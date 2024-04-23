@@ -37,7 +37,7 @@ void test1() {
 // CHECK-NOT: size_t temp_storage_bytes = 0;
 // CHECK: DPCT1026:{{.*}}: The call to cub::DeviceSelect::UniqueByKey was removed because this functionality is redundant in SYCL.
 // CHECK: q_ct1.fill(d_num_selected_out, std::distance(d_keys_out, std::get<0>(dpct::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_keys_in, d_keys_in + num_items, d_values_in, d_keys_out, d_values_out))), 1).wait();
-// CHECK-NOT: sycl::free(d_temp_storage, q_ct1);
+// CHECK-NOT: dpct::dpct_free(d_temp_storage, q_ct1);
 // CHECK: }
 
 void test2() {
@@ -53,7 +53,7 @@ void test2() {
 // CHECK-NOT: size_t temp_storage_bytes = 0;
 // CHECK: DPCT1027:{{.*}}: The call to cub::DeviceSelect::UniqueByKey was replaced with 0 because this functionality is redundant in SYCL.
 // CHECK: q_ct1.fill(d_num_selected_out, std::distance(d_keys_out, std::get<0>(dpct::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_keys_in, d_keys_in + num_items, d_values_in, d_keys_out, d_values_out))), 1).wait();
-// CHECK-NOT: sycl::free(d_temp_storage, q_ct1);
+// CHECK-NOT: dpct::dpct_free(d_temp_storage, q_ct1);
 // CHECK: }
 
 void test3() {

@@ -20,7 +20,32 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                          CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(0)),
                          CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(1))),
                       CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(2)))))
-
+      // cub::SHL_ADD
+      CALL_FACTORY_ENTRY(
+          "cub::SHL_ADD",
+          CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() +
+                                              "extend_shl_clamp",
+                                          LITERAL("uint32_t")),
+               ARG(0), ARG(1), ARG(2),
+               LITERAL(MapNames::getClNamespace() + "plus<>()")))
+      // cub::SHR_ADD
+      CALL_FACTORY_ENTRY(
+          "cub::SHR_ADD",
+          CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() +
+                                              "extend_shr_clamp",
+                                          LITERAL("uint32_t")),
+               ARG(0), ARG(1), ARG(2),
+               LITERAL(MapNames::getClNamespace() + "plus<>()")))
+      // cub::BFE
+      CALL_FACTORY_ENTRY("cub::BFE",
+                         CALL(MapNames::getDpctNamespace() + "bfe_safe", ARG(0),
+                              ARG(1), ARG(2)))
+      // cub::BFI
+      ASSIGN_FACTORY_ENTRY("cub::BFI", ARG(0),
+                           CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                    MapNames::getDpctNamespace() + "bfi_safe",
+                                    LITERAL("unsigned")),
+                                ARG(2), ARG(1), ARG(3), ARG(4)))
       // cub::LaneId
       MEMBER_CALL_FACTORY_ENTRY(
           "cub::LaneId", MEMBER_CALL(NDITEM, false, LITERAL("get_sub_group")),

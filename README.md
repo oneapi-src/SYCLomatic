@@ -41,6 +41,8 @@ expected to be similar to the daily releases.
   * Windows: `Visual Studio` 2019 or 2022 (In the following description, assume that the version used is 2019) -
     [Download](https://visualstudio.microsoft.com/downloads/)
 
+Note: SYCLomatic can be built from source without any CUDA dependencies. However, before migration of CUDA codebases to SYCL, ensure that CUDA header files are accessible to the tool. These header files are necessary for SYCLomatic to properly understand and process CUDA code during the migration process.
+
 ### Create SYCLomatic workspace
 
 Throughout this document `SYCLOMATIC_HOME` denotes the path to the local directory
@@ -119,15 +121,12 @@ After a successful build, you should be able to see following message in the ter
 
 **Linux**:
 ```bash
-export PATH=$PATH_TO_C2S_INSTALL_FOLDER/bin:$PATH
-export CPATH=$PATH_TO_C2S_INSTALL_FOLDER/include:$CPATH
+source $PATH_TO_C2S_INSTALL_FOLDER/setvars.sh
 ```
 
 **Windows (64-bit)**:
 ```bat
-SET PATH=%PATH_TO_C2S_INSTALL_FOLDER%\bin;%PATH%
-SET INCLUDE=%PATH_TO_C2S_INSTALL_FOLDER%\include;%INCLUDE%
-SET CPATH=%PATH_TO_C2S_INSTALL_FOLDER%\include;%CPATH%
+.\%PATH_TO_C2S_INSTALL_FOLDER%\setvars.bat
 ```
 
 ### Verify the Installation
@@ -149,8 +148,16 @@ dpct is an alias command for c2s.
 ### Run in-tree LIT tests
 SYCLomatic uses [LLVM Integrated Tester](https://llvm.org/docs/CommandGuide/lit.html) infrastructure to do the unit test.
 Note: Certain CUDA header files may need to be accessible to the tool.
-After building the SYCLomatic, you can run the list test by:
+After building the SYCLomatic, you can run the lit test by:
 ```
+ninja check-clang-c2s
+```
+
+Or enabling extra lit build test besides lit migration test:
+
+Set up compiler and libraries according to [oneAPI Development Environment Setup](https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2024-0/oneapi-development-environment-setup.html#SETVARS-ONEAPI-VARS-AND-VARS-FILES)
+```
+export BUILD_LIT=TRUE
 ninja check-clang-c2s
 ```
 
@@ -182,6 +189,10 @@ The end to end test executes the migration, build and run steps. Follow instruct
 * [Migrate from CUDA* to C++ with SYCL\*](https://developer.intel.com/cuda2sycl)
 * [oneAPI Ecosystem Support](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ecosystem-support.html)
 * [oneAPI Centers of Excellence](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/academic-program/centers-of-excellence.html)
+* Check the following documentation for guidance on using the migrated SYCL code with non-Intel devices using the DPC++ Compatibility Tool:
+
+  * [Targeting NVIDIA* GPUs](https://developer.codeplay.com/products/oneapi/nvidia/home/)
+  * [Targeting AMD* GPUs](https://developer.codeplay.com/products/oneapi/amd/home/)
 
 ## License
 

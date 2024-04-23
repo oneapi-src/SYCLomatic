@@ -7,6 +7,8 @@ set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 Find_Package(CUDA REQUIRED)
+find_package(OpenCV REQUIRED)
+Find_Package(CUDA)
 set(SOURCES
     ${CMAKE_SOURCE_DIR}/foo/main.cu
     ${CMAKE_SOURCE_DIR}/foo/bar/util.cu
@@ -20,6 +22,8 @@ project(foo CUDA)
 
 project(foo2 CUDA CXX)
 
-target_link_libraries(foo3 PUBLIC ${CUDA_LIBRARIES} ${TCNN_LIBRARIES} fmt)
-
 set(SOURCES a.cu b.cuh)
+
+project  (foo2 CUDA CXX)
+
+project  (  foo2 CUDA CXX)

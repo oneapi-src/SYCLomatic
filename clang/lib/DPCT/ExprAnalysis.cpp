@@ -270,7 +270,6 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    SrcBeginLoc = BeginLoc;
     auto LastTokenLength = End.second;
     if(ApplyGreaterTokenWorkAround)
       LastTokenLength = 0;
@@ -289,14 +288,14 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
                                  const Expr *Parent) {
   const std::shared_ptr<DynTypedNode> P =
       std::make_shared<DynTypedNode>(DynTypedNode::create(*Parent));
-  if (BeginLoc.isMacroID() && isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
-    BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
-    EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
-  } else {
-    if (EndLoc.isValid()) {
-      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
-      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
-    }
+  while (BeginLoc.isMacroID() &&
+         isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
+    BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
+    EndLoc = SM.getImmediateSpellingLoc(EndLoc);
+  }
+  if (EndLoc.isValid()) {
+    BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+    EndLoc = SM.getExpansionRange(EndLoc).getEnd();
   }
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
@@ -401,6 +400,7 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
   if (Range.getBegin().isValid()) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
+    SrcBeginLoc = Range.getBegin();
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
       ReplSet.init(std::string(
           FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
@@ -564,6 +564,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
       REPLACE_ENUM(MapNames::RandomEngineTypeMap);
+      REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
 #undef REPLACE_ENUM
@@ -785,6 +786,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
               dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts());
           if (!Callee)
             return false;
+          if (CE->getDirectCallee()->isTemplateInstantiation())
+            return true;
           if (!Callee->getQualifier())
             return false;
           if (Callee->getQualifier()->getKind() !=
@@ -818,8 +821,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
       addReplacement(ME->getMemberLoc(),
                      "get_" + ReplacementStr + TmplArg + "()");
-      requestFeature(MapNames::PropToGetFeatureMap.at(
-          ME->getMemberNameInfo().getAsString()));
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
@@ -1045,8 +1046,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
     return;
 
   auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
-  if (StringRef(BaseType).startswith("cub::") ||
-      StringRef(BaseType).startswith("cuda::std::")) {
+  if (StringRef(BaseType).starts_with("cub::") ||
+      StringRef(BaseType).starts_with("cuda::std::")) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
       if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
         BaseType.clear();
@@ -1159,6 +1160,17 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   if (NNSL) {
     SR.setBegin(NNSL->getBeginLoc());
   }
+
+  auto RewriteType = [&](std::string &TypeStr, const TypeLoc &TLoc) {
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TypeStr);
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TLoc);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value())
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+    }
+  };
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
@@ -1174,14 +1186,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   case TypeLoc::Elaborated:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
-    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
-      auto Rewriter = Itr->second->create(TL);
-      auto Result = Rewriter->rewrite();
-      if (Result.has_value())
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
-    }
+    RewriteType(TyName, TL);
     break;
   }
   case TypeLoc::TemplateTypeParm:
@@ -1243,7 +1248,16 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     break;
   case TypeLoc::Enum: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    RewriteType(TyName, TL);
     break;
+  }
+  case TypeLoc::FunctionProto: {
+    auto FuncProtoType = TYPELOC_CAST(FunctionTypeLoc);
+    analyzeType(FuncProtoType.getReturnLoc(), CSCE);
+    for (auto *const Param : FuncProtoType.getParams()) {
+      analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), CSCE);
+    }
+    return;
   }
   default:
     return;
@@ -1673,6 +1687,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
@@ -1773,23 +1788,27 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   IsRedeclareRequired = false;
 }
 
-
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
-  if (UO->getOpcode() == UO_Deref) {
-    IsRedeclareRequired = true;
-    return;
-  }
+  IsRedeclareRequired = true;
   if (UO->getOpcode() == UO_AddrOf) {
     IsAddrOf = true;
+    dispatch(UO->getSubExpr());
+    /// If subexpr is variable defined on device, remove operator '&'.
+    if (IsAddrOf && IsDefinedOnDevice) {
+      addReplacement(UO->getOperatorLoc(), "");
+    }
+    /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
+    IsDefinedOnDevice = false;
+    IsAddrOf = false;
+  } else {
+    dispatch(UO->getSubExpr());
   }
-  dispatch(UO->getSubExpr());
-  /// If subexpr is variable defined on device, remove operator '&'.
-  if (IsAddrOf && IsDefinedOnDevice) {
-    addReplacement(UO->getOperatorLoc(), "");
-  }
-  /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
-  IsDefinedOnDevice = false;
-  IsAddrOf = false;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  IsRedeclareRequired = true;
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {

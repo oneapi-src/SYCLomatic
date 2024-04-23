@@ -794,7 +794,7 @@ void raw_fd_ostream::write_impl(const char *Ptr, size_t Size) {
       }
 #endif
       // Otherwise it's a non-recoverable error. Note it and quit.
-      error_detected(std::error_code(errno, std::generic_category()));
+      error_detected(errnoAsErrorCode());
       break;
     }
 
@@ -824,7 +824,7 @@ uint64_t raw_fd_ostream::seek(uint64_t off) {
   pos = ::lseek(FD, off, SEEK_SET);
 #endif
   if (pos == (uint64_t)-1)
-    error_detected(std::error_code(errno, std::generic_category()));
+    error_detected(errnoAsErrorCode());
   return pos;
 }
 
@@ -908,7 +908,7 @@ raw_fd_ostream &llvm::outs() {
 raw_fd_ostream &llvm::errs() {
   // Set standard error to be unbuffered and tied to outs() by default.
 #ifdef __MVS__
-  std::error_code EC = enableAutoConversion(STDOUT_FILENO);
+  std::error_code EC = enableAutoConversion(STDERR_FILENO);
   assert(!EC);
 #endif
   static raw_fd_ostream S(STDERR_FILENO, false, true);
@@ -937,13 +937,16 @@ raw_fd_stream::raw_fd_stream(StringRef Filename, std::error_code &EC)
     EC = std::make_error_code(std::errc::invalid_argument);
 }
 
+raw_fd_stream::raw_fd_stream(int fd, bool shouldClose)
+    : raw_fd_ostream(fd, shouldClose, false, OStreamKind::OK_FDStream) {}
+
 ssize_t raw_fd_stream::read(char *Ptr, size_t Size) {
   assert(get_fd() >= 0 && "File already closed.");
   ssize_t Ret = ::read(get_fd(), (void *)Ptr, Size);
   if (Ret >= 0)
     inc_pos(Ret);
   else
-    error_detected(std::error_code(errno, std::generic_category()));
+    error_detected(errnoAsErrorCode());
   return Ret;
 }
 

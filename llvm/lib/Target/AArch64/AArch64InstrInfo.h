@@ -56,9 +56,9 @@ public:
   areMemAccessesTriviallyDisjoint(const MachineInstr &MIa,
                                   const MachineInstr &MIb) const override;
 
-  unsigned isLoadFromStackSlot(const MachineInstr &MI,
+  Register isLoadFromStackSlot(const MachineInstr &MI,
                                int &FrameIndex) const override;
-  unsigned isStoreToStackSlot(const MachineInstr &MI,
+  Register isStoreToStackSlot(const MachineInstr &MI,
                               int &FrameIndex) const override;
 
   /// Does this instruction set its full destination register to zero?
@@ -155,7 +155,7 @@ public:
 
   bool getMemOperandsWithOffsetWidth(
       const MachineInstr &MI, SmallVectorImpl<const MachineOperand *> &BaseOps,
-      int64_t &Offset, bool &OffsetIsScalable, unsigned &Width,
+      int64_t &Offset, bool &OffsetIsScalable, LocationSize &Width,
       const TargetRegisterInfo *TRI) const override;
 
   /// If \p OffsetIsScalable is set to 'true', the offset is scaled by `vscale`.
@@ -247,6 +247,10 @@ public:
                         MachineBasicBlock *FBB, ArrayRef<MachineOperand> Cond,
                         const DebugLoc &DL,
                         int *BytesAdded = nullptr) const override;
+
+  std::unique_ptr<TargetInstrInfo::PipelinerLoopInfo>
+  analyzeLoopForPipelining(MachineBasicBlock *LoopBB) const override;
+
   bool
   reverseBranchCondition(SmallVectorImpl<MachineOperand> &Cond) const override;
   bool canInsertSelect(const MachineBasicBlock &, ArrayRef<MachineOperand> Cond,
@@ -377,8 +381,6 @@ public:
                                                   int64_t &ByteSized,
                                                   int64_t &VGSized);
 
-  bool isReallyTriviallyReMaterializable(const MachineInstr &MI) const override;
-
   // Return true if address of the form BaseReg + Scale * ScaledReg + Offset can
   // be used for a load/store of NumBytes. BaseReg is always present and
   // implicit.
@@ -401,6 +403,8 @@ protected:
   /// registers as machine operands.
   std::optional<DestSourcePair>
   isCopyInstrImpl(const MachineInstr &MI) const override;
+  std::optional<DestSourcePair>
+  isCopyLikeInstrImpl(const MachineInstr &MI) const override;
 
 private:
   unsigned getInstBundleLength(const MachineInstr &MI) const;

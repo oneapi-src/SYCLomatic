@@ -1,0 +1,5 @@
+dpct_helper_compile_sycl_code(CUDA_FATBINS ${CUDA_FATBIN_SOURCE})
+
+dpct_helper_compile_sycl_code(FATBINS main.dp.cpp)
+
+dpct_helper_compile_sycl_code(${TARGET} ${CMAKE_SOURCE_DIR}/foo/bar/util.dp.cpp)

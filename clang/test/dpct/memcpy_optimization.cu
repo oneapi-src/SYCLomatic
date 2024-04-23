@@ -60,5 +60,8 @@ int main(){
       cudaDeviceSynchronize();
     }
     free(host_f);
+
+//CHECK:  sycl::free(dev_a, q_ct1);
+    cudaFree(dev_a);
     return 0;
 }

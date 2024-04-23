@@ -6,6 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AnalysisInfo.h"
+#include "Rules.h"
+#include "SaveNewFiles.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Path.h"
 #include <PatternRewriter.h>
 
 #include <optional>
@@ -15,6 +20,8 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+
+std::set<std::string> MainSrcFilesHasCudaSyntex;
 
 struct SpacingElement {};
 
@@ -37,8 +44,9 @@ struct MatchResult {
   std::unordered_map<std::string, std::string> Bindings;
 };
 
-extern llvm::cl::opt<bool> MigrateCmakeScriptOnly;
-extern llvm::cl::opt<bool> MigrateCmakeScript;
+static SourceFileType SrcFileType = SourceFileType::SFT_CAndCXXSource;
+
+extern llvm::cl::opt<bool> MigrateBuildScriptOnly;
 
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
@@ -102,27 +110,6 @@ static std::string indent(const std::string &Input, int Indentation) {
   }
   std::string Str = trim(join(Output, "\n"));
   return Str;
-}
-
-static std::string dedent(const std::string &Input, int Indentation) {
-  std::stringstream OutputStream;
-  const int Size = Input.size();
-  int Index = 0;
-  int Skip = 0;
-  while (Index < Size) {
-    char Character = Input[Index];
-    if (Skip > 0 && Character == ' ') {
-      Skip--;
-      Index++;
-      continue;
-    }
-    if (Character == '\n') {
-      Skip = Indentation;
-    }
-    OutputStream << Character;
-    Index++;
-  }
-  return OutputStream.str();
 }
 
 /*
@@ -277,8 +264,19 @@ static int parseCodeElement(const MatchPattern &Suffix,
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
-    const auto Character = Input[Index];
 
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+        continue;
+      }
+    }
+
+    const auto Character = Input[Index];
+    if(Suffix.size() == 0 && Character =='"') {
+      return Index;
+    }
     if (Suffix.size() > 0) {
       std::optional<MatchResult> SuffixMatch;
 
@@ -378,14 +376,42 @@ static int parseCodeElement(const MatchPattern &Suffix,
   return Suffix.size() == 0 ? Index : -1;
 }
 
+// Add '-' as a valid identified char, as cmake target name including '-' is
+// valid
 static bool isIdentifiedChar(char Char) {
 
   if ((Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z') ||
-      (Char >= '0' && Char <= '9') || (Char == '_')) {
+      (Char >= '0' && Char <= '9') || (Char == '_') || (Char == '-')) {
     return true;
   }
 
   return false;
+}
+
+static void
+updateExtentionName(const std::string &Input, size_t Next,
+                    std::unordered_map<std::string, std::string> &Bindings) {
+  auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
+  if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
+    size_t Pos = Next - 1;
+    for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
+    }
+    Pos = Pos == 0 ? 0 : Pos + 1;
+    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - Pos);
+    bool HasCudaSyntax = false;
+    for (const auto &File : MainSrcFilesHasCudaSyntex) {
+      if (llvm::sys::path::filename(File) == FileName) {
+        HasCudaSyntax = true;
+      }
+    }
+
+    if (HasCudaSyntax)
+      Bindings["rewrite_extention_name"] = "cpp" + Extension;
+    else
+      Bindings["rewrite_extention_name"] = "cpp";
+  } else {
+    Bindings["rewrite_extention_name"] = Extension.erase(0, 1);
+  }
 }
 
 static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
@@ -398,8 +424,22 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
+  bool CodeElementExist = false;
+  for (const auto &Element : Pattern) {
+    if (std::holds_alternative<CodeElement>(Element)) {
+      CodeElementExist = true;
+    }
+  }
 
   while (PatternIndex < PatternSize && Index < Size) {
+
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+      }
+    }
+
     const auto &Element = Pattern[PatternIndex];
 
     if (std::holds_alternative<SpacingElement>(Element)) {
@@ -417,6 +457,26 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       const auto &Literal = std::get<LiteralElement>(Element);
       if (Input[Index] != Literal.Value) {
         return {};
+      }
+
+      if (!CodeElementExist && Index - PatternSize >= 0 && Index <= Size - 1 &&
+          PatternIndex == PatternSize - 1) {
+        if (!isIdentifiedChar(Input[Index - PatternSize]) &&
+            !isIdentifiedChar(Input[Index + 1])) {
+          if (Index < Size - 1 && Input[Index - PatternSize] != '{' &&
+              Input[Index + 1] != '}' &&
+              !isWhitespace(Input[Index - PatternSize]) &&
+              !isWhitespace(Input[Index + 1]) &&
+              Input[Index - PatternSize] != '*' &&
+              Input[Index - PatternSize] != '"') {
+            return {};
+          }
+        }
+
+        if (isIdentifiedChar(Input[Index - PatternSize]) &&
+            Input[Index - PatternSize + 1] != '.') {
+          return {};
+        }
       }
 
       // If input value has been matched to the end but match pattern still has
@@ -447,16 +507,13 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       if (Next == -1) {
         return {};
       }
-      const int Indentation = detectIndentation(Input, Index);
-      std::string ElementContents =
-          dedent(Input.substr(Index, Next - Index), Indentation);
-      if (Result.Bindings.count(Code.Name)) {
-        if (Result.Bindings[Code.Name] != ElementContents) {
-          return {};
-        }
-      } else {
-        Result.Bindings[Code.Name] = std::move(ElementContents);
+
+      std::string ElementContents = Input.substr(Index, Next - Index);
+      if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+        updateExtentionName(Input, Next, Result.Bindings);
       }
+
+      Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;
       continue;
@@ -480,6 +537,14 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
   while (PatternIndex < PatternSize && Index < Size) {
+
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+      }
+    }
+
     const auto &Element = Pattern[PatternIndex];
 
     if (std::holds_alternative<SpacingElement>(Element)) {
@@ -514,16 +579,8 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
       if (Next == -1) {
         return {};
       }
-      const int Indentation = detectIndentation(Input, Index);
-      std::string ElementContents =
-          dedent(Input.substr(Index, Next - Index), Indentation);
-      if (Result.Bindings.count(Code.Name)) {
-        if (Result.Bindings[Code.Name] != ElementContents) {
-          return {};
-        }
-      } else {
-        Result.Bindings[Code.Name] = std::move(ElementContents);
-      }
+      std::string ElementContents = Input.substr(Index, Next - Index);
+      Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;
       continue;
@@ -624,10 +681,21 @@ bool skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
     for (; Index < Size && Input[Index] != '\n'; Index++) {
       OutputStream << Input[Index];
     }
-    OutputStream << "\n";
+    if (Index != Size) {
+      OutputStream << "\n";
+    }
     Index++;
+    if (Index < Size && isWhitespace(Input[Index])) {
+      for (; Index < Size && isWhitespace(Input[Index]); Index++) {
+        OutputStream << Input[Index];
+      }
+    }
   }
   return CommentFound;
+}
+
+void setFileTypeProcessed(enum SourceFileType FileType) {
+  SrcFileType = FileType;
 }
 
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
@@ -643,7 +711,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   int Index = 0;
   while (Index < Size) {
 
-    if (MigrateCmakeScript || MigrateCmakeScriptOnly) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
       if (skipCmakeComments(OutputStream, Input, Index)) {
         continue;
       }
@@ -665,8 +733,8 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
               applyPatternRewriter(SubruleIterator->second, Value);
         }
       }
-      const int Indentation = detectIndentation(Input, Index);
 
+      const int Indentation = detectIndentation(Input, Index);
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       while (Input[Index] == '\n') {

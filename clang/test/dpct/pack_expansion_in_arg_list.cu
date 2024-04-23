@@ -1,7 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/pack_expansion_in_arg_list %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --input-file %T/pack_expansion_in_arg_list/pack_expansion_in_arg_list.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/pack_expansion_in_arg_list/pack_expansion_in_arg_list.dp.cpp -o %T/pack_expansion_in_arg_list/pack_expansion_in_arg_list.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/pack_expansion_in_arg_list/pack_expansion_in_arg_list.dp.cpp -o %T/pack_expansion_in_arg_list/pack_expansion_in_arg_list.dp.o %}
 
+#ifndef BUILD_TEST
 #include <cuda_runtime.h>
 #include <type_traits>
 #include <vector>
@@ -41,3 +42,4 @@ int *foo(size_t N, int Low, int High) {
   CHECK_CUDA_RET(cudaMemcpy, Buffer, Vec.data(), Vec.size() * sizeof(int), cudaMemcpyHostToDevice);
   return Buffer;
 }
+#endif

@@ -26,17 +26,17 @@ __device__ float4 fun() {
 }
 
 
-__global__ void kernel() {
+__global__ void kernel1() {
 
 }
 
 void foo() {
-// CHECK:   get_in_order_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK:   get_in_order_queue().parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         nd_range<3>(range<3>(1, 1, ceil(2.3)), range<3>(1, 1, 1)),
 // CHECK-NEXT:         [=](nd_item<3> item_{{[0-9a-z]+}}) {
-// CHECK-NEXT:           kernel();
+// CHECK-NEXT:           kernel1();
 // CHECK-NEXT:         });
-  kernel<<< ceil(2.3), 1 >>>();
+  kernel1<<< ceil(2.3), 1 >>>();
 }
 // CHECK: global_memory<int, 0> al;
 __device__ int al;
@@ -59,7 +59,8 @@ __global__ void kernel2(float *out) {
 
 // CHECK:void test_assignment() try {
 // CHECK-NEXT:  err0 err;
-// CHECK-NEXT:  if (err = DPCT_CHECK_ERROR(*0 = (void *)malloc_device(0, get_in_order_queue()))) {
+// CHECK-NEXT:  int *a;
+// CHECK-NEXT:  if (err = DPCT_CHECK_ERROR(a = (int *)malloc_device(0, get_in_order_queue()))) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -69,7 +70,8 @@ __global__ void kernel2(float *out) {
 // CHECK-NEXT:}
 void test_assignment() {
   cudaError_t err;
-  if (err = cudaMalloc(0, 0)) {
+  int *a;
+  if (err = cudaMalloc(&a, 0)) {
     printf("error!\n");
   }
 }

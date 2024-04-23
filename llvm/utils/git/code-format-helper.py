@@ -125,14 +125,16 @@ View the diff from {self.name} here.
             pr.as_issue().create_comment(comment_text)
 
     def run(self, changed_files: List[str], args: FormatArgs) -> bool:
+        changed_files = [arg for arg in changed_files if "third-party" not in arg]
         diff = self.format_run(changed_files, args)
         should_update_gh = args.token is not None and args.repo is not None
 
         if diff is None:
             if should_update_gh:
-                comment_text = f"""
-    :white_check_mark: With the latest revision this PR passed the {self.friendly_name}.
-    """
+                comment_text = (
+                    ":white_check_mark: With the latest revision "
+                    f"this PR passed the {self.friendly_name}."
+                )
                 self.update_pr(comment_text, args, create_new=False)
             return True
         elif len(diff) > 0:
@@ -141,15 +143,17 @@ View the diff from {self.name} here.
                 self.update_pr(comment_text, args, create_new=True)
             else:
                 print(
-                    f"Warning: {self.friendly_name}, {self.name} detected some issues with your code formatting..."
+                    f"Warning: {self.friendly_name}, {self.name} detected "
+                    "some issues with your code formatting..."
                 )
             return False
         else:
             # The formatter failed but didn't output a diff (e.g. some sort of
             # infrastructure failure).
-            comment_text = f"""
-:warning: The {self.friendly_name} failed without printing a diff. Check the logs for stderr output. :warning:
-"""
+            comment_text = (
+                f":warning: The {self.friendly_name} failed without printing "
+                "a diff. Check the logs for stderr output. :warning:"
+            )
             self.update_pr(comment_text, args, create_new=False)
             return False
 

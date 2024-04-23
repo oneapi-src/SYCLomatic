@@ -14,6 +14,7 @@
 #ifndef LLVM_TEXTAPI_RECORD_H
 #define LLVM_TEXTAPI_RECORD_H
 
+#include "llvm/ADT/MapVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/TextAPI/Symbol.h"
@@ -50,7 +51,8 @@ class Record {
 public:
   Record() = default;
   Record(StringRef Name, RecordLinkage Linkage, SymbolFlags Flags)
-      : Name(Name), Linkage(Linkage), Flags(Flags) {}
+      : Name(Name), Linkage(Linkage), Flags(mergeFlags(Flags, Linkage)),
+        Verified(false) {}
 
   bool isWeakDefined() const {
     return (Flags & SymbolFlags::WeakDefined) == SymbolFlags::WeakDefined;
@@ -78,12 +80,20 @@ public:
   bool isExported() const { return Linkage >= RecordLinkage::Rexported; }
   bool isRexported() const { return Linkage == RecordLinkage::Rexported; }
 
+  bool isVerified() const { return Verified; }
+  void setVerify(bool V = true) { Verified = V; }
+
   StringRef getName() const { return Name; }
+  SymbolFlags getFlags() const { return Flags; }
+
+private:
+  SymbolFlags mergeFlags(SymbolFlags Flags, RecordLinkage Linkage);
 
 protected:
   StringRef Name;
   RecordLinkage Linkage;
   SymbolFlags Flags;
+  bool Verified;
 
   friend class RecordsSlice;
 };
@@ -98,14 +108,20 @@ public:
   };
 
   GlobalRecord(StringRef Name, RecordLinkage Linkage, SymbolFlags Flags,
-               Kind GV)
-      : Record({Name, Linkage, Flags}), GV(GV) {}
+               Kind GV, bool Inlined)
+      : Record({Name, Linkage, Flags}), GV(GV), Inlined(Inlined) {}
 
   bool isFunction() const { return GV == Kind::Function; }
   bool isVariable() const { return GV == Kind::Variable; }
+  void setKind(const Kind &V) {
+    if (GV == Kind::Unknown)
+      GV = V;
+  }
+  bool isInlined() const { return Inlined; }
 
 private:
   Kind GV;
+  bool Inlined = false;
 };
 
 // Define Objective-C instance variable records.
@@ -133,6 +149,8 @@ public:
 
   ObjCIVarRecord *addObjCIVar(StringRef IVar, RecordLinkage Linkage);
   ObjCIVarRecord *findObjCIVar(StringRef IVar) const;
+  std::vector<ObjCIVarRecord *> getObjCIVars() const;
+  RecordLinkage getLinkage() const { return Linkage; }
 
 private:
   RecordMap<ObjCIVarRecord> IVars;
@@ -146,6 +164,8 @@ public:
       : ObjCContainerRecord(Name, RecordLinkage::Unknown),
         ClassToExtend(ClassToExtend) {}
 
+  StringRef getSuperClassName() const { return ClassToExtend; }
+
 private:
   StringRef ClassToExtend;
 };
@@ -154,14 +174,42 @@ private:
 class ObjCInterfaceRecord : public ObjCContainerRecord {
 public:
   ObjCInterfaceRecord(StringRef Name, RecordLinkage Linkage,
-                      bool HasEHType = false)
-      : ObjCContainerRecord(Name, Linkage), HasEHType(HasEHType) {}
+                      ObjCIFSymbolKind SymType)
+      : ObjCContainerRecord(Name, Linkage) {
+    updateLinkageForSymbols(SymType, Linkage);
+  }
 
-  bool hasExceptionAttribute() const { return HasEHType; }
+  bool hasExceptionAttribute() const {
+    return Linkages.EHType != RecordLinkage::Unknown;
+  }
+  bool isCompleteInterface() const {
+    return Linkages.Class >= RecordLinkage::Rexported &&
+           Linkages.MetaClass >= RecordLinkage::Rexported;
+  }
+  bool isExportedSymbol(ObjCIFSymbolKind CurrType) const {
+    return getLinkageForSymbol(CurrType) >= RecordLinkage::Rexported;
+  }
+
+  RecordLinkage getLinkageForSymbol(ObjCIFSymbolKind CurrType) const;
+  void updateLinkageForSymbols(ObjCIFSymbolKind SymType, RecordLinkage Link);
+
   bool addObjCCategory(ObjCCategoryRecord *Record);
+  std::vector<ObjCCategoryRecord *> getObjCCategories() const;
 
 private:
-  bool HasEHType;
+  /// Linkage level for each symbol represented in ObjCInterfaceRecord.
+  struct Linkages {
+    RecordLinkage Class = RecordLinkage::Unknown;
+    RecordLinkage MetaClass = RecordLinkage::Unknown;
+    RecordLinkage EHType = RecordLinkage::Unknown;
+    bool operator==(const Linkages &other) const {
+      return std::tie(Class, MetaClass, EHType) ==
+             std::tie(other.Class, other.MetaClass, other.EHType);
+    }
+    bool operator!=(const Linkages &other) const { return !(*this == other); }
+  };
+  Linkages Linkages;
+
   // Non-owning containers of categories that extend the class.
   llvm::MapVector<StringRef, ObjCCategoryRecord *> Categories;
 };

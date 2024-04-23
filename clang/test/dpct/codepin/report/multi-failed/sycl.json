@@ -1,0 +1,86 @@
+[
+    {
+        "ID": "serial123",
+        "CheckPoint": {
+            "var_1": {
+                "Type": "std::vector",
+                "Data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            "var_2": {
+                "Type": "MyClassA",
+                "Data": {
+                    "member_1": {
+                        "Type": "int",
+                        "Data": 3
+                    },
+                    "member_2": {
+                        "Type": "MyClassB",
+                        "Data": "ccc"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "ID": "serial1243",
+        "CheckPoint": {
+            "var_1": {
+                "Type": "std::vector",
+                "Data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            "var_2": {
+                "Type": "MyClassA",
+                "Data": {
+                    "member_1": {
+                        "Type": "int3",
+                        "Data": 3
+                    },
+                    "member_2": {
+                        "Type": "MyClassB",
+                        "Data": "bb"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "ID": "serial1234",
+        "CheckPoint": {
+            "var_1": {
+                "Type": "std::vector",
+                "Data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            "var_2": {
+                "Type": "MyClassA",
+                "Data": {
+                    "member_1": {
+                        "Type": "int",
+                        "Data": 3
+                    },
+                    "member_2": {
+                        "Type": "MyClassB",
+                        "Data": "cc"
+                    }
+                }
+            }
+        }
+    }
+]

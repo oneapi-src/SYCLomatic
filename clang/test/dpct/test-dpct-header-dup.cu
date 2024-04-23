@@ -2,7 +2,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/OUT/test-dpct-header-dup.dp.cpp %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/OUT/test-dpct-header-dup.dp.cpp -o %T/OUT/test-dpct-header-dup.dp.o %}
 
-// CHECK: #include "inc/header3.c"
+// CHECK: #include "inc/header3.c.dp.cpp"
 // CHECK-NEXT: #include "inc/header4.c"
 #include "inc/header3.c"
 #include "inc/header4.c"

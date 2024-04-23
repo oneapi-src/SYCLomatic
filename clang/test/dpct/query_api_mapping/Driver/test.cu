@@ -379,7 +379,7 @@
 // CUSTREAMADDCALLBACK-NEXT:                       u /*unsigned int*/);
 // CUSTREAMADDCALLBACK-NEXT: Is migrated to:
 // CUSTREAMADDCALLBACK-NEXT:   dpct::queue_ptr s;
-// CUSTREAMADDCALLBACK-NEXT:   std::async([&](){s->wait(); sc(s, 0, pData);});
+// CUSTREAMADDCALLBACK-NEXT:   std::async([&]() { s->wait(); sc(s, 0, pData); });
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuStreamAttachMemAsync | FileCheck %s -check-prefix=CUSTREAMATTACHMEMASYNC
 // CUSTREAMATTACHMEMASYNC: CUDA API:
@@ -441,7 +441,7 @@
 // CUEVENTQUERY-NEXT:   cuEventQuery(e /*CUevent*/);
 // CUEVENTQUERY-NEXT: Is migrated to:
 // CUEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUEVENTQUERY-NEXT:   (int)e->get_info<sycl::info::event::command_execution_status>();
+// CUEVENTQUERY-NEXT:   e->get_info<sycl::info::event::command_execution_status>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuEventRecord | FileCheck %s -check-prefix=CUEVENTRECORD
 // CUEVENTRECORD: CUDA API:

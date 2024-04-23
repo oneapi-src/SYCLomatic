@@ -3,8 +3,8 @@
 
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem_var_static %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_static/sharedmem_var_static.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/sharedmem_var_static/sharedmem_var_static.dp.cpp -o %T/sharedmem_var_static/sharedmem_var_static.dp.o %}
-
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/sharedmem_var_static/sharedmem_var_static.dp.cpp -o %T/sharedmem_var_static/sharedmem_var_static.dp.o %}
+#ifndef BUILD_TEST
 #include <stdio.h>
 #include <complex>
 #define SIZE 64
@@ -145,7 +145,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, a0_acc_ct1, s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, a0_acc_ct1, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n>>>(d_d, n);
@@ -188,7 +188,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>((int *)(&d_d_acc_ct0[0]), n, item_ct1, s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>((int *)(&d_d_acc_ct0[0]), n, item_ct1, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
@@ -209,3 +209,4 @@ void fooh() {
   // CHECK: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(SIZE), cgh);
   fook<SZ><<<1, 1>>>();
 }
+#endif

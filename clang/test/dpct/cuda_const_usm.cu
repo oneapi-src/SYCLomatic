@@ -28,7 +28,7 @@ __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2]
 __constant__ double2 vec_d;
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1120:{{[0-9]+}}: template_a is in device memory and passed into device functions as extra arguments. As here template_a is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.
+// CHECK-NEXT: DPCT1120:{{[0-9]+}}: template_a is in device memory and passed into device functions as an extra argument. As template_a is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.
 // CHECK-NEXT: */
 template<class T>
 __constant__ T template_a;

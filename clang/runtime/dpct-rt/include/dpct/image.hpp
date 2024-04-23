@@ -369,6 +369,12 @@ using image_matrix_p = image_matrix *;
 
 enum class image_data_type { matrix, linear, pitch, unsupport };
 
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+namespace experimental {
+class image_mem_wrapper;
+}
+#endif
+
 /// Image data info.
 class image_data {
 public:
@@ -386,6 +392,12 @@ public:
     _data = matrix_data;
     _channel = matrix_data->get_channel();
   }
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+  void set_data(experimental::image_mem_wrapper *image_mem) {
+    _type = image_data_type::matrix;
+    _data = image_mem;
+  }
+#endif
   void set_data(void *data_ptr, size_t x_size, image_channel channel) {
     _type = image_data_type::linear;
     _data = data_ptr;
@@ -459,48 +471,119 @@ class sampling_info {
   sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
   sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       sycl::coordinate_normalization_mode::unnormalized;
+  // Dictates the method in which sampling between mipmap levels is performed.
+  sycl::filtering_mode _mipmap_filtering = sycl::filtering_mode::nearest;
+  // Defines the minimum mipmap level from which we can sample, with the minimum
+  // value being 0.
+  float _min_mipmap_level_clamp = 0.f;
+  // Defines the maximum mipmap level from which we can sample. This value
+  // cannot be higher than the number of allocated levels.
+  float _max_mipmap_level_clamp = 0.f;
+  // Dictates the anisotropic ratio used when sampling the mipmap with
+  // anisotropic filtering.
+  float _max_anisotropy = 0.f;
 
 public:
-  sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
-  void set(sycl::addressing_mode addressing_mode) { _addressing_mode = addressing_mode; }
+  sycl::addressing_mode get_addressing_mode() const noexcept {
+    return _addressing_mode;
+  }
+  void set(sycl::addressing_mode addressing_mode) noexcept {
+    _addressing_mode = addressing_mode;
+  }
 
-  sycl::filtering_mode get_filtering_mode() { return _filtering_mode; }
-  void set(sycl::filtering_mode filtering_mode) { _filtering_mode = filtering_mode; }
+  sycl::filtering_mode get_filtering_mode() const noexcept {
+    return _filtering_mode;
+  }
+  void set(sycl::filtering_mode filtering_mode) noexcept {
+    _filtering_mode = filtering_mode;
+  }
 
-  sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
+  sycl::coordinate_normalization_mode
+  get_coordinate_normalization_mode() const noexcept {
     return _coordinate_normalization_mode;
   }
-  void set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+  void set(sycl::coordinate_normalization_mode
+               coordinate_normalization_mode) noexcept {
     _coordinate_normalization_mode = coordinate_normalization_mode;
   }
 
-  bool is_coordinate_normalized() {
+  bool is_coordinate_normalized() const noexcept {
     return _coordinate_normalization_mode ==
            sycl::coordinate_normalization_mode::normalized;
   }
-  void set_coordinate_normalization_mode(int is_normalized) {
+  void set_coordinate_normalization_mode(int is_normalized) noexcept {
     _coordinate_normalization_mode =
         is_normalized ? sycl::coordinate_normalization_mode::normalized
                       : sycl::coordinate_normalization_mode::unnormalized;
   }
-  void
-  set(sycl::addressing_mode addressing_mode,
-      sycl::filtering_mode filtering_mode,
-      sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+
+  /// Get the method in which sampling between mipmap levels is performed.
+  /// \returns The method in which sampling between mipmap levels is performed.
+  sycl::filtering_mode get_mipmap_filtering() const noexcept {
+    return _mipmap_filtering;
+  }
+  /// Set the method in which sampling between mipmap levels is performed.
+  /// \param [in] filtering_mode The method in which sampling between mipmap
+  /// levels is performed.
+  void set_mipmap_filtering(sycl::filtering_mode filtering_mode) noexcept {
+    _mipmap_filtering = filtering_mode;
+  }
+
+  /// Get the minimum mipmap level from which we can sample
+  /// \returns The minimum mipmap level from which we can sample.
+  float get_min_mipmap_level_clamp() const noexcept {
+    return _min_mipmap_level_clamp;
+  }
+  /// Set the minimum mipmap level from which we can sample
+  /// \param [in] min_mipmap_level_clamp The minimum mipmap level from which we
+  /// can sample.
+  void set_min_mipmap_level_clamp(float min_mipmap_level_clamp) noexcept {
+    _min_mipmap_level_clamp = min_mipmap_level_clamp;
+  }
+
+  /// Get the maximum mipmap level from which we can sample.
+  /// \returns The maximum mipmap level from which we can sample.
+  float get_max_mipmap_level_clamp() const noexcept {
+    return _max_mipmap_level_clamp;
+  }
+  /// Set the maximum mipmap level from which we can sample.
+  /// \param [in] max_mipmap_level_clamp The maximum mipmap level from which we
+  /// can sample.
+  void set_max_mipmap_level_clamp(float max_mipmap_level_clamp) noexcept {
+    _max_mipmap_level_clamp = max_mipmap_level_clamp;
+  }
+
+  /// Get the anisotropic ratio used when sampling the mipmap with
+  // anisotropic filtering.
+  /// \returns The anisotropic ratio used when sampling the mipmap with
+  // anisotropic filtering.
+  float get_max_anisotropy() const noexcept { return _max_anisotropy; }
+  /// Set the anisotropic ratio used when sampling the mipmap with
+  // anisotropic filtering.
+  /// \param [in] max_anisotropy The anisotropic ratio used when sampling the
+  /// mipmap with anisotropic filtering.
+  void set_max_anisotropy(float max_anisotropy) noexcept {
+    _max_anisotropy = max_anisotropy;
+  }
+
+  void set(sycl::addressing_mode addressing_mode,
+           sycl::filtering_mode filtering_mode,
+           sycl::coordinate_normalization_mode
+               coordinate_normalization_mode) noexcept {
     set(addressing_mode);
     set(filtering_mode);
     set(coordinate_normalization_mode);
   }
   void set(sycl::addressing_mode addressing_mode,
-           sycl::filtering_mode filtering_mode, int is_normalized) {
+           sycl::filtering_mode filtering_mode, int is_normalized) noexcept {
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
   }
 
-  sycl::sampler get_sampler() {
+  sycl::sampler get_sampler() const {
     return sycl::sampler(_coordinate_normalization_mode, _addressing_mode,
-                             _filtering_mode);
+                         _filtering_mode);
   }
 };
 
@@ -659,9 +742,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 
     if (detail::get_pointer_attribute(q, ptr) == detail::pointer_access_attribute::device_only) {
 #ifdef DPCT_USM_LEVEL_NONE
-      ptr = get_buffer(ptr)
-                .template get_access<sycl::access_mode::read_write>()
-                .get_pointer();
+      ptr = get_buffer(ptr).get_host_access().get_pointer();
 #else
       auto sz = data.get_x();
       if (data.get_data_type() == image_data_type::pitch)

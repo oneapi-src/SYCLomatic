@@ -69,7 +69,8 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   // Tile using a 2D grid
   int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / warpSize;
   int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
-
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::layout_t type is not supported.
+  nvcuda::wmma::layout_t ly = nvcuda::wmma::mem_row_major;
   // Declare the fragments
   // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::fragment<nvcuda::wmma::matrix_a, 16, 16, 16, half, nvcuda::wmma::row_major> type is not supported.
   // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::matrix_a type is not supported.

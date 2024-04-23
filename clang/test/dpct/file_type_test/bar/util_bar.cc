@@ -1,3 +1,4 @@
+#ifndef BUILD_TEST
 #include "macro_def.hh"
 #include "util_bar.hh"
 #include <iostream>
@@ -47,3 +48,4 @@ void SubFooReaction::fooCollision(){
     printf("hello");
 }
 HOST_DEVICE_END
+#endif

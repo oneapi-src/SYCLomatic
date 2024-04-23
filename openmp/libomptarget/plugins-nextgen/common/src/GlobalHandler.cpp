@@ -16,10 +16,8 @@
 
 #include "Shared/Utils.h"
 
-#include "llvm/BinaryFormat/ELF.h"
 #include "llvm/Support/Error.h"
 
-#include <cstdint>
 #include <cstring>
 
 using namespace llvm;
@@ -27,50 +25,12 @@ using namespace omp;
 using namespace target;
 using namespace plugin;
 
-const ELF64LEObjectFile *
-GenericGlobalHandlerTy::getOrCreateELFObjectFile(const GenericDeviceTy &Device,
-                                                 DeviceImageTy &Image) {
+Expected<std::unique_ptr<ObjectFile>>
+GenericGlobalHandlerTy::getELFObjectFile(DeviceImageTy &Image) {
+  assert(utils::elf::isELF(Image.getMemoryBuffer().getBuffer()) &&
+         "Input is not an ELF file");
 
-  auto Search = ELFObjectFiles.find(Image.getId());
-  if (Search != ELFObjectFiles.end())
-    // The ELF object file was already there.
-    return &Search->second;
-
-  // The ELF object file we are checking is not created yet.
-  Expected<ELF64LEObjectFile> ElfOrErr =
-      ELF64LEObjectFile::create(Image.getMemoryBuffer());
-  if (!ElfOrErr) {
-    consumeError(ElfOrErr.takeError());
-    return nullptr;
-  }
-
-  auto Result =
-      ELFObjectFiles.try_emplace(Image.getId(), std::move(ElfOrErr.get()));
-  assert(Result.second && "Map insertion failed");
-  assert(Result.first != ELFObjectFiles.end() && "Map insertion failed");
-
-  return &Result.first->second;
-}
-
-Error GenericGlobalHandlerTy::getGlobalMetadataFromELF(
-    const DeviceImageTy &Image, const ELF64LE::Sym &Symbol,
-    const ELF64LE::Shdr &Section, GlobalTy &ImageGlobal) {
-
-  // The global's address is computed as the image begin + the ELF section
-  // offset + the ELF symbol value except for NOBITS sections that, as the name
-  // suggests, have no bits in the image. We still record the size and use
-  // nullptr to indicate there is no location.
-  if (Section.sh_type == ELF::SHT_NOBITS)
-    ImageGlobal.setPtr(nullptr);
-  else
-    ImageGlobal.setPtr(
-        advanceVoidPtr(Image.getStart(),
-                       Section.sh_offset - Section.sh_addr + Symbol.st_value));
-
-  // Set the global's size.
-  ImageGlobal.setSize(Symbol.st_size);
-
-  return Plugin::success();
+  return ELFObjectFileBase::createELFObjectFile(Image.getMemoryBuffer());
 }
 
 Error GenericGlobalHandlerTy::moveGlobalBetweenDeviceAndHost(
@@ -106,7 +66,8 @@ Error GenericGlobalHandlerTy::moveGlobalBetweenDeviceAndHost(
       return Err;
   }
 
-  DP("Succesfully %s %u bytes associated with global symbol '%s' %s the device "
+  DP("Succesfully %s %u bytes associated with global symbol '%s' %s the "
+     "device "
      "(%p -> %p).\n",
      Device2Host ? "read" : "write", HostGlobal.getSize(),
      HostGlobal.getName().data(), Device2Host ? "from" : "to",
@@ -121,18 +82,20 @@ bool GenericGlobalHandlerTy::isSymbolInImage(GenericDeviceTy &Device,
   // Get the ELF object file for the image. Notice the ELF object may already
   // be created in previous calls, so we can reuse it. If this is unsuccessful
   // just return false as we couldn't find it.
-  const ELF64LEObjectFile *ELFObj = getOrCreateELFObjectFile(Device, Image);
-  if (!ELFObj)
+  auto ELFObjOrErr = getELFObjectFile(Image);
+  if (!ELFObjOrErr) {
+    consumeError(ELFObjOrErr.takeError());
     return false;
+  }
 
   // Search the ELF symbol using the symbol name.
-  auto SymOrErr = utils::elf::getSymbol(*ELFObj, SymName);
+  auto SymOrErr = utils::elf::getSymbol(**ELFObjOrErr, SymName);
   if (!SymOrErr) {
     consumeError(SymOrErr.takeError());
     return false;
   }
 
-  return *SymOrErr;
+  return SymOrErr->has_value();
 }
 
 Error GenericGlobalHandlerTy::getGlobalMetadataFromImage(
@@ -140,31 +103,33 @@ Error GenericGlobalHandlerTy::getGlobalMetadataFromImage(
 
   // Get the ELF object file for the image. Notice the ELF object may already
   // be created in previous calls, so we can reuse it.
-  const ELF64LEObjectFile *ELFObj = getOrCreateELFObjectFile(Device, Image);
+  auto ELFObj = getELFObjectFile(Image);
   if (!ELFObj)
-    return Plugin::error("Unable to create ELF object for image %p",
-                         Image.getStart());
+    return ELFObj.takeError();
 
   // Search the ELF symbol using the symbol name.
-  auto SymOrErr = utils::elf::getSymbol(*ELFObj, ImageGlobal.getName());
+  auto SymOrErr = utils::elf::getSymbol(**ELFObj, ImageGlobal.getName());
   if (!SymOrErr)
     return Plugin::error("Failed ELF lookup of global '%s': %s",
                          ImageGlobal.getName().data(),
                          toString(SymOrErr.takeError()).data());
 
-  if (!*SymOrErr)
+  if (!SymOrErr->has_value())
     return Plugin::error("Failed to find global symbol '%s' in the ELF image",
                          ImageGlobal.getName().data());
 
+  auto AddrOrErr = utils::elf::getSymbolAddress(**SymOrErr);
   // Get the section to which the symbol belongs.
-  auto SecOrErr = ELFObj->getELFFile().getSection((*SymOrErr)->st_shndx);
-  if (!SecOrErr)
-    return Plugin::error("Failed to get ELF section from global '%s': %s",
+  if (!AddrOrErr)
+    return Plugin::error("Failed to get ELF symbol from global '%s': %s",
                          ImageGlobal.getName().data(),
-                         toString(SecOrErr.takeError()).data());
+                         toString(AddrOrErr.takeError()).data());
 
   // Setup the global symbol's address and size.
-  return getGlobalMetadataFromELF(Image, **SymOrErr, **SecOrErr, ImageGlobal);
+  ImageGlobal.setPtr(const_cast<void *>(*AddrOrErr));
+  ImageGlobal.setSize((*SymOrErr)->getSize());
+
+  return Plugin::success();
 }
 
 Error GenericGlobalHandlerTy::readGlobalFromImage(GenericDeviceTy &Device,
@@ -180,10 +145,6 @@ Error GenericGlobalHandlerTy::readGlobalFromImage(GenericDeviceTy &Device,
                          "%u bytes in the ELF image but %u bytes on the host",
                          HostGlobal.getName().data(), ImageGlobal.getSize(),
                          HostGlobal.getSize());
-  if (ImageGlobal.getPtr() == nullptr)
-    return Plugin::error("Transfer impossible because global symbol '%s' has "
-                         "no representation in the image (NOBITS sections)",
-                         HostGlobal.getName().data());
 
   DP("Global symbol '%s' was found in the ELF image and %u bytes will copied "
      "from %p to %p.\n",

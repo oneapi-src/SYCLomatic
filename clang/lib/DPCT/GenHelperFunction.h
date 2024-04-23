@@ -16,6 +16,7 @@ namespace clang {
 namespace dpct {
 extern const std::string DpctAllContentStr;
 extern const std::string AtomicAllContentStr;
+extern const std::string BindlessImageAllContentStr;
 extern const std::string BlasUtilsAllContentStr;
 extern const std::string DnnlUtilsAllContentStr;
 extern const std::string DeviceAllContentStr;
@@ -38,9 +39,10 @@ extern const std::string DplExtrasMemoryAllContentStr;
 extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
-void replaceEndOfLine(std::string &StrNeedProcess);
+extern const std::string CodePinAllContentStr;
+extern const std::string CodePinSerializationBasicAllContentStr;
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
-}
+} // namespace dpct
 } // namespace clang
 
 #endif // DPCT_GEN_HELPER_FUNCTION_H

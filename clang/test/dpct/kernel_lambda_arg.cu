@@ -6,7 +6,7 @@
 #include <curand_kernel.h>
 #include <tuple>
 
-// The kernel function can be migrated on windows with v8.0 SDK with -fno-delayed-template-parsing option.
+// The kernel function can be migrated on windows with v8.0 SDK.
 // But the kernel call which has device lambda as argument has a parsing error on windows with v8.0 SDK.
 // So we disable this test on windows with v8.0 SDK.
 

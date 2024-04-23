@@ -9,6 +9,7 @@
 #ifndef DPCT_UTILITY_H
 #define DPCT_UTILITY_H
 
+#include <fstream>
 #include <functional>
 #include <ios>
 #include <iostream>
@@ -18,11 +19,13 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "Error.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
@@ -312,7 +315,13 @@ clang::SourceRange
 getScopeInsertRange(const clang::Expr *CE,
                     const clang::SourceLocation &FuncNameBegin,
                     const clang::SourceLocation &FuncCallEnd);
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
+const clang::DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const clang::DynTypedNode &N);
+template <typename T>
+const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const T *SD) {
+  return findNearestNonExprNonDeclAncestorNode(clang::DynTypedNode::create(*SD))
+      .template get<clang::Stmt>();
+}
 std::string getCanonicalPath(clang::SourceLocation Loc);
 bool containOnlyDigits(const std::string &str);
 void replaceSubStr(std::string &Str, const std::string &SubStr,
@@ -416,6 +425,7 @@ std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 
 bool needExtraParens(const clang::Expr *);
+bool needExtraParensInMemberExpr(const clang::Expr *);
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End);
@@ -526,8 +536,9 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE);
 bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
-bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo);
 bool isCubVar(const clang::VarDecl *VD);
+bool isCubTempStorageType(QualType T);
+bool isCubCollectiveRecordType(QualType T);
 void findAllVarRef(const clang::DeclRefExpr *DRE,
                    std::vector<const clang::DeclRefExpr *> &RefMatchResult,
                    bool IsGlobalScopeAllowed = false);
@@ -551,7 +562,6 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
-std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
 std::string getNameSpace(const NamespaceDecl *NSD);
 bool isFromCUDA(const Decl *D);
 namespace clang {
@@ -581,6 +591,45 @@ public:
   ~PairedPrinter() { OS << Postfix; }
 };
 std::string appendPath(const std::string &P1, const std::string &P2);
+
+void writeDataToFile(const std::string &FileName, const std::string &Data);
+void appendDataToFile(const std::string &FileName, const std::string &Data);
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                       bool IgnoreExisting = true);
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
+class RawFDOStream : public llvm::raw_fd_ostream {
+  StringRef FileName;
+  std::error_code EC;
+
+public:
+  RawFDOStream(StringRef FileName);
+  RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF);
+
+  template <class T> RawFDOStream &operator<<(T &&var) {
+    llvm::raw_fd_ostream::operator<<(std::forward<T>(var));
+    if ((bool)this->error()) {
+      std::string ErrMsg =
+          "[ERROR] Write data to " + FileName.str() + " Fail!\n";
+      dpct::PrintMsg(ErrMsg);
+      dpctExit(MigrationErrorCannotWrite);
+    }
+    return *this;
+  }
+  ~RawFDOStream();
+};
+
+std::set<const clang::DeclRefExpr *>
+matchTargetDREInScope(const clang::VarDecl *TargetDecl,
+                      const clang::Stmt *Range);
+/// @brief Check if an argument is initialized.
+/// @param Arg Function call argument (may be an expression).
+/// @param DeclsRequireInit UnInitialized VarDecl(s).
+/// @return  1: Initialized
+///          0: Not initialized.
+///         -1: Cannot deduce.
+int isArgumentInitialized(
+    const clang::Expr *Arg,
+    std::vector<const clang::VarDecl *> &DeclsRequireInit);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

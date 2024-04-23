@@ -536,3 +536,92 @@
 // cudnnTransformTensor-NEXT:   dpct::dnnl::engine_ext h;
 // cudnnTransformTensor-NEXT:   h.create_engine();
 // cudnnTransformTensor-NEXT:   h.async_reorder(*alpha, src_d, src, *beta, dst_d, dst);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnFindConvolutionBackwardDataAlgorithm | FileCheck %s -check-prefix=cudnnFindConvolutionBackwardDataAlgorithm
+// cudnnFindConvolutionBackwardDataAlgorithm: CUDA API:
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   cudnnHandle_t h;
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   cudnnConvolutionBwdDataAlgoPerf_t r;
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   cudnnFindConvolutionBackwardDataAlgorithm(
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:       h /*cudnnHandle_t*/, weight_d /*cudnnFilterDescriptor_t*/,
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:       diff_dst_d /*cudnnTensorDescriptor_t*/,
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:       cdesc /*cudnnConvolutionDescriptor_t*/,
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:       diff_src_d /*cudnnTensorDescriptor_t*/, reqc /*int*/, realc /*int **/,
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:       &r /*cudnnConvolutionBwdDataAlgoPerf_t*/);
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT: Is migrated to:
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   dpct::dnnl::engine_ext h;
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   h.create_engine();
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   dpct::dnnl::convolution_algorithm_info r;
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   r.algo = dnnl::algorithm::convolution_auto;
+// cudnnFindConvolutionBackwardDataAlgorithm-NEXT:   *realc = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnFindConvolutionBackwardFilterAlgorithm | FileCheck %s -check-prefix=cudnnFindConvolutionBackwardFilterAlgorithm
+// cudnnFindConvolutionBackwardFilterAlgorithm: CUDA API:
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   cudnnHandle_t h;
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   cudnnConvolutionBwdFilterAlgoPerf_t r;
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   cudnnFindConvolutionBackwardFilterAlgorithm(
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:       h /*cudnnHandle_t*/, src_d /*cudnnTensorDescriptor_t*/,
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:       diff_dst_d /*cudnnTensorDescriptor_t*/,
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:       cdesc /*cudnnConvolutionDescriptor_t*/,
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:       diff_weight_d /*cudnnFilterDescriptor_t*/, reqc /*int*/, realc /*int **/,
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:       &r /*cudnnConvolutionBwdFilterAlgoPerf_t*/);
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT: Is migrated to:
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   dpct::dnnl::engine_ext h;
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   h.create_engine();
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   dpct::dnnl::convolution_algorithm_info r;
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   r.algo = dnnl::algorithm::convolution_auto;
+// cudnnFindConvolutionBackwardFilterAlgorithm-NEXT:   *realc = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardDataAlgorithm_v7 | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardDataAlgorithm_v7
+// cudnnGetConvolutionBackwardDataAlgorithm_v7: CUDA API:
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   cudnnHandle_t h;
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   cudnnConvolutionBwdDataAlgoPerf_t r;
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   cudnnGetConvolutionBackwardDataAlgorithm_v7(
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:       h /*cudnnHandle_t*/, weight_d /*cudnnFilterDescriptor_t*/,
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:       diff_dst_d /*cudnnTensorDescriptor_t*/,
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:       cdesc /*cudnnConvolutionDescriptor_t*/,
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:       diff_src_d /*cudnnTensorDescriptor_t*/, reqc /*int*/, realc /*int **/,
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:       &r /*cudnnConvolutionBwdDataAlgoPerf_t*/);
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT: Is migrated to:
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   dpct::dnnl::engine_ext h;
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   h.create_engine();
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   dpct::dnnl::convolution_algorithm_info r;
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   r.algo = dnnl::algorithm::convolution_auto;
+// cudnnGetConvolutionBackwardDataAlgorithm_v7-NEXT:   *realc = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionBackwardFilterAlgorithm_v7 | FileCheck %s -check-prefix=cudnnGetConvolutionBackwardFilterAlgorithm_v7
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7: CUDA API:
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   cudnnHandle_t h;
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   cudnnConvolutionBwdFilterAlgoPerf_t r;
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   cudnnGetConvolutionBackwardFilterAlgorithm_v7(
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:       h /*cudnnHandle_t*/, src_d /*cudnnFilterDescriptor_t*/,
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:       diff_dst_d /*cudnnTensorDescriptor_t*/,
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:       cdesc /*cudnnConvolutionDescriptor_t*/,
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:       diff_weight_d /*cudnnFilterDescriptor_t*/, reqc /*int*/, realc /*int **/,
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:       &r /*cudnnConvolutionBwdFilterAlgoPerf_t*/);
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT: Is migrated to:
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   dpct::dnnl::engine_ext h;
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   h.create_engine();
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   dpct::dnnl::convolution_algorithm_info r;
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   r.algo = dnnl::algorithm::convolution_auto;
+// cudnnGetConvolutionBackwardFilterAlgorithm_v7-NEXT:   *realc = 1;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetConvolutionForwardAlgorithm_v7 | FileCheck %s -check-prefix=cudnnGetConvolutionForwardAlgorithm_v7
+// cudnnGetConvolutionForwardAlgorithm_v7: CUDA API:
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   cudnnHandle_t h;
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   cudnnCreate(&h /*cudnnHandle_t **/);
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   cudnnConvolutionFwdAlgoPerf_t r;
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   cudnnGetConvolutionForwardAlgorithm_v7(
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:       h /*cudnnHandle_t*/, src_d /*cudnnFilterDescriptor_t*/,
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:       weight_d /*cudnnTensorDescriptor_t*/,
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:       cdesc /*cudnnConvolutionDescriptor_t*/, dst_d /*cudnnFilterDescriptor_t*/,
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:       reqc /*int*/, realc /*int **/, &r /*cudnnConvolutionFwdAlgoPerf_t*/);
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT: Is migrated to:
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   dpct::dnnl::engine_ext h;
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   h.create_engine();
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   dpct::dnnl::convolution_algorithm_info r;
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   r.algo = dnnl::algorithm::convolution_auto;
+// cudnnGetConvolutionForwardAlgorithm_v7-NEXT:   *realc = 1;

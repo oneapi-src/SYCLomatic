@@ -86,26 +86,26 @@
 // __shfl_down_sync: CUDA API:
 // __shfl_down_sync-NEXT:   r = __shfl_down_sync(mask /*unsigned int*/, var /*unsigned int*/,
 // __shfl_down_sync-NEXT:                        delta /*unsigned int*/, width /*int*/);
-// __shfl_down_sync-NEXT: Is migrated to:
-// __shfl_down_sync-NEXT:   r = dpct::shift_sub_group_left(item_ct1.get_sub_group(), var, delta, width);
+// __shfl_down_sync-NEXT: Is migrated to (with the option --use-experimental-features=masked-sub-group-operation):
+// __shfl_down_sync-NEXT:   r = dpct::experimental::shift_sub_group_left(mask, item_ct1.get_sub_group(), var, delta, width);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__shfl_sync | FileCheck %s -check-prefix=__shfl_sync
 // __shfl_sync: CUDA API:
 // __shfl_sync-NEXT:   r = __shfl_sync(mask /*unsigned int*/, var /*unsigned int*/, src_lane /*int*/,
 // __shfl_sync-NEXT:                   width /*int*/);
-// __shfl_sync-NEXT: Is migrated to:
-// __shfl_sync-NEXT:   r = dpct::select_from_sub_group(item_ct1.get_sub_group(), var, src_lane, width);
+// __shfl_sync-NEXT: Is migrated to (with the option --use-experimental-features=masked-sub-group-operation):
+// __shfl_sync-NEXT:   r = dpct::experimental::select_from_sub_group(mask, item_ct1.get_sub_group(), var, src_lane, width);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__shfl_up_sync | FileCheck %s -check-prefix=__shfl_up_sync
 // __shfl_up_sync: CUDA API:
 // __shfl_up_sync-NEXT:   r = __shfl_up_sync(mask /*unsigned int*/, var /*unsigned int*/,
 // __shfl_up_sync-NEXT:                      delta /*unsigned int*/, width /*int*/);
-// __shfl_up_sync-NEXT: Is migrated to:
-// __shfl_up_sync-NEXT:   r = dpct::shift_sub_group_right(item_ct1.get_sub_group(), var, delta, width);
+// __shfl_up_sync-NEXT: Is migrated to (with the option --use-experimental-features=masked-sub-group-operation):
+// __shfl_up_sync-NEXT:   r = dpct::experimental::shift_sub_group_right(mask, item_ct1.get_sub_group(), var, delta, width);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__shfl_xor_sync | FileCheck %s -check-prefix=__shfl_xor_sync
 // __shfl_xor_sync: CUDA API:
 // __shfl_xor_sync-NEXT:   r = __shfl_xor_sync(mask /*unsigned int*/, var /*unsigned int*/, lane /*int*/,
 // __shfl_xor_sync-NEXT:                       width /*int*/);
-// __shfl_xor_sync-NEXT: Is migrated to:
-// __shfl_xor_sync-NEXT:   r = dpct::permute_sub_group_by_xor(item_ct1.get_sub_group(), var, lane, width);
+// __shfl_xor_sync-NEXT: Is migrated to (with the option --use-experimental-features=masked-sub-group-operation):
+// __shfl_xor_sync-NEXT:   r = dpct::experimental::permute_sub_group_by_xor(mask, item_ct1.get_sub_group(), var, lane, width);

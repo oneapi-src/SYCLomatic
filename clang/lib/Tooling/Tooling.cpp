@@ -70,11 +70,13 @@ using namespace clang;
 using namespace tooling;
 
 #ifdef SYCLomatic_CUSTOMIZATION
+extern int SDKVersionMajor;
+extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
-static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
+static std::set<std::string> *FileSetInCompilationDBPtr = nullptr;
 static std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
@@ -90,8 +92,8 @@ void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
 }
 
-void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
-  FileSetInCompiationDBPtr = &FileSetInCompiationDB;
+void SetFileSetInCompilationDB(std::set<std::string> &FileSetInCompilationDB) {
+  FileSetInCompilationDBPtr = &FileSetInCompilationDB;
 }
 
 void SetCompileTargetsMap(
@@ -107,8 +109,8 @@ void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
 }
 
 void CollectFileFromDB(std::string FileName) {
-  if (FileSetInCompiationDBPtr != nullptr) {
-    (*FileSetInCompiationDBPtr).insert(FileName);
+  if (FileSetInCompilationDBPtr != nullptr) {
+    (*FileSetInCompilationDBPtr).insert(FileName);
   }
 }
 
@@ -446,15 +448,13 @@ llvm::Expected<std::string> getAbsolutePath(llvm::vfs::FileSystem &FS,
                                             StringRef File) {
   StringRef RelativePath(File);
   // FIXME: Should '.\\' be accepted on Win32?
-  if (RelativePath.starts_with("./")) {
-    RelativePath = RelativePath.substr(strlen("./"));
-  }
+  RelativePath.consume_front("./");
 
   SmallString<1024> AbsolutePath = RelativePath;
   if (auto EC = FS.makeAbsolute(AbsolutePath))
     return llvm::errorCodeToError(EC);
   llvm::sys::path::native(AbsolutePath);
-  return std::string(AbsolutePath.str());
+  return std::string(AbsolutePath);
 }
 
 std::string getAbsolutePath(StringRef File) {
@@ -880,19 +880,11 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
-           llvm::sys::path::extension(File)==".cu")) {
-        emitDefaultLanguageWarningIfNecessary(File.str(),
-                                              SpecifyLanguageInOption);
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-      }
+           llvm::sys::path::extension(File) == ".cu")) {
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+#endif
         emitDefaultLanguageWarningIfNecessary(File.str(),
                                               SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
@@ -901,8 +893,28 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMajor =
+            "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMajor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMinor =
+            "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
+                                      ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster =
+            combineAdjusters(std::move(CudaArgsAdjuster),
+                             getInsertArgumentAdjuster(
+                                 "-D__NVCC__", ArgumentInsertPosition::BEGIN));
       }
-#endif
+
       CommandLine = getInsertArgumentAdjuster(
           (std::string("-I") + SDKIncludePath).c_str(),
           ArgumentInsertPosition::END)(CommandLine, "");
@@ -1012,6 +1024,8 @@ int ClangTool::run(ToolAction *Action) {
                  << CWD.getError().message() << "\n";
   }
 
+  size_t NumOfTotalFiles = AbsolutePaths.size();
+  unsigned ProcessedFileCounter = 0;
   for (llvm::StringRef File : AbsolutePaths) {
 
 #ifndef SYCLomatic_CUSTOMIZATION
@@ -1071,7 +1085,11 @@ int ClangTool::run(ToolAction *Action) {
 
       // FIXME: We need a callback mechanism for the tool writer to output a
       // customized message for each file.
-      LLVM_DEBUG({ llvm::dbgs() << "Processing: " << File << ".\n"; });
+      if (NumOfTotalFiles > 1)
+        llvm::errs() << "[" + std::to_string(++ProcessedFileCounter) + "/" +
+                            std::to_string(NumOfTotalFiles) +
+                            "] Processing file " + File
+                     << ".\n";
       ToolInvocation Invocation(std::move(CommandLine), Action, Files.get(),
                                 PCHContainerOps);
       Invocation.setDiagnosticConsumer(DiagConsumer);
@@ -1084,6 +1102,8 @@ int ClangTool::run(ToolAction *Action) {
       }
     }
 #else
+    ++ProcessedFileCounter;
+    (void)NumOfTotalFiles;
     if(isExcludePath(File.str())) {
       continue;
     }

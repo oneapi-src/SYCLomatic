@@ -1,6 +1,7 @@
 // RUN: dpct --format-range=none --optimize-migration -out-root %T/opt_loop_unroll %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/opt_loop_unroll/opt_loop_unroll.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/opt_loop_unroll/opt_loop_unroll.dp.cpp -o %T/opt_loop_unroll/opt_loop_unroll.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/opt_loop_unroll/opt_loop_unroll.dp.cpp -o %T/opt_loop_unroll/opt_loop_unroll.dp.o %}
+#ifndef BUILD_TEST
 #include <cuda_runtime.h>
 
 __global__ void kernel(float *a, float *b, float *c){
@@ -114,3 +115,4 @@ int main(){
     kernel<<<10, 10>>>(a, b, c);
     return 0;
 }
+#endif

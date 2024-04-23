@@ -171,6 +171,32 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                  CALL(MapNames::getClNamespace() + "malloc_shared",
                       getSizeForMalloc(0, 1), QUEUESTR))))))
 
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cudaFreeMipmappedArray", ARG(0))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaFreeMipmappedArray",
+                                      MipmapNeedBindlessImage))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGetMipmappedArrayLevel", DEREF(makeCallArgCreatorWithCall(0)),
+        MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaGetMipmappedArrayLevel",
+                                      MipmapNeedBindlessImage))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaMallocMipmappedArray", DEREF(makeCallArgCreatorWithCall(0)),
+        NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
+            DEREF(1), ARG(2),
+            LITERAL(MapNames::getClNamespace() +
+                    "ext::oneapi::experimental::image_type::mipmap"),
+            ARG(3)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaMallocMipmappedArray",
+                                      MipmapNeedBindlessImage))
+
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CheckCanUseTemplateMalloc(0, 1),
     ASSIGN_FACTORY_ENTRY("cuMemAllocManaged", DEREF(makeDerefArgCreatorWithCall(0)),
@@ -586,3 +612,48 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                        CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d32",
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
                             DEREF(makeCallArgCreatorWithCall(5))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaDeviceCanAccessPeer", DEREF(ARG_WC(0)),
+        MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                             "dev_mgr::instance().get_device",
+                         ARG_WC(1)),
+                    false, "ext_oneapi_can_access_peer",
+                    CALL(MapNames::getDpctNamespace() +
+                             "dev_mgr::instance().get_device",
+                         ARG_WC(2))))),
+    ASSIGNABLE_FACTORY(
+        WARNING_FACTORY_ENTRY("cudaDeviceCanAccessPeer",
+                              ASSIGN_FACTORY_ENTRY("cudaDeviceCanAccessPeer",
+                                                   DEREF(ARG_WC(0)), ARG("0")),
+                              Diagnostics::EXPLICIT_PEER_ACCESS)))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cudaDeviceEnablePeerAccess",
+        CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
+        "ext_oneapi_enable_peer_access",
+        CALL(MapNames::getDpctNamespace() + "dev_mgr::instance().get_device",
+             ARG_WC(0)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+        "cudaDeviceEnablePeerAccess",
+        "SYCL currently does not support memory access across peer devices. "
+        "You can migrate the code with peer access extension by not specifying "
+        "-no-dpcpp-extensions=peer_access."))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cudaDeviceDisablePeerAccess",
+        CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
+        "ext_oneapi_disable_peer_access",
+        CALL(MapNames::getDpctNamespace() + "dev_mgr::instance().get_device",
+             ARG_WC(0)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+        "cudaDeviceDisablePeerAccess",
+        "SYCL currently does not support memory access across peer devices. "
+        "You can migrate the code with peer access extension by not specifying "
+        "-no-dpcpp-extensions=peer_access."))

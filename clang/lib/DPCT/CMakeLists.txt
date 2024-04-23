@@ -5,6 +5,7 @@ set(LLVM_LINK_COMPONENTS
 
 set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/atomic.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/bindless_images.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/device.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/image.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/math.hpp
@@ -39,6 +40,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/numeric.h.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/vector.h.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/bindless_images.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dnnl_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.hpp.inc
@@ -113,6 +115,26 @@ add_clang_library(DPCT
   Rewriters/CUB/RewriterDeviceSegmentedSort.cpp
   Rewriters/CUB/RewriterDeviceSelect.cpp
   Rewriters/CUB/RewriterUtilityFunctions.cpp
+  Rewriters/CUB/RewriterDevicePartition.cpp
+  Rewriters/Math/CallExprRewriterMath.cpp
+  Rewriters/Math/RewriterSTDFunctions.cpp
+  Rewriters/Math/RewriterHalfArithmeticFunctions.cpp
+  Rewriters/Math/RewriterHalf2ArithmeticFunctions.cpp
+  Rewriters/Math/RewriterHalfComparisonFunctions.cpp
+  Rewriters/Math/RewriterHalf2ComparisonFunctions.cpp
+  Rewriters/Math/RewriterHalfPrecisionConversionAndDataMovement.cpp
+  Rewriters/Math/RewriterHalfMathFunctions.cpp
+  Rewriters/Math/RewriterHalf2MathFunctions.cpp
+  Rewriters/Math/RewriterBfloat16PrecisionConversionAndDataMovement.cpp
+  Rewriters/Math/RewriterSinglePrecisionMathematicalFunctions.cpp
+  Rewriters/Math/RewriterDoublePrecisionMathematicalFunctions.cpp
+  Rewriters/Math/RewriterIntegerMathematicalFunctions.cpp
+  Rewriters/Math/RewriterSinglePrecisionIntrinsics.cpp
+  Rewriters/Math/RewriterDoublePrecisionIntrinsics.cpp
+  Rewriters/Math/RewriterIntegerIntrinsics.cpp
+  Rewriters/Math/RewriterSIMDIntrinsics.cpp
+  Rewriters/Math/RewriterCXXAPIRoutines.cpp
+  Rewriters/Math/RewriterOverload.cpp
   CallExprRewriter.cpp
   CallExprRewriterAtomic.cpp
   CallExprRewriterCUFFT.cpp
@@ -133,7 +155,6 @@ add_clang_library(DPCT
   CallExprRewriterErrorHandling.cpp
   CallExprRewriterLIBCU.cpp
   CallExprRewriterEvent.cpp
-  CallExprRewriterMath.cpp
   CallExprRewriterCG.cpp
   CallExprRewriterWmma.cpp
   CrashRecovery.cpp

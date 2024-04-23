@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types001/types001.dp.cpp
 
 #include <cuda.h>
@@ -363,8 +363,8 @@ int main(int argc, char **argv) {
   a = sizeof(event_st);
   a = sizeof event_st;
 
-  //CHECK:dpct::queue_ptr blashandle;
-  //CHECK-NEXT:a = sizeof(dpct::queue_ptr);
+  //CHECK:dpct::blas::descriptor_ptr blashandle;
+  //CHECK-NEXT:a = sizeof(dpct::blas::descriptor_ptr);
   //CHECK-NEXT:a = sizeof(blashandle);
   //CHECK-NEXT:a = sizeof blashandle;
   cublasHandle_t blashandle;
@@ -597,17 +597,15 @@ cudaComputeMode M;
 cudaComputeMode fun(cudaComputeMode);
 }
 
-// CHECK: void foo_2(dpct::library_data_t a1, dpct::library_data_t a2, dpct::library_data_t a3, dpct::library_data_t a4) {
+// CHECK: void foo_2(dpct::library_data_t a1, dpct::library_data_t a2, dpct::library_data_t a3) {
 // CHECK-NEXT:   dpct::library_data_t b1 = a1;
 // CHECK-NEXT:   dpct::library_data_t b2 = a2;
 // CHECK-NEXT:   dpct::library_data_t b3 = a3;
-// CHECK-NEXT:   dpct::library_data_t b4 = a4;
 // CHECK-NEXT: }
-void foo_2(cudaDataType_t a1, cudaDataType a2, cublasDataType_t a3, cublasComputeType_t a4) {
+void foo_2(cudaDataType_t a1, cudaDataType a2, cublasDataType_t a3) {
   cudaDataType_t b1 = a1;
   cudaDataType b2 = a2;
   cublasDataType_t b3 = a3;
-  cublasComputeType_t b4 = a4;
 }
 
 __device__ void foo_3() {

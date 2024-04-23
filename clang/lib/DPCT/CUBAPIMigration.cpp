@@ -10,6 +10,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "ExprAnalysis.h"
 #include "MigrationRuleManager.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
@@ -29,6 +30,7 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/raw_ostream.h"
 #include <iterator>
 
 using namespace clang;
@@ -60,7 +62,8 @@ auto isDeviceFuncCallExpr = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
-                      "DeviceSegmentedSort", "DeviceHistogram", "DeviceMergeSort");
+                      "DeviceSegmentedSort", "DeviceHistogram",
+                      "DeviceMergeSort", "DevicePartition");
   };
   return callExpr(callee(functionDecl(allOf(
       hasDeviceFuncName(),
@@ -96,7 +99,15 @@ void CubTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const TypeLoc *TL = getAssistNodeAsType<TypeLoc>(Result, "loc")) {
     ExprAnalysis EA;
-    EA.analyze(*TL);
+    auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
+    auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
+    if (NNSL) {
+      EA.analyze(*TL, *NNSL);
+    } else if (DNTL) {
+      EA.analyze(*TL, *DNTL);
+    } else {
+      EA.analyze(*TL);
+    }
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   }
@@ -112,7 +123,7 @@ bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
          OpTypeName == "cub::Equality" || OpTypeName == "cub::NullType" ||
 
          // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
-         OpTypeName.startswith("cub::KeyValuePair");
+         OpTypeName.starts_with("cub::KeyValuePair");
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -162,12 +173,13 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(allOf(
-                   hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
-                              "SyncStream", "CurrentDevice", "DeviceCount",
-                              "DeviceCountUncached", "DeviceCountCachedValue",
-                              "PtxVersion", "PtxVersionUncached"),
-                   hasAncestor(namespaceDecl(hasName("cub")))))))
+      callExpr(
+          callee(functionDecl(allOf(
+              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
+                         "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
+                         "DeviceCountUncached", "DeviceCountCachedValue",
+                         "PtxVersion", "PtxVersionUncached"),
+              hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
 }
@@ -573,15 +585,15 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("TypeDefDecl"),
       this);
 
-  MF.addMatcher(
-      declStmt(
-          has(varDecl(anyOf(
-              hasType(hasCanonicalType(qualType(
-                  hasDeclaration(namedDecl(hasAnyName("TempStorage")))))),
-              hasType(arrayType(hasElementType(hasCanonicalType(qualType(
-                  hasDeclaration(namedDecl(hasAnyName("TempStorage"))))))))))))
-          .bind("DeclStmt"),
-      this);
+  auto isTempStorage = hasDeclaration(namedDecl(hasAnyName("TempStorage")));
+  MF.addMatcher(declStmt(has(varDecl(anyOf(
+                             hasType(hasCanonicalType(qualType(isTempStorage))),
+                             hasType(arrayType(hasElementType(
+                                 hasCanonicalType(qualType(isTempStorage))))),
+                             hasType(hasCanonicalType(qualType(hasDeclaration(
+                                 recordDecl(isUnion(), has(fieldDecl()))))))))))
+                    .bind("DeclStmt"),
+                this);
 
   MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
                                       "InclusiveSum", "ExclusiveSum",
@@ -660,11 +672,26 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
     std::string VarType =
         VDecl->getTypeSourceInfo()->getType().getCanonicalType().getAsString();
     std::string VarName = VDecl->getNameAsString();
-
+    bool isUnion = VDecl->getType()->isUnionType();
     auto MatcherScope = DpctGlobalInfo::findAncestor<CompoundStmt>(Decl);
     if (!isCubVar(VDecl)) {
+      if (isUnion) {
+        const TagDecl *RD =
+            VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+        for (const auto *D : RD->decls())
+          if (const auto *FD = dyn_cast<FieldDecl>(D))
+            if (isCubTempStorageType(FD->getType()))
+              emplaceTransformation(new ReplaceDecl(FD, ""));
+      }
       return;
     }
+
+    if (isUnion) {
+      const TagDecl *RD =
+          VDecl->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+      emplaceTransformation(new ReplaceDecl(RD, ""));
+    }
+
     // always remove TempStorage variable declaration
     emplaceTransformation(new ReplaceStmt(DS, ""));
 
@@ -706,15 +733,10 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
     return;
-  
-  if (maybeDependentCubType(TD->getTypeSourceInfo())) {
-    emplaceTransformation(new ReplaceDecl(TD, ""));
+  if (!isCubCollectiveRecordType(TD->getUnderlyingType().getDesugaredType(
+          DpctGlobalInfo::getContext())) &&
+      CanonicalTypeStr.find("class cub::") != 0)
     return;
-  }
-
-  if (CanonicalTypeStr.find("class cub::") != 0) {
-    return;
-  }
 
   std::string TypeName = TD->getNameAsString();
   auto &Context = dpct::DpctGlobalInfo::getContext();
@@ -762,6 +784,11 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
       else if (auto AncestorTD =
                    DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
         if (AncestorTD != TD) {
+          DeleteFlag = false;
+          break;
+        }
+      } else if (auto *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL)) {
+        if (!isCubTempStorageType(FD->getType())) {
           DeleteFlag = false;
           break;
         }
@@ -1131,16 +1158,34 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     }
     const Expr *InData = FuncArgs[0];
     ExprAnalysis InEA(InData);
+    bool IsPartialReduce = false;
+    unsigned ValidItemParamIdx = 0;
     if (FuncName == "Reduce" && NumArgs == 2) {
       OpRepl = getOpRepl(FuncArgs[1]);
-    } else if (FuncName == "Sum" && NumArgs == 1) {
+    } else if (FuncName == "Sum") {
       OpRepl = getOpRepl(nullptr);
+      IsPartialReduce = NumArgs == 2;
+      ValidItemParamIdx = 1;
     } else {
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              "cub::" + FuncName);
       return;
     }
-    CubParamAs << GroupOrWorkitem << InEA.getReplacedString() << OpRepl;
+    std::string In;
+    if (IsPartialReduce) {
+      std::string tmp;
+      llvm::raw_string_ostream OS(tmp);
+      ExprAnalysis ValidItemsEA(BlockMC->getArg(ValidItemParamIdx));
+      ValidItemsEA.analyze();
+      OS << '(' << GroupOrWorkitem << ".get_local_linear_id() < "
+         << ValidItemsEA.getReplacedString() << ") ? "
+         << InEA.getReplacedString() << " : " << MapNames::getClNamespace()
+         << "known_identity_v<" << StringRef(OpRepl).drop_back(2) << ", "
+         << DpctGlobalInfo::getTypeName(InData->getType()) << ">";
+      In = std::move(tmp);
+    } else
+      In = InEA.getReplacedString();
+    CubParamAs << GroupOrWorkitem << In << OpRepl;
     Repl = NewFuncName + "(" + ParamList + ")";
     emplaceTransformation(new ReplaceStmt(BlockMC, Repl));
   }
@@ -1236,6 +1281,7 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
            ")";
     NewFuncName = "group_broadcast";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
+    analyzeUninitializedDeviceVar(WarpMC, InData);
   } else if (FuncName == "Reduce") {
     ExprAnalysis InDateEA(WarpMC->getArg(0));
     switch (NumArgs) {
@@ -1369,4 +1415,5 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processTypeLoc(TL);
   }
 }
+
 REGISTER_RULE(CubRule, PassKind::PK_Analysis)

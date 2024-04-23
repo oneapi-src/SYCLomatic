@@ -28,6 +28,9 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped";
     break;
+  case MigrationCmakeScriptCompleted:
+    StatusString = "Migration of CMake script completed";
+    break;
   case MigrationError:
     StatusString = "An error has occurred during migration";
     break;
@@ -182,23 +185,32 @@ void ShowStatus(int Status, std::string Message) {
                    ". Please specify the header file for '" + Message +
                    "' with option \"--extra-arg\".";
     break;
-  case InterceptBuildError:
-    StatusString = "Error: Call to intercept-build failed";
+  case CallIndependentToolError:
+    StatusString = "Error: Call to " + Message + " failed";
     break;
   case MigrationErrorCMakeScriptPathInvalid:
-    StatusString = "Error: Path of Cmake Script is invalid.\n";
+    StatusString = "Error: Path of CMake Script is invalid.";
     break;
   case MigrateCmakeScriptOnlyNotSpecifed:
-    StatusString = "Error: option '-migrate-cmake-script-only' is not specified "
-                   "for cmake script migartion.\n";
+    StatusString =
+        "Error: option '-migrate-build-script-only' is not specified "
+        "for CMake script migartion.";
     break;
-  case MigarteCmakeScriptIncorrectUse:
-    StatusString = "Error: option '-migrate-cmake-script' is only used for "
-                   "whole project code migration.\n";
+  case MigarteBuildScriptIncorrectUse:
+    StatusString = "Error: option '-migrate-build-script' is only used for "
+                   "whole project code migration.";
     break;
-  case MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse:
-    StatusString = "Error: option '-migrate-cmake-script' and "
-                   "'-migrate-cmake-script-only' cannot be used together.\n";
+  case MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse:
+    StatusString = "Error: option '-migrate-build-script' and "
+                   "'-migrate-build-script-only' cannot be used together.";
+    break;
+  case MigrationErrorNoExplicitInRootAndCMakeScript:
+    StatusString =
+        "Error: The option -migrate-build-script-only requires that either "
+        "the option '--in-root' or the CMake file(s) be specified explicitly.";
+    break;
+  case MigrationErrorInvalidInstallPath:
+    StatusString = "Error: " + Message + " not found.";
     break;
   default:
     DpctLog() << "Unknown error\n";

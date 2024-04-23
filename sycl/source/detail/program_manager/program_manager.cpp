@@ -28,7 +28,6 @@
 #include <sycl/detail/util.hpp>
 #include <sycl/device.hpp>
 #include <sycl/exception.hpp>
-#include <sycl/stl.hpp>
 
 #include <sycl/ext/oneapi/matrix/query-types.hpp>
 
@@ -380,13 +379,6 @@ static void appendCompileOptionsFromImage(std::string &CompileOpts,
         return Dev.is_gpu() &&
                Dev.get_info<info::device::vendor_id>() == 0x8086;
       });
-  if (IsIntelGPU && Img.getDeviceGlobals().size() != 0) {
-    // If the image has device globals we need to add the
-    // -ze-take-global-address option to tell IGC to record addresses of these.
-    if (!CompileOpts.empty())
-      CompileOpts += " ";
-    CompileOpts += "-ze-take-global-address";
-  }
   if (!CompileOptsEnv) {
     static const char *TargetCompileFast = "-ftarget-compile-fast";
     if (auto Pos = CompileOpts.find(TargetCompileFast);
@@ -530,7 +522,8 @@ static void emitBuiltProgramInfo(const pi_program &Prog,
 // its ref count incremented.
 sycl::detail::pi::PiProgram ProgramManager::getBuiltPIProgram(
     const ContextImplPtr &ContextImpl, const DeviceImplPtr &DeviceImpl,
-    const std::string &KernelName, bool JITCompilationIsRequired) {
+    const std::string &KernelName, const NDRDescT &NDRDesc,
+    bool JITCompilationIsRequired) {
   KernelProgramCache &Cache = ContextImpl->getKernelProgramCache();
 
   std::string CompileOpts;
@@ -565,7 +558,7 @@ sycl::detail::pi::PiProgram ProgramManager::getBuiltPIProgram(
       getDeviceImage(KernelName, Context, Device, JITCompilationIsRequired);
 
   // Check that device supports all aspects used by the kernel
-  if (auto exception = checkDevSupportDeviceRequirements(Device, Img))
+  if (auto exception = checkDevSupportDeviceRequirements(Device, Img, NDRDesc))
     throw *exception;
 
   auto BuildF = [this, &Img, &Context, &ContextImpl, &Device, &CompileOpts,
@@ -649,7 +642,8 @@ std::tuple<sycl::detail::pi::PiKernel, std::mutex *, const KernelArgMask *,
            sycl::detail::pi::PiProgram>
 ProgramManager::getOrCreateKernel(const ContextImplPtr &ContextImpl,
                                   const DeviceImplPtr &DeviceImpl,
-                                  const std::string &KernelName) {
+                                  const std::string &KernelName,
+                                  const NDRDescT &NDRDesc) {
   if (DbgProgMgr > 0) {
     std::cerr << ">>> ProgramManager::getOrCreateKernel(" << ContextImpl.get()
               << ", " << DeviceImpl.get() << ", " << KernelName << ")\n";
@@ -685,7 +679,7 @@ ProgramManager::getOrCreateKernel(const ContextImplPtr &ContextImpl,
   }
 
   sycl::detail::pi::PiProgram Program =
-      getBuiltPIProgram(ContextImpl, DeviceImpl, KernelName);
+      getBuiltPIProgram(ContextImpl, DeviceImpl, KernelName, NDRDesc);
 
   auto BuildF = [this, &Program, &KernelName, &ContextImpl] {
     sycl::detail::pi::PiKernel Kernel = nullptr;
@@ -694,10 +688,13 @@ ProgramManager::getOrCreateKernel(const ContextImplPtr &ContextImpl,
     Plugin->call<errc::kernel_not_supported, PiApiKind::piKernelCreate>(
         Program, KernelName.c_str(), &Kernel);
 
-    // Some PI Plugins (like OpenCL) require this call to enable USM
-    // For others, PI will turn this into a NOP.
-    Plugin->call<PiApiKind::piKernelSetExecInfo>(Kernel, PI_USM_INDIRECT_ACCESS,
-                                                 sizeof(pi_bool), &PI_TRUE);
+    // Only set PI_USM_INDIRECT_ACCESS if the platform can handle it.
+    if (ContextImpl->getPlatformImpl()->supports_usm()) {
+      // Some PI Plugins (like OpenCL) require this call to enable USM
+      // For others, PI will turn this into a NOP.
+      Plugin->call<PiApiKind::piKernelSetExecInfo>(
+          Kernel, PI_USM_INDIRECT_ACCESS, sizeof(pi_bool), &PI_TRUE);
+    }
 
     const KernelArgMask *ArgMask = nullptr;
     if (!m_UseSpvFile)
@@ -949,7 +946,7 @@ ProgramManager::ProgramManager() : m_AsanFoundInImage(false) {
     // blocked until the construction of the ProgramManager singleton is
     // finished.
     m_SpvFileImage =
-        make_unique_ptr<DynRTDeviceBinaryImage>(std::move(Data), Size);
+        std::make_unique<DynRTDeviceBinaryImage>(std::move(Data), Size);
 
     if (DbgProgMgr > 0) {
       std::cerr << "loaded device image binary from " << SpvFile << "\n";
@@ -1268,7 +1265,7 @@ void ProgramManager::addImages(pi_device_binaries DeviceBinary) {
     if (EntriesB == EntriesE)
       continue;
 
-    auto Img = make_unique_ptr<RTDeviceBinaryImage>(RawImg);
+    auto Img = std::make_unique<RTDeviceBinaryImage>(RawImg);
     static uint32_t SequenceID = 0;
 
     // Fill the kernel argument mask map
@@ -2366,8 +2363,10 @@ ProgramManager::getOrCreateKernel(const context &Context,
     Plugin->call<PiApiKind::piKernelCreate>(Program, KernelName.c_str(),
                                             &Kernel);
 
-    Plugin->call<PiApiKind::piKernelSetExecInfo>(Kernel, PI_USM_INDIRECT_ACCESS,
-                                                 sizeof(pi_bool), &PI_TRUE);
+    // Only set PI_USM_INDIRECT_ACCESS if the platform can handle it.
+    if (Ctx->getPlatformImpl()->supports_usm())
+      Plugin->call<PiApiKind::piKernelSetExecInfo>(
+          Kernel, PI_USM_INDIRECT_ACCESS, sizeof(pi_bool), &PI_TRUE);
 
     // Ignore possible m_UseSpvFile for now.
     // TODO consider making m_UseSpvFile interact with kernel bundles as well.
@@ -2679,7 +2678,8 @@ std::optional<sycl::exception> checkDevSupportJointMatrixMad(
 
 std::optional<sycl::exception>
 checkDevSupportDeviceRequirements(const device &Dev,
-                                  const RTDeviceBinaryImage &Img) {
+                                  const RTDeviceBinaryImage &Img,
+                                  const NDRDescT &NDRDesc) {
   auto getPropIt = [&Img](const std::string &PropName) {
     const RTDeviceBinaryImage::PropertyRange &PropRange =
         Img.getDeviceRequirements();
@@ -2716,11 +2716,7 @@ checkDevSupportDeviceRequirements(const device &Dev,
     }
   }
 
-  // TODO: remove checks for CUDA and HIP from if-statement below when runtime
-  // query for them in matrix_combinations is implemented
-  if (JointMatrixPropIt &&
-      (Dev.get_backend() != sycl::backend::ext_oneapi_cuda) &&
-      (Dev.get_backend() != sycl::backend::ext_oneapi_hip)) {
+  if (JointMatrixPropIt) {
     std::vector<ext::oneapi::experimental::matrix::combination> Combinations =
         Dev.get_info<
             ext::oneapi::experimental::info::device::matrix_combinations>();
@@ -2744,11 +2740,7 @@ checkDevSupportDeviceRequirements(const device &Dev,
       return Result.value();
   }
 
-  // TODO: remove checks for CUDA and HIP from if-statement below when runtime
-  // query for them in matrix_combinations is implemented
-  if (JointMatrixMadPropIt &&
-      (Dev.get_backend() != sycl::backend::ext_oneapi_cuda) &&
-      (Dev.get_backend() != sycl::backend::ext_oneapi_hip)) {
+  if (JointMatrixMadPropIt) {
     std::vector<ext::oneapi::experimental::matrix::combination> Combinations =
         Dev.get_info<
             ext::oneapi::experimental::info::device::matrix_combinations>();
@@ -2803,6 +2795,12 @@ checkDevSupportDeviceRequirements(const device &Dev,
       ReqdWGSizeVec.push_back(SingleDimSize);
       Dims++;
     }
+
+    if (NDRDesc.Dims != 0 && NDRDesc.Dims != static_cast<size_t>(Dims))
+      return sycl::exception(
+          sycl::errc::nd_range,
+          "The local size dimension of submitted nd_range doesn't match the "
+          "required work-group size dimension");
 
     // The SingleDimSize was computed in an uint64_t; size_t does not
     // necessarily have to be the same uint64_t (but should fit in an

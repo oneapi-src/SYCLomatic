@@ -1,0 +1,100 @@
+.. _DPCT1083:
+
+DPCT1083
+========
+
+Message
+-------
+
+.. _msg-1083-start:
+
+The size of *<placeholder>* in the migrated code may be different
+from the original code. Check that the allocated memory size in the migrated code
+is correct.
+
+.. _msg-1083-end:
+
+Detailed Help
+-------------
+
+Some types have a different size in the migrated code than in the original code,
+for example ``sycl::float3`` compared to ``float3``. Check if the allocated size
+of memory is correct in the migrated code.
+
+In the example below, ``3*sizeof(float)`` is used to represent the size of
+``float3`` in the original code. In the migrated code the size of ``sycl::float3``
+is different, so the allocated size needs adjustment.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+     __global__ void kernel() {
+       extern __shared__ float3 shared_memory[];
+       ...
+     }
+     
+     void foo() {
+       size_t shared_size = 3 * sizeof(float);
+       kernel<<<1, 1, shared_size>>>();
+     }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+     void kernel(uint8_t *dpct_local) {
+       auto shared_memory = (sycl::float3 *)dpct_local;
+       ...
+     }
+     
+     void foo() {
+       /*
+       DPCT1083:0: The size of local memory in the migrated code may be different
+       from the original code. Check that the allocated memory size in the migrated
+       code is correct.
+       */
+       size_t shared_size = 3 * sizeof(float);
+       dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
+         sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(
+             sycl::range<1>(shared_size), cgh);
+     
+         cgh.parallel_for(
+             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+             [=](sycl::nd_item<3> item_ct1) {
+               kernel(dpct_local_acc_ct1.get_pointer());
+             });
+       });
+     }
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+     void kernel(uint8_t *dpct_local) {
+       auto shared_memory = (sycl::float3 *)dpct_local;
+       ...
+     }
+     
+     void foo() {
+       size_t shared_size = 1 * sizeof(sycl::float3);
+       dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
+         sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(
+             sycl::range<1>(shared_size), cgh);
+     
+         cgh.parallel_for(
+             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+             [=](sycl::nd_item<3> item_ct1) {
+               kernel(dpct_local_acc_ct1.get_pointer());
+             });
+       });
+     }
+     
+Suggestions to Fix
+------------------
+
+Check the allocated size of memory and replace it with the correct size if
+necessary.

@@ -11,6 +11,7 @@
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
 #include <thrust/complex.h>
 #include <thrust/device_ptr.h>
+#include <thrust/device_vector.h>
 #include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include <cuda_runtime.h>
@@ -39,3 +40,18 @@ int main() {
   thrust::device_free(d_ptr);
 }
 
+__global__ void kernel2(float *p) {}
+
+void foo(thrust::device_vector<float> &vec, const int i, const int j) {
+  //CHECK:dpct::get_in_order_queue().submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    float * thrust_raw_pointer_cast_vec_data_i_j_ct0 = dpct::get_raw_pointer(vec.data()) + i * j;
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:        kernel2(thrust_raw_pointer_cast_vec_data_i_j_ct0);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  kernel2<<<1, 1>>>(thrust::raw_pointer_cast(vec.data()) + i * j);
+}
