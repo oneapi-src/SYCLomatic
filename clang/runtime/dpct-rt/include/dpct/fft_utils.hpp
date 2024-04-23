@@ -15,6 +15,25 @@
 #include <utility>
 #include "lib_common_utils.hpp"
 
+template<class T>
+void __debug_printer(std::string param_name, T arg, int D = 1) {
+  std::cout << param_name << ":";
+  if constexpr (!std::is_pointer_v<T>) {
+    std::cout << arg << ",";
+  } else {
+    for (int i = 0; i < D; i++) {
+      std::cout << arg[i] << ",";
+    }
+  }
+  std::cout << std::endl;
+}
+template<>
+void __debug_printer(std::string param_name, const char * arg, int D) {
+  std::cout << param_name << ":";
+  std::cout << arg << ",";
+  std::cout << std::endl;
+}
+
 namespace dpct {
 namespace fft {
 /// An enumeration type to describe the FFT direction is forward or backward.
@@ -710,18 +729,25 @@ private:
                           distance);
       _desc_sc->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
+      __debug_printer("FWD_DISTANCE", distance);
+      __debug_printer("BWD_DISTANCE", distance);
+      __debug_printer("NUMBER_OF_TRANSFORMS", _batch);
 #ifdef __INTEL_MKL__
-      if (_is_user_specified_dir_and_placement && _is_inplace)
+      if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
-      else
+        __debug_printer("PLACEMENT", "DFTI_INPLACE");
+      } else {
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+        __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
+      }
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_sc->set_value(
               oneapi::mkl::dft::config_param::WORKSPACE,
               oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          __debug_printer("WORKSPACE", "WORKSPACE_EXTERNAL");
         }
       }
       if (_is_estimate_call) {
@@ -738,12 +764,15 @@ private:
         }
       }
 #else
-      if (_is_user_specified_dir_and_placement && _is_inplace)
+      if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::INPLACE);
-      else
+        __debug_printer("PLACEMENT", "INPLACE");
+      } else {
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::NOT_INPLACE);
+        __debug_printer("PLACEMENT", "NOT_INPLACE");
+      }
       _desc_sc->commit(*_q);
 #endif
     } else if (_input_type == library_data_t::complex_double &&
@@ -762,18 +791,25 @@ private:
                           distance);
       _desc_dc->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
+      __debug_printer("FWD_DISTANCE", distance);
+      __debug_printer("BWD_DISTANCE", distance);
+      __debug_printer("NUMBER_OF_TRANSFORMS", _batch);
 #ifdef __INTEL_MKL__
-      if (_is_user_specified_dir_and_placement && _is_inplace)
+      if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
-      else
+        __debug_printer("PLACEMENT", "DFTI_INPLACE");
+      } else {
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+        __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
+      }
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_dc->set_value(
               oneapi::mkl::dft::config_param::WORKSPACE,
               oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          __debug_printer("WORKSPACE", "WORKSPACE_EXTERNAL");
         }
       }
       if (_is_estimate_call) {
@@ -790,12 +826,15 @@ private:
         }
       }
 #else
-      if (_is_user_specified_dir_and_placement && _is_inplace)
+      if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::INPLACE);
-      else
+        __debug_printer("PLACEMENT", "INPLACE");
+      } else {
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::NOT_INPLACE);
+        __debug_printer("PLACEMENT", "NOT_INPLACE");
+      }
       _desc_dc->commit(*_q);
 #endif
     } else if ((_input_type == library_data_t::real_float &&
@@ -812,14 +851,17 @@ private:
         _direction = fft_direction::backward;
       _desc_sr->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
+      __debug_printer("NUMBER_OF_TRANSFORMS", _batch);
 #ifdef __INTEL_MKL__
       if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
+        __debug_printer("PLACEMENT", "DFTI_INPLACE");
         set_stride_and_distance_basic<true>(_desc_sr);
       } else {
         _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+        __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
         set_stride_and_distance_basic<false>(_desc_sr);
       }
       if (_use_external_workspace) {
@@ -827,6 +869,7 @@ private:
           _desc_sr->set_value(
               oneapi::mkl::dft::config_param::WORKSPACE,
               oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          __debug_printer("WORKSPACE", "WORKSPACE_EXTERNAL");
         }
       }
       if (_is_estimate_call) {
@@ -846,10 +889,12 @@ private:
       if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::INPLACE);
+        __debug_printer("PLACEMENT", "INPLACE");
         set_stride_and_distance_basic<true>(_desc_sr);
       } else {
         _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::NOT_INPLACE);
+        __debug_printer("PLACEMENT", "NOT_INPLACE");
         set_stride_and_distance_basic<false>(_desc_sr);
       }
       _desc_sr->commit(*_q);
@@ -868,14 +913,17 @@ private:
         _direction = fft_direction::backward;
       _desc_dr->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
+      __debug_printer("NUMBER_OF_TRANSFORMS", _batch);
 #ifdef __INTEL_MKL__
       if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
+        __debug_printer("PLACEMENT", "DFTI_INPLACE");
         set_stride_and_distance_basic<true>(_desc_dr);
       } else {
         _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+        __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
         set_stride_and_distance_basic<false>(_desc_dr);
       }
       if (_use_external_workspace) {
@@ -883,6 +931,7 @@ private:
           _desc_dr->set_value(
               oneapi::mkl::dft::config_param::WORKSPACE,
               oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          __debug_printer("WORKSPACE", "WORKSPACE_EXTERNAL");
         }
       }
       if (_is_estimate_call) {
@@ -902,10 +951,12 @@ private:
       if (_is_user_specified_dir_and_placement && _is_inplace) {
         _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::INPLACE);
+        __debug_printer("PLACEMENT", "INPLACE");
         set_stride_and_distance_basic<true>(_desc_dr);
       } else {
         _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::NOT_INPLACE);
+        __debug_printer("PLACEMENT", "NOT_INPLACE");
         set_stride_and_distance_basic<false>(_desc_dr);
       }
       _desc_dr->commit(*_q);
@@ -928,15 +979,22 @@ private:
     DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
     DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
                     _batch);                                                   \
-    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
+    __debug_printer("FWD_DISTANCE", _fwd_dist);                                \
+    __debug_printer("BWD_DISTANCE", _bwd_dist);                                \
+    __debug_printer("NUMBER_OF_TRANSFORMS", _batch);                           \
+    if (_is_user_specified_dir_and_placement && _is_inplace) {                 \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       DFTI_CONFIG_VALUE::DFTI_INPLACE);                        \
-    else                                                                       \
+      __debug_printer("PLACEMENT", "DFTI_INPLACE");                            \
+    } else {                                                                   \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                    \
+      __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");                        \
+    }                                                                          \
     if (_use_external_workspace) {                                             \
       DESC->set_value(oneapi::mkl::dft::config_param::WORKSPACE,               \
                       oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);     \
+      __debug_printer("WORKSPACE", "WORKSPACE_EXTERNAL");                      \
     }                                                                          \
     if (_is_estimate_call) {                                                   \
       if (_q->get_device().is_gpu()) {                                         \
@@ -963,12 +1021,18 @@ private:
     DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
     DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
                     _batch);                                                   \
-    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
+    __debug_printer("FWD_DISTANCE", _fwd_dist);                                \
+    __debug_printer("BWD_DISTANCE", _bwd_dist);                                \
+    __debug_printer("NUMBER_OF_TRANSFORMS", _batch);                           \
+    if (_is_user_specified_dir_and_placement && _is_inplace) {                 \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       oneapi::mkl::dft::config_value::INPLACE);                \
-    else                                                                       \
+      __debug_printer("PLACEMENT", "INPLACE");                                 \
+    } else {                                                                   \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       oneapi::mkl::dft::config_value::NOT_INPLACE);            \
+      __debug_printer("PLACEMENT", "NOT_INPLACE");                             \
+    }                                                                          \
     DESC->commit(*_q);                                                         \
   }
 #endif
@@ -1029,12 +1093,14 @@ private:
            _output_type == library_data_t::complex_double)) {
         _fwd_dist = idist;
         _bwd_dist = odist;
+        _direction = fft_direction::forward;
       } else if ((_output_type == library_data_t::real_float &&
                   _input_type == library_data_t::complex_float) ||
                  (_output_type == library_data_t::real_double &&
                   _input_type == library_data_t::complex_double)) {
         _fwd_dist = odist;
         _bwd_dist = idist;
+        _direction = fft_direction::backward;
       } else {
         if (_is_user_specified_dir_and_placement &&
             (_direction == fft_direction::backward)) {
@@ -1061,35 +1127,102 @@ private:
     if (_dim == 1) {
       std::int64_t input_stride[2] = {0, _istride};
       std::int64_t output_stride[2] = {0, _ostride};
-      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
-                      input_stride);
-      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
-                      output_stride);
+      if (_direction == fft_direction::forward) {
+        desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                        input_stride);
+        desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                        output_stride);
+        std::copy(input_stride, input_stride + 2, _fwd_strides_1d);
+        std::copy(output_stride, output_stride + 2, _bwd_strides_1d);
+        __debug_printer("FWD_STRIDES", input_stride, 2);
+        __debug_printer("BWD_STRIDES", output_stride, 2);
+      } else {
+        desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                        output_stride);
+        desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                        input_stride);
+        std::copy(output_stride, output_stride + 2, _fwd_strides_1d);
+        std::copy(input_stride, input_stride + 2, _bwd_strides_1d);
+        __debug_printer("FWD_STRIDES", output_stride, 2);
+        __debug_printer("BWD_STRIDES", input_stride, 2);
+      }
     } else if (_dim == 2) {
       std::int64_t input_stride[3] = {0, _inembed[1] * _istride, _istride};
       std::int64_t output_stride[3] = {0, _onembed[1] * _ostride, _ostride};
-      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
-                      input_stride);
-      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
-                      output_stride);
+      if (_direction == fft_direction::forward) {
+        desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                        input_stride);
+        desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                        output_stride);
+        std::copy(input_stride, input_stride + 3, _fwd_strides_2d);
+        std::copy(output_stride, output_stride + 3, _bwd_strides_2d);
+        __debug_printer("FWD_STRIDES", input_stride, 3);
+        __debug_printer("BWD_STRIDES", output_stride, 3);
+      } else {
+        desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                        output_stride);
+        desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                        input_stride);
+        std::copy(output_stride, output_stride + 3, _fwd_strides_2d);
+        std::copy(input_stride, input_stride + 3, _bwd_strides_2d);
+        __debug_printer("FWD_STRIDES", output_stride, 3);
+        __debug_printer("BWD_STRIDES", input_stride, 3);
+      }
     } else if (_dim == 3) {
       std::int64_t input_stride[4] = {0, _inembed[2] * _inembed[1] * _istride,
                                       _inembed[2] * _istride, _istride};
       std::int64_t output_stride[4] = {0, _onembed[2] * _onembed[1] * _ostride,
                                        _onembed[2] * _ostride, _ostride};
-      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
-                      input_stride);
-      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
-                      output_stride);
+      if (_direction == fft_direction::forward) {
+        desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                        input_stride);
+        desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                        output_stride);
+        std::copy(input_stride, input_stride + 4, _fwd_strides_3d);
+        std::copy(output_stride, output_stride + 4, _bwd_strides_3d);
+        __debug_printer("FWD_STRIDES", input_stride, 4);
+        __debug_printer("BWD_STRIDES", output_stride, 4);
+      } else {
+        desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                        output_stride);
+        desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                        input_stride);
+        std::copy(output_stride, output_stride + 4, _fwd_strides_3d);
+        std::copy(input_stride, input_stride + 4, _bwd_strides_3d);
+        __debug_printer("FWD_STRIDES", output_stride, 4);
+        __debug_printer("BWD_STRIDES", input_stride, 4);
+      }
     }
   }
 
   template <class Desc_t> void swap_distance(std::shared_ptr<Desc_t> desc) {
-    desc->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _bwd_dist);
-    desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _fwd_dist);
-    std::int64_t temp = _bwd_dist;
-    _bwd_dist = _fwd_dist;
-    _fwd_dist = temp;
+    std::swap(_fwd_dist, _bwd_dist);
+    desc->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);
+    desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);
+    __debug_printer("FWD_DISTANCE", _fwd_dist);
+    __debug_printer("BWD_DISTANCE", _bwd_dist);
+  }
+
+  template <class Desc_t> void swap_strides(std::shared_ptr<Desc_t> desc) {
+    if (_dim == 1) {
+      std::swap_ranges(_fwd_strides_1d, _fwd_strides_1d + 2, _bwd_strides_1d);
+      desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES, _fwd_strides_1d);
+      desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES, _bwd_strides_1d);
+      __debug_printer("FWD_STRIDES", _fwd_strides_1d, 2);
+      __debug_printer("BWD_STRIDES", _bwd_strides_1d, 2);
+    } else if (_dim == 2) {
+      std::swap_ranges(_fwd_strides_2d, _fwd_strides_2d + 3, _bwd_strides_2d);
+      desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES, _fwd_strides_2d);
+      desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES, _bwd_strides_2d);
+      __debug_printer("FWD_STRIDES", _fwd_strides_2d, 3);
+      __debug_printer("BWD_STRIDES", _bwd_strides_2d, 3);
+    } else if (_dim == 3) {
+      std::swap_ranges(_fwd_strides_3d, _fwd_strides_3d + 4, _bwd_strides_3d);
+      desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES, _fwd_strides_3d);
+      desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES, _bwd_strides_3d);
+      __debug_printer("FWD_STRIDES", _fwd_strides_3d, 4);
+      __debug_printer("BWD_STRIDES", _bwd_strides_3d, 4);
+    }
   }
 
   template <bool Is_inplace, class Desc_t>
@@ -1097,31 +1230,29 @@ private:
     std::int64_t forward_distance = 0;
     std::int64_t backward_distance = 0;
 
-#define SET_STRIDE                                                             \
+#define MAKE_STRIDE_VAR_NAME(DIR, DIM) _##DIR##_strides_##DIM##d
+#define SET_STRIDE(DIM)                                                        \
   {                                                                            \
-    if (_direction == fft_direction::forward) {                                \
-      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,           \
+      desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,             \
                       real_stride);                                            \
-      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,          \
+      desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,             \
                       complex_stride);                                         \
-    } else {                                                                   \
-      desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,           \
-                      complex_stride);                                         \
-      desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,          \
-                      real_stride);                                            \
-    }                                                                          \
+      std::copy(real_stride, real_stride + DIM + 1, MAKE_STRIDE_VAR_NAME(fwd, DIM));     \
+      std::copy(complex_stride, complex_stride + DIM + 1, MAKE_STRIDE_VAR_NAME(bwd, DIM));       \
+      __debug_printer("FWD_STRIDES", real_stride, DIM + 1);                    \
+      __debug_printer("BWD_STRIDES", complex_stride, DIM + 1);                 \
   }
     if (_dim == 1) {
       if constexpr (Is_inplace) {
         std::int64_t real_stride[2] = {0, 1};
         std::int64_t complex_stride[2] = {0, 1};
-        SET_STRIDE;
+        SET_STRIDE(1);
         forward_distance = 2 * (_n[0] / 2 + 1);
         backward_distance = _n[0] / 2 + 1;
       } else {
         std::int64_t real_stride[2] = {0, 1};
         std::int64_t complex_stride[2] = {0, 1};
-        SET_STRIDE;
+        SET_STRIDE(1);
         forward_distance = _n[0];
         backward_distance = _n[0] / 2 + 1;
       }
@@ -1129,13 +1260,13 @@ private:
       if constexpr (Is_inplace) {
         std::int64_t complex_stride[3] = {0, _n[1] / 2 + 1, 1};
         std::int64_t real_stride[3] = {0, 2 * (_n[1] / 2 + 1), 1};
-        SET_STRIDE;
+        SET_STRIDE(2);
         forward_distance = _n[0] * 2 * (_n[1] / 2 + 1);
         backward_distance = _n[0] * (_n[1] / 2 + 1);
       } else {
         std::int64_t complex_stride[3] = {0, _n[1] / 2 + 1, 1};
         std::int64_t real_stride[3] = {0, _n[1], 1};
-        SET_STRIDE;
+        SET_STRIDE(2);
         forward_distance = _n[0] * _n[1];
         backward_distance = _n[0] * (_n[1] / 2 + 1);
       }
@@ -1145,23 +1276,26 @@ private:
                                           _n[2] / 2 + 1, 1};
         std::int64_t real_stride[4] = {0, _n[1] * 2 * (_n[2] / 2 + 1),
                                        2 * (_n[2] / 2 + 1), 1};
-        SET_STRIDE;
+        SET_STRIDE(3);
         forward_distance = _n[0] * _n[1] * 2 * (_n[2] / 2 + 1);
         backward_distance = _n[0] * _n[1] * (_n[2] / 2 + 1);
       } else {
         std::int64_t complex_stride[4] = {0, _n[1] * (_n[2] / 2 + 1),
                                           _n[2] / 2 + 1, 1};
         std::int64_t real_stride[4] = {0, _n[1] * _n[2], _n[2], 1};
-        SET_STRIDE;
+        SET_STRIDE(3);
         forward_distance = _n[0] * _n[1] * _n[2];
         backward_distance = _n[0] * _n[1] * (_n[2] / 2 + 1);
       }
     }
 #undef SET_STRIDE
+#undef MAKE_STRIDE_VAR_NAME
     desc->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,
                     forward_distance);
     desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,
                     backward_distance);
+    __debug_printer("FWD_DISTANCE", forward_distance);
+    __debug_printer("BWD_DISTANCE", backward_distance);
   }
 
 #define COMPUTE(DESC)                                                          \
@@ -1169,9 +1303,11 @@ private:
     if (_is_inplace) {                                                         \
       auto data_input = dpct::detail::get_memory<T>(input);                    \
       if (_direction == fft_direction::forward) {                              \
+        __debug_printer("compute_forward", "!!!!!!!!!!!!!!!!!!!compute_forward!!!!!!!!!!!!!!!!!"); \
         oneapi::mkl::dft::compute_forward<                                     \
             std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
       } else {                                                                 \
+        __debug_printer("compute_backward", "!!!!!!!!!!!!!!!!!!!compute_backward!!!!!!!!!!!!!!!!!"); \
         oneapi::mkl::dft::compute_backward<                                    \
             std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
       }                                                                        \
@@ -1179,10 +1315,12 @@ private:
       auto data_input = dpct::detail::get_memory<T>(input);                    \
       auto data_output = dpct::detail::get_memory<T>(output);                  \
       if (_direction == fft_direction::forward) {                              \
+        __debug_printer("compute_forward", "!!!!!!!!!!!!!!!!!!!compute_forward!!!!!!!!!!!!!!!!!"); \
         oneapi::mkl::dft::compute_forward<                                     \
             std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
                                                             data_output);      \
       } else {                                                                 \
+        __debug_printer("compute_backward", "!!!!!!!!!!!!!!!!!!!compute_backward!!!!!!!!!!!!!!!!!"); \
         oneapi::mkl::dft::compute_backward<                                    \
             std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
                                                             data_output);      \
@@ -1203,6 +1341,8 @@ private:
         if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
           if (direction != _direction) {
             swap_distance(_desc_sc);
+            if (!_is_basic)
+              swap_strides(_desc_sc);
             _direction = direction;
           }
           if (is_this_compute_inplace != _is_inplace) {
@@ -1211,17 +1351,21 @@ private:
             if (_is_inplace) {
               _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_INPLACE);
+              __debug_printer("PLACEMENT", "DFTI_INPLACE");
             } else {
               _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+              __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
             }
 #else
             if (_is_inplace) {
               _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   oneapi::mkl::dft::config_value::INPLACE);
+              __debug_printer("PLACEMENT", "INPLACE");
             } else {
               _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   oneapi::mkl::dft::config_value::NOT_INPLACE);
+              __debug_printer("PLACEMENT", "NOT_INPLACE");
             }
 #endif
           }
@@ -1229,6 +1373,8 @@ private:
         } else {
           if (direction != _direction) {
             swap_distance(_desc_dc);
+            if (!_is_basic)
+              swap_strides(_desc_dc);
             _direction = direction;
           }
           if (is_this_compute_inplace != _is_inplace) {
@@ -1237,17 +1383,21 @@ private:
             if (_is_inplace) {
               _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_INPLACE);
+              __debug_printer("PLACEMENT", "DFTI_INPLACE");
             } else {
               _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+              __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
             }
 #else
             if (_is_inplace) {
               _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   oneapi::mkl::dft::config_value::INPLACE);
+              __debug_printer("PLACEMENT", "INPLACE");
             } else {
               _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   oneapi::mkl::dft::config_value::NOT_INPLACE);
+              __debug_printer("PLACEMENT", "NOT_INPLACE");
             }
 #endif
           }
@@ -1279,9 +1429,11 @@ private:
 #ifdef __INTEL_MKL__
             _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_INPLACE);
+            __debug_printer("PLACEMENT", "DFTI_INPLACE");
 #else
             _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 oneapi::mkl::dft::config_value::INPLACE);
+            __debug_printer("PLACEMENT", "INPLACE");
 #endif
             if (_is_basic)
               set_stride_and_distance_basic<true>(_desc_sr);
@@ -1289,9 +1441,11 @@ private:
 #ifdef __INTEL_MKL__
             _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+            __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
 #else
             _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 oneapi::mkl::dft::config_value::NOT_INPLACE);
+            __debug_printer("PLACEMENT", "NOT_INPLACE");
 #endif
             if (_is_basic)
               set_stride_and_distance_basic<false>(_desc_sr);
@@ -1303,9 +1457,11 @@ private:
 #ifdef __INTEL_MKL__
             _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_INPLACE);
+            __debug_printer("PLACEMENT", "DFTI_INPLACE");
 #else
             _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 oneapi::mkl::dft::config_value::INPLACE);
+            __debug_printer("PLACEMENT", "INPLACE");
 #endif
             if (_is_basic)
               set_stride_and_distance_basic<true>(_desc_dr);
@@ -1313,9 +1469,11 @@ private:
 #ifdef __INTEL_MKL__
             _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+            __debug_printer("PLACEMENT", "DFTI_NOT_INPLACE");
 #else
             _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 oneapi::mkl::dft::config_value::NOT_INPLACE);
+            __debug_printer("PLACEMENT", "NOT_INPLACE");
 #endif
             if (_is_basic)
               set_stride_and_distance_basic<false>(_desc_dr);
@@ -1367,6 +1525,12 @@ private:
   std::shared_ptr<oneapi::mkl::dft::descriptor<
       oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>
       _desc_dc;
+  std::int64_t _fwd_strides_1d[2] = {0, 0};
+  std::int64_t _fwd_strides_2d[3] = {0, 0, 0};
+  std::int64_t _fwd_strides_3d[4] = {0, 0, 0, 0};
+  std::int64_t _bwd_strides_1d[2] = {0, 0};
+  std::int64_t _bwd_strides_2d[3] = {0, 0, 0};
+  std::int64_t _bwd_strides_3d[4] = {0, 0, 0, 0};
 };
 
 using fft_engine_ptr = fft_engine *;
