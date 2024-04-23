@@ -627,9 +627,7 @@ static inline unsigned int get_tid() {
 /// device manager
 class dev_mgr {
 public:
-  device_ext &current_device() {
-    return get_device(current_device_id());
-  }
+  device_ext &current_device() { return get_device(current_device_id()); }
   device_ext &cpu_device() const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (_cpu_device == -1) {
@@ -844,9 +842,7 @@ static inline void filter_device(const std::vector<std::string> &dev_subnames) {
 }
 
 /// List all the devices with its id in dev_mgr.
-static inline void list_devices() {
-  dev_mgr::instance().list_devices();
-}
+static inline void list_devices() { dev_mgr::instance().list_devices(); }
 
 static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
