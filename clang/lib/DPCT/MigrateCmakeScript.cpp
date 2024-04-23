@@ -625,7 +625,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
     // Apply user define migration rules
     for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
       const auto &PR = CmakeSyntaxEntry.second;
-
       if (PR.In.empty() && PR.Out.empty()) {
         // Implicit migration rule is used when the migration logic is difficult
         // to be described with yaml based rule syntax. Currently only migration
@@ -675,7 +674,6 @@ static void storeBufferToFile() {
 
     dpct::RawFDOStream Stream(FileName.getCanonicalPath().str());
     // Restore original endline format
-    printf("############## FileName: [%s]\n", FileName.getCanonicalPath().str().c_str());
     auto IsCRLF = ScriptFileCRLFMap[FileName];
     if (IsCRLF) {
       std::stringstream ResultStream;
