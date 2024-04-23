@@ -759,6 +759,10 @@ DPCT_ENUM_OPTION(
             "Experimental extension that allows use of bindless images APIs.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
+            "graphs", int(ExperimentalFeatures::Exp_Graphs),
+            "Experimental extension that allows use of SYCL Graph APIs.\n",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "non-uniform-groups",
             int(ExperimentalFeatures::Exp_NonUniformGroups),
             "Experimental extension that allows use of non-uniform groups.\n",

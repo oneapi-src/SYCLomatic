@@ -1274,6 +1274,9 @@ public:
   static bool useExtBindlessImages() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
   }
+  static bool useExtGraphs() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Graphs>();
+  }
   static bool useExpNonUniformGroups() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
   }

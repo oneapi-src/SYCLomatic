@@ -1707,8 +1707,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUstream_st", "thrust::complex", "thrust::device_vector",
               "thrust::device_ptr", "thrust::device_reference",
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
-              "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
-              "cudaDeviceProp", "cudaPitchedPtr", "thrust::counting_iterator",
+              "half", "__half2", "half2", "cudaMemoryAdvise",
+              "cudaStreamCaptureStatus", "cudaError_enum", "cudaDeviceProp",
+              "cudaPitchedPtr", "thrust::counting_iterator",
               "thrust::transform_iterator", "thrust::permutation_iterator",
               "thrust::iterator_difference", "cusolverDnHandle_t",
               "cusolverDnParams_t", "gesvdjInfo_t", "syevjInfo_t",
@@ -3329,7 +3330,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
           to(enumConstantDecl(anyOf(
               hasType(enumDecl(hasAnyName(
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
-                  "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
+                  "cudaStreamCaptureStatus", "cudaDeviceAttr",
+                  "libraryPropertyType_t", "cudaDataType_t",
                   "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
