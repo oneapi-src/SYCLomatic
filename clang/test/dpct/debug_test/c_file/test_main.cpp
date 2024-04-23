@@ -5,7 +5,7 @@
 // RUN: FileCheck %S/test_main.cpp --match-full-lines --input-file %T/debug_test/c_file_codepin_cuda/test_main.cpp -check-prefix=CUDA
 // RUN: FileCheck %S/test_cuda.cu --match-full-lines --input-file %T/debug_test/c_file_codepin_cuda/test_cuda.cu -check-prefix=CUDA
 // RUN: FileCheck %S/test.h --match-full-lines --input-file %T/debug_test/c_file_codepin_cuda/test.h -check-prefix=CUDA
-// RUN: %if build_lit %{icpx -fsycl %T/debug_test/c_file_codepin_sycl/test_main.cpp %T/c_file_codepin_sycl/c_file/test_cuda.dp.cpp -o %T/debug_test/c_file_codepin_sycl/c_file.run %}
+// RUN: %if build_lit %{icpx -fsycl %T/debug_test/c_file_codepin_sycl/test_main.cpp %T/debug_test/c_file_codepin_sycl/test_cuda.dp.cpp -o %T/debug_test/c_file_codepin_sycl/c_file.run %}
 // RUN: rm -rf %T/debug_test/c_file_codepin_sycl
 // RUN: rm -rf %T/debug_test/c_file_debug_cuda
 

@@ -564,12 +564,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   std::string SrcFile = "MainSrcFiles_placehold";
   std::string CodePinCUDAFolder =
       OutRoot.getCanonicalPath().str() + "_codepin_cuda";
-  std::string SYCLMigratedOutRoot = OutRoot.getCanonicalPath().str();
+  std::string OutRootStr = OutRoot.getCanonicalPath().str();
   if (DpctGlobalInfo::isCodePinEnabled()) {
-    SYCLMigratedOutRoot = OutRoot.getCanonicalPath().str() + "_codepin_sycl";
+    OutRootStr = OutRootStr + "_codepin_sycl";
   }
+  clang::tooling::UnifiedPath SYCLMigratedOutRoot(OutRootStr);
   std::string YamlFile =
-      appendPath(SYCLMigratedOutRoot, DpctGlobalInfo::getYamlFileName());
+      appendPath(OutRootStr, DpctGlobalInfo::getYamlFileName());
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
     auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
     for (const auto &Repl : PreTU->Replacements) {
@@ -612,7 +613,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     auto GroupResult = groupReplacementsByFile(
         Rewrite.getSourceMgr().getFileManager(), ReplSYCL);
     if (auto RewriteStatus = writeReplacementsToFiles(
-            ReplSYCL, Rewrite, SYCLMigratedOutRoot, InRoot, MainSrcFilesDigest,
+            ReplSYCL, Rewrite, OutRootStr, InRoot, MainSrcFilesDigest,
             MainSrcFileMap, MainSrcFilesRepls, FileRangesMap,
             FileBlockLevelFormatRangesMap, clang::dpct::RT_ForSYCLMigration))
       return RewriteStatus;
@@ -737,7 +738,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       FilePath = TempFilePath;
 
-      if (!rewriteDir(FilePath, InRoot, OutRoot)) {
+      if (!rewriteDir(FilePath, InRoot, SYCLMigratedOutRoot)) {
         continue;
       }
 
@@ -806,13 +807,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   if (!BuildScriptFile.empty())
     ScriptFineName = BuildScriptFile;
   if (GenBuildScript)
-    genBuildScript(Tool, InRoot, OutRoot, ScriptFineName);
+    genBuildScript(Tool, InRoot, SYCLMigratedOutRoot, ScriptFineName);
 
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
     std::string SchemaPathCUDA = CodePinCUDAFolder + "/generated_schema.hpp";
-    std::string SchemaPathSYCL = SYCLMigratedOutRoot + "/generated_schema.hpp";
+    std::string SchemaPathSYCL = OutRootStr + "/generated_schema.hpp";
     std::error_code EC;
     createDirectories(path::parent_path(SchemaPathCUDA));
     dpct::RawFDOStream SchemaStreamCUDA(SchemaPathCUDA);
@@ -820,7 +821,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     createDirectories(path::parent_path(SchemaPathSYCL));
     clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
   }
-  processallOptionAction(InRoot, OutRoot);
+  processallOptionAction(InRoot, SYCLMigratedOutRoot);
 
   return status;
 }
