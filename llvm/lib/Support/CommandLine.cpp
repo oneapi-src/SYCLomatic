@@ -2595,13 +2595,13 @@ protected:
       const auto &CategoryOptions = CategorizedOptions[Category];
       if (CategoryOptions.empty())
         continue;
-      
+
 #ifdef SYCLomatic_CUSTOMIZATION
       if (&requestedCat != Category)
         continue;
 #endif // SYCLomatic_CUSTOMIZATION
 
-      // Print category information.
+        // Print category information.
 #ifdef SYCLomatic_CUSTOMIZATION
       // outs() << "\n";
       // outs() << Category->getName() << ":\n";
