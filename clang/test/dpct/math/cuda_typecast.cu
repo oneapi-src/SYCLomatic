@@ -34,3 +34,11 @@ inline __device__ __half bar(uint32_t v) {
   // CHECK: return sycl::bit_cast<sycl::half, unsigned short>(v ^ mask);
   return __ushort_as_half(v ^ mask);
 }
+
+#define WARP_SHUFFLE(MASK, VAR) __shfl_sync(MASK, VAR, 1, 1)
+
+__global__ void f() {
+  double d;
+  __hiloint2double(WARP_SHUFFLE(1, __double2hiint(d)),
+                   WARP_SHUFFLE(1, __double2loint(d)));
+}
