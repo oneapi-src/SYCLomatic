@@ -713,7 +713,7 @@ public:
       }
     }
     _thread2dev_map.clear();
-#ifdef DPCT_VERBOSE
+#ifdef DPCT_HELPER_VERBOSE
     list_devices();
 #endif
   }
@@ -758,7 +758,7 @@ private:
         _cpu_device = _devs.size() - 1;
       }
     }
-#ifdef DPCT_VERBOSE
+#ifdef DPCT_HELPER_VERBOSE
     list_devices();
 #endif
   }
