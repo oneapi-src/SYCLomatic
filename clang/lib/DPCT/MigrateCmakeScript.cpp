@@ -617,7 +617,7 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
     auto Iter = FileWarningsMap.find(FileName.getPath().str());
     if (Iter != FileWarningsMap.end()) {
       std::vector WarningsVec = Iter->second;
-      for (auto Warning : WarningsVec) {
+      for (auto &Warning : WarningsVec) {
         llvm::outs() << Warning;
       }
     }
