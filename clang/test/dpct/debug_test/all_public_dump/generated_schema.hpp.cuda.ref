@@ -32,7 +32,7 @@
 
 //CHECK:  struct PointCloud_codepin {
 //CHECK:  public:
-//CHECK:    sycl::float3 pc[3];
+//CHECK:    float3 pc[3];
 //CHECK:  };
 
 //CHECK:  class Point3DExt_codepin : public Point3D_codepin<int> {
@@ -88,7 +88,7 @@
 //CHECK:                     dpct::experimental::StreamType stream) {
 //CHECK:      ss << "{\"Type\":\"PointCloud\",\"Data\":[";
 //CHECK:      ss << "{\"pc\":";
-//CHECK:      dpct::experimental::detail::DataSer<sycl::float3[3]>::dump(ss, value.pc, stream);
+//CHECK:      dpct::experimental::detail::DataSer<float3[3]>::dump(ss, value.pc, stream);
 //CHECK:      ss << "}";
 //CHECK:      ss << "]}";
 //CHECK:    }

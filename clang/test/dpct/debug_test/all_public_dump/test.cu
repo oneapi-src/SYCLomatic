@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/all_public_dump %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
 // RUN: FileCheck %S/generated_schema.hpp.ref --match-full-lines --input-file %T/debug_test/all_public_dump/generated_schema.hpp
+// RUN: FileCheck %S/generated_schema.hpp.cuda.ref --match-full-lines --input-file %T/debug_test/all_public_dump_debug/generated_schema.hpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/all_public_dump/test.dp.cpp -o %T/debug_test/all_public_dump/test.dp.o %}
 #include <cuda.h>
 #include <iostream>

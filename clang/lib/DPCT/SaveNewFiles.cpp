@@ -717,7 +717,7 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
        << "public:" << getNL()
        << "  static void dump(dpct::experimental::detail::json_stringstream "
           "&ss, "
-       << CodepinTypeName << "&value," << getNL()
+       << CodepinTypeName << " &value," << getNL()
        << "                   dpct::experimental::StreamType stream) {"
        << getNL();
     RS << "    ss << \"{\\\"Type\\\":\\\"" << Name << "\\\",\\\"Data\\\":[\";"
@@ -746,7 +746,7 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
          << "public:" << getNL()
          << "  static void dump(dpct::experimental::detail::json_stringstream "
             "&ss, "
-         << Name << "&value," << getNL()
+         << Name << " &value," << getNL()
          << "                   dpct::experimental::StreamType stream) {"
          << getNL();
       RS << "    " + CodepinTypeName << "& temp = reinterpret_cast<"
