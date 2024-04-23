@@ -2098,7 +2098,7 @@ __global__ void testUnsupported() {
   u = __umul24(u, u);
   // CHECK: ull = sycl::mul_hi(ull, ull);
   ull = __umul64hi(ull, ull);
-  // CHECK: u = sycl::mul_hi(u, u);
+  // CHECK: u = sycl::mul_hi<unsigned>(u, u);
   u = __umulhi(u, u);
   // CHECK: u = sycl::rhadd(u, u);
   u = __urhadd(u, u);
@@ -3095,8 +3095,10 @@ __global__ void k2() {
   __umul24(u, u2);
   // CHECK: sycl::mul_hi(ull, ull2);
   __umul64hi(ull, ull2);
-  // CHECK: sycl::mul_hi(u, u2);
+  // CHECK: sycl::mul_hi<unsigned>(u, u2);
   __umulhi(u, u2);
+  // CHECK: sycl::mul_hi<unsigned>(i, u2);
+  __umulhi(i, u2);
   // CHECK: sycl::rhadd(u, u2);
   __urhadd(u, u2);
 

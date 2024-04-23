@@ -40,5 +40,14 @@ RewriterMap dpct::createIntegerIntrinsicsRewriterMap() {
               EMPTY_FACTORY_ENTRY("__dp4a"),
               CALL_FACTORY_ENTRY("__dp4a",
                                  CALL(MapNames::getDpctNamespace() + "dp4a",
-                                      ARG(0), ARG(1), ARG(2)))))};
+                                      ARG(0), ARG(1), ARG(2)))))
+      // __umulhi
+      MATH_API_REWRITERS_V2(
+          "__umulhi",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::device_normal,
+              CALL_FACTORY_ENTRY("__umulhi",
+                                 CALL(MapNames::getClNamespace(false, true) +
+                                          "mul_hi<unsigned>",
+                                      ARG(0), ARG(1)))))};
 }

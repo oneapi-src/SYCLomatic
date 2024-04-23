@@ -70,8 +70,9 @@ public:
 
   void print_dict_item_key(std::string key) { *this << "\"" << key << "\":"; }
   void print_ID_checkpoint_begin(std::string ID) {
-    *this << "{\"ID\":\"" << ID;
-    *this << "\",\"CheckPoint\":{";
+    *this << "{\"ID\":"
+          << "\"" << ID << "\"";
+    *this << ",\"CheckPoint\":{";
   }
   void print_ID_checkpoint_end() { *this << "}},"; }
   void print_data_mem_begin(std::string mem_name) {

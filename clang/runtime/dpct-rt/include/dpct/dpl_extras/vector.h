@@ -159,8 +159,8 @@ public:
   using reference = device_reference<T>;
   using const_reference = const reference;
   using value_type = T;
-  using pointer = T *;
-  using const_pointer = const T *;
+  using pointer = device_pointer<T>;
+  using const_pointer = device_pointer<const T>;
   using difference_type =
       typename ::std::iterator_traits<iterator>::difference_type;
   using size_type = ::std::size_t;
@@ -171,7 +171,7 @@ private:
   Allocator _alloc;
   size_type _size;
   size_type _capacity;
-  pointer _storage;
+  T *_storage;
 
   size_type _min_capacity() const { return size_type(1); }
 
@@ -417,15 +417,19 @@ public:
       if (size() > v.size()) {
         v.reserve(capacity());
         device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-            _alloc, begin() + min_size, begin() + size(), size() - min_size,
-            v.begin() + min_size);
+            _alloc, begin() + min_size, size() - min_size,
+            v._storage + min_size);
         v._size = size();
+        _destroy(size() - min_size, min_size);
+        _size = min_size;
       } else if (size() < v.size()) {
         reserve(v.capacity());
         device_allocator_traits<Allocator>::uninitialized_device_copy_n(
-            _alloc, v.begin() + min_size, v.begin() + v.size(),
-            v.size() - min_size, begin() + min_size);
+            _alloc, v.begin() + min_size, v.size() - min_size,
+            _storage + min_size);
         _size = v.size();
+        v._destroy(v.size() - min_size, min_size);
+        v._size = min_size;
       }
     }
   }
@@ -462,8 +466,8 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) { return _storage; }
-  const_pointer data(void) const { return _storage; }
+  pointer data(void) { return pointer(_storage); }
+  const_pointer data(void) const { return const_pointer(_storage); }
   void shrink_to_fit(void) {
     if (_size != capacity() && capacity() > _min_capacity()) {
       size_type tmp_capacity = ::std::max(_size, _min_capacity());
@@ -622,8 +626,8 @@ public:
   using reference = device_reference<T>;
   using const_reference = const reference;
   using value_type = T;
-  using pointer = T *;
-  using const_pointer = const T *;
+  using pointer = device_pointer<T>;
+  using const_pointer = device_pointer<const T>;
   using difference_type =
       typename std::iterator_traits<iterator>::difference_type;
   using size_type = std::size_t;
@@ -785,12 +789,18 @@ public:
   const_iterator end() const { return device_iterator<T>(get_buffer(), _size); }
   const_iterator cend() const { return end(); }
   T *real_begin() {
+    // This code returns a pointer to a data within sycl buffer accessor which
+    // is leaving scope. This relies on undefined
+    // behavior and may not provide a valid pointer to data inside that buffer.
     return (detail::mem_mgr::instance()
                 .translate_ptr(_storage)
                 .buffer.get_host_access())
         .get_pointer();
   }
   const T *real_begin() const {
+    // This code returns a pointer to a data within sycl buffer accessor which
+    // is leaving scope. This relies on undefined
+    // behavior and may not provide a valid pointer to data inside that buffer.
     return const_cast<device_vector *>(this)
         ->detail::mem_mgr::instance()
         .translate_ptr(_storage)
@@ -850,9 +860,9 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) { return reinterpret_cast<pointer>(_storage); }
+  pointer data(void) { return pointer(reinterpret_cast<T *>(_storage)); }
   const_pointer data(void) const {
-    return reinterpret_cast<const_pointer>(_storage);
+    return const_pointer(reinterpret_cast<const T *>(_storage));
   }
   void shrink_to_fit(void) {
     if (_size != capacity()) {
