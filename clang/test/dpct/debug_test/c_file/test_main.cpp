@@ -1,7 +1,7 @@
 // RUN: dpct --enable-codepin --out-root %T/debug_test/c_file %S/test_main.cpp %S/test_cuda.cu --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck %S/test_main.cpp --match-full-lines --input-file %T/debug_test/c_file/test_main.cpp -check-prefix=SYCL
+// RUN: FileCheck %S/test_main.cpp --match-full-lines --input-file %T/debug_test/c_file_codepin_sycl/test_main.cpp -check-prefix=SYCL
 // RUN: FileCheck %S/test_cuda.cu --match-full-lines --input-file %T/debug_test/c_file_codepin_sycl/test_cuda.dp.cpp -check-prefix=SYCL
-// RUN: FileCheck %S/test.h --match-full-lines --input-file %T/debug_test/c_file/test.h -check-prefix=SYCL
+// RUN: FileCheck %S/test.h --match-full-lines --input-file %T/debug_test/c_file_codepin_sycl/test.h -check-prefix=SYCL
 // RUN: FileCheck %S/test_main.cpp --match-full-lines --input-file %T/debug_test/c_file_codepin_cuda/test_main.cpp -check-prefix=CUDA
 // RUN: FileCheck %S/test_cuda.cu --match-full-lines --input-file %T/debug_test/c_file_codepin_cuda/test_cuda.cu -check-prefix=CUDA
 // RUN: FileCheck %S/test.h --match-full-lines --input-file %T/debug_test/c_file_codepin_cuda/test.h -check-prefix=CUDA
