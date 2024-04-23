@@ -711,13 +711,12 @@ private:
       _desc_sc->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
 #ifdef __INTEL_MKL__
-      if (_is_user_specified_dir_and_placement && _is_inplace) {
+      if (_is_user_specified_dir_and_placement && _is_inplace)
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
-      } else {
+      else
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-      }
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_sc->set_value(
@@ -739,13 +738,12 @@ private:
         }
       }
 #else
-      if (_is_user_specified_dir_and_placement && _is_inplace) {
+      if (_is_user_specified_dir_and_placement && _is_inplace)
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::INPLACE);
-      } else {
+      else
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::NOT_INPLACE);
-      }
       _desc_sc->commit(*_q);
 #endif
     } else if (_input_type == library_data_t::complex_double &&
@@ -765,13 +763,12 @@ private:
       _desc_dc->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
 #ifdef __INTEL_MKL__
-      if (_is_user_specified_dir_and_placement && _is_inplace) {
+      if (_is_user_specified_dir_and_placement && _is_inplace)
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
-      } else {
+      else
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-      }
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_dc->set_value(
@@ -793,13 +790,12 @@ private:
         }
       }
 #else
-      if (_is_user_specified_dir_and_placement && _is_inplace) {
+      if (_is_user_specified_dir_and_placement && _is_inplace)
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::INPLACE);
-      } else {
+      else
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::NOT_INPLACE);
-      }
       _desc_dc->commit(*_q);
 #endif
     } else if ((_input_type == library_data_t::real_float &&
@@ -932,13 +928,12 @@ private:
     DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
     DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
                     _batch);                                                   \
-    if (_is_user_specified_dir_and_placement && _is_inplace) {                 \
+    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       DFTI_CONFIG_VALUE::DFTI_INPLACE);                        \
-    } else {                                                                   \
+    else                                                                       \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                    \
-    }                                                                          \
     if (_use_external_workspace) {                                             \
       DESC->set_value(oneapi::mkl::dft::config_param::WORKSPACE,               \
                       oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);     \
@@ -968,13 +963,12 @@ private:
     DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
     DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
                     _batch);                                                   \
-    if (_is_user_specified_dir_and_placement && _is_inplace) {                 \
+    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       oneapi::mkl::dft::config_value::INPLACE);                \
-    } else {                                                                   \
+    else                                                                       \
       DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
                       oneapi::mkl::dft::config_value::NOT_INPLACE);            \
-    }                                                                          \
     DESC->commit(*_q);                                                         \
   }
 #endif
