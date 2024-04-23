@@ -114,7 +114,7 @@
 // cublasCtrsm-NEXT:               alpha /*const cuComplex **/, a /*const cuComplex **/, lda /*int*/,
 // cublasCtrsm-NEXT:               b /*cuComplex **/, ldb /*int*/);
 // cublasCtrsm-NEXT: Is migrated to:
-// cublasCtrsm-NEXT:   oneapi::mkl::blas::column_major::trsm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, (std::complex<float>*)b, ldb);
+// cublasCtrsm-NEXT:   oneapi::mkl::blas::column_major::trsm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, (std::complex<float>*)b, ldb, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCsyrk | FileCheck %s -check-prefix=cublasCsyrk
 // cublasCsyrk: CUDA API:
@@ -123,7 +123,7 @@
 // cublasCsyrk-NEXT:               alpha /*const cuComplex **/, a /*const cuComplex **/, lda /*int*/,
 // cublasCsyrk-NEXT:               beta /*const cuComplex **/, c /*cuComplex **/, ldc /*int*/);
 // cublasCsyrk-NEXT: Is migrated to:
-// cublasCsyrk-NEXT:   oneapi::mkl::blas::column_major::syrk(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc);
+// cublasCsyrk-NEXT:   oneapi::mkl::blas::column_major::syrk(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<float>*)a, lda, dpct::get_value(beta, handle->get_queue()), (std::complex<float>*)c, ldc, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDsyr2 | FileCheck %s -check-prefix=cublasDsyr2
 // cublasDsyr2: CUDA API:
@@ -219,4 +219,4 @@
 // cublasZherk-NEXT:               lda /*int*/, beta /*const double **/, c /*cuDoubleComplex **/,
 // cublasZherk-NEXT:               ldc /*int*/);
 // cublasZherk-NEXT: Is migrated to:
-// cublasZherk-NEXT:   oneapi::mkl::blas::column_major::herk(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc);
+// cublasZherk-NEXT:   oneapi::mkl::blas::column_major::herk(handle->get_queue(), upper_lower, trans, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));

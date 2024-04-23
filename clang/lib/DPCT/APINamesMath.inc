@@ -245,7 +245,7 @@ ENTRY_RENAMED("__mul64hi", MapNames::getClNamespace(false, true) + "mul_hi")
 ENTRY_RENAMED("__rhadd", MapNames::getClNamespace(false, true) + "rhadd")
 ENTRY_RENAMED("__uhadd", MapNames::getClNamespace(false, true) + "hadd")
 ENTRY_RENAMED("__umul24", MapNames::getClNamespace(false, true) + "mul24")
-ENTRY_RENAMED("__umulhi", MapNames::getClNamespace(false, true) + "mul_hi")
+ENTRY_REWRITE("__umulhi")
 ENTRY_RENAMED("__urhadd", MapNames::getClNamespace(false, true) + "rhadd")
 
 // Renamed No Rewrite
