@@ -1,0 +1,9 @@
+include_directories(${SYCL_INCLUDE_DIR})
+
+target_include_directories(my_cuda_program PRIVATE ${SYCL_INCLUDE_DIR})
+
+list(APPEND CMAKE_SYCL_FLAGS ${ARCH_FLAGS})
+
+set(CMAKE_SYCL_FLAGS "${CMAKE_SYCL_FLAGS} ${COMPILE_FLAG}")
+
+set(CMAKE_SYCL_FLAGS "${CMAKE_SYCL_FLAGS} -std=c++17")

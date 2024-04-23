@@ -47,7 +47,7 @@ int main() {
     cublasErrCheck(cublasSetStream(handle, stream1));
     cublasErrCheck(cublasGetStream(handle, &stream1));
 
-    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, dpct::get_value(&beta_S, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N)));
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_S)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_S)), N, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_S)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false))));
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
     // CHECK: cublasErrCheck([&]() {
@@ -58,11 +58,11 @@ int main() {
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
 
 
-    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::syrk(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
+    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::syrk(handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
     cublasErrCheck(cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(handle->get_queue(), (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)));
+    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::trmm(handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)));
     cublasErrCheck(cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
 
 
@@ -78,7 +78,7 @@ int main() {
     int batchSize = 10;
 
 
-    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(&alpha_C, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_A_C)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_B_C)), N, dpct::get_value(&beta_C, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_C_C)), N)));
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_A_C)), N, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_B_C)), N, std::complex<float>(beta_C.x(), beta_C.y()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(d_C_C)), N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true))));
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
     // CHECK: cublasErrCheck([&]() {
@@ -88,7 +88,7 @@ int main() {
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
 
-    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(handle->get_queue(), (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N)));
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::trmm(handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N)));
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
 
     // CHECK: /*
