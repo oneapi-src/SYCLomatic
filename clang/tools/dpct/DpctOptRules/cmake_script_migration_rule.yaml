@@ -2213,3 +2213,57 @@
       Out: ONEAPI_LIB_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
+
+- Rule: rule_cuda_host_compiler
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_host_compiler_var
+  In: set${empty}(CUDA_HOST_COMPILER ${compiler})
+  Out: set${empty}(CUDA_HOST_COMPILER ${compiler})
+  Subrules:
+    compiler:
+      In: CACHE FILEPATH ${options}
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_set_options_for_cuda_host_compiler"
+
+- Rule: rule_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_compiler
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
+
+- Rule: rule_CUDA_HOST_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_flags
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_FLAGS
+      Out: SYCL_HOST_FLAGS
+
+- Rule: rule_cuda_host_flags_str
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_host_flags_str
+  In: set${empty}(CUDA_HOST_FLAGS "${flags}")
+  Out: set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} --fsycl-host-compiler-options ${flags}")
+
+- Rule: rule_cuda_host_flags_var
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_host_flags_var
+  In: set${empty}(CUDA_HOST_FLAGS ${flags})
+  Out: set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} --fsycl-host-compiler-options ${flags}")
+
