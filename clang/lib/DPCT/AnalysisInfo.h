@@ -1374,9 +1374,6 @@ public:
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
-  static std::unordered_set<std::string> &getUseDeviceGlobalVarSet() {
-    return UseDeviceGlobalVarSet;
-  }
   static bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
   }
@@ -1584,7 +1581,6 @@ private:
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static IncludeMapSetTy IncludeMapSet;
-  static std::unordered_set<std::string> UseDeviceGlobalVarSet;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 

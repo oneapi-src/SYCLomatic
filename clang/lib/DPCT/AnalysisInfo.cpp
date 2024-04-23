@@ -2459,7 +2459,6 @@ std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
-std::unordered_set<std::string> DpctGlobalInfo::UseDeviceGlobalVarSet;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
@@ -3142,13 +3141,15 @@ void MemVarInfo::setInitList(const Expr *E, const VarDecl *V) {
   InitList = getStmtSpelling(E, V->getSourceRange());
 }
 std::string MemVarInfo::getMemoryType() {
+  static std::string DeviceGlobalMemory =
+      MapNames::getClNamespace() + "ext::oneapi::experimental::device_global";
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
     requestFeature(HelperFeatureEnum::device_ext);
-    std::string DeviceMemory = MapNames::getDpctNamespace() + "global_memory";
+    static std::string DeviceMemory =
+        MapNames::getDpctNamespace() + "global_memory";
     if (isUseDeviceGlobal()) {
-      DeviceMemory = MapNames::getClNamespace() +
-                     "ext::oneapi::experimental::device_global";
+      return getMemoryType(DeviceGlobalMemory, getType());
     }
     return getMemoryType(DeviceMemory, getType());
   }
@@ -3156,15 +3157,12 @@ std::string MemVarInfo::getMemoryType() {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string ConstantMemory =
         MapNames::getDpctNamespace() + "constant_memory";
-    if (!isUseHelperFunc()) {
-      if (isUseDeviceGlobal()) {
-        ConstantMemory = MapNames::getClNamespace() +
-                         "ext::oneapi::experimental::device_global";
-      } else {
-        ConstantMemory = "const ";
-      }
+    if (isUseHelperFunc()) {
+      return getMemoryType(ConstantMemory, getType());
+    } else if (isUseDeviceGlobal()) {
+      return getMemoryType(DeviceGlobalMemory, getType());
     }
-    return getMemoryType(ConstantMemory, getType());
+    return getMemoryType("const ", getType());
   }
   case clang::dpct::MemVarInfo::Shared: {
     static std::string SharedMemory =
@@ -4913,15 +4911,15 @@ void DeviceFunctionInfo::buildInfo() {
   auto &Map = VarMap.getMap(clang::dpct::MemVarInfo::Global);
   for (auto It = Map.begin(); It != Map.end();) {
     auto &Info = It->second;
-    if (DpctGlobalInfo::isOptimizeMigration() && Info->isConstant() &&
-        !Info->getUsedBySymbolAPIFlag()) {
-      Info->setUseHelperFuncFlag(false);
-    }
-    if (DpctGlobalInfo::useExpDeviceGlobal() &&
-        (Info->isConstant() || Info->isDevice()) &&
-        !Info->getUsedBySymbolAPIFlag()) {
-      Info->setUseHelperFuncFlag(false);
-      Info->setUseDeviceGlobalFlag(true);
+    if (!Info->getUsedBySymbolAPIFlag()) {
+      if (DpctGlobalInfo::isOptimizeMigration() && Info->isConstant()) {
+        Info->setUseHelperFuncFlag(false);
+      }
+      if (DpctGlobalInfo::useExpDeviceGlobal() &&
+          (Info->isConstant() || Info->isDevice())) {
+        Info->setUseHelperFuncFlag(false);
+        Info->setUseDeviceGlobalFlag(true);
+      }
     }
     if (!Info->isUseHelperFunc()) {
       It = Map.erase(It);
