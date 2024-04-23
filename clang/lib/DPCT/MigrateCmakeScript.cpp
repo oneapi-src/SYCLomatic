@@ -625,6 +625,7 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
     // Apply user define migration rules
     for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
       const auto &PR = CmakeSyntaxEntry.second;
+
       if (PR.In.empty() && PR.Out.empty()) {
         // Implicit migration rule is used when the migration logic is difficult
         // to be described with yaml based rule syntax. Currently only migration
@@ -634,7 +635,26 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
                                    DispatchTable.at(PR.CmakeSyntax));
 
       } else {
-        Buffer = applyPatternRewriter(PR, Buffer);
+        if (PR.RuleId == "rule_project") {
+          auto NewPR = PR;
+          SmallString<512> RelativePath(FileName.getCanonicalPath());
+          llvm::sys::path::replace_path_prefix(RelativePath,
+                                               OutRoot.getCanonicalPath(), ".");
+
+          std::vector<std::string> SplitedStr =
+              split(RelativePath.c_str(), '/');
+
+          std::string RelativePathPrefix = "./";
+          for (size_t Idx = 0;
+               RelativePath.size() > 2 && Idx < SplitedStr.size() - 2; Idx++) {
+            RelativePathPrefix += "../";
+          }
+          RelativePathPrefix += "dpct.cmake";
+          NewPR.Out += "include(" + RelativePathPrefix + ")\n";
+          Buffer = applyPatternRewriter(NewPR, Buffer);
+        } else {
+          Buffer = applyPatternRewriter(PR, Buffer);
+        }
       }
     }
   }
@@ -655,6 +675,7 @@ static void storeBufferToFile() {
 
     dpct::RawFDOStream Stream(FileName.getCanonicalPath().str());
     // Restore original endline format
+    printf("############## FileName: [%s]\n", FileName.getCanonicalPath().str().c_str());
     auto IsCRLF = ScriptFileCRLFMap[FileName];
     if (IsCRLF) {
       std::stringstream ResultStream;
