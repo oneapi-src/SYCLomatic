@@ -993,8 +993,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   concatHeader(OS, getHeaderSpelling(Type));
   return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
 }
-void DpctFileInfo::insertHeader(HeaderType Type,
-                                ReplacementType IsForCodePin) {
+void DpctFileInfo::insertHeader(HeaderType Type, ReplacementType IsForCodePin) {
   switch (Type) {
 #define HEADER(Name, Spelling)                                                 \
   case HT_##Name:                                                              \

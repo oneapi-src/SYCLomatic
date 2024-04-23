@@ -32,10 +32,7 @@ enum InsertPosition {
   IP_Right,
 };
 
-enum ReplacementType {
-  RT_ForSYCLMigration = 0,
-  RT_CUDAWithCodePin
-};
+enum ReplacementType { RT_ForSYCLMigration = 0, RT_CUDAWithCodePin };
 
 /// Extend Replacement to contain more meta info of Replacement inserted by
 /// AST Rule. Further Analysis Pass like Merge Pass can happen based
@@ -127,6 +124,7 @@ public:
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
   ReplacementType IsForCodePin = RT_ForSYCLMigration;
+
 private:
   InsertPosition InsertPos = IP_Left;
   const TextModification *TM;
@@ -204,6 +202,7 @@ public:
   }
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
   ReplacementType IsForCodePin = RT_ForSYCLMigration;
+
 private:
   const TMID ID;
   Group Key;

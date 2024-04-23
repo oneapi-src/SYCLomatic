@@ -8491,8 +8491,8 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
                               dpct::ReplacementType CodePinType) {
     std::string CodePinKernelArgsString = "(\"";
     CodePinKernelArgsString += llvm::sys::path::convert_to_slash(
-                           KCallSpellingRange.first.printToString(SM)) +
-                       "\", ";
+                                   KCallSpellingRange.first.printToString(SM)) +
+                               "\", ";
     CodePinKernelArgsString += StreamStr;
 
     buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);

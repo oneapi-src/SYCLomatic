@@ -23,7 +23,7 @@ using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 bool isOutRootAccess(SmallString<256> OutRoot) {
-  if (fs::can_write(OutRoot)) {
+  if (!fs::can_write(OutRoot)) {
     llvm::errs() << "Could not access out-root directory.\n";
     return false;
   }

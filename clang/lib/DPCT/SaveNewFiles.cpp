@@ -568,7 +568,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   if (DpctGlobalInfo::isCodePinEnabled()) {
     SYCLMigratedOutRoot = OutRoot.getCanonicalPath().str() + "_codepin_sycl";
   }
-  std::string YamlFile = appendPath(SYCLMigratedOutRoot, DpctGlobalInfo::getYamlFileName());
+  std::string YamlFile =
+      appendPath(SYCLMigratedOutRoot, DpctGlobalInfo::getYamlFileName());
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
     auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
     for (const auto &Repl : PreTU->Replacements) {
@@ -611,10 +612,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     auto GroupResult = groupReplacementsByFile(
         Rewrite.getSourceMgr().getFileManager(), ReplSYCL);
     if (auto RewriteStatus = writeReplacementsToFiles(
-            ReplSYCL, Rewrite, SYCLMigratedOutRoot, InRoot,
-            MainSrcFilesDigest, MainSrcFileMap, MainSrcFilesRepls,
-            FileRangesMap, FileBlockLevelFormatRangesMap,
-            clang::dpct::RT_ForSYCLMigration))
+            ReplSYCL, Rewrite, SYCLMigratedOutRoot, InRoot, MainSrcFilesDigest,
+            MainSrcFileMap, MainSrcFilesRepls, FileRangesMap,
+            FileBlockLevelFormatRangesMap, clang::dpct::RT_ForSYCLMigration))
       return RewriteStatus;
     if (DpctGlobalInfo::isCodePinEnabled()) {
       if (auto RewriteStatus = writeReplacementsToFiles(
