@@ -2425,10 +2425,12 @@ public:
     StrSubCommandPairVector Subs;
     sortSubCommands(GlobalParser->RegisteredSubCommands, Subs);
 
+#ifdef SYCLomatic_CUSTOMIZATION
     if (helpCatEnum == HelpCategory::HC_Examples) {
       outs() << DPCTExamplesMsg;
       return;
     }
+#endif // SYCLomatic_CUSTOMIZATION
 
     if (!GlobalParser->ProgramOverview.empty())
       outs() << "OVERVIEW: " << GlobalParser->ProgramOverview << "\n";
@@ -2591,9 +2593,13 @@ protected:
     for (OptionCategory *Category : SortedCategories) {
       // Hide empty categories for --help, but show for --help-hidden.
       const auto &CategoryOptions = CategorizedOptions[Category];
-      bool IsReqCat = (&requestedCat == Category);
-      if (CategoryOptions.empty() || !IsReqCat)
+      if (CategoryOptions.empty())
         continue;
+      
+#ifdef SYCLomatic_CUSTOMIZATION
+      if (&requestedCat != Category)
+        continue;
+#endif // SYCLomatic_CUSTOMIZATION
 
       // Print category information.
 #ifdef SYCLomatic_CUSTOMIZATION
@@ -2632,7 +2638,9 @@ public:
 
   // Invoke the printer.
   void operator=(bool Value);
+#ifdef SYCLomatic_CUSTOMIZATION
   void operator=(HelpCategory Value);
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 } // End anonymous namespace

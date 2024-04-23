@@ -1,4 +1,4 @@
-auto exMsgStr = std::string(R""(EXAMPLES:
+std::string exMsgStr = std::string(R""(EXAMPLES:
 
 Prepare for Migration
 =====================
