@@ -4398,7 +4398,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(
       FuncInfo(getFuncInfo(FD)) {
   if (!FuncInfo) {
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
-        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD), FD);
   }
   if (!FilePath.getCanonicalPath().empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
@@ -4559,7 +4559,7 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
           FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
-          getFunctionName(FD));
+          getFunctionName(FD), FD);
       FuncInfo = Info;
     }
     return;
@@ -4884,12 +4884,14 @@ void DeviceFunctionDeclInModule::emplaceReplacement() {
 ///// class DeviceFunctionInfo /////
 DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum,
                                        size_t NonDefaultParamNum,
-                                       std::string FunctionName)
+                                       std::string FunctionName,
+                                       const clang::FunctionDecl *FD)
     : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
       IsBuilt(false),
       TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
       FunctionName(FunctionName), IsLambda(false) {
   ParametersProps.resize(ParamsNum);
+  // TODO: collect BarrierFenceSpaceAnalysisInfo from FD
 }
 std::shared_ptr<CallFunctionExpr>
 DeviceFunctionInfo::findCallee(const CallExpr *C) {
@@ -4913,6 +4915,27 @@ void DeviceFunctionInfo::buildInfo() {
                       Call.second->getTextureObjectList());
   }
   VarMap.removeDuplicateVar();
+  // TODO: do inter-procedural analysis for __syncthreads migration
+  //       emplace replacements for __syncthreads in this DFI
+  for (const auto &SyncCall : IAR.Map) {
+    InterproceduralAnalyzer IA;
+    InterproceduralAnalyzerResult Res =
+        IA.analyze(shared_from_this(), SyncCall.first);
+    std::string Replacement;
+    if (Res.CanUseLocalBarrier) {
+      Replacement = getItemName() + ".barrier(" + MapNames::getClNamespace() +
+                    "access::fence_space::local_space)";
+    } else {
+      DiagnosticsUtils::report(
+          std::get<0>(SyncCall.second), std::get<1>(SyncCall.second),
+          Diagnostics::BARRIER_PERFORMANCE_TUNNING, true, false, "nd_item");
+      Replacement = getItemName() + ".barrier()";
+    }
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            std::get<0>(SyncCall.second), std::get<1>(SyncCall.second),
+            std::get<2>(SyncCall.second), Replacement, nullptr));
+  }
 }
 std::string
 DeviceFunctionInfo::getExtraParameters(const clang::tooling::UnifiedPath &Path,
@@ -4941,6 +4964,7 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
     return;
   VarMap.merge(Other->getVarMap());
   dpct::merge(CallExprMap, Other->CallExprMap);
+  dpct::merge(ParentDFIs, Other->ParentDFIs);
   if (BaseObjectTexture)
     BaseObjectTexture->merge(Other->BaseObjectTexture);
   else
