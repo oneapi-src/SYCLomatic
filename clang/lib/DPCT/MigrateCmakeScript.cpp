@@ -642,10 +642,10 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
 
           std::vector<std::string> SplitedStr =
               split(RelativePath.c_str(), '/');
-
           std::string RelativePathPrefix = "./";
-          for (size_t Idx = 0;
-               RelativePath.size() > 2 && Idx < SplitedStr.size() - 2; Idx++) {
+
+          auto Size = SplitedStr.size();
+          for (size_t Idx = 0; Size > 2 && Idx < Size - 2; Idx++) {
             RelativePathPrefix += "../";
           }
           RelativePathPrefix += "dpct.cmake";
