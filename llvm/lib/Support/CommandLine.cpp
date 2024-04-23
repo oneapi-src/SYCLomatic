@@ -2368,16 +2368,16 @@ enum class HelpCategory {
   HC_InterceptBuild,
   HC_Examples
 };
-#endif // SYCLomatic_CUSTOMIZATION
 
-// clang-format off
 #include "llvm/migration_cmd_examples.inc"
-// clang-format on
+#endif // SYCLomatic_CUSTOMIZATION
 
 class HelpPrinter {
 protected:
   const bool ShowHidden;
+#ifdef SYCLomatic_CUSTOMIZATION
   HelpCategory helpCatEnum = HelpCategory::HC_All;
+#endif // SYCLomatic_CUSTOMIZATION
   typedef SmallVector<std::pair<const char *, Option *>, 128>
       StrOptionPairVector;
   typedef SmallVector<std::pair<const char *, SubCommand *>, 128>
