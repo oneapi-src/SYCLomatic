@@ -1,15 +1,15 @@
-std::string exMsgStr = std::string(R""(EXAMPLES:
+const char *const DPCTExamplesMsg = R"(EXAMPLES:
 
 Prepare for Migration
 =====================
 
     Generate a compilation database of the project files used to guide migration
-    Example command:)"") +
+    Example command:)"
 #ifndef _WIN32
-R""(
-            $ dpct --intercept-build make)"" +
+R"(
+            $ dpct --intercept-build make)"
 #endif
-R""(
+R"(
             $ dpct --intercept-build --parse-build-log <logfile>
     
     Estimate the migration effect to complete a migration
@@ -32,12 +32,12 @@ Migrate your code
     Migrate an entire project
     Example commands:
             $ dpct -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project     # With compilation database
-            $ dpct --process-all --in-root=/path/to/project --out-root=/path/to/migrated-project                        # Without compilation database)"" +
+            $ dpct --process-all --in-root=/path/to/project --out-root=/path/to/migrated-project                        # Without compilation database)"
 #ifdef _WIN32
-R""(
-            $ dpct -vcxprojfile=/path/to/vcproject/file --in-root=/path/to/project --out-root=/path/to/migrated-project # With VS project file)"" +
+R"(
+            $ dpct -vcxprojfile=/path/to/vcproject/file --in-root=/path/to/project --out-root=/path/to/migrated-project # With VS project file)"
 #endif
-R""(
+R"(
             $ dpct -in-root=/path/to/project --in-root-exclude=/path/to/project/dir1                                    # Exclude migration of a dir or file
     
     Migrate/generate build scripts for migrated SYCL code
@@ -65,6 +65,4 @@ Utils to assist migration
     Example command:
             $ dpct --helper-function-dir
     
-)"";
-
-const char *const DPCTExamplesMsg = exMsgStr.c_str();
+)";
