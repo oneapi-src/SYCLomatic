@@ -11,3 +11,6 @@
 
 // CHECK: begin
 // CHECK-NEXT: end
+
+// The command below is used to test if dpct.cmake has been write to the output directory
+// RUN: diff --strip-trailing-cr %T/out/dpct.cmake %T/out/dpct.cmake
