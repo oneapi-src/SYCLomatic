@@ -179,6 +179,31 @@ struct CudaArchPPInfo {
   bool isInHDFunc = false;
 };
 
+struct MemberOrBaseInfoForCodePin {
+  bool UserDefinedTypeFlag = false;
+  int PointerDepth = 0;
+  bool IsBaseMember = false;
+  std::vector<int> Dims;
+  std::string TypeNameInCuda;
+  std::string TypeNameInSycl;
+  std::string MemberName;
+};
+
+struct VarInfoForCodePin {
+  bool TemplateFlag = false;
+  bool TopTypeFlag = false;
+  bool IsValid = false;
+  std::string HashKey;
+  std::string VarRecordType;
+  std::string VarName;
+  std::string VarNameWithoutScopeAndTemplateArgs;
+  std::string TemplateInstArgs;
+  std::vector<std::string> Namespaces;
+  std::vector<std::string> TemplateArgs;
+  std::vector<MemberOrBaseInfoForCodePin> Bases;
+  std::vector<MemberOrBaseInfoForCodePin> Members;
+};
+
 struct MemcpyOrderAnalysisInfo {
   MemcpyOrderAnalysisInfo(
       std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
@@ -1039,11 +1064,13 @@ public:
   /// bool...) regardless its order in origin code.
   /// \param [in] QT The input qualified type which need migration.
   /// \param [in] Context The AST context.
+  /// \param [in] SuppressScope Suppresses printing of scope specifiers.
   /// \return The replaced type name string with qualifiers.
+  static std::string getReplacedTypeName(QualType QT, const ASTContext &Context,
+                                         bool SuppressScope = false);
   static std::string getReplacedTypeName(QualType QT,
-                                         const ASTContext &Context);
-  static std::string getReplacedTypeName(QualType QT) {
-    return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
+                                         bool SuppressScope = false) {
+    return getReplacedTypeName(QT, DpctGlobalInfo::getContext(), SuppressScope);
   }
   /// This function will return the original type name with qualifiers.
   /// The order of original qualifiers will follow the behavior of
@@ -1371,6 +1398,12 @@ public:
     return VarUsedByRuntimeSymbolAPISet;
   }
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
+  static auto &getCodePinTypeInfoVec() { return CodePinTypeInfoMap; }
+  static auto &getCodePinTemplateTypeInfoVec() {
+    return CodePinTemplateTypeInfoMap;
+  }
+  static auto &getCodePinTypeDepsVec() { return CodePinTypeDepsVec; }
+  static auto &getCodePinDumpFuncDepsVec() { return CodePinDumpFuncDepsVec; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
@@ -1586,6 +1619,14 @@ private:
   static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static std::unordered_map<std::string, std::string> SpecialReplForEAMap;
   static IncludeMapSetTy IncludeMapSet;
+  static std::vector<std::pair<std::string, VarInfoForCodePin>>
+      CodePinTypeInfoMap;
+  static std::vector<std::pair<std::string, VarInfoForCodePin>>
+      CodePinTemplateTypeInfoMap;
+  static std::vector<std::pair<std::string, std::vector<std::string>>>
+      CodePinTypeDepsVec;
+  static std::vector<std::pair<std::string, std::vector<std::string>>>
+      CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 
