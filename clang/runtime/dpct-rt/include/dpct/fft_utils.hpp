@@ -1197,8 +1197,9 @@ private:
     }                                                                          \
   }
 
-  template <class T, oneapi::mkl::dft::precision Precision>
-  void compute_complex(T *input, T *output, fft_direction direction) {
+  template <class Dest_t, class T>
+  void compute_complex_impl(Dest_t desc, T *input, T *output,
+                            fft_direction direction) {
     bool is_this_compute_inplace = input == output;
 
     if (!_is_user_specified_dir_and_placement) {
@@ -1207,79 +1208,52 @@ private:
       // Here we check the conditions, and new config values are set and
       // re-committed if needed.
       if (direction != _direction || is_this_compute_inplace != _is_inplace) {
-        if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
-          if (direction != _direction) {
-            swap_distance(_desc_sc);
+        if (direction != _direction) {
+          swap_distance(desc);
 #ifdef __INTEL_MKL__
-            if (!_is_basic)
-              swap_strides(_desc_sc);
+          if (!_is_basic)
+            swap_strides(desc);
 #endif
-            _direction = direction;
-          }
-          if (is_this_compute_inplace != _is_inplace) {
-            _is_inplace = is_this_compute_inplace;
-#ifdef __INTEL_MKL__
-            if (_is_inplace) {
-              _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  DFTI_CONFIG_VALUE::DFTI_INPLACE);
-            } else {
-              _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-            }
-#else
-            if (_is_inplace) {
-              _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  oneapi::mkl::dft::config_value::INPLACE);
-            } else {
-              _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  oneapi::mkl::dft::config_value::NOT_INPLACE);
-            }
-#endif
-          }
-          _desc_sc->commit(*_q);
-        } else {
-          if (direction != _direction) {
-            swap_distance(_desc_dc);
-#ifdef __INTEL_MKL__
-            if (!_is_basic)
-              swap_strides(_desc_dc);
-#endif
-            _direction = direction;
-          }
-          if (is_this_compute_inplace != _is_inplace) {
-            _is_inplace = is_this_compute_inplace;
-#ifdef __INTEL_MKL__
-            if (_is_inplace) {
-              _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  DFTI_CONFIG_VALUE::DFTI_INPLACE);
-            } else {
-              _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-            }
-#else
-            if (_is_inplace) {
-              _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  oneapi::mkl::dft::config_value::INPLACE);
-            } else {
-              _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                  oneapi::mkl::dft::config_value::NOT_INPLACE);
-            }
-#endif
-          }
-          _desc_dc->commit(*_q);
+          _direction = direction;
         }
+        if (is_this_compute_inplace != _is_inplace) {
+          _is_inplace = is_this_compute_inplace;
+#ifdef __INTEL_MKL__
+          if (_is_inplace) {
+            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            DFTI_CONFIG_VALUE::DFTI_INPLACE);
+          } else {
+            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+          }
+#else
+          if (_is_inplace) {
+            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::INPLACE);
+          } else {
+            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::NOT_INPLACE);
+          }
+#endif
+        }
+        desc->commit(*_q);
       }
     }
 
-    if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
-      COMPUTE(_desc_sc);
-    } else {
-      COMPUTE(_desc_dc);
-    }
+    COMPUTE(desc);
   }
 
   template <class T, oneapi::mkl::dft::precision Precision>
-  void compute_real(T *input, T *output) {
+  void compute_complex(T *input, T *output, fft_direction direction) {
+    if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
+      compute_complex_impl(_desc_sc, input, output, direction);
+    } else {
+      compute_complex_impl(_desc_dc, input, output, direction);
+    }
+  }
+
+  template <class Dest_t, class T>
+  void compute_real_impl(Dest_t desc, T *input, T *output) {
     bool is_this_compute_inplace = input == output;
 
     if (!_is_user_specified_dir_and_placement) {
@@ -1288,62 +1262,41 @@ private:
       // Here we check the condition, and new config values are set and
       // re-committed if needed.
       if (is_this_compute_inplace != _is_inplace) {
-        if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
-          _is_inplace = is_this_compute_inplace;
-          if (_is_inplace) {
+        _is_inplace = is_this_compute_inplace;
+        if (_is_inplace) {
 #ifdef __INTEL_MKL__
-            _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                DFTI_CONFIG_VALUE::DFTI_INPLACE);
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          DFTI_CONFIG_VALUE::DFTI_INPLACE);
 #else
-            _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                oneapi::mkl::dft::config_value::INPLACE);
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          oneapi::mkl::dft::config_value::INPLACE);
 #endif
-            if (_is_basic)
-              set_stride_and_distance_basic<true>(_desc_sr);
-          } else {
-#ifdef __INTEL_MKL__
-            _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-#else
-            _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                oneapi::mkl::dft::config_value::NOT_INPLACE);
-#endif
-            if (_is_basic)
-              set_stride_and_distance_basic<false>(_desc_sr);
-          }
-          _desc_sr->commit(*_q);
+          if (_is_basic)
+            set_stride_and_distance_basic<true>(desc);
         } else {
-          _is_inplace = is_this_compute_inplace;
-          if (_is_inplace) {
 #ifdef __INTEL_MKL__
-            _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                DFTI_CONFIG_VALUE::DFTI_INPLACE);
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
 #else
-            _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                oneapi::mkl::dft::config_value::INPLACE);
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          oneapi::mkl::dft::config_value::NOT_INPLACE);
 #endif
-            if (_is_basic)
-              set_stride_and_distance_basic<true>(_desc_dr);
-          } else {
-#ifdef __INTEL_MKL__
-            _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-#else
-            _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                                oneapi::mkl::dft::config_value::NOT_INPLACE);
-#endif
-            if (_is_basic)
-              set_stride_and_distance_basic<false>(_desc_dr);
-          }
-          _desc_dr->commit(*_q);
+          if (_is_basic)
+            set_stride_and_distance_basic<false>(desc);
         }
+        desc->commit(*_q);
       }
     }
 
+    COMPUTE(desc);
+  }
+
+  template <class T, oneapi::mkl::dft::precision Precision>
+  void compute_real(T *input, T *output) {
     if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
-      COMPUTE(_desc_sr);
+      compute_real_impl(_desc_sr, input, output);
     } else {
-      COMPUTE(_desc_dr);
+      compute_real_impl(_desc_dr, input, output);
     }
   }
 #undef COMPUTE
