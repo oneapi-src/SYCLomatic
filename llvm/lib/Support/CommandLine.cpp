@@ -2485,14 +2485,14 @@ public:
     printOptions(Opts, MaxArgLen);
 
 #ifdef SYCLomatic_CUSTOMIZATION
-    const char *const CtHelpTrailMsg = 
-    "\n"
-    "<source0> ... Paths of input source files. These paths are looked up in "
-    "the compilation database.\n\n";
+    const char *const CtHelpTrailMsg = "\n"
+                                       "<source0> ... Paths of input source "
+                                       "files. These paths are looked up in "
+                                       "the compilation database.\n\n";
 
     outs() << CtHelpTrailMsg;
 
-    if (helpCatEnum == HelpCategory::HC_All) {  
+    if (helpCatEnum == HelpCategory::HC_All) {
       outs() << DPCTExamplesMsg;
     }
 #endif // SYCLomatic_CUSTOMIZATION
