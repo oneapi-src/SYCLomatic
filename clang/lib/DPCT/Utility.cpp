@@ -4974,15 +4974,13 @@ const DeclRefExpr *getAddressedRef(const Expr *E) {
   return nullptr;
 }
 
-void checkTrivallyCopyable(
-    QualType QT, std::map<SourceLocation, std::string> &ReportLocations) {
+void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
   const auto &Ctx = DpctGlobalInfo::getContext();
   if (QT.isTriviallyCopyableType(Ctx))
     return;
   QualType CanonicalType = QT.getCanonicalType();
   if (CanonicalType->isArrayType()) {
-    return checkTrivallyCopyable(Ctx.getBaseElementType(CanonicalType),
-                                 ReportLocations);
+    return checkTrivallyCopyable(Ctx.getBaseElementType(CanonicalType), Rule);
   }
   if (const auto *RT = CanonicalType->getAs<RecordType>()) {
     if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
@@ -5006,14 +5004,12 @@ void checkTrivallyCopyable(
             Messages.push_back("move assignment");
           }
         }
-      }
-      if (!ClassDecl->hasSimpleDestructor()) {
-        Messages.push_back("destructor");
-      }
-      for (const auto &M : ClassDecl->methods()) {
         if (M->isVirtual()) {
           Messages.push_back("virtual method \"" + M->getNameAsString() + "\"");
         }
+      }
+      if (!ClassDecl->hasSimpleDestructor()) {
+        Messages.push_back("destructor");
       }
       for (const auto &B : ClassDecl->bases()) {
         if (B.isVirtual()) {
@@ -5025,14 +5021,14 @@ void checkTrivallyCopyable(
           Messages.push_back("non trivially copyable base class \"" +
                              DpctGlobalInfo::getOriginalTypeName(B.getType()) +
                              "\"");
-          checkTrivallyCopyable(B.getType(), ReportLocations);
+          checkTrivallyCopyable(B.getType(), Rule);
         }
       }
       // Check each field
       for (const auto *F : ClassDecl->fields()) {
         QualType FQT = F->getType();
         if (!FQT.isTriviallyCopyableType(Ctx)) {
-          checkTrivallyCopyable(FQT, ReportLocations);
+          checkTrivallyCopyable(FQT, Rule);
           Messages.push_back("non trivially copyable field \"" +
                              F->getNameAsString() + "\"");
         }
@@ -5045,13 +5041,22 @@ void checkTrivallyCopyable(
       } else if (Messages.size() == 2) {
         MsgStr = Messages[0] + " and " + Messages[1];
       } else {
-        for (size_t i = 0; i < Messages.size() - 2; i++) {
-          MsgStr += (Messages[i] + ", ");
+        for (auto I = Messages.begin(); I < Messages.end() - 2; I++) {
+          MsgStr += (*I + ", ");
         }
         MsgStr += (Messages[Messages.size() - 2] + " and " +
                    Messages[Messages.size() - 1]);
       }
-      ReportLocations.insert(std::make_pair(ClassDecl->getBeginLoc(), MsgStr));
+
+      if (Rule) {
+        Rule->report(ClassDecl->getBeginLoc(), Diagnostics::NOT_DEVICE_COPYABLE,
+                     true, MsgStr);
+      } else {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(ClassDecl->getBeginLoc());
+        DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                                 Diagnostics::NOT_DEVICE_COPYABLE, true, true,
+                                 MsgStr);
+      }
     }
   }
 }
@@ -5061,8 +5066,7 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
                                           const Decl *D) {
   const auto &Ctx = DpctGlobalInfo::getContext();
   const auto &SM = DpctGlobalInfo::getSourceManager();
-  std::map<SourceLocation, std::string> ReportLocations;
-  checkTrivallyCopyable(Type, ReportLocations);
+  checkTrivallyCopyable(Type, Rule);
 
   // Find insert location
   auto getInsertLocation = [&Ctx, &SM](SourceLocation InsertLoc,
@@ -5088,32 +5092,28 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
 
   std::string NamespaceStr;
   SourceLocation InsertLoc;
-  if (D->getDeclContext()->getDeclKind() == Decl::Kind::TranslationUnit) {
-    if (D->getEndLoc().isMacroID())
-      return;
-    InsertLoc = getInsertLocation(D->getEndLoc(), tok::TokenKind::semi);
-  } else {
-    const DeclContext *DC = D->getDeclContext();
-    const NamespaceDecl *NS = nullptr;
-    while (DC) {
-      if (const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(DC)) {
-        NamespaceStr = ND->getNameAsString() + "::" + NamespaceStr;
-        NS = ND;
-        DC = ND->getDeclContext();
-      } else if (isa<TranslationUnitDecl>(DC)) {
-        break;
-      } else {
-        NS = nullptr;
-        break;
-      }
-    }
-    if (NS) {
-      if (NS->getEndLoc().isMacroID())
-        return;
-      InsertLoc = getInsertLocation(NS->getEndLoc(), tok::TokenKind::r_brace);
+
+  const DeclContext *DC = D->getDeclContext();
+  const NamespaceDecl *NS = nullptr;
+  while (DC) {
+    if (const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(DC)) {
+      NamespaceStr = ND->getNameAsString() + "::" + NamespaceStr;
+      NS = ND;
+      DC = ND->getDeclContext();
+    } else if (isa<TranslationUnitDecl>(DC)) {
+      break;
     } else {
       return;
     }
+  }
+  if (NS) {
+    if (NS->getEndLoc().isMacroID())
+      return;
+    InsertLoc = getInsertLocation(NS->getEndLoc(), tok::TokenKind::r_brace);
+  } else {
+    if (D->getEndLoc().isMacroID())
+      return;
+    InsertLoc = getInsertLocation(D->getEndLoc(), tok::TokenKind::semi);
   }
 
   // Prepare replacemet
@@ -5147,49 +5147,42 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
 
   if (Rule) {
     Rule->emplaceTransformation(new ReplaceText(InsertLoc, 0, std::move(Repl)));
-    for (const auto &P : ReportLocations) {
-      Rule->report(P.first, Diagnostics::NOT_DEVICE_COPYABLE, true, P.second);
-    }
   } else {
     auto FileNameAndOffset = DpctGlobalInfo::getLocInfo(InsertLoc);
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FileNameAndOffset.first,
                                          FileNameAndOffset.second, 0, Repl,
                                          nullptr));
-    for (const auto &P : ReportLocations) {
-      auto LocInfo = DpctGlobalInfo::getLocInfo(P.first);
-      DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                               Diagnostics::NOT_DEVICE_COPYABLE, true, true,
-                               P.second);
-    }
   }
 }
 
 bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule) {
-  std::function<const Decl *(QualType)> getTypeDecl;
-  getTypeDecl = [&getTypeDecl](QualType QT) -> const Decl * {
-    switch (QT->getTypeClass()) {
-    case Type::TypeClass::Elaborated:
-      return getTypeDecl(QT.getTypePtr()->castAs<ElaboratedType>()->desugar());
-    case Type::TypeClass::TemplateSpecialization:
-      return QT.getTypePtr()
-          ->getAs<TemplateSpecializationType>()
-          ->getTemplateName()
-          .getAsTemplateDecl();
-    case Type::TypeClass::Record:
-      return QT.getTypePtr()->getAs<RecordType>()->getDecl();
-    case Type::TypeClass::SubstTemplateTypeParm:
-      return getTypeDecl(QT.getTypePtr()
-                             ->castAs<SubstTemplateTypeParmType>()
-                             ->getReplacementType());
-    default:
-      return nullptr;
-    }
-  };
-
   if (Type->isPointerType())
     return true;
-  const Decl *D = getTypeDecl(Type);
+  const Decl *D = nullptr;
+  QualType QT = Type;
+  while (true) {
+    auto Class = QT->getTypeClass();
+    if (Class == Type::TypeClass::Elaborated) {
+      QT = QT.getTypePtr()->castAs<ElaboratedType>()->desugar();
+    } else if (Class == Type::TypeClass::TemplateSpecialization) {
+      D = QT.getTypePtr()
+              ->getAs<TemplateSpecializationType>()
+              ->getTemplateName()
+              .getAsTemplateDecl();
+      break;
+    } else if (Class == Type::TypeClass::Record) {
+      D = QT.getTypePtr()->getAs<RecordType>()->getDecl();
+      break;
+    } else if (Class == Type::TypeClass::SubstTemplateTypeParm) {
+      QT = QT.getTypePtr()
+               ->castAs<SubstTemplateTypeParmType>()
+               ->getReplacementType();
+    } else {
+      return true;
+    }
+  }
+
   if (!D)
     return true;
   if (!isUserDefinedDecl(D))

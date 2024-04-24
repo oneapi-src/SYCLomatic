@@ -117,6 +117,7 @@ class MigrationRule : public ASTTraversal {
   friend void insertIsDeviceCopyableSpecialization(QualType Type,
                                                    MigrationRule *Rule,
                                                    const Decl *D);
+  friend void checkTrivallyCopyable(QualType QT, MigrationRule *Rule);
 
 protected:
   TransformSetTy *TransformSet = nullptr;
