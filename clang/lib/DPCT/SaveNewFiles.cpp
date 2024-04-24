@@ -562,9 +562,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       MainSrcFileMap;
 
   std::string SrcFile = "MainSrcFiles_placehold";
-  std::string CodePinCUDAFolder =
-      OutRoot.getCanonicalPath().str() + "_codepin_cuda";
   std::string OutRootStr = OutRoot.getCanonicalPath().str();
+  std::string CodePinCUDAFolder = OutRootStr + "_codepin_cuda";
   if (DpctGlobalInfo::isCodePinEnabled()) {
     OutRootStr = OutRootStr + "_codepin_sycl";
   }
