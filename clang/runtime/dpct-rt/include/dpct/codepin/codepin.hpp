@@ -33,7 +33,7 @@ public:
     std::time_t now_time = std::chrono::system_clock::to_time_t(now);
     std::tm *now_tm = std::localtime(&now_time);
     std::stringstream strs;
-    strs << std::put_time(now_tm, "%Y-%m-%d_%H:%M:%S");
+    strs << std::put_time(now_tm, "%Y-%m-%d_%H-%M-%S");
     opf.open(dump_file_prefix + strs.str() + ".json");
     ss.print_left_bracket();
   }
