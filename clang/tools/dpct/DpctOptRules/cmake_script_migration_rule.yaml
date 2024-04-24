@@ -2241,3 +2241,10 @@
       Out: ONEAPI_LIB_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
+
+- Rule: rule_set_source_files_properties
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_source_files_properties_lang
+  In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
+  Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
