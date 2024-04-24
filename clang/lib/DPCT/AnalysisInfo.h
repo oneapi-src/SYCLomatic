@@ -2522,17 +2522,9 @@ public:
     // Update ParentDFIs
     // Currently, only support CallExpr & FunctionDecl only
     if constexpr (std::is_same<CallT, CallExpr>::value) {
-      if (C->getDirectCallee()) {
-        if (C->getDirectCallee()->getNameAsString() == "__syncthreads") {
-          if (IAR.isDefault()) {
-            IntraproceduralAnalyzer IA;
-            IAR = IA.analyze(C);
-          }
-        }
-        if (auto ChildDFI =
-                DeviceFunctionDecl::LinkRedecls(C->getDirectCallee())) {
-          ChildDFI->getParentDFIs().insert(weak_from_this());
-        }
+      if (auto ChildDFI =
+              DeviceFunctionDecl::LinkRedecls(C->getDirectCallee())) {
+        ChildDFI->getParentDFIs().insert(weak_from_this());
       }
     }
     return Call;

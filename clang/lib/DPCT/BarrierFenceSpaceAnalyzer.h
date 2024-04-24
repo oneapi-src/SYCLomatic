@@ -27,18 +27,18 @@ template <> struct std::hash<clang::SourceRange> {
 
 namespace clang {
 namespace dpct {
+enum AccessMode : std::uint32_t {
+  Read = 1 << 0,
+  Write = 1 << 1,
+  ReadWrite = 1 << 2,
+};
 
-struct AffectedResult {
-  AffectedResult(bool NotAffected, bool NotAffectedIf1D,
-                 bool NotAffectedIf1DWithConditons,
-                 std::string StepOfCondition)
-      : NotAffected(NotAffected), NotAffectedIf1D(NotAffectedIf1D),
-        NotAffectedIf1DWithConditons(NotAffectedIf1DWithConditons),
-        StepOfCondition(StepOfCondition) {}
-  bool NotAffected = false;
-  bool NotAffectedIf1D = false;
-  bool NotAffectedIf1DWithConditons = false;
-  std::string StepOfCondition;
+struct AffectedInfo {
+  AffectedInfo(bool UsedBefore, bool UsedAfter, AccessMode AM)
+      : UsedBefore(UsedBefore), UsedAfter(UsedAfter), AM(AM) {}
+  bool UsedBefore = false;
+  bool UsedAfter = false;
+  AccessMode AM = Read;
 };
 
 struct IntraproceduralAnalyzerResult {
@@ -48,40 +48,22 @@ struct IntraproceduralAnalyzerResult {
   IntraproceduralAnalyzerResult(
       std::unordered_map<
           std::string /*call's combined loc string*/,
-          std::tuple<tooling::UnifiedPath, unsigned int,
-                     std::unordered_map<unsigned int /*parameter idx*/,
-                                        AffectedResult>>>
+          std::tuple<
+              tooling::UnifiedPath, unsigned int,
+              std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
           Map)
-      : UnsupportedCase(false), Map(Map) {}
+      : Map(Map), UnsupportedCase(false) {}
   bool isDefault() const noexcept { return IsDefault; }
   std::unordered_map<
       std::string /*call's combined loc string*/,
       std::tuple<
           tooling::UnifiedPath, unsigned int,
-          std::unordered_map<unsigned int /*parameter idx*/, AffectedResult>>>
+          std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
       Map;
 
 private:
   bool IsDefault = false;
   bool UnsupportedCase = true;
-};
-
-struct InterproceduralAnalyzerResult {
-  InterproceduralAnalyzerResult() {}
-  InterproceduralAnalyzerResult(bool CanUseLocalBarrier,
-                                bool CanUseLocalBarrierWithCondition,
-                                bool MayDependOn1DKernel,
-                                std::string GlobalFunctionName,
-                                std::string Condition = "")
-      : CanUseLocalBarrier(CanUseLocalBarrier),
-        CanUseLocalBarrierWithCondition(CanUseLocalBarrierWithCondition),
-        MayDependOn1DKernel(MayDependOn1DKernel),
-        GlobalFunctionName(GlobalFunctionName), Condition(Condition) {}
-  bool CanUseLocalBarrier = false;
-  bool CanUseLocalBarrierWithCondition = false;
-  bool MayDependOn1DKernel = false;
-  std::string GlobalFunctionName;
-  std::string Condition;
 };
 
 using Ranges = std::unordered_set<SourceRange>;
@@ -93,108 +75,100 @@ struct SyncCallInfo {
   Ranges Successors;
 };
 
+struct DREInfo {
+  DREInfo(const DeclRefExpr *DRE, SourceLocation SL, AccessMode AM)
+      : DRE(DRE), SL(SL), AM(AM) {}
+  const DeclRefExpr *DRE;
+  SourceLocation SL;
+  AccessMode AM;
+  bool operator<(const DREInfo &Other) const { return DRE < Other.DRE; }
+};
+
+bool isInRanges(SourceLocation SL, Ranges Ranges);
+
+class TypeAnalyzer {
+public:
+  enum class ParamterTypeKind : int {
+    NeedAnalysis = 0,
+    CanSkipAnalysis,
+    Unsupported
+  };
+  ParamterTypeKind getInputParamterTypeKind(clang::QualType QT) {
+    bool Res = canBeAnalyzed(QT.getTypePtr());
+    if (!Res)
+      return ParamterTypeKind::Unsupported;
+    if (PointerLevel) {
+      if (IsConstPtr)
+        return ParamterTypeKind::CanSkipAnalysis;
+      return ParamterTypeKind::NeedAnalysis;
+    }
+    return ParamterTypeKind::CanSkipAnalysis;
+  }
+
+private:
+  int PointerLevel = 0;
+  bool IsConstPtr = false;
+  bool IsClass = false;
+  bool canBeAnalyzed(const clang::Type *TypePtr) {
+    switch (TypePtr->getTypeClass()) {
+    case clang::Type::TypeClass::ConstantArray:
+      return canBeAnalyzed(dyn_cast<clang::ConstantArrayType>(TypePtr)
+                               ->getElementType()
+                               .getTypePtr());
+    case clang::Type::TypeClass::Pointer:
+      PointerLevel++;
+      if (PointerLevel >= 2 || IsClass)
+        return false;
+      IsConstPtr = TypePtr->getPointeeType().isConstQualified();
+      return canBeAnalyzed(TypePtr->getPointeeType().getTypePtr());
+    case clang::Type::TypeClass::Elaborated:
+      return canBeAnalyzed(
+          dyn_cast<clang::ElaboratedType>(TypePtr)->desugar().getTypePtr());
+    case clang::Type::TypeClass::Typedef:
+      return canBeAnalyzed(dyn_cast<clang::TypedefType>(TypePtr)
+                               ->getDecl()
+                               ->getUnderlyingType()
+                               .getTypePtr());
+    case clang::Type::TypeClass::Record:
+      IsClass = true;
+      if (PointerLevel &&
+          isUserDefinedDecl(dyn_cast<clang::RecordType>(TypePtr)->getDecl()))
+        return false;
+      for (const auto &Field :
+           dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
+        if (!canBeAnalyzed(Field->getType().getTypePtr())) {
+          return false;
+        }
+      }
+      return true;
+    case clang::Type::TypeClass::SubstTemplateTypeParm:
+      return canBeAnalyzed(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
+                               ->getReplacementType()
+                               .getTypePtr());
+    default:
+      if (TypePtr->isFundamentalType())
+        return true;
+      else
+        return false;
+    }
+  }
+};
+
 #define VISIT_NODE(CLASS)                                                      \
   bool Visit(const CLASS *Node);                                               \
   void PostVisit(const CLASS *FS);                                             \
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!RecursiveASTVisitor<BarrierFenceSpaceAnalyzer>::Traverse##CLASS(      \
+    if (!RecursiveASTVisitor<IntraproceduralAnalyzer>::Traverse##CLASS(        \
             Node))                                                             \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
   }
 
-class BarrierFenceSpaceAnalyzer
-    : public RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
-protected:
-  enum AccessMode : std::uint32_t {
-    Read = 1 << 0,
-    Write = 1 << 1,
-    ReadWrite = 1 << 2,
-  };
-  struct DREInfo {
-    DREInfo(const DeclRefExpr *DRE, SourceLocation SL, AccessMode AM)
-        : DRE(DRE), SL(SL), AM(AM) {}
-    const DeclRefExpr *DRE;
-    SourceLocation SL;
-    AccessMode AM;
-    bool operator<(const DREInfo &Other) const { return DRE < Other.DRE; }
-  };
-
-  bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
-  bool isInRanges(SourceLocation SL, Ranges Ranges);
-  class TypeAnalyzer {
-  public:
-    enum class ParamterTypeKind : int {
-      NeedAnalysis = 0,
-      CanSkipAnalysis,
-      Unsupported
-    };
-    ParamterTypeKind getInputParamterTypeKind(clang::QualType QT) {
-      bool Res = canBeAnalyzed(QT.getTypePtr());
-      if (!Res)
-        return ParamterTypeKind::Unsupported;
-      if (PointerLevel) {
-        if (IsConstPtr)
-          return ParamterTypeKind::CanSkipAnalysis;
-        return ParamterTypeKind::NeedAnalysis;
-      }
-      return ParamterTypeKind::CanSkipAnalysis;
-    }
-
-  private:
-    int PointerLevel = 0;
-    bool IsConstPtr = false;
-    bool IsClass = false;
-    bool canBeAnalyzed(const clang::Type *TypePtr) {
-      switch (TypePtr->getTypeClass()) {
-      case clang::Type::TypeClass::ConstantArray:
-        return canBeAnalyzed(dyn_cast<clang::ConstantArrayType>(TypePtr)
-                                 ->getElementType()
-                                 .getTypePtr());
-      case clang::Type::TypeClass::Pointer:
-        PointerLevel++;
-        if (PointerLevel >= 2 || IsClass)
-          return false;
-        IsConstPtr = TypePtr->getPointeeType().isConstQualified();
-        return canBeAnalyzed(TypePtr->getPointeeType().getTypePtr());
-      case clang::Type::TypeClass::Elaborated:
-        return canBeAnalyzed(
-            dyn_cast<clang::ElaboratedType>(TypePtr)->desugar().getTypePtr());
-      case clang::Type::TypeClass::Typedef:
-        return canBeAnalyzed(dyn_cast<clang::TypedefType>(TypePtr)
-                                 ->getDecl()
-                                 ->getUnderlyingType()
-                                 .getTypePtr());
-      case clang::Type::TypeClass::Record:
-        IsClass = true;
-        if (PointerLevel &&
-            isUserDefinedDecl(dyn_cast<clang::RecordType>(TypePtr)->getDecl()))
-          return false;
-        for (const auto &Field :
-             dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
-          if (!canBeAnalyzed(Field->getType().getTypePtr())) {
-            return false;
-          }
-        }
-        return true;
-      case clang::Type::TypeClass::SubstTemplateTypeParm:
-        return canBeAnalyzed(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
-                                 ->getReplacementType()
-                                 .getTypePtr());
-      default:
-        if (TypePtr->isFundamentalType())
-          return true;
-        else
-          return false;
-      }
-    }
-  };
-};
-
-class IntraproceduralAnalyzer : public BarrierFenceSpaceAnalyzer {
+class IntraproceduralAnalyzer
+    : public RecursiveASTVisitor<IntraproceduralAnalyzer> {
 public:
   bool shouldVisitImplicitCode() const { return true; }
   bool shouldTraversePostOrder() const { return false; }
@@ -210,13 +184,12 @@ public:
   VISIT_NODE(DeclRefExpr)
   VISIT_NODE(CXXConstructExpr)
 
-  IntraproceduralAnalyzerResult analyze(const CallExpr *CE);
+  IntraproceduralAnalyzerResult analyze(const FunctionDecl *FD);
 private:
   void constructDefUseMap();
   void simplifyMap(
       std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
-  bool hasOverlappingAccessAmongWorkItems(const DeclRefExpr *DRE);
-  std::unordered_map<unsigned int /*parameter idx*/, AffectedResult>
+  std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
   affectedByWhichParameters(
       const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
       const SyncCallInfo &SCI);
@@ -244,11 +217,10 @@ private:
   std::set<const Expr *> DeviceFunctionCallArgs;
 };
 
-class InterproceduralAnalyzer : public BarrierFenceSpaceAnalyzer {
+class InterproceduralAnalyzer {
 public:
-  InterproceduralAnalyzerResult
-  analyze(const std::shared_ptr<DeviceFunctionInfo> DFI,
-          std::string SyncCallCombinedLoc);
+  bool analyze(const std::shared_ptr<DeviceFunctionInfo> DFI,
+               std::string SyncCallCombinedLoc);
 
 private:
   std::tuple<bool /*CanUseLocalBarrier*/,

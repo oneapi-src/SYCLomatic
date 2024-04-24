@@ -229,7 +229,7 @@ clang::dpct::IntraproceduralAnalyzer::isAssignedToAnotherDREOrVD(
   return std::make_pair(ResultDRESet, ResultVDSet);
 }
 
-clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode
+clang::dpct::AccessMode
 clang::dpct::IntraproceduralAnalyzer::getAccessKindReadWrite(
     const DeclRefExpr *CurrentDRE) {
   bool FoundDeref = false;
@@ -456,26 +456,7 @@ getIdxExprOfASE(const ArraySubscriptExpr *ASE) {
   return {IdxVD->getInit()->IgnoreImpCasts(), IsIdxInc, IncStr};
 }
 
-bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
-#endif
-  if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F: CE->getBeginLoc().isMacroID() || "
-                 "CE->getEndLoc().isMacroID()"
-              << std::endl;
-#endif
-    return false;
-  }
-  FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
-  if (!FD) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case G: !FD" << std::endl;
-#endif
-    return false;
-  }
-  std::unordered_set<const DeviceFunctionInfo *> Visited{};
+bool isMeetAnalyisPrerequirements(const FunctionDecl *FD) {
   auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
   if (!DFI) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
@@ -606,21 +587,20 @@ void clang::dpct::IntraproceduralAnalyzer::simplifyMap(
 #endif
 }
 
-clang::dpct::InterproceduralAnalyzerResult
-clang::dpct::InterproceduralAnalyzer::analyze(
+bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> DFI,
     std::string SyncCallCombinedLoc) {
-  // TODO: Need do analysis for all syncthreads call in this DFI's ancestors and this DFI's decendents.
-  //       The results need be cached and reuse at the next time.
+  // TODO: Need do analysis for all syncthreads call in this DFI's ancestors and
+  // this DFI's decendents.
+  // The results need be cached and reuse at the next time.
 
-  return InterproceduralAnalyzerResult(false, false, false, GlobalFunctionName);
+  return false;
 }
 
 clang::dpct::IntraproceduralAnalyzerResult
-clang::dpct::IntraproceduralAnalyzer::analyze(const CallExpr *CE) {
+clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD) {
   // Check prerequirements
-  const FunctionDecl *FD = nullptr;
-  if (!isMeetAnalyisPrerequirements(CE, FD))
+  if (!isMeetAnalyisPrerequirements(FD))
     return IntraproceduralAnalyzerResult(true);
 
   // Init values
@@ -664,7 +644,7 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const CallExpr *CE) {
       std::string /*call's combined loc string*/,
       std::tuple<
           tooling::UnifiedPath, unsigned int,
-          std::unordered_map<unsigned int /*parameter idx*/, AffectedResult>>>
+          std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
       Map;
   for (auto &SyncCall : SyncCallsVec) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(SyncCall.first->getBeginLoc());
@@ -675,41 +655,6 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const CallExpr *CE) {
                                            DefLocInfoMap, SyncCall.second))));
   }
   return IntraproceduralAnalyzerResult(Map);
-}
-
-bool clang::dpct::IntraproceduralAnalyzer::hasOverlappingAccessAmongWorkItems(
-    const DeclRefExpr *DRE) {
-  using namespace ast_matchers;
-  const ArraySubscriptExpr *ASE = getArraySubscriptExpr(DRE);
-  if (!ASE)
-    return true;
-  auto Res = getIdxExprOfASE(ASE);
-  if (!std::get<0>(Res))
-    return true;
-
-  IndexAnalysis IA(std::get<0>(Res));
-  if (IA.isDifferenceBetweenThreadIdxXAndIndexConstant()) {
-    DREIncStepMap.insert({DRE, std::get<2>(Res)});
-  }
-  // Check if Index variable has 1:1 mapping to threadIdx.x in a block
-  return std::get<1>(Res) || !IA.isStrictlyMonotonic();
-}
-
-bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
-    const SourceLocation &SL, const SyncCallInfo &SCI) {
-  if (SL.isMacroID())
-    return true;
-  for (auto &Range : SCI.Predecessors) {
-    if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
-      return true;
-    }
-  }
-  for (auto &Range : SCI.Successors) {
-    if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
-      return true;
-    }
-  }
-  return false;
 }
 
 bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(
@@ -734,8 +679,7 @@ bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(SourceLocation SL,
-                                                        Ranges Ranges) {
+bool clang::dpct::isInRanges(SourceLocation SL, Ranges Ranges) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto &Range : Ranges) {
     if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&
@@ -754,7 +698,7 @@ clang::dpct::InterproceduralAnalyzer::isSafeToUseLocalBarrier(
   return {true, false, ""};
 }
 
-std::unordered_map<unsigned int /*parameter idx*/, AffectedResult>
+std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
 IntraproceduralAnalyzer::affectedByWhichParameters(
     const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
     const SyncCallInfo &SCI) {
@@ -768,30 +712,31 @@ IntraproceduralAnalyzer::affectedByWhichParameters(
     assert(0 && "PVD is not in the FD.");
   };
 
-  std::unordered_map<unsigned int /*parameter idx*/, AffectedResult>
+  std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
       AffectingParameters;
   for (auto &DefDREInfo : DefDREInfoMap) {
-    bool FoundRead = false;
-    bool FoundWrite = false;
-    std::set<const DeclRefExpr *> WriteAfterWriteDRE;
+    bool UsedBefore = false;
+    bool UsedAfter = false;
+    AccessMode AM = Read;
     for (auto &DREInfo : DefDREInfo.second) {
-      if (DREInfo.SL.isMacroID() || (DREInfo.AM == AccessMode::ReadWrite)) {
-        AffectingParameters.insert(
-            std::make_pair(convertPVD2Idx(FD, DefDREInfo.first),
-                           AffectedResult{false, false, false, ""}));
+      if (DREInfo.SL.isMacroID()) {
+        UsedBefore = true;
+        UsedAfter = true;
+        AM = ReadWrite;
         break;
       }
-      if (DREInfo.AM & AccessMode::Read) {
-        FoundRead = true;
-      } else if (DREInfo.AM & AccessMode::Write) {
-        FoundWrite = true;
+      AM = AccessMode(AM | DREInfo.AM);
+      if (isInRanges(DREInfo.SL, SCI.Predecessors)) {
+        UsedBefore = true;
+      }
+      if (isInRanges(DREInfo.SL, SCI.Successors)) {
+        UsedAfter = true;
       }
     }
-    if (FoundRead && FoundWrite) {
+    if (AM != Read)
       AffectingParameters.insert(
           std::make_pair(convertPVD2Idx(FD, DefDREInfo.first),
-                         AffectedResult{false, false, false, ""}));
-    }
+                         AffectedInfo{UsedBefore, UsedAfter, AM}));
   }
   return AffectingParameters;
 }

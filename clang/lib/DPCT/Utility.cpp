@@ -4355,6 +4355,8 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
 }
 
 bool isUserDefinedDecl(const clang::Decl *D) {
+  if (D->isImplicit())
+    return false;
   clang::tooling::UnifiedPath InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());

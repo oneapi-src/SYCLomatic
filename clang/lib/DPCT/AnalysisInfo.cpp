@@ -4891,7 +4891,15 @@ DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum,
       TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
       FunctionName(FunctionName), IsLambda(false) {
   ParametersProps.resize(ParamsNum);
-  // TODO: collect BarrierFenceSpaceAnalysisInfo from FD
+  // collect IntraproceduralAnalyzerResult from FD
+  static std::unordered_set<const FunctionDecl*> Visited;
+  if (!Visited.count(FD)) {
+    Visited.insert(FD);
+    if (isUserDefinedDecl(FD)) {
+      IntraproceduralAnalyzer IA;
+      IAR = IA.analyze(FD);
+    }
+  }
 }
 std::shared_ptr<CallFunctionExpr>
 DeviceFunctionInfo::findCallee(const CallExpr *C) {
@@ -4919,10 +4927,9 @@ void DeviceFunctionInfo::buildInfo() {
   //       emplace replacements for __syncthreads in this DFI
   for (const auto &SyncCall : IAR.Map) {
     InterproceduralAnalyzer IA;
-    InterproceduralAnalyzerResult Res =
-        IA.analyze(shared_from_this(), SyncCall.first);
+    bool Res = IA.analyze(shared_from_this(), SyncCall.first);
     std::string Replacement;
-    if (Res.CanUseLocalBarrier) {
+    if (Res) {
       Replacement = getItemName() + ".barrier(" + MapNames::getClNamespace() +
                     "access::fence_space::local_space)";
     } else {
@@ -4934,7 +4941,7 @@ void DeviceFunctionInfo::buildInfo() {
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             std::get<0>(SyncCall.second), std::get<1>(SyncCall.second),
-            std::get<2>(SyncCall.second), Replacement, nullptr));
+            std::strlen("__syncthreads"), Replacement, nullptr));
   }
 }
 std::string
