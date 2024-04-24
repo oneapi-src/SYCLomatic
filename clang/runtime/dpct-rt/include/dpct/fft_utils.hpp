@@ -1298,10 +1298,8 @@ private:
   std::shared_ptr<oneapi::mkl::dft::descriptor<
       oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>
       _desc_dc;
-#ifdef __INTEL_MKL__
   std::array<std::int64_t, 4> _fwd_strides = {0, 0, 0, 0};
   std::array<std::int64_t, 4> _bwd_strides = {0, 0, 0, 0};
-#endif
 };
 
 using fft_engine_ptr = fft_engine *;
