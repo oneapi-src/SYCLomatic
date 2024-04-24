@@ -644,11 +644,11 @@ public:
   }
   ReplaceText(const SourceLocation &Begin, const SourceLocation &End,
               std::string &&S,
-              ReplacementType IsForCUDADebug = RT_ForSYCLMigration)
+              ReplacementType IsForCodePin = RT_ForSYCLMigration)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin),
         Len(End.getRawEncoding() - Begin.getRawEncoding()), T(std::move(S)) {
     this->NotFormatFlag = false;
-    this->IsForCUDADebug = IsForCUDADebug;
+    this->IsForCodePin = IsForCodePin;
   }
 
   std::shared_ptr<ExtReplacement>
