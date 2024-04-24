@@ -103,14 +103,7 @@ void initWarningIDs();
 } // namespace clang
 
 // clang-format off
-#include "llvm/migration_cmd_examples.inc"
-const char *const CtHelpTrailMsg = 
-    "\n"
-    "<source0> ... Paths of input source files. These paths are looked up in "
-    "the compilation database.\n\n";
-
-std::string CtHelpMessageStr = std::string(CtHelpTrailMsg) + DPCTExamplesMsg + DiagRef;
-const char *const CtHelpMessage = CtHelpMessageStr.c_str();
+const char *const CtHelpMessage = DiagRef;
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"

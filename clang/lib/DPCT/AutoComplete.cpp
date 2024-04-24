@@ -17,7 +17,9 @@ namespace dpct {
 
 static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
   // To avoid make llvm library depends on this file, hard code 2 options here.
-  {"help", {}},
+  {"help",
+     {"basic", "advanced", "code-gen", "report-gen", "build-script",
+      "query-api", "warnings", "help-info", "intercept-build", "examples"}},
   {"version", {}},
 #define DPCT_OPTIONS_IN_LLVM_SUPPORT
 #define DPCT_OPTIONS_IN_CLANG_TOOLING
