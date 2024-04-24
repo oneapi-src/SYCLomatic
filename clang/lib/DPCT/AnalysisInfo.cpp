@@ -3211,8 +3211,8 @@ std::string MemVarInfo::getMemoryType(const std::string &MemoryType,
     if (isConstant()) {
       Specifier = "const ";
     }
-    return buildString(MemoryType, "<", Specifier + VarType->getBaseName(),
-                       Dims, ">");
+    return buildString(MemoryType, "<", Specifier, VarType->getBaseName(), Dims,
+                       ">");
   } else {
     return buildString(MemoryType, VarType->getBaseNameWithoutQualifiers());
   }
