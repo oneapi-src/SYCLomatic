@@ -1227,20 +1227,20 @@ private:
     if (_is_inplace) {
       auto data_input = dpct::detail::get_memory<T>(input);
       if (_direction == fft_direction::forward) {
-        oneapi::mkl::dft::compute_forward<
-            std::remove_reference_t<decltype(*desc)>, T>(*desc, data_input);
+        oneapi::mkl::dft::compute_forward<typename Dest_t::element_type, T>(
+            *desc, data_input);
       } else {
-        oneapi::mkl::dft::compute_backward<
-            std::remove_reference_t<decltype(*desc)>, T>(*desc, data_input);
+        oneapi::mkl::dft::compute_backward<typename Dest_t::element_type, T>(
+            *desc, data_input);
       }
     } else {
       auto data_input = dpct::detail::get_memory<T>(input);
       auto data_output = dpct::detail::get_memory<T>(output);
       if (_direction == fft_direction::forward) {
-        oneapi::mkl::dft::compute_forward<Dest_t::element_type, T, T>(
+        oneapi::mkl::dft::compute_forward<typename Dest_t::element_type, T, T>(
             *desc, data_input, data_output);
       } else {
-        oneapi::mkl::dft::compute_backward<Dest_t::element_type, T, T>(
+        oneapi::mkl::dft::compute_backward<typename Dest_t::element_type, T, T>(
             *desc, data_input, data_output);
       }
     }
