@@ -15,6 +15,7 @@
 #include "DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
+#include "GenCodePinHeader.h"
 #include "GroupFunctionAnalyzer.h"
 #include "Homoglyph.h"
 #include "LIBCUAPIMigration.h"
@@ -14893,6 +14894,8 @@ REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 REGISTER_RULE(SpBLASTypeLocRule, PassKind::PK_Migration)
 
 REGISTER_RULE(DeviceConstantVarOptimizeAnalysisRule, PassKind::PK_Analysis)
+
+REGISTER_RULE(GenCodePinHeaderRule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

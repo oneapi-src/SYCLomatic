@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <queue>
 
 using namespace clang::dpct;
 using namespace llvm;
@@ -533,6 +534,244 @@ int writeReplacementsToFiles(
   return status;
 }
 
+std::vector<std::string> codePinTypeTopologicalSort(
+    std::vector<std::pair<std::string, std::vector<std::string>>> &Graph) {
+  std::map<std::string, int> indegree;
+  std::map<std::string, std::vector<std::string>> adj;
+  std::vector<std::string> result;
+
+  for (auto &node : Graph) {
+    std::string u = node.first;
+    std::vector<std::string> &edges = node.second;
+    if (indegree.find(u) == indegree.end()) {
+      indegree[u] = 0;
+    }
+    for (auto &v : edges) {
+      adj[u].push_back(v);
+      indegree[v]++;
+    }
+  }
+
+  std::queue<std::string> q;
+  for (auto &pair : indegree) {
+    if (pair.second == 0) {
+      q.push(pair.first);
+    }
+  }
+
+  while (!q.empty()) {
+    std::string u = q.front();
+    q.pop();
+    result.push_back(u);
+    for (auto &v : adj[u]) {
+      indegree[v]--;
+      if (indegree[v] == 0) {
+        q.push(v);
+      }
+    }
+  }
+  if (result.size() != indegree.size()) {
+    return {};
+  }
+  return result;
+}
+
+std::string getCodePinPostfixName(MemberOrBaseInfoForCodePin &Info,
+                                  bool IsForCUDADebug) {
+  std::string TypeName;
+  if (IsForCUDADebug) {
+    TypeName = Info.TypeNameInCuda;
+  } else {
+    TypeName = Info.TypeNameInSycl;
+  }
+  if (Info.UserDefinedTypeFlag) {
+    auto LPos = TypeName.find('<');
+    if (LPos != std::string::npos) {
+      TypeName.insert(LPos, "_codepin");
+    } else {
+      auto BPos = TypeName.find('[');
+      if (BPos != std::string::npos) {
+        TypeName.insert(BPos, "_codepin");
+      } else {
+        TypeName.append("_codepin");
+      }
+    }
+  }
+  for (int i = 0; i < Info.PointerDepth; i++) {
+    TypeName += "*";
+  }
+  return TypeName;
+}
+
+void genCodePinDecl(dpct::RawFDOStream &RS, std::vector<std::string> &SortedVec,
+                    bool IsForwardDecl, bool IsForCUDADebug) {
+  int SortedVecSize = SortedVec.size();
+  for (int j = SortedVecSize - 1; j >= 0; --j) {
+    VarInfoForCodePin Info;
+    bool IsTemplate = false;
+    auto &CodePinTypeVec = dpct::DpctGlobalInfo::getCodePinTypeInfoVec();
+    auto &CodePinTemplateTypeVec =
+        dpct::DpctGlobalInfo::getCodePinTemplateTypeInfoVec();
+    auto Iter = std::find_if(
+        CodePinTypeVec.begin(), CodePinTypeVec.end(),
+        [&](const auto &pair) { return pair.second.HashKey == SortedVec[j]; });
+    if (Iter != CodePinTypeVec.end()) {
+      if (Iter->second.TemplateFlag) {
+        Iter =
+            std::find_if(CodePinTemplateTypeVec.begin(),
+                         CodePinTemplateTypeVec.end(), [&](const auto &pair) {
+                           return pair.second.HashKey == SortedVec[j];
+                         });
+        if (Iter != CodePinTemplateTypeVec.end()) {
+          Info = Iter->second;
+          IsTemplate = true;
+        } else {
+          continue;
+        }
+      } else {
+        Info = Iter->second;
+      }
+    } else {
+      continue;
+    }
+    if (!Info.IsValid) {
+      continue;
+    }
+    int NamespaceSize = IsForwardDecl ? Info.Namespaces.size() : 0;
+    if (NamespaceSize) {
+      for (int i = 0; i < NamespaceSize; i++) {
+        RS << "namespace " << Info.Namespaces[i] << "{" << getNL();
+      }
+    }
+    if (IsTemplate) {
+      RS << "template<";
+      int TemplateArgsNum = Info.TemplateArgs.size();
+      for (int i = 0; i < TemplateArgsNum; i++) {
+        if (i != 0) {
+          RS << ", ";
+        }
+        RS << Info.TemplateArgs[i];
+      }
+      RS << ">" << getNL();
+    }
+    RS << Info.VarRecordType;
+    if (IsForwardDecl) {
+      RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << ";" << getNL();
+    } else {
+      RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << "_codepin";
+      if (!Info.Bases.empty()) {
+        RS << " : ";
+        int BaseSize = Info.Bases.size();
+        for (int i = 0; i < BaseSize; ++i) {
+          if (i != 0) {
+            RS << ", ";
+          }
+          RS << "public "
+             << getCodePinPostfixName(Info.Bases[i], IsForCUDADebug);
+        }
+      }
+      RS << " {" << getNL() << "public:" << getNL();
+      int MemberSize = Info.Members.size();
+      for (int i = 0; i < MemberSize; ++i) {
+        if (Info.Members[i].IsBaseMember) {
+          continue;
+        }
+        RS << "  " << getCodePinPostfixName(Info.Members[i], IsForCUDADebug)
+           << " " << Info.Members[i].MemberName;
+        for (auto &D : Info.Members[i].Dims) {
+          RS << "[" << std::to_string(D) << "]";
+        }
+        RS << ";" << getNL();
+      }
+      RS << "};" << getNL();
+    }
+    if (NamespaceSize) {
+      for (int i = 0; i < NamespaceSize; i++) {
+        RS << "}" << getNL();
+      }
+    }
+    RS << getNL();
+  }
+}
+
+void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
+  auto &Vec = dpct::DpctGlobalInfo::getCodePinTypeInfoVec();
+  std::vector<std::string> SortedVec =
+      codePinTypeTopologicalSort(DpctGlobalInfo::getCodePinDumpFuncDepsVec());
+  int SortedVecSize = SortedVec.size();
+  for (int j = SortedVecSize - 1; j >= 0; --j) {
+    auto Iter = std::find_if(Vec.begin(), Vec.end(), [&](const auto &pair) {
+      return pair.first == SortedVec[j];
+    });
+    if (Iter == Vec.end()) {
+      continue;
+    }
+    if (!Iter->second.IsValid) {
+      continue;
+    }
+    auto &Name = Iter->first;
+    auto &Info = Iter->second;
+    std::string CodepinTypeName = Info.VarNameWithoutScopeAndTemplateArgs +
+                                  "_codepin" + Info.TemplateInstArgs;
+    RS << "template <> class DataSer<" << CodepinTypeName << "> {" << getNL()
+       << "public:" << getNL()
+       << "  static void dump(dpct::experimental::detail::json_stringstream "
+          "&ss, "
+       << CodepinTypeName << " &value," << getNL()
+       << "                   dpct::experimental::StreamType stream) {"
+       << getNL();
+    RS << "    ss << \"{\\\"Type\\\":\\\"" << Name << "\\\",\\\"Data\\\":[\";"
+       << getNL();
+    if (int MemberNum = Info.Members.size()) {
+      for (int i = 0; i < MemberNum; i++) {
+        RS << "    ss << \"{\\\"" << Info.Members[i].MemberName << "\\\":\";"
+           << getNL() << "    dpct::experimental::detail::DataSer<"
+           << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
+        for (auto &D : Info.Members[i].Dims) {
+          RS << "[" << std::to_string(D) << "]";
+        }
+        RS << ">::dump(ss, "
+           << "value." << Info.Members[i].MemberName << ", stream);" << getNL();
+        if (i == (MemberNum - 1)) {
+          RS << "    ss << \"}\";" << getNL();
+        } else {
+          RS << "    ss << \"},\";" << getNL();
+        }
+      }
+    }
+    RS << "    ss << \"]}\";" << getNL() << "  }" << getNL() << "};" << getNL()
+       << getNL();
+    if (Info.TopTypeFlag) {
+      RS << "template <> class DataSer<" << Name << "> {" << getNL()
+         << "public:" << getNL()
+         << "  static void dump(dpct::experimental::detail::json_stringstream "
+            "&ss, "
+         << Name << " &value," << getNL()
+         << "                   dpct::experimental::StreamType stream) {"
+         << getNL();
+      RS << "    " + CodepinTypeName << "& temp = reinterpret_cast<"
+         << CodepinTypeName << "&>(value);" << getNL();
+      RS << "    dpct::experimental::detail::DataSer<" << CodepinTypeName
+         << ">::dump(ss, temp, stream);" << getNL() << "  }" << getNL() << "};"
+         << getNL() << getNL();
+    }
+  }
+}
+
+void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
+  std::vector<std::string> SortedVec =
+      codePinTypeTopologicalSort(DpctGlobalInfo::getCodePinTypeDepsVec());
+  RS << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
+     << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL() << getNL();
+  genCodePinDecl(RS, SortedVec, true, IsForCUDADebug);
+  RS << getNL() << "namespace dpct {" << getNL() << "namespace experimental {"
+     << getNL() << "namespace detail {" << getNL();
+  genCodePinDecl(RS, SortedVec, false, IsForCUDADebug);
+  genCodePinDumpFunc(RS, IsForCUDADebug);
+  RS << "}" << getNL() << "}" << getNL() << "}" << getNL();
+  RS << "#endif" << getNL();
+}
+
 /// Apply all generated replacements, and immediately save the results to files
 /// in output directory.
 ///
@@ -815,10 +1054,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     std::string SchemaPathSYCL = OutRootStr + "/generated_schema.hpp";
     std::error_code EC;
     createDirectories(path::parent_path(SchemaPathCUDA));
-    dpct::RawFDOStream SchemaStreamCUDA(SchemaPathCUDA);
-
     createDirectories(path::parent_path(SchemaPathSYCL));
+
+    dpct::RawFDOStream SchemaStreamCUDA(SchemaPathCUDA);
+    genCodePinHeader(SchemaStreamCUDA, true);
+
     clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
+    genCodePinHeader(SchemaStreamSYCL, false);
   }
   processallOptionAction(InRoot, SYCLMigratedOutRoot);
 
