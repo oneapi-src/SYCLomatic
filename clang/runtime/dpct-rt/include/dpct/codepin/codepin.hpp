@@ -140,10 +140,13 @@ public:
   static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
                    dpct::experimental::StreamType stream) {
     ss.print_type_begin("Array");
-    for (auto tmp : value) {
+    size_t size = sizeof(T) / sizeof(value[0]);
+    for (size_t i = 0; i < size; i++) {
       dpct::experimental::detail::DataSer<std::remove_extent_t<T>>::dump(
-          ss, tmp, stream);
-      ss.print_comma();
+          ss, value[i], stream);
+      if (i != (size - 1)) {
+        ss.print_comma();
+      }
     }
     ss.print_type_end();
   }

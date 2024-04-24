@@ -52,18 +52,18 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), InRootOpt
                 " directory, if input\nsource files are not provided. "
                 "If input source files are provided, the directory\n"
                 "of the first input source file is used."),
-           llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
+           llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat),
            llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), OutRootOpt, "out-root",
            llvm::cl::desc("The directory path for root of generated files. A directory is "
                 "created if it\n"
                 "does not exist. Default: dpct_output."),
-           llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
+           llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat),
            llvm::cl::Optional)
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CudaIncludePathOpt, "cuda-include-path",
            llvm::cl::desc("The directory path of the CUDA header files."),
-           llvm::cl::value_desc("dir"), cat(DPCTCat),
+           llvm::cl::value_desc("dir"), cat(DPCTCat), cat(DPCTBasicCat),
            llvm::cl::Optional)
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ReportFilePrefix,
@@ -78,16 +78,16 @@ DPCT_NON_ENUM_OPTION(
         "specified, the report will go to stdout. The report files are created "
         "in the\n"
         "directory, specified by -out-root."),
-    llvm::cl::value_desc("prefix"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+    llvm::cl::value_desc("prefix"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTReportGenCat), llvm::cl::Optional)
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ReportOnly, "report-only",
     llvm::cl::desc("Generate migration reports only. No SYCL code will be generated. Default: off."),
-    llvm::cl::cat(DPCTCat), llvm::cl::location(ReportOnlyFlag))
+    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTReportGenCat), llvm::cl::location(ReportOnlyFlag))
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>),
                      ShowOrigCode, "keep-original-code",
                      llvm::cl::desc("Keeps the original code in comments of "
                                     "generated SYCL files. Default: off.\n"),
-                     llvm::cl::cat(DPCTCat),
+                     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat),
                      llvm::cl::location(KeepOriginalCodeFlag))
 
 #ifdef DPCT_DEBUG_BUILD
@@ -116,7 +116,7 @@ DPCT_ENUM_OPTION(
                       "diags information", true)),
     llvm::cl::desc("Specifies the type of migration report. Values are:\n"),
     llvm::cl::init(ReportTypeEnum::RTE_NotSetType),
-    llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+    llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTReportGenCat), llvm::cl::Optional)
 #else
 DPCT_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<ReportTypeEnum>), ReportType,
@@ -160,25 +160,25 @@ DPCT_ENUM_OPTION(
                       false)),
     llvm::cl::desc("Specify the format of the migration reports:\n"),
     llvm::cl::init(ReportFormatEnum::RFE_NotSetFormat),
-    llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+    llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTReportGenCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), SuppressWarnings, "suppress-warnings",
            llvm::cl::desc(SuppressWarningsMessage),
-                llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat))
+                llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTWarningsCat))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SuppressWarningsAll, "suppress-warnings-all",
            llvm::cl::desc("Suppresses all migration warnings. Default: off."),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(SuppressWarningsAllFlag))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTWarningsCat), llvm::cl::location(SuppressWarningsAllFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), StopOnParseErrOption, "stop-on-parse-err",
            llvm::cl::desc("Stop migration and generation of reports if "
                                "parsing errors happened. Default: off. \n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(StopOnParseErr))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat), llvm::cl::location(StopOnParseErr))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), CheckUnicodeSecurity, "check-unicode-security",
            llvm::cl::desc("Enable detection and warnings about Unicode constructs that can be exploited by using\n"
                    "bi-directional formatting codes and homoglyphs in identifiers. Default: off.\n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(CheckUnicodeSecurityFlag))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::location(CheckUnicodeSecurityFlag))
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), EnablepProfiling,
@@ -186,11 +186,11 @@ DPCT_NON_ENUM_OPTION(
     llvm::cl::desc("Enable SYCL queue profiling in helper functions. default: "
                    "auto (enable-profiling if\nthe tool deduces that "
                    "profiling is required during migration, else not).\n"),
-    llvm::cl::cat(DPCTCat), llvm::cl::location(EnablepProfilingFlag))
+    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::location(EnablepProfilingFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedLambda, "sycl-named-lambda",
            llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::location(SyclNamedLambdaFlag))
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<OutputVerbosityLevel>), OutputVerbosity, "output-verbosity",
            DPCT_OPTION_VALUES(
@@ -208,17 +208,18 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<OutputVerbosityLevel>), OutputVerbo
            ),
            llvm::cl::desc("Sets the output verbosity level:"),
            llvm::cl::init(OutputVerbosityLevel::OVL_Diagnostics), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+           llvm::cl::cat(DPCTWarningsCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), OutputFile, "output-file",
            llvm::cl::desc("Redirects the stdout/stderr output to <file> in the output"
                     " directory specified\n"
                     "by the --out-root option."),
-           llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+           llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTWarningsCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), RuleFileOpt, "rule-file",
            llvm::cl::desc("Specifies the rule file path that contains rules used for migration.\n"),
-           llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+           llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTAdvancedCat),
+           llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<UsmLevel>), USMLevel, "usm-level",
            DPCT_OPTION_VALUES(
@@ -230,7 +231,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<UsmLevel>), USMLevel, "usm-level",
            ),
            llvm::cl::desc("Sets the Unified Shared Memory (USM) level to use in source code generation.\n"),
            llvm::cl::init(UsmLevel::UL_Restricted), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+           llvm::cl::cat(DPCTCodeGenCat), llvm::cl::Optional)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<BuildScript>), BuildScript, "migrate-build-script",
            DPCT_OPTION_VALUES(
@@ -251,7 +252,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<format::FormatRange>), Forma
            ),
            llvm::cl::desc("Sets the range of formatting.\nThe values are:\n"),
            llvm::cl::init(format::FormatRange::migrated), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+           llvm::cl::cat(DPCTAdvancedCat), llvm::cl::Optional)
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<DPCTFormatStyle>), FormatST, "format-style",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("custom", int(DPCTFormatStyle::FS_Custom),
@@ -263,18 +264,18 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<DPCTFormatStyle>), FormatST,
            ),
            llvm::cl::desc("Sets the formatting style.\nThe values are:\n"),
            llvm::cl::init(DPCTFormatStyle::FS_Custom), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+           llvm::cl::cat(DPCTAdvancedCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), NoDRYPattern, "no-dry-pattern",
            llvm::cl::desc("Do not use DRY (do not repeat yourself) pattern when functions from dpct\n"
                                    "namespace are inserted. Default: off.\n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(NoDRYPatternFlag))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::location(NoDRYPatternFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ProcessAll, "process-all",
            llvm::cl::desc("Migrates or copies all files, except hidden, from the --in-root directory\n"
                  "to the --out-root directory. The --in-root option should be explicitly specified.\n"
                  "Default: off."),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(ProcessAllFlag))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat), llvm::cl::location(ProcessAllFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCodePin, "enable-codepin",
            llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purposes."),
@@ -284,17 +285,17 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCTAD, "ena
            llvm::cl::desc("Use a C++17 class template argument deduction (CTAD) in "
                    "your generated code.\n"
                    "Default: off."),
-           llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableComments, "comments",
            llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
-           llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+           llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), AsyncHandler, "always-use-async-handler",
         llvm::cl::desc("Use async exception handler when creating new sycl::queue "
                    "with dpct::create_queue\nin addition to default "
                    "dpct::get_default_queue. Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag))
+        llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::location(AsyncHandlerFlag))
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<AssumedNDRangeDimEnum>), NDRangeDim, "assume-nd-range-dim",
            DPCT_OPTION_VALUES(
@@ -309,7 +310,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<AssumedNDRangeDimEnum>), NDR
            llvm::cl::desc("Provides a hint to the tool on the dimensionality of nd_range to use in generated code.\n"
            "The values are:\n"),
            llvm::cl::init(AssumedNDRangeDimEnum::ARE_Dim3), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
+           llvm::cl::cat(DPCTCodeGenCat), llvm::cl::Optional)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExplicitNamespace, "use-explicit-namespace",
            DPCT_OPTION_VALUES(
@@ -332,7 +333,8 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
            llvm::cl::desc("Defines the namespaces to use explicitly in generated code. The <value> is a comma\n"
            "separated list. Default: dpct, sycl.\n"
            "Possible values are:"),
-           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat),
+           llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabled>), NoDPCPPExtensions, "no-dpcpp-extensions",
            DPCT_OPTION_VALUES(
@@ -366,7 +368,8 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
            "By default, these extensions are used in migrated code.\n"
            "The values are:"),
-           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
+           llvm::cl::cat(DPCTAdvancedCat), llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisabled>), UseDPCPPExtensions, "use-dpcpp-extensions",
            DPCT_OPTION_VALUES(
@@ -389,7 +392,8 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisab
            ),
            llvm::cl::desc("A comma-separated list of extensions to be used in migrated code.\n"
            "By default, these extensions are not used in migrated code."),
-           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTAdvancedCat),
+           llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Experimentals, "use-experimental-features",
            DPCT_OPTION_VALUES(
@@ -438,15 +442,16 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
            llvm::cl::desc("Comma-separated list of experimental features to be used in migrated "
            "code.\n"
            "By default, experimental features will not be used in migrated code.\nThe values are:\n"),
-           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTAdvancedCat),
+           llvm::cl::ZeroOrMore)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), GenBuildScript, "gen-build-script",
         llvm::cl::desc("Generates makefile for migrated file(s) in -out-root directory. Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+        llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBuildScriptCat), llvm::cl::init(false))
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<std::string>), BuildScriptFile, "build-script-file",
         llvm::cl::desc("Specifies the name of generated makefile for migrated file(s).\n"
                     "Default name: Makefile.dpct."),
-        llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+        llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBuildScriptCat), llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateBuildScriptOnly, "migrate-build-script-only",
         llvm::cl::desc("EXPERIMENTAL: Only migrate the build script(s). Default: off."),
@@ -454,30 +459,31 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), MigrateBuildScriptOnly,
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ExcludePathList, "in-root-exclude",
         llvm::cl::desc("Excludes the specified directory or file from processing."),
-        llvm::cl::value_desc("dir|file"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+        llvm::cl::value_desc("dir|file"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat),
+        llvm::cl::ZeroOrMore)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), OptimizeMigration, "optimize-migration",
         llvm::cl::desc("Generates SYCL code applying more aggressive assumptions that potentially\n"
                    "may alter the semantics of your program. Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+        llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMigration, "no-incremental-migration",
         llvm::cl::desc("Tells the tool to not perform an incremental migration.\n"
                    "Default: off (incremental migration happens)."),
-        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+        llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScopeOpt, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "
              "needs to be migrated.\n"
              "Default: the value of --in-root."),
-        llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
+        llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat))
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), LimitChangeExtension,
     "change-cuda-files-extension-only",
     llvm::cl::desc(
         "Limit extension change to .cu and .cuh files only. Default: off."),
-    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::init(false))
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYCLFileExtension, "sycl-file-extension",
            DPCT_OPTION_VALUES(
@@ -491,21 +497,21 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<SYCLFileExtensionEnum>), SYC
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
         llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+        llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), PathToHelperFunction,
     "helper-function-dir",
     llvm::cl::desc(
         "Print the installation directory for helper function header files."),
-    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTHelpInfoCat), llvm::cl::init(false))
 
 #ifndef _WIN32
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), InterceptBuildCommand,
     "intercept-build",
     llvm::cl::desc("Intercept build tool to generate a compilation database."),
-    llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat),
+    llvm::cl::value_desc("build command"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTInterceptBuildCat),
     llvm::cl::init(false))
 #endif
 
@@ -522,7 +528,7 @@ DPCT_NON_ENUM_OPTION(
     "query-api-mapping",
     llvm::cl::desc(
         "Query functionally compatible SYCL API to migrate CUDA API."),
-    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTQueryAPICat), llvm::cl::Optional)
 
 DPCT_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::bits<HelperFuncPreference>), Preferences,
@@ -533,18 +539,18 @@ DPCT_ENUM_OPTION(
         false)),
     llvm::cl::desc("The preference of helper function usage in migration.\n"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
-    llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), AnalysisMode, "analysis-mode",
     llvm::cl::desc("Only generate a report for porting effort. Default: off."),
-    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisModeOutputFile,
     "analysis-mode-output-file",
     llvm::cl::desc("Specifies the file where the analysis mode report is saved. Default: "
                    "Output to stdout."),
-    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat))
+    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
