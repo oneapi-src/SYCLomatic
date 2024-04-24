@@ -864,6 +864,21 @@
         \${SYCL_INCLUDE_DIR}
       RuleId: "replace_CUDA_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
 
+- Rule: rule_CUDA_NVCC_INCLUDE_DIRS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_NVCC_INCLUDE_DIRS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_NVCC_INCLUDE_DIRS}
+      Out: |
+        \${SYCL_INCLUDE_DIR}
+      RuleId: "replace_CUDA_NVCC_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
+
 - Rule: rule_cuda_add_cufft_to_target
   Kind: CMakeRule
   Priority: Fallback
@@ -958,6 +973,19 @@
     value:
       MatchMode: Full
       In: CMAKE_CUDA_FLAGS
+      Out: CMAKE_SYCL_FLAGS
+
+- Rule: rule_CUDA_NVCC_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_NVCC_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_NVCC_FLAGS
       Out: CMAKE_SYCL_FLAGS
 
 - Rule: rule_cudart_static_removed
@@ -2213,3 +2241,10 @@
       Out: ONEAPI_LIB_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
+
+- Rule: rule_set_source_files_properties
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_source_files_properties_lang
+  In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
+  Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})

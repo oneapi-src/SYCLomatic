@@ -15,6 +15,7 @@
 #include "DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
+#include "GenCodePinHeader.h"
 #include "GroupFunctionAnalyzer.h"
 #include "Homoglyph.h"
 #include "LIBCUAPIMigration.h"
@@ -3628,11 +3629,13 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
                                 "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)"))))
                     .bind("BLASStatusConstants"),
                 this);
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
-                                "(CUBLAS_OP.*)|(CUBLAS_SIDE.*)|(CUBLAS_FILL_"
-                                "MODE.*)|(CUBLAS_DIAG.*)"))))
-                    .bind("BLASNamedValueConstants"),
-                this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(matchesName(
+                      "(CUBLAS_OP.*)|(CUBLAS_SIDE.*)|(CUBLAS_FILL_"
+                      "MODE.*)|(CUBLAS_DIAG.*)|(CUBLAS_.*_MATH)|CUBLAS_MATH_"
+                      "DISALLOW_REDUCED_PRECISION_REDUCTION"))))
+          .bind("BLASNamedValueConstants"),
+      this);
 }
 
 void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -5229,9 +5232,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetPointerMode_v2" ||
              FuncName == "cublasSetPointerMode_v2" ||
              FuncName == "cublasGetAtomicsMode" ||
-             FuncName == "cublasSetAtomicsMode" ||
-             FuncName == "cublasGetMathMode" ||
-             FuncName == "cublasSetMathMode") {
+             FuncName == "cublasSetAtomicsMode") {
     std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -14953,6 +14954,8 @@ REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 REGISTER_RULE(SpBLASTypeLocRule, PassKind::PK_Migration)
 
 REGISTER_RULE(DeviceConstantVarOptimizeAnalysisRule, PassKind::PK_Analysis)
+
+REGISTER_RULE(GenCodePinHeaderRule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

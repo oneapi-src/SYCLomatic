@@ -1498,7 +1498,8 @@ std::string DpctGlobalInfo::getTypeName(QualType QT,
   return QT.getAsString(PP);
 }
 std::string DpctGlobalInfo::getReplacedTypeName(QualType QT,
-                                                const ASTContext &Context) {
+                                                const ASTContext &Context,
+                                                bool SuppressScope) {
   if (!QT.isNull())
     if (const auto *AT = dyn_cast<AutoType>(QT.getTypePtr())) {
       QT = AT->getDeducedType();
@@ -1511,6 +1512,7 @@ std::string DpctGlobalInfo::getReplacedTypeName(QualType QT,
   llvm::raw_string_ostream OS(MigratedTypeStr);
   clang::PrintingPolicy PP =
       clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
+  PP.SuppressScope = SuppressScope;
   QT.print(OS, PP);
   OS.flush();
   setGetReplacedNamePtr(nullptr);
@@ -2459,6 +2461,14 @@ std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
 IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
+std::vector<std::pair<std::string, VarInfoForCodePin>>
+    DpctGlobalInfo::CodePinTypeInfoMap;
+std::vector<std::pair<std::string, VarInfoForCodePin>>
+    DpctGlobalInfo::CodePinTemplateTypeInfoMap;
+std::vector<std::pair<std::string, std::vector<std::string>>>
+    DpctGlobalInfo::CodePinTypeDepsVec;
+std::vector<std::pair<std::string, std::vector<std::string>>>
+    DpctGlobalInfo::CodePinDumpFuncDepsVec;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
