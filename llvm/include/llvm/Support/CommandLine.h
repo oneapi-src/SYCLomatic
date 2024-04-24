@@ -199,6 +199,16 @@ public:
 OptionCategory &getGeneralCategory();
 #ifdef SYCLomatic_CUSTOMIZATION
 OptionCategory &getDPCTCategory();
+OptionCategory &getDPCTBasicCategory();
+OptionCategory &getDPCTAdvancedCategory();
+OptionCategory &getDPCTCodeGenCategory();
+OptionCategory &getDPCTReportGenCategory();
+OptionCategory &getDPCTBuildScriptCategory();
+OptionCategory &getDPCTQueryAPICategory();
+OptionCategory &getDPCTWarningsCategory();
+OptionCategory &getDPCTHelpInfoCategory();
+OptionCategory &getDPCTInterceptBuildCategory();
+OptionCategory &getDPCTExamplesCategory();
 #endif // SYCLomatic_CUSTOMIZATION
 
 //===----------------------------------------------------------------------===//

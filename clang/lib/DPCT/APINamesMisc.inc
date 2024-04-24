@@ -121,3 +121,8 @@ CONDITIONAL_FACTORY_ENTRY(
                  CALL(MapNames::getDpctNamespace() +
                           "dev_mgr::instance().get_device",
                       ARG(1)))))))
+
+REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStart",
+                         getRemovedAPIWarningMessage("cudaProfilerStart"))
+REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStop",
+                         getRemovedAPIWarningMessage("cudaProfilerStop"))

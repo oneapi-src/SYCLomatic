@@ -1321,6 +1321,43 @@ inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
   return detail::extend_binary<RetT, true>(a, b, c, maximum(), second_op);
 }
 
+/// Extend \p a and \p b to 33 bit and compare input values using specified
+/// comparison \p cmp .
+///
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] BinaryOperation The type of the compare operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] cmp The comparsion operator
+/// \returns The comparison result of the two extended values.
+template <typename AT, typename BT, typename BinaryOperation>
+inline constexpr unsigned extend_compare(AT a, BT b, BinaryOperation cmp) {
+  return detail::extend_binary<unsigned, false>(a, b, cmp);
+}
+
+/// Extend Inputs to 33 bit, and compare input values using specified comparison
+/// \p cmp , then do \p second_op with \p c .
+///
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] BinaryOperation The type of the compare operation
+/// \tparam [in] SecondBinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] cmp The comparsion operator
+/// \param [in] second_op The operation to do with the third value
+/// \returns The comparison result of the two extended values. and \p second_op
+/// with \p c .
+template <typename AT, typename BT, typename BinaryOperation,
+          typename SecondBinaryOperation>
+inline constexpr unsigned extend_compare(AT a, BT b, unsigned c,
+                                         BinaryOperation cmp,
+                                         SecondBinaryOperation second_op) {
+  return detail::extend_binary<unsigned, false>(a, b, c, cmp, second_op);
+}
+
 /// Extend \p a and \p b to 33 bit and return a << clamp(b, 0, 32).
 /// \param [in] a The source value
 /// \param [in] b The offset to shift
@@ -1721,6 +1758,39 @@ inline constexpr RetT extend_vmax2_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary2<RetT, true, false>(a, b, c, maximum());
 }
 
+/// Extend \p a and \p b to 33 bit and vectorized compare input values using
+///
+/// specified comparison \p cmp .
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] BinaryOperation The type of the compare operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] cmp The comparsion operator
+/// \returns The comparison result of the two extended values.
+template <typename AT, typename BT, typename BinaryOperation>
+inline constexpr unsigned extend_vcompare2(AT a, BT b, BinaryOperation cmp) {
+  return detail::extend_vbinary2<unsigned, false, false>(a, b, 0, cmp);
+}
+
+/// Extend Inputs to 33 bit, and vectorized compare input values using specified
+/// comparison \p cmp , then add the result with \p c .
+///
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] BinaryOperation The type of the compare operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] cmp The comparsion operator
+/// \returns The comparison result of the two extended values, and add the
+/// result with \p c .
+template <typename AT, typename BT, typename BinaryOperation>
+inline constexpr unsigned extend_vcompare2_add(AT a, BT b, unsigned c,
+                                               BinaryOperation cmp) {
+  return detail::extend_vbinary2<unsigned, false, true>(a, b, c, cmp);
+}
+
 /// Compute vectorized average of \p a and \p b, with each value treated as a 2
 /// elements vector type and extend each element to 17 bit.
 /// \tparam [in] RetT The type of the return value, can only be 32 bit integer
@@ -1983,6 +2053,39 @@ inline constexpr RetT extend_vmax4_add(AT a, BT b, RetT c) {
 template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vmax4_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary4<RetT, true, false>(a, b, c, maximum());
+}
+
+/// Extend \p a and \p b to 33 bit and vectorized compare input values using
+///
+/// specified comparison \p cmp .
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] BinaryOperation The type of the compare operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] cmp The comparsion operator
+/// \returns The comparison result of the two extended values.
+template <typename AT, typename BT, typename BinaryOperation>
+inline constexpr unsigned extend_vcompare4(AT a, BT b, BinaryOperation cmp) {
+  return detail::extend_vbinary4<unsigned, false, false>(a, b, 0, cmp);
+}
+
+/// Extend Inputs to 33 bit, and vectorized compare input values using specified
+/// comparison \p cmp , then add the result with \p c .
+///
+/// \tparam [in] AT The type of the first value, can only be 32 bit integer
+/// \tparam [in] BT The type of the second value, can only be 32 bit integer
+/// \tparam [in] BinaryOperation The type of the compare operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] cmp The comparsion operator
+/// \returns The comparison result of the two extended values, and add the
+/// result with \p c .
+template <typename AT, typename BT, typename BinaryOperation>
+inline constexpr unsigned extend_vcompare4_add(AT a, BT b, unsigned c,
+                                               BinaryOperation cmp) {
+  return detail::extend_vbinary4<unsigned, false, true>(a, b, c, cmp);
 }
 
 /// Compute vectorized average of \p a and \p b, with each value treated as a 4

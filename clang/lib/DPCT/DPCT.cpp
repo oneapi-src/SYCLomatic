@@ -86,30 +86,31 @@ extern UnifiedPath VcxprojFilePath;
 } // namespace tooling
 namespace dpct {
 llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
+llvm::cl::OptionCategory &DPCTBasicCat = llvm::cl::getDPCTBasicCategory();
+llvm::cl::OptionCategory &DPCTAdvancedCat = llvm::cl::getDPCTAdvancedCategory();
+llvm::cl::OptionCategory &DPCTCodeGenCat = llvm::cl::getDPCTCodeGenCategory();
+llvm::cl::OptionCategory &DPCTReportGenCat =
+    llvm::cl::getDPCTReportGenCategory();
+llvm::cl::OptionCategory &DPCTBuildScriptCat =
+    llvm::cl::getDPCTBuildScriptCategory();
+llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
+llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
+llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
+llvm::cl::OptionCategory &DPCTInterceptBuildCat =
+    llvm::cl::getDPCTInterceptBuildCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
 
 // clang-format off
-const char *const CtHelpMessage =
+#include "llvm/migration_cmd_examples.inc"
+const char *const CtHelpTrailMsg = 
     "\n"
     "<source0> ... Paths of input source files. These paths are looked up in "
-    "the compilation database.\n\n"
-    "EXAMPLES:\n\n"
-    "Migrate single source file:\n\n"
-    "  dpct source.cpp\n\n"
-    "Migrate single source file with C++11 features:\n\n"
-    "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
-    "Migrate all files available in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
-    "Migrate one file in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
-#if defined(_WIN32)
-    "Migrate all files available in vcxprojfile:\n\n"
-    "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
-#endif
-    DiagRef
-    ;
+    "the compilation database.\n\n";
+
+std::string CtHelpMessageStr = std::string(CtHelpTrailMsg) + DPCTExamplesMsg + DiagRef;
+const char *const CtHelpMessage = CtHelpMessageStr.c_str();
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
@@ -268,13 +269,14 @@ bool hasOption(int argc, const char **argv, StringRef Opt) {
 bool hasOptConflictWithQuery(int argc, const char **argv) {
   for (auto I = 1; I < argc; I++) {
     auto Opt = StringRef(argv[I]);
-    if (!Opt.starts_with("--query-api-mapping") &&
-        !Opt.starts_with("--cuda-include-path") &&
-        !Opt.starts_with("--extra-arg")) {
+    Opt = Opt.drop_while([](char input) { return input == '-'; });
+    if (!Opt.starts_with("query-api-mapping") &&
+        !Opt.starts_with("cuda-include-path") &&
+        !Opt.starts_with("extra-arg")) {
       return true;
     }
-    if (Opt == "--query-api-mapping" || Opt == "--cuda-include-path" ||
-        Opt == "--extra-arg") {
+    if (Opt == "query-api-mapping" || Opt == "cuda-include-path" ||
+        Opt == "extra-arg") {
       ++I; // Skip option value when using option without '='.
     }
   }
@@ -463,8 +465,7 @@ std::string printCTVersion() {
   llvm::raw_string_ostream OS(buf);
 
   OS << "\n"
-     << TOOL_NAME << " version " << DPCT_VERSION_MAJOR << "."
-     << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
+     << TOOL_NAME << " version " << getDpctVersionStr() << "."
      << " Codebase:";
   std::string Revision = getClangRevision();
   if (!Revision.empty()) {
@@ -472,9 +473,12 @@ std::string printCTVersion() {
     if (!Revision.empty()) {
       OS << Revision;
     }
-    OS << ')';
+    OS << ").";
   }
-  OS << "\n";
+
+  OS << " clang version " << CLANG_VERSION_MAJOR << "." << CLANG_VERSION_MINOR
+     << "." << CLANG_VERSION_PATCHLEVEL << "\n";
+
   return OS.str();
 }
 
@@ -625,9 +629,7 @@ int runDPCT(int argc, const char **argv) {
     SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(HelperFunctionPathStr, "include");
     if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
-      DpctLog() << "Error: Helper functions not found"
-                << "/n";
-      ShowStatus(MigrationErrorInvalidInstallPath);
+      ShowStatus(MigrationErrorInvalidInstallPath, "Helper functions");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
     std::cout << HelperFunctionPathStr.c_str() << "\n";
@@ -691,32 +693,32 @@ int runDPCT(int argc, const char **argv) {
     clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
   initWarningIDs();
-
-#ifndef _WIN32
-  if (InterceptBuildCommand) {
-    SmallString<512> InterceptBuildBinaryPathStr(
-        DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(InterceptBuildBinaryPathStr, "bin",
-                            "intercept-build");
-    if (!llvm::sys::fs::exists(InterceptBuildBinaryPathStr)) {
-      DpctLog() << "Error: intercept-build tool not found"
-                << "\n";
-      ShowStatus(MigrationErrorInvalidInstallPath);
+  auto CallIndependentTool = [&](const std::string IndependentTool) {
+    SmallString<512> ExecutableScriptPath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(ExecutableScriptPath, "bin", IndependentTool);
+    if (!llvm::sys::fs::exists(ExecutableScriptPath)) {
+      ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::string InterceptBuildSystemCall(InterceptBuildBinaryPathStr.str());
-    for (int argumentIndex = 2; argumentIndex < argc; argumentIndex++) {
-      InterceptBuildSystemCall.append(" ");
-      InterceptBuildSystemCall.append(std::string(argv[argumentIndex]));
+    std::string SystemCallCommand =
+        "python3 " + std::string(ExecutableScriptPath.str());
+    for (int Index = 2; Index < argc; Index++) {
+      SystemCallCommand.append(" ");
+      SystemCallCommand.append(std::string(argv[Index]));
     }
-    int processExitCode = system(InterceptBuildSystemCall.c_str());
-    if (processExitCode) {
-      ShowStatus(InterceptBuildError);
-      dpctExit(InterceptBuildError);
+    int ProcessExitCode = system(SystemCallCommand.c_str());
+    if (ProcessExitCode) {
+      ShowStatus(CallIndependentToolError, IndependentTool);
+      dpctExit(CallIndependentToolError);
     }
-    dpctExit(InterceptBuildSuccess);
-  }
+    dpctExit(CallIndependentToolSucceeded);
+  };
+#ifndef _WIN32
+  if (InterceptBuildCommand)
+    CallIndependentTool("intercept-build");
 #endif
+  if (CodePinReport)
+    CallIndependentTool("codepin-report.py");
 
   if (InRoot.getPath().size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot.getPath() << "' is too long\n";
@@ -964,6 +966,8 @@ int runDPCT(int argc, const char **argv) {
           else if (Option.ends_with("masked-sub-group-operation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_MaskedSubGroupFunction);
+          else if (Option.ends_with("bindless_images"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_BindlessImages);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPatternFlag = true;
         }
@@ -1001,8 +1005,10 @@ int runDPCT(int argc, const char **argv) {
     Tool.setPrintErrorMessage(false);
   } else {
     IsUsingDefaultOutRoot = OutRoot.getPath().empty();
+    bool NeedCheckOutRootEmpty =
+        !(BuildScript == BuildScript::BS_Cmake) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRoot)) {
+        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }

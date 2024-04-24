@@ -294,6 +294,7 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
     case Type::PackExpansion:
     case Type::SubstTemplateTypeParm:
     case Type::MacroQualified:
+    case Type::CountAttributed:
       CanPrefixQualifiers = false;
       break;
 
@@ -1687,7 +1688,7 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
   if (getReplacedNamePtr) {
     if (auto TT = T->getNamedType()->getAs<TypedefType>()) {
       auto Name = TT->getDecl()->getQualifiedNameAsString(false);
-      if (StringRef(Name).startswith("thrust")) {
+      if (StringRef(Name).starts_with("thrust")) {
         return printBefore(TT->getDecl()->getUnderlyingType(), OS);
       }
     }
@@ -1695,7 +1696,7 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
       std::string QualifiedName;
       llvm::raw_string_ostream InternalOS(QualifiedName);
       T->getQualifier()->print(InternalOS, Policy);
-      if (StringRef(InternalOS.str()).startswith("thrust")) {
+      if (StringRef(InternalOS.str()).starts_with("thrust")) {
         printBefore(T->getNamedType(), OS);
         return;
       }
@@ -1732,6 +1733,17 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
          OS << " ";
     }
     NestedNameSpecifier *Qualifier = T->getQualifier();
+    if (!Policy.SuppressTagKeyword && Policy.SuppressScope &&
+        !Policy.SuppressUnwrittenScope) {
+      bool OldTagKeyword = Policy.SuppressTagKeyword;
+      bool OldSupressScope = Policy.SuppressScope;
+      Policy.SuppressTagKeyword = true;
+      Policy.SuppressScope = false;
+      printBefore(T->getNamedType(), OS);
+      Policy.SuppressTagKeyword = OldTagKeyword;
+      Policy.SuppressScope = OldSupressScope;
+      return;
+    }
     if (Qualifier && !(Policy.SuppressTypedefs &&
                        T->getNamedType()->getTypeClass() == Type::Typedef))
       Qualifier->print(OS, Policy);
@@ -1813,6 +1825,36 @@ void TypePrinter::printPackExpansionAfter(const PackExpansionType *T,
                                           raw_ostream &OS) {
   printAfter(T->getPattern(), OS);
   OS << "...";
+}
+
+static void printCountAttributedImpl(const CountAttributedType *T,
+                                     raw_ostream &OS,
+                                     const PrintingPolicy &Policy) {
+  if (T->isCountInBytes() && T->isOrNull())
+    OS << " __sized_by_or_null(";
+  else if (T->isCountInBytes())
+    OS << " __sized_by(";
+  else if (T->isOrNull())
+    OS << " __counted_by_or_null(";
+  else
+    OS << " __counted_by(";
+  if (T->getCountExpr())
+    T->getCountExpr()->printPretty(OS, nullptr, Policy);
+  OS << ')';
+}
+
+void TypePrinter::printCountAttributedBefore(const CountAttributedType *T,
+                                             raw_ostream &OS) {
+  printBefore(T->desugar(), OS);
+  if (!T->desugar()->isArrayType())
+    printCountAttributedImpl(T, OS, Policy);
+}
+
+void TypePrinter::printCountAttributedAfter(const CountAttributedType *T,
+                                            raw_ostream &OS) {
+  printAfter(T->desugar(), OS);
+  if (T->desugar()->isArrayType())
+    printCountAttributedImpl(T, OS, Policy);
 }
 
 void TypePrinter::printAttributedBefore(const AttributedType *T,
@@ -1949,6 +1991,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
     OS << "pipe";
     break;
 
+  case attr::CountedBy:
   case attr::LifetimeBound:
   case attr::TypeNonNull:
   case attr::TypeNullable:

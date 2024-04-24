@@ -10,6 +10,7 @@
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Path.h"
 #include <PatternRewriter.h>
 
 #include <optional>
@@ -396,13 +397,10 @@ updateExtentionName(const std::string &Input, size_t Next,
     for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
     }
     Pos = Pos == 0 ? 0 : Pos + 1;
-    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - 1 - Pos);
-
-    std::string SyclFileName;
-    rewriteFileName(SyclFileName, FileName);
+    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - Pos);
     bool HasCudaSyntax = false;
     for (const auto &File : MainSrcFilesHasCudaSyntex) {
-      if (File.find(FileName) != std::string::npos) {
+      if (llvm::sys::path::filename(File) == FileName) {
         HasCudaSyntax = true;
       }
     }
@@ -461,15 +459,16 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      if (!CodeElementExist && Index - PatternSize >= 0 && Index < Size - 1 &&
+      if (!CodeElementExist && Index - PatternSize >= 0 && Index <= Size - 1 &&
           PatternIndex == PatternSize - 1) {
         if (!isIdentifiedChar(Input[Index - PatternSize]) &&
             !isIdentifiedChar(Input[Index + 1])) {
-
-          if (Input[Index - PatternSize] != '{' && Input[Index + 1] != '}' &&
+          if (Index < Size - 1 && Input[Index - PatternSize] != '{' &&
+              Input[Index + 1] != '}' &&
               !isWhitespace(Input[Index - PatternSize]) &&
               !isWhitespace(Input[Index + 1]) &&
-              Input[Index - PatternSize] != '*') {
+              Input[Index - PatternSize] != '*' &&
+              Input[Index - PatternSize] != '"') {
             return {};
           }
         }
@@ -510,18 +509,11 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       }
 
       std::string ElementContents = Input.substr(Index, Next - Index);
-
       if (SrcFileType == SourceFileType::SFT_CMakeScript) {
         updateExtentionName(Input, Next, Result.Bindings);
       }
 
-      if (Result.Bindings.count(Code.Name)) {
-        if (Result.Bindings[Code.Name] != ElementContents) {
-          return {};
-        }
-      } else {
-        Result.Bindings[Code.Name] = std::move(ElementContents);
-      }
+      Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;
       continue;
@@ -588,13 +580,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
         return {};
       }
       std::string ElementContents = Input.substr(Index, Next - Index);
-      if (Result.Bindings.count(Code.Name)) {
-        if (Result.Bindings[Code.Name] != ElementContents) {
-          return {};
-        }
-      } else {
-        Result.Bindings[Code.Name] = std::move(ElementContents);
-      }
+      Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;
       continue;
@@ -749,7 +735,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       }
 
       const int Indentation = detectIndentation(Input, Index);
-
       instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       while (Input[Index] == '\n') {
