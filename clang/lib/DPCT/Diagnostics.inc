@@ -280,8 +280,8 @@ DEF_WARNING(MOVE_TYPE_DEFINITION_DEVICE_FUNC, 1125, MEDIUM_LEVEL, "The type \"%0
 DEF_COMMENT(MOVE_TYPE_DEFINITION_DEVICE_FUNC, 1125, MEDIUM_LEVEL, "The type \"{0}\" defined in function \"{1}\" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.")
 DEF_WARNING(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"%0\" defined in function \"%1\" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function \"%1\". You may need to adjust the type definition location.")
 DEF_COMMENT(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"{0}\" defined in function \"{1}\" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function \"{1}\". You may need to adjust the type definition location.")
-DEF_WARNING(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported only when compiling with C++20. You may need to adjust the compile commands.")
-DEF_COMMENT(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported only when compiling with C++20. You may need to adjust the compile commands.")
+DEF_WARNING(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported when compiling with C++20. You may need to adjust the compile commands.")
+DEF_COMMENT(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported when compiling with C++20. You may need to adjust the compile commands.")
 // clang-format on
 
 #undef DEF_COMMENT

@@ -436,7 +436,8 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental extension that allows use of non-uniform groups.\n",
         false),
              DPCT_OPT_ENUM("device_global", int(ExperimentalFeatures::Exp_DeviceGlobal),
-        "Experimental extension that allows device memory allocations similar to C++ global variables.\n",
+        "Experimental extension that allows device scoped memory allocations into SYCL that can \n"
+        "be accessed within a kernel using syntax similar to C++ global variables.\n",
         false),
             DPCT_OPT_ENUM("all", int(ExperimentalFeatures::Exp_All),
         "Enable all experimental extensions listed in this option.\n",
