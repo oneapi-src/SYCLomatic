@@ -640,8 +640,13 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
           llvm::sys::path::replace_path_prefix(RelativePath,
                                                OutRoot.getCanonicalPath(), ".");
 
+#ifdef _WIN32
+          std::vector<std::string> SplitedStr =
+              split(RelativePath.c_str(), '\\');
+#else
           std::vector<std::string> SplitedStr =
               split(RelativePath.c_str(), '/');
+#endif
           std::string RelativePathPrefix = "./";
 
           auto Size = SplitedStr.size();
