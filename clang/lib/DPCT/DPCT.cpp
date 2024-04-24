@@ -1207,7 +1207,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
-    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    if (!MigrateBuildScriptOnly &&
+        clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
       if (!canContinueMigration(Msg)) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);
