@@ -1171,50 +1171,26 @@ private:
                     backward_distance);
   }
 
-#define COMPUTE(DESC)                                                          \
-  {                                                                            \
-    if (_is_inplace) {                                                         \
-      auto data_input = dpct::detail::get_memory<T>(input);                    \
-      if (_direction == fft_direction::forward) {                              \
-        oneapi::mkl::dft::compute_forward<                                     \
-            std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
-      } else {                                                                 \
-        oneapi::mkl::dft::compute_backward<                                    \
-            std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
-      }                                                                        \
-    } else {                                                                   \
-      auto data_input = dpct::detail::get_memory<T>(input);                    \
-      auto data_output = dpct::detail::get_memory<T>(output);                  \
-      if (_direction == fft_direction::forward) {                              \
-        oneapi::mkl::dft::compute_forward<                                     \
-            std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
-                                                            data_output);      \
-      } else {                                                                 \
-        oneapi::mkl::dft::compute_backward<                                    \
-            std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
-                                                            data_output);      \
-      }                                                                        \
-    }                                                                          \
-  }
-
   template <class Dest_t, class T>
-  void compute_complex_impl(Dest_t desc, T *input, T *output,
-                            fft_direction direction) {
+  void compute_impl(Dest_t desc, T *input, T *output,
+                    std::optional<fft_direction> direction) {
     bool is_this_compute_inplace = input == output;
+    bool is_complex = direction.has_value();
 
     if (!_is_user_specified_dir_and_placement) {
-      // The complex domain descriptor need different config values if the
-      // FFT direction or placement is different.
+      // The descriptor need different config values if the FFT direction
+      // or placement is different.
       // Here we check the conditions, and new config values are set and
       // re-committed if needed.
-      if (direction != _direction || is_this_compute_inplace != _is_inplace) {
-        if (direction != _direction) {
+      if ((is_this_compute_inplace != _is_inplace) ||
+          (is_complex && (direction != _direction))) {
+        if (is_complex && (direction != _direction)) {
           swap_distance(desc);
 #ifdef __INTEL_MKL__
           if (!_is_basic)
             swap_strides(desc);
 #endif
-          _direction = direction;
+          _direction = direction.value();
         }
         if (is_this_compute_inplace != _is_inplace) {
           _is_inplace = is_this_compute_inplace;
@@ -1222,17 +1198,25 @@ private:
           if (_is_inplace) {
             desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
+            if (_is_basic && !is_complex)
+              set_stride_and_distance_basic<true>(desc);
           } else {
             desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+            if (_is_basic && !is_complex)
+              set_stride_and_distance_basic<false>(desc);
           }
 #else
           if (_is_inplace) {
             desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::INPLACE);
+            if (_is_basic && !is_complex)
+              set_stride_and_distance_basic<true>(desc);
           } else {
             desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             oneapi::mkl::dft::config_value::NOT_INPLACE);
+            if (_is_basic && !is_complex)
+              set_stride_and_distance_basic<false>(desc);
           }
 #endif
         }
@@ -1240,66 +1224,45 @@ private:
       }
     }
 
-    COMPUTE(desc);
+    if (_is_inplace) {
+      auto data_input = dpct::detail::get_memory<T>(input);
+      if (_direction == fft_direction::forward) {
+        oneapi::mkl::dft::compute_forward<
+            std::remove_reference_t<decltype(*desc)>, T>(*desc, data_input);
+      } else {
+        oneapi::mkl::dft::compute_backward<
+            std::remove_reference_t<decltype(*desc)>, T>(*desc, data_input);
+      }
+    } else {
+      auto data_input = dpct::detail::get_memory<T>(input);
+      auto data_output = dpct::detail::get_memory<T>(output);
+      if (_direction == fft_direction::forward) {
+        oneapi::mkl::dft::compute_forward<Dest_t::element_type, T, T>(
+            *desc, data_input, data_output);
+      } else {
+        oneapi::mkl::dft::compute_backward<Dest_t::element_type, T, T>(
+            *desc, data_input, data_output);
+      }
+    }
   }
 
   template <class T, oneapi::mkl::dft::precision Precision>
   void compute_complex(T *input, T *output, fft_direction direction) {
     if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
-      compute_complex_impl(_desc_sc, input, output, direction);
+      compute_impl(_desc_sc, input, output, direction);
     } else {
-      compute_complex_impl(_desc_dc, input, output, direction);
+      compute_impl(_desc_dc, input, output, direction);
     }
-  }
-
-  template <class Dest_t, class T>
-  void compute_real_impl(Dest_t desc, T *input, T *output) {
-    bool is_this_compute_inplace = input == output;
-
-    if (!_is_user_specified_dir_and_placement) {
-      // The real domain descriptor need different config values if the
-      // FFT placement is different.
-      // Here we check the condition, and new config values are set and
-      // re-committed if needed.
-      if (is_this_compute_inplace != _is_inplace) {
-        _is_inplace = is_this_compute_inplace;
-        if (_is_inplace) {
-#ifdef __INTEL_MKL__
-          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                          DFTI_CONFIG_VALUE::DFTI_INPLACE);
-#else
-          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                          oneapi::mkl::dft::config_value::INPLACE);
-#endif
-          if (_is_basic)
-            set_stride_and_distance_basic<true>(desc);
-        } else {
-#ifdef __INTEL_MKL__
-          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                          DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-#else
-          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                          oneapi::mkl::dft::config_value::NOT_INPLACE);
-#endif
-          if (_is_basic)
-            set_stride_and_distance_basic<false>(desc);
-        }
-        desc->commit(*_q);
-      }
-    }
-
-    COMPUTE(desc);
   }
 
   template <class T, oneapi::mkl::dft::precision Precision>
   void compute_real(T *input, T *output) {
     if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
-      compute_real_impl(_desc_sr, input, output);
+      compute_impl(_desc_sr, input, output, std::nullopt);
     } else {
-      compute_real_impl(_desc_dr, input, output);
+      compute_impl(_desc_dr, input, output, std::nullopt);
     }
   }
-#undef COMPUTE
 
 private:
   sycl::queue *_q = nullptr;
