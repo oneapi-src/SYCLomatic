@@ -5094,27 +5094,23 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
   SourceLocation InsertLoc;
 
   const DeclContext *DC = D->getDeclContext();
-  const NamespaceDecl *NS = nullptr;
+  SourceLocation StartSearchLoc = D->getEndLoc();
+  tok::TokenKind FindTok = tok::TokenKind::semi;
   while (DC) {
     if (const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(DC)) {
       NamespaceStr = ND->getNameAsString() + "::" + NamespaceStr;
-      NS = ND;
+      StartSearchLoc = ND->getEndLoc();
       DC = ND->getDeclContext();
+      FindTok = tok::TokenKind::r_brace;
     } else if (isa<TranslationUnitDecl>(DC)) {
       break;
     } else {
       return;
     }
   }
-  if (NS) {
-    if (NS->getEndLoc().isMacroID())
-      return;
-    InsertLoc = getInsertLocation(NS->getEndLoc(), tok::TokenKind::r_brace);
-  } else {
-    if (D->getEndLoc().isMacroID())
-      return;
-    InsertLoc = getInsertLocation(D->getEndLoc(), tok::TokenKind::semi);
-  }
+  if (StartSearchLoc.isMacroID())
+    return;
+  InsertLoc = getInsertLocation(StartSearchLoc, FindTok);
 
   // Prepare replacemet
   std::string Repl = getNL();

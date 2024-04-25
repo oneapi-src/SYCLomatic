@@ -114,53 +114,12 @@ class MigrationRule : public ASTTraversal {
 
   static unsigned PairID;
 
-  friend void insertIsDeviceCopyableSpecialization(QualType Type,
-                                                   MigrationRule *Rule,
-                                                   const Decl *D);
-  friend void checkTrivallyCopyable(QualType QT, MigrationRule *Rule);
-
 protected:
   TransformSetTy *TransformSet = nullptr;
-  /// Add \a TM to the set of transformations.
-  ///
-  /// The ownership of the TM is transferred to the TransformSet.
-  void emplaceTransformation(TextModification *TM);
 
   inline static unsigned incPairID() { return ++PairID; }
 
   const CompilerInstance &getCompilerInstance();
-
-  // Emits a warning/error/note and/or comment depending on MsgID. For details
-  // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
-  template <typename IDTy, typename... Ts>
-  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    return DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, TransformSet, UseTextBegin,
-        std::forward<Ts>(Vals)...);
-  }
-  // Extend version of report()
-  // Pass Stmt to process macro more precisely.
-  // The location should be consistent with the result of
-  // ReplaceStmt::getReplacement
-  template <typename IDTy, typename... Ts>
-  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    SourceLocation Begin(S->getBeginLoc());
-    if (Begin.isMacroID() && !isOuterMostMacro(S)) {
-      if (SM.isMacroArgExpansion(Begin)) {
-        Begin =
-            SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
-      } else {
-        Begin = SM.getSpellingLoc(Begin);
-      }
-    } else {
-      Begin = SM.getExpansionLoc(Begin);
-    }
-
-    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, TransformSet,
-                                          UseTextBegin,
-                                          std::forward<Ts>(Vals)...);
-  }
 
   // Get node from match result map. And also check if the node's host file is
   // in the InRoot path and if the node has been processed by the same rule.
@@ -214,6 +173,44 @@ public:
 
   void print(llvm::raw_ostream &OS);
   void printStatistics(llvm::raw_ostream &OS);
+
+  /// Add \a TM to the set of transformations.
+  ///
+  /// The ownership of the TM is transferred to the TransformSet.
+  void emplaceTransformation(TextModification *TM);
+
+  // Emits a warning/error/note and/or comment depending on MsgID. For details
+  // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
+  template <typename IDTy, typename... Ts>
+  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    return DiagnosticsUtils::report<IDTy, Ts...>(
+        SL, MsgID, TransformSet, UseTextBegin,
+        std::forward<Ts>(Vals)...);
+  }
+
+  // Extend version of report()
+  // Pass Stmt to process macro more precisely.
+  // The location should be consistent with the result of
+  // ReplaceStmt::getReplacement
+  template <typename IDTy, typename... Ts>
+  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    SourceLocation Begin(S->getBeginLoc());
+    if (Begin.isMacroID() && !isOuterMostMacro(S)) {
+      if (SM.isMacroArgExpansion(Begin)) {
+        Begin =
+            SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+      } else {
+        Begin = SM.getSpellingLoc(Begin);
+      }
+    } else {
+      Begin = SM.getExpansionLoc(Begin);
+    }
+
+    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, TransformSet,
+                                          UseTextBegin,
+                                          std::forward<Ts>(Vals)...);
+  }
 };
 
 /// Migration rules with names
