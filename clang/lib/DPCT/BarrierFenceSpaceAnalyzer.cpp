@@ -8,8 +8,10 @@
 
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "AnalysisInfo.h"
+#include "Utility.h"
 #include "llvm/Support/Casting.h"
 #include <algorithm>
+#include <unordered_set>
 
 using namespace llvm;
 
@@ -594,20 +596,30 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     std::string SyncCallCombinedLoc) {
   // TODO: Need do analysis for all syncthreads call in this DFI's ancestors and
   // this DFI's decendents.
-  // The results need be cached and reuse at the next time.
+  std::deque<std::weak_ptr<DeviceFunctionInfo>> Q;
+  std::set<std::weak_ptr<DeviceFunctionInfo>,
+           std::owner_less<std::weak_ptr<DeviceFunctionInfo>>>
+      Visited;
+  for (const auto &I : DFI->getParentDFIs()) {
+    if (Visited.find(I) == Visited.end()) {
+      Q.push_back(I);
+      Visited.insert(I);
+    }
+  }
+  while (!Q.empty()) {
+    auto Cur = Q.front().lock();
+    Q.pop_front();
 
   
 
 
-
-
-
-
-
-
-
-
-
+    for (const auto &I : Cur->getParentDFIs()) {
+      if (Visited.find(I) == Visited.end()) {
+        Q.push_back(I);
+        Visited.insert(I);
+      }
+    }
+  }
 
   return false;
 }
@@ -655,21 +667,28 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD) {
   std::cout << "===== SyncCall info contnet end =====" << std::endl;
 #endif
 
+  generateDRE2PVDMap(DefLocInfoMap);
+
   std::unordered_map<
       std::string /*call's combined loc string*/,
       std::tuple<
           bool /*is real sync call*/, bool /*is in loop*/, tooling::UnifiedPath,
           unsigned int,
-          std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
+          std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>,
+          std::unordered_map<
+              unsigned int /*arg idx*/,
+              std::set<unsigned int> /*caller parameter(s) idx*/>>>
       Map;
   for (auto &SyncCall : SyncCallsVec) {
+    const auto AffectedByParmsMap =
+        affectedByWhichParameters(DefLocInfoMap, SyncCall.second);
+    const auto ArgCallerParmsMap = getArgCallerParmsMap(SyncCall.first);
     auto LocInfo = DpctGlobalInfo::getLocInfo(SyncCall.first->getBeginLoc());
     Map.insert(std::make_pair(
         getCombinedStrFromLoc(SyncCall.first->getBeginLoc()),
-        std::make_tuple(
-            SyncCall.second.IsRealSyncCall, SyncCall.second.IsInLoop,
-            LocInfo.first, LocInfo.second,
-            affectedByWhichParameters(DefLocInfoMap, SyncCall.second))));
+        std::make_tuple(SyncCall.second.IsRealSyncCall,
+                        SyncCall.second.IsInLoop, LocInfo.first, LocInfo.second,
+                        AffectedByParmsMap, ArgCallerParmsMap)));
   }
   return IntraproceduralAnalyzerResult(Map);
 }
@@ -715,20 +734,20 @@ clang::dpct::InterproceduralAnalyzer::isSafeToUseLocalBarrier(
   return {true, false, ""};
 }
 
+auto convertPVD2Idx = [](const FunctionDecl *FD, const ParmVarDecl *PVD) {
+  unsigned int Idx = 0;
+  for (const auto& D : FD->parameters()) {
+    if (D == PVD)
+      return Idx;
+    Idx++;
+  }
+  assert(0 && "PVD is not in the FD.");
+};
+
 std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
 IntraproceduralAnalyzer::affectedByWhichParameters(
     const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
     const SyncCallInfo &SCI) {
-  auto convertPVD2Idx = [](const FunctionDecl *FD, const ParmVarDecl *PVD) {
-    unsigned int Idx = 0;
-    for (const auto& D : FD->parameters()) {
-      if (D == PVD)
-        return Idx;
-      Idx++;
-    }
-    assert(0 && "PVD is not in the FD.");
-  };
-
   std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
       AffectingParameters;
   for (auto &DefDREInfo : DefDREInfoMap) {
@@ -756,4 +775,38 @@ IntraproceduralAnalyzer::affectedByWhichParameters(
                          AffectedInfo{UsedBefore, UsedAfter, AM}));
   }
   return AffectingParameters;
+}
+
+void IntraproceduralAnalyzer::generateDRE2PVDMap(
+    const std::map<const ParmVarDecl *, std::set<DREInfo>> &Map) {
+  for (const auto &I : Map) {
+    for (const auto &J : I.second) {
+      DRE2PVDMap.insert(std::make_pair(J.DRE, I.first));
+    }
+  }
+}
+
+std::unordered_map<unsigned int /*arg idx*/,
+                   std::set<unsigned int> /*caller parameter(s) idx*/>
+IntraproceduralAnalyzer::getArgCallerParmsMap(const CallExpr *CE) {
+  std::unordered_map<unsigned int /*arg idx*/,
+                     std::set<unsigned int> /*caller parameter(s) idx*/>
+      RetMap;
+  unsigned int ArgIdx = 0;
+  for (const auto &E : CE->arguments()) {
+    std::set<const clang::DeclRefExpr *> DRESet;
+    bool HasCallExpr;
+    findDREs(E, DRESet, HasCallExpr /*un-used output arg*/);
+    std::set<unsigned int> CallerParmsIdx;
+    for (const auto &DRE : DRESet) {
+      const auto &Iter = DRE2PVDMap.find(DRE);
+      if (Iter != DRE2PVDMap.end()) {
+        const auto &PVD = Iter->second;
+        CallerParmsIdx.insert(convertPVD2Idx(FD, PVD));
+      }
+    }
+    RetMap.insert(std::make_pair(ArgIdx, CallerParmsIdx));
+    ArgIdx++;
+  }
+  return RetMap;
 }

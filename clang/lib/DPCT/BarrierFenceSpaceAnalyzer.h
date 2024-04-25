@@ -51,7 +51,10 @@ struct IntraproceduralAnalyzerResult {
           std::tuple<
               bool /*is real sync call*/, bool /*is in loop*/,
               tooling::UnifiedPath, unsigned int,
-              std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
+              std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>,
+              std::unordered_map<
+                  unsigned int /*arg idx*/,
+                  std::set<unsigned int> /*caller parameter(s) idx*/>>>
           Map)
       : Map(Map), UnsupportedCase(false) {}
   bool isDefault() const noexcept { return IsDefault; }
@@ -60,7 +63,10 @@ struct IntraproceduralAnalyzerResult {
       std::tuple<
           bool /*is real sync call*/, bool /*is in loop*/, tooling::UnifiedPath,
           unsigned int,
-          std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
+          std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>,
+          std::unordered_map<
+              unsigned int /*arg idx*/,
+              std::set<unsigned int> /*caller parameter(s) idx*/>>>
       Map;
 
 private:
@@ -199,10 +205,14 @@ private:
   affectedByWhichParameters(
       const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
       const SyncCallInfo &SCI);
+  std::unordered_map<unsigned int /*arg idx*/,
+                     std::set<unsigned int> /*caller parameter(s) idx*/>
+  getArgCallerParmsMap(const CallExpr* CE);
   std::pair<std::set<const DeclRefExpr *>, std::set<const VarDecl *>>
   isAssignedToAnotherDREOrVD(const DeclRefExpr *);
   bool isAccessingMemory(const DeclRefExpr *);
   AccessMode getAccessKindReadWrite(const DeclRefExpr *);
+  void generateDRE2PVDMap(const std::map<const ParmVarDecl *, std::set<DREInfo>>&);
 
   const FunctionDecl *FD = nullptr;
   std::string FDLoc;
@@ -210,6 +220,7 @@ private:
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::unordered_map<const ParmVarDecl *, std::set<const DeclRefExpr *>>
       DefUseMap;
+  std::multimap<const DeclRefExpr *, const ParmVarDecl *> DRE2PVDMap;
   // This map contains pairs meet below pattern:
   // loop {
   //   ...
