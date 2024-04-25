@@ -19,7 +19,7 @@ program = main
 #===============================================================================
 
 # Standard Flags
-CFLAGS := $(EXTRA_CFLAGS) -std=c++14 -Xcompiler -Wall -arch=$(ARCH)
+CFLAGS := $(EXTRA_CFLAGS) -std=c++14 -Xfatbin=-compress-all -Xfatbin -compress-all -Xcompiler -Wall -arch=$(ARCH)
 
 # Linker Flags
 LDFLAGS = 
