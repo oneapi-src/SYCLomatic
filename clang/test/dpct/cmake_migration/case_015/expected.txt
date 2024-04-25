@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 project(AProject)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-include(./dpct.cmake)
+include(dpct.cmake)
 add_library(target_one MODULE nosrc1.dp.cpp)
 
 # Test C++ 99 standard

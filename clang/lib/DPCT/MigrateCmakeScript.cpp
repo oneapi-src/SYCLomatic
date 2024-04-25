@@ -647,7 +647,7 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
           std::vector<std::string> SplitedStr =
               split(RelativePath.c_str(), '/');
 #endif
-          std::string RelativePathPrefix = "./";
+          std::string RelativePathPrefix = "";
 
           auto Size = SplitedStr.size();
           for (size_t Idx = 0; Size > 2 && Idx < Size - 2; Idx++) {

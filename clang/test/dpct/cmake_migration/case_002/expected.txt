@@ -1,26 +1,26 @@
 project(foo-bar LANGUAGES CXX )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-include(./dpct.cmake)
+include(dpct.cmake)
 
 project(foo2  CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-include(./dpct.cmake)
+include(dpct.cmake)
 
 project(foo VERSION 1.7
 DESCRIPTION "cuda test"
 LANGUAGES CXX 
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-include(./dpct.cmake)
+include(dpct.cmake)
 
 project(foo VERSION 1.1.0
 LANGUAGES)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-include(./dpct.cmake)
+include(dpct.cmake)
 
 project(foo)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-include(./dpct.cmake)
+include(dpct.cmake)
 
 project( tiny-cuda-nn
 	VERSION 1.7
@@ -28,4 +28,4 @@ project( tiny-cuda-nn
 	LANGUAGES CXX 
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-include(./dpct.cmake)
+include(dpct.cmake)
