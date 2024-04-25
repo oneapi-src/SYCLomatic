@@ -8997,7 +8997,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     bool HasTypeCasted = false;
     auto Info = Global.findMemVarInfo(Decl);
 
-    if (Info->isUseDeviceGlobal()) {
+    if (Info && Info->isUseDeviceGlobal()) {
       if (Decl->hasInit()) {
         auto InitStr = getInitForDeviceGlobal(Decl);
         if (!InitStr.empty()) {
@@ -9653,7 +9653,7 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
-    if (Info->isTypeDeclaredLocal() && !Info->isAnonymousType()) {
+    if (Info && Info->isTypeDeclaredLocal() && !Info->isAnonymousType()) {
       if (Info->getDeclStmtOfVarType()) {
         Info->setLocalTypeName(Info->getType()->getBaseName());
       }
