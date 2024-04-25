@@ -2244,3 +2244,17 @@
   CmakeSyntax: set_source_files_properties_lang
   In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
   Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
+
+- Rule: rule_CUDAToolkit_FOUND
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDAToolkit_FOUND
+  MatchMode: Partial
+  In: if${empty}(${value})
+  Out: if${empty}(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_FOUND
+      Out: IntelSYCL_FOUND
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
