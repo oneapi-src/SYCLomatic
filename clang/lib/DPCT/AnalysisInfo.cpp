@@ -1360,17 +1360,6 @@ int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
   }
 }
 
-bool DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(
-    std::shared_ptr<MemVarInfo> Info) {
-  std::string Key = Info->getFilePath().getCanonicalPath().str() +
-                    std::to_string(Info->getOffset()) + Info->getName();
-  if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
-      VarUsedByRuntimeSymbolAPISet.end()) {
-    return false;
-  }
-  return true;
-}
-
 int DpctGlobalInfo::getSuffixIndexInRuleThenInc() {
   int Res = CurrentIndexInRule;
   if (CurrentMaxIndex < Res)
@@ -1510,7 +1499,8 @@ std::string DpctGlobalInfo::getTypeName(QualType QT,
   return QT.getAsString(PP);
 }
 std::string DpctGlobalInfo::getReplacedTypeName(QualType QT,
-                                                const ASTContext &Context) {
+                                                const ASTContext &Context,
+                                                bool SuppressScope) {
   if (!QT.isNull())
     if (const auto *AT = dyn_cast<AutoType>(QT.getTypePtr())) {
       QT = AT->getDeducedType();
@@ -1523,6 +1513,7 @@ std::string DpctGlobalInfo::getReplacedTypeName(QualType QT,
   llvm::raw_string_ostream OS(MigratedTypeStr);
   clang::PrintingPolicy PP =
       clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
+  PP.SuppressScope = SuppressScope;
   QT.print(OS, PP);
   OS.flush();
   setGetReplacedNamePtr(nullptr);
@@ -2470,8 +2461,15 @@ std::unordered_map<clang::tooling::UnifiedPath,
 std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
-std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
+std::vector<std::pair<std::string, VarInfoForCodePin>>
+    DpctGlobalInfo::CodePinTypeInfoMap;
+std::vector<std::pair<std::string, VarInfoForCodePin>>
+    DpctGlobalInfo::CodePinTemplateTypeInfoMap;
+std::vector<std::pair<std::string, std::vector<std::string>>>
+    DpctGlobalInfo::CodePinTypeDepsVec;
+std::vector<std::pair<std::string, std::vector<std::string>>>
+    DpctGlobalInfo::CodePinDumpFuncDepsVec;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
@@ -2959,7 +2957,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
     if (isShared())
       return "";
     if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
-        !isUseHelperFunc()) {
+        !isUseHelperFunc() && !isUseDeviceGlobal()) {
       std::string Dims;
       const static std::string NullString;
       for (auto &Dim : getType()->getRange()) {
@@ -3154,21 +3152,28 @@ void MemVarInfo::setInitList(const Expr *E, const VarDecl *V) {
   InitList = getStmtSpelling(E, V->getSourceRange());
 }
 std::string MemVarInfo::getMemoryType() {
+  static std::string DeviceGlobalMemory =
+      MapNames::getClNamespace() + "ext::oneapi::experimental::device_global";
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
     requestFeature(HelperFeatureEnum::device_ext);
     static std::string DeviceMemory =
         MapNames::getDpctNamespace() + "global_memory";
+    if (isUseDeviceGlobal()) {
+      return getMemoryType(DeviceGlobalMemory, getType());
+    }
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string ConstantMemory =
         MapNames::getDpctNamespace() + "constant_memory";
-    if (!isUseHelperFunc()) {
-      ConstantMemory = "const ";
+    if (isUseHelperFunc()) {
+      return getMemoryType(ConstantMemory, getType());
+    } else if (isUseDeviceGlobal()) {
+      return getMemoryType(DeviceGlobalMemory, getType());
     }
-    return getMemoryType(ConstantMemory, getType());
+    return getMemoryType("const ", getType());
   }
   case clang::dpct::MemVarInfo::Shared: {
     static std::string SharedMemory =
@@ -3198,6 +3203,17 @@ std::string MemVarInfo::getMemoryType(const std::string &MemoryType,
   if (isUseHelperFunc()) {
     return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
                        VarType->getDimension(), ">");
+  } else if (isUseDeviceGlobal()) {
+    std::string Dims;
+    std::string Specifier;
+    for (auto &D : VarType->getRange()) {
+      Dims = Dims + "[" + D.getSize() + "]";
+    }
+    if (isConstant()) {
+      Specifier = "const ";
+    }
+    return buildString(MemoryType, "<", Specifier, VarType->getBaseName(), Dims,
+                       ">");
   } else {
     return buildString(MemoryType, VarType->getBaseNameWithoutQualifiers());
   }
@@ -3212,6 +3228,8 @@ std::string MemVarInfo::getInitArguments(const std::string &MemSize,
                          getType()->getRangeArgument(MemSize, true),
                          ", " + InitList, ")");
     return buildString("(", InitList, ")");
+  } else if (isUseDeviceGlobal()) {
+    return InitList;
   } else {
     return InitList.empty() ? "" : buildString(" = ", InitList);
   }
@@ -3906,11 +3924,6 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
                                                 LocInfo LI) {
   for (const auto &VI : VarMap) {
     if (!VI.second->isUseHelperFunc()) {
-      continue;
-    }
-    if (DpctGlobalInfo::isOptimizeMigration() && VI.second->isConstant() &&
-        !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(VI.second)) {
-      VI.second->setUseHelperFuncFlag(false);
       continue;
     }
     if (!VI.second->getType()->SharedVarInfo.TypeName.empty() &&
@@ -4916,6 +4929,25 @@ void DeviceFunctionInfo::buildInfo() {
   if (isBuilt())
     return;
   setBuilt();
+  auto &Map = VarMap.getMap(clang::dpct::MemVarInfo::Global);
+  for (auto It = Map.begin(); It != Map.end();) {
+    auto &Info = It->second;
+    if (!Info->getUsedBySymbolAPIFlag()) {
+      if (DpctGlobalInfo::isOptimizeMigration() && Info->isConstant()) {
+        Info->setUseHelperFuncFlag(false);
+      }
+      if (DpctGlobalInfo::useExpDeviceGlobal() &&
+          (Info->isConstant() || Info->isDevice())) {
+        Info->setUseHelperFuncFlag(false);
+        Info->setUseDeviceGlobalFlag(true);
+      }
+    }
+    if (!Info->isUseHelperFunc()) {
+      It = Map.erase(It);
+    } else {
+      ++It;
+    }
+  }
   for (auto &Call : CallExprMap) {
     Call.second->emplaceReplacement();
     VarMap.merge(Call.second->getVarMap());

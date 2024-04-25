@@ -205,6 +205,7 @@ add_clang_library(DPCT
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
   SpBLASAPIMigration.cpp
+  GenCodePinHeader.cpp
 
   DEPENDS
   ClangDriverOptions
