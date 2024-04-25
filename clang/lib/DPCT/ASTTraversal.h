@@ -184,8 +184,7 @@ public:
   template <typename IDTy, typename... Ts>
   bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
     return DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, TransformSet, UseTextBegin,
-        std::forward<Ts>(Vals)...);
+        SL, MsgID, TransformSet, UseTextBegin, std::forward<Ts>(Vals)...);
   }
 
   // Extend version of report()
@@ -207,9 +206,8 @@ public:
       Begin = SM.getExpansionLoc(Begin);
     }
 
-    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, TransformSet,
-                                          UseTextBegin,
-                                          std::forward<Ts>(Vals)...);
+    DiagnosticsUtils::report<IDTy, Ts...>(
+        Begin, MsgID, TransformSet, UseTextBegin, std::forward<Ts>(Vals)...);
   }
 };
 
