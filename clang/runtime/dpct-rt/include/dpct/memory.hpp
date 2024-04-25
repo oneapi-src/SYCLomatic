@@ -82,17 +82,14 @@ namespace experimental {
 class image_mem_wrapper;
 namespace detail {
 static sycl::event dpct_memcpy(const image_mem_wrapper *src,
-                               const sycl::range<3> &src_offset, void *dest,
-                               const sycl::range<3> &dest_offset,
-                               const sycl::range<3> &dest_extend,
+                               const sycl::id<3> &src_id, pitched_data &dest,
+                               const sycl::id<3> &dest_id,
                                const sycl::range<3> &copy_extend,
                                sycl::queue q);
-static sycl::event dpct_memcpy(void *src, const sycl::range<3> &src_offset,
-                               const sycl::range<3> &src_extend,
-                               image_mem_wrapper *dest,
-                               const sycl::range<3> &dest_offset,
-                               const sycl::range<3> &copy_extend,
-                               sycl::queue q);
+static sycl::event
+dpct_memcpy(const pitched_data src, const sycl::id<3> &src_id,
+            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q);
 } // namespace detail
 } // namespace experimental
 #endif
@@ -667,49 +664,59 @@ static inline std::vector<sycl::event>
 dpct_memcpy(sycl::queue &q, const mem_cpy_parameter *param) {
   auto to = param->to.pitched;
   auto from = param->from.pitched;
-  const auto to_pos = param->to.pos;
-  const auto from_pos = param->from.pos;
-  const auto to_img_data = param->to.image;
-  const auto from_img_data = param->from.image;
-  const auto size = param->size;
-  const auto direction = param->direction;
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-  auto to_img_mem = param->to.image_bindless;
-  const auto from_img_mem = param->from.image_bindless;
-  const auto to_offset = sycl::range<3>(to_pos[0], to_pos[1], to_pos[2]);
-  const auto from_offset =
-      sycl::range<3>(from_pos[0], from_pos[1], from_pos[2]);
-  const auto to_extend = sycl::range<3>(to.get_pitch(), to.get_y(), 1);
-  const auto from_extend = sycl::range<3>(from.get_pitch(), from.get_y(), 1);
-  if (to_img_mem != nullptr && from_img_mem != nullptr) {
+  if (param->to.image_bindless != nullptr &&
+      param->from.image_bindless != nullptr) {
+    // RAII for device pointer
+    class host_buffer {
+      void *_buf;
+      sycl::queue &_q;
+      const std::vector<sycl::event> &_deps; // free operation depends
+
+    public:
+      host_buffer(size_t size, sycl::queue &q,
+                  const std::vector<sycl::event> &deps)
+          : _buf(std::malloc(size)), _q(q), _deps(deps) {}
+      void *get_ptr() const { return _buf; }
+      ~host_buffer() {
+        if (_buf) {
+          _q.submit([&](sycl::handler &cgh) {
+            cgh.depends_on(_deps);
+            cgh.host_task([buf = _buf] { std::free(buf); });
+          });
+        }
+      }
+    };
     std::vector<sycl::event> event_list;
-    auto temp = (void *)sycl::malloc_device(size.size(), q);
+    host_buffer buf(param->size.size(), q, event_list);
+    to.set_data_ptr(buf.get_ptr());
     // TODO: Need change logic when sycl support image_mem to image_mem copy.
+    experimental::detail::dpct_memcpy(param->from.image_bindless,
+                                      param->from.pos, to, sycl::id<3>(0, 0, 0),
+                                      param->size, q);
+    from.set_data_ptr(buf.get_ptr());
     event_list.push_back(experimental::detail::dpct_memcpy(
-        from_img_mem, from_offset, temp, sycl::range<3>(0, 0, 0), to_extend,
-        size, q));
-    event_list.push_back(experimental::detail::dpct_memcpy(
-        temp, sycl::range<3>(0, 0, 0), from_extend, to_img_mem, to_offset, size,
-        q));
-    sycl::free(temp, q);
+        from, sycl::id<3>(0, 0, 0), param->to.image_bindless, param->to.pos,
+        param->size, q));
     return event_list;
-  } else if (to_img_mem != nullptr) {
-    return {experimental::detail::dpct_memcpy(from.get_data_ptr(), from_offset,
-                                              from_extend, to_img_mem,
-                                              to_offset, size, q)};
-  } else if (from_img_mem != nullptr) {
-    return {experimental::detail::dpct_memcpy(from_img_mem, from_offset,
-                                              to.get_data_ptr(), to_offset,
-                                              to_extend, size, q)};
+  } else if (param->to.image_bindless != nullptr) {
+    return {experimental::detail::dpct_memcpy(from, param->from.pos,
+                                              param->to.image_bindless,
+                                              param->to.pos, param->size, q)};
+  } else if (param->from.image_bindless != nullptr) {
+    return {experimental::detail::dpct_memcpy(param->from.image_bindless,
+                                              param->from.pos, to,
+                                              param->to.pos, param->size, q)};
   }
 #endif
-  if (to_img_data != nullptr) {
-    to = to_pitched_data(to_img_data);
+  if (param->to.image != nullptr) {
+    to = to_pitched_data(param->to.image);
   }
-  if (from_img_data != nullptr) {
-    from = to_pitched_data(from_img_data);
+  if (param->from.image != nullptr) {
+    from = to_pitched_data(param->from.image);
   }
-  return dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
+  return dpct_memcpy(q, to, param->to.pos, from, param->from.pos, param->size,
+                     param->direction);
 }
 
 namespace deprecated {
