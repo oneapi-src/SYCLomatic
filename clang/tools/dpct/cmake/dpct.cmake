@@ -122,6 +122,6 @@ set(COMPATIBILITY_VERSION_MINOR 9)
 set(COMPATIBILITY_VERSION_STRING "${COMPATIBILITY_VERSION}")
 set(SYCL_TOOLKIT_ROOT_DIR "${ONEAPI_ROOT}")
 set(SYCL_TOOLKIT_INCLUDE "${ONEAPI_ROOT}/vtune/latest/include;${ONEAPI_ROOT}/vtune/latest/sdk/include")
-# OneAPI library is marked for linker lookup by FindIntelSYCL.cmake. So we can
+# The SYCL runtime library is auto-loaded when option `-fsycl` is specified. So we can
 # safely set the CUDAToolkit_LIBRARY_DIR to ""
 set(SYCLToolkit_LIBRARY_DIR "")
