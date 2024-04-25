@@ -1127,6 +1127,7 @@ int runDPCT(int argc, const char **argv) {
       std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{
           CmakeRuleFilePath};
       importRules(CmakeRuleFiles);
+      dpct::genCmakeHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
     }
   }
 
