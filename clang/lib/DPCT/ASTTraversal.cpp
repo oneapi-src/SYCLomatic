@@ -12460,68 +12460,74 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
-//  static std::map<std::string, bool> LocationResultMapForTemplate;
-//  auto emplaceReplacement = [&](BarrierFenceSpace1DAnalyzerResult Res,
-//                                const CallExpr *CE) {
-//    std::string Replacement;
-//    if (Res.CanUseLocalBarrier) {
-//      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
-//             Res.GlobalFunctionName);
-//      Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
-//                    MapNames::getClNamespace() +
-//                    "access::fence_space::local_space)";
-//    } else if (Res.CanUseLocalBarrierWithCondition) {
-//      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
-//             Res.GlobalFunctionName);
-//      Replacement =
-//          "(" + Res.Condition + ") ? " + DpctGlobalInfo::getItem(CE) +
-//          ".barrier(" + MapNames::getClNamespace() +
-//          "access::fence_space::local_space) : " + DpctGlobalInfo::getItem(CE) +
-//          ".barrier()";
-//    } else {
-//      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
-//             "nd_item");
-//      Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
-//    }
-//    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-//  };
-//
-//  const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "SyncFuncCall");
-//  const FunctionDecl *FD =
-//      getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
-//  if (!CE || !FD)
-//    return;
-//
-//  std::string FuncName =
-//      CE->getDirectCallee()->getNameInfo().getName().getAsString();
-//  if (FuncName == "__syncthreads") {
-//    BarrierFenceSpace1DAnalyzer A;
-//    const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
-//    if (FTD) {
-//      if (FTD->specializations().empty()) {
-//        emplaceReplacement(A.analyzeFor1DKernel(CE), CE);
-//      }
-//    } else {
-//      if (FD->getTemplateSpecializationKind() ==
-//          TemplateSpecializationKind::TSK_Undeclared) {
-//        emplaceReplacement(A.analyzeFor1DKernel(CE), CE);
-//      } else {
-//        auto CurRes = A.analyzeFor1DKernel(CE);
-//        std::string LocHash = getHashStrFromLoc(CE->getBeginLoc());
-//        auto Iter = LocationResultMapForTemplate.find(LocHash);
-//        if (Iter != LocationResultMapForTemplate.end()) {
-//          if (Iter->second != CurRes.CanUseLocalBarrier) {
-//            report(CE->getBeginLoc(),
-//                   Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
-//                   false, FuncName);
-//          }
-//        } else {
-//          LocationResultMapForTemplate[LocHash] = CurRes.CanUseLocalBarrier;
-//          emplaceReplacement(CurRes, CE);
-//        }
-//      }
-//    }
-//  }
+  static std::map<std::string, bool> LocationResultMapForTemplate;
+  auto emplaceReplacement = [&](BarrierFenceSpace1DAnalyzerResult Res,
+                                const CallExpr *CE) {
+    std::string Replacement;
+    if (Res.CanUseLocalBarrier) {
+      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
+             Res.GlobalFunctionName);
+      Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
+                    MapNames::getClNamespace() +
+                    "access::fence_space::local_space)";
+    } else if (Res.CanUseLocalBarrierWithCondition) {
+      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
+             Res.GlobalFunctionName);
+      Replacement =
+          "(" + Res.Condition + ") ? " + DpctGlobalInfo::getItem(CE) +
+          ".barrier(" + MapNames::getClNamespace() +
+          "access::fence_space::local_space) : " + DpctGlobalInfo::getItem(CE) +
+          ".barrier()";
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
+             "nd_item");
+      Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+  };
+
+  const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "SyncFuncCall");
+  const FunctionDecl *FD =
+      getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
+  if (!CE || !FD)
+    return;
+
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  if (FuncName == "__syncthreads") {
+    std::string Key = getCombinedStrFromLoc(CE->getBeginLoc());
+    const auto &Map =
+        DpctGlobalInfo::getSyncthreadsMigrationCrossFunctionResultsMap();
+    auto Iter = Map.find(Key);
+    if (Iter != Map.end() && Iter->second)
+      return;
+    BarrierFenceSpace1DAnalyzer A;
+    const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
+    if (FTD) {
+      if (FTD->specializations().empty()) {
+        emplaceReplacement(A.analyzeFor1DKernel(CE), CE);
+      }
+    } else {
+      if (FD->getTemplateSpecializationKind() ==
+          TemplateSpecializationKind::TSK_Undeclared) {
+        emplaceReplacement(A.analyzeFor1DKernel(CE), CE);
+      } else {
+        auto CurRes = A.analyzeFor1DKernel(CE);
+        std::string LocHash = getHashStrFromLoc(CE->getBeginLoc());
+        auto Iter = LocationResultMapForTemplate.find(LocHash);
+        if (Iter != LocationResultMapForTemplate.end()) {
+          if (Iter->second != CurRes.CanUseLocalBarrier) {
+            report(CE->getBeginLoc(),
+                   Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+                   false, FuncName);
+          }
+        } else {
+          LocationResultMapForTemplate[LocHash] = CurRes.CanUseLocalBarrier;
+          emplaceReplacement(CurRes, CE);
+        }
+      }
+    }
+  }
 }
 
 REGISTER_RULE(SyncThreadsMigrationRule, PassKind::PK_Migration)

@@ -45,6 +45,7 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
 
   if (FuncName == "__syncthreads" || isUserDefinedDecl(FuncDecl)) {
     SyncCallInfo SCI;
+    SCI.IsRealSyncCall = FuncName == "__syncthreads";
     SCI.Predecessors.insert(
         SourceRange(FD->getBody()->getBeginLoc(), CE->getBeginLoc()));
     SCI.Successors.insert(
@@ -52,6 +53,7 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
     if (!LoopRange.empty()) {
       SCI.Predecessors.insert(LoopRange.front());
       SCI.Successors.insert(LoopRange.front());
+      SCI.IsInLoop = true;
     }
     SyncCallsVec.push_back(std::make_pair(CE, SCI));
   }
@@ -594,6 +596,19 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
   // this DFI's decendents.
   // The results need be cached and reuse at the next time.
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   return false;
 }
 
@@ -643,16 +658,18 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD) {
   std::unordered_map<
       std::string /*call's combined loc string*/,
       std::tuple<
-          tooling::UnifiedPath, unsigned int,
+          bool /*is real sync call*/, bool /*is in loop*/, tooling::UnifiedPath,
+          unsigned int,
           std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
       Map;
   for (auto &SyncCall : SyncCallsVec) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(SyncCall.first->getBeginLoc());
-    Map.insert(
-        std::make_pair(getCombinedStrFromLoc(SyncCall.first->getBeginLoc()),
-                       std::make_tuple(LocInfo.first, LocInfo.second,
-                                       affectedByWhichParameters(
-                                           DefLocInfoMap, SyncCall.second))));
+    Map.insert(std::make_pair(
+        getCombinedStrFromLoc(SyncCall.first->getBeginLoc()),
+        std::make_tuple(
+            SyncCall.second.IsRealSyncCall, SyncCall.second.IsInLoop,
+            LocInfo.first, LocInfo.second,
+            affectedByWhichParameters(DefLocInfoMap, SyncCall.second))));
   }
   return IntraproceduralAnalyzerResult(Map);
 }

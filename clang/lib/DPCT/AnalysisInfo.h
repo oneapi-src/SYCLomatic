@@ -1411,6 +1411,10 @@ public:
   static bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
   }
+  static std::unordered_map<std::string, bool> &
+  getSyncthreadsMigrationCrossFunctionResultsMap() {
+    return SyncthreadsMigrationCrossFunctionResultsMap;
+  }
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 
@@ -1624,6 +1628,8 @@ private:
   static std::vector<std::pair<std::string, std::vector<std::string>>>
       CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
+  static std::unordered_map<std::string, bool>
+      SyncthreadsMigrationCrossFunctionResultsMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

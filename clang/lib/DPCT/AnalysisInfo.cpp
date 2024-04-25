@@ -2471,6 +2471,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>>
 std::vector<std::pair<std::string, std::vector<std::string>>>
     DpctGlobalInfo::CodePinDumpFuncDepsVec;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
+std::unordered_map<std::string, bool>
+    DpctGlobalInfo::SyncthreadsMigrationCrossFunctionResultsMap;
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {
@@ -4955,25 +4957,36 @@ void DeviceFunctionInfo::buildInfo() {
                       Call.second->getTextureObjectList());
   }
   VarMap.removeDuplicateVar();
-  // TODO: do inter-procedural analysis for __syncthreads migration
-  //       emplace replacements for __syncthreads in this DFI
+
+  // Inter-procedural analysis for __syncthreads migration
   for (const auto &SyncCall : IAR.Map) {
+    if (!std::get<0>(SyncCall.second))
+      continue;
     InterproceduralAnalyzer IA;
     bool Res = IA.analyze(shared_from_this(), SyncCall.first);
-    std::string Replacement;
-    if (Res) {
-      Replacement = getItemName() + ".barrier(" + MapNames::getClNamespace() +
-                    "access::fence_space::local_space)";
+    auto &Map =
+        DpctGlobalInfo::getSyncthreadsMigrationCrossFunctionResultsMap();
+    auto Iter = Map.find(SyncCall.first);
+    if (Iter == Map.end()) {
+      Map.insert(std::make_pair(SyncCall.first, Res));
     } else {
-      DiagnosticsUtils::report(
-          std::get<0>(SyncCall.second), std::get<1>(SyncCall.second),
-          Diagnostics::BARRIER_PERFORMANCE_TUNNING, true, false, "nd_item");
-      Replacement = getItemName() + ".barrier()";
+      if (Iter->second && !Res)
+        Iter->second = false;
     }
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            std::get<0>(SyncCall.second), std::get<1>(SyncCall.second),
-            std::strlen("__syncthreads"), Replacement, nullptr));
+    //std::string Replacement;
+    //if (Res) {
+    //  Replacement = getItemName() + ".barrier(" + MapNames::getClNamespace() +
+    //                "access::fence_space::local_space)";
+    //} else {
+    //  DiagnosticsUtils::report(
+    //      std::get<2>(SyncCall.second), std::get<3>(SyncCall.second),
+    //      Diagnostics::BARRIER_PERFORMANCE_TUNNING, true, false, "nd_item");
+    //  Replacement = getItemName() + ".barrier()";
+    //}
+    //DpctGlobalInfo::getInstance().addReplacement(
+    //    std::make_shared<ExtReplacement>(
+    //        std::get<2>(SyncCall.second), std::get<3>(SyncCall.second),
+    //        std::strlen("__syncthreads"), Replacement, nullptr));
   }
 }
 std::string

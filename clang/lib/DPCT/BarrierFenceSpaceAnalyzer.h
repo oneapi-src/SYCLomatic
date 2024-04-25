@@ -49,6 +49,7 @@ struct IntraproceduralAnalyzerResult {
       std::unordered_map<
           std::string /*call's combined loc string*/,
           std::tuple<
+              bool /*is real sync call*/, bool /*is in loop*/,
               tooling::UnifiedPath, unsigned int,
               std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
           Map)
@@ -57,7 +58,8 @@ struct IntraproceduralAnalyzerResult {
   std::unordered_map<
       std::string /*call's combined loc string*/,
       std::tuple<
-          tooling::UnifiedPath, unsigned int,
+          bool /*is real sync call*/, bool /*is in loop*/, tooling::UnifiedPath,
+          unsigned int,
           std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
       Map;
 
@@ -69,10 +71,14 @@ private:
 using Ranges = std::unordered_set<SourceRange>;
 struct SyncCallInfo {
   SyncCallInfo() {}
-  SyncCallInfo(Ranges Predecessors, Ranges Successors)
-      : Predecessors(Predecessors), Successors(Successors){};
+  SyncCallInfo(Ranges Predecessors, Ranges Successors, bool IsRealSyncCall,
+               bool IsInLoop)
+      : Predecessors(Predecessors), Successors(Successors),
+        IsRealSyncCall(IsRealSyncCall), IsInLoop(IsInLoop){};
   Ranges Predecessors;
   Ranges Successors;
+  bool IsRealSyncCall;
+  bool IsInLoop;
 };
 
 struct DREInfo {
