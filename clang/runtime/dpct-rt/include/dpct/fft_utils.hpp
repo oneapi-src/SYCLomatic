@@ -12,6 +12,7 @@
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include "lib_common_utils.hpp"
 
@@ -1175,16 +1176,23 @@ private:
   void compute_impl(Dest_t desc, T *input, T *output,
                     std::optional<fft_direction> direction) {
     bool is_this_compute_inplace = input == output;
-    bool is_complex = direction.has_value();
+    constexpr bool is_complex =
+        std::is_same_v<Dest_t, std::shared_ptr<oneapi::mkl::dft::descriptor<
+                                   oneapi::mkl::dft::precision::SINGLE,
+                                   oneapi::mkl::dft::domain::COMPLEX>>> ||
+        std::is_same_v<Dest_t, std::shared_ptr<oneapi::mkl::dft::descriptor<
+                                   oneapi::mkl::dft::precision::DOUBLE,
+                                   oneapi::mkl::dft::domain::COMPLEX>>>;
 
     if (!_is_user_specified_dir_and_placement) {
       // The descriptor need different config values if the FFT direction
       // or placement is different.
       // Here we check the conditions, and new config values are set and
       // re-committed if needed.
-      if ((is_this_compute_inplace != _is_inplace) ||
-          (is_complex && (direction != _direction))) {
-        if (is_complex && (direction != _direction)) {
+      bool need_commit = false;
+      if constexpr (is_complex) {
+        if (direction.value() != _direction) {
+          need_commit = true;
           swap_distance(desc);
 #ifdef __INTEL_MKL__
           if (!_is_basic)
@@ -1192,36 +1200,42 @@ private:
 #endif
           _direction = direction.value();
         }
-        if (is_this_compute_inplace != _is_inplace) {
-          _is_inplace = is_this_compute_inplace;
-#ifdef __INTEL_MKL__
-          if (_is_inplace) {
-            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                            DFTI_CONFIG_VALUE::DFTI_INPLACE);
-            if (_is_basic && !is_complex)
-              set_stride_and_distance_basic<true>(desc);
-          } else {
-            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                            DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-            if (_is_basic && !is_complex)
-              set_stride_and_distance_basic<false>(desc);
-          }
-#else
-          if (_is_inplace) {
-            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                            oneapi::mkl::dft::config_value::INPLACE);
-            if (_is_basic && !is_complex)
-              set_stride_and_distance_basic<true>(desc);
-          } else {
-            desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
-                            oneapi::mkl::dft::config_value::NOT_INPLACE);
-            if (_is_basic && !is_complex)
-              set_stride_and_distance_basic<false>(desc);
-          }
-#endif
-        }
-        desc->commit(*_q);
       }
+      if (is_this_compute_inplace != _is_inplace) {
+        need_commit = true;
+        _is_inplace = is_this_compute_inplace;
+#ifdef __INTEL_MKL__
+        if (_is_inplace) {
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          DFTI_CONFIG_VALUE::DFTI_INPLACE);
+          if constexpr (!is_complex)
+            if (_is_basic)
+              set_stride_and_distance_basic<true>(desc);
+        } else {
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+          if constexpr (!is_complex)
+            if (_is_basic)
+              set_stride_and_distance_basic<false>(desc);
+        }
+#else
+        if (_is_inplace) {
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          oneapi::mkl::dft::config_value::INPLACE);
+          if constexpr (!is_complex)
+            if (_is_basic)
+              set_stride_and_distance_basic<true>(desc);
+        } else {
+          desc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                          oneapi::mkl::dft::config_value::NOT_INPLACE);
+          if constexpr (!is_complex)
+            if (_is_basic)
+              set_stride_and_distance_basic<false>(desc);
+        }
+#endif
+      }
+      if (need_commit)
+        desc->commit(*_q);
     }
 
     if (_is_inplace) {
