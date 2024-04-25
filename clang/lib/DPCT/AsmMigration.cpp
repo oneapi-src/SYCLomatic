@@ -2167,7 +2167,7 @@ protected:
 
           // Src type is integer type, float or double
           ((SrcType->isInt() || SrcType->isFloating()) &&
-           DesType->getKind() != InlineAsmBuiltinType::TK_f16) &&
+           SrcType->getKind() != InlineAsmBuiltinType::TK_f16) &&
 
           // Instruction has no rounding modifier
           !Inst->hasAttr(InstAttr::rni, InstAttr::rn, InstAttr::rzi,

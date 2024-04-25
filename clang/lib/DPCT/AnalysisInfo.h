@@ -179,6 +179,31 @@ struct CudaArchPPInfo {
   bool isInHDFunc = false;
 };
 
+struct MemberOrBaseInfoForCodePin {
+  bool UserDefinedTypeFlag = false;
+  int PointerDepth = 0;
+  bool IsBaseMember = false;
+  std::vector<int> Dims;
+  std::string TypeNameInCuda;
+  std::string TypeNameInSycl;
+  std::string MemberName;
+};
+
+struct VarInfoForCodePin {
+  bool TemplateFlag = false;
+  bool TopTypeFlag = false;
+  bool IsValid = false;
+  std::string HashKey;
+  std::string VarRecordType;
+  std::string VarName;
+  std::string VarNameWithoutScopeAndTemplateArgs;
+  std::string TemplateInstArgs;
+  std::vector<std::string> Namespaces;
+  std::vector<std::string> TemplateArgs;
+  std::vector<MemberOrBaseInfoForCodePin> Bases;
+  std::vector<MemberOrBaseInfoForCodePin> Members;
+};
+
 struct MemcpyOrderAnalysisInfo {
   MemcpyOrderAnalysisInfo(
       std::vector<std::pair<const Stmt *, MemcpyOrderAnalysisNodeKind>>
@@ -1039,11 +1064,13 @@ public:
   /// bool...) regardless its order in origin code.
   /// \param [in] QT The input qualified type which need migration.
   /// \param [in] Context The AST context.
+  /// \param [in] SuppressScope Suppresses printing of scope specifiers.
   /// \return The replaced type name string with qualifiers.
+  static std::string getReplacedTypeName(QualType QT, const ASTContext &Context,
+                                         bool SuppressScope = false);
   static std::string getReplacedTypeName(QualType QT,
-                                         const ASTContext &Context);
-  static std::string getReplacedTypeName(QualType QT) {
-    return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
+                                         bool SuppressScope = false) {
+    return getReplacedTypeName(QT, DpctGlobalInfo::getContext(), SuppressScope);
   }
   /// This function will return the original type name with qualifiers.
   /// The order of original qualifiers will follow the behavior of
@@ -1250,6 +1277,9 @@ public:
   static bool useExpNonUniformGroups() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
   }
+  static bool useExpDeviceGlobal() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DeviceGlobal>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
@@ -1367,10 +1397,13 @@ public:
   getConstantReplProcessedFlagMap() {
     return ConstantReplProcessedFlagMap;
   }
-  static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
-    return VarUsedByRuntimeSymbolAPISet;
-  }
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
+  static auto &getCodePinTypeInfoVec() { return CodePinTypeInfoMap; }
+  static auto &getCodePinTemplateTypeInfoVec() {
+    return CodePinTemplateTypeInfoMap;
+  }
+  static auto &getCodePinTypeDepsVec() { return CodePinTypeDepsVec; }
+  static auto &getCodePinDumpFuncDepsVec() { return CodePinDumpFuncDepsVec; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
@@ -1580,8 +1613,15 @@ private:
   /// "true" means this repl has been processed.
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
-  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static IncludeMapSetTy IncludeMapSet;
+  static std::vector<std::pair<std::string, VarInfoForCodePin>>
+      CodePinTypeInfoMap;
+  static std::vector<std::pair<std::string, VarInfoForCodePin>>
+      CodePinTemplateTypeInfoMap;
+  static std::vector<std::pair<std::string, std::vector<std::string>>>
+      CodePinTypeDepsVec;
+  static std::vector<std::pair<std::string, std::vector<std::string>>>
+      CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 
@@ -1774,6 +1814,8 @@ public:
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
   bool isConstant() { return Attr == Constant; }
+  bool isDevice() { return Attr == Device; }
+  bool isManaged() { return Attr == Managed; }
   bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
   bool isAnonymousType() { return IsAnonymousType; }
   const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }
@@ -1808,8 +1850,13 @@ public:
   ParameterStream &getKernelArg(ParameterStream &PS);
   std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
                                   bool NeedCheckExtraConstQualifier = false);
+  void setUsedBySymbolAPIFlag(bool Flag) { UsedBySymbolAPIFlag = Flag; }
+  bool getUsedBySymbolAPIFlag() { return UsedBySymbolAPIFlag; }
   void setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; }
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
+  void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
+  bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
+  void setInitForDeviceGlobal(std::string Init) { InitList = Init; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -1874,7 +1921,9 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  bool UsedBySymbolAPIFlag = false;
   bool UseHelperFuncFlag = true;
+  bool UseDeviceGlobalFlag = false;
 };
 
 class TextureTypeInfo {

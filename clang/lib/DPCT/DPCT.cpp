@@ -86,30 +86,24 @@ extern UnifiedPath VcxprojFilePath;
 } // namespace tooling
 namespace dpct {
 llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
+llvm::cl::OptionCategory &DPCTBasicCat = llvm::cl::getDPCTBasicCategory();
+llvm::cl::OptionCategory &DPCTAdvancedCat = llvm::cl::getDPCTAdvancedCategory();
+llvm::cl::OptionCategory &DPCTCodeGenCat = llvm::cl::getDPCTCodeGenCategory();
+llvm::cl::OptionCategory &DPCTReportGenCat =
+    llvm::cl::getDPCTReportGenCategory();
+llvm::cl::OptionCategory &DPCTBuildScriptCat =
+    llvm::cl::getDPCTBuildScriptCategory();
+llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
+llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
+llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
+llvm::cl::OptionCategory &DPCTInterceptBuildCat =
+    llvm::cl::getDPCTInterceptBuildCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
 
 // clang-format off
-const char *const CtHelpMessage =
-    "\n"
-    "<source0> ... Paths of input source files. These paths are looked up in "
-    "the compilation database.\n\n"
-    "EXAMPLES:\n\n"
-    "Migrate single source file:\n\n"
-    "  dpct source.cpp\n\n"
-    "Migrate single source file with C++11 features:\n\n"
-    "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
-    "Migrate all files available in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
-    "Migrate one file in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
-#if defined(_WIN32)
-    "Migrate all files available in vcxprojfile:\n\n"
-    "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
-#endif
-    DiagRef
-    ;
+const char *const CtHelpMessage = DiagRef;
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
@@ -1133,6 +1127,7 @@ int runDPCT(int argc, const char **argv) {
       std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{
           CmakeRuleFilePath};
       importRules(CmakeRuleFiles);
+      dpct::genCmakeHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
     }
   }
 
