@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --out-root %T/user_defined_half_raw %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/user_defined_half_raw/user_defined_half_raw.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/user_defined_half_raw/user_defined_half_raw.dp.cpp -o %T/user_defined_half_raw/user_defined_half_raw.dp.o %}
 
 struct __half_raw {
   __device__ __half_raw() : _raw(0) {}
