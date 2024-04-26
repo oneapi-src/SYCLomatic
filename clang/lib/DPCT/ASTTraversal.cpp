@@ -2674,6 +2674,13 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   }
   // Runrule for __half_raw implicitly convert to half.
   if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
+    if (const auto *RT =
+            DRE->getType().getCanonicalType()->getAs<RecordType>()) {
+      if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
+        if (isUserDefinedDecl(ClassDecl))
+          return;
+      }
+    }
     ExprAnalysis EA;
     std::string Replacement;
     llvm::raw_string_ostream OS(Replacement);
