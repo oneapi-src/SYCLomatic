@@ -413,12 +413,12 @@ public:
   template <typename ReplacementT>
   void insertHeader(ReplacementT &&Repl, unsigned Offset,
                     InsertPosition InsertPos = IP_Left,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
-    R->IsForCUDADebug = IsForCUDADebug;
+    R->IsForCodePin = IsForCodePin;
     IncludeDirectiveInsertions.push_back(R);
   }
 
@@ -433,9 +433,9 @@ public:
   }
 
   void insertHeader(HeaderType Type, unsigned Offset,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
   void insertHeader(HeaderType Type,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -1164,7 +1164,7 @@ public:
   void setAlgorithmHeaderInserted(SourceLocation Loc, bool B);
   void setTimeHeaderInserted(SourceLocation Loc, bool B);
   void insertHeader(SourceLocation Loc, HeaderType Type,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
   void insertHeader(SourceLocation Loc, std::string HeaderName);
   static std::unordered_map<
       std::string,
@@ -1276,6 +1276,9 @@ public:
   }
   static bool useExpNonUniformGroups() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
+  }
+  static bool useExpDeviceGlobal() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DeviceGlobal>();
   }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
@@ -1393,9 +1396,6 @@ public:
   static std::map<std::shared_ptr<TextModification>, bool> &
   getConstantReplProcessedFlagMap() {
     return ConstantReplProcessedFlagMap;
-  }
-  static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
-    return VarUsedByRuntimeSymbolAPISet;
   }
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
   static auto &getCodePinTypeInfoVec() { return CodePinTypeInfoMap; }
@@ -1613,7 +1613,6 @@ private:
   /// "true" means this repl has been processed.
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
-  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static IncludeMapSetTy IncludeMapSet;
   static std::vector<std::pair<std::string, VarInfoForCodePin>>
       CodePinTypeInfoMap;
@@ -1815,6 +1814,8 @@ public:
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
   bool isConstant() { return Attr == Constant; }
+  bool isDevice() { return Attr == Device; }
+  bool isManaged() { return Attr == Managed; }
   bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
   bool isAnonymousType() { return IsAnonymousType; }
   const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }
@@ -1849,8 +1850,13 @@ public:
   ParameterStream &getKernelArg(ParameterStream &PS);
   std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
                                   bool NeedCheckExtraConstQualifier = false);
+  void setUsedBySymbolAPIFlag(bool Flag) { UsedBySymbolAPIFlag = Flag; }
+  bool getUsedBySymbolAPIFlag() { return UsedBySymbolAPIFlag; }
   void setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; }
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
+  void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
+  bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
+  void setInitForDeviceGlobal(std::string Init) { InitList = Init; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -1915,7 +1921,9 @@ private:
   std::string LocalTypeName = "";
 
   static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  bool UsedBySymbolAPIFlag = false;
   bool UseHelperFuncFlag = true;
+  bool UseDeviceGlobalFlag = false;
 };
 
 class TextureTypeInfo {

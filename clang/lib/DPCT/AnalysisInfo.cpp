@@ -701,7 +701,7 @@ void DpctFileInfo::buildReplacements() {
   }
   HeaderOSCUDA.flush();
   insertHeader(std::move(InsertHeaderStrCUDA), LastIncludeOffset, IP_Left,
-               RT_ForCUDADebug);
+               RT_CUDAWithCodePin);
 
   FreeQueriesInfo::buildInfo();
 
@@ -792,7 +792,7 @@ void DpctFileInfo::emplaceReplacements(
 void DpctFileInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
     return;
-  if (Repl->IsForCUDADebug)
+  if (Repl->IsForCodePin)
     ReplsCUDA->addReplacement(Repl);
   else
     ReplsSYCL->addReplacement(Repl);
@@ -838,7 +838,7 @@ StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
   return "";
 }
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
-                                ReplacementType IsForCUDADebug) {
+                                ReplacementType IsForCodePin) {
   if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
       Type == HT_DPCT_DNNL_Utils) {
     if (this != DpctGlobalInfo::getInstance().getMainFile().get())
@@ -982,7 +982,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     SchemaRelativePath += "generated_schema.hpp\"";
     concatHeader(OS, SchemaRelativePath);
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
-                        IsForCUDADebug);
+                        IsForCodePin);
   } break;
   default:
     break;
@@ -993,12 +993,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   concatHeader(OS, getHeaderSpelling(Type));
   return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
 }
-void DpctFileInfo::insertHeader(HeaderType Type,
-                                ReplacementType IsForCUDADebug) {
+void DpctFileInfo::insertHeader(HeaderType Type, ReplacementType IsForCodePin) {
   switch (Type) {
 #define HEADER(Name, Spelling)                                                 \
   case HT_##Name:                                                              \
-    return insertHeader(HT_##Name, LastIncludeOffset, IsForCUDADebug);
+    return insertHeader(HT_##Name, LastIncludeOffset, IsForCodePin);
 #include "HeaderTypes.inc"
   default:
     return;
@@ -1357,17 +1356,6 @@ int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
   } else {
     return Res->second;
   }
-}
-
-bool DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(
-    std::shared_ptr<MemVarInfo> Info) {
-  std::string Key = Info->getFilePath().getCanonicalPath().str() +
-                    std::to_string(Info->getOffset()) + Info->getName();
-  if (VarUsedByRuntimeSymbolAPISet.find(Key) ==
-      VarUsedByRuntimeSymbolAPISet.end()) {
-    return false;
-  }
-  return true;
 }
 
 int DpctGlobalInfo::getSuffixIndexInRuleThenInc() {
@@ -2192,9 +2180,9 @@ void DpctGlobalInfo::setTimeHeaderInserted(SourceLocation Loc, bool B) {
   insertFile(LocInfo.first)->setTimeHeaderInserted(B);
 }
 void DpctGlobalInfo::insertHeader(SourceLocation Loc, HeaderType Type,
-                                  ReplacementType IsForCUDADebug) {
+                                  ReplacementType IsForCodePin) {
   auto LocInfo = getLocInfo(Loc);
-  insertFile(LocInfo.first)->insertHeader(Type, IsForCUDADebug);
+  insertFile(LocInfo.first)->insertHeader(Type, IsForCodePin);
 }
 void DpctGlobalInfo::insertHeader(SourceLocation Loc, std::string HeaderName) {
   auto LocInfo = getLocInfo(Loc);
@@ -2471,7 +2459,6 @@ std::unordered_map<clang::tooling::UnifiedPath,
 std::unordered_map<std::string, bool> DpctGlobalInfo::MallocHostInfoMap;
 std::map<std::shared_ptr<TextModification>, bool>
     DpctGlobalInfo::ConstantReplProcessedFlagMap;
-std::set<std::string> DpctGlobalInfo::VarUsedByRuntimeSymbolAPISet;
 IncludeMapSetTy DpctGlobalInfo::IncludeMapSet;
 std::vector<std::pair<std::string, VarInfoForCodePin>>
     DpctGlobalInfo::CodePinTypeInfoMap;
@@ -2968,7 +2955,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
     if (isShared())
       return "";
     if ((getAttr() == MemVarInfo::VarAttrKind::Constant) &&
-        !isUseHelperFunc()) {
+        !isUseHelperFunc() && !isUseDeviceGlobal()) {
       std::string Dims;
       const static std::string NullString;
       for (auto &Dim : getType()->getRange()) {
@@ -3163,21 +3150,28 @@ void MemVarInfo::setInitList(const Expr *E, const VarDecl *V) {
   InitList = getStmtSpelling(E, V->getSourceRange());
 }
 std::string MemVarInfo::getMemoryType() {
+  static std::string DeviceGlobalMemory =
+      MapNames::getClNamespace() + "ext::oneapi::experimental::device_global";
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
     requestFeature(HelperFeatureEnum::device_ext);
     static std::string DeviceMemory =
         MapNames::getDpctNamespace() + "global_memory";
+    if (isUseDeviceGlobal()) {
+      return getMemoryType(DeviceGlobalMemory, getType());
+    }
     return getMemoryType(DeviceMemory, getType());
   }
   case clang::dpct::MemVarInfo::Constant: {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string ConstantMemory =
         MapNames::getDpctNamespace() + "constant_memory";
-    if (!isUseHelperFunc()) {
-      ConstantMemory = "const ";
+    if (isUseHelperFunc()) {
+      return getMemoryType(ConstantMemory, getType());
+    } else if (isUseDeviceGlobal()) {
+      return getMemoryType(DeviceGlobalMemory, getType());
     }
-    return getMemoryType(ConstantMemory, getType());
+    return getMemoryType("const ", getType());
   }
   case clang::dpct::MemVarInfo::Shared: {
     static std::string SharedMemory =
@@ -3207,6 +3201,17 @@ std::string MemVarInfo::getMemoryType(const std::string &MemoryType,
   if (isUseHelperFunc()) {
     return buildString(MemoryType, "<", VarType->getBaseName(), ", ",
                        VarType->getDimension(), ">");
+  } else if (isUseDeviceGlobal()) {
+    std::string Dims;
+    std::string Specifier;
+    for (auto &D : VarType->getRange()) {
+      Dims = Dims + "[" + D.getSize() + "]";
+    }
+    if (isConstant()) {
+      Specifier = "const ";
+    }
+    return buildString(MemoryType, "<", Specifier, VarType->getBaseName(), Dims,
+                       ">");
   } else {
     return buildString(MemoryType, VarType->getBaseNameWithoutQualifiers());
   }
@@ -3221,6 +3226,8 @@ std::string MemVarInfo::getInitArguments(const std::string &MemSize,
                          getType()->getRangeArgument(MemSize, true),
                          ", " + InitList, ")");
     return buildString("(", InitList, ")");
+  } else if (isUseDeviceGlobal()) {
+    return InitList;
   } else {
     return InitList.empty() ? "" : buildString(" = ", InitList);
   }
@@ -3915,11 +3922,6 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
                                                 LocInfo LI) {
   for (const auto &VI : VarMap) {
     if (!VI.second->isUseHelperFunc()) {
-      continue;
-    }
-    if (DpctGlobalInfo::isOptimizeMigration() && VI.second->isConstant() &&
-        !DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(VI.second)) {
-      VI.second->setUseHelperFuncFlag(false);
       continue;
     }
     if (!VI.second->getType()->SharedVarInfo.TypeName.empty() &&
@@ -4915,6 +4917,25 @@ void DeviceFunctionInfo::buildInfo() {
   if (isBuilt())
     return;
   setBuilt();
+  auto &Map = VarMap.getMap(clang::dpct::MemVarInfo::Global);
+  for (auto It = Map.begin(); It != Map.end();) {
+    auto &Info = It->second;
+    if (!Info->getUsedBySymbolAPIFlag()) {
+      if (DpctGlobalInfo::isOptimizeMigration() && Info->isConstant()) {
+        Info->setUseHelperFuncFlag(false);
+      }
+      if (DpctGlobalInfo::useExpDeviceGlobal() &&
+          (Info->isConstant() || Info->isDevice())) {
+        Info->setUseHelperFuncFlag(false);
+        Info->setUseDeviceGlobalFlag(true);
+      }
+    }
+    if (!Info->isUseHelperFunc()) {
+      It = Map.erase(It);
+    } else {
+      ++It;
+    }
+  }
   for (auto &Call : CallExprMap) {
     Call.second->emplaceReplacement();
     VarMap.merge(Call.second->getVarMap());
