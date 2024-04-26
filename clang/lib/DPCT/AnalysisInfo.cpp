@@ -701,7 +701,7 @@ void DpctFileInfo::buildReplacements() {
   }
   HeaderOSCUDA.flush();
   insertHeader(std::move(InsertHeaderStrCUDA), LastIncludeOffset, IP_Left,
-               RT_ForCUDADebug);
+               RT_CUDAWithCodePin);
 
   FreeQueriesInfo::buildInfo();
 
@@ -793,7 +793,7 @@ void DpctFileInfo::emplaceReplacements(
 void DpctFileInfo::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (Repl->getLength() == 0 && Repl->getReplacementText().empty())
     return;
-  if (Repl->IsForCUDADebug)
+  if (Repl->IsForCodePin)
     ReplsCUDA->addReplacement(Repl);
   else
     ReplsSYCL->addReplacement(Repl);
@@ -839,7 +839,7 @@ StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
   return "";
 }
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
-                                ReplacementType IsForCUDADebug) {
+                                ReplacementType IsForCodePin) {
   if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
       Type == HT_DPCT_DNNL_Utils) {
     if (this != DpctGlobalInfo::getInstance().getMainFile().get())
@@ -983,7 +983,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     SchemaRelativePath += "generated_schema.hpp\"";
     concatHeader(OS, SchemaRelativePath);
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
-                        IsForCUDADebug);
+                        IsForCodePin);
   } break;
   default:
     break;
@@ -994,12 +994,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   concatHeader(OS, getHeaderSpelling(Type));
   return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
 }
-void DpctFileInfo::insertHeader(HeaderType Type,
-                                ReplacementType IsForCUDADebug) {
+void DpctFileInfo::insertHeader(HeaderType Type, ReplacementType IsForCodePin) {
   switch (Type) {
 #define HEADER(Name, Spelling)                                                 \
   case HT_##Name:                                                              \
-    return insertHeader(HT_##Name, LastIncludeOffset, IsForCUDADebug);
+    return insertHeader(HT_##Name, LastIncludeOffset, IsForCodePin);
 #include "HeaderTypes.inc"
   default:
     return;
@@ -2182,9 +2181,9 @@ void DpctGlobalInfo::setTimeHeaderInserted(SourceLocation Loc, bool B) {
   insertFile(LocInfo.first)->setTimeHeaderInserted(B);
 }
 void DpctGlobalInfo::insertHeader(SourceLocation Loc, HeaderType Type,
-                                  ReplacementType IsForCUDADebug) {
+                                  ReplacementType IsForCodePin) {
   auto LocInfo = getLocInfo(Loc);
-  insertFile(LocInfo.first)->insertHeader(Type, IsForCUDADebug);
+  insertFile(LocInfo.first)->insertHeader(Type, IsForCodePin);
 }
 void DpctGlobalInfo::insertHeader(SourceLocation Loc, std::string HeaderName) {
   auto LocInfo = getLocInfo(Loc);
