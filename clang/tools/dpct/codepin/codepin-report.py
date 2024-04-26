@@ -44,7 +44,7 @@ def prepare_failed_log(cuda_id, sycl_id, log_type, detail):
     return ",".join([cuda_id, sycl_id, log_type, detail]) + "\n"
 
 def prolog_dismatch_but_epilog_match(id):
-    detail =f"[WARNING: INPUT METADATA MISMATCH] The data for {id} is mismatching, and the corresponding log matches. The input data may not have been initialized.\n"
+    detail =f"[WARNING: INPUT METADATA MISMATCH] The data for {id} is mismatching, and the corresponding epilog matches. The input data may not have been initialized.\n"
     return prepare_failed_log(id, id, "Data value", detail)
 
 def get_missing_key_log(id):
