@@ -17,7 +17,8 @@ DATA = "Data"
 TYPE = "Type"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), 'CodePin_Report.csv')
-passed_checkpoint_num = 0
+match_checkpoint_num = 0
+dismatch_checkpoint_num = 0
 checkpoint_size = 0
 
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
@@ -44,7 +45,7 @@ def prepare_failed_log(cuda_id, sycl_id, log_type, detail):
 
 def prolog_dismatch_but_epilog_match(id):
     detail =f"[WARNING: INPUT METADATA MISMATCH] The data for {id} is mismatching, and the corresponding log matches. The input data may not have been initialized.\n"
-    return prepare_failed_log(id, id, "Data value", "Input data not initialized", detail)
+    return prepare_failed_log(id, id, "Data value", detail)
 
 def get_missing_key_log(id):
     detail = f"[ERROR: METADATA MISSING] Cannot find the checkpoint: \"{id}\" in the execution log dataset of instrumented SYCL code.\n"
@@ -129,7 +130,7 @@ def is_checkpoint_length_dismatch(cuda_list, sycl_list):
         print_checkpoint_length_dismatch_warning(cuda_list, sycl_list)
 
 def compare_checkpoint_list(cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_list, sycl_prolog_checkpoint_list, sycl_epilog_checkpoint_list):
-    global passed_checkpoint_num
+    global match_checkpoint_num
     global checkpoint_size
     failed_log  = ""
     is_checkpoint_length_dismatch(cuda_prolog_checkpoint_list, sycl_prolog_checkpoint_list)
@@ -140,22 +141,25 @@ def compare_checkpoint_list(cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_
         checkpoint_size += 1
         if not sycl_epilog_checkpoint_list.get(id):
             failed_log += get_missing_key_log(id)
+            dismatch_checkpoint_num += 1
             continue
         try:
             compare_checkpoint(cuda_epilog_checkpoint, sycl_epilog_checkpoint_list.get(id))
-            passed_checkpoint_num += 1
+            match_checkpoint_num += 1
         except comparison_error as e:
             failed_log += get_data_value_mismatch_log(id, e.message)
             failed_epilog.append(id)
+            dismatch_checkpoint_num += 1
             continue
     for id, cuda_prolog_checkpoint in cuda_prolog_checkpoint_list.items():
         checkpoint_size += 1
         if not sycl_prolog_checkpoint_list.get(id):
             failed_log += get_missing_key_log(id)
+            dismatch_checkpoint_num += 1
             continue
         try:
             compare_checkpoint(cuda_prolog_checkpoint, sycl_prolog_checkpoint_list.get(id))
-            passed_checkpoint_num += 1
+            match_checkpoint_num += 1
         except comparison_error as e:
             # Check whether the corresponding ID is failed in the epilog,
             # If the epilog is matching, then skip the prolog.
@@ -163,6 +167,7 @@ def compare_checkpoint_list(cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_
             epilog_id = id.replace(":prolog:", ":epilog:")
             if epilog_id in failed_epilog:
                 failed_log += get_data_value_mismatch_log(id, e.message)
+                dismatch_checkpoint_num += 1
             else:
                 failed_log += prolog_dismatch_but_epilog_match(id)
             continue
@@ -196,7 +201,7 @@ def get_checkpoint_list_from_json_file(file_path):
     return prolog_checkpoint_list, epilog_checkpoint_list
 
 def main():
-    global passed_checkpoint_num
+    global match_checkpoint_num
     global checkpoint_size
     parser = argparse.ArgumentParser(
         description='Codepin report tool.\n')
@@ -213,8 +218,8 @@ def main():
     with(open(CODEPIN_REPORT_FILE, 'w')) as f:
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
-        f.write("Consistently APIs count, " + str(passed_checkpoint_num) + "\n")
-    if (failed_log):
+        f.write("Consistently APIs count, " + str(match_checkpoint_num) + "\n")
+    if dismatch_checkpoint_num != 0:
         with(open(CODEPIN_REPORT_FILE, 'a')) as f:
             f.write(ERROR_CSV_PATTERN)
             f.write(failed_log)
