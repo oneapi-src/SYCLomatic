@@ -124,4 +124,4 @@ set(SYCL_TOOLKIT_ROOT_DIR "${ONEAPI_ROOT}")
 set(SYCL_TOOLKIT_INCLUDE "${SYCL_INCLUDE_DIR}")
 # The SYCL runtime library is auto-loaded when option `-fsycl` is specified. So we can
 # safely set the CUDAToolkit_LIBRARY_DIR to ""
-set(SYCLToolkit_LIBRARY_DIR "${SYCL_INCLUDE_DIR}/../lib")
+set(SYCLToolkit_LIBRARY_DIR "${SYCL_LIBRARY_DIR}")
