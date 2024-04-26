@@ -169,10 +169,10 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(DplExtrasVector, "dpl_extras", vector.h)
   GENERATE_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, "dpl_extras",
                             dpcpp_extensions.h)
-  GENERATE_ALL_FILE_CONTENT(DplExtrasIteratorAdaptor, "dpl_extras", iterator_adaptor.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasIteratorAdaptor, "dpl_extras",
+                            iterator_adaptor.h)
 #undef GENERATE_ALL_FILE_CONTENT
 }
 
 } // namespace dpct
 } // namespace clang
-
