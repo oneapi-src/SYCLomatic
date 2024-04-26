@@ -66,7 +66,7 @@ add_custom_command(
   )
 
 add_custom_command(
-  DEPENDS ${RUNTIME_HEADERS} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/processFiles.py
+  DEPENDS ${RUNTIME_HEADERS} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/processFiles.py  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/cmake/dpct.cmake
   OUTPUT  ${PROCESS_FILES_OUTPUT}
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
   )
@@ -204,6 +204,7 @@ add_clang_library(DPCT
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
   SpBLASAPIMigration.cpp
+  GenCodePinHeader.cpp
 
   DEPENDS
   ClangDriverOptions

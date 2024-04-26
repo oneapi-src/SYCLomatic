@@ -27,8 +27,14 @@ namespace detail {
 
 class Logger {
 public:
-  Logger(const std::string &dump_file) : dst_output(dump_file) {
-    opf.open(dst_output);
+  Logger(const std::string &dump_file_prefix)
+      : dump_file_prefix(dump_file_prefix) {
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm *now_tm = std::localtime(&now_time);
+    std::stringstream strs;
+    strs << std::put_time(now_tm, "%Y-%m-%d_%H-%M-%S");
+    opf.open(dump_file_prefix + strs.str() + ".json");
     ss.print_left_bracket();
   }
 
@@ -44,15 +50,19 @@ public:
   }
 
 private:
-  std::string dst_output;
+  std::string dump_file_prefix;
   std::ofstream opf;
   dpct::experimental::detail::json_stringstream ss;
 };
 
 inline static std::unordered_set<void *> ptr_unique;
 inline static std::map<std::string, int> api_index;
-inline static std::string data_file = "app_runtime_data_record.json";
-inline static Logger log(data_file);
+#ifdef __NVCC__
+inline static std::string data_file_prefix = "CodePin_CUDA_";
+#else
+inline static std::string data_file_prefix = "CodePin_SYCL_";
+#endif
+inline static Logger log(data_file_prefix);
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
   static std::map<void *, uint32_t> ptr_size_map;
@@ -130,10 +140,13 @@ public:
   static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
                    dpct::experimental::StreamType stream) {
     ss.print_type_begin("Array");
-    for (auto tmp : value) {
+    size_t size = sizeof(T) / sizeof(value[0]);
+    for (size_t i = 0; i < size; i++) {
       dpct::experimental::detail::DataSer<std::remove_extent_t<T>>::dump(
-          ss, tmp, stream);
-      ss.print_comma();
+          ss, value[i], stream);
+      if (i != (size - 1)) {
+        ss.print_comma();
+      }
     }
     ss.print_type_end();
   }
