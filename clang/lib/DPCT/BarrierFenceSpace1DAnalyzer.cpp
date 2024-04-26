@@ -30,6 +30,8 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const CallExpr *CE) {
   const FunctionDecl *FuncDecl = CE->getDirectCallee();
   if (!FuncDecl)
     return true;
+  if (isUserDefinedDecl(FuncDecl))
+    return false;
   std::string FuncName = FuncDecl->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
     SyncCallsVec.push_back(CE);

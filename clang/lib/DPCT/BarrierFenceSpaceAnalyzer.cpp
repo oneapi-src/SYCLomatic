@@ -593,35 +593,51 @@ void clang::dpct::IntraproceduralAnalyzer::simplifyMap(
 
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> DFI,
-    std::string SyncCallCombinedLoc) {
-  // TODO: Need do analysis for all syncthreads call in this DFI's ancestors and
+    std::string SyncCallDeclCombinedLoc) {
+  // Do analysis for all syncthreads call in this DFI's ancestors and
   // this DFI's decendents.
-  std::deque<std::weak_ptr<DeviceFunctionInfo>> Q;
+  std::stack<std::pair<std::weak_ptr<DeviceFunctionInfo>/*node*/, int/*depth*/>> NodeStack;
+  std::stack<std::pair<
+      std::string /*caller's decl's combined loc str*/,
+      std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
+      AffectedByParmsMapInfoStack;
   std::set<std::weak_ptr<DeviceFunctionInfo>,
            std::owner_less<std::weak_ptr<DeviceFunctionInfo>>>
       Visited;
-  for (const auto &I : DFI->getParentDFIs()) {
-    if (Visited.find(I) == Visited.end()) {
-      Q.push_back(I);
+  
+  // DFS to find all related DFIs
+  NodeStack.push(std::make_pair(DFI, 0));
+  Visited.insert(DFI);
+  while (!NodeStack.empty()) {
+    auto CurNode = NodeStack.top().first.lock();
+    auto CurDepth = NodeStack.top().second;
+    NodeStack.pop();
+
+    int N = static_cast<int>(AffectedByParmsMapInfoStack.size()) - CurDepth;
+    assert(N >= 0 && "N should be greater than or equal to 0");
+    for (int i = 0; i < N; i++) {
+      AffectedByParmsMapInfoStack.pop();
+    }
+
+    auto Iter = DFI->IAR.Map.find(SyncCallDeclCombinedLoc);
+    if (Iter != DFI->IAR.Map.end()) {
+      // TODO: Merge std::get<4>(Iter->second) and AffectedByParmsMapInfoStack.top().second
+      // Then push into AffectedByParmsMapInfoStack
+
+
+    }
+
+    for (const auto &I : CurNode->getParentDFIs()) {
+      if (Visited.find(I) != Visited.end()) {
+        // Not support analyzing circle in graph
+        return false;
+      }
+      NodeStack.push(std::make_pair(I, CurDepth + 1));
       Visited.insert(I);
     }
   }
-  while (!Q.empty()) {
-    auto Cur = Q.front().lock();
-    Q.pop_front();
 
-  
-
-
-    for (const auto &I : Cur->getParentDFIs()) {
-      if (Visited.find(I) == Visited.end()) {
-        Q.push_back(I);
-        Visited.insert(I);
-      }
-    }
-  }
-
-  return false;
+  return true;
 }
 
 clang::dpct::IntraproceduralAnalyzerResult
@@ -685,12 +701,13 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD) {
     const auto ArgCallerParmsMap = getArgCallerParmsMap(SyncCall.first);
     auto LocInfo = DpctGlobalInfo::getLocInfo(SyncCall.first->getBeginLoc());
     Map.insert(std::make_pair(
-        getCombinedStrFromLoc(SyncCall.first->getBeginLoc()),
+        getCombinedStrFromLoc(SyncCall.first->getCalleeDecl()->getBeginLoc()),
         std::make_tuple(SyncCall.second.IsRealSyncCall,
                         SyncCall.second.IsInLoop, LocInfo.first, LocInfo.second,
                         AffectedByParmsMap, ArgCallerParmsMap)));
   }
-  return IntraproceduralAnalyzerResult(Map);
+  return IntraproceduralAnalyzerResult(
+      Map, getCombinedStrFromLoc(FD->getBeginLoc()));
 }
 
 bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(

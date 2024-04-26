@@ -2556,7 +2556,6 @@ class DeviceFunctionInfo
   struct ParameterProps {
     bool IsReferenced = false;
   };
-  IntraproceduralAnalyzerResult IAR;
 
 public:
   DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum,
@@ -2645,6 +2644,7 @@ public:
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
+  IntraproceduralAnalyzerResult IAR;
   GlobalMap<CallFunctionExpr> &getCallExprMap() { return CallExprMap; }
   std::set<std::weak_ptr<DeviceFunctionInfo>,
            std::owner_less<std::weak_ptr<DeviceFunctionInfo>>> &

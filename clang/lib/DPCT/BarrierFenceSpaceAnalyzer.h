@@ -47,7 +47,7 @@ struct IntraproceduralAnalyzerResult {
       : UnsupportedCase(UnsupportedCase) {}
   IntraproceduralAnalyzerResult(
       std::unordered_map<
-          std::string /*call's combined loc string*/,
+          std::string /*call's decl's combined loc string*/,
           std::tuple<
               bool /*is real sync call*/, bool /*is in loop*/,
               tooling::UnifiedPath, unsigned int,
@@ -55,19 +55,24 @@ struct IntraproceduralAnalyzerResult {
               std::unordered_map<
                   unsigned int /*arg idx*/,
                   std::set<unsigned int> /*caller parameter(s) idx*/>>>
-          Map)
-      : Map(Map), UnsupportedCase(false) {}
+          Map,
+      std::string CurrentCtxFuncName)
+      : Map(Map), CurrentCtxFuncName(CurrentCtxFuncName),
+        UnsupportedCase(false) {}
   bool isDefault() const noexcept { return IsDefault; }
-  std::unordered_map<
-      std::string /*call's combined loc string*/,
-      std::tuple<
-          bool /*is real sync call*/, bool /*is in loop*/, tooling::UnifiedPath,
-          unsigned int,
-          std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>,
-          std::unordered_map<
-              unsigned int /*arg idx*/,
-              std::set<unsigned int> /*caller parameter(s) idx*/>>>
-      Map;
+  std::
+      unordered_map<
+          std::string /*call's decl's combined loc string*/,
+          std::tuple<
+              bool /*is real sync call*/, bool /*is in loop*/,
+              tooling::UnifiedPath, unsigned int,
+              std::
+                  unordered_map<unsigned int /*parameter idx*/, AffectedInfo /*{bool UsedBefore, bool UsedAfter, AccessMode AM}*/>,
+              std::unordered_map<
+                  unsigned int /*arg idx*/,
+                  std::set<unsigned int> /*caller parameter(s) idx*/>>>
+          Map;
+  std::string CurrentCtxFuncName;
 
 private:
   bool IsDefault = false;
@@ -237,7 +242,7 @@ private:
 class InterproceduralAnalyzer {
 public:
   bool analyze(const std::shared_ptr<DeviceFunctionInfo> DFI,
-               std::string SyncCallCombinedLoc);
+               std::string SyncCallDeclCombinedLoc);
 
 private:
   std::tuple<bool /*CanUseLocalBarrier*/,
