@@ -184,6 +184,11 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     std::string ReplacedMacroName = Iter->second;
     auto Repl = std::make_shared<ReplaceToken>(MacroNameTok.getLocation(),
                                                std::move(ReplacedMacroName));
+    if (MacroName == "__NVCC__") {
+      if (!DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
+        return false;
+      }
+    }
     if (MacroName == "__CUDA_ARCH__") {
       if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         requestFeature(HelperFeatureEnum::device_ext);
@@ -263,6 +268,10 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
         MapNames::MacrosMap.end()) {
       std::string ReplacedMacroName =
           MapNames::MacrosMap.at(II->getName().str());
+      if (II->getName().str() == "__NVCC__" &&
+          !DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
+        return;
+      }
       TransformSet.emplace_back(
           new ReplaceToken(Iter->getLocation(), std::move(ReplacedMacroName)));
       if (II->getName().str() == "__CUDA_ARCH__" ||
@@ -839,7 +848,9 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
       } else if ((MacroName != "__CUDACC__" ||
                   DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
                  MacroName != "__CUDA_ARCH__") {
-        TransformSet.emplace_back(Repl);
+        if (MacroName != "__NVCC__" ||
+            DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA)
+          TransformSet.emplace_back(Repl);
       }
       // check next
       Pos = Found + MacroName.length();
