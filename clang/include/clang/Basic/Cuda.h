@@ -45,14 +45,15 @@ enum class CudaVersion {
   CUDA_121,
   CUDA_122,
   CUDA_123,
-  FULLY_SUPPORTED = CUDA_123,
+  CUDA_124,
+  FULLY_SUPPORTED = CUDA_124,
   PARTIALLY_SUPPORTED =
-      CUDA_123, // Partially supported. Proceed with a warning.
+      CUDA_124, // Partially supported. Proceed with a warning.
   NEW = 10000,  // Too new. Issue a warning, but allow using it.
 };
 const char *CudaVersionToString(CudaVersion V);
 #ifdef SYCLomatic_CUSTOMIZATION
-std::string CudaVersionToMacroDefStr(CudaVersion V);
+std::pair<unsigned int, unsigned int> getCudaVersionPair(CudaVersion V);
 #endif // SYCLomatic_CUSTOMIZATION
 // Input is "Major.Minor"
 CudaVersion CudaStringToVersion(const llvm::Twine &S);
@@ -130,7 +131,7 @@ enum class CudaArch {
   LAST,
 
   CudaDefault = CudaArch::SM_52,
-  HIPDefault = CudaArch::GFX803,
+  HIPDefault = CudaArch::GFX906,
 };
 
 static inline bool IsNVIDIAGpuArch(CudaArch A) {

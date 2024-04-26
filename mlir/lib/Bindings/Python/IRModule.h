@@ -176,19 +176,8 @@ public:
   static PyMlirContext *createNewContextForInit();
 
   /// Returns a context reference for the singleton PyMlirContext wrapper for
-  /// the given context. It is only valid to call this on an MlirContext that
-  /// is already owned by the Python bindings. Typically this will be because
-  /// it came in some fashion from createNewContextForInit(). However, it
-  /// is also possible to explicitly transfer ownership of an existing
-  /// MlirContext to the Python bindings via stealExternalContext().
+  /// the given context.
   static PyMlirContextRef forContext(MlirContext context);
-
-  /// Explicitly takes ownership of an MlirContext that must not already be
-  /// known to the Python bindings. Once done, the life-cycle of the context
-  /// will be controlled by the Python bindings, and it will be destroyed
-  /// when the reference count goes to zero.
-  static PyMlirContextRef stealExternalContext(MlirContext context);
-
   ~PyMlirContext();
 
   /// Accesses the underlying MlirContext.
@@ -212,6 +201,9 @@ public:
   /// Gets the count of live context objects. Used for testing.
   static size_t getLiveCount();
 
+  /// Get a list of Python objects which are still in the live context map.
+  std::vector<PyOperation *> getLiveOperationObjects();
+
   /// Gets the count of live operations associated with this context.
   /// Used for testing.
   size_t getLiveOperationCount();
@@ -231,6 +223,7 @@ public:
   /// Clears all operations nested inside the given op using
   /// `clearOperation(MlirOperation)`.
   void clearOperationsInside(PyOperationBase &op);
+  void clearOperationsInside(MlirOperation op);
 
   /// Gets the count of live modules associated with this context.
   /// Used for testing.
@@ -616,12 +609,6 @@ public:
   static PyOperationRef
   forOperation(PyMlirContextRef contextRef, MlirOperation operation,
                pybind11::object parentKeepAlive = pybind11::object());
-
-  /// Explicitly takes ownership of an operation that must not already be known
-  /// to the Python bindings. Once done, the life-cycle of the operation
-  /// will be controlled by the Python bindings.
-  static PyOperationRef stealExternalOperation(PyMlirContextRef contextRef,
-                                               MlirOperation operation);
 
   /// Creates a detached operation. The operation must not be associated with
   /// any existing live operation.

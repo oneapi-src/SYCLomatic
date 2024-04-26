@@ -89,8 +89,6 @@ TEST(RecordOpsTest, CopyRecord) {
         auto *S2Val = cast<RecordValue>(Env.getValue(S2));
         EXPECT_NE(S1Val, S2Val);
 
-        S1Val->setProperty("prop", Env.getBoolLiteralValue(true));
-
         copyRecord(S1, S2, Env);
 
         EXPECT_EQ(getFieldValue(&S1, *OuterIntDecl, Env),
@@ -104,8 +102,6 @@ TEST(RecordOpsTest, CopyRecord) {
         S1Val = cast<RecordValue>(Env.getValue(S1));
         S2Val = cast<RecordValue>(Env.getValue(S2));
         EXPECT_NE(S1Val, S2Val);
-
-        EXPECT_EQ(S2Val->getProperty("prop"), &Env.getBoolLiteralValue(true));
       });
 }
 
@@ -149,9 +145,6 @@ TEST(RecordOpsTest, RecordsEqual) {
 
         Env.setValue(S1.getSyntheticField("synth_int"),
                      Env.create<IntegerValue>());
-
-        cast<RecordValue>(Env.getValue(S1))
-            ->setProperty("prop", Env.getBoolLiteralValue(true));
 
         // Strategy: Create two equal records, then verify each of the various
         // ways in which records can differ causes recordsEqual to return false.
@@ -202,40 +195,10 @@ TEST(RecordOpsTest, RecordsEqual) {
         EXPECT_FALSE(recordsEqual(S1, S2, Env));
         copyRecord(S1, S2, Env);
         EXPECT_TRUE(recordsEqual(S1, S2, Env));
-
-        // S1 and S2 have the same property with different values.
-        cast<RecordValue>(Env.getValue(S2))
-            ->setProperty("prop", Env.getBoolLiteralValue(false));
-        EXPECT_FALSE(recordsEqual(S1, S2, Env));
-        copyRecord(S1, S2, Env);
-        EXPECT_TRUE(recordsEqual(S1, S2, Env));
-
-        // S1 has a property that S2 doesn't have.
-        cast<RecordValue>(Env.getValue(S1))
-            ->setProperty("other_prop", Env.getBoolLiteralValue(false));
-        EXPECT_FALSE(recordsEqual(S1, S2, Env));
-        // We modified S1 this time, so need to copy back the other way.
-        copyRecord(S2, S1, Env);
-        EXPECT_TRUE(recordsEqual(S1, S2, Env));
-
-        // S2 has a property that S1 doesn't have.
-        cast<RecordValue>(Env.getValue(S2))
-            ->setProperty("other_prop", Env.getBoolLiteralValue(false));
-        EXPECT_FALSE(recordsEqual(S1, S2, Env));
-        copyRecord(S1, S2, Env);
-        EXPECT_TRUE(recordsEqual(S1, S2, Env));
-
-        // S1 and S2 have the same number of properties, but with different
-        // names.
-        cast<RecordValue>(Env.getValue(S1))
-            ->setProperty("prop1", Env.getBoolLiteralValue(false));
-        cast<RecordValue>(Env.getValue(S2))
-            ->setProperty("prop2", Env.getBoolLiteralValue(false));
-        EXPECT_FALSE(recordsEqual(S1, S2, Env));
       });
 }
 
-TEST(TransferTest, CopyRecordFromDerivedToBase) {
+TEST(TransferTest, CopyRecordBetweenDerivedAndBase) {
   std::string Code = R"(
     struct A {
       int i;
@@ -249,8 +212,23 @@ TEST(TransferTest, CopyRecordFromDerivedToBase) {
       // [[p]]
     }
   )";
+  auto SyntheticFieldCallback = [](QualType Ty) -> llvm::StringMap<QualType> {
+    CXXRecordDecl *ADecl = nullptr;
+    if (Ty.getAsString() == "A")
+      ADecl = Ty->getAsCXXRecordDecl();
+    else if (Ty.getAsString() == "B")
+      ADecl = Ty->getAsCXXRecordDecl()
+                  ->bases_begin()
+                  ->getType()
+                  ->getAsCXXRecordDecl();
+    else
+      return {};
+    QualType IntTy = getFieldNamed(ADecl, "i")->getType();
+    return {{"synth_int", IntTy}};
+  };
+  // Test copying derived to base class.
   runDataflow(
-      Code, /*SyntheticFieldCallback=*/{},
+      Code, SyntheticFieldCallback,
       [](const llvm::StringMap<DataflowAnalysisState<NoopLattice>> &Results,
          ASTContext &ASTCtx) {
         Environment Env = getEnvironmentAtAnnotation(Results, "p").fork();
@@ -261,11 +239,38 @@ TEST(TransferTest, CopyRecordFromDerivedToBase) {
 
         EXPECT_NE(Env.getValue(*A.getChild(*IDecl)),
                   Env.getValue(*B.getChild(*IDecl)));
+        EXPECT_NE(Env.getValue(A.getSyntheticField("synth_int")),
+                  Env.getValue(B.getSyntheticField("synth_int")));
 
         copyRecord(B, A, Env);
 
         EXPECT_EQ(Env.getValue(*A.getChild(*IDecl)),
                   Env.getValue(*B.getChild(*IDecl)));
+        EXPECT_EQ(Env.getValue(A.getSyntheticField("synth_int")),
+                  Env.getValue(B.getSyntheticField("synth_int")));
+      });
+  // Test copying base to derived class.
+  runDataflow(
+      Code, SyntheticFieldCallback,
+      [](const llvm::StringMap<DataflowAnalysisState<NoopLattice>> &Results,
+         ASTContext &ASTCtx) {
+        Environment Env = getEnvironmentAtAnnotation(Results, "p").fork();
+
+        const ValueDecl *IDecl = findValueDecl(ASTCtx, "i");
+        auto &A = getLocForDecl<RecordStorageLocation>(ASTCtx, Env, "a");
+        auto &B = getLocForDecl<RecordStorageLocation>(ASTCtx, Env, "b");
+
+        EXPECT_NE(Env.getValue(*A.getChild(*IDecl)),
+                  Env.getValue(*B.getChild(*IDecl)));
+        EXPECT_NE(Env.getValue(A.getSyntheticField("synth_int")),
+                  Env.getValue(B.getSyntheticField("synth_int")));
+
+        copyRecord(A, B, Env);
+
+        EXPECT_EQ(Env.getValue(*A.getChild(*IDecl)),
+                  Env.getValue(*B.getChild(*IDecl)));
+        EXPECT_EQ(Env.getValue(A.getSyntheticField("synth_int")),
+                  Env.getValue(B.getSyntheticField("synth_int")));
       });
 }
 

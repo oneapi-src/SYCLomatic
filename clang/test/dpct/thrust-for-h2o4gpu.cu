@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing -ferror-limit=50
+// RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp -o %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.o %}
 #ifndef BUILD_TEST

@@ -46,7 +46,7 @@ int main(void) {
   thrust::copy(data, data + N, dst_data);
   //CHECK: std::copy(oneapi::dpl::execution::seq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
-  //CHECK: std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
+  //CHECK: std::copy(oneapi::dpl::execution::seq, input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
   //CHECK: std::copy(oneapi::dpl::execution::seq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(thrust::host, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));

@@ -164,10 +164,7 @@ public:
   // This collects the different subcommands that have been registered.
   SmallPtrSet<SubCommand *, 4> RegisteredSubCommands;
 
-  CommandLineParser() {
-    registerSubCommand(&SubCommand::getTopLevel());
-    registerSubCommand(&SubCommand::getAll());
-  }
+  CommandLineParser() { registerSubCommand(&SubCommand::getTopLevel()); }
 
   void ResetAllOptionOccurrences();
 
@@ -183,6 +180,7 @@ public:
     if (Opt.Subs.size() == 1 && *Opt.Subs.begin() == &SubCommand::getAll()) {
       for (auto *SC : RegisteredSubCommands)
         Action(*SC);
+      Action(SubCommand::getAll());
       return;
     }
     for (auto *SC : Opt.Subs) {
@@ -348,15 +346,15 @@ public:
 
     // For all options that have been registered for all subcommands, add the
     // option to this subcommand now.
-    if (sub != &SubCommand::getAll()) {
-      for (auto &E : SubCommand::getAll().OptionsMap) {
-        Option *O = E.second;
-        if ((O->isPositional() || O->isSink() || O->isConsumeAfter()) ||
-            O->hasArgStr())
-          addOption(O, sub);
-        else
-          addLiteralOption(*O, sub, E.first());
-      }
+    assert(sub != &SubCommand::getAll() &&
+           "SubCommand::getAll() should not be registered");
+    for (auto &E : SubCommand::getAll().OptionsMap) {
+      Option *O = E.second;
+      if ((O->isPositional() || O->isSink() || O->isConsumeAfter()) ||
+          O->hasArgStr())
+        addOption(O, sub);
+      else
+        addLiteralOption(*O, sub, E.first());
     }
   }
 
@@ -384,7 +382,6 @@ public:
     SubCommand::getTopLevel().reset();
     SubCommand::getAll().reset();
     registerSubCommand(&SubCommand::getTopLevel());
-    registerSubCommand(&SubCommand::getAll());
 
     DefaultOptions.clear();
   }
@@ -425,7 +422,7 @@ void Option::removeArgument() { GlobalParser->removeOption(this); }
 void Option::setArgStr(StringRef S) {
   if (FullyInitialized)
     GlobalParser->updateArgStr(this, S);
-  assert((S.empty() || S[0] != '-') && "Option can't start with '-");
+  assert(!S.starts_with("-") && "Option can't start with '-");
   ArgStr = S;
   if (ArgStr.size() == 1)
     setMiscFlag(Grouping);
@@ -532,8 +529,8 @@ SubCommand *CommandLineParser::LookupSubCommand(StringRef Name,
   // Find a subcommand with the edit distance == 1.
   SubCommand *NearestMatch = nullptr;
   for (auto *S : RegisteredSubCommands) {
-    if (S == &SubCommand::getAll())
-      continue;
+    assert(S != &SubCommand::getAll() &&
+           "SubCommand::getAll() is not expected in RegisteredSubCommands");
     if (S->getName().empty())
       continue;
 
@@ -1528,23 +1525,32 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
   assert(ChosenSubCommand);
 
 #ifdef SYCLomatic_CUSTOMIZATION
-#ifndef _WIN32
-  if ((argc >= FirstArg + 1) &&
-      (std::string(argv[FirstArg]) == "--intercept-build" ||
-       std::string(argv[FirstArg]) == "-intercept-build" ||
-       std::string(argv[FirstArg]) == "intercept-build")) {
-    const static std::string InterceptBuildCommand = "intercept-build";
-    StringRef ArgName(InterceptBuildCommand);
-    StringRef Value;
-    Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
-                                       LongOptionsUseDoubleDash, false);
-    if (Handler) {
-      Handler->addOccurrence(0, ArgName, Value);
-      return true;
+  auto HandleLongOptionCommand = [&](const std::string &option) {
+    const std::string arg = argv[FirstArg];
+    if (arg == "--" + option || arg == "-" + option || arg == option) {
+      StringRef ArgName(option);
+      StringRef Value;
+      Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
+                                         LongOptionsUseDoubleDash, false);
+      if (Handler) {
+        Handler->addOccurrence(0, ArgName, Value);
+        return true;
+      }
     }
     return false;
+  };
+#ifndef _WIN32
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("intercept-build") !=
+       std::string::npos)) {
+    return HandleLongOptionCommand("intercept-build");
   }
 #endif
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("codepin-report") !=
+       std::string::npos)) {
+    return HandleLongOptionCommand("codepin-report");
+  }
 #endif // SYCLomatic_CUSTOMIZATION
 
   auto &ConsumeAfterOpt = ChosenSubCommand->ConsumeAfterOpt;
@@ -1654,10 +1660,8 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
       // otherwise feed it to the eating positional.
       ArgName = StringRef(argv[i] + 1);
       // Eat second dash.
-      if (!ArgName.empty() && ArgName[0] == '-') {
+      if (ArgName.consume_front("-"))
         HaveDoubleDash = true;
-        ArgName = ArgName.substr(1);
-      }
 
       Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
                                  LongOptionsUseDoubleDash, HaveDoubleDash);
@@ -1668,10 +1672,8 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
     } else { // We start with a '-', must be an argument.
       ArgName = StringRef(argv[i] + 1);
       // Eat second dash.
-      if (!ArgName.empty() && ArgName[0] == '-') {
+      if (ArgName.consume_front("-"))
         HaveDoubleDash = true;
-        ArgName = ArgName.substr(1);
-      }
 
       Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
                                  LongOptionsUseDoubleDash, HaveDoubleDash);
@@ -2351,9 +2353,31 @@ sortSubCommands(const SmallPtrSetImpl<SubCommand *> &SubMap,
 
 namespace {
 
+#ifdef SYCLomatic_CUSTOMIZATION
+/// HelpCategory defines various category groups for dpct options
+enum class HelpCategory {
+  HC_All,
+  HC_Basic,
+  HC_Advanced,
+  HC_CodeGen,
+  HC_ReportGen,
+  HC_BuildScript,
+  HC_QueryAPI,
+  HC_Warnings,
+  HC_HelpInfo,
+  HC_InterceptBuild,
+  HC_Examples
+};
+
+#include "llvm/migration_cmd_examples.inc"
+#endif // SYCLomatic_CUSTOMIZATION
+
 class HelpPrinter {
 protected:
   const bool ShowHidden;
+#ifdef SYCLomatic_CUSTOMIZATION
+  HelpCategory helpCatEnum = HelpCategory::HC_All;
+#endif // SYCLomatic_CUSTOMIZATION
   typedef SmallVector<std::pair<const char *, Option *>, 128>
       StrOptionPairVector;
   typedef SmallVector<std::pair<const char *, SubCommand *>, 128>
@@ -2400,6 +2424,13 @@ public:
 
     StrSubCommandPairVector Subs;
     sortSubCommands(GlobalParser->RegisteredSubCommands, Subs);
+
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (helpCatEnum == HelpCategory::HC_Examples) {
+      outs() << DPCTExamplesMsg;
+      return;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
 
     if (!GlobalParser->ProgramOverview.empty())
       outs() << "OVERVIEW: " << GlobalParser->ProgramOverview << "\n";
@@ -2453,6 +2484,19 @@ public:
     outs() << "OPTIONS:\n";
     printOptions(Opts, MaxArgLen);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    const char *const CtHelpTrailMsg = "\n"
+                                       "<source0> ... Paths of input source "
+                                       "files. These paths are looked up in "
+                                       "the compilation database.\n\n";
+
+    outs() << CtHelpTrailMsg;
+
+    if (helpCatEnum == HelpCategory::HC_All) {
+      outs() << DPCTExamplesMsg;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
+
     // Print any extra help the user has declared.
     for (const auto &I : GlobalParser->MoreHelp)
       outs() << I;
@@ -2472,6 +2516,57 @@ public:
                                    OptionCategory *const *B) {
     return (*A)->getName().compare((*B)->getName());
   }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Store the user requested category
+  void setReqCategory(HelpCategory reqCatEnumVal) {
+    helpCatEnum = reqCatEnumVal;
+  }
+
+  // Return the user requested category
+  OptionCategory &getReqCategory(HelpCategory reqCatEnumVal) {
+    switch (reqCatEnumVal) {
+    case HelpCategory::HC_All:
+      return cl::getDPCTCategory();
+      break;
+    case HelpCategory::HC_Basic:
+      return cl::getDPCTBasicCategory();
+      break;
+    case HelpCategory::HC_Advanced:
+      return cl::getDPCTAdvancedCategory();
+      break;
+    case HelpCategory::HC_CodeGen:
+      return cl::getDPCTCodeGenCategory();
+      break;
+    case HelpCategory::HC_ReportGen:
+      return cl::getDPCTReportGenCategory();
+      break;
+    case HelpCategory::HC_BuildScript:
+      return cl::getDPCTBuildScriptCategory();
+      break;
+    case HelpCategory::HC_QueryAPI:
+      return cl::getDPCTQueryAPICategory();
+      break;
+    case HelpCategory::HC_Warnings:
+      return cl::getDPCTWarningsCategory();
+      break;
+    case HelpCategory::HC_HelpInfo:
+      return cl::getDPCTHelpInfoCategory();
+      break;
+    case HelpCategory::HC_InterceptBuild:
+      return cl::getDPCTInterceptBuildCategory();
+      break;
+    case HelpCategory::HC_Examples:
+      return cl::getDPCTExamplesCategory();
+      break;
+    default:
+      return cl::getDPCTCategory();
+      break;
+    }
+
+    return cl::getDPCTCategory();
+  }
+#endif // SYCLomatic_CUSTOMIZATION
 
   // Make sure we inherit our base class's operator=()
   using HelpPrinter::operator=;
@@ -2503,19 +2598,23 @@ protected:
       }
     }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    OptionCategory &requestedCat(getReqCategory(helpCatEnum));
+#endif // SYCLomatic_CUSTOMIZATION
+
     // Now do printing.
     for (OptionCategory *Category : SortedCategories) {
       // Hide empty categories for --help, but show for --help-hidden.
       const auto &CategoryOptions = CategorizedOptions[Category];
-      bool IsEmptyCategory = CategoryOptions.empty();
-#ifdef SYCLomatic_CUSTOMIZATION
-      if (IsEmptyCategory)
-#else
-      if (!ShowHidden && IsEmptyCategory)
-#endif // SYCLomatic_CUSTOMIZATION
+      if (CategoryOptions.empty())
         continue;
 
-      // Print category information.
+#ifdef SYCLomatic_CUSTOMIZATION
+      if (&requestedCat != Category)
+        continue;
+#endif // SYCLomatic_CUSTOMIZATION
+
+        // Print category information.
 #ifdef SYCLomatic_CUSTOMIZATION
       // outs() << "\n";
       // outs() << Category->getName() << ":\n";
@@ -2530,12 +2629,6 @@ protected:
       else
         outs() << "\n";
 
-      // When using --help-hidden explicitly state if the category has no
-      // options associated with it.
-      if (IsEmptyCategory) {
-        outs() << "  This option category has no options.\n";
-        continue;
-      }
       // Loop over the options in the category and print.
       for (const Option *Opt : CategoryOptions)
         Opt->printOptionInfo(MaxArgLen);
@@ -2558,6 +2651,9 @@ public:
 
   // Invoke the printer.
   void operator=(bool Value);
+#ifdef SYCLomatic_CUSTOMIZATION
+  void operator=(HelpCategory Value);
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 } // End anonymous namespace
@@ -2657,11 +2753,50 @@ struct CommandLineCommonOptions {
   // behaviour at runtime depending on whether one or more Option categories
   // have been declared.
 #ifdef SYCLomatic_CUSTOMIZATION
-  cl::opt<HelpPrinterWrapper, true, parser<bool>>
-      HOp{"help",
-          cl::desc("Provides a list of available options."),
-          cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
-          cl::cat(cl::getDPCTCategory()), cl::sub(*AllSubCommands)};
+  cl::opt<HelpPrinterWrapper, true, cl::parser<HelpCategory>> HOp{
+      "help",
+      cl::values(
+          cl::OptionEnumValue{
+              "", int(HelpCategory::HC_All),
+              "List all options in alphabetical order. (default)", true},
+          cl::OptionEnumValue{"basic", int(HelpCategory::HC_Basic),
+                              "List options for basic migration.", false},
+          cl::OptionEnumValue{"advanced", int(HelpCategory::HC_Advanced),
+                              "List options for advanced migration.", false},
+          cl::OptionEnumValue{"code-gen", int(HelpCategory::HC_CodeGen),
+                              "List options to customize "
+                              "how code is migrated.",
+                              false},
+          cl::OptionEnumValue{"report-gen", int(HelpCategory::HC_ReportGen),
+                              "List option(s) to control report generation "
+                              "during migration.",
+                              false},
+          cl::OptionEnumValue{"build-script", int(HelpCategory::HC_BuildScript),
+                              "List options to migrate build script(s).",
+                              false},
+          cl::OptionEnumValue{"query-api", int(HelpCategory::HC_QueryAPI),
+                              "List options to query API mapping support.",
+                              false},
+          cl::OptionEnumValue{"warnings", int(HelpCategory::HC_Warnings),
+                              "List options to manage warnings "
+                              "generated by the tool.",
+                              false},
+          cl::OptionEnumValue{"help-info", int(HelpCategory::HC_HelpInfo),
+                              "List options to display tool information.",
+                              false},
+          cl::OptionEnumValue{"intercept-build",
+                              int(HelpCategory::HC_InterceptBuild),
+                              "List options of intercept-build tool.", false},
+          cl::OptionEnumValue{"examples", int(HelpCategory::HC_Examples),
+                              "List examples of common DPCT options usage.",
+                              false}),
+      cl::desc("Display available options.\n"),
+      cl::value_desc("value"),
+      cl::location(WrappedNormalPrinter),
+      cl::ValueOptional,
+      cl::cat(cl::getDPCTCategory()),
+      cl::cat(cl::getDPCTHelpInfoCategory()),
+      cl::sub(*AllSubCommands)};
 #else
   cl::opt<HelpPrinterWrapper, true, parser<bool>> HOp{
       "help",
@@ -2708,10 +2843,13 @@ struct CommandLineCommonOptions {
   VersionPrinter VersionPrinterInstance;
 
 #ifdef SYCLomatic_CUSTOMIZATION
-  cl::opt<VersionPrinter, true, parser<bool>>
-      VersOp{"version", cl::desc("Shows the version of the tool."),
-             cl::location(VersionPrinterInstance), cl::ValueDisallowed,
-             cl::cat(cl::getDPCTCategory())};
+  cl::opt<VersionPrinter, true, parser<bool>> VersOp{
+      "version",
+      cl::desc("Shows the version of the tool."),
+      cl::location(VersionPrinterInstance),
+      cl::ValueDisallowed,
+      cl::cat(cl::getDPCTCategory()),
+      cl::cat(cl::getDPCTHelpInfoCategory())};
 #else
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Display the version of this program"),
@@ -2748,6 +2886,46 @@ OptionCategory &cl::getDPCTCategory() {
   static OptionCategory DPCTCat{"dpct"};
   return DPCTCat;
 }
+OptionCategory &cl::getDPCTBasicCategory() {
+  static OptionCategory DPCTBasicCat{"basic"};
+  return DPCTBasicCat;
+}
+OptionCategory &cl::getDPCTAdvancedCategory() {
+  static OptionCategory DPCTAdvancedCat{"advanced"};
+  return DPCTAdvancedCat;
+}
+OptionCategory &cl::getDPCTCodeGenCategory() {
+  static OptionCategory DPCTCodeGenCat{"code-gen"};
+  return DPCTCodeGenCat;
+}
+OptionCategory &cl::getDPCTReportGenCategory() {
+  static OptionCategory DPCTReportGenCat{"report-gen"};
+  return DPCTReportGenCat;
+}
+OptionCategory &cl::getDPCTBuildScriptCategory() {
+  static OptionCategory DPCTTBuildScriptCat{"build-script"};
+  return DPCTTBuildScriptCat;
+}
+OptionCategory &cl::getDPCTQueryAPICategory() {
+  static OptionCategory DPCTQueryAPICat{"query-api"};
+  return DPCTQueryAPICat;
+}
+OptionCategory &cl::getDPCTWarningsCategory() {
+  static OptionCategory DPCTWarningsCat{"warnings"};
+  return DPCTWarningsCat;
+}
+OptionCategory &cl::getDPCTHelpInfoCategory() {
+  static OptionCategory DPCTHelpInfoCat{"help-info"};
+  return DPCTHelpInfoCat;
+}
+OptionCategory &cl::getDPCTInterceptBuildCategory() {
+  static OptionCategory DPCTInterceptBuildCat{"intercept-build"};
+  return DPCTInterceptBuildCat;
+}
+OptionCategory &cl::getDPCTExamplesCategory() {
+  static OptionCategory DPCTExamplesCat{"examples"};
+  return DPCTExamplesCat;
+}
 #endif // SYCLomatic_CUSTOMIZATION
 
 void VersionPrinter::operator=(bool OptionWasSpecified) {
@@ -2783,6 +2961,14 @@ void HelpPrinterWrapper::operator=(bool Value) {
   } else
     UncategorizedPrinter = true; // Invoke uncategorized printer
 }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+void HelpPrinterWrapper::operator=(HelpCategory Value) {
+  CategorizedPrinter.setReqCategory(Value);
+
+  *this = true;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 
 // Print the value of each option.
 void cl::PrintOptionValues() { GlobalParser->printOptionValues(); }

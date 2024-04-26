@@ -16,7 +16,8 @@ namespace mlir {
 namespace emitc {
 
 ExpressionOp createExpression(Operation *op, OpBuilder &builder) {
-  assert(ExpressionOp::isCExpression(*op) && "Expected a C expression");
+  assert(op->hasTrait<OpTrait::emitc::CExpression>() &&
+         "Expected a C expression");
 
   // Create an expression yielding the value returned by op.
   assert(op->getNumResults() == 1 && "Expected exactly one result");
@@ -96,10 +97,7 @@ struct FoldExpressionOp : public OpRewritePattern<ExpressionOp> {
         assert(clonedExpressionRootOp->getNumResults() == 1 &&
                "Expected cloned root to have a single result");
 
-        Value clonedExpressionResult = clonedExpressionRootOp->getResult(0);
-
-        usedExpression.getResult().replaceAllUsesWith(clonedExpressionResult);
-        rewriter.eraseOp(usedExpression);
+        rewriter.replaceOp(usedExpression, clonedExpressionRootOp);
         anythingFolded = true;
       }
     }

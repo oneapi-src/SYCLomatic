@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/math/cuda-math-need-paren %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-need-paren/cuda-math-need-paren.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math/cuda-math-need-paren/cuda-math-need-paren.dp.cpp -o %T/math/cuda-math-need-paren/cuda-math-need-paren.dp.o %}
 
 #include "cuda_fp16.h"
 

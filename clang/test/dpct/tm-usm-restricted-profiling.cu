@@ -43,7 +43,7 @@ int main() {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
- // CHECK:    *start = q_ct1.ext_oneapi_submit_barrier();
+ // CHECK:    dpct::sync_barrier(start, &q_ct1);
     cudaEventRecord(start, 0);
 
   // CHECK: q_ct1.memcpy(da, ha, N*sizeof(int));
@@ -53,8 +53,8 @@ int main() {
   // CHECK: stream->memcpy(da, ha, N*sizeof(int));
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
-  // CHECK:    *stop = q_ct1.ext_oneapi_submit_barrier();
-  // CHECK-NEXT:    stop->wait_and_throw();
+  // CHECK:    dpct::sync_barrier(stop, &q_ct1);
+  // CHECK-NEXT:   stop->wait_and_throw();
   // CHECK-NEXT:   elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -91,16 +91,16 @@ void foo_usm() {
   int *gpu_t, *host_t, n = 10;
   cudaEvent_t start, stop;
 
-// CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::sync_barrier(start, &q_ct1)));
   SAFE_CALL(cudaEventRecord(start, 0));
 
-// CHECK:SAFE_CALL(DPCT_CHECK_ERROR(s1->memcpy(gpu_t, host_t, n * sizeof(int))));
+// CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(s1->memcpy(gpu_t, host_t, n * sizeof(int))));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
 // CHECK:  /*
 // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::sync_barrier(stop, &q_ct1)));
 // CHECK-NEXT:  SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
   SAFE_CALL(cudaEventRecord(stop, 0));
   SAFE_CALL(cudaEventSynchronize(stop));
@@ -111,7 +111,6 @@ void foo_usm() {
 __global__ void readTexels(int n, float *d_out, int width){}
 __global__ void readTexelsFoo1(int n, float *d_out){}
 __global__ void readTexelsFoo2(int n, float *d_out, int width, int height){}
-texture<float4, 2, cudaReadModeElementType> texA;
 
 void foo()
 {
@@ -161,7 +160,7 @@ void foo()
             // Test 1: Repeated Linear Access
             float t = 0.0f;
 
-// CHECK:            *start = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:            dpct::sync_barrier(start, &q_ct1);
             cudaEventRecord(start, 0);
             // read texels from texture
             for (int iter = 0; iter < iterations; iter++)
@@ -177,7 +176,7 @@ void foo()
                                                     width);
             }
 
-// CHECK:             *stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:             dpct::sync_barrier(stop, &q_ct1);
 // CHECK-NEXT:             stop->wait_and_throw();
 // CHECK-NEXT:             t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
@@ -189,7 +188,7 @@ void foo()
                     cudaMemcpyDeviceToHost);
 
             // Test 2 Repeated Cache Access
-// CHECK:            *start = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:            dpct::sync_barrier(start, &q_ct1);
             cudaEventRecord(start, 0);
             for (int iter = 0; iter < iterations; iter++)
             {
@@ -205,7 +204,7 @@ void foo()
                         (kernelRepFactor, d_out);
             }
 
-// CHECK:            *stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:            dpct::sync_barrier(stop, &q_ct1);
 // CHECK-NEXT:            stop->wait_and_throw();
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
@@ -217,7 +216,7 @@ void foo()
                     cudaMemcpyDeviceToHost);
 
             // Test 3 Repeated "Random" Access
-// CHECK:            *start = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:            dpct::sync_barrier(start, &q_ct1);
             cudaEventRecord(start, 0);
 
             // read texels from texture
@@ -235,7 +234,7 @@ void foo()
                                 (kernelRepFactor, d_out, width, height);
             }
 
-// CHECK:            *stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:            dpct::sync_barrier(stop, &q_ct1);
 // CHECK-NEXT:            stop->wait_and_throw();
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
@@ -266,23 +265,23 @@ void barr(int maxCalls) {
     time[i] = 0.0;
   }
 
-// CHECK: *evtStart[0] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK: dpct::sync_barrier( evtStart[0], &q_ct1 );
   cudaEventRecord( evtStart[0], 0 );
   kernelFunc<<<1, 1>>>();
-// CHECK:   *evtEnd[0] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:   dpct::sync_barrier( evtEnd[0], &q_ct1 );
   cudaEventRecord( evtEnd[0], 0 );
 
-// CHECK: *evtStart[1] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK: dpct::sync_barrier( evtStart[1], &q_ct1 );
   cudaEventRecord( evtStart[1], 0 );
 
   kernelFunc<<<1, 1>>>();
-// CHECK: *evtEnd[1] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK: dpct::sync_barrier( evtEnd[1], &q_ct1 );
   cudaEventRecord( evtEnd[1], 0 );
 
-// CHECK: *evtStart[2] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK: dpct::sync_barrier( evtStart[2], &q_ct1 );
   cudaEventRecord( evtStart[2], 0 );
   kernelFunc<<<1, 1>>>();
-// CHECK: *evtEnd[2] = q_ct1.ext_oneapi_submit_barrier();
+// CHECK: dpct::sync_barrier( evtEnd[2], &q_ct1 );
   cudaEventRecord( evtEnd[2], 0 );
 
 // CHECK: dev_ct1.queues_wait_and_throw();
@@ -386,7 +385,7 @@ void test_1999(void* ref_image, void* cur_image,
     cudaEvent_t sad_calc_start, sad_calc_stop;
     cudaEventCreate(&sad_calc_start);
     cudaEventCreate(&sad_calc_stop);
-// CHECK:    *sad_calc_start = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:    dpct::sync_barrier(sad_calc_start);
     cudaEventRecord(sad_calc_start);
     dim3 foo_kernel_1_threads_in_block;
     dim3 foo_kernel_1_blocks_in_grid;
@@ -402,7 +401,7 @@ void test_1999(void* ref_image, void* cur_image,
                                                   image_height_macroblocks,
                                                   imgRef);
 
-// CHECK:    *sad_calc_stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:    dpct::sync_barrier(sad_calc_stop);
     cudaEventRecord(sad_calc_stop);
 
 // CHECK:    dpct::event_ptr sad_calc_8_start, sad_calc_8_stop;
@@ -410,7 +409,7 @@ void test_1999(void* ref_image, void* cur_image,
 
     cudaEventCreate(&sad_calc_8_start);
     cudaEventCreate(&sad_calc_8_stop);
-// CHECK:    *sad_calc_8_start = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:    dpct::sync_barrier(sad_calc_8_start);
     cudaEventRecord(sad_calc_8_start);
     dim3 foo_kernel_2_threads_in_block;
     dim3 foo_kernel_2_blocks_in_grid;
@@ -424,7 +423,7 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_2_blocks_in_grid,
       foo_kernel_2_threads_in_block>>>(d_sads, image_width_macroblocks,
                                             image_height_macroblocks);
-// CHECK:    *sad_calc_8_stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:    dpct::sync_barrier(sad_calc_8_stop);
     cudaEventRecord(sad_calc_8_stop);
 
 
@@ -446,7 +445,7 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_3_blocks_in_grid,
       foo_kernel_3_threads_in_block>>>(d_sads, image_width_macroblocks,
                                              image_height_macroblocks);
-// CHECK:    *sad_calc_16_stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK:    dpct::sync_barrier(sad_calc_16_stop);
     cudaEventRecord(sad_calc_16_stop);
 
     cudaMallocHost((void **)h_sads, nsads * sizeof(unsigned short));
@@ -477,11 +476,11 @@ void foo_test_1983() {
 
   for (int i = 0; i < repeat; i++) {
     kernel<<<1, 1, 0, stream1>>>();
-// CHECK:    *event1 = stream1->ext_oneapi_submit_barrier();
+// CHECK:    dpct::sync_barrier(event1, stream1);
     cudaEventRecord(event1, stream1);
     kernel<<<1, 1, 0, stream2>>>();
 
-// CHECK:    *event2 = stream2->ext_oneapi_submit_barrier();
+// CHECK:    dpct::sync_barrier(event2, stream2);
 // CHECK-NEXT:    event1->wait_and_throw();
 // CHECK-NEXT:    event2->wait_and_throw();
     cudaEventRecord(event2, stream2);
@@ -507,14 +506,14 @@ template <class T, class vecT> void foo_test_2131() {
 
   for (int k = 0; k < passes; k++) {
     float totalScanTime = 0.0f;
-  // CHECK:     SAFE_CALL(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK:     SAFE_CALL(DPCT_CHECK_ERROR(dpct::sync_barrier(start, &q_ct1)));
     SAFE_CALL(cudaEventRecord(start, 0));
     for (int j = 0; j < iters; j++) {
       reduce<T, 256>
           <<<num_blocks, num_threads, smem_size>>>(d_idata, d_block_sums, size);
     }
 
-  // CHECK: SAFE_CALL(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK: SAFE_CALL(DPCT_CHECK_ERROR(dpct::sync_barrier(stop, &q_ct1)));
   // CHECK: SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
   // CHECK: totalScanTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     SAFE_CALL(cudaEventRecord(stop, 0));

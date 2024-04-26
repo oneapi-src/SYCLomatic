@@ -1269,3 +1269,38 @@ while.end.i:
   %bool = icmp eq i32 %orval, 0
   ret i1 %bool
 }
+
+define i1 @check_get_vector_length(i32 %x, i32 %y) {
+; CHECK-LABEL: @check_get_vector_length(
+; CHECK-NEXT:    [[NE:%.*]] = icmp ne i32 [[X:%.*]], 0
+; CHECK-NEXT:    br i1 [[NE]], label [[TRUE:%.*]], label [[FALSE:%.*]]
+; CHECK:       true:
+; CHECK-NEXT:    [[Z:%.*]] = call i32 @llvm.experimental.get.vector.length.i32(i32 [[X]], i32 1, i1 true)
+; CHECK-NEXT:    [[CMP0:%.*]] = icmp ugt i32 [[Z]], [[Y:%.*]]
+; CHECK-NEXT:    ret i1 [[CMP0]]
+; CHECK:       false:
+; CHECK-NEXT:    ret i1 [[NE]]
+;
+  %ne = icmp ne i32 %x, 0
+  br i1 %ne, label %true, label %false
+true:
+  %z = call i32 @llvm.experimental.get.vector.length.i32(i32 %x, i32 1, i1 true)
+  %cmp0 = icmp ugt i32 %z, %y
+  %cmp1 = icmp eq i32 %y, 0
+  %r = or i1 %cmp0, %cmp1
+  ret i1 %r
+false:
+  ret i1 %ne
+}
+
+define <2 x i1> @range_metadata_vec(ptr %p, <2 x i32> %x) {
+; CHECK-LABEL: @range_metadata_vec(
+; CHECK-NEXT:    ret <2 x i1> <i1 true, i1 true>
+;
+  %v = load <2 x i32>, ptr %p, !range !{i32 1, i32 100}
+  %or = or <2 x i32> %v, %x
+  %cmp = icmp ne <2 x i32> %or, zeroinitializer
+  ret <2 x i1> %cmp
+}
+
+declare i32 @llvm.experimental.get.vector.length.i32(i32, i32, i1)

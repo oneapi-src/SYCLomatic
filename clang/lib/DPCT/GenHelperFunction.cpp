@@ -95,91 +95,104 @@ const std::string DplExtrasDpcppExtensionsAllContentStr =
 #include "clang/DPCT/dpl_extras/dpcpp_extensions.h.inc"
     ;
 
-void replaceAllOccurredStrsInStr(std::string &StrNeedProcess,
-                                 const std::string &Pattern,
-                                 const std::string &Repl) {
-  if (StrNeedProcess.empty() || Pattern.empty()) {
-    return;
-  }
+const std::string CodePinAllContentStr =
+#include "clang/DPCT/codepin/codepin.hpp.inc"
+    ;
 
-  size_t PatternLen = Pattern.size();
-  size_t ReplLen = Repl.size();
-  size_t Offset = 0;
-  Offset = StrNeedProcess.find(Pattern, Offset);
+const std::string CodePinSerializationBasicAllContentStr =
+#include "clang/DPCT/codepin/serialization/basic.hpp.inc"
+    ;
 
-  while (Offset != std::string::npos) {
-    StrNeedProcess.replace(Offset, PatternLen, Repl);
-    Offset = Offset + ReplLen;
-    Offset = StrNeedProcess.find(Pattern, Offset);
-  }
-}
-
-void replaceEndOfLine(std::string &StrNeedProcess) {
-#ifdef _WIN64
-  replaceAllOccurredStrsInStr(StrNeedProcess, "\n", "\r\n");
-#endif
-}
+const std::string CmakeAllContentStr =
+#include "clang/DPCT/dpct.cmake.inc"
+    ;
 
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
-    llvm::sys::fs::create_directory(OutRoot.getCanonicalPath());
-  clang::tooling::UnifiedPath ToPath = OutRoot.getCanonicalPath() + "/include";
+    createDirectories(OutRoot);
+  clang::tooling::UnifiedPath ToPath =
+      appendPath(OutRoot.getCanonicalPath().str(), "include");
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
-  ToPath = ToPath.getCanonicalPath() + "/dpct";
+    createDirectories(ToPath);
+  ToPath = appendPath(ToPath.getCanonicalPath().str(), "dpct");
   if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath()))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath());
-  if (!llvm::sys::fs::is_directory(ToPath.getCanonicalPath() + "/dpl_extras"))
-    llvm::sys::fs::create_directory(ToPath.getCanonicalPath() + "/dpl_extras");
+    createDirectories(ToPath);
+  if (!llvm::sys::fs::is_directory(
+          appendPath(ToPath.getCanonicalPath().str(), "dpl_extras")))
+    createDirectories(
+        appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"));
+  if (!llvm::sys::fs::is_directory(
+          appendPath(ToPath.getCanonicalPath().str(), "codepin")))
+    createDirectories(appendPath(ToPath.getCanonicalPath().str(), "codepin"));
+  if (!llvm::sys::fs::is_directory(
+          appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"),
+                     "serialization")))
+    createDirectories(
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"),
+                   "serialization"));
 
-#define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
+#define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FOLDER_NAME, FILE_NAME)            \
   {                                                                            \
     std::ofstream VAR_NAME##File(                                              \
-        appendPath(ToPath.getCanonicalPath().str(), #FILE_NAME),               \
-        std::ios::binary);                                                     \
-    std::string Code = VAR_NAME##AllContentStr;                                \
-    replaceEndOfLine(Code);                                                    \
-    VAR_NAME##File << Code;                                                    \
-    VAR_NAME##File.flush();                                                    \
-  }
-#define GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)              \
-  {                                                                            \
-    std::ofstream VAR_NAME##File(                                              \
-        appendPath(appendPath(ToPath.getCanonicalPath().str(), "dpl_extras"),  \
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), FOLDER_NAME),   \
                    #FILE_NAME),                                                \
-        std::ios::binary);                                                     \
+        std::ios::out | std::ios::trunc);                                      \
     std::string Code = VAR_NAME##AllContentStr;                                \
-    replaceEndOfLine(Code);                                                    \
     VAR_NAME##File << Code;                                                    \
     VAR_NAME##File.flush();                                                    \
   }
-  GENERATE_ALL_FILE_CONTENT(Atomic, atomic.hpp)
-  GENERATE_ALL_FILE_CONTENT(BindlessImage, bindless_images.hpp)
-  GENERATE_ALL_FILE_CONTENT(BlasUtils, blas_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(Device, device.hpp)
-  GENERATE_ALL_FILE_CONTENT(Dpct, dpct.hpp)
-  GENERATE_ALL_FILE_CONTENT(DplUtils, dpl_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(DnnlUtils, dnnl_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(Image, image.hpp)
-  GENERATE_ALL_FILE_CONTENT(Kernel, kernel.hpp)
-  GENERATE_ALL_FILE_CONTENT(Math, math.hpp)
-  GENERATE_ALL_FILE_CONTENT(Memory, memory.hpp)
-  GENERATE_ALL_FILE_CONTENT(Util, util.hpp)
-  GENERATE_ALL_FILE_CONTENT(RngUtils, rng_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(LibCommonUtils, lib_common_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(CclUtils, ccl_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(SparseUtils, sparse_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(FftUtils, fft_utils.hpp)
-  GENERATE_ALL_FILE_CONTENT(LapackUtils, lapack_utils.hpp)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm, algorithm.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional, functional.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators, iterators.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasMemory, memory.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasNumeric, numeric.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasVector, vector.h)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, dpcpp_extensions.h)
+  GENERATE_ALL_FILE_CONTENT(Atomic, ".", atomic.hpp)
+  GENERATE_ALL_FILE_CONTENT(BindlessImage, ".", bindless_images.hpp)
+  GENERATE_ALL_FILE_CONTENT(BlasUtils, ".", blas_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(Device, ".", device.hpp)
+  GENERATE_ALL_FILE_CONTENT(Dpct, ".", dpct.hpp)
+  GENERATE_ALL_FILE_CONTENT(DplUtils, ".", dpl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(DnnlUtils, ".", dnnl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(Image, ".", image.hpp)
+  GENERATE_ALL_FILE_CONTENT(Kernel, ".", kernel.hpp)
+  GENERATE_ALL_FILE_CONTENT(Math, ".", math.hpp)
+  GENERATE_ALL_FILE_CONTENT(Memory, ".", memory.hpp)
+  GENERATE_ALL_FILE_CONTENT(Util, ".", util.hpp)
+  GENERATE_ALL_FILE_CONTENT(RngUtils, ".", rng_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(LibCommonUtils, ".", lib_common_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(CclUtils, ".", ccl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(SparseUtils, ".", sparse_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(FftUtils, ".", fft_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(LapackUtils, ".", lapack_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
+  GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic, "codepin/serialization",
+                            basic.hpp)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasAlgorithm, "dpl_extras", algorithm.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasFunctional, "dpl_extras", functional.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasIterators, "dpl_extras", iterators.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasMemory, "dpl_extras", memory.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasNumeric, "dpl_extras", numeric.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasVector, "dpl_extras", vector.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, "dpl_extras",
+                            dpcpp_extensions.h)
 #undef GENERATE_ALL_FILE_CONTENT
-#undef GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT
+}
+
+void genCmakeHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
+  if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
+    createDirectories(OutRoot);
+
+  clang::tooling::UnifiedPath ToPath =
+      appendPath(OutRoot.getCanonicalPath().str(), ".");
+
+#define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FOLDER_NAME, FILE_NAME)            \
+  {                                                                            \
+    std::ofstream VAR_NAME##File(                                              \
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), FOLDER_NAME),   \
+                   #FILE_NAME),                                                \
+        std::ios::out | std::ios::trunc);                                      \
+    std::string Code = VAR_NAME##AllContentStr;                                \
+    VAR_NAME##File << Code;                                                    \
+    VAR_NAME##File.flush();                                                    \
+  }
+  GENERATE_ALL_FILE_CONTENT(Cmake, ".", dpct.cmake)
+
+#undef GENERATE_ALL_FILE_CONTENT
 }
 
 } // namespace dpct

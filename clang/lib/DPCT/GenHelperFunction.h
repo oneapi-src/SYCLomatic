@@ -39,9 +39,12 @@ extern const std::string DplExtrasMemoryAllContentStr;
 extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
-void replaceEndOfLine(std::string &StrNeedProcess);
+extern const std::string CodePinAllContentStr;
+extern const std::string CodePinSerializationBasicAllContentStr;
+extern const std::string DpctCmakeHelperFileStr;
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
-}
+void genCmakeHelperFunction(const clang::tooling::UnifiedPath &OutRoot);
+} // namespace dpct
 } // namespace clang
 
 #endif // DPCT_GEN_HELPER_FUNCTION_H

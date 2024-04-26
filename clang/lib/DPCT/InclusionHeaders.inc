@@ -99,6 +99,10 @@ REGIST_INCLUSION("thrust/", Startwith, Thrust, Replace, false,
                  HeaderType::HT_DPCT_DPL_Utils, HeaderType::HT_DPL_Execution,
                  HeaderType::HT_DPL_Algorithm)
 
+REGIST_INCLUSION("cub/", Startwith, Thrust, Replace, false,
+                 HeaderType::HT_DPCT_DPL_Utils, HeaderType::HT_DPL_Execution,
+                 HeaderType::HT_DPL_Algorithm)
+
 REGIST_INCLUSION("CL/", Startwith, Common, DoNothing, false)
 
 REGIST_INCLUSION("cuda_rutime.h", FullMatch, Libcu, Remove, true)

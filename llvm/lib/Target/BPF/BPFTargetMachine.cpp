@@ -108,7 +108,8 @@ TargetPassConfig *BPFTargetMachine::createPassConfig(PassManagerBase &PM) {
   return new BPFPassConfig(*this, PM);
 }
 
-void BPFTargetMachine::registerPassBuilderCallbacks(PassBuilder &PB) {
+void BPFTargetMachine::registerPassBuilderCallbacks(
+    PassBuilder &PB, bool PopulateClassToPassNames) {
   PB.registerPipelineParsingCallback(
       [](StringRef PassName, FunctionPassManager &FPM,
          ArrayRef<PassBuilder::PipelineElement>) {
@@ -118,6 +119,10 @@ void BPFTargetMachine::registerPassBuilderCallbacks(PassBuilder &PB) {
         }
         if (PassName == "bpf-preserve-static-offset") {
           FPM.addPass(BPFPreserveStaticOffsetPass(false));
+          return true;
+        }
+        if (PassName == "bpf-aspace-simplify") {
+          FPM.addPass(BPFASpaceCastSimplifyPass());
           return true;
         }
         return false;
@@ -134,6 +139,7 @@ void BPFTargetMachine::registerPassBuilderCallbacks(PassBuilder &PB) {
   PB.registerPeepholeEPCallback([=](FunctionPassManager &FPM,
                                     OptimizationLevel Level) {
     FPM.addPass(SimplifyCFGPass(SimplifyCFGOptions().hoistCommonInsts(true)));
+    FPM.addPass(BPFASpaceCastSimplifyPass());
   });
   PB.registerScalarOptimizerLateEPCallback(
       [=](FunctionPassManager &FPM, OptimizationLevel Level) {
@@ -148,7 +154,9 @@ void BPFTargetMachine::registerPassBuilderCallbacks(PassBuilder &PB) {
 }
 
 void BPFPassConfig::addIRPasses() {
+  addPass(createAtomicExpandLegacyPass());
   addPass(createBPFCheckAndAdjustIR());
+
   TargetPassConfig::addIRPasses();
 }
 

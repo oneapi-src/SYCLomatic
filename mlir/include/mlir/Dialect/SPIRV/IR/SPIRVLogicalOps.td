@@ -534,6 +534,7 @@ def SPIRV_LogicalNotOp : SPIRV_LogicalUnaryOp<"LogicalNot",
   }];
 
   let hasCanonicalizer = 1;
+  let hasFolder = 1;
 }
 
 // -----
@@ -799,6 +800,8 @@ def SPIRV_SelectOp : SPIRV_Op<"Select",
   // These ops require dynamic availability specification based on operand and
   // result types.
   bit autogenAvailability = 0;
+
+  let hasFolder = 1;
 }
 
 // -----

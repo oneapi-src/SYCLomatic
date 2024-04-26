@@ -102,7 +102,7 @@ int main() {
   int2* data;
   kernel<<<1, 1>>>(data);
 
-  // CHECK: volatile int aaa1;
+  // CHECK: volatile int32_t aaa1;
   // CHECK-NEXT: aaa1 = 1;
   volatile int1 aaa1;
   aaa1.x = 1;
@@ -126,7 +126,7 @@ int main() {
   // CHECK-NEXT: sycl::int4 aaa4;
   volatile int4 aaa4;
 
-  // CHECK: volatile int *pv1;
+  // CHECK: volatile int32_t *pv1;
   volatile int1 *pv1;
 
   // CHECK: /*

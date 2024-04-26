@@ -10,6 +10,8 @@
 // RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/inc/header.inc %S/inc/header.inc
 // RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/inc/header2.INC %S/inc/header2.INC
 
+// RUN: FileCheck --match-full-lines --input-file %T/est-dpct-header/inc/header3.c.dp.cpp %S/inc/header3.c
+
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include "inc/header.h"
@@ -21,11 +23,9 @@
 #include "inc/header.tpp"
 #include "inc/header2.TPP"
 
-// CHECK: #include "inc/header3.c"
-// CHECK-NEXT: #include <inc/header3.c>
+// CHECK: #include "inc/header3.c.dp.cpp"
 // CHECK-NEXT: #include "inc/header4.c"
 #include "inc/header3.c"
-#include <inc/header3.c>
 #include "inc/header4.c"
 
 // CHECK: #ifdef CUDA

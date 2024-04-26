@@ -45,7 +45,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                            CALL(TEMPLATED_CALLEE_WITH_ARGS(
                                     MapNames::getDpctNamespace() + "bfi_safe",
                                     LITERAL("unsigned")),
-                                ARG(0), ARG(1), ARG(2), ARG(3)))
+                                ARG(2), ARG(1), ARG(3), ARG(4)))
       // cub::LaneId
       MEMBER_CALL_FACTORY_ENTRY(
           "cub::LaneId", MEMBER_CALL(NDITEM, false, LITERAL("get_sub_group")),

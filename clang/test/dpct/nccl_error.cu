@@ -37,9 +37,9 @@ int main(){
       case ncclInt32: std::cout << "Int32" << std::endl; break;
   }
   // CHECK:     /*
-  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: "ncclGetErrorString is not supported"/*ncclGetErrorString(res)*/;
+  // CHECK-NEXT: "<Placeholder string>";
   ncclGetErrorString(res);
   // CHECK:     /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this functionality is redundant in SYCL.

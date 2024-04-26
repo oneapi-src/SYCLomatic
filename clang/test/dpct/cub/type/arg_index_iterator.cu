@@ -1,9 +1,8 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/type/arg_index_iterator %S/arg_index_iterator.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/type/arg_index_iterator/arg_index_iterator.dp.cpp %s
+// RUN: FileCheck --match-full-lines --input-file %T/type/arg_index_iterator/arg_index_iterator.dp.cpp %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/type/arg_index_iterator/arg_index_iterator.dp.cpp -o %T/type/arg_index_iterator/arg_index_iterator.dp.o %}
-
 
 #ifndef BUILD_TEST
 // CHECK: #include <dpct/dpl_utils.hpp>
@@ -20,20 +19,20 @@ void test1(void) {
   cub::ArgIndexInputIterator<int *> Iter(d_in);
 }
 
-// CHECK: int test2(dpct::arg_index_input_iterator<double *> Iter)
+// CHECK: int test2(dpct::arg_index_input_iterator<double *> Iter) {
 int test2(cub::ArgIndexInputIterator<double *> Iter) {
   Tuple<double> t = *Iter;
   return t.key;
 }
 
-// CHECK: T test3(dpct::arg_index_input_iterator<T *> Iter)
+// CHECK: T test3(dpct::arg_index_input_iterator<T *> Iter) {
 template <typename T>
 T test3(cub::ArgIndexInputIterator<T *> Iter) {
   Tuple<T> t = *Iter;
   return t.value;
 }
 
-// CHECK: decltype(auto) test4(dpct::arg_index_input_iterator<IteratorT> Iter)
+// CHECK: decltype(auto) test4(dpct::arg_index_input_iterator<IteratorT> Iter) {
 template <typename IteratorT>
 decltype(auto) test4(cub::ArgIndexInputIterator<IteratorT> Iter) {
   Tuple<typename std::iterator_traits<IteratorT>::value_type> t = *Iter;
@@ -47,7 +46,7 @@ class Test5 {
 public:
   Test5(int *Ptr) : Iter(Ptr) {}
 
-  // CHECK: dpct::arg_index_input_iterator<int *> getIter() const
+  // CHECK: dpct::arg_index_input_iterator<int *> getIter() const {
   cub::ArgIndexInputIterator<int *> getIter() const {
     return Iter;
   }

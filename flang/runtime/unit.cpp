@@ -11,6 +11,7 @@
 #include "lock.h"
 #include "tools.h"
 #include "unit-map.h"
+#include "flang/Runtime/magic-numbers.h"
 #include <cstdio>
 #include <limits>
 #include <utility>
@@ -51,7 +52,7 @@ ExternalFileUnit *ExternalFileUnit::LookUpOrCreate(
 }
 
 ExternalFileUnit *ExternalFileUnit::LookUpOrCreateAnonymous(int unit,
-    Direction dir, std::optional<bool> isUnformatted,
+    Direction dir, Fortran::common::optional<bool> isUnformatted,
     const Terminator &terminator) {
   // Make sure that the returned anonymous unit has been opened
   // not just created in the unitMap.
@@ -94,9 +95,10 @@ ExternalFileUnit &ExternalFileUnit::NewUnit(
   return unit;
 }
 
-bool ExternalFileUnit::OpenUnit(std::optional<OpenStatus> status,
-    std::optional<Action> action, Position position, OwningPtr<char> &&newPath,
-    std::size_t newPathLength, Convert convert, IoErrorHandler &handler) {
+bool ExternalFileUnit::OpenUnit(Fortran::common::optional<OpenStatus> status,
+    Fortran::common::optional<Action> action, Position position,
+    OwningPtr<char> &&newPath, std::size_t newPathLength, Convert convert,
+    IoErrorHandler &handler) {
   if (convert == Convert::Unknown) {
     convert = executionEnvironment.conversion;
   }
@@ -175,9 +177,10 @@ bool ExternalFileUnit::OpenUnit(std::optional<OpenStatus> status,
   return impliedClose;
 }
 
-void ExternalFileUnit::OpenAnonymousUnit(std::optional<OpenStatus> status,
-    std::optional<Action> action, Position position, Convert convert,
-    IoErrorHandler &handler) {
+void ExternalFileUnit::OpenAnonymousUnit(
+    Fortran::common::optional<OpenStatus> status,
+    Fortran::common::optional<Action> action, Position position,
+    Convert convert, IoErrorHandler &handler) {
   // I/O to an unconnected unit reads/creates a local file, e.g. fort.7
   std::size_t pathMaxLen{32};
   auto path{SizedNew<char>{handler}(pathMaxLen)};
@@ -220,21 +223,24 @@ UnitMap &ExternalFileUnit::CreateUnitMap() {
   UnitMap &newUnitMap{*New<UnitMap>{terminator}().release()};
 
   bool wasExtant{false};
-  ExternalFileUnit &out{*newUnitMap.LookUpOrCreate(6, terminator, wasExtant)};
+  ExternalFileUnit &out{*newUnitMap.LookUpOrCreate(
+      FORTRAN_DEFAULT_OUTPUT_UNIT, terminator, wasExtant)};
   RUNTIME_CHECK(terminator, !wasExtant);
   out.Predefine(1);
   handler.SignalError(out.SetDirection(Direction::Output));
   out.isUnformatted = false;
   defaultOutput = &out;
 
-  ExternalFileUnit &in{*newUnitMap.LookUpOrCreate(5, terminator, wasExtant)};
+  ExternalFileUnit &in{*newUnitMap.LookUpOrCreate(
+      FORTRAN_DEFAULT_INPUT_UNIT, terminator, wasExtant)};
   RUNTIME_CHECK(terminator, !wasExtant);
   in.Predefine(0);
   handler.SignalError(in.SetDirection(Direction::Input));
   in.isUnformatted = false;
   defaultInput = &in;
 
-  ExternalFileUnit &error{*newUnitMap.LookUpOrCreate(0, terminator, wasExtant)};
+  ExternalFileUnit &error{
+      *newUnitMap.LookUpOrCreate(FORTRAN_ERROR_UNIT, terminator, wasExtant)};
   RUNTIME_CHECK(terminator, !wasExtant);
   error.Predefine(2);
   handler.SignalError(error.SetDirection(Direction::Output));
@@ -675,6 +681,7 @@ void ExternalFileUnit::Rewind(IoErrorHandler &handler) {
     handler.SignalError(IostatRewindNonSequential,
         "REWIND(UNIT=%d) on non-sequential file", unitNumber());
   } else {
+    DoImpliedEndfile(handler);
     SetPosition(0, handler);
     currentRecordNumber = 1;
     leftTabLimit.reset();
@@ -683,7 +690,6 @@ void ExternalFileUnit::Rewind(IoErrorHandler &handler) {
 }
 
 void ExternalFileUnit::SetPosition(std::int64_t pos, IoErrorHandler &handler) {
-  DoImpliedEndfile(handler);
   frameOffsetInFile_ = pos;
   recordOffsetInFrame_ = 0;
   if (access == Access::Direct) {
@@ -702,6 +708,12 @@ bool ExternalFileUnit::SetStreamPos(
     handler.SignalError(
         "POS=%zd is invalid", static_cast<std::intmax_t>(oneBasedPos));
     return false;
+  }
+  // A backwards POS= implies truncation after writing, at least in
+  // Intel and NAG.
+  if (static_cast<std::size_t>(oneBasedPos - 1) <
+      frameOffsetInFile_ + recordOffsetInFrame_) {
+    DoImpliedEndfile(handler);
   }
   SetPosition(oneBasedPos - 1, handler);
   // We no longer know which record we're in.  Set currentRecordNumber to
@@ -991,25 +1003,30 @@ int ExternalFileUnit::GetAsynchronousId(IoErrorHandler &handler) {
   if (!mayAsynchronous()) {
     handler.SignalError(IostatBadAsynchronous);
     return -1;
-  } else if (auto least{asyncIdAvailable_.LeastElement()}) {
-    asyncIdAvailable_.reset(*least);
-    return static_cast<int>(*least);
   } else {
+    for (int j{0}; 64 * j < maxAsyncIds; ++j) {
+      if (auto least{asyncIdAvailable_[j].LeastElement()}) {
+        asyncIdAvailable_[j].reset(*least);
+        return 64 * j + static_cast<int>(*least);
+      }
+    }
     handler.SignalError(IostatTooManyAsyncOps);
     return -1;
   }
 }
 
 bool ExternalFileUnit::Wait(int id) {
-  if (static_cast<std::size_t>(id) >= asyncIdAvailable_.size() ||
-      asyncIdAvailable_.test(id)) {
+  if (static_cast<std::size_t>(id) >= maxAsyncIds ||
+      asyncIdAvailable_[id / 64].test(id % 64)) {
     return false;
   } else {
     if (id == 0) { // means "all IDs"
-      asyncIdAvailable_.set();
-      asyncIdAvailable_.reset(0);
+      for (int j{0}; 64 * j < maxAsyncIds; ++j) {
+        asyncIdAvailable_[j].set();
+      }
+      asyncIdAvailable_[0].reset(0);
     } else {
-      asyncIdAvailable_.set(id);
+      asyncIdAvailable_[id / 64].set(id % 64);
     }
     return true;
   }

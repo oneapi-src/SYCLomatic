@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
-// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4
 // RUN: dpct --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/comments/comments.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/comments/comments.dp.cpp -o %T/comments/comments.dp.o %}
@@ -61,7 +61,7 @@ int main() {
 // CHECK-NEXT:            cgh.parallel_for(
 // CHECK-NEXT:              sycl::nd_range<3>(griddim * threaddim, threaddim),
 // CHECK-NEXT:              [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, al_ptr_ct1, cl_acc_ct1.get_pointer(), bl_acc_ct1, dpct::image_accessor_ext<sycl::uint2, 1>(tex21_smpl, tex21_acc));
+// CHECK-NEXT:                kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, al_ptr_ct1, cl_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), bl_acc_ct1, dpct::image_accessor_ext<sycl::uint2, 1>(tex21_smpl, tex21_acc));
 // CHECK-NEXT:              });
 // CHECK-NEXT:          });
 // CHECK-NEXT:    }

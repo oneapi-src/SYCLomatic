@@ -609,7 +609,7 @@ void test_conversions() {
 
 __global__ void kernelFuncBfloat16Math() {
   // CHECK: sycl::ext::oneapi::bfloat16 bf16, bf16_1;
-  __nv_bfloat16 bf16, bf16_1;
+  nv_bfloat16 bf16, bf16_1;
   // CHECK: bf16_1 = sycl::ceil(float(bf16));
   bf16_1 = hceil(bf16);
   // CHECK: bf16_1 = sycl::cos(float(bf16));
@@ -644,7 +644,7 @@ __global__ void kernelFuncBfloat16Math() {
 
 __global__ void kernelFuncBfloat162Math() {
   // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1;
-  __nv_bfloat162 bf162, bf162_1;
+  nv_bfloat162 bf162, bf162_1;
   // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::ceil(float(bf162[0])), sycl::ceil(float(bf162[1])));
   bf162_1 = h2ceil(bf162);
   // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::cos(float(bf162[0])), sycl::cos(float(bf162[1])));

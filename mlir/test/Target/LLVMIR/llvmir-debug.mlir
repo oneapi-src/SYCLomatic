@@ -35,8 +35,8 @@ llvm.func @func_no_debug() {
   tag = DW_TAG_pointer_type, name = "named", baseType = #si32
 >
 #cu = #llvm.di_compile_unit<
-  sourceLanguage = DW_LANG_C, file = #file, producer = "MLIR",
-  isOptimized = true, emissionKind = Full
+  id = distinct[0]<>, sourceLanguage = DW_LANG_C, file = #file,
+  producer = "MLIR", isOptimized = true, emissionKind = Full
 >
 #composite = #llvm.di_composite_type<
   tag = DW_TAG_structure_type, name = "composite", file = #file,
@@ -169,11 +169,25 @@ llvm.func @empty_types() {
 
 // -----
 
+#di_file = #llvm.di_file<"foo.mlir" in "/test/">
+#di_subprogram = #llvm.di_subprogram<
+  scope = #di_file, name = "func_decl_with_subprogram", file = #di_file, subprogramFlags = "Optimized"
+>
+
+// CHECK-LABEL: declare !dbg
+// CHECK-SAME: ![[SUBPROGRAM:.*]] i32 @func_decl_with_subprogram(
+llvm.func @func_decl_with_subprogram() -> (i32) loc(fused<#di_subprogram>["foo.mlir":2:1])
+
+// CHECK: ![[SUBPROGRAM]] = !DISubprogram(name: "func_decl_with_subprogram", scope: ![[FILE:.*]], file: ![[FILE]], spFlags: DISPFlagOptimized)
+// CHECK: ![[FILE]] = !DIFile(filename: "foo.mlir", directory: "/test/")
+
+// -----
+
 #di_basic_type = #llvm.di_basic_type<tag = DW_TAG_base_type, name = "int", sizeInBits = 32, encoding = DW_ATE_signed>
 #di_file = #llvm.di_file<"foo.mlir" in "/test/">
 #di_compile_unit = #llvm.di_compile_unit<
-  sourceLanguage = DW_LANG_C, file = #di_file, producer = "MLIR",
-  isOptimized = true, emissionKind = Full
+  id = distinct[0]<>, sourceLanguage = DW_LANG_C, file = #di_file,
+  producer = "MLIR", isOptimized = true, emissionKind = Full
 >
 #di_subprogram = #llvm.di_subprogram<
   compileUnit = #di_compile_unit, scope = #di_file, name = "outer_func",
@@ -216,8 +230,8 @@ llvm.func @func_with_inlined_dbg_value(%arg0: i32) -> (i32) {
 #di_basic_type = #llvm.di_basic_type<tag = DW_TAG_base_type, name = "int", sizeInBits = 32, encoding = DW_ATE_signed>
 #di_file = #llvm.di_file<"foo.mlir" in "/test/">
 #di_compile_unit = #llvm.di_compile_unit<
-  sourceLanguage = DW_LANG_C, file = #di_file, producer = "MLIR",
-  isOptimized = true, emissionKind = Full
+  id = distinct[0]<>, sourceLanguage = DW_LANG_C, file = #di_file,
+  producer = "MLIR", isOptimized = true, emissionKind = Full
 >
 #di_subprogram = #llvm.di_subprogram<
   compileUnit = #di_compile_unit, scope = #di_file, name = "func",
@@ -245,8 +259,8 @@ llvm.func @func_without_subprogram(%0 : i32) {
 
 #di_file = #llvm.di_file<"foo.mlir" in "/test/">
 #di_compile_unit = #llvm.di_compile_unit<
-  sourceLanguage = DW_LANG_C, file = #di_file, producer = "MLIR",
-  isOptimized = true, emissionKind = Full
+  id = distinct[0]<>, sourceLanguage = DW_LANG_C, file = #di_file,
+  producer = "MLIR", isOptimized = true, emissionKind = Full
 >
 #di_subprogram = #llvm.di_subprogram<
   compileUnit = #di_compile_unit, scope = #di_file, name = "outer_func",
@@ -285,7 +299,7 @@ llvm.func @dbg_intrinsics_with_no_location(%arg0: i32) -> (i32) {
 // CHECK-DAG: ![[GVALS]] = !{![[GEXPR0]], ![[GEXPR1]]}
 
 #di_file_2 = #llvm.di_file<"not" in "existence">
-#di_compile_unit_2 = #llvm.di_compile_unit<sourceLanguage = DW_LANG_C, file = #di_file_2, producer = "MLIR", isOptimized = true, emissionKind = Full>
+#di_compile_unit_2 = #llvm.di_compile_unit<id = distinct[0]<>, sourceLanguage = DW_LANG_C, file = #di_file_2, producer = "MLIR", isOptimized = true, emissionKind = Full>
 #di_basic_type_2 = #llvm.di_basic_type<tag = DW_TAG_base_type, name = "uint64_t", sizeInBits = 64, encoding = DW_ATE_unsigned>
 llvm.mlir.global external @global_with_expr_1() {addr_space = 0 : i32, dbg_expr = #llvm.di_global_variable_expression<var = <scope = #di_compile_unit_2, name = "global_with_expr_1", linkageName = "global_with_expr_1", file = #di_file_2, line = 370, type = #di_basic_type_2>, expr = <>>} : i64
 llvm.mlir.global external @global_with_expr_2() {addr_space = 0 : i32, dbg_expr = #llvm.di_global_variable_expression<var = <scope = #di_compile_unit_2, name = "global_with_expr_2", linkageName = "global_with_expr_2", file = #di_file_2, line = 371, type = #di_basic_type_2, isLocalToUnit = true, isDefined = true, alignInBits = 8>, expr = <>>} : i64
@@ -315,9 +329,9 @@ llvm.mlir.global external constant @".str.1"() {addr_space = 0 : i32, dbg_expr =
 // CHECK-DAG: ![[FILE2:.*]] = !DIFile(filename: "foo2.mlir", directory: "/test/")
 #di_file_2 = #llvm.di_file<"foo2.mlir" in "/test/">
 // CHECK-DAG: ![[SCOPE2:.*]] = distinct !DICompileUnit(language: DW_LANG_C, file: ![[FILE2]], producer: "MLIR", isOptimized: true, runtimeVersion: 0, emissionKind: DebugDirectivesOnly)
-#di_compile_unit_1 = #llvm.di_compile_unit<sourceLanguage = DW_LANG_C, file = #di_file_1, producer = "MLIR", isOptimized = true, emissionKind = LineTablesOnly>
+#di_compile_unit_1 = #llvm.di_compile_unit<id = distinct[0]<>, sourceLanguage = DW_LANG_C, file = #di_file_1, producer = "MLIR", isOptimized = true, emissionKind = LineTablesOnly>
 // CHECK-DAG: ![[SCOPE1:.*]] = distinct !DICompileUnit(language: DW_LANG_C, file: ![[FILE1]], producer: "MLIR", isOptimized: true, runtimeVersion: 0, emissionKind: LineTablesOnly)
-#di_compile_unit_2 = #llvm.di_compile_unit<sourceLanguage = DW_LANG_C, file = #di_file_2, producer = "MLIR", isOptimized = true, emissionKind = DebugDirectivesOnly>
+#di_compile_unit_2 = #llvm.di_compile_unit<id = distinct[1]<>, sourceLanguage = DW_LANG_C, file = #di_file_2, producer = "MLIR", isOptimized = true, emissionKind = DebugDirectivesOnly>
 #di_subprogram_1 = #llvm.di_subprogram<compileUnit = #di_compile_unit_1, scope = #di_file_1, name = "func1", file = #di_file_1, subprogramFlags = "Definition|Optimized">
 #di_subprogram_2 = #llvm.di_subprogram<compileUnit = #di_compile_unit_2, scope = #di_file_2, name = "func2", file = #di_file_2, subprogramFlags = "Definition|Optimized">
 
@@ -328,3 +342,83 @@ llvm.func @func_line_tables() {
 llvm.func @func_debug_directives() {
   llvm.return
 } loc(fused<#di_subprogram_2>["foo2.mlir":0:0])
+
+// -----
+
+// Ensure recursive types with multiple external references work.
+
+// Common base nodes.
+#di_file = #llvm.di_file<"test.mlir" in "/">
+#di_null_type = #llvm.di_null_type
+#di_compile_unit = #llvm.di_compile_unit<id = distinct[1]<>, sourceLanguage = DW_LANG_C, file = #di_file, isOptimized = false, emissionKind = None>
+
+// Recursive type itself.
+#di_struct_self = #llvm.di_composite_type<tag = DW_TAG_null, recId = distinct[0]<>>
+#di_ptr_inner = #llvm.di_derived_type<tag = DW_TAG_pointer_type, baseType = #di_struct_self, sizeInBits = 64>
+#di_subroutine_inner = #llvm.di_subroutine_type<types = #di_null_type, #di_ptr_inner>
+#di_subprogram_inner = #llvm.di_subprogram<
+  id = distinct[2]<>,
+  compileUnit = #di_compile_unit,
+  scope = #di_struct_self,
+  name = "class_method",
+  file = #di_file,
+  subprogramFlags = Definition,
+  type = #di_subroutine_inner>
+#di_struct = #llvm.di_composite_type<
+  tag = DW_TAG_class_type,
+  recId = distinct[0]<>,
+  name = "class_name",
+  file = #di_file,
+  line = 42,
+  flags = "TypePassByReference|NonTrivial",
+  elements = #di_subprogram_inner>
+
+// Outer types referencing the entire recursive type.
+#di_ptr_outer = #llvm.di_derived_type<tag = DW_TAG_pointer_type, baseType = #di_struct, sizeInBits = 64>
+#di_subroutine_outer = #llvm.di_subroutine_type<types = #di_null_type, #di_ptr_outer>
+#di_subprogram_outer = #llvm.di_subprogram<
+  id = distinct[2]<>,
+  compileUnit = #di_compile_unit,
+  scope = #di_struct,
+  name = "class_method",
+  file = #di_file,
+  subprogramFlags = Definition,
+  type = #di_subroutine_outer>
+
+#loc3 = loc(fused<#di_subprogram_outer>["test.mlir":1:1])
+
+// CHECK: @class_method
+// CHECK: ret void, !dbg ![[LOC:.*]]
+
+// CHECK: ![[CU:.*]] = distinct !DICompileUnit(
+// CHECK: ![[SP:.*]] = distinct !DISubprogram(name: "class_method", scope: ![[STRUCT:.*]], file: !{{.*}}, type: ![[SUBROUTINE:.*]], spFlags: DISPFlagDefinition, unit: ![[CU]])
+// CHECK: ![[STRUCT]] = distinct !DICompositeType(tag: DW_TAG_class_type, name: "class_name", {{.*}}, elements: ![[ELEMS:.*]])
+// CHECK: ![[ELEMS]] = !{![[SP]]}
+// CHECK: ![[SUBROUTINE]] = !DISubroutineType(types: ![[SUBROUTINE_ELEMS:.*]])
+// CHECK: ![[SUBROUTINE_ELEMS]] = !{null, ![[PTR:.*]]}
+// CHECK: ![[PTR]] = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: ![[STRUCT]], size: 64)
+// CHECK: ![[LOC]] = !DILocation(line: 1, column: 1, scope: ![[SP]])
+
+llvm.func @class_method() {
+  llvm.return loc(#loc3)
+} loc(#loc3)
+
+// -----
+
+// Ensures composite types with a recursive scope work.
+
+#di_composite_type_self = #llvm.di_composite_type<tag = DW_TAG_null, recId = distinct[0]<>>
+#di_file = #llvm.di_file<"test.mlir" in "/">
+#di_subroutine_type = #llvm.di_subroutine_type<types = #di_composite_type_self>
+#di_subprogram = #llvm.di_subprogram<scope = #di_file, file = #di_file, subprogramFlags = Optimized, type = #di_subroutine_type>
+#di_composite_type = #llvm.di_composite_type<tag = DW_TAG_class_type, recId = distinct[0]<>, scope = #di_subprogram>
+#di_global_variable = #llvm.di_global_variable<file = #di_file, line = 1, type = #di_composite_type>
+#di_global_variable_expression = #llvm.di_global_variable_expression<var = #di_global_variable>
+
+llvm.mlir.global @global_variable() {dbg_expr = #di_global_variable_expression} : !llvm.struct<()>
+
+// CHECK: distinct !DIGlobalVariable({{.*}}type: ![[COMP:[0-9]+]],
+// CHECK: ![[COMP]] = distinct !DICompositeType({{.*}}scope: ![[SCOPE:[0-9]+]],
+// CHECK: ![[SCOPE]] = !DISubprogram({{.*}}type: ![[SUBROUTINE:[0-9]+]],
+// CHECK: ![[SUBROUTINE]] = !DISubroutineType(types: ![[SR_TYPES:[0-9]+]])
+// CHECK: ![[SR_TYPES]] = !{![[COMP]]}

@@ -4,6 +4,14 @@
 #include <cub/cub.cuh>
 #include <stddef.h>
 
+#ifdef BUILD_TEST
+namespace cub {
+struct DeviceScan {
+static void InclusiveSum(void *, size_t &, int *, int *, int) {}
+};
+} // namespace cub
+#endif // BUILD_TEST
+
 int n, *d_in, *d_out;
 void *tmp;
 size_t tmp_size;

@@ -199,6 +199,16 @@ public:
 OptionCategory &getGeneralCategory();
 #ifdef SYCLomatic_CUSTOMIZATION
 OptionCategory &getDPCTCategory();
+OptionCategory &getDPCTBasicCategory();
+OptionCategory &getDPCTAdvancedCategory();
+OptionCategory &getDPCTCodeGenCategory();
+OptionCategory &getDPCTReportGenCategory();
+OptionCategory &getDPCTBuildScriptCategory();
+OptionCategory &getDPCTQueryAPICategory();
+OptionCategory &getDPCTWarningsCategory();
+OptionCategory &getDPCTHelpInfoCategory();
+OptionCategory &getDPCTInterceptBuildCategory();
+OptionCategory &getDPCTExamplesCategory();
 #endif // SYCLomatic_CUSTOMIZATION
 
 //===----------------------------------------------------------------------===//
@@ -915,7 +925,7 @@ public:
   void addLiteralOption(StringRef Name, const DT &V, StringRef HelpStr) {
 #ifndef NDEBUG
     if (findOption(Name) != Values.size())
-      report_fatal_error("Option " + Name + " already exists!");
+      report_fatal_error("Option '" + Name + "' already exists!");
 #endif
     OptionInfo X(Name, static_cast<DataType>(V), HelpStr);
 #endif // SYCLomatic_CUSTOMIZATION

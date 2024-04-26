@@ -145,7 +145,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, a0_acc_ct1, s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, a0_acc_ct1, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n>>>(d_d, n);
@@ -188,7 +188,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>((int *)(&d_d_acc_ct0[0]), n, item_ct1, s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>((int *)(&d_d_acc_ct0[0]), n, item_ct1, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);

@@ -21,7 +21,6 @@
 #include <sycl/platform.hpp>
 #include <sycl/properties/context_properties.hpp>
 #include <sycl/property_list.hpp>
-#include <sycl/stl.hpp>
 
 #include <algorithm>
 
@@ -32,7 +31,9 @@ namespace detail {
 context_impl::context_impl(const device &Device, async_handler AsyncHandler,
                            const property_list &PropList)
     : MOwnedByRuntime(true), MAsyncHandler(AsyncHandler), MDevices(1, Device),
-      MContext(nullptr), MPlatform(), MPropList(PropList),
+      MContext(nullptr),
+      MPlatform(detail::getSyclObjImpl(Device.get_platform())),
+      MPropList(PropList),
       MHostContext(detail::getSyclObjImpl(Device)->is_host()),
       MSupportBufferLocationByDevices(NotChecked) {
   MKernelProgramCache.setContextPtr(this);
@@ -47,6 +48,18 @@ context_impl::context_impl(const std::vector<sycl::device> Devices,
   MPlatform = detail::getSyclObjImpl(MDevices[0].get_platform());
   std::vector<sycl::detail::pi::PiDevice> DeviceIds;
   for (const auto &D : MDevices) {
+    if (D.has(aspect::ext_oneapi_is_composite)) {
+      // Component devices are considered to be descendent devices from a
+      // composite device and therefore context created for a composite
+      // device should also work for a component device.
+      // In order to achieve that, we implicitly add all component devices to
+      // the list if a composite device was passed by user to us.
+      std::vector<device> ComponentDevices = D.get_info<
+          ext::oneapi::experimental::info::device::component_devices>();
+      for (const auto &CD : ComponentDevices)
+        DeviceIds.push_back(getSyclObjImpl(CD)->getHandleRef());
+    }
+
     DeviceIds.push_back(getSyclObjImpl(D)->getHandleRef());
   }
 
@@ -100,6 +113,10 @@ context_impl::context_impl(sycl::detail::pi::PiContext PiContext,
             Platform->getOrMakeDeviceImpl(Dev, Platform)));
       }
       MPlatform = Platform;
+    } else {
+      throw invalid_parameter_error(
+          "No devices in the provided device list and native context.",
+          PI_ERROR_INVALID_VALUE);
     }
   }
   // TODO catch an exception and put it to list of asynchronous exceptions

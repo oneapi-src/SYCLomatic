@@ -35,6 +35,7 @@ enum class OutputVerbosityLevel {
   OVL_Detailed,
   OVL_Diagnostics
 };
+enum class BuildScript { BS_None, BS_Cmake };
 enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
 enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
 enum class HelperFilesCustomizationLevel {
@@ -53,7 +54,7 @@ enum class ReportTypeEnum {
 enum class AssumedNDRangeDimEnum : unsigned int { ARE_Dim1 = 1, ARE_Dim3 = 3 };
 enum class ExplicitNamespace : unsigned int {
   EN_None = 0,
-  EN_CL = 1,
+  // 1 means EN_CL and it has already been removed
   EN_SYCL = 2,
   EN_SYCL_Math = 3,
   EN_DPCT = 4
@@ -63,12 +64,16 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_DeviceInfo,
   ExtDE_BFloat16,
   ExtDE_PeerAccess,
-  ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
+  ExtDE_Assert,
+  ExtDE_QueueEmpty,
+  ExtDE_DPCPPExtensionsDefaultEnabledEnumSize,
+  ExtDE_All
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
   ExtDD_CCXXStandardLibrary = 0,
   ExtDD_IntelDeviceMath,
-  ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
+  ExtDD_DPCPPExtensionsDefaultDisabledEnumSize,
+  ExtDD_All
 };
 enum class ExperimentalFeatures : unsigned int {
   Exp_NdRangeBarrier = 0, // Using nd_range_barrier.
@@ -83,16 +88,20 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_Matrix,
   Exp_BFloat16Math,
   Exp_BindlessImages,
-  Exp_ExperimentalFeaturesEnumSize
+  Exp_NonUniformGroups,
+  Exp_DeviceGlobal,
+  Exp_ExperimentalFeaturesEnumSize,
+  Exp_All
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
+enum class SYCLFileExtensionEnum { DP_CPP, SYCL_CPP, CPP };
 
 bool makeInRootCanonicalOrSetDefaults(
     clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);
-bool makeOutRootCanonicalOrSetDefaults(clang::tooling::UnifiedPath &OutRoot);
 bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::UnifiedPath &AnalysisScope,
                                              const clang::tooling::UnifiedPath &InRoot);
-
+bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
+                       bool NeedCheckOutRootEmpty = true);
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.
 /// return value:

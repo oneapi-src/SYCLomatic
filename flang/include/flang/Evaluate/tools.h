@@ -430,6 +430,28 @@ template <typename A> std::optional<CoarrayRef> ExtractCoarrayRef(const A &x) {
   }
 }
 
+struct ExtractSubstringHelper {
+  template <typename T> static std::optional<Substring> visit(T &&) {
+    return std::nullopt;
+  }
+
+  static std::optional<Substring> visit(const Substring &e) { return e; }
+
+  template <typename T>
+  static std::optional<Substring> visit(const Designator<T> &e) {
+    return std::visit([](auto &&s) { return visit(s); }, e.u);
+  }
+
+  template <typename T>
+  static std::optional<Substring> visit(const Expr<T> &e) {
+    return std::visit([](auto &&s) { return visit(s); }, e.u);
+  }
+};
+
+template <typename A> std::optional<Substring> ExtractSubstring(const A &x) {
+  return ExtractSubstringHelper::visit(x);
+}
+
 // If an expression is simply a whole symbol data designator,
 // extract and return that symbol, else null.
 template <typename A> const Symbol *UnwrapWholeSymbolDataRef(const A &x) {
@@ -1094,7 +1116,7 @@ std::optional<parser::MessageFixedText> CheckProcCompatibility(bool isCall,
     const std::optional<characteristics::Procedure> &lhsProcedure,
     const characteristics::Procedure *rhsProcedure,
     const SpecificIntrinsic *specificIntrinsic, std::string &whyNotCompatible,
-    std::optional<std::string> &warning);
+    std::optional<std::string> &warning, bool ignoreImplicitVsExplicit);
 
 // Scalar constant expansion
 class ScalarConstantExpander {
@@ -1192,6 +1214,24 @@ private:
 std::optional<bool> AreEquivalentInInterface(
     const Expr<SubscriptInteger> &, const Expr<SubscriptInteger> &);
 
+bool CheckForCoindexedObject(parser::ContextualMessages &,
+    const std::optional<ActualArgument> &, const std::string &procName,
+    const std::string &argName);
+
+/// Check if any of the symbols part of the expression has a cuda data
+/// attribute.
+inline bool HasCUDAAttrs(const Expr<SomeType> &expr) {
+  for (const Symbol &sym : CollectSymbols(expr)) {
+    if (const auto *details =
+            sym.GetUltimate().detailsIf<semantics::ObjectEntityDetails>()) {
+      if (details->cudaDataAttr()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 } // namespace Fortran::evaluate
 
 namespace Fortran::semantics {
@@ -1227,10 +1267,12 @@ bool IsFunctionResult(const Symbol &);
 bool IsKindTypeParameter(const Symbol &);
 bool IsLenTypeParameter(const Symbol &);
 bool IsExtensibleType(const DerivedTypeSpec *);
+bool IsSequenceOrBindCType(const DerivedTypeSpec *);
 bool IsBuiltinDerivedType(const DerivedTypeSpec *derived, const char *name);
 bool IsBuiltinCPtr(const Symbol &);
 bool IsEventType(const DerivedTypeSpec *);
 bool IsLockType(const DerivedTypeSpec *);
+bool IsNotifyType(const DerivedTypeSpec *);
 // Is this derived type TEAM_TYPE from module ISO_FORTRAN_ENV?
 bool IsTeamType(const DerivedTypeSpec *);
 // Is this derived type TEAM_TYPE, C_PTR, or C_FUNPTR?
@@ -1238,6 +1280,16 @@ bool IsBadCoarrayType(const DerivedTypeSpec *);
 // Is this derived type either C_PTR or C_FUNPTR from module ISO_C_BINDING
 bool IsIsoCType(const DerivedTypeSpec *);
 bool IsEventTypeOrLockType(const DerivedTypeSpec *);
+inline bool IsAssumedSizeArray(const Symbol &symbol) {
+  if (const auto *object{symbol.detailsIf<ObjectEntityDetails>()}) {
+    return (object->isDummy() || symbol.test(Symbol::Flag::CrayPointee)) &&
+        object->shape().CanBeAssumedSize();
+  } else if (const auto *assoc{symbol.detailsIf<AssocEntityDetails>()}) {
+    return assoc->IsAssumedSize();
+  } else {
+    return false;
+  }
+}
 
 // ResolveAssociations() traverses use associations and host associations
 // like GetUltimate(), but also resolves through whole variable associations

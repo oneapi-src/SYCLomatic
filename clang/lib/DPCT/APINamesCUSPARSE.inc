@@ -317,18 +317,16 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
 WARNING_FACTORY_ENTRY(
     "cusparseGetErrorString",
-    INSERT_AROUND_FACTORY(
-        CALL_FACTORY_ENTRY("cusparseGetErrorString",
-                           CALL("cusparseGetErrorString", ARG_WC(0))),
-        "\"cusparseGetErrorString is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    TOSTRING_FACTORY_ENTRY("cusparseGetErrorString",
+                           LITERAL("\"<Placeholder string>\"")),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The call was replaced by a placeholder string"))
 WARNING_FACTORY_ENTRY(
     "cusparseGetErrorName",
-    INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cusparseGetErrorName",
-                                             CALL("cusparseGetErrorName",
-                                                  ARG_WC(0))),
-                          "\"cusparseGetErrorName is not supported\"/*", "*/"),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+    TOSTRING_FACTORY_ENTRY("cusparseGetErrorName",
+                           LITERAL("\"<Placeholder string>\"")),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The call was replaced by a placeholder string"))
 
 ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cusparseSpGEMM_createDescr",
@@ -488,3 +486,16 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateCsrsv2Info", DEREF(0),
                                              "sparse::optimize_info>")))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyCsrsv2Info",
                                              ARG(0), false, "reset"))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpSM_bufferSize", DEREF(10),
+                                        LITERAL("0")))
+REMOVE_API_FACTORY_ENTRY("cusparseSpSM_createDescr")
+REMOVE_API_FACTORY_ENTRY("cusparseSpSM_destroyDescr")
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpSM_analysis",
+    CALL(MapNames::getDpctNamespace() + "sparse::spsm_optimize", DEREF(0),
+         ARG(1), ARG(4), ARG(5), ARG(6))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpSM_solve",
+    CALL(MapNames::getDpctNamespace() + "sparse::spsm", DEREF(0), ARG(1),
+         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))

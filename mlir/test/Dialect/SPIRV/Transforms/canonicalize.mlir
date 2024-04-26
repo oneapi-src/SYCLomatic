@@ -1007,6 +1007,102 @@ func.func @umod_fail_fold(%arg0: i32) -> (i32, i32) {
 // -----
 
 //===----------------------------------------------------------------------===//
+// spirv.SNegate
+//===----------------------------------------------------------------------===//
+
+// CHECK-LABEL: @snegate_twice
+// CHECK-SAME: (%[[ARG:.*]]: i32)
+func.func @snegate_twice(%arg0 : i32) -> i32 {
+  %0 = spirv.SNegate %arg0 : i32
+  %1 = spirv.SNegate %0 : i32
+
+  // CHECK: return %[[ARG]] : i32
+  return %1 : i32
+}
+
+// CHECK-LABEL: @snegate_min
+func.func @snegate_min() -> (i8, i8) {
+  // CHECK: %[[MIN:.*]] = spirv.Constant -128 : i8
+  %cmin = spirv.Constant -128 : i8
+
+  %0 = spirv.SNegate %cmin : i8
+  %1 = spirv.SNegate %0 : i8
+
+  // CHECK: return %[[MIN]], %[[MIN]]
+  return %0, %1 : i8, i8
+}
+
+// CHECK-LABEL: @const_fold_scalar_snegate
+func.func @const_fold_scalar_snegate() -> (i32, i32, i32) {
+  %c0 = spirv.Constant 0 : i32
+  %c3 = spirv.Constant 3 : i32
+  %cn3 = spirv.Constant -3 : i32
+
+  // CHECK-DAG: %[[THREE:.*]] = spirv.Constant 3 : i32
+  // CHECK-DAG: %[[NTHREE:.*]] = spirv.Constant -3 : i32
+  // CHECK-DAG: %[[ZERO:.*]] = spirv.Constant 0 : i32
+  %0 = spirv.SNegate %c0 : i32
+  %1 = spirv.SNegate %c3 : i32
+  %2 = spirv.SNegate %cn3 : i32
+
+  // CHECK: return %[[ZERO]], %[[NTHREE]], %[[THREE]]
+  return %0, %1, %2  : i32, i32, i32
+}
+
+// CHECK-LABEL: @const_fold_vector_snegate
+func.func @const_fold_vector_snegate() -> vector<3xi32> {
+  // CHECK: spirv.Constant dense<[0, 3, -3]>
+  %cv = spirv.Constant dense<[0, -3, 3]> : vector<3xi32>
+  %0 = spirv.SNegate %cv : vector<3xi32>
+  return %0  : vector<3xi32>
+}
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// spirv.Not
+//===----------------------------------------------------------------------===//
+
+// CHECK-LABEL: @not_twice
+// CHECK-SAME: (%[[ARG:.*]]: i32)
+func.func @not_twice(%arg0 : i32) -> i32 {
+  %0 = spirv.Not %arg0 : i32
+  %1 = spirv.Not %0 : i32
+
+  // CHECK: return %[[ARG]] : i32
+  return %1 : i32
+}
+
+// CHECK-LABEL: @const_fold_scalar_not
+func.func @const_fold_scalar_not() -> (i32, i32, i32) {
+  %c0 = spirv.Constant 0 : i32
+  %c3 = spirv.Constant 3 : i32
+  %cn3 = spirv.Constant -3 : i32
+
+  // CHECK-DAG: %[[TWO:.*]] = spirv.Constant 2 : i32
+  // CHECK-DAG: %[[NFOUR:.*]] = spirv.Constant -4 : i32
+  // CHECK-DAG: %[[NONE:.*]] = spirv.Constant -1 : i32
+  %0 = spirv.Not %c0 : i32
+  %1 = spirv.Not %c3 : i32
+  %2 = spirv.Not %cn3 : i32
+
+  // CHECK: return %[[NONE]], %[[NFOUR]], %[[TWO]]
+  return %0, %1, %2  : i32, i32, i32
+}
+
+// CHECK-LABEL: @const_fold_vector_not
+func.func @const_fold_vector_not() -> vector<3xi32> {
+  %cv = spirv.Constant dense<[-1, -4, 2]> : vector<3xi32>
+
+  // CHECK: spirv.Constant dense<[0, 3, -3]>
+  %0 = spirv.Not %cv : vector<3xi32>
+
+  return %0 : vector<3xi32>
+}
+
+// -----
+
+//===----------------------------------------------------------------------===//
 // spirv.LogicalAnd
 //===----------------------------------------------------------------------===//
 
@@ -1039,6 +1135,38 @@ func.func @convert_logical_and_true_false_vector(%arg: vector<3xi1>) -> (vector<
 //===----------------------------------------------------------------------===//
 // spirv.LogicalNot
 //===----------------------------------------------------------------------===//
+
+// CHECK-LABEL: @logical_not_twice
+// CHECK-SAME: (%[[ARG:.*]]: i1)
+func.func @logical_not_twice(%arg0 : i1) -> i1 {
+  %0 = spirv.LogicalNot %arg0 : i1
+  %1 = spirv.LogicalNot %0 : i1
+
+  // CHECK: return %[[ARG]] : i1
+  return %1 : i1
+}
+
+// CHECK-LABEL: @const_fold_scalar_logical_not
+func.func @const_fold_scalar_logical_not() -> i1 {
+  %true = spirv.Constant true
+
+  // CHECK: spirv.Constant false
+  %0 = spirv.LogicalNot %true : i1
+
+  return %0 : i1
+}
+
+// CHECK-LABEL: @const_fold_vector_logical_not
+func.func @const_fold_vector_logical_not() -> vector<2xi1> {
+  %cv = spirv.Constant dense<[true, false]> : vector<2xi1>
+
+  // CHECK: spirv.Constant dense<[false, true]>
+  %0 = spirv.LogicalNot %cv : vector<2xi1>
+
+  return %0 : vector<2xi1>
+}
+
+// -----
 
 func.func @convert_logical_not_to_not_equal(%arg0: vector<3xi64>, %arg1: vector<3xi64>) -> vector<3xi1> {
   // CHECK: %[[RESULT:.*]] = spirv.INotEqual {{%.*}}, {{%.*}} : vector<3xi64>
@@ -1214,6 +1342,52 @@ func.func @convert_logical_or_true_false_vector(%arg: vector<3xi1>) -> (vector<3
   %1 = spirv.LogicalOr %arg, %false: vector<3xi1>
   // CHECK: return %[[TRUE]], %[[ARG]]
   return %0, %1: vector<3xi1>, vector<3xi1>
+}
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// spirv.Select
+//===----------------------------------------------------------------------===//
+
+// CHECK-LABEL: @convert_select_scalar
+// CHECK-SAME: %[[ARG1:.+]]: i32, %[[ARG2:.+]]: i32
+func.func @convert_select_scalar(%arg1: i32, %arg2: i32) -> (i32, i32) {
+  %true = spirv.Constant true
+  %false = spirv.Constant false
+  %0 = spirv.Select %true, %arg1, %arg2 : i1, i32
+  %1 = spirv.Select %false, %arg1, %arg2 : i1, i32
+
+  // CHECK: return %[[ARG1]], %[[ARG2]]
+  return %0, %1 : i32, i32
+}
+
+// CHECK-LABEL: @convert_select_vector
+// CHECK-SAME: %[[ARG1:.+]]: vector<3xi32>, %[[ARG2:.+]]: vector<3xi32>
+func.func @convert_select_vector(%arg1: vector<3xi32>, %arg2: vector<3xi32>) -> (vector<3xi32>, vector<3xi32>) {
+  %true = spirv.Constant dense<true> : vector<3xi1>
+  %false = spirv.Constant dense<false> : vector<3xi1>
+  %0 = spirv.Select %true, %arg1, %arg2 : vector<3xi1>, vector<3xi32>
+  %1 = spirv.Select %false, %arg1, %arg2 : vector<3xi1>, vector<3xi32>
+
+  // CHECK: return %[[ARG1]], %[[ARG2]]
+  return %0, %1: vector<3xi32>, vector<3xi32>
+}
+
+// CHECK-LABEL: @convert_select_vector_extra
+// CHECK-SAME: %[[CONDITIONS:.+]]: vector<2xi1>, %[[ARG1:.+]]: vector<2xi32>
+func.func @convert_select_vector_extra(%conditions: vector<2xi1>, %arg1: vector<2xi32>) -> (vector<2xi32>, vector<2xi32>) {
+  %true_false = spirv.Constant dense<[true, false]> : vector<2xi1>
+  %cvec_1 = spirv.Constant dense<[42, -132]> : vector<2xi32>
+  %cvec_2 = spirv.Constant dense<[0, 42]> : vector<2xi32>
+
+  // CHECK: %[[RES:.+]] = spirv.Constant dense<42>
+  %0 = spirv.Select %true_false, %cvec_1, %cvec_2: vector<2xi1>, vector<2xi32>
+
+  %1 = spirv.Select %conditions, %arg1, %arg1 : vector<2xi1>, vector<2xi32>
+
+  // CHECK: return %[[RES]], %[[ARG1]]
+  return %0, %1: vector<2xi32>, vector<2xi32>
 }
 
 // -----

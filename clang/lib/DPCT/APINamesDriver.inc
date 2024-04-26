@@ -8,6 +8,14 @@
 
 // clang-format off
 
+WARNING_FACTORY_ENTRY(
+    "cuGetErrorString",
+    ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY("cuGetErrorString", DEREF(1),
+                             ARG("\"<Placeholder string>\""))),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
+    ARG("The call was replaced by a placeholder string"))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -180,11 +188,19 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                             false, "get_device_info"),
                 false, makeFuncNameFromDevAttrCreator(1)),
             false, "get", getWorkGroupDim(1))),
+    CONDITIONAL_FACTORY_ENTRY(
+    checkIsMigratedToHasAspect(1),
+    ASSIGN_FACTORY_ENTRY(
+        "cuDeviceGetAttribute", DEREF(0),
+        MEMBER_EXPR(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                     "dev_mgr::instance"),
+                                false, "get_device", ARG(2)),
+                    false, makeFuncNameFromDevAttrCreator(1))),
     ASSIGN_FACTORY_ENTRY(
         "cuDeviceGetAttribute", DEREF(0),
         MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
                                      "dev_mgr::instance"),
                                 false, "get_device", ARG(2)),
-                    false, makeFuncNameFromDevAttrCreator(1)))))
+                    false, makeFuncNameFromDevAttrCreator(1))))))
 
 // clang-format on

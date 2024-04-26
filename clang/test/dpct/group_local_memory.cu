@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/group_local_memory %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -use-experimental-features=local-memory-kernel-scope-allocation -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/group_local_memory %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -use-experimental-features=local-memory-kernel-scope-allocation -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/group_local_memory/group_local_memory.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/group_local_memory/group_local_memory.dp.cpp -o %T/group_local_memory/group_local_memory.dp.o %}
 

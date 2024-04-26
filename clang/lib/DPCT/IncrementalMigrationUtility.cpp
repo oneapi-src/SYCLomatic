@@ -134,12 +134,7 @@ int checkDpctOptionSet(
       }
 #endif
     } else {
-      if (CurrentOpt.first == OPTION_NoUseGenericSpace) {
-        if (CurrentOpt.second.Value == "true")
-          return -1;
-      } else {
-        return -2;
-      }
+      return -2;
     }
   }
   return 0;
@@ -173,16 +168,9 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--comments");
     }
-    if (Key == clang::dpct::OPTION_CustomHelperFileName && Specified) {
-      Opts.emplace_back("--custom-helper-name=" + Value);
-    }
     if (Key == clang::dpct::OPTION_CtadEnabled) {
       if ("true" == Value)
         Opts.emplace_back("--enable-ctad");
-    }
-    if (Key == clang::dpct::OPTION_ExplicitClNamespace) {
-      if ("true" == Value)
-        Opts.emplace_back("--no-cl-namespace-inline");
     }
     if (Key == clang::dpct::OPTION_ExtensionDEFlag && Specified) {
       std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
@@ -209,6 +197,12 @@ bool printOptions(
         if (!(UValue & (1 << static_cast<unsigned>(
                             DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess))))
           Str += "peer_access,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_Assert))))
+          Str += "assert,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty))))
+          Str += "queue_empty,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;
@@ -240,10 +234,6 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_NoDRYPattern) {
       if ("true" == Value)
         Opts.emplace_back("--no-dry-pattern");
-    }
-    if (Key == clang::dpct::OPTION_NoUseGenericSpace) {
-      if ("true" == Value)
-        Opts.emplace_back("--no-use-generic-space");
     }
     if (Key == clang::dpct::OPTION_CompilationsDir && Specified) {
       Opts.emplace_back("--compilation-database=\"" + Value + "\"");
@@ -304,9 +294,6 @@ bool printOptions(
       std::vector<std::string> Values;
       if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_None))) {
         Values.emplace_back("none");
-      }
-      if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_CL))) {
-        Values.emplace_back("cl");
       }
       if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_SYCL))) {
         Values.emplace_back("sycl");

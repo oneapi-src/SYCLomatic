@@ -201,8 +201,7 @@ void solaris::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   ToolChain.AddFilePathLibArgs(Args, CmdArgs);
 
-  Args.addAllArgs(CmdArgs,
-                  {options::OPT_L, options::OPT_T_Group, options::OPT_r});
+  Args.addAllArgs(CmdArgs, {options::OPT_L, options::OPT_T_Group});
 
   bool NeedsSanitizerDeps = addSanitizerRuntimes(ToolChain, Args, CmdArgs);
   AddLinkerInputs(ToolChain, Inputs, Args, CmdArgs, JA);
@@ -295,13 +294,12 @@ static StringRef getSolarisLibSuffix(const llvm::Triple &Triple) {
   switch (Triple.getArch()) {
   case llvm::Triple::x86:
   case llvm::Triple::sparc:
+  default:
     break;
   case llvm::Triple::x86_64:
     return "/amd64";
   case llvm::Triple::sparcv9:
     return "/sparcv9";
-  default:
-    llvm_unreachable("Unsupported architecture");
   }
   return "";
 }

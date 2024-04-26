@@ -20,6 +20,7 @@
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/DiagnosticIDs.h"
+#include "clang/Basic/SourceLocation.h"
 #include "clang/Frontend/CompilerInstance.h"
 
 #include <algorithm>
@@ -35,7 +36,6 @@ enum class PassKind : unsigned { PK_Analysis = 0, PK_Migration, PK_End };
 /// including directives rewriting.
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
-  IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
   RuleGroups &Groups;
 
@@ -43,16 +43,15 @@ class IncludesCallbacks : public PPCallbacks {
   bool IsFileInCmd = true;
 
 public:
-  IncludesCallbacks(TransformSetTy &TransformSet,
-                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
+  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
                     RuleGroups &G)
-      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
-        Groups(G) {}
+      : TransformSet(TransformSet), SM(SM), Groups(G) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange,
                           OptionalFileEntryRef File, StringRef SearchPath,
-                          StringRef RelativePath, const Module *Imported,
+                          StringRef RelativePath, const Module *SuggestedModule,
+                          bool ModuleImported,
                           SrcMgr::CharacteristicKind FileType) override;
   /// Hook called whenever a macro definition is seen.
   void MacroDefined(const Token &MacroNameTok,
@@ -256,6 +255,29 @@ protected:
     }
     emplaceTransformation(std::move(PIT));
     emplaceTransformation(std::move(SIT));
+  }
+
+  /// @brief If necessary, initialize an argument or emit warning.
+  /// @param Call Function CallExpr
+  /// @param Arg An argument (may be an expression) of \p Call .
+  void analyzeUninitializedDeviceVar(const clang::Expr *Call,
+                                     const clang::Expr *Arg) {
+    if (!Call || !Arg)
+      return;
+    std::vector<const clang::VarDecl *> DeclsRequireInit;
+    int Res = isArgumentInitialized(Arg, DeclsRequireInit);
+    if (Res == 0) {
+      for (const auto D : DeclsRequireInit) {
+        emplaceTransformation(new InsertText(
+            D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                DpctGlobalInfo::getContext().getLangOpts())),
+            " = 0"));
+      }
+    } else if (Res == -1) {
+      report(Call->getBeginLoc(), Diagnostics::UNINITIALIZED_DEVICE_VAR, false,
+             ExprAnalysis::ref(Arg));
+    }
   }
 
   void addReplacementForLibraryAPI(LibraryMigrationFlags Flags,
@@ -740,7 +762,7 @@ public:
       ResultStr = ResultStr + ", " + CallExprArguReplVec[i];
     }
 
-    return FuncName + "(*" + ResultStr + ")" +
+    return FuncName + "(" + ResultStr + ")" +
            (NeedWaitAPICall ? ".wait()" : "");
   }
 
@@ -750,10 +772,10 @@ public:
     auto getIfStmtStr = [=](const std::string Ptr) -> std::string {
       return "if(" + MapNames::getClNamespace() + "get_pointer_type(" + Ptr +
              ", " + CallExprArguReplVec[0] +
-             "->get_context())!=" + MapNames::getClNamespace() +
+             ".get_context())!=" + MapNames::getClNamespace() +
              "usm::alloc::device && " + MapNames::getClNamespace() +
              "get_pointer_type(" + Ptr + ", " + CallExprArguReplVec[0] +
-             "->get_context())!=" + MapNames::getClNamespace() +
+             ".get_context())!=" + MapNames::getClNamespace() +
              "usm::alloc::shared) {";
     };
 
@@ -823,7 +845,7 @@ public:
 
         Prefix = Prefix + std::string("}") + getNL() + IndentStr;
         Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
-                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+                 IndentStr + "  " + CallExprArguReplVec[0] + ".wait();";
 
         copyBack(D1Ptr, "1", Type, 1);
         copyBack(D2Ptr, "1", Type, 2);
@@ -895,7 +917,7 @@ public:
 
         Prefix = Prefix + std::string("}") + getNL() + IndentStr;
         Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
-                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+                 IndentStr + "  " + CallExprArguReplVec[0] + ".wait();";
 
         copyBack(APtr, "1", Type, 1);
         copyBack(BPtr, "1", Type, 2);
@@ -914,46 +936,6 @@ public:
       }
       PrefixInsertStr = Prefix + PrefixInsertStr;
       SuffixInsertStr = Suffix + SuffixInsertStr;
-    } else if (MapNames::MaySyncBLASFunc.find(FuncName) !=
-               MapNames::MaySyncBLASFunc.end()) {
-      auto MaySyncI = MapNames::MaySyncBLASFunc.find(FuncName);
-      int ArgIndex = MaySyncI->second.second;
-      std::string Type = MaySyncI->second.first;
-      ExprAnalysis EA(CE->getArg(ArgIndex));
-      std::string ResultTempPtr =
-          "res_temp_ptr_ct" +
-          std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-
-      std::string OriginType;
-      if (Type == "std::complex<float>") {
-        OriginType = MapNames::getClNamespace() + "float2";
-        CallExprArguReplVec[ArgIndex] =
-            "(std::complex<float>*)" + ResultTempPtr;
-      } else if (Type == "std::complex<double>") {
-        OriginType = MapNames::getClNamespace() + "double2";
-        CallExprArguReplVec[ArgIndex] =
-            "(std::complex<double>*)" + ResultTempPtr;
-      } else {
-        OriginType = Type;
-        CallExprArguReplVec[ArgIndex] = ResultTempPtr;
-      }
-
-      std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
-
-      requestFeature(HelperFeatureEnum::device_ext);
-      PrefixInsertStr = OriginType + "* " + ResultTempPtr + " = " +
-                        EA.getReplacedString() + ";" + getNL() + IndentStr +
-                        IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
-                        " = " + MapNames::getClNamespace() + "malloc_shared<" +
-                        OriginType + ">(1, " + DefaultQueue + ");" + getNL() +
-                        IndentStr + "}" + getNL() + IndentStr + PrefixInsertStr;
-      SuffixInsertStr = getNL() + IndentStr + IfStmtStr + getNL() + IndentStr +
-                        "  " + CallExprArguReplVec[0] + "->wait();" + getNL() +
-                        IndentStr + "  " + getDrefName(CE->getArg(ArgIndex)) +
-                        " = *" + ResultTempPtr + ";" + getNL() + IndentStr +
-                        "  " + MapNames::getClNamespace() + "free(" +
-                        ResultTempPtr + ", " + DefaultQueue + ");" + getNL() +
-                        IndentStr + "}" + SuffixInsertStr;
     }
   }
 
@@ -1019,17 +1001,8 @@ public:
       PrefixInsertStr = PrefixInsertStr + IfStmtStr;
     };
 
-    if (MapNames::MaySyncBLASFunc.find(FuncName) !=
-        MapNames::MaySyncBLASFunc.end()) {
-      auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
-      PointerStr = ExprAnalysis::ref(CE->getArg(MaySyncAPIIter->second.second));
-      assembleIfStmt();
-    } else if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-               MapNames::MustSyncBLASFunc.end()) {
-      PointerStr = ExprAnalysis::ref(CE->getArg(4));
-      assembleIfStmt();
-    } else if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
-               MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
+    if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
+        MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
       auto MaySyncAPIWithMultiArgsIter =
           MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
       PointerStr = ExprAnalysis::ref(
@@ -1300,13 +1273,16 @@ public:
 /// Migration rule for kernel API calls
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
+  std::set<clang::SourceLocation> CodePinInstrumentation;
 
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-  void
+  SourceLocation
   removeTrailingSemicolon(const CallExpr *KCall,
                           const ast_matchers::MatchFinder::MatchResult &Result);
+  void instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
+                                      SourceLocation &EpilogLocation);
 };
 
 /// Migration rule for device function calls
@@ -1319,6 +1295,12 @@ public:
 
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
 class MemVarAnalysisRule : public NamedMigrationRule<MemVarAnalysisRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class MemVarMigrationRule : public NamedMigrationRule<MemVarMigrationRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1342,6 +1324,13 @@ private:
 };
 
 class MemVarRefMigrationRule : public NamedMigrationRule<MemVarRefMigrationRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class ProfilingEnableOnDemandRule
+    : public NamedMigrationRule<ProfilingEnableOnDemandRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1480,6 +1469,8 @@ private:
       emplaceTransformation(new InsertBeforeStmt(C->getArg(InsertArgIndex),
                                                  std::string(InsertedText)));
   }
+  void instrumentAddressToSizeRecordForCodePin(const CallExpr *C, int PtrArgLoc,
+                                               int AllocMemSizeLoc);
 };
 
 class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {

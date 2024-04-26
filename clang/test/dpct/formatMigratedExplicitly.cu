@@ -1,10 +1,9 @@
 // RUN: cat %s > %T/formatMigratedExplicitly.cu
 // RUN: cd %T
-// RUN: dpct --no-cl-namespace-inline -out-root %T/formatMigratedExplicitly formatMigratedExplicitly.cu --cuda-include-path="%cuda-path/include" --format-range=migrated  -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --out-root %T/formatMigratedExplicitly formatMigratedExplicitly.cu --cuda-include-path="%cuda-path/include" --format-range=migrated  -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatMigratedExplicitly.cu --match-full-lines --input-file %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.cpp -o %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.cpp -o %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cuda_runtime.h>
 #include <cassert>
 
@@ -19,7 +18,7 @@ __device__ void testDevice(const int *K) {
 __device__ void testDevice1(const int *K) { int t = K[1]; }
 
      //CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   const cl::sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:                   const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);
@@ -32,15 +31,15 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
      //CHECK:int main() {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-//CHECK-NEXT:  cl::sycl::range<3> griddim = cl::sycl::range<3>(1, 1, 2);
-//CHECK-NEXT:  cl::sycl::range<3> threaddim = cl::sycl::range<3>(1, 1, 32);
+//CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+//CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
+//CHECK-NEXT:  sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
 //CHECK-NEXT:  int *karg1, *karg2;
-//CHECK-NEXT:  karg1 = cl::sycl::malloc_device<int>(32, q_ct1);
-//CHECK-NEXT:  karg2 = cl::sycl::malloc_device<int>(32, q_ct1);
+//CHECK-NEXT:  karg1 = sycl::malloc_device<int>(32, q_ct1);
+//CHECK-NEXT:  karg2 = sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  int karg3 = 80;
-//CHECK-NEXT:  q_ct1.parallel_for(cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
-//CHECK-NEXT:                     [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  q_ct1.parallel_for(sycl::nd_range<3>(griddim * threaddim, threaddim),
+//CHECK-NEXT:                     [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:                       testKernelPtr((const int *)karg1, karg2, karg3,
 //CHECK-NEXT:                                     item_ct1);
 //CHECK-NEXT:                     });
@@ -102,9 +101,9 @@ typedef struct
 //CHECK-NEXT:                                 const float g_ewald, const float qqrd2e,
 //CHECK-NEXT:                                 const float denom_lj_inv,
 //CHECK-NEXT:                                 const int loop_trip,
-//CHECK-NEXT:                                 const cl::sycl::nd_item<3> &item_ct1,
-//CHECK-NEXT:                                 float *sp_lj, float *sp_coul, int *ljd,
-//CHECK-NEXT:                                 cl::sycl::local_accessor<double, 2> la) {
+//CHECK-NEXT:                                 const sycl::nd_item<3> &item_ct1, float *sp_lj,
+//CHECK-NEXT:                                 float *sp_coul, int *ljd,
+//CHECK-NEXT:                                 sycl::local_accessor<double, 2> la) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
                                  const float * __restrict__ q,
@@ -144,4 +143,3 @@ void test() {
                                    0,
                                    0);
 }
-#endif

@@ -70,7 +70,7 @@ int main() {
     // CHECK:    dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
     // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
-    // CHECK-NEXT:    stop->wait_and_throw();
+    // CHECK-NEXT:     stop->wait_and_throw();
     // CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -282,7 +282,6 @@ __global__ void readTexelsFoo1(int n, float *d_out){
 }
 __global__ void readTexelsFoo2(int n, float *d_out, int width, int height){
 }
-texture<float4, 2, cudaReadModeElementType> texA;
 
 void foo()
 {

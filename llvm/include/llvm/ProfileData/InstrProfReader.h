@@ -326,12 +326,16 @@ private:
   uint64_t NamesDelta;
   const RawInstrProf::ProfileData<IntPtrT> *Data;
   const RawInstrProf::ProfileData<IntPtrT> *DataEnd;
+  const RawInstrProf::VTableProfileData<IntPtrT> *VTableBegin = nullptr;
+  const RawInstrProf::VTableProfileData<IntPtrT> *VTableEnd = nullptr;
   const char *CountersStart;
   const char *CountersEnd;
   const char *BitmapStart;
   const char *BitmapEnd;
   const char *NamesStart;
   const char *NamesEnd;
+  const char *VNamesStart = nullptr;
+  const char *VNamesEnd = nullptr;
   // After value profile is all read, this pointer points to
   // the header of next profile data (if exists)
   const uint8_t *ValueDataStart;
@@ -352,11 +356,11 @@ public:
       : DataBuffer(std::move(DataBuffer)),
         Correlator(dyn_cast_or_null<const InstrProfCorrelatorImpl<IntPtrT>>(
             Correlator)),
-        ShouldSwapBytes(false), Version(0), CountersDelta(0), NamesDelta(0),
-        Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
-        CountersEnd(nullptr), NamesStart(nullptr), NamesEnd(nullptr),
-        ValueDataStart(nullptr), ValueKindLast(0), CurValueDataSize(0),
-        BinaryIds({}), Warn(Warn) {}
+        ShouldSwapBytes(false), Version(0), CountersDelta(0), BitmapDelta(0),
+        NamesDelta(0), Data(nullptr), DataEnd(nullptr), CountersStart(nullptr),
+        CountersEnd(nullptr), BitmapStart(nullptr), BitmapEnd(nullptr),
+        NamesStart(nullptr), NamesEnd(nullptr), ValueDataStart(nullptr),
+        ValueKindLast(0), CurValueDataSize(0), BinaryIds({}), Warn(Warn) {}
 #else
   RawInstrProfReader(std::unique_ptr<MemoryBuffer> DataBuffer,
                      const InstrProfCorrelator *Correlator,
@@ -670,6 +674,15 @@ private:
   std::unique_ptr<MemProfRecordHashTable> MemProfRecordTable;
   /// MemProf frame profile data on-disk indexed via frame id.
   std::unique_ptr<MemProfFrameHashTable> MemProfFrameTable;
+  /// VTableNamePtr points to the beginning of compressed vtable names.
+  /// When a symtab is constructed from profiles by llvm-profdata, the list of
+  /// names could be decompressed based on `VTableNamePtr` and
+  /// `CompressedVTableNamesLen`.
+  /// A compiler that reads indexed profiles could construct symtab from module
+  /// IR so it doesn't need the decompressed names.
+  const char *VTableNamePtr = nullptr;
+  /// The length of compressed vtable names.
+  uint64_t CompressedVTableNamesLen = 0;
   /// Total size of binary ids.
   uint64_t BinaryIdsSize{0};
   /// Start address of binary id length and data pairs.
@@ -750,9 +763,9 @@ public:
   Error getFunctionCounts(StringRef FuncName, uint64_t FuncHash,
                           std::vector<uint64_t> &Counts);
 
-  /// Fill Bitmap Bytes with the profile data for the given function name.
-  Error getFunctionBitmapBytes(StringRef FuncName, uint64_t FuncHash,
-                               std::vector<uint8_t> &BitmapBytes);
+  /// Fill Bitmap with the profile data for the given function name.
+  Error getFunctionBitmap(StringRef FuncName, uint64_t FuncHash,
+                          BitVector &Bitmap);
 
   /// Return the maximum of all known function counts.
   /// \c UseCS indicates whether to use the context-sensitive count.

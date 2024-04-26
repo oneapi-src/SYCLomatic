@@ -17,7 +17,6 @@
 #include <sycl/exception_list.hpp>
 #include <sycl/info/info_desc.hpp>
 #include <sycl/property_list.hpp>
-#include <sycl/stl.hpp>
 
 #include <map>
 #include <memory>
@@ -191,7 +190,10 @@ public:
   }
 
   // Returns the backend of this context
-  backend getBackend() const { return MPlatform->getBackend(); }
+  backend getBackend() const {
+    assert(MPlatform && "MPlatform must be not null");
+    return MPlatform->getBackend();
+  }
 
   /// Given a PiDevice, returns the matching shared_ptr<device_impl>
   /// within this context. May return nullptr if no match discovered.

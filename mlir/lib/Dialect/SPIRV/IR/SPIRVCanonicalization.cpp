@@ -644,6 +644,45 @@ OpFoldResult spirv::UModOp::fold(FoldAdaptor adaptor) {
 }
 
 //===----------------------------------------------------------------------===//
+// spirv.SNegate
+//===----------------------------------------------------------------------===//
+
+OpFoldResult spirv::SNegateOp::fold(FoldAdaptor adaptor) {
+  // -(-x) = 0 - (0 - x) = x
+  auto op = getOperand();
+  if (auto negateOp = op.getDefiningOp<spirv::SNegateOp>())
+    return negateOp->getOperand(0);
+
+  // According to the SPIR-V spec:
+  //
+  // Signed-integer subtract of Operand from zero.
+  return constFoldUnaryOp<IntegerAttr>(
+      adaptor.getOperands(), [](const APInt &a) {
+        APInt zero = APInt::getZero(a.getBitWidth());
+        return zero - a;
+      });
+}
+
+//===----------------------------------------------------------------------===//
+// spirv.NotOp
+//===----------------------------------------------------------------------===//
+
+OpFoldResult spirv::NotOp::fold(spirv::NotOp::FoldAdaptor adaptor) {
+  // !(!x) = x
+  auto op = getOperand();
+  if (auto notOp = op.getDefiningOp<spirv::NotOp>())
+    return notOp->getOperand(0);
+
+  // According to the SPIR-V spec:
+  //
+  // Complement the bits of Operand.
+  return constFoldUnaryOp<IntegerAttr>(adaptor.getOperands(), [&](APInt a) {
+    a.flipAllBits();
+    return a;
+  });
+}
+
+//===----------------------------------------------------------------------===//
 // spirv.LogicalAnd
 //===----------------------------------------------------------------------===//
 
@@ -714,6 +753,22 @@ OpFoldResult spirv::LogicalNotEqualOp::fold(FoldAdaptor adaptor) {
 // spirv.LogicalNot
 //===----------------------------------------------------------------------===//
 
+OpFoldResult spirv::LogicalNotOp::fold(FoldAdaptor adaptor) {
+  // !(!x) = x
+  auto op = getOperand();
+  if (auto notOp = op.getDefiningOp<spirv::LogicalNotOp>())
+    return notOp->getOperand(0);
+
+  // According to the SPIR-V spec:
+  //
+  // Complement the bits of Operand.
+  return constFoldUnaryOp<IntegerAttr>(adaptor.getOperands(),
+                                       [](const APInt &a) {
+                                         APInt zero = APInt::getZero(1);
+                                         return a == 1 ? zero : (zero + 1);
+                                       });
+}
+
 void spirv::LogicalNotOp::getCanonicalizationPatterns(
     RewritePatternSet &results, MLIRContext *context) {
   results
@@ -740,6 +795,49 @@ OpFoldResult spirv::LogicalOrOp::fold(FoldAdaptor adaptor) {
   }
 
   return Attribute();
+}
+
+//===----------------------------------------------------------------------===//
+// spirv.SelectOp
+//===----------------------------------------------------------------------===//
+
+OpFoldResult spirv::SelectOp::fold(FoldAdaptor adaptor) {
+  // spirv.Select _ x x -> x
+  Value trueVals = getTrueValue();
+  Value falseVals = getFalseValue();
+  if (trueVals == falseVals)
+    return trueVals;
+
+  ArrayRef<Attribute> operands = adaptor.getOperands();
+
+  // spirv.Select true  x y -> x
+  // spirv.Select false x y -> y
+  if (auto boolAttr = getScalarOrSplatBoolAttr(operands[0]))
+    return *boolAttr ? trueVals : falseVals;
+
+  // Check that all the operands are constant
+  if (!operands[0] || !operands[1] || !operands[2])
+    return Attribute();
+
+  // Note: getScalarOrSplatBoolAttr will always return a boolAttr if we are in
+  // the scalar case. Hence, we are only required to consider the case of
+  // DenseElementsAttr in foldSelectOp.
+  auto condAttrs = dyn_cast<DenseElementsAttr>(operands[0]);
+  auto trueAttrs = dyn_cast<DenseElementsAttr>(operands[1]);
+  auto falseAttrs = dyn_cast<DenseElementsAttr>(operands[2]);
+  if (!condAttrs || !trueAttrs || !falseAttrs)
+    return Attribute();
+
+  auto elementResults = llvm::to_vector<4>(trueAttrs.getValues<Attribute>());
+  auto iters = llvm::zip_equal(elementResults, condAttrs.getValues<BoolAttr>(),
+                               falseAttrs.getValues<Attribute>());
+  for (auto [result, cond, falseRes] : iters) {
+    if (!cond.getValue())
+      result = falseRes;
+  }
+
+  auto resultType = trueAttrs.getType();
+  return DenseElementsAttr::get(cast<ShapedType>(resultType), elementResults);
 }
 
 //===----------------------------------------------------------------------===//

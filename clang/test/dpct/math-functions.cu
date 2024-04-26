@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math-functions/math-functions.dp.cpp --match-full-lines %s
 
 #include <cmath>
@@ -613,13 +613,29 @@ __device__ static void multiply(int block_size, AccPtr<T> &ptr, T value) {
 }
 
 __device__ void sincos_1(double x, double* sptr, double* cptr) {
-  // CHECK:  return [&](){ *sptr = sycl::sincos(x, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
+  // CHECK:  return [&](){ *sptr = sycl::sincos(x, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(cptr)); }();
   return ::sincos(x, sptr, cptr);
 }
 
-__device__ void sincospi_1(double x, double* sptr, double* cptr) {
-  // CHECK:  return [&](){ *(sptr) = sycl::sincos(x * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
-  return ::sincospi (x, sptr, cptr);
+__device__ void sincospi_1(double x, double *sptr, double *cptr) {
+  float fx;
+  float *fsptr;
+  float *fcptr;
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  *sptr = sycl::sincos((double)fx * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(cptr));
+  ::sincospi(fx, sptr, cptr);
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  *fsptr = sycl::sincos((float)x * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(fcptr));
+  ::sincospi(x, fsptr, fcptr);
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  return [&](){ *sptr = sycl::sincos(x * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(cptr)); }();
+  return ::sincospi(x, sptr, cptr);
 }
 
 template <typename T>

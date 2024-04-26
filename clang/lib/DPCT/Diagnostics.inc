@@ -23,6 +23,12 @@
 #ifndef LOW_LEVEL
 #define LOW_LEVEL
 #endif
+#ifndef DEF_WARNING
+#define DEF_WARNING(NAME, ID, LEVEL, MESSAGE)
+#endif
+#ifndef DEF_COMMENT
+#define DEF_COMMENT(NAME, ID, LEVEL, MESSAGE)
+#endif
 
 DEF_WARNING(IFSTMT_NOT_REMOVED, 1000, LOW_LEVEL, "Error handling if-stmt was detected but could not be rewritten.")
 DEF_COMMENT(IFSTMT_NOT_REMOVED, 1000, LOW_LEVEL, "Error handling if-stmt was detected but could not be rewritten.")
@@ -42,8 +48,8 @@ DEF_WARNING(API_NOT_MIGRATED, 1007, HIGH_LEVEL, "Migration of %0 is not supporte
 DEF_COMMENT(API_NOT_MIGRATED, 1007, HIGH_LEVEL, "Migration of {0} is not supported.")
 DEF_WARNING(API_NOT_MIGRATED_SYCL_UNDEF, 1008, HIGH_LEVEL, "%0 function is not defined in SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.")
 DEF_COMMENT(API_NOT_MIGRATED_SYCL_UNDEF, 1008, HIGH_LEVEL, "{0} function is not defined in SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.")
-DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.")
-DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.")
+DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. %0. You need to rewrite this code.")
+DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, 1009, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. {0}. You need to rewrite this code.")
 DEF_WARNING(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.")
 DEF_COMMENT(TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, 1010, LOW_LEVEL, "SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.")
 DEF_WARNING(TRNA_WARNING_OVERLOADED_API_FOUND, 1011, LOW_LEVEL, "The tool detected overloaded operators for built-in vector types, which may conflict with the SYCL 2020 standard operators (see 4.14.2.1 Vec interface). The tool inserted a namespace to avoid the conflict. Use SYCL 2020 standard operators instead.")
@@ -86,8 +92,8 @@ DEF_WARNING(DEVICE_LIMIT_NOT_SUPPORTED, 1029, HIGH_LEVEL, "SYCL currently does n
 DEF_COMMENT(DEVICE_LIMIT_NOT_SUPPORTED, 1029, HIGH_LEVEL, "SYCL currently does not support getting device resource limits. The output parameter(s) are set to 0.")
 DEF_WARNING(IPC_NOT_SUPPORTED, 1030, HIGH_LEVEL, "SYCL currently does not support inter-process communication (IPC) operations. You may need to rewrite the code.")
 DEF_COMMENT(IPC_NOT_SUPPORTED, 1030, HIGH_LEVEL, "SYCL currently does not support inter-process communication (IPC) operations. You may need to rewrite the code.")
-DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory accessing across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
-DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory accessing across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.")
+DEF_WARNING(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension if you do not specify -no-dpcpp-extensions=peer_access.")
+DEF_COMMENT(EXPLICIT_PEER_ACCESS, 1031, HIGH_LEVEL, "Memory access across peer devices is an implementation-specific feature which may not be supported by some SYCL backends and compilers. The output parameter(s) are set to 0. You can migrate the code with peer access extension if you do not specify -no-dpcpp-extensions=peer_access.")
 DEF_WARNING(DIFFERENT_GENERATOR, 1032, LOW_LEVEL, "A different random number generator is used. You may need to adjust the code.")
 DEF_COMMENT(DIFFERENT_GENERATOR, 1032, LOW_LEVEL, "A different random number generator is used. You may need to adjust the code.")
 DEF_WARNING(DIFFERENT_BASIC_GENERATOR, 1033, LOW_LEVEL, "Migrated code uses a basic Sobol generator. Initialize oneapi::mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.")
@@ -186,8 +192,8 @@ DEF_WARNING(MODULE_FILENAME_MANUAL_FIX, 1079, LOW_LEVEL, "deprecated")
 DEF_COMMENT(MODULE_FILENAME_MANUAL_FIX, 1079, LOW_LEVEL, "deprecated")
 DEF_WARNING(DEVICE_VARIADIC_FUNCTION, 1080, MEDIUM_LEVEL, "Variadic functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
 DEF_COMMENT(DEVICE_VARIADIC_FUNCTION, 1080, MEDIUM_LEVEL, "Variadic functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
-DEF_WARNING(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "The generated code assumes that \"%0\" points to the global memory address space. If it points to a local or private memory address space, replace \"address_space::global\" with \"address_space::local\" or \"address_space::private\".")
-DEF_COMMENT(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "The generated code assumes that \"{0}\" points to the global memory address space. If it points to a local or private memory address space, replace \"address_space::global\" with \"address_space::local\" or \"address_space::private\".")
+DEF_WARNING(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "deprecated")
+DEF_COMMENT(UNDEDUCED_ADDRESS_SPACE, 1081, MEDIUM_LEVEL, "deprecated")
 DEF_WARNING(KNOWN_UNSUPPORTED_TYPE, 1082, HIGH_LEVEL, "Migration of %0 type is not supported.")
 DEF_COMMENT(KNOWN_UNSUPPORTED_TYPE, 1082, HIGH_LEVEL, "Migration of {0} type is not supported.")
 DEF_WARNING(SIZEOF_WARNING, 1083, LOW_LEVEL, "The size of %0 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.")
@@ -260,6 +266,26 @@ DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, MEDIUM_LEVEL, "SYCL group functions a
 DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, MEDIUM_LEVEL, "SYCL group functions and algorithms must be encountered in converged control flow. You may need to adjust the code.")
 DEF_WARNING(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of '%0' is not supported, please try to remigrate with option: '%1'.")
 DEF_COMMENT(TRY_EXPERIMENTAL_FEATURE, 1119, MEDIUM_LEVEL, "Migration of {0} is not supported, please try to remigrate with option: {1}.")
-DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed into device functions as extra arguments. As here %0 is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
-DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as extra arguments. As here {0} is template variable, then the declaration of extra parameter in device functions, the variable reference in command group and device functions may be incorrect. You may need to adjust the code.")
+DEF_WARNING(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "%0 is in device memory and passed into device functions as an extra argument. As %0 is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.")
+DEF_COMMENT(TEMPLATE_VAR, 1120, MEDIUM_LEVEL, "{0} is in device memory and passed into device functions as an extra argument. As {0} is a template variable here, then the declaration of an extra parameter in device functions, the variable referenced in command group, and device functions may be incorrect as a result. You may need to adjust the code.")
+DEF_WARNING(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"%0\" which is used in the SYCL group function/algorithm is initialized.")
+DEF_COMMENT(UNINITIALIZED_DEVICE_VAR, 1121, LOW_LEVEL, "Make sure that the \"{0}\" which is used in the SYCL group function/algorithm is initialized.")
+DEF_WARNING(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'%0' is migrated to '%1' in template declare, it may cause template function or class redefinition, please adjust the code.")
+DEF_COMMENT(VEC_IN_TEMPLATE_ARG, 1122, LOW_LEVEL, "'{0}' is migrated to '{1}' in template declare, it may cause template function or class redefinition, please adjust the code.")
+DEF_WARNING(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
+DEF_COMMENT(UNDEDUCED_KERNEL_FUNCTION_POINTER, 1123, MEDIUM_LEVEL, "The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.")
+DEF_WARNING(ASYNC_MEMCPY_WARNING, 1124, MEDIUM_LEVEL, "%0 is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.")
+DEF_COMMENT(ASYNC_MEMCPY_WARNING, 1124, MEDIUM_LEVEL, "{0} is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.")
+DEF_WARNING(MOVE_TYPE_DEFINITION_DEVICE_FUNC, 1125, MEDIUM_LEVEL, "The type \"%0\" defined in function \"%1\" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.")
+DEF_COMMENT(MOVE_TYPE_DEFINITION_DEVICE_FUNC, 1125, MEDIUM_LEVEL, "The type \"{0}\" defined in function \"{1}\" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.")
+DEF_WARNING(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"%0\" defined in function \"%1\" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function \"%1\". You may need to adjust the type definition location.")
+DEF_COMMENT(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"{0}\" defined in function \"{1}\" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function \"{1}\". You may need to adjust the type definition location.")
+DEF_WARNING(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported when compiling with C++20. You may need to adjust the compile commands.")
+DEF_COMMENT(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported when compiling with C++20. You may need to adjust the compile commands.")
 // clang-format on
+
+#undef DEF_COMMENT
+#undef DEF_WARNING
+#undef LOW_LEVEL
+#undef MEDIUM_LEVEL
+#undef HIGH_LEVEL

@@ -5,7 +5,9 @@
 // to abort internalization due to target or parameter mismatch. Also check that
 // warnings are printed when SYCL_RT_WARNING_LEVEL=1.
 
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
+#include <sycl/ext/codeplay/experimental/fusion_wrapper.hpp>
+#include <sycl/properties/all_properties.hpp>
 
 using namespace sycl;
 
@@ -152,7 +154,9 @@ int main() {
   // CHECK: Local(8), Local(16)
   // CHECK: WARNING: Not performing specified local promotion due to work-group size mismatch
   // CHECK: ERROR: JIT compilation for kernel fusion failed with message:
-  // CHECK: Cannot fuse kernels with different offsets or local sizes
+  // CHECK: Illegal ND-range combination
+  // CHECK: Detailed information:
+  // CHECK: Cannot fuse kernels with different local sizes
   // CHECK: COMPUTATION OK
 
   // Scenario: One accessor with local internalization, one with private

@@ -855,18 +855,14 @@ static const int streamNonBlocking = CONCATE(StreamNonBlocking);
 static const cudaStream_t streamDefault3 = cudaStreamDefault;
 static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 
-
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
-//CHECK-NEXT:  dpct::event_ptr start;                                                         \
-//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;                \
-//CHECK-NEXT:  dpct::event_ptr stop;                                                          \
-//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;                 \
+//CHECK-NEXT:  dpct::event_ptr start;                                                       \
+//CHECK-NEXT:  dpct::event_ptr stop;                                                        \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start = new sycl::event();                                                 \
 //CHECK-NEXT:    stop = new sycl::event();                                                  \
-//CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();                              \
-//CHECK-NEXT:    *start = q_ct1.ext_oneapi_submit_barrier();                                \
+//CHECK-NEXT:    dpct::sync_barrier(start);                                            \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
   cudaEvent_t start;                                                                                               \
@@ -879,16 +875,17 @@ static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
     cudaEventRecord(start);                                                                                        \
   }
 
-
 //     CHECK:#define CMC_PROFILING_END(lineno)                                              \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
-//CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();                               \
-//CHECK-NEXT:    *stop = q_ct1.ext_oneapi_submit_barrier();                                 \
+//CHECK-NEXT:    dpct::sync_barrier(stop);                                             \
 //CHECK-NEXT:    stop->wait_and_throw();                                                    \
 //CHECK-NEXT:    float time = 0.0f;                                                         \
-//CHECK-NEXT:    time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1)      \
-//CHECK-NEXT:               .count();                                                       \
+//CHECK-NEXT:    time = (stop->get_profiling_info<                                          \
+//CHECK-NEXT:                sycl::info::event_profiling::command_end>() -                  \
+//CHECK-NEXT:            start->get_profiling_info<                                         \
+//CHECK-NEXT:                sycl::info::event_profiling::command_start>()) /               \
+//CHECK-NEXT:           1000000.0f;                                                         \
 //CHECK-NEXT:    dpct::destroy_event(start);                                                \
 //CHECK-NEXT:    dpct::destroy_event(stop);                                                 \
 //CHECK-NEXT:  }                                                                            \
@@ -1231,9 +1228,16 @@ void foo34() {
 
 
 //CHECK: #define ReturnErrorFunction                                                    \
-//CHECK-NEXT:   int amax(dpct::queue_ptr handle, const int n, const float *X,                \
+//CHECK-NEXT:   int amax(dpct::blas::descriptor_ptr handle, const int n, const float *X,     \
 //CHECK-NEXT:            const int incX, int &result) try {                                  \
-//CHECK-NEXT:     return cublasIsamax(handle, n, (const float *)X, incX, &result);           \
+//CHECK-NEXT:     return [&]() {                                                             \
+//CHECK-NEXT:       dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(                    \
+//CHECK-NEXT:           handle->get_queue(), &result);                                       \
+//CHECK-NEXT:       oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, X, incX,  \
+//CHECK-NEXT:                                              res_wrapper_ct4.get_ptr(),        \
+//CHECK-NEXT:                                              oneapi::mkl::index_base::one);    \
+//CHECK-NEXT:       return 0;                                                                \
+//CHECK-NEXT:     }();                                                                       \
 //CHECK-NEXT:   }                                                                            \
 //CHECK-NEXT:   catch (sycl::exception const &exc) {                                         \
 //CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__         \
@@ -1296,4 +1300,44 @@ void foo36() {
   CALLTEMPLATEFOO;
   CALLTEMPLATEFOO2;
 }
+
+template<typename T>void foo37(const T* t){}
+#define FOO37(T)  template void foo37(const T* t)
+//CHECK: FOO37(sycl::half);
+FOO37(half);
+
+#define CHECK_2(E)                                               \
+  do {                                                           \
+    cudaError_t __err = E;                                       \
+    if (__err != cudaSuccess) {                                  \
+      throw std::runtime_error("");                              \
+    }                                                            \
+  } while (0)
+
+#define CHECK_1(E) CHECK_2(E)
+
+template <class T>
+static __global__ void kernel38() {}
+
+template <class T>
+void foo38() {
+  void* args[] = {};
+  int block;
+  int x;
+  int y;
+  int z;
+  int shared;
+  cudaStream_t stream;
+  //     CHECK:stream->parallel_for(
+  //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(z, y, x) * sycl::range<3>(1, 1, block),
+  //CHECK-NEXT:                      sycl::range<3>(1, 1, block)),
+  //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:      ((void *)&kernel38<T>)();
+  //CHECK-NEXT:    });
+  //CHECK-NEXT:CHECK_1(0);
+  CHECK_1(cudaLaunchKernel((void*)&kernel38<T>, dim3(x, y, z), block, args, shared, stream));
+}
+#undef CHECK_1
+#undef CHECK_2
+
 #endif

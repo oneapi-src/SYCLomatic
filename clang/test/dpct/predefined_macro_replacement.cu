@@ -334,3 +334,15 @@ void foo7() {
   cudaMallocHost(&f, 4);
 #endif
 }
+
+//CHECK: void foo8() {
+//CHECK-NEXT:   float *f;
+//CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 12000)
+void foo8() {
+  float *f;
+#if (CUDA_VERSION >= 12000)
+  cudaMalloc(&f, 4);
+#else
+  cudaMallocHost(&f, 4);
+#endif
+}

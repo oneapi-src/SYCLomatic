@@ -1,5 +1,9 @@
-CUDA API Migration Support Status
-=================================
+.. _mapping_status:
+
+CUDA API Migration Support
+==========================
+
+Migration support status updated on |today|.
 
 The following tables provide the current status for CUDA\* API migration support.
 

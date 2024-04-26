@@ -9,7 +9,7 @@
 // CHECK:#include "no_cuda_syntax.dp.hpp"
 #include "no_cuda_syntax.cuh"
 
-// CHECK:#include "no_cuda_syntax.dp.hpp"
+// CHECK:#include <no_cuda_syntax.dp.hpp>
 #include <no_cuda_syntax.cuh>
 
 void test(){
