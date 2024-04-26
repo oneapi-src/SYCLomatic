@@ -373,12 +373,12 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
-      {"cudaMemcpy3DParms", std::make_shared<TypeNameRule>(
-                                getDpctNamespace() + "mem_cpy_parameter")},
-      {"CUDA_MEMCPY3D", std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                                       "mem_cpy_parameter")},
-      {"CUDA_MEMCPY2D", std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                                       "mem_cpy_parameter")},
+      {"cudaMemcpy3DParms",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
+      {"CUDA_MEMCPY3D",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
+      {"CUDA_MEMCPY2D",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"cudaComputeMode", std::make_shared<TypeNameRule>("int")},
       {"cudaSharedMemConfig", std::make_shared<TypeNameRule>("int")},
       {"cufftReal", std::make_shared<TypeNameRule>("float")},
@@ -4128,7 +4128,7 @@ const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
     {"Format", "channel_type"},
     {"NumChannels", "channel_num"}};
 
-const MapNames::MapTy MemoryDataTypeRule::MemberNames{
+const MapNames::MapTy MemoryDataTypeRule::DirectReplMemberNames{
     // cudaMemcpy3DParms fields.
     {"srcArray", "from.image"},
     {"srcPtr", "from.pitched"},
@@ -4150,7 +4150,7 @@ const MapNames::MapTy MemoryDataTypeRule::MemberNames{
     {"dstZ", "to.pos[2]"},
     {"srcZ", "from.pos[2]"}};
 
-const MapNames::MapTy MemoryDataTypeRule::PitchedMember{
+const MapNames::MapTy MemoryDataTypeRule::GetSetReplMemberNames{
     // CUDA_MEMCPY2D fields.
     {"dstPitch", "pitch"},
     {"srcPitch", "pitch"},

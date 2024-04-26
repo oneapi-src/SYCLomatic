@@ -30,7 +30,7 @@ void foo(int *data, int x, int y) {
   // CHECK: sycl::id<3> pos = sycl::id<3>(0, 0, 0);
   cudaPos pos = make_cudaPos(0, 0, 0);
 
-  // CHECK: dpct::mem_cpy_parameter p2;
+  // CHECK: dpct::memcpy_parameter p2;
   cudaMemcpy3DParms p2;
   cudaArray_t a1;
 
@@ -46,7 +46,7 @@ void foo(int *data, int x, int y) {
   p2.extent = extent;
   // CHECK: p2.direction = dpct::device_to_host;
   p2.kind = cudaMemcpyDeviceToHost;
-  // CHECK: dpct::dpct_memcpy(&p2);
+  // CHECK: dpct::dpct_memcpy(p2);
   cudaMemcpy3D(&p2);
 
   // CHECK: dpct::pitched_data p3;
@@ -67,7 +67,7 @@ void foo(int *data, int x, int y) {
   p2.extent.depth = 1;
   // CHECK: p2.direction = dpct::host_to_device;
   p2.kind = cudaMemcpyHostToDevice;
-  // CHECK: dpct::dpct_memcpy(&p2);
+  // CHECK: dpct::dpct_memcpy(p2);
   cudaMemcpy3D(&p2);
 }
 

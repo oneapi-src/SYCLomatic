@@ -10298,6 +10298,10 @@ void MemoryMigrationRule::memcpyMigration(
              NameRef.rfind("cuMemcpy3D", 0) == 0 ||
              NameRef.rfind("cuMemcpy2D", 0) == 0) {
     handleAsync(C, 1, Result);
+    std::string Replacement;
+    llvm::raw_string_ostream OS(Replacement);
+    DerefExpr(C->getArg(0), C).print(OS);
+    emplaceTransformation(new ReplaceStmt(C->getArg(0), Replacement));
   } else if (!NameRef.compare("cudaMemcpy") ||
              NameRef.rfind("cuMemcpyDtoH", 0) == 0) {
     if (!NameRef.compare("cudaMemcpy")) {
@@ -11701,27 +11705,31 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "parmsMember")) {
     auto MemberName = M->getMemberDecl()->getName();
-    auto NeedRemove = isRemove(MemberName.str());
-    auto Replace = MapNames::findReplacedName(MemberNames, MemberName.str());
+    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(M);
+    if (BO && BO->getOpcode() != BO_Assign) {
+      BO = nullptr;
+    }
+    if (isRemove(MemberName.str())) {
+      if (BO)
+        return emplaceTransformation(new ReplaceStmt(BO, ""));
+      return emplaceTransformation(new ReplaceStmt(M, ""));
+    }
+    auto Replace =
+        MapNames::findReplacedName(DirectReplMemberNames, MemberName.str());
     if (DpctGlobalInfo::useExtBindlessImages() &&
         Replace.find("image") != std::string::npos)
       Replace += "_bindless";
     if (!Replace.empty())
       return emplaceTransformation(new ReplaceToken(
           M->getMemberLoc(), M->getEndLoc(), std::string(Replace)));
-    Replace = MapNames::findReplacedName(PitchedMember, MemberName.str());
+    Replace =
+        MapNames::findReplacedName(GetSetReplMemberNames, MemberName.str());
     const std::string ExtraFeild =
         MemberName.starts_with("src") ? "from.pitched." : "to.pitched.";
-    if (const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(M)) {
-      if (BO->getOpcode() == BO_Assign) {
-        if (NeedRemove)
-          return emplaceTransformation(new ReplaceStmt(BO, ""));
-        return emplaceTransformation(
-            ReplaceMemberAssignAsSetMethod(BO, M, Replace, "", "", ExtraFeild));
-      }
+    if (BO) {
+      return emplaceTransformation(
+          ReplaceMemberAssignAsSetMethod(BO, M, Replace, "", "", ExtraFeild));
     }
-    if (NeedRemove)
-      return emplaceTransformation(new ReplaceStmt(M, ""));
     emplaceTransformation(new ReplaceToken(
         M->getMemberLoc(), buildString(ExtraFeild + "get_", Replace, "()")));
   }

@@ -1519,8 +1519,8 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
                                       std::forward<RestNamesT>(Rest)...);
   }
 
-  const static MapNames::MapTy MemberNames;
-  const static MapNames::MapTy PitchedMember;
+  const static MapNames::MapTy DirectReplMemberNames;
+  const static MapNames::MapTy GetSetReplMemberNames;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
   const static MapNames::MapTy ArrayDescMemberNames;
