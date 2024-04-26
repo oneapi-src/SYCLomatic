@@ -4972,20 +4972,6 @@ void DeviceFunctionInfo::buildInfo() {
       if (Iter->second && !Res)
         Iter->second = false;
     }
-    //std::string Replacement;
-    //if (Res) {
-    //  Replacement = getItemName() + ".barrier(" + MapNames::getClNamespace() +
-    //                "access::fence_space::local_space)";
-    //} else {
-    //  DiagnosticsUtils::report(
-    //      std::get<2>(SyncCall.second), std::get<3>(SyncCall.second),
-    //      Diagnostics::BARRIER_PERFORMANCE_TUNNING, true, false, "nd_item");
-    //  Replacement = getItemName() + ".barrier()";
-    //}
-    //DpctGlobalInfo::getInstance().addReplacement(
-    //    std::make_shared<ExtReplacement>(
-    //        std::get<2>(SyncCall.second), std::get<3>(SyncCall.second),
-    //        std::strlen("__syncthreads"), Replacement, nullptr));
   }
 }
 std::string

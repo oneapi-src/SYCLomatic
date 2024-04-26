@@ -11,6 +11,7 @@
 #include "Utility.h"
 #include "llvm/Support/Casting.h"
 #include <algorithm>
+#include <string>
 #include <unordered_set>
 
 using namespace llvm;
@@ -591,12 +592,25 @@ void clang::dpct::IntraproceduralAnalyzer::simplifyMap(
 #endif
 }
 
+AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other, bool IsOtherInLoop) {
+  if (IsOtherInLoop) {
+    Other.UsedBefore = true;
+    Other.UsedAfter = true;
+  }
+  Me.UsedBefore = Me.UsedBefore || Other.UsedBefore;
+  Me.UsedAfter = Me.UsedAfter || Other.UsedAfter;
+  Me.AM = AccessMode(Me.AM | Other.AM);
+  return Me;
+}
+
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> DFI,
     std::string SyncCallDeclCombinedLoc) {
   // Do analysis for all syncthreads call in this DFI's ancestors and
   // this DFI's decendents.
-  std::stack<std::pair<std::weak_ptr<DeviceFunctionInfo>/*node*/, int/*depth*/>> NodeStack;
+  std::stack<std::tuple<std::weak_ptr<DeviceFunctionInfo> /*node*/,
+                        std::string /*CurCallDeclCombinedLoc*/, int /*depth*/>>
+      NodeStack;
   std::stack<std::pair<
       std::string /*caller's decl's combined loc str*/,
       std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
@@ -606,11 +620,12 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       Visited;
   
   // DFS to find all related DFIs
-  NodeStack.push(std::make_pair(DFI, 0));
+  NodeStack.push(std::make_tuple(DFI, SyncCallDeclCombinedLoc, 0));
   Visited.insert(DFI);
   while (!NodeStack.empty()) {
-    auto CurNode = NodeStack.top().first.lock();
-    auto CurDepth = NodeStack.top().second;
+    auto CurNode = std::get<0>(NodeStack.top()).lock();
+    auto CurCallDeclCombinedLoc = std::get<1>(NodeStack.top());
+    auto CurDepth = std::get<2>(NodeStack.top());
     NodeStack.pop();
 
     int N = static_cast<int>(AffectedByParmsMapInfoStack.size()) - CurDepth;
@@ -619,12 +634,39 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       AffectedByParmsMapInfoStack.pop();
     }
 
-    auto Iter = DFI->IAR.Map.find(SyncCallDeclCombinedLoc);
+    auto Iter = DFI->IAR.Map.find(CurCallDeclCombinedLoc);
     if (Iter != DFI->IAR.Map.end()) {
-      // TODO: Merge std::get<4>(Iter->second) and AffectedByParmsMapInfoStack.top().second
-      // Then push into AffectedByParmsMapInfoStack
-
-
+      const auto &Arg2ParmsMap = std::get<5>(Iter->second);
+      bool IsInLoop = std::get<1>(Iter->second);
+      // Merge std::get<4>(Iter->second) and
+      // AffectedByParmsMapInfoStack.top().second.
+      // Then push into AffectedByParmsMapInfoStack.
+      if (AffectedByParmsMapInfoStack.empty()) {
+        AffectedByParmsMapInfoStack.push(std::make_pair(
+            DFI->IAR.CurrentCtxFuncName, std::get<4>(Iter->second)));
+      } else {
+        std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
+            CurAffectedbyParmsMap = std::get<4>(Iter->second);
+        const std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
+            &PrevAffectedbyParmsMap = AffectedByParmsMapInfoStack.top().second;
+        for (const auto &P : PrevAffectedbyParmsMap) {
+          auto Res = Arg2ParmsMap.find(P.first);
+          if (Res != Arg2ParmsMap.end()) {
+            for (const auto &ParmIdx : Res->second) {
+              CurAffectedbyParmsMap[ParmIdx] = mergeOther(
+                  CurAffectedbyParmsMap[ParmIdx], P.second, IsInLoop);
+              if (CurAffectedbyParmsMap[ParmIdx].AM == ReadWrite)
+                return false;
+              if (CurAffectedbyParmsMap[ParmIdx].AM == Write &&
+                  CurAffectedbyParmsMap[ParmIdx].UsedBefore &&
+                  CurAffectedbyParmsMap[ParmIdx].UsedAfter)
+                return false;
+            }
+          }
+        }
+        AffectedByParmsMapInfoStack.push(
+            std::make_pair(DFI->IAR.CurrentCtxFuncName, CurAffectedbyParmsMap));
+      }
     }
 
     for (const auto &I : CurNode->getParentDFIs()) {
@@ -632,7 +674,7 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
         // Not support analyzing circle in graph
         return false;
       }
-      NodeStack.push(std::make_pair(I, CurDepth + 1));
+      NodeStack.push(std::make_tuple(I, DFI->IAR.CurrentCtxFuncName, CurDepth + 1));
       Visited.insert(I);
     }
   }

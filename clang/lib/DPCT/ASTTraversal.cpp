@@ -12491,8 +12491,13 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     const auto &Map =
         DpctGlobalInfo::getSyncthreadsMigrationCrossFunctionResultsMap();
     auto Iter = Map.find(Key);
-    if (Iter != Map.end() && Iter->second)
+    if (Iter != Map.end() && Iter->second) {
+      std::string Replacement = getItemName() + ".barrier(" +
+                                MapNames::getClNamespace() +
+                                "access::fence_space::local_space)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
       return;
+    }
     BarrierFenceSpace1DAnalyzer A;
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {

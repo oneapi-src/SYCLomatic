@@ -34,6 +34,7 @@ enum AccessMode : std::uint32_t {
 };
 
 struct AffectedInfo {
+  AffectedInfo() {}
   AffectedInfo(bool UsedBefore, bool UsedAfter, AccessMode AM)
       : UsedBefore(UsedBefore), UsedAfter(UsedAfter), AM(AM) {}
   bool UsedBefore = false;
