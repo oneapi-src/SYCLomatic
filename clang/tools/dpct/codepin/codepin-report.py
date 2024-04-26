@@ -219,10 +219,11 @@ def main():
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
         f.write("Consistently APIs count, " + str(match_checkpoint_num) + "\n")
-    if dismatch_checkpoint_num != 0:
+    if failed_log:
         with(open(CODEPIN_REPORT_FILE, 'a')) as f:
             f.write(ERROR_CSV_PATTERN)
             f.write(failed_log)
+    if dismatch_checkpoint_num != 0:
         print(f"Finished comparison of the two files and found differences. Please check 'CodePin_Report.csv' file located in your project directory.\n")
         sys.exit(-1)
     print(f"Finished comparison of the two files and data is identical. Please check 'CodePin_Report.csv' file located in your project directory.\n")
