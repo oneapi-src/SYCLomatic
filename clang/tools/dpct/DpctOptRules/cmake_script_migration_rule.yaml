@@ -2329,6 +2329,18 @@
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_math_include_dir_with_sycl_include_dir"
 
+- Rule: rule_target_include_dir_compile_lang
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_dir_compile_lang
+  In: target_include_directories${empty}(${arg})
+  Out: target_include_directories(${arg})
+  Subrules:
+    arg:
+      In: "$<COMPILE_LANGUAGE:CUDA>"
+      Out: "$<COMPILE_LANGUAGE:CXX>"
+      RuleId: "target_include_dir_compile_lang"
+
 - Rule: rule_target_sources
   Kind: CMakeRule
   Priority: Fallback
@@ -2340,4 +2352,5 @@
       In: ${src}.cu
       Out: ${src}.${rewrite_extention_name}
       MatchMode: Full
+
 
