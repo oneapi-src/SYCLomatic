@@ -2234,7 +2234,7 @@
   Subrules:
     value:
       In: CUDAToolkit_LIBRARY_DIR
-      Out: ONEAPI_LIB_DIR
+      Out: SYCLToolkit_LIBRARY_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
 
