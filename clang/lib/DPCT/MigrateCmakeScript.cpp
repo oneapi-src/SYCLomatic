@@ -634,7 +634,31 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
                                    DispatchTable.at(PR.CmakeSyntax));
 
       } else {
-        Buffer = applyPatternRewriter(PR, Buffer);
+        if (PR.RuleId == "rule_project") {
+          auto NewPR = PR;
+          SmallString<512> RelativePath(FileName.getCanonicalPath());
+          llvm::sys::path::replace_path_prefix(RelativePath,
+                                               OutRoot.getCanonicalPath(), ".");
+
+#ifdef _WIN32
+          std::vector<std::string> SplitedStr =
+              split(RelativePath.c_str(), '\\');
+#else
+          std::vector<std::string> SplitedStr =
+              split(RelativePath.c_str(), '/');
+#endif
+          std::string RelativePathPrefix = "";
+
+          auto Size = SplitedStr.size();
+          for (size_t Idx = 0; Size > 2 && Idx < Size - 2; Idx++) {
+            RelativePathPrefix += "../";
+          }
+          RelativePathPrefix += "dpct.cmake";
+          NewPR.Out += "include(" + RelativePathPrefix + ")\n";
+          Buffer = applyPatternRewriter(NewPR, Buffer);
+        } else {
+          Buffer = applyPatternRewriter(PR, Buffer);
+        }
       }
     }
   }

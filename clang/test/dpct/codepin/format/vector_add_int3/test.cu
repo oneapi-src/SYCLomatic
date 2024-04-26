@@ -4,7 +4,7 @@
 // RUN: %if build_lit %{icpx -fsycl  %T/out/test.dp.cpp -o %T/test.run %}
 // RUN: %if build_lit %{ ./test.run %}
 // RUN: %if build_lit %{ cat %S/app_runtime_data_record.json_ref >> %T/app_runtime_data_record.json_ref %}
-// RUN: %if build_lit %{ cat %T/app_runtime_data_record.json >> %T/app_runtime_data_record.json_ref %}
+// RUN: %if build_lit %{ cat %T/CodePin_SYCL_*.json >> %T/app_runtime_data_record.json_ref %}
 // RUN: %if build_lit %{ FileCheck --match-full-lines --input-file %T/app_runtime_data_record.json_ref %T/app_runtime_data_record.json_ref %}
 #include <iostream>
  
