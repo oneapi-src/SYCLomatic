@@ -9928,14 +9928,9 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
   }
 }
 
-<<<<<<< HEAD
-void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
-  std::string CanonicalType;
-  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
-=======
 void MemVarMigrationRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
->>>>>>> SYCLomatic/SYCLomatic
+  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar) || MemVar->hasAttr<CUDAConstantAttr>()) {
       return;
@@ -10003,6 +9998,7 @@ void MemVarAnalysisRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
+  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
       return;

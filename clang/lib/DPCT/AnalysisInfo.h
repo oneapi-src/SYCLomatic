@@ -1616,11 +1616,7 @@ private:
   /// "true" means this repl has been processed.
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
-<<<<<<< HEAD
-  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
   static std::unordered_map<std::string, std::string> SpecialReplForEAMap;
-=======
->>>>>>> SYCLomatic/SYCLomatic
   static IncludeMapSetTy IncludeMapSet;
   static std::vector<std::pair<std::string, VarInfoForCodePin>>
       CodePinTypeInfoMap;
@@ -1862,16 +1858,13 @@ public:
   bool getUsedBySymbolAPIFlag() { return UsedBySymbolAPIFlag; }
   void setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; }
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
-<<<<<<< HEAD
   void setManualInitValue(const std::string &Init) {
     InitList = Init;
     IsManualInitSet = true;
   }
-=======
   void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
   bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
   void setInitForDeviceGlobal(std::string Init) { InitList = Init; }
->>>>>>> SYCLomatic/SYCLomatic
 
 private:
   bool isTreatPointerAsArray() {
