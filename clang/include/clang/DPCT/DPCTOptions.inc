@@ -277,9 +277,13 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), ProcessAll
                  "Default: off."),
            llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat), llvm::cl::location(ProcessAllFlag))
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCodePin, "enable-codepin",
-           llvm::cl::desc("EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verification purposes."),
-           llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCodePin, "enable-codepin",
+    llvm::cl::desc(
+        "EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and "
+        "verification purposes in the directory <dir>_codepin_cuda and "
+        "<dir>_codepin_sycl, <dir> is specified by --out-root option."),
+    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableCTAD, "enable-ctad",
            llvm::cl::desc("Use a C++17 class template argument deduction (CTAD) in "
@@ -434,6 +438,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("non-uniform-groups", int(ExperimentalFeatures::Exp_NonUniformGroups),
         "Experimental extension that allows use of non-uniform groups.\n",
+        false),
+             DPCT_OPT_ENUM("device_global", int(ExperimentalFeatures::Exp_DeviceGlobal),
+        "Experimental extension that allows device scoped memory allocations into SYCL that can \n"
+        "be accessed within a kernel using syntax similar to C++ global variables.\n",
         false),
             DPCT_OPT_ENUM("all", int(ExperimentalFeatures::Exp_All),
         "Enable all experimental extensions listed in this option.\n",

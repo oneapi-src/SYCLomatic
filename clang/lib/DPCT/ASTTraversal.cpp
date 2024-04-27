@@ -8837,14 +8837,6 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       return ;
   llvm::SmallString<512> RelativePath;
 
-  std::string DebugArgsString = "(\"";
-  std::string DebugArgsStringSYCL = "(\"";
-  DebugArgsString += llvm::sys::path::convert_to_slash(
-                         KCallSpellingRange.first.printToString(SM)) +
-                     "\", ";
-  DebugArgsStringSYCL += llvm::sys::path::convert_to_slash(
-                             KCallSpellingRange.first.printToString(SM)) +
-                         "\", ";
   std::string StreamStr = "0";
   int Index = getPlaceholderIdx(KCall);
   if (Index == 0) {
@@ -8862,44 +8854,44 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
     }
   }
 
-  buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
-  DebugArgsString += StreamStr;
-  DebugArgsStringSYCL += QueueStr;
-  for (auto *Arg : KCall->arguments()) {
-    if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-      if (DRE->isLValue()) {
-        DebugArgsString += ", ";
-        DebugArgsStringSYCL += ", ";
-        std::string VarNameStr = "\"" + DRE->getNameInfo().getAsString() + "\"";
-        DebugArgsString += VarNameStr + ", ";
-        DebugArgsStringSYCL += VarNameStr + ", ";
-        DebugArgsString += getStmtSpelling(Arg);
-        DebugArgsStringSYCL += getStmtSpelling(Arg);
+  auto InstrumentKernel = [&](std::string StreamStr, HeaderType HT,
+                              dpct::ReplacementType CodePinType) {
+    std::string CodePinKernelArgsString = "(\"";
+    CodePinKernelArgsString += llvm::sys::path::convert_to_slash(
+                                   KCallSpellingRange.first.printToString(SM)) +
+                               "\", ";
+    CodePinKernelArgsString += StreamStr;
+
+    buildTempVariableMap(Index, KCall, HelperFuncType::HFT_DefaultQueue);
+
+    for (auto *Arg : KCall->arguments()) {
+      if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
+        if (DRE->isLValue()) {
+          CodePinKernelArgsString += ", ";
+          std::string VarNameStr =
+              "\"" + DRE->getNameInfo().getAsString() + "\"";
+          CodePinKernelArgsString += VarNameStr + ", ";
+          CodePinKernelArgsString += getStmtSpelling(Arg);
+        }
       }
     }
-  }
-  DebugArgsString += ");" + std::string(getNL());
-  DebugArgsStringSYCL += ");" + std::string(getNL());
-  emplaceTransformation(
-      new InsertText(KCallSpellingRange.first,
-                     "dpct::experimental::gen_prolog_API_CP" + DebugArgsString,
-                     0, RT_ForCUDADebug));
-  emplaceTransformation(new InsertText(KCallSpellingRange.first,
-                                       "dpct::experimental::gen_prolog_API_CP" +
-                                           DebugArgsStringSYCL,
-                                       0, RT_ForSYCLMigration));
-  emplaceTransformation(new InsertText(
-      EpilogLocation, "dpct::experimental::gen_epilog_API_CP" + DebugArgsString,
-      0, RT_ForCUDADebug));
-  emplaceTransformation(new InsertText(EpilogLocation,
-                                       "dpct::experimental::gen_epilog_API_CP" +
-                                           DebugArgsStringSYCL,
-                                       0, RT_ForSYCLMigration));
-  CodePinInstrumentation.insert(KCallSpellingRange.first);
-  DpctGlobalInfo::getInstance().insertHeader(
-      KCall->getBeginLoc(), HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
-  DpctGlobalInfo::getInstance().insertHeader(
-      KCall->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_ForCUDADebug);
+    CodePinKernelArgsString += ");" + std::string(getNL());
+    emplaceTransformation(new InsertText(
+        KCallSpellingRange.first,
+        "dpct::experimental::gen_prolog_API_CP" + CodePinKernelArgsString, 0,
+        CodePinType));
+
+    emplaceTransformation(new InsertText(
+        EpilogLocation,
+        "dpct::experimental::gen_epilog_API_CP" + CodePinKernelArgsString, 0,
+        CodePinType));
+
+    CodePinInstrumentation.insert(KCallSpellingRange.first);
+    DpctGlobalInfo::getInstance().insertHeader(KCall->getBeginLoc(), HT,
+                                               CodePinType);
+  };
+  InstrumentKernel(StreamStr, HT_DPCT_CodePin_CUDA, RT_CUDAWithCodePin);
+  InstrumentKernel(QueueStr, HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
 }
 
 void KernelCallRule::runRule(
@@ -9342,17 +9334,6 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
-  if (Decl && DpctGlobalInfo::isOptimizeMigration() &&
-      Decl->hasAttr<CUDAConstantAttr>()) {
-    auto &VarUsedBySymbolAPISet =
-        DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
-    auto LocInfo = DpctGlobalInfo::getLocInfo(Decl->getBeginLoc());
-    if (VarUsedBySymbolAPISet.find(
-            LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second) +
-            Decl->getNameAsString()) == VarUsedBySymbolAPISet.end()) {
-      return;
-    }
-  }
   if (MemVarRef && Func && Decl) {
     if (isCubVar(Decl)) {
       return;
@@ -9372,6 +9353,21 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     };
     const auto *Parent = getParentStmt(MemVarRef);
     bool HasTypeCasted = false;
+    auto Info = Global.findMemVarInfo(Decl);
+
+    if (Info && Info->isUseDeviceGlobal()) {
+      if (Decl->hasInit()) {
+        auto InitStr = getInitForDeviceGlobal(Decl);
+        if (!InitStr.empty()) {
+          report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+          Info->setInitForDeviceGlobal(InitStr);
+        }
+      }
+      if (!Info->getType()->isArray()) {
+        emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get()"));
+      }
+      return;
+    }
     // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
     if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
       if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
@@ -9501,9 +9497,13 @@ void ConstantMemVarMigrationRule::runRule(
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (!Info)
       return;
-    if (DpctGlobalInfo::isOptimizeMigration()) {
-      if (!DpctGlobalInfo::IsVarUsedByRuntimeSymbolAPI(Info)) {
-        Info->setUseHelperFuncFlag(false);
+    if (Info->isUseDeviceGlobal()) {
+      if (MemVar->hasInit()) {
+        auto InitStr = getInitForDeviceGlobal(MemVar);
+        if (!InitStr.empty()) {
+          report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+          Info->setInitForDeviceGlobal(InitStr);
+        }
       }
     }
 
@@ -9857,31 +9857,16 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
 
 REGISTER_RULE(ConstantMemVarMigrationRule, PassKind::PK_Migration)
 
-/// __constant__/__shared__/__device__ var information collection
-void MemVarAnalysisRule::registerMatcher(MatchFinder &MF) {
+void MemVarMigrationRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeclMatcherWithoutConstant =
       varDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAShared),
                     hasAttr(attr::HIPManaged)),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
                                 "warpSize")));
-  auto DeclMatcherWithConstant =
-      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
-                    hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
-              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
-                                "warpSize")));
   MF.addMatcher(DeclMatcherWithoutConstant.bind("var"), this);
-  MF.addMatcher(
-      declRefExpr(anyOf(hasParent(implicitCastExpr(
-                                      unless(hasParent(arraySubscriptExpr())))
-                                      .bind("impl")),
-                        anything()),
-                  to(DeclMatcherWithConstant.bind("decl")),
-                  hasAncestor(functionDecl().bind("func")))
-          .bind("used"),
-      this);
 }
 
-void MemVarAnalysisRule::processTypeDeclaredLocal(
+void MemVarMigrationRule::processTypeDeclaredLocal(
     const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto DS = Info->getDeclStmtOfVarType();
@@ -9943,14 +9928,20 @@ void MemVarAnalysisRule::processTypeDeclaredLocal(
   }
 }
 
+<<<<<<< HEAD
 void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string CanonicalType;
   DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
+=======
+void MemVarMigrationRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+>>>>>>> SYCLomatic/SYCLomatic
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar) || MemVar->hasAttr<CUDAConstantAttr>()) {
       return;
     }
-    CanonicalType = MemVar->getType().getCanonicalType().getAsString();
+    std::string CanonicalType =
+        MemVar->getType().getCanonicalType().getAsString();
     if (CanonicalType.find("block_tile_memory") != std::string::npos) {
       emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
       return;
@@ -9962,6 +9953,15 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     if (!Info)
       return;
+    if (Info->isUseDeviceGlobal()) {
+      if (MemVar->hasInit()) {
+        auto InitStr = getInitForDeviceGlobal(MemVar);
+        if (!InitStr.empty()) {
+          report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+          Info->setInitForDeviceGlobal(InitStr);
+        }
+      }
+    }
 
     if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {
       report(VTD->getBeginLoc(), Diagnostics::TEMPLATE_VAR, false,
@@ -9976,6 +9976,55 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       }
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
           MemVar, Info->getDeclarationReplacement(MemVar)));
+    }
+    return;
+  }
+}
+
+REGISTER_RULE(MemVarMigrationRule, PassKind::PK_Migration)
+
+/// __constant__/__shared__/__device__ var information collection
+void MemVarAnalysisRule::registerMatcher(MatchFinder &MF) {
+  auto DeclMatcher =
+      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice),
+                    hasAttr(attr::CUDAShared), hasAttr(attr::HIPManaged)),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
+  MF.addMatcher(DeclMatcher.bind("var"), this);
+  MF.addMatcher(
+      declRefExpr(anyOf(hasParent(implicitCastExpr(
+                                      unless(hasParent(arraySubscriptExpr())))
+                                      .bind("impl")),
+                        anything()),
+                  to(DeclMatcher.bind("decl")),
+                  hasAncestor(functionDecl().bind("func")))
+          .bind("used"),
+      this);
+}
+
+void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
+    if (isCubVar(MemVar)) {
+      return;
+    }
+    std::string CanonicalType =
+        MemVar->getType().getCanonicalType().getAsString();
+    if (CanonicalType.find("block_tile_memory") != std::string::npos) {
+      return;
+    }
+    auto FD = DpctGlobalInfo::getParentFunction(MemVar);
+    if (DpctGlobalInfo::useGroupLocalMemory() &&
+        !DpctGlobalInfo::useFreeQueries() &&
+        MemVar->hasAttr<CUDASharedAttr>()) {
+      if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
+        DFI->setItem();
+      }
+    }
+    auto Info = MemVarInfo::buildMemVarInfo(MemVar);
+    if (Info && Info->isTypeDeclaredLocal() && !Info->isAnonymousType()) {
+      if (Info->getDeclStmtOfVarType()) {
+        Info->setLocalTypeName(Info->getType()->getBaseName());
+      }
     }
     return;
   }
@@ -10244,7 +10293,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
                     C->getArg(AllocMemSizeLoc)->getSourceRange()),
                 DpctGlobalInfo::getSourceManager(), LangOptions())) +
             ";",
-        0, RT_ForCUDADebug));
+        0, RT_CUDAWithCodePin));
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
         std::string(getNL()) + "dpct::experimental::get_ptr_size_map()[" +
@@ -10252,7 +10301,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
             "] = " + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) + ";",
         0, RT_ForSYCLMigration));
     DpctGlobalInfo::getInstance().insertHeader(
-        C->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_ForCUDADebug);
+        C->getBeginLoc(), HT_DPCT_CodePin_CUDA, RT_CUDAWithCodePin);
     DpctGlobalInfo::getInstance().insertHeader(
         C->getBeginLoc(), HT_DPCT_CodePin_SYCL, RT_ForSYCLMigration);
   }

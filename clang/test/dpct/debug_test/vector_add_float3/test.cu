@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/vector_add_float3 %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/vector_add_float3/test.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/vector_add_float3/test.dp.cpp -o %T/debug_test/vector_add_float3/test.dp.o %}
+// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/vector_add_float3_codepin_sycl/test.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/vector_add_float3_codepin_sycl/test.dp.cpp -o %T/debug_test/vector_add_float3_codepin_sycl/test.dp.o %}
 //CHECK: #include <dpct/codepin/codepin.hpp>
 //CHECK: #include "generated_schema.hpp"
 #include <iostream>
