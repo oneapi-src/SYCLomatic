@@ -391,7 +391,7 @@ InsertText::getReplacement(const ASTContext &Context) const {
   R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   R->setInsertPosition(InsertPos);
   R->setSYCLHeaderNeeded(IsSYCLHeaderNeeded);
-  R->IsForCUDADebug = IsForCUDADebug;
+  R->IsForCodePin = IsForCodePin;
   return R;
 }
 
@@ -780,7 +780,7 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
   Repl->setConstantFlag(this->getConstantFlag());
   Repl->setConstantOffset(this->getConstantOffset());
   Repl->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
-  Repl->IsForCUDADebug = IsForCUDADebug;
+  Repl->IsForCodePin = IsForCodePin;
   return Repl;
 }
 

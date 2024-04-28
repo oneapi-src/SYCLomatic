@@ -486,28 +486,28 @@ int main() {
   __half alpha_H;
   __half beta_H;
 
-  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
+  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N));
   a = cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
-  //CHECK:oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_D, d_A_D, N, d_B_D, N, beta_D, d_C_D, N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
+  //CHECK:oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_D, d_A_D, N, d_B_D, N, beta_D, d_C_D, N);
   cublasDgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
-  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_B_C, N, std::complex<float>(beta_C.x(), beta_C.y()), (std::complex<float>*)d_C_C, N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true)));
+  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_B_C, N, std::complex<float>(beta_C.x(), beta_C.y()), (std::complex<float>*)d_C_C, N));
   a = cublasCgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N);
-  //CHECK:oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_B_Z, N, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)d_C_Z, N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
+  //CHECK:oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_B_Z, N, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)d_C_Z, N);
   cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, &beta_Z, d_C_Z, N);
 
-  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, 16, d_B_S, N, 16, beta_S, d_C_S, N, 16, 10, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
+  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, 16, d_B_S, N, 16, beta_S, d_C_S, N, 16, 10));
   a = cublasSgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, 16, d_B_S, N, 16, &beta_S, d_C_S, N, 16, 10);
-  //CHECK:oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_D, d_A_D, N, 16, d_B_D, N, 16, beta_D, d_C_D, N, 16, 10, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
+  //CHECK:oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_D, d_A_D, N, 16, d_B_D, N, 16, beta_D, d_C_D, N, 16, 10);
   cublasDgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_D, d_A_D, N, 16, d_B_D, N, 16, &beta_D, d_C_D, N, 16, 10);
-  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)d_A_C, N, 16, (std::complex<float>*)d_B_C, N, 16, std::complex<float>(beta_C.x(), beta_C.y()), (std::complex<float>*)d_C_C, N, 16, 10, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true)));
+  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)d_A_C, N, 16, (std::complex<float>*)d_B_C, N, 16, std::complex<float>(beta_C.x(), beta_C.y()), (std::complex<float>*)d_C_C, N, 16, 10));
   a = cublasCgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_C, d_A_C, N, 16, d_B_C, N, 16, &beta_C, d_C_C, N, 16, 10);
-  //CHECK:oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)d_A_Z, N, 16, (std::complex<double>*)d_B_Z, N, 16, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)d_C_Z, N, 16, 10, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
+  //CHECK:oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)d_A_Z, N, 16, (std::complex<double>*)d_B_Z, N, 16, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)d_C_Z, N, 16, 10);
   cublasZgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_Z, d_A_Z, N, 16, d_B_Z, N, 16, &beta_Z, d_C_Z, N, 16, 10);
-  //CHECK:oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H, N, 16, d_B_H, N, 16, beta_H, d_C_H, N, 16, 10, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
+  //CHECK:oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H, N, 16, d_B_H, N, 16, beta_H, d_C_H, N, 16, 10);
   cublasHgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, 16, d_B_H, N, 16, &beta_H, d_C_H, N, 16, 10);
 
   cublasOperation_t trans3 = CUBLAS_OP_N;
-  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), trans3, trans3, N, N, N, alpha_H, d_A_H, N, d_B_H, N, beta_H, d_C_H, N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
+  //CHECK:a = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), trans3, trans3, N, N, N, alpha_H, d_A_H, N, d_B_H, N, beta_H, d_C_H, N));
   a = cublasHgemm(handle, trans3, trans3, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 
   // CHECK: void *alpha, *beta, *A, *B, *C;
@@ -578,7 +578,7 @@ int main() {
   // CHECK: if(int stat = DPCT_CHECK_ERROR(dpct::blas::trmm(handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N))){}
   if(int stat = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)){}
 
-  // CHECK: if(int stat = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)))){}
+  // CHECK: if(int stat = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N))){}
   if(int stat = cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)){}
 
 
@@ -592,7 +592,7 @@ int foo1(){
 }
 
 // CHECK:int foo2() try {
-// CHECK:  return DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false)));
+// CHECK:  return DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, alpha_S, d_A_S, N, d_B_S, N, beta_S, d_C_S, N));
 // CHECK-NEXT:}
 int foo2(){
   return cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
@@ -647,7 +647,7 @@ void foo4() {
   const float *a;
   const float *b;
   float *c;
-  // CHECK: oneapi::mkl::blas::column_major::gemm(((dpct::blas::descriptor_ptr)handle)->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, ((dpct::blas::descriptor_ptr)handle)->get_queue()), a, lda, b, ldb, dpct::get_value(beta, ((dpct::blas::descriptor_ptr)handle)->get_queue()), c, ldc, dpct::blas::deduce_compute_mode(std::nullopt, ((dpct::blas::descriptor_ptr)handle)->get_math_mode(), false));
+  // CHECK: oneapi::mkl::blas::column_major::gemm(((dpct::blas::descriptor_ptr)handle)->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, ((dpct::blas::descriptor_ptr)handle)->get_queue()), a, lda, b, ldb, dpct::get_value(beta, ((dpct::blas::descriptor_ptr)handle)->get_queue()), c, ldc);
   cublasSgemm((cublasHandle_t)handle, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
   int incx, incy;
