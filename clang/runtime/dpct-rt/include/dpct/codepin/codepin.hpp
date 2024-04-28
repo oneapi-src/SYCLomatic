@@ -9,6 +9,7 @@
 #define __DPCT_CODEPIN_HPP__
 
 #include "serialization/basic.hpp"
+#include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -20,7 +21,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <chrono>
 namespace dpct {
 namespace experimental {
 
