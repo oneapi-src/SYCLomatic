@@ -1,5 +1,6 @@
 add_library(target
             foo.cpp
+            layer.cudnn.cpp
             foo.h
             )
             
