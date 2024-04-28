@@ -33,6 +33,22 @@ typedef dpct::queue_ptr queue_t;
 
 namespace detail {
 
+inline bool is_dev_ptr(void *p) {
+#ifdef __NVCC__
+  cudaPointerAttributes attr;
+  cudaPointerGetAttributes(&attr, p);
+  if (attr.type == cudaMemoryTypeDevice)
+    return true;
+  return false;
+#else
+  dpct::pointer_attributes attributes;
+  attributes.init(p);
+  if (attributes.get_device_pointer() != nullptr)
+    return true;
+  return false;
+#endif
+}
+
 class json_stringstream {
   public:
   json_stringstream(std::ofstream &ofst) : os(ofst) {
@@ -124,68 +140,6 @@ public:
     }
   };
 
-  // void print_left_brace() { *this << "{"; }
-  // void print_right_brace() { *this << "}"; }
-  // void print_left_bracket() { *this << "["; }
-  // void print_right_bracket() { *this << "]"; }
-  // void print_comma() { *this << ","; }
-  // void print_type_begin(std::string type) {
-  //   *this << "{\"Type\":\"" << type << "\" ,\"Data\":[";
-  // }
-  // void print_type_end() { *this << "]}"; }
-
-  // void print_dict_item_key(std::string key) { *this << "\"" << key << "\":"; }
-  // void print_ID_checkpoint_begin(std::string ID) {
-  //   *this << "{\"ID\":"
-  //         << "\"" << ID << "\"";
-  //   *this << ",\"CheckPoint\":{";
-  // }
-  // void print_ID_checkpoint_end() { *this << "}},"; }
-  // void print_data_mem_begin(std::string mem_name) {
-  //   *this << "{\"" << mem_name << "\":";
-  // }
-  // void print_data_mem_end() { *this << "}"; }
-  // template <typename T> void print_type_data(std::string type, T data) {
-  //   print_type_begin(type);
-  //   *this << data;
-  //   print_type_end();
-  // }
-
-  // json_stringstream &operator<<(const std::string &s) {
-  //   std::string ret = "";
-  //   for (char c : s) {
-  //     switch (c) {
-  //     case '[':
-  //     case '{':
-  //       ret += c;
-  //       ret += '\n';
-  //       indent++;
-  //       ret += get_indent_str();
-  //       break;
-  //     case '}':
-  //     case ']':
-  //       ret += '\n';
-  //       indent--;
-  //       ret += get_indent_str();
-  //       ret += c;
-  //       break;
-  //     case ',':
-  //       ret += c;
-  //       ret += '\n';
-  //       ret += get_indent_str();
-  //       break;
-  //     case ':':
-  //       ret += c;
-  //       ret += ' ';
-  //       break;
-  //     default:
-  //       ret += c;
-  //       break;
-  //     }
-  //   }
-  //   ss << ret;
-  //   return *this;
-  // }
   template <typename T, typename = std::enable_if_t<
                             !std::is_same_v<const char *, std::decay_t<T>>>>
   json_stringstream &operator<<(T &&value) {
@@ -229,10 +183,10 @@ template <class T, class T2 = void> class data_ser {
 public:
   static void dump(json_stringstream &ss, T value,
                    dpct::experimental::queue_t stream) {
-    // ss.print_type_data(
-    //     std::string(demangle_name<T>()),
-    //     "CODEPIN:ERROR:1: Unable to find the corresponding serialization "
-    //     "function.");
+    auto obj = ss.object();
+    obj.key("Data");
+    obj.value("CODEPIN:ERROR:1: Unable to find the corresponding serialization "
+        "function.");
   }
   static void print_type_name(json_stringstream::json_obj &obj) {
     obj.key("Type");
@@ -297,54 +251,84 @@ public:
   }
 };
 
-// template <> class data_ser<float3> {
-// public:
-//   static void dump(json_stringstream &ss, const float3 &value,
-//                    dpct::experimental::queue_t queue) {
-//     ss.print_type_begin("float3");
-
-//     ss.print_data_mem_begin("x");
-//     dpct::experimental::detail::data_ser<float3>::dump(ss, value.x, queue);
-//     ss.print_data_mem_end();
-//     ss.print_comma();
-
-//     ss.print_data_mem_begin("y");
-//     dpct::experimental::detail::data_ser<float3>::dump(ss, value.y, queue);
-//     ss.print_data_mem_end();
-//     ss.print_comma();
-
-//     ss.print_data_mem_begin("z");
-//     dpct::experimental::detail::data_ser<float3>::dump(ss, value.z, queue);
-//     ss.print_data_mem_end();
-
-//     ss.print_type_end();
-//   }
-// };
+template <> class data_ser<float3> {
+public:
+  static void dump(json_stringstream &ss, const float3 &value,
+                   dpct::experimental::queue_t queue) {
+    auto arr = ss.array();
+    {
+      auto obj_x = arr.object();
+      obj_x.key("x");
+      auto value_x =
+          obj_x
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<float>::print_type_name(value_x);
+      value_x.key("Data");
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.x, queue);
+    }
+    {
+      auto obj_y = arr.object();
+      obj_y.key("y");
+      auto value_y =
+          obj_y
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<float>::print_type_name(value_y);
+      value_y.key("Data");
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.y, queue);
+    }
+    {
+      auto obj_z = arr.object();
+      obj_z.key("z");
+      auto value_z =
+          obj_z
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<float>::print_type_name(value_z);
+      value_z.key("Data");
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.z, queue);
+    }
+  }
+  static void print_type_name(json_stringstream::json_obj &obj){
+    obj.key("Type");
+    obj.value("float3");
+  }
+};
 
 #else
 template <> class data_ser<sycl::int3> {
 public:
-  static void dump(json_stringstream &ss, const sycl::int3 &value,
+  static void dump(json_stringstream &ss, const int3 &value,
                    dpct::experimental::queue_t queue) {
-    // ss.print_type_begin("sycl::int3");
-
-    // ss.print_data_mem_begin("x");
-    // dpct::experimental::detail::data_ser<int>::dump(ss, value.x(), queue);
-    // ss.print_data_mem_end();
-    // ss.print_comma();
-
-    // ss.print_data_mem_begin("y");
-    // dpct::experimental::detail::data_ser<int>::dump(ss, value.y(), queue);
-    // ss.print_data_mem_end();
-    // ss.print_comma();
-
-    // ss.print_data_mem_begin("z");
-    // dpct::experimental::detail::data_ser<int>::dump(ss, value.z(), queue);
-    // ss.print_data_mem_end();
-
-    // ss.print_type_end();
     auto arr = ss.array();
-
+    {
+      auto obj_x = arr.object();
+      obj_x.key("x");
+      auto value_x =
+          obj_x
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<int>::print_type_name(value_x);
+      value_x.key("Data");
+      dpct::experimental::detail::data_ser<int>::dump(ss, value.x, queue);
+    }
+    {
+      auto obj_y = arr.object();
+      obj_y.key("y");
+      auto value_y =
+          obj_y
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<int>::print_type_name(value_y);
+      value_y.key("Data");
+      dpct::experimental::detail::data_ser<int>::dump(ss, value.y, queue);
+    }
+    {
+      auto obj_z = arr.object();
+      obj_z.key("z");
+      auto value_z =
+          obj_z
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<int>::print_type_name(value_z);
+      value_z.key("Data");
+      dpct::experimental::detail::data_ser<int>::dump(ss, value.z, queue);
+    }
   }
   static void print_type_name(json_stringstream::json_obj &obj){
     obj.key("Type");
@@ -352,37 +336,74 @@ public:
   }
 };
 
-// template <> class data_ser<sycl::float3> {
-// public:
-//   static void dump(json_stringstream &ss, const sycl::float3 &value,
-//                    dpct::experimental::queue_t queue) {
-
-//     ss.print_type_begin("sycl::float3");
-
-//     ss.print_data_mem_begin("x");
-//     dpct::experimental::detail::data_ser<float3>::dump(ss, value.x(), queue);
-//     ss.print_data_mem_end();
-//     ss.print_comma();
-
-//     ss.print_data_mem_begin("y");
-//     dpct::experimental::detail::data_ser<float3>::dump(ss, value.y(), queue);
-//     ss.print_data_mem_end();
-//     ss.print_comma();
-
-//     ss.print_data_mem_begin("z");
-//     dpct::experimental::detail::data_ser<float3>::dump(ss, value.z(), queue);
-//     ss.print_data_mem_end();
-
-//     ss.print_type_end();
-//   }
-// };
+template <> class data_ser<sycl::float3> {
+public:
+  static void dump(json_stringstream &ss, const float3 &value,
+                   dpct::experimental::queue_t queue) {
+    auto arr = ss.array();
+    {
+      auto obj_x = arr.object();
+      obj_x.key("x");
+      auto value_x =
+          obj_x
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<float>::print_type_name(value_x);
+      value_x.key("Data");
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.x, queue);
+    }
+    {
+      auto obj_y = arr.object();
+      obj_y.key("y");
+      auto value_y =
+          obj_y
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<float>::print_type_name(value_y);
+      value_y.key("Data");
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.y, queue);
+    }
+    {
+      auto obj_z = arr.object();
+      obj_z.key("z");
+      auto value_z =
+          obj_z
+              .value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<float>::print_type_name(value_z);
+      value_z.key("Data");
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.z, queue);
+    }
+  }
+  static void print_type_name(json_stringstream::json_obj &obj){
+    obj.key("Type");
+    obj.value("sycl::float3");
+  }
+};
 #endif
 
 template <> class data_ser<char *> {
 public:
   static void dump(json_stringstream &ss, const char *value,
                    dpct::experimental::queue_t queue) {
-    //ss.print_type_data("char *", std::string(value));
+    auto obj = ss.object();
+    obj.key("Data");
+    const char *dump_addr = value;
+    bool is_dev = is_dev_ptr((void*)value);
+    if (is_dev) {
+      const char *h_data = new char[strlen(value)];
+#ifdef __NVCC__
+      cudaMemcpyAsync((void *)h_data, (void *)value,
+                      strlen(value) * sizeof(char), cudaMemcpyDeviceToHost,
+                      queue);
+      cudaStreamSynchronize(queue);
+#else
+      queue->memcpy(h_data, value, size * sizeof(PointeeType)).wait();
+#endif
+      dump_addr = h_data;    
+    }
+    obj.value(std::string(dump_addr));
+  }
+  static void print_type_name(json_stringstream::json_obj &obj){
+    obj.key("Type");
+    obj.value("char *");
   }
 };
 
@@ -390,7 +411,13 @@ template <> class data_ser<std::string> {
 public:
   static void dump(json_stringstream &ss, const std::string &value,
                    dpct::experimental::queue_t queue) {
-    //ss.print_type_data("char *", value);
+    auto obj = ss.object();
+    obj.key("Data");
+    obj.value(value);
+  }
+  static void print_type_name(json_stringstream::json_obj &obj){
+    obj.key("Type");
+    obj.value("std::string");
   }
 };
 

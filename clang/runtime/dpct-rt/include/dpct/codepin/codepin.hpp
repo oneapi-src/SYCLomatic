@@ -113,22 +113,6 @@ inline uint32_t get_ptr_size_in_bytes(void *ptr) {
   return (it != ptr_size_map.end()) ? it->second : 0;
 }
 
-inline bool is_dev_ptr(void *p) {
-#ifdef __NVCC__
-  cudaPointerAttributes attr;
-  cudaPointerGetAttributes(&attr, p);
-  if (attr.type == cudaMemoryTypeDevice)
-    return true;
-  return false;
-#else
-  dpct::pointer_attributes attributes;
-  attributes.init(p);
-  if (attributes.get_device_pointer() != nullptr)
-    return true;
-  return false;
-#endif
-}
-
 template <class T>
 class data_ser<T*, void> {
 public:
@@ -178,8 +162,13 @@ class data_ser<T, typename std::enable_if<std::is_array<T>::value>::type> {
 public:
   static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
                    dpct::experimental::queue_t queue) {
+    auto arr = ss.array();
     size_t size = sizeof(T) / sizeof(value[0]);
     for (size_t i = 0; i < size; i++) {
+      auto obj = arr.object();
+      dpct::experimental::detail::data_ser<
+          std::remove_extent_t<T>>::print_type_name(obj);
+      obj.key("Data");
       dpct::experimental::detail::data_ser<std::remove_extent_t<T>>::dump(
           ss, value[i], queue);
     }
