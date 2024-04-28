@@ -55,6 +55,9 @@ const char *const CommonOptionsParser::HelpMessage =
 
 
 #ifdef SYCLomatic_CUSTOMIZATION
+
+#include "clang/DPCT/DpctOptions.h"
+
 extern int SDKVersionMajor;
 extern int SDKVersionMinor;
 namespace clang {
@@ -121,24 +124,12 @@ llvm::Error CommonOptionsParser::init(
   bool IsCudaFile = false;
   int OriArgc = argc;
   SpecifyLanguageInOption = false;
-#define DPCT_OPTIONS_IN_CLANG_TOOLING
-#define DPCT_OPT_TYPE(...) __VA_ARGS__
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
-OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#define DPCT_OPTIONS_IN_CLANG_TOOLING 1
+#define DPCT_OPTIONS_VAR 1
 #include "clang/DPCT/DPCTOptions.inc"
-#undef DPCT_NON_ENUM_OPTION
-#undef DPCT_OPT_TYPE
-#undef DPCT_OPTIONS_IN_CLANG_TOOLING
 
-  static llvm::cl::list<std::string> SourcePaths(
-      llvm::cl::Positional, llvm::cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
-      llvm::cl::cat(Category), llvm::cl::sub(*llvm::cl::AllSubCommands));
+  clang::dpct::DpctOptionBase::init();
 
-  static cl::list<std::string> ArgsBefore(
-     "extra-arg-before",
-     cl::desc("Additional argument to prepend to the compiler command line.\n"
-              "Refer to extra-arg option.\n"),
-     cl::cat(Category), cl::sub(*cl::AllSubCommands), llvm::cl::Hidden);
 #else
   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),

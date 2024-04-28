@@ -66,7 +66,7 @@ using namespace clang::tooling;
 
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 extern llvm::cl::opt<UsmLevel> USMLevel;
-extern bool ProcessAllFlag;
+extern DpctOption<opt, bool> ProcessAll;
 
 TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation End,
                               std::string &&Str, const SourceManager &SM) {
@@ -895,7 +895,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     }
 
     clang::tooling::UnifiedPath InFile = SM.getFilename(Loc).str();
-    if (IsFileInCmd || ProcessAllFlag ||
+    if (IsFileInCmd || ProcessAll ||
         GetSourceFileType(InFile.getCanonicalPath()) & SPT_CudaSource) {
       IncludeFileMap[DpctGlobalInfo::removeSymlinks(
           SM.getFileManager(), InFile.getCanonicalPath().str())] = false;
@@ -8196,12 +8196,12 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
 }
 
 std::string getNewQueue(int Index) {
-  extern bool AsyncHandlerFlag;
+  extern DpctOption<opt, bool> AsyncHandler;
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   printPartialArguments(OS << "{{NEEDREPLACED" << std::to_string(Index)
                            << "}}.create_queue(",
-                        AsyncHandlerFlag ? 1 : 0, "true")
+                        AsyncHandler ? 1 : 0, "true")
       << ")";
   return OS.str();
 }

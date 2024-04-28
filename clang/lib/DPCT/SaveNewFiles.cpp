@@ -25,6 +25,7 @@
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
+#include "clang/DPCT/DpctOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 
@@ -793,7 +794,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);
   Rewriter DebugCUDARewrite(Sources, DefaultLangOptions);
-  extern bool ProcessAllFlag;
+  extern DpctOption<clang::dpct::opt, bool> ProcessAll;
 
   // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
@@ -865,7 +866,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     }
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
-    if (ProcessAllFlag) {
+    if (ProcessAll) {
       ProcessedFileNumber = IncludeFileMap.size();
     } else {
       ProcessedFileNumber = GroupResult.size();

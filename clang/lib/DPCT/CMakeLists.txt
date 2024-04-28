@@ -166,6 +166,7 @@ add_clang_library(DPCT
   MapNames.cpp
   SaveNewFiles.cpp
   DPCT.cpp
+  DpctOptions.cpp
   TextModification.cpp
   Utility.cpp
   ValidateArguments.cpp

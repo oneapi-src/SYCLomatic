@@ -64,6 +64,7 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
+#include "clang/DPCT/DpctOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 
@@ -112,16 +113,6 @@ const char *const CtHelpHint =
 
 static extrahelp CommonHelp(CtHelpMessage);
 
-bool ReportOnlyFlag = false;
-bool KeepOriginalCodeFlag = false;
-bool SuppressWarningsAllFlag = false;
-bool StopOnParseErr = false;
-bool CheckUnicodeSecurityFlag = false;
-bool EnablepProfilingFlag = false;
-bool SyclNamedLambdaFlag = false;
-bool NoDRYPatternFlag = false;
-bool ProcessAllFlag = false;
-bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
                 "from " + std::to_string(DiagnosticsMessage::MinID) + " to " +
@@ -129,43 +120,10 @@ static std::string SuppressWarningsMessage = "A comma separated list of migratio
                 ". Hyphen separated ranges are also allowed. For example:\n"
                 "--suppress-warnings=1000-1010,1011.";
 
-#define DPCT_OPTIONS_IN_CLANG_DPCT
-#define DPCT_OPT_TYPE(...) __VA_ARGS__
-#define DPCT_OPT_ENUM(NAME, ...)                                   \
-llvm::cl::OptionEnumValue{NAME, __VA_ARGS__}
-#define DPCT_OPTION_VALUES(...)                                    \
-llvm::cl::values(__VA_ARGS__)
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
-OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
-#define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)      \
-OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#define DPCT_OPTIONS_VAR 1
+#define DPCT_OPTIONS_IN_CLANG_DPCT 1
 #include "clang/DPCT/DPCTOptions.inc"
-#undef DPCT_ENUM_OPTION
-#undef DPCT_NON_ENUM_OPTION
-#undef DPCT_OPTION_VALUES
-#undef DPCT_OPT_ENUM
-#undef DPCT_OPT_TYPE
-#undef DPCT_OPTIONS_IN_CLANG_DPCT
 
-static llvm::cl::opt<std::string> SDKPathOpt("cuda-path", desc("Directory path of SDK.\n"),
-                                llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
-                                llvm::cl::Optional, llvm::cl::Hidden);
-static llvm::cl::opt<std::string> Passes(
-    "passes",
-    llvm::cl::desc("Comma separated list of migration passes, which will be applied.\n"
-         "Only the specified passes are applied."),
-    llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
-               llvm::cl::Hidden);
-#ifdef DPCT_DEBUG_BUILD
-static llvm::cl::opt<std::string>
-    DiagsContent("report-diags-content",
-                 llvm::cl::desc("Diagnostics verbosity level. \"pass\": Basic migration "
-                      "pass information. "
-                      "\"transformation\": Detailed migration pass "
-                      "transformation information."),
-                 llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
-                 llvm::cl::Optional, llvm::cl::Hidden);
-#endif
 #ifdef __linux__
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
@@ -183,11 +141,11 @@ std::unordered_map<std::string, bool> IsDirectoryCache;
 extern bool StopOnParseErrTooling;
 extern UnifiedPath InRootTooling;
 
-clang::tooling::UnifiedPath InRoot;
-clang::tooling::UnifiedPath OutRoot;
+clang::tooling::UnifiedPath InRootPath;
+clang::tooling::UnifiedPath OutRootPath;
 clang::tooling::UnifiedPath CudaIncludePath;
 clang::tooling::UnifiedPath SDKPath;
-std::vector<clang::tooling::UnifiedPath> RuleFile;
+std::vector<clang::tooling::UnifiedPath> RuleFilePath;
 clang::tooling::UnifiedPath AnalysisScope;
 
 UnifiedPath getCudaInstallPath(int argc, const char **argv) {
@@ -297,17 +255,17 @@ UnifiedPath getInstallPath(const char *invokeCommand) {
 }
 
 // To validate the root path of the project to be migrated.
-void ValidateInputDirectory(UnifiedPath InRoot) {
-  if (isChildOrSamePath(CudaPath, InRoot)) {
+void ValidateInputDirectory(UnifiedPath InRootPath) {
+  if (isChildOrSamePath(CudaPath, InRootPath)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
   }
-  if (isChildOrSamePath(InRoot, CudaPath)) {
+  if (isChildOrSamePath(InRootPath, CudaPath)) {
     ShowStatus(MigrationErrorInputDirContainSDKFolder);
     dpctExit(MigrationErrorInputDirContainSDKFolder);
   }
 
-  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
+  if (isChildOrSamePath(InRootPath, DpctInstallPath)) {
     ShowStatus(MigrationErrorInputDirContainCTTool);
     dpctExit(MigrationErrorInputDirContainCTTool);
   }
@@ -385,7 +343,7 @@ static void saveApisReport(void) {
     PrintMsg(OS.str());
   } else {
     std::string RFile = appendPath(
-        OutRoot.getCanonicalPath().str(),
+        OutRootPath.getCanonicalPath().str(),
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".apis.csv"
                                 : ".apis.log"));
@@ -425,7 +383,7 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     PrintMsg(OS.str());
   } else {
     std::string RFile = appendPath(
-        OutRoot.getCanonicalPath().str(),
+        OutRootPath.getCanonicalPath().str(),
         ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                                 ? ".stats.csv"
                                 : ".stats.log"));
@@ -445,7 +403,7 @@ static void saveDiagsReport() {
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile = appendPath(OutRoot.getCanonicalPath().str(),
+    std::string RFile = appendPath(OutRootPath.getCanonicalPath().str(),
                                    ReportFilePrefix + ".diags.log");
     createDirectories(llvm::sys::path::parent_path(RFile));
     writeDataToFile(RFile, getDpctStatsStr() + "\n");
@@ -479,7 +437,7 @@ static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
     std::string FilePath =
-        appendPath(OutRoot.getCanonicalPath().str(), OutputFile);
+        appendPath(OutRootPath.getCanonicalPath().str(), OutputFile);
     createDirectories(llvm::sys::path::parent_path(FilePath));
     writeDataToFile(FilePath, getDpctTermStr() + "\n");
   }
@@ -494,11 +452,11 @@ void PrintReportOnFault(const std::string &FaultMsg) {
     return;
 
   std::string FileApis = appendPath(
-      OutRoot.getCanonicalPath().str(),
+      OutRootPath.getCanonicalPath().str(),
       ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
                               ? ".apis.csv"
                               : ".apis.log"));
-  std::string FileDiags = appendPath(OutRoot.getCanonicalPath().str(),
+  std::string FileDiags = appendPath(OutRootPath.getCanonicalPath().str(),
                                      ReportFilePrefix + ".diags.log");
 
   appendDataToFile(FileApis, FaultMsg);
@@ -603,17 +561,18 @@ int runDPCT(int argc, const char **argv) {
     dpct::ShowStatus(MigrationOptionParsingError);
     dpctExit(MigrationOptionParsingError);
   }
+  DpctOptionBase::check();
 
   DpctInstallPath = getInstallPath(argv[0]);
 
-  InRoot = InRootOpt;
-  OutRoot = OutRootOpt;
-  CudaIncludePath = CudaIncludePathOpt;
+  InRootPath = InRoot;
+  OutRootPath = OutRoot;
+  CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
   std::transform(
-      RuleFileOpt.begin(), RuleFileOpt.end(),
+      RuleFile.begin(), RuleFile.end(),
       std::back_insert_iterator<std::vector<clang::tooling::UnifiedPath>>(
-          RuleFile),
+          RuleFilePath),
       [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
   AnalysisScope = AnalysisScopeOpt;
 
@@ -627,57 +586,6 @@ int runDPCT(int argc, const char **argv) {
     std::cout << HelperFunctionPathStr.c_str() << "\n";
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
-  }
-
-  if (AnalysisMode) {
-    if (hasOption(argc, argv, "migrate-build-script-only") ||
-        hasOption(argc, argv, "query-api-mapping")) {
-      llvm::outs() << "Error: option \"--analysis-mode\", "
-                      "\"--migrate-build-script-only\" and "
-                      "\"--query-api-mapping\" can not be used together.\n";
-      ShowStatus(MigrationErrorConflictOptions);
-      dpctExit(MigrationErrorConflictOptions);
-    }
-    DpctGlobalInfo::enableAnalysisMode();
-    static std::vector<std::string> IgnoreOpts = {
-        "change-cuda-files-extension-only",
-        "sycl-file-extension",
-        "gen-helper-function",
-        "gen-build-script",
-        "build-script-file",
-        "format-range",
-        "format-style",
-        "migrate-build-script",
-        "report-file-prefix",
-        "report-format",
-        "report-only",
-        "report-type",
-        "enable-codepin",
-        "output-file",
-        "output-verbosity",
-        "suppress-warnings",
-        "suppress-warnings-all",
-    };
-    for (const auto &Opt : IgnoreOpts) {
-      if (hasOption(argc, argv, Opt)) {
-        llvm::outs() << "Warning: \"--" << Opt
-                     << "\"will be ignored when analysis mode is enabled.\n";
-      }
-    }
-    BuildScript = BuildScript::BS_None;
-    LimitChangeExtension = false;
-    GenBuildScript = false;
-    GenHelperFunction = false;
-    EnableCodePin = false;
-    SuppressWarningsAllFlag = true;
-    OutputFile = "";
-    OutRoot = "";
-    FormatRng = format::FormatRange::none;
-  } else if (!AnalysisModeOutputFile.empty()) {
-    llvm::outs() << "Error: \"--analysis-mode-output-file\" only available when "
-                    "analysis mode is enabled.\n";
-    ShowStatus(MigrationErrorConflictOptions);
-    dpctExit(MigrationErrorConflictOptions);
   }
 
   if (!OutputFile.empty()) {
@@ -712,13 +620,13 @@ int runDPCT(int argc, const char **argv) {
   if (CodePinReport)
     CallIndependentTool("codepin-report.py");
 
-  if (InRoot.getPath().size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --in-root '" << InRoot.getPath() << "' is too long\n";
+  if (InRootPath.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --in-root '" << InRootPath.getPath() << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (OutRoot.getPath().size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --out-root '" << OutRoot.getPath()
+  if (OutRootPath.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --out-root '" << OutRootPath.getPath()
               << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
@@ -768,27 +676,27 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::addChangeExtensions(".cuh");
   }
 
-  if (InRoot.getPath().empty() && ProcessAllFlag) {
+  if (InRootPath.getPath().empty() && ProcessAll) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
   }
 
   if (MigrateBuildScriptOnly) {
-    if (InRoot.getPath().empty() &&
+    if (InRootPath.getPath().empty() &&
         !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
       ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
       dpctExit(MigrationErrorNoExplicitInRootAndCMakeScript);
     }
   }
 
-  if (!makeInRootCanonicalOrSetDefaults(InRoot,
+  if (!makeInRootCanonicalOrSetDefaults(InRootPath,
                                         OptParser->getSourcePathList())) {
     ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
     dpctExit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
   if (!MigrateBuildScriptOnly) {
-    int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
+    int ValidPath = validatePaths(InRootPath, OptParser->getSourcePathList());
     if (ValidPath == -1) {
       ShowStatus(MigrationErrorInvalidInRootPath);
       dpctExit(MigrationErrorInvalidInRootPath);
@@ -805,7 +713,7 @@ int runDPCT(int argc, const char **argv) {
   } else {
     // To validate the path of cmake file script or directory
     int ValidPath =
-        validateCmakeScriptPaths(InRoot, OptParser->getSourcePathList());
+        validateCmakeScriptPaths(InRootPath, OptParser->getSourcePathList());
     if (ValidPath == -1) {
       ShowStatus(MigrationErrorInvalidInRootPath);
       dpctExit(MigrationErrorInvalidInRootPath);
@@ -815,12 +723,12 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (BuildScript == BuildScript::BS_Cmake &&
+  if (BuildScript == BuildScriptKind::BS_Cmake &&
       !OptParser->getSourcePathList().empty()) {
     ShowStatus(MigarteBuildScriptIncorrectUse);
     dpctExit(MigarteBuildScriptIncorrectUse);
   }
-  if (BuildScript == BuildScript::BS_Cmake && MigrateBuildScriptOnly) {
+  if (BuildScript == BuildScriptKind::BS_Cmake && MigrateBuildScriptOnly) {
     ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
     dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
   }
@@ -851,7 +759,7 @@ int runDPCT(int argc, const char **argv) {
 #endif
   if (!DpctGlobalInfo::isAnalysisModeEnabled() &&
       !checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
-                       ReportFilePrefix, ReportOnlyFlag, GenReport, DVerbose)) {
+                       ReportFilePrefix, ReportOnly, GenReport, DVerbose)) {
     ShowStatus(MigrationErrorInvalidReportArgs);
     dpctExit(MigrationErrorInvalidReportArgs);
   }
@@ -892,20 +800,13 @@ int runDPCT(int argc, const char **argv) {
           << "Warning: Option --query-api-mapping is specified multi times, "
              "only the last one is used, all other are ignored.\n";
     }
-    if (hasOptConflictWithQuery(argc, argv)) {
-      llvm::outs() << "Warning: For API mapping query, only option --extra-arg "
-                      "and --cuda-include-path can be used together with "
-                      "option --query-api-mapping.\n";
-      ShowStatus(MigrationErrorConflictOptions);
-      dpctExit(MigrationErrorConflictOptions);
-    }
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFolderSS;
     llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFolderSS);
     UnifiedPath VirtFolderPath(VirtFolderSS);
 
     // Need set a virtual path and it will used by AnalysisScope.
-    InRoot = VirtFolderPath;
+    InRootPath = VirtFolderPath;
 
     llvm::SmallString<16> VirtFileSS(VirtFolderPath.getCanonicalPath());
     llvm::sys::path::append(VirtFileSS, "temp.cu");
@@ -961,7 +862,7 @@ int runDPCT(int argc, const char **argv) {
           else if (Option.ends_with("bindless_images"))
             Experimentals.addValue(ExperimentalFeatures::Exp_BindlessImages);
         } else if (Option == "--no-dry-pattern") {
-          NoDRYPatternFlag = true;
+          NoDRYPattern.setValue(true);
         }
         // Need add more option.
       }
@@ -992,19 +893,19 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
-    NoIncrementalMigration = true;
-    StopOnParseErr = true;
+    NoIncrementalMigration.setValue(true);
+    StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);
   } else {
-    IsUsingDefaultOutRoot = OutRoot.getPath().empty();
+    IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
     bool NeedCheckOutRootEmpty =
-        !(BuildScript == BuildScript::BS_Cmake) && !MigrateBuildScriptOnly;
+        !(BuildScript == BuildScriptKind::BS_Cmake) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty) && !EnableCodePin) {
+        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
-    dpct::DpctGlobalInfo::setOutRoot(OutRoot);
+    dpct::DpctGlobalInfo::setOutRoot(OutRootPath);
   }
 
   if (GenBuildScript) {
@@ -1016,12 +917,12 @@ int runDPCT(int argc, const char **argv) {
   Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath().str());
 
   if (isCUDAHeaderRequired())
-    ValidateInputDirectory(InRoot);
+    ValidateInputDirectory(InRootPath);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
-  if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRoot) ||
-      (!InRoot.getPath().empty() && !isChildOrSamePath(AnalysisScope, InRoot))) {
+  if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRootPath) ||
+      (!InRootPath.getPath().empty() && !isChildOrSamePath(AnalysisScope, InRootPath))) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
@@ -1069,19 +970,19 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
 
-  DpctGlobalInfo::setInRoot(InRoot);
-  DpctGlobalInfo::setOutRoot(OutRoot);
+  DpctGlobalInfo::setInRoot(InRootPath);
+  DpctGlobalInfo::setOutRoot(OutRootPath);
   DpctGlobalInfo::setAnalysisScope(AnalysisScope);
   DpctGlobalInfo::setCudaPath(CudaPath);
-  DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
-  DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
+  DpctGlobalInfo::setKeepOriginCode(KeepOriginalCode);
+  DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambda);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setBuildScript(BuildScript);
   // When enable codepin feature, the incremental migration will be disabled.
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration && !EnableCodePin &&
                                     !MigrateBuildScriptOnly);
-  DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
-  DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
+  DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurity);
+  DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfiling);
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
@@ -1090,7 +991,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setMigrateBuildScriptOnlyEnabled(MigrateBuildScriptOnly);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
-  DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  DpctGlobalInfo::setUsingDRYPattern(!NoDRYPattern);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
@@ -1099,7 +1000,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
   StopOnParseErrTooling = StopOnParseErr;
-  InRootTooling = InRoot;
+  InRootTooling = InRootPath;
 
   if (ExcludePathList.getNumOccurrences()) {
     DpctGlobalInfo::setExcludePath(ExcludePathList);
@@ -1119,7 +1020,7 @@ int runDPCT(int argc, const char **argv) {
   clang::dpct::initHeaderSpellings();
 
   if (MigrateBuildScriptOnly ||
-      DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake) {
+      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(CmakeRuleFilePath,
                             Twine("extensions/cmake_rules/"
@@ -1132,12 +1033,12 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (!RuleFile.empty()) {
-    importRules(RuleFile);
+  if (!RuleFilePath.empty()) {
+    importRules(RuleFilePath);
   }
 
   {
-    setValueToOptMap(clang::dpct::OPTION_AsyncHandler, AsyncHandlerFlag,
+    setValueToOptMap(clang::dpct::OPTION_AsyncHandler, AsyncHandler.getValue(),
                      AsyncHandler.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NDRangeDim,
                      static_cast<unsigned int>(NDRangeDim.getValue()),
@@ -1157,7 +1058,7 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_ExtensionDDFlag,
                      DpctGlobalInfo::getExtensionDDFlag(),
                      UseDPCPPExtensions.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
+    setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPattern.getValue(),
                      NoDRYPattern.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
@@ -1172,9 +1073,9 @@ int runDPCT(int argc, const char **argv) {
                        OptParser->isVcxprojfileSpecified());
     }
 #endif
-    setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAllFlag,
+    setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAll.getValue(),
                      ProcessAll.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambdaFlag,
+    setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambda.getValue(),
                      SyclNamedLambda.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
@@ -1195,10 +1096,10 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling, EnablepProfilingFlag,
-                     EnablepProfilingFlag);
+    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling, EnablepProfiling.getValue(),
+                     EnablepProfiling.getValue());
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
-                     RuleFileOpt.getNumOccurrences());
+                     RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
@@ -1232,9 +1133,9 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (MigrateBuildScriptOnly) {
-    loadMainSrcFileInfo(OutRoot);
-    collectCmakeScriptsSpecified(OptParser, InRoot, OutRoot);
-    doCmakeScriptMigration(InRoot, OutRoot);
+    loadMainSrcFileInfo(OutRootPath);
+    collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
+    doCmakeScriptMigration(InRootPath, OutRootPath);
     ShowStatus(MigrationCmakeScriptCompleted);
     return MigrationSucceeded;
   }
@@ -1256,9 +1157,9 @@ int runDPCT(int argc, const char **argv) {
                           {PassKind::PK_Analysis, PassKind::PK_Migration},
                           Tool.getFiles().getVirtualFileSystemPtr());
 
-    if (ProcessAllFlag) {
-      clang::tooling::SetFileProcessHandle(InRoot.getCanonicalPath(),
-                                           OutRoot.getCanonicalPath(),
+    if (ProcessAll) {
+      clang::tooling::SetFileProcessHandle(InRootPath.getCanonicalPath(),
+                                           OutRootPath.getCanonicalPath(),
                                            processAllFiles);
     }
 
@@ -1350,7 +1251,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   if (DpctGlobalInfo::isAnalysisModeEnabled()) {
-    if (AnalysisModeOutputFile.empty()) {
+    if (AnalysisModeOutputFile.getValue().empty()) {
       dumpAnalysisModeStatics(llvm::outs());
     } else {
       dpct::RawFDOStream Out(AnalysisModeOutputFile);
@@ -1376,19 +1277,19 @@ int runDPCT(int argc, const char **argv) {
     if (ReportType.getValue() == ReportTypeEnum::RTE_Diags) {
       saveDiagsReport();
     }
-    if (ReportOnlyFlag) {
+    if (ReportOnly) {
       DumpOutputFile();
       return MigrationSucceeded;
     }
   }
 
   // if run was successful
-  int Status = saveNewFiles(Tool, InRoot, OutRoot, ReplCUDA, ReplSYCL);
+  int Status = saveNewFiles(Tool, InRootPath, OutRootPath, ReplCUDA, ReplSYCL);
 
-  if (DpctGlobalInfo::getBuildScript() == BuildScript::BS_Cmake) {
-    loadMainSrcFileInfo(OutRoot);
-    collectCmakeScripts(InRoot, OutRoot);
-    doCmakeScriptMigration(InRoot, OutRoot);
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
+    loadMainSrcFileInfo(OutRootPath);
+    collectCmakeScripts(InRootPath, OutRootPath);
+    doCmakeScriptMigration(InRootPath, OutRootPath);
   }
 
   ShowStatus(Status);
@@ -1399,7 +1300,7 @@ int runDPCT(int argc, const char **argv) {
 int run(int argc, const char **argv) {
   int Status = runDPCT(argc, argv);
   if (IsUsingDefaultOutRoot) {
-    removeDefaultOutRootFolder(OutRoot.getCanonicalPath());
+    removeDefaultOutRootFolder(OutRootPath.getCanonicalPath());
   }
   return Status;
 }
