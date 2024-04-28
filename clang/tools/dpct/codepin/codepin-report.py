@@ -131,6 +131,7 @@ def is_checkpoint_length_dismatch(cuda_list, sycl_list):
 
 def compare_checkpoint_list(cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_list, sycl_prolog_checkpoint_list, sycl_epilog_checkpoint_list):
     global match_checkpoint_num
+    global dismatch_checkpoint_num
     global checkpoint_size
     failed_log  = ""
     is_checkpoint_length_dismatch(cuda_prolog_checkpoint_list, sycl_prolog_checkpoint_list)
