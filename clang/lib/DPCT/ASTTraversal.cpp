@@ -2530,6 +2530,20 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       functionDecl(HasLongLongVecTypeArg()).bind("vectorTypeInTemplateArg"),
       this);
+
+  auto HasVecEleTypeArg = [&]() {
+    return hasAnyTemplateArgument(refersToType(anyOf(
+        builtinType().bind("builtinType"),
+        hasDeclaration(namedDecl(hasAnyName("__half", "half", "__nv_bfloat16",
+                                            "nv_bfloat16"))
+                           .bind("namedDecl")))));
+  };
+  MF.addMatcher(
+      cxxStdInitializerListExpr(
+          hasType(classTemplateSpecializationDecl(HasVecEleTypeArg())),
+          hasAncestor(callExpr()))
+          .bind("cxxStdInitializerListExpr"),
+      this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -2692,6 +2706,23 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       report(D->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false, TypeStr,
              MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr));
     }
+  }
+
+  if (const auto *SILE = getNodeAsType<CXXStdInitializerListExpr>(
+          Result, "cxxStdInitializerListExpr")) {
+    std::string EleName = "";
+    if (const auto *BT =
+            getAssistNodeAsType<BuiltinType>(Result, "builtinType")) {
+      EleName = BT->getName(DpctGlobalInfo::getContext().getPrintingPolicy());
+    } else if (const auto *ND =
+                   getAssistNodeAsType<NamedDecl>(Result, "namedDecl")) {
+      auto Iter = MapNames::TypeNamesMap.find(ND->getNameAsString());
+      if (Iter != MapNames::TypeNamesMap.end()) {
+        EleName = Iter->second->NewName;
+      }
+    }
+    emplaceTransformation(new InsertText(
+        SILE->getBeginLoc(), "std::initializer_list<" + EleName + ">"));
   }
 }
 

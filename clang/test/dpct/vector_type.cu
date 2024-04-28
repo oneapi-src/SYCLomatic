@@ -4,6 +4,8 @@
 
 #include <vector>
 
+#include "cuda_fp16.h"
+
 // CHECK: void func3_char1(int8_t a, int8_t b, int8_t c) {
 void func3_char1(char1 a, char1 b, char1 c) {
 }
@@ -3711,4 +3713,63 @@ template <typename T> T f() {
 template <> longlong4 f<longlong4>() {
   longlong4 a;
   return a;
+}
+
+void char_overload(std::vector<char>) {}
+void char_overload(std::vector<char1>) {}
+void uchar_overload(std::vector<unsigned char>) {}
+void uchar_overload(std::vector<uchar2>) {}
+void short_overload(std::vector<short>) {}
+void short_overload(std::vector<short3>) {}
+void ushort_overload(std::vector<ushort>) {}
+void ushort_overload(std::vector<ushort4>) {}
+void int_overload(std::vector<int>) {}
+void int_overload(std::vector<int1>) {}
+void uint_overload(std::vector<uint>) {}
+void uint_overload(std::vector<uint2>) {}
+void long_overload(std::vector<long>) {}
+void long_overload(std::vector<long3>) {}
+void ulong_overload(std::vector<ulong>) {}
+void ulong_overload(std::vector<ulong4>) {}
+void longlong_overload(std::vector<long long>) {}
+void longlong_overload(std::vector<longlong1>) {}
+void ulonglong_overload(std::vector<unsigned long long>) {}
+void ulonglong_overload(std::vector<ulonglong2>) {}
+void float_overload(std::vector<float>) {}
+void float_overload(std::vector<float3>) {}
+void double_overload(std::vector<double>) {}
+void double_overload(std::vector<double4>) {}
+void __half_overload(std::vector<__half>) {}
+void __half_overload(std::vector<__half2>) {}
+void half_overload(std::vector<half>) {}
+void half_overload(std::vector<half2>) {}
+void initializer_list_expr_call() {
+  // CHECK: char_overload(std::initializer_list<char>{1, 1});
+  char_overload({1, 1});
+  // CHECK: uchar_overload(std::initializer_list<unsigned char>{1, 1});
+  uchar_overload({1, 1});
+  // CHECK: short_overload(std::initializer_list<short>{1, 1});
+  short_overload({1, 1});
+  // CHECK: ushort_overload(std::initializer_list<unsigned short>{1, 1});
+  ushort_overload({1, 1});
+  // CHECK: int_overload(std::initializer_list<int>{1, 1});
+  int_overload({1, 1});
+  // CHECK: uint_overload(std::initializer_list<unsigned int>{1, 1});
+  uint_overload({1, 1});
+  // CHECK: long_overload(std::initializer_list<long>{1, 1});
+  long_overload({1, 1});
+  // CHECK: ulong_overload(std::initializer_list<unsigned long>{1, 1});
+  ulong_overload({1, 1});
+  // CHECK: longlong_overload(std::initializer_list<long long>{1, 1});
+  longlong_overload({1, 1});
+  // CHECK: ulonglong_overload(std::initializer_list<unsigned long long>{1, 1});
+  ulonglong_overload({1, 1});
+  // CHECK: float_overload(std::initializer_list<float>{1, 1});
+  float_overload({1, 1});
+  // CHECK: double_overload(std::initializer_list<double>{1, 1});
+  double_overload({1, 1});
+  // CHECK: __half_overload(std::initializer_list<sycl::half>{1, 1});
+  __half_overload({1, 1});
+  // CHECK: half_overload(std::initializer_list<sycl::half>{1, 1});
+  half_overload({1, 1});
 }

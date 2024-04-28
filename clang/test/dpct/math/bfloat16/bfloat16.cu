@@ -3,6 +3,8 @@
 // RUN: dpct --format-range=none -out-root %T/math/bfloat16/bfloat16 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/math/bfloat16/bfloat16/bfloat16.dp.cpp
 
+#include <vector>
+
 #include "cuda_bf16.h"
 
 // CHECK: class C : public sycl::marray<sycl::ext::oneapi::bfloat16, 2> {
@@ -677,4 +679,15 @@ __global__ void kernelFuncBfloat162Math() {
   bf162_1 = h2trunc(bf162);
 }
 
-int main() { return 0; }
+void __nv_bfloat16_overload(std::vector<__nv_bfloat16>) {}
+void __nv_bfloat16_overload(std::vector<__nv_bfloat162>) {}
+void nv_bfloat16_overload(std::vector<nv_bfloat16>) {}
+void nv_bfloat16_overload(std::vector<nv_bfloat162>) {}
+
+int main() {
+  // CHECK: __nv_bfloat16_overload(std::initializer_list<sycl::ext::oneapi::bfloat16>{1, 1});
+  __nv_bfloat16_overload({1, 1});
+  // CHECK: nv_bfloat16_overload(std::initializer_list<sycl::ext::oneapi::bfloat16>{1, 1});
+  nv_bfloat16_overload({1, 1});
+  return 0;
+}
