@@ -22,13 +22,18 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
 namespace dpct {
 namespace experimental {
 
-namespace detail {
-inline static std::unordered_set<void *> ptr_unique;
 inline static std::map<std::string, int> api_index;
+inline static std::map<std::string, event_t> event_map;
+
+namespace detail {
+
+inline static std::unordered_set<void *> ptr_unique;
 inline static std::string data_file = "app_runtime_data_record.json";
+
 class logger {
 public:
   logger(const std::string &dump_file)
@@ -40,12 +45,19 @@ public:
   }
 
   template <class... Args>
-  void print_CP(std::string &new_api_name, dpct::experimental::queue_t queue,
-                Args... args) {
+  void print_CP(const std::string &new_api_name, size_t free_byte,
+                size_t total_byte, float elapse_time,
+                dpct::experimental::queue_t queue, Args... args) {
     ptr_unique.clear();
     auto obj = arr.object();
     obj.key("ID");
     obj.value(new_api_name);
+    obj.key("Free Device Memory");
+    obj.value(free_byte);
+    obj.key("Total Device Memory");
+    obj.value(total_byte);
+    obj.key("Elapse Time(ms)");
+    obj.value(elapse_time);
     obj.key("CheckPoint");
     auto cp_obj =
         obj.value<dpct::experimental::detail::json_stringstream::json_obj>();
@@ -135,7 +147,8 @@ public:
                       cudaMemcpyDeviceToHost, queue);
       cudaStreamSynchronize(queue);
 #else
-      queue->memcpy(h_data, value, size * sizeof(PointeeType)).wait();
+      queue->memcpy((void *)h_data, (void *)value, size * sizeof(PointeeType))
+          .wait();
 #endif
       dump_addr = h_data;    
     }
@@ -181,16 +194,10 @@ public:
 };
 
 template <class... Args>
-void gen_log_API_CP(const std::string &api_name,
+void gen_log_API_CP(const std::string &api_name, size_t free_byte,
+                    size_t total_byte, float elapse_time,
                     dpct::experimental::queue_t queue, Args... args) {
-  if (api_index.find(api_name) == api_index.end()) {
-    api_index[api_name] = 0;
-  } else {
-    api_index[api_name]++;
-  }
-  std::string new_api_name =
-      api_name + ":" + std::to_string(api_index[api_name]);
-  log.print_CP(new_api_name, queue, args...);
+  log.print_CP(api_name, free_byte, total_byte, elapse_time, queue, args...);
 }
 } // namespace detail
 
@@ -208,18 +215,30 @@ template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name,
                        dpct::experimental::queue_t queue, Args&&... args) {
   synchronize(queue);
+  if (api_index.find(api_name) == api_index.end()) {
+    api_index[api_name] = 0;
+  } else {
+    api_index[api_name]++;
+  }
+  std::string new_api_name =
+      api_name + ":" + std::to_string(api_index[api_name]);
   size_t free_byte, total_byte;
 #ifdef __NVCC__
   cudaMemGetInfo(&free_byte, &total_byte);
   cudaEvent_t event;
   cudaEventCreate(&event);
   cudaEventRecord(event, queue);
+  event_map[new_api_name] = event;
 #else
-  dpct::get_current_device().get_memory_info(free_mem, total_mem);
+  dpct::get_current_device().get_memory_info(free_byte, total_byte);
+#ifdef DPCT_PROFILING_ENABLED
+  sycl::event event = queue->ext_oneapi_submit_barrier();
+  event_map[new_api_name] = event;
+#endif //DPCT_PROFILING_ENABLED
 #endif
 
-  dpct::experimental::detail::gen_log_API_CP(api_name, queue,
-                                             args...);
+  dpct::experimental::detail::gen_log_API_CP(new_api_name, free_byte,
+                                             total_byte, 0.0f, queue, args...);
 }
 
 /// Generate API check point epilog.
@@ -229,16 +248,33 @@ void gen_prolog_API_CP(const std::string &api_name,
 template <class... Args>
 void gen_epilog_API_CP(const std::string &api_name,
                        dpct::experimental::queue_t queue, Args&&... args) {
+  std::string new_api_name =
+      api_name + ":" + std::to_string(api_index[api_name]);
   size_t free_byte, total_byte;
+  float kernel_elapsed_time = 0.0f;
 #ifdef __NVCC__
   cudaMemGetInfo(&free_byte, &total_byte);
   cudaEvent_t event;
   cudaEventCreate(&event);
   cudaEventRecord(event, queue);
+  auto pre_event = event_map[new_api_name];
+  cudaEventSynchronize(event);
+  cudaEventElapsedTime(&kernel_elapsed_time, pre_event, event);
 #else
-  dpct::get_current_device().get_memory_info(free_mem, total_mem);
+#ifdef DPCT_PROFILING_ENABLED
+  sycl::event event = queue->ext_oneapi_submit_barrier();
+  auto pre_event = event_map[new_api_name];
+  event.wait_and_throw();
+  kernel_elapsed_time =
+      (event.get_profiling_info<sycl::info::event_profiling::command_end>() -
+       pre_event
+           .get_profiling_info<sycl::info::event_profiling::command_start>()) /
+      1000000.0f;
+#endif //DPCT_PROFILING_ENABLED
+  dpct::get_current_device().get_memory_info(free_byte, total_byte);
 #endif
-  gen_prolog_API_CP(api_name, queue, args...);
+  dpct::experimental::detail::gen_log_API_CP(
+      new_api_name, free_byte, total_byte, kernel_elapsed_time, queue, args...);
 }
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {

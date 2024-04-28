@@ -31,6 +31,12 @@ typedef cudaStream_t queue_t;
 typedef dpct::queue_ptr queue_t;
 #endif
 
+#ifdef __NVCC__
+typedef cudaEvent_t event_t;
+#else
+typedef sycl::event event_t;
+#endif
+
 namespace detail {
 
 inline bool is_dev_ptr(void *p) {
@@ -95,6 +101,8 @@ public:
     };
 
     void value(std::string_view value) { js.os << "\"" << value << "\""; };
+    void value(float value) { js.os << "\"" << value << "\""; };
+    void value(size_t value) { js.os << "\"" << value << "\""; };
     ~json_obj() {
       js.indent.resize(js.indent.size() - js.tab_length);
       js.os << js.newline;
@@ -296,7 +304,7 @@ public:
 #else
 template <> class data_ser<sycl::int3> {
 public:
-  static void dump(json_stringstream &ss, const int3 &value,
+  static void dump(json_stringstream &ss, const sycl::int3 &value,
                    dpct::experimental::queue_t queue) {
     auto arr = ss.array();
     {
@@ -307,7 +315,7 @@ public:
               .value<dpct::experimental::detail::json_stringstream::json_obj>();
       dpct::experimental::detail::data_ser<int>::print_type_name(value_x);
       value_x.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.x, queue);
+      dpct::experimental::detail::data_ser<int>::dump(ss, value.x(), queue);
     }
     {
       auto obj_y = arr.object();
@@ -317,7 +325,7 @@ public:
               .value<dpct::experimental::detail::json_stringstream::json_obj>();
       dpct::experimental::detail::data_ser<int>::print_type_name(value_y);
       value_y.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.y, queue);
+      dpct::experimental::detail::data_ser<int>::dump(ss, value.y(), queue);
     }
     {
       auto obj_z = arr.object();
@@ -327,7 +335,7 @@ public:
               .value<dpct::experimental::detail::json_stringstream::json_obj>();
       dpct::experimental::detail::data_ser<int>::print_type_name(value_z);
       value_z.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.z, queue);
+      dpct::experimental::detail::data_ser<int>::dump(ss, value.z(), queue);
     }
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -338,7 +346,7 @@ public:
 
 template <> class data_ser<sycl::float3> {
 public:
-  static void dump(json_stringstream &ss, const float3 &value,
+  static void dump(json_stringstream &ss, const sycl::float3 &value,
                    dpct::experimental::queue_t queue) {
     auto arr = ss.array();
     {
@@ -349,7 +357,7 @@ public:
               .value<dpct::experimental::detail::json_stringstream::json_obj>();
       dpct::experimental::detail::data_ser<float>::print_type_name(value_x);
       value_x.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.x, queue);
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.x(), queue);
     }
     {
       auto obj_y = arr.object();
@@ -359,7 +367,7 @@ public:
               .value<dpct::experimental::detail::json_stringstream::json_obj>();
       dpct::experimental::detail::data_ser<float>::print_type_name(value_y);
       value_y.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.y, queue);
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.y(), queue);
     }
     {
       auto obj_z = arr.object();
@@ -369,7 +377,7 @@ public:
               .value<dpct::experimental::detail::json_stringstream::json_obj>();
       dpct::experimental::detail::data_ser<float>::print_type_name(value_z);
       value_z.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.z, queue);
+      dpct::experimental::detail::data_ser<float>::dump(ss, value.z(), queue);
     }
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -395,7 +403,8 @@ public:
                       queue);
       cudaStreamSynchronize(queue);
 #else
-      queue->memcpy(h_data, value, size * sizeof(PointeeType)).wait();
+      queue->memcpy((void *)h_data, (void *)value, strlen(value) * sizeof(char))
+          .wait();
 #endif
       dump_addr = h_data;    
     }
