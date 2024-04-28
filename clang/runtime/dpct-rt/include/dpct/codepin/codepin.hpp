@@ -16,6 +16,7 @@
 #include <memory>
 #include <numeric>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_set>
@@ -25,45 +26,81 @@ namespace dpct {
 namespace experimental {
 
 namespace detail {
-
-class Logger {
+inline static std::unordered_set<void *> ptr_unique;
+inline static std::map<std::string, int> api_index;
+inline static std::string data_file = "app_runtime_data_record.json";
+class logger {
 public:
-  Logger(const std::string &dump_file_prefix)
-      : dump_file_prefix(dump_file_prefix) {
-    auto now = std::chrono::system_clock::now();
-    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-    std::tm *now_tm = std::localtime(&now_time);
-    std::stringstream strs;
-    strs << std::put_time(now_tm, "%Y-%m-%d_%H-%M-%S");
-    opf.open(dump_file_prefix + strs.str() + ".json");
-    ss.print_left_bracket();
-  }
-
-  ~Logger() {
-    this->get_stringstream().remove_last_comma_in_stream();
-    ss.print_right_bracket();
-    opf << ss.str();
-    opf.close();
-  }
+  logger(const std::string &dump_file)
+      : opf(dump_file), json_ss(opf), arr(json_ss) {}
+  ~logger() {}
 
   dpct::experimental::detail::json_stringstream &get_stringstream() {
-    return this->ss;
+    return this->json_ss;
+  }
+
+  template <class... Args>
+  void print_CP(std::string &new_api_name, dpct::experimental::queue_t queue,
+                Args... args) {
+    ptr_unique.clear();
+    auto obj = arr.object();
+    obj.key("ID");
+    obj.value(new_api_name);
+    obj.key("CheckPoint");
+    auto cp_obj =
+        obj.value<dpct::experimental::detail::json_stringstream::json_obj>();
+    print_args(cp_obj, queue, args...);
+  }
+
+  template <class First, class... RestArgs>
+  void print_args(json_stringstream::json_obj &obj,
+                  dpct::experimental::queue_t queue, std::string_view arg_name,
+                  First &arg) {
+    obj.key(arg_name);
+    auto type_obj =
+        obj.value<dpct::experimental::detail::json_stringstream::json_obj>();
+    dpct::experimental::detail::data_ser<First>::print_type_name(type_obj);
+    type_obj.key("Data");
+    dpct::experimental::detail::data_ser<First>::dump(json_ss, arg, queue);
+  }
+
+  template <class First, class... RestArgs>
+  void print_args(json_stringstream::json_obj &obj,
+                  dpct::experimental::queue_t queue, std::string_view arg_name,
+                  First &arg, RestArgs... args) {
+    obj.key(arg_name);
+    {
+      auto type_obj =
+          obj.value<dpct::experimental::detail::json_stringstream::json_obj>();
+      dpct::experimental::detail::data_ser<First>::print_type_name(type_obj);
+      type_obj.key("Data");
+      dpct::experimental::detail::data_ser<First>::dump(json_ss, arg, queue);
+    }
+    print_args(obj, queue, args...);
   }
 
 private:
-  std::string dump_file_prefix;
   std::ofstream opf;
-  dpct::experimental::detail::json_stringstream ss;
+  dpct::experimental::detail::json_stringstream json_ss;
+  dpct::experimental::detail::json_stringstream::json_array arr;
 };
 
-inline static std::unordered_set<void *> ptr_unique;
-inline static std::map<std::string, int> api_index;
 #ifdef __NVCC__
 inline static std::string data_file_prefix = "CodePin_CUDA_";
 #else
 inline static std::string data_file_prefix = "CodePin_SYCL_";
 #endif
-inline static Logger log(data_file_prefix);
+
+std::string get_data_file_name(std::string_view data_file_prefix) {
+  auto now = std::chrono::system_clock::now();
+  std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+  std::tm *now_tm = std::localtime(&now_time);
+  std::stringstream strs;
+  strs << data_file_prefix << std::put_time(now_tm, "%Y-%m-%d_%H-%M-%S")<<".json";
+  return strs.str();
+}
+
+inline static logger log(get_data_file_name(data_file_prefix));
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
   static std::map<void *, uint32_t> ptr_size_map;
@@ -93,85 +130,70 @@ inline bool is_dev_ptr(void *p) {
 }
 
 template <class T>
-class DataSer<T, typename std::enable_if<std::is_pointer<T>::value>::type> {
+class data_ser<T*, void> {
 public:
-  static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
-                   dpct::experimental::StreamType stream) {
+  static void dump(dpct::experimental::detail::json_stringstream &ss, T* value,
+                   dpct::experimental::queue_t queue) {
     if (ptr_unique.find(value) != ptr_unique.end()) {
       return;
     }
     ptr_unique.insert(value);
-    ss.print_type_begin("Pointer");
     int size = get_ptr_size_in_bytes(value);
     size = size == 0 ? 1 : size / sizeof(*value);
-    using PointedType =
-        std::remove_reference_t<std::remove_cv_t<std::remove_pointer_t<T>>>;
-    if (is_dev_ptr(value)) {
-      PointedType *h_data = new PointedType[size];
+    using PointeeType =
+        std::remove_cv_t<std::remove_pointer_t<T>>;
+    PointeeType *dump_addr = value;
+    bool is_dev = is_dev_ptr(value);
+    if (is_dev) {
+      PointeeType *h_data = new PointeeType[size];
 #ifdef __NVCC__
-      cudaMemcpyAsync(h_data, value, size * sizeof(PointedType),
-                      cudaMemcpyDeviceToHost, stream);
-      cudaStreamSynchronize(stream);
+      cudaMemcpyAsync(h_data, value, size * sizeof(PointeeType),
+                      cudaMemcpyDeviceToHost, queue);
+      cudaStreamSynchronize(queue);
 #else
-      stream->memcpy(h_data, value, size * sizeof(PointedType)).wait();
+      queue->memcpy(h_data, value, size * sizeof(PointeeType)).wait();
 #endif
-      for (int i = 0; i < size; ++i) {
-        dpct::experimental::detail::DataSer<PointedType>::dump(
-            ss, *(h_data + i), stream);
-        if (i != size - 1)
-          ss.print_comma();
-      }
-      delete[] h_data;
-    } else {
-      for (int i = 0; i < size; ++i) {
-        dpct::experimental::detail::DataSer<PointedType>::dump(ss, *(value + i),
-                                                               stream);
-        if (i != size - 1)
-          ss.print_comma();
-      }
+      dump_addr = h_data;    
     }
-
-    ss.print_type_end();
+    auto arr = ss.array();
+    for (int i = 0; i < size; ++i) {
+      auto obj = arr.object();
+      dpct::experimental::detail::data_ser<PointeeType>::print_type_name(obj);
+      obj.key("Data");
+      dpct::experimental::detail::data_ser<PointeeType>::dump(
+          ss, *(dump_addr + i), queue);
+    }
+    if(is_dev)
+      delete[] dump_addr;
+  }
+  static void print_type_name(
+      dpct::experimental::detail::json_stringstream::json_obj &obj) {
+    obj.key("Type");
+    obj.value("Pointer");
   }
 };
 
 template <class T>
-class DataSer<T, typename std::enable_if<std::is_array<T>::value>::type> {
+class data_ser<T, typename std::enable_if<std::is_array<T>::value>::type> {
 public:
   static void dump(dpct::experimental::detail::json_stringstream &ss, T value,
-                   dpct::experimental::StreamType stream) {
-    ss.print_type_begin("Array");
+                   dpct::experimental::queue_t queue) {
     size_t size = sizeof(T) / sizeof(value[0]);
     for (size_t i = 0; i < size; i++) {
-      dpct::experimental::detail::DataSer<std::remove_extent_t<T>>::dump(
-          ss, value[i], stream);
-      if (i != (size - 1)) {
-        ss.print_comma();
-      }
+      dpct::experimental::detail::data_ser<std::remove_extent_t<T>>::dump(
+          ss, value[i], queue);
     }
-    ss.print_type_end();
+  }
+  static void print_type_name(
+      dpct::experimental::detail::json_stringstream::json_obj &obj) {
+    obj.key("Type");
+    obj.value("Array");
   }
 };
 
-inline void serialize_var(dpct::experimental::detail::json_stringstream &ss,
-                          dpct::experimental::StreamType stream) {
-  ;
-}
-
-template <class T, class... Args>
-void serialize_var(dpct::experimental::detail::json_stringstream &ss,
-                   dpct::experimental::StreamType stream,
-                   const std::string &var_name, T var, Args... args) {
-  ss.print_dict_item_key(var_name);
-  ptr_unique.clear();
-  dpct::experimental::detail::DataSer<T>::dump(ss, var, stream);
-  ss.print_comma();
-  serialize_var(ss, stream, args...);
-}
-
 template <class... Args>
 void gen_log_API_CP(const std::string &api_name,
-                    dpct::experimental::StreamType stream, Args... args) {
+                    dpct::experimental::queue_t queue, Args... args) {
   if (api_index.find(api_name) == api_index.end()) {
     api_index[api_name] = 0;
   } else {
@@ -179,10 +201,7 @@ void gen_log_API_CP(const std::string &api_name,
   }
   std::string new_api_name =
       api_name + ":" + std::to_string(api_index[api_name]);
-  log.get_stringstream().print_ID_checkpoint_begin(new_api_name);
-  serialize_var(log.get_stringstream(), stream, args...);
-  log.get_stringstream().remove_last_comma_in_stream();
-  log.get_stringstream().print_ID_checkpoint_end();
+  log.print_CP(new_api_name, queue, args...);
 }
 } // namespace detail
 
@@ -198,10 +217,20 @@ inline void synchronize(sycl::queue *q) { q->wait(); }
 /// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name,
-                       dpct::experimental::StreamType queue, Args... args) {
+                       dpct::experimental::queue_t queue, Args&&... args) {
   synchronize(queue);
-  std::string prolog_tag = api_name + ":" + "prolog";
-  dpct::experimental::detail::gen_log_API_CP(prolog_tag, queue, args...);
+  size_t free_byte, total_byte;
+#ifdef __NVCC__
+  cudaMemGetInfo(&free_byte, &total_byte);
+  cudaEvent_t event;
+  cudaEventCreate(&event);
+  cudaEventRecord(event, queue);
+#else
+  dpct::get_current_device().get_memory_info(free_mem, total_mem);
+#endif
+
+  dpct::experimental::detail::gen_log_API_CP(api_name, queue,
+                                             args...);
 }
 
 /// Generate API check point epilog.
@@ -210,10 +239,17 @@ void gen_prolog_API_CP(const std::string &api_name,
 /// \param args The var name string and variable value pair list.
 template <class... Args>
 void gen_epilog_API_CP(const std::string &api_name,
-                       dpct::experimental::StreamType queue, Args... args) {
-  synchronize(queue);
-  std::string epilog_tag = api_name + ":" + "epilog";
-  dpct::experimental::detail::gen_log_API_CP(epilog_tag, queue, args...);
+                       dpct::experimental::queue_t queue, Args&&... args) {
+  size_t free_byte, total_byte;
+#ifdef __NVCC__
+  cudaMemGetInfo(&free_byte, &total_byte);
+  cudaEvent_t event;
+  cudaEventCreate(&event);
+  cudaEventRecord(event, queue);
+#else
+  dpct::get_current_device().get_memory_info(free_mem, total_mem);
+#endif
+  gen_prolog_API_CP(api_name, queue, args...);
 }
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {

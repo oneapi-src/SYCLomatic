@@ -1,6 +1,6 @@
 // CHECK:[
 // CHECK:  {
-// CHECK:    "ID": {{.*}}
+// CHECK:    "ID": {{.*}},
 // CHECK:    "CheckPoint": {
 // CHECK:      "d_a": {
 // CHECK:        "Type": "Pointer" ,
