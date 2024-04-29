@@ -408,7 +408,8 @@ int writeReplacementsToFiles(
     std::unordered_map<clang::tooling::UnifiedPath,
                        std::vector<clang::tooling::Range>>
         &FileBlockLevelFormatRangesMap,
-    clang::dpct::ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
+    clang::dpct::ReplacementType IsForCodePin = RT_ForSYCLMigration) {
+
   volatile ProcessStatus status = MigrationSucceeded;
   clang::tooling::UnifiedPath OutPath;
 
@@ -424,7 +425,7 @@ int writeReplacementsToFiles(
         HasRealReplacements = false;
     }
 
-    if (IsForCUDADebug == clang::dpct::RT_ForSYCLMigration) {
+    if (IsForCodePin != clang::dpct::RT_CUDAWithCodePin) {
       auto Find = IncludeFileMap.find(OutPath);
       if (HasRealReplacements && Find != IncludeFileMap.end()) {
         IncludeFileMap[OutPath] = true;
@@ -457,12 +458,11 @@ int writeReplacementsToFiles(
     // For main file, as it can be compiled or preprocessed with different
     // macro defined, it also needs merge the migration triggered by each
     // command.
-    if (IsForCUDADebug == clang::dpct::RT_ForSYCLMigration) {
+    if (IsForCodePin != clang::dpct::RT_CUDAWithCodePin) {
       SourceProcessType FileType = GetSourceFileType(Entry.first);
       if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
         mergeExternalReps(Entry.first, OutPath, Entry.second);
       } else {
-
         auto Hash = llvm::sys::fs::md5_contents(Entry.first);
         MainSrcFilesDigest.push_back(
             std::make_pair(Entry.first, Hash->digest().c_str()));
@@ -514,7 +514,7 @@ int writeReplacementsToFiles(
 
     // Do not apply PatternRewriters for CodePin CUDA debug file
     if (MapNames::PatternRewriters.empty() ||
-        IsForCUDADebug == clang::dpct::RT_ForCUDADebug) {
+        IsForCodePin == clang::dpct::RT_CUDAWithCodePin) {
       Rewrite
           .getEditBuffer(Rewrite.getSourceMgr().getOrCreateFileID(
               *Result, clang::SrcMgr::C_User /*normal user code*/))
@@ -800,10 +800,15 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                      bool /*false:Not processed in current migration*/>
       MainSrcFileMap;
 
-  std::string YamlFile = appendPath(OutRoot.getCanonicalPath().str(),
-                                    DpctGlobalInfo::getYamlFileName());
   std::string SrcFile = "MainSrcFiles_placehold";
-  std::string DebugCUDAFolder = OutRoot.getCanonicalPath().str() + "_debug";
+  std::string OutRootStr = OutRoot.getCanonicalPath().str();
+  std::string CodePinCUDAFolder = OutRootStr + "_codepin_cuda";
+  if (DpctGlobalInfo::isCodePinEnabled()) {
+    OutRootStr = OutRootStr + "_codepin_sycl";
+  }
+  clang::tooling::UnifiedPath SYCLMigratedOutRoot(OutRootStr);
+  std::string YamlFile =
+      appendPath(OutRootStr, DpctGlobalInfo::getYamlFileName());
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
     auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
     for (const auto &Repl : PreTU->Replacements) {
@@ -845,19 +850,17 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     // included, migrate these files into *.dp.cpp files.
     auto GroupResult = groupReplacementsByFile(
         Rewrite.getSourceMgr().getFileManager(), ReplSYCL);
-
     if (auto RewriteStatus = writeReplacementsToFiles(
-            ReplSYCL, Rewrite, OutRoot.getCanonicalPath().str(), InRoot,
-            MainSrcFilesDigest, MainSrcFileMap, MainSrcFilesRepls,
-            FileRangesMap, FileBlockLevelFormatRangesMap,
-            clang::dpct::RT_ForSYCLMigration))
+            ReplSYCL, Rewrite, OutRootStr, InRoot, MainSrcFilesDigest,
+            MainSrcFileMap, MainSrcFilesRepls, FileRangesMap,
+            FileBlockLevelFormatRangesMap, clang::dpct::RT_ForSYCLMigration))
       return RewriteStatus;
     if (DpctGlobalInfo::isCodePinEnabled()) {
       if (auto RewriteStatus = writeReplacementsToFiles(
-              ReplCUDA, DebugCUDARewrite, DebugCUDAFolder, InRoot,
+              ReplCUDA, DebugCUDARewrite, CodePinCUDAFolder, InRoot,
               MainSrcFilesDigest, MainSrcFileMap, MainSrcFilesRepls,
               FileRangesMap, FileBlockLevelFormatRangesMap,
-              clang::dpct::RT_ForCUDADebug))
+              clang::dpct::RT_CUDAWithCodePin))
         return RewriteStatus;
     }
     // Print the in-root path and the number of processed files
@@ -973,12 +976,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       FilePath = TempFilePath;
 
-      if (!rewriteDir(FilePath, InRoot, OutRoot)) {
+      if (!rewriteDir(FilePath, InRoot, SYCLMigratedOutRoot)) {
         continue;
       }
 
       if (dpct::DpctGlobalInfo::isCodePinEnabled() &&
-          !rewriteDir(DebugFilePath, InRoot, DebugCUDAFolder)) {
+          !rewriteDir(DebugFilePath, InRoot, CodePinCUDAFolder)) {
         continue;
       }
 
@@ -1042,14 +1045,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   if (!BuildScriptFile.empty())
     ScriptFineName = BuildScriptFile;
   if (GenBuildScript)
-    genBuildScript(Tool, InRoot, OutRoot, ScriptFineName);
+    genBuildScript(Tool, InRoot, SYCLMigratedOutRoot, ScriptFineName);
 
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
-    std::string SchemaPathCUDA = DebugCUDAFolder + "/generated_schema.hpp";
-    std::string SchemaPathSYCL =
-        OutRoot.getCanonicalPath().str() + "/generated_schema.hpp";
+    std::string SchemaPathCUDA = CodePinCUDAFolder + "/generated_schema.hpp";
+    std::string SchemaPathSYCL = OutRootStr + "/generated_schema.hpp";
     std::error_code EC;
     createDirectories(path::parent_path(SchemaPathCUDA));
     createDirectories(path::parent_path(SchemaPathSYCL));
@@ -1060,7 +1062,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
     genCodePinHeader(SchemaStreamSYCL, false);
   }
-  processallOptionAction(InRoot, OutRoot);
+  processallOptionAction(InRoot, SYCLMigratedOutRoot);
 
   return status;
 }

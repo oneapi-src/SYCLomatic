@@ -107,11 +107,7 @@ SETGET_MATRIX_ASYNC(cublasGetMatrixAsync_64)
            BUFFER_OR_USM_PTR(ARG(7), TYPE), ARG(8),                            \
            BUFFER_OR_USM_PTR(ARG(9), TYPE), ARG(10),                           \
            SCALAR_INPUT(ARG(11), TYPE), BUFFER_OR_USM_PTR(ARG(12), TYPE),      \
-           ARG(13),                                                            \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
-                ARG(#IS_COMPLEX)))))
+           ARG(13))))
 GEMM(cublasHgemm, MapNames::getClNamespace() + "half", false)
 GEMM(cublasSgemm_v2, "float", false)
 GEMM(cublasDgemm_v2, "double", false)
@@ -719,11 +715,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
            ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE),                        \
            BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
            SCALAR_INPUT(ARG(8), #TYPE), BUFFER_OR_USM_PTR(ARG(9), #TYPE),      \
-           ARG(10),                                                            \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
-                ARG(#IS_COMPLEX)))))
+           ARG(10))))
 SYRK(cublasSsyrk_v2, float, false)
 SYRK(cublasDsyrk_v2, double, false)
 SYRK(cublasCsyrk_v2, std::complex<float>, true)
@@ -745,11 +737,7 @@ SYRK(cublasZsyrk_v2_64, std::complex<double>, true)
            BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
            BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
            SCALAR_INPUT(ARG(10), #TYPE), BUFFER_OR_USM_PTR(ARG(11), #TYPE),    \
-           ARG(12),                                                            \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
-                ARG(#IS_COMPLEX)))))
+           ARG(12))))
 SYMM(cublasSsymm_v2, float, false)
 SYMM(cublasDsymm_v2, double, false)
 SYMM(cublasCsymm_v2, std::complex<float>, true)
@@ -771,11 +759,7 @@ SYMM(cublasZsymm_v2_64, std::complex<double>, true)
            BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
            ARG(5), ARG(6), SCALAR_INPUT(ARG(7), #TYPE),                        \
            BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
-           BUFFER_OR_USM_PTR(ARG(10), #TYPE), ARG(11),                         \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
-                ARG(#IS_COMPLEX)))))
+           BUFFER_OR_USM_PTR(ARG(10), #TYPE), ARG(11))))
 TRSM(cublasStrsm_v2, float, false)
 TRSM(cublasDtrsm_v2, double, false)
 TRSM(cublasCtrsm_v2, std::complex<float>, true)
@@ -797,10 +781,7 @@ TRSM(cublasZtrsm_v2_64, std::complex<double>, true)
            BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
            BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
            SCALAR_INPUT(ARG(10), #TYPE), BUFFER_OR_USM_PTR(ARG(11), #TYPE),    \
-           ARG(12),                                                            \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"), ARG("true")))))
+           ARG(12))))
 HEMM(cublasChemm_v2, std::complex<float>)
 HEMM(cublasZhemm_v2, std::complex<double>)
 HEMM(cublasChemm_v2_64, std::complex<float>)
@@ -817,10 +798,7 @@ HEMM(cublasZhemm_v2_64, std::complex<double>)
            ARG(3), ARG(4), SCALAR_INPUT(ARG(5), #TYPE2),                       \
            BUFFER_OR_USM_PTR(ARG(6), #TYPE1), ARG(7),                          \
            SCALAR_INPUT(ARG(8), #TYPE2), BUFFER_OR_USM_PTR(ARG(9), #TYPE1),    \
-           ARG(10),                                                            \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"), ARG("true")))))
+           ARG(10))))
 HERK(cublasCherk_v2, std::complex<float>, float)
 HERK(cublasZherk_v2, std::complex<double>, double)
 HERK(cublasCherk_v2_64, std::complex<float>, float)
@@ -838,11 +816,7 @@ HERK(cublasZherk_v2_64, std::complex<double>, double)
            BUFFER_OR_USM_PTR(ARG(6), #TYPE), ARG(7),                           \
            BUFFER_OR_USM_PTR(ARG(8), #TYPE), ARG(9),                           \
            SCALAR_INPUT(ARG(10), #TYPE), BUFFER_OR_USM_PTR(ARG(11), #TYPE),    \
-           ARG(12),                                                            \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
-                ARG(#IS_COMPLEX)))))
+           ARG(12))))
 SYR2K(cublasSsyr2k_v2, float, false)
 SYR2K(cublasDsyr2k_v2, double, false)
 SYR2K(cublasCsyr2k_v2, std::complex<float>, true)
@@ -864,10 +838,7 @@ SYR2K(cublasZsyr2k_v2_64, std::complex<double>, true)
            BUFFER_OR_USM_PTR(ARG(6), #TYPE1), ARG(7),                          \
            BUFFER_OR_USM_PTR(ARG(8), #TYPE1), ARG(9),                          \
            SCALAR_INPUT(ARG(10), #TYPE2), BUFFER_OR_USM_PTR(ARG(11), #TYPE1),  \
-           ARG(12),                                                            \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"), ARG("true")))))
+           ARG(12))))
 HER2K(cublasCher2k_v2, std::complex<float>, float)
 HER2K(cublasZher2k_v2, std::complex<double>, double)
 HER2K(cublasCher2k_v2_64, std::complex<float>, float)
@@ -1656,11 +1627,7 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
            BUFFER_OR_USM_PTR(ARG(7), TYPE), ARG(8), ARG(9),                    \
            BUFFER_OR_USM_PTR(ARG(10), TYPE), ARG(11), ARG(12),                 \
            SCALAR_INPUT(ARG(13), TYPE), BUFFER_OR_USM_PTR(ARG(14), TYPE),      \
-           ARG(15), ARG(16), ARG(17),                                          \
-           CALL(MapNames::getDpctNamespace() + "blas::deduce_compute_mode",    \
-                ARG("std::nullopt"),                                           \
-                MEMBER_CALL(ARG(0), true, "get_math_mode"),                    \
-                ARG(#IS_COMPLEX)))))
+           ARG(15), ARG(16), ARG(17))))
 GEMM_BATCH(cublasHgemmStridedBatched, MapNames::getClNamespace() + "half", false)
 GEMM_BATCH(cublasSgemmStridedBatched, "float", false)
 GEMM_BATCH(cublasDgemmStridedBatched, "double", false)

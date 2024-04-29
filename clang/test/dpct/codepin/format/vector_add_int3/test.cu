@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/out %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
 
 // RUN: cd %T
-// RUN: %if build_lit %{icpx -fsycl  %T/out/test.dp.cpp -o %T/test.run %}
+// RUN: %if build_lit %{icpx -fsycl  %T/out_codepin_sycl/test.dp.cpp -o %T/test.run %}
 // RUN: %if build_lit %{ ./test.run %}
 // RUN: %if build_lit %{ cat %S/app_runtime_data_record.json_ref >> %T/app_runtime_data_record.json_ref %}
 // RUN: %if build_lit %{ cat %T/CodePin_SYCL_*.json >> %T/app_runtime_data_record.json_ref %}
