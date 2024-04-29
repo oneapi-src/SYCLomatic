@@ -259,7 +259,9 @@ def get_checkpoint_list_from_json_file(file_path):
     return prolog_checkpoint_list, epilog_checkpoint_list, used_mem_dic, elapsed_time_dic
 
 def get_bottleneck(cp_list):
-    bottleneck_id = ""
+    bottleneck_id = "N/A"
+    if len(cp_list) > 0:
+        bottleneck_id = list(cp_list.keys())[0]
     max_time = 0.0
     for id, time in cp_list.items():
         if time > max_time:
@@ -268,7 +270,9 @@ def get_bottleneck(cp_list):
     return (bottleneck_id, max_time)
 
 def get_memory_used(cp_list):
-    cp_id = ""
+    cp_id = "N/A"
+    if len(cp_list) > 0:
+        cp_id = list(cp_list.keys())[0]
     max_mem = 0
     for id, used_mem in cp_list.items():
         if used_mem > max_mem:
