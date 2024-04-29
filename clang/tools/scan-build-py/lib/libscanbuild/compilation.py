@@ -86,6 +86,7 @@ IGNORED_FLAGS = {
     "--cudart": 1,
     "--libdevice-directory": 1,
     "-ldir": 1,
+    "-Xfatbin": 1,
     "--use-local-env": 0,
     "--profile": 0,
     "-pg": 0,
@@ -486,6 +487,8 @@ def parse_args(args, directory='.'):
         elif re.match(r'^--cudart=', arg):
             pass
         elif re.match(r'^-cudart=', arg):
+            pass
+        elif re.match(r'^-Xfatbin=', arg):
             pass
         elif re.match(r'^--libdevice-directory=', arg):
             pass

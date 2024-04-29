@@ -1287,7 +1287,7 @@ public:
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
   std::set<clang::SourceLocation> CodePinInstrumentation;
-  
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1308,6 +1308,12 @@ public:
 
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
 class MemVarAnalysisRule : public NamedMigrationRule<MemVarAnalysisRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class MemVarMigrationRule : public NamedMigrationRule<MemVarMigrationRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
