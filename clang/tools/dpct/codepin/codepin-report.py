@@ -15,6 +15,9 @@ UUID = "ID"
 CHECKPOINT = "CheckPoint"
 DATA = "Data"
 TYPE = "Type"
+FREE_MEM = "Free Device Memory"
+TOTAL_MEM = "Total Device Memory"
+TIME_ELAPSED = "Elapse Time(ms)"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
 match_checkpoint_num = 0
@@ -234,6 +237,9 @@ def read_data_from_json_file(file_path):
 
 
 def get_checkpoint_list_from_json_file(file_path):
+    checkpoint_list = {}
+    used_mem_dic = {}
+    elapsed_time_dic = {}
     json_data_list = read_data_from_json_file(file_path)
     prolog_checkpoint_list = {}
     epilog_checkpoint_list = {}
@@ -243,8 +249,32 @@ def get_checkpoint_list_from_json_file(file_path):
             prolog_checkpoint_list[id] = item.get(CHECKPOINT, {})
         elif "epilog" in id:
             epilog_checkpoint_list[id] = item.get(CHECKPOINT, {})
-    return prolog_checkpoint_list, epilog_checkpoint_list
 
+        total_mem = item[TOTAL_MEM]
+        free_mem = item[FREE_MEM]
+        used_mem = int(total_mem) - int(free_mem)
+        used_mem_dic[id] = used_mem
+        time_elapsed = item[TIME_ELAPSED]
+        elapsed_time_dic[id] = float(time_elapsed)
+    return prolog_checkpoint_list, epilog_checkpoint_list, used_mem_dic, elapsed_time_dic
+
+def get_bottleneck(cp_list):
+    bottleneck_id = ""
+    max_time = 0.0
+    for id, time in cp_list.items():
+        if time > max_time:
+            bottleneck_id = id
+            max_time = time
+    return (bottleneck_id, max_time)
+
+def get_memory_used(cp_list):
+    cp_id = ""
+    max_mem = 0
+    for id, used_mem in cp_list.items():
+        if used_mem > max_mem:
+            cp_id = id
+            max_mem = used_mem
+    return (cp_id, max_mem)
 
 def main():
     global match_checkpoint_num
@@ -264,12 +294,15 @@ def main():
     )
     args = parser.parse_args()
 
-    cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_list = (
-        get_checkpoint_list_from_json_file(args.instrumented_cuda_log)
-    )
-    sycl_prolog_checkpoint_list, sycl_epilog_checkpoint_list = (
-        get_checkpoint_list_from_json_file(args.instrumented_sycl_log)
-    )
+    cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_list, mem_used_cuda, time_cuda = get_checkpoint_list_from_json_file(
+        args.instrumented_cuda_log)
+    sycl_prolog_checkpoint_list, sycl_epilog_checkpoint_list, mem_used_sycl, time_sycl = get_checkpoint_list_from_json_file(
+        args.instrumented_sycl_log)
+    
+    bottleneck_cuda = get_bottleneck(time_cuda)
+    bottleneck_sycl = get_bottleneck(time_sycl)
+    max_device_memory_cuda = get_memory_used(mem_used_cuda)
+    max_device_memory_sycl = get_memory_used(mem_used_sycl)
 
     failed_log = compare_checkpoint_list(
         cuda_prolog_checkpoint_list,
@@ -277,10 +310,14 @@ def main():
         sycl_prolog_checkpoint_list,
         sycl_epilog_checkpoint_list,
     )
-    with open(CODEPIN_REPORT_FILE, "w") as f:
+    with(open(CODEPIN_REPORT_FILE, 'w')) as f:
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
         f.write("Consistently APIs count, " + str(match_checkpoint_num) + "\n")
+        f.write("Bottleneck Kernel(CUDA), " + str(bottleneck_cuda[0]) + ", time:" + str(bottleneck_cuda[1]) + "\n")
+        f.write("Bottleneck Kernel(SYCL), " + str(bottleneck_sycl[0]) + ", time:" + str(bottleneck_sycl[1]) + "\n")
+        f.write("Peak Device Memory Used(CUDA), " + str(max_device_memory_cuda[1]) + "\n")
+        f.write("Peak Device Memory Used(SYCL), " + str(max_device_memory_sycl[1]) + "\n")
     if failed_log:
         with open(CODEPIN_REPORT_FILE, "a") as f:
             f.write(ERROR_CSV_PATTERN)
