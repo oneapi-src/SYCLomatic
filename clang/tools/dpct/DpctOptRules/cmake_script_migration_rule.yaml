@@ -2264,7 +2264,7 @@
   Priority: Fallback
   CmakeSyntax: target_include_directories_cuda_toolkit_inc
   MatchMode: Partial
-  In: target_include_directories(${value})
+  In: target_include_directories${empty}(${value})
   Out: target_include_directories(${value})
   Subrules:
     value:
@@ -2292,7 +2292,7 @@
   Priority: Fallback
   CmakeSyntax: target_include_directories_cudnn_inc
   MatchMode: Partial
-  In: target_include_directories(${value})
+  In: target_include_directories${empty}(${value})
   Out: target_include_directories(${value})
   Subrules:
     value:
@@ -2306,7 +2306,7 @@
   Priority: Fallback
   CmakeSyntax: target_include_directories_cmake_cuda_toolkit_inc
   MatchMode: Partial
-  In: target_include_directories(${value})
+  In: target_include_directories${empty}(${value})
   Out: target_include_directories(${value})
   Subrules:
     value:
@@ -2320,7 +2320,7 @@
   Priority: Fallback
   CmakeSyntax: target_include_directories_cuda_toolkit_math_inc
   MatchMode: Partial
-  In: target_include_directories(${value})
+  In: target_include_directories${empty}(${value})
   Out: target_include_directories(${value})
   Subrules:
     value:
@@ -2345,7 +2345,7 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: target_sources
-  In: target_sources(${options})
+  In: target_sources${empty}(${options})
   Out: target_sources(${options})
   Subrules:
     sources:
