@@ -23,6 +23,7 @@ namespace clang {
 namespace dpct {
 
 #define DPCT_OPTION(TEMPLATE, TYPE, NAME, ...) OPT_##NAME,
+#define DPCT_OPTIONS_IN_CLANG_TOOLING 0
 enum class DpctOptionNameKind {
 #include "DPCTOptions.inc"
   OPT_NUM

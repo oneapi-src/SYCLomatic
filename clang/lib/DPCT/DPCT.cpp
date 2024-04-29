@@ -204,36 +204,6 @@ UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   return Path;
 }
 
-bool hasOption(int argc, const char **argv, StringRef Opt) {
-  for (auto i = 1; i < argc; ++i) {
-    if (argv[i][0] == '-') {
-      auto O = StringRef(argv[i]);
-      O = O.drop_while([](char input) { return input == '-'; });
-      if (Opt == O)
-        return true;
-    }
-  }
-  return false;
-}
-// Check if there are any options conflicting with '--query-api-mapping'.
-// Now only '--cuda-include-path' and '--extra-arg' are allowed.
-bool hasOptConflictWithQuery(int argc, const char **argv) {
-  for (auto I = 1; I < argc; I++) {
-    auto Opt = StringRef(argv[I]);
-    Opt = Opt.drop_while([](char input) { return input == '-'; });
-    if (!Opt.starts_with("query-api-mapping") &&
-        !Opt.starts_with("cuda-include-path") &&
-        !Opt.starts_with("extra-arg")) {
-      return true;
-    }
-    if (Opt == "query-api-mapping" || Opt == "cuda-include-path" ||
-        Opt == "extra-arg") {
-      ++I; // Skip option value when using option without '='.
-    }
-  }
-  return false;
-}
-
 static bool isCUDAHeaderRequired() { return !MigrateBuildScriptOnly; }
 
 UnifiedPath getInstallPath(const char *invokeCommand) {
@@ -516,6 +486,8 @@ int runDPCT(int argc, const char **argv) {
     return MigrationErrorShowHelp;
   }
   clang::dpct::initCrashRecovery();
+
+  clang::dpct::DpctOptionBase::init();
 
 #if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.

@@ -33,6 +33,8 @@ static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
                          OPTION_NAME, OPTION_VALUES, ...)                      \
   {OPTION_NAME, OPTION_VALUES},
 #define DPCT_SOURCEPATH_OPTION(...)
+#define DPCT_HIDDEN_OPTION(...)
+#define DPCT_ALIASE(ALIASE_FOR, OPTION_NAME, ...) {OPTION_NAME, {}},
 
 #include "clang/DPCT/DPCTOptions.inc"
 };

@@ -26,7 +26,9 @@ inline constexpr DpctOptionBase::BitsType getFlagBit(DpctOptionNameKind Kind) {
   return DpctOptionBase::BitsType(1) << static_cast<unsigned>(Kind);
 }
 
+#ifdef DPCT_DEBUG_BUILD
 StringRef getOptionName(DpctOptionNameKind Kind) {
+#define DPCT_OPTIONS_IN_CLANG_TOOLING 0
 #define DPCT_OPTION(TEMPLATE, TYPE, NAME, ...)                                 \
   case DpctOptionNameKind::OPT_##NAME:                                         \
     return #NAME;
@@ -36,6 +38,7 @@ StringRef getOptionName(DpctOptionNameKind Kind) {
     return "";
   }
 }
+#endif
 
 } // namespace
 
@@ -52,24 +55,24 @@ DpctOptionBase::DpctOptionBase(DpctOptionNameKind Name, DpctOptionClass OC,
 }
 
 inline void DpctOptionBase::addActionGroup(DpctActionKind Action) {
-  ActionGroup[static_cast<unsigned>(Action)] &= FlagBit;
+  ActionGroup[static_cast<unsigned>(Action)] |= FlagBit;
 }
 
 std::vector<DpctOptionBase *> DpctOptionBase::getOptions(BitsType Flag) {
   static constexpr BitsType Mask = getFlagBit(DpctOptionNameKind::OPT_NUM) - 1;
   Flag &= Mask;
   std::vector<DpctOptionBase *> Ret;
-  auto End = DpctOptionList.rend();
+  auto Begin = DpctOptionList.rbegin();
   while (Flag) {
     const auto OptionIter = std::lower_bound(
-        DpctOptionList.rbegin(), End, Flag,
+        Begin, DpctOptionList.rend(), Flag,
         [](const DpctOptionBase *Option, BitsType Flag) -> bool {
           return Option->FlagBit > Flag;
         });
     assert(OptionIter != DpctOptionList.rend());
     Ret.push_back(*OptionIter);
     Flag ^= (*OptionIter)->FlagBit;
-    End = OptionIter;
+    Begin = OptionIter;
   }
   return Ret;
 }
@@ -87,7 +90,7 @@ inline void DpctOptionBase::setExclusive(DpctOptionNameKind OptionA,
 
 inline void DpctOptionBase::setDependency(DpctOptionNameKind DependentOption,
                                           DpctOptionNameKind DependedOption) {
-  getOption(DependentOption)->Exclusive |= getFlagBit(DependedOption);
+  getOption(DependentOption)->Dependencies |= getFlagBit(DependedOption);
 }
 
 void DpctOptionBase::setExclusiveByAction() {
@@ -156,10 +159,6 @@ void DpctOptionBase::init() {
       continue;
     Option->setExclusiveByAction();
   }
-#ifdef _WIN32
-  setExclusive(DpctOptionNameKind::OPT_VcxprojFile,
-               DpctOptionNameKind::OPT_BuildPath);
-#endif
   setDependency(DpctOptionNameKind::OPT_ProcessAll,
                 DpctOptionNameKind::OPT_InRoot);
   setDependency(DpctOptionNameKind::OPT_BuildScriptFile,

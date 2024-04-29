@@ -128,8 +128,6 @@ llvm::Error CommonOptionsParser::init(
 #define DPCT_OPTIONS_VAR 1
 #include "clang/DPCT/DPCTOptions.inc"
 
-  clang::dpct::DpctOptionBase::init();
-
 #else
   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),

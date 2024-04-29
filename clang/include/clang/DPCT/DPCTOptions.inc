@@ -1,18 +1,25 @@
 #ifdef DPCT_OPTIONS_VAR
 
-#define DPCT_OPTION_IMPL(TEMPLATE, TYPE, PARSERCLASS, NAME, ...)               \
-  clang::dpct::DpctOption<TEMPLATE, TYPE, PARSERCLASS> NAME(            \
-      clang::dpct::DpctOptionNameKind::OPT_##NAME, __VA_ARGS__);
+#if DPCT_OPTIONS_IN_CLANG_DPCT
 
-#ifdef DPCT_OPTIONS_IN_CLANG_DPCT
 #define DPCT_OPTION(TEMPLATE, TYPE, NAME, ...)                                 \
-  DPCT_OPTION_IMPL(TEMPLATE, TYPE, llvm::cl::parser<TYPE>, NAME, __VA_ARGS__,  \
-                   llvm::cl::cat(DPCTCat))                 
+  clang::dpct::DpctOption<TEMPLATE, TYPE, llvm::cl::parser<TYPE>> NAME(        \
+      clang::dpct::DpctOptionNameKind::OPT_##NAME, __VA_ARGS__,                \
+      llvm::cl::cat(DPCTCat));
+#define DPCT_OPTION_ACTIONS(...)                                               \
+  { __VA_ARGS__ }
+
+#elif DPCT_OPTIONS_IN_CLANG_TOOLING
+
+#define DPCT_OPTION(TEMPLATE, TYPE, NAME, OPTION_CLASS, OPTION_ACTIONS, ...)   \
+  static TEMPLATE<TYPE, llvm::cl::parser<TYPE>> NAME(                          \
+      __VA_ARGS__, llvm::cl::sub(*llvm::cl::AllSubCommands),                   \
+      llvm::cl::cat(Category));
+#define DPCT_OPTION_ACTIONS(...) 0
+
 #else
-#define DPCT_OPTION(TEMPLATE, TYPE, NAME, ...)                                 \
-  static DPCT_OPTION_IMPL(                                                     \
-      TEMPLATE, TYPE, llvm::cl::parser<TYPE>, NAME, __VA_ARGS__,               \
-      llvm::cl::sub(*llvm::cl::AllSubCommands), llvm::cl::cat(Category))
+
+#define DPCT_OPTION(...)
 
 #endif
 
@@ -23,13 +30,16 @@
 #define DPCT_OPTION_ENUM_VALUE(...)                                            \
   llvm::cl::OptionEnumValue { __VA_ARGS__ }
 #define DPCT_OPTION_VALUES(...) llvm::cl::values(__VA_ARGS__)
-#define DPCT_OPTION_ACTIONS(...)                                               \
-  { __VA_ARGS__ }
 
 #else
 
+#ifndef DPCT_OPTIONS_IN_CLANG_TOOLING
 #define DPCT_OPTIONS_IN_CLANG_TOOLING 1
+#endif
+
+#ifndef DPCT_OPTIONS_IN_CLANG_DPCT
 #define DPCT_OPTIONS_IN_CLANG_DPCT 1
+#endif
 
 #ifndef DPCT_OPTION
 #define DPCT_OPTION(...)
@@ -39,11 +49,12 @@
 #define DPCT_ALIASE(...)
 #endif
 
-#ifndef DPCT_SOURCEPATH_OPTION
-#define DPCT_SOURCEPATH_OPTION(...)                                           \
-  DPCT_OPTION(clang::dpct::list, std::string, __VA_ARGS__)
 #endif
 
+
+#ifndef DPCT_SOURCEPATH_OPTION
+#define DPCT_SOURCEPATH_OPTION(...)                                            \
+  DPCT_OPTION(clang::dpct::list, std::string, __VA_ARGS__)
 #endif
 
 #ifndef DPCT_PATH_OPTION
@@ -61,6 +72,10 @@
   DPCT_OPTION(clang::dpct::opt, bool, __VA_ARGS__, llvm::cl::init(false))
 #endif
 
+#ifndef DPCT_HIDDEN_OPTION
+#define DPCT_HIDDEN_OPTION(...) DPCT_OPTION(__VA_ARGS__, llvm::cl::Hidden)
+#endif
+
 #ifndef DPCT_OPTION_ACTIONS
 #define DPCT_OPTION_ACTIONS(...)
 #endif
@@ -73,7 +88,7 @@
 #define DPCT_OPTION_VALUES(...)
 #endif
 
-#ifdef DPCT_OPTIONS_IN_CLANG_TOOLING
+#if DPCT_OPTIONS_IN_CLANG_TOOLING
 DPCT_PATH_OPTION(
     BuildPath, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
@@ -120,16 +135,16 @@ DPCT_PATH_OPTION(
     llvm::cl::value_desc("file"), llvm::cl::Optional)
 #endif
 
-#define DPCT_SOURCE_PATH_DESC llvm::cl::desc("[<source0> ... <sourceN>]")
+#define DPCT_OPTION_SOURCE_PATH_DESC llvm::cl::desc("[<source0> ... <sourceN>]")
 DPCT_SOURCEPATH_OPTION(
     SourcePaths, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
                         clang::dpct::DpctActionKind::DAK_BuildScript,
                         clang::dpct::DpctActionKind::DAK_Analysis),
-    llvm::cl::Positional, DPCT_SOURCE_PATH_DESC, llvm::cl::ZeroOrMore)
+    llvm::cl::Positional, DPCT_OPTION_SOURCE_PATH_DESC, llvm::cl::ZeroOrMore)
 #undef DPCT_SOURCE_PATH_DESC
 
-DPCT_OPTION(
+DPCT_HIDDEN_OPTION(
     clang::dpct::list, std::string, ArgsBefore,
     clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
@@ -137,12 +152,11 @@ DPCT_OPTION(
                         clang::dpct::DpctActionKind::DAK_Analysis),
     "extra-arg-before",
     cl::desc("Additional argument to prepend to the compiler command line.\n"
-             "Refer to extra-arg option.\n"),
-    llvm::cl::Hidden)
+             "Refer to extra-arg option.\n"))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_TOOLING
 
-#ifdef DPCT_OPTIONS_IN_CLANG_DPCT
+#if DPCT_OPTIONS_IN_CLANG_DPCT
 DPCT_PATH_OPTION(
     InRoot, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
@@ -912,14 +926,17 @@ DPCT_PATH_OPTION(
         "Output to stdout."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTBasicCat))
 
-DPCT_PATH_OPTION(
-    SDKPathOpt, clang::dpct::DpctOptionClass::OC_Attribute,
+DPCT_HIDDEN_OPTION(
+    clang::dpct::opt, std::string, SDKPathOpt,
+    clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
                         clang::dpct::DpctActionKind::DAK_Migration),
     "cuda-path", desc("Directory path of SDK.\n"), llvm::cl::value_desc("dir"),
-     llvm::cl::Optional, llvm::cl::Hidden)
+    llvm::cl::Optional)
 
-DPCT_OPTION(
+#define DPCT_OPTION_PASS_VALUE_DESC                                            \
+  llvm::cl::value_desc("IterationSpaceBuiltinRule,...")
+DPCT_HIDDEN_OPTION(
     clang::dpct::opt, std::string, Passes,
     clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
@@ -928,10 +945,11 @@ DPCT_OPTION(
     llvm::cl::desc(
         "Comma separated list of migration passes, which will be applied.\n"
         "Only the specified passes are applied."),
-    llvm::cl::value_desc("MigrationRule"), llvm::cl::Hidden)
+    DPCT_OPTION_PASS_VALUE_DESC)
+#undef DPCT_OPTION_PASS_VALUE_DESC
 
 #ifdef DPCT_DEBUG_BUILD
-DPCT_OPTION(
+DPCT_HIDDEN_OPTION(
     clang::dpct::opt, std::string, DiagsContent,
     clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
@@ -941,7 +959,7 @@ DPCT_OPTION(
                    "\"transformation\": Detailed migration pass "
                    "transformation information."),
     llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
-    llvm::cl::Optional, llvm::cl::Hidden)
+    llvm::cl::Optional)
 #endif
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
@@ -955,7 +973,7 @@ DPCT_OPTION(
 #undef DPCT_FLAG_OPTION
 #undef DPCT_ENUM_OPTION
 #undef DPCT_PATH_OPTION
+#undef DPCT_SOURCEPATH_OPTION
 #undef DPCT_OPTION_VALUES
 #undef DPCT_OPTION_ENUM_VALUE
 #undef DPCT_OPTION_ACTIONS
-#undef DPCT_OPTION_IMPL
