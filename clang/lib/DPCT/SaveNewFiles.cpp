@@ -720,27 +720,6 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
        << CodepinTypeName << " &value," << getNL()
        << "                   dpct::experimental::queue_t queue) {"
        << getNL();
-    // RS << "    ss << \"{\\\"Type\\\":\\\"" << Name << "\\\",\\\"Data\\\":[\";"
-    //    << getNL();
-    // if (int MemberNum = Info.Members.size()) {
-    //   for (int i = 0; i < MemberNum; i++) {
-    //     RS << "    ss << \"{\\\"" << Info.Members[i].MemberName << "\\\":\";"
-    //        << getNL() << "    dpct::experimental::detail::DataSer<"
-    //        << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
-    //     for (auto &D : Info.Members[i].Dims) {
-    //       RS << "[" << std::to_string(D) << "]";
-    //     }
-    //     RS << ">::dump(ss, "
-    //        << "value." << Info.Members[i].MemberName << ", stream);" << getNL();
-    //     if (i == (MemberNum - 1)) {
-    //       RS << "    ss << \"}\";" << getNL();
-    //     } else {
-    //       RS << "    ss << \"},\";" << getNL();
-    //     }
-    //   }
-    // }
-    // RS << "    ss << \"]}\";" << getNL() << "  }" << getNL() << "};" << getNL()
-    //    << getNL();
     RS << "    auto arr = ss.array();" << getNL();
 
     if (int MemberNum = Info.Members.size()) {
