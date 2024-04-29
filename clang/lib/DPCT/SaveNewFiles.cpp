@@ -326,8 +326,8 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
   }
 }
 
-extern llvm::cl::opt<std::string> BuildScriptFile;
-extern llvm::cl::opt<bool> GenBuildScript;
+extern DpctOption<dpct::opt, std::string> BuildScriptFile;
+extern DpctOption<dpct::opt, bool> GenBuildScript;
 
 static void getMainSrcFilesRepls(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
