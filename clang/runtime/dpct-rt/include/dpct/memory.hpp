@@ -454,8 +454,8 @@ static inline size_t get_offset(sycl::id<3> id, size_t slice,
 static inline std::vector<sycl::event>
 dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
             sycl::range<3> to_range, sycl::range<3> from_range,
-            sycl::id<3> to_id, sycl::id<3> from_id,
-            sycl::range<3> size, memcpy_direction direction,
+            sycl::id<3> to_id, sycl::id<3> from_id, sycl::range<3> size,
+            memcpy_direction direction,
             const std::vector<sycl::event> &dep_events = {}) {
   // RAII for host pointer
   class host_buffer {
