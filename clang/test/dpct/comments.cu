@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
-// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4
 // RUN: dpct --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/comments/comments.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/comments/comments.dp.cpp -o %T/comments/comments.dp.o %}
@@ -24,12 +24,6 @@ __global__ void kernel() {
 }
 
 int main() {
-    // CHECK: // These variables are defined for 3d matrix memory copy.
-    // CHECK-NEXT: dpct::pitched_data p_from_data_ct1, p_to_data_ct1;
-    // CHECK-NEXT: sycl::id<3> p_from_pos_ct1(0, 0, 0), p_to_pos_ct1(0, 0, 0);
-    // CHECK-NEXT: sycl::range<3> p_size_ct1(1, 1, 1);
-    // CHECK-NEXT: dpct::memcpy_direction p_direction_ct1;
-    cudaMemcpy3DParms p;
     dim3 griddim(1, 2, 3);
     dim3 threaddim(1, 2, 3);
 

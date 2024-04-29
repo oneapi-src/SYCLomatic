@@ -824,33 +824,13 @@ int main(){
   status = cublasZgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, N, N, N, alpha_z, x_z, N, y_z, N, beta_z, result_z, N);
   cublasZgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, alpha_z, x_z, N, y_z, N, beta_z, result_z, N);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, N, N, N, dpct::get_value(alpha_c, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, N, 16, y_c_buf_ct{{[0-9]+}}, N, 16, dpct::get_value(beta_c, handle->get_queue()), result_c_buf_ct{{[0-9]+}}, N, 16, 10));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_c);
-  // CHECK-NEXT: auto y_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_c);
-  // CHECK-NEXT: auto result_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(result_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, dpct::get_value(alpha_c, handle->get_queue()), x_c_buf_ct{{[0-9]+}}, N, 16, y_c_buf_ct{{[0-9]+}}, N, 16, dpct::get_value(beta_c, handle->get_queue()), result_c_buf_ct{{[0-9]+}}, N, 16, 10);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, N, N, N, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), N, 16, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), N, 16, dpct::get_value(beta_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(result_c)), N, 16, 10));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(x_c)), N, 16, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(y_c)), N, 16, dpct::get_value(beta_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(result_c)), N, 16, 10);
   status = cublasCgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_T, N, N, N, alpha_c, x_c, N, 16, y_c, N, 16, beta_c, result_c, N, 16, 10);
   cublasCgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, alpha_c, x_c, N, 16, y_c, N, 16, beta_c, result_c, N, 16, 10);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, dpct::get_value(alpha_z, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, N, 16, y_z_buf_ct{{[0-9]+}}, N, 16, dpct::get_value(beta_z, handle->get_queue()), result_z_buf_ct{{[0-9]+}}, N, 16, 10));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_z);
-  // CHECK-NEXT: auto y_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_z);
-  // CHECK-NEXT: auto result_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(result_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, dpct::get_value(alpha_z, handle->get_queue()), x_z_buf_ct{{[0-9]+}}, N, 16, y_z_buf_ct{{[0-9]+}}, N, 16, dpct::get_value(beta_z, handle->get_queue()), result_z_buf_ct{{[0-9]+}}, N, 16, 10);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), N, 16, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), N, 16, dpct::get_value(beta_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(result_z)), N, 16, 10));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans1), N, N, N, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(x_z)), N, 16, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(y_z)), N, 16, dpct::get_value(beta_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(result_z)), N, 16, 10);
   status = cublasZgemmStridedBatched(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha_z, x_z, N, 16, y_z, N, 16, beta_z, result_z, N, 16, 10);
   cublasZgemmStridedBatched(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, alpha_z, x_z, N, 16, y_z, N, 16, beta_z, result_z, N, 16, 10);
 
@@ -899,33 +879,13 @@ int main(){
   const float beta_s = 1;
   const double beta_d = 0;
 
-  // CHECK: {
-  // CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_c);
-  // CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_c);
-  // CHECK-NEXT: auto C_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_c);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, m, n, k, dpct::get_value(alpha_c, handle->get_queue()), A_c_buf_ct{{[0-9]+}}, lda, B_c_buf_ct{{[0-9]+}}, ldb, dpct::get_value(beta_c, handle->get_queue()), C_c_buf_ct{{[0-9]+}}, ldc));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_c);
-  // CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_c);
-  // CHECK-NEXT: auto C_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_c);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, dpct::get_value(alpha_c, handle->get_queue()), A_c_buf_ct{{[0-9]+}}, lda, B_c_buf_ct{{[0-9]+}}, ldb, dpct::get_value(beta_c, handle->get_queue()), C_c_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans0), m, n, k, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(B_c)), ldb, dpct::get_value(beta_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc, oneapi::mkl::blas::compute_mode::complex_3m));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(B_c)), ldb, dpct::get_value(beta_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc, oneapi::mkl::blas::compute_mode::complex_3m);
   status = cublasCgemm3m(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
   cublasCgemm3m(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha_c, A_c, lda, B_c, ldb, beta_c, C_c, ldc);
 
-  // CHECK: {
-  // CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_z);
-  // CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_z);
-  // CHECK-NEXT: auto C_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_z);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, m, n, k, dpct::get_value(alpha_z, handle->get_queue()), A_z_buf_ct{{[0-9]+}}, lda, B_z_buf_ct{{[0-9]+}}, ldb, dpct::get_value(beta_z, handle->get_queue()), C_z_buf_ct{{[0-9]+}}, ldc));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_z);
-  // CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_z);
-  // CHECK-NEXT: auto C_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, dpct::get_value(alpha_z, handle->get_queue()), A_z_buf_ct{{[0-9]+}}, lda, B_z_buf_ct{{[0-9]+}}, ldb, dpct::get_value(beta_z, handle->get_queue()), C_z_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(handle->get_queue(), dpct::get_transpose(trans0), dpct::get_transpose(trans0), m, n, k, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(B_z)), ldb, dpct::get_value(beta_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc, oneapi::mkl::blas::compute_mode::complex_3m));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, m, n, k, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(B_z)), ldb, dpct::get_value(beta_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc, oneapi::mkl::blas::compute_mode::complex_3m);
   status = cublasZgemm3m(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans0, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
   cublasZgemm3m(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
@@ -981,23 +941,23 @@ int main(){
   status = cublasZhemm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
   cublasZhemm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, m, n, alpha_z, A_z, lda, B_z, ldb, beta_z, C_z, ldc);
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::herk(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(&alpha_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::get_value(&beta_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::herk(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(&alpha_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::get_value(&beta_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc);
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::herk(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, alpha_s, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, beta_s, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::herk(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, alpha_s, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, beta_s, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc);
   status = cublasCherk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_s, A_c, lda, &beta_s, C_c, ldc);
   cublasCherk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, &alpha_s, A_c, lda, &beta_s, C_c, ldc);
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::herk(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(alpha_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::get_value(&beta_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::herk(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(alpha_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::get_value(&beta_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc);
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::herk(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(alpha_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, beta_d, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::herk(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(alpha_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, beta_d, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc);
   status = cublasZherk(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_d, A_z, lda, &beta_d, C_z, ldc);
   cublasZherk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_d, A_z, lda, &beta_d, C_z, ldc);
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::her2k(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(B_c)), ldb, dpct::get_value(&beta_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::her2k(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(B_c)), ldb, dpct::get_value(&beta_s, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc);
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::her2k(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(B_c)), ldb, beta_s, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::her2k(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(alpha_c, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(A_c)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(B_c)), ldb, beta_s, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<float>>(C_c)), ldc);
   status = cublasCher2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_c, A_c, lda, B_c, ldb, &beta_s, C_c, ldc);
   cublasCher2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_c, A_c, lda, B_c, ldb, &beta_s, C_c, ldc);
 
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::her2k(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(B_z)), ldb, dpct::get_value(&beta_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc));
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::her2k(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(B_z)), ldb, dpct::get_value(&beta_d, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc);
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::her2k(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(B_z)), ldb, beta_d, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::her2k(handle->get_queue(), oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, dpct::get_value(alpha_z, handle->get_queue()), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(A_z)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(B_z)), ldb, beta_d, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::complex<double>>(C_z)), ldc);
   status = cublasZher2k(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, alpha_z, A_z, lda, B_z, ldb, &beta_d, C_z, ldc);
   cublasZher2k(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, n, k, alpha_z, A_z, lda, B_z, ldb, &beta_d, C_z, ldc);
 

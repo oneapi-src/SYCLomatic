@@ -10,6 +10,7 @@
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Path.h"
 #include <PatternRewriter.h>
 
 #include <optional>
@@ -393,16 +394,14 @@ updateExtentionName(const std::string &Input, size_t Next,
   auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
     size_t Pos = Next - 1;
-    for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
+    for (; Pos > 0 && (isIdentifiedChar(Input[Pos]) || Input[Pos] == '.');
+         Pos--) {
     }
     Pos = Pos == 0 ? 0 : Pos + 1;
-    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - 1 - Pos);
-
-    std::string SyclFileName;
-    rewriteFileName(SyclFileName, FileName);
+    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - Pos);
     bool HasCudaSyntax = false;
     for (const auto &File : MainSrcFilesHasCudaSyntex) {
-      if (File.find(FileName) != std::string::npos) {
+      if (llvm::sys::path::filename(File) == FileName) {
         HasCudaSyntax = true;
       }
     }
@@ -511,7 +510,6 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       }
 
       std::string ElementContents = Input.substr(Index, Next - Index);
-
       if (SrcFileType == SourceFileType::SFT_CMakeScript) {
         updateExtentionName(Input, Next, Result.Bindings);
       }

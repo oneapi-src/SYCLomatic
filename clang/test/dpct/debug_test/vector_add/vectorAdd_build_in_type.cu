@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/vector_add %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
-// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/vector_add/vectorAdd_build_in_type.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/vector_add/vectorAdd_build_in_type.dp.cpp -o %T/debug_test/vector_add/vectorAdd_build_in_type.dp.o %}
+// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/vector_add_codepin_sycl/vectorAdd_build_in_type.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/vector_add_codepin_sycl/vectorAdd_build_in_type.dp.cpp -o %T/debug_test/vector_add_codepin_sycl/vectorAdd_build_in_type.dp.o %}
 //==============================================================
 // Copyright 2019 Intel Corporation
 //

@@ -32,10 +32,7 @@ enum InsertPosition {
   IP_Right,
 };
 
-enum ReplacementType {
-  RT_ForSYCLMigration = 0,
-  RT_ForCUDADebug
-};
+enum ReplacementType { RT_ForSYCLMigration = 0, RT_CUDAWithCodePin };
 
 /// Extend Replacement to contain more meta info of Replacement inserted by
 /// AST Rule. Further Analysis Pass like Merge Pass can happen based
@@ -126,7 +123,8 @@ public:
 
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
-  ReplacementType IsForCUDADebug = RT_ForSYCLMigration;
+  ReplacementType IsForCodePin = RT_ForSYCLMigration;
+
 private:
   InsertPosition InsertPos = IP_Left;
   const TextModification *TM;
@@ -203,7 +201,8 @@ public:
     BlockLevelFormatFlag = Flag;
   }
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
-  ReplacementType IsForCUDADebug = RT_ForSYCLMigration;
+  ReplacementType IsForCodePin = RT_ForSYCLMigration;
+
 private:
   const TMID ID;
   Group Key;
@@ -232,9 +231,9 @@ class InsertText : public TextModification {
 
 public:
   InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
-             ReplacementType IsForCUDADebug = RT_ForSYCLMigration)
+             ReplacementType IsForCodePin = RT_ForSYCLMigration)
       : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {
-    this->IsForCUDADebug = IsForCUDADebug;
+    this->IsForCodePin = IsForCodePin;
   }
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
@@ -637,17 +636,19 @@ class ReplaceText : public TextModification {
 public:
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
               bool NotFormatFlag = false,
-              ReplacementType IsForCUDADebug = RT_ForSYCLMigration)
+              ReplacementType IsForCodePin = RT_ForSYCLMigration)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
         T(std::move(S)) {
     this->NotFormatFlag = NotFormatFlag;
-    this->IsForCUDADebug = IsForCUDADebug;
+    this->IsForCodePin = IsForCodePin;
   }
   ReplaceText(const SourceLocation &Begin, const SourceLocation &End,
-              std::string &&S)
+              std::string &&S,
+              ReplacementType IsForCodePin = RT_ForSYCLMigration)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin),
         Len(End.getRawEncoding() - Begin.getRawEncoding()), T(std::move(S)) {
     this->NotFormatFlag = false;
+    this->IsForCodePin = IsForCodePin;
   }
 
   std::shared_ptr<ExtReplacement>

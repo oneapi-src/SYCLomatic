@@ -70,7 +70,8 @@ public:
 
   void print_dict_item_key(std::string key) { *this << "\"" << key << "\":"; }
   void print_ID_checkpoint_begin(std::string ID) {
-    *this << "{\"ID\":" << ID;
+    *this << "{\"ID\":"
+          << "\"" << ID << "\"";
     *this << ",\"CheckPoint\":{";
   }
   void print_ID_checkpoint_end() { *this << "}},"; }
@@ -152,8 +153,8 @@ public:
                    dpct::experimental::StreamType stream) {
     ss.print_type_data(
         std::string(demangle_name<T>()),
-        "CODEPIN:ERROR:1: Unable to find the corresponding serialization "
-        "function.");
+        "\"CODEPIN:ERROR:1: Unable to find the corresponding serialization "
+        "function.\"");
   }
 };
 
@@ -198,17 +199,17 @@ public:
     ss.print_type_begin("float3");
 
     ss.print_data_mem_begin("x");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.x, stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.x, stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("y");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.y, stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.y, stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("z");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.z, stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.z, stream);
     ss.print_data_mem_end();
 
     ss.print_type_end();
@@ -248,17 +249,17 @@ public:
     ss.print_type_begin("sycl::float3");
 
     ss.print_data_mem_begin("x");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.x(), stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.x(), stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("y");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.y(), stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.y(), stream);
     ss.print_data_mem_end();
     ss.print_comma();
 
     ss.print_data_mem_begin("z");
-    dpct::experimental::detail::DataSer<int>::dump(ss, value.z(), stream);
+    dpct::experimental::detail::DataSer<float>::dump(ss, value.z(), stream);
     ss.print_data_mem_end();
 
     ss.print_type_end();

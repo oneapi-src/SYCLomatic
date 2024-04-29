@@ -86,30 +86,24 @@ extern UnifiedPath VcxprojFilePath;
 } // namespace tooling
 namespace dpct {
 llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
+llvm::cl::OptionCategory &DPCTBasicCat = llvm::cl::getDPCTBasicCategory();
+llvm::cl::OptionCategory &DPCTAdvancedCat = llvm::cl::getDPCTAdvancedCategory();
+llvm::cl::OptionCategory &DPCTCodeGenCat = llvm::cl::getDPCTCodeGenCategory();
+llvm::cl::OptionCategory &DPCTReportGenCat =
+    llvm::cl::getDPCTReportGenCategory();
+llvm::cl::OptionCategory &DPCTBuildScriptCat =
+    llvm::cl::getDPCTBuildScriptCategory();
+llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
+llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
+llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
+llvm::cl::OptionCategory &DPCTInterceptBuildCat =
+    llvm::cl::getDPCTInterceptBuildCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
 
 // clang-format off
-const char *const CtHelpMessage =
-    "\n"
-    "<source0> ... Paths of input source files. These paths are looked up in "
-    "the compilation database.\n\n"
-    "EXAMPLES:\n\n"
-    "Migrate single source file:\n\n"
-    "  dpct source.cpp\n\n"
-    "Migrate single source file with C++11 features:\n\n"
-    "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
-    "Migrate all files available in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
-    "Migrate one file in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
-#if defined(_WIN32)
-    "Migrate all files available in vcxprojfile:\n\n"
-    "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
-#endif
-    DiagRef
-    ;
+const char *const CtHelpMessage = DiagRef;
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
@@ -268,13 +262,14 @@ bool hasOption(int argc, const char **argv, StringRef Opt) {
 bool hasOptConflictWithQuery(int argc, const char **argv) {
   for (auto I = 1; I < argc; I++) {
     auto Opt = StringRef(argv[I]);
-    if (!Opt.starts_with("--query-api-mapping") &&
-        !Opt.starts_with("--cuda-include-path") &&
-        !Opt.starts_with("--extra-arg")) {
+    Opt = Opt.drop_while([](char input) { return input == '-'; });
+    if (!Opt.starts_with("query-api-mapping") &&
+        !Opt.starts_with("cuda-include-path") &&
+        !Opt.starts_with("extra-arg")) {
       return true;
     }
-    if (Opt == "--query-api-mapping" || Opt == "--cuda-include-path" ||
-        Opt == "--extra-arg") {
+    if (Opt == "query-api-mapping" || Opt == "cuda-include-path" ||
+        Opt == "extra-arg") {
       ++I; // Skip option value when using option without '='.
     }
   }
@@ -463,8 +458,7 @@ std::string printCTVersion() {
   llvm::raw_string_ostream OS(buf);
 
   OS << "\n"
-     << TOOL_NAME << " version " << DPCT_VERSION_MAJOR << "."
-     << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
+     << TOOL_NAME << " version " << getDpctVersionStr() << "."
      << " Codebase:";
   std::string Revision = getClangRevision();
   if (!Revision.empty()) {
@@ -472,9 +466,12 @@ std::string printCTVersion() {
     if (!Revision.empty()) {
       OS << Revision;
     }
-    OS << ')';
+    OS << ").";
   }
-  OS << "\n";
+
+  OS << " clang version " << CLANG_VERSION_MAJOR << "." << CLANG_VERSION_MINOR
+     << "." << CLANG_VERSION_PATCHLEVEL << "\n";
+
   return OS.str();
 }
 
@@ -566,7 +563,6 @@ int runDPCT(int argc, const char **argv) {
   // To support wildcard "*" in source file name in windows.
   llvm::InitLLVM X(argc, argv);
 #endif
-
   // Set handle for libclangTooling to process message for dpct
   clang::tooling::SetPrintHandle(PrintMsg);
   clang::tooling::SetFileSetInCompilationDB(
@@ -1004,7 +1000,7 @@ int runDPCT(int argc, const char **argv) {
     bool NeedCheckOutRootEmpty =
         !(BuildScript == BuildScript::BS_Cmake) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty)) {
+        !getDefaultOutRoot(OutRoot, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
@@ -1081,7 +1077,9 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setBuildScript(BuildScript);
-  DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
+  // When enable codepin feature, the incremental migration will be disabled.
+  DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration && !EnableCodePin &&
+                                    !MigrateBuildScriptOnly);
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
   DpctGlobalInfo::setFormatRange(FormatRng);
@@ -1130,6 +1128,7 @@ int runDPCT(int argc, const char **argv) {
       std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{
           CmakeRuleFilePath};
       importRules(CmakeRuleFiles);
+      dpct::genCmakeHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
     }
   }
 

@@ -16,10 +16,6 @@
   Out: |
    project(${arg0})
    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
-   find_program(dpct_bin_path NAMES dpct PATHS)
-   get_filename_component(bin_path_of_dpct \${dpct_bin_path} DIRECTORY)
-   set(dpct_cmake_file_path "\${bin_path_of_dpct}/../cmake/dpct.cmake")
-   include(\${dpct_cmake_file_path})
 
 - Rule: rule_project_remove_cuda
   Kind: CMakeRule
@@ -864,6 +860,21 @@
         \${SYCL_INCLUDE_DIR}
       RuleId: "replace_CUDA_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
 
+- Rule: rule_CUDA_NVCC_INCLUDE_DIRS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_NVCC_INCLUDE_DIRS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_NVCC_INCLUDE_DIRS}
+      Out: |
+        \${SYCL_INCLUDE_DIR}
+      RuleId: "replace_CUDA_NVCC_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
+
 - Rule: rule_cuda_add_cufft_to_target
   Kind: CMakeRule
   Priority: Fallback
@@ -932,7 +943,7 @@
     value:
       MatchMode: Full
       In: CMAKE_CUDA_HOST_COMPILER
-      Out: CMAKE_SYCL_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
 
 - Rule: rule_CMAKE_CUDA_ARCHITECTURES
   Kind: CMakeRule
@@ -958,6 +969,19 @@
     value:
       MatchMode: Full
       In: CMAKE_CUDA_FLAGS
+      Out: CMAKE_SYCL_FLAGS
+
+- Rule: rule_CUDA_NVCC_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_NVCC_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_NVCC_FLAGS
       Out: CMAKE_SYCL_FLAGS
 
 - Rule: rule_cudart_static_removed
@@ -1997,6 +2021,49 @@
       Out: COMPATIBILITY_VERSION
       RuleId: "replace_CUDA_VERSION_with_COMPATIBILITY_VERSION"
 
+- Rule: rule_CUDA_VERSION_MAJOR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_MAJOR
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_MAJOR
+      Out: COMPATIBILITY_VERSION_MAJOR
+      RuleId: "replace_CUDA_VERSION_MAJOR_with_COMPATIBILITY_VERSION_MAJOR"
+
+- Rule: rule_CUDA_VERSION_MINOR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_MINOR
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_MINOR
+      Out: COMPATIBILITY_VERSION_MINOR
+      RuleId: "replace_CUDA_VERSION_MAJOR_with_COMPATIBILITY_VERSION_MINOR"
+
+- Rule: rule_CUDA_VERSION_STRING
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_STRING
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_STRING
+      Out: COMPATIBILITY_VERSION_STRING
+      RuleId: "replace_CUDA_VERSION_STRING_with_COMPATIBILITY_VERSION_STRING"
+
+
 - Rule: rule_user_defined_variable
   Kind: CMakeRule
   Priority: Fallback
@@ -2170,3 +2237,64 @@
       Out: ONEAPI_LIB_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
+
+- Rule: rule_set_source_files_properties
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_source_files_properties_lang
+  In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
+  Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
+
+- Rule: rule_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_compiler
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
+
+- Rule: rule_CUDA_HOST_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_flags
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_FLAGS
+      Out: SYCL_HOST_FLAGS
+
+- Rule: rule_CUDAToolkit_FOUND
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDAToolkit_FOUND
+  MatchMode: Partial
+  In: if${empty}(${value})
+  Out: if${empty}(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_FOUND
+      Out: IntelSYCL_FOUND
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
+
+- Rule: rule_lib_cuda_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: lib_cuda
+  In: list${empty}(${value})
+  Out: list${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cuda
+      Out: ""
+      RuleId: "remove_lib_cuda"
