@@ -413,12 +413,12 @@ public:
   template <typename ReplacementT>
   void insertHeader(ReplacementT &&Repl, unsigned Offset,
                     InsertPosition InsertPos = IP_Left,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
-    R->IsForCUDADebug = IsForCUDADebug;
+    R->IsForCodePin = IsForCodePin;
     IncludeDirectiveInsertions.push_back(R);
   }
 
@@ -433,9 +433,9 @@ public:
   }
 
   void insertHeader(HeaderType Type, unsigned Offset,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
   void insertHeader(HeaderType Type,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -1164,7 +1164,7 @@ public:
   void setAlgorithmHeaderInserted(SourceLocation Loc, bool B);
   void setTimeHeaderInserted(SourceLocation Loc, bool B);
   void insertHeader(SourceLocation Loc, HeaderType Type,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
   void insertHeader(SourceLocation Loc, std::string HeaderName);
   static std::unordered_map<
       std::string,

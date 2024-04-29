@@ -2297,3 +2297,17 @@
       MatchMode: Full
       In: CUDAToolkit_LIBRARY_DIR
       Out: SYCLToolkit_LIBRARY_DIR
+
+- Rule: rule_lib_cuda_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: lib_cuda
+  In: list${empty}(${value})
+  Out: list${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cuda
+      Out: ""
+      RuleId: "remove_lib_cuda"

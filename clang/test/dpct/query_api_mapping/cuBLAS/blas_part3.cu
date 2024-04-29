@@ -66,7 +66,7 @@
 // cublasHgemmStridedBatched-NEXT:       strideb /*long long int*/, beta /*const __half **/, c /*__half **/,
 // cublasHgemmStridedBatched-NEXT:       ldc /*int*/, stridec /*long long int*/, group_count /*int*/);
 // cublasHgemmStridedBatched-NEXT: Is migrated to:
-// cublasHgemmStridedBatched-NEXT:   oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), a, lda, stridea, b, ldb, strideb, dpct::get_value(beta, handle->get_queue()), c, ldc, stridec, group_count, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), false));
+// cublasHgemmStridedBatched-NEXT:   oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), a, lda, stridea, b, ldb, strideb, dpct::get_value(beta, handle->get_queue()), c, ldc, stridec, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDzasum | FileCheck %s -check-prefix=cublasDzasum
 // cublasDzasum: CUDA API:
@@ -197,7 +197,7 @@
 // cublasZgemmStridedBatched-NEXT:       c /*cuDoubleComplex **/, ldc /*int*/, stridec /*long long int*/,
 // cublasZgemmStridedBatched-NEXT:       group_count /*int*/);
 // cublasZgemmStridedBatched-NEXT: Is migrated to:
-// cublasZgemmStridedBatched-NEXT:   oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, stridea, (std::complex<double>*)b, ldb, strideb, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc, stridec, group_count, dpct::blas::deduce_compute_mode(std::nullopt, handle->get_math_mode(), true));
+// cublasZgemmStridedBatched-NEXT:   oneapi::mkl::blas::column_major::gemm_batch(handle->get_queue(), transa, transb, m, n, k, dpct::get_value(alpha, handle->get_queue()), (std::complex<double>*)a, lda, stridea, (std::complex<double>*)b, ldb, strideb, dpct::get_value(beta, handle->get_queue()), (std::complex<double>*)c, ldc, stridec, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZsyr | FileCheck %s -check-prefix=cublasZsyr
 // cublasZsyr: CUDA API:

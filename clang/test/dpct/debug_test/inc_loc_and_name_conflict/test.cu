@@ -1,6 +1,6 @@
 // RUN: dpct --enable-codepin --out-root %T/debug_test/inc_loc_and_name_conflict %s --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/inc_loc_and_name_conflict/test.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/inc_loc_and_name_conflict/test.dp.cpp -o %T/debug_test/inc_loc_and_name_conflict/test.dp.o %}
+// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/inc_loc_and_name_conflict_codepin_sycl/test.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/inc_loc_and_name_conflict_codepin_sycl/test.dp.cpp -o %T/debug_test/inc_loc_and_name_conflict_codepin_sycl/test.dp.o %}
 
 // CHECK: #define DEVICE ""
 // CHECK-NEXT: #include <sycl/sycl.hpp>
