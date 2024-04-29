@@ -2278,7 +2278,7 @@
   Priority: Fallback
   CmakeSyntax: target_include_directories_cuda_inc
   MatchMode: Partial
-  In: target_include_directories(${value})
+  In: target_include_directories${empty}(${value})
   Out: target_include_directories(${value})
   Subrules:
     value:
