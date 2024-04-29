@@ -215,12 +215,13 @@ template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name,
                        dpct::experimental::queue_t queue, Args&&... args) {
   synchronize(queue);
+  std::string prolog_tag = api_name + ":" + "prolog";
   if (api_index.find(api_name) == api_index.end()) {
     api_index[api_name] = 0;
   } else {
     api_index[api_name]++;
   }
-  std::string new_api_name =
+  std::string event_id =
       api_name + ":" + std::to_string(api_index[api_name]);
   size_t free_byte, total_byte;
 #ifdef __NVCC__
@@ -228,16 +229,16 @@ void gen_prolog_API_CP(const std::string &api_name,
   cudaEvent_t event;
   cudaEventCreate(&event);
   cudaEventRecord(event, queue);
-  event_map[new_api_name] = event;
+  event_map[event_id] = event;
 #else
   dpct::get_current_device().get_memory_info(free_byte, total_byte);
 #ifdef DPCT_PROFILING_ENABLED
   sycl::event event = queue->ext_oneapi_submit_barrier();
-  event_map[new_api_name] = event;
+  event_map[event_id] = event;
 #endif //DPCT_PROFILING_ENABLED
 #endif
 
-  dpct::experimental::detail::gen_log_API_CP(new_api_name, free_byte,
+  dpct::experimental::detail::gen_log_API_CP(prolog_tag, free_byte,
                                              total_byte, 0.0f, queue, args...);
 }
 
@@ -248,7 +249,8 @@ void gen_prolog_API_CP(const std::string &api_name,
 template <class... Args>
 void gen_epilog_API_CP(const std::string &api_name,
                        dpct::experimental::queue_t queue, Args&&... args) {
-  std::string new_api_name =
+  std::string epilog_tag = api_name + ":" + "epilog";
+  std::string event_id =
       api_name + ":" + std::to_string(api_index[api_name]);
   size_t free_byte, total_byte;
   float kernel_elapsed_time = 0.0f;
@@ -257,13 +259,13 @@ void gen_epilog_API_CP(const std::string &api_name,
   cudaEvent_t event;
   cudaEventCreate(&event);
   cudaEventRecord(event, queue);
-  auto pre_event = event_map[new_api_name];
+  auto pre_event = event_map[event_id];
   cudaEventSynchronize(event);
   cudaEventElapsedTime(&kernel_elapsed_time, pre_event, event);
 #else
 #ifdef DPCT_PROFILING_ENABLED
   sycl::event event = queue->ext_oneapi_submit_barrier();
-  auto pre_event = event_map[new_api_name];
+  auto pre_event = event_map[event_id];
   event.wait_and_throw();
   kernel_elapsed_time =
       (event.get_profiling_info<sycl::info::event_profiling::command_end>() -
@@ -274,7 +276,7 @@ void gen_epilog_API_CP(const std::string &api_name,
   dpct::get_current_device().get_memory_info(free_byte, total_byte);
 #endif
   dpct::experimental::detail::gen_log_API_CP(
-      new_api_name, free_byte, total_byte, kernel_elapsed_time, queue, args...);
+      epilog_tag, free_byte, total_byte, kernel_elapsed_time, queue, args...);
 }
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {

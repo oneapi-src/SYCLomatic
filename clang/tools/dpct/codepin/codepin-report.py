@@ -298,7 +298,7 @@ def main():
         args.instrumented_cuda_log)
     sycl_prolog_checkpoint_list, sycl_epilog_checkpoint_list, mem_used_sycl, time_sycl = get_checkpoint_list_from_json_file(
         args.instrumented_sycl_log)
-    
+
     bottleneck_cuda = get_bottleneck(time_cuda)
     bottleneck_sycl = get_bottleneck(time_sycl)
     max_device_memory_cuda = get_memory_used(mem_used_cuda)
@@ -310,6 +310,7 @@ def main():
         sycl_prolog_checkpoint_list,
         sycl_epilog_checkpoint_list,
     )
+
     with(open(CODEPIN_REPORT_FILE, 'w')) as f:
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
