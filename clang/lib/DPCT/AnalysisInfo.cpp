@@ -4914,8 +4914,10 @@ DeviceFunctionInfo::getTextureObject(unsigned Idx) {
   return {};
 }
 void DeviceFunctionInfo::buildInfo() {
-  if (isBuilt())
+  if (isBuilt()) {
+    VarMap.removeDuplicateVar();
     return;
+  }
   setBuilt();
   auto &Map = VarMap.getMap(clang::dpct::MemVarInfo::Global);
   for (auto It = Map.begin(); It != Map.end();) {
