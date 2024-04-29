@@ -81,7 +81,7 @@ void fooo() {
   // CHECK: dpct::dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
   cudaMemcpy2D(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
 
-  // CHECK: dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::dpct_memcpy(parms);
   cudaMemcpy3D(&parms);
 
   struct cudaMemcpy3DParms *parms_pointer;
@@ -116,11 +116,11 @@ void fooo() {
   // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host, *stream);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, stream);
 
-  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::async_dpct_memcpy(parms);
   cudaMemcpy3DAsync(&parms);
-  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::async_dpct_memcpy(parms);
   cudaMemcpy3DAsync(&parms, 0);
-  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1, *stream);
+  // CHECK: dpct::async_dpct_memcpy(parms, *stream);
   cudaMemcpy3DAsync(&parms, stream);
 
   // CHECK: dpct::async_dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device);
@@ -322,11 +322,11 @@ void testCommas() {
   // CHECK:  checkError(DPCT_CHECK_ERROR(dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::automatic)));
   checkError(cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyDefault));
 
-  // CHECK:  dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK:  dpct::dpct_memcpy(parms);
   cudaMemcpy3D(&parms);
-  // CHECK:  err = DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1));
+  // CHECK:  err = DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms));
   err = cudaMemcpy3D(&parms);
-  // CHECK:  checkError(DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1)));
+  // CHECK:  checkError(DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms)));
   checkError(cudaMemcpy3D(&parms));
 
   ///////// Host to device
@@ -715,10 +715,10 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   #define CUDAMEMCPY2D cudaMemcpy2D
   CUDAMEMCPY2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
-  // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1)));
+  // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms)));
   MY_CHECKER(cudaMemcpy3D(&parms));
 
-  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1)));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms)));
   MY_ERROR_CHECKER(cudaMemcpy3D(&parms));
 
   delete[] data;

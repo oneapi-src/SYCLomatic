@@ -1,6 +1,6 @@
 [
     {
-        "ID": "serial123",
+        "ID": "serial123:prolog:0",
         "CheckPoint": {
             "var_1": {
                 "Type": "std::vector",
@@ -28,7 +28,7 @@
         }
     },
     {
-        "ID": "serial1243",
+        "ID": "serial1243:epilog:0",
         "CheckPoint": {
             "var_1": {
                 "Type": "std::vector",
@@ -56,7 +56,7 @@
         }
     },
     {
-        "ID": "serial1234",
+        "ID": "serial1234:prolog:1",
         "CheckPoint": {
             "var_1": {
                 "Type": "std::vector",

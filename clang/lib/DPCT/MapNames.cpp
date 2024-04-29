@@ -373,6 +373,12 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
+      {"cudaMemcpy3DParms",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
+      {"CUDA_MEMCPY3D",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
+      {"CUDA_MEMCPY2D",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"cudaComputeMode", std::make_shared<TypeNameRule>("int")},
       {"cudaSharedMemConfig", std::make_shared<TypeNameRule>("int")},
       {"cufftReal", std::make_shared<TypeNameRule>("float")},
@@ -4116,49 +4122,46 @@ const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
 const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
     {"width", "[0]"}, {"height", "[1]"}, {"depth", "[2]"}};
 
-const MapNames::MapTy MemoryDataTypeRule::MemberNames{
-    {"srcArray", "from_data"},
-    {"srcPtr", "from_data"},
-    {"srcPos", "from_pos"},
-    {"dstArray", "to_data"},
-    {"dstPtr", "to_data"},
-    {"dstPos", "to_pos"},
-    {"extent", "size"},
-    {"kind", "direction"},
+const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
     {"Width", "x"},
     {"Height", "y"},
     {"Format", "channel_type"},
-    {"NumChannels", "channel_num"},
-    {"dstPitch", "to_data"},
-    {"srcPitch", "from_data"},
-    {"dstDevice", "to_data"},
-    {"dstHost", "to_data"},
-    {"srcDevice", "from_data"},
-    {"srcHost", "from_data"},
-    {"dstHeight", "to_data"},
-    {"srcHeight", "from_data"}};
+    {"NumChannels", "channel_num"}};
 
-const MapNames::MapTy MemoryDataTypeRule::PitchMemberToSetter{
-    {"dstPitch", "set_pitch"},   {"dstHeight", "set_y"},
-    {"dstHost", "set_data_ptr"}, {"dstDevice", "set_data_ptr"},
-    {"srcPitch", "set_pitch"},   {"srcHeight", "set_y"},
-    {"srcHost", "set_data_ptr"}, {"srcDevice", "set_data_ptr"}};
+const MapNames::MapTy MemoryDataTypeRule::DirectReplMemberNames{
+    // cudaMemcpy3DParms fields.
+    {"srcArray", "from.image"},
+    {"srcPtr", "from.pitched"},
+    {"srcPos", "from.pos"},
+    {"dstArray", "to.image"},
+    {"dstPtr", "to.pitched"},
+    {"dstPos", "to.pos"},
+    {"extent", "size"},
+    {"kind", "direction"},
+    // CUDA_MEMCPY2D fields.
+    {"Height", "size[1]"},
+    {"WidthInBytes", "size[0]"},
+    {"dstXInBytes", "to.pos[0]"},
+    {"srcXInBytes", "from.pos[0]"},
+    {"dstY", "to.pos[1]"},
+    {"srcY", "from.pos[1]"},
+    // CUDA_MEMCPY3D fields.
+    {"Depth", "size[2]"},
+    {"dstZ", "to.pos[2]"},
+    {"srcZ", "from.pos[2]"}};
 
-const std::map<std::string, HelperFeatureEnum>
-    MemoryDataTypeRule::PitchMemberToFeature{
-        {"dstPitch", {HelperFeatureEnum::device_ext}},
-        {"dstHeight", {HelperFeatureEnum::device_ext}},
-        {"dstHost", {HelperFeatureEnum::device_ext}},
-        {"dstDevice", {HelperFeatureEnum::device_ext}},
-        {"srcPitch", {HelperFeatureEnum::device_ext}},
-        {"srcHeight", {HelperFeatureEnum::device_ext}},
-        {"srcHost", {HelperFeatureEnum::device_ext}},
-        {"srcDevice", {HelperFeatureEnum::device_ext}}};
-
-const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
-    {"srcXInBytes", "[0]"},  {"srcY", "[1]"},   {"srcZ", "[2]"},
-    {"dstXInBytes", "[0]"},  {"dstY", "[1]"},   {"dstZ", "[2]"},
-    {"WidthInBytes", "[0]"}, {"Height", "[1]"}, {"Depth", "[2]"}};
+const MapNames::MapTy MemoryDataTypeRule::GetSetReplMemberNames{
+    // CUDA_MEMCPY2D fields.
+    {"dstPitch", "pitch"},
+    {"srcPitch", "pitch"},
+    {"dstDevice", "data_ptr"},
+    {"dstHost", "data_ptr"},
+    {"srcDevice", "data_ptr"},
+    {"srcHost", "data_ptr"},
+    // CUDA_MEMCPY3D fields.
+    {"dstHeight", "y"},
+    {"srcHeight", "y"},
+};
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
