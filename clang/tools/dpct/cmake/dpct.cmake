@@ -112,7 +112,6 @@ macro(DPCT_HELPER_ADD_MKL_TO_TARGET target)
   endif()
 endmacro()
 
-set(CMAKE_SYCL_HOST_COMPILER "icpx")
 set(CMAKE_SYCL_COMPILER "icpx")
 set(CMAKE_SYCL_ARCHITECTURES "")
 set(CMAKE_SYCL_FLAGS "")
@@ -125,3 +124,5 @@ set(SYCL_TOOLKIT_INCLUDE "${SYCL_INCLUDE_DIR}")
 # The SYCL runtime library is auto-loaded when option `-fsycl` is specified. So we can
 # safely set the CUDAToolkit_LIBRARY_DIR to ""
 set(SYCLToolkit_LIBRARY_DIR "${SYCL_INCLUDE_DIR}/../lib")
+set(SYCL_HOST_COMPILER "icpx")
+set(SYCL_HOST_FLAGS "")

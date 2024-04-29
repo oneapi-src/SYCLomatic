@@ -265,6 +265,30 @@ dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
                                          dest_offset, desc_dest, copy_extend));
   return event_list;
 }
+
+static inline sycl::event
+dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
+            pitched_data &dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q) {
+  const auto src_offset = sycl::range<3>(src_id[0], src_id[1], src_id[2]);
+  const auto dest_offset = sycl::range<3>(dest_id[0], dest_id[1], dest_id[2]);
+  const auto dest_extend = sycl::range<3>(dest.get_pitch(), dest.get_y(), 1);
+  return q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_desc(),
+                           dest.get_data_ptr(), dest_offset, dest_extend,
+                           copy_extend);
+}
+
+static inline sycl::event
+dpct_memcpy(pitched_data src, const sycl::id<3> &src_id,
+            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q) {
+  const auto src_offset = sycl::range<3>(src_id[0], src_id[1], src_id[2]);
+  const auto src_extend = sycl::range<3>(src.get_pitch(), src.get_y(), 1);
+  const auto dest_offset = sycl::range<3>(dest_id[0], dest_id[1], dest_id[2]);
+  return q.ext_oneapi_copy(src.get_data_ptr(), src_offset, src_extend,
+                           dest->get_handle(), dest_offset, dest->get_desc(),
+                           copy_extend);
+}
 } // namespace detail
 
 /// Create bindless image according to image data and sampling info.
