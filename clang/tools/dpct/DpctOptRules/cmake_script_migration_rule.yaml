@@ -2258,3 +2258,17 @@
       Out: IntelSYCL_FOUND
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
+
+- Rule: rule_lib_cuda_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: lib_cuda
+  In: list${empty}(${value})
+  Out: list${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cuda
+      Out: ""
+      RuleId: "remove_lib_cuda"
