@@ -64,6 +64,9 @@ public:
     print_args(cp_obj, queue, args...);
   }
 
+  void print_args(json_stringstream::json_obj &obj,
+                  dpct::experimental::queue_t queue) {}
+
   template <class First, class... RestArgs>
   void print_args(json_stringstream::json_obj &obj,
                   dpct::experimental::queue_t queue, std::string_view arg_name,
