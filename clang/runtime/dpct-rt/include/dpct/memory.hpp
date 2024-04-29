@@ -101,17 +101,17 @@ static pitched_data to_pitched_data(image_matrix *image);
 /// Memory copy parameters for 2D/3D memory data.
 struct memcpy_parameter {
   struct data_wrapper {
-    pitched_data pitched;
-    sycl::id<3> pos;
+    pitched_data pitched{};
+    sycl::id<3> pos{};
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
-    experimental::image_mem_wrapper *image_bindless;
+    experimental::image_mem_wrapper *image_bindless{nullptr};
 #endif
-    image_matrix *image;
+    image_matrix *image{nullptr};
   };
-  data_wrapper from;
-  data_wrapper to;
-  sycl::range<3> size;
-  memcpy_direction direction;
+  data_wrapper from{};
+  data_wrapper to{};
+  sycl::range<3> size{};
+  memcpy_direction direction{memcpy_direction::automatic};
 };
 
 namespace detail {
@@ -668,10 +668,10 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
   if (param.to.image_bindless != nullptr &&
       param.from.image_bindless != nullptr) {
+    // TODO: Need change logic when sycl support image_mem to image_mem copy.
     std::vector<sycl::event> event_list;
     host_buffer buf(param.size.size(), q, event_list);
     to.set_data_ptr(buf.get_ptr());
-    // TODO: Need change logic when sycl support image_mem to image_mem copy.
     experimental::detail::dpct_memcpy(param.from.image_bindless, param.from.pos,
                                       to, sycl::id<3>(0, 0, 0), param.size, q);
     from.set_data_ptr(buf.get_ptr());
