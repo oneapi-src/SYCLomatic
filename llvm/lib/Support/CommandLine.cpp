@@ -2399,6 +2399,57 @@ protected:
     }
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Store the user requested category
+  void setReqCategory(HelpCategory reqCatEnumVal) {
+    helpCatEnum = reqCatEnumVal;
+  }
+
+  // Return the user requested category
+  OptionCategory &getReqCategory(HelpCategory reqCatEnumVal) {
+    switch (reqCatEnumVal) {
+    case HelpCategory::HC_All:
+      return cl::getDPCTCategory();
+      break;
+    case HelpCategory::HC_Basic:
+      return cl::getDPCTBasicCategory();
+      break;
+    case HelpCategory::HC_Advanced:
+      return cl::getDPCTAdvancedCategory();
+      break;
+    case HelpCategory::HC_CodeGen:
+      return cl::getDPCTCodeGenCategory();
+      break;
+    case HelpCategory::HC_ReportGen:
+      return cl::getDPCTReportGenCategory();
+      break;
+    case HelpCategory::HC_BuildScript:
+      return cl::getDPCTBuildScriptCategory();
+      break;
+    case HelpCategory::HC_QueryAPI:
+      return cl::getDPCTQueryAPICategory();
+      break;
+    case HelpCategory::HC_Warnings:
+      return cl::getDPCTWarningsCategory();
+      break;
+    case HelpCategory::HC_HelpInfo:
+      return cl::getDPCTHelpInfoCategory();
+      break;
+    case HelpCategory::HC_InterceptBuild:
+      return cl::getDPCTInterceptBuildCategory();
+      break;
+    case HelpCategory::HC_Examples:
+      return cl::getDPCTExamplesCategory();
+      break;
+    default:
+      return cl::getDPCTCategory();
+      break;
+    }
+
+    return cl::getDPCTCategory();
+  }
+#endif // SYCLomatic_CUSTOMIZATION
+
 public:
   explicit HelpPrinter(bool showHidden) : ShowHidden(showHidden) {}
   virtual ~HelpPrinter() = default;
@@ -2481,7 +2532,16 @@ public:
     for (size_t i = 0, e = Opts.size(); i != e; ++i)
       MaxArgLen = std::max(MaxArgLen, Opts[i].second->getOptionWidth());
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    OptionCategory &requestedCat(getReqCategory(helpCatEnum));
+
+    if (helpCatEnum != HelpCategory::HC_All)
+      outs() << "OPTIONS: " << requestedCat.getName() << "\n";
+    else
+      outs() << "OPTIONS:\n";
+#else
     outs() << "OPTIONS:\n";
+#endif // SYCLomatic_CUSTOMIZATION
     printOptions(Opts, MaxArgLen);
 
 #ifdef SYCLomatic_CUSTOMIZATION
@@ -2498,8 +2558,28 @@ public:
 #endif // SYCLomatic_CUSTOMIZATION
 
     // Print any extra help the user has declared.
+#ifdef SYCLomatic_CUSTOMIZATION
+    bool showDiagMsg = false;
+
+    switch(helpCatEnum) {
+      case HelpCategory::HC_Advanced:
+      case HelpCategory::HC_Basic:
+      case HelpCategory::HC_BuildScript:
+      case HelpCategory::HC_CodeGen:
+        showDiagMsg = true;
+        break;
+      default:
+        showDiagMsg = false;
+    }
+
+    if (showDiagMsg) {
+      for (const auto &I : GlobalParser->MoreHelp)
+        outs() << I;
+    }
+#else
     for (const auto &I : GlobalParser->MoreHelp)
       outs() << I;
+#endif // SYCLomatic_CUSTOMIZATION
     GlobalParser->MoreHelp.clear();
   }
 };
@@ -2517,59 +2597,9 @@ public:
     return (*A)->getName().compare((*B)->getName());
   }
 
-#ifdef SYCLomatic_CUSTOMIZATION
-  // Store the user requested category
-  void setReqCategory(HelpCategory reqCatEnumVal) {
-    helpCatEnum = reqCatEnumVal;
-  }
-
-  // Return the user requested category
-  OptionCategory &getReqCategory(HelpCategory reqCatEnumVal) {
-    switch (reqCatEnumVal) {
-    case HelpCategory::HC_All:
-      return cl::getDPCTCategory();
-      break;
-    case HelpCategory::HC_Basic:
-      return cl::getDPCTBasicCategory();
-      break;
-    case HelpCategory::HC_Advanced:
-      return cl::getDPCTAdvancedCategory();
-      break;
-    case HelpCategory::HC_CodeGen:
-      return cl::getDPCTCodeGenCategory();
-      break;
-    case HelpCategory::HC_ReportGen:
-      return cl::getDPCTReportGenCategory();
-      break;
-    case HelpCategory::HC_BuildScript:
-      return cl::getDPCTBuildScriptCategory();
-      break;
-    case HelpCategory::HC_QueryAPI:
-      return cl::getDPCTQueryAPICategory();
-      break;
-    case HelpCategory::HC_Warnings:
-      return cl::getDPCTWarningsCategory();
-      break;
-    case HelpCategory::HC_HelpInfo:
-      return cl::getDPCTHelpInfoCategory();
-      break;
-    case HelpCategory::HC_InterceptBuild:
-      return cl::getDPCTInterceptBuildCategory();
-      break;
-    case HelpCategory::HC_Examples:
-      return cl::getDPCTExamplesCategory();
-      break;
-    default:
-      return cl::getDPCTCategory();
-      break;
-    }
-
-    return cl::getDPCTCategory();
-  }
-#endif // SYCLomatic_CUSTOMIZATION
-
   // Make sure we inherit our base class's operator=()
   using HelpPrinter::operator=;
+  using HelpPrinter::setReqCategory;
 
 protected:
   void printOptions(StrOptionPairVector &Opts, size_t MaxArgLen) override {
