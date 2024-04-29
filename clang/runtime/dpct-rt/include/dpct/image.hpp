@@ -922,6 +922,10 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 }
 
 namespace detail {
+static inline pitched_data to_pitched_data(image_matrix *image) {
+  return image->to_pitched_data();
+}
+
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
   switch (dims) {

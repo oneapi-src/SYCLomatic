@@ -657,3 +657,17 @@ CONDITIONAL_FACTORY_ENTRY(
         "SYCL currently does not support memory access across peer devices. "
         "You can migrate the code with peer access extension by not specifying "
         "-no-dpcpp-extensions=peer_access."))
+
+CALL_FACTORY_ENTRY(
+    "make_cudaExtent",
+    CALL(DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 3),
+         ARG(0), ARG(1), ARG(2)))
+
+CALL_FACTORY_ENTRY("make_cudaPitchedPtr",
+                   CALL(MapNames::getDpctNamespace() + "pitched_data", ARG(0),
+                        ARG(1), ARG(2), ARG(3)))
+
+CALL_FACTORY_ENTRY(
+    "make_cudaPos",
+    CALL(DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "id", 3),
+         ARG(0), ARG(1), ARG(2)))
