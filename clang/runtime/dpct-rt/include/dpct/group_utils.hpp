@@ -1,4 +1,4 @@
-//==---- group_utils.h ------------------*- C++ -*--------------------==//
+//==---- group_utils.hpp ------------------*- C++ -*--------------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -16,13 +16,12 @@
 #include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
 #endif
 
-#include "dpct/dpct.hpp"
-#include "dpct/dpl_extras/functional.h"
+#include "dpct.hpp"
+#include "dpl_extras/functional.h"
 
 namespace dpct {
 namespace group {
 
-///detail namespace
 namespace detail {
 
 typedef uint16_t digit_counter_type;
@@ -120,8 +119,8 @@ private:
   }
 
   template <typename Item>
-  __dpct_inline__ void
-  exclusive_downsweep(const Item &item, packed_counter_type raking_partial) {
+  __dpct_inline__ void exclusive_downsweep(const Item &item,
+                                           packed_counter_type raking_partial) {
     packed_counter_type *ptr =
         reinterpret_cast<packed_counter_type *>(_local_memory);
     packed_counter_type sum = raking_partial;
@@ -367,8 +366,7 @@ class radix_sort {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
     size_t ranks_size =
-        detail::radix_rank<RADIX_BITS>::get_local_memory_size(
-            group_threads);
+        detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
     size_t exchange_size =
         exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
     return sycl::max(ranks_size, exchange_size);
@@ -386,8 +384,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      unsigned_keys[i] =
-          detail::traits<T>::twiddle_in(unsigned_keys[i]);
+      unsigned_keys[i] = detail::traits<T>::twiddle_in(unsigned_keys[i]);
     }
 
     for (int i = begin_bit; i < end_bit; i += RADIX_BITS) {
@@ -414,8 +411,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      unsigned_keys[i] =
-          detail::traits<T>::twiddle_out(unsigned_keys[i]);
+      unsigned_keys[i] = detail::traits<T>::twiddle_out(unsigned_keys[i]);
     }
   }
 
@@ -443,4 +439,3 @@ private:
 } // namespace dpct
 
 #endif // __DPCT_GROUP_UTILS_HPP__
-
