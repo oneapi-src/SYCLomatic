@@ -9,6 +9,7 @@
 #define __DPCT_CODEPIN_HPP__
 
 #include "serialization/basic.hpp"
+#include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <map>
