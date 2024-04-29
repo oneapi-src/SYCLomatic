@@ -2561,16 +2561,15 @@ public:
 #ifdef SYCLomatic_CUSTOMIZATION
     bool showDiagMsg = false;
 
-    switch(helpCatEnum) {
-      case HelpCategory::HC_Advanced:
-      case HelpCategory::HC_Basic:
-      case HelpCategory::HC_BuildScript:
-      case HelpCategory::HC_CodeGen:
-        showDiagMsg = true;
-        break;
-      default:
-        showDiagMsg = false;
-    }
+    switch (helpCatEnum) {
+    case HelpCategory::HC_Advanced:
+    case HelpCategory::HC_Basic:
+    case HelpCategory::HC_BuildScript:
+    case HelpCategory::HC_CodeGen:
+      showDiagMsg = true;
+      break;
+    default:
+      showDiagMsg = false;    }
 
     if (showDiagMsg) {
       for (const auto &I : GlobalParser->MoreHelp)
