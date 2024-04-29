@@ -18,7 +18,8 @@ using ReplTy = std::map<std::string, clang::tooling::Replacements>;
 #define DiagRef                                                                \
   "See Diagnostics Reference to resolve warnings and complete the "            \
   "migration:\n"                                                               \
-  "https://oneapi-src.github.io/SYCLomatic/dev_guide/reference.html\n"
+  "https://oneapi-src.github.io/SYCLomatic/dev_guide/reference/"               \
+  "diagnostics-reference.html\n"
 
 namespace llvm {
 class StringRef;
