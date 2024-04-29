@@ -2569,7 +2569,8 @@ public:
       showDiagMsg = true;
       break;
     default:
-      showDiagMsg = false;    }
+      showDiagMsg = false;
+    }
 
     if (showDiagMsg) {
       for (const auto &I : GlobalParser->MoreHelp)
