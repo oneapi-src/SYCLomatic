@@ -77,6 +77,43 @@ private:
   size_t _pitch, _x, _y;
 };
 
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+namespace experimental {
+class image_mem_wrapper;
+namespace detail {
+static sycl::event dpct_memcpy(const image_mem_wrapper *src,
+                               const sycl::id<3> &src_id, pitched_data &dest,
+                               const sycl::id<3> &dest_id,
+                               const sycl::range<3> &copy_extend,
+                               sycl::queue q);
+static sycl::event
+dpct_memcpy(const pitched_data src, const sycl::id<3> &src_id,
+            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q);
+} // namespace detail
+} // namespace experimental
+#endif
+class image_matrix;
+namespace detail {
+static pitched_data to_pitched_data(image_matrix *image);
+}
+
+/// Memory copy parameters for 2D/3D memory data.
+struct memcpy_parameter {
+  struct data_wrapper {
+    pitched_data pitched{};
+    sycl::id<3> pos{};
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+    experimental::image_mem_wrapper *image_bindless{nullptr};
+#endif
+    image_matrix *image{nullptr};
+  };
+  data_wrapper from{};
+  data_wrapper to{};
+  sycl::range<3> size{};
+  memcpy_direction direction{memcpy_direction::automatic};
+};
+
 namespace detail {
 class mem_mgr {
   mem_mgr() {
@@ -449,36 +486,36 @@ static inline size_t get_offset(sycl::id<3> id, size_t slice,
   return slice * id.get(2) + pitch * id.get(1) + id.get(0);
 }
 
+// RAII for host pointer
+class host_buffer {
+  void *_buf;
+  size_t _size;
+  sycl::queue &_q;
+  const std::vector<sycl::event> &_deps; // free operation depends
+
+public:
+  host_buffer(size_t size, sycl::queue &q, const std::vector<sycl::event> &deps)
+      : _buf(std::malloc(size)), _size(size), _q(q), _deps(deps) {}
+  void *get_ptr() const { return _buf; }
+  size_t get_size() const { return _size; }
+  ~host_buffer() {
+    if (_buf) {
+      _q.submit([&](sycl::handler &cgh) {
+        cgh.depends_on(_deps);
+        cgh.host_task([buf = _buf] { std::free(buf); });
+      });
+    }
+  }
+};
+
 /// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
 /// and \p from_range to another specified by \p to_ptr and \p to_range.
 static inline std::vector<sycl::event>
 dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
             sycl::range<3> to_range, sycl::range<3> from_range,
-            sycl::id<3> to_id, sycl::id<3> from_id,
-            sycl::range<3> size, memcpy_direction direction,
+            sycl::id<3> to_id, sycl::id<3> from_id, sycl::range<3> size,
+            memcpy_direction direction,
             const std::vector<sycl::event> &dep_events = {}) {
-  // RAII for host pointer
-  class host_buffer {
-    void *_buf;
-    size_t _size;
-    sycl::queue &_q;
-    const std::vector<sycl::event> &_deps; // free operation depends
-
-  public:
-    host_buffer(size_t size, sycl::queue &q,
-                const std::vector<sycl::event> &deps)
-        : _buf(std::malloc(size)), _size(size), _q(q), _deps(deps) {}
-    void *get_ptr() const { return _buf; }
-    size_t get_size() const { return _size; }
-    ~host_buffer() {
-      if (_buf) {
-        _q.submit([&](sycl::handler &cgh) {
-          cgh.depends_on(_deps);
-          cgh.host_task([buf = _buf] { std::free(buf); });
-        });
-      }
-    }
-  };
   std::vector<sycl::event> event_list;
 
   size_t to_slice = to_range.get(1) * to_range.get(0),
@@ -622,6 +659,44 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
                      sycl::range<3>(from_pitch, y, 1),
                      sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0),
                      sycl::range<3>(x, y, 1), direction);
+}
+
+static inline std::vector<sycl::event>
+dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
+  auto to = param.to.pitched;
+  auto from = param.from.pitched;
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+  if (param.to.image_bindless != nullptr &&
+      param.from.image_bindless != nullptr) {
+    // TODO: Need change logic when sycl support image_mem to image_mem copy.
+    std::vector<sycl::event> event_list;
+    host_buffer buf(param.size.size(), q, event_list);
+    to.set_data_ptr(buf.get_ptr());
+    experimental::detail::dpct_memcpy(param.from.image_bindless, param.from.pos,
+                                      to, sycl::id<3>(0, 0, 0), param.size, q);
+    from.set_data_ptr(buf.get_ptr());
+    event_list.push_back(experimental::detail::dpct_memcpy(
+        from, sycl::id<3>(0, 0, 0), param.to.image_bindless, param.to.pos,
+        param.size, q));
+    return event_list;
+  } else if (param.to.image_bindless != nullptr) {
+    return {experimental::detail::dpct_memcpy(from, param.from.pos,
+                                              param.to.image_bindless,
+                                              param.to.pos, param.size, q)};
+  } else if (param.from.image_bindless != nullptr) {
+    return {experimental::detail::dpct_memcpy(param.from.image_bindless,
+                                              param.from.pos, to, param.to.pos,
+                                              param.size, q)};
+  }
+#endif
+  if (param.to.image != nullptr) {
+    to = to_pitched_data(param.to.image);
+  }
+  if (param.from.image != nullptr) {
+    from = to_pitched_data(param.from.image);
+  }
+  return dpct_memcpy(q, to, param.to.pos, from, param.from.pos, param.size,
+                     param.direction);
 }
 
 namespace deprecated {
@@ -994,6 +1069,29 @@ async_dpct_memcpy(pitched_data to, sycl::id<3> to_pos, pitched_data from,
                   sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
+
+/// Synchronously copies 2D/3D memory data specified by \p param . The function
+/// will return after the copy is completed.
+///
+/// \param param Memory copy parameters.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static inline void dpct_memcpy(const memcpy_parameter &param,
+                               sycl::queue &q = dpct::get_default_queue()) {
+  sycl::event::wait(detail::dpct_memcpy(q, param));
+}
+
+/// Asynchronously copies 2D/3D memory data specified by \p param . The return
+/// of the function does NOT guarantee the copy is completed.
+///
+/// \param param Memory copy parameters.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static inline void async_dpct_memcpy(const memcpy_parameter &param,
+                                     sycl::queue &q = get_default_queue()) {
+  detail::dpct_memcpy(q, param);
+}
+
 /**
  * @brief Sets 1 byte data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q synchronously.
