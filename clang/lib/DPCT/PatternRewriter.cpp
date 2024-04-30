@@ -394,7 +394,8 @@ updateExtentionName(const std::string &Input, size_t Next,
   auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
     size_t Pos = Next - 1;
-    for (; Pos > 0 && isIdentifiedChar(Input[Pos]); Pos--) {
+    for (; Pos > 0 && (isIdentifiedChar(Input[Pos]) || Input[Pos] == '.');
+         Pos--) {
     }
     Pos = Pos == 0 ? 0 : Pos + 1;
     std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - Pos);

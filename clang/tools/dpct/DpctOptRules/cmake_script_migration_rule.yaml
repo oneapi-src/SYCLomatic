@@ -943,7 +943,7 @@
     value:
       MatchMode: Full
       In: CMAKE_CUDA_HOST_COMPILER
-      Out: CMAKE_SYCL_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
 
 - Rule: rule_CMAKE_CUDA_ARCHITECTURES
   Kind: CMakeRule
@@ -2245,6 +2245,32 @@
   In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
   Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
 
+- Rule: rule_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_compiler
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
+
+- Rule: rule_CUDA_HOST_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_flags
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_FLAGS
+      Out: SYCL_HOST_FLAGS
+
 - Rule: rule_CUDAToolkit_FOUND
   Kind: CMakeRule
   Priority: Fallback
@@ -2258,3 +2284,17 @@
       Out: IntelSYCL_FOUND
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
+
+- Rule: rule_lib_cuda_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: lib_cuda
+  In: list${empty}(${value})
+  Out: list${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cuda
+      Out: ""
+      RuleId: "remove_lib_cuda"
