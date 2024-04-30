@@ -289,3 +289,11 @@
 // unique_count-NEXT:  /*10*/  count = dpct::unique_count(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + N);
 // unique_count-NEXT:  /*11*/  count = dpct::unique_count(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + N);
 // unique_count-NEXT:  /*12*/  count = dpct::unique_count(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + N);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::partition_point --extra-arg="-std=c++14"| FileCheck %s -check-prefix=partition_point
+// partition_point:  /*1*/  dpct::partition_point(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), up);
+// partition_point-NEXT:  /*2*/  dpct::partition_point(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), up);
+// partition_point-NEXT:  /*3*/  dpct::partition_point(oneapi::dpl::execution::seq, data, data + 10, up);
+// partition_point-NEXT:  /*4*/  dpct::partition_point(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), up);
+// partition_point-NEXT:  /*5*/  dpct::partition_point(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), up);
+// partition_point-NEXT:  /*6*/  dpct::partition_point(oneapi::dpl::execution::seq, data, data + 10, up);

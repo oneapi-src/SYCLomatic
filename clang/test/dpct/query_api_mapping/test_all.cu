@@ -1921,6 +1921,7 @@
 // CHECK-NEXT: thrust::is_sorted_until
 // CHECK-NEXT: thrust::mismatch
 // CHECK-NEXT: thrust::none_of
+// CHECK-NEXT: thrust::partition_point
 // CHECK-NEXT: thrust::remove
 // CHECK-NEXT: thrust::replace_copy
 // CHECK-NEXT: thrust::reverse
