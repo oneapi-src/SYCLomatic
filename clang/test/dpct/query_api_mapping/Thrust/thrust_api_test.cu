@@ -253,3 +253,17 @@
 // stable_partition-NEXT:  /*10*/ dpct::stable_partition(oneapi::dpl::execution::seq, data, data + N, S, is_even());
 // stable_partition-NEXT:  /*11*/ dpct::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, host_S.begin(), is_even());
 // stable_partition-NEXT:  /*12*/ dpct::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, device_s.begin(), is_even());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::scatter_if --extra-arg="-std=c++14"| FileCheck %s -check-prefix=scatter_if
+// scatter_if:  /*1*/ dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+// scatter_if-NEXT:  /*2*/ dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+// scatter_if-NEXT:  /*3*/ dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+// scatter_if-NEXT:  /*4*/ dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+// scatter_if-NEXT:  /*5*/  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+// scatter_if-NEXT:  /*6*/  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+// scatter_if-NEXT:  /*7*/  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+// scatter_if-NEXT:  /*8*/  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+// scatter_if-NEXT:  /*9*/  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+// scatter_if-NEXT:  /*10*/  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+// scatter_if-NEXT:  /*11*/  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+// scatter_if-NEXT:  /*12*/  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
