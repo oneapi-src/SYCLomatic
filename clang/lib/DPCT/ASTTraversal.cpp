@@ -65,8 +65,7 @@ using namespace clang::dpct;
 using namespace clang::tooling;
 
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
-extern llvm::cl::opt<UsmLevel> USMLevel;
-extern bool ProcessAllFlag;
+extern DpctOption<opt, bool> ProcessAll;
 
 TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation End,
                               std::string &&Str, const SourceManager &SM) {
@@ -895,7 +894,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     }
 
     clang::tooling::UnifiedPath InFile = SM.getFilename(Loc).str();
-    if (IsFileInCmd || ProcessAllFlag ||
+    if (IsFileInCmd || ProcessAll ||
         GetSourceFileType(InFile.getCanonicalPath()) & SPT_CudaSource) {
       IncludeFileMap[DpctGlobalInfo::removeSymlinks(
           SM.getFileManager(), InFile.getCanonicalPath().str())] = false;
@@ -8056,7 +8055,7 @@ void EventAPICallRule::processAsyncJob(const Stmt *Node) {
   // Handle the kernel calls and async memory operations between start and stop
   handleTargetCalls(Node);
 
-  if (USMLevel == UsmLevel::UL_Restricted) {
+  if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
     for (const auto &NewEventName : Events2Wait) {
       std::ostringstream SyncStmt;
       SyncStmt
@@ -8416,7 +8415,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
     }
   }
 
-  if (USMLevel == UsmLevel::UL_Restricted) {
+  if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
     if (KCallLoc > RecordBeginLoc) {
       if (!IsKernelInLoopStmt && !IsKernelSync) {
         K->setEvent(ArgName);
@@ -8450,7 +8449,7 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
         Stmt::ArraySubscriptExprClass)
       NeedStreamWait = true;
 
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       // std::string EventName = getTempNameForExpr(TimeElapsedCE->getArg(2));
       std::string EventName;
       if (TimeElapsedCE->getNumArgs() == 3) {
@@ -8573,12 +8572,12 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
 }
 
 std::string getNewQueue(int Index) {
-  extern bool AsyncHandlerFlag;
+  extern DpctOption<opt, bool> AsyncHandler;
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   printPartialArguments(OS << "{{NEEDREPLACED" << std::to_string(Index)
                            << "}}.create_queue(",
-                        AsyncHandlerFlag ? 1 : 0, "true")
+                        AsyncHandler ? 1 : 0, "true")
       << ")";
   return OS.str();
 }
@@ -10465,7 +10464,7 @@ void MemoryMigrationRule::mallocMigration(
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
   if (Name == "cudaMalloc" || Name == "cuMemAlloc_v2") {
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       // Leverage CallExprRewritter to migrate the USM version
       ExprAnalysis EA(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
@@ -10506,7 +10505,7 @@ void MemoryMigrationRule::mallocMigration(
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (Name == "cudaMallocManaged" || Name == "cuMemAllocManaged") {
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       // Leverage CallExprRewriter to migrate the USM version
       ExprAnalysis EA(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
@@ -10536,7 +10535,7 @@ void MemoryMigrationRule::mallocMigration(
     insertAroundStmt(C->getArg(1), "(", ")");
     DpctGlobalInfo::getInstance().insertCublasAlloc(C);
     emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
       if (IsAssigned)
         emplaceTransformation(new InsertBeforeStmt(C, "DPCT_CHECK_ERROR("));
@@ -10710,7 +10709,7 @@ void MemoryMigrationRule::memcpyMigration(
 
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
     replaceMemAPIArg(C->getArg(1), Result, AsyncQueue);
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       // Since the range of removeArg is larger than the range of
       // handleDirection, the handle direction replacement will be removed.
       emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
@@ -11017,7 +11016,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
     return;
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
   if (Name == "cudaMemcpyToSymbol" || Name == "cudaMemcpyFromSymbol") {
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
       ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
     } else {
@@ -11030,7 +11029,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
         StreamStr = ExprAnalysis::ref(C->getArg(5));
       }
     }
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       if (StreamStr.empty()) {
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
@@ -11091,7 +11090,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
   if (Name == "cudaMemcpyToSymbolAsync" ||
       Name == "cudaMemcpyFromSymbolAsync") {
     if (C->getNumArgs() == 6 && !C->getArg(4)->isDefaultArgument()) {
-      if (USMLevel == UsmLevel::UL_Restricted) {
+      if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
         if (!C->getArg(5)->isDefaultArgument()) {
@@ -11102,13 +11101,13 @@ void MemoryMigrationRule::memcpySymbolMigration(
         handleAsync(C, 5, Result);
       }
     } else if (C->getNumArgs() == 5 && !C->getArg(4)->isDefaultArgument()) {
-      if (USMLevel == UsmLevel::UL_Restricted) {
+      if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
       }
     }
   } else {
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       if (C->getNumArgs() == 5 && !C->getArg(4)->isDefaultArgument()) {
         if (auto TM = removeArg(C, 4, *Result.SourceManager))
           emplaceTransformation(TM);
@@ -11143,7 +11142,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
   }
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
   if (Name == "cudaFree" || Name == "cublasFree") {
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       ArgumentAnalysis AA;
       AA.setCallSpelling(C);
       AA.analyze(C->getArg(0));
@@ -11177,7 +11176,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
           new ReplaceCalleeName(C, MapNames::getDpctNamespace() + "dpct_free"));
     }
   } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       CheckCanUseCLibraryMallocOrFree Checker(0, true);
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
@@ -11246,7 +11245,7 @@ void MemoryMigrationRule::memsetMigration(
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       if (IsAsync) {
         emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
       } else {
@@ -11302,14 +11301,14 @@ void MemoryMigrationRule::prefetchMigration(
 
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end() &&
-      USMLevel == UsmLevel::UL_Restricted) {
+      DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
   }
 
-  if (USMLevel == UsmLevel::UL_Restricted) {
+  if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
     const SourceManager *SM = Result.SourceManager;
     std::string Replacement;
     ExprAnalysis EA;
@@ -11367,7 +11366,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
 
   if (Name == "cudaHostGetDevicePointer" ||
       Name == "cuMemHostGetDevicePointer_v2") {
-    if (USMLevel == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       ExprAnalysis EA(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
       auto Info = std::make_shared<PriorityReplInfo>();
@@ -11491,14 +11490,14 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
                                         bool IsAssigned) {
   auto FuncName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   // Do nothing if USM is disabled
-  if (USMLevel == UsmLevel::UL_None) {
+  if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_None) {
     report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, FuncName);
     return;
   }
 
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end() &&
-      USMLevel == UsmLevel::UL_Restricted) {
+      DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -11679,7 +11678,7 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, "DPCT_CHECK_ERROR(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
-               USMLevel != UsmLevel::UL_None) {
+               DpctGlobalInfo::getUsmLevel() !=  UsmLevel::UL_None) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, "DPCT_CHECK_ERROR(", ")");
     } else if (IsAssigned && !Name.compare("cudaArrayGetInfo")) {

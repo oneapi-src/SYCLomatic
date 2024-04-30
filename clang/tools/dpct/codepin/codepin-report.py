@@ -27,7 +27,7 @@ ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 # Raise the warning message when the data is not matched.
 def data_value_dismatch_error(value1, value2):
     return comparison_error(
-        f' and [ERROR: DATA VALUE MISMATCH] the CUDA value "{value1}" differs from the SYCL value "{value2}".'
+        f" and [ERROR: DATA VALUE MISMATCH] the CUDA value {value1} differs from the SYCL value {value2}."
     )
 
 
@@ -60,12 +60,13 @@ def prepare_failed_log(cuda_id, sycl_id, log_type, detail):
 
 
 def prolog_dismatch_but_epilog_match(id):
-    detail = f"[WARNING: METADATA MISMATCH] The pair of prolog data {id} are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API {id}.\n"
+    api_name = id.split(":")[0]
+    detail = f"[WARNING: METADATA MISMATCH] The pair of prolog data {id} are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API {api_name}.\n"
     return prepare_failed_log(id, id, "Data value", detail)
 
 
 def get_missing_key_log(id):
-    detail = f'[ERROR: METADATA MISSING] Cannot find the checkpoint: "{id}" in the execution log dataset of instrumented SYCL code.\n'
+    detail = f"[ERROR: METADATA MISSING] Cannot find the checkpoint: {id} in the execution log dataset of instrumented SYCL code.\n"
     return prepare_failed_log(id, "Missing", "Execution path", detail)
 
 
@@ -130,7 +131,7 @@ def compare_dict_value(cuda_dict, sycl_dict):
                     continue
                 compare_data_value(data, sycl_dict[name])
         except comparison_error as e:
-            raise comparison_error(f'->"{name}"{e.message}')
+            raise comparison_error(f"->{name}{e.message}")
 
 
 def compare_container_value(cuda_value, sycl_value):
@@ -150,7 +151,7 @@ def compare_checkpoint(cuda_checkpoint, sycl_checkpoint):
                 compare_container_value(cuda_var, sycl_var)
                 continue
             except comparison_error as e:
-                raise comparison_error(f'"{id}"{e.message}')
+                raise comparison_error(f"{id}{e.message}")
 
 
 def is_checkpoint_length_dismatch(cuda_list, sycl_list):
