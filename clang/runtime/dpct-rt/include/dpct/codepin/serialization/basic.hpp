@@ -16,6 +16,8 @@
 #include <string>
 #ifdef __NVCC__
 #include <cuda_runtime.h>
+#include <cuda_bf16.h>
+#include <cuda_fp16.h>
 #else
 #include <dpct/dpct.hpp>
 #include <sycl/sycl.hpp>
@@ -147,6 +149,17 @@ template <typename T> std::string demangle_name() {
 #endif
   return ret_str;
 }
+
+#ifdef __NVCC__
+template <> std::string demangle_name<__half>() { return "fp16"; }
+template <> std::string demangle_name<nv_bfloat16>() { return "bp16"; }
+#else
+template <> std::string demangle_name<sycl::half>() { return "fp16"; }
+template <> std::string demangle_name<sycl::ext::oneapi::bfloat16>() {
+  return "bp16";
+}
+#endif
+
 template <class T, class T2 = void> class DataSer {
 public:
   static void dump(json_stringstream &ss, T value,
@@ -166,6 +179,40 @@ public:
     ss.print_type_data(std::string(demangle_name<T>()), value);
   }
 };
+
+#ifdef __NVCC__
+template <>
+class DataSer<__half> {
+public:
+  static void dump(json_stringstream &ss, const __half &value,
+                   dpct::experimental::StreamType stream) {
+    float f = __half2float(value);
+    ss.print_type_data(demangle_name<__half>(), f);
+  }
+};
+template <>
+class DataSer<nv_bfloat16> {
+public:
+  static void dump(json_stringstream &ss, const nv_bfloat16 &value,
+                   dpct::experimental::StreamType stream) {
+    float f = bfloat16_to_float(value);
+    ss.print_type_data(demangle_name<nv_bfloat16>(), f);
+  }
+};
+#else
+template <typename T>
+class DataSer<T,
+              typename std::enable_if<
+                  std::is_same<T, sycl::half>::value ||
+                  std::is_same<T, sycl::ext::oneapi::bfloat16>::value>::type> {
+public:
+  static void dump(json_stringstream &ss, const T &value,
+                   dpct::experimental::StreamType stream) {
+    float f = static_cast<float>(value);
+    ss.print_type_data(demangle_name<T>(), f);
+  }
+};
+#endif
 
 #ifdef __NVCC__
 template <> class DataSer<int3> {
