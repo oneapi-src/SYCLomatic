@@ -97,10 +97,24 @@ class comparison_error(Exception):
         super().__init__(self.message)
 
 
-def compare_data_value(data1, data2):
+def compare_float_value(data1, data2, type):
+    if type not in ["bf16", "fp16", "float", "double"]:
+        raise ValueError("Type must be one of 'bf16', 'fp16', 'float', 'double'")
+    if type == "float" and not math.isclose(data1, data2, rel_tol=1.1920929e-7):
+        raise ValueError(f"Float values {data1} and {data2} are not close enough")
+    if type == "fp16" and not math.isclose(data1, data2, rel_tol=9.765625e-4):
+        raise ValueError(f"fp16 values {data1} and {data2} are not close enough")
+    if type == "bf16" and not math.isclose(data1, data2, rel_tol=9.765625e-4):
+        raise ValueError(f"bf16 values {data1} and {data2} are not close enough")
+    return True
+
+
+def compare_data_value(data1, data2, type):
     if data1 == ERROR_MATCH_PATTERN or data2 == ERROR_MATCH_PATTERN:
         raise no_serialization_function_error()
-    if data1 != data2:
+    if type in ["bf16", "fp16", "float", "double"]:
+        compare_float_value(data1, data2, type)
+    elif data1 != data2:
         raise data_value_dismatch_error(data1, data2)
     return True
 
@@ -119,6 +133,7 @@ def compare_list_value(cuda_list, sycl_list):
 
 
 def compare_dict_value(cuda_dict, sycl_dict):
+    type_name = ""
     for name, data in cuda_dict.items():
         if name not in sycl_dict:
             raise data_missed_error(name)
@@ -128,8 +143,9 @@ def compare_dict_value(cuda_dict, sycl_dict):
                 continue
             else:
                 if name == TYPE:  # Check the Data only, ignore the key is 'Type'
+                    type_name = name
                     continue
-                compare_data_value(data, sycl_dict[name])
+                compare_data_value(data, sycl_dict[name], type_name)
         except comparison_error as e:
             raise comparison_error(f"->{name}{e.message}")
 
