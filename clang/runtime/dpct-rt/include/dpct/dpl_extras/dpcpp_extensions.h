@@ -577,7 +577,7 @@ enum load_algorithm {
 };
 
 // loads a linear segment of workgroup items into a blocked arrangement.
-template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT,
           typename InputIteratorT, typename Item>
 __dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -594,7 +594,7 @@ __dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
 }
 
 // loads a linear segment of workgroup items into a striped arrangement.
-template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT,
           typename InputIteratorT, typename Item>
 __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -647,9 +647,9 @@ public:
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
     if constexpr (ALGORITHM == BLOCK_LOAD_DIRECT) {
-      load_blocked<ITEMS_PER_WORK_ITEM, ALGORITHM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      load_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     } else if constexpr (ALGORITHM == BLOCK_LOAD_STRIPED) {
-      load_striped<ITEMS_PER_WORK_ITEM, ALGORITHM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      load_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     }
   }
 
