@@ -1,5 +1,4 @@
-//===--------------- DpctOptions.h
-//-----------------------------------------------===//
+//===--------------- DpctOptions.h-----------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -56,8 +55,14 @@ private:
 
   static std::vector<DpctOptionBase *> getOptions(BitsType Flag);
 
+  /// The usage of option /p DependerOption requires option /p DependeeOption to
+  /// be specified.
+  /// Requires to be called in DpctOptionBase::init().
   static void setDependency(DpctOptionNameKind DependentOption,
-                            DpctOptionNameKind DependedOption);
+                            DpctOptionNameKind DependeeOption);
+
+  /// Sepcify that /p OptionA and /p OptionB cannot be used together.
+  /// Requires to be called in DpctOptionBase::init().
   static void setExclusive(DpctOptionNameKind OptionA,
                            DpctOptionNameKind OptionB);
 

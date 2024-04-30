@@ -1,3 +1,26 @@
+//===--------------- DpctOptions.inc--------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+/****************************************************************************
+*
+* DPCT_OPTION(TEMPLATE, TYPE, NAME, OPTION_CLASS, OPTION_ACTIONS, OPTION_ARG_NAME, ...)
+*  TEMPLATE: clang::dpct::opt | clang::dpct::list | clang::dpct::bits
+*  TYPE: Option data type
+*  NAME: Option enum name and variable name
+*  OPTION_CLASS: clang::dpct::DpctOptionClass::OC_Attribute 
+*    | clang::dpct::DpctOptionClass::OC_Action
+*  OPTION_ACTIONS: DPCT_OPTION_ACTIONS([DpctActionKind, ...])
+*  OPTION_ARG_NAME: Option argument name
+*
+*  ...: Other option attributes, e.g. llvm::cl::desc(...), llvm::cl::value_desc(...)
+*
+****************************************************************************/
+
 #ifdef DPCT_OPTIONS_VAR
 
 #if DPCT_OPTIONS_IN_CLANG_DPCT
