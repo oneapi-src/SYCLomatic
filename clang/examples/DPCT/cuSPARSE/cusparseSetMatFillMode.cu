@@ -1,7 +1,8 @@
 #include "cusparse.h"
 
-void test(const cusparseMatDescr_t desc) {
+void test(cusparseMatDescr_t desc, cusparseFillMode_t uplo) {
   // Start
-  cusparseFillMode_t uplo = cusparseGetMatFillMode(desc);
+  cusparseSetMatFillMode(desc /*cusparseMatDescr_t*/,
+                         uplo /*cusparseFillMode_t*/);
   // End
 }

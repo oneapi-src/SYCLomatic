@@ -2,6 +2,7 @@
 
 void test(cusparseMatDescr_t desc, cusparseMatrixType_t mat_type) {
   // Start
-  cusparseSetMatType(desc, mat_type);
+  cusparseSetMatType(desc /*cusparseMatDescr_t*/,
+                     mat_type /*cusparseMatrixType_t*/);
   // End
 }

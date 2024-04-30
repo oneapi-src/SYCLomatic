@@ -1,7 +1,8 @@
 #include "cusparse.h"
 
-void test(const cusparseMatDescr_t desc) {
+void test(cusparseMatDescr_t desc, cusparseIndexBase_t base) {
   // Start
-  cusparseIndexBase_t base = cusparseGetMatIndexBase(desc);
+  cusparseSetMatIndexBase(desc /*cusparseMatDescr_t*/,
+                          base /*cusparseIndexBase_t*/);
   // End
 }
