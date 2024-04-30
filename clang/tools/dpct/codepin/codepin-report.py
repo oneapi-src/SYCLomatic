@@ -319,8 +319,8 @@ def main():
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
         f.write("Consistently APIs count, " + str(match_checkpoint_num) + "\n")
-        f.write("Bottleneck Kernel(CUDA), " + str(bottleneck_cuda[0]) + ", time:" + str(bottleneck_cuda[1]) + "\n")
-        f.write("Bottleneck Kernel(SYCL), " + str(bottleneck_sycl[0]) + ", time:" + str(bottleneck_sycl[1]) + "\n")
+        f.write("Most Time-consuming Kernel(CUDA), " + str(bottleneck_cuda[0]) + ", time:" + str(bottleneck_cuda[1]) + "\n")
+        f.write("Most Time-consuming Kernel(SYCL), " + str(bottleneck_sycl[0]) + ", time:" + str(bottleneck_sycl[1]) + "\n")
         f.write("Peak Device Memory Used(CUDA), " + str(max_device_memory_cuda[1]) + "\n")
         f.write("Peak Device Memory Used(SYCL), " + str(max_device_memory_sycl[1]) + "\n")
     if failed_log:

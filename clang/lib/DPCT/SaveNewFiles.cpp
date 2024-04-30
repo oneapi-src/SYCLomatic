@@ -715,10 +715,10 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
                                   "_codepin" + Info.TemplateInstArgs;
     RS << "template <> class data_ser<" << CodepinTypeName << "> {" << getNL()
        << "public:" << getNL()
-       << "  static void dump(dpct::experimental::detail::json_stringstream "
+       << "  static void dump(dpctexp::codepin::detail::json_stringstream "
           "&ss, "
        << CodepinTypeName << " &value," << getNL()
-       << "                   dpct::experimental::queue_t queue) {"
+       << "                   dpctexp::codepin::queue_t queue) {"
        << getNL();
     RS << "    auto arr = ss.array();" << getNL();
 
@@ -728,16 +728,16 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
            << getNL() << "      obj" << i << ".key(\""
            << Info.Members[i].MemberName << "\");" << getNL()
            << "      auto value" << i << " = obj" << i
-           << ".value<dpct::experimental::detail::json_stringstream::json_obj>("
+           << ".value<dpctexp::codepin::detail::json_stringstream::json_obj>("
               ");"
-           << getNL() << "      dpct::experimental::detail::data_ser<"
+           << getNL() << "      dpctexp::codepin::detail::data_ser<"
            << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
         }
         RS << ">::print_type_name(value" << i << ");" << getNL()
            << "      obj"<<i<<".key(\"Data\");" << getNL()
-           << "      dpct::experimental::detail::data_ser<"
+           << "      dpctexp::codepin::detail::data_ser<"
            << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
@@ -754,14 +754,14 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
     if (Info.TopTypeFlag) {
       RS << "template <> class data_ser<" << Name << "> {" << getNL()
          << "public:" << getNL()
-         << "  static void dump(dpct::experimental::detail::json_stringstream "
+         << "  static void dump(dpctexp::codepin::detail::json_stringstream "
             "&ss, "
          << Name << " &value," << getNL()
-         << "                   dpct::experimental::queue_t queue) {"
+         << "                   dpctexp::codepin::queue_t queue) {"
          << getNL();
       RS << "    " + CodepinTypeName << "& temp = reinterpret_cast<"
          << CodepinTypeName << "&>(value);" << getNL();
-      RS << "    dpct::experimental::detail::data_ser<" << CodepinTypeName
+      RS << "    dpctexp::codepin::detail::data_ser<" << CodepinTypeName
          << ">::dump(ss, temp, queue);" << getNL() << "  }" << getNL()
          << "  static void print_type_name(json_stringstream::json_obj &obj) {"
          << getNL() << "    obj.key(\"Type\");" << getNL() << "    obj.value(\""
@@ -774,14 +774,16 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
 void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
   std::vector<std::string> SortedVec =
       codePinTypeTopologicalSort(DpctGlobalInfo::getCodePinTypeDepsVec());
-  RS << "#ifndef __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL()
-     << "#define __DPCT_CODEPIN_GENRATED_SCHEMA__" << getNL() << getNL();
+  RS << "// This file is auto-generated to support the instrument API of CodePin." << getNL();
+  RS << "#ifndef __DPCT_CODEPIN_AUTOGEN_UTIL__" << getNL()
+     << "#define __DPCT_CODEPIN_AUTOGEN_UTIL__" << getNL() << getNL();
   genCodePinDecl(RS, SortedVec, true, IsForCUDADebug);
   RS << getNL() << "namespace dpct {" << getNL() << "namespace experimental {"
-     << getNL() << "namespace detail {" << getNL();
+     << getNL() << "namespace codepin {" << getNL() << "namespace detail {"
+     << getNL();
   genCodePinDecl(RS, SortedVec, false, IsForCUDADebug);
   genCodePinDumpFunc(RS, IsForCUDADebug);
-  RS << "}" << getNL() << "}" << getNL() << "}" << getNL();
+  RS << "}" << getNL() << "}" << getNL() << "}" << getNL() << "}" << getNL();
   RS << "#endif" << getNL();
 }
 
@@ -1063,8 +1065,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
-    std::string SchemaPathCUDA = CodePinCUDAFolder + "/generated_schema.hpp";
-    std::string SchemaPathSYCL = OutRootStr + "/generated_schema.hpp";
+    std::string SchemaPathCUDA = CodePinCUDAFolder + "/codepin_autogen_util.hpp";
+    std::string SchemaPathSYCL = OutRootStr + "/codepin_autogen_util.hpp";
     std::error_code EC;
     createDirectories(path::parent_path(SchemaPathCUDA));
     createDirectories(path::parent_path(SchemaPathSYCL));

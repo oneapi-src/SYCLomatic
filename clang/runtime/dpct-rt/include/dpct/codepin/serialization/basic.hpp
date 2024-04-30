@@ -24,6 +24,7 @@
 
 namespace dpct {
 namespace experimental {
+namespace codepin {
 
 #ifdef __NVCC__
 typedef cudaStream_t queue_t;
@@ -95,9 +96,10 @@ public:
     void key(std::string_view key) {
       if (!isFirst){
         js.os << "," << js.newline << js.indent;
+      } else {
+        isFirst = false;
       }
       js.os << "\"" << key << "\": ";
-      isFirst = false;
     };
 
     void value(std::string_view value) { js.os << "\"" << value << "\""; };
@@ -126,8 +128,9 @@ public:
     json_obj object() {
       if(!isFirst){
         js.os << "," << js.newline << js.indent;
+      } else {
+        isFirst = false;
       }
-      isFirst = false;
       return json_obj(js);      
     }
 
@@ -135,8 +138,9 @@ public:
     void member(const MemberT &t) {
       if(!isFirst){
         js.os << "," << js.newline << js.indent;
+      } else {
+        isFirst = false;
       }
-      isFirst = false;
       js.os << t;    
     }
 
@@ -190,7 +194,7 @@ template <typename T> std::string demangle_name() {
 template <class T, class T2 = void> class data_ser {
 public:
   static void dump(json_stringstream &ss, T value,
-                   dpct::experimental::queue_t stream) {
+                   queue_t stream) {
     auto obj = ss.object();
     obj.key("Data");
     obj.value("CODEPIN:ERROR:1: Unable to find the corresponding serialization "
@@ -206,7 +210,7 @@ template <class T>
 class data_ser<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
   static void dump(json_stringstream &ss, const T &value,
-                   dpct::experimental::queue_t stream) {
+                   queue_t stream) {
     auto arr = ss.array();
     arr.member<T>(value);
   }
@@ -220,37 +224,37 @@ public:
 template <> class data_ser<int3> {
 public:
   static void dump(json_stringstream &ss, const int3 &value,
-                   dpct::experimental::queue_t queue) {
+                   queue_t queue) {
     auto arr = ss.array();
     {
       auto obj_x = arr.object();
       obj_x.key("x");
       auto value_x =
           obj_x
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<int>::print_type_name(value_x);
+              .value<json_stringstream::json_obj>();
+      data_ser<int>::print_type_name(value_x);
       value_x.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.x, queue);
+      data_ser<int>::dump(ss, value.x, queue);
     }
     {
       auto obj_y = arr.object();
       obj_y.key("y");
       auto value_y =
           obj_y
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<int>::print_type_name(value_y);
+              .value<json_stringstream::json_obj>();
+      data_ser<int>::print_type_name(value_y);
       value_y.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.y, queue);
+      data_ser<int>::dump(ss, value.y, queue);
     }
     {
       auto obj_z = arr.object();
       obj_z.key("z");
       auto value_z =
           obj_z
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<int>::print_type_name(value_z);
+              .value<json_stringstream::json_obj>();
+      data_ser<int>::print_type_name(value_z);
       value_z.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.z, queue);
+      data_ser<int>::dump(ss, value.z, queue);
     }
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -262,37 +266,37 @@ public:
 template <> class data_ser<float3> {
 public:
   static void dump(json_stringstream &ss, const float3 &value,
-                   dpct::experimental::queue_t queue) {
+                   queue_t queue) {
     auto arr = ss.array();
     {
       auto obj_x = arr.object();
       obj_x.key("x");
       auto value_x =
           obj_x
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<float>::print_type_name(value_x);
+              .value<json_stringstream::json_obj>();
+      data_ser<float>::print_type_name(value_x);
       value_x.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.x, queue);
+      data_ser<float>::dump(ss, value.x, queue);
     }
     {
       auto obj_y = arr.object();
       obj_y.key("y");
       auto value_y =
           obj_y
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<float>::print_type_name(value_y);
+              .value<json_stringstream::json_obj>();
+      data_ser<float>::print_type_name(value_y);
       value_y.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.y, queue);
+      data_ser<float>::dump(ss, value.y, queue);
     }
     {
       auto obj_z = arr.object();
       obj_z.key("z");
       auto value_z =
           obj_z
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<float>::print_type_name(value_z);
+              .value<json_stringstream::json_obj>();
+      data_ser<float>::print_type_name(value_z);
       value_z.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.z, queue);
+      data_ser<float>::dump(ss, value.z, queue);
     }
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -305,37 +309,37 @@ public:
 template <> class data_ser<sycl::int3> {
 public:
   static void dump(json_stringstream &ss, const sycl::int3 &value,
-                   dpct::experimental::queue_t queue) {
+                   queue_t queue) {
     auto arr = ss.array();
     {
       auto obj_x = arr.object();
       obj_x.key("x");
       auto value_x =
           obj_x
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<int>::print_type_name(value_x);
+              .value<json_stringstream::json_obj>();
+      data_ser<int>::print_type_name(value_x);
       value_x.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.x(), queue);
+      data_ser<int>::dump(ss, value.x(), queue);
     }
     {
       auto obj_y = arr.object();
       obj_y.key("y");
       auto value_y =
           obj_y
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<int>::print_type_name(value_y);
+              .value<json_stringstream::json_obj>();
+      data_ser<int>::print_type_name(value_y);
       value_y.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.y(), queue);
+      data_ser<int>::dump(ss, value.y(), queue);
     }
     {
       auto obj_z = arr.object();
       obj_z.key("z");
       auto value_z =
           obj_z
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<int>::print_type_name(value_z);
+              .value<json_stringstream::json_obj>();
+      data_ser<int>::print_type_name(value_z);
       value_z.key("Data");
-      dpct::experimental::detail::data_ser<int>::dump(ss, value.z(), queue);
+      data_ser<int>::dump(ss, value.z(), queue);
     }
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -347,37 +351,37 @@ public:
 template <> class data_ser<sycl::float3> {
 public:
   static void dump(json_stringstream &ss, const sycl::float3 &value,
-                   dpct::experimental::queue_t queue) {
+                   queue_t queue) {
     auto arr = ss.array();
     {
       auto obj_x = arr.object();
       obj_x.key("x");
       auto value_x =
           obj_x
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<float>::print_type_name(value_x);
+              .value<json_stringstream::json_obj>();
+      data_ser<float>::print_type_name(value_x);
       value_x.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.x(), queue);
+      data_ser<float>::dump(ss, value.x(), queue);
     }
     {
       auto obj_y = arr.object();
       obj_y.key("y");
       auto value_y =
           obj_y
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<float>::print_type_name(value_y);
+              .value<json_stringstream::json_obj>();
+      data_ser<float>::print_type_name(value_y);
       value_y.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.y(), queue);
+      data_ser<float>::dump(ss, value.y(), queue);
     }
     {
       auto obj_z = arr.object();
       obj_z.key("z");
       auto value_z =
           obj_z
-              .value<dpct::experimental::detail::json_stringstream::json_obj>();
-      dpct::experimental::detail::data_ser<float>::print_type_name(value_z);
+              .value<json_stringstream::json_obj>();
+      data_ser<float>::print_type_name(value_z);
       value_z.key("Data");
-      dpct::experimental::detail::data_ser<float>::dump(ss, value.z(), queue);
+      data_ser<float>::dump(ss, value.z(), queue);
     }
   }
   static void print_type_name(json_stringstream::json_obj &obj){
@@ -390,7 +394,7 @@ public:
 template <> class data_ser<char *> {
 public:
   static void dump(json_stringstream &ss, const char *value,
-                   dpct::experimental::queue_t queue) {
+                   queue_t queue) {
     auto obj = ss.object();
     obj.key("Data");
     const char *dump_addr = value;
@@ -419,7 +423,7 @@ public:
 template <> class data_ser<std::string> {
 public:
   static void dump(json_stringstream &ss, const std::string &value,
-                   dpct::experimental::queue_t queue) {
+                   queue_t queue) {
     auto obj = ss.object();
     obj.key("Data");
     obj.value(value);
@@ -431,6 +435,7 @@ public:
 };
 
 } // namespace detail
+} // namespace codepin
 } // namespace experimental
 } // namespace dpct
 

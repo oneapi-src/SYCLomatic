@@ -7,7 +7,7 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-EMPTY: 
 // CHECK-NEXT: #include <dpct/codepin/codepin.hpp>
-// CHECK-NEXT: #include "generated_schema.hpp"
+// CHECK-NEXT: #include "codepin_autogen_util.hpp"
 // CHECK-NEXT: #include <iostream>
 // CHECK-EMPTY: 
 // CHECK-NEXT: namespace user_ns {

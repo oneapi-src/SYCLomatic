@@ -979,7 +979,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     for (size_t i = 1; i < FilePathCount - InRootPathCount; i++) {
       SchemaRelativePath += "../";
     }
-    SchemaRelativePath += "generated_schema.hpp\"";
+    SchemaRelativePath += "codepin_autogen_util.hpp\"";
     concatHeader(OS, SchemaRelativePath);
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
                         IsForCodePin);

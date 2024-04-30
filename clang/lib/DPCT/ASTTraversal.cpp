@@ -8523,12 +8523,12 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
     CodePinKernelArgsString += ");" + std::string(getNL());
     emplaceTransformation(new InsertText(
         KCallSpellingRange.first,
-        "dpct::experimental::gen_prolog_API_CP" + CodePinKernelArgsString, 0,
+        "dpctexp::codepin::gen_prolog_API_CP" + CodePinKernelArgsString, 0,
         CodePinType));
 
     emplaceTransformation(new InsertText(
         EpilogLocation,
-        "dpct::experimental::gen_epilog_API_CP" + CodePinKernelArgsString, 0,
+        "dpctexp::codepin::gen_epilog_API_CP" + CodePinKernelArgsString, 0,
         CodePinType));
 
     CodePinInstrumentation.insert(KCallSpellingRange.first);
@@ -9921,7 +9921,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
         DpctGlobalInfo::getContext().getLangOpts(), false);
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
-        std::string(getNL()) + "dpct::experimental::get_ptr_size_map()[" +
+        std::string(getNL()) + "dpctexp::codepin::get_ptr_size_map()[" +
             getDrefName(C->getArg(PtrArgLoc)) + "] = " +
             std::string(Lexer::getSourceText(
                 CharSourceRange::getTokenRange(
@@ -9931,7 +9931,7 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
         0, RT_CUDAWithCodePin));
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
-        std::string(getNL()) + "dpct::experimental::get_ptr_size_map()[" +
+        std::string(getNL()) + "dpctexp::codepin::get_ptr_size_map()[" +
             getDrefName(C->getArg(PtrArgLoc)) +
             "] = " + ExprAnalysis::ref(C->getArg(AllocMemSizeLoc)) + ";",
         0, RT_ForSYCLMigration));
