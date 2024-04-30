@@ -90,9 +90,9 @@ private:
 };
 
 #ifdef __NVCC__
-inline static std::string data_file_prefix = "CodePin_CUDA_";
+inline std::string data_file_prefix = "CodePin_CUDA_";
 #else
-inline static std::string data_file_prefix = "CodePin_SYCL_";
+inline std::string data_file_prefix = "CodePin_SYCL_";
 #endif
 
 inline std::string get_data_file_name(std::string_view data_file_prefix) {
