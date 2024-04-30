@@ -26,6 +26,11 @@ inline constexpr DpctOptionBase::BitsType getFlagBit(DpctOptionNameKind Kind) {
   return DpctOptionBase::BitsType(1) << static_cast<unsigned>(Kind);
 }
 
+inline void fatalError() {
+  ShowStatus(MigrationErrorConflictOptions);
+  dpctExit(MigrationErrorConflictOptions);
+}
+
 #ifdef DPCT_DEBUG_BUILD
 StringRef getOptionName(DpctOptionNameKind Kind) {
 #define DPCT_OPTIONS_IN_CLANG_TOOLING 0
@@ -139,8 +144,7 @@ void DpctOptionBase::setOccurrenced() {
         Action->printName(ErrorStream);
         ErrorStream << ".\n";
       }
-      ShowStatus(MigrationErrorConflictOptions);
-      dpctExit(MigrationErrorConflictOptions);
+      fatalError();
     } else {
       auto Options = getOptions(Conflicts);
       for (auto Option : Options) {
@@ -184,11 +188,12 @@ void DpctOptionBase::check() {
       }
       ErrorStream << " require(s) that option ";
       Required->printName(ErrorStream);
-      ErrorStream << " be specified explicitly.";
+      ErrorStream << " be specified explicitly.\n";
     };
     auto LackOptions = getOptions(Lack);
     for (auto Option : LackOptions)
       ReportErrMsg(Option);
+    fatalError();
   }
 }
 
