@@ -46,8 +46,6 @@ struct MatchResult {
 
 static SourceFileType SrcFileType = SourceFileType::SFT_CAndCXXSource;
 
-extern llvm::cl::opt<bool> MigrateBuildScriptOnly;
-
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
 }
