@@ -2687,10 +2687,8 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
     if (const auto *RT =
             DRE->getType().getCanonicalType()->getAs<RecordType>()) {
-      if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
-        if (isUserDefinedDecl(ClassDecl))
-          return;
-      }
+      if (isUserDefinedDecl(RT->getDecl()))
+        return;
     }
     ExprAnalysis EA;
     std::string Replacement;
