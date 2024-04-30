@@ -603,7 +603,7 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
   // workgroup items To-do: Decide whether range loading is required for group
   // loading
   size_t linear_tid = item.get_local_linear_id();
-  size_t group_work_items = item.get_global_range();
+  size_t group_work_items = item.get_global_range().size();
 #pragma unroll
   for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     items[idx] = block_itr[linear_tid + (idx * group_work_items)];
@@ -637,8 +637,9 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
 }
 
 template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
-          typename InputIteratorT, typename Item, typename T>
+          typename InputIteratorT, typename Item>
 class workgroup_load {
+public:
   static size_t get_local_memory_size(size_t group_work_items) { return 0; }
   workgroup_load(uint8_t *local_memory) : _local_memory(local_memory) {}
 
@@ -646,9 +647,9 @@ class workgroup_load {
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
     if constexpr (ALGORITHM == BLOCK_LOAD_DIRECT) {
-      load_blocked(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      load_blocked<ITEMS_PER_WORK_ITEM, ALGORITHM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     } else if constexpr (ALGORITHM == BLOCK_LOAD_STRIPED) {
-      load_striped(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      load_striped<ITEMS_PER_WORK_ITEM, ALGORITHM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     }
   }
 
