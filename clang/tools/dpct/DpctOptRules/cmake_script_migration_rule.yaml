@@ -2234,7 +2234,7 @@
   Subrules:
     value:
       In: CUDAToolkit_LIBRARY_DIR
-      Out: ONEAPI_LIB_DIR
+      Out: SYCLToolkit_LIBRARY_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
 
@@ -2284,6 +2284,45 @@
       Out: IntelSYCL_FOUND
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
+
+- Rule: rule_CUDA_TOOLKIT_ROOT_DIR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_toolkit_root_dir
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_TOOLKIT_ROOT_DIR
+      Out: SYCL_TOOLKIT_ROOT_DIR
+
+- Rule: rule_CUDA_TOOLKIT_INCLUDE
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_toolkit_include
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_TOOLKIT_INCLUDE
+      Out: SYCL_TOOLKIT_INCLUDE
+
+- Rule: rule_CUDAToolkit_LIBRARY_DIR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudatoolkit_library_dir
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDAToolkit_LIBRARY_DIR
+      Out: SYCLToolkit_LIBRARY_DIR
 
 - Rule: rule_lib_cuda_removed
   Kind: CMakeRule
