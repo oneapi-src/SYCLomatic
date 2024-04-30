@@ -42,11 +42,11 @@ int main() {
     int3 *d_a, *d_b, *d_result;
  
     // Allocate memory for device vectors
-    //CHECK: dpct::experimental::get_ptr_size_map()[*((void**)&d_a)] = vectorSize * sizeof(sycl::int3);
+    //CHECK: dpctexp::codepin::get_ptr_size_map()[*((void**)&d_a)] = vectorSize * sizeof(sycl::int3);
     cudaMalloc((void**)&d_a, vectorSize * sizeof(int3));
-    //CHECK: dpct::experimental::get_ptr_size_map()[*((void**)&d_b)] = vectorSize * sizeof(sycl::int3);
+    //CHECK: dpctexp::codepin::get_ptr_size_map()[*((void**)&d_b)] = vectorSize * sizeof(sycl::int3);
     cudaMalloc((void**)&d_b, vectorSize * sizeof(int3));
-    //CHECK: dpct::experimental::get_ptr_size_map()[*((void**)&d_result)] = vectorSize * sizeof(sycl::int3);
+    //CHECK: dpctexp::codepin::get_ptr_size_map()[*((void**)&d_result)] = vectorSize * sizeof(sycl::int3);
     cudaMalloc((void**)&d_result, vectorSize * sizeof(int3));
  
     // Copy host vectors to device
@@ -58,9 +58,9 @@ int main() {
     dim3 gridDim((vectorSize + blockDim.x - 1) / blockDim.x); // Sufficient blocks to cover the vector size
  
     // Launch the CUDA kernel
-    //CHECK: dpct::experimental::gen_prolog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
+    //CHECK: dpctexp::codepin::gen_prolog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
     vectorAdd<<<gridDim, blockDim, 0, 0>>>(d_a, d_b, d_result, vectorSize);
-    //CHECK: dpct::experimental::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
+    //CHECK: dpctexp::codepin::gen_epilog_API_CP("{{[._0-9a-zA-Z\/\(\)\:]+}}", &q_ct1, "d_a", d_a, "d_b", d_b, "d_result", d_result, "vectorSize", vectorSize);
  
     // Copy result from device to host
     cudaMemcpy(h_result, d_result, vectorSize * 12, cudaMemcpyDeviceToHost);
