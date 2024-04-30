@@ -267,3 +267,11 @@
 // scatter_if-NEXT:  /*10*/  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
 // scatter_if-NEXT:  /*11*/  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
 // scatter_if-NEXT:  /*12*/  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::reverse_copy --extra-arg="-std=c++14"| FileCheck %s -check-prefix=reverse_copy
+// reverse_copy:  /*1*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), device_result.begin());
+// reverse_copy-NEXT:  /*2*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), host_result.begin());
+// reverse_copy-NEXT:  /*3*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
+// reverse_copy-NEXT:  /*4*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), device_result.begin());
+// reverse_copy-NEXT:  /*5*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), host_result.begin());
+// reverse_copy-NEXT:  /*6*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
