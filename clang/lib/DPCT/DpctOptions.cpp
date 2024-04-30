@@ -148,7 +148,7 @@ void DpctOptionBase::setOccurrenced() {
       for (auto Action : Actions) {
         ErrorStream << "Error: Option ";
         printName(ErrorStream);
-        ErrorStream << "and option ";
+        ErrorStream << " and option ";
         Action->printName(ErrorStream);
         ErrorStream << " can not be used together.\n";
       }
