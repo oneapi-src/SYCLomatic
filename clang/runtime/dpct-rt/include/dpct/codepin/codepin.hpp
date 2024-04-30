@@ -200,7 +200,8 @@ template <class... Args>
 void gen_prolog_API_CP(const std::string &api_name,
                        dpct::experimental::StreamType queue, Args... args) {
   synchronize(queue);
-  dpct::experimental::detail::gen_log_API_CP(api_name, queue, args...);
+  std::string prolog_tag = api_name + ":" + "prolog";
+  dpct::experimental::detail::gen_log_API_CP(prolog_tag, queue, args...);
 }
 
 /// Generate API check point epilog.
@@ -210,7 +211,9 @@ void gen_prolog_API_CP(const std::string &api_name,
 template <class... Args>
 void gen_epilog_API_CP(const std::string &api_name,
                        dpct::experimental::StreamType queue, Args... args) {
-  gen_prolog_API_CP(api_name, queue, args...);
+  synchronize(queue);
+  std::string epilog_tag = api_name + ":" + "epilog";
+  dpct::experimental::detail::gen_log_API_CP(epilog_tag, queue, args...);
 }
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
