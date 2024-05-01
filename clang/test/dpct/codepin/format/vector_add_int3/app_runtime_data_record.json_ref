@@ -1,16 +1,19 @@
 // CHECK:[
 // CHECK:  {
-// CHECK:    "ID": {{.*}}
+// CHECK:    "ID": {{.*}},
+// CHECK:    "Free Device Memory": {{.*}},
+// CHECK:    "Total Device Memory": {{.*}},
+// CHECK:    "Elapse Time(ms)": {{.*}},
 // CHECK:    "CheckPoint": {
 // CHECK:      "d_a": {
-// CHECK:        "Type": "Pointer" ,
+// CHECK:        "Type": "Pointer",
 // CHECK:        "Data": [
 // CHECK:          {
-// CHECK:            "Type": "sycl::int3" ,
+// CHECK:            "Type": "sycl::int3",
 // CHECK:            "Data": [
 // CHECK:              {
 // CHECK:                "x": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    1
 // CHECK:                  ]
@@ -18,7 +21,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "y": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    2
 // CHECK:                  ]
@@ -26,7 +29,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "z": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    3
 // CHECK:                  ]
@@ -37,14 +40,14 @@
 // CHECK:        ]
 // CHECK:      },
 // CHECK:      "d_b": {
-// CHECK:        "Type": "Pointer" ,
+// CHECK:        "Type": "Pointer",
 // CHECK:        "Data": [
 // CHECK:          {
-// CHECK:            "Type": "sycl::int3" ,
+// CHECK:            "Type": "sycl::int3",
 // CHECK:            "Data": [
 // CHECK:              {
 // CHECK:                "x": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    4
 // CHECK:                  ]
@@ -52,7 +55,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "y": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    5
 // CHECK:                  ]
@@ -60,7 +63,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "z": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    6
 // CHECK:                  ]
@@ -71,14 +74,14 @@
 // CHECK:        ]
 // CHECK:      },
 // CHECK:      "d_result": {
-// CHECK:        "Type": "Pointer" ,
+// CHECK:        "Type": "Pointer",
 // CHECK:        "Data": [
 // CHECK:          {
-// CHECK:            "Type": "sycl::int3" ,
+// CHECK:            "Type": "sycl::int3",
 // CHECK:            "Data": [
 // CHECK:              {
 // CHECK:                "x": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    {{.*}}
 // CHECK:                  ]
@@ -86,7 +89,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "y": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    {{.*}}
 // CHECK:                  ]
@@ -94,7 +97,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "z": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    {{.*}}
 // CHECK:                  ]
@@ -105,7 +108,7 @@
 // CHECK:        ]
 // CHECK:      },
 // CHECK:      "vectorSize": {
-// CHECK:        "Type": "int" ,
+// CHECK:        "Type": "int",
 // CHECK:        "Data": [
 // CHECK:          1
 // CHECK:        ]
@@ -114,16 +117,19 @@
 // CHECK:  },
 // CHECK:  {
 // CHECK:    "ID": {{.*}},
+// CHECK:    "Free Device Memory": {{.*}},
+// CHECK:    "Total Device Memory": {{.*}},
+// CHECK:    "Elapse Time(ms)": {{.*}},
 // CHECK:    "CheckPoint": {
 // CHECK:      "d_a": {
-// CHECK:        "Type": "Pointer" ,
+// CHECK:        "Type": "Pointer",
 // CHECK:        "Data": [
 // CHECK:          {
-// CHECK:            "Type": "sycl::int3" ,
+// CHECK:            "Type": "sycl::int3",
 // CHECK:            "Data": [
 // CHECK:              {
 // CHECK:                "x": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    1
 // CHECK:                  ]
@@ -131,7 +137,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "y": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    2
 // CHECK:                  ]
@@ -139,7 +145,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "z": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    3
 // CHECK:                  ]
@@ -150,14 +156,14 @@
 // CHECK:        ]
 // CHECK:      },
 // CHECK:      "d_b": {
-// CHECK:        "Type": "Pointer" ,
+// CHECK:        "Type": "Pointer",
 // CHECK:        "Data": [
 // CHECK:          {
-// CHECK:            "Type": "sycl::int3" ,
+// CHECK:            "Type": "sycl::int3",
 // CHECK:            "Data": [
 // CHECK:              {
 // CHECK:                "x": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    4
 // CHECK:                  ]
@@ -165,7 +171,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "y": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    5
 // CHECK:                  ]
@@ -173,7 +179,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "z": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    6
 // CHECK:                  ]
@@ -184,14 +190,14 @@
 // CHECK:        ]
 // CHECK:      },
 // CHECK:      "d_result": {
-// CHECK:        "Type": "Pointer" ,
+// CHECK:        "Type": "Pointer",
 // CHECK:        "Data": [
 // CHECK:          {
-// CHECK:            "Type": "sycl::int3" ,
+// CHECK:            "Type": "sycl::int3",
 // CHECK:            "Data": [
 // CHECK:              {
 // CHECK:                "x": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    5
 // CHECK:                  ]
@@ -199,7 +205,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "y": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    7
 // CHECK:                  ]
@@ -207,7 +213,7 @@
 // CHECK:              },
 // CHECK:              {
 // CHECK:                "z": {
-// CHECK:                  "Type": "int" ,
+// CHECK:                  "Type": "int",
 // CHECK:                  "Data": [
 // CHECK:                    9
 // CHECK:                  ]
@@ -218,7 +224,7 @@
 // CHECK:        ]
 // CHECK:      },
 // CHECK:      "vectorSize": {
-// CHECK:        "Type": "int" ,
+// CHECK:        "Type": "int",
 // CHECK:        "Data": [
 // CHECK:          1
 // CHECK:        ]
