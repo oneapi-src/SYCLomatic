@@ -603,7 +603,7 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
   // workgroup items To-do: Decide whether range loading is required for group
   // loading
   size_t linear_tid = item.get_local_linear_id();
-  size_t group_work_items = item.get_global_range().size();
+  size_t group_work_items = item.get_local_range().size();
 #pragma unroll
   for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     items[idx] = block_itr[linear_tid + (idx * group_work_items)];
