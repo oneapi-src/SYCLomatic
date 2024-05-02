@@ -23,13 +23,6 @@ namespace dpct {
 
 class MigrationRule;
 
-#ifdef NDEBUG
-#undef DPCT_DEBUG_BUILD
-#else
-#undef DPCT_DEBUG_BUILD
-#define DPCT_DEBUG_BUILD 1
-#endif
-
 class StaticsInfo {
 public:
   static void
