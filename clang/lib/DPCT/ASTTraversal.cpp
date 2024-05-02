@@ -1749,7 +1749,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
               "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
               "cublasLtMatmulHeuristicResult_t",
-              "cublasLtMatrixTransformDesc_t"))))))
+              "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
+              "cudaGraphicsResource", "cudaGraphicsResource_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -3220,7 +3221,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "cudaStreamCaptureStatus", "cudaDeviceAttr",
                   "libraryPropertyType_t", "cudaDataType_t",
                   "CUmem_advise_enum", "cufftType_t",
-                  "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
+                  "cufftType", "cudaMemoryType", "CUctx_flags_enum",
+                  "cudaGraphicsMapFlags"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
@@ -15081,3 +15083,65 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(GraphRule, PassKind::PK_Migration)
+
+void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto graphicsInteropAPI = [&]() {
+    return hasAnyName(
+        "cudaGraphicsResourceSetMapFlags", "cudaGraphicsUnregisterResource",
+        "cudaGraphicsMapResources", "cudaGraphicsUnmapResources");
+  };
+
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(graphicsInteropAPI())), parentStmt()))
+          .bind("call"),
+      this);
+
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(graphicsInteropAPI())), unless(parentStmt())))
+          .bind("callUsed"),
+      this);
+  
+  MF.addMatcher(
+      typeLoc(
+          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "cudaGraphicsResource", "cudaGraphicsResource_t"))))))
+          .bind("resType"),
+      this);
+}
+
+void GraphicsInteropRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  bool IsAssigned = false;
+  std::string APIName;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed")))
+      return;
+    IsAssigned = true;
+  }
+
+  if (auto DC = CE->getDirectCallee()) {
+    APIName = DC->getNameAsString();
+  } else {
+    return;
+  }
+
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "resType")) {
+    if (isCapturedByLambda(TL))
+      return;
+  }
+}
+
+REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)

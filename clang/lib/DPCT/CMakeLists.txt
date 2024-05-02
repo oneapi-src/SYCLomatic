@@ -155,6 +155,7 @@ add_clang_library(DPCT
   CallExprRewriterComplex.cpp
   CallExprRewriterDriver.cpp
   CallExprRewriterGraph.cpp
+  CallExprRewriterGraphicsInterop.cpp
   CallExprRewriterMemory.cpp
   CallExprRewriterMisc.cpp
   CallExprRewriterNccl.cpp

@@ -112,6 +112,192 @@ private:
   image_mem_wrapper *_sub_wrappers{nullptr};
 };
 
+/// The wrapper class of graphics interop memory handle.
+class interop_mem_wrapper {
+public:
+  void interop_mem_wrapper(ID3D11Resource* d3d11_res, int reg_flags)
+      : _d3d11_res(d3d11_res), _reg_flags(reg_flags) {
+    /// Create Win NT handle for the ID3D11Resource object
+    HANDLE win_nt_handle;
+    
+    IDXGIResource* pResource;
+    _d3d11_res->QueryInterface(__uuidof(IDXGIResource), (void**) &pResource);
+
+    pResource->CreateSharedHandle(NULL, 
+            DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE, 
+            NULL,
+            &win_nt_handle);
+
+    sycl::ext::oneapi::experimental::external_mem_win32 
+      ext_mem_win_handle{win_nt_handle, nullptr};
+
+    /// Query the size of the resource
+    _res_height = _res_width = _res_depth = 1;
+
+    D3D11_RESOURCE_DESC _d3d11_res_desc;
+    pResource->GetDesc(&_d3d11_res_desc);
+
+    // Check the resource type
+    switch (_d3d11_res_desc.Dimension)
+    {
+      case D3D11_RESOURCE_DIMENSION_BUFFER:
+        _res_width = _d3d11_res_desc.Width;
+        break;
+      case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
+        _res_width = _d3d11_res_desc.Width;
+        break;
+      case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
+        _res_width = _d3d11_res_desc.Width;
+        _res_height = _d3d11_res_desc.Height;
+        break;
+      case D3D11_RESOURCE_DIMENSION_TEXTURE3D:
+        _res_width = _d3d11_res_desc.Width;
+        _res_height = _d3d11_res_desc.Height;
+        _res_depth = _d3d11_res_desc.Depth;
+        break;
+      default:
+        throw std::runtime_error("Unsupported resource type.");
+        break;
+    }
+
+    DXGI_FORMAT textureFormat = desc.Format;
+
+    sycl::ext::oneapi::experimental::image_channel_type _im_ch_type;
+    sycl::ext::oneapi::experimental::image_channel_order _im_ch_order;
+    size_t _size_in_bytes;
+
+    get_channel_info(textureFormat, _im_ch_type, _im_ch_order, _dt_size_in_bytes);
+
+    size_t _res_size_bytes = _res_width * _res_height * _res_depth * 
+      _dt_size_in_bytes;
+
+    // Create descriptor for the external memory
+    _ext_mem_desc = sycl::ext::oneapi::experimental::external_mem_descriptor
+      <sycl::ext::oneapi::experimental::external_mem_win32>{
+        ext_mem_win_handle, _res_size_bytes};
+    
+    // Extension: import external memory from descriptors
+    _interop_mem_handle =
+      sycl::ext::oneapi::experimental::import_external_memory(
+        _ext_mem_desc, q);
+    
+    // Map external API image layout
+    sycl::ext::oneapi::experimental::image_descriptor _im_desc(
+      {_res_width, _res_height, _res_depth}, _im_ch_order, _im_ch_type,
+      sycl::ext::oneapi::experimental::image_type::standard);
+  }
+
+  interop_mem_wrapper(const interop_mem_wrapper &) = delete;
+
+  interop_mem_wrapper &operator=(const interop_mem_wrapper &) = delete;
+
+  /// Destroy interop memory wrapper.
+  ~interop_mem_wrapper() {
+    // dummy destructor (temp)
+  }
+
+  sycl::ext::oneapi::experimental::image_descriptor &
+  get_desc() {
+    return _desc;
+  }
+
+  void get_channel_info(DXGI_FORMAT format, image_channel_order& order, image_channel_type& type, size_t& size_in_bytes) {
+    switch (format) {
+      case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+      case DXGI_FORMAT_R32G32B32A32_FLOAT:
+        order = image_channel_order::rgba;
+        type = image_channel_type::fp32;
+        size_in_bytes = sizeof(float);
+        break;
+      case DXGI_FORMAT_R32G32B32A32_UINT:
+        order = image_channel_order::rgba;
+        type = image_channel_type::unsigned_int32;
+        size_in_bytes = sizeof(unsigned int);
+        break;
+      case DXGI_FORMAT_R32G32B32A32_SINT:
+        order = image_channel_order::rgba;
+        type = image_channel_type::signed_int32;
+        size_in_bytes = sizeof(int);
+        break;
+      case DXGI_FORMAT_R32G32B32_TYPELESS:
+      case DXGI_FORMAT_R32G32B32_FLOAT:
+        order = image_channel_order::rgb;
+        type = image_channel_type::fp32;
+        size_in_bytes = sizeof(float);
+        break;
+      case DXGI_FORMAT_R32G32B32_UINT:
+        order = image_channel_order::rgb;
+        type = image_channel_type::unsigned_int32;
+        size_in_bytes = sizeof(unsigned int);
+        break;
+      case DXGI_FORMAT_R32G32B32_SINT:
+        order = image_channel_order::rgb;
+        type = image_channel_type::signed_int32;
+        size_in_bytes = sizeof(int);
+        break;
+      case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+      case DXGI_FORMAT_R16G16B16A16_FLOAT:
+        order = image_channel_order::rgba;
+        type = image_channel_type::fp16;
+        size_in_bytes = sizeof(float) / 2; // Half float
+        break;
+      case DXGI_FORMAT_R16G16B16A16_UNORM:
+        order = image_channel_order::rgba;
+        type = image_channel_type::unorm_int16;
+        size_in_bytes = sizeof(unsigned short);
+        break;
+      case DXGI_FORMAT_R16G16B16A16_UINT:
+        order = image_channel_order::rgba;
+        type = image_channel_type::unsigned_int16;
+        size_in_bytes = sizeof(unsigned short);
+        break;
+      case DXGI_FORMAT_R16G16B16A16_SNORM:
+        order = image_channel_order::rgba;
+        type = image_channel_type::snorm_int16;
+        size_in_bytes = sizeof(short);
+        break;
+      // Add more cases as needed
+      default:
+        // Handle unsupported formats or return default values
+        order = image_channel_order::rgba;
+        type = image_channel_type::fp32;
+        size_in_bytes = sizeof(float);
+        break;
+    }
+  }
+
+  void unregister_resource(sycl::queue q = get_default_queue()) {
+    sycl::ext::oneapi::experimental::release_external_memory(
+      _interop_mem_handle, q);
+  }
+
+  void map_resource(sycl::queue q = get_default_queue()) {
+    _img_mem_handle =
+      sycl::ext::oneapi::experimental::map_external_image_memory(
+        _interop_mem_handle, _img_desc, q);
+  }
+  
+  void unmap_resource(sycl::queue q = get_default_queue()) {
+    sycl::ext::oneapi::experimental::free_image_mem(_img_mem_handle,
+      sycl::ext::oneapi::experimental::image_type::standard, q);
+  }
+
+private:
+  ID3D11Resource *_d3d11_res;
+  int _reg_flags;
+
+  size_t _res_width;
+  size_t _res_height;
+  size_t _res_depth;
+  DXGI_FORMAT _res_format;
+
+  sycl::ext::oneapi::experimental::image_descriptor _img_desc;
+  sycl::ext::oneapi::experimental::image_mem_handle _img_mem_handle;
+  sycl::ext::oneapi::experimental::external_mem_descriptor
+    <sycl::ext::oneapi::experimental::external_mem_win32> _ext_mem_desc;
+  sycl::ext::oneapi::experimental::interop_mem_handle _interop_mem_handle;
+};
+
 namespace detail {
 struct sampled_image_handle_compare {
   bool
@@ -329,6 +515,28 @@ dpct_memcpy(pitched_data src, const sycl::id<3> &src_id,
                            copy_extend);
 }
 } // namespace detail
+
+static inline void map_resources(
+    int count, dpct::experimental::interop_mem_wrapper_ptr *handle,
+    sycl::queue q = get_default_queue()) {
+  for (int i = 0; i < count; i++ ) {
+    handle[i]->map_resource(q);
+  }
+}
+
+static inline void unmap_resources(
+    int count, dpct::experimental::interop_mem_wrapper_ptr *handle,
+    sycl::queue q = get_default_queue()) {
+  for (int i = 0; i < count; i++ ) {
+    handle[i]->unmap_resource(q);
+  }
+}
+
+static inline void unregister_resource(
+    dpct::experimental::interop_mem_wrapper_ptr handle,
+    sycl::queue q = get_default_queue()) {
+  handle->unregister_resource(q);
+}
 
 /// Create bindless image according to image data and sampling info.
 /// \param [in] data The image data used to create bindless image.

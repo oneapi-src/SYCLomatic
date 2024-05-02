@@ -404,6 +404,16 @@ void MapNames::setExplicitNamespaceMap(
            DpctGlobalInfo::useExtBindlessImages()
                ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
                : "cudaMipmappedArray_t")},
+      {"cudaGraphicsResource",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::interop_mem_wrapper"
+               : "cudaGraphicsResource")},
+      {"cudaGraphicsResource_t",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::interop_mem_wrapper_ptr"
+               : "cudaGraphicsResource_t")},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
@@ -661,6 +671,7 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasLtMatrixTransformDesc_t",
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_ptr")},
+      {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1488,6 +1499,10 @@ void MapNames::setExplicitNamespaceMap(
       {"CUSOLVER_EIG_RANGE_I",
        std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsMapFlags
+      {"cudaGraphicsMapFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsReadOnly", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsWriteDiscard", std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
