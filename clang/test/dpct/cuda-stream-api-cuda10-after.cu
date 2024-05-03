@@ -19,11 +19,16 @@ int main() {
   cudaStreamCaptureStatus captureStatus = cudaStreamCaptureStatusNone;
   captureStatus = cudaStreamCaptureStatusActive;
   captureStatus = cudaStreamCaptureStatusInvalidated;
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaStreamIsCapturing was replaced with 0 because SYCL currently does not support capture operations on queues.
   // CHECK-NEXT: */
   // CHECK: MY_ERROR_CHECKER(0);
   MY_ERROR_CHECKER(cudaStreamIsCapturing(s0, &captureStatus));
+
+  if (captureStatus == cudaStreamCaptureStatusInvalidated) {
+    return -1;
+  }
 
   return 0;
 }

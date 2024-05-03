@@ -1055,8 +1055,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaStreamCaptureStatusInvalidated",
        std::make_shared<EnumNameRule>(
            DpctGlobalInfo::useExtGraphs()
-               ? getClNamespace() +
-                     "ext::oneapi::experimental::queue_state::executing"
+               ? "("+ getClNamespace() +
+                     "ext::oneapi::experimental::queue_state) -1"
                : "0")},
       // enum CUmem_advise_enum
       {"CU_MEM_ADVISE_SET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
