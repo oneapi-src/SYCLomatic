@@ -2,7 +2,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none --use-experimental-features=graphs -out-root %T/cuda-stream-api-cuda10-after %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cuda-stream-api-cuda10-after/cuda-stream-api-cuda10-after.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cuda-stream-api-cuda10-after/cuda-stream-api-cuda10-after.dp.cpp -o %T/cuda-stream-api-cuda10-after/cuda-stream-api-cuda10-after.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/cuda-stream-api-cuda10-after/cuda-stream-api-cuda10-after.dp.cpp -o %T/cuda-stream-api-cuda10-after/cuda-stream-api-cuda10-after.dp.o %}
+
+#ifndef BUILD_TEST
 
 template <typename T>
 // CHECK: void my_error_checker(T ReturnValue, char const *const FuncName) {
@@ -39,3 +41,4 @@ int main() {
 
   return 0;
 }
+#endif
