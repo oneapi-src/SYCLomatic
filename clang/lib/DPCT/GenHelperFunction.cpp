@@ -94,6 +94,9 @@ const std::string DplExtrasVectorAllContentStr =
 const std::string DplExtrasDpcppExtensionsAllContentStr =
 #include "clang/DPCT/dpl_extras/dpcpp_extensions.h.inc"
     ;
+const std::string DplExtrasIteratorAdaptorAllContentStr =
+#include "clang/DPCT/dpl_extras/iterator_adaptor.h.inc"
+    ;
 
 const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
@@ -170,6 +173,8 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(DplExtrasVector, "dpl_extras", vector.h)
   GENERATE_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, "dpl_extras",
                             dpcpp_extensions.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasIteratorAdaptor, "dpl_extras",
+                            iterator_adaptor.h)
 #undef GENERATE_ALL_FILE_CONTENT
 }
 

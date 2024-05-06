@@ -1,6 +1,9 @@
 [
     {
-        "ID": "serial123",
+        "ID": "serial123:prolog:0",
+        "Free Device Memory": "200",
+        "Total Device Memory": "500",
+        "Elapse Time(ms)": "0.0",
         "CheckPoint": {
             "var_1": {
                 "Type": "std::vector",

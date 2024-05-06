@@ -943,7 +943,7 @@
     value:
       MatchMode: Full
       In: CMAKE_CUDA_HOST_COMPILER
-      Out: CMAKE_SYCL_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
 
 - Rule: rule_CMAKE_CUDA_ARCHITECTURES
   Kind: CMakeRule
@@ -2234,7 +2234,7 @@
   Subrules:
     value:
       In: CUDAToolkit_LIBRARY_DIR
-      Out: ONEAPI_LIB_DIR
+      Out: SYCLToolkit_LIBRARY_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
 
@@ -2244,6 +2244,32 @@
   CmakeSyntax: set_source_files_properties_lang
   In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
   Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
+
+- Rule: rule_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_compiler
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
+
+- Rule: rule_CUDA_HOST_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_flags
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_FLAGS
+      Out: SYCL_HOST_FLAGS
 
 - Rule: rule_CUDAToolkit_FOUND
   Kind: CMakeRule
@@ -2258,3 +2284,150 @@
       Out: IntelSYCL_FOUND
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
+
+- Rule: rule_target_include_directories_cuda_toolkit_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cuda_toolkit_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_INCLUDE_DIRS
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_directories_cuda_include_dirs
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cuda_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CUDA_INCLUDE_DIRS
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cuda_include_dirs_with_sycl_include_dir"
+
+- Rule: rule_target_include_directories_cudnn_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cudnn_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CUDNN_INCLUDE_DIR
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cudnn_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_directories_cmake_cuda_toolkit_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cmake_cuda_toolkit_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cmake_cuda_toolkit_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_directories_cuda_toolkit_math_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cuda_toolkit_math_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_MATH_INCLUDE_DIR
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_math_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_dir_compile_lang
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_dir_compile_lang
+  In: target_include_directories${empty}(${arg})
+  Out: target_include_directories(${arg})
+  Subrules:
+    arg:
+      In: "$<COMPILE_LANGUAGE:CUDA>"
+      Out: "$<COMPILE_LANGUAGE:CXX>"
+      RuleId: "target_include_dir_compile_lang"
+
+- Rule: rule_target_sources
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_sources
+  In: target_sources${empty}(${options})
+  Out: target_sources(${options})
+  Subrules:
+    sources:
+      In: ${src}.cu
+      Out: ${src}.${rewrite_extention_name}
+      MatchMode: Full
+
+- Rule: rule_CUDA_TOOLKIT_ROOT_DIR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_toolkit_root_dir
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_TOOLKIT_ROOT_DIR
+      Out: SYCL_TOOLKIT_ROOT_DIR
+
+- Rule: rule_CUDA_TOOLKIT_INCLUDE
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_toolkit_include
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_TOOLKIT_INCLUDE
+      Out: SYCL_TOOLKIT_INCLUDE
+
+- Rule: rule_CUDAToolkit_LIBRARY_DIR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudatoolkit_library_dir
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDAToolkit_LIBRARY_DIR
+      Out: SYCLToolkit_LIBRARY_DIR
+
+- Rule: rule_lib_cuda_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: lib_cuda
+  In: list${empty}(${value})
+  Out: list${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cuda
+      Out: ""
+      RuleId: "remove_lib_cuda"

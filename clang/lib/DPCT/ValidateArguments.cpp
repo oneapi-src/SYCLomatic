@@ -196,7 +196,7 @@ int checkSDKPathOrIncludePath(clang::tooling::UnifiedPath &Path) {
 }
 
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
-                     std::string &RFile, bool &ROnly, bool &GenReport,
+                     std::string &RFile, bool ROnly, bool &GenReport,
                      std::string &DVerbose) {
   bool Success = true;
   if (ROnly || !RFile.empty() || !DVerbose.empty() ||

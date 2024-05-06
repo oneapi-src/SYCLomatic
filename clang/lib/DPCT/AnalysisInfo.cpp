@@ -980,7 +980,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     for (size_t i = 1; i < FilePathCount - InRootPathCount; i++) {
       SchemaRelativePath += "../";
     }
-    SchemaRelativePath += "generated_schema.hpp\"";
+    SchemaRelativePath += "codepin_autogen_util.hpp\"";
     concatHeader(OS, SchemaRelativePath);
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
                         IsForCodePin);
@@ -2349,7 +2349,7 @@ std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
 clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
-BuildScript DpctGlobalInfo::BuildScriptVal = BuildScript::BS_None;
+BuildScriptKind DpctGlobalInfo::BuildScriptVal = BuildScriptKind::BS_None;
 clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
@@ -4927,8 +4927,10 @@ DeviceFunctionInfo::getTextureObject(unsigned Idx) {
   return {};
 }
 void DeviceFunctionInfo::buildInfo() {
-  if (isBuilt())
+  if (isBuilt()) {
+    VarMap.removeDuplicateVar();
     return;
+  }
   setBuilt();
   auto &Map = VarMap.getMap(clang::dpct::MemVarInfo::Global);
   for (auto It = Map.begin(); It != Map.end();) {
