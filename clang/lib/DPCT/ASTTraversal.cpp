@@ -10440,7 +10440,8 @@ void MemoryMigrationRule::arrayMigration(
       auto Begin = getArgEndLocation(C, EndPos - 2, SM),
            End = getArgEndLocation(C, EndPos, SM);
       llvm::raw_string_ostream OS(Str);
-      OS << ", " << MapNames::getDpctNamespace() << "automatic";
+      if (!DpctGlobalInfo::useExtBindlessImages())
+        OS << ", " << MapNames::getDpctNamespace() << "automatic";
       OS << ", ";
       DerefExpr(StreamExpr, C).print(OS);
       emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
@@ -10457,20 +10458,7 @@ void MemoryMigrationRule::arrayMigration(
 
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", "
-         << ExprAnalysis::ref(C->getArg(7)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -10480,19 +10468,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpy2DFromArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       aggregatePitchedData(C, 0, 1, SM);
       insertZeroOffset(C, 2);
@@ -10502,19 +10478,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpy2DToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -10524,19 +10488,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpyArrayToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -10546,17 +10498,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpyFromArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       aggregatePitchedData(C, 0, 4, SM, true);
       insertZeroOffset(C, 1);
@@ -10566,17 +10508,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpyToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);

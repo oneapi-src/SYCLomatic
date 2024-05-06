@@ -74,6 +74,7 @@ int main() {
   size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
   unsigned int flag, l;
   cudaExtent e;
+  cudaStream_t s;
   // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr;
   cudaArray_t pArr;
   // CHECK: const dpct::experimental::image_mem_wrapper *pArr_src;
@@ -96,38 +97,62 @@ int main() {
   // CHECK-NEXT: e = pArr->get_range();
   // CHECK-NEXT: flag = 0;
   cudaArrayGetInfo(&desc, &e, &flag, pArr);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_dest, w, h, q_ct1);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  // CHECK-NEXT:                          w_offest_src, h_offest_src, w, h);
   cudaMemcpy2DArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
                            w_offest_src, h_offest_src, w, h,
                            cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w, w, h, q_ct1);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  // CHECK-NEXT:                          w_offest_src, h_offest_src, w, h);
+  cudaMemcpy2DArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
+                           w_offest_src, h_offest_src, w, h);
+  // CHECK: dpct::experimental::dpct_memcpy(output, w, pArr_src, w_offest_src, h_offest_src, w, h);
   cudaMemcpy2DFromArray(output, w, pArr_src, w_offest_src, h_offest_src, w, h,
                         cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w, w, h, q_ct1);
-  cudaMemcpy2DFromArrayAsync(output, w, pArr_src, w_offest_src, h_offest_src, w, h,
-                             cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w, w, h, q_ct1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, w, pArr_src, w_offest_src, h_offest_src, w,
+  // CHECK-NEXT:                            h);
+  cudaMemcpy2DFromArrayAsync(output, w, pArr_src, w_offest_src, h_offest_src, w,
+                             h, cudaMemcpyHostToDevice);
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, w, pArr_src, w_offest_src, h_offest_src, w,
+  // CHECK-NEXT:                            h, *s);
+  cudaMemcpy2DFromArrayAsync(output, w, pArr_src, w_offest_src, h_offest_src, w,
+                             h, cudaMemcpyHostToDevice, s);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w, w, h);
   cudaMemcpy2DToArray(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
                       cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w, w, h, q_ct1);
+  // CHECK:  dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w, w, h);
   cudaMemcpy2DToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
                            cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  // CHECK:  dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w, w, h, *s);
+  cudaMemcpy2DToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
+                           cudaMemcpyHostToDevice, s);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  //                        w_offest_src, h_offest_src, w * h);
   cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
                          w_offest_src, h_offest_src, w * h,
                          cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w * h, q_ct1);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  //                        w_offest_src, h_offest_src, w * h);
+  cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
+                         w_offest_src, h_offest_src, w * h);
+  // CHECK: dpct::experimental::dpct_memcpy(output, pArr_src, w_offest_src, h_offest_src, w * h);
   cudaMemcpyFromArray(output, pArr_src, w_offest_src, h_offest_src, w * h,
                       cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(pArr_src, w_offest_src, h_offest_src, output, w * h, q_ct1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, pArr_src, w_offest_src, h_offest_src, w * h);
   cudaMemcpyFromArrayAsync(output, pArr_src, w_offest_src, h_offest_src, w * h,
                            cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, pArr_src, w_offest_src, h_offest_src, w * h, *s);
+  cudaMemcpyFromArrayAsync(output, pArr_src, w_offest_src, h_offest_src, w * h,
+                           cudaMemcpyHostToDevice, s);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w * h);
   cudaMemcpyToArray(pArr, w_offest_dest, h_offest_dest, input, w * h,
                     cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w * h);
   cudaMemcpyToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w * h,
                          cudaMemcpyHostToDevice);
+  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w * h, *s);
+  cudaMemcpyToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w * h,
+                         cudaMemcpyHostToDevice, s);
 
   // CHECK: dpct::memcpy_parameter p3d;
   cudaMemcpy3DParms p3d;
@@ -137,8 +162,8 @@ int main() {
   cudaPitchedPtr pp;
   // CHECK: dpct::memcpy_direction k;
   cudaMemcpyKind k;
-  // CHECK: p3d.from.image_bindless = pArr_src;
-  p3d.srcArray = pArr_src;
+  // CHECK: p3d.from.image_bindless = pArr;
+  p3d.srcArray = pArr;
   // CHECK: pArr_src = p3d.from.image_bindless;
   pArr_src = p3d.srcArray;
   // CHECK: p3d.from.pos = pos;
@@ -153,8 +178,8 @@ int main() {
   pos = p3d.srcPos;
   // CHECK: p3d.from.pitched = pp;
   p3d.srcPtr = pp;
-  // CHECK: p3d.from.pitched.set_data_ptr(input);
-  p3d.srcPtr.ptr = input;
+  // CHECK: p3d.from.pitched.set_data_ptr(output);
+  p3d.srcPtr.ptr = output;
   // CHECK: p3d.from.pitched.set_pitch(1);
   p3d.srcPtr.pitch = 1;
   // CHECK: p3d.from.pitched.set_x(2);
@@ -179,8 +204,8 @@ int main() {
   pos = p3d.dstPos;
   // CHECK: p3d.to.pitched = pp;
   p3d.dstPtr = pp;
-  // CHECK: p3d.to.pitched.set_data_ptr(input);
-  p3d.dstPtr.ptr = input;
+  // CHECK: p3d.to.pitched.set_data_ptr(output);
+  p3d.dstPtr.ptr = output;
   // CHECK: p3d.to.pitched.set_pitch(1);
   p3d.dstPtr.pitch = 1;
   // CHECK: p3d.to.pitched.set_x(2);
