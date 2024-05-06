@@ -1917,6 +1917,7 @@
 // CHECK-NEXT: thrust::equal_range
 // CHECK-NEXT: thrust::find_if
 // CHECK-NEXT: thrust::find_if_not
+// CHECK-NEXT: thrust::for_each_n
 // CHECK-NEXT: thrust::is_partitioned
 // CHECK-NEXT: thrust::is_sorted
 // CHECK-NEXT: thrust::is_sorted_until

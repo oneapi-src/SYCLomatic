@@ -410,3 +410,11 @@
 // set_difference-NEXT:  /*11*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C, std::greater<int>());
 // set_difference-NEXT:  /*12*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C, std::greater<int>());
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::for_each_n --extra-arg="-std=c++14"| FileCheck %s -check-prefix=for_each_n
+// for_each_n:  /*1*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, h_V.begin(), h_V.size(), add_functor());
+// for_each_n-NEXT:  /*2*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, h_V.begin(), h_V.size(), add_functor());
+// for_each_n-NEXT:  /*3*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.size(), add_functor());
+// for_each_n-NEXT:  /*4*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, d_V.begin(), d_V.size(), add_functor());
+// for_each_n-NEXT:  /*5*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+// for_each_n-NEXT:  /*6*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+
