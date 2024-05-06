@@ -313,7 +313,7 @@
 // minmax_element-NEXT:  /*12*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::unique_by_key --extra-arg="-std=c++14"| FileCheck %s -check-prefix=unique_by_key
-// unique_by_key  /*1*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+// unique_by_key:  /*1*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
 // unique_by_key-NEXT:  /*2*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
 // unique_by_key-NEXT:   /*3*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
 // unique_by_key-NEXT:   /*4*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
@@ -325,3 +325,17 @@
 // unique_by_key-NEXT:   /*10*/ dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
 // unique_by_key-NEXT:   /*11*/ dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
 // unique_by_key-NEXT:   /*12*/ dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::is_sorted --extra-arg="-std=c++14"| FileCheck %s -check-prefix=is_sorted
+// is_sorted:  /*1*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// is_sorted-NEXT:  /*2*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// is_sorted-NEXT:  /*3*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
+// is_sorted-NEXT:  /*4*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
+// is_sorted-NEXT:  /*5*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
+// is_sorted-NEXT:  /*6*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// is_sorted-NEXT:  /*7*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), comp);
+// is_sorted-NEXT:  /*8*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), comp);
+// is_sorted-NEXT:  /*9*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N);
+// is_sorted-NEXT:  /*10*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N);
+// is_sorted-NEXT:  /*11*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N, comp);
+// is_sorted-NEXT:  /*12*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N, comp);

@@ -39,7 +39,8 @@ void unique_by_key_test() {
   const int N = 7;
   int A[N]; // keys
   int B[N]; // values
-            // Start
+
+  // Start
   /*1*/ thrust::unique_by_key(thrust::host, h_keys.begin(), h_keys.end(),
                               h_values.begin());
   /*2*/ thrust::unique_by_key(h_keys.begin(), h_keys.end(), h_values.begin());
