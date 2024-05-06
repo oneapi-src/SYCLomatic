@@ -1918,11 +1918,12 @@
 // CHECK-NEXT: thrust::find_if
 // CHECK-NEXT: thrust::find_if_not
 // CHECK-NEXT: thrust::is_partitioned
-// CHECK-NEXT:thrust::is_sorted
+// CHECK-NEXT: thrust::is_sorted
 // CHECK-NEXT: thrust::is_sorted_until
 // CHECK-NEXT: thrust::minmax_element
 // CHECK-NEXT: thrust::mismatch
 // CHECK-NEXT: thrust::none_of
+// CHECK-NEXT: thrust::partition
 // CHECK-NEXT: thrust::partition_point
 // CHECK-NEXT: thrust::remove
 // CHECK-NEXT: thrust::replace_copy
@@ -1941,7 +1942,8 @@
 // CHECK-NEXT: thrust::uninitialized_copy
 // CHECK-NEXT: thrust::uninitialized_copy_n
 // CHECK-NEXT: thrust::uninitialized_fill_n
-// CHECK-NEXT:thrust::unique_by_key
+// CHECK-NEXT: thrust::unique_by_key
+// CHECK-NEXT: thrust::unique_copy
 // CHECK-NEXT: thrust::unique_count
 // CHECK-NEXT: trunc
 // CHECK-NEXT: truncf

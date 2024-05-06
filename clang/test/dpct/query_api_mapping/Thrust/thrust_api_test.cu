@@ -339,3 +339,31 @@
 // is_sorted-NEXT:  /*10*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N);
 // is_sorted-NEXT:  /*11*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N, comp);
 // is_sorted-NEXT:  /*12*/ oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N, comp);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::partition --extra-arg="-std=c++14"| FileCheck %s -check-prefix=partition
+// partition:  /*1*/ oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
+// partition-NEXT:  /*2*/ oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
+// partition-NEXT:  /*3*/ dpct::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// partition-NEXT:  /*4*/ dpct::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// partition-NEXT:  /*5*/ oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
+// partition-NEXT:  /*6*/ oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
+// partition-NEXT:  /*7*/ dpct::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// partition-NEXT:  /*8*/ dpct::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// partition-NEXT:  /*9*/ oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas + N, is_even());
+// partition-NEXT:  /*10*/ oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas + N, is_even());
+// partition-NEXT:  /*11*/ dpct::partition(oneapi::dpl::execution::seq, datas, datas + N, stencil, is_even());
+// partition-NEXT:  /*12*/ dpct::partition(oneapi::dpl::execution::seq, datas, datas + N, stencil, is_even());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::unique_copy --extra-arg="-std=c++14"| FileCheck %s -check-prefix=unique_copy
+// unique_copy:  /*1*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin());
+// unique_copy-NEXT:  /*2*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin());
+// unique_copy-NEXT:  /*3*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), oneapi::dpl::equal_to<int>());
+// unique_copy-NEXT:  /*4*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), oneapi::dpl::equal_to<int>());
+// unique_copy-NEXT:  /*5*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin());
+// unique_copy-NEXT:  /*6*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin());
+// unique_copy-NEXT:  /*7*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), oneapi::dpl::equal_to<int>());
+// unique_copy-NEXT:  /*8*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), oneapi::dpl::equal_to<int>());
+// unique_copy-NEXT:  /*9*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+// unique_copy-NEXT:  /*10*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+// unique_copy-NEXT:  /*11*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+// unique_copy-NEXT:  /*12*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
