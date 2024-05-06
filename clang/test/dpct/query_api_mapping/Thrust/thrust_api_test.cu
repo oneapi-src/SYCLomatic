@@ -367,3 +367,17 @@
 // unique_copy-NEXT:  /*10*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
 // unique_copy-NEXT:  /*11*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
 // unique_copy-NEXT:  /*12*/ oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::stable_sort --extra-arg="-std=c++14"| FileCheck %s -check-prefix=stable_sort
+// stable_sort:  /*1*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// stable_sort-NEXT:  /*2*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// stable_sort-NEXT:  /*3*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), std::greater<int>());
+// stable_sort-NEXT:  /*4*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), std::greater<int>());
+// stable_sort-NEXT:  /*5*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// stable_sort-NEXT:  /*6*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// stable_sort-NEXT:  /*7*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), std::greater<int>());
+// stable_sort-NEXT:  /*8*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), std::greater<int>());
+// stable_sort-NEXT:  /*9*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N);
+// stable_sort-NEXT:  /*10*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N);
+// stable_sort-NEXT:  /*11*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N, std::greater<int>());
+// stable_sort-NEXT:  /*12*/ oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N, std::greater<int>());
