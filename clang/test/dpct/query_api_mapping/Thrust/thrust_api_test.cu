@@ -311,3 +311,17 @@
 // minmax_element-NEXT:  /*10*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N);
 // minmax_element-NEXT:  /*11*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
 // minmax_element-NEXT:  /*12*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::unique_by_key --extra-arg="-std=c++14"| FileCheck %s -check-prefix=unique_by_key
+// unique_by_key  /*1*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+// unique_by_key-NEXT:  /*2*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+// unique_by_key-NEXT:   /*3*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+// unique_by_key-NEXT:   /*4*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+// unique_by_key-NEXT:   /*5*/ dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+// unique_by_key-NEXT:   /*6*/ dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+// unique_by_key-NEXT:   /*7*/ dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+// unique_by_key-NEXT:   /*8*/ dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+// unique_by_key-NEXT:   /*9*/ dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+// unique_by_key-NEXT:   /*10*/ dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+// unique_by_key-NEXT:   /*11*/ dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+// unique_by_key-NEXT:   /*12*/ dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);

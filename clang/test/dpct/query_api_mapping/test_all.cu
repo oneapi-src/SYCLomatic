@@ -1940,6 +1940,7 @@
 // CHECK-NEXT: thrust::uninitialized_copy
 // CHECK-NEXT: thrust::uninitialized_copy_n
 // CHECK-NEXT: thrust::uninitialized_fill_n
+// CHECK-NEXT:thrust::unique_by_key
 // CHECK-NEXT: thrust::unique_count
 // CHECK-NEXT: trunc
 // CHECK-NEXT: truncf
