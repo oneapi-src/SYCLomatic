@@ -395,3 +395,18 @@
 // set_difference_by_key-NEXT:  /*10*/ dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue);
 // set_difference_by_key-NEXT:  /*11*/ dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
 // set_difference_by_key-NEXT:  /*12*/ dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::set_difference --extra-arg="-std=c++14"| FileCheck %s -check-prefix=set_difference
+// set_difference:  /*1*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin());
+// set_difference-NEXT:  /*2*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin());
+// set_difference-NEXT:  /*3*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin(), std::greater<int>());
+// set_difference-NEXT:  /*4*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin(), std::greater<int>());
+// set_difference-NEXT:  /*5*/ oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin());
+// set_difference-NEXT:  /*6*/ oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin());
+// set_difference-NEXT:  /*7*/ oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin(), std::greater<int>());
+// set_difference-NEXT:  /*8*/ oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin(), std::greater<int>());
+// set_difference-NEXT:  /*9*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C);
+// set_difference-NEXT:  /*10*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C);
+// set_difference-NEXT:  /*11*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C, std::greater<int>());
+// set_difference-NEXT:  /*12*/ oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C, std::greater<int>());
+
