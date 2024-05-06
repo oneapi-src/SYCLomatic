@@ -3401,8 +3401,9 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
     handleComputeMode(EnumName, E);
     return;
   } else if (EnumName == "cudaStreamCaptureStatusInvalidated") {
-    report(E->getBeginLoc(), Diagnostics::KNOWN_UNSUPPORTED_TYPE, true,
-           "cudaStreamCaptureStatus::cudaStreamCaptureStatusInvalidated");
+    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           "cudaStreamCaptureStatusInvalidated");
+    return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
       auto EnumTypeName = ETD->getName().str();

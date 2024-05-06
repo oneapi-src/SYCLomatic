@@ -16,9 +16,9 @@ int main() {
   // CHECK: sycl::ext::oneapi::experimental::queue_state captureStatus = sycl::ext::oneapi::experimental::queue_state::executing;
   // CHECK-NEXT: captureStatus = sycl::ext::oneapi::experimental::queue_state::recording;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaStreamCaptureStatus::cudaStreamCaptureStatusInvalidated type is not supported.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaStreamCaptureStatusInvalidated is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: captureStatus = (sycl::ext::oneapi::experimental::queue_state) -1;
+  // CHECK-NEXT: captureStatus = cudaStreamCaptureStatusInvalidated;
   cudaStreamCaptureStatus captureStatus = cudaStreamCaptureStatusNone;
   captureStatus = cudaStreamCaptureStatusActive;
   captureStatus = cudaStreamCaptureStatusInvalidated;
@@ -30,9 +30,9 @@ int main() {
   MY_ERROR_CHECKER(cudaStreamIsCapturing(s0, &captureStatus));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaStreamCaptureStatus::cudaStreamCaptureStatusInvalidated type is not supported.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaStreamCaptureStatusInvalidated is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: if (captureStatus == (sycl::ext::oneapi::experimental::queue_state) -1) {
+  // CHECK-NEXT: if (captureStatus == cudaStreamCaptureStatusInvalidated) {
   if (captureStatus == cudaStreamCaptureStatusInvalidated) {
     return -1;
   }
