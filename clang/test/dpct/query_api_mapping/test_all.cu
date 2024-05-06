@@ -1930,6 +1930,7 @@
 // CHECK-NEXT: thrust::reverse
 // CHECK-NEXT: thrust::reverse_copy
 // CHECK-NEXT: thrust::scatter_if
+// CHECK-NEXT: thrust::set_difference_by_key
 // CHECK-NEXT: thrust::set_intersection
 // CHECK-NEXT: thrust::set_symmetric_difference
 // CHECK-NEXT: thrust::set_symmetric_difference_by_key
