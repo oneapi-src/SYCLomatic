@@ -604,6 +604,10 @@
 // CHECK-NEXT: cuMemHostUnregister
 // CHECK-NEXT: cuMemPrefetchAsync
 // CHECK-NEXT: cuMemcpy
+// CHECK-NEXT: cuMemcpy2D
+// CHECK-NEXT: cuMemcpy2DAsync
+// CHECK-NEXT: cuMemcpy3D
+// CHECK-NEXT: cuMemcpy3DAsync
 // CHECK-NEXT: cuMemcpyAsync
 // CHECK-NEXT: cuMemcpyAtoA
 // CHECK-NEXT: cuMemcpyAtoD

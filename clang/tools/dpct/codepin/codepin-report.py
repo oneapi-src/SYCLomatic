@@ -15,6 +15,9 @@ UUID = "ID"
 CHECKPOINT = "CheckPoint"
 DATA = "Data"
 TYPE = "Type"
+FREE_MEM = "Free Device Memory"
+TOTAL_MEM = "Total Device Memory"
+TIME_ELAPSED = "Elapse Time(ms)"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
 match_checkpoint_num = 0
@@ -27,7 +30,7 @@ ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 # Raise the warning message when the data is not matched.
 def data_value_dismatch_error(value1, value2):
     return comparison_error(
-        f' and [ERROR: DATA VALUE MISMATCH] the CUDA value "{value1}" differs from the SYCL value "{value2}".'
+        f" and [ERROR: DATA VALUE MISMATCH] the CUDA value {value1} differs from the SYCL value {value2}."
     )
 
 
@@ -60,12 +63,13 @@ def prepare_failed_log(cuda_id, sycl_id, log_type, detail):
 
 
 def prolog_dismatch_but_epilog_match(id):
-    detail = f"[WARNING: METADATA MISMATCH] The pair of prolog data {id} are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API {id}.\n"
+    api_name = id.split(":")[0]
+    detail = f"[WARNING: METADATA MISMATCH] The pair of prolog data {id} are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API {api_name}.\n"
     return prepare_failed_log(id, id, "Data value", detail)
 
 
 def get_missing_key_log(id):
-    detail = f'[ERROR: METADATA MISSING] Cannot find the checkpoint: "{id}" in the execution log dataset of instrumented SYCL code.\n'
+    detail = f"[ERROR: METADATA MISSING] Cannot find the checkpoint: {id} in the execution log dataset of instrumented SYCL code.\n"
     return prepare_failed_log(id, "Missing", "Execution path", detail)
 
 
@@ -130,7 +134,7 @@ def compare_dict_value(cuda_dict, sycl_dict):
                     continue
                 compare_data_value(data, sycl_dict[name])
         except comparison_error as e:
-            raise comparison_error(f'->"{name}"{e.message}')
+            raise comparison_error(f"->{name}{e.message}")
 
 
 def compare_container_value(cuda_value, sycl_value):
@@ -150,7 +154,7 @@ def compare_checkpoint(cuda_checkpoint, sycl_checkpoint):
                 compare_container_value(cuda_var, sycl_var)
                 continue
             except comparison_error as e:
-                raise comparison_error(f'"{id}"{e.message}')
+                raise comparison_error(f"{id}{e.message}")
 
 
 def is_checkpoint_length_dismatch(cuda_list, sycl_list):
@@ -234,6 +238,9 @@ def read_data_from_json_file(file_path):
 
 
 def get_checkpoint_list_from_json_file(file_path):
+    checkpoint_list = {}
+    used_mem_dic = {}
+    elapsed_time_dic = {}
     json_data_list = read_data_from_json_file(file_path)
     prolog_checkpoint_list = {}
     epilog_checkpoint_list = {}
@@ -243,8 +250,36 @@ def get_checkpoint_list_from_json_file(file_path):
             prolog_checkpoint_list[id] = item.get(CHECKPOINT, {})
         elif "epilog" in id:
             epilog_checkpoint_list[id] = item.get(CHECKPOINT, {})
-    return prolog_checkpoint_list, epilog_checkpoint_list
 
+        total_mem = item[TOTAL_MEM]
+        free_mem = item[FREE_MEM]
+        used_mem = int(total_mem) - int(free_mem)
+        used_mem_dic[id] = used_mem
+        time_elapsed = item[TIME_ELAPSED]
+        elapsed_time_dic[id] = float(time_elapsed)
+    return prolog_checkpoint_list, epilog_checkpoint_list, used_mem_dic, elapsed_time_dic
+
+def get_bottleneck(cp_list):
+    bottleneck_id = "N/A"
+    if len(cp_list) > 0:
+        bottleneck_id = list(cp_list.keys())[0]
+    max_time = 0.0
+    for id, time in cp_list.items():
+        if time > max_time:
+            bottleneck_id = id
+            max_time = time
+    return (bottleneck_id, max_time)
+
+def get_memory_used(cp_list):
+    cp_id = "N/A"
+    if len(cp_list) > 0:
+        cp_id = list(cp_list.keys())[0]
+    max_mem = 0
+    for id, used_mem in cp_list.items():
+        if used_mem > max_mem:
+            cp_id = id
+            max_mem = used_mem
+    return (cp_id, max_mem)
 
 def main():
     global match_checkpoint_num
@@ -264,12 +299,15 @@ def main():
     )
     args = parser.parse_args()
 
-    cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_list = (
-        get_checkpoint_list_from_json_file(args.instrumented_cuda_log)
-    )
-    sycl_prolog_checkpoint_list, sycl_epilog_checkpoint_list = (
-        get_checkpoint_list_from_json_file(args.instrumented_sycl_log)
-    )
+    cuda_prolog_checkpoint_list, cuda_epilog_checkpoint_list, mem_used_cuda, time_cuda = get_checkpoint_list_from_json_file(
+        args.instrumented_cuda_log)
+    sycl_prolog_checkpoint_list, sycl_epilog_checkpoint_list, mem_used_sycl, time_sycl = get_checkpoint_list_from_json_file(
+        args.instrumented_sycl_log)
+
+    bottleneck_cuda = get_bottleneck(time_cuda)
+    bottleneck_sycl = get_bottleneck(time_sycl)
+    max_device_memory_cuda = get_memory_used(mem_used_cuda)
+    max_device_memory_sycl = get_memory_used(mem_used_sycl)
 
     failed_log = compare_checkpoint_list(
         cuda_prolog_checkpoint_list,
@@ -277,10 +315,15 @@ def main():
         sycl_prolog_checkpoint_list,
         sycl_epilog_checkpoint_list,
     )
-    with open(CODEPIN_REPORT_FILE, "w") as f:
+
+    with(open(CODEPIN_REPORT_FILE, 'w')) as f:
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
         f.write("Consistently APIs count, " + str(match_checkpoint_num) + "\n")
+        f.write("Most Time-consuming Kernel(CUDA), " + str(bottleneck_cuda[0]) + ", time:" + str(bottleneck_cuda[1]) + "\n")
+        f.write("Most Time-consuming Kernel(SYCL), " + str(bottleneck_sycl[0]) + ", time:" + str(bottleneck_sycl[1]) + "\n")
+        f.write("Peak Device Memory Used(CUDA), " + str(max_device_memory_cuda[1]) + "\n")
+        f.write("Peak Device Memory Used(SYCL), " + str(max_device_memory_sycl[1]) + "\n")
     if failed_log:
         with open(CODEPIN_REPORT_FILE, "a") as f:
             f.write(ERROR_CSV_PATTERN)

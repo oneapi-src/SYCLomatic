@@ -185,6 +185,9 @@ void ShowStatus(int Status, std::string Message) {
                    ". Please specify the header file for '" + Message +
                    "' with option \"--extra-arg\".";
     break;
+  case MigrationErrorConflictOptions:
+    StatusString = "Error: Specified options have conflicts.";
+    break;
   case CallIndependentToolError:
     StatusString = "Error: Call to " + Message + " failed";
     break;
