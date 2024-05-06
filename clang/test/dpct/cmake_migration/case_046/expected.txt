@@ -1,0 +1,5 @@
+find_path(SYCL_TOOLKIT_ROOT_DIR NAME some.exe PATHS /usr/lib)
+
+GLOBAL_SET(TPL_INCLUDE_DIRS ${SYCL_TOOLKIT_INCLUDE})
+
+mark_as_advanced(FORCE ${SYCLToolkit_LIBRARY_DIR})

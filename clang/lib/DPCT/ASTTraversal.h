@@ -1274,7 +1274,7 @@ public:
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
   std::set<clang::SourceLocation> CodePinInstrumentation;
-  
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1519,24 +1519,20 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
                                       std::forward<RestNamesT>(Rest)...);
   }
 
-  const static MapNames::MapTy MemberNames;
+  const static MapNames::MapTy DirectReplMemberNames;
+  const static MapNames::MapTy GetSetReplMemberNames;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
-  const static MapNames::MapTy PitchMemberToSetter;
-  const static std::map<std::string, HelperFeatureEnum> PitchMemberToFeature;
-  const static MapNames::MapTy SizeOrPosToMember;
+  const static MapNames::MapTy ArrayDescMemberNames;
   const static std::vector<std::string> RemoveMember;
 
 public:
   void emplaceCuArrayDescDeclarations(const VarDecl *VD);
-  void emplaceMemcpy3DDeclarations(const VarDecl *VD, bool hasDirection);
-  static std::string getMemcpy3DArguments(StringRef BaseName,
-                                          bool hasDirection);
 
-  static std::string getMemberName(StringRef BaseName,
-                                   const std::string &Member) {
-    auto Itr = MemberNames.find(Member);
-    if (Itr != MemberNames.end()) {
+  static std::string getArrayDescMemberName(StringRef BaseName,
+                                            const std::string &Member) {
+    auto Itr = ArrayDescMemberNames.find(Member);
+    if (Itr != ArrayDescMemberNames.end()) {
       std::string ReplacedName;
       llvm::raw_string_ostream OS(ReplacedName);
       printParamName(OS, BaseName, Itr->second);
@@ -1544,13 +1540,6 @@ public:
     }
     return Member;
   }
-
-  static std::string getPitchMemberSetter(StringRef BaseName,
-                                          const std::string &Member,
-                                          const Expr *E);
-
-  static std::string getSizeOrPosMember(StringRef BaseName,
-                                        const std::string &Member);
 
   static bool isRemove(std::string Name) {
     return std::find(RemoveMember.begin(), RemoveMember.end(), Name) !=

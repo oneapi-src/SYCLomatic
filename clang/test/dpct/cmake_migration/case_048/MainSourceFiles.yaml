@@ -25,6 +25,8 @@ MainSourceFilesDigest:
     Digest:          e2636fb8d174ac319083b0306294d3bd
   - MainSourceFile:  '/path/to/src/baz.cpp'
     Digest:          991d7e4825fc597205bf68f2eda27acd
+  - MainSourceFile:  '/path/to/src/layer.cudnn.cpp'
+    Digest:          991d7e4825fc597205bf68f2eda27ace
 DpctVersion:     19.0.0
 MainHelperFileName: ''
 USMLevel:        ''
