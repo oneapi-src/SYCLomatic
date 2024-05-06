@@ -22,6 +22,7 @@ set(dpct_rt_files
 set(dpct_rt_dpstd_files
   include/dpct/dpl_extras/functional.h
   include/dpct/dpl_extras/memory.h
+  include/dpct/dpl_extras/iterator_adaptor.h
   include/dpct/dpl_extras/iterators.h
   include/dpct/dpl_extras/algorithm.h
   include/dpct/dpl_extras/numeric.h
