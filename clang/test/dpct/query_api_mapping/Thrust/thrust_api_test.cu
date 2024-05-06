@@ -418,3 +418,11 @@
 // for_each_n-NEXT:  /*5*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
 // for_each_n-NEXT:  /*6*/ oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::tabulate --extra-arg="-std=c++14"| FileCheck %s -check-prefix=tabulate
+// tabulate:  /*1*/ dpct::for_each_index(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), std::negate<int>());
+// tabulate-NEXT:  /*2*/ dpct::for_each_index(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), std::negate<int>());
+// tabulate-NEXT:  /*3*/ dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), std::negate<int>());
+// tabulate-NEXT:  /*4*/ dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), std::negate<int>());
+// tabulate-NEXT:  /*5*/ dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
+// tabulate-NEXT:  /*6*/ dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
+
