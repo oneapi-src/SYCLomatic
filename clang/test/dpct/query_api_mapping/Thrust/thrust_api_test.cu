@@ -426,3 +426,11 @@
 // tabulate-NEXT:  /*5*/ dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
 // tabulate-NEXT:  /*6*/ dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::remove_copy --extra-arg="-std=c++14"| FileCheck %s -check-prefix=remove_copy
+// remove_copy:  /*1*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), 0);
+// remove_copy-NEXT:  /*2*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), 0);
+// remove_copy-NEXT:  /*3*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
+// remove_copy-NEXT:  /*4*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
+// remove_copy-NEXT:  /*5*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
+// remove_copy-NEXT:  /*6*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
+
