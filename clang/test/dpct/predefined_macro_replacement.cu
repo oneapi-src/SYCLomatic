@@ -13,7 +13,7 @@ __device__ void hello() { printf("foo"); }
 __device__ void hello() { printf("other"); }
 #endif
 
-//CHECK: #ifndef DPCT_COMPATIBILITY_TEMP
+//CHECK: #ifndef SYCL_LANGUAGE_VERSION
 #ifndef __NVCC__
 __device__ void hello2() { printf("hello2"); }
 #endif
@@ -75,7 +75,7 @@ printf("<200, \n");
 
 
 int main() {
-//CHECK: #if defined(DPCT_COMPATIBILITY_TEMP)
+//CHECK: #if defined(SYCL_LANGUAGE_VERSION)
 //CHECK-NEXT:     q_ct1.parallel_for(
 #if defined(__NVCC__)
   hello8<<<1,1>>>();
@@ -83,7 +83,7 @@ int main() {
   hello();
 #endif
 
-//CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
+//CHECK: #ifdef SYCL_LANGUAGE_VERSION
 //CHECK-NEXT:     q_ct1.parallel_for(
   #ifdef __NVCC__
   hello8<<<1,1>>>();
@@ -91,7 +91,7 @@ int main() {
   hello();
 #endif
 
-//CHECK: #if DPCT_COMPATIBILITY_TEMP
+//CHECK: #if SYCL_LANGUAGE_VERSION
 //CHECK-NEXT:     q_ct1.parallel_for(
   #if __NVCC__
   hello8<<<1,1>>>();
@@ -103,7 +103,7 @@ int main() {
 
 //CHECK: #define AAA DPCT_COMPATIBILITY_TEMP
 //CHECK-NEXT: #define BBB SYCL_LANGUAGE_VERSION
-//CHECK-NEXT: #define CCC DPCT_COMPATIBILITY_TEMP
+//CHECK-NEXT: #define CCC SYCL_LANGUAGE_VERSION
 #define AAA __CUDA_ARCH__
 #define BBB __CUDACC__
 #define CCC __NVCC__
