@@ -639,7 +639,7 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
 // ITEMS_PER_WORK_ITEM: size_t variable controlling the number of items per
 // thread/work_item
 // ALGORITHM: load_algorithm variable controlling the type of load operation.
-// InputT: typename parameter controlled at runtime from input sequence.
+// InputT: type for input sequence.
 // InputIteratorT: typename parameter for iterator pointer controlled at
 // runtime.
 // Item : typename parameter resembling sycl::nd_item<3> .
