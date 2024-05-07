@@ -465,3 +465,6 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::device_pointer_cast --extra-arg="-std=c++14"| FileCheck %s -check-prefix=device_pointer_cast
 // device_pointer_cast: dpct::device_pointer<int> begin = dpct::get_device_pointer(&data[0]);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::raw_pointer_cast --extra-arg="-std=c++14"| FileCheck %s -check-prefix=raw_pointer_cast
+// raw_pointer_cast: auto min_costs_ptr = dpct::get_raw_pointer(d[0].data());

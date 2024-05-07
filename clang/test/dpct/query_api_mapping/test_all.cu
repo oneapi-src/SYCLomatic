@@ -1928,6 +1928,7 @@
 // CHECK-NEXT: thrust::partition
 // CHECK-NEXT: thrust::partition_copy
 // CHECK-NEXT: thrust::partition_point
+// CHECK-NEXT: thrust::raw_pointer_cast
 // CHECK-NEXT: thrust::raw_reference_cast
 // CHECK-NEXT: thrust::remove
 // CHECK-NEXT: thrust::remove_copy
