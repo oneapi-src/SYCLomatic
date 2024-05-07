@@ -434,3 +434,11 @@
 // remove_copy-NEXT:  /*5*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
 // remove_copy-NEXT:  /*6*/ oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::transform_exclusive_scan --extra-arg="-std=c++14"| FileCheck %s -check-prefix=transform_exclusive_scan
+// transform_exclusive_scan:  /*1*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
+// transform_exclusive_scan-NEXT:  /*2*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
+// transform_exclusive_scan-NEXT:  /*3*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
+// transform_exclusive_scan-NEXT:  /*4*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
+// transform_exclusive_scan-NEXT:  /*5*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A + N, A, 4, binary_op, unary_op);
+// transform_exclusive_scan-NEXT:  /*6*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A + N, A, 4, binary_op, unary_op);
+

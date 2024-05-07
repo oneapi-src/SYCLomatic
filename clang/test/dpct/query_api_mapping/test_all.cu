@@ -1944,6 +1944,7 @@
 // CHECK-NEXT: thrust::stable_sort
 // CHECK-NEXT: thrust::swap_ranges
 // CHECK-NEXT: thrust::tabulate
+// CHECK-NEXT: thrust::transform_exclusive_scan
 // CHECK-NEXT: thrust::transform_inclusive_scan
 // CHECK-NEXT: thrust::uninitialized_copy
 // CHECK-NEXT: thrust::uninitialized_copy_n
