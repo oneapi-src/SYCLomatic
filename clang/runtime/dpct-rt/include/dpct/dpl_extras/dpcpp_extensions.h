@@ -636,7 +636,7 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
   }
 }
 // template parameters :
-// ITEMS_PER_WORK_ITEM: size_t varaiable controlling the number of items per
+// ITEMS_PER_WORK_ITEM: size_t variable controlling the number of items per
 // thread/work_item
 // ALGORITHM: load_algorithm variable controlling the type of load operation.
 // InputT: typename parameter controlled at runtime from input sequence.
