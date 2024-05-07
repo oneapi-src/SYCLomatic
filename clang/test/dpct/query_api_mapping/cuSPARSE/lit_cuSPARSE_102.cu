@@ -69,7 +69,7 @@
 // cusparseScsrmv_mp-NEXT:   dpct::sparse::csrmv(*handle, trans, m, n, alpha, desc, value, row_ptr, col_idx, x, beta, y);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseDcsrmv_mp | FileCheck %s -check-prefix=cusparseDcsrmv_mp
-// cusparseDcsrmv_mp- CUDA API:
+// cusparseDcsrmv_mp: CUDA API:
 // cusparseDcsrmv_mp-NEXT:   cusparseDcsrmv_mp(handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/,
 // cusparseDcsrmv_mp-NEXT:                     m /*int*/, n /*int*/, nnz /*int*/, alpha /*const double **/,
 // cusparseDcsrmv_mp-NEXT:                     desc /*const cusparseMatDescr_t*/, value /*const double **/,
