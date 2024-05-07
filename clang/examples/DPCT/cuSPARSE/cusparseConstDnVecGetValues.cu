@@ -2,8 +2,8 @@
 
 void test(cusparseConstDnVecDescr_t desc) {
   // Start
-  void *value;
+  const void *value;
   cusparseConstDnVecGetValues(desc /*cusparseConstDnVecDescr_t*/,
-                              &value /*void ***/);
+                              &value /*const void ***/);
   // End
 }
