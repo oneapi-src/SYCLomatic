@@ -152,11 +152,11 @@ template <typename T> std::string demangle_name() {
 
 #ifdef __NVCC__
 template <> std::string demangle_name<__half>() { return "fp16"; }
-template <> std::string demangle_name<nv_bfloat16>() { return "bp16"; }
+template <> std::string demangle_name<nv_bfloat16>() { return "bf16"; }
 #else
 template <> std::string demangle_name<sycl::half>() { return "fp16"; }
 template <> std::string demangle_name<sycl::ext::oneapi::bfloat16>() {
-  return "bp16";
+  return "bf16";
 }
 #endif
 
@@ -190,12 +190,11 @@ public:
     ss.print_type_data(demangle_name<__half>(), f);
   }
 };
-template <>
-class DataSer<nv_bfloat16> {
+template <> class DataSer<nv_bfloat16> {
 public:
   static void dump(json_stringstream &ss, const nv_bfloat16 &value,
                    dpct::experimental::StreamType stream) {
-    float f = bfloat16_to_float(value);
+    float f = __bfloat162float(value);
     ss.print_type_data(demangle_name<nv_bfloat16>(), f);
   }
 };

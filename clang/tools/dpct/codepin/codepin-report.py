@@ -10,6 +10,7 @@ import json
 import os
 import sys
 from collections.abc import Container
+import math
 
 UUID = "ID"
 CHECKPOINT = "CheckPoint"
@@ -17,10 +18,6 @@ DATA = "Data"
 TYPE = "Type"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
-match_checkpoint_num = 0
-dismatch_checkpoint_num = 0
-checkpoint_size = 0
-
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 
 
@@ -97,77 +94,91 @@ class comparison_error(Exception):
         super().__init__(self.message)
 
 
+# Reference: https://en.wikipedia.org/wiki/Machine_epsilon
 def compare_float_value(data1, data2, type):
-    if type not in ["bf16", "fp16", "float", "double"]:
-        raise ValueError("Type must be one of 'bf16', 'fp16', 'float', 'double'")
-    if type == "float" and not math.isclose(data1, data2, rel_tol=1.1920929e-7):
-        raise ValueError(f"Float values {data1} and {data2} are not close enough")
-    if type == "fp16" and not math.isclose(data1, data2, rel_tol=9.765625e-4):
-        raise ValueError(f"fp16 values {data1} and {data2} are not close enough")
-    if type == "bf16" and not math.isclose(data1, data2, rel_tol=9.765625e-4):
-        raise ValueError(f"bf16 values {data1} and {data2} are not close enough")
+    tolerances = {
+        "bf16": 9.77e-04,
+        "fp16": 9.77e-04,
+        "float": 1.19e-07,
+        "double": 2.22e-16,
+    }
+
+    if type not in tolerances:
+        raise comparison_error(" Type must be one of 'bf16', 'fp16', 'float', 'double'")
+
+    if not math.isclose(data1, data2, rel_tol=tolerances[type]):
+        raise comparison_error(
+            f": {type} values {data1} and {data2} are not close enough"
+        )
+
     return True
 
 
-def compare_data_value(data1, data2, type):
+def compare_data_value(data1, data2, var_name, var_type):
     if data1 == ERROR_MATCH_PATTERN or data2 == ERROR_MATCH_PATTERN:
         raise no_serialization_function_error()
-    if type in ["bf16", "fp16", "float", "double"]:
-        compare_float_value(data1, data2, type)
-    elif data1 != data2:
-        raise data_value_dismatch_error(data1, data2)
-    return True
+    try:
+        if var_type in ["bf16", "fp16", "float", "double"]:
+            compare_float_value(data1, data2, var_type)
+        elif data1 != data2:
+            raise data_value_dismatch_error(data1, data2)
+    except comparison_error as e:
+        raise comparison_error(f"{var_name}{e.message}")
 
 
-def compare_list_value(cuda_list, sycl_list):
+def compare_list_value(cuda_list, sycl_list, var_name, var_type):
     for i in range(len(cuda_list)):
-        try:
-            if is_both_container(cuda_list[i], sycl_list[i]):
-                compare_container_value(cuda_list[i], sycl_list[i])
-                continue
-            else:
-                compare_data_value(cuda_list[i], sycl_list[i])
-                continue
-        except comparison_error as e:
-            raise comparison_error(f"->[{i}]{e.message}")
+        var_name = var_name + "->[" + str(i) + "]"
+        if is_both_container(cuda_list[i], sycl_list[i]):
+            compare_container_value(cuda_list[i], sycl_list[i], var_name, var_type)
+            continue
+        else:
+            compare_data_value(cuda_list[i], sycl_list[i], var_name, var_type)
+            continue
 
 
-def compare_dict_value(cuda_dict, sycl_dict):
-    type_name = ""
+def compare_dict_value(cuda_dict, sycl_dict, var_name, var_type):
     for name, data in cuda_dict.items():
         if name not in sycl_dict:
             raise data_missed_error(name)
-        try:
-            if is_both_container(data, sycl_dict[name]):
-                compare_container_value(data, sycl_dict[name])
+        if is_both_container(data, sycl_dict[name]):
+            compare_container_value(data, sycl_dict[name], var_name, var_type)
+            continue
+        else:
+            if name == TYPE:  # Check the Data only, ignore the key is 'Type'
+                var_type = data
                 continue
-            else:
-                if name == TYPE:  # Check the Data only, ignore the key is 'Type'
-                    type_name = name
-                    continue
-                compare_data_value(data, sycl_dict[name], type_name)
-        except comparison_error as e:
-            raise comparison_error(f"->{name}{e.message}")
+            var_name = var_name + "->" + name
+            compare_data_value(data, sycl_dict[name], var_name, var_type)
 
 
-def compare_container_value(cuda_value, sycl_value):
+def compare_container_value(cuda_value, sycl_value, var_name, var_type=""):
     if len(cuda_value) != len(sycl_value):
         raise data_length_dismatch_error()
     if is_container_with_type(cuda_value, sycl_value, list):
-        return compare_list_value(cuda_value, sycl_value)
+        return compare_list_value(cuda_value, sycl_value, var_name, var_type)
     elif is_container_with_type(cuda_value, sycl_value, dict):
-        return compare_dict_value(cuda_value, sycl_value)
+        return compare_dict_value(cuda_value, sycl_value, var_name, var_type)
+
+
+def compare_cp_var(cuda_var, sycl_var, var_name):
+    compare_container_value(cuda_var, sycl_var, var_name)
 
 
 def compare_checkpoint(cuda_checkpoint, sycl_checkpoint):
-    for id, cuda_var in cuda_checkpoint.items():
-        sycl_var = sycl_checkpoint.get(id)
+    error_messages = []
+    for var_name, cuda_var in cuda_checkpoint.items():
+        sycl_var = sycl_checkpoint.get(var_name)
         if cuda_var is not None and sycl_var is not None:
             try:
-                compare_container_value(cuda_var, sycl_var)
-                continue
-            except comparison_error as e:
-                raise comparison_error(f"{id}{e.message}")
+                compare_cp_var(cuda_var, sycl_var, var_name)
+            except Exception as e:
+                error_messages.append(str(e))
+            continue
+    if error_messages:
+        raise comparison_error(
+            "Errors occurred during comparison: " + "; ".join(error_messages)
+        )
 
 
 def is_checkpoint_length_dismatch(cuda_list, sycl_list):
@@ -180,10 +191,10 @@ def compare_checkpoint_list(
     cuda_epilog_checkpoint_list,
     sycl_prolog_checkpoint_list,
     sycl_epilog_checkpoint_list,
+    match_checkpoint_num,
+    dismatch_checkpoint_num,
+    checkpoint_size,
 ):
-    global match_checkpoint_num
-    global dismatch_checkpoint_num
-    global checkpoint_size
     failed_log = ""
     is_checkpoint_length_dismatch(
         cuda_prolog_checkpoint_list, sycl_prolog_checkpoint_list
@@ -230,7 +241,7 @@ def compare_checkpoint_list(
             else:
                 failed_log += prolog_dismatch_but_epilog_match(id)
             continue
-    return failed_log
+    return match_checkpoint_num, dismatch_checkpoint_num, checkpoint_size, failed_log
 
 
 def parse_json(json_str):
@@ -264,8 +275,9 @@ def get_checkpoint_list_from_json_file(file_path):
 
 
 def main():
-    global match_checkpoint_num
-    global checkpoint_size
+    match_checkpoint_num = 0
+    dismatch_checkpoint_num = 0
+    checkpoint_size = 0
     parser = argparse.ArgumentParser(description="Codepin report tool.\n")
     parser.add_argument(
         "--instrumented-cuda-log",
@@ -288,11 +300,16 @@ def main():
         get_checkpoint_list_from_json_file(args.instrumented_sycl_log)
     )
 
-    failed_log = compare_checkpoint_list(
-        cuda_prolog_checkpoint_list,
-        cuda_epilog_checkpoint_list,
-        sycl_prolog_checkpoint_list,
-        sycl_epilog_checkpoint_list,
+    match_checkpoint_num, dismatch_checkpoint_num, checkpoint_size, failed_log = (
+        compare_checkpoint_list(
+            cuda_prolog_checkpoint_list,
+            cuda_epilog_checkpoint_list,
+            sycl_prolog_checkpoint_list,
+            sycl_epilog_checkpoint_list,
+            match_checkpoint_num,
+            dismatch_checkpoint_num,
+            checkpoint_size,
+        )
     )
     with open(CODEPIN_REPORT_FILE, "w") as f:
         f.write("CodePin Summary\n")
