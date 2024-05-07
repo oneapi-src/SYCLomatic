@@ -1914,6 +1914,7 @@
 // CHECK-NEXT: tgammaf
 // CHECK-NEXT: thrust::all_of
 // CHECK-NEXT: thrust::device_delete
+// CHECK-NEXT: thrust::device_new
 // CHECK-NEXT: thrust::device_pointer_cast
 // CHECK-NEXT: thrust::equal
 // CHECK-NEXT: thrust::equal_range
