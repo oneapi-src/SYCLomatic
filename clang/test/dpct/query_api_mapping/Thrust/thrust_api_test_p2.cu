@@ -10,3 +10,6 @@
 // device_new-NEXT:  /*2*/ dpct::device_pointer<int> d_array2 =
 // device_new-NEXT:      dpct::device_new<int>(d_mem, val, N);
 // device_new-NEXT:  /*3*/ dpct::device_pointer<int> d_array3 = dpct::device_new<int>(N);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::device_ptr --extra-arg="-std=c++14"| FileCheck %s -check-prefix=device_ptr
+// device_ptr: dpct::device_pointer<int> d_mem = dpct::malloc_device<int>(N);

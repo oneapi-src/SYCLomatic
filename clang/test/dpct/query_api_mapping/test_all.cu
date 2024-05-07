@@ -1916,6 +1916,7 @@
 // CHECK-NEXT: thrust::device_delete
 // CHECK-NEXT: thrust::device_new
 // CHECK-NEXT: thrust::device_pointer_cast
+// CHECK-NEXT: thrust::device_ptr
 // CHECK-NEXT: thrust::equal
 // CHECK-NEXT: thrust::equal_range
 // CHECK-NEXT: thrust::find_if
