@@ -456,3 +456,7 @@
 // set_intersection_by_key-NEXT:  /*11*/ dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
 // set_intersection_by_key-NEXT:  /*12*/ dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::raw_reference_cast --extra-arg="-std=c++14"| FileCheck %s -check-prefix=raw_reference_cast
+// raw_reference_cast:  /*1*/ int &ref1 = dpct::get_raw_reference(d_vec[0]);
+// raw_reference_cast-NEXT:  /*2*/ int &ref2 = dpct::get_raw_reference(ref_const);
+
