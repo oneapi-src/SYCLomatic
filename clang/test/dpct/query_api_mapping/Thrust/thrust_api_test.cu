@@ -460,3 +460,17 @@
 // raw_reference_cast:  /*1*/ int &ref1 = dpct::get_raw_reference(d_vec[0]);
 // raw_reference_cast-NEXT:  /*2*/ int &ref2 = dpct::get_raw_reference(ref_const);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::partition_copy --extra-arg="-std=c++14"| FileCheck %s -check-prefix=partition_copy
+// partition_copy:  /*1*/ oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// partition_copy-NEXT:  /*2*/ oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// partition_copy-NEXT:  /*3*/ oneapi::dpl::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// partition_copy-NEXT:  /*4*/ oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// partition_copy-NEXT:  /*5*/ oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// partition_copy-NEXT:  /*6*/ oneapi::dpl::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// partition_copy-NEXT:  /*7*/ dpct::partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// partition_copy-NEXT:  /*8*/ dpct::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// partition_copy-NEXT:  /*9*/ dpct::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+// partition_copy-NEXT:  /*10*/ dpct::partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// partition_copy-NEXT:  /*11*/ dpct::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// partition_copy-NEXT:  /*12*/ dpct::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+
