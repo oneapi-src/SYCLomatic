@@ -13,6 +13,10 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping hfma | FileCheck %s
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping hfma | FileCheck %s
+
+// RUN: dpct -cuda-include-path "%cuda-path/include" -query-api-mapping=hfma | FileCheck %s
+
 // CHECK: CUDA API:
 // CHECK-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // CHECK-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
@@ -39,5 +43,5 @@
 // MULTI_QUERY-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
 // MULTI_QUERY-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
-// RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc --usm-level=none 2>&1 | FileCheck %s -check-prefix=CONFLICT_OPT
-// CONFLICT_OPT: Warning: For API mapping query, only option --extra-arg and --cuda-include-path can be used together with option --query-api-mapping.
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc --usm-level=none 2>&1 | FileCheck %s -check-prefix=CONFLICT_OPT
+// CONFLICT_OPT: Warning: Option "-usm-level" is ignored because it is conflict with option "-query-api-mapping".

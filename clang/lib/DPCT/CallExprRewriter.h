@@ -1650,19 +1650,25 @@ public:
   }
 };
 
+struct NullRewriter : public CallExprRewriter {
+  NullRewriter(const CallExpr *C, StringRef Name) : CallExprRewriter(C, Name) {}
+
+  std::optional<std::string> rewrite() override { return std::nullopt; }
+};
+
+struct NullRewriterFactory : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriter>
+  create(const CallExpr *Call) const override {
+    return std::make_shared<NullRewriter>(Call, "");
+  }
+};
+
 class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   // Information for building the result string from the original function call
   OutputBuilder OB;
   std::string OutStr;
   std::vector<std::string> &Includes;
   MetaRuleObject::Attributes RuleAttributes;
-
-  struct NullRewriter : public CallExprRewriter {
-    NullRewriter(const CallExpr *C, StringRef Name)
-        : CallExprRewriter(C, Name) {}
-
-    std::optional<std::string> rewrite() override { return std::nullopt; }
-  };
 
 public:
   static bool hasExplicitTemplateArgs(const CallExpr *C) {
@@ -1679,8 +1685,7 @@ public:
 
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
-      : OutStr(R.Out), Includes(R.Includes),
-        RuleAttributes(R.RuleAttributes) {
+      : OutStr(R.Out), Includes(R.Includes), RuleAttributes(R.RuleAttributes) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;

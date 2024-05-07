@@ -311,8 +311,8 @@ private:
 
 class kernel_library {
 public:
-  kernel_library() : ptr{nullptr} {}
-  kernel_library(void *ptr) : ptr{ptr} {}
+  constexpr kernel_library() : ptr{nullptr} {}
+  constexpr kernel_library(void *ptr) : ptr{ptr} {}
 
   operator void *() const { return ptr; }
 
@@ -386,8 +386,8 @@ static inline void unload_kernel_library(const kernel_library &library) {
 
 class kernel_function {
 public:
-  kernel_function() : ptr{nullptr} {}
-  kernel_function(dpct::kernel_functor ptr) : ptr{ptr} {}
+  constexpr kernel_function() : ptr{nullptr} {}
+  constexpr kernel_function(dpct::kernel_functor ptr) : ptr{ptr} {}
 
   operator void *() const { return ((void *)ptr); }
 

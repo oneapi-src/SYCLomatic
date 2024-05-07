@@ -13,30 +13,15 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/Format/Format.h"
-#include "AffectedRangeManager.h"
-#include "BreakableToken.h"
-#include "ContinuationIndenter.h"
 #include "DefinitionBlockSeparator.h"
-#include "FormatInternal.h"
-#include "FormatToken.h"
-#include "FormatTokenLexer.h"
 #include "IntegerLiteralSeparatorFixer.h"
 #include "NamespaceEndCommentsFixer.h"
 #include "ObjCPropertyAttributeOrderFixer.h"
 #include "QualifierAlignmentFixer.h"
 #include "SortJavaScriptImports.h"
-#include "TokenAnalyzer.h"
-#include "TokenAnnotator.h"
 #include "UnwrappedLineFormatter.h"
-#include "UnwrappedLineParser.h"
 #include "UsingDeclarationsSorter.h"
-#include "WhitespaceManager.h"
-#include "clang/Basic/Diagnostic.h"
-#include "clang/Basic/DiagnosticOptions.h"
-#include "clang/Basic/SourceManager.h"
-#include "clang/Lex/Lexer.h"
 #include "clang/Tooling/Inclusions/HeaderIncludes.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Allocator.h"
@@ -318,6 +303,14 @@ struct ScalarEnumerationTraits<FormatStyle::BreakTemplateDeclarationsStyle> {
     // For backward compatibility.
     IO.enumCase(Value, "false", FormatStyle::BTDS_MultiLine);
     IO.enumCase(Value, "true", FormatStyle::BTDS_Yes);
+  }
+};
+
+template <> struct ScalarEnumerationTraits<FormatStyle::DAGArgStyle> {
+  static void enumeration(IO &IO, FormatStyle::DAGArgStyle &Value) {
+    IO.enumCase(Value, "DontBreak", FormatStyle::DAS_DontBreak);
+    IO.enumCase(Value, "BreakElements", FormatStyle::DAS_BreakElements);
+    IO.enumCase(Value, "BreakAll", FormatStyle::DAS_BreakAll);
   }
 };
 
@@ -1134,6 +1127,10 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("StatementAttributeLikeMacros",
                    Style.StatementAttributeLikeMacros);
     IO.mapOptional("StatementMacros", Style.StatementMacros);
+    IO.mapOptional("TableGenBreakingDAGArgOperators",
+                   Style.TableGenBreakingDAGArgOperators);
+    IO.mapOptional("TableGenBreakInsideDAGArg",
+                   Style.TableGenBreakInsideDAGArg);
     IO.mapOptional("TabWidth", Style.TabWidth);
     IO.mapOptional("TypeNames", Style.TypeNames);
     IO.mapOptional("TypenameMacros", Style.TypenameMacros);
@@ -1594,6 +1591,8 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.StatementAttributeLikeMacros.push_back("Q_EMIT");
   LLVMStyle.StatementMacros.push_back("Q_UNUSED");
   LLVMStyle.StatementMacros.push_back("QT_REQUIRE_VERSION");
+  LLVMStyle.TableGenBreakingDAGArgOperators = {};
+  LLVMStyle.TableGenBreakInsideDAGArg = FormatStyle::DAS_DontBreak;
   LLVMStyle.TabWidth = 8;
   LLVMStyle.UseTab = FormatStyle::UT_Never;
   LLVMStyle.VerilogBreakBetweenInstancePorts = true;

@@ -94,6 +94,9 @@ const std::string DplExtrasVectorAllContentStr =
 const std::string DplExtrasDpcppExtensionsAllContentStr =
 #include "clang/DPCT/dpl_extras/dpcpp_extensions.h.inc"
     ;
+const std::string DplExtrasIteratorAdaptorAllContentStr =
+#include "clang/DPCT/dpl_extras/iterator_adaptor.h.inc"
+    ;
 
 const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
@@ -101,6 +104,10 @@ const std::string CodePinAllContentStr =
 
 const std::string CodePinSerializationBasicAllContentStr =
 #include "clang/DPCT/codepin/serialization/basic.hpp.inc"
+    ;
+
+const std::string CmakeAllContentStr =
+#include "clang/DPCT/dpct.cmake.inc"
     ;
 
 void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
@@ -166,6 +173,30 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(DplExtrasVector, "dpl_extras", vector.h)
   GENERATE_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, "dpl_extras",
                             dpcpp_extensions.h)
+  GENERATE_ALL_FILE_CONTENT(DplExtrasIteratorAdaptor, "dpl_extras",
+                            iterator_adaptor.h)
+#undef GENERATE_ALL_FILE_CONTENT
+}
+
+void genCmakeHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
+  if (!llvm::sys::fs::is_directory(OutRoot.getCanonicalPath()))
+    createDirectories(OutRoot);
+
+  clang::tooling::UnifiedPath ToPath =
+      appendPath(OutRoot.getCanonicalPath().str(), ".");
+
+#define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FOLDER_NAME, FILE_NAME)            \
+  {                                                                            \
+    std::ofstream VAR_NAME##File(                                              \
+        appendPath(appendPath(ToPath.getCanonicalPath().str(), FOLDER_NAME),   \
+                   #FILE_NAME),                                                \
+        std::ios::out | std::ios::trunc);                                      \
+    std::string Code = VAR_NAME##AllContentStr;                                \
+    VAR_NAME##File << Code;                                                    \
+    VAR_NAME##File.flush();                                                    \
+  }
+  GENERATE_ALL_FILE_CONTENT(Cmake, ".", dpct.cmake)
+
 #undef GENERATE_ALL_FILE_CONTENT
 }
 

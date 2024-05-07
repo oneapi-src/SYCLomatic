@@ -71,7 +71,8 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   // Tile using a 2D grid
   int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / warpSize;
   int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
-
+  // CHECK: sycl::ext::oneapi::experimental::matrix::layout ly = sycl::ext::oneapi::experimental::matrix::layout::row_major;
+  nvcuda::wmma::layout_t ly = nvcuda::wmma::mem_row_major;
   // Declare the fragments
   // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix<sycl::sub_group, sycl::half, sycl::ext::oneapi::experimental::matrix::use::a, WMMA_M, WMMA_K, sycl::ext::oneapi::experimental::matrix::layout::row_major>
   nvcuda::wmma::fragment<nvcuda::wmma::matrix_a, WMMA_M, WMMA_N, WMMA_K, half, nvcuda::wmma::row_major>
@@ -116,7 +117,8 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
     // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
                                    nvcuda::wmma::mem_row_major);
-
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, ly);
+    nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc, ly);
     // Store the output
     // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::col_major);
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,

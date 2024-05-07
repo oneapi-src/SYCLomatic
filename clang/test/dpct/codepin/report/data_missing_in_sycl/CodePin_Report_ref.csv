@@ -1,0 +1,10 @@
+// CHECK: CodePin Summary
+// CHECK: Totally APIs count, 2
+// CHECK: Consistently APIs count, 1
+// CHECK: Most Time-consuming Kernel(CUDA), serial1243:epilog:0, time:0.5
+// CHECK: Most Time-consuming Kernel(SYCL), serial123:prolog:0, time:0.0
+// CHECK: Peak Device Memory Used(CUDA), 300
+// CHECK: Peak Device Memory Used(SYCL), 300
+// CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
+// CHECK: serial1243:epilog:0,Missing,Execution path,[ERROR: METADATA MISSING] Cannot find the checkpoint: serial1243:epilog:0 in the execution log dataset of instrumented SYCL code.
+

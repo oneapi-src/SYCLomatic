@@ -110,6 +110,14 @@
 // CURANDSETGENERATOROFFSET-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDSETGENERATOROFFSET-NEXT:   g->skip_ahead(ull);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetGeneratorOrdering | FileCheck %s -check-prefix=CURANDSETGENERATORORDERING
+// CURANDSETGENERATORORDERING: CUDA API:
+// CURANDSETGENERATORORDERING-NEXT:   curandGenerator_t g;
+// CURANDSETGENERATORORDERING-NEXT:   curandSetGeneratorOrdering(g /*curandGenerator_t*/, o /*curandOrdering_t*/);
+// CURANDSETGENERATORORDERING-NEXT: Is migrated to:
+// CURANDSETGENERATORORDERING-NEXT:   dpct::rng::host_rng_ptr g;
+// CURANDSETGENERATORORDERING-NEXT:   g->set_mode(o);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetPseudoRandomGeneratorSeed | FileCheck %s -check-prefix=CURANDSETPSEUDORANDOMGENERATORSEED
 // CURANDSETPSEUDORANDOMGENERATORSEED: CUDA API:
 // CURANDSETPSEUDORANDOMGENERATORSEED-NEXT:   curandGenerator_t g;

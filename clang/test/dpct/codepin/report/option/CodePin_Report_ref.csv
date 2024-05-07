@@ -1,0 +1,7 @@
+// CHECK: CodePin Summary
+// CHECK: Totally APIs count, 2
+// CHECK: Consistently APIs count, 2
+// CHECK: Most Time-consuming Kernel(CUDA), serial1243:epilog:0, time:0.5
+// CHECK: Most Time-consuming Kernel(SYCL), serial1243:epilog:0, time:0.5
+// CHECK: Peak Device Memory Used(CUDA), 400
+// CHECK: Peak Device Memory Used(SYCL), 400

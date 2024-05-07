@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
-// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4
 // RUN: dpct --format-range=none --use-experimental-features=bindless_images -out-root %T/texture/texture_reference_bindless_image %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.cpp -o %T/texture/texture_reference_bindless_image/texture_reference_bindless_image.dp.o %}
@@ -86,6 +86,10 @@ int main() {
   cudaArray_t pArr;
   // CHECK: tex2.attach(pArr);
   cudaBindTextureToArray(tex2, pArr);
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pMipMapArr;
+  cudaMipmappedArray_t pMipMapArr;
+  // CHECK: tex3.attach(pMipMapArr);
+  cudaBindTextureToMipmappedArray(tex3, pMipMapArr);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT: [&](sycl::handler &cgh) {
   // CHECK-NEXT:   auto tex1_handle = tex1.get_handle();

@@ -97,30 +97,14 @@
 // cublasCrotg-NEXT:   cublasCrotg(handle /*cublasHandle_t*/, a /*cuComplex **/, b /*cuComplex **/,
 // cublasCrotg-NEXT:               c /*float **/, s /*cuComplex **/);
 // cublasCrotg-NEXT: Is migrated to:
-// cublasCrotg-NEXT:   sycl::float2* a_ct{{[0-9]+}} = a;
-// cublasCrotg-NEXT:   sycl::float2* b_ct{{[0-9]+}} = b;
-// cublasCrotg-NEXT:   float* c_ct{{[0-9]+}} = c;
-// cublasCrotg-NEXT:   sycl::float2* s_ct{{[0-9]+}} = s;
-// cublasCrotg-NEXT:   if(sycl::get_pointer_type(a, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasCrotg-NEXT:     a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(3, dpct::get_in_order_queue());
-// cublasCrotg-NEXT:     c_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_in_order_queue());
-// cublasCrotg-NEXT:     b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
-// cublasCrotg-NEXT:     s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
-// cublasCrotg-NEXT:     *a_ct{{[0-9]+}} = *a;
-// cublasCrotg-NEXT:     *b_ct{{[0-9]+}} = *b;
-// cublasCrotg-NEXT:     *c_ct{{[0-9]+}} = *c;
-// cublasCrotg-NEXT:     *s_ct{{[0-9]+}} = *s;
-// cublasCrotg-NEXT:   }
-// cublasCrotg-NEXT:   oneapi::mkl::blas::column_major::rotg(handle->get_queue(), (std::complex<float>*)a_ct{{[0-9]+}}, (std::complex<float>*)b_ct{{[0-9]+}}, c_ct{{[0-9]+}}, (std::complex<float>*)s_ct{{[0-9]+}});
-// cublasCrotg-NEXT:   if(sycl::get_pointer_type(a, handle->get_queue().get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a, handle->get_queue().get_context())!=sycl::usm::alloc::shared) {
-// cublasCrotg-NEXT:     handle->get_queue().wait();
-// cublasCrotg-NEXT:     *a = *a_ct{{[0-9]+}};
-// cublasCrotg-NEXT:     *b = *b_ct{{[0-9]+}};
-// cublasCrotg-NEXT:     *c = *c_ct{{[0-9]+}};
-// cublasCrotg-NEXT:     *s = *s_ct{{[0-9]+}};
-// cublasCrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_in_order_queue());
-// cublasCrotg-NEXT:     sycl::free(c_ct{{[0-9]+}}, dpct::get_in_order_queue());
-// cublasCrotg-NEXT:   }
+// cublasCrotg-NEXT:   [&]() {
+// cublasCrotg-NEXT:   dpct::blas::wrapper_float2_inout res_wrapper_ct1(handle->get_queue(), a);
+// cublasCrotg-NEXT:   dpct::blas::wrapper_float2_inout res_wrapper_ct2(handle->get_queue(), b);
+// cublasCrotg-NEXT:   dpct::blas::wrapper_float_out res_wrapper_ct3(handle->get_queue(), c);
+// cublasCrotg-NEXT:   dpct::blas::wrapper_float2_out res_wrapper_ct4(handle->get_queue(), s);
+// cublasCrotg-NEXT:   oneapi::mkl::blas::column_major::rotg(handle->get_queue(), (std::complex<float>*)res_wrapper_ct1.get_ptr(), (std::complex<float>*)res_wrapper_ct2.get_ptr(), res_wrapper_ct3.get_ptr(), (std::complex<float>*)res_wrapper_ct4.get_ptr());
+// cublasCrotg-NEXT:   return 0;
+// cublasCrotg-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZtbsv | FileCheck %s -check-prefix=cublasZtbsv
 // cublasZtbsv: CUDA API:

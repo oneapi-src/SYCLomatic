@@ -37,3 +37,6 @@ ENTRY(cudaHostRegister,                "SYCL currently does not support register
 ENTRY(cudaHostUnregister,              "SYCL currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")
 ENTRY(cuMemHostRegister_v2,            "SYCL currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")
 ENTRY(cuMemHostUnregister,             "SYCL currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")
+
+ENTRY(cudaProfilerStart,               "SYCL currently does not support this function. Remove the profiler API will not impact the outcome.")
+ENTRY(cudaProfilerStop,                "SYCL currently does not support this function. Remove the profiler API will not impact the outcome.")

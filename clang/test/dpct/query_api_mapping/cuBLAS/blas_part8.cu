@@ -160,7 +160,7 @@
 // cublasGetMatrixAsync-NEXT:                        a /*const void **/, lda /*int*/, b /*void **/,
 // cublasGetMatrixAsync-NEXT:                        ldb /*int*/, stream /*cudaStream_t*/);
 // cublasGetMatrixAsync-NEXT: Is migrated to:
-// cublasGetMatrixAsync-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
+// cublasGetMatrixAsync-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtrmm | FileCheck %s -check-prefix=cublasDtrmm
 // cublasDtrmm: CUDA API:
@@ -170,7 +170,7 @@
 // cublasDtrmm-NEXT:               alpha /*const double **/, a /*const double **/, lda /*int*/,
 // cublasDtrmm-NEXT:               b /*const double **/, ldb /*int*/, c /*double **/, ldc /*int*/);
 // cublasDtrmm-NEXT: Is migrated to:
-// cublasDtrmm-NEXT:   dpct::trmm(handle->get_queue(), left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
+// cublasDtrmm-NEXT:   dpct::blas::trmm(handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZher | FileCheck %s -check-prefix=cublasZher
 // cublasZher: CUDA API:
@@ -208,7 +208,7 @@
 // cublasCsyrkx-NEXT:                lda /*int*/, b /*const cuComplex **/, ldb /*int*/,
 // cublasCsyrkx-NEXT:                beta /*const cuComplex **/, c /*cuComplex **/, ldc /*int*/);
 // cublasCsyrkx-NEXT: Is migrated to:
-// cublasCsyrkx-NEXT:   dpct::syrk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasCsyrkx-NEXT:   dpct::blas::syrk(handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetPointerMode | FileCheck %s -check-prefix=cublasSetPointerMode
 // cublasSetPointerMode: CUDA API:
