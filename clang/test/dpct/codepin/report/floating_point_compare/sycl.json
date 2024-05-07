@@ -1,6 +1,9 @@
 [
     {
         "ID": "serial123:epilog:0",
+        "Free Device Memory": "100",
+        "Total Device Memory": "500",
+        "Elapse Time(ms)": "0",
         "CheckPoint": {
             "var_1": {
                 "Type": "bf16",
