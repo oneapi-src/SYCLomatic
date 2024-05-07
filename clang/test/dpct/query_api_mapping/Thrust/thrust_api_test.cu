@@ -442,3 +442,17 @@
 // transform_exclusive_scan-NEXT:  /*5*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A + N, A, 4, binary_op, unary_op);
 // transform_exclusive_scan-NEXT:  /*6*/ oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A + N, A, 4, binary_op, unary_op);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::set_intersection_by_key --extra-arg="-std=c++14"| FileCheck %s -check-prefix=set_intersection_by_key
+// set_intersection_by_key:  /*1*/ dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// set_intersection_by_key-NEXT:  /*2*/ dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// set_intersection_by_key-NEXT:  /*3*/ dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// set_intersection_by_key-NEXT:  /*4*/ dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// set_intersection_by_key-NEXT:  /*5*/ dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// set_intersection_by_key-NEXT:  /*6*/ dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// set_intersection_by_key-NEXT:  /*7*/ dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// set_intersection_by_key-NEXT:  /*8*/ dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// set_intersection_by_key-NEXT:  /*9*/ dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+// set_intersection_by_key-NEXT:  /*10*/ dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+// set_intersection_by_key-NEXT:  /*11*/ dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+// set_intersection_by_key-NEXT:  /*12*/ dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+

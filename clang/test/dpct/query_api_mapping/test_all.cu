@@ -1935,6 +1935,7 @@
 // CHECK-NEXT: thrust::set_difference
 // CHECK-NEXT: thrust::set_difference_by_key
 // CHECK-NEXT: thrust::set_intersection
+// CHECK-NEXT: thrust::set_intersection_by_key
 // CHECK-NEXT: thrust::set_symmetric_difference
 // CHECK-NEXT: thrust::set_symmetric_difference_by_key
 // CHECK-NEXT: thrust::set_union
