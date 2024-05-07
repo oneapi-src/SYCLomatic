@@ -460,3 +460,5 @@
 // partition_copy-NEXT:  /*11*/ dpct::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
 // partition_copy-NEXT:  /*12*/ dpct::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::swap --extra-arg="-std=c++14"| FileCheck %s -check-prefix=swap_api
+// swap_api: std::swap(x, y)
