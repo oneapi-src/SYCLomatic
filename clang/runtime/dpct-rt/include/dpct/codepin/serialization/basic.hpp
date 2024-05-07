@@ -207,12 +207,11 @@ template <> std::string demangle_name<sycl::ext::oneapi::bfloat16>() {
 template <class T, class T2 = void> class data_ser {
 
 public:
-  static void dump(json_stringstream &ss, T value,
-                   queue_t stream) {
+  static void dump(json_stringstream &ss, T value, queue_t queue) {
     auto obj = ss.object();
     obj.key("Data");
     obj.value("CODEPIN:ERROR:1: Unable to find the corresponding serialization "
-        "function.");
+              "function.");
   }
   static void print_type_name(json_stringstream::json_obj &obj) {
     obj.key("Type");
@@ -223,23 +222,20 @@ public:
 template <class T>
 class data_ser<T, typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 public:
-  static void dump(json_stringstream &ss, const T &value,
-                   queue_t stream) {
+  static void dump(json_stringstream &ss, const T &value, queue_t queue) {
     auto arr = ss.array();
     arr.member<T>(value);
   }
-  static void print_type_name(json_stringstream::json_obj &obj){
+  static void print_type_name(json_stringstream::json_obj &obj) {
     obj.key("Type");
     obj.value(std::string(demangle_name<T>()));
   }
 };
 
 #ifdef __NVCC__
-template <>
-class data_ser<__half> {
+template <> class data_ser<__half> {
 public:
-  static void dump(json_stringstream &ss, const __half &value,
-                   dpct::experimental::StreamType stream) {
+  static void dump(json_stringstream &ss, const __half &value, queue_t queue) {
     float f = __half2float(value);
     ss.print_type_data(demangle_name<__half>(), f);
   }
@@ -247,7 +243,7 @@ public:
 template <> class data_ser<__nv_bfloat16> {
 public:
   static void dump(json_stringstream &ss, const __nv_bfloat16 &value,
-                   dpct::experimental::StreamType stream) {
+                   queue_t queue) {
     float f = __bfloat162float(value);
     ss.print_type_data(demangle_name<__nv_bfloat16>(), f);
   }
@@ -255,12 +251,11 @@ public:
 #else
 template <typename T>
 class data_ser<T,
-              typename std::enable_if<
-                  std::is_same<T, sycl::half>::value ||
-                  std::is_same<T, sycl::ext::oneapi::bfloat16>::value>::type> {
+               typename std::enable_if<
+                   std::is_same<T, sycl::half>::value ||
+                   std::is_same<T, sycl::ext::oneapi::bfloat16>::value>::type> {
 public:
-  static void dump(json_stringstream &ss, const T &value,
-                   dpct::experimental::StreamType stream) {
+  static void dump(json_stringstream &ss, const T &value, queue_t queue) {
     float f = static_cast<float>(value);
     ss.print_type_data(demangle_name<T>(), f);
   }
