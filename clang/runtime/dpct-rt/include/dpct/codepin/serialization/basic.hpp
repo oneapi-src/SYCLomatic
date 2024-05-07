@@ -237,16 +237,26 @@ template <> class data_ser<__half> {
 public:
   static void dump(json_stringstream &ss, const __half &value, queue_t queue) {
     float f = __half2float(value);
-    ss.print_type_data(demangle_name<__half>(), f);
+    auto arr = ss.array();
+    arr.member<float>(value);
+  }
+  static void print_type_name(json_stringstream::json_obj &obj) {
+    obj.key("Type");
+    obj.value(std::string(demangle_name<__half>()));
   }
 };
 template <> class data_ser<__nv_bfloat16> {
 public:
-  static void dump(json_stringstream &ss, const __nv_bfloat16 &value,
-                   queue_t queue) {
+  static void dump(json_stringstream &ss, const __nv_bfloat16 &value, queue_t queue) {
     float f = __bfloat162float(value);
-    ss.print_type_data(demangle_name<__nv_bfloat16>(), f);
+    auto arr = ss.array();
+    arr.member<float>(value);
   }
+  static void print_type_name(json_stringstream::json_obj &obj) {
+    obj.key("Type");
+    obj.value(std::string(demangle_name<__nv_bfloat16>()));
+  }
+
 };
 #else
 template <typename T>
@@ -256,9 +266,14 @@ class data_ser<T,
                    std::is_same<T, sycl::ext::oneapi::bfloat16>::value>::type> {
 public:
   static void dump(json_stringstream &ss, const T &value, queue_t queue) {
-    float f = static_cast<float>(value);
-    ss.print_type_data(demangle_name<T>(), f);
+    auto arr = ss.array();
+    arr.member<T>(value);
   }
+  static void print_type_name(json_stringstream::json_obj &obj) {
+    obj.key("Type");
+    obj.value(std::string(demangle_name<T>()));
+  }
+
 };
 #endif
 
