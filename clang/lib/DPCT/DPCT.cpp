@@ -592,6 +592,9 @@ int runDPCT(int argc, const char **argv) {
   if (CodePinReport)
     CallIndependentTool("codepin-report.py");
 
+  if (AnalysisMode)
+    DpctGlobalInfo::enableAnalysisMode();
+
   if (InRootPath.getPath().size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRootPath.getPath() << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
@@ -729,8 +732,7 @@ int runDPCT(int argc, const char **argv) {
 #else
   std::string DVerbose = "";
 #endif
-  if (!DpctGlobalInfo::isAnalysisModeEnabled() &&
-      !checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
+  if (!checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
                        ReportFilePrefix, ReportOnly, GenReport, DVerbose)) {
     ShowStatus(MigrationErrorInvalidReportArgs);
     dpctExit(MigrationErrorInvalidReportArgs);
