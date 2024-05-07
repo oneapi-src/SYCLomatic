@@ -462,3 +462,6 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::swap --extra-arg="-std=c++14"| FileCheck %s -check-prefix=swap_api
 // swap_api: std::swap(x, y)
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::device_pointer_cast --extra-arg="-std=c++14"| FileCheck %s -check-prefix=device_pointer_cast
+// device_pointer_cast: dpct::device_pointer<int> begin = dpct::get_device_pointer(&data[0]);
