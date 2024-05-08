@@ -54,10 +54,7 @@
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
 #ifdef SYCLomatic_CUSTOMIZATION
-// In some projects, there is a header file also named cuda.h but with different
-// content. To include the correct cuda.h, we try to use a folder name to
-// distinguish those two cases.
-#include "crt/../cuda.h"
+#include __CUDA_DOT_H_FILE_PATH__
 #else
 #include "cuda.h"
 #endif // SYCLomatic_CUSTOMIZATION
