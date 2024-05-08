@@ -53,20 +53,19 @@
 // WARNING: Preprocessor hacks below are based on specific details of
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
-#include "cuda.h"
 #ifdef SYCLomatic_CUSTOMIZATION
-#if !defined(CUDA_VERSION)
-#error "cuda.h did not define CUDA_VERSION"
-#elif CUDA_VERSION < 7000
-#error "Unsupported CUDA version!"
-#endif
+// In some projects, there is a header file also named cuda.h but with different
+// content. To include the correct cuda.h, we try to use a folder name to
+// distinguish those two cases.
+#include "crt/../cuda.h"
 #else
+#include "cuda.h"
+#endif // SYCLomatic_CUSTOMIZATION
 #if !defined(CUDA_VERSION)
 #error "cuda.h did not define CUDA_VERSION"
 #elif CUDA_VERSION < 7000
 #error "Unsupported CUDA version!"
 #endif
-#endif // SYCLomatic_CUSTOMIZATION
 
 #if defined(SYCLomatic_CUSTOMIZATION) && CUDA_VERSION >= 10000
 #pragma push_macro("__clang_major__")
