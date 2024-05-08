@@ -7,7 +7,7 @@
 # This file will be installed to folder:
 # {dpct_install_folder}/extensions/opt_rules.
 # The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/opt_rules/macro.yaml
+# --rule-file={dpct_install_folder}/extensions/opt_rules/macro_checks.yaml
 ---
 - Rule: rule_error_check_macro    # specify an unique name(ID) of the rule
   Kind: Macro                     # specify the kind of the rule
