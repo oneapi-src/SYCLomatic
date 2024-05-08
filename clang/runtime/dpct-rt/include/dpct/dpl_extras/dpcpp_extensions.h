@@ -654,11 +654,9 @@ public:
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
     if constexpr (ALGORITHM == BLOCK_LOAD_DIRECT) {
-      load_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr,
-                                        (&items)[ITEMS_PER_WORK_ITEM]);
+      load_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
     } else if constexpr (ALGORITHM == BLOCK_LOAD_STRIPED) {
-      load_striped<ITEMS_PER_WORK_ITEM>(item, block_itr,
-                                        (&items)[ITEMS_PER_WORK_ITEM]);
+      load_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
     }
   }
 
