@@ -2883,15 +2883,20 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
   // Begin           End
   auto GetFunctionSourceRange = [&](const SourceManager &SM,
                                     const SourceLocation &StartLoc,
-                                    const SourceLocation &EndLoc) {
+                                    SourceLocation EndLoc) {
     const std::pair<FileID, unsigned> StartLocInfo =
         SM.getDecomposedExpansionLoc(StartLoc);
+    // Set the EndLoc to the end of token. If the first char after the EndLoc is
+    // ';', then set after it.
+    EndLoc = Lexer::getLocForEndOfToken(EndLoc, 0, SM,
+                                        Result.Context->getLangOpts());
     llvm::StringRef Buffer(SM.getCharacterData(EndLoc));
-    const std::string Str = std::string(";}");
-    size_t Offset = Buffer.find_first_of(Str);
+    const std::string Str = std::string(" ") + getNL();
+    size_t Offset = Buffer.find_first_not_of(Str);
+    Offset = Buffer[Offset] == ';' ? Offset + 1 : 0;
     assert(Offset != llvm::StringRef::npos);
     const std::pair<FileID, unsigned> EndLocInfo =
-        SM.getDecomposedExpansionLoc(EndLoc.getLocWithOffset(Offset + 1));
+        SM.getDecomposedExpansionLoc(EndLoc.getLocWithOffset(Offset));
     assert(StartLocInfo.first == EndLocInfo.first);
 
     return SourceRange(
