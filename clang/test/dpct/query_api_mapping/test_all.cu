@@ -1925,6 +1925,7 @@
 // CHECK-NEXT: thrust::is_partitioned
 // CHECK-NEXT: thrust::is_sorted
 // CHECK-NEXT: thrust::is_sorted_until
+// CHECK-NEXT: thrust::malloc
 // CHECK-NEXT: thrust::minmax_element
 // CHECK-NEXT: thrust::mismatch
 // CHECK-NEXT: thrust::none_of

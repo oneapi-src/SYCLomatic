@@ -13,3 +13,9 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::device_ptr --extra-arg="-std=c++14"| FileCheck %s -check-prefix=device_ptr
 // device_ptr: dpct::device_pointer<int> d_mem = dpct::malloc_device<int>(N);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::malloc --extra-arg="-std=c++14"| FileCheck %s -check-prefix=malloc
+// malloc:  /*1*/ dpct::tagged_pointer<int, dpct::device_sys_tag> ptr =
+// malloc-NEXT:      dpct::malloc<int>(device_sys, N);
+// malloc-NEXT:  /*2*/ dpct::tagged_pointer<void, dpct::device_sys_tag> void_ptr =
+// malloc-NEXT:      dpct::malloc(device_sys, N);
