@@ -24,6 +24,7 @@ CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 TOLERANCE_FILE = ""
 
+# Reference: https://en.wikipedia.org/wiki/Machine_epsilon
 default_tolerances = {
     "bf16": 9.77e-04,
     "fp16": 9.77e-04,
@@ -105,20 +106,22 @@ class comparison_error(Exception):
         super().__init__(self.message)
 
 
-# Reference: https://en.wikipedia.org/wiki/Machine_epsilon
 def compare_float_value(data1, data2, type):
     global TOLERANCE_FILE
-    try:
-        with open(TOLERANCE_FILE, "r") as f:
-            tolerances = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    if TOLERANCE_FILE is None:
         tolerances = default_tolerances
+    else:
+        try:
+            with open(TOLERANCE_FILE, "r") as f:
+                tolerances = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            tolerances = default_tolerances
     if type not in tolerances:
         raise comparison_error(" Type must be one of 'bf16', 'fp16', 'float', 'double'")
 
     if not math.isclose(data1, data2, rel_tol=tolerances[type]):
         raise comparison_error(
-            f": {type} values {data1} and {data2} are not close enough"
+            f": {type} values {data1} and {data2} are not close enough [Floating Point comparison fail]"
         )
 
     return True
