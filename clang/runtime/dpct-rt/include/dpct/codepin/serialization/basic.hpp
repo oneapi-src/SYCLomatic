@@ -11,14 +11,14 @@
 #if defined(__linux__)
 #include <cxxabi.h>
 #endif
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 #ifdef __NVCC__
-#include <cuda_runtime.h>
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
+#include <cuda_runtime.h>
 #else
 #include <dpct/dpct.hpp>
 #include <sycl/sycl.hpp>
@@ -247,7 +247,8 @@ public:
 };
 template <> class data_ser<__nv_bfloat16> {
 public:
-  static void dump(json_stringstream &ss, const __nv_bfloat16 &value, queue_t queue) {
+  static void dump(json_stringstream &ss, const __nv_bfloat16 &value,
+                   queue_t queue) {
     float f = __bfloat162float(value);
     auto arr = ss.array();
     arr.member<float>(value);
@@ -256,7 +257,6 @@ public:
     obj.key("Type");
     obj.value(std::string(demangle_name<__nv_bfloat16>()));
   }
-
 };
 #else
 template <typename T>

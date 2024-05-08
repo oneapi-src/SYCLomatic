@@ -30,13 +30,13 @@
                 ]
             },
             "var_5": {
-                "Type": "fp32",
+                "Type": "float",
                 "Data": [
                     1.00000001
                 ]
             },
             "var_6": {
-                "Type": "fp32",
+                "Type": "float",
                 "Data": [
                     1.2
                 ]
