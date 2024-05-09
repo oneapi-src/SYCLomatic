@@ -53,7 +53,7 @@
 // WARNING: Preprocessor hacks below are based on specific details of
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
-#ifdef SYCLomatic_CUSTOMIZATION
+#if defined(SYCLomatic_CUSTOMIZATION) && defined(__CUDA_DOT_H_FILE_PATH__)
 #include __CUDA_DOT_H_FILE_PATH__
 #else
 #include "cuda.h"
