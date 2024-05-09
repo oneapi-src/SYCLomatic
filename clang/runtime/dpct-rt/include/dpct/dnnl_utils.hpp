@@ -1051,6 +1051,11 @@ class engine_ext {
                              int *direction_num, int *gate_num);
 public:
   engine_ext() {}
+  engine_ext(std::nullptr_t) {
+    _eng = nullptr;
+    _s = nullptr;
+    _q = nullptr;
+  }
   operator bool() const {
     return bool(_eng) && bool(_s) && bool(_q);
   }
