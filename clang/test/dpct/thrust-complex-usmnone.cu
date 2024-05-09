@@ -127,7 +127,7 @@ int main() {
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           template_kernel<int>(nullptr, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:           template_kernel<int>(nullptr, s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
   template_kernel<int><<<1, 256>>>(d_i);

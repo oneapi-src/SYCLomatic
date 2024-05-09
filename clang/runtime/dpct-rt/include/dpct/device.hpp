@@ -693,7 +693,7 @@ public:
       std::string dev_name = (*iter)->get_info<sycl::info::device::name>();
       bool matched = false;
       for (const auto &name : dev_subnames) {
-        if (dev_name.find(name)) {
+        if (dev_name.find(name) != std::string::npos) {
           matched = true;
           break;
         }
