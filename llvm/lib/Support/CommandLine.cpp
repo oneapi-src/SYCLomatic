@@ -2445,8 +2445,6 @@ protected:
       return cl::getDPCTCategory();
       break;
     }
-
-    return cl::getDPCTCategory();
   }
 #endif // SYCLomatic_CUSTOMIZATION
 
