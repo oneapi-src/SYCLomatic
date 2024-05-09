@@ -22,14 +22,15 @@ TIME_ELAPSED = "Elapse Time(ms)"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
-TOLERANCE_FILE = ""
+EPSILON_FILE = ""
 
 # Reference: https://en.wikipedia.org/wiki/Machine_epsilon
-default_tolerances = {
-    "bf16": 9.77e-04,
-    "fp16": 9.77e-04,
-    "float": 1.19e-07,
-    "double": 2.22e-16,
+# bfloat16 reference: https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
+default_epsilons = {
+    "bf16": 7.81e-03,  # 2^-7
+    "fp16": 9.77e-04,  # 2^-10
+    "float": 1.19e-07,  # 2^-23
+    "double": 2.22e-16,  # 2^-52
 }
 
 
@@ -107,19 +108,19 @@ class comparison_error(Exception):
 
 
 def compare_float_value(data1, data2, type):
-    global TOLERANCE_FILE
-    if TOLERANCE_FILE is None:
-        tolerances = default_tolerances
+    global EPSILON_FILE
+    if EPSILON_FILE is None:
+        epsilons = default_epsilons
     else:
         try:
-            with open(TOLERANCE_FILE, "r") as f:
-                tolerances = json.load(f)
+            with open(EPSILON_FILE, "r") as f:
+                epsilons = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            tolerances = default_tolerances
-    if type not in tolerances:
-        raise comparison_error(" Type must be one of 'bf16', 'fp16', 'float', 'double'")
+            epsilons = default_epsilons
+    if type not in epsilons:
+        raise comparison_error(f" type '{type}' is not supported yet.")
 
-    if not math.isclose(data1, data2, rel_tol=tolerances[type]):
+    if not math.isclose(data1, data2, rel_tol=epsilons[type]):
         raise comparison_error(
             f": {type} values {data1} and {data2} are not close enough [Floating Point comparison fail]"
         )
@@ -327,11 +328,13 @@ def get_memory_used(cp_list):
 
 
 def main():
-    global TOLERANCE_FILE
+    global EPSILON_FILE
     match_checkpoint_num = 0
     dismatch_checkpoint_num = 0
     checkpoint_size = 0
-    parser = argparse.ArgumentParser(description="Codepin report tool.\n")
+    parser = argparse.ArgumentParser(
+        description="Codepin report tool of the compatibility tool.\n"
+    )
     parser.add_argument(
         "--instrumented-cuda-log",
         metavar="<file path>",
@@ -346,21 +349,20 @@ def main():
     )
 
     parser.add_argument(
-        "--floating-point-comparison-tolerance",
+        "--floating-point-comparison-epsilon",
         metavar="<file path>",
         required=False,
-        help="Specifies the tolerance for floating point comparison. The file should be a JSON file with the following format: \n"
+        help="Specifies the tolerance epsilon JSON file for floating point comparison. The key is float type, value is epsilon. For example: \n"
         "{\n"
         '    "bf16": 0.000977,\n'
         '    "fp16": 0.000977,\n'
         '    "float": 1.19e-7,\n'
         '    "double": 2.22e-16\n'
-        "}\n"
-        "Each key represents the data type and the value represents the tolerance for that data type.",
+        "}\n",
     )
 
     args = parser.parse_args()
-    TOLERANCE_FILE = args.floating_point_comparison_tolerance
+    EPSILON_FILE = args.floating_point_comparison_epsilon
     (
         cuda_prolog_checkpoint_list,
         cuda_epilog_checkpoint_list,
