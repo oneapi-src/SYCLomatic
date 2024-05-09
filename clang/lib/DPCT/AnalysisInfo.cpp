@@ -3091,7 +3091,10 @@ ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
     if (AccMode == Pointer) {
       if (!getType()->isWritten())
         PS << "(" << getAccessorDataType(false, true) << " *)";
-      PS << getAccessorName() << ".get_multi_ptr<" << MapNames::getClNamespace()
+      PS << getAccessorName() << ".";
+      if (getType()->isTemplate())
+        PS << "template ";
+      PS << "get_multi_ptr<" << MapNames::getClNamespace()
          << "access::decorated::no>().get()";
     } else {
       PS << getAccessorName();
