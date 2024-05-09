@@ -682,7 +682,7 @@ void test_ctor() {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k11_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          k11<TT>(a, temp_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+//CHECK-NEXT:          k11<TT>(a, temp_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
@@ -731,7 +731,7 @@ void foo11() {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k12_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          k12<TT>(a, temp_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+//CHECK-NEXT:          k12<TT>(a, temp_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
