@@ -419,25 +419,29 @@ template <typename T1, typename T2>
 std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
                  std::common_type_t<T1, T2>>
 min(T1 a, T2 b) {
-  return sycl::min<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::min(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
                  std::common_type_t<T1, T2>>
 min(T1 a, T2 b) {
-  return sycl::fmin<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::fmin(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
                  std::common_type_t<T1, T2>>
 max(T1 a, T2 b) {
-  return sycl::max<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::max(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
                  std::common_type_t<T1, T2>>
 max(T1 a, T2 b) {
-  return sycl::fmax<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::fmax(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 
 // pow functions overload.
