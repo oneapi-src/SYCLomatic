@@ -111,6 +111,10 @@ const char *const CtHelpHint =
     "  To get help on the tool usage, run: dpct --help\n"
     "\n";
 
+const char *const CmakeScriptMigrationHelpHint =
+    "Warning: CMakeLists.txt is not found, please specify \"-gen-build-scripts\" to generated Makefile.dpct instead.";
+
+
 static extrahelp CommonHelp(CtHelpMessage);
 
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
@@ -1115,6 +1119,10 @@ int runDPCT(int argc, const char **argv) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
     doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
     ShowStatus(MigrationCmakeScriptCompleted);
     return MigrationSucceeded;
   }
@@ -1269,6 +1277,10 @@ int runDPCT(int argc, const char **argv) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScripts(InRootPath, OutRootPath);
     doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
   }
 
   ShowStatus(Status);
