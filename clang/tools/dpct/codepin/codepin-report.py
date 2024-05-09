@@ -361,8 +361,8 @@ def main():
         required=False,
         help="Specifies the tolerance epsilon JSON file for floating point comparison. The key is float type, value is epsilon. For example: \n"
         "{\n"
-        '    "bf16": 0.000977,\n'
-        '    "fp16": 0.000977,\n'
+        '    "bf16": 7.81e-03,,\n'
+        '    "fp16": 9.77e-04,\n'
         '    "float": 1.19e-7,\n'
         '    "double": 2.22e-16\n'
         "}\n",
