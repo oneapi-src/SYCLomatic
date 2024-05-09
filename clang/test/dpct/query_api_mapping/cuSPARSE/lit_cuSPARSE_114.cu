@@ -29,7 +29,6 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpSM_createDescr | FileCheck %s -check-prefix=cusparseSpSM_createDescr
 // cusparseSpSM_createDescr: CUDA API:
-// cusparseSpSM_createDescr-NEXT:   cusparseSpSMDescr_t desc;
 // cusparseSpSM_createDescr-NEXT:   cusparseSpSM_createDescr(&desc /*cusparseSpSMDescr_t **/);
 // cusparseSpSM_createDescr-NEXT: The API is Removed.
 
