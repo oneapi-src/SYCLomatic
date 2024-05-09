@@ -29,8 +29,7 @@
 // cusparseSpSV_createDescr: CUDA API:
 // cusparseSpSV_createDescr-NEXT:   cusparseSpSVDescr_t desc;
 // cusparseSpSV_createDescr-NEXT:   cusparseSpSV_createDescr(&desc /*cusparseSpSVDescr_t **/);
-// cusparseSpSV_createDescr-NEXT: Is migrated to:
-// cusparseSpSV_createDescr-NEXT:   int desc;
+// cusparseSpSV_createDescr-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpSV_destroyDescr | FileCheck %s -check-prefix=cusparseSpSV_destroyDescr
 // cusparseSpSV_destroyDescr: CUDA API:

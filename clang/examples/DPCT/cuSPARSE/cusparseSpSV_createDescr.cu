@@ -1,8 +1,7 @@
 #include "cusparse.h"
 
-void test() {
+void test(cusparseSpSVDescr_t desc) {
   // Start
-  cusparseSpSVDescr_t desc;
   cusparseSpSV_createDescr(&desc /*cusparseSpSVDescr_t **/);
   // End
 }
