@@ -5023,6 +5023,9 @@ const DeclRefExpr *getAddressedRef(const Expr *E) {
   return nullptr;
 }
 
+// This function emits warning to tell user which part of that type violate the
+// trivally-copyable requirements.
+// TODO: Emit warning for non-instantiated template.
 void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
   const auto &Ctx = DpctGlobalInfo::getContext();
   if (QT.isTriviallyCopyableType(Ctx))
@@ -5096,25 +5099,31 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
         MsgStr += (Messages[Messages.size() - 2] + " and " +
                    Messages[Messages.size() - 1]);
       }
+      MsgStr += " breaking the device copyable requirement";
 
       if (Rule) {
         Rule->report(ClassDecl->getBeginLoc(), Diagnostics::NOT_DEVICE_COPYABLE,
-                     true, MsgStr);
+                     true, DpctGlobalInfo::getOriginalTypeName(QT), MsgStr);
       } else {
         auto LocInfo = DpctGlobalInfo::getLocInfo(ClassDecl->getBeginLoc());
-        DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                                 Diagnostics::NOT_DEVICE_COPYABLE, true, true,
-                                 MsgStr);
+        DiagnosticsUtils::report(
+            LocInfo.first, LocInfo.second, Diagnostics::NOT_DEVICE_COPYABLE,
+            true, true, DpctGlobalInfo::getOriginalTypeName(QT), MsgStr);
       }
     }
   }
 }
 
+// This function inserts code like:
+// template <>
+// struct sycl::is_device_copyable<UserDefinedType> : std::true_type {};
 void insertIsDeviceCopyableSpecialization(QualType Type,
                                           clang::dpct::MigrationRule *Rule,
                                           const Decl *D) {
   const auto &Ctx = DpctGlobalInfo::getContext();
   const auto &SM = DpctGlobalInfo::getSourceManager();
+
+  // Emit warning DPCT1128
   checkTrivallyCopyable(Type, Rule);
 
   // Find insert location
@@ -5190,6 +5199,7 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
     Repl += "> : std::true_type {};";
   }
 
+  // Insert replacement
   if (Rule) {
     Rule->emplaceTransformation(new ReplaceText(InsertLoc, 0, std::move(Repl)));
   } else {
@@ -5201,6 +5211,12 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
   }
 }
 
+// Check if the given type is device copyable.
+// We use is_trivally_copyable to determine if the type is device copyable.
+// For non-trivally-copyable type:
+// 1. Try to insert specialization sycl::is_device_copyable for it.
+// 2. Try to tell which part of that type violate the trivally-copyable
+// requirements.
 bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule) {
   if (Type->isPointerType())
     return true;

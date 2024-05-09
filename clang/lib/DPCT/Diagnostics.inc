@@ -282,10 +282,10 @@ DEF_WARNING(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"%0
 DEF_COMMENT(MOVE_TYPE_DEFINITION_KERNEL_FUNC, 1126, MEDIUM_LEVEL, "The type \"{0}\" defined in function \"{1}\" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function \"{1}\". You may need to adjust the type definition location.")
 DEF_WARNING(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported when compiling with C++20. You may need to adjust the compile commands.")
 DEF_COMMENT(DEVICE_GLOBAL_INIT, 1127, LOW_LEVEL, "The constant compile-time initialization for device_globals is supported when compiling with C++20. You may need to adjust the compile commands.")
-DEF_WARNING(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "This type is used in kernel but it is not device copyable. Below part(s) is(are) not meet the requirements: %0. Please rewrite the code.")
-DEF_COMMENT(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "This type is used in kernel but it is not device copyable. Below part(s) is(are) not meet the requirements: {0}. Please rewrite the code.")
-DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"%0\" is used in kernel but it is not device copyable. The tool has added the sycl::is_device_copyable specialization for this type.")
-DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in kernel but it is not device copyable. The tool has added the sycl::is_device_copyable specialization for this type.")
+DEF_WARNING(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"%0\" is not device copyable for %1. It is used in SYCL kernel, please rewrite the code.")
+DEF_COMMENT(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"{0}\" is not device copyable for {1}. It is used in SYCL kernel, please rewrite the code.")
+DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"%0\" is used in SYCL kernel but it is not device copyable. The sycl::is_device_copyable specialization has been added for the type, please review the code.")
+DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in SYCL kernel but it is not device copyable. The sycl::is_device_copyable specialization has been added for the type, please review the code.")
 // clang-format on
 
 #undef DEF_COMMENT
