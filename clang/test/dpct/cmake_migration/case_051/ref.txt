@@ -1,0 +1,1 @@
+// CHECK: Warning: CMakeLists.txt is not found, please specify "-gen-build-scripts" to generated Makefile.dpct instead.
