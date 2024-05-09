@@ -1,8 +1,7 @@
 #include "cusolverDn.h"
 
-void test() {
+void test(gesvdjInfo_t *info) {
   // Start
-  gesvdjInfo_t info;
-  cusolverDnCreateGesvdjInfo(&info /*gesvdjInfo_t **/);
+  cusolverDnCreateGesvdjInfo(info /*gesvdjInfo_t **/);
   // End
 }

@@ -1,8 +1,7 @@
 #include "cusolverDn.h"
 
-void test() {
+void test(syevjInfo_t *info) {
   // Start
-  syevjInfo_t info;
-  cusolverDnCreateSyevjInfo(&info /*syevjInfo_t **/);
+  cusolverDnCreateSyevjInfo(info /*syevjInfo_t **/);
   // End
 }
