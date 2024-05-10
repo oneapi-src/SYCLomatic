@@ -647,11 +647,11 @@ store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
 // OutputIteratorT:  output iterator type
 // Item : typename parameter resembling sycl::nd_item<3> .
 template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM, typename InputT,
-          typename OutputIteratorT, typename Item, typename T>
+          typename OutputIteratorT, typename Item>
 class workgroup_store {
-  static size_t get_local_memory_size(size_t group_threads) {
-    return (group_threads * ITEMS_PER_WORK_ITEM) * sizeof(T);
-  }
+public:
+  static size_t get_local_memory_size(size_t group_work_items) { return 0; }
+  workgroup_store(uint8_t *local_memory) : _local_memory(local_memory) {}
   
   __dpct_inline__ void store(const Item &item, OutputIteratorT block_itr,
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -662,6 +662,9 @@ class workgroup_store {
       store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     }
   }
+  
+private:
+  uint8_t *_local_memory;
 };
 
 /// Perform a reduction of the data elements assigned to all threads in the
