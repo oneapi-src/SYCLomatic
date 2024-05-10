@@ -276,91 +276,6 @@
 // cusolverDnZpotrs-NEXT:   dpct::async_dpct_free(ws_vec_ct4, {event_ct3}, *handle);
 // cusolverDnZpotrs-NEXT:   }
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnSpotri_bufferSize | FileCheck %s -check-prefix=cusolverDnSpotri_bufferSize
-// cusolverDnSpotri_bufferSize: CUDA API:
-// cusolverDnSpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnSpotri_bufferSize-NEXT:   cusolverDnSpotri_bufferSize(
-// cusolverDnSpotri_bufferSize-NEXT:       handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*int*/,
-// cusolverDnSpotri_bufferSize-NEXT:       a /*float **/, lda /*int*/, &buffer_size /*int **/);
-// cusolverDnSpotri_bufferSize-NEXT: Is migrated to:
-// cusolverDnSpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnSpotri_bufferSize-NEXT:   *(&buffer_size) = oneapi::mkl::lapack::potri_scratchpad_size<float>(
-// cusolverDnSpotri_bufferSize-NEXT:       *handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*float **/, lda /*int **/);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnDpotri_bufferSize | FileCheck %s -check-prefix=cusolverDnDpotri_bufferSize
-// cusolverDnDpotri_bufferSize: CUDA API:
-// cusolverDnDpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnDpotri_bufferSize-NEXT:   cusolverDnDpotri_bufferSize(
-// cusolverDnDpotri_bufferSize-NEXT:       handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*int*/,
-// cusolverDnDpotri_bufferSize-NEXT:       a /*double **/, lda /*int*/, &buffer_size /*int **/);
-// cusolverDnDpotri_bufferSize-NEXT: Is migrated to:
-// cusolverDnDpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnDpotri_bufferSize-NEXT:   *(&buffer_size) = oneapi::mkl::lapack::potri_scratchpad_size<double>(
-// cusolverDnDpotri_bufferSize-NEXT:       *handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*double **/, lda /*int **/);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnCpotri_bufferSize | FileCheck %s -check-prefix=cusolverDnCpotri_bufferSize
-// cusolverDnCpotri_bufferSize: CUDA API:
-// cusolverDnCpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnCpotri_bufferSize-NEXT:   cusolverDnCpotri_bufferSize(
-// cusolverDnCpotri_bufferSize-NEXT:       handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*int*/,
-// cusolverDnCpotri_bufferSize-NEXT:       a /*cuComplex **/, lda /*int*/, &buffer_size /*int **/);
-// cusolverDnCpotri_bufferSize-NEXT: Is migrated to:
-// cusolverDnCpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnCpotri_bufferSize-NEXT:   *(&buffer_size) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>(
-// cusolverDnCpotri_bufferSize-NEXT:       *handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*cuComplex **/, lda /*int **/);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnZpotri_bufferSize | FileCheck %s -check-prefix=cusolverDnZpotri_bufferSize
-// cusolverDnZpotri_bufferSize: CUDA API:
-// cusolverDnZpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnZpotri_bufferSize-NEXT:   cusolverDnZpotri_bufferSize(
-// cusolverDnZpotri_bufferSize-NEXT:       handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*int*/,
-// cusolverDnZpotri_bufferSize-NEXT:       a /*cuDoubleComplex **/, lda /*int*/, &buffer_size /*int **/);
-// cusolverDnZpotri_bufferSize-NEXT: Is migrated to:
-// cusolverDnZpotri_bufferSize-NEXT:   int buffer_size;
-// cusolverDnZpotri_bufferSize-NEXT:   *(&buffer_size) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>(
-// cusolverDnZpotri_bufferSize-NEXT:       *handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/, n /*cuDoubleComplex **/, lda /*int **/);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnSpotri | FileCheck %s -check-prefix=cusolverDnSpotri
-// cusolverDnSpotri: CUDA API:
-// cusolverDnSpotri-NEXT:   cusolverDnSpotri(handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnSpotri-NEXT:                    n /*int*/, a /*float **/, lda /*int*/, buffer /*float **/,
-// cusolverDnSpotri-NEXT:                    buffer_size /*int*/, info /*int **/);
-// cusolverDnSpotri-NEXT: Is migrated to:
-// cusolverDnSpotri-NEXT:   oneapi::mkl::lapack::potri(*handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnSpotri-NEXT:                    n /*int*/, (float*)a /*float **/, lda /*int*/, (float*)buffer /*float **/,
-// cusolverDnSpotri-NEXT:                    buffer_size /*int **/);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnDpotri | FileCheck %s -check-prefix=cusolverDnDpotri
-// cusolverDnDpotri: CUDA API:
-// cusolverDnDpotri-NEXT:   cusolverDnDpotri(handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnDpotri-NEXT:                    n /*int*/, a /*double **/, lda /*int*/, buffer /*double **/,
-// cusolverDnDpotri-NEXT:                    buffer_size /*int*/, info /*int **/);
-// cusolverDnDpotri-NEXT: Is migrated to:
-// cusolverDnDpotri-NEXT:   oneapi::mkl::lapack::potri(*handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnDpotri-NEXT:                    n /*int*/, (double*)a /*double **/, lda /*int*/, (double*)buffer /*double **/,
-// cusolverDnDpotri-NEXT:                    buffer_size /*int **/);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnCpotri | FileCheck %s -check-prefix=cusolverDnCpotri
-// cusolverDnCpotri: CUDA API:
-// cusolverDnCpotri-NEXT:   cusolverDnCpotri(handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnCpotri-NEXT:                    n /*int*/, a /*cuComplex **/, lda /*int*/,
-// cusolverDnCpotri-NEXT:                    buffer /*cuComplex **/, buffer_size /*int*/, info /*int **/);
-// cusolverDnCpotri-NEXT: Is migrated to:
-// cusolverDnCpotri-NEXT:   oneapi::mkl::lapack::potri(*handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnCpotri-NEXT:                    n /*int*/, (std::complex<float>*)a /*cuComplex **/, lda /*int*/,
-// cusolverDnCpotri-NEXT:                    (std::complex<float>*)buffer /*cuComplex **/, buffer_size /*int **/);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnZpotri | FileCheck %s -check-prefix=cusolverDnZpotri
-// cusolverDnZpotri: CUDA API:
-// cusolverDnZpotri-NEXT:   cusolverDnZpotri(handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnZpotri-NEXT:                    n /*int*/, a /*cuDoubleComplex **/, lda /*int*/,
-// cusolverDnZpotri-NEXT:                    buffer /*cuDoubleComplex **/, buffer_size /*int*/,
-// cusolverDnZpotri-NEXT:                    info /*int **/);
-// cusolverDnZpotri-NEXT: Is migrated to:
-// cusolverDnZpotri-NEXT:   oneapi::mkl::lapack::potri(*handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnZpotri-NEXT:                    n /*int*/, (std::complex<double>*)a /*cuDoubleComplex **/, lda /*int*/,
-// cusolverDnZpotri-NEXT:                    (std::complex<double>*)buffer /*cuDoubleComplex **/, buffer_size /*int **/);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnSgetrf_bufferSize | FileCheck %s -check-prefix=cusolverDnSgetrf_bufferSize
 // cusolverDnSgetrf_bufferSize: CUDA API:
 // cusolverDnSgetrf_bufferSize-NEXT:   int buffer_size;
@@ -675,13 +590,15 @@
 // cusolverDnZunmqr_bufferSize-NEXT:   cusolverDnZunmqr_bufferSize(
 // cusolverDnZunmqr_bufferSize-NEXT:       handle /*cusolverDnHandle_t*/, left_right /*cublasSideMode_t*/,
 // cusolverDnZunmqr_bufferSize-NEXT:       trans /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cusolverDnZunmqr_bufferSize-NEXT:       a /*const cuDoubleComplex **/, lda /*int*/, tau /*const cuDoubleComplex **/,
-// cusolverDnZunmqr_bufferSize-NEXT:       c /*const cuDoubleComplex **/, ldc /*int*/, &buffer_size /*int **/);
+// cusolverDnZunmqr_bufferSize-NEXT:       a /*const cuDoubleComplex **/, lda /*int*/,
+// cusolverDnZunmqr_bufferSize-NEXT:       tau /*const cuDoubleComplex **/, c /*const cuDoubleComplex **/,
+// cusolverDnZunmqr_bufferSize-NEXT:       ldc /*int*/, &buffer_size /*int **/);
 // cusolverDnZunmqr_bufferSize-NEXT: Is migrated to:
 // cusolverDnZunmqr_bufferSize-NEXT:   int buffer_size;
 // cusolverDnZunmqr_bufferSize-NEXT:   *(&buffer_size) = oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<double>>(
 // cusolverDnZunmqr_bufferSize-NEXT:       *handle /*cusolverDnHandle_t*/, left_right /*cublasSideMode_t*/,
-// cusolverDnZunmqr_bufferSize-NEXT:       trans /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*const cuDoubleComplex **/, lda /*const cuDoubleComplex **/, ldc /*int **/);
+// cusolverDnZunmqr_bufferSize-NEXT:       trans /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*const cuDoubleComplex **/, lda /*const cuDoubleComplex **/,
+// cusolverDnZunmqr_bufferSize-NEXT:       ldc /*int **/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnSormqr | FileCheck %s -check-prefix=cusolverDnSormqr
 // cusolverDnSormqr: CUDA API:

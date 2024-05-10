@@ -1,8 +1,8 @@
 #include "cusolverDn.h"
 
 void test(cusolverDnHandle_t handle, cublasSideMode_t left_right,
-          cublasOperation_t trans, int m, int n, int k, const cuComplex *a, int lda,
-          const cuComplex *tau, const cuComplex *c, int ldc) {
+          cublasOperation_t trans, int m, int n, int k, const cuComplex *a,
+          int lda, const cuComplex *tau, const cuComplex *c, int ldc) {
   // Start
   int buffer_size;
   cusolverDnCunmqr_bufferSize(
