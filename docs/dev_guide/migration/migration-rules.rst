@@ -91,6 +91,9 @@ Migration rules are specified in YAML files. A single rule file may contain mult
    * - Subrules
      - String value
      - Specifies the subrules for the PatternRewriter rule type.
+   * - APIRestrictCondition
+     - List of restrictions
+     - Specifies the restrictions for the API.
 
 For example, the following user-defined migration rule file demonstrates different
 rule types. The behavior of each rule is explained in the corresponding comment:
@@ -112,6 +115,8 @@ rule types. The behavior of each rule is explained in the corresponding comment:
      Out: $type_name_of($2) *new_ptr = bar($deref($1))  # Format of the migrated result in the
                                                         # output source code
      Includes: ["<header3>"]
+     APIRestrictCondition:
+       ArgCount: 1                       # Only the overloading with 1 argument will be migrated 
    - Rule: rule_cmath                    # Rule to migrate "include<cmath>" to "#include<mymath>"
      Kind: Header
      Priority: Takeover

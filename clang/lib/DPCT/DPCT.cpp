@@ -924,6 +924,11 @@ int runDPCT(int argc, const char **argv) {
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
         CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
   }
+  std::string CUDADotHFilePathMacro =
+      "-D__CUDA_DOT_H_FILE_PATH__=\"" +
+      appendPath(CudaPath.getCanonicalPath().str(), "cuda.h") + "\"";
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      CUDADotHFilePathMacro.c_str(), ArgumentInsertPosition::BEGIN));
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fno-delayed-template-parsing", ArgumentInsertPosition::END));

@@ -22,14 +22,14 @@ using namespace llvm;
 using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
-bool isOutRootAccess(SmallString<256> OutRoot) {
+bool isOutRootAccess(SmallString<256> &OutRoot) {
   if (!fs::can_write(OutRoot)) {
     llvm::errs() << "Could not access out-root directory.\n";
     return false;
   }
   return true;
 }
-bool isOutRootEmpty(SmallString<256> OutRoot) {
+bool isOutRootEmpty(SmallString<256> &OutRoot) {
   std::error_code EC;
   fs::directory_iterator Iter(OutRoot, EC);
   fs::directory_iterator End;
