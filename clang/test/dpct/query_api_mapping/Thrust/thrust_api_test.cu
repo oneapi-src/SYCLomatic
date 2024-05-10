@@ -276,14 +276,6 @@
 // reverse_copy-NEXT:  /*5*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), host_result.begin());
 // reverse_copy-NEXT:  /*6*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::partition_point --extra-arg="-std=c++14"| FileCheck %s -check-prefix=partition_point
-// partition_point:  /*1*/  dpct::partition_point(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), up);
-// partition_point-NEXT:  /*2*/  dpct::partition_point(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), up);
-// partition_point-NEXT:  /*3*/  dpct::partition_point(oneapi::dpl::execution::seq, data, data + 10, up);
-// partition_point-NEXT:  /*4*/  dpct::partition_point(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), up);
-// partition_point-NEXT:  /*5*/  dpct::partition_point(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), up);
-// partition_point-NEXT:  /*6*/  dpct::partition_point(oneapi::dpl::execution::seq, data, data + 10, up);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::minmax_element --extra-arg="-std=c++14"| FileCheck %s -check-prefix=minmax_element
 // minmax_element:  /*1*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
 // minmax_element-NEXT:  /*2*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());

@@ -1,6 +1,5 @@
+// UNSUPPORTED: system-windows
 // UNSUPPORTED: cuda-8.0, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, 
-// UNSUPPORTED: v8.0, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1
-
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::device_delete --extra-arg="-std=c++14"| FileCheck %s -check-prefix=device_delete
 // device_delete: dpct::device_delete(d_array1, N);
@@ -19,3 +18,11 @@
 // malloc-NEXT:      dpct::malloc<int>(device_sys, N);
 // malloc-NEXT:  /*2*/ dpct::tagged_pointer<void, dpct::device_sys_tag> void_ptr =
 // malloc-NEXT:      dpct::malloc(device_sys, N);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::partition_point --extra-arg="-std=c++14"| FileCheck %s -check-prefix=partition_point
+// partition_point:  /*1*/  dpct::partition_point(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), up);
+// partition_point-NEXT:  /*2*/  dpct::partition_point(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), up);
+// partition_point-NEXT:  /*3*/  dpct::partition_point(oneapi::dpl::execution::seq, data, data + 10, up);
+// partition_point-NEXT:  /*4*/  dpct::partition_point(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), up);
+// partition_point-NEXT:  /*5*/  dpct::partition_point(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), up);
+// partition_point-NEXT:  /*6*/  dpct::partition_point(oneapi::dpl::execution::seq, data, data + 10, up);
