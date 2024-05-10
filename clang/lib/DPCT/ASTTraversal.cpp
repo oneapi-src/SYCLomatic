@@ -8576,6 +8576,14 @@ void KernelCallRule::runRule(
     if (Flag)
       DpctGlobalInfo::insertKCIndentWidth(IndentLen);
 
+    for (const Expr *Arg : KCall->arguments()) {
+      if (!isDeviceCopyable(Arg->getType(), this)) {
+        report(KCall->getBeginLoc(),
+               Diagnostics::NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, true,
+               DpctGlobalInfo::getOriginalTypeName(Arg->getType()));
+      }
+    }
+
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
     if (!FD->isTemplateInstantiation()){

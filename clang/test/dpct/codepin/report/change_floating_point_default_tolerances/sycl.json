@@ -1,0 +1,22 @@
+[
+    {
+        "ID": "serial123:epilog:0",
+        "Free Device Memory": "100",
+        "Total Device Memory": "500",
+        "Elapse Time(ms)": "0",
+        "CheckPoint": {
+            "var_5": {
+                "Type": "float",
+                "Data": [
+                    1.0
+                ]
+            },
+            "var_6": {
+                "Type": "float",
+                "Data": [
+                    1.3
+                ]
+            }
+        }
+    }
+]
