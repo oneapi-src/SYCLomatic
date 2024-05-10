@@ -64,41 +64,4 @@ R"(
     Display the folder of helper function files
       $ dpct --helper-function-dir
 
-  Basic workflow
-  ==============
-
-    Generate compilation database)"
-#ifndef _WIN32
-R"(
-      $ dpct --intercept-build make)"
-#endif
-R"(
-      $ dpct --intercept-build --parse-build-log <logfile>
-
-    Migration efforts estimatation analysis
-      $ dpct --analysis-mode source.cu --analysis-mode-output-file
-
-    Migrate a single project file
-      $ dpct source.cu
-  
-    Migrate entire project
-      $ dpct -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project     # With compilation database
-      $ dpct --process-all --in-root=/path/to/project --out-root=/path/to/migrated-project                        # Without compilation database)"
-#ifdef _WIN32
-R"(
-      $ dpct -vcxprojfile=/path/to/vcproject/file --in-root=/path/to/project --out-root=/path/to/migrated-project # With VS project file)"
-#endif
-R"(
-    Migrate entire project and generate a makefile
-      $ dpct --gen-build-script -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project
-
-    Migrate entire project along with CMake scripts
-      $ dpct --migrate-build-script=cmake -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project
-  
-    Migrate entire project with extra options
-      $ dpct --extra-arg="-I /path/to/extra/include" source.cu                                                    # With additional app args
-      $ dpct --sycl-file-extension=cpp source.cu                                                                  # Specify the extension of migrated source file(s)
-      $ dpct --optimize-migration source.cu                                                                       # Generate optimal SYCL code applying more aggressive assumptions
-      $ dpct --enable-codepin source.cu                                                                           # Generate instrumented CUDA and SYCL code for debugging
-
 )";
