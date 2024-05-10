@@ -6,7 +6,7 @@ void test(cusolverDnHandle_t handle, cublasFillMode_t uplo, int n, float *a,
   // Start
   cusolverDnSsytrd(handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
                    n /*int*/, a /*float **/, lda /*int*/, d /*float **/,
-                   e /*float **/, tau /*float **/, buffer /*int **/,
+                   e /*float **/, tau /*float **/, buffer /*float **/,
                    buffer_size /*int*/, info /*int **/);
   // End
 }

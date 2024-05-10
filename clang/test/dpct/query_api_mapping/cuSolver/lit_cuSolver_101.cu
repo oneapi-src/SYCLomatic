@@ -473,8 +473,8 @@
 // cusolverDnXgeqrf: CUDA API:
 // cusolverDnXgeqrf-NEXT:   cusolverDnXgeqrf(handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
 // cusolverDnXgeqrf-NEXT:                    m /*int64_t*/, n /*int64_t*/, a_type /*cudaDataType*/,
-// cusolverDnXgeqrf-NEXT:                    a /* void **/, lda /*int64_t*/, tau_type /*cudaDataType*/,
-// cusolverDnXgeqrf-NEXT:                    tau /* void **/, compute_type /*cudaDataType*/,
+// cusolverDnXgeqrf-NEXT:                    a /*void **/, lda /*int64_t*/, tau_type /*cudaDataType*/,
+// cusolverDnXgeqrf-NEXT:                    tau /*void **/, compute_type /*cudaDataType*/,
 // cusolverDnXgeqrf-NEXT:                    device_buffer /*void **/, device_buffer_size /*size_t*/,
 // cusolverDnXgeqrf-NEXT:                    host_buffer /*void **/, host_buffer_size /*size_t*/,
 // cusolverDnXgeqrf-NEXT:                    info /*int **/);
@@ -500,10 +500,10 @@
 // cusolverDnXgesvd: CUDA API:
 // cusolverDnXgesvd-NEXT:   cusolverDnXgesvd(handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
 // cusolverDnXgesvd-NEXT:                    jobu /*signed char*/, jobvt /*signed char*/, m /*int64_t*/,
-// cusolverDnXgesvd-NEXT:                    n /*int64_t*/, a_type /*cudaDataType*/, a /* void **/,
-// cusolverDnXgesvd-NEXT:                    lda /*int64_t*/, s_type /*cudaDataType*/, s /* void **/,
-// cusolverDnXgesvd-NEXT:                    u_type /*cudaDataType*/, u /* void **/, ldu /*int64_t*/,
-// cusolverDnXgesvd-NEXT:                    vt_type /*cudaDataType*/, vt /* void **/, ldvt /*int64_t*/,
+// cusolverDnXgesvd-NEXT:                    n /*int64_t*/, a_type /*cudaDataType*/, a /*void **/,
+// cusolverDnXgesvd-NEXT:                    lda /*int64_t*/, s_type /*cudaDataType*/, s /*void **/,
+// cusolverDnXgesvd-NEXT:                    u_type /*cudaDataType*/, u /*void **/, ldu /*int64_t*/,
+// cusolverDnXgesvd-NEXT:                    vt_type /*cudaDataType*/, vt /*void **/, ldvt /*int64_t*/,
 // cusolverDnXgesvd-NEXT:                    compute_type /*cudaDataType*/, device_buffer /*void **/,
 // cusolverDnXgesvd-NEXT:                    device_buffer_size /*size_t*/, host_buffer /*void **/,
 // cusolverDnXgesvd-NEXT:                    host_buffer_size /*size_t*/, info /*int **/);
@@ -531,7 +531,7 @@
 // cusolverDnXgetrf: CUDA API:
 // cusolverDnXgetrf-NEXT:   cusolverDnXgetrf(handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
 // cusolverDnXgetrf-NEXT:                    m /*int64_t*/, n /*int64_t*/, a_type /*cudaDataType*/,
-// cusolverDnXgetrf-NEXT:                    a /* void **/, lda /*int64_t*/, ipiv /*int64_t **/,
+// cusolverDnXgetrf-NEXT:                    a /*void **/, lda /*int64_t*/, ipiv /*int64_t **/,
 // cusolverDnXgetrf-NEXT:                    compute_type /*cudaDataType*/, device_buffer /*void **/,
 // cusolverDnXgetrf-NEXT:                    device_buffer_size /*size_t*/, host_buffer /*void **/,
 // cusolverDnXgetrf-NEXT:                    host_buffer_size /*size_t*/, info /*int **/);
@@ -566,7 +566,7 @@
 // cusolverDnXpotrf: CUDA API:
 // cusolverDnXpotrf-NEXT:   cusolverDnXpotrf(handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
 // cusolverDnXpotrf-NEXT:                    uplo /*cublasFillMode_t*/, n /*int64_t*/,
-// cusolverDnXpotrf-NEXT:                    a_type /*cudaDataType*/, a /* void **/, lda /*int64_t*/,
+// cusolverDnXpotrf-NEXT:                    a_type /*cudaDataType*/, a /*void **/, lda /*int64_t*/,
 // cusolverDnXpotrf-NEXT:                    compute_type /*cudaDataType*/, device_buffer /*void **/,
 // cusolverDnXpotrf-NEXT:                    device_buffer_size /*size_t*/, host_buffer /*void **/,
 // cusolverDnXpotrf-NEXT:                    host_buffer_size /*size_t*/, info /*int **/);
@@ -601,8 +601,8 @@
 // cusolverDnXsyevd: CUDA API:
 // cusolverDnXsyevd-NEXT:   cusolverDnXsyevd(handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
 // cusolverDnXsyevd-NEXT:                    jobz /*cusolverEigMode_t*/, uplo /*cublasFillMode_t*/,
-// cusolverDnXsyevd-NEXT:                    n /*int64_t*/, a_type /*cudaDataType*/, a /* void **/,
-// cusolverDnXsyevd-NEXT:                    lda /*int64_t*/, w_type /*cudaDataType*/, w /* void **/,
+// cusolverDnXsyevd-NEXT:                    n /*int64_t*/, a_type /*cudaDataType*/, a /*void **/,
+// cusolverDnXsyevd-NEXT:                    lda /*int64_t*/, w_type /*cudaDataType*/, w /*void **/,
 // cusolverDnXsyevd-NEXT:                    compute_type /*cudaDataType*/, device_buffer /*void **/,
 // cusolverDnXsyevd-NEXT:                    device_buffer_size /*size_t*/, host_buffer /*void **/,
 // cusolverDnXsyevd-NEXT:                    host_buffer_size /*size_t*/, info /*int **/);
@@ -631,9 +631,9 @@
 // cusolverDnXsyevdx-NEXT:       handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
 // cusolverDnXsyevdx-NEXT:       jobz /*cusolverEigMode_t*/, range /*cusolverEigRange_t*/,
 // cusolverDnXsyevdx-NEXT:       uplo /*cublasFillMode_t*/, n /*int64_t*/, a_type /*cudaDataType*/,
-// cusolverDnXsyevdx-NEXT:       a /* void **/, lda /*int64_t*/, vl /*void **/, vu /*void **/,
+// cusolverDnXsyevdx-NEXT:       a /*void **/, lda /*int64_t*/, vl /*void **/, vu /*void **/,
 // cusolverDnXsyevdx-NEXT:       il /*int64_t*/, iu /*int64_t*/, h_meig /*int64_t **/,
-// cusolverDnXsyevdx-NEXT:       w_type /*cudaDataType*/, w /* void **/, compute_type /*cudaDataType*/,
+// cusolverDnXsyevdx-NEXT:       w_type /*cudaDataType*/, w /*void **/, compute_type /*cudaDataType*/,
 // cusolverDnXsyevdx-NEXT:       device_buffer /*void **/, device_buffer_size /*size_t*/,
 // cusolverDnXsyevdx-NEXT:       host_buffer /*void **/, host_buffer_size /*size_t*/, info /*int **/);
 // cusolverDnXsyevdx-NEXT: Is migrated to:
@@ -661,7 +661,7 @@
 // cusolverDnXtrtri: CUDA API:
 // cusolverDnXtrtri-NEXT:   cusolverDnXtrtri(handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
 // cusolverDnXtrtri-NEXT:                    diag /*cublasDiagType_t*/, n /*int64_t*/,
-// cusolverDnXtrtri-NEXT:                    a_type /*cudaDataType*/, a /* void **/, lda /*int64_t*/,
+// cusolverDnXtrtri-NEXT:                    a_type /*cudaDataType*/, a /*void **/, lda /*int64_t*/,
 // cusolverDnXtrtri-NEXT:                    device_buffer /*void **/, device_buffer_size /*size_t*/,
 // cusolverDnXtrtri-NEXT:                    host_buffer /*void **/, host_buffer_size /*size_t*/,
 // cusolverDnXtrtri-NEXT:                    info /*int **/);
@@ -675,7 +675,7 @@
 // cusolverDnXtrtri_bufferSize-NEXT:   cusolverDnXtrtri_bufferSize(
 // cusolverDnXtrtri_bufferSize-NEXT:       handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
 // cusolverDnXtrtri_bufferSize-NEXT:       diag /*cublasDiagType_t*/, n /*int64_t*/, a_type /*cudaDataType*/,
-// cusolverDnXtrtri_bufferSize-NEXT:       a /*const void **/, lda /*int64_t*/, &device_buffer_size /*size_t **/,
+// cusolverDnXtrtri_bufferSize-NEXT:       a /*void **/, lda /*int64_t*/, &device_buffer_size /*size_t **/,
 // cusolverDnXtrtri_bufferSize-NEXT:       &host_buffer_size /*size_t **/);
 // cusolverDnXtrtri_bufferSize-NEXT: Is migrated to:
 // cusolverDnXtrtri_bufferSize-NEXT:   size_t device_buffer_size;

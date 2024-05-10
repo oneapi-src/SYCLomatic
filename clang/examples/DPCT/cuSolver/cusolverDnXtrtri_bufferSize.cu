@@ -9,7 +9,7 @@ void test(cusolverDnHandle_t handle, cublasFillMode_t uplo,
   cusolverDnXtrtri_bufferSize(
       handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
       diag /*cublasDiagType_t*/, n /*int64_t*/, a_type /*cudaDataType*/,
-      a /*const void **/, lda /*int64_t*/, &device_buffer_size /*size_t **/,
+      a /*void **/, lda /*int64_t*/, &device_buffer_size /*size_t **/,
       &host_buffer_size /*size_t **/);
   // End
 }

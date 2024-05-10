@@ -1125,12 +1125,12 @@
 // cusolverDnSsytrd: CUDA API:
 // cusolverDnSsytrd-NEXT:   cusolverDnSsytrd(handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
 // cusolverDnSsytrd-NEXT:                    n /*int*/, a /*float **/, lda /*int*/, d /*float **/,
-// cusolverDnSsytrd-NEXT:                    e /*float **/, tau /*float **/, buffer /*int **/,
+// cusolverDnSsytrd-NEXT:                    e /*float **/, tau /*float **/, buffer /*float **/,
 // cusolverDnSsytrd-NEXT:                    buffer_size /*int*/, info /*int **/);
 // cusolverDnSsytrd-NEXT: Is migrated to:
 // cusolverDnSsytrd-NEXT:   oneapi::mkl::lapack::sytrd(*handle /*cusolverDnHandle_t*/, uplo /*cublasFillMode_t*/,
 // cusolverDnSsytrd-NEXT:                    n /*int*/, (float*)a /*float **/, lda /*int*/, (float*)d /*float **/,
-// cusolverDnSsytrd-NEXT:                    (float*)e /*float **/, (float*)tau /*float **/, (float*)buffer /*int **/,
+// cusolverDnSsytrd-NEXT:                    (float*)e /*float **/, (float*)tau /*float **/, (float*)buffer /*float **/,
 // cusolverDnSsytrd-NEXT:                    buffer_size /*int **/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnDsytrd | FileCheck %s -check-prefix=cusolverDnDsytrd

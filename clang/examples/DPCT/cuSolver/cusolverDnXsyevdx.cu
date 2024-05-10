@@ -13,9 +13,9 @@ void test(cusolverDnHandle_t handle, cusolverDnParams_t params,
       handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
       jobz /*cusolverEigMode_t*/, range /*cusolverEigRange_t*/,
       uplo /*cublasFillMode_t*/, n /*int64_t*/, a_type /*cudaDataType*/,
-      a /* void **/, lda /*int64_t*/, vl /*void **/, vu /*void **/,
+      a /*void **/, lda /*int64_t*/, vl /*void **/, vu /*void **/,
       il /*int64_t*/, iu /*int64_t*/, h_meig /*int64_t **/,
-      w_type /*cudaDataType*/, w /* void **/, compute_type /*cudaDataType*/,
+      w_type /*cudaDataType*/, w /*void **/, compute_type /*cudaDataType*/,
       device_buffer /*void **/, device_buffer_size /*size_t*/,
       host_buffer /*void **/, host_buffer_size /*size_t*/, info /*int **/);
   // End

@@ -8,8 +8,8 @@ void test(cusolverDnHandle_t handle, cusolverDnParams_t params, int64_t m,
   // Start
   cusolverDnXgeqrf(handle /*cusolverDnHandle_t*/, params /*cusolverDnParams_t*/,
                    m /*int64_t*/, n /*int64_t*/, a_type /*cudaDataType*/,
-                   a /* void **/, lda /*int64_t*/, tau_type /*cudaDataType*/,
-                   tau /* void **/, compute_type /*cudaDataType*/,
+                   a /*void **/, lda /*int64_t*/, tau_type /*cudaDataType*/,
+                   tau /*void **/, compute_type /*cudaDataType*/,
                    device_buffer /*void **/, device_buffer_size /*size_t*/,
                    host_buffer /*void **/, host_buffer_size /*size_t*/,
                    info /*int **/);
