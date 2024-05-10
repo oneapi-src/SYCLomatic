@@ -333,7 +333,7 @@ def main():
     dismatch_checkpoint_num = 0
     checkpoint_size = 0
     parser = argparse.ArgumentParser(
-        description="Codepin report tool of the compatibility tool.\n", add_help=False
+        description="CodePin report tool of the compatibility tool.\n", add_help=False
     )
     parser.add_argument(
         "-h",
