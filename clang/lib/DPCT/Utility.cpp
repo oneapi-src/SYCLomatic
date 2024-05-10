@@ -5212,7 +5212,8 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
 }
 
 // Check if the given type is device copyable.
-// We use is_trivally_copyable to determine if the type is device copyable.
+// We use the requirements of is_trivally_copyable to determine if the type is
+// device copyable.
 // For non-trivally-copyable type:
 // 1. Try to insert specialization sycl::is_device_copyable for it.
 // 2. Try to tell which part of that type violate the trivally-copyable
