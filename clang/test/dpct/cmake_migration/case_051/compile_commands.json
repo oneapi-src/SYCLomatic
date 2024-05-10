@@ -1,0 +1,7 @@
+[
+    {
+    "command": "nvcc -c  foo.cu",
+    "directory": ".",
+    "file": "./foo.cu"
+    }
+]
