@@ -3,6 +3,7 @@
 void test(cusparseHandle_t handle) {
   // Start
   cusparsePointerMode_t mode;
-  cusparseGetPointerMode(handle /*cusparseHandle_t*/, &mode);
+  cusparseGetPointerMode(handle /*cusparseHandle_t*/,
+                         &mode /*cusparsePointerMode_t **/);
   // End
 }

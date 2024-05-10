@@ -14,8 +14,8 @@ void test(cusparseSpMatDescr_t desc) {
   cudaDataType value_type;
   cusparseCsrGet(
       desc /*cusparseSpMatDescr_t*/, &rows /*int64_t **/, &cols /*int64_t **/,
-      &nnz /*int64_t **/, &row_ptr /*void **/, &col_ind /*void **/,
-      &value /*void **/, &row_ptr_type /*cusparseIndexType_t **/,
+      &nnz /*int64_t **/, &row_ptr /*void ***/, &col_ind /*void ***/,
+      &value /*void ***/, &row_ptr_type /*cusparseIndexType_t **/,
       &col_ind_type /*cusparseIndexType_t **/, &base /*cusparseIndexBase_t **/,
       &value_type /*cudaDataType **/);
   // End
