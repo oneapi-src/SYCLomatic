@@ -605,7 +605,7 @@ __dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
   // storage
   size_t linear_tid = item.get_local_linear_id();
   OutputIteratorT workitem_itr = block_itr + linear_tid; 
-  size_t GROUP_WORK_ITEMS = item.get_global_range();
+  size_t GROUP_WORK_ITEMS = item.get_global_range().size();
 #pragma unroll
   for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     workitem_itr[(idx * GROUP_WORK_ITEMS)] = items[idx];
@@ -639,6 +639,13 @@ store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
   }
 }
 
+// template parameters :
+// ITEMS_PER_WORK_ITEM: size_t variable controlling the number of items per
+// thread/work_item
+// ALGORITHM: store_algorithm variable controlling the type of store operation.
+// InputT: type for input sequence.
+// OutputIteratorT:  output iterator type
+// Item : typename parameter resembling sycl::nd_item<3> .
 template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM, typename InputT,
           typename OutputIteratorT, typename Item, typename T>
 class workgroup_store {
@@ -650,9 +657,9 @@ class workgroup_store {
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
     if constexpr (ALGORITHM == BLOCK_STORE_DIRECT) {
-      store_blocked(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      store_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     } else if constexpr (ALGORITHM == BLOCK_STORE_STRIPED) {
-      store_striped(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     }
   }
 };
