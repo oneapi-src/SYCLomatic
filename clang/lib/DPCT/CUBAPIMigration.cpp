@@ -12,14 +12,21 @@
 #include "CallExprRewriter.h"
 #include "ExprAnalysis.h"
 #include "MigrationRuleManager.h"
+#include "TextModification.h"
+#include "Utility.h"
+#include "clang/AST/Attrs.inc"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/OperationKinds.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/TypeLoc.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
+#include "clang/Basic/AttrKinds.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Tooling/Tooling.h"
@@ -32,6 +39,8 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include <iterator>
+#include <memory>
+#include <vector>
 
 using namespace clang;
 using namespace dpct;
@@ -1164,6 +1173,73 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       OpRepl = getOpRepl(FuncArgs[1]);
       IsPartialReduce = NumArgs == 3;
       ValidItemParamIdx = 2;
+      const auto *CK = dyn_cast<ImplicitCastExpr>(FuncArgs[1]);
+      if (OpRepl.empty() && CK &&
+          CK->getCastKind() == CK_FunctionToPointerDecay) {
+        ExprAnalysis EA;
+        EA.analyze(CK);
+        OpRepl =
+            "[](auto&& x, auto&& y) { return " + EA.getReplacedString() +
+            "(std::forward<decltype(x)>(x), std::forward<decltype(y)>(y)); }";
+
+        NewFuncName = MapNames::getClNamespace() + "ext::oneapi::experimental::reduce_over_group";
+        Expr *Obj = BlockMC->getImplicitObjectArgument();
+        const VarDecl *TempStorage = nullptr;
+
+        auto FindTempStorageVarInCtor = [&](const Expr *E) -> const VarDecl * {
+          if (auto *Ctor = dyn_cast<CXXConstructExpr>(E)) {
+            if (auto *DRE = dyn_cast<DeclRefExpr>(Ctor->getArg(0))) {
+              if (auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+                if (VD->hasAttr<CUDASharedAttr>() && isCubVar(VD)) {
+                  return VD;
+                }
+              }
+            }
+          }
+          return nullptr;
+        };
+
+        if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Obj)) {
+          TempStorage =
+              FindTempStorageVarInCtor(MTE->getSubExpr()->IgnoreCasts());
+        } else if (const auto *DRE = dyn_cast<DeclRefExpr>(Obj)) {
+          if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+            if (isCubCollectiveRecordType(VD->getType()) && VD->hasInit()) {
+              emplaceTransformation(new ReplaceVarDecl(VD, ""));
+              TempStorage = FindTempStorageVarInCtor(VD->getInit());
+            }
+          }
+        }
+
+        auto MemberCallObjType = Obj->getType().getCanonicalType();
+        MemberCallObjType->dump();
+        QualType ElementType;
+
+        if (auto *CD = dyn_cast<RecordType>(MemberCallObjType.getTypePtr())) {
+          auto *RD = CD->getAsRecordDecl();
+          if (auto *CTST = dyn_cast<ClassTemplateSpecializationDecl>(RD)) {
+            ElementType = CTST->getTemplateArgs()[0].getAsType();
+          }
+        }
+        
+        auto *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TempStorage);
+        if (!FD || !TempStorage || ElementType.isNull())
+          return;
+        if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
+          auto Loc = DpctGlobalInfo::getLocInfo(TempStorage);
+          ExprAnalysis EA;
+          EA.analyze(BlockMC);
+          FuncInfo->getVarMap().addCUBTempStorage(
+              std::make_shared<TempStorageVarInfo>(
+                  Loc.second, DpctGlobalInfo::getTypeName(ElementType), TempStorage->getName()));
+        }
+        std::string Span = MapNames::getClNamespace() + "span<std::byte, 1>" +
+                           "(&" + TempStorage->getNameAsString() + "[0], " +
+                           TempStorage->getNameAsString() + ".size())";
+        GroupOrWorkitem = MapNames::getClNamespace() +
+                          "ext::oneapi::experimental::group_with_scratchpad("  +
+                          GroupOrWorkitem + ", " + Span + ")";
+      }
     } else if (FuncName == "Sum") {
       OpRepl = getOpRepl(nullptr);
       IsPartialReduce = NumArgs == 2;

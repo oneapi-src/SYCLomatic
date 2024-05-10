@@ -3485,6 +3485,27 @@ void TextureObjectInfo::addParamDeclReplacement() {
                                          getParamDeclType(), nullptr));
   }
 }
+
+// class TempStorageVarInfo //
+void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
+                                         StringRef LocalSize) const {
+  std::string Accessor;
+  llvm::raw_string_ostream OS(Accessor);
+  OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
+     << "_acc(" << MapNames::getClNamespace() << "range(" << LocalSize
+     << ".size() * sizeof(" << Type << ")), cgh);";
+  AccessorList.emplace_back(Accessor);
+}
+ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
+  return PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> "
+            << Name;
+}
+ParameterStream &TempStorageVarInfo::getFuncArg(ParameterStream &PS) {
+  return PS << Name;
+}
+ParameterStream &TempStorageVarInfo::getKernelArg(ParameterStream &PS) {
+  return PS << Name << "_acc";
+}
 ///// class CudaLaunchTextureObjectInfo /////
 std::string
 CudaLaunchTextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
@@ -3664,6 +3685,9 @@ void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
 void MemVarMap::addTexture(std::shared_ptr<TextureInfo> Tex) {
   TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
 }
+void MemVarMap::addCUBTempStorage(std::shared_ptr<TempStorageVarInfo> Tmp) {
+  TempStorageMap.insert(std::make_pair(Tmp->getOffset(), Tmp));
+}
 void MemVarMap::addVar(std::shared_ptr<MemVarInfo> Var) {
   auto Attr = Var->getAttr();
   if (Var->isGlobal() && (Attr == MemVarInfo::VarAttrKind::Device ||
@@ -3689,6 +3713,7 @@ void MemVarMap::merge(const MemVarMap &VarMap,
   merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
   merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
   dpct::merge(TextureMap, VarMap.TextureMap);
+  dpct::merge(TempStorageMap, VarMap.TempStorageMap);
 }
 int MemVarMap::calculateExtraArgsSize() const {
   int Size = 0;
@@ -3721,6 +3746,7 @@ MemVarMap::getArgumentsOrParameters(int PreParams, int PostParams, LocInfo LI,
   getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, GlobalVarMap, LI);
   getArgumentsOrParametersFromMap<MemVarInfo, COD>(PS, LocalVarMap, LI);
   getArgumentsOrParametersFromoTextureInfoMap<COD>(PS, TextureMap);
+  getArgumentsOrParametersFromMap<TempStorageVarInfo, COD>(PS, TempStorageMap);
   std::string Result = PS.Str;
   return (Result.empty() || PostParams != 0) && PreParams == 0
              ? Result
@@ -3804,6 +3830,9 @@ const MemVarInfoMap &MemVarMap::getMap(MemVarInfo::VarScope Scope) const {
 const GlobalMap<TextureInfo> &MemVarMap::getTextureMap() const {
   return TextureMap;
 }
+const GlobalMap<TempStorageVarInfo> &MemVarMap::getTempStorageMap() const {
+  return TempStorageMap;
+}
 void MemVarMap::removeDuplicateVar() {
   std::unordered_set<std::string> VarNames{getItemName(),
                                            DpctGlobalInfo::getStreamName()};
@@ -3811,6 +3840,7 @@ void MemVarMap::removeDuplicateVar() {
   dpct::removeDuplicateVar(LocalVarMap, VarNames);
   dpct::removeDuplicateVar(ExternVarMap, VarNames);
   dpct::removeDuplicateVar(TextureMap, VarNames);
+  dpct::removeDuplicateVar(TempStorageMap, VarNames);
 }
 MemVarInfoMap &MemVarMap::getMap(MemVarInfo::VarScope Scope) {
   switch (Scope) {
@@ -3907,16 +3937,18 @@ void MemVarMap::getArgumentsOrParametersFromMap(ParameterStream &PS,
                                                 const GlobalMap<T> &VarMap,
                                                 LocInfo LI) {
   for (const auto &VI : VarMap) {
-    if (!VI.second->isUseHelperFunc()) {
-      continue;
-    }
-    if (!VI.second->getType()->SharedVarInfo.TypeName.empty() &&
-        !LI.first.getCanonicalPath().empty() && LI.second) {
-      DiagnosticsUtils::report(
-          LI.first.getCanonicalPath().str(), LI.second,
-          Warnings::MOVE_TYPE_DEFINITION_DEVICE_FUNC, true, false,
-          VI.second->getType()->SharedVarInfo.TypeName,
-          VI.second->getType()->SharedVarInfo.DefinitionFuncName);
+    if constexpr (!std::is_same_v<T, TempStorageVarInfo>) {
+      if (!VI.second->isUseHelperFunc()) {
+        continue;
+      }
+      if (!VI.second->getType()->SharedVarInfo.TypeName.empty() &&
+          !LI.first.getCanonicalPath().empty() && LI.second) {
+        DiagnosticsUtils::report(
+            LI.first.getCanonicalPath().str(), LI.second,
+            Warnings::MOVE_TYPE_DEFINITION_DEVICE_FUNC, true, false,
+            VI.second->getType()->SharedVarInfo.TypeName,
+            VI.second->getType()->SharedVarInfo.DefinitionFuncName);
+      }
     }
     if (PS.FormatInformation.EnableFormat) {
       ParameterStream TPS;
@@ -3970,6 +4002,8 @@ void MemVarMap::getArgumentsOrParametersForDecl(ParameterStream &PS,
       PS, LocalVarMap, LI);
   getArgumentsOrParametersFromoTextureInfoMap<MemVarMap::DeclParameter>(
       PS, TextureMap);
+  getArgumentsOrParametersFromMap<TempStorageVarInfo, MemVarMap::DeclParameter>(
+      PS, TempStorageMap);
 }
 ///// class CallFunctionExpr /////
 void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
@@ -5477,6 +5511,10 @@ void KernelCallExpr::addAccessorDecl() {
   for (auto &Tex : VM.getTextureMap()) {
     Tex.second->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
                         getQueueStr());
+  }
+  for (auto &Tmp : VM.getTempStorageMap()) {
+    Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,
+                                ExecutionConfig.LocalSize);
   }
 }
 void KernelCallExpr::buildInfo() {

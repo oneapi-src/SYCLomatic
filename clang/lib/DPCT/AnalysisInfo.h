@@ -2139,6 +2139,21 @@ private:
   bool IsWritten = true;
 };
 
+class TempStorageVarInfo {
+  unsigned Offset;
+  std::string Type;
+  std::string Name;
+public:
+  TempStorageVarInfo(unsigned Off, StringRef Type, StringRef Name)
+      : Offset(Off), Type(Type.str()), Name(Name.str()) {}
+  const std::string &getName() const { return Name; }
+  unsigned getOffset() const { return Offset; }
+  void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;
+  ParameterStream &getFuncDecl(ParameterStream &PS);
+  ParameterStream &getFuncArg(ParameterStream &PS);
+  ParameterStream &getKernelArg(ParameterStream &PS);
+};
+
 // memory variable map includes memory variable used in __global__/__device__
 // function and call expression.
 class MemVarMap {
@@ -2162,6 +2177,7 @@ public:
   void setBF64(bool Has = true) { HasBF64 = Has; }
   void setBF16(bool Has = true) { HasBF16 = Has; }
   void setGlobalMemAcc(bool Has = true) { HasGlobalMemAcc = Has; }
+  void addCUBTempStorage(std::shared_ptr<TempStorageVarInfo> Tmp);
   void addTexture(std::shared_ptr<TextureInfo> Tex);
   void addVar(std::shared_ptr<MemVarInfo> Var);
   void merge(const MemVarMap &OtherMap);
@@ -2197,6 +2213,7 @@ public:
                                  const clang::tooling::UnifiedPath &Path) const;
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const;
   const GlobalMap<TextureInfo> &getTextureMap() const;
+  const GlobalMap<TempStorageVarInfo> &getTempStorageMap() const;
   void removeDuplicateVar();
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope);
@@ -2258,6 +2275,7 @@ private:
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
   GlobalMap<TextureInfo> TextureMap;
+  GlobalMap<TempStorageVarInfo> TempStorageMap;
 };
 
 template <>
