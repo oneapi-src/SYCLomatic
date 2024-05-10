@@ -24,8 +24,8 @@ the CUDA and SYCL programs to help identify the source of divergent runtime beha
 Enable CodePin
 --------------
 
-Enable CodePin with the ``–enable-codepin`` option. The instrumented CUDA program will be put
-in the folder ``dpct_output_codepin_cuda``.
+Enable CodePin with the ``–enable-codepin`` option. The instrumented program will be put
+in the folder ``dpct_output_codepin_cuda`` and ``dpct_output_codepin_sycl``.
 
 Example
 -------
@@ -240,7 +240,7 @@ After migration, there will be two files: ``dpct_output_codepin_sycl/example.dp.
     */
 
 After building and executing ``dpct_output_codepin_sycl/example.dp.cpp`` and ``dpct_output_debug/example.cu``,
-the following reports will be generated.
+the following execution log files will be generated.
 
 .. list-table::
    :widths: 50 50
@@ -285,35 +285,35 @@ the following reports will be generated.
      - .. code-block::
            :linenos:
 
-            [
-                {
-                    "ID": "/home/yyergg/workspace/simple_test/test.cu:84:3:prolog",
-                    "Free Device Memory": "0",
-                    "Total Device Memory": "31023112192",
-                    "Elapse Time(ms)": "0",
-                    "CheckPoint": {
-                        "d_a2d": {
-                            "Type": "Pointer",
-                            "Data": [
-                                {
-                                    "Type": "Point2D",
-                                    "Data": [
-                                        {
-                                            "x": {
-                                                "Type": "int",
-                                                "Data": [
-                                                    0
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "y": {
-                                                "Type": "int",
-                                                "Data": [
-                                                    0
-                                                ]
-                                            }
-                                        },
+        [
+            {
+                "ID": "example.cu:26:3:prolog",
+                "Free Device Memory": "0",
+                "Total Device Memory": "31023112192",
+                "Elapse Time(ms)": "0",
+                "CheckPoint": {
+                    "d_a": {
+                        "Type": "Pointer",
+                        "Data": [
+                            {
+                                "Type": "sycl::int3",
+                                "Data": [
+                                    {
+                                        "x": {
+                                            "Type": "int",
+                                            "Data": [
+                                                1
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "y": {
+                                            "Type": "int",
+                                            "Data": [
+                                                2
+                                            ]
+                                        }
+                                    },
             ...
 
 The report helps identify where the runtime behavior of the CUDA and the SYCL
@@ -321,10 +321,10 @@ programs start to diverge from one another.
 
 Analyze the Data Checkpoints
 -------
-codepin-report.py is a tool consumes the data point files from both CUDA and SYCL and performs auto analysis of the data checkpoints.
-codepin-report.py can identify the in consistent data value and report the stats data of the data checkpoints.
+codepin-report.py is a tool consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
+codepin-report.py can identify the in consistent data value and report the stats data of the execution log including data checkpoints.
 
-codepin-report.py consumes the data point files from both CUDA and SYCL with the following commandline.
+codepin-report.py consumes the execution log files from both CUDA and SYCL code with the following command line.
 ``codepin-report.py [-h] --instrumented-cuda-log <file path> --instrumented-sycl-log <file path>``
 
 Following is an example of the analysis report.
@@ -334,8 +334,8 @@ Following is an example of the analysis report.
     CodePin Summary
     Totally APIs count, 2
     Consistently APIs count, 2
-    Most Time-consuming Kernel(CUDA), /home/yyergg/workspace/codepin_demo/example.cu:26:3:epilog, time:8.2316
-    Most Time-consuming Kernel(SYCL), /home/yyergg/workspace/codepin_demo/example.cu:26:3:epilog, time:10.2575
+    Most Time-consuming Kernel(CUDA), example.cu:26:3:epilog, time:8.2316
+    Most Time-consuming Kernel(SYCL), example.cu:26:3:epilog, time:10.2575
     Peak Device Memory Used(CUDA), 508100608
     Peak Device Memory Used(SYCL), 31023112192
     CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
