@@ -2445,8 +2445,6 @@ protected:
       return cl::getDPCTCategory();
       break;
     }
-
-    return cl::getDPCTCategory();
   }
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -2562,6 +2560,7 @@ public:
     bool showDiagMsg = false;
 
     switch (helpCatEnum) {
+    case HelpCategory::HC_All:
     case HelpCategory::HC_Advanced:
     case HelpCategory::HC_Basic:
     case HelpCategory::HC_BuildScript:
