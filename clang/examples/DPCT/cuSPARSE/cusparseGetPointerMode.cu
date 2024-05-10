@@ -1,9 +1,8 @@
 #include "cusparse.h"
 
-void test(cusparseHandle_t handle) {
+void test(cusparseHandle_t handle, cusparsePointerMode_t *mode) {
   // Start
-  cusparsePointerMode_t mode;
   cusparseGetPointerMode(handle /*cusparseHandle_t*/,
-                         &mode /*cusparsePointerMode_t **/);
+                         mode /*cusparsePointerMode_t **/);
   // End
 }

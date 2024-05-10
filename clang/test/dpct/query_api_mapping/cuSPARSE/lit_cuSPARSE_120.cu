@@ -5,7 +5,7 @@
 // cusparseCreateConstDnVec: CUDA API:
 // cusparseCreateConstDnVec-NEXT:   cusparseConstDnVecDescr_t desc;
 // cusparseCreateConstDnVec-NEXT:   cusparseCreateConstDnVec(&desc /*cusparseConstDnVecDescr_t **/,
-// cusparseCreateConstDnVec-NEXT:                            size /*int64_t*/, value /*void **/,
+// cusparseCreateConstDnVec-NEXT:                            size /*int64_t*/, value /*const void **/,
 // cusparseCreateConstDnVec-NEXT:                            value_type /*cudaDataType*/);
 // cusparseCreateConstDnVec-NEXT: Is migrated to:
 // cusparseCreateConstDnVec-NEXT:   std::shared_ptr<dpct::sparse::dense_vector_desc> desc;

@@ -233,24 +233,20 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetMatDiagType | FileCheck %s -check-prefix=cusparseGetMatDiagType
 // cusparseGetMatDiagType: CUDA API:
-// cusparseGetMatDiagType-NEXT:   cusparseDiagType_t diag =
-// cusparseGetMatDiagType-NEXT:       cusparseGetMatDiagType(desc /*const cusparseMatDescr_t*/);
+// cusparseGetMatDiagType-NEXT:   cusparseDiagType_t diag = cusparseGetMatDiagType(desc /*cusparseMatDescr_t*/);
 // cusparseGetMatDiagType-NEXT: Is migrated to:
-// cusparseGetMatDiagType-NEXT:   oneapi::mkl::diag diag =
-// cusparseGetMatDiagType-NEXT:       desc->get_diag();
+// cusparseGetMatDiagType-NEXT:   oneapi::mkl::diag diag = desc->get_diag();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetMatFillMode | FileCheck %s -check-prefix=cusparseGetMatFillMode
 // cusparseGetMatFillMode: CUDA API:
-// cusparseGetMatFillMode-NEXT:   cusparseFillMode_t uplo =
-// cusparseGetMatFillMode-NEXT:       cusparseGetMatFillMode(desc /*const cusparseMatDescr_t*/);
+// cusparseGetMatFillMode-NEXT:   cusparseFillMode_t uplo = cusparseGetMatFillMode(desc /*cusparseMatDescr_t*/);
 // cusparseGetMatFillMode-NEXT: Is migrated to:
-// cusparseGetMatFillMode-NEXT:   oneapi::mkl::uplo uplo =
-// cusparseGetMatFillMode-NEXT:       desc->get_uplo();
+// cusparseGetMatFillMode-NEXT:   oneapi::mkl::uplo uplo = desc->get_uplo();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetMatIndexBase | FileCheck %s -check-prefix=cusparseGetMatIndexBase
 // cusparseGetMatIndexBase: CUDA API:
 // cusparseGetMatIndexBase-NEXT:   cusparseIndexBase_t base =
-// cusparseGetMatIndexBase-NEXT:       cusparseGetMatIndexBase(desc /*const cusparseMatDescr_t*/);
+// cusparseGetMatIndexBase-NEXT:       cusparseGetMatIndexBase(desc /*cusparseMatDescr_t*/);
 // cusparseGetMatIndexBase-NEXT: Is migrated to:
 // cusparseGetMatIndexBase-NEXT:   oneapi::mkl::index_base base =
 // cusparseGetMatIndexBase-NEXT:       desc->get_index_base();
@@ -258,22 +254,21 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetMatType | FileCheck %s -check-prefix=cusparseGetMatType
 // cusparseGetMatType: CUDA API:
 // cusparseGetMatType-NEXT:   cusparseMatrixType_t mat_type =
-// cusparseGetMatType-NEXT:       cusparseGetMatType(desc /*const cusparseMatDescr_t*/);
+// cusparseGetMatType-NEXT:       cusparseGetMatType(desc /*cusparseMatDescr_t*/);
 // cusparseGetMatType-NEXT: Is migrated to:
 // cusparseGetMatType-NEXT:   dpct::sparse::matrix_info::matrix_type mat_type =
 // cusparseGetMatType-NEXT:       desc->get_matrix_type();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetPointerMode | FileCheck %s -check-prefix=cusparseGetPointerMode
 // cusparseGetPointerMode: CUDA API:
-// cusparseGetPointerMode-NEXT:   cusparsePointerMode_t mode;
-// cusparseGetPointerMode-NEXT:   cusparseGetPointerMode(handle /*cusparseHandle_t*/, &mode);
-// cusparseGetPointerMode-NEXT: Is migrated to:
-// cusparseGetPointerMode-NEXT:   int mode;
+// cusparseGetPointerMode-NEXT:   cusparseGetPointerMode(handle /*cusparseHandle_t*/,
+// cusparseGetPointerMode-NEXT:                          mode /*cusparsePointerMode_t **/);
+// cusparseGetPointerMode-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetStream | FileCheck %s -check-prefix=cusparseGetStream
 // cusparseGetStream: CUDA API:
 // cusparseGetStream-NEXT:   cudaStream_t s;
-// cusparseGetStream-NEXT:   cusparseGetStream(handle /*cusparseHandle_t*/, &s);
+// cusparseGetStream-NEXT:   cusparseGetStream(handle /*cusparseHandle_t*/, &s /*cudaStream_t **/);
 // cusparseGetStream-NEXT: Is migrated to:
 // cusparseGetStream-NEXT:   dpct::queue_ptr s;
 // cusparseGetStream-NEXT:   s = handle;
@@ -339,14 +334,14 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMatGetValues | FileCheck %s -check-prefix=cusparseSpMatGetValues
 // cusparseSpMatGetValues: CUDA API:
 // cusparseSpMatGetValues-NEXT:   void *value;
-// cusparseSpMatGetValues-NEXT:   cusparseSpMatGetValues(desc /*cusparseSpMatDescr_t*/, &value /*void **/);
+// cusparseSpMatGetValues-NEXT:   cusparseSpMatGetValues(desc /*cusparseSpMatDescr_t*/, &value /*void ***/);
 // cusparseSpMatGetValues-NEXT: Is migrated to:
 // cusparseSpMatGetValues-NEXT:   void *value;
 // cusparseSpMatGetValues-NEXT:   desc->get_value(&value);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMatSetValues | FileCheck %s -check-prefix=cusparseSpMatSetValues
 // cusparseSpMatSetValues: CUDA API:
-// cusparseSpMatSetValues-NEXT:   cusparseSpMatSetValues(desc /*cusparseSpMatDescr_t*/, value /*void */);
+// cusparseSpMatSetValues-NEXT:   cusparseSpMatSetValues(desc /*cusparseSpMatDescr_t*/, value /*void **/);
 // cusparseSpMatSetValues-NEXT: Is migrated to:
 // cusparseSpMatSetValues-NEXT:   desc->set_value(value);
 
@@ -448,8 +443,8 @@
 // cusparseCsrGet-NEXT:   cudaDataType value_type;
 // cusparseCsrGet-NEXT:   cusparseCsrGet(
 // cusparseCsrGet-NEXT:       desc /*cusparseSpMatDescr_t*/, &rows /*int64_t **/, &cols /*int64_t **/,
-// cusparseCsrGet-NEXT:       &nnz /*int64_t **/, &row_ptr /*void **/, &col_ind /*void **/,
-// cusparseCsrGet-NEXT:       &value /*void **/, &row_ptr_type /*cusparseIndexType_t **/,
+// cusparseCsrGet-NEXT:       &nnz /*int64_t **/, &row_ptr /*void ***/, &col_ind /*void ***/,
+// cusparseCsrGet-NEXT:       &value /*void ***/, &row_ptr_type /*cusparseIndexType_t **/,
 // cusparseCsrGet-NEXT:       &col_ind_type /*cusparseIndexType_t **/, &base /*cusparseIndexBase_t **/,
 // cusparseCsrGet-NEXT:       &value_type /*cudaDataType **/);
 // cusparseCsrGet-NEXT: Is migrated to:

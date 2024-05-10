@@ -4,7 +4,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCreateCsrsv2Info | FileCheck %s -check-prefix=cusparseCreateCsrsv2Info
 // cusparseCreateCsrsv2Info: CUDA API:
 // cusparseCreateCsrsv2Info-NEXT:   csrsv2Info_t info;
-// cusparseCreateCsrsv2Info-NEXT:   cusparseCreateCsrsv2Info(&info /*csrsv2Info_t**/);
+// cusparseCreateCsrsv2Info-NEXT:   cusparseCreateCsrsv2Info(&info /*csrsv2Info_t **/);
 // cusparseCreateCsrsv2Info-NEXT: Is migrated to:
 // cusparseCreateCsrsv2Info-NEXT:   std::shared_ptr<dpct::sparse::optimize_info> info;
 // cusparseCreateCsrsv2Info-NEXT:   info = std::make_shared<dpct::sparse::optimize_info>();
@@ -20,7 +20,7 @@
 // cusparseScsrsv2_bufferSizeExt-NEXT:   size_t buffer_size;
 // cusparseScsrsv2_bufferSizeExt-NEXT:   cusparseScsrsv2_bufferSizeExt(
 // cusparseScsrsv2_bufferSizeExt-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseScsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*float **/,
+// cusparseScsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*float **/,
 // cusparseScsrsv2_bufferSizeExt-NEXT:       row_ptr /*const int **/, con_ind /*const int **/, info /*csrsv2Info_t*/,
 // cusparseScsrsv2_bufferSizeExt-NEXT:       &buffer_size /*size_t **/);
 // cusparseScsrsv2_bufferSizeExt-NEXT: Is migrated to:
@@ -32,7 +32,7 @@
 // cusparseDcsrsv2_bufferSizeExt-NEXT:   size_t buffer_size;
 // cusparseDcsrsv2_bufferSizeExt-NEXT:   cusparseDcsrsv2_bufferSizeExt(
 // cusparseDcsrsv2_bufferSizeExt-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseDcsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*double **/,
+// cusparseDcsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*double **/,
 // cusparseDcsrsv2_bufferSizeExt-NEXT:       row_ptr /*const int **/, con_ind /*const int **/, info /*csrsv2Info_t*/,
 // cusparseDcsrsv2_bufferSizeExt-NEXT:       &buffer_size /*size_t **/);
 // cusparseDcsrsv2_bufferSizeExt-NEXT: Is migrated to:
@@ -44,7 +44,7 @@
 // cusparseCcsrsv2_bufferSizeExt-NEXT:   size_t buffer_size;
 // cusparseCcsrsv2_bufferSizeExt-NEXT:   cusparseCcsrsv2_bufferSizeExt(
 // cusparseCcsrsv2_bufferSizeExt-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseCcsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*cuComplex **/,
+// cusparseCcsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*cuComplex **/,
 // cusparseCcsrsv2_bufferSizeExt-NEXT:       row_ptr /*const int **/, con_ind /*const int **/, info /*csrsv2Info_t*/,
 // cusparseCcsrsv2_bufferSizeExt-NEXT:       &buffer_size /*size_t **/);
 // cusparseCcsrsv2_bufferSizeExt-NEXT: Is migrated to:
@@ -56,9 +56,8 @@
 // cusparseZcsrsv2_bufferSizeExt-NEXT:   size_t buffer_size;
 // cusparseZcsrsv2_bufferSizeExt-NEXT:   cusparseZcsrsv2_bufferSizeExt(
 // cusparseZcsrsv2_bufferSizeExt-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseZcsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/,
-// cusparseZcsrsv2_bufferSizeExt-NEXT:       value /*cuDoubleComplex **/, row_ptr /*const int **/,
-// cusparseZcsrsv2_bufferSizeExt-NEXT:       con_ind /*const int **/, info /*csrsv2Info_t*/,
+// cusparseZcsrsv2_bufferSizeExt-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*cuDoubleComplex **/,
+// cusparseZcsrsv2_bufferSizeExt-NEXT:       row_ptr /*const int **/, con_ind /*const int **/, info /*csrsv2Info_t*/,
 // cusparseZcsrsv2_bufferSizeExt-NEXT:       &buffer_size /*size_t **/);
 // cusparseZcsrsv2_bufferSizeExt-NEXT: Is migrated to:
 // cusparseZcsrsv2_bufferSizeExt-NEXT:   size_t buffer_size;
@@ -70,7 +69,7 @@
 // cusparseCsrmvEx-NEXT:       handle /*cusparseHandle_t*/, algo /*cusparseAlgMode_t*/,
 // cusparseCsrmvEx-NEXT:       trans /*cusparseOperation_t*/, m /*int*/, n /*int*/, nnz /*int*/,
 // cusparseCsrmvEx-NEXT:       alpha /*const void **/, alpha_type /*cudaDataType*/,
-// cusparseCsrmvEx-NEXT:       desc /*const cusparseMatDescr_t*/, value /*const void **/,
+// cusparseCsrmvEx-NEXT:       desc /*cusparseMatDescr_t*/, value /*const void **/,
 // cusparseCsrmvEx-NEXT:       value_type /*cudaDataType*/, row_ptr /*const int **/,
 // cusparseCsrmvEx-NEXT:       col_idx /*const int **/, x /*const void **/, x_type /*cudaDataType*/,
 // cusparseCsrmvEx-NEXT:       beta /*const void **/, beta_type /*cudaDataType*/, y /*void **/,
@@ -85,7 +84,7 @@
 // cusparseCsrmvEx_bufferSize-NEXT:       handle /*cusparseHandle_t*/, algo /*cusparseAlgMode_t*/,
 // cusparseCsrmvEx_bufferSize-NEXT:       trans /*cusparseOperation_t*/, m /*int*/, n /*int*/, nnz /*int*/,
 // cusparseCsrmvEx_bufferSize-NEXT:       alpha /*const void **/, alpha_type /*cudaDataType*/,
-// cusparseCsrmvEx_bufferSize-NEXT:       desc /*const cusparseMatDescr_t*/, value /*const void **/,
+// cusparseCsrmvEx_bufferSize-NEXT:       desc /*cusparseMatDescr_t*/, value /*const void **/,
 // cusparseCsrmvEx_bufferSize-NEXT:       value_type /*cudaDataType*/, row_ptr /*const int **/,
 // cusparseCsrmvEx_bufferSize-NEXT:       col_idx /*const int **/, x /*const void **/, x_type /*cudaDataType*/,
 // cusparseCsrmvEx_bufferSize-NEXT:       beta /*const void **/, beta_type /*cudaDataType*/, y /*void **/,
@@ -100,7 +99,7 @@
 // cusparseScsrsv2_bufferSize-NEXT:   int buffer_size_in_bytes;
 // cusparseScsrsv2_bufferSize-NEXT:   cusparseScsrsv2_bufferSize(
 // cusparseScsrsv2_bufferSize-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseScsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*float **/,
+// cusparseScsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*float **/,
 // cusparseScsrsv2_bufferSize-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseScsrsv2_bufferSize-NEXT:       &buffer_size_in_bytes /*int **/);
 // cusparseScsrsv2_bufferSize-NEXT: Is migrated to:
@@ -112,7 +111,7 @@
 // cusparseDcsrsv2_bufferSize-NEXT:   int buffer_size_in_bytes;
 // cusparseDcsrsv2_bufferSize-NEXT:   cusparseDcsrsv2_bufferSize(
 // cusparseDcsrsv2_bufferSize-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseDcsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*double **/,
+// cusparseDcsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*double **/,
 // cusparseDcsrsv2_bufferSize-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseDcsrsv2_bufferSize-NEXT:       &buffer_size_in_bytes /*int **/);
 // cusparseDcsrsv2_bufferSize-NEXT: Is migrated to:
@@ -124,7 +123,7 @@
 // cusparseCcsrsv2_bufferSize-NEXT:   int buffer_size_in_bytes;
 // cusparseCcsrsv2_bufferSize-NEXT:   cusparseCcsrsv2_bufferSize(
 // cusparseCcsrsv2_bufferSize-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseCcsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*cuComplex **/,
+// cusparseCcsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*cuComplex **/,
 // cusparseCcsrsv2_bufferSize-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseCcsrsv2_bufferSize-NEXT:       &buffer_size_in_bytes /*int **/);
 // cusparseCcsrsv2_bufferSize-NEXT: Is migrated to:
@@ -136,9 +135,8 @@
 // cusparseZcsrsv2_bufferSize-NEXT:   int buffer_size_in_bytes;
 // cusparseZcsrsv2_bufferSize-NEXT:   cusparseZcsrsv2_bufferSize(
 // cusparseZcsrsv2_bufferSize-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseZcsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/,
-// cusparseZcsrsv2_bufferSize-NEXT:       value /*cuDoubleComplex **/, row_ptr /*const int **/,
-// cusparseZcsrsv2_bufferSize-NEXT:       col_idx /*const int **/, info /*csrsv2Info_t*/,
+// cusparseZcsrsv2_bufferSize-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*cuDoubleComplex **/,
+// cusparseZcsrsv2_bufferSize-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseZcsrsv2_bufferSize-NEXT:       &buffer_size_in_bytes /*int **/);
 // cusparseZcsrsv2_bufferSize-NEXT: Is migrated to:
 // cusparseZcsrsv2_bufferSize-NEXT:   int buffer_size_in_bytes;
@@ -148,7 +146,7 @@
 // cusparseScsrsv2_analysis: CUDA API:
 // cusparseScsrsv2_analysis-NEXT:   cusparseScsrsv2_analysis(
 // cusparseScsrsv2_analysis-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseScsrsv2_analysis-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*const float **/,
+// cusparseScsrsv2_analysis-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*const float **/,
 // cusparseScsrsv2_analysis-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseScsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseScsrsv2_analysis-NEXT: Is migrated to:
@@ -158,7 +156,7 @@
 // cusparseDcsrsv2_analysis: CUDA API:
 // cusparseDcsrsv2_analysis-NEXT:   cusparseDcsrsv2_analysis(
 // cusparseDcsrsv2_analysis-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseDcsrsv2_analysis-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/, value /*const double **/,
+// cusparseDcsrsv2_analysis-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*const double **/,
 // cusparseDcsrsv2_analysis-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseDcsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseDcsrsv2_analysis-NEXT: Is migrated to:
@@ -166,12 +164,11 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCcsrsv2_analysis | FileCheck %s -check-prefix=cusparseCcsrsv2_analysis
 // cusparseCcsrsv2_analysis: CUDA API:
-// cusparseCcsrsv2_analysis-NEXT:   cusparseCcsrsv2_analysis(handle /*cusparseHandle_t*/,
-// cusparseCcsrsv2_analysis-NEXT:                            trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseCcsrsv2_analysis-NEXT:                            nnz /*int*/, desc /*const cusparseMatDescr_t*/,
-// cusparseCcsrsv2_analysis-NEXT:                            value /*const cuComplex **/, row_ptr /*const int **/,
-// cusparseCcsrsv2_analysis-NEXT:                            col_idx /*const int **/, info /*csrsv2Info_t*/,
-// cusparseCcsrsv2_analysis-NEXT:                            policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
+// cusparseCcsrsv2_analysis-NEXT:   cusparseCcsrsv2_analysis(
+// cusparseCcsrsv2_analysis-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
+// cusparseCcsrsv2_analysis-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/, value /*const cuComplex **/,
+// cusparseCcsrsv2_analysis-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
+// cusparseCcsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseCcsrsv2_analysis-NEXT: Is migrated to:
 // cusparseCcsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(*handle, trans, m, desc, value, row_ptr, col_idx, info);
 
@@ -179,7 +176,7 @@
 // cusparseZcsrsv2_analysis: CUDA API:
 // cusparseZcsrsv2_analysis-NEXT:   cusparseZcsrsv2_analysis(
 // cusparseZcsrsv2_analysis-NEXT:       handle /*cusparseHandle_t*/, trans /*cusparseOperation_t*/, m /*int*/,
-// cusparseZcsrsv2_analysis-NEXT:       nnz /*int*/, desc /*const cusparseMatDescr_t*/,
+// cusparseZcsrsv2_analysis-NEXT:       nnz /*int*/, desc /*cusparseMatDescr_t*/,
 // cusparseZcsrsv2_analysis-NEXT:       value /*const cuDoubleComplex **/, row_ptr /*const int **/,
 // cusparseZcsrsv2_analysis-NEXT:       col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseZcsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
