@@ -35,7 +35,7 @@
 // cublasZherkx-NEXT:                lda /*int*/, b /*const cuDoubleComplex **/, ldb /*int*/,
 // cublasZherkx-NEXT:                beta /*const double **/, c /*cuDoubleComplex **/, ldc /*int*/);
 // cublasZherkx-NEXT: Is migrated to:
-// cublasZherkx-NEXT:   dpct::herk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasZherkx-NEXT:   dpct::blas::herk(handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasChbmv | FileCheck %s -check-prefix=cublasChbmv
 // cublasChbmv: CUDA API:
@@ -52,7 +52,11 @@
 // cublasSrotm-NEXT:   cublasSrotm(handle /*cublasHandle_t*/, n /*int*/, x /*float **/, incx /*int*/,
 // cublasSrotm-NEXT:               y /*float **/, incy /*int*/, param /*const float **/);
 // cublasSrotm-NEXT: Is migrated to:
-// cublasSrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, const_cast<float*>(param));
+// cublasSrotm-NEXT:   [&]() {
+// cublasSrotm-NEXT:   dpct::blas::wrapper_float_in res_wrapper_ct6(handle->get_queue(), param, 5);
+// cublasSrotm-NEXT:   oneapi::mkl::blas::column_major::rotm(handle->get_queue(), n, x, incx, y, incy, res_wrapper_ct6.get_ptr());
+// cublasSrotm-NEXT:   return 0;
+// cublasSrotm-NEXT:   }();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCher | FileCheck %s -check-prefix=cublasCher
 // cublasCher: CUDA API:
@@ -98,7 +102,7 @@
 // cublasSetMatrixAsync-NEXT:                        a /*const void **/, lda /*int*/, b /*void **/,
 // cublasSetMatrixAsync-NEXT:                        ldb /*int*/, stream /*cudaStream_t*/);
 // cublasSetMatrixAsync-NEXT: Is migrated to:
-// cublasSetMatrixAsync-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
+// cublasSetMatrixAsync-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSaxpy | FileCheck %s -check-prefix=cublasSaxpy
 // cublasSaxpy: CUDA API:
@@ -169,7 +173,7 @@
 // cublasCgemmEx-NEXT:                 btype /*cudaDataType*/, ldb /*int*/, beta /*const cuComplex **/,
 // cublasCgemmEx-NEXT:                 c /*void **/, ctype /*cudaDataType*/, ldc /*int*/);
 // cublasCgemmEx-NEXT: Is migrated to:
-// cublasCgemmEx-NEXT:   dpct::gemm(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, dpct::library_data_t::complex_float);
+// cublasCgemmEx-NEXT:   dpct::blas::gemm(handle, transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, dpct::library_data_t::complex_float);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasIsamax | FileCheck %s -check-prefix=cublasIsamax
 // cublasIsamax: CUDA API:
@@ -187,7 +191,7 @@
 // cublasGetMatrix-NEXT:   cublasGetMatrix(rows /*int*/, cols /*int*/, elementsize /*int*/,
 // cublasGetMatrix-NEXT:                   a /*const void **/, lda /*int*/, b /*void **/, ldb /*int*/);
 // cublasGetMatrix-NEXT: Is migrated to:
-// cublasGetMatrix-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize);
+// cublasGetMatrix-NEXT:   dpct::blas::matrix_mem_copy(b, a, ldb, lda, rows, cols, elementsize);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgeam | FileCheck %s -check-prefix=cublasZgeam
 // cublasZgeam: CUDA API:
@@ -218,7 +222,7 @@
 // cublasZsyrkx-NEXT:                beta /*const cuDoubleComplex **/, c /*cuDoubleComplex **/,
 // cublasZsyrkx-NEXT:                ldc /*int*/);
 // cublasZsyrkx-NEXT: Is migrated to:
-// cublasZsyrkx-NEXT:   dpct::syrk(handle->get_queue(), upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+// cublasZsyrkx-NEXT:   dpct::blas::syrk(handle, upper_lower, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZsyr2 | FileCheck %s -check-prefix=cublasZsyr2
 // cublasZsyr2: CUDA API:

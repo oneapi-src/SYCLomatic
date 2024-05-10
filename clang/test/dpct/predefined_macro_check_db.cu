@@ -16,7 +16,7 @@
 // RUN: cd ..
 // RUN: rm -rf ./predefined_macro_check_db
 
-// CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
+// CHECK: #ifdef SYCL_LANGUAGE_VERSION
 #ifdef __NVCC__
 void fun() {}
 #else

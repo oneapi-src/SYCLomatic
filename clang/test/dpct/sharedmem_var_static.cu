@@ -112,6 +112,20 @@ void testTemplate() {
   templateReverse<T><<<1, n>>>(d_d, n);
 }
 
+// CHECK: void deviceFunc(int *sharedData) {
+// CHECK: }
+__device__ void deviceFunc() {
+  __shared__ int sharedData[64];
+}
+
+// CHECK: void globalFunc(int *sharedData) {
+// CHECK:   deviceFunc(sharedData);
+// CHECK: }
+__global__ void globalFunc() {
+  __shared__ int sharedData[64];
+  deviceFunc();
+}
+
 int main(void) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
@@ -192,6 +206,8 @@ int main(void) {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
+
+  globalFunc<<<1, 1>>>();
 }
 
 #define SIZE S * 2

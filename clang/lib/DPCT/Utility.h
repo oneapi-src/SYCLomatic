@@ -68,6 +68,7 @@ enum class FFTTypeEnum;
 class DeviceFunctionInfo;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
+class MigrationRule;
 } // namespace dpct
 
 namespace tooling {
@@ -414,6 +415,7 @@ bool isSameSizeofTypeWithTypeStr(const clang::Expr *E,
 bool isInReturnStmt(const clang::Expr *E,
                     clang::SourceLocation &OuterInsertLoc);
 std::string getHashStrFromLoc(clang::SourceLocation Loc);
+std::string getStrFromLoc(clang::SourceLocation Loc);
 const clang::FunctionDecl *getFunctionDecl(const clang::Stmt *S);
 const clang::CXXRecordDecl *getParentRecordDecl(const clang::ValueDecl *DD);
 bool IsTypeChangedToPointer(const clang::DeclRefExpr *DRE);
@@ -461,6 +463,7 @@ const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
 bool checkPointerInStructRecursively(const clang::RecordDecl *);
 clang::RecordDecl *getRecordDecl(clang::QualType QT);
+std::string getRecordTypeStr(const CXXRecordDecl *RD);
 clang::SourceLocation
 getImmSpellingLocRecursive(const clang::SourceLocation Loc);
 clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
@@ -563,6 +566,11 @@ bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getNameSpace(const NamespaceDecl *NSD);
+std::string getInitForDeviceGlobal(const VarDecl *VD);
+void getNameSpace(const NamespaceDecl *NSD,
+                  std::vector<std::string> &Namespaces);
+std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
+                                        const clang::ASTContext &Ctx);
 bool isFromCUDA(const Decl *D);
 namespace clang {
 namespace dpct {
@@ -630,6 +638,8 @@ matchTargetDREInScope(const clang::VarDecl *TargetDecl,
 int isArgumentInitialized(
     const clang::Expr *Arg,
     std::vector<const clang::VarDecl *> &DeclsRequireInit);
+const DeclRefExpr *getAddressedRef(const Expr *E);
+bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

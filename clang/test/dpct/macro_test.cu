@@ -1305,6 +1305,39 @@ template<typename T>void foo37(const T* t){}
 #define FOO37(T)  template void foo37(const T* t)
 //CHECK: FOO37(sycl::half);
 FOO37(half);
+
+#define CHECK_2(E)                                               \
+  do {                                                           \
+    cudaError_t __err = E;                                       \
+    if (__err != cudaSuccess) {                                  \
+      throw std::runtime_error("");                              \
+    }                                                            \
+  } while (0)
+
+#define CHECK_1(E) CHECK_2(E)
+
+template <class T>
+static __global__ void kernel38() {}
+
+template <class T>
+void foo38() {
+  void* args[] = {};
+  int block;
+  int x;
+  int y;
+  int z;
+  int shared;
+  cudaStream_t stream;
+  //     CHECK:stream->parallel_for(
+  //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(z, y, x) * sycl::range<3>(1, 1, block),
+  //CHECK-NEXT:                      sycl::range<3>(1, 1, block)),
+  //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:      ((void *)&kernel38<T>)();
+  //CHECK-NEXT:    });
+  //CHECK-NEXT:CHECK_1(0);
+  CHECK_1(cudaLaunchKernel((void*)&kernel38<T>, dim3(x, y, z), block, args, shared, stream));
+}
+#undef CHECK_1
+#undef CHECK_2
+
 #endif
-
-

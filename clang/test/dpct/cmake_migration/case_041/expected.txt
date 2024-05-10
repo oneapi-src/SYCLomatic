@@ -1,0 +1,11 @@
+target_link_directories(CUDA::toolkit INTERFACE "${SYCLToolkit_LIBRARY_DIR}")
+
+target_link_directories( CUDA::toolkit INTERFACE "${SYCLToolkit_LIBRARY_DIR}")
+
+target_link_directories( CUDA::toolkit INTERFACE "${SYCLToolkit_LIBRARY_DIR}" )
+
+target_link_options(quda PUBLIC )
+
+target_link_options( quda PUBLIC )
+
+target_link_options(quda PUBLIC  )

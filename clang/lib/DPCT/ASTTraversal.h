@@ -116,46 +116,10 @@ class MigrationRule : public ASTTraversal {
 
 protected:
   TransformSetTy *TransformSet = nullptr;
-  /// Add \a TM to the set of transformations.
-  ///
-  /// The ownership of the TM is transferred to the TransformSet.
-  void emplaceTransformation(TextModification *TM);
 
   inline static unsigned incPairID() { return ++PairID; }
 
   const CompilerInstance &getCompilerInstance();
-
-  // Emits a warning/error/note and/or comment depending on MsgID. For details
-  // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
-  template <typename IDTy, typename... Ts>
-  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    return DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, TransformSet, UseTextBegin,
-        std::forward<Ts>(Vals)...);
-  }
-  // Extend version of report()
-  // Pass Stmt to process macro more precisely.
-  // The location should be consistent with the result of
-  // ReplaceStmt::getReplacement
-  template <typename IDTy, typename... Ts>
-  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    SourceLocation Begin(S->getBeginLoc());
-    if (Begin.isMacroID() && !isOuterMostMacro(S)) {
-      if (SM.isMacroArgExpansion(Begin)) {
-        Begin =
-            SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
-      } else {
-        Begin = SM.getSpellingLoc(Begin);
-      }
-    } else {
-      Begin = SM.getExpansionLoc(Begin);
-    }
-
-    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, TransformSet,
-                                          UseTextBegin,
-                                          std::forward<Ts>(Vals)...);
-  }
 
   // Get node from match result map. And also check if the node's host file is
   // in the InRoot path and if the node has been processed by the same rule.
@@ -209,6 +173,42 @@ public:
 
   void print(llvm::raw_ostream &OS);
   void printStatistics(llvm::raw_ostream &OS);
+
+  /// Add \a TM to the set of transformations.
+  ///
+  /// The ownership of the TM is transferred to the TransformSet.
+  void emplaceTransformation(TextModification *TM);
+
+  // Emits a warning/error/note and/or comment depending on MsgID. For details
+  // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
+  template <typename IDTy, typename... Ts>
+  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    return DiagnosticsUtils::report<IDTy, Ts...>(
+        SL, MsgID, TransformSet, UseTextBegin, std::forward<Ts>(Vals)...);
+  }
+
+  // Extend version of report()
+  // Pass Stmt to process macro more precisely.
+  // The location should be consistent with the result of
+  // ReplaceStmt::getReplacement
+  template <typename IDTy, typename... Ts>
+  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    SourceLocation Begin(S->getBeginLoc());
+    if (Begin.isMacroID() && !isOuterMostMacro(S)) {
+      if (SM.isMacroArgExpansion(Begin)) {
+        Begin =
+            SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+      } else {
+        Begin = SM.getSpellingLoc(Begin);
+      }
+    } else {
+      Begin = SM.getExpansionLoc(Begin);
+    }
+
+    DiagnosticsUtils::report<IDTy, Ts...>(
+        Begin, MsgID, TransformSet, UseTextBegin, std::forward<Ts>(Vals)...);
+  }
 };
 
 /// Migration rules with names
@@ -1274,7 +1274,7 @@ public:
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
   std::set<clang::SourceLocation> CodePinInstrumentation;
-  
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1295,6 +1295,12 @@ public:
 
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
 class MemVarAnalysisRule : public NamedMigrationRule<MemVarAnalysisRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class MemVarMigrationRule : public NamedMigrationRule<MemVarMigrationRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1513,24 +1519,20 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
                                       std::forward<RestNamesT>(Rest)...);
   }
 
-  const static MapNames::MapTy MemberNames;
+  const static MapNames::MapTy DirectReplMemberNames;
+  const static MapNames::MapTy GetSetReplMemberNames;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
-  const static MapNames::MapTy PitchMemberToSetter;
-  const static std::map<std::string, HelperFeatureEnum> PitchMemberToFeature;
-  const static MapNames::MapTy SizeOrPosToMember;
+  const static MapNames::MapTy ArrayDescMemberNames;
   const static std::vector<std::string> RemoveMember;
 
 public:
   void emplaceCuArrayDescDeclarations(const VarDecl *VD);
-  void emplaceMemcpy3DDeclarations(const VarDecl *VD, bool hasDirection);
-  static std::string getMemcpy3DArguments(StringRef BaseName,
-                                          bool hasDirection);
 
-  static std::string getMemberName(StringRef BaseName,
-                                   const std::string &Member) {
-    auto Itr = MemberNames.find(Member);
-    if (Itr != MemberNames.end()) {
+  static std::string getArrayDescMemberName(StringRef BaseName,
+                                            const std::string &Member) {
+    auto Itr = ArrayDescMemberNames.find(Member);
+    if (Itr != ArrayDescMemberNames.end()) {
       std::string ReplacedName;
       llvm::raw_string_ostream OS(ReplacedName);
       printParamName(OS, BaseName, Itr->second);
@@ -1538,13 +1540,6 @@ public:
     }
     return Member;
   }
-
-  static std::string getPitchMemberSetter(StringRef BaseName,
-                                          const std::string &Member,
-                                          const Expr *E);
-
-  static std::string getSizeOrPosMember(StringRef BaseName,
-                                        const std::string &Member);
 
   static bool isRemove(std::string Name) {
     return std::find(RemoveMember.begin(), RemoveMember.end(), Name) !=

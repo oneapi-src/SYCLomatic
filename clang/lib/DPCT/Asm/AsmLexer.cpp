@@ -195,6 +195,10 @@ LexNextToken:
     } else if (Char == '|') {
       ++CurPtr;
       Kind = asmtok::pipe;
+    } else if (isIdentifierContinue(Char)) {
+      // PTX allows % builtin-identifier.
+      Result.setFlag(InlineAsmToken::NeedsCleaning);
+      return lexIdentifierContinue(Result, CurPtr);
     } else {
       // error: unknown escaped characher.
       return false;

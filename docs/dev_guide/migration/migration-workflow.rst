@@ -135,11 +135,10 @@ with all subsequent manual SYCL changes, under revision control as well.
 Run Analysis Mode
 *****************
 
-You can use Analysis Mode [link to new analysis mode page] to generate a report
-before migration that will indicate how much of your code will be migrated, how
-much will be partially migrated, and an estimate of the manual effort needed to
-complete migration after you have run the tool. This can be helpful to estimate
-the work required for your migration.
+You can use :ref:`analysis_mode` to generate a report before migration that will
+indicate how much of your code will be migrated, how much will be partially migrated,
+and an estimate of the manual effort needed to complete migration after you have
+run the tool. This can be helpful to estimate the work required for your migration.
 
 Stage 2: Migrate Your Code
 --------------------------

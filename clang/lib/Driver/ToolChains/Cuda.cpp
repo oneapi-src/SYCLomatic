@@ -118,7 +118,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
     Version = CudaVersion::CUDA_122;
   } else if (Major == 12 && Minor == 3) {
     Version = CudaVersion::CUDA_123;
+  } else if (Major == 12 && Minor == 4) {
+    Version = CudaVersion::CUDA_124;
   }
+
 
   if (Version != CudaVersion::UNKNOWN) {
     IsVersionSupported = true;
@@ -178,6 +181,8 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_122;
   if (raw_version < 12040)
     return CudaVersion::CUDA_123;
+  if (raw_version < 12050)
+    return CudaVersion::CUDA_124;
   return CudaVersion::NEW;
 }
 
@@ -259,10 +264,28 @@ CudaInstallationDetector::CudaInstallationDetector(
 
   // In decreasing order so we prefer newer versions to older versions.
 #ifdef SYCLomatic_CUSTOMIZATION
-  std::initializer_list<const char *> Versions = {
-      "12.3", "12.2", "12.1", "12.0", "11.8", "11.7", "11.6",
-      "11.5", "11.4", "11.3", "11.2", "11.1", "10.2", "10.1",
-      "10.0", "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
+  std::initializer_list<const char *> Versions = {"12.4"
+                                                  "12.3",
+                                                  "12.2",
+                                                  "12.1",
+                                                  "12.0",
+                                                  "11.8",
+                                                  "11.7",
+                                                  "11.6",
+                                                  "11.5",
+                                                  "11.4",
+                                                  "11.3",
+                                                  "11.2",
+                                                  "11.1",
+                                                  "10.2",
+                                                  "10.1",
+                                                  "10.0",
+                                                  "9.2",
+                                                  "9.1",
+                                                  "9.0",
+                                                  "8.0",
+                                                  "7.5",
+                                                  "7.0"};
 #else
   std::initializer_list<const char *> Versions = {
       "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",
@@ -1015,10 +1038,12 @@ NVPTXToolChain::TranslateArgs(const llvm::opt::DerivedArgList &Args,
     if (!llvm::is_contained(*DAL, A))
       DAL->append(A);
 
-  // TODO: We should accept 'generic' as a valid architecture.
   if (!DAL->hasArg(options::OPT_march_EQ) && OffloadKind != Action::OFK_None) {
     DAL->AddJoinedArg(nullptr, Opts.getOption(options::OPT_march_EQ),
                       CudaArchToString(CudaArch::CudaDefault));
+  } else if (DAL->getLastArgValue(options::OPT_march_EQ) == "generic" &&
+             OffloadKind == Action::OFK_None) {
+    DAL->eraseArg(options::OPT_march_EQ);
   } else if (DAL->getLastArgValue(options::OPT_march_EQ) == "native") {
     auto GPUsOrErr = getSystemGPUArchs(Args);
     if (!GPUsOrErr) {

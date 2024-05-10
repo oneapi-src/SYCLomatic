@@ -566,6 +566,107 @@ private:
   uint8_t *_local_memory;
 };
 
+
+/// Load linear segment items into block format across threads
+/// Helper for Block Load
+enum load_algorithm {
+
+  BLOCK_LOAD_DIRECT,
+  BLOCK_LOAD_STRIPED,
+  // To-do: BLOCK_LOAD_WARP_TRANSPOSE
+
+};
+
+// loads a linear segment of workgroup items into a blocked arrangement.
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
+          typename Item>
+__dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
+                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range loading across
+  // workgroup items To-do: Decide whether range loading is required for group
+  // loading
+  size_t linear_tid = item.get_local_linear_id();
+  uint32_t workgroup_offset = linear_tid * ITEMS_PER_WORK_ITEM;
+#pragma unroll
+  for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    items[idx] = block_itr[workgroup_offset + idx];
+  }
+}
+
+// loads a linear segment of workgroup items into a striped arrangement.
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
+          typename Item>
+__dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
+                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range loading across
+  // workgroup items To-do: Decide whether range loading is required for group
+  // loading
+  size_t linear_tid = item.get_local_linear_id();
+  size_t group_work_items = item.get_local_range().size();
+#pragma unroll
+  for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    items[idx] = block_itr[linear_tid + (idx * group_work_items)];
+  }
+}
+
+// loads a linear segment of workgroup items into a subgroup striped
+// arrangement. Created as free function until exchange mechanism is
+// implemented.
+// To-do: inline this function with BLOCK_LOAD_WARP_TRANSPOSE mechanism
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
+          typename Item>
+__dpct_inline__ void
+uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
+                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range loading across
+  // workgroup items To-do: Decide whether range loading is required for group
+  // loading
+  // This implementation uses unintialized memory for loading linear segments
+  // into warp striped arrangement.
+  uint32_t subgroup_offset = item.get_sub_group().get_local_linear_id();
+  uint32_t subgroup_size = item.get_sub_group().get_local_linear_range();
+  uint32_t subgroup_idx = item.get_sub_group().get_group_linear_id();
+  uint32_t initial_offset =
+      (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset;
+
+   
+#pragma unroll
+  for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    new (&items[idx]) InputT(block_itr[initial_offset + (idx * subgroup_size)]);
+  }
+}
+// template parameters :
+// ITEMS_PER_WORK_ITEM: size_t variable controlling the number of items per
+// thread/work_item
+// ALGORITHM: load_algorithm variable controlling the type of load operation.
+// InputT: type for input sequence.
+// InputIteratorT:  input iterator type
+// Item : typename parameter resembling sycl::nd_item<3> .
+template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
+          typename InputIteratorT, typename Item>
+class workgroup_load {
+public:
+  static size_t get_local_memory_size(size_t group_work_items) { return 0; }
+  workgroup_load(uint8_t *local_memory) : _local_memory(local_memory) {}
+
+  __dpct_inline__ void load(const Item &item, InputIteratorT block_itr,
+                            InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+    if constexpr (ALGORITHM == BLOCK_LOAD_DIRECT) {
+      load_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
+    } else if constexpr (ALGORITHM == BLOCK_LOAD_STRIPED) {
+      load_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
+    }
+
+
+private:
+  uint8_t *_local_memory;
+};
+  
+
 /// Store blocked/warped or striped work items into linear segment of items.
 /// Helper for Block Store
 enum store_algorithm {
@@ -665,6 +766,7 @@ public:
   
 private:
   uint8_t *_local_memory;
+
 };
 
 /// Perform a reduction of the data elements assigned to all threads in the
