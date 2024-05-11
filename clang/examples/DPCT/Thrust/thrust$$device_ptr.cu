@@ -8,7 +8,7 @@
 void device_ptr_test() {
   const int N = 137;
   int val = 46;
-  
+
   // Start
   thrust::device_ptr<int> d_mem = thrust::device_malloc<int>(N);
   // End

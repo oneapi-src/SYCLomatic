@@ -277,18 +277,18 @@
 // reverse_copy-NEXT:  /*6*/  oneapi::dpl::reverse_copy(oneapi::dpl::execution::seq, data, data + N, result);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::minmax_element --extra-arg="-std=c++14"| FileCheck %s -check-prefix=minmax_element
-// minmax_element:  /*1*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
+// minmax_element:  /*1*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
 // minmax_element-NEXT:  /*2*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
-// minmax_element-NEXT:  /*3*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
-// minmax_element-NEXT:  /*4*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
-// minmax_element-NEXT:  /*5*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
-// minmax_element-NEXT:  /*6*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
-// minmax_element-NEXT:  /*7*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
-// minmax_element-NEXT:  /*8*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
-// minmax_element-NEXT:  /*9*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N);
-// minmax_element-NEXT:  /*10*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N);
-// minmax_element-NEXT:  /*11*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
-// minmax_element-NEXT:  /*12*/  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
+// minmax_element-NEXT:  /*3*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
+// minmax_element-NEXT:  /*4*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
+// minmax_element-NEXT:  /*5*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
+// minmax_element-NEXT:  /*6*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
+// minmax_element-NEXT:  /*7*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
+// minmax_element-NEXT:  /*8*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
+// minmax_element-NEXT:  /*9*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N);
+// minmax_element-NEXT:  /*10*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N);
+// minmax_element-NEXT:  /*11*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N, compare_key_value());
+// minmax_element-NEXT:  /*12*/ oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N, compare_key_value());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::unique_by_key --extra-arg="-std=c++14"| FileCheck %s -check-prefix=unique_by_key
 // unique_by_key:  /*1*/ dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());

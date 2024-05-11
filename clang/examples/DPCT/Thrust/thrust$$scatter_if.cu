@@ -58,13 +58,21 @@ void scatter_if() {
   /*2*/ thrust::scatter_if(V, V + 8, M, S, D);
   /*3*/ thrust::scatter_if(thrust::host, V, V + 8, M, S, D, pred);
   /*4*/ thrust::scatter_if(V, V + 8, M, S, D, pred);
-  /*5*/  thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
-  /*6*/  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
-  /*7*/  thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
-  /*8*/  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
-  /*9*/  thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
-  /*10*/  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
-  /*11*/  thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
-  /*12*/  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+  /*5*/ thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(),
+                           d_S.begin(), d_D.begin());
+  /*6*/ thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(),
+                           d_D.begin());
+  /*7*/ thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(),
+                           d_S.begin(), d_D.begin(), pred);
+  /*8*/ thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(),
+                           d_D.begin(), pred);
+  /*9*/ thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(),
+                           h_S.begin(), h_D.begin());
+  /*10*/ thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(),
+                            h_D.begin());
+  /*11*/ thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(),
+                            h_S.begin(), h_D.begin(), pred);
+  /*12*/ thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(),
+                            h_D.begin(), pred);
   // End
 }

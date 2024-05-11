@@ -30,13 +30,8 @@
 #include <thrust/partition.h>
 #include <thrust/scatter.h>
 
-struct is_even
-{
-  __host__ __device__
-  bool operator()(const int &x)
-  {
-    return (x % 2) == 0;
-  }
+struct is_even {
+  __host__ __device__ bool operator()(const int &x) { return (x % 2) == 0; }
 };
 
 void partition_copy_test() {
