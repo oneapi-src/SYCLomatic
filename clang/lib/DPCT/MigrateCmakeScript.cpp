@@ -667,7 +667,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
 static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot) {
   for (const auto &ScriptFile : CmakeScriptFilesSet) {
-    printf("ScriptFile [%s]\n", ScriptFile.getPath().str().c_str());
     if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile))
       continue;
   }
