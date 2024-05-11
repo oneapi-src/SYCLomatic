@@ -91,6 +91,8 @@ int main() {
   cudaMallocArray(&pArr, &desc, 1, 0.1);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::mipmap, l);
   cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
+  // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, sycl::range<3>(), sycl::ext::oneapi::experimental::image_type::mipmap, 2);
+  cudaMallocMipmappedArray(&pMipMapArr, &desc, cudaExtent(), 2);
   // CHECK: pArr = pMipMapArr->get_mip_level(0);
   cudaGetMipmappedArrayLevel(&pArr, pMipMapArr, 0);
   // CHECK: desc = pArr->get_channel();
