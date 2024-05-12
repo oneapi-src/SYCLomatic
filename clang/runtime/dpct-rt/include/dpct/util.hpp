@@ -622,7 +622,7 @@ inline int get_sycl_language_version() {
 // Returns the SYCL event status for the SYCL command.
 /// \param [in] event_ptr A pointer points to the SYCL event
 /// \returns The execution result for the SYCL command
-inline dpct::err0 sycl_event_query(sycl::event *event_ptr) {
+inline int sycl_event_query(sycl::event *event_ptr) {
   if (event_ptr->get_info<sycl::info::event::command_execution_status>() ==
       sycl::info::event_command_status::complete) {
     // The SYCL command has finished running on the SYCL device.
