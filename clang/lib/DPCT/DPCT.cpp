@@ -112,7 +112,7 @@ const char *const CtHelpHint =
     "\n";
 
 const char *const CmakeScriptMigrationHelpHint =
-    "Warning: CMakeLists.txt is not found, please specify \"-gen-build-scripts\" to generated Makefile.dpct instead.";
+    "Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.";
 
 
 static extrahelp CommonHelp(CtHelpMessage);
