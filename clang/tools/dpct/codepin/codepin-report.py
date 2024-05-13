@@ -11,6 +11,7 @@ import os
 import sys
 from collections.abc import Container
 import math
+from argparse import RawTextHelpFormatter
 
 UUID = "ID"
 CHECKPOINT = "CheckPoint"
@@ -340,7 +341,9 @@ def main():
     dismatch_checkpoint_num = 0
     checkpoint_size = 0
     parser = argparse.ArgumentParser(
-        description="CodePin report tool of the compatibility tool.\n", add_help=False
+        description="CodePin report tool of the compatibility tool.\n",
+        add_help=False,
+        formatter_class=RawTextHelpFormatter,
     )
     parser.add_argument(
         "-h",
@@ -368,12 +371,14 @@ def main():
         required=False,
         help="Specify the relative and absolute tolerance epsilon JSON file for floating point data comparison. The JSON file contains the key-value pairs, the key is a specific float type, value is the corresponding epsilon. For example: \n"
         "{\n"
-        '    "rel_tol": 1e-3,\n'
-        '    "bf16_abs_tol": 7.81e-3,\n'
-        '    "fp16_abs_tol": 9.77e-4,\n'
-        '    "float_abs_tol": 1.19e-7,\n'
-        '    "double_abs_tol": 2.22e-16,\n'
-        "}\n",
+        '\v "rel_tol": 1e-3,               # relative tolerance for all float types, range 0 <= rel_tol <= 1.0.\n'
+        '\v "bf16_abs_tol": 7.81e-3,       # absolute tolerance for bfloat16 type.\n'
+        '\v "fp16_abs_tol": 9.77e-4,       # absolute tolerance for float16 type.\n'
+        '\v "float_abs_tol": 1.19e-7,      # absolute tolerance for float type.\n'
+        '\v "double_abs_tol": 2.22e-16,    # absolute tolerance for double type.\n'
+        "}\n When both rel_tol (relative tolerance) and abs_tol (absolute tolerance) are provided, both tolerances are taken into account.\n"
+        "The tolerance value will be passed to the Python math.isclose function.\n"
+        "If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol is 0, then rel_tol is used. If both tolerances are 0, the floating point values must be exactly the same for the comparison to return true.",
     )
 
     args = parser.parse_args()
