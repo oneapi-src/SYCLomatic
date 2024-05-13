@@ -2883,15 +2883,19 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
   // Begin           End
   auto GetFunctionSourceRange = [&](const SourceManager &SM,
                                     const SourceLocation &StartLoc,
-                                    const SourceLocation &EndLoc) {
+                                    SourceLocation EndLoc) {
     const std::pair<FileID, unsigned> StartLocInfo =
         SM.getDecomposedExpansionLoc(StartLoc);
-    llvm::StringRef Buffer(SM.getCharacterData(EndLoc));
-    const std::string Str = std::string(";}");
-    size_t Offset = Buffer.find_first_of(Str);
-    assert(Offset != llvm::StringRef::npos);
+    // Set the EndLoc to the end of token. If the first token after the EndLoc
+    // is ';', then set after the ';'.
+    EndLoc = Lexer::getLocForEndOfToken(EndLoc, 0, SM,
+                                        Result.Context->getLangOpts());
+    const auto Tok = Lexer::findNextToken(EndLoc, SM, LangOptions()).value();
+    if (Tok.is(tok::TokenKind::semi)) {
+      EndLoc = Tok.getEndLoc();
+    }
     const std::pair<FileID, unsigned> EndLocInfo =
-        SM.getDecomposedExpansionLoc(EndLoc.getLocWithOffset(Offset + 1));
+        SM.getDecomposedExpansionLoc(EndLoc);
     assert(StartLocInfo.first == EndLocInfo.first);
 
     return SourceRange(
@@ -3469,65 +3473,9 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
   auto *EC = cast<EnumConstantDecl>(DE->getDecl());
   std::string Repl = toString(EC->getInitVal(), 10);
 
-  // If the cudaErrorNotReady is one operand of binary operator "==" or "!=",
-  // and the other operand is the function call "cudaEventQuery", and the whole
-  // binary is in the condition of if/while/for/do/switch,
-  // then cudaErrorNotReady will be migrated to "0" while "==" will be migrated
-  // to "!=".
-  if (EC->getDeclName().getAsString() == "cudaErrorNotReady" &&
-      isConditionOfFlowControl(DE, true)) {
-    auto &Context = dpct::DpctGlobalInfo::getContext();
-    auto ParentNodes = Context.getParents(*DE);
-    DynTypedNode ParentNode;
-    bool MatchFunction = false;
-    const BinaryOperator *BO = nullptr;
-    while (!ParentNodes.empty()) {
-      ParentNode = ParentNodes[0];
-      BO = ParentNode.get<BinaryOperator>();
-      if (BO && (BO->getOpcode() == BinaryOperatorKind::BO_EQ ||
-                 BO->getOpcode() == BinaryOperatorKind::BO_NE)) {
-        auto LHSCall = dyn_cast<CallExpr>(BO->getLHS()->IgnoreImpCasts());
-        auto RHSCall = dyn_cast<CallExpr>(BO->getRHS()->IgnoreImpCasts());
-
-        if ((LHSCall && LHSCall->getDirectCallee() &&
-             (LHSCall->getDirectCallee()
-                      ->getNameInfo()
-                      .getName()
-                      .getAsString() == "cudaEventQuery" ||
-              LHSCall->getDirectCallee()
-                      ->getNameInfo()
-                      .getName()
-                      .getAsString() == "cuEventQuery")) ||
-            (RHSCall && RHSCall->getDirectCallee() &&
-             (RHSCall->getDirectCallee()
-                      ->getNameInfo()
-                      .getName()
-                      .getAsString() == "cudaEventQuery" ||
-              RHSCall->getDirectCallee()
-                      ->getNameInfo()
-                      .getName()
-                      .getAsString() == "cuEventQuery"))) {
-          MatchFunction = true;
-          auto *Call = LHSCall ? LHSCall : RHSCall;
-          emplaceTransformation(new InsertBeforeStmt(Call, "(int)"));
-          break;
-        }
-      }
-      ParentNodes = Context.getParents(ParentNode);
-    }
-
-    if (MatchFunction) {
-      Repl = "0";
-      std::string OperatorRepl;
-      if (BO->getOpcode() == BinaryOperatorKind::BO_EQ)
-        OperatorRepl = "!=";
-      else
-        OperatorRepl = "==";
-      emplaceTransformation(
-          new ReplaceToken(DpctGlobalInfo::getSourceManager().getSpellingLoc(
-                               BO->getOperatorLoc()),
-                           std::move(OperatorRepl)));
-    }
+  if (EC->getDeclName().getAsString() == "cudaErrorNotReady") {
+    emplaceTransformation(new ReplaceStmt(DE, "1"));
+    return;
   }
 
   emplaceTransformation(new ReplaceStmt(DE, Repl));
@@ -7079,11 +7027,8 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    ExprAnalysis EA(CE->getArg(0));
-    std::string ReplStr = EA.getReplacedString() + "->get_info<" +
-                          MapNames::getClNamespace() +
-                          "info::event::command_execution_status>()";
-    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+    std::string ReplStr = MapNames::getDpctNamespace() + "sycl_event_query";
+    emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplStr)));
   } else if (FuncName == "cudaEventRecord" || FuncName == "cuEventRecord") {
     handleEventRecord(CE, Result, IsAssigned);
   } else if (FuncName == "cudaEventElapsedTime" ||
@@ -10448,7 +10393,8 @@ void MemoryMigrationRule::arrayMigration(
       auto Begin = getArgEndLocation(C, EndPos - 2, SM),
            End = getArgEndLocation(C, EndPos, SM);
       llvm::raw_string_ostream OS(Str);
-      OS << ", " << MapNames::getDpctNamespace() << "automatic";
+      if (!DpctGlobalInfo::useExtBindlessImages())
+        OS << ", " << MapNames::getDpctNamespace() << "automatic";
       OS << ", ";
       DerefExpr(StreamExpr, C).print(OS);
       emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
@@ -10465,20 +10411,7 @@ void MemoryMigrationRule::arrayMigration(
 
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", "
-         << ExprAnalysis::ref(C->getArg(7)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -10488,19 +10421,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpy2DFromArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       aggregatePitchedData(C, 0, 1, SM);
       insertZeroOffset(C, 2);
@@ -10510,19 +10431,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpy2DToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -10532,19 +10441,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpyArrayToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", "
-         << ExprAnalysis::ref(C->getArg(5)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(6)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -10554,17 +10451,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpyFromArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       aggregatePitchedData(C, 0, 4, SM, true);
       insertZeroOffset(C, 1);
@@ -10574,17 +10461,7 @@ void MemoryMigrationRule::arrayMigration(
     }
   } else if (NameRef == "cudaMemcpyToArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      OS << ReplaceStr << "(" << ExprAnalysis::ref(C->getArg(3)) << ", "
-         << ExprAnalysis::ref(C->getArg(0)) << ", "
-         << ExprAnalysis::ref(C->getArg(1)) << ", "
-         << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(4)) << ", ";
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      OS << "{{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, Replacement));
+      emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
     } else {
       insertToPitchedData(C, 0);
       aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
@@ -13278,7 +13155,7 @@ bool TextureRule::tryMerge(const MemberExpr *ME, const Expr *BO) {
 void TextureRule::replaceTextureMember(const MemberExpr *ME,
                                        ASTContext &Context, SourceManager &SM) {
   auto AssignedBO = getParentAsAssignedBO(ME, Context);
-  if (tryMerge(ME, AssignedBO))
+  if (!DpctGlobalInfo::useExtBindlessImages() && tryMerge(ME, AssignedBO))
     return;
 
   auto Field = ME->getMemberNameInfo().getAsString();
