@@ -20,11 +20,15 @@ void reverse_copy() {
   int result[N];
 
   // Start
-  /*1*/  thrust::reverse_copy(thrust::device, device_data.begin(), device_data.end(), device_result.begin());
-  /*2*/  thrust::reverse_copy(thrust::host, host_data.begin(), host_data.end(), host_result.begin());
-  /*3*/  thrust::reverse_copy(thrust::host, data, data + N, result);
-  /*4*/  thrust::reverse_copy(device_data.begin(), device_data.end(), device_result.begin());
-  /*5*/  thrust::reverse_copy(host_data.begin(), host_data.end(), host_result.begin());
-  /*6*/  thrust::reverse_copy(data, data + N, result);
+  /*1*/ thrust::reverse_copy(thrust::device, device_data.begin(),
+                             device_data.end(), device_result.begin());
+  /*2*/ thrust::reverse_copy(thrust::host, host_data.begin(), host_data.end(),
+                             host_result.begin());
+  /*3*/ thrust::reverse_copy(thrust::host, data, data + N, result);
+  /*4*/ thrust::reverse_copy(device_data.begin(), device_data.end(),
+                             device_result.begin());
+  /*5*/ thrust::reverse_copy(host_data.begin(), host_data.end(),
+                             host_result.begin());
+  /*6*/ thrust::reverse_copy(data, data + N, result);
   // End
 }

@@ -16,6 +16,7 @@ void unique_count() {
   thrust::host_vector<int> h_A(A, A + N);
   thrust::device_vector<int> d_A(A, A + N);
 
+  // clang-format off
   // Start
   /*1*/ count = thrust::unique_count(thrust::host, A, A + N, thrust::equal_to<int>());
   /*2*/ count = thrust::unique_count(A, A + N, thrust::equal_to<int>());
@@ -36,4 +37,5 @@ void unique_count() {
   /*11*/ count = thrust::unique_count(h_A.begin(), h_A.begin() + N);
   /*12*/ count = thrust::unique_count(d_A.begin(), d_A.begin() + N);
   // End
+  // clang-format on
 }
