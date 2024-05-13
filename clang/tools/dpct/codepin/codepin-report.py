@@ -27,10 +27,10 @@ EPSILON_FILE = ""
 # Reference: https://en.wikipedia.org/wiki/Machine_epsilon
 # bfloat16 reference: https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
 default_epsilons = {
-    "bf16_abs_rel": 7.81e-03,  # 2^-7
-    "fp16_abs_rel": 9.77e-04,  # 2^-10
-    "float_abs_rel": 1.19e-07,  # 2^-23
-    "double_abs_rel": 2.22e-16,  # 2^-52
+    "bf16_abs_tol": 7.81e-03,  # 2^-7
+    "fp16_abs_tol": 9.77e-04,  # 2^-10
+    "float_abs_tol": 1.19e-07,  # 2^-23
+    "double_abs_tol": 2.22e-16,  # 2^-52
     "rel_tol": 1e-3,
 }
 
@@ -118,9 +118,9 @@ def compare_float_value(data1, data2, type):
                 epsilons = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             epsilons = default_epsilons
-    if type not in epsilons:
-        raise comparison_error(f" type '{type}' is not supported yet.")
     abs_type = type + "_abs_tol"
+    if abs_type not in epsilons:
+        raise comparison_error(f" type '{type}' is not supported yet.")
     abs_tol = epsilons[abs_type]
     rel_tol = epsilons["rel_tol"]
     if not abs_tol:
