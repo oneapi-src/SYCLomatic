@@ -1160,8 +1160,10 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
     ExprAnalysis InEA(InData);
     bool IsPartialReduce = false;
     unsigned ValidItemParamIdx = 0;
-    if (FuncName == "Reduce" && NumArgs == 2) {
+    if (FuncName == "Reduce") {
       OpRepl = getOpRepl(FuncArgs[1]);
+      IsPartialReduce = NumArgs == 3;
+      ValidItemParamIdx = 2;
     } else if (FuncName == "Sum") {
       OpRepl = getOpRepl(nullptr);
       IsPartialReduce = NumArgs == 2;
