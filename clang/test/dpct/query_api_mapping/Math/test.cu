@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Double Precision Intrinsics
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dadd_rd | FileCheck %s -check-prefix=__DADD_RD
