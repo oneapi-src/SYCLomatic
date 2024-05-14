@@ -25,6 +25,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+#include "clang/AST/TypeLoc.h"
 
 extern clang::tooling::UnifiedPath DpctInstallPath;
 namespace clang {
@@ -1189,6 +1190,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     RewriteType(TyName, TL);
     break;
   }
+  case TypeLoc::SubstTemplateTypeParm:
+    TYPELOC_CAST(SubstTemplateTypeParmTypeLoc).getType()->getAs<SubstTemplateTypeParmType>()->getAssociatedDecl();
+    if (auto T = TYPELOC_CAST(SubstTemplateTypeParmTypeLoc).getType()->getAs<SubstTemplateTypeParmType>())
+      return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE, T->getIndex());
+    break;
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,

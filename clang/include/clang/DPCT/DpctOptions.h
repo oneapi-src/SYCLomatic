@@ -82,7 +82,7 @@ protected:
                  std::initializer_list<DpctActionKind>);
 
 public:
-  ~DpctOptionBase() = default;
+  virtual ~DpctOptionBase() = default;
   static void init();
   static void check();
 };

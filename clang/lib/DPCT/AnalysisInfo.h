@@ -21,6 +21,7 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
+#include <memory>
 #include <optional>
 #include <unordered_set>
 #include <vector>
@@ -2141,14 +2142,15 @@ private:
 
 class TempStorageVarInfo {
   unsigned Offset;
-  std::string Type;
   std::string Name;
+  std::shared_ptr<CtTypeInfo> Type;
 public:
-  TempStorageVarInfo(unsigned Off, StringRef Type, StringRef Name)
-      : Offset(Off), Type(Type.str()), Name(Name.str()) {}
+  TempStorageVarInfo(unsigned Off, StringRef Name, std::shared_ptr<CtTypeInfo> T)
+      : Offset(Off), Name(Name.str()), Type(T)  {}
   const std::string &getName() const { return Name; }
   unsigned getOffset() const { return Offset; }
   void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;
+  void applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
   ParameterStream &getFuncDecl(ParameterStream &PS);
   ParameterStream &getFuncArg(ParameterStream &PS);
   ParameterStream &getKernelArg(ParameterStream &PS);
@@ -2225,8 +2227,17 @@ public:
   unsigned int getHeadNodeDim() const;
 
 private:
-  static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
-                    const std::vector<TemplateArgumentInfo> &TemplateArgs);
+  template <class VarT>
+  static void merge(GlobalMap<VarT> &Master, const GlobalMap<VarT> &Branch,
+                    const std::vector<TemplateArgumentInfo> &TemplateArgs) {
+    if (TemplateArgs.empty())
+      return dpct::merge(Master, Branch);
+    for (auto &VarInfoPair : Branch)
+      Master
+          .insert(std::make_pair(VarInfoPair.first,
+                                 std::make_shared<VarT>(*VarInfoPair.second)))
+          .first->second->applyTemplateArguments(TemplateArgs);
+  }
   int calculateExtraArgsSize(const MemVarInfoMap &Map) const;
 
   template <CallOrDecl COD>

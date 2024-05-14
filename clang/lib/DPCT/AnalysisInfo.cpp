@@ -3493,8 +3493,12 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
   llvm::raw_string_ostream OS(Accessor);
   OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
      << "_acc(" << MapNames::getClNamespace() << "range(" << LocalSize
-     << ".size() * sizeof(" << Type << ")), cgh);";
+     << ".size() * sizeof(" << Type->getBaseName() << ")), cgh);";
   AccessorList.emplace_back(Accessor);
+}
+void TempStorageVarInfo::applyTemplateArguments(
+    const std::vector<TemplateArgumentInfo> &TAList) {
+  Type = Type->applyTemplateArguments(TAList);
 }
 ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
   return PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> "
@@ -3712,8 +3716,8 @@ void MemVarMap::merge(const MemVarMap &VarMap,
   merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
   merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
   merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
+  merge(TempStorageMap, VarMap.TempStorageMap, TemplateArgs);
   dpct::merge(TextureMap, VarMap.TextureMap);
-  dpct::merge(TempStorageMap, VarMap.TempStorageMap);
 }
 int MemVarMap::calculateExtraArgsSize() const {
   int Size = 0;
@@ -3913,16 +3917,6 @@ unsigned int MemVarMap::getHeadNodeDim() const {
     return Ptr->Dim;
   else
     return 3;
-}
-void MemVarMap::merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
-                      const std::vector<TemplateArgumentInfo> &TemplateArgs) {
-  if (TemplateArgs.empty())
-    return dpct::merge(Master, Branch);
-  for (auto &VarInfoPair : Branch)
-    Master
-        .insert(std::make_pair(VarInfoPair.first, std::make_shared<MemVarInfo>(
-                                                      *VarInfoPair.second)))
-        .first->second->applyTemplateArguments(TemplateArgs);
 }
 int MemVarMap::calculateExtraArgsSize(const MemVarInfoMap &Map) const {
   int Size = 0;
