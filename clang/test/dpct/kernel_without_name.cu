@@ -284,7 +284,7 @@ template <typename T> struct kernel_type_t {
 };
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1125:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT: DPCT1125:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the definition location of the type.
 // CHECK-NEXT: */
 // CHECK-NEXT: template <typename T> 
 // CHECK-NEXT: void foo_device7(int a,
@@ -299,7 +299,7 @@ void foo_device7(int a,
 }
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1125:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the type definition location.
+// CHECK-NEXT: DPCT1125:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the definition location of the type.
 // CHECK-NEXT: */
 // CHECK-NEXT: template <typename T> 
 // CHECK-NEXT: void foo_kernel7(int a,
@@ -316,7 +316,7 @@ template <typename T>
 void run_foo8() {
   // CHECK: int i;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1126:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function "foo_device7". You may need to adjust the type definition location.
+  // CHECK-NEXT: DPCT1126:{{[0-9]+}}: The type "Tk" defined in function "foo_device7" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function "foo_device7". You may need to adjust the definition location of the type.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
