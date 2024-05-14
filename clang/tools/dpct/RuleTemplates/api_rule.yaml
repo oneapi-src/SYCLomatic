@@ -1,0 +1,15 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/rule_templates.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/rule_templates/api_rule.yaml
+---
+- Rule: rule_foo_to_goo
+  Kind: API
+  Priority: Takeover
+  In: foo
+  Out: $type_name_of  (  $ 2   ) *aaa = goo($deref ($1), ($deref_type($1))$addr_of($1), $queue, $context, $device)
+  Includes: ["ccc.h"]
