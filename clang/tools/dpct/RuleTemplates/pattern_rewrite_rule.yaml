@@ -1,0 +1,45 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/rule_templates.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/rule_templates/pattern_rewrite_rule.yaml
+---
+- Rule: rule_post
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: my_max(${args});                   # search my_max in the migrated SYCL code and replace it with my_min
+  Out: my_min(${args});                  # the args of my_max will be cached as ${args}
+  Includes: []
+  Subrules:
+    args:                                # replace all "a" with "b" in ${args}
+      In: a
+      Out: b
+
+# Following are the original CUDA source code and the migrated SYCL source code before/after applying the above rule.
+# example.cu:
+# ---------------------------------
+# int my_max(int a, int b) {
+#   return 0;
+# }
+# void foo() {
+#   int a, b;
+#   my_max(a, b);
+# }
+# ---------------------------------
+#
+# example.dp.cpp:
+# ---------------------------------
+# int my_max(int a, int b) {
+#   return 0;
+# }
+# void foo() {
+#   int a, b;
+#   my_min(b, b);
+# }
+# ---------------------------------
+
+# For detail definition of the key/value pairs of a migration rule please reference:
+# https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2023-0/user-defined-migration-rules.html

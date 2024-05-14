@@ -1,0 +1,67 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/rule_templates.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/rule_templates/class_rule.yaml
+---
+- Rule: rule_classA
+  Kind: Class
+  Priority: Takeover
+  In: ClassA                      # migrate type name classA to classB
+  Out: ClassB
+  Includes: []
+  Fields:
+    - In: fieldA                  # migrate class field reference to getter and setter
+      OutGetter: get_b
+      OutSetter: set_b
+    - In: fieldC                  # migrate class field reference to another field
+      Out: fieldD
+
+# Following are the original CUDA source code and the migrated SYCL source code before/after applying the above rule.
+# example.cu:
+# ---------------------------------
+# class ClassA{
+# public:
+#     int fieldA;
+#     int fieldC;
+# };
+# class ClassB{
+# public:
+#     int fieldB;
+# };
+
+# void foo(){
+#     ClassA a;
+#     a.fieldC = 3;
+#     a.fieldA = 3;
+#     int k = a.fieldA;
+# }
+# ---------------------------------
+#
+# example.dp.cpp:
+# ---------------------------------
+# #include <sycl/sycl.hpp>
+# #include <dpct/dpct.hpp>
+# class ClassA {
+# public:
+#     int fieldA;
+#     int fieldC;
+# };
+# class ClassB{
+# public:
+#     int fieldB;
+# };
+
+# void foo(){
+#     ClassB a;
+#     a.fieldD = 3;
+#     a.set_b(3);
+#     int k = a.get_b();
+# }
+# ---------------------------------
+
+# For detail definition of the key/value pairs of a migration rule please reference:
+# https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2023-0/user-defined-migration-rules.html

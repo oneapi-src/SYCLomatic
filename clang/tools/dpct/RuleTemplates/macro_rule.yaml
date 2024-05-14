@@ -5,40 +5,29 @@
 # This file will be installed to folder:
 # {dpct_install_folder}/extensions/rule_templates.
 # The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/rule_templates/api_rule.yaml
+# --rule-file={dpct_install_folder}/extensions/rule_templates/macro_rule.yaml
 ---
-- Rule: rule_foo_to_goo
-  Kind: API
+- Rule: rule_force_inline
+  Kind: Macro
   Priority: Takeover
-  In: foo
-  Out: $type_name_of($2) a = goo($deref($1), ($deref_type($1))$addr_of($1), $queue, $context, $device)
-  Includes: ["ccc.h"]
+  In: __forceinline__
+  Out: inline
+  Includes: ["aaa.h", "\"bbb.h\""]
 
 # Following are the original CUDA source code and the migrated SYCL source code before/after applying the above rule.
 # example.cu:
 # ---------------------------------
-# void foo(int *i, int2 j){}
-# int main(){
-#   int *ptr;
-#   int2 b;
-#   foo(ptr, b);
-# }
+# __forceinline__ __global__ void foo(){}
 # ---------------------------------
 #
 # example.dp.cpp:
 # ---------------------------------
 # #include <sycl/sycl.hpp>
 # #include <dpct/dpct.hpp>
-# #include "ccc.h"
-# void foo(int *i, sycl::int2 j) {}
-# int main(){
-#   int *ptr;
-#   sycl::int2 b;
-#   sycl::int2 a = goo(*ptr, (int)&(ptr), dpct::get_in_order_queue(),
-#                      dpct::get_default_context(), dpct::get_current_device());
-# }
+# #include "aaa.h"
+# #include "bbb.h"
+# inline void foo(){}
 # ---------------------------------
 
-# For detail definition of the key/value pairs of a migration rule and the detailed usage of keywords
-# like "$2", "$deref_type($1)", please reference:
+# For detail definition of the key/value pairs of a migration rule please reference:
 # https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2023-0/user-defined-migration-rules.html
