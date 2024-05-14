@@ -1256,7 +1256,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
         if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
           auto LocInfo = DpctGlobalInfo::getLocInfo(TempStorage);
           auto TypeInfo = std::make_shared<CtTypeInfo>(DataTypeLoc);
-          
+
           FuncInfo->getVarMap().addCUBTempStorage(
               std::make_shared<TempStorageVarInfo>(
                   LocInfo.second, TempStorage->getName(), TypeInfo));

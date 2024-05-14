@@ -72,30 +72,30 @@ __global__ void reduce_kernel_dependent1(T *da) {
 
 template <class T, int N, int THREAD_PRE_BLOCK>
 void test() {
-    T *ha = (float *)malloc(N * sizeof(T));
-    T *da;
-    cudaMalloc(&da, N * sizeof(T));
+  T *ha = (float *)malloc(N * sizeof(T));
+  T *da;
+  cudaMalloc(&da, N * sizeof(T));
 
-    for (int i = 0; i < N; i++) {
-      ha[i] = i * 1.0f;
-    }
+  for (int i = 0; i < N; i++) {
+    ha[i] = i * 1.0f;
+  }
 
-    cudaMemcpy(da, ha, N * sizeof(T), cudaMemcpyHostToDevice);
-    // CHECK: void test()
-    // CHECK: q_ct1.submit(
-    // CHECK:   [&](sycl::handler &cgh) {
-    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(T)), cgh);
-    // CHECK:     cgh.parallel_for(
-    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
-    // CHECK:       [=](sycl::nd_item<3> item_ct1) {
-    // CHECK:         reduce_kernel_dependent1<T, 32>(da, item_ct1, temp_storage_acc);
-    // CHECK:       });
-    // CHECK:   });
-    reduce_kernel_dependent1<T, 32><<<1, 32>>>(da);
-    cudaMemcpy(ha, da, 1 * sizeof(T), cudaMemcpyDeviceToHost);
-    std::cout << ha[0] << std::endl;
-    cudaFree(da);
-    free(ha);
+  cudaMemcpy(da, ha, N * sizeof(T), cudaMemcpyHostToDevice);
+  // CHECK: void test()
+  // CHECK: q_ct1.submit(
+  // CHECK:   [&](sycl::handler &cgh) {
+  // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(T)), cgh);
+  // CHECK:     cgh.parallel_for(
+  // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+  // CHECK:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK:         reduce_kernel_dependent1<T, 32>(da, item_ct1, temp_storage_acc);
+  // CHECK:       });
+  // CHECK:   });
+  reduce_kernel_dependent1<T, 32><<<1, 32>>>(da);
+  cudaMemcpy(ha, da, 1 * sizeof(T), cudaMemcpyDeviceToHost);
+  std::cout << ha[0] << std::endl;
+  cudaFree(da);
+  free(ha);
 }
 
 int main() {
@@ -115,7 +115,7 @@ int main() {
     // CHECK:   [&](sycl::handler &cgh) {
     // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size(float) * sizeof(float)), cgh);
     // CHECK:     cgh.parallel_for(
-    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
+    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK:         reduce_kernel(da, item_ct1, temp_storage_acc);
     // CHECK:       });
@@ -126,7 +126,7 @@ int main() {
     // CHECK:   [&](sycl::handler &cgh) {
     // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size(float) * sizeof(float)), cgh);
     // CHECK:     cgh.parallel_for(
-    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
+    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK:         reduce_kernel1(da, item_ct1, temp_storage_acc);
     // CHECK:       });
@@ -137,7 +137,7 @@ int main() {
     // CHECK:   [&](sycl::handler &cgh) {
     // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size(float) * sizeof(T)), cgh);
     // CHECK:     cgh.parallel_for(
-    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
+    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK:         reduce_kernel_dependent<float, 32>(da, item_ct1, temp_storage_acc);
     // CHECK:       });
@@ -148,7 +148,7 @@ int main() {
     // CHECK:   [&](sycl::handler &cgh) {
     // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size(float) * sizeof(T)), cgh);
     // CHECK:     cgh.parallel_for(
-    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
+    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK:         reduce_kernel_dependent1<float, 32>(da, item_ct1, temp_storage_acc);
     // CHECK:       });
@@ -160,7 +160,7 @@ int main() {
     free(ha);
   }
 
-   {
+  {
     int *ha = (int *)malloc(N * sizeof(int));
     int *da;
     cudaMalloc(&da, N * sizeof(int));
@@ -174,7 +174,7 @@ int main() {
     // CHECK:   [&](sycl::handler &cgh) {
     // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size(int) * sizeof(T)), cgh);
     // CHECK:     cgh.parallel_for(
-    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
+    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK:         reduce_kernel_dependent<int, 32>(da, item_ct1, temp_storage_acc);
     // CHECK:       });
@@ -185,7 +185,7 @@ int main() {
     // CHECK:   [&](sycl::handler &cgh) {
     // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size(int) * sizeof(T)), cgh);
     // CHECK:     cgh.parallel_for(
-    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
+    // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK:         reduce_kernel_dependent1<int, 32>(da, item_ct1, temp_storage_acc);
     // CHECK:       });

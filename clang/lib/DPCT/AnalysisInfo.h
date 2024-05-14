@@ -2144,9 +2144,11 @@ class TempStorageVarInfo {
   unsigned Offset;
   std::string Name;
   std::shared_ptr<CtTypeInfo> Type;
+
 public:
-  TempStorageVarInfo(unsigned Off, StringRef Name, std::shared_ptr<CtTypeInfo> T)
-      : Offset(Off), Name(Name.str()), Type(T)  {}
+  TempStorageVarInfo(unsigned Off, StringRef Name,
+                     std::shared_ptr<CtTypeInfo> T)
+      : Offset(Off), Name(Name.str()), Type(T) {}
   const std::string &getName() const { return Name; }
   unsigned getOffset() const { return Offset; }
   void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;
