@@ -341,7 +341,7 @@ def main():
     dismatch_checkpoint_num = 0
     checkpoint_size = 0
     parser = argparse.ArgumentParser(
-        description="CodePin report utility script of the compatibility tool.\n",
+        description="CodePin report functionality of the compatibility tool.\n",
         add_help=False,
         formatter_class=RawTextHelpFormatter,
     )
