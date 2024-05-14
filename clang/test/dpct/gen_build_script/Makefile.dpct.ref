@@ -1,6 +1,6 @@
 // CHECK:CC := icpx
 // CHECK:LD := $(CC)
-// CHECK:#DPCT2001:0: You can link with more library by add them here.
+// CHECK:#DPCT2001:0: You can link with more libraries by adding them here.
 // CHECK:LIB := 
 // CHECK:FLAGS := 
 // CHECK:ifeq ($(shell which $(CC)),)
