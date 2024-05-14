@@ -87,68 +87,31 @@ You can optionally provide file paths for source files that should be migrated.
 The paths can be found in the compilation database. The following examples show
 ways to specify a file or directory for migration.
 
-* Prepare for Migration
+* Migrate a single source file:
 
-Generate a compilation database of the project files used to guide migration
   .. code-block::
 
-  $ dpct --intercept-build make
-  $ dpct --intercept-build --parse-build-log <logfile>
+     dpct source.cpp
 
-Estimate the migration efforts to complete a migration
+* Migrate all files available in the compilation database:
+
   .. code-block::
 
-  $ dpct --analysis-mode source.cu --analysis-mode-output-file
+     dpct -p=<path to the location of compilation database file>
 
-* Migrate your code
+* Migrate one file in the compilation database:
 
-Migrate a single source file
-    .. code-block::
+  .. code-block::
 
-    $ dpct source.cu
-    $ dpct --keep-original-code source.cu                           # Keep original code
-    $ dpct --cuda-include-path=/path/to/cuda/include source.cu      # Specify the path to CUDA headers
-    $ dpct --extra-arg="-std=c++11" source.cu                       # With extra options
-    $ dpct --extra-arg="-I /path/to/extra/include" source.cu        # With additional app args
-    $ dpct -p=/path/to/compilation-database source.cu               # With compilation database
-    $ dpct --gen-build-script source.cu                             # Migrate src code and generate Makefile script
+     dpct -p=<path to the location of compilation database file> source.cpp
 
-Migrate an entire project
-    .. code-block::
+* Migrate source files in the directory specified by the ``--in-root`` option and
+  place generated files in the directory specified by the ``--out-root`` option:
 
-    $ dpct -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project     # With compilation database
-    $ dpct --process-all --in-root=/path/to/project --out-root=/path/to/migrated-project                        # Without compilation database
-    $ dpct -vcxprojfile=/path/to/vcproject/file --in-root=/path/to/project --out-root=/path/to/migrated-project # With VS project file
-    $ dpct -in-root=/path/to/project --in-root-exclude=/path/to/project/dir1                                    # Exclude migration of a dir or file
+  .. code-block::
 
-Migrate/generate build scripts for migrated SYCL code
-    .. code-block::
+     dpct --in-root=foo --out-root=bar
 
-    $ dpct --migrate-build-script=cmake -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project        # Migrate src code and CMake scripts
-    $ dpct --migrate-build-script-only -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project         # Migrate build script only
-    $ dpct --gen-build-script -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project                  # Migrate src code and generate Makefile script
-
-* Utils to assist migration
-
-Query functionally compatible SYCL API for a CUDA API
-    .. code-block::
-
-    $ dpct --query-api-mapping=cudaMalloc
-
-Generate instrumented CUDA and SYCL code for debugging
-    .. code-block::
-
-    $ dpct --enable-codepin source.cu
-
-Generate helper function files in the out-root directory
-    .. code-block::
-
-    $ dpct --gen-helper-function
-
-Display the folder of helper function files
-    .. code-block::
-
-    $ dpct --helper-function-dir
 
 Understand Emitted Warnings
 ---------------------------
