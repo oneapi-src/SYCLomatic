@@ -341,7 +341,7 @@ def main():
     dismatch_checkpoint_num = 0
     checkpoint_size = 0
     parser = argparse.ArgumentParser(
-        description="CodePin report tool of the compatibility tool.\n",
+        description="CodePin report utility script of the compatibility tool.\n",
         add_help=False,
         formatter_class=RawTextHelpFormatter,
     )
@@ -369,7 +369,7 @@ def main():
         "--floating-point-comparison-epsilon",
         metavar="<file path>",
         required=False,
-        help="Specify the relative and absolute tolerance epsilon JSON file for floating point data comparison. The JSON file contains the key-value pairs, the key is a specific float type, value is the corresponding epsilon. For example: \n"
+        help="Specify the relative and absolute tolerance epsilon JSON file for floating point data comparison. The JSON file contains the key-value pairs, where the key is a specific float type, and the value is the corresponding epsilon. For example:\n"
         "{\n"
         '\v "rel_tol": 1e-3,               # relative tolerance for all float types, it is a ratio value in the range [0 , 1].\n'
         '\v "bf16_abs_tol": 7.81e-3,       # absolute tolerance for bfloat16 type.\n'
