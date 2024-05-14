@@ -20,7 +20,7 @@ Detailed Help
 Since SYCL\* 2020 does not support calling a function pointer in a device function (SYCL 2020 Spec,
 5.4. Language restrictions for device functions), the user needs to adjust the code to directly call the
 function pointed by that function pointer. Furthermore, the tool cannot do the analysis well for the
-arguments, and the dimension of sycl::nd_item if option --assume-nd-range-dim=1 is used during migration,
+dimension of sycl::nd_item (if option --assume-nd-range-dim=1 is used during migration) and the arguments,
 so the user may also need to adjust the related code.
 
 Suggestions to Fix

@@ -1,24 +1,25 @@
-.. _DPCT1122:
+.. _DPCT1127:
 
-DPCT1122
+DPCT1127
 ========
 
 Message
 -------
 
-.. _msg-1122-start:
+.. _msg-1127-start:
 
-'*<original type>*' is migrated to '*<migrated type>*' in the template declaration; it may cause
-template function or class redefinition; please adjust the code.
+The constant compile-time initialization for device_global is supported when compiling with C++20.
+You may need to adjust the compile commands.
 
-.. _msg-1122-end:
+.. _msg-1127-end:
 
 Detailed Help
 -------------
 
-SYCL\* vector types like sycl::long4 are defined by 'using <type><elems> = vec<<storage-type>, <elems>>'
-in SYCL2020 Vector types section 4.12.2, but sycl::longlong4 is not defined. In the migration, both
-'long4' and 'longlong4' are migrated to sycl::long4, this may cause template function or class redefinition.
+The device_global extension introduces device scoped memory allocations into SYCL\* that can be
+accessed within a kernel, using syntax similar to C++ global variables. Constant compile-time
+initialization for device_global is supported when compiling with C++20.
+Ref: https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_device_global.asciidoc.
 
 Suggestions to Fix
 ------------------
@@ -28,32 +29,31 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-   template <typename T> struct C { T a; };
-   template <> struct C<longlong4> { longlong4 a; };
-   template <> struct C<long4> { long4 a; };
+   // test.cu
+   __constant__ int var = 0;
+   __global__ void kernel(int* ptr) {
+     *ptr = var;
+   }
 
 results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
 
-   #include <sycl/sycl.hpp>
-   #include <dpct/dpct.hpp>
-   template <typename T> struct C { T a; };
+   // test.dp.cpp
    /*
-   DPCT1122:0: 'longlong4' is migrated to 'sycl::long4' in the template declaration; it may cause template function or class redefinition; please adjust the code.
+   DPCT1127:0: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
    */
-   template <> struct C<sycl::long4> { sycl::long4 a; };
-   template <> struct C<sycl::long4> { sycl::long4 a; };
+   static sycl::ext::oneapi::experimental::device_global<const int> var{0};
+   void kernel(int* ptr) {
+     *ptr = var.get();
+   }
 
-which needs to be rewritten to:
+The compile commands need to be rewritten to:
 
-.. code-block:: cpp
+.. code-block:: bash
    :linenos:
 
-   #include <sycl/sycl.hpp>
-   #include <dpct/dpct.hpp>
-   template <typename T> struct C { T a; };
-   template <> struct C<sycl::long4> { sycl::long4 a; };
-
+   icpx -fsycl -std=c++20 test.dp.cpp # Linux
+   icx-cl -fsycl -Qstd=c++20 test.dp.cpp # Windows
 
