@@ -776,7 +776,7 @@ DPCT_ENUM_OPTION(
             "Enable all experimental extensions listed in this option.\n",
             false)),
     llvm::cl::desc(
-        "Comma-separated list of experimental features to be used in migrated "
+        "A comma-separated list of experimental features to be used in migrated "
         "code.\n"
         "By default, experimental features will not be used in migrated "
         "code.\nThe values are:\n"),
