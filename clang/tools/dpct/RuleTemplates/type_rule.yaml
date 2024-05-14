@@ -7,12 +7,12 @@
 # The rule specified in this file can be imported with commandline option:
 # --rule-file={dpct_install_folder}/extensions/rule_templates/type_rule.yaml
 ---
-- Rule: rule_force_inline
-  Kind: Macro
+- Rule: int2_rule
+  Kind: Type
   Priority: Takeover
-  In: __forceinline__
-  Out: inline
-  Includes: ["aaa.h", "\"bbb.h\""]
+  In: int2
+  Out: mytype
+  Includes: ["ddd.h"]
 
 # Following are the original CUDA source code and the migrated SYCL source code before/after applying the above rule.
 # example.cu:
