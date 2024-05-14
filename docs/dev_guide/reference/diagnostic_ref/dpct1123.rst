@@ -62,7 +62,10 @@ results in the following migrated SYCL code:
      kernel_array[10] = (void *)&kernel;
      void *args[1] = {&d};
      /*
-     DPCT1123:0: The kernel function pointer cannot be used in the device code. You need to call the kernel function with the correct argument(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may also be required.
+     DPCT1123:0: The kernel function pointer cannot be used in the device code. You
+     need to call the kernel function with the correct argument(s) directly.
+     According to the kernel function definition, adjusting the dimension of the
+     sycl::nd_item may also be required.
      */
      q_ct1.parallel_for(
          sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16),
@@ -71,7 +74,6 @@ results in the following migrated SYCL code:
            (kernel_array[10])();
          });
    }
-
 
 which needs to be rewritten to:
 

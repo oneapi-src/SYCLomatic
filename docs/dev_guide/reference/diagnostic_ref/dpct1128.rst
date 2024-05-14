@@ -48,7 +48,8 @@ results in the following migrated SYCL code:
 
    /*
    DPCT1128:0: The type "UserStruct<float, int>" is not device copyable for copy
-   constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
+   constructor breaking the device copyable requirement. It is used in the SYCL
+   kernel, please rewrite the code.
    */
    template <class T1, class T2> struct UserStruct {
      UserStruct() {}
@@ -63,7 +64,9 @@ results in the following migrated SYCL code:
    void foo() {
      UserStruct<float, int> us;
      /*
-     DPCT1129:1: The type "UserStruct<float, int>" is used in the SYCL kernel but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type, please review the code.
+     DPCT1129:1: The type "UserStruct<float, int>" is used in the SYCL kernel, but
+     it is not device copyable. The sycl::is_device_copyable specialization has
+     been added for this type. Please review the code.
      */
      dpct::get_in_order_queue().parallel_for(
          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

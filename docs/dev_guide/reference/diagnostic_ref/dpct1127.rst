@@ -42,7 +42,9 @@ results in the following migrated SYCL code:
 
    // test.dp.cpp
    /*
-   DPCT1127:0: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
+   DPCT1127:0: The constant compile-time initialization for device_global is
+   supported when compiling with C++20. You may need to adjust the compile
+   commands.
    */
    static sycl::ext::oneapi::experimental::device_global<const int> var{0};
    void kernel(int* ptr) {

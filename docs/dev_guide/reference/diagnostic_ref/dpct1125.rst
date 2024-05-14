@@ -58,7 +58,10 @@ results in the following migrated SYCL code:
    };
    
    /*
-   DPCT1125:1: The type "Tk" defined in function "device" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the definition location of the type.
+   DPCT1125:1: The type "Tk" defined in function "device" is used as the parameter
+   type in all functions in the call path from the corresponding
+   sycl::handler::parallel_for() to the current function. You may need to adjust
+   the definition location of the type.
    */
    template <typename T> void device(int a, int b, Tk *mem) {
      using Tk = typename kernel_type_t<T>::Type;
@@ -67,7 +70,10 @@ results in the following migrated SYCL code:
    }
    
    /*
-   DPCT1125:2: The type "Tk" defined in function "device" is used as the parameter type in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current function. You may need to adjust the definition location of the type.
+   DPCT1125:2: The type "Tk" defined in function "device" is used as the parameter
+   type in all functions in the call path from the corresponding
+   sycl::handler::parallel_for() to the current function. You may need to adjust
+   the definition location of the type.
    */
    template <typename T>
    void kernel(int a, int b, Tk *mem) {
@@ -77,7 +83,10 @@ results in the following migrated SYCL code:
    template <typename T> void foo() {
      int i;
      /*
-     DPCT1126:0: The type "Tk" defined in function "device" is used as the parameter type in all functions in the call path from the sycl::handler::parallel_for() to the function "device". You may need to adjust the definition location of the type.
+     DPCT1126:0: The type "Tk" defined in function "device" is used as the
+     parameter type in all functions in the call path from the
+     sycl::handler::parallel_for() to the function "device". You may need to adjust
+     the definition location of the type.
      */
      dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
        sycl::local_accessor<Tk, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
@@ -87,7 +96,8 @@ results in the following migrated SYCL code:
            [=](sycl::nd_item<3> item_ct1) {
              kernel<T>(
                  i, i,
-                 mem_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+                 mem_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>()
+                     .get());
            });
      });
    }

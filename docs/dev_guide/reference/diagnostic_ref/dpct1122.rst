@@ -37,11 +37,11 @@ results in the following migrated SYCL code:
 .. code-block:: cpp
    :linenos:
 
-   #include <sycl/sycl.hpp>
-   #include <dpct/dpct.hpp>
    template <typename T> struct C { T a; };
    /*
-   DPCT1122:0: 'longlong4' is migrated to 'sycl::long4' in the template declaration; it may cause template function or class redefinition; please adjust the code.
+   DPCT1122:0: 'longlong4' is migrated to 'sycl::long4' in the template
+   declaration; it may cause template function or class redefinition; please adjust
+   the code.
    */
    template <> struct C<sycl::long4> { sycl::long4 a; };
    template <> struct C<sycl::long4> { sycl::long4 a; };
@@ -51,8 +51,6 @@ which needs to be rewritten to:
 .. code-block:: cpp
    :linenos:
 
-   #include <sycl/sycl.hpp>
-   #include <dpct/dpct.hpp>
    template <typename T> struct C { T a; };
    template <> struct C<sycl::long4> { sycl::long4 a; };
 

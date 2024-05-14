@@ -38,18 +38,17 @@ results in the following migrated SYCL\* code:
    :linenos:
 
    /*
-   DPCT1124:0: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+   DPCT1124:0: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the
+   origin API might be synchronous, it depends on the type of operand memory, so
+   you may need to call wait() on event return by memcpy API to ensure
+   synchronization behavior.
    */
-   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-   q_ct1.memcpy(host_dst, host_src, size);
+   dpct::get_in_order_queue().memcpy(host_dst, host_src, size);
 
 which needs to be rewritten to:
 
 .. code-block:: cpp
    :linenos:
 
-   dpct::device_ext &dev_ct1 = dpct::get_current_device(); 
-   sycl::queue &q_ct1 = dev_ct1.in_order_queue(); 
-   q_ct1.memcpy(host_dst, host_src, size).wait();
+   dpct::get_in_order_queue().memcpy(host_dst, host_src, size).wait();
 
