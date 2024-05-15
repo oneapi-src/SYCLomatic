@@ -111,6 +111,10 @@ const char *const CtHelpHint =
     "  To get help on the tool usage, run: dpct --help\n"
     "\n";
 
+const char *const CmakeScriptMigrationHelpHint =
+    "Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.";
+
+
 static extrahelp CommonHelp(CtHelpMessage);
 
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
@@ -924,6 +928,11 @@ int runDPCT(int argc, const char **argv) {
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
         CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
   }
+  std::string CUDADotHFilePathMacro =
+      "-D__CUDA_DOT_H_FILE_PATH__=\"" +
+      appendPath(CudaPath.getCanonicalPath().str(), "cuda.h") + "\"";
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      CUDADotHFilePathMacro.c_str(), ArgumentInsertPosition::BEGIN));
 
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fno-delayed-template-parsing", ArgumentInsertPosition::END));
@@ -1110,6 +1119,10 @@ int runDPCT(int argc, const char **argv) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
     doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
     ShowStatus(MigrationCmakeScriptCompleted);
     return MigrationSucceeded;
   }
@@ -1264,6 +1277,10 @@ int runDPCT(int argc, const char **argv) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScripts(InRootPath, OutRootPath);
     doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
   }
 
   ShowStatus(Status);

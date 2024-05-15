@@ -17,8 +17,8 @@ cublasSetMatrixAsync,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
 cublasGetMatrixAsync,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
 cublasSetAtomicsMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cublasGetAtomicsMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cublasSetMathMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cublasGetMathMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cublasSetMathMode,YES,
+cublasGetMathMode,YES,
 cublasLoggerConfigure,NO,
 cublasGetLoggerCallback,NO,
 cublasSetLoggerCallback,NO,

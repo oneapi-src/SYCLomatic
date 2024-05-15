@@ -672,6 +672,8 @@ static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
   }
 }
 
+bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
+
 static void storeBufferToFile() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &FileName = Entry.first;
