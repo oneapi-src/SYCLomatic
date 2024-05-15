@@ -241,6 +241,7 @@ void gen_prolog_API_CP(const std::string &cp_id,
 template <class... Args>
 void gen_epilog_API_CP(const std::string &cp_id,
                        queue_t queue, Args&&... args) {
+  synchronize(queue);
   std::string epilog_tag = cp_id + ":" + "epilog";
   std::string event_id =
       cp_id + ":" + std::to_string(api_index[cp_id]);
