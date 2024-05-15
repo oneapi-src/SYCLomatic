@@ -1255,11 +1255,12 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           return;
         if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
           auto LocInfo = DpctGlobalInfo::getLocInfo(TempStorage);
-          auto TypeInfo = std::make_shared<CtTypeInfo>(DataTypeLoc);
-
+          ExprAnalysis EA;
+          EA.analyze(DataTypeLoc);
           FuncInfo->getVarMap().addCUBTempStorage(
               std::make_shared<TempStorageVarInfo>(
-                  LocInfo.second, TempStorage->getName(), TypeInfo));
+                  LocInfo.second, TempStorage->getName(),
+                  EA.getTemplateDependentStringInfo()));
         }
         std::string Span = MapNames::getClNamespace() + "span<std::byte, 1>" +
                            "(&" + TempStorage->getNameAsString() + "[0], " +

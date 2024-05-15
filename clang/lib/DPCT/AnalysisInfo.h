@@ -2143,11 +2143,11 @@ private:
 class TempStorageVarInfo {
   unsigned Offset;
   std::string Name;
-  std::shared_ptr<CtTypeInfo> Type;
+  std::shared_ptr<TemplateDependentStringInfo> Type;
 
 public:
   TempStorageVarInfo(unsigned Off, StringRef Name,
-                     std::shared_ptr<CtTypeInfo> T)
+                     std::shared_ptr<TemplateDependentStringInfo> T)
       : Offset(Off), Name(Name.str()), Type(T) {}
   const std::string &getName() const { return Name; }
   unsigned getOffset() const { return Offset; }

@@ -3494,7 +3494,7 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
   OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
      << "_acc(";
   DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
-  OS << '(' << LocalSize << ".size() * sizeof(" << Type->getBaseName()
+  OS << '(' << LocalSize << ".size() * sizeof(" << Type->getSourceString()
      << ")), cgh);";
   AccessorList.emplace_back(Accessor);
 }
