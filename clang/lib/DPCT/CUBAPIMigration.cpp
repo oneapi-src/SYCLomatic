@@ -1203,30 +1203,30 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
         };
 
         auto HandleTypeLoc = [&](TypeLoc Loc) -> TypeLoc {
-          retry:
+          while (true) {
             switch (Loc.getTypeLocClass()) {
             case TypeLoc::Elaborated:
               Loc = Loc.getNextTypeLoc();
-              goto retry;
+              break;
             case TypeLoc::Typedef: {
               auto NewLoc = Loc.castAs<TypedefTypeLoc>();
               Loc = NewLoc.getTypedefNameDecl()
                         ->getTypeSourceInfo()
                         ->getTypeLoc();
-              goto retry;
+              break;
             }
             case TypeLoc::TemplateSpecialization: {
               auto NewLoc = Loc.getAs<TemplateSpecializationTypeLoc>();
               Loc = NewLoc.getArgLocInfo(0).getAsTypeSourceInfo()->getTypeLoc();
-              goto retry;
+              break;
             }
             case TypeLoc::SubstTemplateTypeParm:
             case TypeLoc::Builtin:
               return Loc;
             default:
-              break;
+              return {};
             }
-            return {};
+          }
         };
 
         TypeLoc DataTypeLoc;

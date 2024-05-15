@@ -3492,8 +3492,10 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
   std::string Accessor;
   llvm::raw_string_ostream OS(Accessor);
   OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
-     << "_acc(" << MapNames::getClNamespace() << "range(" << LocalSize
-     << ".size() * sizeof(" << Type->getBaseName() << ")), cgh);";
+     << "_acc(";
+  DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
+  OS << '(' << LocalSize << ".size() * sizeof(" << Type->getBaseName()
+     << ")), cgh);";
   AccessorList.emplace_back(Accessor);
 }
 void TempStorageVarInfo::applyTemplateArguments(

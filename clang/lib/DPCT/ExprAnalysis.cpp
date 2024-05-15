@@ -1191,16 +1191,12 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     break;
   }
   case TypeLoc::SubstTemplateTypeParm:
-    TYPELOC_CAST(SubstTemplateTypeParmTypeLoc)
-        .getType()
-        ->getAs<SubstTemplateTypeParmType>()
-        ->getAssociatedDecl();
-    if (auto T = TYPELOC_CAST(SubstTemplateTypeParmTypeLoc)
-                     .getType()
-                     ->getAs<SubstTemplateTypeParmType>())
-      return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
-                            T->getIndex());
-    break;
+    // Used for Instantiated class.
+    return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
+                          TYPELOC_CAST(SubstTemplateTypeParmTypeLoc)
+                              .getType()
+                              ->getAs<SubstTemplateTypeParmType>()
+                              ->getIndex());
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
