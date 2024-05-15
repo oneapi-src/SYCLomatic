@@ -543,7 +543,7 @@ private:
                           oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
         }
       }
-      std::cout << "oneapi::mkl::rng::mrg32k3a_mode does not support on "
+      std::cout << "oneapi::mkl::rng::mrg32k3a_mode is not supported for "
                 << queue->get_device().get_info<sycl::info::device::name>()
                 << ". This argument will be ignored." << std::endl;
     }
