@@ -530,7 +530,7 @@ private:
                                        const random_mode mode) {
 #ifdef __INTEL_MKL__
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
-      if (queue->is_gpu()) {
+      if (queue->get_device().is_gpu()) {
         switch (mode) {
         case random_mode::best:
           return engine_t(*queue, seed,
