@@ -9880,11 +9880,11 @@ void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
     } else {
       CallEnd = getDefinitionRange(C->getBeginLoc(), C->getEndLoc()).getEnd();
     }
-    std::cout<<CallEnd.printToString(SM)<<std::endl;
+
     auto PtrSizeLoc = Lexer::findLocationAfterToken(
-        CallEnd, tok::semi, SM,
-        DpctGlobalInfo::getContext().getLangOpts(), false);
-    std::cout<<PtrSizeLoc.printToString(SM)<<std::endl;
+        CallEnd, tok::semi, SM, DpctGlobalInfo::getContext().getLangOpts(),
+        false);
+
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
         std::string(getNL()) + "dpctexp::codepin::get_ptr_size_map()[" +
