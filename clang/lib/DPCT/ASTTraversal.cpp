@@ -9872,10 +9872,19 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
 
 void MemoryMigrationRule::instrumentAddressToSizeRecordForCodePin(
     const CallExpr *C, int PtrArgLoc, int AllocMemSizeLoc) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager(); 
   if (DpctGlobalInfo::isCodePinEnabled()) {
+    SourceLocation CallEnd = C->getEndLoc();
+    if(SM.isMacroArgExpansion(C->getEndLoc())){
+      CallEnd = SM.getExpansionRange(C->getEndLoc()).getEnd();
+    } else {
+      CallEnd = getDefinitionRange(C->getBeginLoc(), C->getEndLoc()).getEnd();
+    }
+    std::cout<<CallEnd.printToString(SM)<<std::endl;
     auto PtrSizeLoc = Lexer::findLocationAfterToken(
-        C->getEndLoc(), tok::semi, DpctGlobalInfo::getSourceManager(),
+        CallEnd, tok::semi, SM,
         DpctGlobalInfo::getContext().getLangOpts(), false);
+    std::cout<<PtrSizeLoc.printToString(SM)<<std::endl;
     emplaceTransformation(new InsertText(
         PtrSizeLoc,
         std::string(getNL()) + "dpctexp::codepin::get_ptr_size_map()[" +
