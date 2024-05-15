@@ -530,17 +530,22 @@ private:
                                        const random_mode mode) {
 #ifdef __INTEL_MKL__
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
-      switch (mode) {
-      case random_mode::best:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::custom{81920});
-      case random_mode::legacy:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::custom{4096});
-      case random_mode::optimal:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
+      if (queue->is_gpu()) {
+        switch (mode) {
+        case random_mode::best:
+          return engine_t(*queue, seed,
+                          oneapi::mkl::rng::mrg32k3a_mode::custom{81920});
+        case random_mode::legacy:
+          return engine_t(*queue, seed,
+                          oneapi::mkl::rng::mrg32k3a_mode::custom{4096});
+        case random_mode::optimal:
+          return engine_t(*queue, seed,
+                          oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
+        }
       }
+      std::cout << "oneapi::mkl::rng::mrg32k3a_mode does not support on "
+                << queue->get_device().get_info<sycl::info::device::name>()
+                << ". This argument will be ignored." << std::endl;
     }
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
