@@ -963,7 +963,6 @@ Options:
        key is a specific float type, and the value is the corresponding epsilon. For
        example:
        {
-
        "rel_tol": 1e-3,               # relative tolerance for all float types, it is a ratio value in the range [0 , 1].
 
        "bf16_abs_tol": 7.81e-3,       # absolute tolerance for bfloat16 type.
@@ -974,8 +973,8 @@ Options:
 
        "double_abs_tol": 2.22e-16,    # absolute tolerance for double type.
        }
-        When both rel_tol (relative tolerance) and abs_tol (absolute tolerance) are 
-        provided, both tolerances are taken into account.
+       When both rel_tol (relative tolerance) and abs_tol (absolute tolerance) are 
+       provided, both tolerances are taken into account.
        The tolerance values are passed to the Python math.isclose() function.
        If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol
        is 0, then rel_tol is used. If both tolerances are 0, the floating point data
