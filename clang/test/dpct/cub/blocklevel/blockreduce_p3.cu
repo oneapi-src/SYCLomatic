@@ -19,7 +19,8 @@ __global__ void reduce_kernel(float *da) {
   __shared__ typename BlockReduce::TempStorage temp_storage;
   int id = threadIdx.x;
   BlockReduce rd(temp_storage);
-  // CHECK: void reduce_kernel
+  // CHECK: void reduce_kernel(float *da, const sycl::nd_item<3> &item_ct1,
+  // CHECK:                    sycl::local_accessor<std::byte, 1> temp_storage) {
   // CHECK: float temp = sycl::ext::oneapi::experimental::reduce_over_group(sycl::ext::oneapi::experimental::group_with_scratchpad(item_ct1.get_group(), sycl::span<std::byte, 1>(&temp_storage[0], temp_storage.size())), da[id], [](auto&& x, auto&& y) { return reduce_topk_op_2<float>(std::forward<decltype(x)>(x), std::forward<decltype(y)>(y)); });
   float temp = rd.Reduce(da[id], reduce_topk_op_2<float>);
   if (id == 0) {
@@ -32,7 +33,8 @@ __global__ void reduce_kernel1(float *da) {
   typedef cub::BlockReduce<float, 32> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
   int id = threadIdx.x;
-  // CHECK: void reduce_kernel1
+  // CHECK: void reduce_kernel1(float *da, const sycl::nd_item<3> &item_ct1,
+  // CHECK:                     sycl::local_accessor<std::byte, 1> temp_storage) {
   // CHECK: float temp = sycl::ext::oneapi::experimental::reduce_over_group(sycl::ext::oneapi::experimental::group_with_scratchpad(item_ct1.get_group(), sycl::span<std::byte, 1>(&temp_storage[0], temp_storage.size())), da[id], [](auto&& x, auto&& y) { return reduce_topk_op_2<float>(std::forward<decltype(x)>(x), std::forward<decltype(y)>(y)); });
   float temp = BlockReduce(temp_storage).Reduce(da[id], reduce_topk_op_2<float>);
   if (id == 0) {
@@ -47,7 +49,8 @@ __global__ void reduce_kernel_dependent(T *da) {
   __shared__ typename BlockReduce::TempStorage temp_storage;
   int id = threadIdx.x;
   BlockReduce rd(temp_storage);
-  // CHECK: void reduce_kernel_dependent
+  // CHECK: void reduce_kernel_dependent(T *da, const sycl::nd_item<3> &item_ct1,
+  // CHECK:                              sycl::local_accessor<std::byte, 1> temp_storage) {
   // CHECK: float temp = sycl::ext::oneapi::experimental::reduce_over_group(sycl::ext::oneapi::experimental::group_with_scratchpad(item_ct1.get_group(), sycl::span<std::byte, 1>(&temp_storage[0], temp_storage.size())), da[id], [](auto&& x, auto&& y) { return reduce_topk_op_2<float>(std::forward<decltype(x)>(x), std::forward<decltype(y)>(y)); });
   float temp = rd.Reduce(da[id], reduce_topk_op_2<float>);
   if (id == 0) {
@@ -61,7 +64,8 @@ __global__ void reduce_kernel_dependent1(T *da) {
   typedef cub::BlockReduce<T, THREAD_PRE_BLOCK> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
   int id = threadIdx.x;
-  // CHECK: void reduce_kernel_dependent1
+  // CHECK: void reduce_kernel_dependent1(T *da, const sycl::nd_item<3> &item_ct1,
+    // CHECK:                             sycl::local_accessor<std::byte, 1> temp_storage) {
   // CHECK: float temp = sycl::ext::oneapi::experimental::reduce_over_group(sycl::ext::oneapi::experimental::group_with_scratchpad(item_ct1.get_group(), sycl::span<std::byte, 1>(&temp_storage[0], temp_storage.size())), da[id], [](auto&& x, auto&& y) { return reduce_topk_op_2<T>(std::forward<decltype(x)>(x), std::forward<decltype(y)>(y)); });
   float temp = BlockReduce(temp_storage).Reduce(da[id], reduce_topk_op_2<T>);
   if (id == 0) {
@@ -84,7 +88,7 @@ void test() {
   // CHECK: void test()
   // CHECK: q_ct1.submit(
   // CHECK:   [&](sycl::handler &cgh) {
-  // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(T)), cgh);
+  // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range<1>(sycl::range<3>(1, 1, 32).size() * sizeof(T)), cgh);
   // CHECK:     cgh.parallel_for(
   // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK:       [=](sycl::nd_item<3> item_ct1) {
@@ -113,7 +117,7 @@ int main() {
     // CHECK: int main()
     // CHECK: q_ct1.submit(
     // CHECK:   [&](sycl::handler &cgh) {
-    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
+    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range<1>(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
     // CHECK:     cgh.parallel_for(
     // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
@@ -124,7 +128,7 @@ int main() {
 
     // CHECK: q_ct1.submit(
     // CHECK:   [&](sycl::handler &cgh) {
-    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
+    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range<1>(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
     // CHECK:     cgh.parallel_for(
     // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
@@ -135,7 +139,7 @@ int main() {
 
     // CHECK: q_ct1.submit(
     // CHECK:   [&](sycl::handler &cgh) {
-    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
+    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range<1>(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
     // CHECK:     cgh.parallel_for(
     // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
@@ -146,7 +150,7 @@ int main() {
 
     // CHECK: q_ct1.submit(
     // CHECK:   [&](sycl::handler &cgh) {
-    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
+    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range<1>(sycl::range<3>(1, 1, 32).size() * sizeof(float)), cgh);
     // CHECK:     cgh.parallel_for(
     // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
@@ -172,7 +176,7 @@ int main() {
     cudaMemcpy(da, ha, N * sizeof(int), cudaMemcpyHostToDevice);
     // CHECK: q_ct1.submit(
     // CHECK:   [&](sycl::handler &cgh) {
-    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(int)), cgh);
+    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range<1>(sycl::range<3>(1, 1, 32).size() * sizeof(int)), cgh);
     // CHECK:     cgh.parallel_for(
     // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
@@ -183,7 +187,7 @@ int main() {
 
     // CHECK: q_ct1.submit(
     // CHECK:   [&](sycl::handler &cgh) {
-    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range(sycl::range<3>(1, 1, 32).size() * sizeof(int)), cgh);
+    // CHECK:     sycl::local_accessor<std::byte, 1> temp_storage_acc(sycl::range<1>(sycl::range<3>(1, 1, 32).size() * sizeof(int)), cgh);
     // CHECK:     cgh.parallel_for(
     // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK:       [=](sycl::nd_item<3> item_ct1) {
