@@ -3692,7 +3692,7 @@ void test2() {
 
 template <typename T> struct C { T a; };
 // CHECK: /*
-// CHECK-NEXT: DPCT1122:{{[0-9]+}}: 'longlong4' is migrated to 'sycl::long4' in template declare, it may cause template function or class redefinition, please adjust the code.
+// CHECK-NEXT: DPCT1122:{{[0-9]+}}: 'longlong4' is migrated to 'sycl::long4' in the template declaration; it may cause template function or class redefinition; please adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: template <> struct C<sycl::long4> { sycl::long4 a; };
 template <> struct C<longlong4> { longlong4 a; };
@@ -3702,7 +3702,7 @@ template <typename T> T f() {
   return a;
 }
 // CHECK: /*
-// CHECK-NEXT: DPCT1122:{{[0-9]+}}: 'longlong4' is migrated to 'sycl::long4' in template declare, it may cause template function or class redefinition, please adjust the code.
+// CHECK-NEXT: DPCT1122:{{[0-9]+}}: 'longlong4' is migrated to 'sycl::long4' in the template declaration; it may cause template function or class redefinition; please adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: template <> sycl::long4 f<sycl::long4>() {
 // CHECK-NEXT:   sycl::long4 a;

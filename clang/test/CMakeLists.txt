@@ -80,7 +80,11 @@ list(APPEND CLANG_TEST_DEPS
   clang-offload-packager
   diagtool
   hmaptool
+
   dpct-binary
+  dpct-codepin-report-files
+  scan-build-py
+  pattern-rewriter-binary
   )
 
 if(CLANG_ENABLE_STATIC_ANALYZER)

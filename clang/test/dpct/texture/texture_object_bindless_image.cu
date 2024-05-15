@@ -69,12 +69,16 @@ void driver() {
 }
 
 int main() {
-  void *input;
+  const void *input;
+  void *output;
   size_t w, h, sizeInBytes, w_offest_src, h_offest_src, w_offest_dest, h_offest_dest;
   unsigned int flag, l;
   cudaExtent e;
-  // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr, pArr_src;
-  cudaArray_t pArr, pArr_src;
+  cudaStream_t s;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr pArr;
+  cudaArray_t pArr;
+  // CHECK: const dpct::experimental::image_mem_wrapper *pArr_src;
+  const cudaArray *pArr_src;
   // CHECK: dpct::experimental::image_mem_wrapper_ptr pMipMapArr;
   cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
@@ -83,46 +87,74 @@ int main() {
   cudaMalloc3DArray(&pArr, &desc, e);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, w, h);
   cudaMallocArray(&pArr, &desc, w, h);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, 1, 0.1);
+  cudaMallocArray(&pArr, &desc, 1, 0.1);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::mipmap, l);
   cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
+  // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, sycl::range<3>(), sycl::ext::oneapi::experimental::image_type::mipmap, 2);
+  cudaMallocMipmappedArray(&pMipMapArr, &desc, cudaExtent(), 2);
   // CHECK: pArr = pMipMapArr->get_mip_level(0);
   cudaGetMipmappedArrayLevel(&pArr, pMipMapArr, 0);
   // CHECK: desc = pArr->get_channel();
   // CHECK-NEXT: e = pArr->get_range();
   // CHECK-NEXT: flag = 0;
   cudaArrayGetInfo(&desc, &e, &flag, pArr);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_dest, w, h, q_ct1);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  // CHECK-NEXT:                          w_offest_src, h_offest_src, w, h);
   cudaMemcpy2DArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
                            w_offest_src, h_offest_src, w, h,
                            cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w, w, h, q_ct1);
-  cudaMemcpy2DFromArray(input, w, pArr, w_offest_src, h_offest_src, w, h,
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  // CHECK-NEXT:                          w_offest_src, h_offest_src, w, h);
+  cudaMemcpy2DArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
+                           w_offest_src, h_offest_src, w, h);
+  // CHECK: dpct::experimental::dpct_memcpy(output, w, pArr_src, w_offest_src, h_offest_src, w, h);
+  cudaMemcpy2DFromArray(output, w, pArr_src, w_offest_src, h_offest_src, w, h,
                         cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w, w, h, q_ct1);
-  cudaMemcpy2DFromArrayAsync(input, w, pArr, w_offest_src, h_offest_src, w, h,
-                             cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w, w, h, q_ct1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, w, pArr_src, w_offest_src, h_offest_src, w,
+  // CHECK-NEXT:                            h);
+  cudaMemcpy2DFromArrayAsync(output, w, pArr_src, w_offest_src, h_offest_src, w,
+                             h, cudaMemcpyHostToDevice);
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, w, pArr_src, w_offest_src, h_offest_src, w,
+  // CHECK-NEXT:                            h, *s);
+  cudaMemcpy2DFromArrayAsync(output, w, pArr_src, w_offest_src, h_offest_src, w,
+                             h, cudaMemcpyHostToDevice, s);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w, w, h);
   cudaMemcpy2DToArray(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
                       cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w, w, h, q_ct1);
+  // CHECK:  dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w, w, h);
   cudaMemcpy2DToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
                            cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr_src, w_offest_src, h_offest_src, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  // CHECK:  dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w, w, h, *s);
+  cudaMemcpy2DToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w, w, h,
+                           cudaMemcpyHostToDevice, s);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  //                        w_offest_src, h_offest_src, w * h);
   cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
                          w_offest_src, h_offest_src, w * h,
                          cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w * h, q_ct1);
-  cudaMemcpyFromArray(input, pArr, w_offest_src, h_offest_src, w * h,
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, pArr_src,
+  //                        w_offest_src, h_offest_src, w * h);
+  cudaMemcpyArrayToArray(pArr, w_offest_dest, h_offest_dest, pArr_src,
+                         w_offest_src, h_offest_src, w * h);
+  // CHECK: dpct::experimental::dpct_memcpy(output, pArr_src, w_offest_src, h_offest_src, w * h);
+  cudaMemcpyFromArray(output, pArr_src, w_offest_src, h_offest_src, w * h,
                       cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_src, h_offest_src, input, w * h, q_ct1);
-  cudaMemcpyFromArrayAsync(input, pArr, w_offest_src, h_offest_src, w * h,
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, pArr_src, w_offest_src, h_offest_src, w * h);
+  cudaMemcpyFromArrayAsync(output, pArr_src, w_offest_src, h_offest_src, w * h,
                            cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(output, pArr_src, w_offest_src, h_offest_src, w * h, *s);
+  cudaMemcpyFromArrayAsync(output, pArr_src, w_offest_src, h_offest_src, w * h,
+                           cudaMemcpyHostToDevice, s);
+  // CHECK: dpct::experimental::dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w * h);
   cudaMemcpyToArray(pArr, w_offest_dest, h_offest_dest, input, w * h,
                     cudaMemcpyHostToDevice);
-  // CHECK: dpct::experimental::async_dpct_memcpy(input, pArr, w_offest_dest, h_offest_dest, w * h, q_ct1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w * h);
   cudaMemcpyToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w * h,
                          cudaMemcpyHostToDevice);
+  // CHECK: dpct::experimental::async_dpct_memcpy(pArr, w_offest_dest, h_offest_dest, input, w * h, *s);
+  cudaMemcpyToArrayAsync(pArr, w_offest_dest, h_offest_dest, input, w * h,
+                         cudaMemcpyHostToDevice, s);
 
   // CHECK: dpct::memcpy_parameter p3d;
   cudaMemcpy3DParms p3d;
@@ -132,8 +164,8 @@ int main() {
   cudaPitchedPtr pp;
   // CHECK: dpct::memcpy_direction k;
   cudaMemcpyKind k;
-  // CHECK: p3d.from.image_bindless = pArr_src;
-  p3d.srcArray = pArr_src;
+  // CHECK: p3d.from.image_bindless = pArr;
+  p3d.srcArray = pArr;
   // CHECK: pArr_src = p3d.from.image_bindless;
   pArr_src = p3d.srcArray;
   // CHECK: p3d.from.pos = pos;
@@ -148,8 +180,8 @@ int main() {
   pos = p3d.srcPos;
   // CHECK: p3d.from.pitched = pp;
   p3d.srcPtr = pp;
-  // CHECK: p3d.from.pitched.set_data_ptr(input);
-  p3d.srcPtr.ptr = input;
+  // CHECK: p3d.from.pitched.set_data_ptr(output);
+  p3d.srcPtr.ptr = output;
   // CHECK: p3d.from.pitched.set_pitch(1);
   p3d.srcPtr.pitch = 1;
   // CHECK: p3d.from.pitched.set_x(2);
@@ -174,8 +206,8 @@ int main() {
   pos = p3d.dstPos;
   // CHECK: p3d.to.pitched = pp;
   p3d.dstPtr = pp;
-  // CHECK: p3d.to.pitched.set_data_ptr(input);
-  p3d.dstPtr.ptr = input;
+  // CHECK: p3d.to.pitched.set_data_ptr(output);
+  p3d.dstPtr.ptr = output;
   // CHECK: p3d.to.pitched.set_pitch(1);
   p3d.dstPtr.pitch = 1;
   // CHECK: p3d.to.pitched.set_x(2);
@@ -215,16 +247,16 @@ int main() {
   resDesc2.res.mipmap.mipmap = pMipMapArr;
   // CHECK: resDesc0.set_data_type(dpct::image_data_type::linear);
   resDesc0.resType = cudaResourceTypeLinear;
-  // CHECK: resDesc3.set_data_ptr(input);
-  resDesc3.res.linear.devPtr = input;
+  // CHECK: resDesc3.set_data_ptr(output);
+  resDesc3.res.linear.devPtr = output;
   // CHECK: resDesc3.set_channel(desc);
   resDesc3.res.linear.desc = desc;
   // CHECK: resDesc3.set_x(sizeInBytes);
   resDesc3.res.linear.sizeInBytes = sizeInBytes;
   // CHECK: resDesc0.set_data_type(dpct::image_data_type::pitch);
   resDesc0.resType = cudaResourceTypePitch2D;
-  // CHECK: resDesc4.set_data_ptr(input);
-  resDesc4.res.pitch2D.devPtr = input;
+  // CHECK: resDesc4.set_data_ptr(output);
+  resDesc4.res.pitch2D.devPtr = output;
   // CHECK: resDesc4.set_channel(desc);
   resDesc4.res.pitch2D.desc = desc;
   // CHECK: resDesc4.set_x(w);
@@ -251,18 +283,18 @@ int main() {
   {
     // CHECK: dpct::image_data resDesc;
     cudaResourceDesc resDesc;
-    // CHECK: resDesc.set_data(input, sizeInBytes, desc);
+    // CHECK: resDesc.set_data(output, sizeInBytes, desc);
     resDesc.resType = cudaResourceTypeLinear;
-    resDesc.res.linear.devPtr = input;
+    resDesc.res.linear.devPtr = output;
     resDesc.res.linear.desc = desc;
     resDesc.res.linear.sizeInBytes = sizeInBytes;
   }
   {
     // CHECK: dpct::image_data resDesc;
     cudaResourceDesc resDesc;
-    // CHECK: resDesc.set_data(input, w, h, sizeInBytes, desc);
+    // CHECK: resDesc.set_data(output, w, h, sizeInBytes, desc);
     resDesc.resType = cudaResourceTypePitch2D;
-    resDesc.res.pitch2D.devPtr = input;
+    resDesc.res.pitch2D.devPtr = output;
     resDesc.res.pitch2D.desc = desc;
     resDesc.res.pitch2D.width = w;
     resDesc.res.pitch2D.height = h;

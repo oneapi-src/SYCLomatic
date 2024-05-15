@@ -249,23 +249,6 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
   }
   EA.applyAllSubExprRepl();
 }
-const DeclRefExpr *getAddressedRef(const Expr *E) {
-  E = E->IgnoreImplicitAsWritten();
-  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
-    if (DRE->getDecl()->getKind() == Decl::Function) {
-      return DRE;
-    }
-  } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
-    return getAddressedRef(Paren->getSubExpr());
-  } else if (auto Cast = dyn_cast<CastExpr>(E)) {
-    return getAddressedRef(Cast->getSubExprAsWritten());
-  } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
-    if (UO->getOpcode() == UO_AddrOf) {
-      return getAddressedRef(UO->getSubExpr());
-    }
-  }
-  return nullptr;
-}
 
 ///// class FreeQueriesInfo /////
 class FreeQueriesInfo {
@@ -979,7 +962,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     for (size_t i = 1; i < FilePathCount - InRootPathCount; i++) {
       SchemaRelativePath += "../";
     }
-    SchemaRelativePath += "generated_schema.hpp\"";
+    SchemaRelativePath += "codepin_autogen_util.hpp\"";
     concatHeader(OS, SchemaRelativePath);
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
                         IsForCodePin);
@@ -2348,7 +2331,7 @@ std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
 clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
-BuildScript DpctGlobalInfo::BuildScriptVal = BuildScript::BS_None;
+BuildScriptKind DpctGlobalInfo::BuildScriptVal = BuildScriptKind::BS_None;
 clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
@@ -3088,7 +3071,10 @@ ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
     if (AccMode == Pointer) {
       if (!getType()->isWritten())
         PS << "(" << getAccessorDataType(false, true) << " *)";
-      PS << getAccessorName() << ".get_multi_ptr<" << MapNames::getClNamespace()
+      PS << getAccessorName() << ".";
+      if (getType()->isTemplate())
+        PS << "template ";
+      PS << "get_multi_ptr<" << MapNames::getClNamespace()
          << "access::decorated::no>().get()";
     } else {
       PS << getAccessorName();
@@ -4914,8 +4900,10 @@ DeviceFunctionInfo::getTextureObject(unsigned Idx) {
   return {};
 }
 void DeviceFunctionInfo::buildInfo() {
-  if (isBuilt())
+  if (isBuilt()) {
+    VarMap.removeDuplicateVar();
     return;
+  }
   setBuilt();
   auto &Map = VarMap.getMap(clang::dpct::MemVarInfo::Global);
   for (auto It = Map.begin(); It != Map.end();) {
@@ -5592,6 +5580,12 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
       Kernel->resizeTextureObjectList(FD->getNumParams());
       for (auto &Parm : FD->parameters()) {
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
+        if (!isDeviceCopyable(Parm->getType(), nullptr)) {
+          DiagnosticsUtils::report(
+              LocInfo.first, LocInfo.second,
+              Diagnostics::NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, true, true,
+              DpctGlobalInfo::getOriginalTypeName(Parm->getType()));
+        }
       }
     }
   } else {

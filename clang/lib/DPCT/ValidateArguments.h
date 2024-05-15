@@ -35,7 +35,7 @@ enum class OutputVerbosityLevel {
   OVL_Detailed,
   OVL_Diagnostics
 };
-enum class BuildScript { BS_None, BS_Cmake };
+enum class BuildScriptKind { BS_None, BS_Cmake };
 enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
 enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
 enum class HelperFilesCustomizationLevel {
@@ -123,7 +123,7 @@ int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
                              const std::vector<std::string> &CmakeScriptPaths);
 
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
-                     std::string &RFile, bool &ROnly, bool &GenReport,
+                     std::string &RFile, bool ROnly, bool &GenReport,
                      std::string &DVerbose);
 
 /// Return value:
