@@ -5,7 +5,7 @@
 // Case1: template struct with <<<>>>
 //      CHECK: template<class T1, class T2>
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct1<float, int>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct1<float, int>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct1 {
 // CHECK-NEXT:   UserStruct1() {}
@@ -14,7 +14,7 @@
 // CHECK-NEXT: template <class T1, class T2>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct1<T1, T2>> : std::true_type {};
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct2" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct2" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct2 {
 // CHECK-NEXT:   UserStruct2() {}
@@ -47,7 +47,7 @@ template void foo1<float, int>();
 // Case2: template struct with cudaLaunchKernel
 //      CHECK: template<class T1, class T2>
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct3<float, int>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct3<float, int>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct3 {
 // CHECK-NEXT:   UserStruct3() {}
@@ -56,7 +56,7 @@ template void foo1<float, int>();
 // CHECK-NEXT: template <class T1, class T2>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct3<T1, T2>> : std::true_type {};
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct4" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct4" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct4 {
 // CHECK-NEXT:   UserStruct4() {}
@@ -92,7 +92,7 @@ void foo2() {
 // CHECK-NEXT: };
 // CHECK-NEXT: template<class T>
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct6<UserStruct5>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct6<UserStruct5>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct6 {
 // CHECK-NEXT:   UserStruct6() {}
@@ -137,7 +137,7 @@ void foo4() {
 
 //      CHECK: template<class T>
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct7<float>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct7<float>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct7 {
 // CHECK-NEXT:   UserStruct7() {}
@@ -161,7 +161,7 @@ template void foo4<float>();
 // CHECK-NEXT: };
 // CHECK-NEXT: template<>
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct8<double, float>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct8<double, float>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct8<double, float> {
 // CHECK-NEXT:   UserStruct8() {}
@@ -196,7 +196,7 @@ void foo5() {
 // CHECK-NEXT: };
 // CHECK-NEXT: template<class TT>
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct9<float, int>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct9<float, int>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct9<TT, int> {
 // CHECK-NEXT:   UserStruct9() {}
@@ -256,7 +256,7 @@ void foo6() {
 //}
 
 // Case9: template struct with using and template alias
-//      CHECK: DPCT1128:{{[0-9]+}}: The type "UserStruct12" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+//      CHECK: DPCT1128:{{[0-9]+}}: The type "UserStruct12" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct12 {
 // CHECK-NEXT:   UserStruct12() {}
@@ -266,7 +266,7 @@ void foo6() {
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct12> : std::true_type {};
 // CHECK-NEXT: template<class T>
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct13<float>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct13<float>" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct13 {
 // CHECK-NEXT:   UserStruct13() {}
@@ -301,7 +301,7 @@ void test9() {
 // Case10: user-define struct in namespace
 //      CHECK: namespace ns {
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "ns::UserStruct15" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "ns::UserStruct15" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct15 {
 // CHECK-NEXT:   UserStruct15() {}
@@ -330,21 +330,21 @@ template<class T>
 __global__ void k11(T) {}
 //      CHECK: struct B1 {};
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "B2" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "B2" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct B2 {
 // CHECK-NEXT:   B2() {}
 // CHECK-NEXT:   B2(B2& other) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "F" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "F" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct F {
 // CHECK-NEXT:   F() {}
 // CHECK-NEXT:   F(F& other) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct16" is not device copyable for copy constructor, copy assignment, move constructor, move assignment, virtual method "m", destructor, virtual base class "B1", non trivially copyable base class "B2" and non trivially copyable field "f" breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct16" is not device copyable for copy constructor, copy assignment, move constructor, move assignment, virtual method "m", destructor, virtual base class "B1", non trivially copyable base class "B2" and non trivially copyable field "f" breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct16 : virtual public B1, public B2 {
 // CHECK-NEXT:   UserStruct16() {}
@@ -378,7 +378,7 @@ struct UserStruct16 : virtual public B1, public B2 {
   F f;
 };
 //      CHECK: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct17" is not device copyable for copy constructor breaking the device copyable requirement. It is used in SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct17" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct17 {
 // CHECK-NEXT:   UserStruct17() {}
@@ -396,7 +396,7 @@ struct UserStruct17 {
 void test11() {
   UserStruct16 us16;
   //      CHECK: /*
-  // CHECK-NEXT: DPCT1129:{{[0-9]+}}: The type "UserStruct16" is used in SYCL kernel but it is not device copyable. The sycl::is_device_copyable specialization has been added for the type, please review the code.
+  // CHECK-NEXT: DPCT1129:{{[0-9]+}}: The type "UserStruct16" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -406,7 +406,7 @@ void test11() {
   k11<<<1, 1>>>(us16);
   UserStruct17 us17;
   //      CHECK: /*
-  // CHECK-NEXT: DPCT1129:{{[0-9]+}}: The type "UserStruct17" is used in SYCL kernel but it is not device copyable. The sycl::is_device_copyable specialization has been added for the type, please review the code.
+  // CHECK-NEXT: DPCT1129:{{[0-9]+}}: The type "UserStruct17" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 

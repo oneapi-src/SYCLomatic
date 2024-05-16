@@ -164,7 +164,7 @@ void runTest() {
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:*/
   // CHECK-NEXT:/*
-  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in SYCL kernel but it is not device copyable. The sycl::is_device_copyable specialization has been added for the type, please review the code.
+  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
@@ -182,7 +182,7 @@ void runTest() {
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:*/
   // CHECK-NEXT:/*
-  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in SYCL kernel but it is not device copyable. The sycl::is_device_copyable specialization has been added for the type, please review the code.
+  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {

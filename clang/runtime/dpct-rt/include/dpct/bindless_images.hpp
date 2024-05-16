@@ -46,11 +46,12 @@ public:
   }
   /// Create bindless image memory wrapper.
   /// \param [in] channel The image channel used to create bindless image
-  /// \param [in] size The sizes of each dimension of bindless image memory.
-  /// memory.
-  template <typename... Args>
-  image_mem_wrapper(image_channel channel, Args... size)
-      : image_mem_wrapper(channel, sycl::range{(size_t)size...}) {}
+  /// \param [in] width The width of bindless image memory.
+  /// \param [in] height The height of bindless image memory.
+  /// \param [in] depth The depth of bindless image memory.
+  image_mem_wrapper(image_channel channel, size_t width, size_t height = 0,
+                    size_t depth = 0)
+      : image_mem_wrapper(channel, {width, height, depth}) {}
   image_mem_wrapper(const image_mem_wrapper &) = delete;
   image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
   /// Destroy bindless image memory wrapper.

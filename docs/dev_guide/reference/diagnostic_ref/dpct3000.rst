@@ -1,0 +1,24 @@
+.. _DPCT3000:
+
+DPCT3000
+========
+
+Message
+-------
+
+.. _msg-3000-start:
+
+Migration of syntax "*<CMake CUDA\* specific command>*" is not supported. You may need to adjust the code.
+
+.. _msg-3000-end:
+
+Detailed Help
+-------------
+
+Migration of syntax "*<CMake CUDA specific command>*" is not supported. You may need to adjust the code.
+
+Suggestions to Fix
+------------------
+
+If there is straightforward mapping available on the SYCL\* side, use the mapping instead in the migrated CMake script;
+If not, you need to implement a helper function in dpct.cmake, which is part of the migrated project, and use this helper function as the mapping in the migrated CMake script.
