@@ -1,0 +1,100 @@
+.. _DPCT1123:
+
+DPCT1123
+========
+
+Message
+-------
+
+.. _msg-1123-start:
+
+The kernel function pointer cannot be used in the device code. You need to call the kernel function with
+the correct argument(s) directly. According to the kernel function definition, adjusting the dimension
+of the sycl::nd_item may also be required
+
+.. _msg-1123-end:
+
+Detailed Help
+-------------
+
+Since SYCL\* 2020 does not support calling a function pointer in a device function (SYCL 2020 Spec,
+5.4. Language restrictions for device functions), the user needs to adjust the code to directly call the
+function pointed by that function pointer. Furthermore, the tool cannot do the analysis well for the
+dimension of sycl::nd_item (if option --assume-nd-range-dim=1 is used during migration) and the arguments,
+so the user may also need to adjust the related code.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel(int *d) {
+     int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+     d[gtid] = gtid;
+   }
+   
+   void foo(int *d) {
+     void *kernel_array[100];
+     kernel_array[10] = (void *)&kernel;
+     void *args[1] = {&d};
+     cudaLaunchKernel(kernel_array[10], dim3(16), dim3(16), args, 0, 0);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(int *d, const sycl::nd_item<3> &item_ct1) {
+     int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
+                item_ct1.get_local_id(2);
+     d[gtid] = gtid;
+   }
+   
+   void foo(int *d) {
+     sycl::device dev_ct1;
+     sycl::queue q_ct1(dev_ct1,
+                       sycl::property_list{sycl::property::queue::in_order()});
+     void *kernel_array[100];
+     kernel_array[10] = (void *)&kernel;
+     void *args[1] = {&d};
+     /*
+     DPCT1123:0: The kernel function pointer cannot be used in the device code. You
+     need to call the kernel function with the correct argument(s) directly.
+     According to the kernel function definition, adjusting the dimension of the
+     sycl::nd_item may also be required.
+     */
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16),
+                           sycl::range<3>(1, 1, 16)),
+         [=](sycl::nd_item<3> item_ct1) {
+           (kernel_array[10])();
+         });
+   }
+
+which needs to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(int *d, const sycl::nd_item<3> &item_ct1) {
+     int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
+                item_ct1.get_local_id(2);
+     d[gtid] = gtid;
+   }
+   
+   void foo(int *d) {
+     sycl::device dev_ct1;
+     sycl::queue q_ct1(dev_ct1,
+                       sycl::property_list{sycl::property::queue::in_order()});
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16),
+                           sycl::range<3>(1, 1, 16)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel(d, item_ct1);
+         });
+   }
+

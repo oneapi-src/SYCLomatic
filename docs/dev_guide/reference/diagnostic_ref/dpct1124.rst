@@ -1,0 +1,54 @@
+.. _DPCT1124:
+
+DPCT1124
+========
+
+Message
+-------
+
+.. _msg-1124-start:
+
+*<API name>* is migrated to asynchronous memcpy API. While the origin API might be synchronous,
+it depends on the type of operand memory, so you may need to call wait() on event return by memcpy
+API to ensure synchronization behavior.
+
+.. _msg-1124-end:
+
+Detailed Help
+-------------
+
+Some CUDA\* asynchronous API might be synchronous with respect to host. For example, asynchronous
+memcpy API might be synchronous in the following 3 cases: data transfers between device memory
+and pageable host memory, data transfers between host memory, and data transfers involving pinned
+memory.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   cudaMemcpyAsync(host_dst, host_src, size, cudaMemcpyHostToHost);
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1124:0: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the
+   origin API might be synchronous, it depends on the type of operand memory, so
+   you may need to call wait() on event return by memcpy API to ensure
+   synchronization behavior.
+   */
+   dpct::get_in_order_queue().memcpy(host_dst, host_src, size);
+
+which needs to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   dpct::get_in_order_queue().memcpy(host_dst, host_src, size).wait();
+
