@@ -131,7 +131,7 @@ void DpctOptionBase::setOccurrenced() {
                                         DpctOptionBase *Conflict) {
     ErrorStream << "Warning: Option ";
     Ignored->printName(ErrorStream);
-    ErrorStream << " is ignored because it is conflict with option ";
+    ErrorStream << " is ignored because it conflicts with option ";
     Conflict->printName(ErrorStream);
     ErrorStream << ".\n";
   };
