@@ -174,6 +174,7 @@ if(UNIX)
 endif()
 
 add_subdirectory(DpctOptRules)
+add_subdirectory(RuleTemplates)
 
 set(dpct_cmake_helper_file
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/cmake/dpct.cmake
