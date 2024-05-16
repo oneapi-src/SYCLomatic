@@ -93,7 +93,7 @@ results in the following migrated SYCL\* code:
      ...
    }
 
-which need be rewritten to:
+which needs to be rewritten to:
 
 .. code-block:: cpp
    :linenos:
