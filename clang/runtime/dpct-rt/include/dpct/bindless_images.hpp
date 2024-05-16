@@ -728,8 +728,11 @@ static inline sycl::event
 dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
             pitched_data &dest, const sycl::id<3> &dest_id,
             const sycl::range<3> &copy_extend, sycl::queue q) {
-  const auto src_offset = sycl::range<3>(src_id[0], src_id[1], src_id[2]);
-  const auto dest_offset = sycl::range<3>(dest_id[0], dest_id[1], dest_id[2]);
+  const auto ele_size = get_ele_size(src->get_desc());
+  const auto src_offset =
+      sycl::range<3>(src_id[0] * ele_size, src_id[1], src_id[2]);
+  const auto dest_offset =
+      sycl::range<3>(dest_id[0] * ele_size, dest_id[1], dest_id[2]);
   const auto dest_extend = sycl::range<3>(dest.get_pitch(), dest.get_y(), 1);
   return q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_desc(),
                            dest.get_data_ptr(), dest_offset, dest_extend,
@@ -740,12 +743,34 @@ static inline sycl::event
 dpct_memcpy(pitched_data src, const sycl::id<3> &src_id,
             image_mem_wrapper *dest, const sycl::id<3> &dest_id,
             const sycl::range<3> &copy_extend, sycl::queue q) {
+  const auto ele_size = get_ele_size(dest->get_desc());
   const auto src_offset = sycl::range<3>(src_id[0], src_id[1], src_id[2]);
-  const auto src_extend = sycl::range<3>(src.get_pitch(), src.get_y(), 1);
+  const auto src_extend =
+      sycl::range<3>(src.get_pitch() / ele_size, src.get_y(), 1);
   const auto dest_offset = sycl::range<3>(dest_id[0], dest_id[1], dest_id[2]);
   return q.ext_oneapi_copy(src.get_data_ptr(), src_offset, src_extend,
                            dest->get_handle(), dest_offset, dest->get_desc(),
                            copy_extend);
+}
+
+static inline sycl::event
+dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
+            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q) {
+  // TODO: Need change logic when sycl support image_mem to image_mem copy.
+  auto from_ele_size = get_ele_size(src->get_desc());
+  auto to_ele_size = get_ele_size(dest->get_desc());
+  std::vector<sycl::event> event_list;
+  dpct::detail::host_buffer buf(
+      copy_extend.size() * std::max(from_ele_size, to_ele_size), q, event_list);
+  auto to = pitched_data(buf.get_ptr(), copy_extend[0] * from_ele_size,
+                         copy_extend[0], copy_extend[1]);
+  dpct_memcpy(src, src_id, to, sycl::id<3>(0, 0, 0), copy_extend, q);
+  auto from = pitched_data(buf.get_ptr(), copy_extend[0] * to_ele_size,
+                           copy_extend[0], copy_extend[1]);
+  event_list.push_back(
+      dpct_memcpy(from, sycl::id<3>(0, 0, 0), dest, dest_id, copy_extend, q));
+  return event_list.front();
 }
 
 template <typename T>
