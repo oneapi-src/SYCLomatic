@@ -342,11 +342,12 @@ DPCT_ENUM_OPTION(
     llvm::cl::value_desc("value"), llvm::cl::cat(DPCTReportGenCat),
     llvm::cl::Optional)
 
-DPCT_OPTION(clang::dpct::opt, std::string, SuppressWarnings,
+DPCT_OPTION(clang::dpct::list, std::string, SuppressWarnings,
             clang::dpct::DpctOptionClass::OC_Attribute,
             DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
             "suppress-warnings", llvm::cl::desc(SuppressWarningsMessage),
-            llvm::cl::value_desc("value"), llvm::cl::cat(DPCTWarningsCat))
+            llvm::cl::value_desc("value"), llvm::cl::CommaSeparated,
+            llvm::cl::cat(DPCTWarningsCat))
 
 DPCT_FLAG_OPTION(
     SuppressWarningsAll, clang::dpct::DpctOptionClass::OC_Attribute,
