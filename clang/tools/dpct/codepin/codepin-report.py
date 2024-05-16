@@ -379,7 +379,7 @@ def main():
         "}\n"
         "When both rel_tol (relative tolerance) and abs_tol (absolute tolerance) are provided, both tolerances are taken into account.\n"
         "The tolerance values are passed to the Python math.isclose() function.\n"
-        "If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol is 0, then rel_tol is used. If both tolerances are 0, the floating point data must be exactly the same when compare.",
+        "If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol is 0, then rel_tol is used. If both tolerances are 0, the floating point data must be exactly the same when compared.",
     )
 
     args = parser.parse_args()
