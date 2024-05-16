@@ -543,9 +543,11 @@ private:
                           oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
         }
       }
+#ifndef NDEBUG
       std::cout << "oneapi::mkl::rng::mrg32k3a_mode is not supported for "
                 << queue->get_device().get_info<sycl::info::device::name>()
                 << ". This argument will be ignored." << std::endl;
+#endif
     }
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
