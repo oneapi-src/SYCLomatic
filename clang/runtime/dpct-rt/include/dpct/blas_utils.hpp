@@ -9,12 +9,9 @@
 #ifndef __DPCT_BLAS_UTILS_HPP__
 #define __DPCT_BLAS_UTILS_HPP__
 
-#include "device.hpp"
 #include "memory.hpp"
 #include "util.hpp"
 #include "lib_common_utils.hpp"
-#include <cstddef>
-#include <cstdint>
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/dnnl/dnnl.hpp>
