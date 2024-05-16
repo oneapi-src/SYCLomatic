@@ -2727,7 +2727,8 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
                                                         q_ptr->get_context());
   dnnl::stream engine_stream = dnnl::sycl_interop::make_stream(engine, *q_ptr);
 
-  const dnnl::memory::dim M = a_desc->_rows, K = b_desc->_rows, N = b_desc->_cols;
+  const dnnl::memory::dim M = a_desc->_rows, K = b_desc->_rows,
+                          N = b_desc->_cols;
 
   dnnl::memory::dims src_dims = {M, K};
   dnnl::memory::dims weights_dims = {K, N};
@@ -2773,15 +2774,13 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
                    : weights_type_size * b_desc->_rows * b_desc->_ld)
       .wait();
 
-  // TODO
   dnnl::primitive_attr matmul_attr;
-  std::size_t ele_num = 1;
   if (compute_desc->_pointer_mode == pointer_mode_t::device ||
       compute_desc->_pointer_mode == pointer_mode_t::host) {
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
   } else {
-    matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 2);
-    ele_num = M;
+    throw std::runtime_error(
+        "only support pointer_mode_t::device and pointer_mode_t::host");
   }
 
   void *alpha_data = nullptr;
@@ -2789,7 +2788,7 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
     std::size_t Size =
         dpct::detail::library_data_size[static_cast<unsigned int>(
             compute_desc->_scale_type)] /
-        8 * ele_num;
+        8;
     alpha_data = sycl::malloc_device(Size, *q_ptr);
     q_ptr->memcpy(alpha_data, alpha, Size).wait();
   } else {
