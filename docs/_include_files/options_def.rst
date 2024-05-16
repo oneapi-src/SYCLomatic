@@ -978,7 +978,7 @@ Options:
        The tolerance values are passed to the Python math.isclose() function.
        If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol
        is 0, then rel_tol is used. If both tolerances are 0, the floating point data
-       must be exactly the same when compare.
+       must be exactly the same when compared.
 
 .. _end-codepin-report-block:
 
