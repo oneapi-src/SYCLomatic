@@ -521,10 +521,8 @@ void sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
           std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
                        std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  auto first = oneapi::dpl::make_zip_iterator(keys_first, values_first);
-  auto last = first + std::distance(keys_first, keys_last);
-  std::sort(std::forward<Policy>(policy), first, last,
-            internal::compare_key_fun<Comp>(comp));
+  oneapi::dpl::sort_by_key(std::forward<Policy>(policy), keys_first, keys_last,
+                           values_first, comp);
 }
 
 template <class Policy, class Iter1, class Iter2>
