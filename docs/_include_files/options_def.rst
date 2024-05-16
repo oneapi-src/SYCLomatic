@@ -342,14 +342,14 @@ By default, these extensions are used in migrated code.
 
 The values are:
 
-- ``=bfloat16``: Disable the SYCL extensions for bfloat16.
+- ``=bfloat16``: Disable the SYCL extensions for bfloat16. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=device_info``: Disable the Intel extensions for device information, if supported
-  by the compiler and the backend.
-- ``=enqueued_barriers``: Disable the enqueued barriers extension.
-- ``=peer_access``: Disable the peer access extension.
-- ``=assert``: Disable the assert extension.
-- ``=queue_empty``: Disable the queue empty extension.
-- ``=all``: Disable all extensions listed in this option.
+  by the compiler and the backend. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=enqueued_barriers``: Disable the enqueued barriers extension. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=peer_access``: Disable the peer access extension. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=assert``: Disable the assert extension. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=queue_empty``: Disable the queue empty extension. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=all``: Disable all extensions listed in this option. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 
 .. _end-no-dpcpp-extensions:
 
@@ -655,11 +655,11 @@ By default, these extensions are not used in migrated code.
 - ``=c_cxx_standard_library``: Use std functions from the libdevice library
   (provided by |dpcpp_compiler|_) and C/C++ Standard Library to migrate functions
   which have no mapping in the SYCL standard. If this value is used together with
-  ``intel_device_math``, the ``intel_device_math`` functions take precedence.
+  ``intel_device_math``, the ``intel_device_math`` functions take precedence. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=intel_device_math``: Use ``sycl::ext::intel::math`` functions from the libdevice
   library (provided by |dpcpp_compiler|) to migrate functions which have no
-  mapping in the SYCL standard.
-- ``all``: Enable all DPC++ extensions listed in this option.
+  mapping in the SYCL standard. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``all``: Enable all DPC++ extensions listed in this option. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 
 .. _end-use-dpcpp-extensions:
 
@@ -676,28 +676,28 @@ By default, experimental features will not be used in migrated code.
 
 The values are:
 
-- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions.
-- ``=bindless_images``: Experimental extension that allows use of bindless images APIs.
+- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=bindless_images``: Experimental extension that allows use of bindless images APIs. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
-  oneDPL APIs.
+  oneDPL APIs. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=free-function-queries``: Experimental extension that allows getting
   ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances
-  globally.
+  globally. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=local-memory-kernel-scope-allocation``: Experimental extension that
-  allows allocation of local memory objects at the kernel functor scope.
+  allows allocation of local memory objects at the kernel functor scope. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=logical-group``: Experimental helper function used to logically
-  group work-items.
+  group work-items. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
-  sub-group operation with mask.
-- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``.
-- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration.
-- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
+  sub-group operation with mask. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
-  reductions.
-- ``=non-uniform-groups``: Experimental extension that allows use of non-uniform groups.
+  reductions. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=non-uniform-groups``: Experimental extension that allows use of non-uniform groups. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 - ``=device_global``: Experimental extension that allows device scoped memory allocations into SYCL that can
-  be accessed within a kernel using syntax similar to C++ global variables.
-- ``=all``: Enable all experimental extensions listed in this option.
+  be accessed within a kernel using syntax similar to C++ global variables. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
+- ``=all``: Enable all experimental extensions listed in this option. `extension doc <https://github.com/intel/llvm/tree/sycl/sycl/doc/extensions>`_
 
 .. _end-use-experimental-features:
 
