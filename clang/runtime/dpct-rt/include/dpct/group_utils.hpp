@@ -538,4 +538,4 @@ private:
 } // namespace group
 } // namespace dpct
 
-#endif // __DPCT_GROUP_UTILS_HPP__
+#endif // __GROUP_UTILS_HPP__
