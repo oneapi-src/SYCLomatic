@@ -1,0 +1,61 @@
+.. _DPCT1127:
+
+DPCT1127
+========
+
+Message
+-------
+
+.. _msg-1127-start:
+
+The constant compile-time initialization for device_global is supported when compiling with C++20.
+You may need to adjust the compile commands.
+
+.. _msg-1127-end:
+
+Detailed Help
+-------------
+
+The device_global extension introduces device scoped memory allocations into SYCL\* that can be
+accessed within a kernel, using syntax similar to C++ global variables. Constant compile-time
+initialization for device_global is supported when compiling with C++20.
+Ref: https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_device_global.asciidoc.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // test.cu
+   __constant__ int var = 0;
+   __global__ void kernel(int* ptr) {
+     *ptr = var;
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // test.dp.cpp
+   /*
+   DPCT1127:0: The constant compile-time initialization for device_global is
+   supported when compiling with C++20. You may need to adjust the compile
+   commands.
+   */
+   static sycl::ext::oneapi::experimental::device_global<const int> var{0};
+   void kernel(int* ptr) {
+     *ptr = var.get();
+   }
+
+The compile commands need to be rewritten to:
+
+.. code-block:: bash
+   :linenos:
+
+   icpx -fsycl -std=c++20 test.dp.cpp # Linux
+   icx-cl -fsycl -Qstd=c++20 test.dp.cpp # Windows
+
