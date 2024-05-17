@@ -1755,7 +1755,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
               "CUDA_MEMCPY2D", "cublasLtHandle_t", "cublasLtMatmulDesc_t",
               "cublasLtOrder_t", "cublasLtPointerMode_t",
-              "cublasLtMatrixLayout_t"))))))
+              "cublasLtMatrixLayout_t", "cublasLtMatrixLayoutAttribute_t",
+              "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -3598,7 +3599,9 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUBLAS_OP.*)|(CUBLAS_SIDE.*)|(CUBLAS_FILL_"
                       "MODE.*)|(CUBLAS_DIAG.*)|(CUBLAS_.*_MATH)|CUBLAS_MATH_"
-                      "DISALLOW_REDUCED_PRECISION_REDUCTION"))))
+                      "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
+                      "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
+                      "(CUBLASLT_MATMUL_DESC_.*)"))))
           .bind("BLASNamedValueConstants"),
       this);
 }
