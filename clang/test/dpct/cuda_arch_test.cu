@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/cuda_arch_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/cuda_arch_test %s --cuda-include-path="%cuda-path/include" --stop-on-parse-err -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda_arch_test/cuda_arch_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/cuda_arch_test/cuda_arch_test.dp.cpp -o %T/cuda_arch_test/cuda_arch_test.dp.o %}
 #include <cuda_runtime.h>
