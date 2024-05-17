@@ -150,12 +150,14 @@ def compare_data_value(data1, data2, var_name, var_type):
 
 def compare_list_value(cuda_list, sycl_list, var_name, var_type):
     for i in range(len(cuda_list)):
-        var_name = var_name + "->[" + str(i) + "]"
+        local_var_name = var_name + "->[" + str(i) + "]"
         if is_both_container(cuda_list[i], sycl_list[i]):
-            compare_container_value(cuda_list[i], sycl_list[i], var_name, var_type)
+            compare_container_value(
+                cuda_list[i], sycl_list[i], local_var_name, var_type
+            )
             continue
         else:
-            compare_data_value(cuda_list[i], sycl_list[i], var_name, var_type)
+            compare_data_value(cuda_list[i], sycl_list[i], local_var_name, var_type)
             continue
 
 
@@ -164,14 +166,15 @@ def compare_dict_value(cuda_dict, sycl_dict, var_name, var_type):
         if name not in sycl_dict:
             raise data_missed_error(name)
         if is_both_container(data, sycl_dict[name]):
-            compare_container_value(data, sycl_dict[name], var_name, var_type)
+            local_var_name = var_name + '->"' + name + '"'
+            compare_container_value(data, sycl_dict[name], local_var_name, var_type)
             continue
         else:
             if name == TYPE:  # Check the Data only, ignore the key is 'Type'
                 var_type = data
                 continue
-            var_name = var_name + "->" + name
-            compare_data_value(data, sycl_dict[name], var_name, var_type)
+            local_var_name = var_name + '->"' + name + '"'
+            compare_data_value(data, sycl_dict[name], local_var_name, var_type)
 
 
 def compare_container_value(cuda_value, sycl_value, var_name, var_type=""):
