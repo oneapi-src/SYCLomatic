@@ -871,6 +871,12 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
+#ifdef _WIN32 // Avoid some error on windows platform.
+    if (DpctGlobalInfo::getSDKVersion() <= CudaVersion::CUDA_100) {
+      Tool.appendArgumentsAdjuster(
+          getInsertArgumentAdjuster("-D_MSC_VER=1900"));
+    }
+#endif
     NoIncrementalMigration.setValue(true);
     StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);

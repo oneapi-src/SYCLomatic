@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Type Casting Intrinsics
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__double2float_rd | FileCheck %s -check-prefix=__DOUBLE2FLOAT_RD

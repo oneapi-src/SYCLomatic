@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-extern clang::dpct::DpctOption<clang::dpct::opt, std::string> SuppressWarnings;
+extern clang::dpct::DpctOption<clang::dpct::list, std::string> SuppressWarnings;
 extern clang::dpct::DpctOption<clang::dpct::opt, std::string> OutputFile;
 extern clang::dpct::DpctOption<clang::dpct::opt, OutputVerbosityLevel> OutputVerbosity;
 extern clang::dpct::DpctOption<clang::dpct::opt, bool> SuppressWarningsAll;
