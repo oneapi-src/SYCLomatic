@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__assert_fail | FileCheck %s -check-prefix=__ASSERT_FAIL
 // __ASSERT_FAIL: CUDA API:
 // __ASSERT_FAIL-NEXT:   __assert_fail(msg /*const char **/, file /*const char **/, line /*unsigned*/,
