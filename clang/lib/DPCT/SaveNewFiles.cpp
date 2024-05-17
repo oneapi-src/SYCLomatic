@@ -1083,9 +1083,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
 
     clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
     genCodePinHeader(SchemaStreamSYCL, false);
-  }
 
-  processallOptionAction(InRoot, CUDAMigratedOutRoot, false);
+    processallOptionAction(InRoot, CUDAMigratedOutRoot, false);
+  }
   processallOptionAction(InRoot, SYCLMigratedOutRoot, true);
 
   return status;
