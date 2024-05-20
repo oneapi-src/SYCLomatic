@@ -520,24 +520,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasLtHandle_t", std::make_shared<TypeNameRule>("int")},
       {"cublasLtMatmulDesc_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                      "blas::experimental::matmul_desc_ptr")},
+                                      "dnnl::experimental::matmul_desc_ptr")},
       {"cublasLtOrder_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                      "blas::experimental::order_t")},
+                                      "dnnl::experimental::order_t")},
       {"cublasLtPointerMode_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                      "blas::experimental::pointer_mode_t")},
+                                      "dnnl::experimental::pointer_mode_t")},
       {"cublasLtMatrixLayout_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                      "blas::experimental::matrix_layout_ptr")},
+                                      "dnnl::experimental::matrix_layout_ptr")},
       {"cublasLtMatrixLayoutAttribute_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute")},
+           "dnnl::experimental::matrix_layout_t::attribute")},
       {"cublasLtMatmulDescAttributes_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute")},
+           "dnnl::experimental::matmul_desc_t::attribute")},
       {"cublasLtMatmulAlgo_t", std::make_shared<TypeNameRule>("int")},
       {"cublasLtEpilogue_t", std::make_shared<TypeNameRule>("int")},
       // ...
@@ -1447,138 +1447,138 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLAS_MATH_DISALLOW_REDUCED_PRECISION_REDUCTION",
        getDpctNamespace() + "blas::math_mode::mm_default"},
       {"CUBLASLT_ORDER_COL",
-       getDpctNamespace() + "blas::experimental::order_t::col"},
+       getDpctNamespace() + "dnnl::experimental::order_t::col"},
       {"CUBLASLT_ORDER_ROW",
-       getDpctNamespace() + "blas::experimental::order_t::row"},
+       getDpctNamespace() + "dnnl::experimental::order_t::row"},
       {"CUBLASLT_ORDER_COL32",
-       getDpctNamespace() + "blas::experimental::order_t::col32"},
+       getDpctNamespace() + "dnnl::experimental::order_t::col32"},
       {"CUBLASLT_ORDER_COL4_4R2_8C",
-       getDpctNamespace() + "blas::experimental::order_t::col4_4r2_8c"},
+       getDpctNamespace() + "dnnl::experimental::order_t::col4_4r2_8c"},
       {"CUBLASLT_ORDER_COL32_2R_4R4",
-       getDpctNamespace() + "blas::experimental::order_t::col32_2r_4r4"},
+       getDpctNamespace() + "dnnl::experimental::order_t::col32_2r_4r4"},
       {"CUBLASLT_POINTER_MODE_HOST",
-       getDpctNamespace() + "blas::experimental::pointer_mode_t::host"},
+       getDpctNamespace() + "dnnl::experimental::pointer_mode_t::host"},
       {"CUBLASLT_POINTER_MODE_DEVICE",
-       getDpctNamespace() + "blas::experimental::pointer_mode_t::device"},
+       getDpctNamespace() + "dnnl::experimental::pointer_mode_t::device"},
       {"CUBLASLT_POINTER_MODE_DEVICE_VECTOR",
        getDpctNamespace() +
-           "blas::experimental::pointer_mode_t::device_vector"},
+           "dnnl::experimental::pointer_mode_t::device_vector"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_ZERO",
        getDpctNamespace() +
-           "blas::experimental::pointer_mode_t::alpha_device_vector_beta_zero"},
+           "dnnl::experimental::pointer_mode_t::alpha_device_vector_beta_zero"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_HOST",
        getDpctNamespace() +
-           "blas::experimental::pointer_mode_t::alpha_device_vector_beta_host"},
+           "dnnl::experimental::pointer_mode_t::alpha_device_vector_beta_host"},
       {"CUBLASLT_MATRIX_LAYOUT_TYPE",
        getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute::type"},
+           "dnnl::experimental::matrix_layout_t::attribute::type"},
       {"CUBLASLT_MATRIX_LAYOUT_ORDER",
        getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute::order"},
+           "dnnl::experimental::matrix_layout_t::attribute::order"},
       {"CUBLASLT_MATRIX_LAYOUT_ROWS",
        getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute::rows"},
+           "dnnl::experimental::matrix_layout_t::attribute::rows"},
       {"CUBLASLT_MATRIX_LAYOUT_COLS",
        getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute::cols"},
+           "dnnl::experimental::matrix_layout_t::attribute::cols"},
       {"CUBLASLT_MATRIX_LAYOUT_LD",
        getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute::ld"},
+           "dnnl::experimental::matrix_layout_t::attribute::ld"},
       {"CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT",
        getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute::batch_count"},
+           "dnnl::experimental::matrix_layout_t::attribute::batch_count"},
       {"CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET",
-       getDpctNamespace() + "blas::experimental::matrix_layout_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matrix_layout_t::attribute::"
                             "strided_batch_offset"},
       {"CUBLASLT_MATRIX_LAYOUT_PLANE_OFFSET",
        getDpctNamespace() +
-           "blas::experimental::matrix_layout_t::attribute::plane_offset"},
+           "dnnl::experimental::matrix_layout_t::attribute::plane_offset"},
       {"CUBLASLT_MATMUL_DESC_COMPUTE_TYPE",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::compute_type"},
+           "dnnl::experimental::matmul_desc_t::attribute::compute_type"},
       {"CUBLASLT_MATMUL_DESC_SCALE_TYPE",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::scale_type"},
+           "dnnl::experimental::matmul_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATMUL_DESC_POINTER_MODE",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::pointer_mode"},
+           "dnnl::experimental::matmul_desc_t::attribute::pointer_mode"},
       {"CUBLASLT_MATMUL_DESC_TRANSA",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::trans_a"},
+           "dnnl::experimental::matmul_desc_t::attribute::trans_a"},
       {"CUBLASLT_MATMUL_DESC_TRANSB",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::trans_b"},
+           "dnnl::experimental::matmul_desc_t::attribute::trans_b"},
       {"CUBLASLT_MATMUL_DESC_TRANSC",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::trans_c"},
+           "dnnl::experimental::matmul_desc_t::attribute::trans_c"},
       {"CUBLASLT_MATMUL_DESC_FILL_MODE",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::fill_mode"},
+           "dnnl::experimental::matmul_desc_t::attribute::fill_mode"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::epilogue"},
+           "dnnl::experimental::matmul_desc_t::attribute::epilogue"},
       {"CUBLASLT_MATMUL_DESC_BIAS_POINTER",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::bias_pointer"},
+           "dnnl::experimental::matmul_desc_t::attribute::bias_pointer"},
       {"CUBLASLT_MATMUL_DESC_BIAS_BATCH_STRIDE",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::bias_batch_stride"},
+           "dnnl::experimental::matmul_desc_t::attribute::bias_batch_stride"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "epilogue_aux_pointer"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::epilogue_aux_ld"},
+           "dnnl::experimental::matmul_desc_t::attribute::epilogue_aux_ld"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_BATCH_STRIDE",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "epilogue_aux_batch_stride"},
       {"CUBLASLT_MATMUL_DESC_ALPHA_VECTOR_BATCH_STRIDE",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "alpha_vector_batch_stride"},
       {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::sm_count_target"},
+           "dnnl::experimental::matmul_desc_t::attribute::sm_count_target"},
       {"CUBLASLT_MATMUL_DESC_A_SCALE_POINTER",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::a_scale_pointer"},
+           "dnnl::experimental::matmul_desc_t::attribute::a_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_B_SCALE_POINTER",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::b_scale_pointer"},
+           "dnnl::experimental::matmul_desc_t::attribute::b_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_C_SCALE_POINTER",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::c_scale_pointer"},
+           "dnnl::experimental::matmul_desc_t::attribute::c_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_D_SCALE_POINTER",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::d_scale_pointer"},
+           "dnnl::experimental::matmul_desc_t::attribute::d_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_AMAX_D_POINTER",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::amax_d_pointer"},
+           "dnnl::experimental::matmul_desc_t::attribute::amax_d_pointer"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_DATA_TYPE",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "epilogue_aux_data_type"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_SCALE_POINTER",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "epilogue_aux_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_AMAX_POINTER",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "epilogue_aux_amax_pointer"},
       {"CUBLASLT_MATMUL_DESC_FAST_ACCUM",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::fast_accum"},
+           "dnnl::experimental::matmul_desc_t::attribute::fast_accum"},
       {"CUBLASLT_MATMUL_DESC_BIAS_DATA_TYPE",
        getDpctNamespace() +
-           "blas::experimental::matmul_desc_t::attribute::bias_data_type"},
+           "dnnl::experimental::matmul_desc_t::attribute::bias_data_type"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_IN_COUNTERS_POINTER",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "atomic_sync_in_counters_pointer"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_OUT_COUNTERS_POINTER",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "atomic_sync_out_counters_pointer"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "atomic_sync_num_chunks_d_rows"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_COLS",
-       getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
+       getDpctNamespace() + "dnnl::experimental::matmul_desc_t::attribute::"
                             "atomic_sync_num_chunks_d_cols"},
   };
 
@@ -2054,29 +2054,29 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasLtCreate", ""},
       {"cublasLtDestroy", ""},
       {"cublasLtMatmulDescCreate", "std::make_shared<" + getDpctNamespace() +
-                                       "blas::experimental::matmul_desc_t>"},
+                                       "dnnl::experimental::matmul_desc_t>"},
       {"cublasLtMatmulDescDestroy",
        "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matmul_desc_t>::reset"},
+           "dnnl::experimental::matmul_desc_t>::reset"},
       {"cublasLtMatmulDescSetAttribute",
        "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matmul_desc_t>::set_attribute"},
+           "dnnl::experimental::matmul_desc_t>::set_attribute"},
       {"cublasLtMatmulDescGetAttribute",
        "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matmul_desc_t>::get_attribute"},
+           "dnnl::experimental::matmul_desc_t>::get_attribute"},
       {"cublasLtMatrixLayoutCreate",
        "std::make_shared<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>"},
+           "dnnl::experimental::matrix_layout_t>"},
       {"cublasLtMatrixLayoutDestroy",
        "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>::reset"},
+           "dnnl::experimental::matrix_layout_t>::reset"},
       {"cublasLtMatrixLayoutSetAttribute",
        "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>::set_attribute"},
+           "dnnl::experimental::matrix_layout_t>::set_attribute"},
       {"cublasLtMatrixLayoutGetAttribute",
        "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>::get_attribute"},
-      {"cublasLtMatmul", getDpctNamespace() + "blas::experimental::matmul"},
+           "dnnl::experimental::matrix_layout_t>::get_attribute"},
+      {"cublasLtMatmul", getDpctNamespace() + "dnnl::experimental::matmul"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
