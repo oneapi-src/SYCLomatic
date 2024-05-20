@@ -2504,6 +2504,12 @@ enum class pointer_mode_t {
 //  bgrada = 256,
 //  bgradb = 512
 //};
+
+class matrix_layout_t;
+using matrix_layout_ptr = std::shared_ptr<matrix_layout_t>;
+class matmul_desc_t;
+using matmul_desc_ptr = std::shared_ptr<matmul_desc_t>;
+
 class matrix_layout_t {
 public:
   enum class attribute {
@@ -2519,12 +2525,12 @@ public:
 
   matrix_layout_t(library_data_t type, std::uint64_t rows, std::uint64_t cols,
                   std::int64_t ld)
-      : _type(tpye), _rows(rows), _cols(cols), _ld(ld) {}
+      : _type(type), _rows(rows), _cols(cols), _ld(ld) {}
 
   void set_attribute(attribute attr, const void *mem) {
     get_set_attr<true>(attr, const_cast<void *>(mem));
   }
-  void get_attribute(attribute attr, void *mem) const {
+  void get_attribute(attribute attr, void *mem) {
     get_set_attr<false>(attr, mem);
   }
 
@@ -2566,7 +2572,6 @@ private:
                      matrix_layout_ptr c_desc, void *d,
                      matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
 };
-using matrix_layout_ptr = std::shared_ptr<matrix_layout_t>;
 
 class matmul_desc_t {
 public:
@@ -2608,7 +2613,7 @@ public:
   void set_attribute(attribute attr, const void *mem) {
     get_set_attr<true>(attr, const_cast<void *>(mem));
   }
-  void get_attribute(attribute attr, void *mem) const {
+  void get_attribute(attribute attr, void *mem) {
     get_set_attr<false>(attr, mem);
   }
 
@@ -2693,19 +2698,37 @@ private:
                      matrix_layout_ptr c_desc, void *d,
                      matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
 };
-using matmul_desc_ptr = std::shared_ptr<matmul_desc_t>;
 
 namespace detail {
-dnnl::memory::data_type dpct_type_to_dnnl_type(library_data_t) {
-
+dnnl::memory::data_type dpct_type_to_dnnl_type(library_data_t type) {
+  switch (type) {
+  case library_data_t::real_half:
+    return dnnl::memory::data_type::f16;
+  case library_data_t::real_bfloat16:
+    return dnnl::memory::data_type::bf16;
+  case library_data_t::real_float:
+    return dnnl::memory::data_type::f32;
+  case library_data_t::real_double:
+    return dnnl::memory::data_type::f64;
+  case library_data_t::real_int32:
+    return dnnl::memory::data_type::s32;
+  case library_data_t::real_int8:
+    return dnnl::memory::data_type::s8;
+  case library_data_t::real_uint8:
+    return dnnl::memory::data_type::u8;
+  default:
+    throw std::runtime_error(
+        "the input library_data_t type has no corresponding type in dnnl");
+  }
 }
-}
+} // namespace detail
 
 void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
             matrix_layout_ptr a_desc, const void *b, matrix_layout_ptr b_desc,
             const void *beta, const void *c, matrix_layout_ptr c_desc, void *d,
             matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
   // 1. if beta is not zero, need throw exception since we do not support it.
+  // TODO
 
   // 2. if has epilogue, need throw exception since we do not support it.
   if (compute_desc->_epilogue != 1) {
@@ -2757,9 +2780,13 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
 
   // Write data to memory object's handles.
   size_t src_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(a->_type)] / 8;
+      dpct::detail::library_data_size[static_cast<unsigned int>(
+          a_desc->_type)] /
+      8;
   size_t weights_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(b->_type)] / 8;
+      dpct::detail::library_data_size[static_cast<unsigned int>(
+          b_desc->_type)] /
+      8;
   q_ptr->memcpy(src_mem.get_data_handle(), a,
                 (a_desc->_order == order_t::row)
                     ? src_type_size * a_desc->_cols * a_desc->_ld
@@ -2789,7 +2816,7 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
     alpha_data = sycl::malloc_device(Size, *q_ptr);
     q_ptr->memcpy(alpha_data, alpha, Size).wait();
   } else {
-    alpha_data = alpha;
+    alpha_data = const_cast<void *>(alpha);
   }
 
   dnnl::memory scales_alpha(
@@ -2818,7 +2845,9 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
 
   // Read data from memory object's handle.
   size_t dst_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(d->_type)] / 8;
+      dpct::detail::library_data_size[static_cast<unsigned int>(
+          d_desc->_type)] /
+      8;
   q_ptr
       ->memcpy(d, dst_mem.get_data_handle(),
                (d_desc->_order == order_t::row)

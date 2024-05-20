@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v12.0, v12.1, v12.2, v12.3
 // RUN: dpct --format-range=none --out-root %T/cublaslt %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cublaslt/cublaslt.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/cublaslt/cublaslt.dp.cpp -o %T/cublaslt/cublaslt.dp.o %}
@@ -5,10 +7,23 @@
 #include "cublasLt.h"
 
 void foo1 () {
+  // CHECK: int ltHandle;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtCreate was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtDestroy was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
   cublasLtHandle_t ltHandle;
   cublasLtCreate(&ltHandle);
   cublasLtDestroy(ltHandle);
 
+  // CHECK: dpct::blas::experimental::matrix_layout_ptr matLayout;
+  // CHECK-NEXT: dpct::library_data_t type;
+  // CHECK-NEXT: uint64_t rows;
+  // CHECK-NEXT: uint64_t cols;
+  // CHECK-NEXT: int64_t ld;
+  // CHECK-NEXT: matLayout = std::make_shared<dpct::blas::experimental::matrix_layout_t>(type, rows, cols, ld);
   cublasLtMatrixLayout_t matLayout;
   cudaDataType type;
   uint64_t rows;
@@ -16,6 +31,13 @@ void foo1 () {
   int64_t ld;
   cublasLtMatrixLayoutCreate(&matLayout, type, rows, cols, ld);
 
+  // CHECK: dpct::blas::experimental::matrix_layout_t::attribute attr1;
+  // CHECK-NEXT: void *buf1;
+  // CHECK-NEXT: size_t sizeInBytes1;
+  // CHECK-NEXT: size_t *sizeWritten1;
+  // CHECK-NEXT: matLayout->get_attribute(attr1, buf1);
+  // CHECK-NEXT: matLayout->set_attribute(attr1, buf1);
+  // CHECK-NEXT: matLayout.reset();
   cublasLtMatrixLayoutAttribute_t attr1;
   void *buf1;
   size_t sizeInBytes1;
@@ -24,11 +46,22 @@ void foo1 () {
   cublasLtMatrixLayoutSetAttribute(matLayout, attr1, buf1, sizeInBytes1);
   cublasLtMatrixLayoutDestroy(matLayout);
 
+  // CHECK: dpct::blas::experimental::matmul_desc_ptr matmulDesc;
+  // CHECK-NEXT: dpct::blas::compute_type computeType;
+  // CHECK-NEXT: dpct::library_data_t scaleType;
+  // CHECK-NEXT: matmulDesc = std::make_shared<dpct::blas::experimental::matmul_desc_t>(computeType, scaleType);
   cublasLtMatmulDesc_t matmulDesc;
   cublasComputeType_t computeType;
   cudaDataType_t scaleType;
   cublasLtMatmulDescCreate(&matmulDesc, computeType, scaleType);
 
+  // CHECK: dpct::blas::experimental::matmul_desc_t::attribute attr2;
+  // CHECK-NEXT: void *buf2;
+  // CHECK-NEXT: size_t sizeInBytes2;
+  // CHECK-NEXT: size_t *sizeWritten2;
+  // CHECK-NEXT: matmulDesc->get_attribute(attr2, buf2);
+  // CHECK-NEXT: matmulDesc->set_attribute(attr2, buf2);
+  // CHECK-NEXT: matmulDesc.reset();
   cublasLtMatmulDescAttributes_t attr2;
   void *buf2;
   size_t sizeInBytes2;
@@ -39,6 +72,23 @@ void foo1 () {
 }
 
 void foo2() {
+  // CHECK: int lightHandle;
+  // CHECK-NEXT: dpct::blas::experimental::matmul_desc_ptr computeDesc;
+  // CHECK-NEXT: const void *alpha;
+  // CHECK-NEXT: const void *A;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Adesc;
+  // CHECK-NEXT: const void *B;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Bdesc;
+  // CHECK-NEXT: const void *beta;
+  // CHECK-NEXT: const void *C;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Cdesc;
+  // CHECK-NEXT: void *D;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Ddesc;
+  // CHECK-NEXT: const int *algo;
+  // CHECK-NEXT: void *workspace;
+  // CHECK-NEXT: size_t workspaceSizeInBytes;
+  // CHECK-NEXT: dpct::queue_ptr stream;
+  // CHECK-NEXT: dpct::blas::experimental::matmul(computeDesc, alpha, A, Adesc, B, Bdesc, beta, C, Cdesc, D, Ddesc, stream);
   cublasLtHandle_t lightHandle;
   cublasLtMatmulDesc_t computeDesc;
   const void *alpha;
@@ -59,18 +109,39 @@ void foo2() {
 }
 
 void foo3() {
+  // CHECK: dpct::blas::experimental::order_t a;
+  // CHECK-NEXT: a = dpct::blas::experimental::order_t::col;
+  // CHECK-NEXT: a = dpct::blas::experimental::order_t::row;
+  // CHECK-NEXT: a = dpct::blas::experimental::order_t::col32;
+  // CHECK-NEXT: a = dpct::blas::experimental::order_t::col4_4r2_8c;
+  // CHECK-NEXT: a = dpct::blas::experimental::order_t::col32_2r_4r4;
   cublasLtOrder_t a;
   a = CUBLASLT_ORDER_COL;
   a = CUBLASLT_ORDER_ROW;
   a = CUBLASLT_ORDER_COL32;
   a = CUBLASLT_ORDER_COL4_4R2_8C;
   a = CUBLASLT_ORDER_COL32_2R_4R4;
+  // CHECK: dpct::blas::experimental::pointer_mode_t b;
+  // CHECK-NEXT: b = dpct::blas::experimental::pointer_mode_t::host;
+  // CHECK-NEXT: b = dpct::blas::experimental::pointer_mode_t::device;
+  // CHECK-NEXT: b = dpct::blas::experimental::pointer_mode_t::device_vector;
+  // CHECK-NEXT: b = dpct::blas::experimental::pointer_mode_t::alpha_device_vector_beta_zero;
+  // CHECK-NEXT: b = dpct::blas::experimental::pointer_mode_t::alpha_device_vector_beta_host;
   cublasLtPointerMode_t b;
   b = CUBLASLT_POINTER_MODE_HOST;
   b = CUBLASLT_POINTER_MODE_DEVICE;
   b = CUBLASLT_POINTER_MODE_DEVICE_VECTOR;
   b = CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_ZERO;
   b = CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_HOST;
+  // CHECK: dpct::blas::experimental::matrix_layout_t::attribute c;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::type;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::order;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::rows;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::cols;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::ld;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::batch_count;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::strided_batch_offset;
+  // CHECK-NEXT: c = dpct::blas::experimental::matrix_layout_t::attribute::plane_offset;
   cublasLtMatrixLayoutAttribute_t c;
   c = CUBLASLT_MATRIX_LAYOUT_TYPE;
   c = CUBLASLT_MATRIX_LAYOUT_ORDER;
@@ -80,6 +151,36 @@ void foo3() {
   c = CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT;
   c = CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET;
   c = CUBLASLT_MATRIX_LAYOUT_PLANE_OFFSET;
+  // CHECK: dpct::blas::experimental::matmul_desc_t::attribute d;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::compute_type;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::scale_type;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::pointer_mode;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::trans_a;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::trans_b;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::trans_c;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::fill_mode;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::epilogue;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::bias_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::bias_batch_stride;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::epilogue_aux_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::epilogue_aux_ld;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::epilogue_aux_batch_stride;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::alpha_vector_batch_stride;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::sm_count_target;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::a_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::b_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::c_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::d_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::amax_d_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::epilogue_aux_data_type;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::epilogue_aux_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::epilogue_aux_amax_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::fast_accum;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::bias_data_type;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::atomic_sync_in_counters_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::atomic_sync_out_counters_pointer;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::atomic_sync_num_chunks_d_rows;
+  // CHECK-NEXT: d = dpct::blas::experimental::matmul_desc_t::attribute::atomic_sync_num_chunks_d_cols;
   cublasLtMatmulDescAttributes_t d;
   d = CUBLASLT_MATMUL_DESC_COMPUTE_TYPE;
   d = CUBLASLT_MATMUL_DESC_SCALE_TYPE;
@@ -110,4 +211,38 @@ void foo3() {
   d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_OUT_COUNTERS_POINTER;
   d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS;
   d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_COLS;
+  // CHECK: int e;
+  // CHECK-NEXT: e = 1;
+  // CHECK-NEXT: e = 2;
+  // CHECK-NEXT: e = 130;
+  // CHECK-NEXT: e = 4;
+  // CHECK-NEXT: e = 6;
+  // CHECK-NEXT: e = 134;
+  // CHECK-NEXT: e = 136;
+  // CHECK-NEXT: e = 152;
+  // CHECK-NEXT: e = 32;
+  // CHECK-NEXT: e = 160;
+  // CHECK-NEXT: e = 36;
+  // CHECK-NEXT: e = 164;
+  // CHECK-NEXT: e = 192;
+  // CHECK-NEXT: e = 208;
+  // CHECK-NEXT: e = 256;
+  // CHECK-NEXT: e = 512;
+  cublasLtEpilogue_t e;
+  e = CUBLASLT_EPILOGUE_DEFAULT;
+  e = CUBLASLT_EPILOGUE_RELU;
+  e = CUBLASLT_EPILOGUE_RELU_AUX;
+  e = CUBLASLT_EPILOGUE_BIAS;
+  e = CUBLASLT_EPILOGUE_RELU_BIAS;
+  e = CUBLASLT_EPILOGUE_RELU_AUX_BIAS;
+  e = CUBLASLT_EPILOGUE_DRELU;
+  e = CUBLASLT_EPILOGUE_DRELU_BGRAD;
+  e = CUBLASLT_EPILOGUE_GELU;
+  e = CUBLASLT_EPILOGUE_GELU_AUX;
+  e = CUBLASLT_EPILOGUE_GELU_BIAS;
+  e = CUBLASLT_EPILOGUE_GELU_AUX_BIAS;
+  e = CUBLASLT_EPILOGUE_DGELU;
+  e = CUBLASLT_EPILOGUE_DGELU_BGRAD;
+  e = CUBLASLT_EPILOGUE_BGRADA;
+  e = CUBLASLT_EPILOGUE_BGRADB;
 }

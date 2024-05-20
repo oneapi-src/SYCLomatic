@@ -539,6 +539,7 @@ void MapNames::setExplicitNamespaceMap() {
            getDpctNamespace() +
            "blas::experimental::matmul_desc_t::attribute")},
       {"cublasLtMatmulAlgo_t", std::make_shared<TypeNameRule>("int")},
+      {"cublasLtEpilogue_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 

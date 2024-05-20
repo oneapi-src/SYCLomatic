@@ -1756,7 +1756,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUDA_MEMCPY2D", "cublasLtHandle_t", "cublasLtMatmulDesc_t",
               "cublasLtOrder_t", "cublasLtPointerMode_t",
               "cublasLtMatrixLayout_t", "cublasLtMatrixLayoutAttribute_t",
-              "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t"))))))
+              "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
+              "cublasLtEpilogue_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -3592,7 +3593,8 @@ REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
 void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUBLAS_STATUS.*)|(CUDA_R_.*)|(CUDA_C_.*)|("
-                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)"))))
+                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)|("
+                                "CUBLASLT_EPILOGUE_.*)"))))
                     .bind("BLASStatusConstants"),
                 this);
   MF.addMatcher(

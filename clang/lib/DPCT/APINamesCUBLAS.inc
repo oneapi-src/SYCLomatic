@@ -1655,7 +1655,7 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cublasLtMatrixLayoutCreate", DEREF(0),
     CALL("std::make_shared<" + MapNames::getDpctNamespace() +
              "blas::experimental::matrix_layout_t>",
-         ARG(1), ARG(2))))
+         ARG(1), ARG(2), ARG(3), ARG(4))))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixLayoutDestroy",
                                              ARG(0), false, "reset"))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixLayoutSetAttribute",
