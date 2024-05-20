@@ -17,6 +17,7 @@ set(dpct_rt_files
   include/dpct/sparse_utils.hpp
   include/dpct/fft_utils.hpp
   include/dpct/lapack_utils.hpp
+  include/dpct/group_utils.hpp
 )
 
 set(dpct_rt_dpstd_files
