@@ -119,8 +119,8 @@ private:
   }
 
   template <typename Item>
-  __dpct_inline__ void
-  exclusive_downsweep(const Item &item, packed_counter_type raking_partial) {
+  __dpct_inline__ void exclusive_downsweep(const Item &item,
+                                           packed_counter_type raking_partial) {
     packed_counter_type *ptr =
         reinterpret_cast<packed_counter_type *>(_local_memory);
     packed_counter_type sum = raking_partial;
@@ -534,7 +534,7 @@ public:
 
 private:
   uint8_t *_local_memory;
- };
+};
 } // namespace group
 } // namespace dpct
 
