@@ -139,6 +139,14 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 
 } // namespace detail
 
+struct image_desc {
+  size_t width = 0;
+  size_t height = 0;
+  sycl::image_channel_type channel_type =
+      sycl::image_channel_type::signed_int32;
+  unsigned channel_num = 0;
+};
+
 /// Image channel info, include channel number, order, data width and type
 class image_channel {
   image_channel_data_type _type = image_channel_data_type::signed_int;
@@ -625,6 +633,15 @@ public:
     detach();
     image_wrapper_base::set_data(
         image_data(const_cast<void *>(data), x, y, pitch, channel));
+  }
+  /// Attach device_ptr data to this class.
+  void attach(const image_desc *desc, device_ptr ptr, size_t pitch) {
+    detach();
+    image_channel channel;
+    channel.set_channel_num(desc->channel_num);
+    channel.set_channel_type(desc->channel_type);
+    image_wrapper_base::set_data(
+        image_data(ptr, desc->width, desc->height, pitch, channel));
   }
   /// Detach data.
   virtual void detach() {}

@@ -313,11 +313,11 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefSetAddress2D | FileCheck %s -check-prefix=CUTEXREFSETADDRESS2D
 // CUTEXREFSETADDRESS2D: CUDA API:
 // CUTEXREFSETADDRESS2D-NEXT:   CUtexref t;
-// CUTEXREFSETADDRESS2D-NEXT:   cuTexRefSetAddress2D(t /*CUtexref*/, pa /*size_t **/, d /*CUdeviceptr*/,
-// CUTEXREFSETADDRESS2D-NEXT:                        s /*size_t*/);
+// CUTEXREFSETADDRESS2D-NEXT:   cuTexRefSetAddress2D(t /*CUtexref*/, pa /*const CUDA_ARRAY_DESCRIPTOR **/,
+// CUTEXREFSETADDRESS2D-NEXT:                        d /*CUdeviceptr*/, s /*size_t*/);
 // CUTEXREFSETADDRESS2D-NEXT: Is migrated to:
 // CUTEXREFSETADDRESS2D-NEXT:   dpct::image_wrapper_base_p t;
-// CUTEXREFSETADDRESS2D-NEXT:   t->attach(d, s);
+// CUTEXREFSETADDRESS2D-NEXT:   t->attach(pa, d, s);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefSetAddressMode | FileCheck %s -check-prefix=CUTEXREFSETADDRESSMODE
 // CUTEXREFSETADDRESSMODE: CUDA API:
