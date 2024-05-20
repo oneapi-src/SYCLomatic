@@ -150,12 +150,14 @@ def compare_data_value(data1, data2, var_name, var_type):
 
 def compare_list_value(cuda_list, sycl_list, var_name, var_type):
     for i in range(len(cuda_list)):
-        var_name = var_name + "->[" + str(i) + "]"
+        local_var_name = var_name + "->[" + str(i) + "]"
         if is_both_container(cuda_list[i], sycl_list[i]):
-            compare_container_value(cuda_list[i], sycl_list[i], var_name, var_type)
+            compare_container_value(
+                cuda_list[i], sycl_list[i], local_var_name, var_type
+            )
             continue
         else:
-            compare_data_value(cuda_list[i], sycl_list[i], var_name, var_type)
+            compare_data_value(cuda_list[i], sycl_list[i], local_var_name, var_type)
             continue
 
 
@@ -164,14 +166,15 @@ def compare_dict_value(cuda_dict, sycl_dict, var_name, var_type):
         if name not in sycl_dict:
             raise data_missed_error(name)
         if is_both_container(data, sycl_dict[name]):
-            compare_container_value(data, sycl_dict[name], var_name, var_type)
+            local_var_name = var_name + '->"' + name + '"'
+            compare_container_value(data, sycl_dict[name], local_var_name, var_type)
             continue
         else:
             if name == TYPE:  # Check the Data only, ignore the key is 'Type'
                 var_type = data
                 continue
-            var_name = var_name + "->" + name
-            compare_data_value(data, sycl_dict[name], var_name, var_type)
+            local_var_name = var_name + '->"' + name + '"'
+            compare_data_value(data, sycl_dict[name], local_var_name, var_type)
 
 
 def compare_container_value(cuda_value, sycl_value, var_name, var_type=""):
@@ -371,14 +374,15 @@ def main():
         required=False,
         help="Specify the relative and absolute tolerance epsilon JSON file for floating point data comparison. The JSON file contains the key-value pairs, where the key is a specific float type, and the value is the corresponding epsilon. For example:\n"
         "{\n"
-        '\v "rel_tol": 1e-3,               # relative tolerance for all float types, it is a ratio value in the range [0 , 1].\n'
-        '\v "bf16_abs_tol": 7.81e-3,       # absolute tolerance for bfloat16 type.\n'
-        '\v "fp16_abs_tol": 9.77e-4,       # absolute tolerance for float16 type.\n'
-        '\v "float_abs_tol": 1.19e-7,      # absolute tolerance for float type.\n'
-        '\v "double_abs_tol": 2.22e-16,    # absolute tolerance for double type.\n'
-        "}\n When both rel_tol (relative tolerance) and abs_tol (absolute tolerance) are provided, both tolerances are taken into account.\n"
+        '"rel_tol": 1e-3,               # relative tolerance for all float types, it is a ratio value in the range [0, 1].\n\n'
+        '"bf16_abs_tol": 7.81e-3,       # absolute tolerance for bfloat16 type.\n\n'
+        '"fp16_abs_tol": 9.77e-4,       # absolute tolerance for float16 type.\n\n'
+        '"float_abs_tol": 1.19e-7,      # absolute tolerance for float type.\n\n'
+        '"double_abs_tol": 2.22e-16,    # absolute tolerance for double type.\n'
+        "}\n"
+        "When both rel_tol (relative tolerance) and abs_tol (absolute tolerance) are provided, both tolerances are taken into account.\n"
         "The tolerance values are passed to the Python math.isclose() function.\n"
-        "If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol is 0, then rel_tol is used. If both tolerances are 0, the floating point data must be exactly the same when compare.",
+        "If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol is 0, then rel_tol is used. If both tolerances are 0, the floating point data must be exactly the same when compared.",
     )
 
     args = parser.parse_args()
