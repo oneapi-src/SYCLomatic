@@ -733,8 +733,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: cuda
@@ -745,8 +745,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cublas_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: cublas
@@ -759,8 +759,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libcublas_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: -lcublas
@@ -773,8 +773,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudnn_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: "cudnn"
@@ -787,8 +787,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvinfer_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: libnvinfer.so
@@ -800,8 +800,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvonnxparser_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: libnvonnxparser.so
@@ -814,8 +814,102 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libstdc++_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      In: -static-libstdc++
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_-static-libstdc++"
+
+- Rule: rule_link_libraries_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cuda
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: cuda
+      Out: ""
+      MatchMode: Full
+
+- Rule: rule_link_libraries_cublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cublas
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: cublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+      RuleId: "replace_cublas_with_MKL_target"
+
+- Rule: rule_link_libraries_libcublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libcublas
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: -lcublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+      RuleId: "replace_libcublas_with_qmkl"
+
+- Rule: rule_link_libraries_cudnn
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cudnn
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: "cudnn"
+      Out: |
+        \${DNN_LIB}
+      MatchMode: Full
+      RuleId: "replace_cudnn_with_libdnn"
+
+- Rule: rule_link_libraries_libnvinfer
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libnvinfer
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: libnvinfer.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvinfer"
+
+- Rule: rule_link_libraries_libnvonnxparser
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libnvonnxparser
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: libnvonnxparser.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvonnxparser"
+
+# icpx: error: '-static-libstdc++' is not supported with '-fsycl', so removing here
+- Rule: rule_link_libraries_libstdc++
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libstdc++
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
   Subrules:
     libs:
       In: -static-libstdc++
