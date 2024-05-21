@@ -57,7 +57,7 @@ which is rewritten to:
 
    void device(float *f) {
    #if defined(__NVPTX__) && defined(__SYCL_DEVICE_ONLY__)
-     float a = sycl::ext::oneapi::experimental::cuda::lgd(f);
+     float a = sycl::ext::oneapi::experimental::cuda::ldg(f);
    #else
      float a = *f;
    #endif
