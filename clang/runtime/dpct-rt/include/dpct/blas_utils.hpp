@@ -14,8 +14,6 @@
 #include "lib_common_utils.hpp"
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
-#include <oneapi/dnnl/dnnl.hpp>
-#include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <utility>
 #include <vector>
 #include <thread>
@@ -2667,7 +2665,7 @@ private:
   oneapi::mkl::transpose _trans_b;
   oneapi::mkl::transpose _trans_c;
   oneapi::mkl::uplo _fill_mode;
-  int _epilogue;
+  int _epilogue = 1;
   void *_bias_pointer;
   std::int64_t _bias_batch_stride;
   void *_epilogue_aux_pointer;
@@ -2725,6 +2723,8 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
             matrix_layout_ptr a_desc, const void *b, matrix_layout_ptr b_desc,
             const void *beta, const void *c, matrix_layout_ptr c_desc, void *d,
             matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
+  if (!q_ptr)
+    q_ptr = &get_default_queue();
   if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
       compute_desc->_pointer_mode ==
           pointer_mode_t::alpha_device_vector_beta_zero ||
@@ -2734,11 +2734,10 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
   }
 
   // 1. if beta is not zero, need throw exception since we do not support it.
-  // TODO
   if (beta != nullptr) {
     size_t beta_size =
         dpct::detail::library_data_size[static_cast<unsigned int>(
-            b_desc->_type)] /
+            compute_desc->_scale_type)] /
         8;
     void *beta_host = std::malloc(beta_size);
     void *beta_zero = std::malloc(beta_size);
