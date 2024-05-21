@@ -225,6 +225,9 @@ void IncludesCallbacks::InclusionDirective(
     if (Info.MustAngled && !IsAngled)
       break;
 
+    if (FileName.equals("cublasLt.h")) {
+      DpctGlobalInfo::enableBLASExperimental();
+    }
     Groups.enableRuleGroup(Info.RuleGroup);
 
     switch (Info.ProcessFlag) {

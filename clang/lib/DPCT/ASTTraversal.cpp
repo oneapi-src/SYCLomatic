@@ -1757,7 +1757,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtOrder_t", "cublasLtPointerMode_t",
               "cublasLtMatrixLayout_t", "cublasLtMatrixLayoutAttribute_t",
               "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
-              "cublasLtEpilogue_t"))))))
+              "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
+              "cublasLtMatmulHeuristicResult_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -4346,7 +4347,10 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasLtMatmulDescDestroy", "cublasLtMatmulDescSetAttribute",
         "cublasLtMatmulDescGetAttribute", "cublasLtMatrixLayoutCreate",
         "cublasLtMatrixLayoutDestroy", "cublasLtMatrixLayoutGetAttribute",
-        "cublasLtMatrixLayoutSetAttribute", "cublasLtMatmul");
+        "cublasLtMatrixLayoutSetAttribute", "cublasLtMatmul",
+        "cublasLtMatmulPreferenceCreate", "cublasLtMatmulPreferenceDestroy",
+        "cublasLtMatmulPreferenceSetAttribute",
+        "cublasLtMatmulAlgoGetHeuristic");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),

@@ -1640,7 +1640,7 @@ REMOVE_API_FACTORY_ENTRY("cublasLtDestroy")
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cublasLtMatmulDescCreate", DEREF(0),
     CALL("std::make_shared<" + MapNames::getDpctNamespace() +
-             "dnnl::experimental::matmul_desc_t>",
+             "blas::experimental::matmul_desc_t>",
          ARG(1), ARG(2))))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatmulDescDestroy",
                                              ARG(0), false, "reset"))
@@ -1654,7 +1654,7 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatmulDescGetAttribute",
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cublasLtMatrixLayoutCreate", DEREF(0),
     CALL("std::make_shared<" + MapNames::getDpctNamespace() +
-             "dnnl::experimental::matrix_layout_t>",
+             "blas::experimental::matrix_layout_t>",
          ARG(1), ARG(2), ARG(3), ARG(4))))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixLayoutDestroy",
                                              ARG(0), false, "reset"))
@@ -1667,6 +1667,10 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixLayoutGetAttribute",
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasLtMatmul",
-    CALL(MapNames::getDpctNamespace() + "dnnl::experimental::matmul", ARG(1),
+    CALL(MapNames::getDpctNamespace() + "blas::experimental::matmul", ARG(1),
          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
          ARG(10), ARG(11), ARG(15))))
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceCreate")
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceDestroy")
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceSetAttribute")
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulAlgoGetHeuristic")
