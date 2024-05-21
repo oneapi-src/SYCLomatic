@@ -2660,10 +2660,10 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
-  pointer_mode_t _pointer_mode;
-  oneapi::mkl::transpose _trans_a;
-  oneapi::mkl::transpose _trans_b;
-  oneapi::mkl::transpose _trans_c;
+  pointer_mode_t _pointer_mode = pointer_mode_t::host;
+  oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
+  oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
+  oneapi::mkl::transpose _trans_c = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::uplo _fill_mode;
   int _epilogue = 1;
   void *_bias_pointer;
@@ -2758,6 +2758,22 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
       (c_desc->_order != order_t::col && c_desc->_order != order_t::row) ||
       (d_desc->_order != order_t::col && d_desc->_order != order_t::row)) {
     throw std::runtime_error("Only support row majorand col major.");
+  }
+
+  // TODO: process a_trans and b_trans
+  if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
+    if (a_desc->_order == order_t::col) {
+      a_desc->_order = order_t::row;
+    } else {
+      a_desc->_order = order_t::col;
+    }
+  }
+  if (compute_desc->_trans_b != oneapi::mkl::transpose::nontrans) {
+    if (b_desc->_order == order_t::col) {
+      b_desc->_order = order_t::row;
+    } else {
+      b_desc->_order = order_t::col;
+    }
   }
 
   dnnl::engine engine = dnnl::sycl_interop::make_engine(q_ptr->get_device(),
