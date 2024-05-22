@@ -1673,4 +1673,5 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
 REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceCreate")
 REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceDestroy")
 REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceSetAttribute")
-REMOVE_API_FACTORY_ENTRY("cublasLtMatmulAlgoGetHeuristic")
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasLtMatmulAlgoGetHeuristic",
+                                        DEREF(9), ARG("1")))

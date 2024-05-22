@@ -69,6 +69,43 @@ void foo1 () {
   cublasLtMatmulDescGetAttribute(matmulDesc, attr2, buf2, sizeInBytes2, sizeWritten2);
   cublasLtMatmulDescSetAttribute(matmulDesc, attr2, buf2, sizeInBytes2);
   cublasLtMatmulDescDestroy(matmulDesc);
+
+  // CHECK: int matmulPreference;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtMatmulPreferenceCreate was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: void *buf3;
+  // CHECK-NEXT: size_t sizeInBytes3;
+  // CHECK-NEXT: size_t *sizeWritten3;
+  // CHECK-NEXT: cublasLtMatmulPreferenceGetAttribute(matmulPreference, CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, buf3, sizeInBytes3, sizeWritten3);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtMatmulPreferenceSetAttribute was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtMatmulPreferenceDestroy was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
+  cublasLtMatmulPreference_t matmulPreference;
+  cublasLtMatmulPreferenceCreate(&matmulPreference);
+  void *buf3;
+  size_t sizeInBytes3;
+  size_t *sizeWritten3;
+  cublasLtMatmulPreferenceGetAttribute(matmulPreference, CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, buf3, sizeInBytes3, sizeWritten3);
+  cublasLtMatmulPreferenceSetAttribute(matmulPreference, CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, buf3, sizeInBytes3);
+  cublasLtMatmulPreferenceDestroy(matmulPreference);
+
+  cublasLtMatrixLayout_t Adesc;
+  cublasLtMatrixLayout_t Bdesc;
+  cublasLtMatrixLayout_t Cdesc;
+  cublasLtMatrixLayout_t Ddesc;
+
+  // CHECK: int requestedAlgoCount = 1;
+  // CHECK-NEXT: int heuristicResultsArray;
+  // CHECK-NEXT: int returnAlgoCount;
+  // CHECK-NEXT: returnAlgoCount = 1;
+  int requestedAlgoCount = 1;
+  cublasLtMatmulHeuristicResult_t heuristicResultsArray;
+  int returnAlgoCount;
+  cublasLtMatmulAlgoGetHeuristic(ltHandle, matmulDesc, Adesc, Bdesc, Cdesc, Ddesc, matmulPreference, requestedAlgoCount, &heuristicResultsArray, &returnAlgoCount);
 }
 
 void foo2() {

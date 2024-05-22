@@ -2554,7 +2554,7 @@ private:
   }
 
   library_data_t _type;
-  order_t _order;
+  order_t _order = order_t::col;
   std::uint64_t _rows;
   std::uint64_t _cols;
   std::int64_t _ld;
