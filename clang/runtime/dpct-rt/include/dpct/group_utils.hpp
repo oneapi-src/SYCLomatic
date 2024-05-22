@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // See https://llvm.org/LICENSE.txt for license information.
 //
-//===----------------------------------------------------------------===//
+//===------------------------------------------------------------------===//
 
 #ifndef __GROUP_UTILS_HPP__
 #define __GROUP_UTILS_HPP__
