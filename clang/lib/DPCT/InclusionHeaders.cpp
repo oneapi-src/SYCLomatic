@@ -236,8 +236,8 @@ void IncludesCallbacks::InclusionDirective(
       break;
     case DpctInclusionInfo::IF_MarkInserted:
       setHeadersAsInserted(FileInfo, Info.Headers);
+      break;
     case DpctInclusionInfo::IF_DoNothing:
-    default:
       break;
     }
     return;
@@ -278,8 +278,6 @@ void DpctInclusionHeadersMap::registInclusionHeaderEntry(
   case MatchMode::Mode_Startwith:
     Info = &InclusionStartWithMap.emplace_back(Filename).Info;
     break;
-  default:
-    return;
   }
   Info->RuleGroup = Group;
   Info->ProcessFlag = Flag;

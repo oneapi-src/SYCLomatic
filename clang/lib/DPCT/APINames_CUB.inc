@@ -167,7 +167,7 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, cub::DeviceSelect, Flagged, Flagged, tr
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, cub::DeviceSelect, If, If, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, cub::DeviceSelect, Unique, Unique, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, cub::DeviceSelect, UniqueByKey, UniqueByKey, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSpmv, cub::DeviceSpmv, CsrMV, CsrMV, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSpmv, cub::DeviceSpmv, CsrMV, CsrMV, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, cub::DeviceSegmentedRadixSort, SortPairs, SortPairs, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, cub::DeviceSegmentedRadixSort, SortPairsDescending, SortPairsDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, cub::DeviceSegmentedRadixSort, SortKeys, SortKeys, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
