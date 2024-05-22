@@ -167,13 +167,14 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 ///
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
+/// \param [in] values An array containing the non-zero elements of the matrix.
+/// \param [in] row_offsets An array of length \p num_rows + 1.
+/// \param [in] column_indices An array containing the column indices in
+/// index-based numbering.
+/// \param [in] vector_x Data of the vector x.
+/// \param [in, out] vector_y Data of the vector y.
 /// \param [in] num_rows Number of rows of the matrix A.
 /// \param [in] num_cols Number of columns of the matrix A.
-/// \param [in] values An array containing the non-zero elements of the matrix A.
-/// \param [in] row_offsets An array of length \p num_rows + 1.
-/// \param [in] column_indices An array containing the column indices in index-based numbering.
-/// \param [in] x Data of the vector x.
-/// \param [in, out] y Data of the vector y.
 template <typename T>
 void csrmv(sycl::queue &queue, const T *values, const int *row_offsets,
            const int *column_indices, const T *vector_x, T *vector_y,
