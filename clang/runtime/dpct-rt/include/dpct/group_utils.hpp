@@ -216,10 +216,6 @@ template <> struct traits<uint32_t> : base_traits<uint32_t, uint32_t> {};
 template <> struct traits<int> : base_traits<int, uint32_t> {};
 template <> struct traits<float> : base_traits<float, uint32_t> {};
 
-} // namespace detail
-
-namespace detail {
-
 template <int N> struct power_of_two {
   enum { VALUE = ((N & (N - 1)) == 0) };
 };
