@@ -12,10 +12,6 @@
 #include <stdexcept>
 #include <sycl/sycl.hpp>
 
-#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
-#include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
-#endif
-
 #include "dpct.hpp"
 #include "dpl_extras/functional.h"
 
