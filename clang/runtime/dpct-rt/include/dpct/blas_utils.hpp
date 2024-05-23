@@ -2505,6 +2505,8 @@ class matrix_layout_t;
 using matrix_layout_ptr = std::shared_ptr<matrix_layout_t>;
 class matmul_desc_t;
 using matmul_desc_ptr = std::shared_ptr<matmul_desc_t>;
+class transform_desc_t;
+using transform_desc_ptr = std::shared_ptr<transform_desc_t>;
 
 class matrix_layout_t {
 public:
@@ -2567,6 +2569,11 @@ private:
                      matrix_layout_ptr b_desc, const void *beta, const void *c,
                      matrix_layout_ptr c_desc, void *d,
                      matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
+  friend void matrix_transform(transform_desc_ptr transform_desc,
+                               const void *alpha, const void *a,
+                               matrix_layout_ptr a_desc, const void *beta,
+                               const void *b, matrix_layout_ptr b_desc, void *c,
+                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
 };
 
 class matmul_desc_t {
@@ -2624,7 +2631,6 @@ private:
     }                                                                          \
     break;
     switch (attr) {
-
       CASE(compute_type)
       CASE(scale_type)
       CASE(pointer_mode)
@@ -2887,6 +2893,187 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
                    ? dst_type_size * d_desc->_cols * d_desc->_ld
                    : dst_type_size * d_desc->_rows * d_desc->_ld)
       .wait();
+}
+
+class transform_desc_t {
+public:
+  enum class attribute { scale_type, pointer_mode, trans_a, trans_b };
+
+  transform_desc_t(library_data_t scale_type) : _scale_type(scale_type) {}
+  void set_attribute(attribute attr, const void *mem) {
+    get_set_attr<true>(attr, const_cast<void *>(mem));
+  }
+  void get_attribute(attribute attr, void *mem) {
+    get_set_attr<false>(attr, mem);
+  }
+
+private:
+  template <bool is_set> void get_set_attr(attribute attr, void *mem) {
+#define CASE(tag)                                                              \
+  case attribute::tag:                                                         \
+    if constexpr (is_set) {                                                    \
+      _##tag = *static_cast<decltype(_##tag) *>(mem);                          \
+    } else {                                                                   \
+      *static_cast<decltype(_##tag) *>(mem) = _##tag;                          \
+    }                                                                          \
+    break;
+    switch (attr) {
+      CASE(scale_type)
+      CASE(pointer_mode)
+      CASE(trans_a)
+      CASE(trans_b)
+    }
+#undef CASE
+  }
+
+  library_data_t _scale_type;
+  pointer_mode_t _pointer_mode = pointer_mode_t::host;
+  oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
+  oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
+
+  friend void matrix_transform(transform_desc_ptr transform_desc,
+                               const void *alpha, const void *a,
+                               matrix_layout_ptr a_desc, const void *beta,
+                               const void *b, matrix_layout_ptr b_desc, void *c,
+                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
+};
+namespace detail {
+template <class T, class Talpha>
+void matrix_transform_impl(queue_ptr q_ptr, size_t a_rows, size_t a_cols,
+                           size_t a_ld, order_t a_order, T *a, size_t c_ld,
+                           order_t c_order, T *c, Talpha *alpha_data) {
+  if (a_order == order_t::col) {
+    q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.parallel_for(sycl::range<2>(a_ld, a_cols), [=](sycl::id<2> index) {
+        if (index.get(0) < a_rows) {
+          size_t row_idx = index.get(0);
+          size_t col_idx = index.get(1);
+          size_t from_idx = a_ld * col_idx + row_idx;
+          size_t to_idx;
+          if (c_order == order_t::col) {
+            to_idx = c_ld * row_idx + col_idx;
+          } else {
+            to_idx = c_ld * col_idx + row_idx;
+          }
+          c[to_idx] = (*alpha_data) * a[from_idx];
+        }
+      });
+    });
+  } else {
+    q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.parallel_for(sycl::range<2>(a_rows, a_ld), [=](sycl::id<2> index) {
+        if (index.get(1) < a_cols) {
+          size_t row_idx = index.get(0);
+          size_t col_idx = index.get(1);
+          size_t from_idx = a_ld * row_idx + col_idx;
+          size_t to_idx;
+          if (c_order == order_t::col) {
+            to_idx = c_ld * row_idx + col_idx;
+          } else {
+            to_idx = c_ld * col_idx + row_idx;
+          }
+          c[to_idx] = (*alpha_data) * a[from_idx];
+        }
+      });
+    });
+  }
+}
+} // namespace detail
+void matrix_transform(transform_desc_ptr transform_desc, const void *alpha,
+                      const void *a, matrix_layout_ptr a_desc, const void *beta,
+                      const void *b, matrix_layout_ptr b_desc, void *c,
+                      matrix_layout_ptr c_desc, queue_ptr q_ptr) {
+  if (!q_ptr)
+    q_ptr = &get_default_queue();
+
+  if (transform_desc->_pointer_mode == pointer_mode_t::device_vector ||
+      transform_desc->_pointer_mode ==
+          pointer_mode_t::alpha_device_vector_beta_zero ||
+      transform_desc->_pointer_mode ==
+          pointer_mode_t::alpha_device_vector_beta_host) {
+    throw std::runtime_error("Unsupported pointer mode.");
+  }
+
+  // If beta is not zero, need throw exception since we do not support it.
+  if (beta != nullptr) {
+    size_t beta_size =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            transform_desc->_scale_type)] /
+        8;
+    void *beta_host = std::malloc(beta_size);
+    void *beta_zero = std::malloc(beta_size);
+    std::memset(beta_zero, 0, beta_size);
+    q_ptr->memcpy(beta_host, beta, beta_size).wait();
+    if (std::memcmp(beta_host, beta_zero, beta_size))
+      throw std::runtime_error("Non-zero beta is not supported.");
+  }
+
+  void *alpha_data = nullptr;
+  if (transform_desc->_pointer_mode == pointer_mode_t::host) {
+    std::size_t Size =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            transform_desc->_scale_type)] /
+        8;
+    alpha_data = sycl::malloc_device(Size, *q_ptr);
+    q_ptr->memcpy(alpha_data, alpha, Size).wait();
+  } else {
+    alpha_data = const_cast<void *>(alpha);
+  }
+
+  std::uint64_t key = dpct::detail::get_type_combination_id(
+      a_desc->_type, transform_desc->_scale_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(library_data_t::real_half,
+                                             library_data_t::real_half): {
+    detail::matrix_transform_impl<sycl::half, sycl::half>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (sycl::half *)a, c_desc->_ld, c_desc->_order, (sycl::half *)c,
+        (sycl::half *)alpha_data);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
+                                             library_data_t::real_int32): {
+    detail::matrix_transform_impl<std::int8_t, std::int32_t>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (std::int8_t *)a, c_desc->_ld, c_desc->_order, (std::int8_t *)c,
+        (std::int32_t *)alpha_data);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
+                                             library_data_t::real_float): {
+    detail::matrix_transform_impl<std::int8_t, float>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (std::int8_t *)a, c_desc->_ld, c_desc->_order, (std::int8_t *)c,
+        (float *)alpha_data);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_bfloat16,
+                                             library_data_t::real_float): {
+    detail::matrix_transform_impl<oneapi::mkl::bfloat16, float>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (oneapi::mkl::bfloat16 *)a, c_desc->_ld, c_desc->_order,
+        (oneapi::mkl::bfloat16 *)c, (float *)alpha_data);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_half,
+                                             library_data_t::real_float): {
+    detail::matrix_transform_impl<sycl::half, float>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (sycl::half *)a, c_desc->_ld, c_desc->_order, (sycl::half *)c,
+        (float *)alpha_data);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                             library_data_t::real_float): {
+    detail::matrix_transform_impl<float, float>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (float *)a, c_desc->_ld, c_desc->_order, (float *)c,
+        (float *)alpha_data);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
 }
 } // namespace experimental
 } // namespace blas

@@ -1758,7 +1758,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatrixLayout_t", "cublasLtMatrixLayoutAttribute_t",
               "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
               "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
-              "cublasLtMatmulHeuristicResult_t"))))))
+              "cublasLtMatmulHeuristicResult_t",
+              "cublasLtMatrixTransformDesc_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -3604,7 +3605,8 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
                       "MODE.*)|(CUBLAS_DIAG.*)|(CUBLAS_.*_MATH)|CUBLAS_MATH_"
                       "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
                       "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
-                      "(CUBLASLT_MATMUL_DESC_.*)"))))
+                      "(CUBLASLT_MATMUL_DESC_.*)|(CUBLASLT_MATRIX_TRANSFORM_"
+                      "DESC_.*)"))))
           .bind("BLASNamedValueConstants"),
       this);
 }
@@ -4350,7 +4352,10 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasLtMatrixLayoutSetAttribute", "cublasLtMatmul",
         "cublasLtMatmulPreferenceCreate", "cublasLtMatmulPreferenceDestroy",
         "cublasLtMatmulPreferenceSetAttribute",
-        "cublasLtMatmulAlgoGetHeuristic");
+        "cublasLtMatmulAlgoGetHeuristic", "cublasLtMatrixTransformDescCreate",
+        "cublasLtMatrixTransformDescDestroy",
+        "cublasLtMatrixTransformDescSetAttribute",
+        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),

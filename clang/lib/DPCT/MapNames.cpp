@@ -543,6 +543,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasLtMatmulPreference_t", std::make_shared<TypeNameRule>("int")},
       {"cublasLtMatmulHeuristicResult_t",
        std::make_shared<TypeNameRule>("int")},
+      {"cublasLtMatrixTransformDesc_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "blas::experimental::transform_desc_ptr")},
       // ...
   };
 
@@ -1583,6 +1586,18 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_COLS",
        getDpctNamespace() + "blas::experimental::matmul_desc_t::attribute::"
                             "atomic_sync_num_chunks_d_cols"},
+      {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
+       getDpctNamespace() +
+           "blas::experimental::transform_desc_t::attribute::scale_type"},
+      {"CUBLASLT_MATRIX_TRANSFORM_DESC_POINTER_MODE",
+       getDpctNamespace() +
+           "blas::experimental::transform_desc_t::attribute::pointer_mode"},
+      {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA",
+       getDpctNamespace() +
+           "blas::experimental::transform_desc_t::attribute::trans_a"},
+      {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSB",
+       getDpctNamespace() +
+           "blas::experimental::transform_desc_t::attribute::trans_b"},
   };
 
   ClassFieldMap = {};
@@ -2084,6 +2099,20 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasLtMatmulPreferenceDestroy", ""},
       {"cublasLtMatmulPreferenceSetAttribute", ""},
       {"cublasLtMatmulAlgoGetHeuristic", ""},
+      {"cublasLtMatrixTransformDescCreate",
+       "std::make_shared<" + getDpctNamespace() +
+           "blas::experimental::transform_desc_t>"},
+      {"cublasLtMatrixTransformDescDestroy",
+       "std::shared_ptr<" + getDpctNamespace() +
+           "blas::experimental::transform_desc_t>::reset"},
+      {"cublasLtMatrixTransformDescSetAttribute",
+       "std::shared_ptr<" + getDpctNamespace() +
+           "blas::experimental::transform_desc_t>::set_attribute"},
+      {"cublasLtMatrixTransformDescGetAttribute",
+       "std::shared_ptr<" + getDpctNamespace() +
+           "blas::experimental::transform_desc_t>::get_attribute"},
+      {"cublasLtMatrixTransform",
+       getDpctNamespace() + "blas::experimental::matrix_transform"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",

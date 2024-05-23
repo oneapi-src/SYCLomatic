@@ -1675,3 +1675,22 @@ REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceDestroy")
 REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceSetAttribute")
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasLtMatmulAlgoGetHeuristic",
                                         DEREF(9), ARG("1")))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cublasLtMatrixTransformDescCreate", DEREF(0),
+    CALL("std::make_shared<" + MapNames::getDpctNamespace() +
+             "blas::experimental::transform_desc_t>",
+         ARG(1))))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+    "cublasLtMatrixTransformDescDestroy", ARG(0), false, "reset"))
+ASSIGNABLE_FACTORY(
+    MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixTransformDescSetAttribute", ARG(0),
+                              true, "set_attribute", ARG(1), ARG(2)))
+ASSIGNABLE_FACTORY(
+    MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixTransformDescGetAttribute", ARG(0),
+                              true, "get_attribute", ARG(1), ARG(2)))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasLtMatrixTransform",
+    CALL(MapNames::getDpctNamespace() + "blas::experimental::matrix_transform",
+         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
+         ARG(10))))
