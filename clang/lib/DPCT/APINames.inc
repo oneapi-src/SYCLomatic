@@ -1779,7 +1779,7 @@ ENTRY(cuDriverGetVersion, cuDriverGetVersion, true, NO_FLAG, P4, "DPCT1043")
 ENTRY(cuEventCreateFromEGLSync, cuEventCreateFromEGLSync, false, NO_FLAG, P4, "comment")
 ENTRY(cuStreamWaitValue64, cuStreamWaitValue64_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cuStreamWriteValue64, cuStreamWriteValue64_v2, false, NO_FLAG, P4, "comment")
-ENTRY(cuFuncSetAttribute, cuFuncSetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuFuncSetAttribute, cuFuncSetAttribute, true, API_CALL_REMOVED, P4, "DPCT1026")
 ENTRY(cuLaunchCooperativeKernel, cuLaunchCooperativeKernel, false, NO_FLAG, P4, "comment")
 ENTRY(cuLaunchCooperativeKernelMultiDevice, cuLaunchCooperativeKernelMultiDevice, false, NO_FLAG, P4, "comment")
 
