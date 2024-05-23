@@ -283,3 +283,45 @@ void foo3() {
   e = CUBLASLT_EPILOGUE_BGRADA;
   e = CUBLASLT_EPILOGUE_BGRADB;
 }
+
+void foo4() {
+  // CHECK: dpct::blas::experimental::transform_desc_ptr transformDesc;
+  // CHECK-NEXT: dpct::library_data_t scaleType;
+  // CHECK-NEXT: transformDesc = std::make_shared<dpct::blas::experimental::transform_desc_t>(scaleType);
+  // CHECK-NEXT: oneapi::mkl::transpose opT = oneapi::mkl::transpose::trans;
+  // CHECK-NEXT: size_t sizeWritten;
+  // CHECK-NEXT: transformDesc->set_attribute(dpct::blas::experimental::transform_desc_t::attribute::trans_a, &opT);
+  // CHECK-NEXT: transformDesc->get_attribute(dpct::blas::experimental::transform_desc_t::attribute::trans_a, &opT);
+  // CHECK-NEXT: transformDesc.reset();
+  cublasLtMatrixTransformDesc_t transformDesc;
+  cudaDataType scaleType;
+  cublasLtMatrixTransformDescCreate(&transformDesc, scaleType);
+  cublasOperation_t opT = CUBLAS_OP_T;
+  size_t sizeWritten;
+  cublasLtMatrixTransformDescSetAttribute(transformDesc, CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA, &opT, sizeof(opT));
+  cublasLtMatrixTransformDescGetAttribute(transformDesc, CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA, &opT, sizeof(opT), &sizeWritten);
+  cublasLtMatrixTransformDescDestroy(transformDesc);
+
+  // CHECK: int lightHandle;
+  // CHECK-NEXT: const void *alpha;
+  // CHECK-NEXT: const void *A;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Adesc;
+  // CHECK-NEXT: const void *beta;
+  // CHECK-NEXT: const void *B;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Bdesc;
+  // CHECK-NEXT: void *C;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Cdesc;
+  // CHECK-NEXT: dpct::queue_ptr stream;
+  // CHECK-NEXT: dpct::blas::experimental::matrix_transform(transformDesc, alpha, A, Adesc, beta, B, Bdesc, C, Cdesc, stream);
+  cublasLtHandle_t lightHandle;
+  const void *alpha;
+  const void *A;
+  cublasLtMatrixLayout_t Adesc;
+  const void *beta;
+  const void *B;
+  cublasLtMatrixLayout_t Bdesc;
+  void *C;
+  cublasLtMatrixLayout_t Cdesc;
+  cudaStream_t stream;
+  cublasLtMatrixTransform(lightHandle, transformDesc, alpha, A, Adesc, beta, B, Bdesc, C, Cdesc, stream);
+}
