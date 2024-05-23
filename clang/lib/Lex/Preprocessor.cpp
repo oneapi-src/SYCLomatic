@@ -843,8 +843,8 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
     DefMacroDirective DMD(MI, SourceLocation());
     ArrayRef<ModuleMacro *> MMs;
     MacroDefinition MD(&DMD, MMs, false);
-    if (IsHandleDefineDirective)
-      DisableMacroExpansion = false;
+    if (!getMacroDefinition(&II) && (GetRunRound() == 0))
+      appendDefMacroDirective(&II, MI);
     if (!DisableMacroExpansion) {
       if (!Identifier.isExpandDisabled() && MI->isEnabled()) {
         // C99 6.10.3p10: If the preprocessing token immediately after the

@@ -3071,9 +3071,6 @@ static bool isObjCProtectedMacro(const IdentifierInfo *II) {
 /// line then lets the caller lex the next real token.
 void Preprocessor::HandleDefineDirective(
     Token &DefineTok, const bool ImmediatelyAfterHeaderGuard) {
-#ifdef SYCLomatic_CUSTOMIZATION
-  IsHandleDefineDirective = true;
-#endif
   ++NumDefined;
 
   Token MacroNameTok;
@@ -3217,9 +3214,6 @@ void Preprocessor::HandleDefineDirective(
     MI->setTokens({Tok}, BP);
     (void)appendDefMacroDirective(getIdentifierInfo("static_assert"), MI);
   }
-#ifdef SYCLomatic_CUSTOMIZATION
-  IsHandleDefineDirective = false;
-#endif
 }
 
 /// HandleUndefDirective - Implements \#undef.

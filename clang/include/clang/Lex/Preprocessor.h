@@ -141,9 +141,6 @@ class Preprocessor {
   HeaderSearch      &HeaderInfo;
   ModuleLoader      &TheModuleLoader;
 
-#ifdef SYCLomatic_CUSTOMIZATION
-  bool IsHandleDefineDirective = false;
-#endif
   /// External source of macros.
   ExternalPreprocessorSource *ExternalSource;
 
