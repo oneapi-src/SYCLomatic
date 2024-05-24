@@ -8578,10 +8578,9 @@ void KernelCallRule::runRule(
       return;
     if (!IsAssigned)
       removeTrailingSemicolon(LaunchKernelCall, Result);
-    if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall, IsAssigned)) {
-      std::string Repl = "";
-      emplaceTransformation(
-          new ReplaceStmt(LaunchKernelCall, true, false, ""));
+    if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
+                                                            IsAssigned)) {
+      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
     }
   }
 }
