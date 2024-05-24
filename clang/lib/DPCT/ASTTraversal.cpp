@@ -2828,8 +2828,16 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
       return false;
 
     const std::string TypeName = IDInfo->getName().str();
-    return (MapNames::SupportedVectorTypes.find(TypeName) !=
-            MapNames::SupportedVectorTypes.end());
+    if (MapNames::SupportedVectorTypes.find(TypeName) !=
+        MapNames::SupportedVectorTypes.end()) {
+      if (const auto *ND = getNamedDecl(PD->getType().getTypePtr())) {
+        auto Loc = ND->getBeginLoc();
+        if (DpctGlobalInfo::isInAnalysisScope(Loc))
+          return false;
+      }
+      return true;
+    }
+    return false;
   };
 
   // As long as one parameter is vector type

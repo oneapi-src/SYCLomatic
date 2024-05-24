@@ -33,3 +33,14 @@ static __device__ uint2 operator^(const uint2 a, const uint2 b) {
 __device__ uint2 chi(const uint2 a, const uint2 b, const uint2 c) {
     return a ^ (~b) & c;
 };
+
+// CHECK: struct half {};
+// CHECK-NEXT: sycl::half operator+(sycl::half &&a, sycl::half &&b) { return a; }
+// CHECK-NEXT: sycl::half operator-(sycl::half &a, sycl::half &b) { return a; }
+// CHECK-NEXT: void foo1() { sycl::half() + sycl::half(); }
+// CHECK-NEXT: void foo2(sycl::half &a, sycl::half &b) { a - b; }
+struct half {};
+half operator+(half &&a, half &&b) { return a; }
+half operator-(half &a, half &b) { return a; }
+void foo1() { half() + half(); }
+void foo2(half &a, half &b) { a - b; }
