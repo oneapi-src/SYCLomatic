@@ -6,8 +6,8 @@
 //
 //===------------------------------------------------------------------===//
 
-#ifndef __GROUP_UTILS_HPP__
-#define __GROUP_UTILS_HPP__
+#ifndef __DPCT_GROUP_UTILS_HPP__
+#define __DPCT_GROUP_UTILS_HPP__
 
 #include <stdexcept>
 #include <sycl/sycl.hpp>
@@ -530,4 +530,4 @@ private:
 } // namespace group
 } // namespace dpct
 
-#endif // __GROUP_UTILS_HPP__
+#endif // __DPCT_GROUP_UTILS_HPP__
