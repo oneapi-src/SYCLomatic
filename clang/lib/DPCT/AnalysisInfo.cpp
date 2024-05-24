@@ -1973,14 +1973,15 @@ void DpctGlobalInfo::emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
   }
 }
 std::shared_ptr<KernelCallExpr>
-DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
-  auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
+DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall, bool IsAssigned) {
+  auto DefRange = getDefinitionRange(LaunchKernelCall->getBeginLoc(), LaunchKernelCall->getEndLoc());
+  auto LocInfo = getLocInfo(DefRange.getBegin());
   auto FileInfo = insertFile(LocInfo.first);
   if (FileInfo->findNode<KernelCallExpr>(LocInfo.second))
     return std::shared_ptr<KernelCallExpr>();
 
   auto KernelInfo =
-      KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall);
+      KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall, IsAssigned);
   if (KernelInfo) {
     FileInfo->insertNode(LocInfo.second, KernelInfo);
   } else {
@@ -5192,6 +5193,9 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
     Block = std::move(Printer.block(true));
   }
   printSubmit(Printer);
+  if (NeedDefaultRetValue) {
+    Printer.line("return 0;");
+  }
   Block.reset();
   if (!getEvent().empty() && isSync())
     Printer.line(getEvent(), "->wait();");
@@ -5587,7 +5591,7 @@ std::string KernelCallExpr::getReplacement() {
 }
 std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
-    const CallExpr *CE) {
+    const CallExpr *CE, bool IsAssigned) {
   auto LaunchFD = CE->getDirectCallee();
   if (!LaunchFD || (LaunchFD->getName() != "cudaLaunchKernel" &&
                     LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
@@ -5595,6 +5599,11 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
   }
   auto Kernel = std::shared_ptr<KernelCallExpr>(
       new KernelCallExpr(LocInfo.second, LocInfo.first));
+  // Call the lambda function with default return value.
+  if (IsAssigned) {
+    Kernel->setNeedDefaultRet();
+    Kernel->setNeedAddLambda();
+  }
   Kernel->buildLocationInfo(CE);
   Kernel->buildExecutionConfig(
       ArrayRef<const Expr *>{CE->getArg(1), CE->getArg(2), CE->getArg(4),
@@ -5727,6 +5736,12 @@ void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
   if (dyn_cast<ParenExpr>(getParentStmt(KernelCall))) {
     NeedLambda = true;
   }
+}
+void KernelCallExpr::setNeedAddLambda() {
+    NeedLambda = true;
+}
+void KernelCallExpr::setNeedDefaultRet() {
+    NeedDefaultRetValue = true;
 }
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   NeedBraces = true;
