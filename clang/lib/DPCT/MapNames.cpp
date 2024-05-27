@@ -374,7 +374,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
       {"CUDA_ARRAY_DESCRIPTOR",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_desc")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "matrix_desc")},
       {"cudaMemcpy3DParms",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"CUDA_MEMCPY3D",

@@ -181,15 +181,11 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::API_NOT_MIGRATED)
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-        "cuArrayCreate_v2", DEREF(0),
-        NEW(MapNames::getDpctNamespace() + "image_matrix",
-            MEMBER_EXPR(ARG(1), true, LITERAL("channel_type")),
-            MEMBER_EXPR(ARG(1), true, LITERAL("channel_num")),
-            MEMBER_EXPR(ARG(1), true, LITERAL("width")),
-            MEMBER_EXPR(ARG(1), true, LITERAL("height"))))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cuArrayCreate_v2", DEREF(0),
+                            NEW(MapNames::getDpctNamespace() + "image_matrix",
+                                ARG(1)))))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)
 FEATURE_REQUEST_FACTORY(

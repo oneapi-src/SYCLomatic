@@ -139,7 +139,7 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 
 } // namespace detail
 
-struct image_desc {
+struct matrix_desc {
   size_t width = 0;
   size_t height = 0;
   sycl::image_channel_type channel_type =
@@ -339,6 +339,9 @@ public:
     }
     _host_data = std::malloc(_range[0] * _range[1] * _channel.get_total_size());
   }
+  image_matrix(const matrix_desc *desc)
+      : image_matrix(desc->channel_type, desc->channel_num, desc->width,
+                     desc->height) {}
 
   /// Construct a new image class with the matrix data.
   template <int dimensions> sycl::image<dimensions> *create_image() {
@@ -635,7 +638,7 @@ public:
         image_data(const_cast<void *>(data), x, y, pitch, channel));
   }
   /// Attach device_ptr data to this class.
-  void attach(const image_desc *desc, device_ptr ptr, size_t pitch) {
+  void attach(const matrix_desc *desc, device_ptr ptr, size_t pitch) {
     detach();
     image_channel channel;
     channel.set_channel_num(desc->channel_num);

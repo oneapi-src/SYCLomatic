@@ -20,7 +20,7 @@ void funcT(T t) {}
 
 int main() {
 
-  // CHECK: dpct::image_desc halfDesc;
+  // CHECK: dpct::matrix_desc halfDesc;
   // CHECK-NEXT: halfDesc.height = 32;
   // CHECK-NEXT: halfDesc.width = 64;
   // CHECK-NEXT: halfDesc.channel_type = sycl::image_channel_type::fp16;
@@ -31,7 +31,7 @@ int main() {
   halfDesc.Format = CU_AD_FORMAT_HALF;
   halfDesc.NumChannels = 1;
 
-  // CHECK: dpct::image_desc float4Desc;
+  // CHECK: dpct::matrix_desc float4Desc;
   // CHECK-NEXT: float4Desc.width = 64;
   // CHECK-NEXT: float4Desc.channel_type = sycl::image_channel_type::fp32;
   // CHECK-NEXT: float4Desc.channel_num = 4;
@@ -44,8 +44,8 @@ int main() {
 
   // CHECK: dpct::image_matrix **a_ptr = new dpct::image_matrix_p;
   // CHECK-NEXT: dpct::image_matrix_p a42;
-  // CHECK-NEXT: *a_ptr = new dpct::image_matrix((&halfDesc)->channel_type, (&halfDesc)->channel_num, (&halfDesc)->width, (&halfDesc)->height);
-  // CHECK-NEXT: a42 = new dpct::image_matrix((&float4Desc)->channel_type, (&float4Desc)->channel_num, (&float4Desc)->width, (&float4Desc)->height);
+  // CHECK-NEXT: *a_ptr = new dpct::image_matrix(&halfDesc);
+  // CHECK-NEXT: a42 = new dpct::image_matrix(&float4Desc);
   // CHECK-NEXT: delete (*a_ptr);
   // CHECK-NEXT: delete a42;
   // CHECK-NEXT: delete a_ptr;
@@ -61,25 +61,25 @@ int main() {
   {
     int errorCode;
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(a42 = new dpct::image_matrix((&float4Desc)->channel_type, (&float4Desc)->channel_num, (&float4Desc)->width, (&float4Desc)->height));
+    // CHECK: errorCode = DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc));
     errorCode = cuArrayCreate(&a42, &float4Desc);
     // CHECK: errorCode = DPCT_CHECK_ERROR(delete a42);
     errorCode = cuArrayDestroy(a42);
 
 
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix((&float4Desc)->channel_type, (&float4Desc)->channel_num, (&float4Desc)->width, (&float4Desc)->height)));
+    // CHECK: cudaCheck(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc)));
     cudaCheck(cuArrayCreate(&a42, &float4Desc));
     // CHECK: cudaCheck(DPCT_CHECK_ERROR(delete a42));
     cudaCheck(cuArrayDestroy(a42));
 
 
-    // CHECK: func(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix((&float4Desc)->channel_type, (&float4Desc)->channel_num, (&float4Desc)->width, (&float4Desc)->height)));
+    // CHECK: func(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc)));
     func(cuArrayCreate(&a42, &float4Desc));
     // CHECK: func(DPCT_CHECK_ERROR(delete a42));
     func(cuArrayDestroy(a42));
 
 
-    // CHECK: funcT(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix((&float4Desc)->channel_type, (&float4Desc)->channel_num, (&float4Desc)->width, (&float4Desc)->height)));
+    // CHECK: funcT(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc)));
     funcT(cuArrayCreate(&a42, &float4Desc));
     // CHECK: funcT(DPCT_CHECK_ERROR(delete a42));
     funcT(cuArrayDestroy(a42));
@@ -89,14 +89,14 @@ int main() {
 void create_array_fail() {
   CUarray a;
   unsigned i;
-  // CHECK: dpct::image_desc d[20], *p;
+  // CHECK: dpct::matrix_desc d[20], *p;
   CUDA_ARRAY_DESCRIPTOR d[20], *p;
   p = &d[5];
 
-  // CHECK: a = new dpct::image_matrix(d->channel_type, d->channel_num, d->width, d->height);
-  // CHECK-NEXT: a = new dpct::image_matrix(p->channel_type, p->channel_num, p->width, p->height);
-  // CHECK-NEXT: a = new dpct::image_matrix((p + i)->channel_type, (p + i)->channel_num, (p + i)->width, (p + i)->height);
-  // CHECK-NEXT: a = new dpct::image_matrix((&d[i])->channel_type, (&d[i])->channel_num, (&d[i])->width, (&d[i])->height);
+  // CHECK: a = new dpct::image_matrix(d);
+  // CHECK-NEXT: a = new dpct::image_matrix(p);
+  // CHECK-NEXT: a = new dpct::image_matrix(p + i);
+  // CHECK-NEXT: a = new dpct::image_matrix(&d[i]);
   cuArrayCreate(&a, d);
   cuArrayCreate(&a, p);
   cuArrayCreate(&a, p + i);
