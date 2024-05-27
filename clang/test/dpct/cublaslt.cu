@@ -77,7 +77,9 @@ void foo1 () {
   // CHECK-NEXT: void *buf3;
   // CHECK-NEXT: size_t sizeInBytes3;
   // CHECK-NEXT: size_t *sizeWritten3;
-  // CHECK-NEXT: cublasLtMatmulPreferenceGetAttribute(matmulPreference, CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, buf3, sizeInBytes3, sizeWritten3);
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtMatmulPreferenceGetAttribute was removed because this functionality is redundant in SYCL.
+  // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtMatmulPreferenceSetAttribute was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */

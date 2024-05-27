@@ -2098,6 +2098,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasLtMatmulPreferenceCreate", ""},
       {"cublasLtMatmulPreferenceDestroy", ""},
       {"cublasLtMatmulPreferenceSetAttribute", ""},
+      {"cublasLtMatmulPreferenceGetAttribute", ""},
       {"cublasLtMatmulAlgoGetHeuristic", ""},
       {"cublasLtMatrixTransformDescCreate",
        "std::make_shared<" + getDpctNamespace() +

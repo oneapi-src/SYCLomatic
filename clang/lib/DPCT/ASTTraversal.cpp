@@ -4352,6 +4352,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasLtMatrixLayoutSetAttribute", "cublasLtMatmul",
         "cublasLtMatmulPreferenceCreate", "cublasLtMatmulPreferenceDestroy",
         "cublasLtMatmulPreferenceSetAttribute",
+        "cublasLtMatmulPreferenceGetAttribute",
         "cublasLtMatmulAlgoGetHeuristic", "cublasLtMatrixTransformDescCreate",
         "cublasLtMatrixTransformDescDestroy",
         "cublasLtMatrixTransformDescSetAttribute",
