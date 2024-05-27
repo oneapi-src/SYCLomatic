@@ -5182,16 +5182,14 @@ const std::string &KernelCallExpr::ArgInfo::getTypeString() const {
 }
 void KernelCallExpr::print(KernelPrinter &Printer) {
   std::unique_ptr<KernelPrinter::Block> Block;
+  bool IsBlockInserted = false;
   if (!OuterStmts.empty()) {
-    if (NeedBraces)
-      Block = std::move(Printer.block(true));
-    else
-      Block = std::move(Printer.block(false));
+    Block = std::move(Printer.block(NeedBraces));
+    IsBlockInserted = NeedBraces;
     OuterStmts.print(Printer);
   }
-  if (NeedLambda) {
+  if (NeedLambda && !IsBlockInserted)
     Block = std::move(Printer.block(true));
-  }
   printSubmit(Printer);
   if (NeedDefaultRetValue) {
     Printer.line("return 0;");
