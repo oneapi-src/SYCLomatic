@@ -318,6 +318,21 @@ static int parseCodeElement(const MatchPattern &Suffix,
     delimiters.
     */
 
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Index - 1 >= 0 && Character == '"' && Input[Index - 1] == '\\') {
+        Index++;
+        while (Index < Size &&
+               !(Input[Index - 1] == '\\' && Input[Index] == '"')) {
+          Index++;
+        }
+        if (Index >= Size) {
+          return -1;
+        }
+        Index++;
+        continue;
+      }
+    }
+
     if (Character == '\'') {
       Index++;
       while (Index < Size &&
@@ -467,7 +482,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
               !isWhitespace(Input[Index - PatternSize]) &&
               !isWhitespace(Input[Index + 1]) &&
               Input[Index - PatternSize] != '*' &&
-              Input[Index - PatternSize] != '"') {
+              Input[Index - PatternSize] != '"' &&
+              Input[Index - PatternSize] != ';' && Input[Index + 1] != '\\') {
             return {};
           }
         }

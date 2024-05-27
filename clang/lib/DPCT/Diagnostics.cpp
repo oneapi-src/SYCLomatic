@@ -102,7 +102,7 @@ void initWarningIDs() {
     } else if (*Cur == '-') {
       ++Cur;
       auto End = ParseNumber();
-      if (*Cur == '\0') {
+      if (*Cur == '\0' && Begin < End) {
         for (size_t I = Begin; I < End; ++I)
           WarningIDs.insert(I);
         continue;

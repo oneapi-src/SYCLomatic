@@ -15,11 +15,8 @@ target_link_libraries(${target} PRIVATE
          
          )
                      
-target_link_libraries(${PROJECT_NAME}
-   
-   
-)
-target_link_libraries(nlm_cuda  ${OpenCV_LIBS} stdc++ stdc++fs)
+target_link_libraries(${PROJECT_NAME} )
+target_link_libraries(nlm_cuda ${OpenCV_LIBS} stdc++ stdc++fs)
 target_link_libraries(cublas-cudnn-test ${MKL_LIB} ${DNN_LIB})
 
-target_link_libraries(tsne  ${MKL_LIB} ${MKL_LIB} ${MKL_LIB})
+target_link_libraries(tsne ${MKL_LIB} ${MKL_LIB} ${MKL_LIB})
