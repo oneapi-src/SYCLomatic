@@ -2214,7 +2214,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
-
+    if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
+      auto Loc = ND->getBeginLoc();
+      if (DpctGlobalInfo::isInAnalysisScope(Loc))
+        return;
+    }
     // if TL is the T in
     // template<typename T> void foo(T a);
     if (TL->getType()->getTypeClass() == clang::Type::SubstTemplateTypeParm ||
