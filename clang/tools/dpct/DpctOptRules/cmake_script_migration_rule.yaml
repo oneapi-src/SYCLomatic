@@ -613,18 +613,6 @@
   In: cuda_compile(${libname} ${srcs})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
 
-- Rule: rule_add_compile_options
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_compile_options
-  In: add_compile_options${empty}(${arg})
-  Out: add_compile_options(${arg})
-  Subrules:
-    arg:
-      In: -std=${cxx_standard}
-      Out: -std=c++17
-      RuleId: "add_compile_options_cxx_standard"
-
 - Rule: rule_target_compile_options
   Kind: CMakeRule
   Priority: Fallback
@@ -2157,7 +2145,6 @@
       Out: COMPATIBILITY_VERSION_STRING
       RuleId: "replace_CUDA_VERSION_STRING_with_COMPATIBILITY_VERSION_STRING"
 
-
 - Rule: rule_user_defined_variable
   Kind: CMakeRule
   Priority: Fallback
@@ -2169,6 +2156,19 @@
     value:
       In:  -std=c++${version}
       Out: -std=c++17
+
+# to handle the case like "list(APPEND PMEMD_NVCC_FLAGS --std c++11)"
+- Rule: rule_user_defined_variable_format_2
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_variable_format_2
+  In: ${func_name}(${arg0} --std ${value})
+  Out: ${func_name}(${arg0} --std ${value})
+  Subrules:
+    value:
+      In:  c++${version}
+      Out: c++17
 
 - Rule: rule_add_link_options
   Kind: CMakeRule
