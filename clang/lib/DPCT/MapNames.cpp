@@ -3900,6 +3900,7 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
     {"CUFFT_FORWARD", "-1"},
     {"CUFFT_INVERSE", "1"},
+    {"cudaEventDefault", "0"},
     //...
 };
 
