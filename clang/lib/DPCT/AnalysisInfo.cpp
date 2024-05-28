@@ -1973,15 +1973,17 @@ void DpctGlobalInfo::emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
   }
 }
 std::shared_ptr<KernelCallExpr>
-DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall, bool IsAssigned) {
-  auto DefRange = getDefinitionRange(LaunchKernelCall->getBeginLoc(), LaunchKernelCall->getEndLoc());
+DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall,
+                                      bool IsAssigned) {
+  auto DefRange = getDefinitionRange(LaunchKernelCall->getBeginLoc(),
+                                     LaunchKernelCall->getEndLoc());
   auto LocInfo = getLocInfo(DefRange.getBegin());
   auto FileInfo = insertFile(LocInfo.first);
   if (FileInfo->findNode<KernelCallExpr>(LocInfo.second))
     return std::shared_ptr<KernelCallExpr>();
 
-  auto KernelInfo =
-      KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall, IsAssigned);
+  auto KernelInfo = KernelCallExpr::buildFromCudaLaunchKernel(
+      LocInfo, LaunchKernelCall, IsAssigned);
   if (KernelInfo) {
     FileInfo->insertNode(LocInfo.second, KernelInfo);
   } else {
@@ -5731,12 +5733,8 @@ void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
     NeedLambda = true;
   }
 }
-void KernelCallExpr::setNeedAddLambda() {
-    NeedLambda = true;
-}
-void KernelCallExpr::setNeedDefaultRet() {
-    NeedDefaultRetValue = true;
-}
+void KernelCallExpr::setNeedAddLambda() { NeedLambda = true; }
+void KernelCallExpr::setNeedDefaultRet() { NeedDefaultRetValue = true; }
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   NeedBraces = true;
   auto &Context = dpct::DpctGlobalInfo::getContext();

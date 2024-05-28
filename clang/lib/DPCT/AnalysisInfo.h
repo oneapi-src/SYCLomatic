@@ -1120,7 +1120,8 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
                            ReplTy &ReplSetsSYCL /*out*/);
-  std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *, bool IsAssigned = false);
+  std::shared_ptr<KernelCallExpr>
+  buildLaunchKernelInfo(const CallExpr *, bool IsAssigned = false);
   void insertCudaMalloc(const CallExpr *CE);
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
