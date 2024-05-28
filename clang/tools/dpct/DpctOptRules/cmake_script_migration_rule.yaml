@@ -2539,3 +2539,29 @@
       In: cuda
       Out: ""
       RuleId: "remove_lib_cuda"
+
+- Rule: rule_use_fast_math_one_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_one_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -use_fast_math
+      Out: -ffast-math
+
+- Rule: rule_use_fast_math_two_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_two_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --use_fast_math
+      Out: -ffast-math
