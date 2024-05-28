@@ -18,26 +18,6 @@
 namespace dpct {
 
 template <typename Policy, typename InputIt1, typename InputIt2, typename T>
-T inner_product_reduce(Policy &&policy, InputIt1 first1, InputIt1 last1) {
-  return oneapi::dpl::reduce(std::forward<Policy>(policy), first1, last1);
-}
-
-template <typename Policy, typename InputIt1, typename InputIt2, typename T>
-T inner_product_reduce(Policy &&policy, InputIt1 first1, InputIt1 last1, 
-                       T init) {
-  return oneapi::dpl::reduce(std::forward<Policy>(policy), first1, last1,
-                             init);
-}
-
-template <typename Policy, typename InputIt1, typename InputIt2, typename T
-          typename BinaryOperation>
-T inner_product_reduce(Policy &&policy, InputIt1 first1, InputIt1 last1, 
-                       T init, BinaryOperation op) {
-  return oneapi::dpl::reduce(std::forward<Policy>(policy), first1, last1,
-                             init, op);
-}
-
-template <typename Policy, typename InputIt1, typename InputIt2, typename T>
 T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
                 InputIt2 first2, T init) {
   return oneapi::dpl::transform_reduce(std::forward<Policy>(policy), first1, last1,
@@ -52,13 +32,6 @@ T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
   return oneapi::dpl::transform_reduce(std::forward<Policy>(policy), first1, last1,
                                first2, init, op1, op2);
 
-template <typename Policy, typename InputIt1, typename InputIt2, typename T,
-          typename BinaryOperation1, typename UnaryOperation>
-T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
-                InputIt2 first2, T init, BinaryOperation1 op1,
-                UnaryOperation op2) {
-  return oneapi::dpl::transform_reduce(std::forward<Policy>(policy), first1, last1,
-                               first2, init, op1, op2);
 }
 
 } // end namespace dpct
