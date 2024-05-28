@@ -14,7 +14,7 @@ namespace dpct {
 template <typename Policy, typename InputIt1, typename InputIt2, typename T>
 T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
                 InputIt2 first2, T init) {
-  return std::transform_reduce(std::forward<Policy>(policy), first1, last1,
+  return oneapi::dpl::transform_reduce(std::forward<Policy>(policy), first1, last1,
                                first2, init);
 }
 
@@ -23,7 +23,7 @@ template <typename Policy, typename InputIt1, typename InputIt2, typename T,
 T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
                 InputIt2 first2, T init, BinaryOperation1 op1,
                 BinaryOperation2 op2) {
-  return std::transform_reduce(std::forward<Policy>(policy), first1, last1,
+  return oneapi::dpl::transform_reduce(std::forward<Policy>(policy), first1, last1,
                                first2, init, op1, op2);
 }
 
