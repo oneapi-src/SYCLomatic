@@ -178,6 +178,21 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     return false;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
+  auto ItRule = MapNames::MacroRuleMap.find(MacroName);
+  if (ItRule != MapNames::MacroRuleMap.end() &&
+      ItRule->second.Priority == Takeover) {
+    std::string OutStr = ItRule->second.Out;
+    TransformSet.emplace_back(
+        new ReplaceToken(MacroNameTok.getLocation(), std::move(OutStr)));
+    requestFeature(ItRule->second.HelperFeature);
+    for (auto ItHeader = ItRule->second.Includes.begin();
+         ItHeader != ItRule->second.Includes.end(); ItHeader++) {
+      DpctGlobalInfo::getInstance().insertHeader(MacroNameTok.getLocation(),
+                                                 *ItHeader);
+    }
+    return true;
+  }
+
   auto Iter = MapNames::MacrosMap.find(MacroName);
   if (Iter != MapNames::MacrosMap.end()) {
     std::string ReplacedMacroName = Iter->second;
@@ -228,6 +243,23 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     TransformSet.emplace_back(Repl);
     return true;
   }
+
+  if (ItRule != MapNames::MacroRuleMap.end()) {
+    if (MacroName == "NCCL_VERSION_CODE") {
+      return false;
+    }
+    std::string OutStr = ItRule->second.Out;
+    TransformSet.emplace_back(
+        new ReplaceToken(MacroNameTok.getLocation(), std::move(OutStr)));
+    requestFeature(ItRule->second.HelperFeature);
+    for (auto ItHeader = ItRule->second.Includes.begin();
+         ItHeader != ItRule->second.Includes.end(); ItHeader++) {
+      DpctGlobalInfo::getInstance().insertHeader(MacroNameTok.getLocation(),
+                                                 *ItHeader);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -264,8 +296,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
           MapNames::MacrosMap.at(II->getName().str());
       TransformSet.emplace_back(
           new ReplaceToken(Iter->getLocation(), std::move(ReplacedMacroName)));
-      if (II->getName().str() == "__CUDA_ARCH__" ||
-          II->getName().str() == "__NVCC__") {
+      if (II->getName().str() == "__CUDA_ARCH__") {
         requestFeature(HelperFeatureEnum::device_ext);
       }
     }
@@ -455,7 +486,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (!IsInAnalysisScope) {
     return;
   }
-  
+
   if (ReplaceCuMacro(MacroNameTok)){
     return ;
   }
@@ -754,7 +785,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
   Token Tok;
   if (!Lexer::getRawToken(End, Tok, SM, LangOptions()))
     Size = Size + Tok.getLength();
-  std::string E(BP, Size);
+  const std::string E(BP, Size);
   for (auto &MacroMap : MapNames::MacrosMap) {
     size_t Pos = 0;
     std::string MacroName = MacroMap.first;
@@ -829,6 +860,17 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
       SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
+
+      auto ItRule = MapNames::MacroRuleMap.find(MacroName);
+      if (ItRule != MapNames::MacroRuleMap.end() &&
+          ItRule->second.Priority == Takeover) {
+        ReplacedMacroName = ItRule->second.Out;
+        requestFeature(ItRule->second.HelperFeature);
+        for (auto ItHeader = ItRule->second.Includes.begin();
+             ItHeader != ItRule->second.Includes.end(); ItHeader++) {
+          DpctGlobalInfo::getInstance().insertHeader(IB, *ItHeader);
+        }
+      }
       auto Repl =
           std::make_shared<ReplaceInclude>(InsertRange, ReplacedMacroName);
       if (MacroName == "__CUDA_ARCH__" &&
@@ -840,6 +882,39 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
                  MacroName != "__CUDA_ARCH__") {
         TransformSet.emplace_back(Repl);
       }
+      // check next
+      Pos = Found + MacroName.length();
+      if ((Pos + MacroName.length()) > Size) {
+        break;
+      }
+      Found = E.find(MacroName, Pos);
+    }
+  }
+  for (const auto &R : MapNames::MacroRuleMap) {
+    if (R.second.Priority == Takeover)
+      continue;
+    size_t Pos = 0;
+    std::string MacroName = R.first;
+    std::string ReplacedMacroName = R.second.Out;
+    std::size_t Found = E.find(MacroName, Pos);
+    while (Found != std::string::npos) {
+      // found one, insert replace for it
+      SourceLocation IB = Begin.getLocWithOffset(Found);
+      SourceLocation IE = IB.getLocWithOffset(MacroName.length());
+      CharSourceRange InsertRange(SourceRange(IB, IE), false);
+
+      auto ItRule = MapNames::MacroRuleMap.find(MacroName);
+      if (ItRule != MapNames::MacroRuleMap.end() &&
+          ItRule->second.Priority == Takeover) {
+        ReplacedMacroName = ItRule->second.Out;
+        requestFeature(ItRule->second.HelperFeature);
+        for (auto ItHeader = ItRule->second.Includes.begin();
+             ItHeader != ItRule->second.Includes.end(); ItHeader++) {
+          DpctGlobalInfo::getInstance().insertHeader(IB, *ItHeader);
+        }
+      }
+      auto Repl =
+          std::make_shared<ReplaceInclude>(InsertRange, ReplacedMacroName);
       // check next
       Pos = Found + MacroName.length();
       if ((Pos + MacroName.length()) > Size) {
