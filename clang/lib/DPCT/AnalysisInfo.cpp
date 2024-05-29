@@ -6123,16 +6123,20 @@ const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 template <class T>
 void setTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
                              unsigned Idx, T Ty) {
-  auto &TA = TAILis[Idx];
-  if (TA.isNull())
-    TA.setAsType(Ty);
+  if (Idx < TAILis.size()) {
+    auto &TA = TAILis[Idx];
+    if (TA.isNull())
+      TA.setAsType(Ty);
+  }
 }
 template <class T>
 void setNonTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
                                 unsigned Idx, T Ty) {
-  auto &TA = TAILis[Idx];
-  if (TA.isNull())
-    TA.setAsNonType(Ty);
+  if (Idx < TAILis.size()) {
+    auto &TA = TAILis[Idx];
+    if (TA.isNull())
+      TA.setAsNonType(Ty);
+  }
 }
 
 bool getInnerType(QualType &Ty, TypeLoc &TL) {
