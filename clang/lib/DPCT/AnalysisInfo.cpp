@@ -2844,14 +2844,17 @@ MemVarInfo::MemVarInfo(unsigned Offset,
         if (DS1 && DS2 && DS1 == DS2) {
           IsAnonymousType = true;
           DeclStmtOfVarType = DS2;
-          auto Iter = AnonymousTypeDeclStmtMap.find(DS2);
+          const auto LocInfo = DpctGlobalInfo::getLocInfo(DS2->getBeginLoc());
+          const auto LocStr = LocInfo.first.getCanonicalPath().str() +
+                              std::to_string(LocInfo.second);
+          auto Iter = AnonymousTypeDeclStmtMap.find(LocStr);
           if (Iter != AnonymousTypeDeclStmtMap.end()) {
             LocalTypeName = "type_ct" + std::to_string(Iter->second);
           } else {
             LocalTypeName =
                 "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
             AnonymousTypeDeclStmtMap.insert(
-                std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
+                std::make_pair(LocStr, AnonymousTypeDeclStmtMap.size() + 1));
           }
         } else if (DS2) {
           DeclStmtOfVarType = DS2;
@@ -3298,7 +3301,7 @@ std::string MemVarInfo::getArgName() {
   return getName();
 }
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
-std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
+std::unordered_map<std::string, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 ///// class TextureTypeInfo /////
 TextureTypeInfo::TextureTypeInfo(std::string &&DataType, int TexType) {
   setDataTypeAndTexType(std::move(DataType), TexType);

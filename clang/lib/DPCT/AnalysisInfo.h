@@ -1919,7 +1919,7 @@ private:
   const DeclStmt *DeclStmtOfVarType = nullptr;
   std::string LocalTypeName = "";
 
-  static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  static std::unordered_map<std::string, int> AnonymousTypeDeclStmtMap;
   bool UsedBySymbolAPIFlag = false;
   bool UseHelperFuncFlag = true;
   bool UseDeviceGlobalFlag = false;
