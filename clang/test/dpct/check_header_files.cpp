@@ -1,5 +1,5 @@
 // RUN: mkdir %T/check_header_files
-// RUN: dpct --out-root %T/check_header_files/out --gen-helper-function --cuda-include-path="%cuda-path/include" --process-all || true
+// RUN: dpct --out-root %T/check_header_files/out --gen-helper-function --cuda-include-path="%cuda-path/include" || true
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %T/check_header_files/out/include/dpct/atomic.hpp  %S/../../runtime/dpct-rt/include/dpct/atomic.hpp >> %T/check_header_files/diff_res.txt
