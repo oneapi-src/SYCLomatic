@@ -1,5 +1,5 @@
 // RUN: mkdir %T/check_header_files
-// RUN: dpct --out-root %T/check_header_files/out --gen-helper-function --cuda-include-path="%cuda-path/include" || true
+// RUN: dpct --out-root %T/check_header_files/out --gen-helper-function --cuda-include-path="%cuda-path/include" --process-all || true
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %T/check_header_files/out/include/dpct/atomic.hpp  %S/../../runtime/dpct-rt/include/dpct/atomic.hpp >> %T/check_header_files/diff_res.txt
@@ -78,6 +78,11 @@
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %T/check_header_files/out/include/dpct/lapack_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/lapack_utils.hpp >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %T/check_header_files/out/include/dpct/group_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/group_utils.hpp >> %T/check_header_files/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
