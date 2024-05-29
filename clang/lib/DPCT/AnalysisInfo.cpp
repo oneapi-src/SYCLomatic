@@ -1850,10 +1850,8 @@ void DpctGlobalInfo::processCudaArchMacro() {
   }
 }
 
-void DpctGlobalInfo::generateHostCode(
-    std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
-        &ProcessedReplList,
-    HostDeviceFuncLocInfo Info, unsigned ID) {
+void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
+                                      HostDeviceFuncLocInfo Info, unsigned ID) {
   std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
 
   unsigned int Pos, Len;
@@ -1861,13 +1859,12 @@ void DpctGlobalInfo::generateHostCode(
   StringRef SR(OriginText);
   RewriteBuffer RB;
   RB.Initialize(SR.begin(), SR.end());
-  for (auto &Element : ProcessedReplList) {
-    auto R = Element.second;
-    unsigned ROffset = R->getOffset();
+  for (const auto &R : ProcessedReplList) {
+    unsigned ROffset = R.getOffset();
     if (ROffset >= Info.FuncStartOffset && ROffset <= Info.FuncEndOffset) {
       Pos = ROffset - Info.FuncStartOffset;
-      Len = R->getLength();
-      RB.ReplaceText(Pos, Len, R->getReplacementText());
+      Len = R.getLength();
+      RB.ReplaceText(Pos, Len, R.getReplacementText());
     }
   }
   Pos = Info.FuncNameOffset - Info.FuncStartOffset;
@@ -1953,8 +1950,9 @@ void DpctGlobalInfo::postProcess() {
           if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
             continue;
           }
-          auto &ReplLists =
-              FileMap[LocInfo.FilePath]->getReplsSYCL()->getReplMap();
+          tooling::Replacements ReplLists;
+          FileMap[LocInfo.FilePath]->getReplsSYCL()->emplaceIntoReplSet(
+              ReplLists);
           generateHostCode(ReplLists, LocInfo, Info.PostFixId);
         }
       }
