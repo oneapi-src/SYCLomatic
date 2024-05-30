@@ -433,7 +433,7 @@ private:
 
 /// Load linear segment items into block format across threads
 /// Helper for Block Load
-enum load_algorithm {
+enum class load_algorithm {
 
   BLOCK_LOAD_DIRECT,
   BLOCK_LOAD_STRIPED,
@@ -517,9 +517,9 @@ public:
   __dpct_inline__ void load(const Item &item, InputIteratorT block_itr,
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
-    if constexpr (ALGORITHM == BLOCK_LOAD_DIRECT) {
+    if constexpr (ALGORITHM == load_algorithm::BLOCK_LOAD_DIRECT) {
       load_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
-    } else if constexpr (ALGORITHM == BLOCK_LOAD_STRIPED) {
+    } else if constexpr (ALGORITHM == load_algorithm::BLOCK_LOAD_STRIPED) {
       load_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
     }
   }
@@ -530,7 +530,7 @@ private:
 
 /// Store blocked/warped or striped work items into linear segment of items.
 /// Helper for Block Store
-enum store_algorithm {
+enum class store_algorithm {
 
   BLOCK_STORE_DIRECT,
   BLOCK_STORE_STRIPED,
@@ -618,9 +618,9 @@ public:
   __dpct_inline__ void store(const Item &item, OutputIteratorT block_itr,
                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
-    if constexpr (ALGORITHM == BLOCK_STORE_DIRECT) {
+    if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_DIRECT) {
       store_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
-    } else if constexpr (ALGORITHM == BLOCK_STORE_STRIPED) {
+    } else if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_STRIPED) {
       store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
     }
   }
