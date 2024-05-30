@@ -547,7 +547,7 @@ void stable_sort(Policy &&policy, Iter1 keys_first, Iter1 keys_last,
           std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
                        std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  //oneDPL::sort_by_key is explicitly stable
+  //oneDPL's sort_by_key is explicitly stable
   oneapi::dpl::sort_by_key(std::forward<Policy>(policy), keys_first, keys_last,
                            values_first, comp);
 }
