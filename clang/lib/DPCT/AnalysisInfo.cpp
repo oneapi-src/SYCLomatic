@@ -22,7 +22,6 @@
 #include <fstream>
 #include <optional>
 #include <string>
-#include <iostream>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
@@ -1667,7 +1666,6 @@ void DpctGlobalInfo::processCudaArchMacro() {
       (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
     }
   };
- std::cout <<"------- ==== " <<  std::endl;
 
   for (auto Iter = ReplMap.begin(); Iter != ReplMap.end();) {
     auto Repl = Iter->second;
@@ -1707,7 +1705,6 @@ void DpctGlobalInfo::processCudaArchMacro() {
             //    ...
             //    host_code/empty;
             //    ...
-            std::cout <<"====1 " <<  Info.IfInfo.Condition << std::endl;
             if ((Info.DT == IfType::IT_Ifdef && Round == 1) ||
                 (Info.DT == IfType::IT_Ifndef && Round == 0) ||
                 (Info.DT == IfType::IT_If && Round == 1 &&
@@ -1766,9 +1763,6 @@ void DpctGlobalInfo::processCudaArchMacro() {
             //    ...
             //    host_code;
             //    ...
-            std::cout <<"====2 " <<  Info.IfInfo.Condition << std::endl;
-            std::cout <<"====222 " <<  Round << std::endl;
-
             if ((Info.DT == IfType::IT_Ifdef && Round == 1) ||
                 (Info.DT == IfType::IT_Ifndef && Round == 0) ||
                 (Info.DT == IfType::IT_If && Round == 1 &&
@@ -1778,8 +1772,6 @@ void DpctGlobalInfo::processCudaArchMacro() {
                  Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
               Pos_a = Info.IfInfo.NumberSignLoc;
               Pos_b = Info.EndInfo.NumberSignLoc;
-            std::cout <<"====3 " <<  Info.IfInfo.Condition << std::endl;
-
               if (Pos_a != UINT_MAX && Pos_b != UINT_MAX) {
                 Len_a =
                     Info.ElseInfo.DirectiveLoc - Pos_a + 4 /*length of else*/;
@@ -1798,8 +1790,6 @@ void DpctGlobalInfo::processCudaArchMacro() {
                          Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
                        (Info.DT == IfType::IT_If && Round == 1 &&
                         Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
-            std::cout <<"====4 " <<  Info.IfInfo.Condition << std::endl;
-                
               Pos_a = Info.IfInfo.NumberSignLoc;
               Pos_b = Info.ElseInfo.NumberSignLoc;
               if (Pos_a != UINT_MAX && Pos_b != UINT_MAX) {
@@ -1832,7 +1822,6 @@ void DpctGlobalInfo::processCudaArchMacro() {
             addReplacement(std::make_shared<ExtReplacement>(
                 FilePath, Pos_a, Len_a, "ifdef", nullptr));
           } else if (Info.DT == IfType::IT_If) {
-            std::cout << "OPPPPPP" << std::endl;
             processIfMacro(Repl, Info.IfInfo);
           }
         }
@@ -1878,7 +1867,6 @@ void DpctGlobalInfo::generateHostCode(
     if (ROffset >= Info.FuncStartOffset && ROffset <= Info.FuncEndOffset) {
       Pos = ROffset - Info.FuncStartOffset;
       Len = R->getLength();
-      std::cout <<"RRRR "<< R->getReplacementText().str() << std::endl;
       RB.ReplaceText(Pos, Len, R->getReplacementText());
     }
   }
@@ -1902,17 +1890,6 @@ void DpctGlobalInfo::generateHostCode(
 void DpctGlobalInfo::postProcess() {
   auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
   bool isFirstPass = !DpctGlobalInfo::getRunRound();
-  for (auto &File : FileMap) {
-    auto FileSec = File.second;
-    if (!isFirstPass) {
-    std::cout << "CCCC  FileSec->getReplsSYCL()->empty() "
-              << FileSec->getReplsSYCL()->getReplMap().size() << std::endl;
-    for (auto &element : FileSec->getReplsSYCL()->getReplMap()) {
-      std::cout << "CCCCC LLLL Before get the repalcement  "
-                << element.second->getReplacementText().str() << std::endl;
-    }
-    }
-  }
   processCudaArchMacro();
   for (auto &Element : HostDeviceFuncInfoMap) {
     auto &Info = Element.second;
@@ -1938,7 +1915,6 @@ void DpctGlobalInfo::postProcess() {
           auto R = std::make_shared<ExtReplacement>(
               LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
               "_host_ct" + std::to_string(Info.PostFixId), nullptr);
-          std::cout << "------ " << R->toString() << std::endl;
           addReplacement(R);
           if (!isFirstPass) {
             auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
@@ -1959,14 +1935,6 @@ void DpctGlobalInfo::postProcess() {
     }
   }
   for (auto &File : FileMap) {
-    auto FileSec = File.second;
-    if (!isFirstPass) {
-
-    std::cout << "FileSec->getReplsSYCL()->empty() " << FileSec->getReplsSYCL()->getReplMap().size() << std::endl;
-    for ( auto &element: FileSec->getReplsSYCL()->getReplMap()) {
-        std::cout << "Before get the repalcement  "<< element.second->getReplacementText().str() << std::endl;
-    }
-    }
     auto &S = File.second->getConstantMacroTMSet();
     auto &Map = DpctGlobalInfo::getConstantReplProcessedFlagMap();
     for (auto &E : S) {
