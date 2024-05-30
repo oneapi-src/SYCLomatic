@@ -299,7 +299,7 @@ __host__ __device__ int test(T a, T b){
 // CHECK-NEXT: int test1_host_ct{{[0-9]+}}(){
 // CHECK-NEXT:   #if !DPCT_COMPATIBILITY_TEMP > 800
 // CHECK-NEXT:     return threadIdx.x > 8;
-// CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 700
+// CHECK-NEXT:   #elif __CUDA_ARCH__ > 700
 // CHECK-NEXT:     return threadIdx.x > 7;
 // CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 600
 // CHECK-NEXT:     return threadIdx.x > 6;

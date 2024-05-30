@@ -836,15 +836,14 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   }
 #ifdef SYCLomatic_CUSTOMIZATION
   else if (LangOpts.CUDA && II.getName() == "__CUDA_ARCH__" &&
-           IsInAnalysisScopeFunc(Identifier.getLocation())) {
+           IsInAnalysisScopeFunc(Identifier.getLocation()) && GetRunRound() == 0) {
     // Make a MacroDefinition for __CUDA_ARCH__
     MacroInfo *MI = AllocateMacroInfo(SourceLocation());
     MI->setIsBuiltinMacro();
     DefMacroDirective DMD(MI, SourceLocation());
     ArrayRef<ModuleMacro *> MMs;
     MacroDefinition MD(&DMD, MMs, false);
-    if (GetRunRound() == 0)
-      appendDefMacroDirective(&II, MI);
+    appendDefMacroDirective(&II, MI);
     if (!DisableMacroExpansion) {
       if (!Identifier.isExpandDisabled() && MI->isEnabled()) {
         // C99 6.10.3p10: If the preprocessing token immediately after the
