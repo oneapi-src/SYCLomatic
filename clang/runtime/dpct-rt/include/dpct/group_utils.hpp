@@ -437,7 +437,6 @@ enum class load_algorithm {
 
   BLOCK_LOAD_DIRECT,
   BLOCK_LOAD_STRIPED,
-  // To-do: BLOCK_LOAD_WARP_TRANSPOSE
 
 };
 
@@ -534,8 +533,6 @@ enum class store_algorithm {
 
   BLOCK_STORE_DIRECT,
   BLOCK_STORE_STRIPED,
-  // To-do: BLOCK_STORE_WARP_TRANSPOSE
-  // To-do: BLOCK_STORE_VECTORIZE
 
 };
 
