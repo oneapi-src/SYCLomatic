@@ -902,16 +902,10 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
       SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
-
-      auto ItRule = MapNames::MacroRuleMap.find(MacroName);
-      if (ItRule != MapNames::MacroRuleMap.end() &&
-          ItRule->second.Priority == Takeover) {
-        ReplacedMacroName = ItRule->second.Out;
-        requestFeature(ItRule->second.HelperFeature);
-        for (auto ItHeader = ItRule->second.Includes.begin();
-             ItHeader != ItRule->second.Includes.end(); ItHeader++) {
-          DpctGlobalInfo::getInstance().insertHeader(IB, *ItHeader);
-        }
+      requestFeature(R.second.HelperFeature);
+      for (auto ItHeader = R.second.Includes.begin();
+           ItHeader != R.second.Includes.end(); ItHeader++) {
+        DpctGlobalInfo::getInstance().insertHeader(IB, *ItHeader);
       }
       auto Repl =
           std::make_shared<ReplaceInclude>(InsertRange, ReplacedMacroName);
