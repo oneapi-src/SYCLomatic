@@ -1707,7 +1707,7 @@ ENTRY(cuOccupancyMaxPotentialBlockSize, cuOccupancyMaxPotentialBlockSize, false,
 ENTRY(cuOccupancyMaxPotentialBlockSizeWithFlags, cuOccupancyMaxPotentialBlockSizeWithFlags, false, NO_FLAG, P4, "comment")
 ENTRY(cuCtxDisablePeerAccess, cuCtxDisablePeerAccess, false, NO_FLAG, P4, "comment")
 ENTRY(cuCtxEnablePeerAccess, cuCtxEnablePeerAccess, false, NO_FLAG, P4, "comment")
-ENTRY(cuDeviceCanAccessPeer, cuDeviceCanAccessPeer, false, NO_FLAG, P4, "comment")
+ENTRY(cuDeviceCanAccessPeer, cuDeviceCanAccessPeer, true, NO_FLAG, P4, "DPCT1031")
 ENTRY(cuDeviceGetP2PAttribute, cuDeviceGetP2PAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxGetState, cuDevicePrimaryCtxGetState, false, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxRelease, cuDevicePrimaryCtxRelease_v2, true, NO_FLAG, P4, "DPCT1026/DPCT1027")

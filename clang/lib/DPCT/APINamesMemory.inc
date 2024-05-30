@@ -616,6 +616,23 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuDeviceCanAccessPeer", DEREF(ARG_WC(0)),
+        MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                             "dev_mgr::instance().get_device",
+                         ARG_WC(1)),
+                    false, "ext_oneapi_can_access_peer",
+                    CALL(MapNames::getDpctNamespace() +
+                             "dev_mgr::instance().get_device",
+                         ARG_WC(2))))),
+    ASSIGNABLE_FACTORY(
+        WARNING_FACTORY_ENTRY("cuDeviceCanAccessPeer",
+                              ASSIGN_FACTORY_ENTRY("cuDeviceCanAccessPeer",
+                                                   DEREF(ARG_WC(0)), ARG("0")),
+                              Diagnostics::EXPLICIT_PEER_ACCESS)))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaDeviceCanAccessPeer", DEREF(ARG_WC(0)),
         MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
                              "dev_mgr::instance().get_device",

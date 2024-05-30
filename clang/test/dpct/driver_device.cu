@@ -17,9 +17,11 @@ void test() {
   // CHECK-NEXT: */
   cuInit(0);
   CUdevice device;
+  CUdevice peerDevice;
+
   cuDeviceGet(&device, 0);
 
-  int result0, result1, result2, result3, result4, result5;
+  int result0, result1, result2, result3, result4, result5, result6;
   // CHECK: /*
   // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY. It was migrated to get_global_mem_size. You may need to adjust the value of get_global_mem_size for the specific device.
   // CHECK-NEXT: */
@@ -47,6 +49,13 @@ void test() {
   // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).has(sycl::aspect::usm_host_allocations);
   cuDeviceGetAttribute(&result5,CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, device);
   std::cout << " result5 " << result5 << std::endl;
+
+  // CHECK:  *result6 = dpct::dev_mgr::instance()
+  // CHECK-NEXT:             .get_device(device)
+  // CHECK-NEXT:             .ext_oneapi_can_access_peer(
+  // CHECK-NEXT:                 dpct::dev_mgr::instance().get_device(peerDevice));
+  cudaDeviceCanAccessPeer(&result6, device, peerDevice);
+  std::cout << " result6 " << result6 << std::endl;
 }
 
 int main(){
