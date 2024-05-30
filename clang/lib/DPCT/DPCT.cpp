@@ -111,6 +111,10 @@ const char *const CtHelpHint =
     "  To get help on the tool usage, run: dpct --help\n"
     "\n";
 
+const char *const CmakeScriptMigrationHelpHint =
+    "Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.";
+
+
 static extrahelp CommonHelp(CtHelpMessage);
 
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
@@ -867,6 +871,12 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
+#ifdef _WIN32 // Avoid some error on windows platform.
+    if (DpctGlobalInfo::getSDKVersion() <= CudaVersion::CUDA_100) {
+      Tool.appendArgumentsAdjuster(
+          getInsertArgumentAdjuster("-D_MSC_VER=1900"));
+    }
+#endif
     NoIncrementalMigration.setValue(true);
     StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);
@@ -1115,6 +1125,10 @@ int runDPCT(int argc, const char **argv) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
     doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
     ShowStatus(MigrationCmakeScriptCompleted);
     return MigrationSucceeded;
   }
@@ -1269,6 +1283,10 @@ int runDPCT(int argc, const char **argv) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScripts(InRootPath, OutRootPath);
     doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
   }
 
   ShowStatus(Status);

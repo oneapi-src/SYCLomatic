@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Initialization
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuInit | FileCheck %s -check-prefix=CUINIT
@@ -236,7 +234,7 @@
 // CUEVENTQUERY-NEXT:   cuEventQuery(e /*CUevent*/);
 // CUEVENTQUERY-NEXT: Is migrated to:
 // CUEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUEVENTQUERY-NEXT:   e->get_info<sycl::info::event::command_execution_status>();
+// CUEVENTQUERY-NEXT:   dpct::sycl_event_query(e /*CUevent*/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuEventRecord | FileCheck %s -check-prefix=CUEVENTRECORD
 // CUEVENTRECORD: CUDA API:

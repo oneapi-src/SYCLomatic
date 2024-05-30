@@ -672,6 +672,8 @@ static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
   }
 }
 
+bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
+
 static void storeBufferToFile() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &FileName = Entry.first;
@@ -725,7 +727,7 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
   auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
   if (Iter != CmakeBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover &&
-        Iter->second.Priority < PR.Priority) {
+        Iter->second.Priority > PR.Priority) {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
     } else {
       llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId

@@ -79,7 +79,7 @@ int main() {
 
   void *kernel_func = (void *)&kernel;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1123:{{[0-9]+}}: The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.
+  // CHECK-NEXT: DPCT1123:{{[0-9]+}}: The kernel function pointer cannot be used in the device code. You need to call the kernel function with the correct argument(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may also be required.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)), 
@@ -91,7 +91,7 @@ int main() {
   void *kernel_array[100];
   kernel_array[10] = (void *)&kernel;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1123:{{[0-9]+}}: The kernel function pointer cannot be used in the device code. You need call the kernel function with correct argunemt(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may be also required.
+  // CHECK-NEXT: DPCT1123:{{[0-9]+}}: The kernel function pointer cannot be used in the device code. You need to call the kernel function with the correct argument(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may also be required.
   // CHECK-NEXT: */
   // CHECK-NEXT: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)), 

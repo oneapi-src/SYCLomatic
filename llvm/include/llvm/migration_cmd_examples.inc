@@ -28,7 +28,7 @@ R"(
     Migrate a single source file
       $ dpct source.cu
       $ dpct --keep-original-code source.cu                           # Keep original code
-      $ dpct --cuda-include-path=/path/to/cuda/include source.cu      # Specify path to CUDA headers
+      $ dpct --cuda-include-path=/path/to/cuda/include source.cu      # Specify the path to CUDA headers
       $ dpct --extra-arg="-std=c++11" source.cu                       # With extra options
       $ dpct --extra-arg="-I /path/to/extra/include" source.cu        # With additional app args
       $ dpct -p=/path/to/compilation-database source.cu               # With compilation database

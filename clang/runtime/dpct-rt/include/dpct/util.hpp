@@ -619,6 +619,20 @@ inline int get_sycl_language_version() {
 #endif
 }
 
+// Returns the SYCL event status for the SYCL command.
+/// \param [in] event_ptr A pointer points to the SYCL event
+/// \returns The execution result for the SYCL command
+inline int sycl_event_query(sycl::event *event_ptr) {
+  if (event_ptr->get_info<sycl::info::event::command_execution_status>() ==
+      sycl::info::event_command_status::complete) {
+    // The SYCL command has finished running on the SYCL device.
+    return 0;
+  } else {
+    // The SYCL command has not finished running on the SYCL device.
+    return 1;
+  }
+}
+
 namespace experimental {
 /// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.

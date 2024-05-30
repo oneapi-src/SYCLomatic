@@ -82,6 +82,7 @@ protected:
                  std::initializer_list<DpctActionKind>);
 
 public:
+  virtual ~DpctOptionBase() = default;
   static void init();
   static void check();
 };
@@ -155,3 +156,4 @@ private:
 } // namespace clang
 
 #endif //!__DPCT_OPTIONS_H__
+

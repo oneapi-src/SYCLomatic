@@ -1340,4 +1340,19 @@ void foo38() {
 #undef CHECK_1
 #undef CHECK_2
 
+template<typename T>
+void foo38(T *t);
+
+//CHECK: #define GRID grid[2] = 3;
+#define GRID grid.x = 3;
+
+template<typename T>
+void foo38(T *t)
+{
+    dim3 grid;
+    GRID
+}
+
+template void foo38(int *);
+
 #endif

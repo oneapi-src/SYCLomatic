@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Device Management
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetAttribute | FileCheck %s -check-prefix=CUDADEVICEGETATTRIBUTE
@@ -312,7 +310,7 @@
 // CUDAEVENTQUERY-NEXT:   cudaEventQuery(e /*cudaEvent_t*/);
 // CUDAEVENTQUERY-NEXT: Is migrated to:
 // CUDAEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUDAEVENTQUERY-NEXT:   e->get_info<sycl::info::event::command_execution_status>();
+// CUDAEVENTQUERY-NEXT:   dpct::sycl_event_query(e /*cudaEvent_t*/)
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventRecord | FileCheck %s -check-prefix=CUDAEVENTRECORD
 // CUDAEVENTRECORD: CUDA API:

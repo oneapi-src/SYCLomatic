@@ -11783,9 +11783,18 @@ TreeTransform<Derived>::TransformMemberExpr(MemberExpr *E) {
       return ExprError();
   }
 
+
+#ifdef SYCLomatic_CUSTOMIZATION
+  // FIXME: Bogus source location for the operator
+  SourceLocation FakeOperatorLoc =
+      SemaRef.getLocForEndOfToken(SemaRef.getSourceManager().getSpellingLoc(
+          E->getBase()->getSourceRange().getEnd()));
+#else
   // FIXME: Bogus source location for the operator
   SourceLocation FakeOperatorLoc =
       SemaRef.getLocForEndOfToken(E->getBase()->getSourceRange().getEnd());
+#endif
+
 
   // FIXME: to do this check properly, we will need to preserve the
   // first-qualifier-in-scope here, just in case we had a dependent

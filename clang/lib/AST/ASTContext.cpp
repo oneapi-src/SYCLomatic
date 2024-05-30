@@ -9631,7 +9631,11 @@ static uint64_t getRVVTypeSize(ASTContext &Context, const BuiltinType *Ty) {
     EltSize = 1;
 
   unsigned MinElts = Info.EC.getKnownMinValue();
+#ifdef SYCLomatic_CUSTOMIZATION
+  return (uint64_t)VScale->first * (uint64_t)MinElts * (uint64_t)EltSize;
+#else
   return VScale->first * MinElts * EltSize;
+#endif
 }
 
 bool ASTContext::areCompatibleRVVTypes(QualType FirstType,

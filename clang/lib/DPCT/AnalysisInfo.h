@@ -21,6 +21,7 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
+#include <memory>
 #include <optional>
 #include <unordered_set>
 #include <vector>
@@ -1105,10 +1106,8 @@ public:
   void buildKernelInfo();
   void buildReplacements();
   void processCudaArchMacro();
-  void generateHostCode(
-      std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
-          &ProcessedReplList,
-      HostDeviceFuncLocInfo Info, unsigned ID);
+  void generateHostCode(tooling::Replacements &ProcessedReplList,
+                        HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
@@ -2139,6 +2138,24 @@ private:
   bool IsWritten = true;
 };
 
+class TempStorageVarInfo {
+  unsigned Offset;
+  std::string Name;
+  std::shared_ptr<TemplateDependentStringInfo> Type;
+
+public:
+  TempStorageVarInfo(unsigned Off, StringRef Name,
+                     std::shared_ptr<TemplateDependentStringInfo> T)
+      : Offset(Off), Name(Name.str()), Type(T) {}
+  const std::string &getName() const { return Name; }
+  unsigned getOffset() const { return Offset; }
+  void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;
+  void applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
+  ParameterStream &getFuncDecl(ParameterStream &PS);
+  ParameterStream &getFuncArg(ParameterStream &PS);
+  ParameterStream &getKernelArg(ParameterStream &PS);
+};
+
 // memory variable map includes memory variable used in __global__/__device__
 // function and call expression.
 class MemVarMap {
@@ -2162,6 +2179,7 @@ public:
   void setBF64(bool Has = true) { HasBF64 = Has; }
   void setBF16(bool Has = true) { HasBF16 = Has; }
   void setGlobalMemAcc(bool Has = true) { HasGlobalMemAcc = Has; }
+  void addCUBTempStorage(std::shared_ptr<TempStorageVarInfo> Tmp);
   void addTexture(std::shared_ptr<TextureInfo> Tex);
   void addVar(std::shared_ptr<MemVarInfo> Var);
   void merge(const MemVarMap &OtherMap);
@@ -2197,6 +2215,7 @@ public:
                                  const clang::tooling::UnifiedPath &Path) const;
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const;
   const GlobalMap<TextureInfo> &getTextureMap() const;
+  const GlobalMap<TempStorageVarInfo> &getTempStorageMap() const;
   void removeDuplicateVar();
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope);
@@ -2208,8 +2227,17 @@ public:
   unsigned int getHeadNodeDim() const;
 
 private:
-  static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
-                    const std::vector<TemplateArgumentInfo> &TemplateArgs);
+  template <class VarT>
+  static void merge(GlobalMap<VarT> &Master, const GlobalMap<VarT> &Branch,
+                    const std::vector<TemplateArgumentInfo> &TemplateArgs) {
+    if (TemplateArgs.empty())
+      return dpct::merge(Master, Branch);
+    for (auto &VarInfoPair : Branch)
+      Master
+          .insert(std::make_pair(VarInfoPair.first,
+                                 std::make_shared<VarT>(*VarInfoPair.second)))
+          .first->second->applyTemplateArguments(TemplateArgs);
+  }
   int calculateExtraArgsSize(const MemVarInfoMap &Map) const;
 
   template <CallOrDecl COD>
@@ -2258,6 +2286,7 @@ private:
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
   GlobalMap<TextureInfo> TextureMap;
+  GlobalMap<TempStorageVarInfo> TempStorageMap;
 };
 
 template <>
