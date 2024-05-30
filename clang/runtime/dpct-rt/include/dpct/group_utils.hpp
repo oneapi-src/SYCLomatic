@@ -537,10 +537,10 @@ enum class store_algorithm {
 };
 
 /// Stores a blocked arrangement of work items linear segment of items.
-template <size_t ITEMS_PER_WORK_ITEM, typename InputT,
-          typename OutputIteratorT, typename Item>
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
+          typename Item>
 __dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
-                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
   // This implementation does not take in account range storage across
   // workgroup items To-do: Decide whether range storage is required for group
@@ -557,7 +557,7 @@ __dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
 template <size_t ITEMS_PER_WORK_ITEM, typename InputT,
           typename OutputIteratorT, typename Item>
 __dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
-                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
   // This implementation does not take in account range storage across
   // workgroup items To-do: Decide whether range storage is required for group
@@ -579,7 +579,7 @@ template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
           typename Item>
 __dpct_inline__ void
 store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
-                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+                       InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
   // This implementation does not take in account range loading across
   // workgroup items To-do: Decide whether range loading is required for group
@@ -605,20 +605,22 @@ store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
 // InputT: type for input sequence.
 // OutputIteratorT:  output iterator type
 // Item : typename parameter resembling sycl::nd_item<3> .
-template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM, typename InputT,
-          typename OutputIteratorT, typename Item>
+template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM,
+          typename InputT, typename OutputIteratorT, typename Item>
 class workgroup_store {
 public:
   static size_t get_local_memory_size(size_t group_work_items) { return 0; }
   workgroup_store(uint8_t *local_memory) : _local_memory(local_memory) {}
 
   __dpct_inline__ void store(const Item &item, OutputIteratorT block_itr,
-                            InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
     if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_DIRECT) {
-      store_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      store_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr,
+                                         (&items)[ITEMS_PER_WORK_ITEM]);
     } else if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_STRIPED) {
-      store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, (&items)[ITEMS_PER_WORK_ITEM]);
+      store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr,
+                                         (&items)[ITEMS_PER_WORK_ITEM]);
     }
   }
 
