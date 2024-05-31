@@ -169,7 +169,8 @@ void IncludesCallbacks::insertCudaArchRepl(
   return;
 }
 
-bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok, MacroInfo *MI) {
+bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok,
+                                       MacroInfo *MI) {
   bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
   if (!IsInAnalysisScope) {
     return false;
@@ -285,7 +286,8 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
       requestFeature(ItRule->second.HelperFeature);
       for (auto ItHeader = ItRule->second.Includes.begin();
            ItHeader != ItRule->second.Includes.end(); ItHeader++) {
-        DpctGlobalInfo::getInstance().insertHeader(Iter->getLocation(), *ItHeader);
+        DpctGlobalInfo::getInstance().insertHeader(Iter->getLocation(),
+                                                   *ItHeader);
       }
     }
 
