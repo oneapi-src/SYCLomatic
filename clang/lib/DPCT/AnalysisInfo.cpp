@@ -2845,7 +2845,7 @@ MemVarInfo::MemVarInfo(unsigned Offset,
           IsAnonymousType = true;
           DeclStmtOfVarType = DS2;
           const auto LocInfo = DpctGlobalInfo::getLocInfo(DS2->getBeginLoc());
-          const auto LocStr = LocInfo.first.getCanonicalPath().str() +
+          const auto LocStr = LocInfo.first.getCanonicalPath().str() + ":" +
                               std::to_string(LocInfo.second);
           auto Iter = AnonymousTypeDeclStmtMap.find(LocStr);
           if (Iter != AnonymousTypeDeclStmtMap.end()) {
