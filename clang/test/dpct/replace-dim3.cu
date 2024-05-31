@@ -4,10 +4,10 @@
 // RUN: FileCheck --input-file %T/replace-dim3/replace-dim3.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/replace-dim3/replace-dim3.dp.cpp -o %T/replace-dim3/replace-dim3.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cstdio>
 #include <algorithm>
 
+#ifndef BUILD_TEST
 #define NUM 23
 #define CALL_FUNC(func) func()
 
@@ -284,3 +284,14 @@ void dim3_foo() {
       });
 }
 #endif
+
+// CHECK: class Dim3Struct {
+// CHECK-NEXT:   Dim3Struct() : x(sycl::range<3>(1, 2, 1)) {}
+// CHECK-NEXT:   sycl::range<3> x = sycl::range<3>(1, 4, 3);
+// CHECK-NEXT:   void f() { sycl::range<3>(1, 6, 5); }
+// CHECK-NEXT: };
+class Dim3Struct {
+  Dim3Struct() : x(dim3(1, 2)) {}
+  dim3 x = dim3(3, 4);
+  void f() { dim3(5, 6); }
+};

@@ -3022,18 +3022,15 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
                     .bind("dim3CtorDecl"),
                 this);
 
-  MF.addMatcher(
-      cxxConstructExpr(hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
-                       // skip fields in a struct.  The source loc is
-                       // messed up (points to the start of the struct)
-                       unless(hasParent(initListExpr())),
-                       unless(hasAncestor(cxxRecordDecl())),
-                       unless(hasParent(varDecl())),
-                       unless(hasParent(exprWithCleanups())),
-                       unless(hasAncestor(cxxConstructExpr(
-                           hasType(namedDecl(hasName("dim3")))))))
-          .bind("dim3CtorNoDecl"),
-      this);
+  MF.addMatcher(cxxConstructExpr(hasType(namedDecl(hasName("dim3"))),
+                                 argumentCountIs(3),
+                                 unless(hasParent(initListExpr())),
+                                 unless(hasParent(varDecl())),
+                                 unless(hasParent(exprWithCleanups())),
+                                 unless(hasAncestor(cxxConstructExpr(
+                                     hasType(namedDecl(hasName("dim3")))))))
+                    .bind("dim3CtorNoDecl"),
+                this);
 
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(anyOf(
