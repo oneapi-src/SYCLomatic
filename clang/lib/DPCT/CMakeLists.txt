@@ -119,6 +119,7 @@ add_clang_library(DPCT
   Rewriters/CUB/RewriterDeviceSelect.cpp
   Rewriters/CUB/RewriterUtilityFunctions.cpp
   Rewriters/CUB/RewriterDevicePartition.cpp
+  Rewriters/CUB/RewriterDeviceSpmv.cpp
   Rewriters/Math/CallExprRewriterMath.cpp
   Rewriters/Math/RewriterSTDFunctions.cpp
   Rewriters/Math/RewriterHalfArithmeticFunctions.cpp
