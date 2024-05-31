@@ -45,7 +45,7 @@ int main() {
 
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
-  // CHECK-NEXT: dpct::matrix_desc desc42;
+  // CHECK-NEXT: dpct::image_matrix_desc desc42;
   // CHECK-NEXT: desc42.channel_num = 4;
   // CHECK-NEXT: desc42.channel_type = sycl::image_channel_type::fp32;
   // CHECK-NEXT: desc42.width = 32;

@@ -8,7 +8,7 @@
 #include "nvml.h"
 #include <vector>
 int main(int argc, char **argv) {
-    // CHECK: dpct::matrix_desc *pcad;
+    // CHECK: dpct::image_matrix_desc *pcad;
     CUDA_ARRAY_DESCRIPTOR *pcad;
     // CHECK: dpct::memcpy_parameter *p1c3d;
     cudaMemcpy3DParms *p1c3d;

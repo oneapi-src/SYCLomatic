@@ -20,7 +20,7 @@ void funcT(T t) {}
 
 int main() {
 
-  // CHECK: dpct::matrix_desc halfDesc;
+  // CHECK: dpct::image_matrix_desc halfDesc;
   // CHECK-NEXT: halfDesc.height = 32;
   // CHECK-NEXT: halfDesc.width = 64;
   // CHECK-NEXT: halfDesc.channel_type = sycl::image_channel_type::fp16;
@@ -31,7 +31,7 @@ int main() {
   halfDesc.Format = CU_AD_FORMAT_HALF;
   halfDesc.NumChannels = 1;
 
-  // CHECK: dpct::matrix_desc float4Desc;
+  // CHECK: dpct::image_matrix_desc float4Desc;
   // CHECK-NEXT: float4Desc.width = 64;
   // CHECK-NEXT: float4Desc.channel_type = sycl::image_channel_type::fp32;
   // CHECK-NEXT: float4Desc.channel_num = 4;
@@ -89,7 +89,7 @@ int main() {
 void create_array_fail() {
   CUarray a;
   unsigned i;
-  // CHECK: dpct::matrix_desc d[20], *p;
+  // CHECK: dpct::image_matrix_desc d[20], *p;
   CUDA_ARRAY_DESCRIPTOR d[20], *p;
   p = &d[5];
 
