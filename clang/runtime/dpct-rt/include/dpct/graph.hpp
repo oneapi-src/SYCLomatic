@@ -14,8 +14,9 @@
 namespace dpct {
 namespace experimental {
 
-
-typedef std::shared_ptr<sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::modifiable>> command_graph_t;
+typedef std::shared_ptr<sycl::ext::oneapi::experimental::command_graph<
+    sycl::ext::oneapi::experimental::graph_state::modifiable>>
+    command_graph_t;
 
 } // namespace experimental
 } // namespace dpct
