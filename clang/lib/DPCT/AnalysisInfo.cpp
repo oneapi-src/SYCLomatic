@@ -2221,6 +2221,7 @@ void DpctGlobalInfo::resetInfo() {
   FileRelpsMap.clear();
   DigestMap.clear();
   MacroDefines.clear();
+  CAPPInfoMap.clear();
   CurrentMaxIndex = 0;
   CurrentIndexInRule = 0;
   IncludingFileSet.clear();
