@@ -1705,23 +1705,23 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
               "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
               "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
-              "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t",
-              "cusparseAlgMode_t", "cusparseOperation_t", "cusparseMatDescr_t",
-              "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
-              "cusparsePointerMode_t", "cublasGemmAlgo_t",
-              "cusparseSolveAnalysisInfo_t", "cudaDataType", "cublasDataType_t",
-              "curandState_t", "curandState", "curandStateXORWOW_t",
-              "curandStateXORWOW", "curandStatePhilox4_32_10_t",
-              "curandStatePhilox4_32_10", "curandStateMRG32k3a_t",
-              "curandStateMRG32k3a", "thrust::minus", "thrust::negate",
-              "thrust::logical_or", "thrust::equal_to", "thrust::less",
-              "cudaSharedMemConfig", "curandGenerator_t", "curandRngType_t",
-              "curandOrdering_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
-              "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
-              "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
-              "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
-              "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
+              "cudaGraph_t", "cusparseStatus_t", "cusparseDiagType_t",
+              "cusparseFillMode_t", "cusparseIndexBase_t",
+              "cusparseMatrixType_t", "cusparseAlgMode_t",
+              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
+              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
+              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
+              "cublasDataType_t", "curandState_t", "curandState",
+              "curandStateXORWOW_t", "curandStateXORWOW",
+              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
+              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
+              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
+              "curandRngType_t", "curandOrdering_t", "cufftHandle", "cufftReal",
+              "cufftDoubleReal", "cufftComplex", "cufftDoubleComplex",
+              "cufftResult_t", "cufftResult", "cufftType_t", "cufftType",
+              "thrust::pair", "CUdeviceptr", "cudaDeviceAttr", "CUmodule",
+              "CUjit_option", "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
               "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
@@ -2388,6 +2388,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         Str = Itr->second;
       }
     }
+
     // Add '#include <complex>' directive to the file only once
     if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex" ||
         TypeStr == "cuFloatComplex") {
