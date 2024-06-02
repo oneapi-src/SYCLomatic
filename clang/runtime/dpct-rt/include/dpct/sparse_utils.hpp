@@ -163,6 +163,31 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
                           row_ptr, col_ind, x, beta, y);
 }
 
+/// Computes a CSR format sparse matrix-dense vector product. y = A * x
+///
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] values An array containing the non-zero elements of the matrix.
+/// \param [in] row_offsets An array of length \p num_rows + 1.
+/// \param [in] column_indices An array containing the column indices in
+/// index-based numbering.
+/// \param [in] vector_x Data of the vector x.
+/// \param [in, out] vector_y Data of the vector y.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+template <typename T>
+void csrmv(sycl::queue &queue, const T *values, const int *row_offsets,
+           const int *column_indices, const T *vector_x, T *vector_y,
+           int num_rows, int num_cols) {
+  T alpha{1}, beta{0};
+  auto matrix_info = std::make_shared<dpct::sparse::matrix_info>();
+  matrix_info->set_index_base(oneapi::mkl::index_base::zero);
+  matrix_info->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
+  detail::csrmv_impl<T>()(queue, oneapi::mkl::transpose::nontrans, num_rows,
+                          num_cols, &alpha, matrix_info, values, row_offsets,
+                          column_indices, vector_x, &beta, vector_y);
+}
+
 /// Computes a CSR format sparse matrix-dense vector product.
 /// y = alpha * op(A) * x + beta * y
 /// \param [in] queue The queue where the routine should be executed. It must

@@ -1110,10 +1110,8 @@ public:
   void buildKernelInfo();
   void buildReplacements();
   void processCudaArchMacro();
-  void generateHostCode(
-      std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
-          &ProcessedReplList,
-      HostDeviceFuncLocInfo Info, unsigned ID);
+  void generateHostCode(tooling::Replacements &ProcessedReplList,
+                        HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
@@ -1926,7 +1924,7 @@ private:
   const DeclStmt *DeclStmtOfVarType = nullptr;
   std::string LocalTypeName = "";
 
-  static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  static std::unordered_map<std::string, int> AnonymousTypeDeclStmtMap;
   bool UsedBySymbolAPIFlag = false;
   bool UseHelperFuncFlag = true;
   bool UseDeviceGlobalFlag = false;
