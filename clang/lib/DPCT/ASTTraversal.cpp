@@ -12328,10 +12328,9 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
           .bind("member"),
       this);
 
-  MF.addMatcher(
-      callExpr(callee(functionDecl(hasName("cuFuncSetAttribute"))))
-        .bind("cuFuncSetAttribute"),
-      this);
+  MF.addMatcher(callExpr(callee(functionDecl(hasName("cuFuncSetAttribute"))))
+                    .bind("cuFuncSetAttribute"),
+                this);
 }
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -12360,13 +12359,16 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceToken(MemberName.getBeginLoc(),
                                              std::string(NameMap->second)));
 
-  } else if (auto *CallNode = getNodeAsType<CallExpr>(Result, "cuFuncSetAttribute")) {
+  } else if (auto *CallNode =
+                 getNodeAsType<CallExpr>(Result, "cuFuncSetAttribute")) {
     std::string FuncName =
         CallNode->getDirectCallee()->getNameInfo().getName().getAsString();
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     // TODO: Handle assignments
     report(CallNode->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
            MapNames::ITFName.at(FuncName), Msg->second);
+    ExprAnalysis EA;
+    EA.analyze(C);
     emplaceTransformation(new ReplaceStmt(CallNode, ""));
   }
 }
