@@ -63,7 +63,7 @@ public:
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
-  bool ReplaceCuMacro(const Token &MacroNameTok);
+  bool ReplaceCuMacro(const Token &MacroNameTok, MacroInfo *MI = nullptr);
   void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,

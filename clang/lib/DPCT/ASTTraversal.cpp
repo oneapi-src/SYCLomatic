@@ -169,7 +169,18 @@ void IncludesCallbacks::insertCudaArchRepl(
   return;
 }
 
-bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+std::shared_ptr<clang::dpct::ReplaceToken>
+generateReplacement(SourceLocation SL, MacroMigrationRule Rule) {
+  requestFeature(Rule.HelperFeature);
+  for (auto ItHeader = Rule.Includes.begin(); ItHeader != Rule.Includes.end();
+       ItHeader++) {
+    DpctGlobalInfo::getInstance().insertHeader(SL, *ItHeader);
+  }
+  return std::make_shared<ReplaceToken>(SL, std::move(Rule.Out));
+}
+
+bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok,
+                                       MacroInfo *MI) {
   bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
   if (!IsInAnalysisScope) {
     return false;
@@ -178,14 +189,11 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     return false;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-  auto Iter = MapNames::MacrosMap.find(MacroName);
-  if (Iter != MapNames::MacrosMap.end()) {
-    std::string ReplacedMacroName = Iter->second;
-    auto Repl = std::make_shared<ReplaceToken>(MacroNameTok.getLocation(),
-                                               std::move(ReplacedMacroName));
+  auto Iter = MapNames::MacroRuleMap.find(MacroName);
+  if (Iter != MapNames::MacroRuleMap.end()) {
+    auto Repl = generateReplacement(MacroNameTok.getLocation(), Iter->second);
     if (MacroName == "__CUDA_ARCH__") {
       if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-        requestFeature(HelperFeatureEnum::device_ext);
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         return true;
       }
@@ -197,9 +205,9 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
       } else {
         return false;
       }
-    }
-    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION" ||
-        MacroName == "CUDA_VERSION") {
+    } else if (MacroName == "CUDART_VERSION" ||
+               MacroName == "__CUDART_API_VERSION" ||
+               MacroName == "CUDA_VERSION") {
       // These two macros are defined by CUDA header file
       auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
       auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
@@ -207,6 +215,18 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
           .insertFile(LocInfo.first)
           ->setRTVersionValue(
               std::to_string(Ver.first * 1000 + Ver.second * 10));
+    } else if (MacroName == "NCCL_VERSION_CODE" && MI) {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setCCLVerValue(Lexer::getSourceText(
+                               CharSourceRange::getCharRange(
+                                   MI->getReplacementToken(0).getLocation(),
+                                   Lexer::getLocForEndOfToken(
+                                       MI->getReplacementToken(0).getLocation(),
+                                       0, SM, LangOptions())),
+                               SM, LangOptions())
+                               .str());
     }
     if (DpctGlobalInfo::getContext().getLangOpts().CUDA) {
       // These two macros are defined by CUDA compiler
@@ -258,16 +278,10 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     if (!II)
       continue;
 
-    if (MapNames::MacrosMap.find(II->getName().str()) !=
-        MapNames::MacrosMap.end()) {
-      std::string ReplacedMacroName =
-          MapNames::MacrosMap.at(II->getName().str());
+    auto ItRule = MapNames::MacroRuleMap.find(II->getName().str());
+    if (ItRule != MapNames::MacroRuleMap.end()) {
       TransformSet.emplace_back(
-          new ReplaceToken(Iter->getLocation(), std::move(ReplacedMacroName)));
-      if (II->getName().str() == "__CUDA_ARCH__" ||
-          II->getName().str() == "__NVCC__") {
-        requestFeature(HelperFeatureEnum::device_ext);
-      }
+          generateReplacement(Iter->getLocation(), ItRule->second));
     }
 
     if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
@@ -455,9 +469,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (!IsInAnalysisScope) {
     return;
   }
-  
-  if (ReplaceCuMacro(MacroNameTok)){
-    return ;
+
+  if (ReplaceCuMacro(MacroNameTok, MI)) {
+    return;
   }
 
   // For the un-specialized struct, there is no AST for the extern function
@@ -535,31 +549,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                               LangOptions())),
                       SM, LangOptions())
                       .str())));
-  }
-
-  auto ItRule = MapNames::MacroRuleMap.find(Name.str());
-  if (ItRule != MapNames::MacroRuleMap.end()) {
-    if (Name == "NCCL_VERSION_CODE") {
-      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
-      DpctGlobalInfo::getInstance()
-          .insertFile(LocInfo.first)
-          ->setCCLVerValue(Lexer::getSourceText(
-                               CharSourceRange::getCharRange(
-                                   MI->getReplacementToken(0).getLocation(),
-                                   Lexer::getLocForEndOfToken(
-                                       MI->getReplacementToken(0).getLocation(),
-                                       0, SM, LangOptions())),
-                               SM, LangOptions())
-                               .str());
-    }
-    std::string OutStr = ItRule->second.Out;
-    TransformSet.emplace_back(
-        new ReplaceToken(Range.getBegin(), std::move(OutStr)));
-    requestFeature(ItRule->second.HelperFeature);
-    for (auto ItHeader = ItRule->second.Includes.begin();
-         ItHeader != ItRule->second.Includes.end(); ItHeader++) {
-      DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
-    }
   }
 
   if (TKind == tok::identifier && Name == "CUDART_CB") {
@@ -754,11 +743,10 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
   Token Tok;
   if (!Lexer::getRawToken(End, Tok, SM, LangOptions()))
     Size = Size + Tok.getLength();
-  std::string E(BP, Size);
-  for (auto &MacroMap : MapNames::MacrosMap) {
+  const std::string E(BP, Size);
+  for (auto &MacroRule : MapNames::MacroRuleMap) {
     size_t Pos = 0;
-    std::string MacroName = MacroMap.first;
-    std::string ReplacedMacroName = MacroMap.second;
+    std::string MacroName = MacroRule.first;
 
     std::size_t Found = E.find(MacroName, Pos);
     if (Found != std::string::npos && MacroName == "__CUDA_ARCH__") {
@@ -829,12 +817,11 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
       SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
-      auto Repl =
-          std::make_shared<ReplaceInclude>(InsertRange, ReplacedMacroName);
+
+      auto Repl = generateReplacement(IB, MacroRule.second);
       if (MacroName == "__CUDA_ARCH__" &&
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
-        requestFeature(HelperFeatureEnum::device_ext);
       } else if ((MacroName != "__CUDACC__" ||
                   DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
                  MacroName != "__CUDA_ARCH__") {
