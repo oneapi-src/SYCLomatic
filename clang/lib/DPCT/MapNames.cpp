@@ -524,6 +524,11 @@ void MapNames::setExplicitNamespaceMap() {
                                           ? MapNames::getDpctNamespace() +
                                                 "experimental::command_graph_t"
                                           : "cudaGraph_t")},
+      {"cudaGraphExec_t", std::make_shared<TypeNameRule>(
+                              DpctGlobalInfo::useExtGraph()
+                                  ? MapNames::getDpctNamespace() +
+                                        "experimental::command_graph_exec_t"
+                                  : "cudaGraphExec_t")},
       // ...
   };
 

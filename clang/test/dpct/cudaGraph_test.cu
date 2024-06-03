@@ -21,6 +21,19 @@ int main() {
   // CHECK: dpct::experimental::command_graph_t graph5, *graph6, **graph7;
   cudaGraph_t graph5, *graph6, **graph7;
 
+  // CHECK: dpct::experimental::command_graph_exec_t execGraph;
+  // CHECK-NEXT: dpct::experimental::command_graph_exec_t *execGraph2;
+  // CHECK-NEXT: dpct::experimental::command_graph_exec_t **execGraph3;
+  cudaGraphExec_t execGraph;
+  cudaGraphExec_t *execGraph2;
+  cudaGraphExec_t **execGraph3;
+
+  // CHECK: dpct::experimental::command_graph_exec_t execGraph4[10];
+  cudaGraphExec_t execGraph4[10];
+
+  // CHECK: dpct::experimental::command_graph_exec_t execGraph5, *execGraph6, **execGraph7;
+  cudaGraphExec_t execGraph5, *execGraph6, **execGraph7;
+
   return 0;
 }
 
