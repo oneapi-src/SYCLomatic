@@ -1753,7 +1753,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
-              "CUDA_MEMCPY2D"))))))
+              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -11506,21 +11506,7 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                         ME, MethodName, ReplacedArg, ExtraArg);
 }
 
-void MemoryDataTypeRule::emplaceCuArrayDescDeclarations(const VarDecl *VD) {
-  if (DpctGlobalInfo::isCommentsEnabled()) {
-    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-        VD, "// These variables are defined for info of image_matrix."));
-  }
-  emplaceParamDecl(VD, "size_t", false, "0", "x", "y");
-  emplaceParamDecl(VD, "unsigned", false, "0", "channel_num");
-  emplaceParamDecl(VD, MapNames::getClNamespace() + "image_channel_type", false,
-                   "0", "channel_type");
-}
-
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(hasType(namedDecl(hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))
-                    .bind("decl"),
-                this);
   MF.addMatcher(memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
                                hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))))
                     .bind("arrayMember"),
@@ -11542,19 +11528,12 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto VD = getNodeAsType<VarDecl>(Result, "decl")) {
-    if (isa<ParmVarDecl>(VD))
-      return;
-    auto TypeName = DpctGlobalInfo::getUnqualifiedTypeName(VD->getType());
-    if (TypeName == "CUDA_ARRAY_DESCRIPTOR")
-      emplaceCuArrayDescDeclarations(VD);
-  } else if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
-    if (auto DRE =
-            dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImplicitAsWritten())) {
-      emplaceTransformation(new ReplaceStmt(
-          ME, getArrayDescMemberName(DRE->getDecl()->getName(),
-                                     ME->getMemberDecl()->getName().str())));
-    }
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
+    const auto &Replace = MapNames::findReplacedName(
+        ArrayDescMemberNames, ME->getMemberDecl()->getName().str());
+    if (!Replace.empty())
+      emplaceTransformation(new ReplaceToken(
+          ME->getMemberLoc(), ME->getEndLoc(), std::string(Replace)));
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "makeData")) {
     if (auto FD = CE->getDirectCallee()) {
       auto Name = FD->getName();

@@ -1527,8 +1527,6 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   const static std::vector<std::string> RemoveMember;
 
 public:
-  void emplaceCuArrayDescDeclarations(const VarDecl *VD);
-
   static std::string getArrayDescMemberName(StringRef BaseName,
                                             const std::string &Member) {
     auto Itr = ArrayDescMemberNames.find(Member);

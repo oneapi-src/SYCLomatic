@@ -373,6 +373,8 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
+      {"CUDA_ARRAY_DESCRIPTOR", std::make_shared<TypeNameRule>(
+                                    getDpctNamespace() + "image_matrix_desc")},
       {"cudaMemcpy3DParms",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"CUDA_MEMCPY3D",
@@ -4124,8 +4126,8 @@ const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
     {"width", "[0]"}, {"height", "[1]"}, {"depth", "[2]"}};
 
 const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
-    {"Width", "x"},
-    {"Height", "y"},
+    {"Width", "width"},
+    {"Height", "height"},
     {"Format", "channel_type"},
     {"NumChannels", "channel_num"}};
 
