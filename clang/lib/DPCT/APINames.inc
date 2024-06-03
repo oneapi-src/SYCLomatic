@@ -1625,7 +1625,7 @@ ENTRY(cuGraphicsUnregisterResource, cuGraphicsUnregisterResource, false, NO_FLAG
 ENTRY(cuInit, cuInit, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cuArray3DCreate, cuArray3DCreate_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cuArray3DGetDescriptor, cuArray3DGetDescriptor_v2, false, NO_FLAG, P4, "comment")
-ENTRY(cuArrayCreate, cuArrayCreate_v2, true, NO_FLAG, P4, "DPCT1073")
+ENTRY(cuArrayCreate, cuArrayCreate_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cuArrayDestroy, cuArrayDestroy, true, NO_FLAG, P4, "Successful")
 ENTRY(cuArrayGetDescriptor, cuArrayGetDescriptor_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetByPCIBusId, cuDeviceGetByPCIBusId, false, NO_FLAG, P4, "comment")

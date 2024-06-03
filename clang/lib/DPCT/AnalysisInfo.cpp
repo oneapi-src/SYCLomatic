@@ -1850,10 +1850,8 @@ void DpctGlobalInfo::processCudaArchMacro() {
   }
 }
 
-void DpctGlobalInfo::generateHostCode(
-    std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
-        &ProcessedReplList,
-    HostDeviceFuncLocInfo Info, unsigned ID) {
+void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
+                                      HostDeviceFuncLocInfo Info, unsigned ID) {
   std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
 
   unsigned int Pos, Len;
@@ -1861,13 +1859,12 @@ void DpctGlobalInfo::generateHostCode(
   StringRef SR(OriginText);
   RewriteBuffer RB;
   RB.Initialize(SR.begin(), SR.end());
-  for (auto &Element : ProcessedReplList) {
-    auto R = Element.second;
-    unsigned ROffset = R->getOffset();
+  for (const auto &R : ProcessedReplList) {
+    unsigned ROffset = R.getOffset();
     if (ROffset >= Info.FuncStartOffset && ROffset <= Info.FuncEndOffset) {
       Pos = ROffset - Info.FuncStartOffset;
-      Len = R->getLength();
-      RB.ReplaceText(Pos, Len, R->getReplacementText());
+      Len = R.getLength();
+      RB.ReplaceText(Pos, Len, R.getReplacementText());
     }
   }
   Pos = Info.FuncNameOffset - Info.FuncStartOffset;
@@ -1953,8 +1950,9 @@ void DpctGlobalInfo::postProcess() {
           if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
             continue;
           }
-          auto &ReplLists =
-              FileMap[LocInfo.FilePath]->getReplsSYCL()->getReplMap();
+          tooling::Replacements ReplLists;
+          FileMap[LocInfo.FilePath]->getReplsSYCL()->emplaceIntoReplSet(
+              ReplLists);
           generateHostCode(ReplLists, LocInfo, Info.PostFixId);
         }
       }
@@ -2846,14 +2844,17 @@ MemVarInfo::MemVarInfo(unsigned Offset,
         if (DS1 && DS2 && DS1 == DS2) {
           IsAnonymousType = true;
           DeclStmtOfVarType = DS2;
-          auto Iter = AnonymousTypeDeclStmtMap.find(DS2);
+          const auto LocInfo = DpctGlobalInfo::getLocInfo(DS2->getBeginLoc());
+          const auto LocStr = LocInfo.first.getCanonicalPath().str() + ":" +
+                              std::to_string(LocInfo.second);
+          auto Iter = AnonymousTypeDeclStmtMap.find(LocStr);
           if (Iter != AnonymousTypeDeclStmtMap.end()) {
             LocalTypeName = "type_ct" + std::to_string(Iter->second);
           } else {
             LocalTypeName =
                 "type_ct" + std::to_string(AnonymousTypeDeclStmtMap.size() + 1);
             AnonymousTypeDeclStmtMap.insert(
-                std::make_pair(DS2, AnonymousTypeDeclStmtMap.size() + 1));
+                std::make_pair(LocStr, AnonymousTypeDeclStmtMap.size() + 1));
           }
         } else if (DS2) {
           DeclStmtOfVarType = DS2;
@@ -3300,7 +3301,7 @@ std::string MemVarInfo::getArgName() {
   return getName();
 }
 const std::string MemVarInfo::ExternVariableName = "dpct_local";
-std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
+std::unordered_map<std::string, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 ///// class TextureTypeInfo /////
 TextureTypeInfo::TextureTypeInfo(std::string &&DataType, int TexType) {
   setDataTypeAndTexType(std::move(DataType), TexType);
@@ -6123,16 +6124,20 @@ const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 template <class T>
 void setTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
                              unsigned Idx, T Ty) {
-  auto &TA = TAILis[Idx];
-  if (TA.isNull())
-    TA.setAsType(Ty);
+  if (Idx < TAILis.size()) {
+    auto &TA = TAILis[Idx];
+    if (TA.isNull())
+      TA.setAsType(Ty);
+  }
 }
 template <class T>
 void setNonTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
                                 unsigned Idx, T Ty) {
-  auto &TA = TAILis[Idx];
-  if (TA.isNull())
-    TA.setAsNonType(Ty);
+  if (Idx < TAILis.size()) {
+    auto &TA = TAILis[Idx];
+    if (TA.isNull())
+      TA.setAsNonType(Ty);
+  }
 }
 
 bool getInnerType(QualType &Ty, TypeLoc &TL) {
