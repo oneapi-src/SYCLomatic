@@ -199,5 +199,9 @@ void foo10(){
   filterfoo2(3);
 }
 
+// CHECK: #if defined(__UNDEFINED_MACRO__)
+// CHECK-NEXT: #endif
+#if defined(__NVCC__)
+#endif
 
 #endif

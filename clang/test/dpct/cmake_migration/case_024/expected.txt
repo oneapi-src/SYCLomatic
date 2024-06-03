@@ -1,1 +1,3 @@
 set(SYCL_HAS_FP16 TRUE)
+file(WRITE ${output_file} "SET(SYCL_HAS_FP16\n TRUE)\n\n")
+file(WRITE ${output_file} "SET(SYCL_HAS_FP16 TRUE)\n\n")
