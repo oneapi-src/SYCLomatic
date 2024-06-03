@@ -50,10 +50,7 @@ void test() {
   cuDeviceGetAttribute(&result5,CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, device);
   std::cout << " result5 " << result5 << std::endl;
 
-  // CHECK:  *result6 = dpct::dev_mgr::instance()
-  // CHECK-NEXT:             .get_device(device)
-  // CHECK-NEXT:             .ext_oneapi_can_access_peer(
-  // CHECK-NEXT:                 dpct::dev_mgr::instance().get_device(peerDevice));
+  // CHECK: result6 = dpct::dev_mgr::instance().get_device(device).ext_oneapi_can_access_peer(dpct::dev_mgr::instance().get_device(peerDevice));
   cudaDeviceCanAccessPeer(&result6, device, peerDevice);
   std::cout << " result6 " << result6 << std::endl;
 }
