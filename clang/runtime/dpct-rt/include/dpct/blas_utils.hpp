@@ -2702,7 +2702,7 @@ private:
 };
 
 namespace detail {
-dnnl::memory::data_type dpct_type_to_dnnl_type(library_data_t type) {
+inline dnnl::memory::data_type dpct_type_to_dnnl_type(library_data_t type) {
   switch (type) {
   case library_data_t::real_half:
     return dnnl::memory::data_type::f16;
@@ -2723,6 +2723,43 @@ dnnl::memory::data_type dpct_type_to_dnnl_type(library_data_t type) {
         "the input library_data_t type has no corresponding type in dnnl");
   }
 }
+
+template <class T, class Talpha>
+void scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols, T *d,
+                                    const Talpha *alpha) {
+  q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
+      size_t row_idx = index.get(0);
+      size_t col_idx = index.get(1);
+      size_t idx = rows * col_idx + row_idx;
+      d[idx] = d[idx] * alpha[row_idx];
+    });
+  });
+}
+
+// d is col major without padding
+inline void scale_d_with_vector_alpha(queue_ptr q_ptr, int rows, int cols,
+                                      void *d, library_data_t d_type,
+                                      const void *alpha,
+                                      library_data_t alpha_type) {
+  std::uint64_t key = dpct::detail::get_type_combination_id(d_type, alpha_type);
+  switch (key) {
+  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
+                                             library_data_t::real_float): {
+    scale_d_with_vector_alpha_impl<std::int8_t, float>(
+        q_ptr, rows, cols, (std::int8_t *)d, (const float *)alpha);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_int32,
+                                             library_data_t::real_float): {
+    scale_d_with_vector_alpha_impl<int, float>(q_ptr, rows, cols, (int *)d,
+                                               (const float *)alpha);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
 } // namespace detail
 
 void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
@@ -2731,12 +2768,13 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
             matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
   if (!q_ptr)
     q_ptr = &get_default_queue();
+  bool vector_alpha = false;
   if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
       compute_desc->_pointer_mode ==
           pointer_mode_t::alpha_device_vector_beta_zero ||
       compute_desc->_pointer_mode ==
           pointer_mode_t::alpha_device_vector_beta_host) {
-    throw std::runtime_error("Unsupported pointer mode.");
+    vector_alpha = true;
   }
 
   // 1. if beta is not zero, need throw exception since we do not support it.
@@ -2766,14 +2804,14 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
     throw std::runtime_error("Only support row majorand col major.");
   }
 
-  // TODO: process a_trans and b_trans
   if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
-    if (a_desc->_order == order_t::col) {
-      a_desc->_order = order_t::row;
-    } else {
-      a_desc->_order = order_t::col;
-    }
+    throw std::runtime_error("Matrix A must not be transposed.");
   }
+  if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
+    throw std::runtime_error("Matrix B must be transposed.");
+  }
+
+  // TODO: process b_trans when ldb does not equal to m/n/k
   if (compute_desc->_trans_b != oneapi::mkl::transpose::nontrans) {
     if (b_desc->_order == order_t::col) {
       b_desc->_order = order_t::row;
@@ -2786,6 +2824,7 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
                                                         q_ptr->get_context());
   dnnl::stream engine_stream = dnnl::sycl_interop::make_stream(engine, *q_ptr);
 
+  // TODO: check if need adjust if B is transposed.
   const dnnl::memory::dim M = a_desc->_rows, K = b_desc->_rows,
                           N = b_desc->_cols;
 
@@ -2837,30 +2876,29 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
                    : weights_type_size * b_desc->_rows * b_desc->_ld)
       .wait();
 
+  std::unordered_map<int, dnnl::memory> matmul_args;
+  matmul_args.insert({DNNL_ARG_SRC, src_mem});
+  matmul_args.insert({DNNL_ARG_WEIGHTS, weights_mem});
+  matmul_args.insert({DNNL_ARG_DST, dst_mem});
   dnnl::primitive_attr matmul_attr;
-  if (compute_desc->_pointer_mode == pointer_mode_t::device ||
-      compute_desc->_pointer_mode == pointer_mode_t::host) {
+  if (!vector_alpha) {
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
-  } else {
-    throw std::runtime_error(
-        "Only support pointer_mode_t::device and pointer_mode_t::host.");
+    void *alpha_data = nullptr;
+    if (compute_desc->_pointer_mode == pointer_mode_t::host) {
+      std::size_t Size =
+          dpct::detail::library_data_size[static_cast<unsigned int>(
+              compute_desc->_scale_type)] /
+          8;
+      alpha_data = sycl::malloc_device(Size, *q_ptr);
+      q_ptr->memcpy(alpha_data, alpha, Size).wait();
+    } else {
+      alpha_data = const_cast<void *>(alpha);
+    }
+    dnnl::memory scales_alpha(
+        {{1}, detail::dpct_type_to_dnnl_type(compute_desc->_scale_type), {1}},
+        engine, alpha_data);
+    matmul_args.insert({DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, scales_alpha});
   }
-
-  void *alpha_data = nullptr;
-  if (compute_desc->_pointer_mode == pointer_mode_t::host) {
-    std::size_t Size =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            compute_desc->_scale_type)] /
-        8;
-    alpha_data = sycl::malloc_device(Size, *q_ptr);
-    q_ptr->memcpy(alpha_data, alpha, Size).wait();
-  } else {
-    alpha_data = const_cast<void *>(alpha);
-  }
-
-  dnnl::memory scales_alpha(
-      {{1}, detail::dpct_type_to_dnnl_type(compute_desc->_scale_type), {1}},
-      engine, alpha_data);
 
   // Create primitive descriptor.
   auto matmul_pd = dnnl::matmul::primitive_desc(engine, src_md, weights_md,
@@ -2868,13 +2906,6 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
 
   // Create the primitive.
   auto matmul_prim = dnnl::matmul(matmul_pd);
-
-  // Primitive arguments.
-  std::unordered_map<int, dnnl::memory> matmul_args;
-  matmul_args.insert({DNNL_ARG_SRC, src_mem});
-  matmul_args.insert({DNNL_ARG_WEIGHTS, weights_mem});
-  matmul_args.insert({DNNL_ARG_DST, dst_mem});
-  matmul_args.insert({DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, scales_alpha});
 
   // Primitive execution: matrix multiplication with ReLU.
   matmul_prim.execute(engine_stream, matmul_args);
@@ -2887,12 +2918,15 @@ void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
       dpct::detail::library_data_size[static_cast<unsigned int>(
           d_desc->_type)] /
       8;
-  q_ptr
-      ->memcpy(d, dst_mem.get_data_handle(),
-               (d_desc->_order == order_t::row)
-                   ? dst_type_size * d_desc->_cols * d_desc->_ld
-                   : dst_type_size * d_desc->_rows * d_desc->_ld)
-      .wait();
+  q_ptr->memcpy(d, dst_mem.get_data_handle(),
+                (d_desc->_order == order_t::row)
+                    ? dst_type_size * d_desc->_cols * d_desc->_ld
+                    : dst_type_size * d_desc->_rows * d_desc->_ld);
+  if (vector_alpha)
+    detail::scale_d_with_vector_alpha(q_ptr, d_desc->_rows, d_desc->_cols, d,
+                                      d_desc->_type, alpha,
+                                      compute_desc->_scale_type);
+  q_ptr->wait();
 }
 
 class transform_desc_t {
