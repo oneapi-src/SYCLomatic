@@ -86,6 +86,22 @@ in the migration results:
 For detailed information about dialect differences between Clang and nvcc, refer to llvm.org's
 `Compiling CUDA with clang <https://www.llvm.org/docs/CompileCudaWithLLVM.html>`_ page.
 
+Run CodePin to Capture Application Signature
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CodePin is feature of |tool_name| that helps reduce the effort of debugging inconsistencies in runtime behavior. CodePin generates reports
+from the CUDA and SYCL programs that, when compared, can help identify the
+source of divergent runtime behavior.
+
+Use the CodePin tool before migration in order to capture the project signature.
+This signature will be used later for validation after migration.
+
+Enable CodePin with the ``–enable-codepin`` option.
+
+For detailed information about debugging using the CodePin tool, refer to
+`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html>`_.
+
+
 Configure the Tool
 ******************
 
@@ -285,11 +301,10 @@ your CUDA source.
    `contribute to the SYCLomatic project <https://github.com/oneapi-src/SYCLomatic/blob/SYCLomatic/CONTRIBUTING.md>`_.
    This helps prioritize which CUDA APIs will be supported in future releases.
 
-Stage 4: Build and Validate the New SYCL Code Base
---------------------------------------------------
+Stage 4: Build the New SYCL Code Base
+-------------------------------------
 
-After you have completed any manual migration steps, build your converted code
-and validate your new code base.
+After you have completed any manual migration steps, build your converted code.
 
 Install New SYCL Code Base Dependencies
 ***************************************
@@ -353,6 +368,20 @@ in the Codeplay plugin documentation:
 
 * `Install the oneAPI for AMD GPUs plugin <https://developer.codeplay.com/products/oneapi/amd/guides/>`_ from Codeplay.
 * `Install the oneAPI for NVIDIA GPUs plugin <https://developer.codeplay.com/products/oneapi/nvidia/guides/>`_ from Codeplay.
+
+Stage 5: Validate the New SYCL Application
+------------------------------------------
+
+After you have built your converted code, validate your new SYCL application to
+check for correct functionality after migration.
+
+Use CodePIN to Validate Migrated Code
+*************************************
+
+Use the CodePIN signature (captured in Stage 1) to validate your migrated code.
+
+For detailed information about debugging using the CodePin tool, refer to
+`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html>`_.
 
 Optimize Your Code
 ------------------
