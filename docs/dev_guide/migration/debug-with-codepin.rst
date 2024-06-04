@@ -239,7 +239,7 @@ After migration, there will be two files: ``dpct_output_codepin_sycl/example.dp.
     Result[3]: (2, 3, 4)
     */
 
-After building and executing ``dpct_output_codepin_sycl/example.dp.cpp`` and ``dpct_output_debug/example.cu``,
+After building ``dpct_output_codepin_sycl/example.dp.cpp`` and ``dpct_output_debug/example.cu`` and executing the binaries built out
 the following execution log files will be generated.
 
 .. list-table::
@@ -321,11 +321,27 @@ programs start to diverge from one another.
 
 Analyze the Data Checkpoints
 -------
-codepin-report.py is a tool consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
-codepin-report.py can identify the in consistent data value and report the stats data of the execution log including data checkpoints.
+codepin-report.py (also can be triggered by dpct/c2s --codepin-report) is a functionality of
+the compatibility tool that consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
+codepin-report.py can identify the inconsistent data value and report the stats data of the execution.
 
-codepin-report.py consumes the execution log files from both CUDA and SYCL code with the following command line.
-``codepin-report.py [-h] --instrumented-cuda-log <file path> --instrumented-sycl-log <file path>``
+User can specify the comparison tolerance of floating points in the following format:
+
+.. code-block::
+
+    {
+        "bf16_abs_tol": 9.77e-04,
+        "fp16_abs_tol": 9.77e-04,
+        "float_abs_tol": 1.19e-04,
+        "double_abs_tol": 2.22e-04,
+        "rel_tol": 1e-3
+    }
+
+The first 4 items "bf16_abs_tol", "bf16_abs_tol", "bf16_abs_tol" and "bf16_abs_tol" are the absolute tolerance range of the corresponding type.
+The last item, "rel_tol", is the relative tolerance represented by a ratio value.
+
+codepin-report.py consumes the execution log files generated from both CUDA and SYCL code with the following command line.
+``codepin-report.py [-h] --instrumented-cuda-log <file path> --instrumented-sycl-log <file path> [--floating-point-comparison-epsilon <file path>]``
 
 Following is an example of the analysis report.
 
@@ -339,4 +355,5 @@ Following is an example of the analysis report.
     Peak Device Memory Used(CUDA), 508100608
     Peak Device Memory Used(SYCL), 31023112192
     CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
-    example.cu:26:3:prolog,example.cu:26:3:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data example.cu:26:3:prolog are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API example.cu.
+    example.cu:26:3:prolog,example.cu:26:3:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data example.cu:26:3:prolog are mismatched,
+    and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API example.cu.
