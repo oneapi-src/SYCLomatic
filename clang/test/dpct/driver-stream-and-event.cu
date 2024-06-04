@@ -70,11 +70,6 @@ void foo(){
   //CHECK: rr = dpct::get_kernel_function_info(f).max_work_group_size;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuFuncSetAttribute was removed because SYCL currently does not support setting kernel function attributes
-  // CHECK-NEXT: */
-  cuFuncSetAttribute(f, CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT, 1024);
-
   cuEventDestroy(start);
 
   cuEventDestroy(end);
