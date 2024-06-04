@@ -239,7 +239,7 @@ After migration, there will be two files: ``dpct_output_codepin_sycl/example.dp.
     Result[3]: (2, 3, 4)
     */
 
-After building ``dpct_output_codepin_sycl/example.dp.cpp`` and ``dpct_output_debug/example.cu`` and executing the binaries built out
+After building ``dpct_output_codepin_sycl/example.dp.cpp`` and ``dpct_output_codepin_cuda/example.cu`` and executing the binaries built out
 the following execution log files will be generated.
 
 .. list-table::
@@ -319,7 +319,7 @@ the following execution log files will be generated.
 The report helps identify where the runtime behavior of the CUDA and the SYCL
 programs start to diverge from one another.
 
-Analyze the Data Checkpoints
+Analysis the CodePin Result
 -------
 codepin-report.py (also can be triggered by dpct/c2s --codepin-report) is a functionality of
 the compatibility tool that consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
