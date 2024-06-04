@@ -529,39 +529,6 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-/// Replace Dim3 constructors
-class ReplaceDim3Ctor : public TextModification {
-  bool isDecl;
-  const CXXConstructExpr *Ctor;
-  const CXXConstructExpr *FinalCtor;
-  CharSourceRange CSR;
-  mutable std::string ReplacementString;
-
-  void setRange();
-  const Stmt *getReplaceStmt(const Stmt *S) const;
-  std::string getSyclRangeCtor(const CXXConstructExpr *Ctor) const;
-  std::string getReplaceString() const;
-
-public:
-  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, bool _isDecl = false)
-      : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(_isDecl),
-        Ctor(_Ctor), FinalCtor(nullptr) {
-    setRange();
-  }
-  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor,
-                  const CXXConstructExpr *_FinalCtor)
-      : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(false), Ctor(_Ctor),
-        FinalCtor(_FinalCtor) {
-    setRange();
-  }
-  static const CXXConstructExpr *getConstructExpr(const Expr *E);
-  ReplaceInclude *getEmpty();
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
 class InsertBeforeStmt : public TextModification {
   const Stmt *S;
   std::string T;

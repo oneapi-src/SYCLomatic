@@ -3010,26 +3010,14 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
                                  argumentCountIs(1),
                                  unless(hasAncestor(cxxConstructExpr(
                                      hasType(namedDecl(hasName("dim3")))))))
-                    .bind("dim3Top"),
-                this);
-
-  MF.addMatcher(cxxConstructExpr(
-                    hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
-                    anyOf(hasParent(varDecl()), hasParent(exprWithCleanups())),
-                    unless(hasParent(initListExpr())),
-                    unless(hasAncestor(
-                        cxxConstructExpr(hasType(namedDecl(hasName("dim3")))))))
-                    .bind("dim3CtorDecl"),
+                    .bind("dim3Ctor"),
                 this);
 
   MF.addMatcher(cxxConstructExpr(hasType(namedDecl(hasName("dim3"))),
-                                 argumentCountIs(3),
                                  unless(hasParent(initListExpr())),
-                                 unless(hasParent(varDecl())),
-                                 unless(hasParent(exprWithCleanups())),
                                  unless(hasAncestor(cxxConstructExpr(
                                      hasType(namedDecl(hasName("dim3")))))))
-                    .bind("dim3CtorNoDecl"),
+                    .bind("dim3Ctor"),
                 this);
 
   MF.addMatcher(
@@ -3040,41 +3028,15 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
-    const MatchFinder::MatchResult &Result) {
-  if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3CtorDecl")) {
-    if(getParentKernelCall(Ctor))
-      return nullptr;
-    // dim3 a; or dim3 a(1);
-    return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
-  } else if (auto Ctor =
-                 getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
-    if(getParentKernelCall(Ctor))
-      return nullptr;
-    // deflt = dim3(3);
-    return new ReplaceDim3Ctor(Ctor, false /*isDecl*/);
-  } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
-    if(getParentKernelCall(Ctor))
-      return nullptr;
-    // dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
-    if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
-      // strip the top CXXConstructExpr, if there's a CXXConstructExpr further
-      // down
-      return new ReplaceDim3Ctor(Ctor, A);
-    } else {
-      // Copy constructor case: dim3 a(copyfrom)
-      // No replacements are needed
-      return nullptr;
-    }
-  }
-
-  return nullptr;
-}
-
 void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
-  ReplaceDim3Ctor *R = getReplaceDim3Modification(Result);
-  if (R) {
-    emplaceTransformation(R);
+  if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Ctor")) {
+    if (getParentKernelCall(Ctor))
+      return;
+    ExprAnalysis EA;
+    EA.analyze(Ctor);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   }
 
   if (auto TL = getNodeAsType<TypeLoc>(Result, "dim3Type")) {

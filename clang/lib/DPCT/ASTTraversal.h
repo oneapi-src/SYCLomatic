@@ -581,9 +581,6 @@ private:
 };
 
 class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {
-  ReplaceDim3Ctor *getReplaceDim3Modification(
-      const ast_matchers::MatchFinder::MatchResult &Result);
-
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

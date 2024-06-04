@@ -628,18 +628,44 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
-  if (Temp->getConstructor()->getDeclName().getAsString() != "dim3") {
-    analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
-  }
+  analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
+}
+
+const CXXConstructExpr *getConstructExpr(const Expr *E) {
+  if (const auto *C = dyn_cast_or_null<CXXConstructExpr>(E)) {
+    return C;
+  } else if (isa<MaterializeTemporaryExpr>(E)) {
+    return getConstructExpr(
+        dyn_cast<MaterializeTemporaryExpr>(E)->getSubExpr());
+  } else if (isa<CastExpr>(E)) {
+    return getConstructExpr(dyn_cast<CastExpr>(E)->getSubExpr());
+  } else {
+    return nullptr;
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
+    auto NeedChangeName = dyn_cast<CXXTemporaryObjectExpr>(Ctor) == nullptr;
+    // strip the top CXXConstructExpr, if there's a CXXConstructExpr further
+    // down
+    if (Ctor->getNumArgs() == 1) {
+      Ctor = getConstructExpr(Ctor->getArg(0));
+    }
+    if (Ctor == nullptr) {
+      return;
+    }
+    auto Parents = dpct::DpctGlobalInfo::getContext().getParents(*Ctor);
+    NeedChangeName = NeedChangeName && Parents.size() == 1 &&
+                     Parents[0].get<VarDecl>() == nullptr &&
+                     Parents[0].get<ExprWithCleanups>() == nullptr;
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3)
-        << "(";
+    if (NeedChangeName)
+      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
+                                     3)
+          << "(";
     ArgumentAnalysis A;
     std::string ArgStr = "";
     for (auto Arg : Ctor->arguments()) {
@@ -647,23 +673,61 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
       ArgStr = ", " + A.getReplacedString() + ArgStr;
     }
     ArgStr.replace(0, 2, "");
-    OS << ArgStr << ")";
+    OS << ArgStr;
+    if (NeedChangeName)
+      OS << ")";
     OS.flush();
 
-    // Special handling for implicit ctor.
-    // #define GET_BLOCKS(a) a
-    // dim3 A = GET_BLOCKS(1);
-    // Result if using SM.getExpansionRange:
-    //   sycl::range<3> A = sycl::range<3>(1, 1, GET_BLOCKS(1));
-    // Result if using addReplacement(E):
-    //   #define GET_BLOCKS(a) sycl::range<3>(1, 1, a)
-    //   sycl::range<3> A = GET_BLOCKS(1);
-    if (Ctor->getParenOrBraceRange().isInvalid() && isOuterMostMacro(Ctor)) {
-      return addReplacement(
-          SM.getExpansionRange(Ctor->getBeginLoc()).getBegin(),
-          SM.getExpansionRange(Ctor->getEndLoc()).getEnd(), ArgsString);
+    CharSourceRange CSR;
+    if (!NeedChangeName) {
+      SourceRange SR = Ctor->getParenOrBraceRange();
+      if (SR.isInvalid()) {
+        // convert to spelling location if the dim3 constructor is in a macro
+        // otherwise, Lexer::getLocForEndOfToken returns invalid source location
+        auto CtorLoc = Ctor->getLocation().isMacroID()
+                           ? SM.getSpellingLoc(Ctor->getLocation())
+                           : Ctor->getLocation();
+        // dim3 a;
+        // MACRO(... dim3 a; ...)
+        auto CtorEndLoc = Lexer::getLocForEndOfToken(
+            CtorLoc, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+        CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
+        ArgsString = "(" + ArgsString + ")";
+      } else {
+        SourceRange SR1 =
+            SourceRange(SR.getBegin().getLocWithOffset(1), SR.getEnd());
+        CSR = CharSourceRange(SR1, false);
+      }
+    } else {
+      // adjust the statement to replace if top-level constructor includes the
+      // variable being defined
+      const Stmt *S = Ctor;
+      if (!S) {
+        return;
+      }
+      if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
+        auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+        auto Begin = Range.getBegin();
+        auto End = Range.getEnd();
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+        CSR = CharSourceRange::getTokenRange(Begin, End);
+      } else {
+        // Use getStmtExpansionSourceRange(S) to support cases like
+        // dim3 a = MACRO;
+        auto Range = getStmtExpansionSourceRange(S);
+        auto Begin = Range.getBegin();
+        auto End = Range.getEnd();
+        CSR = CharSourceRange::getTokenRange(
+            Begin,
+            End.getLocWithOffset(Lexer::MeasureTokenLength(
+                End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())));
+      }
     }
-    addReplacement(Ctor, ArgsString);
+    auto Range = getDefinitionRange(CSR.getBegin(), CSR.getEnd());
+    auto Length = SM.getDecomposedLoc(Range.getEnd()).second -
+                  SM.getDecomposedLoc(Range.getBegin()).second;
+    addReplacement(Range.getBegin(), Length, ArgsString);
     return;
   }
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
