@@ -3054,6 +3054,32 @@ void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
       });
     });
   } else if (a_order == order_t::col4_4r2_8c && c_order == order_t::col) {
+    q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.parallel_for(sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
+        size_t row_idx = index.get(0);
+        size_t col_idx = index.get(1);
+        if (row_idx < rows) {
+          size_t to_linear_idx = c_ld * col_idx + row_idx;
+
+          size_t to_row_in_row8_col32 = row_idx % 8;
+          size_t to_col_in_row8_col32 = col_idx % 32;
+
+          size_t from_row_in_row8_col32 =
+              4 * (to_row_in_row8_col32 % 2) + to_col_in_row8_col32 / 8;
+          size_t from_col_in_row8_col32 =
+              16 * ((to_col_in_row8_col32 / 4) % 2) +
+              4 * (to_row_in_row8_col32 / 2) + to_col_in_row8_col32 % 4;
+          size_t from_linear_idx_in_row8_col32 =
+              from_row_in_row8_col32 * 32 + from_col_in_row8_col32;
+
+          size_t from_linear_idx = a_ld * (col_idx / 32) +
+                                   (row_idx / 8) * (32 * 8) +
+                                   from_linear_idx_in_row8_col32;
+
+          c[to_linear_idx] = a[from_linear_idx];
+        }
+      });
+    });
   } else if (a_order == order_t::col && c_order == order_t::col32_2r_4r4) {
   } else if (a_order == order_t::col32_2r_4r4 && c_order == order_t::col) {
   } else {
