@@ -10,6 +10,7 @@ set(dpct_rt_files
   include/dpct/util.hpp
   include/dpct/blas_utils.hpp
   include/dpct/dnnl_utils.hpp
+  include/dpct/mma_utils.hpp
   include/dpct/dpl_utils.hpp
   include/dpct/rng_utils.hpp
   include/dpct/lib_common_utils.hpp
