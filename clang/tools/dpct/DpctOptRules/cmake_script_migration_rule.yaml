@@ -621,8 +621,8 @@
   Out: target_compile_options(${arg})
   Subrules:
     arg:
-      In: $<$<COMPILE_LANGUAGE:CUDA>:${flags}>
-      Out: ""
+      In: $<$<COMPILE_LANGUAGE:CUDA${rest}>:${flags}>
+      Out: $<$<COMPILE_LANGUAGE:CXX>:${flags}>
       RuleId: "target_compile_options_cuda_arg"
 
 - Rule: rule_CUDA_HAS_FP16
