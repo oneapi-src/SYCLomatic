@@ -53,11 +53,11 @@ class joint_matrix {
 
 public:
   joint_matrix() : matrix() {}
-  joint_matrix(const joint_matrix &other) {
+  joint_matrix(joint_matrix &other) {
     sycl_matrix::joint_matrix_copy(
         sycl::ext::oneapi::experimental::this_sub_group(), other.get(), matrix);
   }
-  joint_matrix &operator=(const joint_matrix &other) {
+  joint_matrix &operator=(joint_matrix &other) {
     if (this != &other) {
       sycl_matrix::joint_matrix_copy(
           sycl::ext::oneapi::experimental::this_sub_group(), other.get(),
