@@ -234,8 +234,8 @@ static void getCompileInfo(
           Len = Pos - strlen("-D");
         }
         std::string MacroName = Option.substr(strlen("-D"), Len);
-        auto Iter = MapNames::MacrosMap.find(MacroName);
-        if (Iter != MapNames::MacrosMap.end())
+        auto Iter = MapNames::MacroRuleMap.find(MacroName);
+        if (Iter != MapNames::MacroRuleMap.end())
           // Skip macros defined in helper function header files
           continue;
         else

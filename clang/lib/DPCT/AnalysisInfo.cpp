@@ -1974,14 +1974,17 @@ void DpctGlobalInfo::emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
   }
 }
 std::shared_ptr<KernelCallExpr>
-DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
-  auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
+DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall,
+                                      bool IsAssigned) {
+  auto DefRange = getDefinitionRange(LaunchKernelCall->getBeginLoc(),
+                                     LaunchKernelCall->getEndLoc());
+  auto LocInfo = getLocInfo(DefRange.getBegin());
   auto FileInfo = insertFile(LocInfo.first);
   if (FileInfo->findNode<KernelCallExpr>(LocInfo.second))
     return std::shared_ptr<KernelCallExpr>();
 
-  auto KernelInfo =
-      KernelCallExpr::buildFromCudaLaunchKernel(LocInfo, LaunchKernelCall);
+  auto KernelInfo = KernelCallExpr::buildFromCudaLaunchKernel(
+      LocInfo, LaunchKernelCall, IsAssigned);
   if (KernelInfo) {
     FileInfo->insertNode(LocInfo.second, KernelInfo);
   } else {
@@ -5186,17 +5189,14 @@ const std::string &KernelCallExpr::ArgInfo::getTypeString() const {
 }
 void KernelCallExpr::print(KernelPrinter &Printer) {
   std::unique_ptr<KernelPrinter::Block> Block;
-  if (!OuterStmts.empty()) {
-    if (NeedBraces)
-      Block = std::move(Printer.block(true));
-    else
-      Block = std::move(Printer.block(false));
-    OuterStmts.print(Printer);
-  }
-  if (NeedLambda) {
+  if (NeedLambda)
     Block = std::move(Printer.block(true));
-  }
+  else if (!OuterStmts.empty())
+    Block = std::move(Printer.block(NeedBraces));
+  OuterStmts.print(Printer);
   printSubmit(Printer);
+  if (NeedDefaultRetValue)
+    Printer.line("return 0;");
   Block.reset();
   if (!getEvent().empty() && isSync())
     Printer.line(getEvent(), "->wait();");
@@ -5592,7 +5592,7 @@ std::string KernelCallExpr::getReplacement() {
 }
 std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
-    const CallExpr *CE) {
+    const CallExpr *CE, bool IsAssigned) {
   auto LaunchFD = CE->getDirectCallee();
   if (!LaunchFD || (LaunchFD->getName() != "cudaLaunchKernel" &&
                     LaunchFD->getName() != "cudaLaunchCooperativeKernel")) {
@@ -5600,6 +5600,11 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
   }
   auto Kernel = std::shared_ptr<KernelCallExpr>(
       new KernelCallExpr(LocInfo.second, LocInfo.first));
+  // Call the lambda function with default return value.
+  if (IsAssigned) {
+    Kernel->setNeedDefaultRet();
+    Kernel->setNeedAddLambda();
+  }
   Kernel->buildLocationInfo(CE);
   Kernel->buildExecutionConfig(
       ArrayRef<const Expr *>{CE->getArg(1), CE->getArg(2), CE->getArg(4),
@@ -5733,6 +5738,8 @@ void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
     NeedLambda = true;
   }
 }
+void KernelCallExpr::setNeedAddLambda() { NeedLambda = true; }
+void KernelCallExpr::setNeedDefaultRet() { NeedDefaultRetValue = true; }
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   NeedBraces = true;
   auto &Context = dpct::DpctGlobalInfo::getContext();
@@ -6128,16 +6135,20 @@ const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 template <class T>
 void setTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
                              unsigned Idx, T Ty) {
-  auto &TA = TAILis[Idx];
-  if (TA.isNull())
-    TA.setAsType(Ty);
+  if (Idx < TAILis.size()) {
+    auto &TA = TAILis[Idx];
+    if (TA.isNull())
+      TA.setAsType(Ty);
+  }
 }
 template <class T>
 void setNonTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
                                 unsigned Idx, T Ty) {
-  auto &TA = TAILis[Idx];
-  if (TA.isNull())
-    TA.setAsNonType(Ty);
+  if (Idx < TAILis.size()) {
+    auto &TA = TAILis[Idx];
+    if (TA.isNull())
+      TA.setAsNonType(Ty);
+  }
 }
 
 bool getInnerType(QualType &Ty, TypeLoc &TL) {
