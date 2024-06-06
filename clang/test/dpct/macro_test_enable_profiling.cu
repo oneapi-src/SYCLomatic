@@ -58,7 +58,8 @@
     cudaGetLastError();                                                                                            \
     cudaEventRecord(start);                                                                                        \
   }
-
+//CHECK: const int eventFlags = 0;
+const int eventFlags = cudaEventDefault;
 //     CHECK:#define CMC_PROFILING_END(lineno)                                                                                                                                         \
 //CHECK-NEXT:  if (CMC_profile)                                                                                                                                                        \
 //CHECK-NEXT:  {                                                                                                                                                                       \

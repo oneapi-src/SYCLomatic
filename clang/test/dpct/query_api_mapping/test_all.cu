@@ -1844,12 +1844,17 @@
 // CHECK-NEXT: ncclCommCount
 // CHECK-NEXT: ncclCommCuDevice
 // CHECK-NEXT: ncclCommDestroy
+// CHECK-NEXT: ncclCommGetAsyncError
 // CHECK-NEXT: ncclCommInitRank
 // CHECK-NEXT: ncclCommUserRank
+// CHECK-NEXT: ncclGetErrorString
+// CHECK-NEXT: ncclGetLastError
 // CHECK-NEXT: ncclGetUniqueId
 // CHECK-NEXT: ncclGetVersion
+// CHECK-NEXT: ncclRecv
 // CHECK-NEXT: ncclReduce
 // CHECK-NEXT: ncclReduceScatter
+// CHECK-NEXT: ncclSend
 // CHECK-NEXT: nearbyint
 // CHECK-NEXT: nearbyintf
 // CHECK-NEXT: nextafter

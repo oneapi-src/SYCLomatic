@@ -181,17 +181,11 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
                   Diagnostics::API_NOT_MIGRATED)
 
-CONDITIONAL_FACTORY_ENTRY(
-    CheckWarning1073(1),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "cuArrayCreate_v2", DEREF(0),
-            NEW(MapNames::getDpctNamespace() + "image_matrix",
-                STRUCT_DISMANTLE(1, "channel_type_ct1", "channel_num_ct1",
-                                 "x_ct1", "y_ct1"))))),
-    UNSUPPORT_FACTORY_ENTRY("cuArrayCreate_v2",
-                            Diagnostics::CANNOT_CAPUTURE_AGUMENTS, ARG(1)))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cuArrayCreate_v2", DEREF(0),
+                            NEW(MapNames::getDpctNamespace() + "image_matrix",
+                                ARG(1)))))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)
 FEATURE_REQUEST_FACTORY(
@@ -236,8 +230,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cuTexRefSetAddress2D_v3", ARG(0), true, "attach",
-                            ARG(2), STRUCT_DISMANTLE(1, "x_ct1", "y_ct1"),
-                            ARG(3))))
+                            ARG(1), ARG(2), ARG(3))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
