@@ -978,9 +978,10 @@ bool SemaCUDA::CheckCall(SourceLocation Loc, FunctionDecl *Callee) {
   if (!Caller)
     return true;
 #ifdef SYCLomatic_CUSTOMIZATION
-  CUDAFunctionTarget CallerTarget = IdentifyCUDATarget(Caller);
-  CUDAFunctionTarget CalleeTarget = IdentifyCUDATarget(Callee);
-  if(CallerTarget == CFT_HostDevice && CalleeTarget == CFT_Device){
+  CUDAFunctionTarget CallerTarget = IdentifyTarget(Caller);
+  CUDAFunctionTarget CalleeTarget = IdentifyTarget(Callee);
+  if (CallerTarget == CUDAFunctionTarget::HostDevice &&
+      CalleeTarget == CUDAFunctionTarget::Device) {
     return true;
   }
 #endif // SYCLomatic_CUSTOMIZATION
