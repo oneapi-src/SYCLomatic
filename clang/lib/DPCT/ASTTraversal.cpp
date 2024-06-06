@@ -7370,7 +7370,7 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
   auto &SM = DpctGlobalInfo::getSourceManager();
 
   const ValueDecl *MD = nullptr;
-  if((MD = getDecl(CE->getArg(0))) == nullptr)
+  if ((MD = getDecl(CE->getArg(0))) == nullptr)
     return;
 
   bool IsParmVarDecl = isa<ParmVarDecl>(MD);
