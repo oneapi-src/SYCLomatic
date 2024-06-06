@@ -836,7 +836,8 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   }
 #ifdef SYCLomatic_CUSTOMIZATION
   else if (LangOpts.CUDA && II.getName() == "__CUDA_ARCH__" &&
-           IsInAnalysisScopeFunc(Identifier.getLocation()) && GetRunRound() == 0) {
+           IsInAnalysisScopeFunc(Identifier.getLocation()) &&
+           GetRunRound() == 0) {
     // Make a MacroDefinition for __CUDA_ARCH__
     MacroInfo *MI = AllocateMacroInfo(SourceLocation());
     MI->setIsBuiltinMacro();
