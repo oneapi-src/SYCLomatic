@@ -2252,8 +2252,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       EndLoc = SM->getExpansionRange(TL->getBeginLoc()).getEnd();
     }
 
-    std::string CanonicalTypeStr =
-      DpctGlobalInfo::getUnqualifiedTypeName(
+    std::string CanonicalTypeStr = DpctGlobalInfo::getUnqualifiedTypeName(
         TL->getType().getCanonicalType());
 
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
@@ -7412,7 +7411,6 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &Context = dpct::DpctGlobalInfo::getContext();
-
 
   if (IsAssigned) {
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
