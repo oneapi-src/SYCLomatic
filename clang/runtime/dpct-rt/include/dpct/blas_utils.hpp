@@ -2482,24 +2482,6 @@ enum class pointer_mode_t {
   alpha_device_vector_beta_zero,
   alpha_device_vector_beta_host
 };
-// enum class epilogue_t {
-//   default = 1,
-//   relu = 2,
-//   relu_aux = relu | 128,
-//   bias = 4,
-//   relu_bias = relu | bias,
-//   relu_aux_bias = relu_aux | bias,
-//   drelu = 8 | 128,
-//   drelu_bgrad = drelu | 16,
-//   gelu = 32,
-//   gelu_aux = gelu | 128,
-//   gelu_bias = gelu | bias,
-//   gelu_aux_bias = gelu_aux | bias,
-//   dgelu = 64 | 128,
-//   dgelu_bgrad = dgelu | 16,
-//   bgrada = 256,
-//   bgradb = 512
-// };
 
 class matrix_layout_t;
 using matrix_layout_ptr = std::shared_ptr<matrix_layout_t>;
@@ -2762,10 +2744,11 @@ inline void scale_d_with_vector_alpha(queue_ptr q_ptr, int rows, int cols,
 }
 } // namespace detail
 
-void matmul(matmul_desc_ptr compute_desc, const void *alpha, const void *a,
-            matrix_layout_ptr a_desc, const void *b, matrix_layout_ptr b_desc,
-            const void *beta, const void *c, matrix_layout_ptr c_desc, void *d,
-            matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
+inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
+                   const void *a, matrix_layout_ptr a_desc, const void *b,
+                   matrix_layout_ptr b_desc, const void *beta, const void *c,
+                   matrix_layout_ptr c_desc, void *d, matrix_layout_ptr d_desc,
+                   dpct::queue_ptr q_ptr) {
   if (!q_ptr)
     q_ptr = &get_default_queue();
   bool vector_alpha = false;
@@ -3138,10 +3121,11 @@ void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
 }
 } // namespace detail
 
-void matrix_transform(transform_desc_ptr transform_desc, const void *alpha,
-                      const void *a, matrix_layout_ptr a_desc, const void *beta,
-                      const void *b, matrix_layout_ptr b_desc, void *c,
-                      matrix_layout_ptr c_desc, queue_ptr q_ptr) {
+inline void matrix_transform(transform_desc_ptr transform_desc,
+                             const void *alpha, const void *a,
+                             matrix_layout_ptr a_desc, const void *beta,
+                             const void *b, matrix_layout_ptr b_desc, void *c,
+                             matrix_layout_ptr c_desc, queue_ptr q_ptr) {
   if (!q_ptr)
     q_ptr = &get_default_queue();
 
