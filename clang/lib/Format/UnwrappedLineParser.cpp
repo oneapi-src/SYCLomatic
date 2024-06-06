@@ -217,16 +217,12 @@ UnwrappedLineParser::UnwrappedLineParser(
                        ? IG_Rejected
                        : IG_Inited),
       IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn),
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
       SourceMgr(SourceMgr),
 #endif // SYCLomatic_CUSTOMIZATION
-      Macros(Style.Macros, SourceMgr, Style, Allocator, IdentTable) {}
-=======
       Macros(Style.Macros, SourceMgr, Style, Allocator, IdentTable) {
   assert(IsCpp == LangOpts.CXXOperatorNames);
 }
->>>>>>> upstream/sycl
 
 void UnwrappedLineParser::reset() {
   PPBranchLevel = -1;

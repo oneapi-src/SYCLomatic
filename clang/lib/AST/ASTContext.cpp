@@ -9664,14 +9664,10 @@ static uint64_t getRVVTypeSize(ASTContext &Context, const BuiltinType *Ty) {
   if (Info.ElementType == Context.BoolTy)
     EltSize = 1;
 
-<<<<<<< HEAD
-  unsigned MinElts = Info.EC.getKnownMinValue();
+  uint64_t MinElts = Info.EC.getKnownMinValue();
 #ifdef SYCLomatic_CUSTOMIZATION
   return (uint64_t)VScale->first * (uint64_t)MinElts * (uint64_t)EltSize;
 #else
-=======
-  uint64_t MinElts = Info.EC.getKnownMinValue();
->>>>>>> upstream/sycl
   return VScale->first * MinElts * EltSize;
 #endif
 }

@@ -44,7 +44,6 @@
 
 using clang::format::FormatStyle;
 
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
 namespace format {
@@ -56,10 +55,7 @@ bool BlockLevelFormatFlag = false;
 } // namespace format
 } // namespace clang
 #endif // SYCLomatic_CUSTOMIZATION
-LLVM_YAML_IS_SEQUENCE_VECTOR(clang::format::FormatStyle::RawStringFormat)
-=======
 LLVM_YAML_IS_SEQUENCE_VECTOR(FormatStyle::RawStringFormat)
->>>>>>> upstream/sycl
 
 namespace llvm {
 namespace yaml {
@@ -3993,23 +3989,16 @@ loadAndParseConfigFile(StringRef ConfigFile, llvm::vfs::FileSystem *FS,
   return Text;
 }
 
-<<<<<<< HEAD
-llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
-                                     StringRef FallbackStyleName,
-                                     StringRef Code, llvm::vfs::FileSystem *FS,
-                                     bool AllowUnknownOptions) {
+Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
+                               StringRef FallbackStyleName, StringRef Code,
+                               llvm::vfs::FileSystem *FS,
+                               bool AllowUnknownOptions) {
 #ifdef SYCLomatic_CUSTOMIZATION
   FormatStyle Style = getLLVMStyle(FormatStyle::LanguageKind::LK_Cpp);
   FormatStyle FallbackStyle = getNoStyle();
   // Default fallback style is LLVM
   getPredefinedStyle(DefaultFallbackStyle, Style.Language, &FallbackStyle);
 #else
-=======
-Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
-                               StringRef FallbackStyleName, StringRef Code,
-                               llvm::vfs::FileSystem *FS,
-                               bool AllowUnknownOptions) {
->>>>>>> upstream/sycl
   FormatStyle Style = getLLVMStyle(guessLanguage(FileName, Code));
   FormatStyle FallbackStyle = getNoStyle();
   if (!getPredefinedStyle(FallbackStyleName, Style.Language, &FallbackStyle))
