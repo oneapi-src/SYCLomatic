@@ -1724,7 +1724,7 @@ ENTRY(cuStreamCreateWithPriority, cuStreamCreateWithPriority, false, NO_FLAG, P4
 ENTRY(cuStreamDestroy, cuStreamDestroy_v2, true, NO_FLAG, P4, "Successful")
 ENTRY(cuStreamGetFlags, cuStreamGetFlags, false, NO_FLAG, P4, "comment")
 ENTRY(cuStreamGetPriority, cuStreamGetPriority, false, NO_FLAG, P4, "comment")
-ENTRY(cuStreamQuery, cuStreamQuery, false, NO_FLAG, P4, "comment")
+ENTRY(cuStreamQuery, cuStreamQuery, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
 ENTRY(cuStreamSynchronize, cuStreamSynchronize, true, NO_FLAG, P4, "comment")
 ENTRY(cuStreamWaitEvent, cuStreamWaitEvent, true, NO_FLAG, P4, "comment")
 ENTRY(cuSurfObjectCreate, cuSurfObjectCreate, false, NO_FLAG, P4, "comment")

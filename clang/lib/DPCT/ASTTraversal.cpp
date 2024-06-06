@@ -8141,7 +8141,7 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaStreamAddCallback", "cuStreamCreate",
                       "cuStreamSynchronize", "cuStreamWaitEvent",
                       "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-                      "cuStreamAddCallback");
+                      "cuStreamAddCallback", "cuStreamQuery");
   };
 
   MF.addMatcher(
@@ -8299,12 +8299,13 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamBeginCapture" ||
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
-             FuncName == "cudaStreamQuery") {
+             FuncName == "cudaStreamQuery" ||
+             FuncName == "cuStreamQuery") {
 
     // if extension feature sycl_ext_oneapi_queue_empty is used, member
     // functions "ext_oneapi_empty" in SYCL queue is used to map
-    // cudaStreamQuery.
-    if (FuncName == "cudaStreamQuery" && DpctGlobalInfo::useQueueEmpty()) {
+    // cudaStreamQuery or cuStreamQuery.
+    if ((FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery") && DpctGlobalInfo::useQueueEmpty()) {
       auto StreamArg = CE->getArg(0);
       bool IsDefaultStream = isDefaultStream(StreamArg);
       std::string StreamName;
