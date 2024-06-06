@@ -564,7 +564,7 @@ __dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
   // storage
   size_t linear_tid = item.get_local_linear_id();
   OutputIteratorT workitem_itr = block_itr + linear_tid;
-  size_t GROUP_WORK_ITEMS = item.get_global_range().size();
+  size_t GROUP_WORK_ITEMS = item.get_local_range().size();
 #pragma unroll
   for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     workitem_itr[(idx * GROUP_WORK_ITEMS)] = items[idx];
