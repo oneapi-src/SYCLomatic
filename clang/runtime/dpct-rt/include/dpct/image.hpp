@@ -797,7 +797,7 @@ public:
                               IsImageArray>::accessor_t;
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
-  ~image_wrapper() { detach(); }
+  ~image_wrapper() override { detach(); }
 
   /// Get image accessor.
   accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {
