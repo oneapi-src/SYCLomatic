@@ -20,6 +20,16 @@ stages:
 This document describes the steps in each stage with general recommendations and
 optional steps.
 
+.. note::
+
+   CUDA* API migration support is broad but not complete. If you encounter CUDA
+   APIs that were not migrated due to a lack of tool support, please report it
+   to the |sycl_forum|_ or
+   `priority support <https://www.intel.com/content/www/us/en/developer/get-help/priority-support.html>`_.
+   Alternatively, `submit an issue <https://github.com/oneapi-src/SYCLomatic/issues>`_ or
+   `contribute to the SYCLomatic project <https://github.com/oneapi-src/SYCLomatic/blob/SYCLomatic/CONTRIBUTING.md>`_.
+   This helps prioritize which CUDA APIs will be supported in future releases.
+
 Prerequisites
 -------------
 
