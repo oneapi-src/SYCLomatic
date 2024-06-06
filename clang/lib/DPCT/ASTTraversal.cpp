@@ -2255,7 +2255,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string CanonicalTypeStr =
       DpctGlobalInfo::getUnqualifiedTypeName(
         TL->getType().getCanonicalType());
-    StringRef CanonicalTypeStrRef(CanonicalTypeStr);
 
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
         CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
@@ -7408,11 +7407,12 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
 
   auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
-  auto StreamName = getStmtSpelling(StreamArg);
-  auto ArgName = getStmtSpelling(CE->getArg(0));
+  auto StreamName = ExprAnalysis::ref(StreamArg);
+  auto EventName = ExprAnalysis::ref(CE->getArg(0));
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &Context = dpct::DpctGlobalInfo::getContext();
+
 
   if (IsAssigned) {
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
@@ -7430,10 +7430,10 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
 
         std::string Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
                           "}}.ext_oneapi_submit_barrier()";
-        StmtStr = "*" + ArgName + " = " + Str;
+        StmtStr = "*" + EventName + " = " + Str;
       } else {
         std::string Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
-        StmtStr = "*" + ArgName + " = " + Str;
+        StmtStr = "*" + EventName + " = " + Str;
       }
       StmtStr = "DPCT_CHECK_ERROR(" + StmtStr + ")";
 
@@ -7484,7 +7484,7 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-        std::string Str = "*" + ArgName + " = {{NEEDREPLACEQ" +
+        std::string Str = "*" + EventName + " = {{NEEDREPLACEQ" +
                           std::to_string(Index) +
                           "}}.ext_oneapi_submit_barrier()";
         if (!IsParmVarDecl)
@@ -7492,7 +7492,7 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       } else {
-        std::string Str = "*" + ArgName + " = " + StreamName +
+        std::string Str = "*" + EventName + " = " + StreamName +
                           "->ext_oneapi_submit_barrier()";
         if (!IsParmVarDecl)
           ReplStr += getNL();
