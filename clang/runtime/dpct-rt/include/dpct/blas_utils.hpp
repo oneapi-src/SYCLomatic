@@ -2710,12 +2710,14 @@ template <class T, class Talpha>
 void scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols, T *d,
                                     const Talpha *alpha) {
   q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.parallel_for(sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
-      size_t row_idx = index.get(0);
-      size_t col_idx = index.get(1);
-      size_t idx = rows * col_idx + row_idx;
-      d[idx] = d[idx] * alpha[row_idx];
-    });
+    cgh.parallel_for<
+        dpct_kernel_name<class scale_with_vector_alpha, T, Talpha>>(
+        sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
+          size_t row_idx = index.get(0);
+          size_t col_idx = index.get(1);
+          size_t idx = rows * col_idx + row_idx;
+          d[idx] = d[idx] * alpha[row_idx];
+        });
   });
 }
 
@@ -2840,159 +2842,174 @@ void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols, size_t a_ld,
                       T *c) {
   if (a_order == order_t::col && c_order == order_t::row) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t from_linear_idx = a_ld * col_idx + row_idx;
-          size_t to_linear_idx = c_ld * row_idx + col_idx;
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+      cgh.parallel_for<dpct_kernel_name<class matrix_transform_col_to_row, T>>(
+          sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t from_linear_idx = a_ld * col_idx + row_idx;
+              size_t to_linear_idx = c_ld * row_idx + col_idx;
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else if (a_order == order_t::row && c_order == order_t::col) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t from_linear_idx = a_ld * row_idx + col_idx;
-          size_t to_linear_idx = c_ld * col_idx + row_idx;
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+      cgh.parallel_for<dpct_kernel_name<class matrix_transform_row_to_col, T>>(
+          sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t from_linear_idx = a_ld * row_idx + col_idx;
+              size_t to_linear_idx = c_ld * col_idx + row_idx;
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else if (a_order == order_t::col && c_order == order_t::col32) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t from_linear_idx = a_ld * col_idx + row_idx;
-          size_t to_linear_idx =
-              c_ld * (col_idx / 32) + 32 * row_idx + col_idx % 32;
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+      cgh.parallel_for<
+          dpct_kernel_name<class matrix_transform_col_to_col32, T>>(
+          sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t from_linear_idx = a_ld * col_idx + row_idx;
+              size_t to_linear_idx =
+                  c_ld * (col_idx / 32) + 32 * row_idx + col_idx % 32;
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else if (a_order == order_t::col32 && c_order == order_t::col) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t from_linear_idx =
-              a_ld * (col_idx / 32) + 32 * row_idx + col_idx % 32;
-          size_t to_linear_idx = c_ld * col_idx + row_idx;
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+      cgh.parallel_for<
+          dpct_kernel_name<class matrix_transform_col32_to_col, T>>(
+          sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t from_linear_idx =
+                  a_ld * (col_idx / 32) + 32 * row_idx + col_idx % 32;
+              size_t to_linear_idx = c_ld * col_idx + row_idx;
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else if (a_order == order_t::col && c_order == order_t::col4_4r2_8c) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t from_linear_idx = a_ld * col_idx + row_idx;
+      cgh.parallel_for<
+          dpct_kernel_name<class matrix_transform_col_to_col4_4r2_8c, T>>(
+          sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t from_linear_idx = a_ld * col_idx + row_idx;
 
-          size_t from_row_in_row8_col32 = row_idx % 8;
-          size_t from_col_in_row8_col32 = col_idx % 32;
+              size_t from_row_in_row8_col32 = row_idx % 8;
+              size_t from_col_in_row8_col32 = col_idx % 32;
 
-          size_t to_row_in_row8_col32 =
-              4 * (from_row_in_row8_col32 % 2) + from_col_in_row8_col32 / 8;
-          size_t to_col_in_row8_col32 =
-              16 * ((from_col_in_row8_col32 / 4) % 2) +
-              4 * (from_row_in_row8_col32 / 2) + from_col_in_row8_col32 % 4;
-          size_t to_linear_idx_in_row8_col32 =
-              to_row_in_row8_col32 * 32 + to_col_in_row8_col32;
+              size_t to_row_in_row8_col32 =
+                  4 * (from_row_in_row8_col32 % 2) + from_col_in_row8_col32 / 8;
+              size_t to_col_in_row8_col32 =
+                  16 * ((from_col_in_row8_col32 / 4) % 2) +
+                  4 * (from_row_in_row8_col32 / 2) + from_col_in_row8_col32 % 4;
+              size_t to_linear_idx_in_row8_col32 =
+                  to_row_in_row8_col32 * 32 + to_col_in_row8_col32;
 
-          size_t to_linear_idx = c_ld * (col_idx / 32) +
-                                 (row_idx / 8) * (32 * 8) +
-                                 to_linear_idx_in_row8_col32;
+              size_t to_linear_idx = c_ld * (col_idx / 32) +
+                                     (row_idx / 8) * (32 * 8) +
+                                     to_linear_idx_in_row8_col32;
 
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else if (a_order == order_t::col4_4r2_8c && c_order == order_t::col) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t to_linear_idx = c_ld * col_idx + row_idx;
+      cgh.parallel_for<
+          dpct_kernel_name<class matrix_transform_col4_4r2_8c_to_col, T>>(
+          sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t to_linear_idx = c_ld * col_idx + row_idx;
 
-          size_t to_row_in_row8_col32 = row_idx % 8;
-          size_t to_col_in_row8_col32 = col_idx % 32;
+              size_t to_row_in_row8_col32 = row_idx % 8;
+              size_t to_col_in_row8_col32 = col_idx % 32;
 
-          size_t from_row_in_row8_col32 =
-              4 * (to_row_in_row8_col32 % 2) + to_col_in_row8_col32 / 8;
-          size_t from_col_in_row8_col32 =
-              16 * ((to_col_in_row8_col32 / 4) % 2) +
-              4 * (to_row_in_row8_col32 / 2) + to_col_in_row8_col32 % 4;
-          size_t from_linear_idx_in_row8_col32 =
-              from_row_in_row8_col32 * 32 + from_col_in_row8_col32;
+              size_t from_row_in_row8_col32 =
+                  4 * (to_row_in_row8_col32 % 2) + to_col_in_row8_col32 / 8;
+              size_t from_col_in_row8_col32 =
+                  16 * ((to_col_in_row8_col32 / 4) % 2) +
+                  4 * (to_row_in_row8_col32 / 2) + to_col_in_row8_col32 % 4;
+              size_t from_linear_idx_in_row8_col32 =
+                  from_row_in_row8_col32 * 32 + from_col_in_row8_col32;
 
-          size_t from_linear_idx = a_ld * (col_idx / 32) +
-                                   (row_idx / 8) * (32 * 8) +
-                                   from_linear_idx_in_row8_col32;
+              size_t from_linear_idx = a_ld * (col_idx / 32) +
+                                       (row_idx / 8) * (32 * 8) +
+                                       from_linear_idx_in_row8_col32;
 
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else if (a_order == order_t::col && c_order == order_t::col32_2r_4r4) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t from_linear_idx = a_ld * col_idx + row_idx;
+      cgh.parallel_for<
+          dpct_kernel_name<class matrix_transform_col_to_col32_2r_4r4, T>>(
+          sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t from_linear_idx = a_ld * col_idx + row_idx;
 
-          size_t from_row_in_row32_col32 = row_idx % 32;
-          size_t from_col_in_row32_col32 = col_idx % 32;
+              size_t from_row_in_row32_col32 = row_idx % 32;
+              size_t from_col_in_row32_col32 = col_idx % 32;
 
-          size_t to_row_in_row32_col32 =
-              8 * ((from_row_in_row32_col32 % 8) / 2) +
-              (from_row_in_row32_col32 / 8) * 2 + from_row_in_row32_col32 % 2;
-          size_t to_col_in_row32_col32 = from_col_in_row32_col32;
-          size_t to_linear_idx_in_row32_col32 =
-              to_row_in_row32_col32 * 32 + to_col_in_row32_col32;
+              size_t to_row_in_row32_col32 =
+                  8 * ((from_row_in_row32_col32 % 8) / 2) +
+                  (from_row_in_row32_col32 / 8) * 2 +
+                  from_row_in_row32_col32 % 2;
+              size_t to_col_in_row32_col32 = from_col_in_row32_col32;
+              size_t to_linear_idx_in_row32_col32 =
+                  to_row_in_row32_col32 * 32 + to_col_in_row32_col32;
 
-          size_t to_linear_idx = c_ld * (col_idx / 32) +
-                                 (row_idx / 32) * (32 * 32) +
-                                 to_linear_idx_in_row32_col32;
+              size_t to_linear_idx = c_ld * (col_idx / 32) +
+                                     (row_idx / 32) * (32 * 32) +
+                                     to_linear_idx_in_row32_col32;
 
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else if (a_order == order_t::col32_2r_4r4 && c_order == order_t::col) {
     q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
-        size_t row_idx = index.get(0);
-        size_t col_idx = index.get(1);
-        if (row_idx < rows) {
-          size_t to_linear_idx = c_ld * col_idx + row_idx;
+      cgh.parallel_for<
+          dpct_kernel_name<class matrix_transform_col32_2r_4r4_to_col, T>>(
+          sycl::range<2>(c_ld, cols), [=](sycl::id<2> index) {
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t to_linear_idx = c_ld * col_idx + row_idx;
 
-          size_t to_row_in_row32_col32 = row_idx % 32;
-          size_t to_col_in_row32_col32 = col_idx % 32;
+              size_t to_row_in_row32_col32 = row_idx % 32;
+              size_t to_col_in_row32_col32 = col_idx % 32;
 
-          size_t from_row_in_row32_col32 =
-              8 * ((to_row_in_row32_col32 % 8) / 2) +
-              (to_row_in_row32_col32 / 8) * 2 + to_row_in_row32_col32 % 2;
-          size_t from_col_in_row32_col32 = to_col_in_row32_col32;
-          size_t from_linear_idx_in_row32_col32 =
-              from_row_in_row32_col32 * 32 + from_col_in_row32_col32;
+              size_t from_row_in_row32_col32 =
+                  8 * ((to_row_in_row32_col32 % 8) / 2) +
+                  (to_row_in_row32_col32 / 8) * 2 + to_row_in_row32_col32 % 2;
+              size_t from_col_in_row32_col32 = to_col_in_row32_col32;
+              size_t from_linear_idx_in_row32_col32 =
+                  from_row_in_row32_col32 * 32 + from_col_in_row32_col32;
 
-          size_t from_linear_idx = a_ld * (col_idx / 32) +
-                                   (row_idx / 32) * (32 * 32) +
-                                   from_linear_idx_in_row32_col32;
+              size_t from_linear_idx = a_ld * (col_idx / 32) +
+                                       (row_idx / 32) * (32 * 32) +
+                                       from_linear_idx_in_row32_col32;
 
-          c[to_linear_idx] = a[from_linear_idx];
-        }
-      });
+              c[to_linear_idx] = a[from_linear_idx];
+            }
+          });
     });
   } else {
     throw std::runtime_error("Unsupported order combination.");
