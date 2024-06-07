@@ -519,16 +519,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaLaunchAttributeValue", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSMDescr_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSMAlg_t", std::make_shared<TypeNameRule>("int")},
-      {"cudaGraph_t",
-       std::make_shared<TypeNameRule>(DpctGlobalInfo::useExtGraph()
-                                          ? MapNames::getDpctNamespace() +
-                                                "experimental::command_graph_t"
-                                          : "cudaGraph_t")},
-      {"cudaGraphExec_t", std::make_shared<TypeNameRule>(
-                              DpctGlobalInfo::useExtGraph()
-                                  ? MapNames::getDpctNamespace() +
-                                        "experimental::command_graph_exec_t"
-                                  : "cudaGraphExec_t")},
       // ...
   };
 
