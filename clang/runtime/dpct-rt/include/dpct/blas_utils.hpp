@@ -2742,98 +2742,38 @@ inline void scale_d_with_vector_alpha(queue_ptr q_ptr, int rows, int cols,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-} // namespace detail
 
-inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
-                   const void *a, matrix_layout_ptr a_desc, const void *b,
-                   matrix_layout_ptr b_desc, const void *beta, const void *c,
-                   matrix_layout_ptr c_desc, void *d, matrix_layout_ptr d_desc,
-                   dpct::queue_ptr q_ptr) {
-  if (!q_ptr)
-    q_ptr = &get_default_queue();
-  bool vector_alpha = false;
-  if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
-      compute_desc->_pointer_mode ==
-          pointer_mode_t::alpha_device_vector_beta_zero ||
-      compute_desc->_pointer_mode ==
-          pointer_mode_t::alpha_device_vector_beta_host) {
-    vector_alpha = true;
-  }
-
-  // 1. if beta is not zero, need throw exception since we do not support it.
-  if (beta != nullptr) {
-    size_t beta_size =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            compute_desc->_scale_type)] /
-        8;
-    void *beta_host = std::malloc(beta_size);
-    void *beta_zero = std::malloc(beta_size);
-    std::memset(beta_zero, 0, beta_size);
-    q_ptr->memcpy(beta_host, beta, beta_size).wait();
-    if (std::memcmp(beta_host, beta_zero, beta_size))
-      throw std::runtime_error("Non-zero beta is not supported.");
-  }
-
-  // 2. if has epilogue, need throw exception since we do not support it.
-  if (compute_desc->_epilogue != 1) {
-    throw std::runtime_error("Epilogue is not supported.");
-  }
-
-  // 3. only support row major and col major
-  if ((a_desc->_order != order_t::col && a_desc->_order != order_t::row) ||
-      (b_desc->_order != order_t::col && b_desc->_order != order_t::row) ||
-      (c_desc->_order != order_t::col && c_desc->_order != order_t::row) ||
-      (d_desc->_order != order_t::col && d_desc->_order != order_t::row)) {
-    throw std::runtime_error("Only support row majorand col major.");
-  }
-
-  if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
-    throw std::runtime_error("Matrix A must not be transposed.");
-  }
-  if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
-    throw std::runtime_error("Matrix B must be transposed.");
-  }
-
-  // TODO: process b_trans when ldb does not equal to m/n/k
-  if (compute_desc->_trans_b != oneapi::mkl::transpose::nontrans) {
-    if (b_desc->_order == order_t::col) {
-      b_desc->_order = order_t::row;
-    } else {
-      b_desc->_order = order_t::col;
-    }
-  }
-
+// a,d are col_major, b is row_major
+inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
+                        size_t k, const void *alpha, const void *a, size_t lda,
+                        library_data_t a_type, const void *b, size_t ldb,
+                        library_data_t b_type, void *d, size_t ldd,
+                        library_data_t d_type, dpct::queue_ptr q_ptr,
+                        bool vector_alpha, pointer_mode_t pointer_mode,
+                        library_data_t scale_type) {
   dnnl::engine engine = dnnl::sycl_interop::make_engine(q_ptr->get_device(),
                                                         q_ptr->get_context());
   dnnl::stream engine_stream = dnnl::sycl_interop::make_stream(engine, *q_ptr);
 
-  // TODO: check if need adjust if B is transposed.
-  const dnnl::memory::dim M = a_desc->_rows, K = b_desc->_rows,
-                          N = b_desc->_cols;
+  const dnnl::memory::dim M = m, K = k, N = n;
 
   dnnl::memory::dims src_dims = {M, K};
   dnnl::memory::dims weights_dims = {K, N};
   dnnl::memory::dims dst_dims = {M, N};
 
-  // Create memory descriptors and memory objects for src, weights, and dst.
-
   const dnnl::memory::dims src_strides =
-      (a_desc->_order == order_t::row) ? dnnl::memory::dims{a_desc->_ld, 1}
-                                       : dnnl::memory::dims{1, a_desc->_ld};
+      dnnl::memory::dims{1, static_cast<long>(lda)};
   const dnnl::memory::dims weights_strides =
-      (b_desc->_order == order_t::row) ? dnnl::memory::dims{b_desc->_ld, 1}
-                                       : dnnl::memory::dims{1, b_desc->_ld};
+      dnnl::memory::dims{static_cast<long>(ldb), 1};
   const dnnl::memory::dims dst_strides =
-      (d_desc->_order == order_t::row) ? dnnl::memory::dims{d_desc->_ld, 1}
-                                       : dnnl::memory::dims{1, d_desc->_ld};
+      dnnl::memory::dims{1, static_cast<long>(ldd)};
 
   auto src_md = dnnl::memory::desc(
-      src_dims, detail::dpct_type_to_dnnl_type(a_desc->_type), src_strides);
+      src_dims, detail::dpct_type_to_dnnl_type(a_type), src_strides);
   auto weights_md = dnnl::memory::desc(
-      weights_dims, detail::dpct_type_to_dnnl_type(b_desc->_type),
-      weights_strides);
+      weights_dims, detail::dpct_type_to_dnnl_type(b_type), weights_strides);
   auto dst_md = dnnl::memory::desc(
-      dst_dims, detail::dpct_type_to_dnnl_type(d_desc->_type), dst_strides);
+      dst_dims, detail::dpct_type_to_dnnl_type(d_type), dst_strides);
 
   auto src_mem = dnnl::memory(src_md, engine);
   auto weights_mem = dnnl::memory(weights_md, engine);
@@ -2841,22 +2781,11 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
 
   // Write data to memory object's handles.
   size_t src_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(
-          a_desc->_type)] /
-      8;
+      dpct::detail::library_data_size[static_cast<unsigned int>(a_type)] / 8;
   size_t weights_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(
-          b_desc->_type)] /
-      8;
-  q_ptr->memcpy(src_mem.get_data_handle(), a,
-                (a_desc->_order == order_t::row)
-                    ? src_type_size * a_desc->_cols * a_desc->_ld
-                    : src_type_size * a_desc->_rows * a_desc->_ld);
-  q_ptr
-      ->memcpy(weights_mem.get_data_handle(), b,
-               (b_desc->_order == order_t::row)
-                   ? weights_type_size * b_desc->_cols * b_desc->_ld
-                   : weights_type_size * b_desc->_rows * b_desc->_ld)
+      dpct::detail::library_data_size[static_cast<unsigned int>(b_type)] / 8;
+  q_ptr->memcpy(src_mem.get_data_handle(), a, src_type_size * k * lda);
+  q_ptr->memcpy(weights_mem.get_data_handle(), b, weights_type_size * k * ldb)
       .wait();
 
   std::unordered_map<int, dnnl::memory> matmul_args;
@@ -2867,10 +2796,10 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
   if (!vector_alpha) {
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
     void *alpha_data = nullptr;
-    if (compute_desc->_pointer_mode == pointer_mode_t::host) {
+    if (pointer_mode == pointer_mode_t::host) {
       std::size_t Size =
           dpct::detail::library_data_size[static_cast<unsigned int>(
-              compute_desc->_scale_type)] /
+              scale_type)] /
           8;
       alpha_data = sycl::malloc_device(Size, *q_ptr);
       q_ptr->memcpy(alpha_data, alpha, Size).wait();
@@ -2878,8 +2807,8 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
       alpha_data = const_cast<void *>(alpha);
     }
     dnnl::memory scales_alpha(
-        {{1}, detail::dpct_type_to_dnnl_type(compute_desc->_scale_type), {1}},
-        engine, alpha_data);
+        {{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}}, engine,
+        alpha_data);
     matmul_args.insert({DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, scales_alpha});
   }
 
@@ -2898,63 +2827,13 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
 
   // Read data from memory object's handle.
   size_t dst_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(
-          d_desc->_type)] /
-      8;
-  q_ptr->memcpy(d, dst_mem.get_data_handle(),
-                (d_desc->_order == order_t::row)
-                    ? dst_type_size * d_desc->_cols * d_desc->_ld
-                    : dst_type_size * d_desc->_rows * d_desc->_ld);
+      dpct::detail::library_data_size[static_cast<unsigned int>(d_type)] / 8;
+  q_ptr->memcpy(d, dst_mem.get_data_handle(), dst_type_size * n * ldd);
   if (vector_alpha)
-    detail::scale_d_with_vector_alpha(q_ptr, d_desc->_rows, d_desc->_cols, d,
-                                      d_desc->_type, alpha,
-                                      compute_desc->_scale_type);
+    detail::scale_d_with_vector_alpha(q_ptr, m, n, d, d_type, alpha,
+                                      scale_type);
   q_ptr->wait();
 }
-
-class transform_desc_t {
-public:
-  enum class attribute { scale_type, pointer_mode, trans_a, trans_b };
-
-  transform_desc_t(library_data_t scale_type) : _scale_type(scale_type) {}
-  void set_attribute(attribute attr, const void *mem) {
-    get_set_attr<true>(attr, const_cast<void *>(mem));
-  }
-  void get_attribute(attribute attr, void *mem) {
-    get_set_attr<false>(attr, mem);
-  }
-
-private:
-  template <bool is_set> void get_set_attr(attribute attr, void *mem) {
-#define CASE(tag)                                                              \
-  case attribute::tag:                                                         \
-    if constexpr (is_set) {                                                    \
-      _##tag = *static_cast<decltype(_##tag) *>(mem);                          \
-    } else {                                                                   \
-      *static_cast<decltype(_##tag) *>(mem) = _##tag;                          \
-    }                                                                          \
-    break;
-    switch (attr) {
-      CASE(scale_type)
-      CASE(pointer_mode)
-      CASE(trans_a)
-      CASE(trans_b)
-    }
-#undef CASE
-  }
-
-  library_data_t _scale_type;
-  pointer_mode_t _pointer_mode = pointer_mode_t::host;
-  oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
-  oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
-
-  friend void matrix_transform(transform_desc_ptr transform_desc,
-                               const void *alpha, const void *a,
-                               matrix_layout_ptr a_desc, const void *beta,
-                               const void *b, matrix_layout_ptr b_desc, void *c,
-                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
-};
-namespace detail {
 template <class T>
 void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
                       size_t a_ld, order_t a_order, const T *a, size_t c_ld,
@@ -3121,6 +3000,167 @@ void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
 }
 } // namespace detail
 
+inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
+                   const void *a, matrix_layout_ptr a_desc, const void *b,
+                   matrix_layout_ptr b_desc, const void *beta, const void *c,
+                   matrix_layout_ptr c_desc, void *d, matrix_layout_ptr d_desc,
+                   dpct::queue_ptr q_ptr) {
+  if (!q_ptr)
+    q_ptr = &get_default_queue();
+  bool vector_alpha = false;
+  if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
+      compute_desc->_pointer_mode ==
+          pointer_mode_t::alpha_device_vector_beta_zero ||
+      compute_desc->_pointer_mode ==
+          pointer_mode_t::alpha_device_vector_beta_host) {
+    vector_alpha = true;
+  }
+
+  // 1. if beta is not zero, need throw exception since we do not support it.
+  if (beta != nullptr) {
+    size_t beta_size =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            compute_desc->_scale_type)] /
+        8;
+    void *beta_host = std::malloc(beta_size);
+    void *beta_zero = std::malloc(beta_size);
+    std::memset(beta_zero, 0, beta_size);
+    q_ptr->memcpy(beta_host, beta, beta_size).wait();
+    if (std::memcmp(beta_host, beta_zero, beta_size))
+      throw std::runtime_error("Non-zero beta is not supported.");
+  }
+
+  // 2. if has epilogue, need throw exception since we do not support it.
+  if (compute_desc->_epilogue != 1) {
+    throw std::runtime_error("Epilogue is not supported.");
+  }
+
+  if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
+    throw std::runtime_error("Matrix A must not be transposed.");
+  }
+  if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
+    throw std::runtime_error("Matrix B must be transposed.");
+  }
+
+  // For non-col_major matrix, convert it to col_major.
+  const void *new_a = a;
+  const void *new_b = b;
+  void *new_d = d;
+  size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldd = d_desc->_ld;
+  if (a_desc->_order != order_t::col) {
+    new_lda = a_desc->_rows;
+    if (a_desc->_type == library_data_t::real_int8) {
+      new_a = sycl::malloc_device(sizeof(std::int8_t) * a_desc->_cols * new_lda,
+                                  *q_ptr);
+      detail::matrix_transform<std::int8_t>(
+          q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+          (const std::int8_t *)a, new_lda, order_t::col, (std::int8_t *)new_a);
+    } else {
+      new_a =
+          sycl::malloc_device(sizeof(int) * a_desc->_cols * new_lda, *q_ptr);
+      detail::matrix_transform<int>(q_ptr, a_desc->_rows, a_desc->_cols,
+                                    a_desc->_ld, a_desc->_order, (const int *)a,
+                                    new_lda, order_t::col, (int *)new_a);
+    }
+  }
+  if (b_desc->_order != order_t::col) {
+    new_ldb = b_desc->_cols; // The input b is transpose::trans, so the row/col
+                             // is already swapped.
+    if (b_desc->_type == library_data_t::real_int8) {
+      new_b = sycl::malloc_device(sizeof(std::int8_t) * b_desc->_rows * new_ldb,
+                                  *q_ptr);
+      detail::matrix_transform<std::int8_t>(
+          q_ptr, b_desc->_cols, b_desc->_rows, b_desc->_ld, b_desc->_order,
+          (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b);
+    } else {
+      new_b =
+          sycl::malloc_device(sizeof(int) * b_desc->_rows * new_ldb, *q_ptr);
+      detail::matrix_transform<int>(q_ptr, b_desc->_cols, b_desc->_rows,
+                                    b_desc->_ld, b_desc->_order, (const int *)b,
+                                    new_ldb, order_t::col, (int *)new_b);
+    }
+  }
+  if (d_desc->_order != order_t::col) {
+    new_ldd = d_desc->_rows;
+    if (d_desc->_type == library_data_t::real_int8) {
+      new_d = sycl::malloc_device(sizeof(std::int8_t) * d_desc->_cols * new_ldd,
+                                  *q_ptr);
+    } else {
+      new_d =
+          sycl::malloc_device(sizeof(int) * d_desc->_cols * new_ldd, *q_ptr);
+    }
+  }
+
+  detail::matmul_impl(compute_desc, a_desc->_rows, d_desc->_cols, b_desc->_rows,
+                      alpha, new_a, new_lda, a_desc->_type, new_b, new_ldb,
+                      b_desc->_type, new_d, new_ldd, d_desc->_type, q_ptr,
+                      vector_alpha, compute_desc->_pointer_mode,
+                      compute_desc->_scale_type);
+
+  if (d_desc->_order != order_t::col) {
+    if (d_desc->_type == library_data_t::real_int8) {
+      detail::matrix_transform<std::int8_t>(
+          q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
+          (const std::int8_t *)new_d, d_desc->_ld, d_desc->_order,
+          (std::int8_t *)d);
+    } else {
+      detail::matrix_transform<int>(q_ptr, d_desc->_rows, d_desc->_cols,
+                                    new_ldd, order_t::col, (const int *)new_d,
+                                    d_desc->_ld, d_desc->_order, (int *)d);
+    }
+  }
+
+  q_ptr->wait();
+  if (a_desc->_order != order_t::col)
+    sycl::free((void *)new_a, *q_ptr);
+  if (b_desc->_order != order_t::col)
+    sycl::free((void *)new_b, *q_ptr);
+  if (d_desc->_order != order_t::col)
+    sycl::free(new_d, *q_ptr);
+}
+
+class transform_desc_t {
+public:
+  enum class attribute { scale_type, pointer_mode, trans_a, trans_b };
+
+  transform_desc_t(library_data_t scale_type) : _scale_type(scale_type) {}
+  void set_attribute(attribute attr, const void *mem) {
+    get_set_attr<true>(attr, const_cast<void *>(mem));
+  }
+  void get_attribute(attribute attr, void *mem) {
+    get_set_attr<false>(attr, mem);
+  }
+
+private:
+  template <bool is_set> void get_set_attr(attribute attr, void *mem) {
+#define CASE(tag)                                                              \
+  case attribute::tag:                                                         \
+    if constexpr (is_set) {                                                    \
+      _##tag = *static_cast<decltype(_##tag) *>(mem);                          \
+    } else {                                                                   \
+      *static_cast<decltype(_##tag) *>(mem) = _##tag;                          \
+    }                                                                          \
+    break;
+    switch (attr) {
+      CASE(scale_type)
+      CASE(pointer_mode)
+      CASE(trans_a)
+      CASE(trans_b)
+    }
+#undef CASE
+  }
+
+  library_data_t _scale_type;
+  pointer_mode_t _pointer_mode = pointer_mode_t::host;
+  oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
+  oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
+
+  friend void matrix_transform(transform_desc_ptr transform_desc,
+                               const void *alpha, const void *a,
+                               matrix_layout_ptr a_desc, const void *beta,
+                               const void *b, matrix_layout_ptr b_desc, void *c,
+                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
+};
 inline void matrix_transform(transform_desc_ptr transform_desc,
                              const void *alpha, const void *a,
                              matrix_layout_ptr a_desc, const void *beta,
