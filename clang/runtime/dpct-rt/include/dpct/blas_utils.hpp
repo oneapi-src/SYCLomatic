@@ -2835,9 +2835,9 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
   q_ptr->wait();
 }
 template <class T>
-void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
-                      size_t a_ld, order_t a_order, const T *a, size_t c_ld,
-                      order_t c_order, T *c) {
+void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols, size_t a_ld,
+                      order_t a_order, const T *a, size_t c_ld, order_t c_order,
+                      T *c) {
   if (a_order == order_t::col && c_order == order_t::row) {
     q_ptr->submit([&](sycl::handler &cgh) {
       cgh.parallel_for(sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
