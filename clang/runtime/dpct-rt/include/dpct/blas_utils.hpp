@@ -2787,8 +2787,7 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
   size_t weights_type_size =
       dpct::detail::library_data_size[static_cast<unsigned int>(b_type)] / 8;
   q_ptr->memcpy(src_mem.get_data_handle(), a, src_type_size * k * lda);
-  q_ptr->memcpy(weights_mem.get_data_handle(), b, weights_type_size * k * ldb)
-      .wait();
+  q_ptr->memcpy(weights_mem.get_data_handle(), b, weights_type_size * k * ldb);
 
   std::unordered_map<int, dnnl::memory> matmul_args;
   matmul_args.insert({DNNL_ARG_SRC, src_mem});
@@ -2804,7 +2803,7 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
               scale_type)] /
           8;
       alpha_data = sycl::malloc_device(Size, *q_ptr);
-      q_ptr->memcpy(alpha_data, alpha, Size).wait();
+      q_ptr->memcpy(alpha_data, alpha, Size);
     } else {
       alpha_data = const_cast<void *>(alpha);
     }
@@ -2834,7 +2833,6 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
   if (vector_alpha)
     detail::scale_d_with_vector_alpha(q_ptr, m, n, d, d_type, alpha,
                                       scale_type);
-  q_ptr->wait();
 }
 template <class T>
 void matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols, size_t a_ld,
