@@ -30,6 +30,7 @@ Suggestions to Fix
 ------------------
 
 For example, if an application needs to link the OpenCV libraries in link time, fix the LIB variable as follows:
+
 .. code-block:: bash
    :linenos:
 

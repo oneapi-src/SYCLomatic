@@ -319,8 +319,9 @@ the following execution log files will be generated.
 The report helps identify where the runtime behavior of the CUDA and the SYCL
 programs start to diverge from one another.
 
-Analysis the CodePin Result
--------
+Analysis of the CodePin Result
+------------------------------
+
 codepin-report.py (also can be triggered by dpct/c2s --codepin-report) is a functionality of
 the compatibility tool that consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
 codepin-report.py can identify the inconsistent data value and report the stats data of the execution.
