@@ -845,21 +845,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
     ArrayRef<ModuleMacro *> MMs;
     MacroDefinition MD(&DMD, MMs, false);
     appendDefMacroDirective(&II, MI);
-    if (!DisableMacroExpansion) {
-      if (!Identifier.isExpandDisabled() && MI->isEnabled()) {
-        // C99 6.10.3p10: If the preprocessing token immediately after the
-        // macro name isn't a '(', this macro should not be expanded.
-        if (!MI->isFunctionLike() || isNextPPTokenLParen())
-          return HandleMacroExpandedIdentifier(Identifier, MD);
-      } else {
-        // C99 6.10.3.4p2 says that a disabled macro may never again be
-        // expanded, even if it's in a context where it could be expanded in the
-        // future.
-        Identifier.setFlag(Token::DisableExpand);
-        if (MI->isObjectLike() || isNextPPTokenLParen())
-          Diag(Identifier, diag::pp_disabled_macro_expansion);
-      }
-    }
+    return HandleIdentifier(Identifier);
   }
 #endif // SYCLomatic_CUSTOMIZATION
 
