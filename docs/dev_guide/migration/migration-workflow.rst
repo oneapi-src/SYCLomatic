@@ -475,9 +475,8 @@ Find More
    * - |sycl_forum|_
      - Forum to get assistance when migrating your CUDA code to SYCL.
    * - `Intel® oneAPI Math Kernel Library Link Line Advisor <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html>`_
-    - Intel® oneAPI Math Kernel Library tool to help determine how to include oneMKL libraries for your specific use case.
+     - Intel® oneAPI Math Kernel Library tool to help determine how to include oneMKL libraries for your specific use case.
    * - `Tutorial: Debugging with Intel® Distribution for GDB* <https://www.intel.com/content/www/us/en/docs/distribution-for-gdb/tutorial-debugging-dpcpp-linux/2024-1/overview.html>`_
      - This tutorial describes the basic scenarios of debugging applications using Intel® Distribution for GDB*.
    * - `Intel® VTune™ Profiler Tutorials <https://www.intel.com/content/www/us/en/developer/articles/training/vtune-profiler-tutorials.html>`_
-     - Tutorials demonstrating an end-to-end workflow using Intel® VTune™ Profiler
-     that you can ultimately apply to your own applications.
+     - Tutorials demonstrating an end-to-end workflow using Intel® VTune™ Profiler that you can ultimately apply to your own applications.
