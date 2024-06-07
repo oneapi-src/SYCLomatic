@@ -8,10 +8,7 @@
 #include "nvml.h"
 #include <vector>
 int main(int argc, char **argv) {
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of CUDA_ARRAY_DESCRIPTOR * type is not supported.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: CUDA_ARRAY_DESCRIPTOR *pcad;
+    // CHECK: dpct::image_matrix_desc *pcad;
     CUDA_ARRAY_DESCRIPTOR *pcad;
     // CHECK: dpct::memcpy_parameter *p1c3d;
     cudaMemcpy3DParms *p1c3d;

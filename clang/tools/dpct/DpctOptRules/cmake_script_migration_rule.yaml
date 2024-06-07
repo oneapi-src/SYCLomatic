@@ -621,8 +621,8 @@
   Out: target_compile_options(${arg})
   Subrules:
     arg:
-      In: $<$<COMPILE_LANGUAGE:CUDA>:${flags}>
-      Out: ""
+      In: $<$<COMPILE_LANGUAGE:CUDA${rest}>:${flags}>
+      Out: $<$<COMPILE_LANGUAGE:CXX>:${flags}>
       RuleId: "target_compile_options_cuda_arg"
 
 - Rule: rule_CUDA_HAS_FP16
@@ -2539,3 +2539,42 @@
       In: cuda
       Out: ""
       RuleId: "remove_lib_cuda"
+
+- Rule: rule_use_fast_math_one_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_one_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -use_fast_math
+      Out: -ffast-math
+
+- Rule: rule_use_fast_math_two_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_two_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --use_fast_math
+      Out: -ffast-math
+
+- Rule: rule_CMAKE_CUDA_COMPILER_VERSION
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_COMPILER_VERSION
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER_VERSION
+      Out: COMPATIBILITY_VERSION

@@ -3262,6 +3262,10 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
     ND = getNamedDecl(ET->getNamedType().getTypePtr());
   } else if (auto TST = dyn_cast<clang::TemplateSpecializationType>(TypePtr)) {
     ND = TST->getTemplateName().getAsTemplateDecl();
+  } else if (auto LVRT = dyn_cast<clang::LValueReferenceType>(TypePtr)) {
+    ND = getNamedDecl(LVRT->getPointeeType().getTypePtr());
+  } else if (auto RVRT = dyn_cast<clang::RValueReferenceType>(TypePtr)) {
+    ND = getNamedDecl(RVRT->getPointeeType().getTypePtr());
   }
   return ND;
 }

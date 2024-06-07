@@ -232,6 +232,17 @@ static size_t gotoEndOfCmakeWord(const std::string Input, size_t Index,
   return Index;
 }
 
+static size_t gotoEndOfCmakeCommand(const std::string Input, size_t Index) {
+  size_t Size = Input.size();
+  for (; Index < Size && !isWhitespace(Input[Index]) && Input[Index] != '(';
+       Index++) {
+  }
+  if (Index < Size && Input[Index] == '(') {
+    return Index;
+  }
+  return std::string::npos;
+}
+
 static size_t gotoEndOfCmakeCommandStmt(const std::string Input, size_t Index) {
   size_t Size = Input.size();
   for (; Index < Size && Input[Index] != ')'; Index++) {
@@ -528,17 +539,16 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
   unsigned int Count = 1;
   for (auto Line : Lines) {
 
-    int Size = Line.size();
-    int Index = 0;
+    size_t Size = Line.size();
+    size_t Index = 0;
 
     // Go the begin of cmake command
     Index = skipWhiteSpaces(Line, Index);
     int Begin = Index;
 
     // Go the end of cmake command
-    Index = gotoEndOfCmakeWord(Line, Begin + 1, '(');
+    Index = gotoEndOfCmakeCommand(Line, Begin + 1);
     int End = Index;
-
     if (Index < Size && (Line[Index] == '(' || isWhitespace(Line[Index]))) {
       std::string Str = Line.substr(Begin, End - Begin);
       std::transform(Str.begin(), Str.end(), Str.begin(),
@@ -727,7 +737,7 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
   auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
   if (Iter != CmakeBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover &&
-        Iter->second.Priority < PR.Priority) {
+        Iter->second.Priority > PR.Priority) {
       CmakeBuildInRules[PR.CmakeSyntax] = PR;
     } else {
       llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId

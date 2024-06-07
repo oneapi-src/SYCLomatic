@@ -169,7 +169,18 @@ void IncludesCallbacks::insertCudaArchRepl(
   return;
 }
 
-bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+std::shared_ptr<clang::dpct::ReplaceToken>
+generateReplacement(SourceLocation SL, MacroMigrationRule Rule) {
+  requestFeature(Rule.HelperFeature);
+  for (auto ItHeader = Rule.Includes.begin(); ItHeader != Rule.Includes.end();
+       ItHeader++) {
+    DpctGlobalInfo::getInstance().insertHeader(SL, *ItHeader);
+  }
+  return std::make_shared<ReplaceToken>(SL, std::move(Rule.Out));
+}
+
+bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok,
+                                       MacroInfo *MI) {
   bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
   if (!IsInAnalysisScope) {
     return false;
@@ -178,14 +189,11 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     return false;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-  auto Iter = MapNames::MacrosMap.find(MacroName);
-  if (Iter != MapNames::MacrosMap.end()) {
-    std::string ReplacedMacroName = Iter->second;
-    auto Repl = std::make_shared<ReplaceToken>(MacroNameTok.getLocation(),
-                                               std::move(ReplacedMacroName));
+  auto Iter = MapNames::MacroRuleMap.find(MacroName);
+  if (Iter != MapNames::MacroRuleMap.end()) {
+    auto Repl = generateReplacement(MacroNameTok.getLocation(), Iter->second);
     if (MacroName == "__CUDA_ARCH__") {
       if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-        requestFeature(HelperFeatureEnum::device_ext);
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         return true;
       }
@@ -197,9 +205,9 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
       } else {
         return false;
       }
-    }
-    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION" ||
-        MacroName == "CUDA_VERSION") {
+    } else if (MacroName == "CUDART_VERSION" ||
+               MacroName == "__CUDART_API_VERSION" ||
+               MacroName == "CUDA_VERSION") {
       // These two macros are defined by CUDA header file
       auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
       auto Ver = clang::getCudaVersionPair(DpctGlobalInfo::getSDKVersion());
@@ -207,6 +215,18 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
           .insertFile(LocInfo.first)
           ->setRTVersionValue(
               std::to_string(Ver.first * 1000 + Ver.second * 10));
+    } else if (MacroName == "NCCL_VERSION_CODE" && MI) {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setCCLVerValue(Lexer::getSourceText(
+                               CharSourceRange::getCharRange(
+                                   MI->getReplacementToken(0).getLocation(),
+                                   Lexer::getLocForEndOfToken(
+                                       MI->getReplacementToken(0).getLocation(),
+                                       0, SM, LangOptions())),
+                               SM, LangOptions())
+                               .str());
     }
     if (DpctGlobalInfo::getContext().getLangOpts().CUDA) {
       // These two macros are defined by CUDA compiler
@@ -258,16 +278,10 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     if (!II)
       continue;
 
-    if (MapNames::MacrosMap.find(II->getName().str()) !=
-        MapNames::MacrosMap.end()) {
-      std::string ReplacedMacroName =
-          MapNames::MacrosMap.at(II->getName().str());
+    auto ItRule = MapNames::MacroRuleMap.find(II->getName().str());
+    if (ItRule != MapNames::MacroRuleMap.end()) {
       TransformSet.emplace_back(
-          new ReplaceToken(Iter->getLocation(), std::move(ReplacedMacroName)));
-      if (II->getName().str() == "__CUDA_ARCH__" ||
-          II->getName().str() == "__NVCC__") {
-        requestFeature(HelperFeatureEnum::device_ext);
-      }
+          generateReplacement(Iter->getLocation(), ItRule->second));
     }
 
     if (II->hasMacroDefinition() && (II->getName().str() == "__host__" ||
@@ -455,9 +469,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (!IsInAnalysisScope) {
     return;
   }
-  
-  if (ReplaceCuMacro(MacroNameTok)){
-    return ;
+
+  if (ReplaceCuMacro(MacroNameTok, MI)) {
+    return;
   }
 
   // For the un-specialized struct, there is no AST for the extern function
@@ -535,31 +549,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                               LangOptions())),
                       SM, LangOptions())
                       .str())));
-  }
-
-  auto ItRule = MapNames::MacroRuleMap.find(Name.str());
-  if (ItRule != MapNames::MacroRuleMap.end()) {
-    if (Name == "NCCL_VERSION_CODE") {
-      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
-      DpctGlobalInfo::getInstance()
-          .insertFile(LocInfo.first)
-          ->setCCLVerValue(Lexer::getSourceText(
-                               CharSourceRange::getCharRange(
-                                   MI->getReplacementToken(0).getLocation(),
-                                   Lexer::getLocForEndOfToken(
-                                       MI->getReplacementToken(0).getLocation(),
-                                       0, SM, LangOptions())),
-                               SM, LangOptions())
-                               .str());
-    }
-    std::string OutStr = ItRule->second.Out;
-    TransformSet.emplace_back(
-        new ReplaceToken(Range.getBegin(), std::move(OutStr)));
-    requestFeature(ItRule->second.HelperFeature);
-    for (auto ItHeader = ItRule->second.Includes.begin();
-         ItHeader != ItRule->second.Includes.end(); ItHeader++) {
-      DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
-    }
   }
 
   if (TKind == tok::identifier && Name == "CUDART_CB") {
@@ -754,11 +743,10 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
   Token Tok;
   if (!Lexer::getRawToken(End, Tok, SM, LangOptions()))
     Size = Size + Tok.getLength();
-  std::string E(BP, Size);
-  for (auto &MacroMap : MapNames::MacrosMap) {
+  const std::string E(BP, Size);
+  for (auto &MacroRule : MapNames::MacroRuleMap) {
     size_t Pos = 0;
-    std::string MacroName = MacroMap.first;
-    std::string ReplacedMacroName = MacroMap.second;
+    std::string MacroName = MacroRule.first;
 
     std::size_t Found = E.find(MacroName, Pos);
     if (Found != std::string::npos && MacroName == "__CUDA_ARCH__") {
@@ -829,12 +817,11 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
       SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
-      auto Repl =
-          std::make_shared<ReplaceInclude>(InsertRange, ReplacedMacroName);
+
+      auto Repl = generateReplacement(IB, MacroRule.second);
       if (MacroName == "__CUDA_ARCH__" &&
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
-        requestFeature(HelperFeatureEnum::device_ext);
       } else if ((MacroName != "__CUDACC__" ||
                   DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
                  MacroName != "__CUDA_ARCH__") {
@@ -1753,7 +1740,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
-              "CUDA_MEMCPY2D"))))))
+              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -2214,7 +2201,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
-
+    if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
+      auto Loc = ND->getBeginLoc();
+      if (DpctGlobalInfo::isInAnalysisScope(Loc))
+        return;
+    }
     // if TL is the T in
     // template<typename T> void foo(T a);
     if (TL->getType()->getTypeClass() == clang::Type::SubstTemplateTypeParm ||
@@ -2828,8 +2819,16 @@ AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
       return false;
 
     const std::string TypeName = IDInfo->getName().str();
-    return (MapNames::SupportedVectorTypes.find(TypeName) !=
-            MapNames::SupportedVectorTypes.end());
+    if (MapNames::SupportedVectorTypes.find(TypeName) !=
+        MapNames::SupportedVectorTypes.end()) {
+      if (const auto *ND = getNamedDecl(PD->getType().getTypePtr())) {
+        auto Loc = ND->getBeginLoc();
+        if (DpctGlobalInfo::isInAnalysisScope(Loc))
+          return false;
+      }
+      return true;
+    }
+    return false;
   };
 
   // As long as one parameter is vector type
@@ -8576,14 +8575,11 @@ void KernelCallRule::runRule(
     }
     if (!LaunchKernelCall)
       return;
-
-    if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall)) {
-      std::string Repl = "";
-      if (IsAssigned)
-        Repl = "0";
-      emplaceTransformation(
-          new ReplaceStmt(LaunchKernelCall, true, false, std::move(Repl)));
+    if (!IsAssigned)
       removeTrailingSemicolon(LaunchKernelCall, Result);
+    if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
+                                                            IsAssigned)) {
+      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
     }
   }
 }
@@ -11494,21 +11490,7 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                         ME, MethodName, ReplacedArg, ExtraArg);
 }
 
-void MemoryDataTypeRule::emplaceCuArrayDescDeclarations(const VarDecl *VD) {
-  if (DpctGlobalInfo::isCommentsEnabled()) {
-    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
-        VD, "// These variables are defined for info of image_matrix."));
-  }
-  emplaceParamDecl(VD, "size_t", false, "0", "x", "y");
-  emplaceParamDecl(VD, "unsigned", false, "0", "channel_num");
-  emplaceParamDecl(VD, MapNames::getClNamespace() + "image_channel_type", false,
-                   "0", "channel_type");
-}
-
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(varDecl(hasType(namedDecl(hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))
-                    .bind("decl"),
-                this);
   MF.addMatcher(memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
                                hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))))
                     .bind("arrayMember"),
@@ -11530,19 +11512,12 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto VD = getNodeAsType<VarDecl>(Result, "decl")) {
-    if (isa<ParmVarDecl>(VD))
-      return;
-    auto TypeName = DpctGlobalInfo::getUnqualifiedTypeName(VD->getType());
-    if (TypeName == "CUDA_ARRAY_DESCRIPTOR")
-      emplaceCuArrayDescDeclarations(VD);
-  } else if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
-    if (auto DRE =
-            dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImplicitAsWritten())) {
-      emplaceTransformation(new ReplaceStmt(
-          ME, getArrayDescMemberName(DRE->getDecl()->getName(),
-                                     ME->getMemberDecl()->getName().str())));
-    }
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
+    const auto &Replace = MapNames::findReplacedName(
+        ArrayDescMemberNames, ME->getMemberDecl()->getName().str());
+    if (!Replace.empty())
+      emplaceTransformation(new ReplaceToken(
+          ME->getMemberLoc(), ME->getEndLoc(), std::string(Replace)));
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "makeData")) {
     if (auto FD = CE->getDirectCallee()) {
       auto Name = FD->getName();

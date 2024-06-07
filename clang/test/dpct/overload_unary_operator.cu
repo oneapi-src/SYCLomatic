@@ -33,3 +33,13 @@ static __device__ uint2 operator^(const uint2 a, const uint2 b) {
 __device__ uint2 chi(const uint2 a, const uint2 b, const uint2 c) {
     return a ^ (~b) & c;
 };
+
+// The code piece below is used to test the assert that `Name.isIdentifier() &&
+// "Name is not a simple identifier"' when assert is enabled to build
+// SYCLomatic.
+template <typename T, int m> struct array {
+  __host__ __device__ bool operator==(const array &other) const { return true; }
+  __host__ __device__ bool operator!=(const array &other) const {
+    return !operator==(other);
+  }
+};
