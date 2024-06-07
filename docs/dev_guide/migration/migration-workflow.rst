@@ -203,7 +203,8 @@ Buffer vs USM Code Generation
 Intel promotes both buffer and USM in the SYCL/oneAPI context. Some oneAPI libraries preferentially support buffer versus USM, so there may be some design consideration in configuring your migration. USM is used by default, but buffer may be a better fit for some projects.
 
 The buffer model sets up a 1-3 dimensional array (buffer) and accesses its components via a C++ accessor class. This grants more control over the exact nature and size of the allocated memory, and how host and offload target compute units access it.
-However, the buffer model can also create extra class management overhead, which can require more manual intervention and yield less performance.
+However, the buffer model can also create extra class management overhead, which can require more manual intervention and may yield less performance.
+
 
 USM (unified shared memory) is a newer model, beginning with SYCL2020. USM is a pointer-based memory management model using ``malloc_shared``  allocator functions, similar to how C++ code usually handles memory accesses when no GPU device offload is involved. Choosing the USM model can make it easier to add to existing code and migrate from CUDA code.  Management of the USM memory space is however very much done by the SYCL runtime, reducing granularity of control for the developer.
 
