@@ -5,7 +5,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel-function-unsupported-cuda-8/kernel-function-unsupported-cuda-8.dp.cpp -o %T/kernel-function-unsupported-cuda-8/kernel-function-unsupported-cuda-8.dp.o %}
 
 void foo(void) {
-
   CUfunction f;
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuFuncSetAttribute was removed because SYCL currently does not support setting kernel function attributes

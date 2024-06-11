@@ -1118,7 +1118,8 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
                            ReplTy &ReplSetsSYCL /*out*/);
-  std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
+  std::shared_ptr<KernelCallExpr>
+  buildLaunchKernelInfo(const CallExpr *, bool IsAssigned = false);
   void insertCudaMalloc(const CallExpr *CE);
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
@@ -2694,6 +2695,7 @@ class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
   bool NeedLambda = false;
+  bool NeedDefaultRetValue = false;
 
 private:
   struct ArgInfo {
@@ -2760,7 +2762,7 @@ public:
 
   static std::shared_ptr<KernelCallExpr> buildFromCudaLaunchKernel(
       const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
-      const CallExpr *);
+      const CallExpr *, bool IsAssigned = false);
   static std::shared_ptr<KernelCallExpr>
   buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *,
                   std::shared_ptr<DeviceFunctionInfo>);
@@ -2784,6 +2786,8 @@ private:
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
   void setNeedAddLambda(const CUDAKernelCallExpr *KernelCall);
+  void setNeedAddLambda();
+  void setNeedDefaultRet();
   void buildNeedBracesInfo(const CallExpr *KernelCall);
   void buildLocationInfo(const CallExpr *KernelCall);
   template <class ArgsRange>
