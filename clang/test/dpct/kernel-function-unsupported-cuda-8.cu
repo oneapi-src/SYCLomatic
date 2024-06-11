@@ -12,4 +12,10 @@ void foo(void) {
   // CHECK-NEXT: */
   cuFuncSetAttribute(f, CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT, 1024);
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuFuncSetAttribute was removed because SYCL currently does not support setting kernel function attributes
+  // CHECK-NEXT: */
+  // CHECK-NEXT: int result = 0;
+  CUresult result = cuFuncSetAttribute(f, CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT, 1024);
+  if (result == CUDA_SUCCESS) {;}
 }

@@ -12342,12 +12342,14 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string FuncName =
         CallNode->getDirectCallee()->getNameInfo().getName().getAsString();
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    // TODO: Handle assignments
+
+    std::string CallReplacement{""};
+    if (isAssigned(CallNode)) {
+      CallReplacement = "0";
+    }
     report(CallNode->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
            MapNames::ITFName.at(FuncName), Msg->second);
-    ExprAnalysis EA;
-    EA.analyze(C);
-    emplaceTransformation(new ReplaceStmt(CallNode, ""));
+    emplaceTransformation(new ReplaceStmt(CallNode, CallReplacement));
   }
 }
 
