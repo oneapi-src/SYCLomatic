@@ -9603,7 +9603,8 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
     auto FD = DpctGlobalInfo::getParentFunction(MemVar);
     if (DpctGlobalInfo::useGroupLocalMemory() &&
         !DpctGlobalInfo::useFreeQueries() &&
-        MemVar->hasAttr<CUDASharedAttr>()) {
+        MemVar->hasAttr<CUDASharedAttr>() &&
+        MemVar->getStorageClass() != SC_Extern) {
       if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
         DFI->setItem();
       }
