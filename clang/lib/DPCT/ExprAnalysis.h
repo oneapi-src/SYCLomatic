@@ -831,6 +831,7 @@ private:
   inline void analyzeExpr(const BinaryOperator *);
   inline void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
+  inline void analyzeExpr(const DependentScopeDeclRefExpr *Arg);
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);
   inline void analyzeExpr(const LambdaExpr *LE);
 
