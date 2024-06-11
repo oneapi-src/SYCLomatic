@@ -22,11 +22,6 @@ set_target_properties(target_one
                       PROPERTIES
                       CXX_Standard 14)
 
-# Ideally there should be no change unless
-# value is one of 99, 11, 14. But due to the
-# limitations of pattern-rewriter we will see
-# the versions dropped down to 17. We will fix
-# this in future
 set_target_properties(target_one
                       PROPERTIES
                       CXX_STANDARD 20)

@@ -110,7 +110,7 @@
   Priority: Fallback
   CmakeSyntax: cmake_cxx_standard
   In: set${empty}(${empty}CMAKE_CXX_STANDARD ${version})
-  Out: set(CMAKE_CXX_STANDARD 17)
+  Out: set(CMAKE_CXX_STANDARD 20)
 
 - Rule: rule_cmake_cxx_compiler
   Kind: CMakeRule
@@ -638,7 +638,7 @@
       In: CUDA_HAS_FP16
       Out: SYCL_HAS_FP16
 
-# Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_17"
+# Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_20"
 - Rule: rule_cxx_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
@@ -649,10 +649,10 @@
   Subrules:
     value:
       In: cxx_std_${ver}
-      Out: cxx_std_17
+      Out: cxx_std_20
       RuleId: "adjust_cxx_ver"
 
-# Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
+# Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_20"
 - Rule: rule_cuda_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
@@ -663,7 +663,7 @@
   Subrules:
     value:
       In: cuda_std_${ver}
-      Out: cxx_std_17
+      Out: cxx_std_20
       RuleId: "adjust_cuda_ver"
 
 - Rule: rule_file_include_cuh_header_file
@@ -2047,21 +2047,21 @@
   Priority: Fallback
   CmakeSyntax: set_property_cuda_standard
   In: set_property(${target} PROPERTY CUDA_STANDARD ${version})
-  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+  Out: set_property(${target} PROPERTY CXX_STANDARD 20)
 
 - Rule: rule_set_property_cxx_standard
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cxx_standard
   In: set_property(${target} PROPERTY CXX_STANDARD ${version})
-  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+  Out: set_property(${target} PROPERTY CXX_STANDARD 20)
 
 - Rule: rule_set_cxx_target_properties
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cxx_target_properties
   In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 20)
 
 - Rule: rule_set_target_properties_cuda_standard
   Kind: CMakeRule
@@ -2072,7 +2072,7 @@
   Subrules:
     properties:
       In: CUDA_STANDARD ${version} ${other_properties}
-      Out: CXX_STANDARD 17 ${other_properties}
+      Out: CXX_STANDARD 20 ${other_properties}
       MatchMode: Full
 
 - Rule: rule_set_target_properties_cuda_standard-only
@@ -2080,7 +2080,7 @@
   Priority: Fallback
   CmakeSyntax: set_target_properties_cuda_standard-only
   In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD 17)
+  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD 20)
 
 - Rule: rule_set_cmake_cuda_required
   Kind: CMakeRule
@@ -2155,7 +2155,7 @@
   Subrules:
     value:
       In:  -std=c++${version}
-      Out: -std=c++17
+      Out: -std=c++20
 
 # to handle the case like "list(APPEND PMEMD_NVCC_FLAGS --std c++11)"
 - Rule: rule_user_defined_variable_format_2
@@ -2168,7 +2168,7 @@
   Subrules:
     value:
       In:  c++${version}
-      Out: c++17
+      Out: c++20
 
 - Rule: rule_add_link_options
   Kind: CMakeRule

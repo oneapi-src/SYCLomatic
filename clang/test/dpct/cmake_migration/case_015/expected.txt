@@ -5,23 +5,18 @@ include(dpct.cmake)
 add_library(target_one MODULE nosrc1.dp.cpp)
 
 # Test C++ 99 standard
-set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+set_target_properties(target_one PROPERTIES CXX_STANDARD 20)
 
 # Test C++ 11 standard
-set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+set_target_properties(target_one PROPERTIES CXX_STANDARD 20)
 
 # Test C++ 14 standard
-set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+set_target_properties(target_one PROPERTIES CXX_STANDARD 20)
 
 # No change unless property matches exactly
 set_target_properties(target_one PROPERTIES CXX_Standard 14)
 
-# Ideally there should be no change unless
-# value is one of 99, 11, 14. But due to the
-# limitations of pattern-rewriter we will see
-# the versions dropped down to 17. We will fix
-# this in future
-set_target_properties(target_one PROPERTIES CXX_STANDARD 17)
+set_target_properties(target_one PROPERTIES CXX_STANDARD 20)
 
 # Test CUDA_SEPARABLE_COMPILATION
 #[[
