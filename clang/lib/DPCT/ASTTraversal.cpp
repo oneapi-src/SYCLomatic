@@ -7182,14 +7182,14 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
     const CallExpr *CE, const MatchFinder::MatchResult &Result,
     bool IsAssigned) {
   auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
-  auto Arg0 = CE->getArg(0);
+  auto EventArg = CE->getArg(0);
   auto StreamName = getStmtSpelling(StreamArg);
-  auto ArgName = getStmtSpelling(Arg0);
+  auto ArgName = getStmtSpelling(EventArg);
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &SM = DpctGlobalInfo::getSourceManager();
 
-  if (needExtraParens(Arg0)) {
+  if (needExtraParens(EventArg)) {
     ArgName = "(" + ArgName + ")";
   }
 
@@ -7407,10 +7407,19 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
 
   auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
   auto StreamName = ExprAnalysis::ref(StreamArg);
-  auto EventName = ExprAnalysis::ref(CE->getArg(0));
+  auto EventArg = CE->getArg(0);
+  auto EventName = ExprAnalysis::ref(EventArg);
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &Context = dpct::DpctGlobalInfo::getContext();
+
+  if (needExtraParens(EventArg)) {
+    EventName = "(" + EventName + ")";
+  }
+
+  if (needExtraParensInMemberExpr(StreamArg)) {
+    StreamName = "(" + StreamName + ")";
+  }
 
   if (IsAssigned) {
     if (!DpctGlobalInfo::useEnqueueBarrier()) {

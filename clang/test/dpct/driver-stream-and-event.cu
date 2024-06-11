@@ -124,8 +124,8 @@ void test_stream() {
   cuStreamDestroy(hStream);
 }
 
-void test_cuEventRecord_crash(uint64_t hEvent,uint64_t hStream )
+void test_cuEventRecord_crash(CUevent hEvent, CUstream hStream)
 {
-  // CHECK: int result = DPCT_CHECK_ERROR(*(dpct::event_ptr)hEvent = (dpct::queue_ptr)hStream->ext_oneapi_submit_barrier());
+  // CHECK: int result = DPCT_CHECK_ERROR(*(dpct::event_ptr)hEvent = ((dpct::queue_ptr)hStream)->ext_oneapi_submit_barrier());
   CUresult result = cuEventRecord((CUevent)hEvent, (CUstream)hStream);
 }
