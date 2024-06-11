@@ -2716,13 +2716,24 @@ template <class T, class Talpha>
 void scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols, T *d,
                                     const Talpha *alpha) {
   q_ptr->submit([&](sycl::handler &cgh) {
+#ifdef DPCT_USM_LEVEL_NONE
+    access_wrapper<T *> d_acc(d, cgh);
+    access_wrapper<const Talpha *> alpha_acc(alpha, cgh);
+#endif
     cgh.parallel_for<
         dpct_kernel_name<class scale_with_vector_alpha, T, Talpha>>(
         sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
+#ifdef DPCT_USM_LEVEL_NONE
+          auto d_data = d_acc.get_raw_pointer();
+          auto alpha_data = alpha_acc.get_raw_pointer();
+#else
+            auto d_data = d;
+            auto alpha_data = alpha;
+#endif
           size_t row_idx = index.get(0);
           size_t col_idx = index.get(1);
           size_t idx = rows * col_idx + row_idx;
-          d[idx] = d[idx] * alpha[row_idx];
+          d_data[idx] = d_data[idx] * alpha_data[row_idx];
         });
   });
 }
@@ -2787,7 +2798,6 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
   auto weights_mem = dnnl::memory(weights_md, engine);
   auto dst_mem = dnnl::memory(dst_md, engine);
 
-  // Write data to memory object's handles.
   size_t src_type_size =
       dpct::detail::library_data_size[static_cast<unsigned int>(a_type)] / 8;
   size_t weights_type_size =
@@ -2811,25 +2821,18 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
     alpha_data = dpct::dpct_malloc(Size, *q_ptr);
     dpct::dpct_memcpy(alpha_data, alpha, Size, automatic, *q_ptr);
     dnnl::memory scales_alpha(
-        {{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}}, engine,
-        alpha_data);
+        {{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}}, engine);
+    dpct::dpct_memcpy(scales_alpha.get_data_handle(), alpha_data, Size,
+                      automatic, *q_ptr);
     matmul_args.insert({DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, scales_alpha});
   }
 
-  // Create primitive descriptor.
   auto matmul_pd = dnnl::matmul::primitive_desc(engine, src_md, weights_md,
                                                 dst_md, matmul_attr);
-
-  // Create the primitive.
   auto matmul_prim = dnnl::matmul(matmul_pd);
-
-  // Primitive execution: matrix multiplication with ReLU.
   matmul_prim.execute(engine_stream, matmul_args);
-
-  // Wait for the computation to finalize.
   engine_stream.wait();
 
-  // Read data from memory object's handle.
   size_t dst_type_size =
       dpct::detail::library_data_size[static_cast<unsigned int>(d_type)] / 8;
   dpct::dpct_memcpy(d, dst_mem.get_data_handle(), dst_type_size * n * ldd,
@@ -3021,6 +3024,16 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
   }
   if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
     throw std::runtime_error("Matrix B must be transposed.");
+  }
+
+  // 3. Emit message for for non-col_major matrix.
+  if (a_desc->_order != order_t::col || b_desc->_order != order_t::col ||
+      d_desc->_order != order_t::col) {
+    // TODO: Impl row-major matmul without layout conversion
+    std::cout
+        << "Non-col-major matrix will be converted to col-major matrix before "
+           "multiplication and converted back after multiplication."
+        << std::endl;
   }
 
   // For non-col_major matrix, convert it to col_major.
