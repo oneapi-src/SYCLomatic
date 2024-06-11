@@ -618,10 +618,10 @@ CONDITIONAL_FACTORY_ENTRY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cuDeviceCanAccessPeer", DEREF(ARG_WC(0)),
         MEMBER_CALL(
-          MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance().get_device", ARG_WC(1)), false, "get_device_id"),
+          MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false, "get_device", ARG_WC(1)),
           false,
           "ext_oneapi_can_access_peer",
-          MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance().get_device", ARG_WC(2)), false, "get_device_id")))),
+          MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false, "get_device", ARG_WC(2))))),
     ASSIGNABLE_FACTORY(
         WARNING_FACTORY_ENTRY("cuDeviceCanAccessPeer",
                               ASSIGN_FACTORY_ENTRY("cuDeviceCanAccessPeer",
