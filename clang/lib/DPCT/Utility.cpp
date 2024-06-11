@@ -19,6 +19,7 @@
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/Type.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
@@ -5047,6 +5048,22 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
         if (!C->isImplicit() && !C->isDeleted()) {
           if (C->isCopyConstructor()) {
             Messages.push_back("copy constructor");
+            // The 1st parameter of the copy constructor need "const" qualifier.
+            const ReferenceType *RT = dyn_cast<ReferenceType>(
+                C->getParamDecl(0)->getType().getTypePtr());
+            if (RT && !RT->getPointeeType().isConstQualified()) {
+              if (Rule) {
+                Rule->emplaceTransformation(new InsertText(
+                    C->getParamDecl(0)->getBeginLoc(), "const "));
+              } else {
+                auto FileNameAndOffset = DpctGlobalInfo::getLocInfo(
+                    C->getParamDecl(0)->getBeginLoc());
+                DpctGlobalInfo::getInstance().addReplacement(
+                    std::make_shared<ExtReplacement>(FileNameAndOffset.first,
+                                                     FileNameAndOffset.second,
+                                                     0, "const ", nullptr));
+              }
+            }
           } else if (C->isMoveConstructor()) {
             Messages.push_back("copy assignment");
           }
