@@ -2792,27 +2792,24 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
       dpct::detail::library_data_size[static_cast<unsigned int>(a_type)] / 8;
   size_t weights_type_size =
       dpct::detail::library_data_size[static_cast<unsigned int>(b_type)] / 8;
-  q_ptr->memcpy(src_mem.get_data_handle(), a, src_type_size * k * lda);
-  q_ptr->memcpy(weights_mem.get_data_handle(), b, weights_type_size * k * ldb);
+  dpct::dpct_memcpy(src_mem.get_data_handle(), a, src_type_size * k * lda,
+                    automatic, *q_ptr);
+  dpct::dpct_memcpy(weights_mem.get_data_handle(), b,
+                    weights_type_size * k * ldb, automatic, *q_ptr);
 
   std::unordered_map<int, dnnl::memory> matmul_args;
   matmul_args.insert({DNNL_ARG_SRC, src_mem});
   matmul_args.insert({DNNL_ARG_WEIGHTS, weights_mem});
   matmul_args.insert({DNNL_ARG_DST, dst_mem});
   dnnl::primitive_attr matmul_attr;
+  void *alpha_data = nullptr;
   if (!vector_alpha) {
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
-    void *alpha_data = nullptr;
-    if (pointer_mode == pointer_mode_t::host) {
-      std::size_t Size =
-          dpct::detail::library_data_size[static_cast<unsigned int>(
-              scale_type)] /
-          8;
-      alpha_data = sycl::malloc_device(Size, *q_ptr);
-      q_ptr->memcpy(alpha_data, alpha, Size);
-    } else {
-      alpha_data = const_cast<void *>(alpha);
-    }
+    std::size_t Size =
+        dpct::detail::library_data_size[static_cast<unsigned int>(scale_type)] /
+        8;
+    alpha_data = dpct::dpct_malloc(Size, *q_ptr);
+    dpct::dpct_memcpy(alpha_data, alpha, Size, automatic, *q_ptr);
     dnnl::memory scales_alpha(
         {{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}}, engine,
         alpha_data);
@@ -2835,10 +2832,13 @@ inline void matmul_impl(matmul_desc_ptr compute_desc, size_t m, size_t n,
   // Read data from memory object's handle.
   size_t dst_type_size =
       dpct::detail::library_data_size[static_cast<unsigned int>(d_type)] / 8;
-  q_ptr->memcpy(d, dst_mem.get_data_handle(), dst_type_size * n * ldd);
+  dpct::dpct_memcpy(d, dst_mem.get_data_handle(), dst_type_size * n * ldd,
+                    automatic, *q_ptr);
   if (vector_alpha)
     detail::scale_d_with_vector_alpha(q_ptr, m, n, d, d_type, alpha,
                                       scale_type);
+  else
+    dpct::dpct_free(alpha_data, *q_ptr);
 }
 
 inline std::tuple<size_t, size_t>
@@ -3031,14 +3031,13 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
   if (a_desc->_order != order_t::col) {
     new_lda = a_desc->_rows;
     if (a_desc->_type == library_data_t::real_int8) {
-      new_a = sycl::malloc_device(sizeof(std::int8_t) * a_desc->_cols * new_lda,
-                                  *q_ptr);
+      new_a =
+          dpct_malloc(sizeof(std::int8_t) * a_desc->_cols * new_lda, *q_ptr);
       detail::matrix_transform<std::int8_t>(
           q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
           (const std::int8_t *)a, new_lda, order_t::col, (std::int8_t *)new_a);
     } else {
-      new_a =
-          sycl::malloc_device(sizeof(int) * a_desc->_cols * new_lda, *q_ptr);
+      new_a = dpct_malloc(sizeof(int) * a_desc->_cols * new_lda, *q_ptr);
       detail::matrix_transform<int>(q_ptr, a_desc->_rows, a_desc->_cols,
                                     a_desc->_ld, a_desc->_order, (const int *)a,
                                     new_lda, order_t::col, (int *)new_a);
@@ -3048,14 +3047,13 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
     new_ldb = b_desc->_cols; // The input b is transpose::trans, so the row/col
                              // is already swapped.
     if (b_desc->_type == library_data_t::real_int8) {
-      new_b = sycl::malloc_device(sizeof(std::int8_t) * b_desc->_rows * new_ldb,
-                                  *q_ptr);
+      new_b =
+          dpct_malloc(sizeof(std::int8_t) * b_desc->_rows * new_ldb, *q_ptr);
       detail::matrix_transform<std::int8_t>(
           q_ptr, b_desc->_cols, b_desc->_rows, b_desc->_ld, b_desc->_order,
           (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b);
     } else {
-      new_b =
-          sycl::malloc_device(sizeof(int) * b_desc->_rows * new_ldb, *q_ptr);
+      new_b = dpct_malloc(sizeof(int) * b_desc->_rows * new_ldb, *q_ptr);
       detail::matrix_transform<int>(q_ptr, b_desc->_cols, b_desc->_rows,
                                     b_desc->_ld, b_desc->_order, (const int *)b,
                                     new_ldb, order_t::col, (int *)new_b);
@@ -3064,11 +3062,10 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
   if (d_desc->_order != order_t::col) {
     new_ldd = d_desc->_rows;
     if (d_desc->_type == library_data_t::real_int8) {
-      new_d = sycl::malloc_device(sizeof(std::int8_t) * d_desc->_cols * new_ldd,
-                                  *q_ptr);
-    } else {
       new_d =
-          sycl::malloc_device(sizeof(int) * d_desc->_cols * new_ldd, *q_ptr);
+          dpct_malloc(sizeof(std::int8_t) * d_desc->_cols * new_ldd, *q_ptr);
+    } else {
+      new_d = dpct_malloc(sizeof(int) * d_desc->_cols * new_ldd, *q_ptr);
     }
   }
 
@@ -3093,11 +3090,11 @@ inline void matmul(matmul_desc_ptr compute_desc, const void *alpha,
 
   q_ptr->wait();
   if (a_desc->_order != order_t::col)
-    sycl::free((void *)new_a, *q_ptr);
+    dpct_free((void *)new_a, *q_ptr);
   if (b_desc->_order != order_t::col)
-    sycl::free((void *)new_b, *q_ptr);
+    dpct_free((void *)new_b, *q_ptr);
   if (d_desc->_order != order_t::col)
-    sycl::free(new_d, *q_ptr);
+    dpct_free(new_d, *q_ptr);
 }
 
 class transform_desc_t {
