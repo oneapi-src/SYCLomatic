@@ -67,23 +67,12 @@ class InlineAsmContext : public InlineAsmIdentifierInfoLookup {
   /// This used to cache the discard type.
   InlineAsmDiscardType *DiscardType = nullptr;
 
-  // This used to mapping ASM operands to clang's Expr.
-  llvm::DenseMap<InlineAsmVariableDecl *, const Expr *> OperandExprMap;
-
 public:
   void *allocate(unsigned Size, unsigned Align = 8) {
     return Allocator.Allocate(Size, Align);
   }
 
   void deallocate(void *Ptr) {}
-
-  void addInlineAsmOperandMapping(InlineAsmVariableDecl *Decl, const Expr *E) {
-    OperandExprMap[Decl] = E;
-  }
-
-  const Expr *getExprForInlineAsmOperand(InlineAsmVariableDecl *Decl) {
-    return OperandExprMap.lookup(Decl);
-  }
 
   /// Add predefined inline asm operand, e.g. %0
   unsigned addInlineAsmOperand(StringRef Name) {
