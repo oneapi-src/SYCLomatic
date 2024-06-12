@@ -625,7 +625,7 @@ void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
     return;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-  if (MacroName == "__CUDA_ARCH__" && DpctGlobalInfo::getRunRound() == 0) {
+  if (MacroName == "__CUDA_ARCH__") {
     requestFeature(HelperFeatureEnum::device_ext);
     auto &Map = DpctGlobalInfo::getInstance()
                     .getCudaArchPPInfoMap()[SM.getFilename(Loc).str()];
@@ -654,7 +654,7 @@ void IncludesCallbacks::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
     return;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-  if (MacroName == "__CUDA_ARCH__" && DpctGlobalInfo::getRunRound() == 0) {
+  if (MacroName == "__CUDA_ARCH__") {
     requestFeature(HelperFeatureEnum::device_ext);
     auto &Map = DpctGlobalInfo::getInstance()
                     .getCudaArchPPInfoMap()[SM.getFilename(Loc).str()];
@@ -708,27 +708,25 @@ void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
         DpctGlobalInfo::getInstance().getLocInfo(Loc));
     dpct::DpctGlobalInfo::getConditionalCompilationLoc().emplace_back(
         DpctGlobalInfo::getInstance().getLocInfo(IfLoc));
-    if (DpctGlobalInfo::getRunRound() == 0) {
-      auto &Map = DpctGlobalInfo::getInstance()
-                      .getCudaArchPPInfoMap()[SM.getFilename(Loc).str()];
-      unsigned Offset = SM.getFileOffset(IfLoc);
-      DirectiveInfo DI;
-      DI.DirectiveLoc = SM.getFileOffset(Loc);
-      int NSLoc = findPoundSign(Loc);
-      if (NSLoc == -1) {
-        DI.NumberSignLoc = UINT_MAX;
-      } else {
-        DI.NumberSignLoc = DI.DirectiveLoc - NSLoc;
-      }
-      if (Map.count(Offset)) {
-        Map[Offset].EndInfo = DI;
-      } else {
-        CudaArchPPInfo Info;
-        Info.DT = IfType::IT_Unknow;
-        Info.IfInfo.DirectiveLoc = Offset;
-        Info.EndInfo = DI;
-        Map[Offset] = Info;
-      }
+    auto &Map = DpctGlobalInfo::getInstance()
+                    .getCudaArchPPInfoMap()[SM.getFilename(Loc).str()];
+    unsigned Offset = SM.getFileOffset(IfLoc);
+    DirectiveInfo DI;
+    DI.DirectiveLoc = SM.getFileOffset(Loc);
+    int NSLoc = findPoundSign(Loc);
+    if (NSLoc == -1) {
+      DI.NumberSignLoc = UINT_MAX;
+    } else {
+      DI.NumberSignLoc = DI.DirectiveLoc - NSLoc;
+    }
+    if (Map.count(Offset)) {
+      Map[Offset].EndInfo = DI;
+    } else {
+      CudaArchPPInfo Info;
+      Info.DT = IfType::IT_Unknow;
+      Info.IfInfo.DirectiveLoc = Offset;
+      Info.EndInfo = DI;
+      Map[Offset] = Info;
     }
   }
 }
@@ -14592,7 +14590,7 @@ void CudaArchMacroRule::runRule(
   auto &HDFIMap = Global.getHostDeviceFuncInfoMap();
   HostDeviceFuncLocInfo HDFLI;
   // process __host__ __device__ function definition except overloaded operator
-  if (FD && (Global.getRunRound() == 0) && !FD->isOverloadedOperator() &&
+  if (FD && !FD->isOverloadedOperator() &&
       FD->getTemplateSpecializationKind() ==
           TemplateSpecializationKind::TSK_Undeclared) {
     auto NameInfo = FD->getNameInfo();
