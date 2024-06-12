@@ -9,22 +9,14 @@
 #ifndef CLANG_DPCT_INLINE_ASM_PARSER_H
 #define CLANG_DPCT_INLINE_ASM_PARSER_H
 
-#include "InlineAsm.h"
-#include "Asm/AsmIdentifierTable.h"
-#include "Asm/AsmToken.h"
-#include "Asm/AsmTokenKinds.h"
+#include "AsmNodes.h"
+#include "AsmIdentifierTable.h"
+#include "AsmToken.h"
+#include "AsmTokenKinds.h"
 #include "AsmLexer.h"
-#include "clang/AST/Expr.h"
-#include "clang/AST/Type.h"
-#include "clang/Basic/CharInfo.h"
-#include "clang/Basic/IdentifierTable.h"
-#include "clang/Basic/LLVM.h"
-#include "clang/Sema/DeclSpec.h"
 #include "clang/Sema/Ownership.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
@@ -34,9 +26,6 @@
 #include "llvm/Support/PointerLikeTypeTraits.h"
 #include "llvm/Support/SMLoc.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/raw_ostream.h"
-#include <cstdint>
-#include <optional>
 
 namespace clang::dpct {
 

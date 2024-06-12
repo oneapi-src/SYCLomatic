@@ -9,38 +9,25 @@
 #include "AsmMigration.h"
 #include "AnalysisInfo.h"
 #include "Asm/AsmParser.h"
-#include "Asm/InlineAsm.h"
-#include "CallExprRewriter.h"
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
-#include "MigrationRuleManager.h"
 #include "TextModification.h"
 #include "Utility.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Stmt.h"
 #include "clang/Basic/TokenKinds.h"
-#include "clang/Parse/RAIIObjectsForParser.h"
 #include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
-#include "llvm/ADT/iterator_range.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/SaveAndRestore.h"
 #include "llvm/Support/raw_ostream.h"
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
 #include <cstdio>
-#include <iterator>
-#include <limits>
-#include <sstream>
-#include <stdexcept>
 
 using namespace clang;
 using namespace clang::dpct;
@@ -385,7 +372,7 @@ bool SYCLGenBase::emitParenExpr(const InlineAsmParenExpr *E) {
 }
 
 bool SYCLGenBase::emitDeclRefExpr(const InlineAsmDeclRefExpr *E) {
-  if (E->getDecl().getDeclName()->isBuiltinID()) {
+  if (E->getDecl().getDeclName()->isSpecialReg()) {
     switch (E->getDecl().getDeclName()->getTokenID()) {
     case asmtok::bi_laneid:
       OS() << DpctGlobalInfo::getItem(GAS)

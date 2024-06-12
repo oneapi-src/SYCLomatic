@@ -28,13 +28,26 @@ using llvm::SmallSet;
 using llvm::SmallVector;
 
 enum class InstAttr {
-#define ROUND_MOD(X, Y) X,
-#define SAT_MOD(X, Y) X,
-#define MUL_MOD(X, Y) X,
-#define CMP_OP(X, Y) X,
-#define BIN_OP(X, Y) X,
-#define SYNC_OP(X, Y) X,
+#define MODIFIER(X, Y) X,
 #include "Asm/AsmTokenKinds.def"
+};
+
+enum class AsmStateSpace {
+#define STATE_SPACE(X, Y) S_ ## X,
+#include "AsmTokenKinds.def"
+  none
+};
+
+enum class AsmTarget {
+#define TARGET(X) X,
+#include "AsmTokenKinds.def"
+  none
+};
+
+enum class AsmLinkage {
+#define LINKAGE(X, Y) L_ ## X,
+#include "AsmTokenKinds.def"
+  none
 };
 
 /// The base class of the type hierarchy.
@@ -64,7 +77,7 @@ private:
 /// This class is used for builtin types like 'u32'.
 class InlineAsmBuiltinType : public InlineAsmType {
 public:
-  enum TypeKind : uint8_t {
+  enum TypeKind {
 #define BUILTIN_TYPE(X, Y) X,
 #include "AsmTokenKinds.def"
     NUM_TYPES
@@ -99,10 +112,7 @@ public:
 // This class is used for device asm vector types.
 class InlineAsmVectorType : public InlineAsmType {
 public:
-  enum VecKind : uint8_t {
-#define VECTOR(X, Y) X,
-#include "AsmTokenKinds.def"
-  };
+  enum VecKind { v2, v4, v8 };
 
 private:
   VecKind Kind;

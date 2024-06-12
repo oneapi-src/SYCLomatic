@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "InlineAsm.h"
+#include "AsmNodes.h"
 
 using namespace clang::dpct;
 

@@ -7,10 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "AsmParser.h"
-#include "Asm/AsmIdentifierTable.h"
-#include "Asm/AsmLexer.h"
-#include "Asm/AsmToken.h"
-#include "Asm/AsmTokenKinds.h"
+#include "AsmIdentifierTable.h"
+#include "AsmLexer.h"
+#include "AsmToken.h"
+#include "AsmTokenKinds.h"
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/CharInfo.h"
@@ -93,7 +93,7 @@ InlineAsmScope::lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II,
 }
 
 void InlineAsmParser::addBuiltinIdentifier() {
-#define BUILTIN_ID(X, Y, Z)                                                    \
+#define SPECIAL_REG(X, Y, Z)                                                    \
   getCurScope()->addDecl(::new (Context) InlineAsmVariableDecl(                \
       getLexer().getIdentifierInfo(Y),                                         \
       Context.getBuiltinTypeFromTokenKind(asmtok::kw_##Z)));
@@ -305,25 +305,10 @@ InlineAsmStmtResult InlineAsmParser::ParseConditionalInstruction() {
 
 static inline InstAttr ConvertToInstAttr(asmtok::TokenKind Kind) {
   switch (Kind) {
-#define ROUND_MOD(X, Y)                                                        \
+#define MODIFIER(X, Y)                                                         \
   case asmtok::kw_##X:                                                         \
     return InstAttr::X;
-#define SAT_MOD(X, Y)                                                          \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define MUL_MOD(X, Y)                                                          \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define CMP_OP(X, Y)                                                           \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define BIN_OP(X, Y)                                                           \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define SYNC_OP(X, Y)                                                          \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#include "Asm/AsmTokenKinds.def"
+#include "AsmTokenKinds.def"
   default:
     llvm_unreachable("Kind is not an instruction attribute");
   }
@@ -345,7 +330,7 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
     case InlineAsmIdentifierInfo::BuiltinType:
       Types.push_back(Context.getBuiltinTypeFromTokenKind(Tok.getKind()));
       break;
-    case InlineAsmIdentifierInfo::InstAttr:
+    case InlineAsmIdentifierInfo::Modifier:
       Attrs.push_back(ConvertToInstAttr(Tok.getIdentifier()->getTokenID()));
       break;
     default:
@@ -509,7 +494,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
     ConsumeToken();
     break;
   case asmtok::identifier:
-#define BUILTIN_ID(X, Y, Z) case asmtok::bi_##X:
+#define SPECIAL_REG(X, Y, Z) case asmtok::bi_##X:
 #include "AsmTokenKinds.def"
     Res = ActOnIdExpr(Tok.getIdentifier());
     ConsumeToken();
