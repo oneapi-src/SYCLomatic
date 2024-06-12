@@ -16,11 +16,11 @@ namespace experimental {
 
 typedef sycl::ext::oneapi::experimental::command_graph<
     sycl::ext::oneapi::experimental::graph_state::modifiable>
-    command_graph_ptr;
+    *command_graph_ptr;
 
 typedef sycl::ext::oneapi::experimental::command_graph<
     sycl::ext::oneapi::experimental::graph_state::executable>
-    command_graph_exec_ptr;
+    *command_graph_exec_ptr;
 
 } // namespace experimental
 } // namespace dpct
