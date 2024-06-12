@@ -2894,8 +2894,7 @@ void MemVarInfo::newConstVarInit(const VarDecl *Var) {
 std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   switch (Scope) {
   case clang::dpct::MemVarInfo::Local:
-    if (DpctGlobalInfo::useGroupLocalMemory() && VD &&
-        VD->getStorageClass() != SC_Extern) {
+    if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
       auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext());
       if (FD && FD->hasAttr<CUDADeviceAttr>())
         DiagnosticsUtils::report(getFilePath(), getOffset(),
