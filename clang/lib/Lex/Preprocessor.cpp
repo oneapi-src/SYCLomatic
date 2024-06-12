@@ -834,31 +834,18 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
       }
     }
   }
-
 #ifdef SYCLomatic_CUSTOMIZATION
-  if (LangOpts.CUDA && II.getName() == "__CUDA_ARCH__" && IsInAnalysisScopeFunc(Identifier.getLocation())) {
+  else if (LangOpts.CUDA && II.getName() == "__CUDA_ARCH__" &&
+           IsInAnalysisScopeFunc(Identifier.getLocation()) &&
+           GetRunRound() == 0) {
     // Make a MacroDefinition for __CUDA_ARCH__
     MacroInfo *MI = AllocateMacroInfo(SourceLocation());
     MI->setIsBuiltinMacro();
     DefMacroDirective DMD(MI, SourceLocation());
     ArrayRef<ModuleMacro *> MMs;
     MacroDefinition MD(&DMD, MMs, false);
-    if (!DisableMacroExpansion) {
-      if (!Identifier.isExpandDisabled() && MI->isEnabled()) {
-        // C99 6.10.3p10: If the preprocessing token immediately after the
-        // macro name isn't a '(', this macro should not be expanded.
-        if (!MI->isFunctionLike() || isNextPPTokenLParen())
-          return HandleMacroExpandedIdentifier(Identifier, MD);
-      }
-      else {
-        // C99 6.10.3.4p2 says that a disabled macro may never again be
-        // expanded, even if it's in a context where it could be expanded in the
-        // future.
-        Identifier.setFlag(Token::DisableExpand);
-        if (MI->isObjectLike() || isNextPPTokenLParen())
-          Diag(Identifier, diag::pp_disabled_macro_expansion);
-      }
-    }
+    appendDefMacroDirective(&II, MI);
+    return HandleIdentifier(Identifier);
   }
 #endif // SYCLomatic_CUSTOMIZATION
 
