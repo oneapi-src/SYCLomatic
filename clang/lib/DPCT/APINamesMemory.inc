@@ -664,7 +664,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cuCtxEnablePeerAccess",
         CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
         "ext_oneapi_enable_peer_access",
-        MEMBER_CALL(MapNames::getDpctNamespace() + "dev_mgr::instance", false,
+        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
                     "get_device", ARG_WC(0)))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cuCtxEnablePeerAccess",
