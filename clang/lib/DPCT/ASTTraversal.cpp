@@ -6198,7 +6198,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
         "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
-        "cudaProfilerStop",  "__trap", "cuCtxEnablePeerAccess");
+        "cudaProfilerStop", "__trap", "cuCtxEnablePeerAccess");
   };
 
   MF.addMatcher(
