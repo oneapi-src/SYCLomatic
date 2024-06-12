@@ -71,7 +71,7 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   // Tile using a 2D grid
   int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / warpSize;
   int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
-  // CHECK: dpct::experimental::matrix::layout_t ly = dpct::experimental::matrix::layout_t::m_row_major;
+  // CHECK: dpct::experimental::matrix::layout_t ly = dpct::experimental::matrix::layout_t::row_major;
   nvcuda::wmma::layout_t ly = nvcuda::wmma::mem_row_major;
   // Declare the fragments
   // CHECK: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::a, WMMA_M, WMMA_N, WMMA_K, sycl::half, dpct::experimental::matrix::row_major>
@@ -114,13 +114,13 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int cRow = warpM * WMMA_M;
 
   if (cRow < m_ld && cCol < n_ld) {
-    // CHECK: dpct::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, c + cCol + cRow * ldc, ldc, dpct::experimental::matrix::layout_t::m_row_major);
+    // CHECK: dpct::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, c + cCol + cRow * ldc, ldc, dpct::experimental::matrix::layout_t::row_major);
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
                                    nvcuda::wmma::mem_row_major);
     // CHECK: dpct::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, c + cCol + cRow * ldc, ldc, ly);
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc, ly);
     // Store the output
-    // CHECK: dpct::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), d + cCol + cRow * ldc, c_frag, ldc, dpct::experimental::matrix::layout_t::m_col_major);
+    // CHECK: dpct::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), d + cCol + cRow * ldc, c_frag, ldc, dpct::experimental::matrix::layout_t::col_major);
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
                                     nvcuda::wmma::mem_col_major);
   }

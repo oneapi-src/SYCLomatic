@@ -116,12 +116,12 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int cRow = warpM * WMMA_M;
 
   if (cRow < m_ld && cCol < n_ld) {
-    // CHECK: dpct::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, c + cCol + cRow * ldc, ldc, dpct::experimental::matrix::layout_t::m_row_major);
+    // CHECK: dpct::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, c + cCol + cRow * ldc, ldc, dpct::experimental::matrix::layout_t::row_major);
     wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
                                    wmma::mem_row_major);
 
     // Store the output
-    // CHECK: dpct::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), d + cCol + cRow * ldc, c_frag, ldc, dpct::experimental::matrix::layout_t::m_row_major);
+    // CHECK: dpct::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), d + cCol + cRow * ldc, c_frag, ldc, dpct::experimental::matrix::layout_t::row_major);
     wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
                                     wmma::mem_row_major);
   }

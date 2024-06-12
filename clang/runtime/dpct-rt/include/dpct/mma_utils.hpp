@@ -30,18 +30,31 @@ struct b
 struct accumulator
     : public std::integral_constant<sycl_matrix::use,
                                     sycl_matrix::use::accumulator> {};
-enum layout_t { m_row_major, m_col_major };
+enum class layout_t { row_major, col_major };
+
+template <class use, int m, int n, int k> struct matrix_size_traits;
+template <int m, int n, int k> struct matrix_size_traits<a, m, n, k> {
+  static constexpr int rows = m;
+  static constexpr int cols = k;
+};
+
+template <int m, int n, int k> struct matrix_size_traits<b, m, n, k> {
+  static constexpr int rows = k;
+  static constexpr int cols = n;
+};
+
+template <int m, int n, int k> struct matrix_size_traits<accumulator, m, n, k> {
+  static constexpr int rows = m;
+  static constexpr int cols = n;
+};
 
 template <typename use, int m, int n, int k, typename T,
           typename layout = std::integral_constant<
               sycl_matrix::layout, sycl_matrix::layout::dynamic>>
 class joint_matrix {
-  static constexpr int rows = (use::value == sycl_matrix::use::b) ? n : m;
-  static constexpr int cols =
-      (use::value == sycl_matrix::use::accumulator) ? m : k;
-  using joint_matrix_type =
-      sycl_matrix::joint_matrix<sycl::sub_group, T, use::value, rows, cols,
-                                layout::value>;
+  using joint_matrix_type = sycl_matrix::joint_matrix<
+      sycl::sub_group, T, use::value, matrix_size_traits<use, m, n, k>::rows,
+      matrix_size_traits<use, m, n, k>::cols, layout::value>;
 
 public:
   joint_matrix()
@@ -83,8 +96,8 @@ void joint_matrix_load(sycl::sub_group g, MT &res, const T *src,
       sycl::address_space_cast<sycl::access::address_space::generic_space,
                                sycl::access::decorated::no, const T>(src),
       stride,
-      layout == layout_t::m_row_major ? sycl_matrix::layout::row_major
-                                      : sycl_matrix::layout::col_major);
+      layout == layout_t::row_major ? sycl_matrix::layout::row_major
+                                    : sycl_matrix::layout::col_major);
 }
 
 template <typename MT, typename T>
@@ -95,8 +108,8 @@ void joint_matrix_store(sycl::sub_group g, T *dest, const MT &res,
       sycl::address_space_cast<sycl::access::address_space::generic_space,
                                sycl::access::decorated::no, T>(dest),
       stride,
-      layout == layout_t::m_row_major ? sycl_matrix::layout::row_major
-                                      : sycl_matrix::layout::col_major);
+      layout == layout_t::row_major ? sycl_matrix::layout::row_major
+                                    : sycl_matrix::layout::col_major);
 }
 
 template <typename MT, typename T>
