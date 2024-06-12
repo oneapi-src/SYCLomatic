@@ -199,6 +199,7 @@ add_clang_library(DPCT
   AutoComplete.cpp
   AsmMigration.cpp
   APIMapping/QueryAPIMapping.cpp
+  Asm/InlineAsm.cpp
   Asm/AsmLexer.cpp
   Asm/AsmParser.cpp
   Asm/AsmIdentifierTable.cpp
