@@ -415,3 +415,46 @@ void test11() {
   // CHECK-NEXT:   });
   k11<<<1, 1>>>(us17);
 }
+
+// Case12: test adding const qualifier
+// CHECK: struct UserStruct18 {
+// CHECK-NEXT:   UserStruct18() {}
+// CHECK-NEXT:   UserStruct18(volatile UserStruct18& other) {}
+// CHECK-NEXT:   UserStruct18(const UserStruct18& other) {}
+// CHECK-NEXT: };
+struct UserStruct18 {
+  UserStruct18() {}
+  UserStruct18(volatile UserStruct18& other) {}
+  UserStruct18(const UserStruct18& other) {}
+};
+
+// CHECK: struct UserStruct19 {
+// CHECK-NEXT:   UserStruct19() {}
+// CHECK-NEXT:   UserStruct19(UserStruct19 other) {}
+// CHECK-NEXT: };
+struct UserStruct19 {
+  UserStruct19() {}
+  UserStruct19(UserStruct19 other) {}
+};
+
+// CHECK: struct UserStruct20 {
+// CHECK-NEXT:   UserStruct20() {}
+// CHECK-NEXT:   UserStruct20(const volatile UserStruct20& other) {}
+// CHECK-NEXT:   UserStruct20(const UserStruct20& other) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template <>
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct20> : std::true_type {};
+struct UserStruct20 {
+  UserStruct20() {}
+  UserStruct20(volatile UserStruct20& other) {}
+  UserStruct20(UserStruct20& other) {}
+};
+
+void test12() {
+  UserStruct18 us18;
+  k11<<<1, 1>>>(us18);
+  UserStruct19 us19;
+  k11<<<1, 1>>>(us19);
+  UserStruct20 us20;
+  k11<<<1, 1>>>(us20);
+}
