@@ -6194,12 +6194,13 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
+        "cuDeviceCanAccessPeer", "cudaFuncSetAttribute",
         "cudaRuntimeGetVersion", "clock64", "__nanosleep",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
         "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
-        "cudaProfilerStop", "cudaFuncSetAttribute", "__trap");
+        "cudaProfilerStop", "__trap");
   };
 
   MF.addMatcher(
@@ -6291,6 +6292,9 @@ std::string FunctionCallRule::findValueofAttrVar(const Expr *AttrArg,
 }
 
 void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
@@ -6298,13 +6302,13 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     IsAssigned = true;
   }
+
   if (!CE->getDirectCallee())
     return;
+
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
-  if (!CallExprRewriterFactoryBase::RewriterMap)
-    return;
   auto Iter = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
   if (Iter != CallExprRewriterFactoryBase::RewriterMap->end()) {
     ExprAnalysis EA(CE);
