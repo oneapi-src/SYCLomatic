@@ -658,6 +658,20 @@ CONDITIONAL_FACTORY_ENTRY(
         "You can migrate the code with peer access extension by not specifying "
         "-no-dpcpp-extensions=peer_access."))
 
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cuCtxEnablePeerAccess",
+        CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
+        "ext_oneapi_enable_peer_access",
+        MEMBER_CALL(MapNames::getDpctNamespace() + "dev_mgr::instance", false,
+                    "get_device", ARG_WC(0)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+        "cuCtxEnablePeerAccess",
+        "SYCL currently does not support memory access across peer devices. "
+        "You can migrate the code with peer access extension by not specifying "
+        "-no-dpcpp-extensions=peer_access."))
+
 CALL_FACTORY_ENTRY(
     "make_cudaExtent",
     CALL(DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 3),
