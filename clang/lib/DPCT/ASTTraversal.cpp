@@ -12300,6 +12300,10 @@ void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
                            hasType(recordDecl(hasName("cudaFuncAttributes"))))))
           .bind("member"),
       this);
+
+  MF.addMatcher(callExpr(callee(functionDecl(hasName("cuFuncSetAttribute"))))
+                    .bind("cuFuncSetAttribute"),
+                this);
 }
 
 void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -12327,6 +12331,20 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
     if (NameMap != AttributesNamesMap.end())
       emplaceTransformation(new ReplaceToken(MemberName.getBeginLoc(),
                                              std::string(NameMap->second)));
+
+  } else if (auto *CallNode =
+                 getNodeAsType<CallExpr>(Result, "cuFuncSetAttribute")) {
+    std::string FuncName =
+        CallNode->getDirectCallee()->getNameInfo().getName().getAsString();
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+
+    std::string CallReplacement{""};
+    if (isAssigned(CallNode)) {
+      CallReplacement = "0";
+    }
+    report(CallNode->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+           MapNames::ITFName.at(FuncName), Msg->second);
+    emplaceTransformation(new ReplaceStmt(CallNode, CallReplacement));
   }
 }
 
