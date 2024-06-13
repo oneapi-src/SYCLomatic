@@ -419,7 +419,7 @@ void test11() {
 // Case12: test adding const qualifier
 // CHECK: struct UserStruct18 {
 // CHECK-NEXT:   UserStruct18() {}
-// CHECK-NEXT:   UserStruct18(volatile UserStruct18& other) {}
+// CHECK-NEXT:   UserStruct18(const volatile UserStruct18& other) {}
 // CHECK-NEXT:   UserStruct18(const UserStruct18& other) {}
 // CHECK-NEXT: };
 struct UserStruct18 {

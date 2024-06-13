@@ -19,6 +19,7 @@
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/Type.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
@@ -5043,8 +5044,13 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
       if (!isUserDefinedDecl(ClassDecl))
         return;
       std::vector<std::string> Messages;
-      std::optional<std::vector<SourceLocation>>
-          CtorConstQualifierInsertLocations(std::in_place, 0);
+      // [0] for T&, [1] for volatile T&
+      std::array<std::pair<bool, SourceLocation>, 2>
+          CtorConstQualifierInsertLocations;
+      CtorConstQualifierInsertLocations[0] =
+          std::make_pair(true, SourceLocation());
+      CtorConstQualifierInsertLocations[1] =
+          std::make_pair(true, SourceLocation());
       for (const auto &C : ClassDecl->ctors()) {
         if (!C->isImplicit() && !C->isDeleted()) {
           if (C->isCopyConstructor()) {
@@ -5053,28 +5059,37 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
             const auto *FirstParam = C->getParamDecl(0);
             const ReferenceType *RT =
                 dyn_cast<ReferenceType>(FirstParam->getType().getTypePtr());
-            if (RT && !RT->getPointeeType().isConstQualified()) {
-              if (CtorConstQualifierInsertLocations.has_value())
-                CtorConstQualifierInsertLocations.value().push_back(
-                    FirstParam->getBeginLoc());
-            } else {
-              CtorConstQualifierInsertLocations = std::nullopt;
+            if (RT) {
+              QualType PointeeTy = RT->getPointeeType();
+              if (PointeeTy.isVolatileQualified() &&
+                  PointeeTy.isConstQualified()) {
+                CtorConstQualifierInsertLocations[1].first = false;
+              } else if (PointeeTy.isVolatileQualified()) {
+                CtorConstQualifierInsertLocations[1].second =
+                    FirstParam->getBeginLoc();
+              } else if (PointeeTy.isConstQualified()) {
+                CtorConstQualifierInsertLocations[0].first = false;
+              } else {
+                CtorConstQualifierInsertLocations[0].second =
+                    FirstParam->getBeginLoc();
+              }
             }
           } else if (C->isMoveConstructor()) {
             Messages.push_back("copy assignment");
           }
         }
       }
-      if (CtorConstQualifierInsertLocations.has_value())
-        for (const auto &SL : CtorConstQualifierInsertLocations.value()) {
-          auto *NT = new InsertText(SL, "const ");
-          if (Rule) {
-            Rule->emplaceTransformation(NT);
-          } else {
-            DpctGlobalInfo::getInstance().addReplacement(
-                NT->getReplacement(DpctGlobalInfo::getContext()));
-          }
+      for (const auto &P : CtorConstQualifierInsertLocations) {
+        if (!P.first || P.second.isInvalid())
+          continue;
+        auto *NT = new InsertText(P.second, "const ");
+        if (Rule) {
+          Rule->emplaceTransformation(NT);
+        } else {
+          DpctGlobalInfo::getInstance().addReplacement(
+              NT->getReplacement(DpctGlobalInfo::getContext()));
         }
+      }
       for (const auto &M : ClassDecl->methods()) {
         if (!M->isImplicit() && !M->isDeleted()) {
           if (M->isCopyAssignmentOperator()) {
