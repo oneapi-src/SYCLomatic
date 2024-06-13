@@ -54,11 +54,11 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // CHECK:  /* DPCT_ORIG   dim3 griddim = 2;*/
-  // CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
+  // CHECK-NEXT:  sycl::range<3> griddim = {1, 1, 2};
   dim3 griddim = 2;
 
   // CHECK:  /* DPCT_ORIG   dim3 threaddim = 32;*/
-  // CHECK-NEXT:   sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
+  // CHECK-NEXT:   sycl::range<3> threaddim = {1, 1, 32};
   dim3 threaddim = 32;
 
   void *karg1 = 0;

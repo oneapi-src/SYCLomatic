@@ -12,7 +12,7 @@
 
 void case_1(void) {
 {
-// CHECK: sycl::range<3> var1(1, 1, 1);
+// CHECK: sycl::range<3> var1{1, 1, 1};
 // CHECK-NEXT: sycl::range<3> *var2;
 // CHECK-NEXT: sycl::range<3> &var3 = var1;
 // CHECK-NEXT: sycl::range<3> &&var4 = std::move(var1);
@@ -1293,7 +1293,7 @@ __device__ void foo_t(){
 // CHECK-NEXT: #define T8_1 sycl::range<3> *
 // CHECK-NEXT: #define T8_2 sycl::range<3> &
 // CHECK-NEXT: #define T8_3 sycl::range<3> &&
-// CHECK-NEXT:     T8_0 a1(1, 1, 1);
+// CHECK-NEXT:     T8_0 a1{1, 1, 1};
 // CHECK-NEXT:     T8_1 a2;
 // CHECK-NEXT:     T8_2 a3=a1;
 // CHECK-NEXT:     T8_3 a4=std::move(a1);

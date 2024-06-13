@@ -1688,7 +1688,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
           loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "cudaError", "curandStatus", "cublasStatus", "CUstream",
+              "dim3", "cudaError", "curandStatus", "cublasStatus", "CUstream",
               "CUstream_st", "thrust::complex", "thrust::device_vector",
               "thrust::device_ptr", "thrust::device_reference",
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
@@ -3006,6 +3006,12 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // Find dim3 constructors which are part of different casts (representing
   // different syntaxes). This includes copy constructors. All constructors
   // will be visited once.
+  MF.addMatcher(
+      cxxNewExpr(hasType(pointsTo(namedDecl(hasName("dim3"))))).bind("dim3New"),
+      this);
+  MF.addMatcher(
+      explicitCastExpr(hasType(namedDecl(hasName("dim3")))).bind("dim3Cast"),
+      this);
   MF.addMatcher(cxxConstructExpr(hasType(namedDecl(hasName("dim3"))),
                                  argumentCountIs(1),
                                  unless(hasAncestor(cxxConstructExpr(
@@ -3019,89 +3025,31 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
                                      hasType(namedDecl(hasName("dim3")))))))
                     .bind("dim3Ctor"),
                 this);
-
-  MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(anyOf(
-                  namedDecl(hasAnyName("dim3")),
-                  typedefDecl(hasAnyName("dim3")))))))
-          .bind("dim3Type"),
-      this);
 }
 
 void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Ctor")) {
+  const Expr *E = nullptr;
+  if (const auto *New = getNodeAsType<CXXNewExpr>(Result, "dim3New")) {
+    if (getParentKernelCall(New->getConstructExpr()))
+      return;
+    E = New;
+  }
+  if (const auto *Cast = getNodeAsType<ExplicitCastExpr>(Result, "dim3Cast")) {
+    if (getParentKernelCall(Cast->getSubExprAsWritten()))
+      return;
+    E = Cast;
+  }
+  if (const auto *Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Ctor")) {
     if (getParentKernelCall(Ctor))
       return;
+    E = Ctor;
+  }
+  if (E) {
     ExprAnalysis EA;
-    EA.analyze(Ctor);
+    EA.analyze(E);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  }
-
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "dim3Type")) {
-    if (TL->getBeginLoc().isInvalid())
-      return;
-
-    auto BeginLoc =
-        getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
-    SourceManager *SM = Result.SourceManager;
-
-    // WA for concatenated macro token
-    if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
-      BeginLoc = SM->getExpansionLoc(TL->getBeginLoc());
-    }
-
-    Token Tok;
-    auto LOpts = Result.Context->getLangOpts();
-    Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
-    if (Tok.isAnyIdentifier()) {
-      if (TL->getType()->isElaboratedTypeSpecifier()) {
-        // To handle case like "struct cudaExtent extent;"
-        auto ETC = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
-        auto NTL = ETC.getNamedTypeLoc();
-
-        if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
-          auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
-
-          const std::string TyName =
-              dpct::DpctGlobalInfo::getTypeName(TSL.getType());
-          std::string Str =
-              MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
-          insertHeaderForTypeRule(TyName, BeginLoc);
-          requestHelperFeatureForTypeNames(TyName);
-
-          if (!Str.empty()) {
-            emplaceTransformation(
-                new ReplaceToken(BeginLoc, TSL.getEndLoc(), std::move(Str)));
-            return;
-          }
-        }
-      }
-
-      std::string TypeName = Tok.getRawIdentifier().str();
-      std::string Str =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
-      insertHeaderForTypeRule(TypeName, BeginLoc);
-      requestHelperFeatureForTypeNames(TypeName);
-      if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-        auto TypeStr = VD->getType().getAsString();
-        if (VD->getKind() == Decl::Var && TypeStr == "dim3") {
-          std::string Replacement;
-          std::string ReplacedType = "range";
-          llvm::raw_string_ostream OS(Replacement);
-          DpctGlobalInfo::printCtadClass(
-              OS, buildString(MapNames::getClNamespace(), ReplacedType), 3);
-          Str = OS.str();
-        }
-      }
-
-      if (!Str.empty()) {
-        SrcAPIStaticsMap[TypeName]++;
-        emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
-        return;
-      }
-    }
   }
 }
 

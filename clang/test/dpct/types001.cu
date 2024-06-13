@@ -111,7 +111,7 @@ void my_error_checker(T ReturnValue, char const *const FuncName) {
 #define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 
 int main(int argc, char **argv) {
-  //CHECK:sycl::range<3> d3(1, 1, 1);
+  //CHECK:sycl::range<3> d3{1, 1, 1};
   //CHECK-NEXT:int a = sizeof(sycl::range<3>);
   //CHECK-NEXT:a = sizeof(d3);
   //CHECK-NEXT:a = sizeof d3;

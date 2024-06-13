@@ -32,8 +32,8 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
      //CHECK:int main() {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-//CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
-//CHECK-NEXT:  sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
+//CHECK-NEXT:  sycl::range<3> griddim = {1, 1, 2};
+//CHECK-NEXT:  sycl::range<3> threaddim = {1, 1, 32};
 //CHECK-NEXT:  int *karg1, *karg2;
 //CHECK-NEXT:  karg1 = sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  karg2 = sycl::malloc_device<int>(32, q_ct1);

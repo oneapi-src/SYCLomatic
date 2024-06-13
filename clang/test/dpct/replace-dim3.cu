@@ -40,7 +40,7 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // range default constructor does the right thing.
-  // CHECK: sycl::range<3> deflt(1, 1, 1);
+  // CHECK: sycl::range<3> deflt{1, 1, 1};
   dim3 deflt;
 
   // CHECK: sycl::range<3> round1(1, 1, 1);
@@ -53,14 +53,14 @@ int main() {
   // CHECK: sycl::range<3> round2_1(1, NUM, NUM);
   dim3 round2_1(NUM, NUM);
 
-  // CHECK: sycl::range<3> assign = sycl::range<3>(1, 1, 32);
+  // CHECK: sycl::range<3> assign = {1, 1, 32};
   dim3 assign = 32;
-  // CHECK: sycl::range<3> assign_1 = sycl::range<3>(1, 1, NUM);
+  // CHECK: sycl::range<3> assign_1 = {1, 1, NUM};
   dim3 assign_1 = NUM;
 
-  // CHECK: sycl::range<3> castini = sycl::range<3>(1, 1, 4);
+  // CHECK: sycl::range<3> castini = (sycl::range<3>){1, 1, 4};
   dim3 castini = (dim3)4;
-  // CHECK: sycl::range<3> castini_1 = sycl::range<3>(1, 1, NUM);
+  // CHECK: sycl::range<3> castini_1 = (sycl::range<3>){1, 1, NUM};
   dim3 castini_1 = (dim3)NUM;
 
   // CHECK: sycl::range<3> castini2 = sycl::range<3>(1, 2, 2);
@@ -77,14 +77,14 @@ int main() {
   deflt = dim3(3);
   // CHECK: deflt = sycl::range<3>(1, 1, NUM);
   deflt = dim3(NUM);
-  // CHECK: deflt = sycl::range<3>(1, 1, 5);
+  // CHECK: deflt = {1, 1, 5};
   deflt = 5;
-  // CHECK: deflt = sycl::range<3>(1, 1, ((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1)));
+  // CHECK: deflt = {1, 1, ((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1))};
   deflt = ((NUM%32 == 0) ? NUM/32 : (NUM/32 + 1));
 
-  // CHECK: sycl::range<3> copyctor1 = sycl::range<3>(sycl::range<3>(1, 1, 33));
+  // CHECK: sycl::range<3> copyctor1 = sycl::range<3>((sycl::range<3>){1, 1, 33});
   dim3 copyctor1 = dim3((dim3)33);
-  // CHECK: sycl::range<3> copyctor1_1 = sycl::range<3>(sycl::range<3>(1, 1, NUM));
+  // CHECK: sycl::range<3> copyctor1_1 = sycl::range<3>((sycl::range<3>){1, 1, NUM});
   dim3 copyctor1_1 = dim3((dim3)NUM);
 
   // CHECK: sycl::range<3> copyctor2 = sycl::range<3>(copyctor1);
@@ -93,17 +93,17 @@ int main() {
   // CHECK: sycl::range<3> copyctor3(copyctor1);
   dim3 copyctor3(copyctor1);
 
-  // CHECK: func(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 2), sycl::range<3>(1, 2, 3));
+  // CHECK: func((sycl::range<3>){1, 1, 1}, sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 2), sycl::range<3>(1, 2, 3));
   func((dim3)1, dim3(1), dim3(2, 1), dim3(3, 2, 1));
-  // CHECK: func(sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM), sycl::range<3>(1, NUM, NUM), sycl::range<3>(NUM, NUM, NUM));
+  // CHECK: func((sycl::range<3>){1, 1, NUM}, sycl::range<3>(1, 1, NUM), sycl::range<3>(1, NUM, NUM), sycl::range<3>(NUM, NUM, NUM));
   func((dim3)NUM, dim3(NUM), dim3(NUM, NUM), dim3(NUM, NUM, NUM));
-  // CHECK: func(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 4));
+  // CHECK: func({1, 1, 1}, {1, 1, 2}, {1, 1, 3}, {1, 1, 4});
   func(1, 2, 3, 4);
-  // CHECK: func(sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM));
+  // CHECK: func({1, 1, NUM}, {1, 1, NUM}, {1, 1, NUM}, {1, 1, NUM});
   func(NUM, NUM, NUM, NUM);
-  // CHECK: func(deflt, sycl::range<3>(deflt), sycl::range<3>(deflt), sycl::range<3>(1, 1, 2 + 3 * 3));
+  // CHECK: func(deflt, sycl::range<3>(deflt), (sycl::range<3>)deflt, {1, 1, 2 + 3 * 3});
   func(deflt, dim3(deflt), (dim3)deflt, 2 + 3 * 3);
-  // CHECK: func(deflt, sycl::range<3>(deflt), sycl::range<3>(deflt), sycl::range<3>(1, 1, NUM + NUM * NUM));
+  // CHECK: func(deflt, sycl::range<3>(deflt), (sycl::range<3>)deflt, {1, 1, NUM + NUM * NUM});
   func(deflt, dim3(deflt), (dim3)deflt, NUM + NUM * NUM);
 
   // CHECK: sycl::range<3> test(3, 2, 1);
@@ -262,14 +262,14 @@ __global__ void kernel_foo(float *a, wrap *mt, unsigned int N) {
 }
 
 // CHECK: void dim3_foo() {
-// CHECK-NEXT:     DIM3_DEFAULT_VAR(block0(1, 1, 1));
+// CHECK-NEXT:     DIM3_DEFAULT_VAR(block0{1, 1, 1});
 // CHECK-NEXT:     CALL_FUNC( []() {
-// CHECK-NEXT:         sycl::range<3> block1(1, 1, 1);
+// CHECK-NEXT:         sycl::range<3> block1{1, 1, 1};
 // CHECK-NEXT:         sycl::range<3> block2{1, 1, 1};
 // CHECK-NEXT:         sycl::range<3> block3(1, 1, 2);
 // CHECK-NEXT:         sycl::range<3> block4(1, 3, 2);
 // CHECK-NEXT:         sycl::range<3> block5(4, 3, 2);
-// CHECK-NEXT:         DIM3_DEFAULT_VAR(block6(1, 1, 1));
+// CHECK-NEXT:         DIM3_DEFAULT_VAR(block6{1, 1, 1});
 // CHECK-NEXT:       });
 // CHECK-NEXT: }
 void dim3_foo() {
