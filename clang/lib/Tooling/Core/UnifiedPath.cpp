@@ -46,7 +46,7 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
 
   llvm::sys::path::remove_dots(Path, /* remove_dot_dot= */ true);
   llvm::sys::path::native(Path);
-
+  _AbsolutePath = Path.str();
   llvm::SmallString<512> RealPath;
   // We need make sure the input `Path` for llvm::sys::fs::real_path is
   // exsiting, or else the behavior of real_path() is unexpected. 
@@ -81,6 +81,29 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
   _CanonicalPath = RealPath.str();
 #endif
   CanonicalPathCache.insert(std::pair(_Path, _CanonicalPath));
+}
+
+void UnifiedPath::makeAbsolute(const std::string &CWD) {
+  if (_Path.empty()) {
+    return;
+  }
+  llvm::SmallString<512> Path(_Path);
+  llvm::sys::fs::expand_tilde(Path, Path);
+  if (!llvm::sys::path::is_absolute(Path)) {
+    llvm::SmallString<512> TempPath;
+    if (CWD == ".") {
+      llvm::sys::fs::current_path(TempPath);
+    } else {
+      UnifiedPath UnifiedCWD(CWD);
+      TempPath = UnifiedCWD.getCanonicalPath();
+    }
+    llvm::sys::path::append(TempPath, llvm::sys::path::Style::native, Path);
+    Path = TempPath;
+  }
+
+  llvm::sys::path::remove_dots(Path, /* remove_dot_dot= */ true);
+  llvm::sys::path::native(Path);
+  _AbsolutePath = Path.str();
 }
 std::unordered_map<std::string, std::string> UnifiedPath::CanonicalPathCache;
 bool operator==(const clang::tooling::UnifiedPath &LHS,

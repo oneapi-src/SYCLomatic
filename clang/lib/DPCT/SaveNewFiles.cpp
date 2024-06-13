@@ -38,6 +38,7 @@
 #include <cassert>
 #include <fstream>
 #include <queue>
+#include <filesystem>
 
 using namespace clang::dpct;
 using namespace llvm;
@@ -150,6 +151,90 @@ bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
   return true;
 }
 
+bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
+                        const clang::tooling::UnifiedPath &InRoot,
+                        const clang::tooling::UnifiedPath &OutRoot) {
+#if defined(_WIN64)
+  std::string Filename = sys::path::filename(FilePath.getPath()).str();
+#endif
+
+  if (!isChildPath(InRoot, FilePath) || DpctGlobalInfo::isExcluded(FilePath)) {
+    // Skip rewriting file path if FilePath is not child of InRoot
+    // E.g,
+    //  FilePath : /path/to/inc/util.cuh
+    //    InRoot : /path/to/inroot
+    //   OutRoot : /path/to/outroot
+    //  AnalysisScope : /path/to
+    return false;
+  }
+  auto PathDiff = std::mismatch(path::begin(FilePath.getAbsolutePath()),
+                                path::end(FilePath.getAbsolutePath()),
+                                path::begin(InRoot.getAbsolutePath()));
+  SmallString<512> NewFilePath = OutRoot.getAbsolutePath();
+  path::append(NewFilePath, PathDiff.first,
+               path::end(FilePath.getAbsolutePath()));
+#if defined(_WIN64)
+  sys::path::remove_filename(NewFilePath);
+  sys::path::append(NewFilePath, Filename);
+#endif
+
+  FilePath = NewFilePath;
+  return true;
+}
+
+void createSymLink(const clang::tooling::UnifiedPath &FilePath,
+                   const clang::tooling::UnifiedPath &InRoot,
+                   const clang::tooling::UnifiedPath &OutRoot) {
+    llvm::outs() << "Code pin " << OutRoot.getAbsolutePath() << "\n";
+  if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
+    auto SourcePath = FilePath;
+    while (
+        isChildPath(InRoot.getAbsolutePath(), SourcePath.getAbsolutePath())) {
+      auto AbsolutePath = SourcePath.getAbsolutePath();
+      if (llvm::sys::fs::is_symlink_file(AbsolutePath)) {
+        std::filesystem::path RealPathLink =
+            std::filesystem::read_symlink(
+                std::filesystem::path(AbsolutePath.str()))
+                .string();
+
+        // The code is to create symbol file and link them to the target file.
+        // The code will iterate to get the parent path of the
+        // absolute path of the file. Then create the target directory if the
+        // canonical path is not exists in the out root path.
+        auto ReplPath = SourcePath;
+        auto ReplCanonicalPath =
+            tooling::UnifiedPath(SourcePath.getCanonicalPath());
+        rewriteAbsoluteDir(ReplPath, InRoot, OutRoot);
+        rewriteDir(ReplCanonicalPath, InRoot, OutRoot);
+        if (llvm::sys::fs::is_directory(SourcePath.getAbsolutePath())) {
+          if (!llvm::sys::fs::exists(ReplCanonicalPath.getCanonicalPath()))
+            createDirectories(ReplCanonicalPath.getCanonicalPath());
+        }
+
+        auto AbsoluteParentPath = sys::path::parent_path(AbsolutePath);
+
+        if (llvm::sys::fs::is_symlink_file(AbsoluteParentPath)) {
+          createSymLink(AbsoluteParentPath, InRoot, OutRoot);
+        }
+        auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
+        rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
+        llvm::outs() << "Parrrrr " << ParentPath.getCanonicalPath() <<"\n";
+        if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
+          createDirectories(ParentPath.getAbsolutePath());
+        }
+        try {
+          std::filesystem::create_symlink(
+              std::filesystem::path(RealPathLink),
+              std::filesystem::path(ReplPath.getAbsolutePath().str()));
+        } catch (const std::filesystem::filesystem_error &e) {
+          std::cerr << "Error creating symbolic link: " << e.what()
+                    << std::endl;
+        }
+      }
+      SourcePath = path::parent_path(AbsolutePath);
+    }
+  }
+}
 void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
   rewriteFileName(FileName, FileName);
 }
@@ -976,7 +1061,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   for (const auto &Entry : IncludeFileMap) {
     // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
     clang::tooling::UnifiedPath FilePath = Entry.first;
-    // Generated CUDA file in outroot_debug. E.g., /path/to/outroot_debug/a.cu
+    // Generated CUDA file in outroot_codepin. E.g., /path/to/outroot_codepin/a.cu
     clang::tooling::UnifiedPath DebugFilePath = Entry.first;
     // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
     clang::tooling::UnifiedPath OriginalFilePath = Entry.first;
@@ -1061,6 +1146,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                       DebugFilePath.getCanonicalPath());
       }
     }
+    createSymLink(Entry.first, InRoot, SYCLMigratedOutRoot);
+    if (dpct::DpctGlobalInfo::isCodePinEnabled())
+      createSymLink(Entry.first, InRoot, CodePinCUDAFolder);
   }
 
   std::string ScriptFineName = "Makefile.dpct";

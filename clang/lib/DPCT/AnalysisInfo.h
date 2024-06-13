@@ -1044,6 +1044,12 @@ public:
   // Return the absolute path of \p File
   static std::optional<clang::tooling::UnifiedPath>
   getAbsolutePath(FileEntryRef File);
+
+  static std::optional<clang::tooling::UnifiedPath> getUnifiedPath(FileID ID);
+  // Return the unified path of \p File
+  static std::optional<clang::tooling::UnifiedPath>
+  getUnifiedPath(FileEntryRef File);
+
   static std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */);
   static std::string getTypeName(QualType QT, const ASTContext &Context);
