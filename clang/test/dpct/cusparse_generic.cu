@@ -196,6 +196,8 @@ void foo1() {
 
   //CHECK:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrRowOffsetsType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::csr);
   cusparseCreateCsr(&spMatDescr, rows, cols, nnz, NULL, NULL, NULL, csrRowOffsetsType, csrColIndType, idxBase, valueType);
+  //CHECK:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrColIndType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::coo);
+  cusparseCreateCoo(&spMatDescr, rows, cols, nnz, NULL, NULL, NULL, csrColIndType, idxBase, valueType);
 }
 
 //CHECK:void foo2(oneapi::mkl::sparse::matmat_descr_t *descr) {

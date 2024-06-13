@@ -218,6 +218,14 @@ FEATURE_REQUEST_FACTORY(
              ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16)))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusparseCreateCoo", DEREF(0),
+    CALL("std::make_shared<" + MapNames::getDpctNamespace() +
+             "sparse::sparse_matrix_desc>",
+         ARG(1), ARG(2), ARG(3), NULLPTR_OR_ARG(4), NULLPTR_OR_ARG(5),
+         NULLPTR_OR_ARG(6), ARG(7), ARG(7), ARG(8), ARG(9),
+         ARG(MapNames::getDpctNamespace() + "sparse::matrix_format::coo"))))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cusparseCreateCsr", DEREF(0),
     CALL("std::make_shared<" + MapNames::getDpctNamespace() +
              "sparse::sparse_matrix_desc>",
