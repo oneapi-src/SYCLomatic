@@ -519,7 +519,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaLaunchAttributeValue", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSMDescr_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSMAlg_t", std::make_shared<TypeNameRule>("int")},
-      {"cublasLtHandle_t", std::make_shared<TypeNameRule>(getDpctNamespace() +
+      {"cublasLtHandle_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
                                       "blas::experimental::lt_handle_ptr")},
       {"cublasLtMatmulDesc_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
