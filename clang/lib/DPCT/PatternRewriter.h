@@ -23,4 +23,5 @@ enum SourceFileType { SFT_CAndCXXSource, SFT_CMakeScript };
 void setFileTypeProcessed(enum SourceFileType FileType);
 
 extern std::set<std::string> MainSrcFilesHasCudaSyntex;
+extern bool LANG_Cplusplus_20_Used;
 #endif // DPCT_PATTERN_REWRITER_H

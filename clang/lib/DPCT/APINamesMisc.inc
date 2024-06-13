@@ -124,5 +124,9 @@ CONDITIONAL_FACTORY_ENTRY(
 
 REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStart",
                          getRemovedAPIWarningMessage("cudaProfilerStart"))
+
 REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStop",
                          getRemovedAPIWarningMessage("cudaProfilerStop"))
+
+REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuFuncSetAttribute",
+                         getRemovedAPIWarningMessage("cuFuncSetAttribute"))
