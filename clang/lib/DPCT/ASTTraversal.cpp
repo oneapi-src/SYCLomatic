@@ -9616,7 +9616,7 @@ void MemVarAnalysisRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
     auto FD = DpctGlobalInfo::getParentFunction(MemVar);
-    if (DpctGlobalInfo::useGroupLocalMemory() &&
+    if (FD && DpctGlobalInfo::useGroupLocalMemory() &&
         !DpctGlobalInfo::useFreeQueries() &&
         MemVar->hasAttr<CUDASharedAttr>()) {
       if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
