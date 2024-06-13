@@ -158,10 +158,12 @@ bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
     auto TemplateParm = TemplateParmsList.getParam(i);
     if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
       if (TTPD->hasDefaultArgument())
-        Arg.setAsType(TTPD->getDefaultArgumentInfo()->getTypeLoc());
+        Arg.setAsType(
+            TTPD->getDefaultArgument().getTypeSourceInfo()->getTypeLoc());
     } else if (auto NTTPD = dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
       if (NTTPD->hasDefaultArgument())
-        Arg.setAsNonType(NTTPD->getDefaultArgument());
+        Arg.setAsType(
+            NTTPD->getDefaultArgument().getTypeSourceInfo()->getTypeLoc());
     }
   }
   return false;
@@ -2225,6 +2227,7 @@ void DpctGlobalInfo::resetInfo() {
   FileRelpsMap.clear();
   DigestMap.clear();
   MacroDefines.clear();
+  CAPPInfoMap.clear();
   CurrentMaxIndex = 0;
   CurrentIndexInRule = 0;
   IncludingFileSet.clear();
@@ -6270,10 +6273,12 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         // DPCT should stop the deduction.
         return;
       }
-      if (CTSD->getTypeAsWritten() &&
-          CTSD->getTypeAsWritten()->getType()->getTypeClass() ==
-              Type::TemplateSpecialization) {
-        auto TL = CTSD->getTypeAsWritten()->getTypeLoc();
+      const auto *TA = CTSD->getTemplateArgsAsWritten();
+      if (TA && TA->getTemplateArgs()
+                        ->getTypeSourceInfo()
+                        ->getType()
+                        ->getTypeClass() == Type::TemplateSpecialization) {
+        auto TL = TA->getTemplateArgs()->getTypeSourceInfo()->getTypeLoc();
         auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
         for (unsigned i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
