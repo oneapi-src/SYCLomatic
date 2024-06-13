@@ -519,7 +519,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaLaunchAttributeValue", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSMDescr_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpSMAlg_t", std::make_shared<TypeNameRule>("int")},
-      {"cublasLtHandle_t", std::make_shared<TypeNameRule>("int")},
+      {"cublasLtHandle_t", std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "blas::experimental::lt_handle_ptr")},
       {"cublasLtMatmulDesc_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
                                       "blas::experimental::matmul_desc_ptr")},
@@ -2071,31 +2072,28 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
       {"cublasZtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
       // cublasLt
-      {"cublasLtCreate", ""},
-      {"cublasLtDestroy", ""},
-      {"cublasLtMatmulDescCreate", "std::make_shared<" + getDpctNamespace() +
-                                       "blas::experimental::matmul_desc_t>"},
+      {"cublasLtCreate",
+       "new " + getDpctNamespace() + "blas::experimental::lt_handle_t"},
+      {"cublasLtDestroy",
+       "delete " + getDpctNamespace() + "blas::experimental::lt_handle_t"},
+      {"cublasLtMatmulDescCreate",
+       "new " + getDpctNamespace() + "blas::experimental::matmul_desc_t"},
       {"cublasLtMatmulDescDestroy",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matmul_desc_t>::reset"},
+       "delete " + getDpctNamespace() + "blas::experimental::matmul_desc_t"},
       {"cublasLtMatmulDescSetAttribute",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matmul_desc_t>::set_attribute"},
+       getDpctNamespace() + "blas::experimental::matmul_desc_t::set_attribute"},
       {"cublasLtMatmulDescGetAttribute",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matmul_desc_t>::get_attribute"},
+       getDpctNamespace() + "blas::experimental::matmul_desc_t::get_attribute"},
       {"cublasLtMatrixLayoutCreate",
-       "std::make_shared<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>"},
+       "new " + getDpctNamespace() + "blas::experimental::matrix_layout_t"},
       {"cublasLtMatrixLayoutDestroy",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>::reset"},
+       "delete " + getDpctNamespace() + "blas::experimental::matrix_layout_t"},
       {"cublasLtMatrixLayoutSetAttribute",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>::set_attribute"},
+       getDpctNamespace() +
+           "blas::experimental::matrix_layout_t::set_attribute"},
       {"cublasLtMatrixLayoutGetAttribute",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::matrix_layout_t>::get_attribute"},
+       getDpctNamespace() +
+           "blas::experimental::matrix_layout_t::get_attribute"},
       {"cublasLtMatmul", getDpctNamespace() + "blas::experimental::matmul"},
       {"cublasLtMatmulPreferenceCreate", ""},
       {"cublasLtMatmulPreferenceDestroy", ""},
@@ -2103,17 +2101,15 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasLtMatmulPreferenceGetAttribute", ""},
       {"cublasLtMatmulAlgoGetHeuristic", ""},
       {"cublasLtMatrixTransformDescCreate",
-       "std::make_shared<" + getDpctNamespace() +
-           "blas::experimental::transform_desc_t>"},
+       "new " + getDpctNamespace() + "blas::experimental::transform_desc_t"},
       {"cublasLtMatrixTransformDescDestroy",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::transform_desc_t>::reset"},
+       "delete" + getDpctNamespace() + "blas::experimental::transform_desc_t"},
       {"cublasLtMatrixTransformDescSetAttribute",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::transform_desc_t>::set_attribute"},
+       getDpctNamespace() +
+           "blas::experimental::transform_desc_t::set_attribute"},
       {"cublasLtMatrixTransformDescGetAttribute",
-       "std::shared_ptr<" + getDpctNamespace() +
-           "blas::experimental::transform_desc_t>::get_attribute"},
+       getDpctNamespace() +
+           "blas::experimental::transform_desc_t::get_attribute"},
       {"cublasLtMatrixTransform",
        getDpctNamespace() + "blas::experimental::matrix_transform"},
   };

@@ -7,13 +7,9 @@
 #include "cublasLt.h"
 
 void foo1 () {
-  // CHECK: int ltHandle;
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtCreate was removed because this functionality is redundant in SYCL.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasLtDestroy was removed because this functionality is redundant in SYCL.
-  // CHECK-NEXT: */
+  // CHECK: dpct::blas::experimental::lt_handle_ptr ltHandle;
+  // CHECK-NEXT: ltHandle = new dpct::blas::experimental::lt_handle_t();
+  // CHECK-NEXT: delete (ltHandle);
   cublasLtHandle_t ltHandle;
   cublasLtCreate(&ltHandle);
   cublasLtDestroy(ltHandle);
@@ -23,7 +19,7 @@ void foo1 () {
   // CHECK-NEXT: uint64_t rows;
   // CHECK-NEXT: uint64_t cols;
   // CHECK-NEXT: int64_t ld;
-  // CHECK-NEXT: matLayout = std::make_shared<dpct::blas::experimental::matrix_layout_t>(type, rows, cols, ld);
+  // CHECK-NEXT: matLayout = new dpct::blas::experimental::matrix_layout_t(type, rows, cols, ld);
   cublasLtMatrixLayout_t matLayout;
   cudaDataType type;
   uint64_t rows;
@@ -37,7 +33,7 @@ void foo1 () {
   // CHECK-NEXT: size_t *sizeWritten1;
   // CHECK-NEXT: matLayout->get_attribute(attr1, buf1);
   // CHECK-NEXT: matLayout->set_attribute(attr1, buf1);
-  // CHECK-NEXT: matLayout.reset();
+  // CHECK-NEXT: delete (matLayout);
   cublasLtMatrixLayoutAttribute_t attr1;
   void *buf1;
   size_t sizeInBytes1;
@@ -49,7 +45,7 @@ void foo1 () {
   // CHECK: dpct::blas::experimental::matmul_desc_ptr matmulDesc;
   // CHECK-NEXT: dpct::blas::compute_type computeType;
   // CHECK-NEXT: dpct::library_data_t scaleType;
-  // CHECK-NEXT: matmulDesc = std::make_shared<dpct::blas::experimental::matmul_desc_t>(computeType, scaleType);
+  // CHECK-NEXT: matmulDesc = new dpct::blas::experimental::matmul_desc_t(computeType, scaleType);
   cublasLtMatmulDesc_t matmulDesc;
   cublasComputeType_t computeType;
   cudaDataType_t scaleType;
@@ -61,7 +57,7 @@ void foo1 () {
   // CHECK-NEXT: size_t *sizeWritten2;
   // CHECK-NEXT: matmulDesc->get_attribute(attr2, buf2);
   // CHECK-NEXT: matmulDesc->set_attribute(attr2, buf2);
-  // CHECK-NEXT: matmulDesc.reset();
+  // CHECK-NEXT: delete (matmulDesc);
   cublasLtMatmulDescAttributes_t attr2;
   void *buf2;
   size_t sizeInBytes2;
@@ -111,7 +107,7 @@ void foo1 () {
 }
 
 void foo2() {
-  // CHECK: int lightHandle;
+  // CHECK: dpct::blas::experimental::lt_handle_ptr lightHandle;
   // CHECK-NEXT: dpct::blas::experimental::matmul_desc_ptr computeDesc;
   // CHECK-NEXT: const void *alpha;
   // CHECK-NEXT: const void *A;
@@ -127,7 +123,7 @@ void foo2() {
   // CHECK-NEXT: void *workspace;
   // CHECK-NEXT: size_t workspaceSizeInBytes;
   // CHECK-NEXT: dpct::queue_ptr stream;
-  // CHECK-NEXT: dpct::blas::experimental::matmul(computeDesc, alpha, A, Adesc, B, Bdesc, beta, C, Cdesc, D, Ddesc, stream);
+  // CHECK-NEXT: dpct::blas::experimental::matmul(lightHandle, computeDesc, alpha, A, Adesc, B, Bdesc, beta, C, Cdesc, D, Ddesc, stream);
   cublasLtHandle_t lightHandle;
   cublasLtMatmulDesc_t computeDesc;
   const void *alpha;
@@ -289,12 +285,12 @@ void foo3() {
 void foo4() {
   // CHECK: dpct::blas::experimental::transform_desc_ptr transformDesc;
   // CHECK-NEXT: dpct::library_data_t scaleType;
-  // CHECK-NEXT: transformDesc = std::make_shared<dpct::blas::experimental::transform_desc_t>(scaleType);
+  // CHECK-NEXT: transformDesc = new dpct::blas::experimental::transform_desc_t(scaleType);
   // CHECK-NEXT: oneapi::mkl::transpose opT = oneapi::mkl::transpose::trans;
   // CHECK-NEXT: size_t sizeWritten;
   // CHECK-NEXT: transformDesc->set_attribute(dpct::blas::experimental::transform_desc_t::attribute::trans_a, &opT);
   // CHECK-NEXT: transformDesc->get_attribute(dpct::blas::experimental::transform_desc_t::attribute::trans_a, &opT);
-  // CHECK-NEXT: transformDesc.reset();
+  // CHECK-NEXT: delete (transformDesc);
   cublasLtMatrixTransformDesc_t transformDesc;
   cudaDataType scaleType;
   cublasLtMatrixTransformDescCreate(&transformDesc, scaleType);
@@ -304,7 +300,7 @@ void foo4() {
   cublasLtMatrixTransformDescGetAttribute(transformDesc, CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA, &opT, sizeof(opT), &sizeWritten);
   cublasLtMatrixTransformDescDestroy(transformDesc);
 
-  // CHECK: int lightHandle;
+  // CHECK: dpct::blas::experimental::lt_handle_ptr lightHandle;
   // CHECK-NEXT: const void *alpha;
   // CHECK-NEXT: const void *A;
   // CHECK-NEXT: dpct::blas::experimental::matrix_layout_ptr Adesc;

@@ -2489,12 +2489,32 @@ enum class pointer_mode_t {
   alpha_device_vector_beta_host
 };
 
+class lt_handle_t;
+using lt_handle_ptr = lt_handle_t *;
 class matrix_layout_t;
-using matrix_layout_ptr = std::shared_ptr<matrix_layout_t>;
+using matrix_layout_ptr = matrix_layout_t *;
 class matmul_desc_t;
-using matmul_desc_ptr = std::shared_ptr<matmul_desc_t>;
+using matmul_desc_ptr = matmul_desc_t *;
 class transform_desc_t;
-using transform_desc_ptr = std::shared_ptr<transform_desc_t>;
+using transform_desc_ptr = transform_desc_t *;
+class transform_desc_t;
+using transform_desc_ptr = transform_desc_t *;
+
+class lt_handle_t {
+public:
+  lt_handle_t() {}
+  void init(sycl::queue *q_ptr) {
+    _engine = dnnl::sycl_interop::make_engine(q_ptr->get_device(),
+                                              q_ptr->get_context());
+    _engine_stream = dnnl::sycl_interop::make_stream(_engine, *q_ptr);
+  }
+  dnnl::engine get_engine() const noexcept { return _engine; }
+  dnnl::stream get_engine_stream() const noexcept { return _engine_stream; };
+
+private:
+  dnnl::engine _engine;
+  dnnl::stream _engine_stream;
+};
 
 class matrix_layout_t {
 public:
@@ -2552,11 +2572,10 @@ private:
   std::int64_t _strided_batch_offset;
   std::int64_t _plane_offset;
 
-  friend void matmul(dnnl::engine engine, dnnl::stream engine_stream,
-                     matmul_desc_ptr computeDesc, const void *alpha,
-                     const void *a, matrix_layout_ptr a_desc, const void *b,
-                     matrix_layout_ptr b_desc, const void *beta, const void *c,
-                     matrix_layout_ptr c_desc, void *d,
+  friend void matmul(lt_handle_ptr handle, matmul_desc_ptr computeDesc,
+                     const void *alpha, const void *a, matrix_layout_ptr a_desc,
+                     const void *b, matrix_layout_ptr b_desc, const void *beta,
+                     const void *c, matrix_layout_ptr c_desc, void *d,
                      matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
   friend void matrix_transform(transform_desc_ptr transform_desc,
                                const void *alpha, const void *a,
@@ -2683,11 +2702,10 @@ private:
   std::int32_t _atomic_sync_num_chunks_d_rows;
   std::int32_t _atomic_sync_num_chunks_d_cols;
 
-  friend void matmul(dnnl::engine engine, dnnl::stream engine_stream,
-                     matmul_desc_ptr computeDesc, const void *alpha,
-                     const void *a, matrix_layout_ptr a_desc, const void *b,
-                     matrix_layout_ptr b_desc, const void *beta, const void *c,
-                     matrix_layout_ptr c_desc, void *d,
+  friend void matmul(lt_handle_ptr handle, matmul_desc_ptr computeDesc,
+                     const void *alpha, const void *a, matrix_layout_ptr a_desc,
+                     const void *b, matrix_layout_ptr b_desc, const void *beta,
+                     const void *c, matrix_layout_ptr c_desc, void *d,
                      matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
 };
 
@@ -2907,14 +2925,14 @@ sycl::event matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
 }
 } // namespace detail
 
-inline void matmul(dnnl::engine engine, dnnl::stream engine_stream,
-                   matmul_desc_ptr compute_desc, const void *alpha,
-                   const void *a, matrix_layout_ptr a_desc, const void *b,
-                   matrix_layout_ptr b_desc, const void *beta, const void *c,
-                   matrix_layout_ptr c_desc, void *d, matrix_layout_ptr d_desc,
-                   dpct::queue_ptr q_ptr) {
+inline void matmul(lt_handle_ptr handle, matmul_desc_ptr compute_desc,
+                   const void *alpha, const void *a, matrix_layout_ptr a_desc,
+                   const void *b, matrix_layout_ptr b_desc, const void *beta,
+                   const void *c, matrix_layout_ptr c_desc, void *d,
+                   matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
   if (!q_ptr)
     q_ptr = &get_default_queue();
+  handle->init(q_ptr);
   bool vector_alpha = false;
   if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
       compute_desc->_pointer_mode ==
@@ -3037,9 +3055,9 @@ inline void matmul(dnnl::engine engine, dnnl::stream engine_stream,
   auto dst_md = dnnl::memory::desc(
       dst_dims, detail::dpct_type_to_dnnl_type(d_type), dst_strides);
 
-  auto *src_mem = new dnnl::memory(src_md, engine);
-  auto *weights_mem = new dnnl::memory(weights_md, engine);
-  auto *dst_mem = new dnnl::memory(dst_md, engine);
+  auto *src_mem = new dnnl::memory(src_md, handle->get_engine());
+  auto *weights_mem = new dnnl::memory(weights_md, handle->get_engine());
+  auto *dst_mem = new dnnl::memory(dst_md, handle->get_engine());
 
   size_t src_type_size =
       dpct::detail::library_data_size[static_cast<unsigned int>(a_type)] / 8;
@@ -3064,24 +3082,26 @@ inline void matmul(dnnl::engine engine, dnnl::stream engine_stream,
         8;
     alpha_data = dpct::dpct_malloc(Size, *q_ptr);
     dpct::dpct_memcpy(alpha_data, alpha, Size, automatic, *q_ptr);
-    scales_alpha = new dnnl::memory(
-        {{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}}, engine);
+    scales_alpha =
+        new dnnl::memory({{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}},
+                         handle->get_engine());
     dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha_data, Size,
                       automatic, *q_ptr);
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
 
-  auto matmul_pd = dnnl::matmul::primitive_desc(engine, src_md, weights_md,
-                                                dst_md, matmul_attr);
+  auto matmul_pd = dnnl::matmul::primitive_desc(
+      handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
   auto matmul_prim = dnnl::matmul(matmul_pd);
-  matmul_prim.execute(engine_stream, matmul_args);
-
+  sycl::event matmul_prim_event = dnnl::sycl_interop::execute(
+      matmul_prim, handle->get_engine_stream(), matmul_args);
   size_t dst_type_size =
       dpct::detail::library_data_size[static_cast<unsigned int>(d_type)] / 8;
   sycl::event e;
   e = dpct::detail::dpct_memcpy(*q_ptr, new_d, dst_mem->get_data_handle(),
-                                dst_type_size * n * new_ldd, automatic);
+                                dst_type_size * n * new_ldd, automatic,
+                                {matmul_prim_event});
   if (vector_alpha)
     e = detail::scale_d_with_vector_alpha(q_ptr, m, n, new_d, d_type, alpha,
                                           scale_type);
