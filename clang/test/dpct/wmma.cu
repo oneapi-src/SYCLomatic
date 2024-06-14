@@ -97,7 +97,7 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
     // Bounds checking
     if (aRow < m_ld && aCol < k_ld && bRow < k_ld && bCol < n_ld) {
       // Load the inputs
-      // CHECK: dpct::experimental::matrix::joint_matrix_load( a_frag, a + aCol + aRow * lda, lda);
+      // CHECK: dpct::experimental::matrix::joint_matrix_load(a_frag, a + aCol + aRow * lda, lda);
       nvcuda::wmma::load_matrix_sync(a_frag, a + aCol + aRow * lda, lda);
       // CHECK: dpct::experimental::matrix::joint_matrix_load(b_frag, b + bRow + bCol * ldb, ldb);
       nvcuda::wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
