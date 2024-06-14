@@ -1,5 +1,4 @@
-// UNSUPPORTED: system-linux
-// RUN: cd %S && mklink link\test\test.hpp target\test\test.hpp
+// RUN: cd %S &&  rm link/test/test.hpp && ln -nfs  %S/target/test/test.hpp link/test/test.hpp
 // RUN: dpct  --in-root=%S --out-root=%T/out  %s --cuda-include-path="%cuda-path/include"  -- -I %S/link -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/vector_add_format.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/out/link/test/test.hpp --match-full-lines %S/link/test/test.hpp
