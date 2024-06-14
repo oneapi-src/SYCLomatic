@@ -295,3 +295,24 @@ class Dim3Struct {
   dim3 x = dim3(3, 4);
   void f() { dim3(5, 6); }
 };
+
+struct A {
+  int x;
+  dim3 y;
+  int z;
+};
+struct B {
+  int x;
+  A y;
+  dim3 z;
+};
+
+int dim3_implicit_ctor() {
+  dim3 d;
+  d.x = 5;
+  B b1 = {};
+  B b2 = {0};
+  B b3 = {0, {}};
+  B b4 = {0, {1}};
+  B b5 = {0, {1, {1}}};
+}

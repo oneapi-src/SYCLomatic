@@ -9,17 +9,17 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam0 = {};
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam0 = {{{\{}}}, {1, 1, 1}, {1, 1, 1}};
   cudaKernelNodeParams kernelNodeParam0 = {};
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam1 = {0};
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam1 = {0, {1, 1, 1}, {1, 1, 1}};
   cudaKernelNodeParams kernelNodeParam1 = {0};
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam2 = {0, {1, 1, 0}};
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam2 = {0, {1, 1, 0}, {1, 1, 1}};
   cudaKernelNodeParams kernelNodeParam2 = {0, 0};
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
@@ -30,17 +30,17 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam4{};
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam4{{{\{}}}, {1, 1, 1}, {1, 1, 1}};
   cudaKernelNodeParams kernelNodeParam4{};
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam5{0};
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam5{0, {1, 1, 1}, {1, 1, 1}};
   cudaKernelNodeParams kernelNodeParam5{0};
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam6{0, {1, 1, 0}};
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam6{0, {1, 1, 0}, {1, 1, 1}};
   cudaKernelNodeParams kernelNodeParam6{0, 0};
   // CHECK: /*
   // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.

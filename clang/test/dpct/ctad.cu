@@ -20,7 +20,7 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // range default constructor does the right thing.
-  // CHECK: sycl::range<3> deflt{1, 1, 1};
+  // CHECK: sycl::range deflt{1, 1, 1};
   dim3 deflt;
 
   // CHECK:  sycl::range deflt_1{0, 0, 0};
@@ -28,12 +28,12 @@ int main() {
   cudaExtent deflt_1;
   cudaPos deflt_2;
 
-  // CHECK: sycl::range<3> round1_1(1, 1, NUM);
+  // CHECK: sycl::range round1_1(1, 1, NUM);
   dim3 round1_1(NUM);
 
   cudaExtent exten = make_cudaExtent(1,1,1);;
 
-  // CHECK: sycl::range<3> castini = (sycl::range<3>){1, 1, 4};
+  // CHECK: sycl::range castini = (sycl::range<3>){1, 1, 4};
   dim3 castini = (dim3)4;
 
   // CHECK:   sycl::range castini_1 = exten;
@@ -41,14 +41,14 @@ int main() {
   cudaExtent castini_1 = exten;
   cudaPos castini_2 = deflt_2;
 
-  // CHECK: sycl::range<3> copyctor1 = sycl::range<3>((sycl::range<3>){1, 1, 33});
+  // CHECK: sycl::range copyctor1 = sycl::range<3>((sycl::range<3>){1, 1, 33});
   dim3 copyctor1 = dim3((dim3)33);
 
 
-  // CHECK: sycl::range<3> copyctor2 = sycl::range<3>(copyctor1);
+  // CHECK: sycl::range copyctor2 = sycl::range<3>(copyctor1);
   dim3 copyctor2 = dim3(copyctor1);
 
-  // CHECK: sycl::range<3> copyctor3(copyctor1);
+  // CHECK: sycl::range copyctor3(copyctor1);
   dim3 copyctor3(copyctor1);
 
   // CHECK: sycl::range copyctor31(exten);
@@ -85,7 +85,7 @@ int main() {
     dim3 **ppw;
   };
 
-  // CHECK: sycl::range<3> gpu_blocks(1, 1, 1 / (castini[2] * 200));
+  // CHECK: sycl::range gpu_blocks(1, 1, 1 / (castini[2] * 200));
   dim3 gpu_blocks(1 / (castini.x * 200));
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {

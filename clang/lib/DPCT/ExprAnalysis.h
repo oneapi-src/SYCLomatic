@@ -969,6 +969,22 @@ private:
   std::stack<bool> ContainNonAdditiveOp;
 };
 
+class InitListAnalysis : private ExprAnalysis {
+public:
+  explicit InitListAnalysis(const InitListExpr *ILE);
+  SourceLocation getReplaceLoc() const { return ReplaceLoc; }
+  std::string getReplacedInitListStr() const { return ReplacedInitListStr; }
+
+private:
+  void dispatch(const Stmt *Expression) override;
+  void analyzeExpr(const ImplicitValueInitExpr *IVIE);
+  void analyzeExpr(const InitListExpr *ILE);
+  void analyzeExpr(const CXXConstructExpr *Ctor);
+
+  SourceLocation ReplaceLoc;
+  std::string ReplacedInitListStr = "{";
+};
+
 } // namespace dpct
 } // namespace clang
 

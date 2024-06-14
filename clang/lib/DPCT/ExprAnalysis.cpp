@@ -639,6 +639,17 @@ void ExprAnalysis::analyzeExpr(const CXXNewExpr *New) {
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
+    const auto *InitList = DpctGlobalInfo::findAncestor<InitListExpr>(Ctor);
+    if (InitList &&
+        (Ctor->getParenOrBraceRange().isInvalid() ||
+         Ctor->getBeginLoc() == Ctor->getEndLoc()) &&
+        Ctor->getArg(0)->isDefaultArgument()) {
+      // Handle implicit ctor in linit list: cudaKernelNodeParams p = {0};
+      InitListAnalysis ILA(InitList);
+      addReplacement(InitList->getBeginLoc(), InitList->getEndLoc(),
+                     ILA.getReplacedInitListStr());
+      return;
+    }
     // Only handle the param of dim3 here.
     if (Ctor->getNumArgs() == 1) {
       dispatch(Ctor->getArg(0));
@@ -976,12 +987,7 @@ inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
   analyzeType(Cast->getTypeInfoAsWritten(), Cast);
-  if (Cast->getCastKind() == CastKind::CK_ConstructorConversion) {
-    if (DpctGlobalInfo::getUnqualifiedTypeName(Cast->getTypeAsWritten()) ==
-        "dim3")
-      return dispatch(Cast->getSubExpr());
-  }
-  dispatch(Cast->getSubExprAsWritten());
+  dispatch(Cast->getSubExpr());
 }
 
 // Precondition: CE != nullptr
@@ -2411,6 +2417,69 @@ void IndexAnalysis::analyzeExpr(const ParenExpr *PE) {
   dispatch(PE->getSubExpr());
 }
 void IndexAnalysis::analyzeExpr(const IntegerLiteral *IL) { return; }
+
+InitListAnalysis::InitListAnalysis(const InitListExpr *ILE) : ExprAnalysis() {
+  int LastDim3ImplicitArg = ILE->getNumInits() - 1;
+  while (LastDim3ImplicitArg >= 0) {
+    const auto *Init = ILE->getInit(LastDim3ImplicitArg);
+    const auto *Ctor = dyn_cast<CXXConstructExpr>(Init);
+    if (Init->getBeginLoc() == Init->getEndLoc() && Ctor &&
+        Ctor->getConstructor()->getDeclName().getAsString() == "dim3")
+      break;
+    --LastDim3ImplicitArg;
+  }
+  if (LastDim3ImplicitArg < 0) {
+    return;
+  }
+  ReplaceLoc = ILE->getBeginLoc().getLocWithOffset(1);
+  for (int Index = 0; Index <= LastDim3ImplicitArg; ++Index) {
+    const auto *Init = ILE->getInit(Index);
+    dispatch(Init);
+  }
+  ReplacedInitListStr.replace(1, 2, "");
+  ReplacedInitListStr += "}";
+}
+
+void InitListAnalysis::dispatch(const Stmt *Expression) {
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(ImplicitValueInitExpr)
+    ANALYZE_EXPR(InitListExpr)
+    ANALYZE_EXPR(CXXConstructExpr)
+  default:
+    if (const auto *E = dyn_cast<Expr>(Expression)) {
+      ArgumentAnalysis A;
+      A.analyze(E);
+      ReplacedInitListStr += ", " + A.getReplacedString();
+    }
+  }
+}
+
+void InitListAnalysis::analyzeExpr(const ImplicitValueInitExpr *IVIE) {
+  ReplacedInitListStr += ", {}";
+}
+
+void InitListAnalysis::analyzeExpr(const InitListExpr *ILE) {
+  if (ILE->getBeginLoc() == ILE->getEndLoc()) {
+    InitListAnalysis ILA(ILE);
+    ReplacedInitListStr += ", " + ILA.getReplacedInitListStr();
+  } else {
+    ArgumentAnalysis A;
+    A.analyze(ILE);
+    ReplacedInitListStr += ", " + A.getReplacedString();
+  }
+}
+
+void InitListAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
+  if ((Ctor->getParenOrBraceRange().isInvalid() ||
+       Ctor->getBeginLoc() == Ctor->getEndLoc()) &&
+      Ctor->getArg(0)->isDefaultArgument()) {
+    ReplacedInitListStr += ", {1, 1, 1}";
+  } else {
+    ArgumentAnalysis A;
+    A.analyze(Ctor);
+    ReplacedInitListStr += ", " + A.getReplacedString();
+  }
+}
 
 } // namespace dpct
 } // namespace clang
