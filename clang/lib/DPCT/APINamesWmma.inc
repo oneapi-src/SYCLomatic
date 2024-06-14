@@ -11,7 +11,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("nvcuda::wmma::fill_fragment",
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::matrix::joint_matrix_fill",
-                            SUBGROUP, ARG(0), ARG(1))),
+                            ARG(0), ARG(1))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::fill_fragment",
                       Diagnostics::API_NOT_MIGRATED))
 
@@ -22,11 +22,11 @@ CONDITIONAL_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("nvcuda::wmma::load_matrix_sync",
                            CALL(MapNames::getDpctNamespace() +
                                     "experimental::matrix::joint_matrix_load",
-                                SUBGROUP, ARG(0), ARG(1), ARG(2))),
+                                ARG(0), ARG(1), ARG(2))),
         CALL_FACTORY_ENTRY("nvcuda::wmma::load_matrix_sync",
                            CALL(MapNames::getDpctNamespace() +
                                     "experimental::matrix::joint_matrix_load",
-                                SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3)))),
+                                ARG(0), ARG(1), ARG(2), ARG(3)))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::load_matrix_sync",
                       Diagnostics::API_NOT_MIGRATED))
 
@@ -35,7 +35,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("nvcuda::wmma::mma_sync",
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::matrix::joint_matrix_mad",
-                            SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
+                            ARG(0), ARG(1), ARG(2), ARG(3))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::mma_sync", Diagnostics::API_NOT_MIGRATED))
 
 CONDITIONAL_FACTORY_ENTRY(
@@ -43,6 +43,6 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("nvcuda::wmma::store_matrix_sync",
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::matrix::joint_matrix_store",
-                            SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
+                            ARG(0), ARG(1), ARG(2), ARG(3))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::store_matrix_sync",
                       Diagnostics::API_NOT_MIGRATED))

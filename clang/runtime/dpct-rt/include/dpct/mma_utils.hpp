@@ -57,14 +57,16 @@ class joint_matrix {
       matrix_size_traits<use, m, n, k>::cols, layout::value>;
 
 public:
-  joint_matrix()
-      : matrix(), g(sycl::ext::oneapi::experimental::this_sub_group()) {}
+  joint_matrix() : matrix() {}
   joint_matrix(joint_matrix &other) {
-    sycl_matrix::joint_matrix_copy(g, other.get(), matrix);
+    sycl_matrix::joint_matrix_copy(
+        sycl::ext::oneapi::experimental::this_sub_group(), other.get(), matrix);
   }
   joint_matrix &operator=(joint_matrix &other) {
     if (this != &other) {
-      sycl_matrix::joint_matrix_copy(g, other.get(), matrix);
+      sycl_matrix::joint_matrix_copy(
+          sycl::ext::oneapi::experimental::this_sub_group(), other.get(),
+          matrix);
     }
     return *this;
   }
@@ -74,25 +76,23 @@ public:
   const joint_matrix_type &get() const { return matrix; }
 
 private:
-  sycl::sub_group g;
   joint_matrix_type matrix;
 };
 
 template <typename MT, typename T>
-void joint_matrix_load(sycl::sub_group g, MT &res, const T *src,
-                       unsigned stride) {
+void joint_matrix_load(MT &res, const T *src, unsigned stride) {
   sycl_matrix::joint_matrix_load(
-      g, res.get(),
+      sycl::ext::oneapi::experimental::this_sub_group(), res.get(),
       sycl::address_space_cast<sycl::access::address_space::generic_space,
                                sycl::access::decorated::no, const T>(src),
       stride);
 }
 
 template <typename MT, typename T>
-void joint_matrix_load(sycl::sub_group g, MT &res, const T *src,
-                       unsigned stride, layout_t layout) {
+void joint_matrix_load(MT &res, const T *src, unsigned stride,
+                       layout_t layout) {
   sycl_matrix::joint_matrix_load(
-      g, res.get(),
+      sycl::ext::oneapi::experimental::this_sub_group(), res.get(),
       sycl::address_space_cast<sycl::access::address_space::generic_space,
                                sycl::access::decorated::no, const T>(src),
       stride,
@@ -101,10 +101,10 @@ void joint_matrix_load(sycl::sub_group g, MT &res, const T *src,
 }
 
 template <typename MT, typename T>
-void joint_matrix_store(sycl::sub_group g, T *dest, const MT &res,
-                        unsigned stride, layout_t layout) {
+void joint_matrix_store(T *dest, const MT &res, unsigned stride,
+                        layout_t layout) {
   sycl_matrix::joint_matrix_store(
-      g, res.get(),
+      sycl::ext::oneapi::experimental::this_sub_group(), res.get(),
       sycl::address_space_cast<sycl::access::address_space::generic_space,
                                sycl::access::decorated::no, T>(dest),
       stride,
@@ -112,15 +112,16 @@ void joint_matrix_store(sycl::sub_group g, T *dest, const MT &res,
                                     : sycl_matrix::layout::col_major);
 }
 
-template <typename MT, typename T>
-void joint_matrix_fill(sycl::sub_group g, MT &m, const T &v) {
-  sycl_matrix::joint_matrix_fill(g, m.get(), v);
+template <typename MT, typename T> void joint_matrix_fill(MT &m, const T &v) {
+  sycl_matrix::joint_matrix_fill(
+      sycl::ext::oneapi::experimental::this_sub_group(), m.get(), v);
 }
 
 template <typename Td, typename Ta, typename Tb, typename Tc>
-void joint_matrix_mad(sycl::sub_group g, Td &d, const Ta &a, const Tb &b,
-                      const Tc &c) {
-  sycl_matrix::joint_matrix_mad(g, d.get(), a.get(), b.get(), c.get());
+void joint_matrix_mad(Td &d, const Ta &a, const Tb &b, const Tc &c) {
+  sycl_matrix::joint_matrix_mad(
+      sycl::ext::oneapi::experimental::this_sub_group(), d.get(), a.get(),
+      b.get(), c.get());
 };
 
 } // namespace matrix
