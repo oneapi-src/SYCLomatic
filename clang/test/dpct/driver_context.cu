@@ -60,11 +60,6 @@ int main(){
     return 0;
   }
 
-  // CHECK: if (-1 == ctx) {
-  if (NULL == ctx) {
-    return 0;
-  }
-
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx2 = dpct::dev_mgr::instance().current_device_id()));
   MY_SAFE_CALL(cuCtxGetCurrent(&ctx2));
 

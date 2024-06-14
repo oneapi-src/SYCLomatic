@@ -2215,7 +2215,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         }
         if (AnotherSide) {
           auto E = AnotherSide->IgnoreImplicitAsWritten();
-          if (dyn_cast<CXXNullPtrLiteralExpr>(E) || dyn_cast<GNUNullExpr>(E)) {
+          if (isa<CXXNullPtrLiteralExpr>(E) || isa<GNUNullExpr>(E)) {
             emplaceTransformation(new ReplaceStmt(E, "-1"));
           }
         }
