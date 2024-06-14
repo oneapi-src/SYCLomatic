@@ -7185,8 +7185,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
     bool IsAssigned) {
   auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
   auto EventArg = CE->getArg(0);
-  auto StreamName = getStmtSpelling(StreamArg);
-  auto ArgName = getStmtSpelling(EventArg);
+  ExprAnalysis StreamEA(StreamArg);
+  ExprAnalysis Arg0EA(EventArg);
+  auto StreamName = StreamEA.getReplacedString();
+  auto ArgName = Arg0EA.getReplacedString();
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &SM = DpctGlobalInfo::getSourceManager();
