@@ -1,0 +1,4 @@
+# DPCT3001:1: "configure_file" is used to copy an input file to an output file while performing transformations of the input file content. You may need to copy the input file from CUDA code project to the migrated code project to make sure the command configure_file run successfully or consider removing this command.
+configure_file(foo.in.cu foo.cu @ONLY)
+# DPCT3001:3: "configure_file" is used to copy an input file to an output file while performing transformations of the input file content. You may need to copy the input file from CUDA code project to the migrated code project to make sure the command configure_file run successfully or consider removing this command.
+configure_file(bar.in.cu bar.cu @ONLY)
