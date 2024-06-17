@@ -184,7 +184,11 @@ ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cuArrayCreate_v2", DEREF(0),
-                            NEW(MapNames::getDpctNamespace() + "image_matrix",
+                            NEW(DpctGlobalInfo::useExtBindlessImages()
+                                    ? MapNames::getDpctNamespace() +
+                                          "experimental::image_mem_wrapper"
+                                    : MapNames::getDpctNamespace() +
+                                          "image_matrix",
                                 ARG(1)))))
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)

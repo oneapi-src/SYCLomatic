@@ -373,8 +373,12 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
-      {"CUDA_ARRAY_DESCRIPTOR", std::make_shared<TypeNameRule>(
-                                    getDpctNamespace() + "image_matrix_desc")},
+      {"CUDA_ARRAY_DESCRIPTOR",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::image_descriptor"
+               : getDpctNamespace() + "image_matrix_desc")},
       {"cudaMemcpy3DParms",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"CUDA_MEMCPY3D",
@@ -402,11 +406,17 @@ void MapNames::setExplicitNamespaceMap() {
                           HelperFeatureEnum::device_ext)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper"
+               : getDpctNamespace() + "image_matrix",
+           HelperFeatureEnum::device_ext)},
       {"CUarray",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix_p",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
+               : getDpctNamespace() + "image_matrix_p",
+           HelperFeatureEnum::device_ext)},
       {"CUarray_format",
        std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
       {"CUarray_format_enum",
@@ -4309,7 +4319,7 @@ const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
     {"Width", "width"},
     {"Height", "height"},
     {"Format", "channel_type"},
-    {"NumChannels", "channel_num"}};
+    {"NumChannels", "num_channels"}};
 
 const MapNames::MapTy MemoryDataTypeRule::DirectReplMemberNames{
     // cudaMemcpy3DParms fields.

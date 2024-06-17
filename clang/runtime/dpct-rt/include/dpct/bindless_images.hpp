@@ -55,6 +55,18 @@ public:
   image_mem_wrapper(image_channel channel, size_t width, size_t height = 0,
                     size_t depth = 0)
       : image_mem_wrapper(channel, {width, height, depth}) {}
+  /// Create bindless image memory wrapper.
+  /// \param [in] desc The image descriptor used to create bindless image
+  image_mem_wrapper(
+      const sycl::ext::oneapi::experimental::image_descriptor *desc)
+      : _desc(*desc) {
+    _channel.set_channel_type(desc->channel_type);
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240625)
+    _channel.set_channel_num(desc->num_channels);
+#endif
+    auto q = get_default_queue();
+    _handle = alloc_image_mem(_desc, q);
+  }
   image_mem_wrapper(const image_mem_wrapper &) = delete;
   image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
   /// Destroy bindless image memory wrapper.
@@ -99,7 +111,7 @@ private:
       const sycl::ext::oneapi::experimental::image_mem_handle &handle)
       : _channel(channel), _desc(desc), _handle(handle) {}
 
-  const image_channel _channel;
+  image_channel _channel;
   const sycl::ext::oneapi::experimental::image_descriptor _desc;
   sycl::ext::oneapi::experimental::image_mem_handle _handle;
   image_mem_wrapper *_sub_wrappers{nullptr};
@@ -190,11 +202,11 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
                            dest_extend, copy_extend);
 }
 
-static inline std::vector<sycl::event>
-dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
-            const sycl::ext::oneapi::experimental::image_descriptor &desc_src,
-            size_t w_offset_src, size_t h_offset_src, void *dest, size_t s,
-            sycl::queue q) {
+static inline std::vector<sycl::event> dpct_memcpy_image2host(
+    sycl::ext::oneapi::experimental::image_mem_handle src,
+    const sycl::ext::oneapi::experimental::image_descriptor &desc_src,
+    size_t w_offset_src, size_t h_offset_src, void *dest, size_t s,
+    sycl::queue q) {
   std::vector<sycl::event> event_list;
   const auto ele_size = get_ele_size(desc_src);
   const auto w = desc_src.width * ele_size;
@@ -223,6 +235,26 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
   return event_list;
 }
 
+static inline std::vector<sycl::event>
+dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
+            const sycl::ext::oneapi::experimental::image_descriptor &desc_src,
+            size_t w_offset_src, size_t h_offset_src, void *dest, size_t s,
+            sycl::queue q) {
+  if (dpct::detail::get_pointer_attribute(q, dest) ==
+      dpct::detail::pointer_access_attribute::device_only) {
+    std::vector<sycl::event> event_list;
+    dpct::detail::host_buffer buf(s, q, event_list);
+    auto copy_events = dpct_memcpy_image2host(
+        src, desc_src, w_offset_src, h_offset_src, buf.get_ptr(), s, q);
+    event_list.push_back(dpct::detail::dpct_memcpy(
+        q, dest, buf.get_ptr(), s, memcpy_direction::host_to_device,
+        copy_events));
+    return event_list;
+  }
+  return dpct_memcpy_image2host(src, desc_src, w_offset_src, h_offset_src, dest,
+                                s, q);
+}
+
 static inline sycl::event
 dpct_memcpy(const void *src,
             sycl::ext::oneapi::experimental::image_mem_handle dest,
@@ -240,12 +272,10 @@ dpct_memcpy(const void *src,
                            dest, dest_offset, desc_dest, copy_extend);
 }
 
-static inline std::vector<sycl::event>
-dpct_memcpy(const void *src,
-            sycl::ext::oneapi::experimental::image_mem_handle dest,
-            const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
-            size_t w_offset_dest, size_t h_offset_dest, size_t s,
-            sycl::queue q = get_default_queue()) {
+static inline std::vector<sycl::event> dpct_memcpy_host2image(
+    const void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
+    const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
+    size_t w_offset_dest, size_t h_offset_dest, size_t s, sycl::queue q) {
   std::vector<sycl::event> event_list;
   const auto ele_size = get_ele_size(desc_dest);
   const auto w = desc_dest.width * ele_size;
@@ -276,6 +306,25 @@ dpct_memcpy(const void *src,
                                          src_extend, dest, dest_offset,
                                          desc_dest, copy_extend));
   return event_list;
+}
+
+static inline std::vector<sycl::event> dpct_memcpy(
+    const void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
+    const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
+    size_t w_offset_dest, size_t h_offset_dest, size_t s, sycl::queue q) {
+  if (dpct::detail::get_pointer_attribute(q, src) ==
+      dpct::detail::pointer_access_attribute::device_only) {
+    std::vector<sycl::event> event_list;
+    dpct::detail::host_buffer buf(s, q, event_list);
+    event_list.push_back(dpct::detail::dpct_memcpy(
+        q, buf.get_ptr(), src, s, memcpy_direction::device_to_host));
+    auto copy_events = dpct_memcpy_host2image(
+        buf.get_ptr(), dest, desc_dest, w_offset_dest, h_offset_dest, s, q);
+    event_list.insert(event_list.end(), copy_events.begin(), copy_events.end());
+    return event_list;
+  }
+  return dpct_memcpy_host2image(src, dest, desc_dest, w_offset_dest,
+                                h_offset_dest, s, q);
 }
 
 static inline sycl::event

@@ -2,6 +2,8 @@
 // RUN: FileCheck --input-file %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp -o %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.o %}
 
+#include "cuda.h"
+
 // CHECK: template <typename T> void kernel(sycl::ext::oneapi::experimental::sampled_image_handle tex) {
 template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   int i;
@@ -49,6 +51,161 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   // CHECK: t = sycl::ext::oneapi::experimental::sample_mipmap<dpct_placeholder/*Fix the type mannually*/>(tex, sycl::float3(i, j, k), l);
   tex3DLod(&t, tex, i, j, k, l);
 #endif
+}
+
+void driverMemoryManagement() {
+  size_t s, s1, s2;
+  unsigned u;
+  // CHECK: sycl::image_channel_type f;
+  CUarray_format f;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr *pArr;
+  CUarray *pArr;
+  void *pV;
+  // CHECK: dpct::device_ptr pD;
+  CUdeviceptr pD;
+  // CHECK: dpct::queue_ptr st;
+  CUstream st;
+  // CHECK: sycl::ext::oneapi::experimental::image_descriptor pDesc;
+  CUDA_ARRAY_DESCRIPTOR pDesc;
+  // CHECK: pDesc.channel_type = f;
+  pDesc.Format = f;
+  // CHECK: pDesc.height = s;
+  pDesc.Height = s;
+#ifndef BUILD_TEST // TODO: Need delete later.
+  // CHECK: pDesc.num_channels = u;
+  pDesc.NumChannels = u;
+#endif
+  // CHECK: pDesc.width = s;
+  pDesc.Width = s;
+  // CHECK: dpct::memcpy_parameter p2d;
+  CUDA_MEMCPY2D p2d;
+  // CHECK: p2d.from.pos[0] = s;
+  p2d.srcXInBytes = s;
+  // CHECK: p2d.from.pos[1] = s;
+  p2d.srcY = s;
+  // CHECK: ;
+  p2d.srcMemoryType;
+  // CHECK: p2d.from.pitched.set_data_ptr(pV);
+  p2d.srcHost = pV;
+  // CHECK: p2d.from.pitched.set_data_ptr(pD);
+  p2d.srcDevice = pD;
+  // CHECK: p2d.from.image_bindless = *pArr;
+  p2d.srcArray = *pArr;
+  // CHECK: p2d.from.pitched.set_pitch(s);
+  p2d.srcPitch = s;
+  // CHECK: p2d.to.pos[0] = s;
+  p2d.dstXInBytes = s;
+  // CHECK: p2d.to.pos[1] = s;
+  p2d.dstY = s;
+  // CHECK: ;
+  p2d.dstMemoryType;
+  // CHECK: p2d.to.pitched.set_data_ptr(pV);
+  p2d.dstHost = pV;
+  // CHECK: p2d.to.pitched.set_data_ptr(pD);
+  p2d.dstDevice = pD;
+  // CHECK: p2d.to.image_bindless = *pArr;
+  p2d.dstArray = *pArr;
+  // CHECK: p2d.to.pitched.set_pitch(s);
+  p2d.dstPitch = s;
+  // CHECK: p2d.size[0] = s;
+  p2d.WidthInBytes = s;
+  // CHECK: p2d.size[1] = s;
+  p2d.Height = s;
+  // CHECK: dpct::memcpy_parameter p3d;
+  CUDA_MEMCPY3D p3d;
+  // CHECK: p3d.from.pos[0] = s;
+  p3d.srcXInBytes = s;
+  // CHECK: p3d.from.pos[1] = s;
+  p3d.srcY = s;
+  // CHECK: p3d.from.pos[2] = s;
+  p3d.srcZ = s;
+  // CHECK: ;
+  p3d.srcLOD;
+  // CHECK: ;
+  p3d.srcMemoryType;
+  // CHECK: p3d.from.pitched.set_data_ptr(pV);
+  p3d.srcHost = pV;
+  // CHECK: p3d.from.pitched.set_data_ptr(pD);
+  p3d.srcDevice = pD;
+  // CHECK: p3d.from.image_bindless = *pArr;
+  p3d.srcArray = *pArr;
+  // CHECK: p3d.from.pitched.set_pitch(s);
+  p3d.srcPitch = s;
+  // CHECK: p3d.from.pitched.set_y(s);
+  p3d.srcHeight = s;
+  // CHECK: p3d.to.pos[0] = s;
+  p3d.dstXInBytes = s;
+  // CHECK: p3d.to.pos[1] = s;
+  p3d.dstY = s;
+  // CHECK: p3d.to.pos[2] = s;
+  p3d.dstZ = s;
+  // CHECK: ;
+  p3d.dstLOD;
+  // CHECK: ;
+  p3d.dstMemoryType;
+  // CHECK: p3d.to.pitched.set_data_ptr(pV);
+  p3d.dstHost = pV;
+  // CHECK: p3d.to.pitched.set_data_ptr(pD);
+  p3d.dstDevice = pD;
+  // CHECK: p3d.to.image_bindless = *pArr;
+  p3d.dstArray = *pArr;
+  // CHECK: p3d.to.pitched.set_pitch(s);
+  p3d.dstPitch = s;
+  // CHECK: p3d.to.pitched.set_y(s);
+  p3d.dstHeight = s;
+  // CHECK: p3d.size[0] = s;
+  p3d.WidthInBytes = s;
+  // CHECK: p3d.size[1] = s;
+  p3d.Height = s;
+  // CHECK: p3d.size[2] = s;
+  p3d.Depth = s;
+  // CHECK: *pArr = new dpct::experimental::image_mem_wrapper(&pDesc);
+  cuArrayCreate(pArr, &pDesc);
+  // CHECK: delete (*pArr);
+  cuArrayDestroy(*pArr);
+  // CHECK: dpct::dpct_memcpy(p2d);
+  cuMemcpy2D(&p2d);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cuMemcpy2DAsync_v2 is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::async_dpct_memcpy(p2d, *st);
+  cuMemcpy2DAsync(&p2d, st);
+  // CHECK: dpct::dpct_memcpy(p3d);
+  cuMemcpy3D(&p3d);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cuMemcpy3DAsync_v2 is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::async_dpct_memcpy(p3d, *st);
+  cuMemcpy3DAsync(&p3d, st);
+  // CHECK: dpct::experimental::dpct_memcpy(*pArr, s, 0, *pArr, s1, 0, s2);
+  cuMemcpyAtoA(*pArr, s, *pArr, s1, s2);
+  // CHECK: dpct::experimental::dpct_memcpy(pD, *pArr, s, 0, s1);
+  cuMemcpyAtoD(pD, *pArr, s, s1);
+  // CHECK: dpct::experimental::dpct_memcpy(pV, *pArr, s, 0, s1);
+  cuMemcpyAtoH(pV, *pArr, s, s1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(pV, *pArr, s, 0, s1, *st);
+  cuMemcpyAtoHAsync(pV, *pArr, s, s1, st);
+  // CHECK: dpct::experimental::dpct_memcpy(*pArr, s, 0, pD, s1);
+  cuMemcpyDtoA(*pArr, s, pD, s1);
+  // CHECK: q_ct1.memcpy(pD, pD, s).wait();
+  cuMemcpyDtoD(pD, pD, s);
+  // CHECK: st->memcpy(pD, pD, s);
+  cuMemcpyDtoDAsync(pD, pD, s, st);
+  // CHECK: q_ct1.memcpy(pV, pD, s).wait();
+  cuMemcpyDtoH(pV, pD, s);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cuMemcpyDtoHAsync_v2 is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: st->memcpy(pV, pD, s);
+  cuMemcpyDtoHAsync(pV, pD, s, st);
+  // CHECK: dpct::experimental::dpct_memcpy(*pArr, s, 0, pV, s1);
+  cuMemcpyHtoA(*pArr, s, pV, s1);
+  // CHECK: dpct::experimental::async_dpct_memcpy(*pArr, s, 0, pV, s1, *st);
+  cuMemcpyHtoAAsync(*pArr, s, pV, s1, st);
+  // CHECK: q_ct1.memcpy(pD, pV, s).wait();
+  cuMemcpyHtoD(pD, pV, s);
+  // CHECK: st->memcpy(pD, pV, s);
+  cuMemcpyHtoDAsync(pD, pV, s, st);
 }
 
 void driver() {
