@@ -5046,10 +5046,6 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
       // [0] for T&, [1] for volatile T&
       std::array<std::pair<bool, SourceLocation>, 2>
           CtorConstQualifierInsertLocations;
-      CtorConstQualifierInsertLocations[0] =
-          std::make_pair(true, SourceLocation());
-      CtorConstQualifierInsertLocations[1] =
-          std::make_pair(true, SourceLocation());
       for (const auto &C : ClassDecl->ctors()) {
         if (!C->isImplicit() && !C->isDeleted()) {
           if (C->isCopyConstructor()) {
@@ -5059,19 +5055,16 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
             const ReferenceType *RT =
                 dyn_cast<ReferenceType>(FirstParam->getType().getTypePtr());
             if (RT) {
-              QualType PointeeTy = RT->getPointeeType();
-              if (PointeeTy.isVolatileQualified() &&
-                  PointeeTy.isConstQualified()) {
-                CtorConstQualifierInsertLocations[1].first = false;
-              } else if (PointeeTy.isVolatileQualified()) {
-                CtorConstQualifierInsertLocations[1].second =
+              Qualifiers Q = RT->getPointeeType().getQualifiers();
+              unsigned int CVQualifiers =
+                  Q.getCVRQualifiers() &
+                  (Qualifiers::Volatile | Qualifiers::Const);
+              bool HasVolatile = CVQualifiers & Qualifiers::Volatile;
+              if (CVQualifiers & Qualifiers::Const)
+                CtorConstQualifierInsertLocations[HasVolatile].first = true;
+              else
+                CtorConstQualifierInsertLocations[HasVolatile].second =
                     FirstParam->getBeginLoc();
-              } else if (PointeeTy.isConstQualified()) {
-                CtorConstQualifierInsertLocations[0].first = false;
-              } else {
-                CtorConstQualifierInsertLocations[0].second =
-                    FirstParam->getBeginLoc();
-              }
             }
           } else if (C->isMoveConstructor()) {
             Messages.push_back("copy assignment");
@@ -5079,7 +5072,7 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
         }
       }
       for (const auto &P : CtorConstQualifierInsertLocations) {
-        if (!P.first || P.second.isInvalid())
+        if (P.first || P.second.isInvalid())
           continue;
         auto *NT = new InsertText(P.second, "const ");
         if (Rule) {
