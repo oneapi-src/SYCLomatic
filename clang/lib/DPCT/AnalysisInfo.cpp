@@ -179,15 +179,21 @@ bool deduceTemplateArguments(const CallT *C, const FunctionDecl *FD,
 
 template <class CallT>
 bool deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
-                             std::vector<TemplateArgumentInfo> &TAIList) {
+                             std::vector<TemplateArgumentInfo> &TAIList,
+                             bool &TemplateArgNumNotMatched) {
   if (!ND)
     return false;
   if (auto FTD = dyn_cast<FunctionTemplateDecl>(ND)) {
+    if (TAIList.size() > FTD->getTemplateParameters()->size()) {
+      TemplateArgNumNotMatched = true;
+      return false;
+    }
     return deduceTemplateArguments(C, FTD, TAIList);
   } else if (auto FD = dyn_cast<FunctionDecl>(ND)) {
     return deduceTemplateArguments(C, FD, TAIList);
   } else if (auto UD = dyn_cast<UsingShadowDecl>(ND)) {
-    return deduceTemplateArguments(C, UD->getUnderlyingDecl(), TAIList);
+    return deduceTemplateArguments(C, UD->getUnderlyingDecl(), TAIList,
+                                   TemplateArgNumNotMatched);
   }
   return false;
 }
@@ -4055,9 +4061,14 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     HasImplicitArg = isa<CXXOperatorCallExpr>(CE) && isa<CXXMethodDecl>(FD);
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
-    if (Unresolved->getNumDecls())
-      IsAllTemplateArgsSpecified = deduceTemplateArguments(
-          CE, Unresolved->decls_begin().getDecl(), TemplateArgs);
+    for (const auto &D : Unresolved->decls()) {
+      bool TemplateArgNumNotMatched = false;
+      bool Res = deduceTemplateArguments(CE, D, TemplateArgs,
+                                         TemplateArgNumNotMatched);
+      if (TemplateArgNumNotMatched)
+        continue;
+      IsAllTemplateArgsSpecified = Res;
+    }
   } else if (isa<CXXDependentScopeMemberExpr>(
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
     // Un-instantiate member call. Cannot analyze related method declaration.
