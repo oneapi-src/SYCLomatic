@@ -4426,10 +4426,32 @@ void CallFunctionExpr::mergeTextureObjectInfo() {
 DeviceFunctionDecl::DeviceFunctionDecl(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
     const FunctionDecl *FD)
-    : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
-      ReplaceOffset(0), ReplaceLength(0),
+    : Offset(Offset), OffsetForAttr(Offset), FilePath(FilePathIn),
+      ParamsNum(FD->param_size()), ReplaceOffset(0), ReplaceLength(0),
       NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(FD)) {
+  if (FD->isFunctionTemplateSpecialization()) {
+    SourceLocation SL = FD->getBeginLoc();
+    Token CurTok;
+    if (!Lexer::getRawToken(SL, CurTok, DpctGlobalInfo::getSourceManager(),
+                            LangOptions(), true)) {
+      if (CurTok.is(tok::raw_identifier) &&
+          CurTok.getRawIdentifier() == "template") {
+        for (unsigned i = 0; i < 2; ++i) {
+          auto OptTok = Lexer::findNextToken(
+              SL, DpctGlobalInfo::getSourceManager(), LangOptions());
+          if (!OptTok.has_value()) {
+            break;
+          }
+          auto Tok = OptTok.value();
+          if (Tok.getKind() == tok::greater) {
+            OffsetForAttr = DpctGlobalInfo::getLocInfo(Tok.getEndLoc()).second;
+          }
+          SL = Tok.getLocation();
+        }
+      }
+    }
+  }
   if (!FuncInfo) {
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
         FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
@@ -4526,21 +4548,21 @@ void DeviceFunctionDecl::emplaceReplacement() {
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
-                                         nullptr));
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0,
+                                         StrRepl, nullptr));
   }
 
   if (FuncInfo->IsAlwaysInlineDevFunc()) {
     std::string StrRepl = "inline ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
-                                         nullptr));
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0,
+                                         StrRepl, nullptr));
   }
   if (FuncInfo->IsForceInlineDevFunc()) {
     std::string StrRepl = "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
-                                         nullptr));
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0,
+                                         StrRepl, nullptr));
   }
 
   for (auto &Obj : TextureObjectList) {
