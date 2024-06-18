@@ -11,6 +11,7 @@
 #include "Statics.h"
 #include "Utility.h"
 
+#include "clang/DPCT/DpctOptions.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
