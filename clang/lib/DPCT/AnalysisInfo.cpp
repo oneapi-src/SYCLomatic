@@ -4548,21 +4548,21 @@ void DeviceFunctionDecl::emplaceReplacement() {
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0,
-                                         StrRepl, nullptr));
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
+                                         nullptr));
   }
 
   if (FuncInfo->IsAlwaysInlineDevFunc()) {
     std::string StrRepl = "inline ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0,
-                                         StrRepl, nullptr));
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
+                                         nullptr));
   }
   if (FuncInfo->IsForceInlineDevFunc()) {
     std::string StrRepl = "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0,
-                                         StrRepl, nullptr));
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
+                                         nullptr));
   }
 
   for (auto &Obj : TextureObjectList) {
