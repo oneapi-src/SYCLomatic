@@ -757,21 +757,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     if (Result.has_value()) {
       auto &Match = Result.value();
       for (const auto &[Name, Value] : Match.Bindings) {
-
-        if (SrcFileType == SourceFileType::SFT_CMakeScript &&
-            PP.CmakeSyntax == "user_defined_function_cu_file") {
-          // For command configure_file, as it does not impact the build process
-          // for the migrated code project. So keep it untouched when
-          // predefined rule "user_defined_function_cu_file" is applied.
-          auto Iter = Match.Bindings.find("func_name");
-          if (Iter != Match.Bindings.end()) {
-            if (Iter->second == "configure_file") {
-              Index = Match.End;
-              continue;
-            }
-          }
-        }
-
         const auto &SubruleIterator = PP.Subrules.find(Name);
         if (SubruleIterator != PP.Subrules.end()) {
           Match.Bindings[Name] =
