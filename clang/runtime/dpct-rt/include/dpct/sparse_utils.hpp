@@ -45,7 +45,7 @@ class descriptor {
 public:
   descriptor() {}
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
-  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+  sycl::queue &get_queue() noexcept { return *_queue_ptr; }
 
 private:
   queue_ptr _queue_ptr = &dpct::get_default_queue();
