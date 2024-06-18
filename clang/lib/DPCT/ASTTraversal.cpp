@@ -3206,12 +3206,6 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
       EA.applyAllSubExprRepl();
       return;
   }
-  // unmigrated properties
-  if (MemberName == "regsPerBlock") {
-    report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
-           MemberName);
-    return;
-  }
 
   // not functionally compatible properties
   if (MemberName == "deviceOverlap" || MemberName == "concurrentKernels") {
