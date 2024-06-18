@@ -1429,7 +1429,7 @@ cuGraphicsUnregisterResource,NO,
 cuInit,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuArray3DCreate,NO,
 cuArray3DGetDescriptor,NO,
-cuArrayCreate,YES,:ref:`DPCT1073`
+cuArrayCreate,YES,
 cuArrayDestroy,YES,
 cuArrayGetDescriptor,NO,
 cuDeviceGetByPCIBusId,NO,

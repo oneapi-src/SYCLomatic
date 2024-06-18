@@ -97,7 +97,7 @@ cub::DeviceSelect::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::Unique,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::UniqueByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceSpmv::CsrMV,NO,
+cub::DeviceSpmv::CsrMV,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
