@@ -5056,15 +5056,12 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
                 dyn_cast<ReferenceType>(FirstParam->getType().getTypePtr());
             if (RT) {
               Qualifiers Q = RT->getPointeeType().getQualifiers();
-              unsigned int CVQualifiers =
-                  Q.getCVRQualifiers() &
-                  (Qualifiers::Volatile | Qualifiers::Const);
+              unsigned int CVQualifiers = Q.getCVRQualifiers();
               bool HasVolatile = CVQualifiers & Qualifiers::Volatile;
-              if (CVQualifiers & Qualifiers::Const)
-                CtorConstQualifierInsertLocations[HasVolatile].first = true;
-              else
-                CtorConstQualifierInsertLocations[HasVolatile].second =
-                    FirstParam->getBeginLoc();
+              CtorConstQualifierInsertLocations[HasVolatile].first |=
+                  CVQualifiers & Qualifiers::Const;
+              CtorConstQualifierInsertLocations[HasVolatile].second =
+                  FirstParam->getBeginLoc();
             }
           } else if (C->isMoveConstructor()) {
             Messages.push_back("copy assignment");
