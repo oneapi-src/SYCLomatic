@@ -558,6 +558,22 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
         for (int Idx = Begin; Idx < End; Idx++) {
           Line[Idx] = Str[Idx - Begin];
         }
+
+        if (!std::get<0>(Iter->second) && !std::get<1>(Iter->second)) {
+          std::string WarningMsg =
+              FileName + ":" + std::to_string(Count) + ":warning:";
+          WarningMsg += DiagnosticsUtils::getMsgText(
+              CMakeScriptMigrationMsgs::CMAKE_CONFIG_FILE_WARNING, Str);
+          WarningMsg += "\n";
+          FileWarningsMap[FileName].push_back(WarningMsg);
+
+          OutputStream
+              << "# "
+              << DiagnosticsUtils::getMsgText(
+                     CMakeScriptMigrationMsgs::CMAKE_CONFIG_FILE_WARNING, Str)
+              << "\n";
+        }
+
         if (!std::get<0>(Iter->second) && std::get<1>(Iter->second)) {
           std::string WarningMsg =
               FileName + ":" + std::to_string(Count) + ":warning:";
