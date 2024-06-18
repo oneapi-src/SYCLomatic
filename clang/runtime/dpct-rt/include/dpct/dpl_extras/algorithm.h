@@ -213,10 +213,7 @@ Iter partition_point(Policy &&policy, Iter first, Iter last, Pred p) {
       std::is_same<typename std::iterator_traits<Iter>::iterator_category,
                    std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  if (std::is_partitioned(policy, first, last, p))
-    return std::find_if_not(std::forward<Policy>(policy), first, last, p);
-  else
-    return first;
+  return std::find_if_not(std::forward<Policy>(policy), first, last, p);
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
