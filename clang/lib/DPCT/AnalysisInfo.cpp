@@ -4431,26 +4431,9 @@ DeviceFunctionDecl::DeviceFunctionDecl(
       NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(FD)) {
   if (FD->isFunctionTemplateSpecialization()) {
-    SourceLocation SL = FD->getBeginLoc();
-    Token CurTok;
-    if (!Lexer::getRawToken(SL, CurTok, DpctGlobalInfo::getSourceManager(),
-                            LangOptions(), true)) {
-      if (CurTok.is(tok::raw_identifier) &&
-          CurTok.getRawIdentifier() == "template") {
-        for (unsigned i = 0; i < 2; ++i) {
-          auto OptTok = Lexer::findNextToken(
-              SL, DpctGlobalInfo::getSourceManager(), LangOptions());
-          if (!OptTok.has_value()) {
-            break;
-          }
-          auto Tok = OptTok.value();
-          if (Tok.getKind() == tok::greater) {
-            OffsetForAttr = DpctGlobalInfo::getLocInfo(Tok.getEndLoc()).second;
-          }
-          SL = Tok.getLocation();
-        }
-      }
-    }
+    SourceRange ReturnTypeRange = FD->getReturnTypeSourceRange();
+    OffsetForAttr =
+        DpctGlobalInfo::getLocInfo(ReturnTypeRange.getBegin()).second;
   }
   if (!FuncInfo) {
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
@@ -4474,7 +4457,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
     const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
     const FunctionDecl *Specialization)
-    : Offset(Offset), FilePath(FilePathIn),
+    : Offset(Offset), OffsetForAttr(Offset), FilePath(FilePathIn),
       ParamsNum(Specialization->getNumParams()), ReplaceOffset(0),
       ReplaceLength(0),
       NonDefaultParamNum(
