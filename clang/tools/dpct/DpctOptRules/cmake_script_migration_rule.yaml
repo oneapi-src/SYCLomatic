@@ -109,8 +109,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cmake_cxx_standard
-  In: set${empty}(${empty}CMAKE_CXX_STANDARD ${version})
-  Out: set(CMAKE_CXX_STANDARD 17)
+  In: set${empty}(${empty}CMAKE_CXX_STANDARD ${cplusplus_version})
+  Out: set(CMAKE_CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_cmake_cxx_compiler
   Kind: CMakeRule
@@ -613,18 +613,6 @@
   In: cuda_compile(${libname} ${srcs})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
 
-- Rule: rule_add_compile_options
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_compile_options
-  In: add_compile_options${empty}(${arg})
-  Out: add_compile_options(${arg})
-  Subrules:
-    arg:
-      In: -std=${cxx_standard}
-      Out: -std=c++17
-      RuleId: "add_compile_options_cxx_standard"
-
 - Rule: rule_target_compile_options
   Kind: CMakeRule
   Priority: Fallback
@@ -633,8 +621,8 @@
   Out: target_compile_options(${arg})
   Subrules:
     arg:
-      In: $<$<COMPILE_LANGUAGE:CUDA>:${flags}>
-      Out: ""
+      In: $<$<COMPILE_LANGUAGE:CUDA${rest}>:${flags}>
+      Out: $<$<COMPILE_LANGUAGE:CXX>:${flags}>
       RuleId: "target_compile_options_cuda_arg"
 
 - Rule: rule_CUDA_HAS_FP16
@@ -660,8 +648,8 @@
   Out: target_compile_features(${value})
   Subrules:
     value:
-      In: cxx_std_${ver}
-      Out: cxx_std_17
+      In: cxx_std_${cplusplus_version}
+      Out: cxx_std_${rewrite_cplusplus_version}
       RuleId: "adjust_cxx_ver"
 
 # Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
@@ -674,8 +662,8 @@
   Out: target_compile_features(${value})
   Subrules:
     value:
-      In: cuda_std_${ver}
-      Out: cxx_std_17
+      In: cuda_std_${cplusplus_version}
+      Out: cxx_std_${rewrite_cplusplus_version}
       RuleId: "adjust_cuda_ver"
 
 - Rule: rule_file_include_cuh_header_file
@@ -733,8 +721,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: cuda
@@ -745,8 +733,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cublas_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: cublas
@@ -759,8 +747,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libcublas_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: -lcublas
@@ -773,8 +761,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudnn_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: "cudnn"
@@ -787,8 +775,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvinfer_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: libnvinfer.so
@@ -800,8 +788,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvonnxparser_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
       In: libnvonnxparser.so
@@ -814,8 +802,102 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libstdc++_target_link_libraries
-  In: ${prefix}link_libraries(${libs})
-  Out: ${prefix}link_libraries(${libs})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      In: -static-libstdc++
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_-static-libstdc++"
+
+- Rule: rule_link_libraries_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cuda
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: cuda
+      Out: ""
+      MatchMode: Full
+
+- Rule: rule_link_libraries_cublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cublas
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: cublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+      RuleId: "replace_cublas_with_MKL_target"
+
+- Rule: rule_link_libraries_libcublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libcublas
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: -lcublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+      RuleId: "replace_libcublas_with_qmkl"
+
+- Rule: rule_link_libraries_cudnn
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cudnn
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: "cudnn"
+      Out: |
+        \${DNN_LIB}
+      MatchMode: Full
+      RuleId: "replace_cudnn_with_libdnn"
+
+- Rule: rule_link_libraries_libnvinfer
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libnvinfer
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: libnvinfer.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvinfer"
+
+- Rule: rule_link_libraries_libnvonnxparser
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libnvonnxparser
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: libnvonnxparser.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvonnxparser"
+
+# icpx: error: '-static-libstdc++' is not supported with '-fsycl', so removing here
+- Rule: rule_link_libraries_libstdc++
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libstdc++
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
   Subrules:
     libs:
       In: -static-libstdc++
@@ -1964,22 +2046,22 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cuda_standard
-  In: set_property(${target} PROPERTY CUDA_STANDARD ${version})
-  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+  In: set_property(${target} PROPERTY CUDA_STANDARD ${cplusplus_version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_property_cxx_standard
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cxx_standard
-  In: set_property(${target} PROPERTY CXX_STANDARD ${version})
-  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+  In: set_property(${target} PROPERTY CXX_STANDARD ${cplusplus_version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_cxx_target_properties
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cxx_target_properties
-  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
+  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${cplusplus_version})
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_target_properties_cuda_standard
   Kind: CMakeRule
@@ -1989,16 +2071,15 @@
   Out: set_target_properties(${targets} PROPERTIES ${properties})
   Subrules:
     properties:
-      In: CUDA_STANDARD ${version} ${other_properties}
-      Out: CXX_STANDARD 17 ${other_properties}
-      MatchMode: Full
+      In: CUDA_STANDARD ${cplusplus_version} ${other_properties}
+      Out: CXX_STANDARD ${rewrite_cplusplus_version} ${other_properties}
 
 - Rule: rule_set_target_properties_cuda_standard-only
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_target_properties_cuda_standard-only
-  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD 17)
+  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${cplusplus_version})
+  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_cmake_cuda_required
   Kind: CMakeRule
@@ -2063,7 +2144,6 @@
       Out: COMPATIBILITY_VERSION_STRING
       RuleId: "replace_CUDA_VERSION_STRING_with_COMPATIBILITY_VERSION_STRING"
 
-
 - Rule: rule_user_defined_variable
   Kind: CMakeRule
   Priority: Fallback
@@ -2073,8 +2153,21 @@
   Out: ${func_name}(${value})
   Subrules:
     value:
-      In:  -std=c++${version}
-      Out: -std=c++17
+      In:  -std=c++${cplusplus_version}
+      Out: -std=c++${rewrite_cplusplus_version}
+
+# to handle the case like "list(APPEND PMEMD_NVCC_FLAGS --std c++11)"
+- Rule: rule_user_defined_variable_format_2
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_variable_format_2
+  In: ${func_name}(${arg0} --std ${value})
+  Out: ${func_name}(${arg0} --std ${value})
+  Subrules:
+    value:
+      In:  c++${cplusplus_version}
+      Out: c++${rewrite_cplusplus_version}
 
 - Rule: rule_add_link_options
   Kind: CMakeRule
@@ -2445,3 +2538,42 @@
       In: cuda
       Out: ""
       RuleId: "remove_lib_cuda"
+
+- Rule: rule_use_fast_math_one_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_one_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -use_fast_math
+      Out: -ffast-math
+
+- Rule: rule_use_fast_math_two_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_two_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --use_fast_math
+      Out: -ffast-math
+
+- Rule: rule_CMAKE_CUDA_COMPILER_VERSION
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_COMPILER_VERSION
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER_VERSION
+      Out: COMPATIBILITY_VERSION

@@ -22,6 +22,7 @@
 #include <vector>
 
 std::set<std::string> MainSrcFilesHasCudaSyntex;
+bool LANG_Cplusplus_20_Used = false;
 
 struct SpacingElement {};
 
@@ -318,6 +319,21 @@ static int parseCodeElement(const MatchPattern &Suffix,
     delimiters.
     */
 
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Index - 1 >= 0 && Character == '"' && Input[Index - 1] == '\\') {
+        Index++;
+        while (Index < Size &&
+               !(Input[Index - 1] == '\\' && Input[Index] == '"')) {
+          Index++;
+        }
+        if (Index >= Size) {
+          return -1;
+        }
+        Index++;
+        continue;
+      }
+    }
+
     if (Character == '\'') {
       Index++;
       while (Index < Size &&
@@ -413,6 +429,15 @@ updateExtentionName(const std::string &Input, size_t Next,
   }
 }
 
+static void updateCplusplusStandard(
+    std::unordered_map<std::string, std::string> &Bindings) {
+  if (LANG_Cplusplus_20_Used) {
+    Bindings["rewrite_cplusplus_version"] = "20";
+  } else {
+    Bindings["rewrite_cplusplus_version"] = "17";
+  }
+}
+
 static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
                                                 const std::string &Input,
                                                 const int Start) {
@@ -467,7 +492,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
               !isWhitespace(Input[Index - PatternSize]) &&
               !isWhitespace(Input[Index + 1]) &&
               Input[Index - PatternSize] != '*' &&
-              Input[Index - PatternSize] != '"') {
+              Input[Index - PatternSize] != '"' &&
+              Input[Index - PatternSize] != ';' && Input[Index + 1] != '\\') {
             return {};
           }
         }
@@ -579,6 +605,11 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
         return {};
       }
       std::string ElementContents = Input.substr(Index, Next - Index);
+
+      if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+        updateCplusplusStandard(Result.Bindings);
+      }
+
       Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;

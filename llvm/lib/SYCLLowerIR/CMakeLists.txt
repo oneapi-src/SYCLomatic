@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # INTEL_CUSTOMIZATION
 #
 # INTEL CONFIDENTIAL
@@ -25,15 +26,17 @@ if(${CMAKE_VERSION} VERSION_LESS 3.14)
     endmacro()
 endif()
 
+=======
+>>>>>>> SYCLomatic/SYCLomatic
 # Lowering of SYCL ESIMD kernels depends on vc-intrinsics
 # NOTE: could have been added earlier from llvm/projects
 if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set(LLVMGenXIntrinsics_GIT_REPO https://github.com/intel/vc-intrinsics.git)
 
-    # Date: 13 Feb 2024
-    # Add an intrinsic for named barrier arrive/signal operation
-    set(LLVMGenXIntrinsics_GIT_TAG f9c34404d0ea9abad83875a10bd48d88cea90ebd)
+    # Date: 08 May 2024
+    # Fix warning from switch
+    set(LLVMGenXIntrinsics_GIT_TAG b2565a03eb3cac07f5e8000fde971f95dc782c75)
 
     if (INTEL_CUSTOMIZATION)
       # for xmain builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
@@ -114,6 +117,7 @@ add_llvm_component_library(LLVMSYCLLowerIR
   ESIMD/ESIMDRemoveOptnoneNoinline.cpp
   ESIMD/LowerESIMD.cpp
   ESIMD/LowerESIMDKernelAttrs.cpp
+  RecordSYCLAspectNames.cpp
   CleanupSYCLMetadata.cpp
   CompileTimePropertiesPass.cpp
   DeviceGlobals.cpp
@@ -126,6 +130,7 @@ add_llvm_component_library(LLVMSYCLLowerIR
   ModuleSplitter.cpp
   MutatePrintfAddrspace.cpp
   SYCLAddOptLevelAttribute.cpp
+  SYCLDeviceRequirements.cpp
   SYCLPropagateAspectsUsage.cpp
   SYCLPropagateJointMatrixUsage.cpp
   SYCLUtils.cpp
@@ -159,7 +164,9 @@ add_llvm_component_library(LLVMSYCLLowerIR
 
   LINK_COMPONENTS
   Analysis
+  BitWriter
   Core
+  IRPrinter
   Support
   ipo
   )

@@ -481,6 +481,21 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
     MainSrcFilesHasCudaSyntex.insert(Entry.first);
   }
+
+  // Currently, when "--use-experimental-features=device_global" and
+  // "--use-experimental-features=all" are specified, the migrated code should
+  // be compiled with C++20 or later.
+  auto Iter = PreTU->OptionMap.find("ExperimentalFlag");
+  if (Iter != PreTU->OptionMap.end()) {
+    if (Iter->second.Specified) {
+      const std::string Value = Iter->second.Value;
+      unsigned int UValue = std::stoul(Value);
+      if (UValue & (1 << static_cast<unsigned>(
+                        ExperimentalFeatures::Exp_DeviceGlobal))) {
+        LANG_Cplusplus_20_Used = true;
+      }
+    }
+  }
 }
 
 int runDPCT(int argc, const char **argv) {
