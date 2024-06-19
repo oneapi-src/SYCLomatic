@@ -28,9 +28,7 @@ public:
                         sycl::ext::oneapi::experimental::image_type::standard,
                     unsigned int num_levels = 1)
       : _channel(channel),
-        _desc(sycl::ext::oneapi::experimental::image_descriptor(
-            range, _channel.get_channel_order(), _channel.get_channel_type(),
-            type, num_levels)) {
+        _desc(sycl::ext::oneapi::experimental::image_descriptor()) {
     auto q = get_default_queue();
     _handle = alloc_image_mem(_desc, q);
     if (type == sycl::ext::oneapi::experimental::image_type::mipmap) {
@@ -130,24 +128,7 @@ inline image_mem_wrapper *&get_img_mem_map(
 
 static inline size_t
 get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
-  size_t channel_num, channel_size;
-  switch (decs.channel_order) {
-  case sycl::image_channel_order::r:
-    channel_num = 1;
-    break;
-  case sycl::image_channel_order::rg:
-    channel_num = 2;
-    break;
-  case sycl::image_channel_order::rgb:
-    channel_num = 3;
-    break;
-  case sycl::image_channel_order::rgba:
-    channel_num = 4;
-    break;
-  default:
-    throw std::runtime_error("Unsupported channel_order in get_ele_size!");
-    break;
-  }
+  size_t channel_size;
   switch (decs.channel_type) {
   case sycl::image_channel_type::signed_int8:
   case sycl::image_channel_type::unsigned_int8:
@@ -167,7 +148,7 @@ get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
     throw std::runtime_error("Unsupported channel_type in get_ele_size!");
     break;
   }
-  return channel_num * channel_size;
+  return 4 * channel_size;
 }
 
 static inline sycl::event
@@ -345,9 +326,7 @@ create_bindless_image(image_data data, sampling_info info,
         mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
 #else
-    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
-        {data.get_x(), data.get_y()}, data.get_channel().get_channel_order(),
-        data.get_channel_type());
+    auto desc = sycl::ext::oneapi::experimental::image_descriptor();
     auto img = sycl::ext::oneapi::experimental::create_image(
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
     detail::get_img_mem_map(img) = nullptr;
@@ -471,9 +450,7 @@ public:
                       mem->get_handle(), mem->get_desc());
     q.wait_and_throw();
 #else
-    auto desc = sycl::ext::oneapi::experimental::image_descriptor(
-        {width, height}, channel.get_channel_order(),
-        channel.get_channel_type());
+    auto desc = sycl::ext::oneapi::experimental::image_descriptor();
     _img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
                                                          desc, q);
     detail::get_img_mem_map(_img) = nullptr;
