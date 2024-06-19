@@ -14,6 +14,7 @@
 #include "Utility.h"
 
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
@@ -5072,6 +5073,15 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
+  if (isa<InitListExpr>(Arg)) {
+    IsInitListExpr = true;
+  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+    if (ICE->getCastKind() == CK_LValueToRValue) {
+      HasPotentiallyImplicitCast = false;
+    }
+  } else {
+    HasPotentiallyImplicitCast = false;
+  }
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
   TryGetBuffer = Analysis.TryGetBuffer;
@@ -6013,11 +6023,11 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      std::string TypeStr =
-          Arg.getTypeString().empty()
-              ? "auto"
-              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
-                                                 : Arg.getTypeString());
+      std::string TypeStr = "auto";
+      if ((Arg.HasPotentiallyImplicitCast || Arg.IsInitListExpr) &&
+          !Arg.getTypeString().empty()) {
+        TypeStr = Arg.getTypeString();
+      }
       SubmitStmts.CommandGroupList.emplace_back(
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
                       Arg.getArgString(), ";"));

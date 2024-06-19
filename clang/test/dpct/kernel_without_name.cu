@@ -48,9 +48,9 @@ struct TestThis {
   void test() {
     // CHECK: dpct::get_out_of_order_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
-    // CHECK-NEXT:     int args_arg1_ct0 = args.arg1;
-    // CHECK-NEXT:     int args_arg2_ct1 = args.arg2;
-    // CHECK-NEXT:     int arg3_ct2 = arg3;
+    // CHECK-NEXT:     auto args_arg1_ct0 = args.arg1;
+    // CHECK-NEXT:     auto args_arg2_ct1 = args.arg2;
+    // CHECK-NEXT:     auto arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:     cgh.parallel_for(
     // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -126,9 +126,9 @@ public:
   int run_foo() {
     // CHECK: dpct::get_out_of_order_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
-    // CHECK-NEXT:     int a_ct0 = a;
-    // CHECK-NEXT:     int aa_b_ct1 = aa.b;
-    // CHECK-NEXT:     int aa_c_d_ct2 = aa.c.d;
+    // CHECK-NEXT:     auto a_ct0 = a;
+    // CHECK-NEXT:     auto aa_b_ct1 = aa.b;
+    // CHECK-NEXT:     auto aa_c_d_ct2 = aa.c.d;
     // CHECK-EMPTY:
     // CHECK-NEXT:     cgh.parallel_for(
     // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -222,7 +222,7 @@ void run_foo6() {
   dim3 grid;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    unsigned int grid_x_grid_y_ct0 = grid[2] * grid[1];
+  //CHECK-NEXT:    auto grid_x_grid_y_ct0 = grid[2] * grid[1];
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -233,7 +233,7 @@ void run_foo6() {
   foo_kernel5<<<1, 1>>>(grid.x * grid.y);
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    unsigned int grid_x_ct0 = ++grid[2];
+  //CHECK-NEXT:    auto grid_x_ct0 = ++grid[2];
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -368,4 +368,20 @@ template <typename T> void run_foo10() {
   // CHECK-NEXT:        foo_kernel9<T>(mem_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:      });
   foo_kernel9<T><<<1, 1>>>();
+}
+
+__global__ void foo_kernel11(float2 Input2) {}
+
+void run_foo11() {
+  // CHECK: dpct::get_out_of_order_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::float2 NAN_NAN_ct0 = {NAN, NAN};
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel11(NAN_NAN_ct0);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  foo_kernel11<<<1, 1>>>({NAN, NAN});
 }
