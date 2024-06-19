@@ -140,6 +140,8 @@ bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
   auto &TemplateParmsList = *FTD->getTemplateParameters();
   if (TAIList.size() == TemplateParmsList.size())
     return true;
+  if (TAIList.size() > TemplateParmsList.size())
+    return false;
 
   TAIList.resize(TemplateParmsList.size());
 
@@ -179,21 +181,15 @@ bool deduceTemplateArguments(const CallT *C, const FunctionDecl *FD,
 
 template <class CallT>
 bool deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
-                             std::vector<TemplateArgumentInfo> &TAIList,
-                             bool &TemplateArgNumNotMatched) {
+                             std::vector<TemplateArgumentInfo> &TAIList) {
   if (!ND)
     return false;
   if (auto FTD = dyn_cast<FunctionTemplateDecl>(ND)) {
-    if (TAIList.size() > FTD->getTemplateParameters()->size()) {
-      TemplateArgNumNotMatched = true;
-      return false;
-    }
     return deduceTemplateArguments(C, FTD, TAIList);
   } else if (auto FD = dyn_cast<FunctionDecl>(ND)) {
     return deduceTemplateArguments(C, FD, TAIList);
   } else if (auto UD = dyn_cast<UsingShadowDecl>(ND)) {
-    return deduceTemplateArguments(C, UD->getUnderlyingDecl(), TAIList,
-                                   TemplateArgNumNotMatched);
+    return deduceTemplateArguments(C, UD->getUnderlyingDecl(), TAIList);
   }
   return false;
 }
@@ -4062,12 +4058,9 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
     for (const auto &D : Unresolved->decls()) {
-      bool TemplateArgNumNotMatched = false;
-      bool Res = deduceTemplateArguments(CE, D, TemplateArgs,
-                                         TemplateArgNumNotMatched);
-      if (TemplateArgNumNotMatched)
-        continue;
-      IsAllTemplateArgsSpecified = Res;
+      IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, D, TemplateArgs);
+      if (IsAllTemplateArgsSpecified)
+        break;
     }
   } else if (isa<CXXDependentScopeMemberExpr>(
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
