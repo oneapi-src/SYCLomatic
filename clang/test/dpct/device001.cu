@@ -250,6 +250,9 @@ void test3() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:size_t a3 = deviceProp.get_global_mem_size();
   size_t a3 = deviceProp.totalConstMem;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with regsPerBlock. It was migrated to get_max_register_size_per_work_group. You may need to adjust the value of get_max_register_size_per_work_group for the specific device.
+  //CHECK-NEXT:*/
   //CHECK:int a4 = deviceProp.get_max_register_size_per_work_group();
   int a4 = deviceProp.regsPerBlock;
   //CHECK:/*
