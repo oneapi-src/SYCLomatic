@@ -66,9 +66,6 @@ REGIST_INCLUSION("nccl.h", FullMatch, NCCL, Replace, false,
 REGIST_INCLUSION("cudnn.h", FullMatch, DNN, Replace, false,
                  HeaderType::HT_DPCT_DNNL_Utils)
 
-REGIST_INCLUSION("mma.h", FullMatch, WMMA, Replace, false,
-                 HeaderType::HT_DPCT_MMA_Utils)
-
 REGIST_INCLUSION("cuda/atomic", FullMatch, Libcu, Replace, false,
                  HeaderType::HT_DPCT_Atomic)
 REGIST_INCLUSION("cuda/std/atomic", FullMatch, Libcu, Replace, false,

@@ -14741,7 +14741,7 @@ REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 
 REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 
-REGISTER_RULE(WMMARule, PassKind::PK_Analysis, RuleGroupKind::RK_WMMA)
+REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 

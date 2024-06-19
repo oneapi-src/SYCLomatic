@@ -8,10 +8,11 @@
 
 CONDITIONAL_FACTORY_ENTRY(
     checkEnableJointMatrix(),
-    CALL_FACTORY_ENTRY("nvcuda::wmma::fill_fragment",
-                       CALL(MapNames::getDpctNamespace() +
-                                "experimental::matrix::joint_matrix_fill",
-                            ARG(0), ARG(1))),
+    CALL_FACTORY_ENTRY(
+        "nvcuda::wmma::fill_fragment",
+        CALL(MapNames::getClNamespace() +
+                 "ext::oneapi::experimental::matrix::joint_matrix_fill",
+             SUBGROUP, MEMBER_CALL(ARG(0), false, "get"), ARG(1))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::fill_fragment",
                       Diagnostics::API_NOT_MIGRATED))
 
@@ -19,30 +20,64 @@ CONDITIONAL_FACTORY_ENTRY(
     checkEnableJointMatrix(),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgCount(3),
-        CALL_FACTORY_ENTRY("nvcuda::wmma::load_matrix_sync",
-                           CALL(MapNames::getDpctNamespace() +
-                                    "experimental::matrix::joint_matrix_load",
-                                ARG(0), ARG(1), ARG(2))),
-        CALL_FACTORY_ENTRY("nvcuda::wmma::load_matrix_sync",
-                           CALL(MapNames::getDpctNamespace() +
-                                    "experimental::matrix::joint_matrix_load",
-                                ARG(0), ARG(1), ARG(2), ARG(3)))),
+        CALL_FACTORY_ENTRY(
+            "nvcuda::wmma::load_matrix_sync",
+            CALL(MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::matrix::joint_matrix_load",
+                 SUBGROUP, MEMBER_CALL(ARG(0), false, "get"),
+                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                          MapNames::getClNamespace() + "address_space_cast",
+                          LITERAL(MapNames::getClNamespace() +
+                                  "access::address_space::generic_space"),
+                          LITERAL(MapNames::getClNamespace() +
+                                  "access::decorated::no"),
+                          getDerefedType(1)),
+                      ARG(1)),
+                 ARG(2))),
+        CALL_FACTORY_ENTRY(
+            "nvcuda::wmma::load_matrix_sync",
+            CALL(MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::matrix::joint_matrix_load",
+                 SUBGROUP, MEMBER_CALL(ARG(0), false, "get"),
+                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                          MapNames::getClNamespace() + "address_space_cast",
+                          LITERAL(MapNames::getClNamespace() +
+                                  "access::address_space::generic_space"),
+                          LITERAL(MapNames::getClNamespace() +
+                                  "access::decorated::no"),
+                          getDerefedType(1)),
+                      ARG(1)),
+                 ARG(2), ARG(3)))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::load_matrix_sync",
                       Diagnostics::API_NOT_MIGRATED))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkEnableJointMatrix(),
-    CALL_FACTORY_ENTRY("nvcuda::wmma::mma_sync",
-                       CALL(MapNames::getDpctNamespace() +
-                                "experimental::matrix::joint_matrix_mad",
-                            ARG(0), ARG(1), ARG(2), ARG(3))),
+    CALL_FACTORY_ENTRY(
+        "nvcuda::wmma::mma_sync",
+        CALL(MapNames::getClNamespace() +
+                 "ext::oneapi::experimental::matrix::joint_matrix_mad",
+             SUBGROUP, MEMBER_CALL(ARG(0), false, "get"),
+             MEMBER_CALL(ARG(1), false, "get"),
+             MEMBER_CALL(ARG(2), false, "get"),
+             MEMBER_CALL(ARG(3), false, "get"))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::mma_sync", Diagnostics::API_NOT_MIGRATED))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkEnableJointMatrix(),
-    CALL_FACTORY_ENTRY("nvcuda::wmma::store_matrix_sync",
-                       CALL(MapNames::getDpctNamespace() +
-                                "experimental::matrix::joint_matrix_store",
-                            ARG(0), ARG(1), ARG(2), ARG(3))),
+    CALL_FACTORY_ENTRY(
+        "nvcuda::wmma::store_matrix_sync",
+        CALL(MapNames::getClNamespace() +
+                 "ext::oneapi::experimental::matrix::joint_matrix_store",
+             SUBGROUP, MEMBER_CALL(ARG(1), false, "get"),
+             CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                      MapNames::getClNamespace() + "address_space_cast",
+                      LITERAL(MapNames::getClNamespace() +
+                              "access::address_space::generic_space"),
+                      LITERAL(MapNames::getClNamespace() +
+                              "access::decorated::no"),
+                      getDerefedType(0)),
+                  ARG(0)),
+             ARG(2), ARG(3))),
     ENTRY_UNSUPPORTED("nvcuda::wmma::store_matrix_sync",
                       Diagnostics::API_NOT_MIGRATED))
