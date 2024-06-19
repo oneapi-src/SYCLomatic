@@ -33,6 +33,7 @@ struct LiteralElement {
 struct CodeElement {
   std::string Name;
   int SuffixLength = -1;
+  int PrefixLength = -1;
 };
 
 using Element = std::variant<SpacingElement, LiteralElement, CodeElement>;
@@ -153,6 +154,47 @@ static void adjustSuffixLengths(MatchPattern &Pattern) {
   }
 }
 
+/*
+Determines the number of pattern elements that form the prefix of a code
+element. The prefix of a code element extends up to the previous code element,
+an unbalanced right Delimiter, or the end of the pattern. Example:
+
+Pattern:
+  if (${a} == ${b}) ${body}
+
+${a}:
+  Prefix: ['i', 'f', Spacing, '(']
+  PrefixLength: 4
+${b}:
+  Prefix: [Spacing, '=', '=', Spacing]
+  PrefixLength: 4
+
+${body}:
+  Prefix: [')', Spacing]
+  PrefixLength: 2
+*/
+static void adjustPrefixLengths(MatchPattern &Pattern) {
+  int PrefixTerminator = 0;
+  for (size_t i = 0; i < Pattern.size(); i++) {
+    auto &Element = Pattern[i];
+
+    if (std::holds_alternative<CodeElement>(Element)) {
+      auto &Code = std::get<CodeElement>(Element);
+      Code.PrefixLength = i - PrefixTerminator;
+      PrefixTerminator = i + 1;
+      continue;
+    }
+
+    if (std::holds_alternative<LiteralElement>(Element)) {
+      auto &Literal = std::get<LiteralElement>(Element);
+      if (isRightDelimiter(Literal.Value)) {
+        PrefixTerminator = i;
+      }
+      continue;
+    }
+  }
+}
+
 static void removeTrailingSpacingElement(MatchPattern &Pattern) {
   if (std::holds_alternative<SpacingElement>(Pattern.back())) {
     Pattern.pop_back();
@@ -219,6 +261,7 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
 
   removeTrailingSpacingElement(Result);
   adjustSuffixLengths(Result);
+  adjustPrefixLengths(Result);
   return Result;
 }
 
@@ -561,6 +604,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
+  int CodeCount = 0;
   while (PatternIndex < PatternSize && Index < Size) {
 
     if (SrcFileType == SourceFileType::SFT_CMakeScript) {
@@ -596,6 +640,14 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
 
     if (std::holds_alternative<CodeElement>(Element)) {
       const auto &Code = std::get<CodeElement>(Element);
+
+      CodeCount++;
+      if (SrcFileType == SourceFileType::SFT_CMakeScript && CodeCount == 1 &&
+          Code.PrefixLength > 1 && Index - Code.PrefixLength - 1 > 0 &&
+          isIdentifiedChar(Input[Index - Code.PrefixLength - 1])) {
+        return {};
+      }
+
       MatchPattern Suffix(Pattern.begin() + PatternIndex + 1,
                           Pattern.begin() + PatternIndex + 1 +
                               Code.SuffixLength);
