@@ -41,6 +41,17 @@ private:
   oneapi::mkl::uplo _uplo = oneapi::mkl::uplo::upper;
   oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
 };
+class descriptor {
+public:
+  descriptor() {}
+  void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
+  sycl::queue &get_queue() noexcept { return *_queue_ptr; }
+
+private:
+  queue_ptr _queue_ptr = &dpct::get_default_queue();
+};
+
+using descriptor_ptr = descriptor *;
 
 enum class conversion_scope : int { index = 0, index_and_value };
 
