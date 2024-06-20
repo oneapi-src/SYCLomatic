@@ -78,6 +78,9 @@ int main(int argc, char* argv[]) {
 // CHECK:   dpct::sync_barrier(start, &q_ct1);
   cudaEventRecord(start, 0);
 
+// CHECK:   MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::sync_barrier((dpct::event_ptr)start, &q_ct1)));
+  MY_ERROR_CHECKER(cudaEventRecord((cudaEvent_t)start, 0));
+
   // kernel call without sync
 // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
