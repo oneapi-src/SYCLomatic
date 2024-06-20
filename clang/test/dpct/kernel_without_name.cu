@@ -388,12 +388,18 @@ void run_foo11() {
   foo_kernel11<<<1, 1>>>({NAN, NAN});
 }
 
-__global__ void foo_kernel12(__half2 Input) {}
+struct TYPE_A {
+    float x, y;
+    TYPE_A() = default;
+    __host__ __device__ TYPE_A(const float &a, const float &b) : x(a), y(b) { }
+};
+
+__global__ void foo_kernel12(TYPE_A Input) {}
 
 void run_foo12() {
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::half2 NAN_NAN_ct0 = {NAN, NAN};
+  // CHECK-NEXT:     TYPE_A NAN_NAN_ct0 = {NAN, NAN};
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
