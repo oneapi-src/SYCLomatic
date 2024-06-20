@@ -33,5 +33,10 @@ int main() {
   // CHECK: dpct::experimental::command_graph_exec_ptr execGraph5, *execGraph6, **execGraph7;
   cudaGraphExec_t execGraph5, *execGraph6, **execGraph7;
 
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+
+  cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+
   return 0;
 }
