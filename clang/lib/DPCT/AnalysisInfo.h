@@ -2725,8 +2725,7 @@ private:
     int Index;
     int ArgSize = 0;
     bool IsDeviceRandomGeneratorType = false;
-    bool HasPotentiallyImplicitCast = true;
-    bool IsInitListExpr = false;
+    bool HasImplicitConversion = false;
     bool IsDoublePointer = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;

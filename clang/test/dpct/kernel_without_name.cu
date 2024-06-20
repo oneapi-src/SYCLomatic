@@ -2,6 +2,8 @@
 // RUN: FileCheck --input-file %T/kernel_without_name/kernel_without_name.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/kernel_without_name/kernel_without_name.dp.cpp -o %T/kernel_without_name/kernel_without_name.dp.o %}
 
+#include "cuda_fp16.h"
+
 __global__ void testKernel(int L, int M, int N);
 
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
@@ -370,7 +372,7 @@ template <typename T> void run_foo10() {
   foo_kernel9<T><<<1, 1>>>();
 }
 
-__global__ void foo_kernel11(float2 Input2) {}
+__global__ void foo_kernel11(float2 Input) {}
 
 void run_foo11() {
   // CHECK: dpct::get_out_of_order_queue().submit(
@@ -384,4 +386,20 @@ void run_foo11() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   foo_kernel11<<<1, 1>>>({NAN, NAN});
+}
+
+__global__ void foo_kernel12(__half2 Input) {}
+
+void run_foo12() {
+  // CHECK: dpct::get_out_of_order_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::half2 NAN_NAN_ct0 = {NAN, NAN};
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         foo_kernel12(NAN_NAN_ct0);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  foo_kernel12<<<1, 1>>>({NAN, NAN});
 }

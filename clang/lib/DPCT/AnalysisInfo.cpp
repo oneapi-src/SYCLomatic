@@ -5072,14 +5072,12 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
-  if (isa<InitListExpr>(Arg)) {
-    IsInitListExpr = true;
+  if (isa<InitListExpr>(Arg) || isa<CXXConstructExpr>(Arg)) {
+    HasImplicitConversion = true;
   } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
-    if (ICE->getCastKind() == CK_LValueToRValue) {
-      HasPotentiallyImplicitCast = false;
+    if (ICE->getCastKind() != CK_LValueToRValue) {
+      HasImplicitConversion = true;
     }
-  } else {
-    HasPotentiallyImplicitCast = false;
   }
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
@@ -6023,8 +6021,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
       std::string TypeStr = "auto";
-      if ((Arg.HasPotentiallyImplicitCast || Arg.IsInitListExpr) &&
-          !Arg.getTypeString().empty()) {
+      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty()) {
         TypeStr = Arg.getTypeString();
       }
       SubmitStmts.CommandGroupList.emplace_back(
