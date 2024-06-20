@@ -140,6 +140,8 @@ bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
   auto &TemplateParmsList = *FTD->getTemplateParameters();
   if (TAIList.size() == TemplateParmsList.size())
     return true;
+  if (TAIList.size() > TemplateParmsList.size())
+    return false;
 
   TAIList.resize(TemplateParmsList.size());
 
@@ -4059,9 +4061,11 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     HasImplicitArg = isa<CXXOperatorCallExpr>(CE) && isa<CXXMethodDecl>(FD);
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
-    if (Unresolved->getNumDecls())
-      IsAllTemplateArgsSpecified = deduceTemplateArguments(
-          CE, Unresolved->decls_begin().getDecl(), TemplateArgs);
+    for (const auto &D : Unresolved->decls()) {
+      IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, D, TemplateArgs);
+      if (IsAllTemplateArgsSpecified)
+        break;
+    }
   } else if (isa<CXXDependentScopeMemberExpr>(
                  CE->getCallee()->IgnoreImplicitAsWritten())) {
     // Un-instantiate member call. Cannot analyze related method declaration.

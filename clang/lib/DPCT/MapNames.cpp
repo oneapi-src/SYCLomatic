@@ -361,8 +361,8 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
                                           "sparse::matrix_info>",
                                       HelperFeatureEnum::device_ext)},
-      {"cusparseHandle_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr")},
+      {"cusparseHandle_t", std::make_shared<TypeNameRule>(
+                               getDpctNamespace() + "sparse::descriptor_ptr")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},

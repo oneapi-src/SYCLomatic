@@ -3828,7 +3828,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpSV_bufferSize", "cusparseSpSV_analysis",
         "cusparseSpSM_analysis", "cusparseSpSM_bufferSize",
         "cusparseSpSM_createDescr", "cusparseSpSM_destroyDescr",
-        "cusparseSpSM_solve");
+        "cusparseSpSM_solve", "cusparseCreateCoo");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -7209,8 +7209,10 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
     bool IsAssigned) {
   auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
   auto EventArg = CE->getArg(0);
-  auto StreamName = getStmtSpelling(StreamArg);
-  auto ArgName = getStmtSpelling(EventArg);
+  ExprAnalysis StreamEA(StreamArg);
+  ExprAnalysis Arg0EA(EventArg);
+  auto StreamName = StreamEA.getReplacedString();
+  auto ArgName = Arg0EA.getReplacedString();
   bool IsDefaultStream = isDefaultStream(StreamArg);
   auto IndentLoc = CE->getBeginLoc();
   auto &SM = DpctGlobalInfo::getSourceManager();

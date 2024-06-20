@@ -307,7 +307,7 @@ enum class compute_type : int {
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
-  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+  sycl::queue &get_queue() noexcept { return *_queue_ptr; }
   void set_math_mode(math_mode mm) noexcept { _mm = mm; }
   math_mode get_math_mode() const noexcept { return _mm; }
   static inline void set_saved_queue(queue_ptr q_ptr) noexcept {
