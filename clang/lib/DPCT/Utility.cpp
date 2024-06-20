@@ -5045,13 +5045,40 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
       if (!isUserDefinedDecl(ClassDecl))
         return;
       std::vector<std::string> Messages;
+      // [0] for T&, [1] for volatile T&
+      std::array<std::pair<bool, SourceLocation>, 2>
+          CtorConstQualifierInsertLocations;
       for (const auto &C : ClassDecl->ctors()) {
         if (!C->isImplicit() && !C->isDeleted()) {
           if (C->isCopyConstructor()) {
             Messages.push_back("copy constructor");
+            // The 1st parameter of the copy constructor need "const" qualifier.
+            const auto *FirstParam = C->getParamDecl(0);
+            const ReferenceType *RT =
+                dyn_cast<ReferenceType>(FirstParam->getType().getTypePtr());
+            if (RT) {
+              Qualifiers Q = RT->getPointeeType().getQualifiers();
+              unsigned int CVQualifiers = Q.getCVRQualifiers();
+              bool HasVolatile = CVQualifiers & Qualifiers::Volatile;
+              CtorConstQualifierInsertLocations[HasVolatile].first |=
+                  CVQualifiers & Qualifiers::Const;
+              CtorConstQualifierInsertLocations[HasVolatile].second =
+                  FirstParam->getBeginLoc();
+            }
           } else if (C->isMoveConstructor()) {
             Messages.push_back("copy assignment");
           }
+        }
+      }
+      for (const auto &P : CtorConstQualifierInsertLocations) {
+        if (P.first || P.second.isInvalid())
+          continue;
+        auto *NT = new InsertText(P.second, "const ");
+        if (Rule) {
+          Rule->emplaceTransformation(NT);
+        } else {
+          DpctGlobalInfo::getInstance().addReplacement(
+              NT->getReplacement(DpctGlobalInfo::getContext()));
         }
       }
       for (const auto &M : ClassDecl->methods()) {
