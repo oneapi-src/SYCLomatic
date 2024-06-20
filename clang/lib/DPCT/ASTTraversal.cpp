@@ -3818,7 +3818,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpSV_bufferSize", "cusparseSpSV_analysis",
         "cusparseSpSM_analysis", "cusparseSpSM_bufferSize",
         "cusparseSpSM_createDescr", "cusparseSpSM_destroyDescr",
-        "cusparseSpSM_solve");
+        "cusparseSpSM_solve", "cusparseCreateCoo");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
