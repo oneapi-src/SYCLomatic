@@ -403,3 +403,23 @@ void run_foo12() {
   // CHECK-NEXT:   });
   foo_kernel12<<<1, 1>>>({NAN, NAN});
 }
+
+template<class T, bool B>
+__global__ void foobar(T a) {}
+
+// CHECK: template<class T>
+// CHECK-NEXT: void foobar(T a) {
+// CHECK-NEXT:   dpct::get_out_of_order_queue().parallel_for(
+// CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:       foobar<T, true>(a);
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+template<class T>
+void foobar(T a) {
+  foobar<T, true><<<1, 1>>>(a);
+}
+
+void run_foobar() {
+  foobar<float>(1.0f);
+}
