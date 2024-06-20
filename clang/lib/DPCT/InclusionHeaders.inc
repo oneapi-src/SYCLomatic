@@ -107,4 +107,4 @@ REGIST_INCLUSION("CL/", Startwith, Common, DoNothing, false)
 REGIST_INCLUSION("cuda_rutime.h", FullMatch, Libcu, Remove, true)
 
 REGIST_INCLUSION("cublasLt.h", FullMatch, BLas, Replace, false,
-                 HeaderType::HT_DPCT_BLAS_Utils)
+                 HeaderType::HT_DPCT_BLAS_GEMM_Utils)

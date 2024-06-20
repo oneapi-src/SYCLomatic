@@ -1,0 +1,698 @@
+//==---- blas_gemm_utils.hpp ----------------------*- C++ -*----------------==//
+//
+// Copyright (C) Intel Corporation
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// See https://llvm.org/LICENSE.txt for license information.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef __DPCT_BLAS_GEMM_UTILS_HPP__
+#define __DPCT_BLAS_GEMM_UTILS_HPP__
+
+#include "lib_common_utils.hpp"
+#include "memory.hpp"
+
+#include <oneapi/dnnl/dnnl.hpp>
+#include <oneapi/dnnl/dnnl_sycl.hpp>
+
+#include <sycl/sycl.hpp>
+
+namespace dpct {
+namespace blas_gemm {
+namespace experimental {
+enum class order_t : std::uint8_t {
+  col,
+  row,
+  col32,
+  col4_4r2_8c,
+  col32_2r_4r4
+};
+enum class pointer_mode_t {
+  host,
+  device,
+  device_vector,
+  alpha_device_vector_beta_zero,
+  alpha_device_vector_beta_host
+};
+
+class descriptor;
+using descriptor_ptr = descriptor *;
+class matrix_layout_t;
+using matrix_layout_ptr = matrix_layout_t *;
+class matmul_desc_t;
+using matmul_desc_ptr = matmul_desc_t *;
+class transform_desc_t;
+using transform_desc_ptr = transform_desc_t *;
+class transform_desc_t;
+using transform_desc_ptr = transform_desc_t *;
+
+class descriptor {
+public:
+  descriptor() {}
+  void init(sycl::queue *q_ptr) {
+    _engine = dnnl::sycl_interop::make_engine(q_ptr->get_device(),
+                                              q_ptr->get_context());
+    _engine_stream = dnnl::sycl_interop::make_stream(_engine, *q_ptr);
+  }
+  dnnl::engine get_engine() const noexcept { return _engine; }
+  dnnl::stream get_engine_stream() const noexcept { return _engine_stream; };
+
+private:
+  dnnl::engine _engine;
+  dnnl::stream _engine_stream;
+};
+
+class matrix_layout_t {
+public:
+  enum class attribute { type, order, rows, cols, ld };
+
+  matrix_layout_t(library_data_t type, std::uint64_t rows, std::uint64_t cols,
+                  std::int64_t ld)
+      : _type(type), _rows(rows), _cols(cols), _ld(ld) {}
+
+  void set_attribute(attribute attr, const void *mem) {
+    get_set_attr<true>(attr, const_cast<void *>(mem));
+  }
+  void get_attribute(attribute attr, void *mem) {
+    get_set_attr<false>(attr, mem);
+  }
+
+private:
+  template <bool is_set> void get_set_attr(attribute attr, void *mem) {
+#define CASE(tag)                                                              \
+  case attribute::tag:                                                         \
+    if constexpr (is_set) {                                                    \
+      _##tag = *static_cast<decltype(_##tag) *>(mem);                          \
+    } else {                                                                   \
+      *static_cast<decltype(_##tag) *>(mem) = _##tag;                          \
+    }                                                                          \
+    break;
+    switch (attr) {
+      CASE(type)
+      CASE(order)
+      CASE(rows)
+      CASE(cols)
+      CASE(ld)
+    }
+#undef CASE
+  }
+
+  library_data_t _type;
+  order_t _order = order_t::col;
+  std::uint64_t _rows;
+  std::uint64_t _cols;
+  std::int64_t _ld;
+
+  friend void matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
+                     const void *alpha, const void *a, matrix_layout_ptr a_desc,
+                     const void *b, matrix_layout_ptr b_desc, const void *beta,
+                     const void *c, matrix_layout_ptr c_desc, void *d,
+                     matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
+  friend void matrix_transform(transform_desc_ptr transform_desc,
+                               const void *alpha, const void *a,
+                               matrix_layout_ptr a_desc, const void *beta,
+                               const void *b, matrix_layout_ptr b_desc, void *c,
+                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
+};
+
+class matmul_desc_t {
+public:
+  enum class attribute {
+    compute_type,
+    scale_type,
+    pointer_mode,
+    trans_a,
+    trans_b,
+    trans_c,
+    epilogue
+  };
+
+  matmul_desc_t(compute_type compute_type, library_data_t scale_type)
+      : _compute_type(compute_type), _scale_type(scale_type) {}
+
+  void set_attribute(attribute attr, const void *mem) {
+    get_set_attr<true>(attr, const_cast<void *>(mem));
+  }
+  void get_attribute(attribute attr, void *mem) {
+    get_set_attr<false>(attr, mem);
+  }
+
+private:
+  template <bool is_set> void get_set_attr(attribute attr, void *mem) {
+#define CASE(tag)                                                              \
+  case attribute::tag:                                                         \
+    if constexpr (is_set) {                                                    \
+      _##tag = *static_cast<decltype(_##tag) *>(mem);                          \
+    } else {                                                                   \
+      *static_cast<decltype(_##tag) *>(mem) = _##tag;                          \
+    }                                                                          \
+    break;
+    switch (attr) {
+      CASE(compute_type)
+      CASE(scale_type)
+      CASE(pointer_mode)
+      CASE(trans_a)
+      CASE(trans_b)
+      CASE(trans_c)
+      CASE(epilogue)
+    }
+#undef CASE
+  }
+
+  compute_type _compute_type;
+  library_data_t _scale_type;
+  pointer_mode_t _pointer_mode = pointer_mode_t::host;
+  oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
+  oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
+  oneapi::mkl::transpose _trans_c = oneapi::mkl::transpose::nontrans;
+  int _epilogue = 1;
+
+  friend void matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
+                     const void *alpha, const void *a, matrix_layout_ptr a_desc,
+                     const void *b, matrix_layout_ptr b_desc, const void *beta,
+                     const void *c, matrix_layout_ptr c_desc, void *d,
+                     matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
+};
+
+namespace detail {
+inline dnnl::memory::data_type dpct_type_to_dnnl_type(library_data_t type) {
+  switch (type) {
+  case library_data_t::real_half:
+    return dnnl::memory::data_type::f16;
+  case library_data_t::real_bfloat16:
+    return dnnl::memory::data_type::bf16;
+  case library_data_t::real_float:
+    return dnnl::memory::data_type::f32;
+  case library_data_t::real_double:
+    return dnnl::memory::data_type::f64;
+  case library_data_t::real_int32:
+    return dnnl::memory::data_type::s32;
+  case library_data_t::real_int8:
+    return dnnl::memory::data_type::s8;
+  case library_data_t::real_uint8:
+    return dnnl::memory::data_type::u8;
+  default:
+    throw std::runtime_error(
+        "the input library_data_t type has no corresponding type in dnnl");
+  }
+}
+
+template <class T, class Talpha>
+sycl::event scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols,
+                                           T *d, const Talpha *alpha) {
+  return q_ptr->submit([&](sycl::handler &cgh) {
+#ifdef DPCT_USM_LEVEL_NONE
+    access_wrapper<T *> d_acc(d, cgh);
+    access_wrapper<const Talpha *> alpha_acc(alpha, cgh);
+#endif
+    cgh.parallel_for<
+        dpct_kernel_name<class scale_with_vector_alpha, T, Talpha>>(
+        sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
+#ifdef DPCT_USM_LEVEL_NONE
+          auto d_data = d_acc.get_raw_pointer();
+          auto alpha_data = alpha_acc.get_raw_pointer();
+#else
+            auto d_data = d;
+            auto alpha_data = alpha;
+#endif
+          size_t row_idx = index.get(0);
+          size_t col_idx = index.get(1);
+          size_t idx = rows * col_idx + row_idx;
+          d_data[idx] = d_data[idx] * alpha_data[row_idx];
+        });
+  });
+}
+
+// d is col major without padding
+inline sycl::event scale_d_with_vector_alpha(queue_ptr q_ptr, int rows,
+                                             int cols, void *d,
+                                             library_data_t d_type,
+                                             const void *alpha,
+                                             library_data_t alpha_type) {
+  std::uint64_t key = dpct::detail::get_type_combination_id(d_type, alpha_type);
+  sycl::event e;
+  switch (key) {
+  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
+                                             library_data_t::real_float): {
+    e = scale_d_with_vector_alpha_impl<std::int8_t, float>(
+        q_ptr, rows, cols, (std::int8_t *)d, (const float *)alpha);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_int32,
+                                             library_data_t::real_float): {
+    e = scale_d_with_vector_alpha_impl<int, float>(q_ptr, rows, cols, (int *)d,
+                                                   (const float *)alpha);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+  return e;
+}
+
+inline std::tuple<size_t, size_t>
+get_from_to_linear_idx(size_t rows, size_t cols, size_t a_ld, order_t a_order,
+                       size_t c_ld, order_t c_order, size_t row_idx,
+                       size_t col_idx) {
+#define COMBINE(from, to)                                                      \
+  static_cast<std::uint16_t>(from) << 8 | static_cast<std::uint8_t>(to)
+
+  size_t from_linear_idx, to_linear_idx;
+  switch (COMBINE(a_order, c_order)) {
+  case COMBINE(order_t::col, order_t::row): {
+    from_linear_idx = a_ld * col_idx + row_idx;
+    to_linear_idx = c_ld * row_idx + col_idx;
+    break;
+  }
+  case COMBINE(order_t::row, order_t::col): {
+    from_linear_idx = a_ld * row_idx + col_idx;
+    to_linear_idx = c_ld * col_idx + row_idx;
+    break;
+  }
+  case COMBINE(order_t::col, order_t::col32): {
+    from_linear_idx = a_ld * col_idx + row_idx;
+    to_linear_idx = c_ld * (col_idx / 32) + 32 * row_idx + col_idx % 32;
+    break;
+  }
+  case COMBINE(order_t::col32, order_t::col): {
+    from_linear_idx = a_ld * (col_idx / 32) + 32 * row_idx + col_idx % 32;
+    to_linear_idx = c_ld * col_idx + row_idx;
+    break;
+  }
+  case COMBINE(order_t::col, order_t::col4_4r2_8c): {
+    from_linear_idx = a_ld * col_idx + row_idx;
+
+    size_t from_row_in_row8_col32 = row_idx % 8;
+    size_t from_col_in_row8_col32 = col_idx % 32;
+
+    size_t to_row_in_row8_col32 =
+        4 * (from_row_in_row8_col32 % 2) + from_col_in_row8_col32 / 8;
+    size_t to_col_in_row8_col32 = 16 * ((from_col_in_row8_col32 / 4) % 2) +
+                                  4 * (from_row_in_row8_col32 / 2) +
+                                  from_col_in_row8_col32 % 4;
+    size_t to_linear_idx_in_row8_col32 =
+        to_row_in_row8_col32 * 32 + to_col_in_row8_col32;
+
+    to_linear_idx = c_ld * (col_idx / 32) + (row_idx / 8) * (32 * 8) +
+                    to_linear_idx_in_row8_col32;
+    break;
+  }
+  case COMBINE(order_t::col4_4r2_8c, order_t::col): {
+    to_linear_idx = c_ld * col_idx + row_idx;
+
+    size_t to_row_in_row8_col32 = row_idx % 8;
+    size_t to_col_in_row8_col32 = col_idx % 32;
+
+    size_t from_row_in_row8_col32 =
+        4 * (to_row_in_row8_col32 % 2) + to_col_in_row8_col32 / 8;
+    size_t from_col_in_row8_col32 = 16 * ((to_col_in_row8_col32 / 4) % 2) +
+                                    4 * (to_row_in_row8_col32 / 2) +
+                                    to_col_in_row8_col32 % 4;
+    size_t from_linear_idx_in_row8_col32 =
+        from_row_in_row8_col32 * 32 + from_col_in_row8_col32;
+
+    from_linear_idx = a_ld * (col_idx / 32) + (row_idx / 8) * (32 * 8) +
+                      from_linear_idx_in_row8_col32;
+    break;
+  }
+  case COMBINE(order_t::col, order_t::col32_2r_4r4): {
+    from_linear_idx = a_ld * col_idx + row_idx;
+
+    size_t from_row_in_row32_col32 = row_idx % 32;
+    size_t from_col_in_row32_col32 = col_idx % 32;
+
+    size_t to_row_in_row32_col32 = 8 * ((from_row_in_row32_col32 % 8) / 2) +
+                                   (from_row_in_row32_col32 / 8) * 2 +
+                                   from_row_in_row32_col32 % 2;
+    size_t to_col_in_row32_col32 = from_col_in_row32_col32;
+    size_t to_linear_idx_in_row32_col32 =
+        to_row_in_row32_col32 * 32 + to_col_in_row32_col32;
+
+    to_linear_idx = c_ld * (col_idx / 32) + (row_idx / 32) * (32 * 32) +
+                    to_linear_idx_in_row32_col32;
+    break;
+  }
+  case COMBINE(order_t::col32_2r_4r4, order_t::col): {
+    to_linear_idx = c_ld * col_idx + row_idx;
+
+    size_t to_row_in_row32_col32 = row_idx % 32;
+    size_t to_col_in_row32_col32 = col_idx % 32;
+
+    size_t from_row_in_row32_col32 = 8 * ((to_row_in_row32_col32 % 8) / 2) +
+                                     (to_row_in_row32_col32 / 8) * 2 +
+                                     to_row_in_row32_col32 % 2;
+    size_t from_col_in_row32_col32 = to_col_in_row32_col32;
+    size_t from_linear_idx_in_row32_col32 =
+        from_row_in_row32_col32 * 32 + from_col_in_row32_col32;
+
+    from_linear_idx = a_ld * (col_idx / 32) + (row_idx / 32) * (32 * 32) +
+                      from_linear_idx_in_row32_col32;
+    break;
+  }
+  }
+#undef COMBINE
+  return std::make_tuple(from_linear_idx, to_linear_idx);
+}
+
+template <class T>
+sycl::event matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
+                             size_t a_ld, order_t a_order, const T *a,
+                             size_t c_ld, order_t c_order, T *c) {
+  if ((a_order != order_t::col && c_order != order_t::col) ||
+      (a_order == order_t::col && c_order == order_t::col)) {
+    throw std::runtime_error("Unsupported order combination.");
+  }
+
+  return q_ptr->submit([&](sycl::handler &cgh) {
+#ifdef DPCT_USM_LEVEL_NONE
+    access_wrapper<const T *> a_acc(a, cgh);
+    access_wrapper<T *> c_acc(c, cgh);
+#endif
+    cgh.parallel_for<dpct_kernel_name<class matrix_transform_col_to_row, T>>(
+        sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
+#ifdef DPCT_USM_LEVEL_NONE
+          auto a_data = a_acc.get_raw_pointer();
+          auto c_data = c_acc.get_raw_pointer();
+#else
+            auto a_data = a;
+            auto c_data = c;
+#endif
+          size_t row_idx = index.get(0);
+          size_t col_idx = index.get(1);
+          if (row_idx < rows) {
+            size_t from_linear_idx, to_linear_idx;
+            std::tie(from_linear_idx, to_linear_idx) = get_from_to_linear_idx(
+                rows, cols, a_ld, a_order, c_ld, c_order, row_idx, col_idx);
+            c_data[to_linear_idx] = a_data[from_linear_idx];
+          }
+        });
+  });
+}
+} // namespace detail
+
+// Note: Non-col-major matrix will be converted to col-major matrix before
+// multiplication and converted back after multiplication.
+// TODO: Impl row-major matmul without layout conversion
+inline void matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
+                   const void *alpha, const void *a, matrix_layout_ptr a_desc,
+                   const void *b, matrix_layout_ptr b_desc, const void *beta,
+                   const void *c, matrix_layout_ptr c_desc, void *d,
+                   matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
+  if (!q_ptr)
+    q_ptr = &get_default_queue();
+  handle->init(q_ptr);
+  bool vector_alpha = false;
+  if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
+      compute_desc->_pointer_mode ==
+          pointer_mode_t::alpha_device_vector_beta_zero ||
+      compute_desc->_pointer_mode ==
+          pointer_mode_t::alpha_device_vector_beta_host) {
+    vector_alpha = true;
+  }
+
+  // 1. if beta is not zero, need throw exception since we do not support it.
+  if (beta != nullptr) {
+    size_t beta_size =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            compute_desc->_scale_type)] /
+        8;
+    void *beta_host = std::malloc(beta_size);
+    void *beta_zero = std::malloc(beta_size);
+    std::memset(beta_zero, 0, beta_size);
+    q_ptr->memcpy(beta_host, beta, beta_size).wait();
+    if (std::memcmp(beta_host, beta_zero, beta_size))
+      throw std::runtime_error("Non-zero beta is not supported.");
+  }
+
+  // 2. if has epilogue, need throw exception since we do not support it.
+  if (compute_desc->_epilogue != 1) {
+    throw std::runtime_error("Epilogue is not supported.");
+  }
+
+  if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
+    throw std::runtime_error("Matrix A must not be transposed.");
+  }
+  if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
+    throw std::runtime_error("Matrix B must be transposed.");
+  }
+
+  // For non-col_major matrix, convert it to col_major.
+  const void *new_a = a;
+  const void *new_b = b;
+  void *new_d = d;
+  size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldd = d_desc->_ld;
+  if (a_desc->_order != order_t::col) {
+    new_lda = a_desc->_rows;
+    if (a_desc->_type == library_data_t::real_int8) {
+      new_a =
+          dpct_malloc(sizeof(std::int8_t) * a_desc->_cols * new_lda, *q_ptr);
+      detail::matrix_transform<std::int8_t>(
+          q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+          (const std::int8_t *)a, new_lda, order_t::col, (std::int8_t *)new_a);
+    } else {
+      new_a = dpct_malloc(sizeof(int) * a_desc->_cols * new_lda, *q_ptr);
+      detail::matrix_transform<int>(q_ptr, a_desc->_rows, a_desc->_cols,
+                                    a_desc->_ld, a_desc->_order, (const int *)a,
+                                    new_lda, order_t::col, (int *)new_a);
+    }
+  }
+  if (b_desc->_order != order_t::col) {
+    new_ldb = b_desc->_cols; // The input b is transpose::trans, so the row/col
+                             // is already swapped.
+    if (b_desc->_type == library_data_t::real_int8) {
+      new_b =
+          dpct_malloc(sizeof(std::int8_t) * b_desc->_rows * new_ldb, *q_ptr);
+      detail::matrix_transform<std::int8_t>(
+          q_ptr, b_desc->_cols, b_desc->_rows, b_desc->_ld, b_desc->_order,
+          (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b);
+    } else {
+      new_b = dpct_malloc(sizeof(int) * b_desc->_rows * new_ldb, *q_ptr);
+      detail::matrix_transform<int>(q_ptr, b_desc->_cols, b_desc->_rows,
+                                    b_desc->_ld, b_desc->_order, (const int *)b,
+                                    new_ldb, order_t::col, (int *)new_b);
+    }
+  }
+  if (d_desc->_order != order_t::col) {
+    new_ldd = d_desc->_rows;
+    if (d_desc->_type == library_data_t::real_int8) {
+      new_d =
+          dpct_malloc(sizeof(std::int8_t) * d_desc->_cols * new_ldd, *q_ptr);
+    } else {
+      new_d = dpct_malloc(sizeof(int) * d_desc->_cols * new_ldd, *q_ptr);
+    }
+  }
+
+  // start to call oneDNN matmul primitive
+  // a,d are col_major, b is row_major
+  const size_t m = a_desc->_rows;
+  const size_t n = d_desc->_cols;
+  const size_t k = b_desc->_rows;
+  const dnnl::memory::dim M = m;
+  const dnnl::memory::dim N = n;
+  const dnnl::memory::dim K = k;
+  const library_data_t a_type = a_desc->_type;
+  const library_data_t b_type = b_desc->_type;
+  const library_data_t d_type = d_desc->_type;
+  const library_data_t scale_type = compute_desc->_scale_type;
+
+  dnnl::memory::dims src_dims = {M, K};
+  dnnl::memory::dims weights_dims = {K, N};
+  dnnl::memory::dims dst_dims = {M, N};
+
+  const dnnl::memory::dims src_strides =
+      dnnl::memory::dims{1, static_cast<long>(new_lda)};
+  const dnnl::memory::dims weights_strides =
+      dnnl::memory::dims{static_cast<long>(new_ldb), 1};
+  const dnnl::memory::dims dst_strides =
+      dnnl::memory::dims{1, static_cast<long>(new_ldd)};
+
+  auto src_md = dnnl::memory::desc(
+      src_dims, detail::dpct_type_to_dnnl_type(a_type), src_strides);
+  auto weights_md = dnnl::memory::desc(
+      weights_dims, detail::dpct_type_to_dnnl_type(b_type), weights_strides);
+  auto dst_md = dnnl::memory::desc(
+      dst_dims, detail::dpct_type_to_dnnl_type(d_type), dst_strides);
+
+  auto *src_mem = new dnnl::memory(src_md, handle->get_engine());
+  auto *weights_mem = new dnnl::memory(weights_md, handle->get_engine());
+  auto *dst_mem = new dnnl::memory(dst_md, handle->get_engine());
+
+  size_t src_type_size =
+      dpct::detail::library_data_size[static_cast<unsigned int>(a_type)] / 8;
+  size_t weights_type_size =
+      dpct::detail::library_data_size[static_cast<unsigned int>(b_type)] / 8;
+  dpct::dpct_memcpy(src_mem->get_data_handle(), new_a,
+                    src_type_size * k * new_lda, automatic, *q_ptr);
+  dpct::dpct_memcpy(weights_mem->get_data_handle(), new_b,
+                    weights_type_size * k * new_ldb, automatic, *q_ptr);
+
+  std::unordered_map<int, dnnl::memory> matmul_args;
+  matmul_args.insert({DNNL_ARG_SRC, *src_mem});
+  matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
+  matmul_args.insert({DNNL_ARG_DST, *dst_mem});
+  dnnl::primitive_attr matmul_attr;
+  void *alpha_data = nullptr;
+  dnnl::memory *scales_alpha = nullptr;
+  if (!vector_alpha) {
+    matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
+    std::size_t Size =
+        dpct::detail::library_data_size[static_cast<unsigned int>(scale_type)] /
+        8;
+    alpha_data = dpct::dpct_malloc(Size, *q_ptr);
+    dpct::dpct_memcpy(alpha_data, alpha, Size, automatic, *q_ptr);
+    scales_alpha =
+        new dnnl::memory({{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}},
+                         handle->get_engine());
+    dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha_data, Size,
+                      automatic, *q_ptr);
+    matmul_args.insert(
+        {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
+  }
+
+  auto matmul_pd = dnnl::matmul::primitive_desc(
+      handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
+  auto matmul_prim = dnnl::matmul(matmul_pd);
+  sycl::event matmul_prim_event = dnnl::sycl_interop::execute(
+      matmul_prim, handle->get_engine_stream(), matmul_args);
+  size_t dst_type_size =
+      dpct::detail::library_data_size[static_cast<unsigned int>(d_type)] / 8;
+  sycl::event e;
+  e = dpct::detail::dpct_memcpy(*q_ptr, new_d, dst_mem->get_data_handle(),
+                                dst_type_size * n * new_ldd, automatic,
+                                {matmul_prim_event});
+  if (vector_alpha)
+    e = detail::scale_d_with_vector_alpha(q_ptr, m, n, new_d, d_type, alpha,
+                                          scale_type);
+  else
+    dpct::async_dpct_free({alpha_data}, {e}, *q_ptr);
+  // end of calling oneDNN
+
+  if (d_desc->_order != order_t::col) {
+    if (d_desc->_type == library_data_t::real_int8) {
+      e = detail::matrix_transform<std::int8_t>(
+          q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
+          (const std::int8_t *)new_d, d_desc->_ld, d_desc->_order,
+          (std::int8_t *)d);
+    } else {
+      e = detail::matrix_transform<int>(
+          q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
+          (const int *)new_d, d_desc->_ld, d_desc->_order, (int *)d);
+    }
+  }
+
+  if (a_desc->_order != order_t::col)
+    dpct::async_dpct_free({(void *)new_a}, {e}, *q_ptr);
+  if (b_desc->_order != order_t::col)
+    dpct::async_dpct_free({(void *)new_b}, {e}, *q_ptr);
+  if (d_desc->_order != order_t::col)
+    dpct::async_dpct_free({(void *)new_d}, {e}, *q_ptr);
+  q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      delete src_mem;
+      delete weights_mem;
+      delete dst_mem;
+      if (!vector_alpha)
+        delete scales_alpha;
+    });
+  });
+}
+
+class transform_desc_t {
+public:
+  enum class attribute { scale_type, pointer_mode, trans_a, trans_b };
+
+  transform_desc_t(library_data_t scale_type) : _scale_type(scale_type) {}
+  void set_attribute(attribute attr, const void *mem) {
+    get_set_attr<true>(attr, const_cast<void *>(mem));
+  }
+  void get_attribute(attribute attr, void *mem) {
+    get_set_attr<false>(attr, mem);
+  }
+
+private:
+  template <bool is_set> void get_set_attr(attribute attr, void *mem) {
+#define CASE(tag)                                                              \
+  case attribute::tag:                                                         \
+    if constexpr (is_set) {                                                    \
+      _##tag = *static_cast<decltype(_##tag) *>(mem);                          \
+    } else {                                                                   \
+      *static_cast<decltype(_##tag) *>(mem) = _##tag;                          \
+    }                                                                          \
+    break;
+    switch (attr) {
+      CASE(scale_type)
+      CASE(pointer_mode)
+      CASE(trans_a)
+      CASE(trans_b)
+    }
+#undef CASE
+  }
+
+  library_data_t _scale_type;
+  pointer_mode_t _pointer_mode = pointer_mode_t::host;
+  oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
+  oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
+
+  friend void matrix_transform(transform_desc_ptr transform_desc,
+                               const void *alpha, const void *a,
+                               matrix_layout_ptr a_desc, const void *beta,
+                               const void *b, matrix_layout_ptr b_desc, void *c,
+                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
+};
+inline void matrix_transform(transform_desc_ptr transform_desc,
+                             const void *alpha, const void *a,
+                             matrix_layout_ptr a_desc, const void *beta,
+                             const void *b, matrix_layout_ptr b_desc, void *c,
+                             matrix_layout_ptr c_desc, queue_ptr q_ptr) {
+  if (!q_ptr)
+    q_ptr = &get_default_queue();
+
+  if (transform_desc->_pointer_mode != pointer_mode_t::host) {
+    throw std::runtime_error(
+        "Only support pointer_mode_t::host as pointer_mode.");
+  }
+  if (transform_desc->_scale_type != library_data_t::real_float) {
+    throw std::runtime_error(
+        "Only support library_data_t::real_float as scale_type.");
+  }
+
+  // If alpha is not one, need throw exception since we do not support it.
+  if (alpha != nullptr) {
+    if (1.0f != *reinterpret_cast<const float *>(alpha))
+      throw std::runtime_error("Non-one alpha is not supported.");
+  }
+
+  // If beta is not zero, need throw exception since we do not support it.
+  if (beta != nullptr) {
+    if (0.0f != *reinterpret_cast<const float *>(beta))
+      throw std::runtime_error("Non-zero beta is not supported.");
+  }
+
+  if (b != nullptr) {
+    throw std::runtime_error("Not support b matrix.");
+  }
+
+  if ((a_desc->_type != library_data_t::real_int8 ||
+       c_desc->_type != library_data_t::real_int8) &&
+      (a_desc->_type != library_data_t::real_int32 ||
+       c_desc->_type != library_data_t::real_int32)) {
+    throw std::runtime_error("Only support combinations of data types are: "
+                             "a_type==real_int8&&c_type==real_int8, "
+                             "a_type==real_int32&&c_type==real_int32.");
+  }
+
+  if (a_desc->_type == library_data_t::real_int8) {
+    detail::matrix_transform<std::int8_t>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (const std::int8_t *)a, c_desc->_ld, c_desc->_order, (std::int8_t *)c);
+  } else {
+    detail::matrix_transform<int>(q_ptr, a_desc->_rows, a_desc->_cols,
+                                  a_desc->_ld, a_desc->_order, (const int *)a,
+                                  c_desc->_ld, c_desc->_order, (int *)c);
+  }
+}
+} // namespace experimental
+} // namespace blas_gemm
+} // namespace dpct
+#endif // __DPCT_BLAS_GEMM_UTILS_HPP__

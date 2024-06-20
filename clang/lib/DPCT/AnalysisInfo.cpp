@@ -916,9 +916,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     if (!CCLVerValue.empty())
       MigratedMacroDefinitionOS << "#define DPCT_COMPAT_CCL_VERSION "
                                 << CCLVerValue << getNL();
-    if (DpctGlobalInfo::isEnablingBLASExperimental())
-      MigratedMacroDefinitionOS << "#define __ENABLE_BLAS_EXPERIMENTAL__"
-                                << getNL();
     insertHeader(MigratedMacroDefinitionOS.str(), FileBeginOffset,
                  InsertPosition::IP_AlwaysLeft);
     return;
@@ -2340,7 +2337,6 @@ std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
 clang::tooling::UnifiedPath DpctGlobalInfo::CudaPath;
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
-bool DpctGlobalInfo::IsEnablingBLASExperimental = false;
 BuildScriptKind DpctGlobalInfo::BuildScriptVal = BuildScriptKind::BS_None;
 clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;

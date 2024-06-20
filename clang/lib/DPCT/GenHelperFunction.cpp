@@ -76,6 +76,9 @@ const std::string LapackUtilsAllContentStr =
 const std::string GroupUtilsAllContentStr =
 #include "clang/DPCT/group_utils.hpp.inc"
     ;
+const std::string BlasGemmUtilsAllContentStr =
+#include "clang/DPCT/blas_gemm_utils.hpp.inc"
+    ;
 const std::string DplExtrasAlgorithmAllContentStr =
 #include "clang/DPCT/dpl_extras/algorithm.h.inc"
     ;
@@ -166,6 +169,7 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(FftUtils, ".", fft_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(LapackUtils, ".", lapack_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(GroupUtils, ".", group_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(BlasGemmUtils, ".", blas_gemm_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic, "codepin/serialization",
                             basic.hpp)

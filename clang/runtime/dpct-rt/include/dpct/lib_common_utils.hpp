@@ -101,6 +101,19 @@ enum class library_data_t : unsigned char {
   library_data_t_size
 };
 
+enum class compute_type : int {
+  f16,
+  f16_standard,
+  f32,
+  f32_standard,
+  f32_fast_bf16,
+  f32_fast_tf32,
+  f64,
+  f64_standard,
+  i32,
+  i32_standard,
+};
+
 namespace detail {
 template <typename ArgT>
 inline constexpr std::uint64_t get_type_combination_id(ArgT Val) {

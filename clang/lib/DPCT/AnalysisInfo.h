@@ -789,10 +789,6 @@ public:
   static unsigned int getKCIndentWidth();
   static UsmLevel getUsmLevel() { return UsmLvl; }
   static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
-  static bool isEnablingBLASExperimental() {
-    return IsEnablingBLASExperimental;
-  }
-  static void enableBLASExperimental() { IsEnablingBLASExperimental = true; }
   static BuildScriptKind getBuildScript() { return BuildScriptVal; }
   static void setBuildScript(BuildScriptKind BSVal) { BuildScriptVal = BSVal; }
   static clang::CudaVersion getSDKVersion() { return SDKVersion; }
@@ -1495,7 +1491,6 @@ private:
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
-  static bool IsEnablingBLASExperimental;
   static BuildScriptKind BuildScriptVal;
   static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
