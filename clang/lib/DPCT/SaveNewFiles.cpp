@@ -36,9 +36,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <filesystem>
 #include <fstream>
 #include <queue>
-#include <filesystem>
 
 using namespace clang::dpct;
 using namespace llvm;
@@ -185,7 +185,6 @@ bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
 void createSymLink(const clang::tooling::UnifiedPath &FilePath,
                    const clang::tooling::UnifiedPath &InRoot,
                    const clang::tooling::UnifiedPath &OutRoot) {
-    llvm::outs() << "Code pin " << OutRoot.getAbsolutePath() << "\n";
   if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
     auto SourcePath = FilePath;
     while (
@@ -218,7 +217,6 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
         }
         auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
         rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
-        llvm::outs() << "Parrrrr " << ParentPath.getCanonicalPath() <<"\n";
         if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
           createDirectories(ParentPath.getAbsolutePath());
         }
@@ -1061,7 +1059,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   for (const auto &Entry : IncludeFileMap) {
     // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
     clang::tooling::UnifiedPath FilePath = Entry.first;
-    // Generated CUDA file in outroot_codepin. E.g., /path/to/outroot_codepin/a.cu
+    // Generated CUDA file in outroot_codepin. E.g.,
+    // /path/to/outroot_codepin/a.cu
     clang::tooling::UnifiedPath DebugFilePath = Entry.first;
     // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
     clang::tooling::UnifiedPath OriginalFilePath = Entry.first;

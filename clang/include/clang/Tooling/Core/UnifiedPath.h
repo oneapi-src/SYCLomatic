@@ -74,6 +74,7 @@ public:
     makeCanonical();
     makeAbsolute();
   }
+
 private:
   void makeCanonical(const std::string &CWD = ".");
   void makeAbsolute(const std::string &CWD = ".");
