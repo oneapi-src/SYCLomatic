@@ -6,8 +6,3 @@
 //
 //===----------------------------------------------------------------------===//
 
-CONDITIONAL_FACTORY_ENTRY(
-    UseExtGraph, ENTRY_TEXTURE("tex1DLod", 0x11, 1),
-    UNSUPPORT_FACTORY_ENTRY("tex1DLod", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                            ARG("tex1DLod"),
-                            ARG("--use-experimental-features=bindless_images")))

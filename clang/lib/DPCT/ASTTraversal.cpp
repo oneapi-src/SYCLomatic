@@ -8314,8 +8314,6 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamAttachMemAsync" ||
-             FuncName == "cudaStreamBeginCapture" ||
-             FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery") {
 

@@ -30,3 +30,13 @@ ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
                             LAMBDA(true, false,
                                    MEMBER_CALL(ARG(0), true, "wait"),
                                    CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaStreamBeginCapture",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::command_graph_begin_recording",
+                            ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("cudaStreamBeginCapture", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaStreamBeginCapture"),
+                            ARG("--use-experimental-features=graph")))

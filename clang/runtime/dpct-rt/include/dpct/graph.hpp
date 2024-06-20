@@ -37,7 +37,7 @@ static bool command_graph_begin_recording(sycl::queue *queue_ptr) {
   if (!result.second) {
     return false;
   }
-  return result.first->second->begin_recording(*queue_ptr);
+  return graph->begin_recording(*queue_ptr);
 }
 
 static bool
@@ -50,15 +50,6 @@ command_graph_end_recording(sycl::queue *queue_ptr,
   graph = std::move(it->second);
   return graph->end_recording();
 }
-
-// static bool
-// command_graph_end_recording(sycl::queue *queue_ptr,
-//                             dpct::experimental::command_graph_ptr &graph) {
-
-//   // bool status = queue_graph_map.at(queue_ptr).end_recording(*queue_ptr);
-//   // graph = &(queue_graph_map.at(queue_ptr));
-//   // return status;
-// }
 
 } // namespace experimental
 } // namespace dpct
