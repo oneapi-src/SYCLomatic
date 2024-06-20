@@ -30,10 +30,10 @@ static inline std::unordered_map<
     queue_graph_map;
 
 static bool command_graph_begin_recording(sycl::queue *queue_ptr) {
-  sycl::ext::oneapi::experimental::command_graph<
-      sycl::ext::oneapi::experimental::graph_state::modifiable>
-      graph(queue_ptr->get_context(), queue_ptr->get_device());
-  auto result = queue_graph_map.insert({queue_ptr, &graph});
+  auto graph = new sycl::ext::oneapi::experimental::command_graph<
+      sycl::ext::oneapi::experimental::graph_state::modifiable>(
+      queue_ptr->get_context(), queue_ptr->get_device());
+  auto result = queue_graph_map.insert({queue_ptr, graph});
   if (!result.second) {
     return false;
   }
@@ -47,7 +47,9 @@ command_graph_end_recording(sycl::queue *queue_ptr,
   if (it == queue_graph_map.end()) {
     return false;
   }
-  graph = std::move(it->second);
+  auto cmd_graph_from_map = *(it->second);
+  graph = &cmd_graph_from_map;
+  queue_graph_map.erase(it);
   return graph->end_recording();
 }
 
