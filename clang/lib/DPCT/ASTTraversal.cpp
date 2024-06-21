@@ -2972,8 +2972,8 @@ void VectorTypeOperatorRule::runRule(const MatchFinder::MatchResult &Result) {
       Result, getNodeAsType<FunctionDecl>(Result, "overloadedOperatorDecl"));
 
   // Explicitly call user overloaded operator
-  MigrateOverloadedOperatorCall(Result, getNodeAsType<CXXOperatorCallExpr>(
-                                            Result, "callOverloadedOperator"));
+  //MigrateOverloadedOperatorCall(Result, getNodeAsType<CXXOperatorCallExpr>(
+  //                                          Result, "callOverloadedOperator"));
 }
 
 REGISTER_RULE(VectorTypeOperatorRule, PassKind::PK_Migration)

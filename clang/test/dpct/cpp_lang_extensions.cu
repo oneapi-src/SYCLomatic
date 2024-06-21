@@ -47,7 +47,7 @@ __host__ __device__ inline uint2 &operator^=(uint2 &v, const uint2 &v2) {
 
 DEV_INLINE void SHA3_512(uint2* s) {
     int i;
-  // CHECK:    dpct_operator_overloading::operator^=(s[0] , LDG(keccak_round_constants[i]));
+  // CHECK:    s[0] ^= LDG(keccak_round_constants[i]);
   // CHECK-NEXT:    LDG(keccak_round_constants[23]);
     s[0] ^= LDG(keccak_round_constants[i]);
     LDG(keccak_round_constants[23]);

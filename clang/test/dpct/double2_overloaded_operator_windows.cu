@@ -213,7 +213,7 @@ __host__ __device__ inline bool operator==(const double2 &v1,
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline bool operator!=(const sycl::double2 &v1,
 // CHECK:                                            const sycl::double2 &v2) {
-// CHECK:   return (!(dpct_operator_overloading::operator==(v1 , v2)));
+// CHECK:   return (!(v1 == v2));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline bool operator!=(const double2 &v1,
@@ -228,7 +228,7 @@ __host__ __device__ inline bool operator!=(const double2 &v1,
 // CHECK: template<typename T>
 // CHECK: inline bool operator!=(const sycl::double2 &v1,
 // CHECK:                                            const sycl::double2 &v2) {
-// CHECK:   return (!(dpct_operator_overloading::operator==(v1 , v2)));
+// CHECK:   return (!(v1 == v2));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>
@@ -473,7 +473,7 @@ __host__ __device__ inline double2 rotateCW(const double2 &v) {
 }
 
 // CHECK: inline sycl::double2 project(sycl::double2 &v, const sycl::double2 &u) {
-// CHECK:   return dpct_operator_overloading::operator-(v , dpct_operator_overloading::operator*(dot(v, u) , u));
+// CHECK:   return v - dot(v, u) * u;
 // CHECK: }
 __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
   return v - dot(v, u) * u;
@@ -482,8 +482,8 @@ __host__ __device__ inline double2 project(double2 &v, const double2 &u) {
 // CHECK: void test() {
 // CHECK:   sycl::double2 a;
 // CHECK:   sycl::double2 b;
-// CHECK:   dpct_operator_overloading::operator+=(a , b);
-// CHECK:   dpct_operator_overloading::operator-(a);
+// CHECK:   a += b;
+// CHECK:   -a;
 // CHECK:   b = a;
 // CHECK: }
 void test() {

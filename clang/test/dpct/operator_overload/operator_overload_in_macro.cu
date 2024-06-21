@@ -16,7 +16,7 @@ OPMACRO(operator-, double2 v)
 
 int main() {
   double2 v;
-  //CHECK: dpct_operator_overloading::operator-(v);
+  //CHECK: -v;
   -v;
   return 0;
 }

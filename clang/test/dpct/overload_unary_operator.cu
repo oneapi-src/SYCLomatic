@@ -28,7 +28,7 @@ static __device__ uint2 operator^(const uint2 a, const uint2 b) {
 }
 
 // CHECK: sycl::uint2 chi(const sycl::uint2 a, const sycl::uint2 b, const sycl::uint2 c) {
-// CHECK: return dpct_operator_overloading::operator^(a , dpct_operator_overloading::operator&((dpct_operator_overloading::operator~(b)) , c));
+// CHECK: return a ^ (~b) & c;
 
 __device__ uint2 chi(const uint2 a, const uint2 b, const uint2 c) {
     return a ^ (~b) & c;
