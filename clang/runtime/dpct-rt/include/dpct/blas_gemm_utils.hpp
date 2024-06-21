@@ -103,16 +103,17 @@ private:
   std::uint64_t _cols;
   std::int64_t _ld;
 
-  friend void matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
-                     const void *alpha, const void *a, matrix_layout_ptr a_desc,
-                     const void *b, matrix_layout_ptr b_desc, const void *beta,
-                     const void *c, matrix_layout_ptr c_desc, void *d,
-                     matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
-  friend void matrix_transform(transform_desc_ptr transform_desc,
-                               const void *alpha, const void *a,
-                               matrix_layout_ptr a_desc, const void *beta,
-                               const void *b, matrix_layout_ptr b_desc, void *c,
-                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
+  friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
+                            const void *alpha, const void *a,
+                            matrix_layout_ptr a_desc, const void *b,
+                            matrix_layout_ptr b_desc, const void *beta,
+                            const void *c, matrix_layout_ptr c_desc, void *d,
+                            matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
+  friend sycl::event
+  matrix_transform(transform_desc_ptr transform_desc, const void *alpha,
+                   const void *a, matrix_layout_ptr a_desc, const void *beta,
+                   const void *b, matrix_layout_ptr b_desc, void *c,
+                   matrix_layout_ptr c_desc, queue_ptr q_ptr);
 };
 
 class matmul_desc_t {
@@ -167,11 +168,12 @@ private:
   oneapi::mkl::transpose _trans_c = oneapi::mkl::transpose::nontrans;
   int _epilogue = 1;
 
-  friend void matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
-                     const void *alpha, const void *a, matrix_layout_ptr a_desc,
-                     const void *b, matrix_layout_ptr b_desc, const void *beta,
-                     const void *c, matrix_layout_ptr c_desc, void *d,
-                     matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
+  friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
+                            const void *alpha, const void *a,
+                            matrix_layout_ptr a_desc, const void *b,
+                            matrix_layout_ptr b_desc, const void *beta,
+                            const void *c, matrix_layout_ptr c_desc, void *d,
+                            matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
 };
 
 namespace detail {
@@ -199,8 +201,10 @@ inline dnnl::memory::data_type dpct_type_to_dnnl_type(library_data_t type) {
 
 template <class T, class Talpha>
 sycl::event scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols,
-                                           T *d, const Talpha *alpha) {
+                                           T *d, const Talpha *alpha,
+                                           std::vector<sycl::event> deps) {
   return q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
     access_wrapper<T *> d_acc(d, cgh);
     access_wrapper<const Talpha *> alpha_acc(alpha, cgh);
@@ -228,20 +232,21 @@ inline sycl::event scale_d_with_vector_alpha(queue_ptr q_ptr, int rows,
                                              int cols, void *d,
                                              library_data_t d_type,
                                              const void *alpha,
-                                             library_data_t alpha_type) {
+                                             library_data_t alpha_type,
+                                             std::vector<sycl::event> deps) {
   std::uint64_t key = dpct::detail::get_type_combination_id(d_type, alpha_type);
   sycl::event e;
   switch (key) {
   case dpct::detail::get_type_combination_id(library_data_t::real_int8,
                                              library_data_t::real_float): {
     e = scale_d_with_vector_alpha_impl<std::int8_t, float>(
-        q_ptr, rows, cols, (std::int8_t *)d, (const float *)alpha);
+        q_ptr, rows, cols, (std::int8_t *)d, (const float *)alpha, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_int32,
                                              library_data_t::real_float): {
     e = scale_d_with_vector_alpha_impl<int, float>(q_ptr, rows, cols, (int *)d,
-                                                   (const float *)alpha);
+                                                   (const float *)alpha, deps);
     break;
   }
   default:
@@ -357,13 +362,15 @@ get_from_to_linear_idx(size_t rows, size_t cols, size_t a_ld, order_t a_order,
 template <class T>
 sycl::event matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
                              size_t a_ld, order_t a_order, const T *a,
-                             size_t c_ld, order_t c_order, T *c) {
+                             size_t c_ld, order_t c_order, T *c,
+                             std::vector<sycl::event> deps) {
   if ((a_order != order_t::col && c_order != order_t::col) ||
       (a_order == order_t::col && c_order == order_t::col)) {
     throw std::runtime_error("Unsupported order combination.");
   }
 
   return q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
     access_wrapper<const T *> a_acc(a, cgh);
     access_wrapper<T *> c_acc(c, cgh);
@@ -393,11 +400,12 @@ sycl::event matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
 // Note: Non-col-major matrix will be converted to col-major matrix before
 // multiplication and converted back after multiplication.
 // TODO: Impl row-major matmul without layout conversion
-inline void matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
-                   const void *alpha, const void *a, matrix_layout_ptr a_desc,
-                   const void *b, matrix_layout_ptr b_desc, const void *beta,
-                   const void *c, matrix_layout_ptr c_desc, void *d,
-                   matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
+inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
+                          const void *alpha, const void *a,
+                          matrix_layout_ptr a_desc, const void *b,
+                          matrix_layout_ptr b_desc, const void *beta,
+                          const void *c, matrix_layout_ptr c_desc, void *d,
+                          matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
   if (!q_ptr)
     q_ptr = &get_default_queue();
   handle->init(q_ptr);
@@ -441,19 +449,23 @@ inline void matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   const void *new_b = b;
   void *new_d = d;
   size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldd = d_desc->_ld;
+  std::vector<sycl::event> transform_events;
   if (a_desc->_order != order_t::col) {
     new_lda = a_desc->_rows;
     if (a_desc->_type == library_data_t::real_int8) {
       new_a =
           dpct_malloc(sizeof(std::int8_t) * a_desc->_cols * new_lda, *q_ptr);
-      detail::matrix_transform<std::int8_t>(
+      sycl::event e = detail::matrix_transform<std::int8_t>(
           q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
-          (const std::int8_t *)a, new_lda, order_t::col, (std::int8_t *)new_a);
+          (const std::int8_t *)a, new_lda, order_t::col, (std::int8_t *)new_a,
+          {});
+      transform_events.push_back(e);
     } else {
       new_a = dpct_malloc(sizeof(int) * a_desc->_cols * new_lda, *q_ptr);
-      detail::matrix_transform<int>(q_ptr, a_desc->_rows, a_desc->_cols,
-                                    a_desc->_ld, a_desc->_order, (const int *)a,
-                                    new_lda, order_t::col, (int *)new_a);
+      sycl::event e = detail::matrix_transform<int>(
+          q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+          (const int *)a, new_lda, order_t::col, (int *)new_a, {});
+      transform_events.push_back(e);
     }
   }
   if (b_desc->_order != order_t::col) {
@@ -462,14 +474,17 @@ inline void matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     if (b_desc->_type == library_data_t::real_int8) {
       new_b =
           dpct_malloc(sizeof(std::int8_t) * b_desc->_rows * new_ldb, *q_ptr);
-      detail::matrix_transform<std::int8_t>(
+      sycl::event e = detail::matrix_transform<std::int8_t>(
           q_ptr, b_desc->_cols, b_desc->_rows, b_desc->_ld, b_desc->_order,
-          (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b);
+          (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b,
+          {});
+      transform_events.push_back(e);
     } else {
       new_b = dpct_malloc(sizeof(int) * b_desc->_rows * new_ldb, *q_ptr);
-      detail::matrix_transform<int>(q_ptr, b_desc->_cols, b_desc->_rows,
-                                    b_desc->_ld, b_desc->_order, (const int *)b,
-                                    new_ldb, order_t::col, (int *)new_b);
+      sycl::event e = detail::matrix_transform<int>(
+          q_ptr, b_desc->_cols, b_desc->_rows, b_desc->_ld, b_desc->_order,
+          (const int *)b, new_ldb, order_t::col, (int *)new_b, {});
+      transform_events.push_back(e);
     }
   }
   if (d_desc->_order != order_t::col) {
@@ -513,38 +528,65 @@ inline void matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   auto dst_md = dnnl::memory::desc(
       dst_dims, detail::dpct_type_to_dnnl_type(d_type), dst_strides);
 
-  auto *src_mem = new dnnl::memory(src_md, handle->get_engine());
-  auto *weights_mem = new dnnl::memory(weights_md, handle->get_engine());
-  auto *dst_mem = new dnnl::memory(dst_md, handle->get_engine());
+  auto *src_mem =
+      new dnnl::memory(src_md, handle->get_engine(), DNNL_MEMORY_NONE);
+  auto *weights_mem =
+      new dnnl::memory(weights_md, handle->get_engine(), DNNL_MEMORY_NONE);
+  auto *dst_mem =
+      new dnnl::memory(dst_md, handle->get_engine(), DNNL_MEMORY_NONE);
 
-  size_t src_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(a_type)] / 8;
-  size_t weights_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(b_type)] / 8;
-  dpct::dpct_memcpy(src_mem->get_data_handle(), new_a,
-                    src_type_size * k * new_lda, automatic, *q_ptr);
-  dpct::dpct_memcpy(weights_mem->get_data_handle(), new_b,
-                    weights_type_size * k * new_ldb, automatic, *q_ptr);
+  void *new_a_buffer_ptr = nullptr;
+  void *new_b_buffer_ptr = nullptr;
+  void *new_d_buffer_ptr = nullptr;
+#ifdef DPCT_USM_LEVEL_NONE
+#define MALLOC_AND_SET_BUFFER(DST, BUF_PTR, TYPE, SRC)                         \
+  {                                                                            \
+    switch (TYPE) {                                                            \
+    case library_data_t::real_int8: {                                          \
+      BUF_PTR = std::malloc(sizeof(sycl::buffer<std::int8_t>));                \
+      *((sycl::buffer<std::int8_t> *)BUF_PTR) = get_buffer<std::int8_t>(SRC);  \
+      dnnl::sycl_interop::set_buffer(*DST,                                     \
+                                     *((sycl::buffer<std::int8_t> *)BUF_PTR)); \
+      break;                                                                   \
+    }                                                                          \
+    case library_data_t::real_int32: {                                         \
+      BUF_PTR = std::malloc(sizeof(sycl::buffer<int>));                        \
+      *((sycl::buffer<int> *)BUF_PTR) = get_buffer<int>(SRC);                  \
+      dnnl::sycl_interop::set_buffer(*DST, *((sycl::buffer<int> *)BUF_PTR));   \
+      break;                                                                   \
+    }                                                                          \
+    default:                                                                   \
+      throw std::runtime_error(std::to_string((std::uint8_t)TYPE) +            \
+                               " is an unsupported type currently.");          \
+    }                                                                          \
+  }
+
+  MALLOC_AND_SET_BUFFER(src_mem, new_a_buffer_ptr, a_type, new_a);
+  MALLOC_AND_SET_BUFFER(weights_mem, new_b_buffer_ptr, b_type, new_b);
+  MALLOC_AND_SET_BUFFER(dst_mem, new_d_buffer_ptr, d_type, new_d);
+#undef MALLOC_AND_SET_BUFFER
+#else
+  src_mem->set_data_handle(const_cast<void *>(new_a));
+  weights_mem->set_data_handle(const_cast<void *>(new_b));
+  dst_mem->set_data_handle(new_d);
+#endif
 
   std::unordered_map<int, dnnl::memory> matmul_args;
   matmul_args.insert({DNNL_ARG_SRC, *src_mem});
   matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
   matmul_args.insert({DNNL_ARG_DST, *dst_mem});
   dnnl::primitive_attr matmul_attr;
-  void *alpha_data = nullptr;
   dnnl::memory *scales_alpha = nullptr;
   if (!vector_alpha) {
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
     std::size_t Size =
         dpct::detail::library_data_size[static_cast<unsigned int>(scale_type)] /
         8;
-    alpha_data = dpct::dpct_malloc(Size, *q_ptr);
-    dpct::dpct_memcpy(alpha_data, alpha, Size, automatic, *q_ptr);
     scales_alpha =
         new dnnl::memory({{1}, detail::dpct_type_to_dnnl_type(scale_type), {1}},
                          handle->get_engine());
-    dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha_data, Size,
-                      automatic, *q_ptr);
+    dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha, Size, automatic,
+                      *q_ptr);
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
@@ -553,49 +595,48 @@ inline void matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
   auto matmul_prim = dnnl::matmul(matmul_pd);
   sycl::event matmul_prim_event = dnnl::sycl_interop::execute(
-      matmul_prim, handle->get_engine_stream(), matmul_args);
-  size_t dst_type_size =
-      dpct::detail::library_data_size[static_cast<unsigned int>(d_type)] / 8;
-  sycl::event e;
-  e = dpct::detail::dpct_memcpy(*q_ptr, new_d, dst_mem->get_data_handle(),
-                                dst_type_size * n * new_ldd, automatic,
-                                {matmul_prim_event});
+      matmul_prim, handle->get_engine_stream(), matmul_args, transform_events);
+
+  sycl::event scale_d_event;
   if (vector_alpha)
-    e = detail::scale_d_with_vector_alpha(q_ptr, m, n, new_d, d_type, alpha,
-                                          scale_type);
-  else
-    dpct::async_dpct_free({alpha_data}, {e}, *q_ptr);
+    scale_d_event = detail::scale_d_with_vector_alpha(
+        q_ptr, m, n, new_d, d_type, alpha, scale_type, {matmul_prim_event});
   // end of calling oneDNN
 
+  sycl::event transform_d_event;
   if (d_desc->_order != order_t::col) {
     if (d_desc->_type == library_data_t::real_int8) {
-      e = detail::matrix_transform<std::int8_t>(
+      transform_d_event = detail::matrix_transform<std::int8_t>(
           q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
           (const std::int8_t *)new_d, d_desc->_ld, d_desc->_order,
-          (std::int8_t *)d);
+          (std::int8_t *)d, {scale_d_event, matmul_prim_event});
     } else {
-      e = detail::matrix_transform<int>(
+      transform_d_event = detail::matrix_transform<int>(
           q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
-          (const int *)new_d, d_desc->_ld, d_desc->_order, (int *)d);
+          (const int *)new_d, d_desc->_ld, d_desc->_order, (int *)d,
+          {scale_d_event, matmul_prim_event});
     }
   }
 
-  if (a_desc->_order != order_t::col)
-    dpct::async_dpct_free({(void *)new_a}, {e}, *q_ptr);
-  if (b_desc->_order != order_t::col)
-    dpct::async_dpct_free({(void *)new_b}, {e}, *q_ptr);
-  if (d_desc->_order != order_t::col)
-    dpct::async_dpct_free({(void *)new_d}, {e}, *q_ptr);
-  q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.depends_on(e);
+  sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.depends_on({transform_d_event, scale_d_event, matmul_prim_event});
     cgh.host_task([=] {
       delete src_mem;
       delete weights_mem;
       delete dst_mem;
       if (!vector_alpha)
         delete scales_alpha;
+#ifdef DPCT_USM_LEVEL_NONE
+      std::free(new_a_buffer_ptr);
+      std::free(new_b_buffer_ptr);
+      std::free(new_d_buffer_ptr);
+#endif
+      dpct::detail::dpct_free((void *)new_a, *q_ptr);
+      dpct::detail::dpct_free((void *)new_b, *q_ptr);
+      dpct::detail::dpct_free((void *)new_d, *q_ptr);
     });
   });
+  return free_event;
 }
 
 class transform_desc_t {
@@ -634,17 +675,18 @@ private:
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
 
-  friend void matrix_transform(transform_desc_ptr transform_desc,
-                               const void *alpha, const void *a,
-                               matrix_layout_ptr a_desc, const void *beta,
-                               const void *b, matrix_layout_ptr b_desc, void *c,
-                               matrix_layout_ptr c_desc, queue_ptr q_ptr);
+  friend sycl::event
+  matrix_transform(transform_desc_ptr transform_desc, const void *alpha,
+                   const void *a, matrix_layout_ptr a_desc, const void *beta,
+                   const void *b, matrix_layout_ptr b_desc, void *c,
+                   matrix_layout_ptr c_desc, queue_ptr q_ptr);
 };
-inline void matrix_transform(transform_desc_ptr transform_desc,
-                             const void *alpha, const void *a,
-                             matrix_layout_ptr a_desc, const void *beta,
-                             const void *b, matrix_layout_ptr b_desc, void *c,
-                             matrix_layout_ptr c_desc, queue_ptr q_ptr) {
+inline sycl::event matrix_transform(transform_desc_ptr transform_desc,
+                                    const void *alpha, const void *a,
+                                    matrix_layout_ptr a_desc, const void *beta,
+                                    const void *b, matrix_layout_ptr b_desc,
+                                    void *c, matrix_layout_ptr c_desc,
+                                    queue_ptr q_ptr) {
   if (!q_ptr)
     q_ptr = &get_default_queue();
 
@@ -683,13 +725,14 @@ inline void matrix_transform(transform_desc_ptr transform_desc,
   }
 
   if (a_desc->_type == library_data_t::real_int8) {
-    detail::matrix_transform<std::int8_t>(
+    return detail::matrix_transform<std::int8_t>(
         q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
-        (const std::int8_t *)a, c_desc->_ld, c_desc->_order, (std::int8_t *)c);
+        (const std::int8_t *)a, c_desc->_ld, c_desc->_order, (std::int8_t *)c,
+        {});
   } else {
-    detail::matrix_transform<int>(q_ptr, a_desc->_rows, a_desc->_cols,
-                                  a_desc->_ld, a_desc->_order, (const int *)a,
-                                  c_desc->_ld, c_desc->_order, (int *)c);
+    return detail::matrix_transform<int>(
+        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
+        (const int *)a, c_desc->_ld, c_desc->_order, (int *)c, {});
   }
 }
 } // namespace experimental
