@@ -1,0 +1,15 @@
+// RUN: dpct --format-range=none -out-root %T/analyze-callee %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck %s --match-full-lines --input-file %T/analyze-callee/analyze-callee.dp.cpp
+
+#include <cuda_fp16.h>
+
+template <typename T> struct Math {
+  static inline __device__ T zero() { return (T)0; }
+};
+
+template <> struct Math<int> {
+  static inline __device__ void zero() {
+    // CHECK: sycl::half2(Math<sycl::half>::zero());
+    __half2half2(Math<half>::zero());
+  }
+};
