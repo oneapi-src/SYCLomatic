@@ -10,7 +10,7 @@
 // cusparseSpSV_analysis-NEXT:       compute_type /*cudaDataType*/, alg /*cusparseSpSVAlg_t*/,
 // cusparseSpSV_analysis-NEXT:       desc /*cusparseSpSVDescr_t*/, buffer /*void **/);
 // cusparseSpSV_analysis-NEXT: Is migrated to:
-// cusparseSpSV_analysis-NEXT:   dpct::sparse::spsv_optimize(*handle, op_a, mat_a);
+// cusparseSpSV_analysis-NEXT:   dpct::sparse::spsv_optimize(handle->get_queue(), op_a, mat_a);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpSV_bufferSize | FileCheck %s -check-prefix=cusparseSpSV_bufferSize
 // cusparseSpSV_bufferSize: CUDA API:
@@ -44,7 +44,7 @@
 // cusparseSpSV_solve-NEXT:                      compute_type /*cudaDataType*/, alg /*cusparseSpSVAlg_t*/,
 // cusparseSpSV_solve-NEXT:                      desc /*cusparseSpSVDescr_t*/);
 // cusparseSpSV_solve-NEXT: Is migrated to:
-// cusparseSpSV_solve-NEXT:   dpct::sparse::spsv(*handle, op_a, alpha, mat_a, vec_x, vec_y, compute_type);
+// cusparseSpSV_solve-NEXT:   dpct::sparse::spsv(handle->get_queue(), op_a, alpha, mat_a, vec_x, vec_y, compute_type);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMatGetAttribute | FileCheck %s -check-prefix=cusparseSpMatGetAttribute
 // cusparseSpMatGetAttribute: CUDA API:
