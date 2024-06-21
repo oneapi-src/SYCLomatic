@@ -383,9 +383,24 @@ sycl::event matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
 }
 } // namespace detail
 
-// Note: Non-col-major matrix will be converted to col-major matrix before
-// multiplication and converted back after multiplication.
-// TODO: Impl row-major matmul without layout conversion
+/// TODO: Impl row-major matmul without layout conversion
+/// This function does operation: D = alpha*(A*B) + beta*(C).
+/// Currently it only supports beta==0.
+/// NOTE: Non-col-major matrix will be converted to col-major matrix before
+/// multiplication and converted back after multiplication.
+/// \param [in] handle A handle containing context info.
+/// \param [in] compute_desc Describe the computation.
+/// \param [in] alpha Scaling factor alpha.
+/// \param [in] a Input matrix A.
+/// \param [in] a_desc Describe the matrix A.
+/// \param [in] b Input matrix B.
+/// \param [in] b_desc Describe the matrix B.
+/// \param [in] beta Scaling factor beta.
+/// \param [in] c Input matrix C.
+/// \param [in] c_desc Describe the matrix C.
+/// \param [out] d Output matrix D.
+/// \param [in] d_desc Describe the matrix D.
+/// \param [in] q_ptr The queue where the routine should be executed.
 inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                           const void *alpha, const void *a,
                           matrix_layout_ptr a_desc, const void *b,
@@ -663,6 +678,20 @@ private:
                    const void *b, matrix_layout_ptr b_desc, void *c,
                    matrix_layout_ptr c_desc, queue_ptr q_ptr);
 };
+
+/// This function does operation:
+/// C = alpha*transformation(A) + beta*transformation(B).
+/// Currently it only supports alpha==1 && beta==0.
+/// \param [in] transform_desc Describe the transformation.
+/// \param [in] alpha Scaling factor alpha.
+/// \param [in] a Input matrix A.
+/// \param [in] a_desc Describe the matrix A.
+/// \param [in] beta Scaling factor beta.
+/// \param [in] b Input matrix B.
+/// \param [in] b_desc Describe the matrix B.
+/// \param [out] c Output matrix C.
+/// \param [in] c_desc Describe the matrix C.
+/// \param [in] q_ptr The queue where the routine should be executed.
 inline sycl::event matrix_transform(transform_desc_ptr transform_desc,
                                     const void *alpha, const void *a,
                                     matrix_layout_ptr a_desc, const void *beta,
