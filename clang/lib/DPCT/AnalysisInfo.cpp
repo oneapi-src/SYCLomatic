@@ -1475,6 +1475,7 @@ DpctGlobalInfo::getLocInfo(SourceLocation Loc, bool *IsInvalid) {
   }
   auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
   auto AbsPath = getAbsolutePath(LocInfo.first);
+  // auto AbsPath = getUnifiedPath(LocInfo.first);
   if (AbsPath)
     return std::make_pair(AbsPath.value(), LocInfo.second);
   if (IsInvalid)

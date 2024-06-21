@@ -1146,9 +1146,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                       DebugFilePath.getCanonicalPath());
       }
     }
-    createSymLink(Entry.first, InRoot, SYCLMigratedOutRoot);
-    if (dpct::DpctGlobalInfo::isCodePinEnabled())
-      createSymLink(Entry.first, InRoot, CodePinCUDAFolder);
+    // createSymLink(Entry.first, InRoot, SYCLMigratedOutRoot);
+    // if (dpct::DpctGlobalInfo::isCodePinEnabled())
+    //   createSymLink(Entry.first, InRoot, CodePinCUDAFolder);
   }
 
   std::string ScriptFineName = "Makefile.dpct";
