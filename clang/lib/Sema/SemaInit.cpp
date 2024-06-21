@@ -7059,12 +7059,6 @@ PerformConstructorInitialization(Sema &S,
                          ? Kind.getEqualLoc()
                          : Kind.getLocation();
 
-#ifdef SYCLomatic_CUSTOMIZATION
-  if (Kind.isCStyleCast()) {
-    Loc = Kind.getRange().getEnd();
-  }
-#endif
-
   if (Kind.getKind() == InitializationKind::IK_Default) {
     // Force even a trivial, implicit default constructor to be
     // semantically checked. We do this explicitly because we don't build
@@ -7147,11 +7141,7 @@ PerformConstructorInitialization(Sema &S,
     SourceRange ParenOrBraceRange;
     if (IsListInitialization)
       ParenOrBraceRange = SourceRange(LBraceLoc, RBraceLoc);
-    else if (Kind.getKind() == InitializationKind::IK_Direct
-#ifdef SYCLomatic_CUSTOMIZATION
-             && !Kind.isCStyleCast()
-#endif
-    )
+    else if (Kind.getKind() == InitializationKind::IK_Direct)
       ParenOrBraceRange = Kind.getParenOrBraceRange();
 
     // If the entity allows NRVO, mark the construction as elidable

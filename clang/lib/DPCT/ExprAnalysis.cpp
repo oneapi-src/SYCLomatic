@@ -600,19 +600,6 @@ void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
         if (QT->isPointerType()) {
           QT = QT->getPointeeType();
         }
-        if (DpctGlobalInfo::getUnqualifiedTypeName(
-                QT->getCanonicalTypeUnqualified()) == "dim3") {
-          // Replace initializer list with explicit type conversion (e.g.,
-          // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing
-          // error (e.g., 'size_t -> int64_t') for
-          // non-constant-expression in int64_t initializer list.
-          // E.g.,
-          // dim3 d3; int64_t{d3.x};
-          // will be migratd to
-          // sycl::range<3> d3; int64_t(d3[2]);
-          addReplacement(ILE->getLBraceLoc(), "(");
-          addReplacement(ILE->getRBraceLoc(), ")");
-        }
       }
     }
   }
@@ -632,92 +619,7 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
-void ExprAnalysis::analyzeExpr(const CXXNewExpr *New) {
-  analyzeType(New->getAllocatedTypeSourceInfo()->getTypeLoc());
-  analyzeExpr(New->getConstructExpr());
-}
-
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-  if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
-    const auto *InitList = DpctGlobalInfo::findAncestor<InitListExpr>(Ctor);
-    if (InitList &&
-        (Ctor->getParenOrBraceRange().isInvalid() ||
-         Ctor->getBeginLoc() == Ctor->getEndLoc()) &&
-        Ctor->getArg(0)->isDefaultArgument()) {
-      // Handle implicit ctor in linit list: cudaKernelNodeParams p = {0};
-      InitListAnalysis ILA(InitList);
-      addReplacement(InitList->getBeginLoc(), InitList->getEndLoc(),
-                     ILA.getReplacedInitListStr());
-      return;
-    }
-    // Only handle the param of dim3 here.
-    if (Ctor->getNumArgs() == 1) {
-      dispatch(Ctor->getArg(0));
-    } else {
-      std::string ArgsString;
-      llvm::raw_string_ostream OS(ArgsString);
-      ArgumentAnalysis A;
-      std::string ArgStr = "";
-      for (auto Arg : Ctor->arguments()) {
-        A.analyze(Arg);
-        ArgStr = ", " + A.getReplacedString() + ArgStr;
-      }
-      ArgStr.replace(0, 2, "");
-      OS << ArgStr;
-      OS.flush();
-
-      CharSourceRange CSR;
-      SourceRange SR = Ctor->getParenOrBraceRange();
-
-      if (SR.isInvalid()) {
-        auto CtorLoc = Ctor->getLocation();
-        if (Ctor->getLocation().isMacroID()) {
-          if (isOuterMostMacro(Ctor)) {
-            // #define NUM 1
-            // dim3 a = NUM;
-            auto Parens = SourceRange(
-                SM.getExpansionRange(Ctor->getBeginLoc()).getBegin(),
-                SM.getExpansionRange(Ctor->getEndLoc()).getEnd());
-            CtorLoc = getRangeInRange(Parens, CallSpellingBegin,
-                                      CallSpellingEnd, false)
-                          .first;
-          } else {
-            // convert to spelling location if the dim3 constructor is in a
-            // macro otherwise, Lexer::getLocForEndOfToken returns invalid
-            // source location
-            CtorLoc = SM.getSpellingLoc(Ctor->getLocation());
-          }
-        }
-        if (Ctor->getArg(0)->isDefaultArgument()) {
-          // dim3 a;
-          // MACRO(... dim3 a; ...)
-          auto CtorEndLoc = Lexer::getLocForEndOfToken(
-              CtorLoc, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
-          CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
-        } else {
-          // Mesure the whole expression of arguments:
-          // dim3 a = 1 + 1;
-          auto Range = getStmtExpansionSourceRange(Ctor);
-          auto Begin = Range.getBegin();
-          auto End = Range.getEnd();
-          CSR = CharSourceRange::getTokenRange(
-              Begin,
-              End.getLocWithOffset(Lexer::MeasureTokenLength(
-                  End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())));
-        }
-        ArgsString = "{" + ArgsString + "}";
-      } else {
-        SourceRange SR1 =
-            SourceRange(SR.getBegin().getLocWithOffset(1), SR.getEnd());
-        CSR = CharSourceRange(SR1, false);
-      }
-      auto Range = getDefinitionRange(CSR.getBegin(), CSR.getEnd());
-      auto Length = SM.getDecomposedLoc(Range.getEnd()).second -
-                    SM.getDecomposedLoc(Range.getBegin()).second;
-      addReplacement(Range.getBegin(), Length, ArgsString);
-    }
-    return;
-  }
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
     dispatch(*It);
   }
@@ -805,63 +707,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
                                          ItemItr->second, "(", FieldName, ")"));
         }
       }
-    }
-  } else if (BaseType == "dim3") {
-    if (ME->isArrow()) {
-      addReplacement(ME->getBase(), "(" + getDrefName(ME->getBase()) + ")");
-    }
-    addReplacement(
-        ME->getOperatorLoc(), ME->getMemberLoc(),
-        MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
-                                   ME->getMemberNameInfo().getAsString()));
-   
-    auto needAddTypecast = [](const Expr *E) -> bool {
-      auto &Context = DpctGlobalInfo::getContext();
-      clang::DynTypedNodeList Parents = Context.getParents(*E);
-      bool hasCast = false;
-      while (!Parents.empty()) {
-        auto &Cur = Parents[0];
-        if (const auto ICE = Cur.get<ImplicitCastExpr>()) {
-          CastKind CK = ICE->getCastKind();
-          if (CK == CastKind::CK_FloatingCast ||
-              CK == CastKind::CK_IntegralCast) {
-            hasCast = true;
-            Parents = Context.getParents(Cur);
-            continue;
-          }
-        } else if (Cur.get<CXXStaticCastExpr>() || Cur.get<CStyleCastExpr>() ||
-                   Cur.get<CXXFunctionalCastExpr>()) {
-          hasCast = true;
-          Parents = Context.getParents(Cur);
-          continue;
-        } else if (const auto CE = Cur.get<CallExpr>()) {
-          if (hasCast)
-            return false;
-          auto *Callee =
-              dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreParenImpCasts());
-          if (!Callee)
-            return false;
-          if (CE->getDirectCallee()->isTemplateInstantiation())
-            return true;
-          if (!Callee->getQualifier())
-            return false;
-          if (Callee->getQualifier()->getKind() !=
-              NestedNameSpecifier::SpecifierKind::Namespace)
-            return false;
-          if (Callee->getQualifier()->getAsNamespace()->getNameAsString() !=
-              "std")
-            return false;
-          if (Callee->getNameInfo().getAsString() == "max" ||
-              Callee->getNameInfo().getAsString() == "min")
-            return true;
-          return false;
-        }
-        Parents = Context.getParents(Cur);
-      }
-      return false;
-    };
-    if (needAddTypecast(ME)) {
-      addReplacement(ME->getBeginLoc(), 0, "(unsigned int)");
     }
   } else if (BaseType == "cudaDeviceProp") {
     auto MemberName = ME->getMemberNameInfo().getAsString();
@@ -987,7 +832,7 @@ inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
   analyzeType(Cast->getTypeInfoAsWritten(), Cast);
-  dispatch(Cast->getSubExpr());
+  dispatch(Cast->getSubExprAsWritten());
 }
 
 // Precondition: CE != nullptr
@@ -1352,10 +1197,6 @@ void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
       return;
     auto Name = getNestedNameSpecifierString(Qualifier);
     auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
-    // Types like 'dim3::x' should be migrated to 'size_t'.
-    if (Name == "dim3::") {
-      addReplacement(Range.getBegin(), Range.getEnd(), "size_t");
-    }
     Name.resize(Name.length() - 2); // Remove the "::".
     if (MapNames::SupportedVectorTypes.count(Name)) {
       auto ReplacedStr =
@@ -2417,69 +2258,6 @@ void IndexAnalysis::analyzeExpr(const ParenExpr *PE) {
   dispatch(PE->getSubExpr());
 }
 void IndexAnalysis::analyzeExpr(const IntegerLiteral *IL) { return; }
-
-InitListAnalysis::InitListAnalysis(const InitListExpr *ILE) : ExprAnalysis() {
-  int LastDim3ImplicitArg = ILE->getNumInits() - 1;
-  while (LastDim3ImplicitArg >= 0) {
-    const auto *Init = ILE->getInit(LastDim3ImplicitArg);
-    const auto *Ctor = dyn_cast<CXXConstructExpr>(Init);
-    if (Init->getBeginLoc() == Init->getEndLoc() && Ctor &&
-        Ctor->getConstructor()->getDeclName().getAsString() == "dim3")
-      break;
-    --LastDim3ImplicitArg;
-  }
-  if (LastDim3ImplicitArg < 0) {
-    return;
-  }
-  ReplaceLoc = ILE->getBeginLoc().getLocWithOffset(1);
-  for (int Index = 0; Index <= LastDim3ImplicitArg; ++Index) {
-    const auto *Init = ILE->getInit(Index);
-    dispatch(Init);
-  }
-  ReplacedInitListStr.replace(1, 2, "");
-  ReplacedInitListStr += "}";
-}
-
-void InitListAnalysis::dispatch(const Stmt *Expression) {
-  switch (Expression->getStmtClass()) {
-    ANALYZE_EXPR(ImplicitValueInitExpr)
-    ANALYZE_EXPR(InitListExpr)
-    ANALYZE_EXPR(CXXConstructExpr)
-  default:
-    if (const auto *E = dyn_cast<Expr>(Expression)) {
-      ArgumentAnalysis A;
-      A.analyze(E);
-      ReplacedInitListStr += ", " + A.getReplacedString();
-    }
-  }
-}
-
-void InitListAnalysis::analyzeExpr(const ImplicitValueInitExpr *IVIE) {
-  ReplacedInitListStr += ", {}";
-}
-
-void InitListAnalysis::analyzeExpr(const InitListExpr *ILE) {
-  if (ILE->getBeginLoc() == ILE->getEndLoc()) {
-    InitListAnalysis ILA(ILE);
-    ReplacedInitListStr += ", " + ILA.getReplacedInitListStr();
-  } else {
-    ArgumentAnalysis A;
-    A.analyze(ILE);
-    ReplacedInitListStr += ", " + A.getReplacedString();
-  }
-}
-
-void InitListAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-  if ((Ctor->getParenOrBraceRange().isInvalid() ||
-       Ctor->getBeginLoc() == Ctor->getEndLoc()) &&
-      Ctor->getArg(0)->isDefaultArgument()) {
-    ReplacedInitListStr += ", {1, 1, 1}";
-  } else {
-    ArgumentAnalysis A;
-    A.analyze(Ctor);
-    ReplacedInitListStr += ", " + A.getReplacedString();
-  }
-}
 
 } // namespace dpct
 } // namespace clang

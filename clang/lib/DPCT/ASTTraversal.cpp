@@ -1688,7 +1688,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
           loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "cudaError", "curandStatus", "cublasStatus", "CUstream",
+              "dim3", "cudaError", "curandStatus", "cublasStatus", "CUstream",
               "CUstream_st", "thrust::complex", "thrust::device_vector",
               "thrust::device_ptr", "thrust::device_reference",
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
@@ -3001,164 +3001,6 @@ void VectorTypeOperatorRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(VectorTypeOperatorRule, PassKind::PK_Migration)
-
-void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
-  // Find dim3 constructors which are part of different casts (representing
-  // different syntaxes). This includes copy constructors. All constructors
-  // will be visited once.
-  MF.addMatcher(
-      cxxNewExpr(hasType(pointsTo(namedDecl(hasName("dim3"))))).bind("dim3New"),
-      this);
-  MF.addMatcher(
-      explicitCastExpr(hasType(namedDecl(hasName("dim3")))).bind("dim3Cast"),
-      this);
-  MF.addMatcher(
-      cxxConstructExpr(hasType(namedDecl(hasName("dim3")))).bind("dim3Ctor"),
-      this);
-
-  MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(anyOf(
-                  namedDecl(hasAnyName("dim3")),
-                  typedefDecl(hasAnyName("dim3")))))))
-          .bind("dim3Type"),
-      this);
-}
-
-void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "dim3Type")) {
-    if (TL->getBeginLoc().isInvalid())
-      return;
-
-    auto BeginLoc =
-        getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
-    SourceManager *SM = Result.SourceManager;
-
-    // WA for concatenated macro token
-    if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
-      BeginLoc = SM->getExpansionLoc(TL->getBeginLoc());
-    }
-
-    Token Tok;
-    auto LOpts = Result.Context->getLangOpts();
-    Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
-    if (Tok.isAnyIdentifier()) {
-      if (TL->getType()->isElaboratedTypeSpecifier()) {
-        // To handle case like "struct cudaExtent extent;"
-        auto ETC = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
-        auto NTL = ETC.getNamedTypeLoc();
-
-        if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
-          auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
-
-          const std::string TyName =
-              dpct::DpctGlobalInfo::getTypeName(TSL.getType());
-          std::string Str =
-              MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
-          insertHeaderForTypeRule(TyName, BeginLoc);
-          requestHelperFeatureForTypeNames(TyName);
-
-          if (!Str.empty()) {
-            emplaceTransformation(
-                new ReplaceToken(BeginLoc, TSL.getEndLoc(), std::move(Str)));
-            return;
-          }
-        }
-      }
-
-      std::string TypeName = Tok.getRawIdentifier().str();
-      std::string Str =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
-      insertHeaderForTypeRule(TypeName, BeginLoc);
-      requestHelperFeatureForTypeNames(TypeName);
-      if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-        auto TypeStr = VD->getType().getAsString();
-        if (VD->getKind() == Decl::Var && TypeStr == "dim3") {
-          std::string Replacement;
-          std::string ReplacedType = "range";
-          llvm::raw_string_ostream OS(Replacement);
-          DpctGlobalInfo::printCtadClass(
-              OS, buildString(MapNames::getClNamespace(), ReplacedType), 3);
-          Str = OS.str();
-        }
-      }
-
-      if (!Str.empty()) {
-        SrcAPIStaticsMap[TypeName]++;
-        emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
-        return;
-      }
-    }
-    return;
-  }
-
-  const Expr *E = nullptr;
-  if (const auto *New = getNodeAsType<CXXNewExpr>(Result, "dim3New")) {
-    E = New;
-  } else if (const auto *Cast =
-                 getNodeAsType<ExplicitCastExpr>(Result, "dim3Cast")) {
-    E = Cast;
-  } else if (const auto *Ctor =
-                 getNodeAsType<CXXConstructExpr>(Result, "dim3Ctor")) {
-    E = Ctor;
-  }
-  if (E) {
-    if (getParentKernelCall(E))
-      return;
-    ExprAnalysis EA;
-    EA.analyze(E);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
-  }
-}
-
-REGISTER_RULE(ReplaceDim3CtorRule, PassKind::PK_Migration)
-
-// rule for dim3 types member fields replacements.
-void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
-  // dim3->x/y/z => (*dim3)[0]/[1]/[2]
-  // dim3.x/y/z => dim3[0]/[1]/[2]
-  // int64_t{dim3->x/y/z} => int64_t((*dim3)[0]/[1]/[2])
-  // int64_t{dim3.x/y/z} => int64_t(dim3[0]/[1]/[2])
-  auto Dim3MemberExpr = [&]() {
-    return memberExpr(anyOf(
-        has(implicitCastExpr(hasType(pointsTo(typedefDecl(hasName("dim3")))))),
-        hasObjectExpression(hasType(qualType(hasCanonicalType(
-            recordType(hasDeclaration(cxxRecordDecl(hasName("dim3"))))))))));
-  };
-  MF.addMatcher(Dim3MemberExpr().bind("Dim3MemberExpr"), this);
-  MF.addMatcher(
-      cxxFunctionalCastExpr(
-          allOf(hasTypeLoc(loc(isSignedInteger())),
-                hasDescendant(
-                    initListExpr(hasInit(0, ignoringImplicit(Dim3MemberExpr())))
-                        .bind("InitListExpr")))),
-      this);
-}
-
-void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
-  // E.g.
-  // dim3 *pd3, d3;
-  // pd3->z; d3.z;
-  // int64_t{d3.x}, int64_t{pd3->x};
-  // will migrate to:
-  // (*pd3)[0]; d3[0];
-  // sycl::range<3> *pd3, d3;
-  // int64_t(d3[0]), int64_t((*pd3)[0]);
-  ExprAnalysis EA;
-  if (const auto *ILE = getNodeAsType<InitListExpr>(Result, "InitListExpr")) {
-    EA.analyze(ILE);
-  } else if (const auto *ME =
-                 getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
-    EA.analyze(ME);
-  } else {
-    return;
-  }
-  emplaceTransformation(EA.getReplacement());
-  EA.applyAllSubExprRepl();
-}
-
-REGISTER_RULE(Dim3MemberFieldsRule, PassKind::PK_Migration)
 
 void DeviceInfoVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -11854,9 +11696,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
                    internal::Matcher<NamedDecl>(
                        new internal::HasNameMatcher(MathFunctionsCallExpr)),
                    anyOf(unless(hasDeclContext(namespaceDecl(anything()))),
-                         hasDeclContext(namespaceDecl(hasName("std")))))),
-               unless(hasAncestor(
-                   cxxConstructExpr(hasType(typedefDecl(hasName("dim3")))))))
+                         hasDeclContext(namespaceDecl(hasName("std")))))))
           .bind("math"),
       this);
 

@@ -247,7 +247,7 @@ int *g_a;
 
 __global__ void foo_kernel3(int *d) {
 }
-//CHECK:void run_foo(sycl::range<3> c, sycl::range<3> d) {
+//CHECK:void run_foo(dpct::dim3 c, dpct::dim3 d) {
 //CHECK-NEXT:  if (1)
 //CHECK-NEXT:      dpct::get_in_order_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {

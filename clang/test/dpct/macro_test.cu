@@ -58,7 +58,7 @@ public:
 #define CALL(x) x;
 
 #define EMPTY_MACRO(x) x
-//CHECK:#define GET_MEMBER_MACRO(x) x[1] = 5
+//CHECK:#define GET_MEMBER_MACRO(x) x.y = 5
 #define GET_MEMBER_MACRO(x) x.y = 5
 
 __global__ void foo_kernel() {}
@@ -99,9 +99,9 @@ void foo() {
 #endif
 
 
-  // CHECK: (*d3.A)[2] = 3;
-  // CHECK-NEXT: d3.B[2] = 2;
-  // CHECK-NEXT: EMPTY_MACRO(d3.B[2]);
+  // CHECK: d3.A->x = 3;
+  // CHECK-NEXT: d3.B.x = 2;
+  // CHECK-NEXT: EMPTY_MACRO(d3.B.x);
   // CHECK-NEXT: GET_MEMBER_MACRO(d3.B);
   d3.A->x = 3;
   d3.B.x = 2;
@@ -268,7 +268,7 @@ MACRO_KC2(griddim,threaddim,1,0)
 // CHECK: MACRO_KC2(3,2,1,0)
 MACRO_KC2(3,2,1,0)
 
-// CHECK: MACRO_KC2(sycl::range<3>(5, 4, 3), 2, 1, 0)
+// CHECK: MACRO_KC2(dpct::dim3(5, 4, 3), 2, 1, 0)
 MACRO_KC2(dim3(5,4,3),2,1,0)
 
 int *a;
@@ -1355,7 +1355,7 @@ void foo38() {
 template<typename T>
 void foo38(T *t);
 
-//CHECK: #define GRID grid[2] = 3;
+//CHECK: #define GRID grid.x = 3;
 #define GRID grid.x = 3;
 
 template<typename T>

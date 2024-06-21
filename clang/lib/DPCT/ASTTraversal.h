@@ -580,19 +580,6 @@ private:
   static const char NamespaceName[];
 };
 
-class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for dim3 types member fields replacements.
-class Dim3MemberFieldsRule : public NamedMigrationRule<Dim3MemberFieldsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
 class CudaExtentRule : public NamedMigrationRule<CudaExtentRule> {
   CharSourceRange getConstructorRange(const CXXConstructExpr *Ctor);
   void replaceConstructor(const CXXConstructExpr *Ctor);

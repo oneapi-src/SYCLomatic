@@ -632,7 +632,6 @@ protected:
   }
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
-  void analyzeExpr(const CXXNewExpr *New);
   void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
@@ -967,22 +966,6 @@ private:
   bool HasThreadIdxX = false;
   bool IsThreadIdxXUnderNonAdditiveOp = false;
   std::stack<bool> ContainNonAdditiveOp;
-};
-
-class InitListAnalysis : private ExprAnalysis {
-public:
-  explicit InitListAnalysis(const InitListExpr *ILE);
-  SourceLocation getReplaceLoc() const { return ReplaceLoc; }
-  std::string getReplacedInitListStr() const { return ReplacedInitListStr; }
-
-private:
-  void dispatch(const Stmt *Expression) override;
-  void analyzeExpr(const ImplicitValueInitExpr *IVIE);
-  void analyzeExpr(const InitListExpr *ILE);
-  void analyzeExpr(const CXXConstructExpr *Ctor);
-
-  SourceLocation ReplaceLoc;
-  std::string ReplacedInitListStr = "{";
 };
 
 } // namespace dpct

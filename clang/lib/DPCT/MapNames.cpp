@@ -111,7 +111,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaPointerAttributes",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
                                       HelperFeatureEnum::device_ext)},
-      {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
+      {"dim3", std::make_shared<TypeNameRule>(getDpctNamespace() + "dim3")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"__half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
