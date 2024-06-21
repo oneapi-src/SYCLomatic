@@ -213,7 +213,7 @@ __host__ __device__ inline bool operator==(const double2 &v1,
 // CHECK: namespace dpct_operator_overloading {
 // CHECK: inline bool operator!=(const sycl::double2 &v1,
 // CHECK:                                            const sycl::double2 &v2) {
-// CHECK:   return (!(v1 == v2));
+// CHECK:   return (!(dpct_operator_overloading::operator==(v1 , v2)));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 __host__ __device__ inline bool operator!=(const double2 &v1,
@@ -228,7 +228,7 @@ __host__ __device__ inline bool operator!=(const double2 &v1,
 // CHECK: template<typename T>
 // CHECK: inline bool operator!=(const sycl::double2 &v1,
 // CHECK:                                            const sycl::double2 &v2) {
-// CHECK:   return (!(v1 == v2));
+// CHECK:   return (!(dpct_operator_overloading::operator==(v1 , v2)));
 // CHECK: }
 // CHECK: }  // namespace dpct_operator_overloading
 template<typename T>

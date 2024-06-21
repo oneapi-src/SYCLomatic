@@ -2851,7 +2851,8 @@ void VectorTypeOperatorRule::registerMatcher(MatchFinder &MF) {
                 this);
 
   // Matches call of user overloaded operator
-  MF.addMatcher(cxxOperatorCallExpr(callee(vectorTypeOverLoadedOperator()))
+  MF.addMatcher(cxxOperatorCallExpr(callee(vectorTypeOverLoadedOperator()),
+                                    hasAncestor(vectorTypeOverLoadedOperator()))
                     .bind("callOverloadedOperator"),
                 this);
 }
@@ -2972,8 +2973,8 @@ void VectorTypeOperatorRule::runRule(const MatchFinder::MatchResult &Result) {
       Result, getNodeAsType<FunctionDecl>(Result, "overloadedOperatorDecl"));
 
   // Explicitly call user overloaded operator
-  //MigrateOverloadedOperatorCall(Result, getNodeAsType<CXXOperatorCallExpr>(
-  //                                          Result, "callOverloadedOperator"));
+  MigrateOverloadedOperatorCall(Result, getNodeAsType<CXXOperatorCallExpr>(
+                                            Result, "callOverloadedOperator"));
 }
 
 REGISTER_RULE(VectorTypeOperatorRule, PassKind::PK_Migration)
