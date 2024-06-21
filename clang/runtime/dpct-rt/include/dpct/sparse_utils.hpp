@@ -1589,6 +1589,17 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b;
   oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c;
   oneapi::mkl::sparse::matmat_descr_t *matmat_desc;
+
+  sycl::buffer<int>* row_ptr_a_buf_ptr;
+  sycl::buffer<int>* col_ind_a_buf_ptr;
+  sycl::buffer<Ty>* val_a_buf_ptr;
+  sycl::buffer<int>* row_ptr_b_buf_ptr;
+  sycl::buffer<int>* col_ind_b_buf_ptr;
+  sycl::buffer<Ty>* val_b_buf_ptr;
+  sycl::buffer<int>* row_ptr_c_buf_ptr;
+  sycl::buffer<int>* col_ind_c_buf_ptr;
+  sycl::buffer<Ty>* val_c_buf_ptr;
+
   if (Iter == desc->get_csrgemm_info_map().end()) {
     matrix_handle_a = new oneapi::mkl::sparse::matrix_handle_t();
     matrix_handle_b = new oneapi::mkl::sparse::matrix_handle_t();
@@ -1602,24 +1613,54 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
     int cols_a = (trans_a == oneapi::mkl::transpose::nontrans) ? k : m;
     int rows_b = (trans_b == oneapi::mkl::transpose::nontrans) ? k : n;
     int cols_b = (trans_b == oneapi::mkl::transpose::nontrans) ? n : k;
-    auto data_row_ptr_a = dpct::detail::get_memory<int>(row_ptr_a);
-    auto data_col_ind_a = dpct::detail::get_memory<int>(col_ind_a);
-    auto data_val_a = dpct::detail::get_memory<Ty>(val_a);
+
+#ifdef DPCT_USM_LEVEL_NONE
+    row_ptr_a_buf_ptr = new sycl::buffer<int>(0);
+    col_ind_a_buf_ptr = new sycl::buffer<int>(0);
+    val_a_buf_ptr = new sycl::buffer<Ty>(0);
+    *row_ptr_a_buf_ptr = dpct::detail::get_memory<int>(row_ptr_a);
+    *col_ind_a_buf_ptr = dpct::detail::get_memory<int>(col_ind_a);
+    *val_a_buf_ptr = dpct::detail::get_memory<Ty>(val_a);
+    oneapi::mkl::sparse::set_csr_data(
+        queue, *matrix_handle_a, rows_a, cols_a, info_a->get_index_base(),
+        *row_ptr_a_buf_ptr, *col_ind_a_buf_ptr, *val_a_buf_ptr);
+#else
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_a, rows_a, cols_a,
-                                      info_a->get_index_base(), data_row_ptr_a,
-                                      data_col_ind_a, data_val_a);
-    auto data_row_ptr_b = dpct::detail::get_memory<int>(row_ptr_b);
-    auto data_col_ind_b = dpct::detail::get_memory<int>(col_ind_b);
-    auto data_val_b = dpct::detail::get_memory<Ty>(val_b);
+                                      info_a->get_index_base(), row_ptr_a,
+                                      col_ind_a, val_a);
+#endif
+
+#ifdef DPCT_USM_LEVEL_NONE
+    row_ptr_b_buf_ptr = new sycl::buffer<int>(0);
+    col_ind_b_buf_ptr = new sycl::buffer<int>(0);
+    val_b_buf_ptr = new sycl::buffer<Ty>(0);
+    *row_ptr_b_buf_ptr = dpct::detail::get_memory<int>(row_ptr_b);
+    *col_ind_b_buf_ptr = dpct::detail::get_memory<int>(col_ind_b);
+    *val_b_buf_ptr = dpct::detail::get_memory<Ty>(val_b);
+    oneapi::mkl::sparse::set_csr_data(
+        queue, *matrix_handle_b, rows_b, cols_b, info_b->get_index_base(),
+        *row_ptr_b_buf_ptr, *col_ind_b_buf_ptr, *val_b_buf_ptr);
+#else
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_b, rows_b, cols_b,
-                                      info_b->get_index_base(), data_row_ptr_b,
-                                      data_col_ind_b, data_val_b);
-    auto data_row_ptr_c = dpct::detail::get_memory<int>(row_ptr_c);
-    auto data_col_ind_c = dpct::detail::get_memory<int>(nullptr);
-    auto data_val_c = dpct::detail::get_memory<Ty>(nullptr);
+                                      info_b->get_index_base(), row_ptr_b,
+                                      col_ind_b, val_b);
+#endif
+
+#ifdef DPCT_USM_LEVEL_NONE
+    row_ptr_c_buf_ptr = new sycl::buffer<int>(0);
+    col_ind_c_buf_ptr = new sycl::buffer<int>(0);
+    val_c_buf_ptr = new sycl::buffer<Ty>(0);
+    *row_ptr_c_buf_ptr = dpct::detail::get_memory<int>(row_ptr_c);
+    *col_ind_c_buf_ptr = dpct::detail::get_memory<int>(nullptr);
+    *val_c_buf_ptr = dpct::detail::get_memory<Ty>(nullptr);
+    oneapi::mkl::sparse::set_csr_data(
+        queue, *matrix_handle_c, rows_c, cols_c, info_c->get_index_base(),
+        *row_ptr_c_buf_ptr, *col_ind_c_buf_ptr, *val_c_buf_ptr);
+#else
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_c, rows_c, cols_c,
-                                      info_c->get_index_base(), data_row_ptr_c,
-                                      data_col_ind_c, data_val_c);
+                                      info_c->get_index_base(), row_ptr_c,
+                                      nullptr, nullptr);
+#endif
 
     matmat_desc = new oneapi::mkl::sparse::matmat_descr_t();
     oneapi::mkl::sparse::init_matmat_descr(matmat_desc);
@@ -1687,6 +1728,17 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   dpct::dpct_memcpy(row_ptr_c + m, &nnz_c_int, sizeof(int), host_to_device);
 
   queue.wait();
+#ifdef DPCT_USM_LEVEL_NONE
+  delete row_ptr_a_buf_ptr;
+  delete col_ind_a_buf_ptr;
+  delete val_a_buf_ptr;
+  delete row_ptr_b_buf_ptr;
+  delete col_ind_b_buf_ptr;
+  delete val_b_buf_ptr;
+  delete row_ptr_c_buf_ptr;
+  delete col_ind_c_buf_ptr;
+  delete val_c_buf_ptr;
+#endif
 }
 
 /// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
