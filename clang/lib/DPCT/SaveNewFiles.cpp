@@ -213,6 +213,7 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
         auto AbsoluteParentPath = sys::path::parent_path(AbsolutePath);
 
         if (llvm::sys::fs::is_symlink_file(AbsoluteParentPath)) {
+          llvm::outs() << "SYmbol link is " << AbsoluteParentPath << "\n";
           createSymLink(AbsoluteParentPath, InRoot, OutRoot);
         }
         auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
