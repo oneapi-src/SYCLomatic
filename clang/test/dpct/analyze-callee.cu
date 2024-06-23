@@ -9,8 +9,8 @@ template <typename T> struct Math {
 };
 
 template <> struct Math<int> {
-  static inline __device__ void zero() {
-    // CHECK: sycl::half2(Math<sycl::half>::zero());
-    __half2half2(Math<half>::zero());
+  static inline __device__ half2 zero() {
+    // CHECK: return sycl::half2(Math<sycl::half>::zero());
+    return __half2half2(Math<half>::zero());
   }
 };
