@@ -368,3 +368,21 @@ TYPE_REWRITE_ENTRY(
                              "experimental::logical_group")),
             WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                             STR("--use-experimental-features=logical-group")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraph_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::command_graph_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraphExec_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::command_graph_exec_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))

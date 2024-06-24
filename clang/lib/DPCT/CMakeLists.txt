@@ -8,6 +8,7 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/bindless_images.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/device.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/image.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/graph.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/math.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/memory.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/util.hpp
@@ -49,6 +50,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpct.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/graph.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/math.hpp.inc

@@ -1751,8 +1751,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
 
   MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
                             "cooperative_groups::__v1::coalesced_group",
-                            "cooperative_groups::__v1::thread_block_tile"
-                            ))))))
+                            "cooperative_groups::__v1::thread_block_tile",
+                            "cudaGraph_t", "cudaGraphExec_t"))))))
                     .bind("cudaTypeDefEA"),
                 this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -2418,6 +2418,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         Str = Itr->second;
       }
     }
+
     // Add '#include <complex>' directive to the file only once
     if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex" ||
         TypeStr == "cuFloatComplex") {
@@ -3236,12 +3237,6 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
       EA.applyAllSubExprRepl();
       return;
   }
-  // unmigrated properties
-  if (MemberName == "regsPerBlock") {
-    report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
-           MemberName);
-    return;
-  }
 
   // not functionally compatible properties
   if (MemberName == "deviceOverlap" || MemberName == "concurrentKernels") {
@@ -3291,6 +3286,9 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), std::move(Repl)));
     return;
+  } else if (MemberName == "regsPerBlock") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "get_max_register_size_per_work_group");
   }
 
   if (MemberName == "sharedMemPerBlock" ||

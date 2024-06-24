@@ -73,6 +73,7 @@ DPCT_HEADER(Math, "<dpct/math.hpp>")
 DPCT_HEADER(BLAS_GEMM_Utils, "<dpct/blas_gemm_utils.hpp>")
 DPCT_HEADER(CodePin_SYCL, "<dpct/codepin/codepin.hpp>")
 DPCT_HEADER(CodePin_CUDA, "<dpct/codepin/codepin.hpp>")
+DPCT_HEADER(Graph, "<dpct/graph.hpp>")
 
 #undef MKL_HEADER
 #undef ONEDPL_HEADER
