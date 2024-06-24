@@ -472,20 +472,19 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     }
   }
   if (b_desc->_order != order_t::col) {
-    new_ldb = b_desc->_cols; // The input b is transpose::trans, so the row/col
-                             // is already swapped.
+    new_ldb = b_desc->_rows;
     if (b_desc->_type == library_data_t::real_int8) {
       new_b =
-          dpct_malloc(sizeof(std::int8_t) * b_desc->_rows * new_ldb, *q_ptr);
+          dpct_malloc(sizeof(std::int8_t) * b_desc->_cols * new_ldb, *q_ptr);
       sycl::event e = detail::matrix_transform<std::int8_t>(
-          q_ptr, b_desc->_cols, b_desc->_rows, b_desc->_ld, b_desc->_order,
+          q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld, b_desc->_order,
           (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b,
           {});
       transform_events.push_back(e);
     } else {
-      new_b = dpct_malloc(sizeof(int) * b_desc->_rows * new_ldb, *q_ptr);
+      new_b = dpct_malloc(sizeof(int) * b_desc->_cols * new_ldb, *q_ptr);
       sycl::event e = detail::matrix_transform<int>(
-          q_ptr, b_desc->_cols, b_desc->_rows, b_desc->_ld, b_desc->_order,
+          q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld, b_desc->_order,
           (const int *)b, new_ldb, order_t::col, (int *)new_b, {});
       transform_events.push_back(e);
     }
@@ -504,7 +503,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   // a,d are col_major, b is row_major
   const size_t m = a_desc->_rows;
   const size_t n = d_desc->_cols;
-  const size_t k = b_desc->_rows;
+  const size_t k = b_desc->_cols;
   const ::dnnl::memory::dim M = m;
   const ::dnnl::memory::dim N = n;
   const ::dnnl::memory::dim K = k;
