@@ -55,6 +55,11 @@ int main(){
   // CHECK: ctx2 = dpct::dev_mgr::instance().current_device_id();
   cuCtxGetCurrent(&ctx2);
 
+  // CHECK: if (ctx == -1) {
+  if (ctx == nullptr) {
+    return 0;
+  }
+
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx2 = dpct::dev_mgr::instance().current_device_id()));
   MY_SAFE_CALL(cuCtxGetCurrent(&ctx2));
 
