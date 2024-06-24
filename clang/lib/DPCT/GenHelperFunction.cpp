@@ -40,6 +40,9 @@ const std::string DeviceAllContentStr =
 const std::string DplUtilsAllContentStr =
 #include "clang/DPCT/dpl_utils.hpp.inc"
     ;
+const std::string GraphAllContentStr =
+#include "clang/DPCT/graph.hpp.inc"
+    ;
 const std::string ImageAllContentStr =
 #include "clang/DPCT/image.hpp.inc"
     ;
@@ -154,6 +157,7 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(Dpct, ".", dpct.hpp)
   GENERATE_ALL_FILE_CONTENT(DplUtils, ".", dpl_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(DnnlUtils, ".", dnnl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(Graph, ".", graph.hpp)
   GENERATE_ALL_FILE_CONTENT(Image, ".", image.hpp)
   GENERATE_ALL_FILE_CONTENT(Kernel, ".", kernel.hpp)
   GENERATE_ALL_FILE_CONTENT(Math, ".", math.hpp)
