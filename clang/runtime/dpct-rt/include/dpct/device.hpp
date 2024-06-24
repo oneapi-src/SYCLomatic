@@ -386,9 +386,16 @@ work groups is not supported."
   prop.set_max_nd_range_size(max_nd_range_size);
 #endif
 
-  // Estimates max register size per work group, feel free to update the value
-  // according to device properties.
-  prop.set_max_register_size_per_work_group(65536);
+#ifdef SYCL_EXT_CODEPLAY_MAX_REGISTERS_PER_WORK_GROUP_QUERY
+  if (dev.get_backend() == sycl::backend::ext_oneapi_cuda)
+    prop.set_max_register_size_per_work_group(
+        dev.get_info<sycl::ext::codeplay::experimental::info::device::
+                         max_registers_per_work_group>());
+  else
+#endif
+    // Estimates max register size per work group, feel free to update the value
+    // according to device properties.
+    prop.set_max_register_size_per_work_group(65536);
 
   prop.set_global_mem_cache_size(
       dev.get_info<sycl::info::device::global_mem_cache_size>());
