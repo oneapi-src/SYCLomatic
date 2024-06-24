@@ -381,6 +381,54 @@ sycl::event matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
         });
   });
 }
+
+// Convert an integer to an float.
+// The integer may on the host or the device, the float is on the device.
+#ifdef DPCT_USM_LEVEL_NONE
+inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
+                      sycl::buffer<float, 1> float_buffer) {
+  if (is_host_ptr) {
+    int alpha_host = *reinterpret_cast<int *>(int_ptr);
+    q_ptr->submit([&](sycl::handler &cgh) {
+      sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
+                               sycl::no_init);
+      cgh.single_task<dpct_kernel_name<class inthost2float>>(
+          [=]() { float_acc[0] = alpha_host; });
+    });
+  } else {
+    q_ptr->submit([&](sycl::handler &cgh) {
+      access_wrapper<int *> int_acc(int_ptr, cgh);
+      sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
+                               sycl::no_init);
+      cgh.single_task<dpct_kernel_name<class intdevice2float>>([=]() {
+        auto int_data = int_acc.get_raw_pointer();
+        float_acc[0] = int_data[0];
+      });
+    });
+  }
+}
+#else
+inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
+                      void *float_ptr) {
+  if (is_host_ptr) {
+    int alpha_host = *reinterpret_cast<int *>(int_ptr);
+    q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.single_task<dpct_kernel_name<class inthost2float>>([=]() {
+        auto float_data = (float *)float_ptr;
+        float_data[0] = alpha_host;
+      });
+    });
+  } else {
+    q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.single_task<dpct_kernel_name<class intdevice2float>>([=]() {
+        auto int_data = (int *)int_ptr;
+        auto float_data = (float *)float_ptr;
+        float_data[0] = int_data[0];
+      });
+    });
+  }
+}
+#endif
 } // namespace detail
 
 /// TODO: Impl row-major matmul without layout conversion
@@ -445,6 +493,26 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
     throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
                              "supports transposed matrix B currently.");
+  }
+
+  if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
+        a_desc->_type == library_data_t::real_int8 &&
+        b_desc->_type == library_data_t::real_int8 &&
+        c_desc->_type == library_data_t::real_int32) &&
+      !(compute_desc->_scale_type == library_data_t::real_float &&
+        a_desc->_type == library_data_t::real_int8 &&
+        b_desc->_type == library_data_t::real_int8 &&
+        c_desc->_type == library_data_t::real_int8) &&
+      !(compute_desc->_scale_type == library_data_t::real_float &&
+        a_desc->_type == library_data_t::real_int8 &&
+        b_desc->_type == library_data_t::real_int8 &&
+        c_desc->_type == library_data_t::real_int32)) {
+    throw std::runtime_error(
+        "dpct::blas_gemm::experimental::matmul() only supports data type "
+        "combinataions:\n  scale_type==int32 && a_type==int8 && b_type==int8 "
+        "&& c_type==int32,\n  scale_type==float && a_type==int8 && "
+        "b_type==int8 && c_type==int8 or\n  scale_type==float && a_type==int8 "
+        "&& b_type==int8 && c_type==int32.");
   }
 
   // For non-col_major matrix, convert it to col_major.
@@ -580,14 +648,27 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   ::dnnl::memory *scales_alpha = nullptr;
   if (!vector_alpha) {
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
-    std::size_t Size =
-        dpct::detail::library_data_size[static_cast<unsigned int>(scale_type)] /
-        8;
     scales_alpha = new ::dnnl::memory(
-        {{1}, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(scale_type), {1}},
-        handle->get_engine());
-    dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha, Size, automatic,
-                      *q_ptr);
+        {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine());
+    if (scale_type != library_data_t::real_float) {
+#ifdef DPCT_USM_LEVEL_NONE
+      *scales_alpha = ::dnnl::sycl_interop::make_memory(
+          {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine(),
+          ::dnnl::sycl_interop::memory_kind::buffer);
+#endif
+      detail::int2float(
+          q_ptr, const_cast<void *>(alpha),
+          compute_desc->_pointer_mode == pointer_mode_t::host,
+#ifdef DPCT_USM_LEVEL_NONE
+          ::dnnl::sycl_interop::get_buffer<float, 1>(*scales_alpha)
+#else
+          scales_alpha->get_data_handle()
+#endif
+      );
+    } else {
+      dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha, sizeof(float),
+                        automatic, *q_ptr);
+    }
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
