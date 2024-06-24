@@ -1753,6 +1753,10 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                                 namedDecl(hasName("use_default"))))))))
                     .bind("useDefaultVarDeclInTemplateArg"),
                 this);
+  MF.addMatcher(declRefExpr(to(varDecl(hasType(qualType(hasDeclaration(
+                                namedDecl(hasAnyName("CUcontext"))))))))
+                    .bind("driver_ctx"),
+                this);
 }
 
 template <typename T>
@@ -2196,6 +2200,25 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     EA.analyze(*TL);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
+    return;
+  }
+  if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "driver_ctx")) {
+    if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(DRE)) {
+      if (BO->getOpcode() == BO_EQ) {
+        const clang::Expr *AnotherSide = nullptr;
+        if (BO->getRHS()->IgnoreImplicitAsWritten() == DRE) {
+          AnotherSide = BO->getLHS();
+        } else if (BO->getLHS()->IgnoreImplicitAsWritten() == DRE) {
+          AnotherSide = BO->getRHS();
+        }
+        if (AnotherSide) {
+          auto E = AnotherSide->IgnoreImplicitAsWritten();
+          if (isa<CXXNullPtrLiteralExpr>(E) || isa<GNUNullExpr>(E)) {
+            emplaceTransformation(new ReplaceStmt(E, "-1"));
+          }
+        }
+      }
+    }
     return;
   }
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
