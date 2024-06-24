@@ -9,8 +9,6 @@
 #pragma once
 
 #include "dpct/device.hpp"
-#include "sycl/queue.hpp"
-#include <memory>
 #include <sycl/ext/oneapi/experimental/graph.hpp>
 #include <sycl/sycl.hpp>
 
