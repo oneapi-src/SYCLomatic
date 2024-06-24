@@ -57,7 +57,7 @@ results in the following migrated SYCL\* code:
      d(var, item_ct1);
    }
 
-which need be rewritten to:
+which needs to be rewritten to:
 
 .. code-block:: cpp
    :linenos:

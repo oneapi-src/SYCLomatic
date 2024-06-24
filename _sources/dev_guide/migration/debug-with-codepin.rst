@@ -24,10 +24,8 @@ the CUDA and SYCL programs to help identify the source of divergent runtime beha
 Enable CodePin
 --------------
 
-Enable CodePin with the ``–enable-codepin`` option. If ``–out-root`` is specified,
-the instrumented CUDA program will be put into a folder with a ``_debug`` postfix
-beside the out-root folder. Otherwise, the instrumented CUDA program will be put
-in the default folder ``dpct_output_debug``.
+Enable CodePin with the ``–enable-codepin`` option. The instrumented program will be put
+in the folder ``dpct_output_codepin_cuda`` and ``dpct_output_codepin_sycl``.
 
 Example
 -------
@@ -93,26 +91,26 @@ To debug the issue, the migrate the CUDA program with CodePin enabled:
 
     dpct example.cu --enable-codepin
 
-After migration, there will be two files: ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``.
+After migration, there will be two files: ``dpct_output_codepin_sycl/example.dp.cpp`` and ``dpct_output_codepin_cuda/example.cu``.
 
 .. code-block:: bash
 
     workspace
     ├── example.cu
-    ├── dpct_output
+    ├── dpct_output_codepin_sycl
     │   ├── example.dp.cpp
     │   ├── generated_schema.hpp
     │   └── MainSourceFiles.yaml
-    ├── dpct_output_debug
+    ├── dpct_output_codepin_cuda
     │   ├── example.cu
     │   └── generated_schema.hpp
 
 
-``dpct_output/example.dp.cpp`` is the migrated and instrumented SYCL program:
+``dpct_output_codepin_sycl/example.dp.cpp`` is the migrated and instrumented SYCL program:
 
 .. code-block:: c++
 
-    //dpct_output/example.dp.cpp
+    //dpct_output_codepin_sycl/example.dp.cpp
     #include <dpct/dpct.hpp>
     #include <sycl/sycl.hpp>
 
@@ -180,11 +178,11 @@ After migration, there will be two files: ``dpct_output/example.dp.cpp`` and ``d
     Result[3]: (1, 1, 1) <--- incorrect result
     */
 
-``dpct_output_debug/example.cu`` is the instrumented CUDA program:
+``dpct_output_codepin_cuda/example.cu`` is the instrumented CUDA program:
 
 .. code-block:: c++
 
-    //dpct_output_debug/example.cu
+    //dpct_output_codepin_cuda/example.cu
     #include "generated_schema.hpp"
     #include <dpct/codepin/codepin.hpp>
     #include <iostream>
@@ -241,7 +239,8 @@ After migration, there will be two files: ``dpct_output/example.dp.cpp`` and ``d
     Result[3]: (2, 3, 4)
     */
 
-After building and executing ``dpct_output/example.dp.cpp`` and ``dpct_output_debug/example.cu``, the following reports will be generated. Line number 13 shows the point of divergence.
+After building ``dpct_output_codepin_sycl/example.dp.cpp`` and ``dpct_output_codepin_cuda/example.cu`` and executing the binaries built out
+the following execution log files will be generated.
 
 .. list-table::
    :widths: 50 50
@@ -252,46 +251,110 @@ After building and executing ``dpct_output/example.dp.cpp`` and ``dpct_output_de
    * - .. code-block::
           :linenos:
 
-          {
-             "example.cu:23:3:0": {
-                "d_a[0]": {
-                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
-                },
-                "d_a[1]": {
-                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
-                },
-                "d_a[2]": {
-                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
-                },
-                "d_a[3]": {
-                   "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
-                },
-                "d_result[0]": {
-                   "m_Data": "00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00"
-                },
-          ...
+          [
+              {
+                  "ID": "example.cu:26:3:prolog",
+                  "Free Device Memory": "16374562816",
+                  "Total Device Memory": "16882663424",
+                  "Elapse Time(ms)": "0",
+                  "CheckPoint": {
+                      "d_a": {
+                          "Type": "Pointer",
+                          "Data": [
+                              {
+                                  "Type": "int3",
+                                  "Data": [
+                                      {
+                                          "x": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  1
+                                              ]
+                                          }
+                                      },
+                                      {
+                                          "y": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  2
+                                              ]
+                                          }
+                                      },
+            ...
 
      - .. code-block::
-           :linenos:
+          :linenos:
 
-           {
-              "example.cu:23:3(SYCL):0": {
-                 "d_a[0]": {
-                    "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
-                 },
-                 "d_a[1]": {
-                    "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
-                 },
-                 "d_a[2]": {
-                    "m_Data": "01, 00, 00, 00, 02, 00, 00, 00, 03, 00, 00, 00"
-                 },
-                 "d_a[3]": {
-                    "m_Data": "00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00"
-                 },
-                 "d_result[0]": {
-                    "m_Data": "00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00"
-                 },
-            ...
+          [
+              {
+                  "ID": "example.cu:26:3:prolog",
+                  "Free Device Memory": "0",
+                  "Total Device Memory": "31023112192",
+                  "Elapse Time(ms)": "0",
+                  "CheckPoint": {
+                      "d_a": {
+                          "Type": "Pointer",
+                          "Data": [
+                              {
+                                  "Type": "sycl::int3",
+                                  "Data": [
+                                      {
+                                          "x": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  1
+                                              ]
+                                          }
+                                      },
+                                      {
+                                          "y": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  2
+                                              ]
+                                          }
+                                      },
+              ...
 
 The report helps identify where the runtime behavior of the CUDA and the SYCL
 programs start to diverge from one another.
+
+Analyse the CodePin Result
+--------------------------
+
+codepin-report.py (also can be triggered by dpct/c2s --codepin-report) is a functionality of
+the compatibility tool that consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
+codepin-report.py can identify the inconsistent data value and report the stats data of the execution.
+
+User can specify the comparison tolerance of floating points in the following format:
+
+.. code-block::
+
+    {
+        "bf16_abs_tol": 9.77e-04,
+        "fp16_abs_tol": 9.77e-04,
+        "float_abs_tol": 1.19e-04,
+        "double_abs_tol": 2.22e-04,
+        "rel_tol": 1e-3
+    }
+
+The first 4 items "bf16_abs_tol", "bf16_abs_tol", "bf16_abs_tol" and "bf16_abs_tol" are the absolute tolerance range of the corresponding type.
+The last item, "rel_tol", is the relative tolerance represented by a ratio value.
+
+codepin-report.py consumes the execution log files generated from both CUDA and SYCL code with the following command line.
+``codepin-report.py [-h] --instrumented-cuda-log <file path> --instrumented-sycl-log <file path> [--floating-point-comparison-epsilon <file path>]``
+
+Following is an example of the analysis report.
+
+.. code-block::
+
+    CodePin Summary
+    Totally APIs count, 2
+    Consistently APIs count, 2
+    Most Time-consuming Kernel(CUDA), example.cu:26:3:epilog, time:8.2316
+    Most Time-consuming Kernel(SYCL), example.cu:26:3:epilog, time:10.2575
+    Peak Device Memory Used(CUDA), 508100608
+    Peak Device Memory Used(SYCL), 31023112192
+    CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
+    example.cu:26:3:prolog,example.cu:26:3:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data example.cu:26:3:prolog are mismatched,
+    and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API example.cu.
