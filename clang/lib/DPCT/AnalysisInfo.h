@@ -2500,6 +2500,7 @@ protected:
   virtual std::string getExtraParameters(LocInfo LI);
 
   unsigned Offset;
+  unsigned OffsetForAttr;
   const clang::tooling::UnifiedPath FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
