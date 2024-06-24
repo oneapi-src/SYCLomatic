@@ -15,21 +15,6 @@
 #include <type_traits>
 
 namespace dpct {
-class dim3 {
-public:
-  unsigned x, y, z;
-
-  constexpr dim3(size_t x = 1, size_t y = 1, size_t z = 1) : x(x), y(y), z(z) {}
-
-  dim3(const sycl::id<3> &r) : dim3(r[2], r[1], r[0]) {}
-
-  operator sycl::range<3>() const { return sycl::range<3>(z, y, x); }
-};
-
-inline dim3 operator*(const dim3 &a, const dim3 &b) {
-  return dim3{a.x * b.x, a.y * b.y, a.z * b.z};
-}
-
 namespace detail {
 template <typename VecT, class BinaryOperation, class = void>
 class vectorized_binary {
