@@ -1328,14 +1328,26 @@ void foo38() {
   int z;
   int shared;
   cudaStream_t stream;
-  //     CHECK:stream->parallel_for(
-  //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(z, y, x) * sycl::range<3>(1, 1, block),
-  //CHECK-NEXT:                      sycl::range<3>(1, 1, block)),
-  //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:      ((void *)&kernel38<T>)();
-  //CHECK-NEXT:    });
-  //CHECK-NEXT:CHECK_1(0);
+  //CHECK:CHECK_1([&]() {
+  //CHECK-NEXT: stream->parallel_for(
+  //CHECK-NEXT: sycl::nd_range<3>(sycl::range<3>(z, y, x) * sycl::range<3>(1, 1, block),
+  //CHECK-NEXT:                   sycl::range<3>(1, 1, block)),
+  //CHECK-NEXT: [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:   ((void *)&kernel38<T>)();
+  //CHECK-NEXT: });
+  //CHECK-NEXT: return 0;
+  //CHECK-NEXT: }());
   CHECK_1(cudaLaunchKernel((void*)&kernel38<T>, dim3(x, y, z), block, args, shared, stream));
+  //CHECK:dpct::err0 status = [&]() {
+  //CHECK-NEXT:   stream->parallel_for(
+  //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(z, y, x) * sycl::range<3>(1, 1, block),
+  //CHECK-NEXT:                         sycl::range<3>(1, 1, block)),
+  //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:         ((void *)&kernel38<T>)();
+  //CHECK-NEXT:       });
+  //CHECK-NEXT:   return 0;
+  //CHECK-NEXT: }();
+  cudaError_t status = cudaLaunchKernel((void*)&kernel38<T>, dim3(x, y, z), block, args, shared, stream);
 }
 #undef CHECK_1
 #undef CHECK_2
