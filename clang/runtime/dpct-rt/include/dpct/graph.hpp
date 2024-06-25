@@ -8,7 +8,9 @@
 
 #pragma once
 
+#include "dpct/device.hpp"
 #include "sycl/queue.hpp"
+#include <memory>
 #include <sycl/ext/oneapi/experimental/graph.hpp>
 #include <sycl/sycl.hpp>
 
@@ -24,12 +26,12 @@ typedef sycl::ext::oneapi::experimental::command_graph<
     *command_graph_exec_ptr;
 
 static inline std::unordered_map<
-    sycl::queue *,
+    dpct::queue_ptr,
     sycl::ext::oneapi::experimental::command_graph<
         sycl::ext::oneapi::experimental::graph_state::modifiable> *>
     queue_graph_map;
 
-static bool command_graph_begin_recording(sycl::queue *queue_ptr) {
+static bool command_graph_begin_recording(dpct::queue_ptr queue_ptr) {
   auto graph = new sycl::ext::oneapi::experimental::command_graph<
       sycl::ext::oneapi::experimental::graph_state::modifiable>(
       queue_ptr->get_context(), queue_ptr->get_device());
@@ -37,18 +39,17 @@ static bool command_graph_begin_recording(sycl::queue *queue_ptr) {
   if (!result.second) {
     return false;
   }
-  return graph->begin_recording(*queue_ptr);
+  return result.first->second->begin_recording(*queue_ptr);
 }
 
 static bool
-command_graph_end_recording(sycl::queue *queue_ptr,
-                            dpct::experimental::command_graph_ptr graph) {
+command_graph_end_recording(dpct::queue_ptr queue_ptr,
+                            dpct::experimental::command_graph_ptr &graph) {
   auto it = queue_graph_map.find(queue_ptr);
   if (it == queue_graph_map.end()) {
     return false;
   }
-  auto cmd_graph_from_map = *(it->second);
-  graph = &cmd_graph_from_map;
+  graph = it->second;
   queue_graph_map.erase(it);
   return graph->end_recording();
 }
