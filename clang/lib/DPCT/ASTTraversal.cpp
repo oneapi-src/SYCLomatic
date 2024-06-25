@@ -1744,14 +1744,18 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
 
   MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
                             "cooperative_groups::__v1::coalesced_group",
-                            "cooperative_groups::__v1::thread_block_tile"
-                            ))))))
+                            "cooperative_groups::__v1::thread_block_tile",
+                            "cudaGraph_t", "cudaGraphExec_t"))))))
                     .bind("cudaTypeDefEA"),
                 this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
                             hasAnyTemplateArgument(refersToType(hasDeclaration(
                                 namedDecl(hasName("use_default"))))))))
                     .bind("useDefaultVarDeclInTemplateArg"),
+                this);
+  MF.addMatcher(declRefExpr(to(varDecl(hasType(qualType(hasDeclaration(
+                                namedDecl(hasAnyName("CUcontext"))))))))
+                    .bind("driver_ctx"),
                 this);
 }
 
@@ -2198,6 +2202,25 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     EA.applyAllSubExprRepl();
     return;
   }
+  if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "driver_ctx")) {
+    if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(DRE)) {
+      if (BO->getOpcode() == BO_EQ) {
+        const clang::Expr *AnotherSide = nullptr;
+        if (BO->getRHS()->IgnoreImplicitAsWritten() == DRE) {
+          AnotherSide = BO->getLHS();
+        } else if (BO->getLHS()->IgnoreImplicitAsWritten() == DRE) {
+          AnotherSide = BO->getRHS();
+        }
+        if (AnotherSide) {
+          auto E = AnotherSide->IgnoreImplicitAsWritten();
+          if (isa<CXXNullPtrLiteralExpr>(E) || isa<GNUNullExpr>(E)) {
+            emplaceTransformation(new ReplaceStmt(E, "-1"));
+          }
+        }
+      }
+    }
+    return;
+  }
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
     if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
       auto Loc = ND->getBeginLoc();
@@ -2388,6 +2411,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         Str = Itr->second;
       }
     }
+
     // Add '#include <complex>' directive to the file only once
     if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex" ||
         TypeStr == "cuFloatComplex") {
@@ -3206,12 +3230,6 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
       EA.applyAllSubExprRepl();
       return;
   }
-  // unmigrated properties
-  if (MemberName == "regsPerBlock") {
-    report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
-           MemberName);
-    return;
-  }
 
   // not functionally compatible properties
   if (MemberName == "deviceOverlap" || MemberName == "concurrentKernels") {
@@ -3261,6 +3279,9 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), std::move(Repl)));
     return;
+  } else if (MemberName == "regsPerBlock") {
+    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+           MemberName, "get_max_register_size_per_work_group");
   }
 
   if (MemberName == "sharedMemPerBlock" ||
@@ -3817,7 +3838,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpSV_bufferSize", "cusparseSpSV_analysis",
         "cusparseSpSM_analysis", "cusparseSpSM_bufferSize",
         "cusparseSpSM_createDescr", "cusparseSpSM_destroyDescr",
-        "cusparseSpSM_solve");
+        "cusparseSpSM_solve", "cusparseCreateCoo");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -8295,28 +8316,12 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     const std::string Name =
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
-  } else if (FuncName == "cudaDeviceGetStreamPriorityRange") {
-    report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED,
-           false);
-    auto StmtStr0 = getStmtSpelling(CE->getArg(0));
-    auto StmtStr1 = getStmtSpelling(CE->getArg(1));
-    std::string ReplStr{"*("};
-    ReplStr += StmtStr0;
-    ReplStr += ") = 0, *(";
-    ReplStr += StmtStr1;
-    ReplStr += ") = 0";
-    if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR((" + ReplStr + "))";
-      requestFeature(HelperFeatureEnum::device_ext);
-    }
-    const std::string Name =
-        CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-    emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamAttachMemAsync" ||
              FuncName == "cudaStreamBeginCapture" ||
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
-             FuncName == "cudaStreamQuery") {
+             FuncName == "cudaStreamQuery" ||
+             FuncName == "cudaDeviceGetStreamPriorityRange") {
 
     // if extension feature sycl_ext_oneapi_queue_empty is used, member
     // functions "ext_oneapi_empty" in SYCL queue is used to map

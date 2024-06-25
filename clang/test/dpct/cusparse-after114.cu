@@ -31,8 +31,8 @@ void foo1() {
 
   cusparseStatus_t status;
   //CHECK:status = DPCT_CHECK_ERROR(bufferSize = 0);
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(dpct::sparse::spsm_optimize(*handle, opA, matA, matB, matC));
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(dpct::sparse::spsm(*handle, opA, opB, alpha, matA, matB, matC, computeType));
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(dpct::sparse::spsm_optimize(handle->get_queue(), opA, matA, matB, matC));
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(dpct::sparse::spsm(handle->get_queue(), opA, opB, alpha, matA, matB, matC, computeType));
   status = cusparseSpSM_bufferSize(handle, opA, opB, alpha, matA, matB, matC, computeType, alg, spsmDescr, &bufferSize);
   status = cusparseSpSM_analysis(handle, opA, opB, alpha, matA, matB, matC, computeType, alg, spsmDescr, externalBuffer);
   status = cusparseSpSM_solve(handle, opA, opB, alpha, matA, matB, matC, computeType, alg, spsmDescr);

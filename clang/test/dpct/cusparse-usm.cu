@@ -15,7 +15,7 @@ const int* csrColIndA;
 const double* x;
 double beta_value;
 double* y;
-//CHECK: dpct::queue_ptr handle;
+//CHECK: dpct::sparse::descriptor_ptr handle;
 //CHECK-NEXT: oneapi::mkl::transpose transA = oneapi::mkl::transpose::nontrans;
 //CHECK-NEXT: std::shared_ptr<dpct::sparse::matrix_info> descrA;
 cusparseHandle_t handle;
@@ -64,14 +64,14 @@ int foo(int aaaaa){
   base0 = cusparseGetMatIndexBase(descrA);
   type0 = cusparseGetMatType(descrA);
 
-  //CHECK: handle = &dpct::get_in_order_queue();
+  //CHECK: handle = new dpct::sparse::descriptor();
   //CHECK-NEXT: descrA = std::make_shared<dpct::sparse::matrix_info>();
   //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::matrix_info::matrix_type)aaaaa);
   //CHECK-NEXT: descrA->set_index_base(oneapi::mkl::index_base::zero);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmv(*handle, (oneapi::mkl::transpose)aaaaa, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y);
+  //CHECK-NEXT: dpct::sparse::csrmv(handle->get_queue(), (oneapi::mkl::transpose)aaaaa, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y);
   cusparseCreate(&handle);
   cusparseCreateMatDescr(&descrA);
   cusparseSetMatType(descrA, (cusparseMatrixType_t)aaaaa);
@@ -83,44 +83,44 @@ int foo(int aaaaa){
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmv(*handle, transA, m, n, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
+  //CHECK-NEXT: dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
   cusparseZcsrmv(handle, transA, m, n, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y);
+  //CHECK-NEXT: dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y);
   cusparseDcsrmv_mp(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y);
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmv(*handle, transA, m, n, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
+  //CHECK-NEXT: dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
   cusparseZcsrmv_mp(handle, transA, m, n, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, m, n, k, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta_value, y, ldc);
+  //CHECK-NEXT: dpct::sparse::csrmm(handle->get_queue(), transA, m, n, k, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta_value, y, ldc);
   cusparseDcsrmm(handle, transA, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta_value, y, ldc);
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, m, n, k, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
+  //CHECK-NEXT: dpct::sparse::csrmm(handle->get_queue(), transA, m, n, k, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
   cusparseZcsrmm(handle, transA, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
 
   cusparseOperation_t transB = CUSPARSE_OPERATION_NON_TRANSPOSE;
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, transB, m, n, k, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta_value, y, ldc);
+  //CHECK-NEXT: dpct::sparse::csrmm(handle->get_queue(), transA, transB, m, n, k, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta_value, y, ldc);
   cusparseDcsrmm2(handle, transA, transB, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta_value, y, ldc);
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, transB, m, n, k, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
+  //CHECK-NEXT: dpct::sparse::csrmm(handle->get_queue(), transA, transB, m, n, k, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
   cusparseZcsrmm2(handle, transA, transB, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
 
   size_t ws_size;
@@ -128,7 +128,7 @@ int foo(int aaaaa){
   //CHECK: int alg = 0;
   //CHECK-NEXT: alg = 1;
   //CHECK-NEXT: ws_size = 0;
-  //CHECK-NEXT: dpct::sparse::csrmv(*handle, transA, m, n, &alpha, dpct::library_data_t::real_double, descrA, csrValA, dpct::library_data_t::real_double, csrRowPtrA, csrColIndA, x, dpct::library_data_t::real_double, &beta_value, dpct::library_data_t::real_double, y, dpct::library_data_t::real_double);
+  //CHECK-NEXT: dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha, dpct::library_data_t::real_double, descrA, csrValA, dpct::library_data_t::real_double, csrRowPtrA, csrColIndA, x, dpct::library_data_t::real_double, &beta_value, dpct::library_data_t::real_double, y, dpct::library_data_t::real_double);
   cusparseAlgMode_t alg = CUSPARSE_ALG0;
   alg = CUSPARSE_ALG1;
   cusparseCsrmvEx_bufferSize(handle, alg, transA, m, n, nnz, &alpha, CUDA_R_64F, descrA, csrValA, CUDA_R_64F, csrRowPtrA, csrColIndA, x, CUDA_R_64F, &beta_value, CUDA_R_64F, y, CUDA_R_64F, CUDA_R_64F, &ws_size);
@@ -140,37 +140,37 @@ int foo(int aaaaa){
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: if(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y))){}
+  //CHECK-NEXT: if(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y))){}
   if(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y)){}
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: for(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y));;){}
+  //CHECK-NEXT: for(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y));;){}
   for(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y);;){}
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: switch(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y))){}
+  //CHECK-NEXT: switch(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y))){}
   switch(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y)){}
 
   //CHECK: std::shared_ptr<dpct::sparse::optimize_info> info;
   //CHECK-NEXT: info = std::make_shared<dpct::sparse::optimize_info>();
-  //CHECK-NEXT: dpct::sparse::optimize_csrsv(*handle, transA, m, descrA, csrValA, csrRowPtrA, csrColIndA, info);
+  //CHECK-NEXT: dpct::sparse::optimize_csrsv(handle->get_queue(), transA, m, descrA, csrValA, csrRowPtrA, csrColIndA, info);
   //CHECK-NEXT: info.reset();
   cusparseSolveAnalysisInfo_t info;
   cusparseCreateSolveAnalysisInfo(&info);
   cusparseDcsrsv_analysis(handle, transA, m, nnz, descrA, csrValA, csrRowPtrA, csrColIndA, info);
   cusparseDestroySolveAnalysisInfo(info);
 
-  //CHECK: dpct::sparse::optimize_csrsv(*handle, transA, m, descrA, csrValA_Z, csrRowPtrA, csrColIndA, info);
+  //CHECK: dpct::sparse::optimize_csrsv(handle->get_queue(), transA, m, descrA, csrValA_Z, csrRowPtrA, csrColIndA, info);
   cusparseZcsrsv_analysis(handle, transA, m, nnz, descrA, csrValA_Z, csrRowPtrA, csrColIndA, info);
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
-  //CHECK-NEXT: handle = nullptr;
+  //CHECK-NEXT: delete (handle);
   cusparseDestroyMatDescr(descrA);
   cusparseDestroy(handle);
 }
@@ -179,7 +179,7 @@ int foo(int aaaaa){
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   return DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y));
+//CHECK-NEXT:   return DPCT_CHECK_ERROR(dpct::sparse::csrmv(handle->get_queue(), transA, m, n, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y));
 //CHECK-NEXT: }
 int foo(cusparseMatDescr_t descrB){
   return cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta_value, y);

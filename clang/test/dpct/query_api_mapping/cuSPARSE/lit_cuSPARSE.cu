@@ -34,21 +34,21 @@
 // cusparseSpMM-NEXT:                computetype /*cudaDataType*/, algo /*cusparseSpMMAlg_t*/,
 // cusparseSpMM-NEXT:                workspace /*void **/);
 // cusparseSpMM-NEXT: Is migrated to:
-// cusparseSpMM-NEXT:   dpct::sparse::spmm(*handle, transa, transb, alpha, a, b, beta, c, computetype);
+// cusparseSpMM-NEXT:   dpct::sparse::spmm(handle->get_queue(), transa, transb, alpha, a, b, beta, c, computetype);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCreate | FileCheck %s -check-prefix=cusparseCreate
 // cusparseCreate: CUDA API:
 // cusparseCreate-NEXT:   cusparseHandle_t handle;
 // cusparseCreate-NEXT:   cusparseCreate(&handle /*cusparseHandle_t **/);
 // cusparseCreate-NEXT: Is migrated to:
-// cusparseCreate-NEXT:   dpct::queue_ptr handle;
-// cusparseCreate-NEXT:   handle = &dpct::get_in_order_queue();
+// cusparseCreate-NEXT:   dpct::sparse::descriptor_ptr handle;
+// cusparseCreate-NEXT:   handle = new dpct::sparse::descriptor();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseDestroy | FileCheck %s -check-prefix=cusparseDestroy
 // cusparseDestroy: CUDA API:
 // cusparseDestroy-NEXT:   cusparseDestroy(handle /*cusparseHandle_t*/);
 // cusparseDestroy-NEXT: Is migrated to:
-// cusparseDestroy-NEXT:   handle = nullptr;
+// cusparseDestroy-NEXT:   delete (handle);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCreateMatDescr | FileCheck %s -check-prefix=cusparseCreateMatDescr
 // cusparseCreateMatDescr: CUDA API:
@@ -84,7 +84,7 @@
 // cusparseSpMV-NEXT:                vec_y /*cusparseDnVecDescr_t*/, compute_type /*cudaDataType*/,
 // cusparseSpMV-NEXT:                alg /*cusparseSpMVAlg_t*/, buffer /*void **/);
 // cusparseSpMV-NEXT: Is migrated to:
-// cusparseSpMV-NEXT:   dpct::sparse::spmv(*handle, trans, alpha, mat_a, vec_x, beta, vec_y, compute_type);
+// cusparseSpMV-NEXT:   dpct::sparse::spmv(handle->get_queue(), trans, alpha, mat_a, vec_x, beta, vec_y, compute_type);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCsr2cscEx2_bufferSize | FileCheck %s -check-prefix=cusparseCsr2cscEx2_bufferSize
 // cusparseCsr2cscEx2_bufferSize: CUDA API:
@@ -110,7 +110,7 @@
 // cusparseCsr2cscEx2-NEXT:                      base /*cusparseIndexBase_t*/, alg /*cusparseCsr2CscAlg_t*/,
 // cusparseCsr2cscEx2-NEXT:                      buffer /*void **/);
 // cusparseCsr2cscEx2-NEXT: Is migrated to:
-// cusparseCsr2cscEx2-NEXT:   dpct::sparse::csr2csc(*handle, m, n, nnz, csr_value, row_ptr, col_idx, csc_value, col_ptr, row_ind, value_type, act, base);
+// cusparseCsr2cscEx2-NEXT:   dpct::sparse::csr2csc(handle->get_queue(), m, n, nnz, csr_value, row_ptr, col_idx, csc_value, col_ptr, row_ind, value_type, act, base);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCreateDnVec | FileCheck %s -check-prefix=cusparseCreateDnVec
 // cusparseCreateDnVec: CUDA API:
@@ -271,7 +271,7 @@
 // cusparseGetStream-NEXT:   cusparseGetStream(handle /*cusparseHandle_t*/, &s /*cudaStream_t **/);
 // cusparseGetStream-NEXT: Is migrated to:
 // cusparseGetStream-NEXT:   dpct::queue_ptr s;
-// cusparseGetStream-NEXT:   s = handle;
+// cusparseGetStream-NEXT:   s = &(handle->get_queue());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSetMatDiagType | FileCheck %s -check-prefix=cusparseSetMatDiagType
 // cusparseSetMatDiagType: CUDA API:
@@ -311,7 +311,7 @@
 // cusparseSetStream: CUDA API:
 // cusparseSetStream-NEXT:   cusparseSetStream(handle /*cusparseHandle_t*/, s /*cudaStream_t*/);
 // cusparseSetStream-NEXT: Is migrated to:
-// cusparseSetStream-NEXT:   handle = s;
+// cusparseSetStream-NEXT:   handle->set_queue(s);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMatGetFormat | FileCheck %s -check-prefix=cusparseSpMatGetFormat
 // cusparseSpMatGetFormat: CUDA API:
@@ -369,7 +369,7 @@
 // cusparseSpGEMM_compute-NEXT:       desc /*cusparseSpGEMMDescr_t*/, buffer_size /*size_t **/,
 // cusparseSpGEMM_compute-NEXT:       buffer /*void **/);
 // cusparseSpGEMM_compute-NEXT: Is migrated to:
-// cusparseSpGEMM_compute-NEXT:   dpct::sparse::spgemm_compute(*handle, op_a, op_b, alpha, mat_a, mat_b, beta, mat_c, desc, buffer_size, buffer);
+// cusparseSpGEMM_compute-NEXT:   dpct::sparse::spgemm_compute(handle->get_queue(), op_a, op_b, alpha, mat_a, mat_b, beta, mat_c, desc, buffer_size, buffer);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpGEMM_copy | FileCheck %s -check-prefix=cusparseSpGEMM_copy
 // cusparseSpGEMM_copy: CUDA API:
@@ -381,7 +381,7 @@
 // cusparseSpGEMM_copy-NEXT:       compute_type /*cudaDataType*/, alg /*cusparseSpGEMMAlg_t*/,
 // cusparseSpGEMM_copy-NEXT:       desc /*cusparseSpGEMMDescr_t*/);
 // cusparseSpGEMM_copy-NEXT: Is migrated to:
-// cusparseSpGEMM_copy-NEXT:   dpct::sparse::spgemm_finalize(*handle, op_a, op_b, alpha, mat_a, mat_b, beta, mat_c, desc);
+// cusparseSpGEMM_copy-NEXT:   dpct::sparse::spgemm_finalize(handle->get_queue(), op_a, op_b, alpha, mat_a, mat_b, beta, mat_c, desc);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpGEMM_createDescr | FileCheck %s -check-prefix=cusparseSpGEMM_createDescr
 // cusparseSpGEMM_createDescr: CUDA API:
@@ -408,7 +408,7 @@
 // cusparseSpGEMM_workEstimation-NEXT:       desc /*cusparseSpGEMMDescr_t*/, buffer_size /*size_t **/,
 // cusparseSpGEMM_workEstimation-NEXT:       buffer /*void **/);
 // cusparseSpGEMM_workEstimation-NEXT: Is migrated to:
-// cusparseSpGEMM_workEstimation-NEXT:   dpct::sparse::spgemm_work_estimation(*handle, op_a, op_b, alpha, mat_a, mat_b, beta, mat_c, desc, buffer_size, buffer);
+// cusparseSpGEMM_workEstimation-NEXT:   dpct::sparse::spgemm_work_estimation(handle->get_queue(), op_a, op_b, alpha, mat_a, mat_b, beta, mat_c, desc, buffer_size, buffer);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCreateCsr | FileCheck %s -check-prefix=cusparseCreateCsr
 // cusparseCreateCsr: CUDA API:

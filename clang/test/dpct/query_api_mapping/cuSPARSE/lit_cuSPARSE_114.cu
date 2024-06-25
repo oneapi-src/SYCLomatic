@@ -11,7 +11,7 @@
 // cusparseSpSM_analysis-NEXT:       alg /*cusparseSpSMAlg_t*/, desc /*cusparseSpSMDescr_t*/,
 // cusparseSpSM_analysis-NEXT:       buffer /*void **/);
 // cusparseSpSM_analysis-NEXT: Is migrated to:
-// cusparseSpSM_analysis-NEXT:   dpct::sparse::spsm_optimize(*handle, op_a, mat_a, mat_b, mat_c);
+// cusparseSpSM_analysis-NEXT:   dpct::sparse::spsm_optimize(handle->get_queue(), op_a, mat_a, mat_b, mat_c);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpSM_bufferSize | FileCheck %s -check-prefix=cusparseSpSM_bufferSize
 // cusparseSpSM_bufferSize: CUDA API:
@@ -46,4 +46,4 @@
 // cusparseSpSM_solve-NEXT:       mat_c /*cusparseSpMatDescr_t*/, compute_type /*cudaDataType*/,
 // cusparseSpSM_solve-NEXT:       alg /*cusparseSpSMAlg_t*/, desc /*cusparseSpSMDescr_t*/);
 // cusparseSpSM_solve-NEXT: Is migrated to:
-// cusparseSpSM_solve-NEXT:   dpct::sparse::spsm(*handle, op_a, op_b, alpha, mat_a, mat_b, mat_c, compute_type);
+// cusparseSpSM_solve-NEXT:   dpct::sparse::spsm(handle->get_queue(), op_a, op_b, alpha, mat_a, mat_b, mat_c, compute_type);
