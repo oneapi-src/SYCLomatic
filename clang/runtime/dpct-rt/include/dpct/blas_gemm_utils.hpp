@@ -5,6 +5,10 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
+// This file contains the implementation of GEneral Matrix Multiplication by
+// using oneDNN. More datatype combinations and the epilogue can be supported by
+// oneDNN, which is not available in blas_utils.hpp using oneMKL.
+//===----------------------------------------------------------------------===//
 
 #ifndef __DPCT_BLAS_GEMM_UTILS_HPP__
 #define __DPCT_BLAS_GEMM_UTILS_HPP__
@@ -42,8 +46,6 @@ class matrix_layout_t;
 using matrix_layout_ptr = matrix_layout_t *;
 class matmul_desc_t;
 using matmul_desc_ptr = matmul_desc_t *;
-class transform_desc_t;
-using transform_desc_ptr = transform_desc_t *;
 class transform_desc_t;
 using transform_desc_ptr = transform_desc_t *;
 
@@ -431,10 +433,15 @@ inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
 #endif
 } // namespace detail
 
-/// TODO: Impl row-major matmul without layout conversion
 /// This function does operation: D = alpha*(A*B) + beta*(C).
+/// Currently supports type combinations:
+///   scale_type==int32 && a_type==int8 && b_type==int8 && c_type==int32;
+///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int8;
+///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int32.
 /// Currently it only supports beta==0.
-/// NOTE: Non-col-major matrix will be converted to col-major matrix before
+/// NOTE: Non-col-major matrix will be converted to col-major matrix before.
+/// TODO: Impl row-major matmul without layout conversion.
+/// TODO: Impl epilogue for the matmul.
 /// multiplication and converted back after multiplication.
 /// \param [in] handle A handle containing context info.
 /// \param [in] compute_desc Describe the computation.
@@ -761,6 +768,7 @@ private:
 
 /// This function does operation:
 /// C = alpha*transformation(A) + beta*transformation(B).
+/// The "transformation" includes matrix transpose and layout conversion.
 /// Currently it only supports alpha==1 && beta==0.
 /// \param [in] transform_desc Describe the transformation.
 /// \param [in] alpha Scaling factor alpha.
