@@ -4,7 +4,6 @@
 // RUN: FileCheck --input-file %T/Libcu/libcu_atomic_using_ns.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/Libcu/libcu_atomic_using_ns.dp.cpp -o %T/Libcu/libcu_atomic_using_ns.dp.o %}
 
-
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <dpct/atomic.hpp>
@@ -13,9 +12,9 @@
 // CHECK-EMPTY
 using namespace cuda;
 
-int main(){
+int main() {
   // CHECK: sycl::atomic_fence(sycl::memory_order::release, sycl::memory_scope::system);
-  atomic_thread_fence(cuda::std::memory_order_release,thread_scope_system);
+  atomic_thread_fence(cuda::std::memory_order_release, thread_scope_system);
 
   return 0;
 }
