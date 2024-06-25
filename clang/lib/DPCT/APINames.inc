@@ -47,7 +47,7 @@ ENTRY(cudaDeviceGetNvSciSyncAttributes, cudaDeviceGetNvSciSyncAttributes, false,
 ENTRY(cudaDeviceGetP2PAttribute, cudaDeviceGetP2PAttribute, false, API_CALL_UNSUPPORTED, P0, "DPCT1007")
 ENTRY(cudaDeviceGetPCIBusId, cudaDeviceGetPCIBusId, false, API_CALL_UNSUPPORTED, P0, "DPCT1007")
 ENTRY(cudaDeviceGetSharedMemConfig, cudaDeviceGetSharedMemConfig, false, NO_FLAG, P4, "comment")
-ENTRY(cudaDeviceGetStreamPriorityRange, cudaDeviceGetStreamPriorityRange, true, NO_FLAG, P0, "DPCT1014")
+ENTRY(cudaDeviceGetStreamPriorityRange, cudaDeviceGetStreamPriorityRange, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaDeviceGetTexture1DLinearMaxWidth, cudaDeviceGetTexture1DLinearMaxWidth, false, NO_FLAG, P7, "comment")
 ENTRY(cudaDeviceReset, cudaDeviceReset, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaDeviceSetCacheConfig, cudaDeviceSetCacheConfig, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
@@ -383,6 +383,8 @@ ENTRY(cudaDriverGetVersion, cudaDriverGetVersion, true, NO_FLAG, P0, "DPCT1043")
 ENTRY(cudaRuntimeGetVersion, cudaRuntimeGetVersion, true, NO_FLAG, P0, "DPCT1043")
 
 // Graph Management
+ENTRY(cudaGraph_t, cudaGraph_t, true, NO_FLAG, P4, "Successful/DPCT1119")
+ENTRY(cudaGraphExec_t, cudaGraphExec_t, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cudaDeviceGetGraphMemAttribute, cudaDeviceGetGraphMemAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cudaDeviceGraphMemTrim, cudaDeviceGraphMemTrim, false, NO_FLAG, P4, "comment")
 ENTRY(cudaDeviceSetGraphMemAttribute, cudaDeviceSetGraphMemAttribute, false, NO_FLAG, P4, "comment")
