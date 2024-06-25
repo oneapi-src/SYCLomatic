@@ -295,6 +295,16 @@
 <li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1119.html">DPCT1119</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1120.html">DPCT1120</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1121.html">DPCT1121</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1122.html">DPCT1122</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1123.html">DPCT1123</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1124.html">DPCT1124</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1125.html">DPCT1125</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1126.html">DPCT1126</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1127.html">DPCT1127</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1128.html">DPCT1128</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1129.html">DPCT1129</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct2001.html">DPCT2001</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct3000.html">DPCT3000</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../reference/dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
@@ -503,6 +513,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-your-cuda-project">Prepare Your CUDA Project</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fix-syntax-errors">Fix Syntax Errors</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#clang-compatibility">Clang Compatibility</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#run-codepin-to-capture-application-signature">Run CodePin to Capture Application Signature</a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configure-the-tool">Configure the Tool</a></li>
@@ -518,15 +529,21 @@ document.write(`
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#command-line-options">Command-Line Options</a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#buffer-vs-usm-code-generation">Buffer vs USM Code Generation</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-expect-in-migrated-code">What to Expect in Migrated Code</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-migration">Run Migration</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-3-review-the-migrated-code">Stage 3: Review the Migrated Code</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-4-build-and-validate-the-new-sycl-code-base">Stage 4: Build and Validate the New SYCL Code Base</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-4-build-the-new-sycl-code-base">Stage 4: Build the New SYCL Code Base</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#install-new-sycl-code-base-dependencies">Install New SYCL Code Base Dependencies</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-intel-cpu-and-gpu">Compile for Intel CPU and GPU</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-amd-or-nvidia-gpu">Compile for AMD* or NVIDIA* GPU</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-5-validate-the-new-sycl-application">Stage 5: Validate the New SYCL Application</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#use-a-debugger-to-validate-migrated-code">Use a Debugger to Validate Migrated Code</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#use-codepin-to-validate-migrated-code">Use CodePIN to Validate Migrated Code</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optimize-your-code">Optimize Your Code</a></li>
@@ -554,11 +571,23 @@ a successful migration.</p></li>
 <li><p><a class="reference internal" href="#stage-2-migrate-your-code">Stage 2: Migrate Your Code</a>. Review tool options and migrate your code with the
 tool.</p></li>
 <li><p><a class="reference internal" href="#stage-3-review-the-migrated-code">Stage 3: Review the Migrated Code</a>. Review and manually convert any unmigrated code.</p></li>
-<li><p><a class="reference internal" href="#stage-4-build-and-validate-the-new-sycl-code-base">Stage 4: Build and Validate the New  SYCL Code Base</a>. Build your project with the
+<li><p><a class="reference internal" href="#stage-4-build-the-new-sycl-code-base">Stage 4: Build the New  SYCL Code Base</a>. Build your project with the
 migrated code.</p></li>
+<li><p><a class="reference internal" href="#stage-5-validate-the-new-sycl-application">Stage 5: Validate the New SYCL Application</a>. Validate your new SYCL application to
+check for correct functionality after migration.</p></li>
 </ul>
 <p>This document describes the steps in each stage with general recommendations and
 optional steps.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>CUDA* API migration support is broad but not complete. If you encounter CUDA
+APIs that were not migrated due to a lack of tool support, please report it
+to the <a class="reference external" href="https://community.intel.com/t5/Migrating-to-SYCL/bd-p/migrating-sycl">Migrating to SYCL forum</a> or
+<a class="reference external" href="https://www.intel.com/content/www/us/en/developer/get-help/priority-support.html">priority support</a>.
+Alternatively, <a class="reference external" href="https://github.com/oneapi-src/SYCLomatic/issues">submit an issue</a> or
+<a class="reference external" href="https://github.com/oneapi-src/SYCLomatic/blob/SYCLomatic/CONTRIBUTING.md">contribute to the SYCLomatic project</a>.
+This helps prioritize which CUDA APIs will be supported in future releases.</p>
+</div>
 </section>
 <section id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">#</a></h2>
@@ -624,6 +653,18 @@ in the migration results:</p>
 </ul>
 <p>For detailed information about dialect differences between Clang and nvcc, refer to llvm.org’s
 <a class="reference external" href="https://www.llvm.org/docs/CompileCudaWithLLVM.html">Compiling CUDA with clang</a> page.</p>
+</section>
+<section id="run-codepin-to-capture-application-signature">
+<h4>Run CodePin to Capture Application Signature<a class="headerlink" href="#run-codepin-to-capture-application-signature" title="Permalink to this headline">#</a></h4>
+<p>CodePin is a feature that helps reduce the effort of debugging inconsistencies in
+runtime behavior. CodePin generates reports from the CUDA and SYCL programs
+that, when compared, can help identify the source of divergent runtime behavior.</p>
+<p>Enable the CodePin tool during the migration in order to capture the project
+signature.</p>
+<p>This signature will be used later for validation after migration.</p>
+<p>Enable CodePin with the <code class="docutils literal notranslate"><span class="pre">–enable-codepin</span></code> option.</p>
+<p>For detailed information about debugging using the CodePin tool, refer to
+<a class="reference external" href="https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html">Debug Migrated Code Runtime Behavior</a>.</p>
 </section>
 </section>
 <section id="configure-the-tool">
@@ -729,6 +770,21 @@ Command-line options provide control to</p>
 options.</p>
 </section>
 </section>
+<section id="buffer-vs-usm-code-generation">
+<h3>Buffer vs USM Code Generation<a class="headerlink" href="#buffer-vs-usm-code-generation" title="Permalink to this headline">#</a></h3>
+<p>Intel promotes both buffer and USM in the SYCL/oneAPI context. Some oneAPI libraries preferentially support buffer versus USM, so there may be some design consideration in configuring your migration. USM is used by default, but buffer may be a better fit for some projects.</p>
+<p>The buffer model sets up a 1-3 dimensional array (buffer) and accesses its components via a C++ accessor class. This grants more control over the exact nature and size of the allocated memory, and how host and offload target compute units access it.
+However, the buffer model can also create extra class management overhead, which can require more manual intervention and may yield less performance.</p>
+<p>USM (unified shared memory) is a newer model, beginning with SYCL2020. USM is a pointer-based memory management model using
+<code class="docutils literal notranslate"><span class="pre">malloc_device/malloc_shared/malloc_host</span></code>  allocator functions, similar to how C++ code usually handles memory accesses when no GPU device offload is involved. Choosing the USM model can make it easier to add to existing code and migrate from CUDA code.  Management of the USM memory space is however very much done by the SYCL runtime, reducing granularity of control for the developer.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://registry.khronos.org/SYCL/specs/sycl-2020/html/sycl-2020.html#sec:data.access.and.storage">SYCL Buffer Specification</a></p></li>
+<li><p><a class="reference external" href="https://registry.khronos.org/SYCL/specs/sycl-2020/html/sycl-2020.html#sec:usm">SYCL USM Specification</a></p></li>
+</ul>
+<p>For more information on USM versus Buffer modes, please see the following sections of the GPU Optimization Guide:
+* <a class="reference external" href="https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-1/usm-allocation.html">Unified Shared Memory Allocations</a>
+* <a class="reference external" href="https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-1/buffer-accessors.html">Buffer Accessor Modes</a></p>
+</section>
 <section id="what-to-expect-in-migrated-code">
 <h3>What to Expect in Migrated Code<a class="headerlink" href="#what-to-expect-in-migrated-code" title="Permalink to this headline">#</a></h3>
 <p>When the tool migrates CUDA code to SYCL code, it inserts diagnostic messages as
@@ -826,10 +882,9 @@ Alternatively, <a class="reference external" href="https://github.com/oneapi-src
 This helps prioritize which CUDA APIs will be supported in future releases.</p>
 </div>
 </section>
-<section id="stage-4-build-and-validate-the-new-sycl-code-base">
-<h2>Stage 4: Build and Validate the New SYCL Code Base<a class="headerlink" href="#stage-4-build-and-validate-the-new-sycl-code-base" title="Permalink to this headline">#</a></h2>
-<p>After you have completed any manual migration steps, build your converted code
-and validate your new code base.</p>
+<section id="stage-4-build-the-new-sycl-code-base">
+<h2>Stage 4: Build the New SYCL Code Base<a class="headerlink" href="#stage-4-build-the-new-sycl-code-base" title="Permalink to this headline">#</a></h2>
+<p>After you have completed any manual migration steps, build your converted code.</p>
 <section id="install-new-sycl-code-base-dependencies">
 <h3>Install New SYCL Code Base Dependencies<a class="headerlink" href="#install-new-sycl-code-base-dependencies" title="Permalink to this headline">#</a></h3>
 <p>Converted code makes use of oneAPI library APIs and Intel SYCL extensions. Before
@@ -898,6 +953,27 @@ in the Codeplay plugin documentation:</p>
 </ul>
 </section>
 </section>
+<section id="stage-5-validate-the-new-sycl-application">
+<h2>Stage 5: Validate the New SYCL Application<a class="headerlink" href="#stage-5-validate-the-new-sycl-application" title="Permalink to this headline">#</a></h2>
+<p>After you have built your converted code, validate your new SYCL application to
+check for correct functionality after migration.</p>
+<section id="use-a-debugger-to-validate-migrated-code">
+<h3>Use a Debugger to Validate Migrated Code<a class="headerlink" href="#use-a-debugger-to-validate-migrated-code" title="Permalink to this headline">#</a></h3>
+<p>After you have successfully compiled your new SYCL application, run the app in
+debug mode using a debugger such as
+<a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/distribution-for-gdb.html">Intel Distribution for GDB</a> to verify that your application runs
+as expected after migration.</p>
+<p>Learn more about <a class="reference external" href="https://www.intel.com/content/www/us/en/docs/distribution-for-gdb/tutorial-debugging-dpcpp-linux/2024-1/overview.html">Debugging with Intel Distribution for GDB</a>.</p>
+</section>
+<section id="use-codepin-to-validate-migrated-code">
+<h3>Use CodePIN to Validate Migrated Code<a class="headerlink" href="#use-codepin-to-validate-migrated-code" title="Permalink to this headline">#</a></h3>
+<p>If the CodePin feature has been enabled during the migration time,
+project signature will be logged during the execution time.</p>
+<p>The signature contains the data value of each execution checkpoint, which can be verified manually or with an auto-analysis tool.</p>
+<p>For detailed information about debugging using the CodePin tool, refer to
+<a class="reference external" href="https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html">Debug Migrated Code Runtime Behavior</a>.</p>
+</section>
+</section>
 <section id="optimize-your-code">
 <h2>Optimize Your Code<a class="headerlink" href="#optimize-your-code" title="Permalink to this headline">#</a></h2>
 <p>Optimize your migrated code for Intel GPUs using Intel® tools such as
@@ -961,6 +1037,12 @@ the <a class="reference external" href="https://developer.codeplay.com/products/
 <tr class="row-odd"><td><p><a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html">Intel® oneAPI Math Kernel Library Link Line Advisor</a></p></td>
 <td><p>Intel® oneAPI Math Kernel Library tool to help determine how to include oneMKL libraries for your specific use case.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.intel.com/content/www/us/en/docs/distribution-for-gdb/tutorial-debugging-dpcpp-linux/2024-1/overview.html">Tutorial: Debugging with Intel® Distribution for GDB*</a></p></td>
+<td><p>This tutorial describes the basic scenarios of debugging applications using Intel® Distribution for GDB*.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.intel.com/content/www/us/en/developer/articles/training/vtune-profiler-tutorials.html">Intel® VTune™ Profiler Tutorials</a></p></td>
+<td><p>Tutorials demonstrating an end-to-end workflow using Intel® VTune™ Profiler that you can ultimately apply to your own applications.</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -1020,6 +1102,7 @@ the <a class="reference external" href="https://developer.codeplay.com/products/
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-your-cuda-project">Prepare Your CUDA Project</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fix-syntax-errors">Fix Syntax Errors</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#clang-compatibility">Clang Compatibility</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#run-codepin-to-capture-application-signature">Run CodePin to Capture Application Signature</a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configure-the-tool">Configure the Tool</a></li>
@@ -1035,15 +1118,21 @@ the <a class="reference external" href="https://developer.codeplay.com/products/
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#command-line-options">Command-Line Options</a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#buffer-vs-usm-code-generation">Buffer vs USM Code Generation</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-expect-in-migrated-code">What to Expect in Migrated Code</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-migration">Run Migration</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-3-review-the-migrated-code">Stage 3: Review the Migrated Code</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-4-build-and-validate-the-new-sycl-code-base">Stage 4: Build and Validate the New SYCL Code Base</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-4-build-the-new-sycl-code-base">Stage 4: Build the New SYCL Code Base</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#install-new-sycl-code-base-dependencies">Install New SYCL Code Base Dependencies</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-intel-cpu-and-gpu">Compile for Intel CPU and GPU</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compile-for-amd-or-nvidia-gpu">Compile for AMD* or NVIDIA* GPU</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage-5-validate-the-new-sycl-application">Stage 5: Validate the New SYCL Application</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#use-a-debugger-to-validate-migrated-code">Use a Debugger to Validate Migrated Code</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#use-codepin-to-validate-migrated-code">Use CodePIN to Validate Migrated Code</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optimize-your-code">Optimize Your Code</a></li>
@@ -1074,7 +1163,7 @@ the <a class="reference external" href="https://developer.codeplay.com/products/
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 28 March, 2024</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 24 June, 2024</div>
 </div>
   </div>
   

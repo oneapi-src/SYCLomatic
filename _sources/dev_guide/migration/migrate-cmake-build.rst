@@ -44,6 +44,9 @@ migration rule defined in ``rule_file.yaml``:
 
    dpct -p=./ -in-root=./ -out-root=out  --migrate-build-script=CMake
 
+.. note::
+
+   View a `demo example <https://www.intel.com/content/www/us/en/developer/articles/technical/easily-migrate-cmake-cuda-sycl.html>`_ of CMake-based apps in Velocity-Bench.
 
 Customize Migration of CMake Build Script
 -----------------------------------------
@@ -76,8 +79,7 @@ migrating ``cuda_compile_ptx(obj_file kernel.cu)`` to
 
 .. note::
 
-   ``dpct_helper_compile_sycl_code()`` is provided by the tool. It is located in
-   ``dpct.cmake`` in the cmake folder on the install path.
+   ``dpct_helper_compile_sycl_code()`` is provided by the tool. It is located in ``dpct.cmake`` in the ``cmake`` folder on the install path,  during the CMake script migration, ``dpct.cmake`` will be copied to the root folder of the migrated project and as a part of the migrated project.
 
 .. code-block:: none
 

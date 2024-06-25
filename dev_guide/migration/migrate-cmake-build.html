@@ -295,6 +295,16 @@
 <li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1119.html">DPCT1119</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1120.html">DPCT1120</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1121.html">DPCT1121</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1122.html">DPCT1122</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1123.html">DPCT1123</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1124.html">DPCT1124</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1125.html">DPCT1125</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1126.html">DPCT1126</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1127.html">DPCT1127</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1128.html">DPCT1128</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct1129.html">DPCT1129</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct2001.html">DPCT2001</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../reference/diagnostic_ref/dpct3000.html">DPCT3000</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../reference/dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
@@ -557,6 +567,10 @@ migration rule defined in <code class="docutils literal notranslate"><span class
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="n">p</span><span class="o">=./</span> <span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=./</span> <span class="o">-</span><span class="n">out</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">out</span>  <span class="o">--</span><span class="n">migrate</span><span class="o">-</span><span class="n">build</span><span class="o">-</span><span class="n">script</span><span class="o">=</span><span class="n">CMake</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>View a <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/articles/technical/easily-migrate-cmake-cuda-sycl.html">demo example</a> of CMake-based apps in Velocity-Bench.</p>
+</div>
 </section>
 <section id="customize-migration-of-cmake-build-script">
 <h2>Customize Migration of CMake Build Script<a class="headerlink" href="#customize-migration-of-cmake-build-script" title="Permalink to this headline">#</a></h2>
@@ -581,8 +595,7 @@ migrating <code class="docutils literal notranslate"><span class="pre">cuda_comp
 <code class="docutils literal notranslate"><span class="pre">dpct_helper_compile_sycl_code</span> <span class="pre">(obj_file</span> <span class="pre">kernel.dp.cpp)</span></code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">dpct_helper_compile_sycl_code()</span></code> is provided by the tool. It is located in
-<code class="docutils literal notranslate"><span class="pre">dpct.cmake</span></code> in the cmake folder on the install path.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dpct_helper_compile_sycl_code()</span></code> is provided by the tool. It is located in <code class="docutils literal notranslate"><span class="pre">dpct.cmake</span></code> in the <code class="docutils literal notranslate"><span class="pre">cmake</span></code> folder on the install path,  during the CMake script migration, <code class="docutils literal notranslate"><span class="pre">dpct.cmake</span></code> will be copied to the root folder of the migrated project and as a part of the migrated project.</p>
 </div>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- Rule: rule_cuda_compile_ptx              # Specify the unique name of the
                                            rule
@@ -712,7 +725,7 @@ the migration rule defined in step 2.</p>
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 28 March, 2024</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 24 June, 2024</div>
 </div>
   </div>
   
