@@ -104,7 +104,7 @@ int main() {
   // CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
-  // CHECK-NEXT:       std::complex<double> * thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
+  // CHECK-NEXT:       auto thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
