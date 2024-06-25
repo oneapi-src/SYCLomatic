@@ -2,9 +2,8 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --use-experimental-features=graph --format-range=none -out-root %T/cudaStreamCapture_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaStreamCapture_test/cudaStreamCapture_test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaStreamCapture_test/cudaStreamCapture_test.dp.cpp -o %T/cudaStreamCapture_test/cudaStreamCapture_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/cudaStreamCapture_test/cudaStreamCapture_test.dp.cpp -o %T/cudaStreamCapture_test/cudaStreamCapture_test.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cuda.h>
 
 int main() {
