@@ -19,7 +19,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMemory() {
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #include "APINamesGraph.inc"
       }));
-      // clang-format on
+  // clang-format on
 }
 
 } // namespace dpct
