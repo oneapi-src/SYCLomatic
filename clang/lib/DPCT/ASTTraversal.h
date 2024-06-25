@@ -1804,6 +1804,12 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class GraphRule : public NamedMigrationRule<GraphRule> {
+  public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 class AssertRule : public NamedMigrationRule<AssertRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;

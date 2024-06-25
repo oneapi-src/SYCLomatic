@@ -33,5 +33,29 @@ int main() {
   // CHECK: dpct::experimental::command_graph_exec_ptr execGraph5, *execGraph6, **execGraph7;
   cudaGraphExec_t execGraph5, *execGraph6, **execGraph7;
 
+  // CHECK: execGraph = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize());
+  // CHECK-NEXT: *execGraph2 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>(graph->finalize());
+  // CHECK-NEXT: **execGraph3 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize());
+  cudaGraphInstantiate(&execGraph, *graph2);
+  cudaGraphInstantiate(execGraph2, graph);
+  cudaGraphInstantiate(*execGraph3, *graph2);
+
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+
+  cudaStream_t *stream2;
+
+  // CHECK: stream->ext_oneapi_graph(*execGraph);
+  // CHECK-NEXT: (*stream2)->ext_oneapi_graph(**execGraph2);
+  cudaGraphLaunch(execGraph, stream);
+  cudaGraphLaunch(*execGraph2, *stream2);
+
+  // CHECK: delete (execGraph);
+  // CHECK-NEXT: delete (*execGraph2);
+  // CHECK-NEXT:  delete (**execGraph3);
+  cudaGraphExecDestroy(execGraph);
+  cudaGraphExecDestroy(*execGraph2);
+  cudaGraphExecDestroy(**execGraph3);
+
   return 0;
 }

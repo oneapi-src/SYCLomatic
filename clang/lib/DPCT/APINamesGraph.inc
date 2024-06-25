@@ -1,0 +1,38 @@
+//===--------------- APINamesGraph.inc ------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGraphInstantiate", DEREF(makeCallArgCreatorWithCall(0)),
+        NEW(MapNames::getClNamespace() +
+                "ext::oneapi::experimental::command_graph" + "<" +
+                MapNames::getClNamespace() +
+                "ext::oneapi::experimental::graph_state::executable>",
+            MEMBER_CALL(ARG(1), true, "finalize")))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphInstantiate",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphInstantiate"),
+                            ARG("--use-experimental-features=graph")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    DELETE_FACTORY_ENTRY("cudaGraphExecDestroy", ARG(0)),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphExecDestroy",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphExecDestroy"),
+                            ARG("--use-experimental-features=graph")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    MEMBER_CALL_FACTORY_ENTRY("cudaGraphLaunch", ARG(1), true,
+                              "ext_oneapi_graph", DEREF(0)),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphLaunch",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphLaunch"),
+                            ARG("--use-experimental-features=graph")))
