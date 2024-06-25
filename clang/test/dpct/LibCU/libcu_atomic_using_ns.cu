@@ -1,3 +1,5 @@
+// UNSUPPORTED: system-linux
+// UNSUPPORTED: system-windows
 // UNSUPPORTED: v7.0, v7.5, v8.0, v9.0, v9.2, v10.0, v10.1, v10.2
 // UNSUPPORTED: cuda-7.0, cuda-7.5, cuda-8.0, cuda-9.0, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/Libcu %S/libcu_atomic_using_ns.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
