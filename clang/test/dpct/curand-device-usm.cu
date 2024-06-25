@@ -153,7 +153,7 @@ __global__ void kernel(curandState *states) {}
 // CHECK-NEXT:   static dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states = states_input;
 // CHECK-NEXT:   dpct::get_in_order_queue().submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
-// CHECK-NEXT:       dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> * states_ct0 = states;
+// CHECK-NEXT:       auto states_ct0 = states;
 // CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 

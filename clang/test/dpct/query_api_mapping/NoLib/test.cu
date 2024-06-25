@@ -48,6 +48,19 @@
 // CUCDIVF-NEXT: Is migrated to:
 // CUCDIVF-NEXT:   dpct::cdiv<float>(c1, c2);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCfma | FileCheck %s -check-prefix=CUCFMA
+// CUCFMA: CUDA API:
+// CUCFMA-NEXT:   cuCfma(c1 /*cuDoubleComplex*/, c2 /*cuDoubleComplex*/,
+// CUCFMA-NEXT:          c3 /*cuDoubleComplex*/);
+// CUCFMA-NEXT: Is migrated to:
+// CUCFMA-NEXT:   dpct::cmul<double>(c1, c2) + c3;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCfmaf | FileCheck %s -check-prefix=CUCFMAF
+// CUCFMAF: CUDA API:
+// CUCFMAF-NEXT:   cuCfmaf(c1 /*cuFloatComplex*/, c2 /*cuFloatComplex*/, c3 /*cuFloatComplex*/);
+// CUCFMAF-NEXT: Is migrated to:
+// CUCFMAF-NEXT:   dpct::cmul<float>(c1, c2) + c3;
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCimag | FileCheck %s -check-prefix=CUCIMAG
 // CUCIMAG: CUDA API:
 // CUCIMAG-NEXT:   cuCimag(c /*cuDoubleComplex*/);
