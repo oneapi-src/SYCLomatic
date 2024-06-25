@@ -18,6 +18,18 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphExec_t execGraph;
 
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamBeginCapture is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamEndCapture is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaStreamEndCapture(stream, &graph);
+
   return 0;
 }
 
