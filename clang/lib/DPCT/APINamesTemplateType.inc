@@ -102,7 +102,14 @@ FEATURE_REQUEST_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
                            TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "key_value_pair"),
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
-
+TYPE_REWRITE_ENTRY("cub::ArgMax",
+                    HEADER_INSERTION_FACTORY(
+                           HeaderType::HT_DPCT_DPL_Utils,
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmax"))))
+TYPE_REWRITE_ENTRY("cub::ArgMin",
+                    HEADER_INSERTION_FACTORY(
+                           HeaderType::HT_DPCT_DPL_Utils,
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmin"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",

@@ -246,6 +246,12 @@
 // J1F-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
 // J1F-NEXT:   sycl::ext::intel::math::j1(f);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=jnf | FileCheck %s -check-prefix=JNF
+// JNF: CUDA API:
+// JNF-NEXT:   jnf(i /*int*/, f /*float*/);
+// JNF-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// JNF-NEXT:   sycl::ext::intel::math::jn(i, f);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ldexpf | FileCheck %s -check-prefix=LDEXPF
 // LDEXPF: CUDA API:
 // LDEXPF-NEXT:   ldexpf(f /*float*/, i /*int*/);
@@ -523,3 +529,9 @@
 // Y1F-NEXT:   y1f(f /*float*/);
 // Y1F-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
 // Y1F-NEXT:   sycl::ext::intel::math::y1(f);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ynf | FileCheck %s -check-prefix=YNF
+// YNF: CUDA API:
+// YNF-NEXT:   ynf(i /*int*/, f /*float*/);
+// YNF-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// YNF-NEXT:   sycl::ext::intel::math::yn(i, f);
