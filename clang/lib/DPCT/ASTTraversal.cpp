@@ -8343,8 +8343,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamBeginCapture" ||
              FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
-             FuncName == "cudaStreamQuery" ||
-             FuncName == "cuStreamQuery" ||
+             FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery" ||
              FuncName == "cudaDeviceGetStreamPriorityRange") {
     // if extension feature sycl_ext_oneapi_queue_empty is used, member
     // functions "ext_oneapi_empty" in SYCL queue is used to map

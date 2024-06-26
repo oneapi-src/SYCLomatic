@@ -1091,6 +1091,10 @@ public:
 #define DPCT_EXPORT
 #endif
 
+inline bool sycl_stream_query(dpct::queue_ptr queue) {
+  return false;
+}
+
 } // namespace dpct
 
 #endif // __DPCT_UTIL_HPP__
