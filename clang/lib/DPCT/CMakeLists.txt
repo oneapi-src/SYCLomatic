@@ -150,7 +150,6 @@ add_clang_library(DPCT
   CallExprRewriterCUSPARSE.cpp
   CallExprRewriterComplex.cpp
   CallExprRewriterDriver.cpp
-  CallExprRewriterGraph.cpp
   CallExprRewriterMemory.cpp
   CallExprRewriterMisc.cpp
   CallExprRewriterNccl.cpp
@@ -164,6 +163,7 @@ add_clang_library(DPCT
   CallExprRewriterEvent.cpp
   CallExprRewriterCG.cpp
   CallExprRewriterWmma.cpp
+  CallExprRewriterGraph.cpp
   CrashRecovery.cpp
   Diagnostics.cpp
   Error.cpp

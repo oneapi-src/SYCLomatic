@@ -12,14 +12,12 @@
 namespace clang {
 namespace dpct {
 
-// clang-format off
 void CallExprRewriterFactoryBase::initRewriterMapMemory() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #include "APINamesGraph.inc"
       }));
-  // clang-format on
 }
 
 } // namespace dpct

@@ -9,7 +9,7 @@
 CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-        "cudaGraphInstantiate", DEREF(makeCallArgCreatorWithCall(0)),
+        "cudaGraphInstantiate", DEREF(0),
         NEW(MapNames::getClNamespace() +
                 "ext::oneapi::experimental::command_graph" + "<" +
                 MapNames::getClNamespace() +
@@ -21,8 +21,7 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG("--use-experimental-features=graph")))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseExtGraph,
-    DELETE_FACTORY_ENTRY("cudaGraphExecDestroy", ARG(0)),
+    UseExtGraph, DELETE_FACTORY_ENTRY("cudaGraphExecDestroy", ARG(0)),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphExecDestroy",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphExecDestroy"),
