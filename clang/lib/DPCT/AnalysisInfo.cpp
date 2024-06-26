@@ -4430,10 +4430,15 @@ void CallFunctionExpr::mergeTextureObjectInfo() {
 DeviceFunctionDecl::DeviceFunctionDecl(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
     const FunctionDecl *FD)
-    : Offset(Offset), FilePath(FilePathIn), ParamsNum(FD->param_size()),
-      ReplaceOffset(0), ReplaceLength(0),
+    : Offset(Offset), OffsetForAttr(Offset), FilePath(FilePathIn),
+      ParamsNum(FD->param_size()), ReplaceOffset(0), ReplaceLength(0),
       NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(FD)) {
+  if (FD->isFunctionTemplateSpecialization()) {
+    SourceRange ReturnTypeRange = FD->getReturnTypeSourceRange();
+    OffsetForAttr =
+        DpctGlobalInfo::getLocInfo(ReturnTypeRange.getBegin()).second;
+  }
   if (!FuncInfo) {
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
         FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
@@ -4456,7 +4461,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
     const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
     const FunctionDecl *Specialization)
-    : Offset(Offset), FilePath(FilePathIn),
+    : Offset(Offset), OffsetForAttr(Offset), FilePath(FilePathIn),
       ParamsNum(Specialization->getNumParams()), ReplaceOffset(0),
       ReplaceLength(0),
       NonDefaultParamNum(
@@ -4530,20 +4535,20 @@ void DeviceFunctionDecl::emplaceReplacement() {
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
                                          nullptr));
   }
 
   if (FuncInfo->IsAlwaysInlineDevFunc()) {
     std::string StrRepl = "inline ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
                                          nullptr));
   }
   if (FuncInfo->IsForceInlineDevFunc()) {
     std::string StrRepl = "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
+        std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
                                          nullptr));
   }
 
@@ -5076,6 +5081,13 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
+  if (isa<InitListExpr>(Arg) || isa<CXXConstructExpr>(Arg)) {
+    HasImplicitConversion = true;
+  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+    if (ICE->getCastKind() != CK_LValueToRValue) {
+      HasImplicitConversion = true;
+    }
+  }
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
   TryGetBuffer = Analysis.TryGetBuffer;
@@ -6017,11 +6029,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      std::string TypeStr =
-          Arg.getTypeString().empty()
-              ? "auto"
-              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
-                                                 : Arg.getTypeString());
+      std::string TypeStr = "auto";
+      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty()) {
+        TypeStr = Arg.getTypeString();
+      }
       SubmitStmts.CommandGroupList.emplace_back(
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
                       Arg.getArgString(), ";"));

@@ -1634,3 +1634,64 @@ GEMM_BATCH(cublasDgemmStridedBatched, "double", false)
 GEMM_BATCH(cublasCgemmStridedBatched, "std::complex<float>", true)
 GEMM_BATCH(cublasZgemmStridedBatched, "std::complex<double>", true)
 #undef GEMM_BATCH
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cublasLtCreate", DEREF(0),
+    NEW(MapNames::getDpctNamespace() + "blas_gemm::experimental::descriptor")))
+ASSIGNABLE_FACTORY(DELETE_FACTORY_ENTRY("cublasLtDestroy", ARG(0)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cublasLtMatmulDescCreate", DEREF(0),
+    NEW(MapNames::getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t",
+        ARG(1), ARG(2))))
+ASSIGNABLE_FACTORY(DELETE_FACTORY_ENTRY("cublasLtMatmulDescDestroy", ARG(0)))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatmulDescSetAttribute",
+                                             ARG(0), true, "set_attribute",
+                                             ARG(1), ARG(2)))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatmulDescGetAttribute",
+                                             ARG(0), true, "get_attribute",
+                                             ARG(1), ARG(2)))
+
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cublasLtMatrixLayoutCreate", DEREF(0),
+                         NEW(MapNames::getDpctNamespace() +
+                                 "blas_gemm::experimental::matrix_layout_t",
+                             ARG(1), ARG(2), ARG(3), ARG(4))))
+ASSIGNABLE_FACTORY(DELETE_FACTORY_ENTRY("cublasLtMatrixLayoutDestroy", ARG(0)))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixLayoutSetAttribute",
+                                             ARG(0), true, "set_attribute",
+                                             ARG(1), ARG(2)))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixLayoutGetAttribute",
+                                             ARG(0), true, "get_attribute",
+                                             ARG(1), ARG(2)))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cublasLtMatmul",
+    CALL(MapNames::getDpctNamespace() + "blas_gemm::experimental::matmul",
+         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
+         ARG(9), ARG(10), ARG(11), ARG(15))))
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceCreate")
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceDestroy")
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceSetAttribute")
+REMOVE_API_FACTORY_ENTRY("cublasLtMatmulPreferenceGetAttribute")
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cublasLtMatmulAlgoGetHeuristic",
+                                        DEREF(9), ARG("1")))
+
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cublasLtMatrixTransformDescCreate", DEREF(0),
+                         NEW(MapNames::getDpctNamespace() +
+                                 "blas_gemm::experimental::transform_desc_t",
+                             ARG(1))))
+ASSIGNABLE_FACTORY(DELETE_FACTORY_ENTRY("cublasLtMatrixTransformDescDestroy",
+                                        ARG(0)))
+ASSIGNABLE_FACTORY(
+    MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixTransformDescSetAttribute", ARG(0),
+                              true, "set_attribute", ARG(1), ARG(2)))
+ASSIGNABLE_FACTORY(
+    MEMBER_CALL_FACTORY_ENTRY("cublasLtMatrixTransformDescGetAttribute", ARG(0),
+                              true, "get_attribute", ARG(1), ARG(2)))
+ASSIGNABLE_FACTORY(
+    CALL_FACTORY_ENTRY("cublasLtMatrixTransform",
+                       CALL(MapNames::getDpctNamespace() +
+                                "blas_gemm::experimental::matrix_transform",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9), ARG(10))))
