@@ -41,6 +41,27 @@ inline T1 atomic_fetch_add(T1 *addr, T2 operand) {
   return atm.fetch_add(operand);
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device>
+inline sycl::half2 atomic_fetch_add(sycl::half2 *addr, sycl::half2 operand) {
+  auto ptr = reinterpret_cast<unsigned *>(addr);
+  auto atm = sycl::atomic_ref<unsigned, memoryOrder, memoryScope, addressSpace>(
+      ptr[0]);
+  unsigned old;
+
+  while (true) {
+    old = atm.load();
+    if (atm.compare_exchange_strong(
+            old, (sycl::vec<unsigned, 1>(old).as<sycl::half2>() + operand)
+                     .as<sycl::vec<unsigned, 1>>()[0]))
+      break;
+  }
+
+  return sycl::vec<unsigned, 1>(old).as<sycl::half2>();
+}
+
 /// Atomically add the value operand to the value at the addr and assign the
 /// result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
