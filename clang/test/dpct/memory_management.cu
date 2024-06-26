@@ -29,10 +29,11 @@ void test(){
 
 void fooo() {
   size_t size = 1234567 * sizeof(float);
+  int id1, id2;
   float *h_A = (float *)malloc(size);
   cudaPitchedPtr p_A;
   cudaExtent e;
-  float *d_A = NULL;
+  float *d_A = NULL, *d_B = NULL;
   cudaStream_t stream;
   cudaMemcpy3DParms parms;
   // CHECK: d_A = (float *)dpct::dpct_malloc(size);
@@ -122,6 +123,14 @@ void fooo() {
   cudaMemcpy3DAsync(&parms, 0);
   // CHECK: dpct::async_dpct_memcpy(parms, *stream);
   cudaMemcpy3DAsync(&parms, stream);
+
+  // CHECK: dpct::dpct_memcpy(d_B, d_A, size, dpct::device_to_device);
+  cudaMemcpyPeer(d_B, id1, d_A, id2, size);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cudaMemcpyPeerAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::async_dpct_memcpy(d_B, d_A, size, dpct::device_to_device, *stream);
+  cudaMemcpyPeerAsync(d_B, id1, d_A, id2, size, stream);
 
   // CHECK: dpct::async_dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
