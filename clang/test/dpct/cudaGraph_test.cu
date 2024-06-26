@@ -36,9 +36,9 @@ int main() {
   // CHECK: execGraph = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize());
   // CHECK-NEXT: *execGraph2 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>(graph->finalize());
   // CHECK-NEXT: **execGraph3 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize());
-  cudaGraphInstantiate(&execGraph, *graph2);
-  cudaGraphInstantiate(execGraph2, graph);
-  cudaGraphInstantiate(*execGraph3, *graph2);
+  cudaGraphInstantiate(&execGraph, *graph2, nullptr, nullptr, 0);
+  cudaGraphInstantiate(execGraph2, graph, nullptr, nullptr, 0);
+  cudaGraphInstantiate(*execGraph3, *graph2, nullptr, nullptr, 0);
 
   cudaStream_t stream;
   cudaStreamCreate(&stream);
