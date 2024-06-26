@@ -5095,6 +5095,13 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
+  if (isa<InitListExpr>(Arg) || isa<CXXConstructExpr>(Arg)) {
+    HasImplicitConversion = true;
+  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+    if (ICE->getCastKind() != CK_LValueToRValue) {
+      HasImplicitConversion = true;
+    }
+  }
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
   TryGetBuffer = Analysis.TryGetBuffer;
@@ -6036,11 +6043,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      std::string TypeStr =
-          Arg.getTypeString().empty()
-              ? "auto"
-              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
-                                                 : Arg.getTypeString());
+      std::string TypeStr = "auto";
+      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty()) {
+        TypeStr = Arg.getTypeString();
+      }
       SubmitStmts.CommandGroupList.emplace_back(
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
                       Arg.getArgString(), ";"));

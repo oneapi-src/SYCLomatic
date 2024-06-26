@@ -97,7 +97,7 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cub::KeyValuePair", "cub::CountingInputIterator",
         "cub::TransformInputIterator", "cub::ConstantInputIterator",
         "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
-        "cub::DoubleBuffer", "cub::NullType");
+        "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin");
   };
 
   MF.addMatcher(
@@ -189,7 +189,8 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
               hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
                          "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
                          "DeviceCountUncached", "DeviceCountCachedValue",
-                         "PtxVersion", "PtxVersionUncached"),
+                         "PtxVersion", "PtxVersionUncached", "SmVersion",
+                         "SmVersionUncached"),
               hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
