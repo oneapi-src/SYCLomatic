@@ -483,6 +483,8 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
                          isCGAPI(DRE->getNameInfo().getAsString());
                          // for thrust::log10 and thrust::sinh ...
+    if (Qualifier->getKind() == NestedNameSpecifier::TypeSpec)
+      analyzeType(DRE->getQualifierLoc().getTypeLoc());
     // log10 is a math function
     if (Qualifier->getAsNamespace() &&
         Qualifier->getAsNamespace()->getName() == "thrust" &&

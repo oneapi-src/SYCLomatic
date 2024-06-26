@@ -102,7 +102,14 @@ FEATURE_REQUEST_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
                            TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "key_value_pair"),
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
-
+TYPE_REWRITE_ENTRY("cub::ArgMax",
+                    HEADER_INSERTION_FACTORY(
+                           HeaderType::HT_DPCT_DPL_Utils,
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmax"))))
+TYPE_REWRITE_ENTRY("cub::ArgMin",
+                    HEADER_INSERTION_FACTORY(
+                           HeaderType::HT_DPCT_DPL_Utils,
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmin"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
@@ -368,3 +375,21 @@ TYPE_REWRITE_ENTRY(
                              "experimental::logical_group")),
             WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                             STR("--use-experimental-features=logical-group")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraph_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::command_graph_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraphExec_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::command_graph_exec_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))
