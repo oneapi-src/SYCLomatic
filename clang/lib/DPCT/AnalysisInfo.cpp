@@ -1448,20 +1448,21 @@ DpctGlobalInfo::getAbsolutePath(FileID ID) {
 }
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
-//   llvm::SmallString<512> FilePathAbs(File.getName());
-//   SM->getFileManager().makeAbsolutePath(FilePathAbs);
-//   return clang::tooling::UnifiedPath(FilePathAbs);
-// }
+  llvm::SmallString<512> FilePathAbs(File.getName());
+  SM->getFileManager().makeAbsolutePath(FilePathAbs);
+  llvm::outs() << " Unifiedpath is " << FilePathAbs.c_str() << "\n";
+  return clang::tooling::UnifiedPath(FilePathAbs);
+}
 
-// std::optional<clang::tooling::UnifiedPath>
-// DpctGlobalInfo::getUnifiedPath(FileID ID) {
-//   assert(SM && "SourceManager must be initialized");
-//   if (auto FileEntryRef = SM->getFileEntryRefForID(ID))
-//     return getUnifiedPath(*FileEntryRef);
-//   return std::nullopt;
-// }
-// std::optional<clang::tooling::UnifiedPath>
-// DpctGlobalInfo::getUnifiedPath(FileEntryRef File) {
+std::optional<clang::tooling::UnifiedPath>
+DpctGlobalInfo::getUnifiedPath(FileID ID) {
+  assert(SM && "SourceManager must be initialized");
+  if (auto FileEntryRef = SM->getFileEntryRefForID(ID))
+    return getUnifiedPath(*FileEntryRef);
+  return std::nullopt;
+}
+std::optional<clang::tooling::UnifiedPath>
+DpctGlobalInfo::getUnifiedPath(FileEntryRef File) {
   if (auto RealPath = File.getFileEntry().tryGetRealPathName();
       !RealPath.empty())
     return clang::tooling::UnifiedPath(RealPath);
