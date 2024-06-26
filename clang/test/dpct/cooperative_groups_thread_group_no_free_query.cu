@@ -48,9 +48,9 @@ __global__ void kernelFunc() {
 
   test11(tilePartition16);
   testThreadGroup(tilePartition16);
-  // CHECK:  test44(dpct::experimental::group(tilePartition16, item_ct1));
-  // CHECK:  test11(dpct::experimental::group(tilePartition32, item_ct1));
-  // CHECK:  test11(dpct::experimental::group(threadBlockGroup, item_ct1));
+  // CHECK:  ::test44(dpct::experimental::group(tilePartition16, item_ct1));
+  // CHECK:  ::test11(dpct::experimental::group(tilePartition32, item_ct1));
+  // CHECK:  ::test11(dpct::experimental::group(threadBlockGroup, item_ct1));
   test44(tilePartition16);
   test11(tilePartition32);
   test11(threadBlockGroup);

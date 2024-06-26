@@ -454,7 +454,7 @@ __device__ R tex2D_bar(
 // CHECK-NEXT:  float v = y * inverseOfScale + ty; // mabinbin
 // CHECK-NEXT:  if ((x < srcImgWidth / inverseOfScale) &&
 // CHECK-NEXT:      (y < srcImgHeight / inverseOfScale)) {
-// CHECK-NEXT:    float c = tex2D_bar<unsigned char, float>(tex, u, v);
+// CHECK-NEXT:    float c = ::tex2D_bar<unsigned char, float>(tex, u, v);
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 __global__ void test_call(uchar4 *d_output,

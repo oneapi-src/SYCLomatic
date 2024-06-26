@@ -41,7 +41,7 @@ __device__ void device01(float4 *out) {
 
 // CHECK: void kernel(sycl::float4 *out, dpct::image_accessor_ext<sycl::float4, 2, true> tex42,
 // CHECK-NEXT:        dpct::image_accessor_ext<sycl::uint2, 1, true> tex21) {
-// CHECK-NEXT: device01(out, tex21);
+// CHECK-NEXT: ::device01(out, tex21);
 // CHECK-NEXT: out[1] = tex42.read(12, 1.0f, 1.0f);
 /// Texture accessors should be passed down to __global__/__device__ function if used.
 __global__ void kernel(float4 *out) {

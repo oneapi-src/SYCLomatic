@@ -4025,6 +4025,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 
   SourceLocation InsertLocation;
   auto &SM = DpctGlobalInfo::getSourceManager();
+  CallFuncExprOffset = SM.getFileOffset(SM.getFileLoc(Ctor->getBeginLoc()));
   if (FuncInfo) {
     if (FuncInfo->NonDefaultParamNum) {
       if (Ctor->getNumArgs() >= FuncInfo->NonDefaultParamNum) {
@@ -4047,6 +4048,8 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  CallFuncExprOffset = SM.getFileOffset(SM.getFileLoc(CE->getBeginLoc()));
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
@@ -4068,6 +4071,40 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     HasArgs = CE->getNumArgs() == 1;
   } else {
     HasArgs = CE->getNumArgs();
+  }
+
+  // If the function declaration is defined in global namespace.
+  const FunctionDecl *FD = CE->getDirectCallee();
+  if (FD) {
+    if (isa<TranslationUnitDecl>(FD->getDeclContext()) &&
+        DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc())) {
+      for (unsigned i = 0; i < CE->getNumArgs(); i++) {
+        auto Type = FD->getParamDecl(i)
+                        ->getOriginalType()
+                        .getCanonicalType()
+                        ->getUnqualifiedDesugaredType();
+
+        while (Type && Type->isAnyPointerType()) {
+          Type = Type->getPointeeType().getTypePtrOrNull();
+        }
+        if (Type->isBuiltinType() || Type->isTemplateTypeParmType() ||
+            !Type->getAsRecordDecl() || isa<CXXOperatorCallExpr>(CE)) {
+          break;
+        }
+        SourceLocation ParamLoc = Type->getAsRecordDecl()->getBeginLoc();
+llvm::outs() << "TTTTTTTTTTTTTTTTTTT \n";
+        if (DpctGlobalInfo::isInCudaPath(ParamLoc) &&
+        dyn_cast<DeclRefExpr>(CE->getCallee()) &&
+            !dyn_cast<DeclRefExpr>(CE->getCallee())->getQualifier()) {
+        //   CE->getCallee();
+        // if (DpctGlobalInfo::isInCudaPath(ParamLoc)) {
+llvm::outs() << "TTTTTTTTTTTTTTTTTTT22222 \n";
+          IsGlobalFunc = true;
+          break;
+        }
+llvm::outs() << "TTTTTTTTTTTTTTTTTTT3333 \n";
+      }
+    }
   }
 
   if (FuncInfo) {
@@ -4132,7 +4169,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 }
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-
+  if (IsGlobalFunc)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, CallFuncExprOffset, 0,
+                                         "::", nullptr));
   if (ExtraArgLoc)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
