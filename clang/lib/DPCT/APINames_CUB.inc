@@ -225,13 +225,13 @@ ENTRY_MEMBER_FUNCTION(cub::ChainedPolicy, cub::ChainedPolicy, Invoke, Invoke, fa
 ENTRY(cub::Debug, cub::Debug, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::MaxSmOccupancy, cub::MaxSmOccupancy, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::PtxVersion, cub::PtxVersion, true, NO_FLAG, P4, "Successful")
-ENTRY(cub::SmVersion, cub::SmVersion, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::SmVersion, cub::SmVersion, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::CurrentDevice, cub::CurrentDevice, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::DeviceCount, cub::DeviceCount, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::DeviceCountUncached, cub::DeviceCountUncached, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::DeviceCountCachedValue, cub::DeviceCountCachedValue, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::PtxVersionUncached, cub::PtxVersionUncached, true, NO_FLAG, P4, "Successful")
-ENTRY(cub::SmVersionUncached, cub::SmVersionUncached, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::SmVersionUncached, cub::SmVersionUncached, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::SyncStream, cub::SyncStream, true, NO_FLAG, P4, "Successful")
 
 // Fancy iterators
