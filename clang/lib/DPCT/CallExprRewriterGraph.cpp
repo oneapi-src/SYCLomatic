@@ -12,7 +12,7 @@
 namespace clang {
 namespace dpct {
 
-void CallExprRewriterFactoryBase::initRewriterMapMemory() {
+void CallExprRewriterFactoryBase::initRewriterMapGraph() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
