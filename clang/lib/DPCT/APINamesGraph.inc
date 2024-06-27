@@ -11,7 +11,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaGraphInstantiate", DEREF(0),
         NEW(MapNames::getClNamespace() +
-                "ext::oneapi::experimental::command_graph" + "<" +
+                "ext::oneapi::experimental::command_graph<" +
                 MapNames::getClNamespace() +
                 "ext::oneapi::experimental::graph_state::executable>",
             MEMBER_CALL(ARG(1), true, "finalize")))),
