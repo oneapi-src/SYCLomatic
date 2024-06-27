@@ -1448,11 +1448,13 @@ DpctGlobalInfo::getUnifiedPath(FileID ID) {
 }
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getUnifiedPath(FileEntryRef File) {
-  if (!File.getName().empty()) {
-    llvm::outs() << " File name " << File.getName() << "\n";
+  if (!File.getName().empty() && llvm::sys::fs::exists(File.getName())) {
     return clang::tooling::UnifiedPath(File.getName());
+  } else if (auto RealPath = File.getFileEntry().tryGetRealPathName();
+             !RealPath.empty()) {
+    return clang::tooling::UnifiedPath(RealPath);
   }
-  return clang::tooling::UnifiedPath(".");
+  return std::nullopt;
 }
 
 std::pair<clang::tooling::UnifiedPath, unsigned>
