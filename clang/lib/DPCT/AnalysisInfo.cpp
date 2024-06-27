@@ -1449,6 +1449,7 @@ DpctGlobalInfo::getUnifiedPath(FileID ID) {
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getUnifiedPath(FileEntryRef File) {
   if (!File.getName().empty()) {
+    llvm::outs() << " File name " << File.getName() << "\n";
     return clang::tooling::UnifiedPath(File.getName());
   }
   return clang::tooling::UnifiedPath(".");
