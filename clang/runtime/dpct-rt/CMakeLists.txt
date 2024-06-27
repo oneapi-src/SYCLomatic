@@ -18,6 +18,8 @@ set(dpct_rt_files
   include/dpct/fft_utils.hpp
   include/dpct/lapack_utils.hpp
   include/dpct/group_utils.hpp
+  include/dpct/blas_gemm_utils.hpp
+  include/dpct/graph.hpp
 )
 
 set(dpct_rt_dpstd_files

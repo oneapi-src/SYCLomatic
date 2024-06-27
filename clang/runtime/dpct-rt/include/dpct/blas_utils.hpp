@@ -291,23 +291,11 @@ enum class math_mode : int {
   mm_default,
   mm_tf32,
 };
-enum class compute_type : int {
-  f16,
-  f16_standard,
-  f32,
-  f32_standard,
-  f32_fast_bf16,
-  f32_fast_tf32,
-  f64,
-  f64_standard,
-  i32,
-  i32_standard,
-};
 
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
-  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+  sycl::queue &get_queue() noexcept { return *_queue_ptr; }
   void set_math_mode(math_mode mm) noexcept { _mm = mm; }
   math_mode get_math_mode() const noexcept { return _mm; }
   static inline void set_saved_queue(queue_ptr q_ptr) noexcept {
@@ -2467,7 +2455,6 @@ trmm(sycl::queue &q, oneapi::mkl::side left_right,
   blas::trmm<T>(&desc, left_right, upper_lower, trans, unit_diag, m, n, alpha,
                 a, lda, b, ldb, c, ldc);
 }
-
 } // namespace dpct
 #undef DPCT_COMPUTE_MODE_ARG
 #undef DPCT_COMPUTE_MODE_PARAM

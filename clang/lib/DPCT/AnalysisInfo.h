@@ -1280,6 +1280,9 @@ public:
   static bool useExtBindlessImages() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
   }
+  static bool useExtGraph() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Graph>();
+  }
   static bool useExpNonUniformGroups() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
   }
@@ -2503,6 +2506,7 @@ protected:
   virtual std::string getExtraParameters(LocInfo LI);
 
   unsigned Offset;
+  unsigned OffsetForAttr;
   const clang::tooling::UnifiedPath FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
@@ -2731,6 +2735,7 @@ private:
     int Index;
     int ArgSize = 0;
     bool IsDeviceRandomGeneratorType = false;
+    bool HasImplicitConversion = false;
     bool IsDoublePointer = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
