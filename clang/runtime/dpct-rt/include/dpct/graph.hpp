@@ -22,30 +22,53 @@ typedef sycl::ext::oneapi::experimental::command_graph<
     sycl::ext::oneapi::experimental::graph_state::executable>
     *command_graph_exec_ptr;
 
-static inline std::unordered_map<sycl::queue *, command_graph_ptr>
-    queue_graph_map;
+class graph_mgr {
+public:
+  graph_mgr() = default;
+  graph_mgr(const graph_mgr &) = delete;
+  graph_mgr &operator=(const graph_mgr &) = delete;
+  graph_mgr(graph_mgr &&) = delete;
+  graph_mgr &operator=(graph_mgr &&) = delete;
 
-static bool command_graph_begin_recording(sycl::queue *queue_ptr) {
-  auto graph = new sycl::ext::oneapi::experimental::command_graph<
-      sycl::ext::oneapi::experimental::graph_state::modifiable>(
-      queue_ptr->get_context(), queue_ptr->get_device());
-  auto result = queue_graph_map.insert({queue_ptr, graph});
-  if (!result.second) {
-    return false;
+  static graph_mgr &instance() {
+    static graph_mgr instance;
+    return instance;
   }
-  return result.first->second->begin_recording(*queue_ptr);
+
+  bool begin_recording(sycl::queue *queue_ptr) {
+    auto graph = new sycl::ext::oneapi::experimental::command_graph<
+        sycl::ext::oneapi::experimental::graph_state::modifiable>(
+        queue_ptr->get_context(), queue_ptr->get_device());
+    auto result = queue_graph_map.insert({queue_ptr, graph});
+    if (!result.second) {
+      return false;
+    }
+    return graph->begin_recording(*queue_ptr);
+  }
+
+  bool end_recording(sycl::queue *queue_ptr,
+                     dpct::experimental::command_graph_ptr &graph) {
+    auto it = queue_graph_map.find(queue_ptr);
+    if (it == queue_graph_map.end()) {
+      return false;
+    }
+    graph = it->second;
+    queue_graph_map.erase(it);
+    return graph->end_recording();
+  }
+
+private:
+  std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
+};
+
+static inline bool command_graph_begin_recording(sycl::queue *queue_ptr) {
+  return graph_mgr::instance().begin_recording(queue_ptr);
 }
 
-static bool
+static inline bool
 command_graph_end_recording(sycl::queue *queue_ptr,
                             dpct::experimental::command_graph_ptr &graph) {
-  auto it = queue_graph_map.find(queue_ptr);
-  if (it == queue_graph_map.end()) {
-    return false;
-  }
-  graph = it->second;
-  queue_graph_map.erase(it);
-  return graph->end_recording();
+  return graph_mgr::instance().end_recording(queue_ptr, graph);
 }
 
 } // namespace experimental
