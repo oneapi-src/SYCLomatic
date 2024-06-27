@@ -237,7 +237,7 @@ llvm::Error CommonOptionsParser::init(
 #ifdef SYCLomatic_CUSTOMIZATION
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode, CompilationsDir);
-      clang::tooling::FormatSearchPath = BuildPath; //Path
+      clang::tooling::FormatSearchPath = BuildPath;
 #else
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode);
