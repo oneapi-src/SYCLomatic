@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Initialization
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuInit | FileCheck %s -check-prefix=CUINIT
@@ -236,7 +234,7 @@
 // CUEVENTQUERY-NEXT:   cuEventQuery(e /*CUevent*/);
 // CUEVENTQUERY-NEXT: Is migrated to:
 // CUEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUEVENTQUERY-NEXT:   e->get_info<sycl::info::event::command_execution_status>();
+// CUEVENTQUERY-NEXT:   dpct::sycl_event_query(e /*CUevent*/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuEventRecord | FileCheck %s -check-prefix=CUEVENTRECORD
 // CUEVENTRECORD: CUDA API:
@@ -315,11 +313,11 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefSetAddress2D | FileCheck %s -check-prefix=CUTEXREFSETADDRESS2D
 // CUTEXREFSETADDRESS2D: CUDA API:
 // CUTEXREFSETADDRESS2D-NEXT:   CUtexref t;
-// CUTEXREFSETADDRESS2D-NEXT:   cuTexRefSetAddress2D(t /*CUtexref*/, pa /*size_t **/, d /*CUdeviceptr*/,
-// CUTEXREFSETADDRESS2D-NEXT:                        s /*size_t*/);
+// CUTEXREFSETADDRESS2D-NEXT:   cuTexRefSetAddress2D(t /*CUtexref*/, pa /*const CUDA_ARRAY_DESCRIPTOR **/,
+// CUTEXREFSETADDRESS2D-NEXT:                        d /*CUdeviceptr*/, s /*size_t*/);
 // CUTEXREFSETADDRESS2D-NEXT: Is migrated to:
 // CUTEXREFSETADDRESS2D-NEXT:   dpct::image_wrapper_base_p t;
-// CUTEXREFSETADDRESS2D-NEXT:   t->attach(d, s);
+// CUTEXREFSETADDRESS2D-NEXT:   t->attach(pa, d, s);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuTexRefSetAddressMode | FileCheck %s -check-prefix=CUTEXREFSETADDRESSMODE
 // CUTEXREFSETADDRESSMODE: CUDA API:

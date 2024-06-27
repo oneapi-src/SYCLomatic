@@ -419,25 +419,29 @@ template <typename T1, typename T2>
 std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
                  std::common_type_t<T1, T2>>
 min(T1 a, T2 b) {
-  return sycl::min<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::min(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
                  std::common_type_t<T1, T2>>
 min(T1 a, T2 b) {
-  return sycl::fmin<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::fmin(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_integral_v<T1> && std::is_integral_v<T2>,
                  std::common_type_t<T1, T2>>
 max(T1 a, T2 b) {
-  return sycl::max<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::max(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 template <typename T1, typename T2>
 std::enable_if_t<std::is_floating_point_v<T1> && std::is_floating_point_v<T2>,
                  std::common_type_t<T1, T2>>
 max(T1 a, T2 b) {
-  return sycl::fmax<std::common_type_t<T1, T2>>(a, b);
+  using common_t = std::common_type_t<T1, T2>;
+  return sycl::fmax(static_cast<common_t>(a), static_cast<common_t>(b));
 }
 
 // pow functions overload.
@@ -2131,6 +2135,74 @@ template <typename RetT, typename AT, typename BT>
 inline constexpr RetT extend_vavrg4_sat(AT a, BT b, RetT c) {
   return detail::extend_vbinary4<RetT, true, false>(a, b, c, detail::average());
 }
+
+namespace experimental {
+namespace matrix {
+namespace syclex = sycl::ext::oneapi::experimental;
+struct row_major
+    : public std::integral_constant<syclex::matrix::layout,
+                                    syclex::matrix::layout::row_major> {};
+struct col_major
+    : public std::integral_constant<syclex::matrix::layout,
+                                    syclex::matrix::layout::col_major> {};
+struct a : public std::integral_constant<syclex::matrix::use,
+                                         syclex::matrix::use::a> {};
+struct b : public std::integral_constant<syclex::matrix::use,
+                                         syclex::matrix::use::b> {};
+struct accumulator
+    : public std::integral_constant<syclex::matrix::use,
+                                    syclex::matrix::use::accumulator> {};
+
+template <class use, int m, int n, int k> struct matrix_size_traits;
+template <int m, int n, int k> struct matrix_size_traits<a, m, n, k> {
+  static constexpr int rows = m;
+  static constexpr int cols = k;
+};
+
+template <int m, int n, int k> struct matrix_size_traits<b, m, n, k> {
+  static constexpr int rows = k;
+  static constexpr int cols = n;
+};
+
+template <int m, int n, int k> struct matrix_size_traits<accumulator, m, n, k> {
+  static constexpr int rows = m;
+  static constexpr int cols = n;
+};
+
+// A class that wraps the syclex::matrix::joint_matrix class and provides
+// copy constructor and assignment operator.
+template <typename use, int m, int n, int k, typename T,
+          typename layout = std::integral_constant<
+              syclex::matrix::layout, syclex::matrix::layout::dynamic>>
+class joint_matrix {
+  using joint_matrix_type = syclex::matrix::joint_matrix<
+      sycl::sub_group, T, use::value, matrix_size_traits<use, m, n, k>::rows,
+      matrix_size_traits<use, m, n, k>::cols, layout::value>;
+
+public:
+  joint_matrix() : matrix() {}
+  joint_matrix(joint_matrix &other) {
+    syclex::matrix::joint_matrix_copy(syclex::this_sub_group(), other.get(),
+                                      matrix);
+  }
+  joint_matrix &operator=(joint_matrix &other) {
+    if (this != &other) {
+      syclex::matrix::joint_matrix_copy(syclex::this_sub_group(), other.get(),
+                                        matrix);
+    }
+    return *this;
+  }
+
+  joint_matrix_type &get() { return matrix; }
+
+  const joint_matrix_type &get() const { return matrix; }
+
+private:
+  joint_matrix_type matrix;
+};
+} // namespace matrix
+} // namespace experimental
+
 } // namespace dpct
 
 #endif // __DPCT_MATH_HPP__

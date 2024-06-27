@@ -675,8 +675,8 @@ int foo11() {
 // CHECK-NEXT:   float *d_A = NULL;
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1124:{{[0-9]+}}: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the
-// CHECK-NEXT:   origin API might be synchronous, depends on the type of operand memory, so you
-// CHECK-NEXT:   may need to call wait() on event return by memcpy API to ensure
+// CHECK-NEXT:   origin API might be synchronous, it depends on the type of operand memory, so
+// CHECK-NEXT:   you may need to call wait() on event return by memcpy API to ensure
 // CHECK-NEXT:   synchronization behavior.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   while (DPCT_CHECK_ERROR(

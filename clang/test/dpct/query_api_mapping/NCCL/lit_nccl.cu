@@ -1,4 +1,19 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+/// Communicator Creation and Management Functions
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetLastError | FileCheck %s -check-prefix=NCCLGETLASTERROR
+// NCCLGETLASTERROR: CUDA API:
+// NCCLGETLASTERROR-NEXT:   ncclGetLastError(comm /*ncclComm_t*/);
+// NCCLGETLASTERROR-NEXT: The API is Removed.
+// NCCLGETLASTERROR-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetErrorString | FileCheck %s -check-prefix=NCCLGETERRORSTRING
+// NCCLGETERRORSTRING: CUDA API:
+// NCCLGETERRORSTRING-NEXT:   ncclGetErrorString(r /*ncclResult_t*/);
+// NCCLGETERRORSTRING-NEXT: Is migrated to:
+// NCCLGETERRORSTRING-NEXT:   /*
+// NCCLGETERRORSTRING-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// NCCLGETERRORSTRING-NEXT:   */
+// NCCLGETERRORSTRING-NEXT:   "<Placeholder string>";
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetVersion | FileCheck %s -check-prefix=ncclGetVersion
 // ncclGetVersion: CUDA API:
@@ -25,6 +40,12 @@
 // ncclCommDestroy-NEXT: Is migrated to:
 // ncclCommDestroy-NEXT:   delete comm;
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommGetAsyncError | FileCheck %s -check-prefix=NCCLCOMMGETASYNCERROR
+// NCCLCOMMGETASYNCERROR: CUDA API:
+// NCCLCOMMGETASYNCERROR-NEXT:   ncclCommGetAsyncError(comm /*ncclComm_t*/, r /*ncclResult_t **/);
+// NCCLCOMMGETASYNCERROR-NEXT: The API is Removed.
+// NCCLCOMMGETASYNCERROR-EMPTY:
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclCommCount | FileCheck %s -check-prefix=ncclCommCount
 // ncclCommCount: CUDA API:
 // ncclCommCount-NEXT:    ncclCommCount(comm /*ncclComm_t*/, count /*int **/);
@@ -43,6 +64,8 @@
 // ncclCommUserRank-NEXT: Is migrated to:
 // ncclCommUserRank-NEXT:   *rank = comm->rank();
 
+/// Collective Communication Functions
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclAllReduce | FileCheck %s -check-prefix=ncclAllReduce
 // ncclAllReduce: CUDA API:
 // ncclAllReduce-NEXT:   ncclAllReduce(sendbuff /*void **/, recvbuff /*void **/, count /*size_t*/,
@@ -58,6 +81,13 @@
 // ncclBroadcast-NEXT:             stream /*cudaStream_t*/);
 // ncclBroadcast-NEXT: Is migrated to:
 // ncclBroadcast-NEXT:   comm->broadcast(sendbuff, recvbuff, count, datatype, root, stream);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclBcast | FileCheck %s -check-prefix=ncclBcast
+// ncclBcast: CUDA API:
+// ncclBcast-NEXT:   ncclBcast(buff /*void **/, count /*size_t*/, datatype /*ncclDataType_t*/,
+// ncclBcast-NEXT:                 root /*int*/, comm /*ncclComm_t*/, stream /*cudaStream_t*/);
+// ncclBcast-NEXT: Is migrated to:
+// ncclBcast-NEXT:   comm->broadcast(buff, buff, count, datatype, root, stream);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclReduce | FileCheck %s -check-prefix=ncclReduce
 // ncclReduce: CUDA API:
@@ -76,9 +106,19 @@
 // ncclReduceScatter-NEXT: Is migrated to:
 // ncclReduceScatter-NEXT:   comm->reduce_scatter(sendbuff, recvbuff, recvcount, datatype, op, stream);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclBcast | FileCheck %s -check-prefix=ncclBcast
-// ncclBcast: CUDA API:
-// ncclBcast-NEXT:   ncclBcast(buff /*void **/, count /*size_t*/, datatype /*ncclDataType_t*/,
-// ncclBcast-NEXT:                 root /*int*/, comm /*ncclComm_t*/, stream /*cudaStream_t*/);
-// ncclBcast-NEXT: Is migrated to:
-// ncclBcast-NEXT:   comm->broadcast(buff, buff, count, datatype, root, stream);
+/// Point To Point Communication Functions
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclSend | FileCheck %s -check-prefix=NCCLSEND
+// NCCLSEND: CUDA API:
+// NCCLSEND-NEXT:   ncclSend(sendbuff /*const void **/, count /*size_t*/,
+// NCCLSEND-NEXT:            datatype /*ncclDataType_t*/, peer /*int*/, comm /*ncclComm_t*/,
+// NCCLSEND-NEXT:            stream /*cudaStream_t*/);
+// NCCLSEND-NEXT: Is migrated to:
+// NCCLSEND-NEXT:   comm->send(sendbuff, count, datatype, peer, stream);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclRecv | FileCheck %s -check-prefix=NCCLRECV
+// NCCLRECV: CUDA API:
+// NCCLRECV-NEXT:   ncclRecv(sendbuff /*void **/, count /*size_t*/, datatype /*ncclDataType_t*/,
+// NCCLRECV-NEXT:            peer /*int*/, comm /*ncclComm_t*/, stream /*cudaStream_t*/);
+// NCCLRECV-NEXT: Is migrated to:
+// NCCLRECV-NEXT:   comm->recv(sendbuff, count, datatype, peer, stream);

@@ -2,7 +2,7 @@
 // RUN: FileCheck --input-file %T/predefined_macro_check/predefined_macro_check.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/predefined_macro_check/predefined_macro_check.dp.cpp -o %T/predefined_macro_check/predefined_macro_check.dp.o %}
 
-//CHECK:#ifdef DPCT_COMPATIBILITY_TEMP
+//CHECK:#ifdef SYCL_LANGUAGE_VERSION
 #ifdef __NVCC__
 void fun(){
  }

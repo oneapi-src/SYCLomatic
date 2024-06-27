@@ -21,8 +21,8 @@ __global__ void kernel(int a, int b){
 // CHECK-NEXT:   void run(){
 // CHECK-NEXT:     dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         int this_a_ct0 = this->a;
-// CHECK-NEXT:         int ptest_data_ct1 = ptest->data;
+// CHECK-NEXT:         auto this_a_ct0 = this->a;
+// CHECK-NEXT:         auto ptest_data_ct1 = ptest->data;
 // CHECK-EMPTY:
 // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -163,6 +163,9 @@ void runTest() {
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:*/
+  // CHECK-NEXT:/*
+  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
+  // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
@@ -177,6 +180,9 @@ void runTest() {
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:/*
+  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {

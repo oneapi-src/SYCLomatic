@@ -19,13 +19,14 @@ __global__ void VectorAddKernel(float *A, float *B, float *C) {
   B[threadIdx.x] = threadIdx.x + 1.0f;
   C[threadIdx.x] = A[threadIdx.x] + B[threadIdx.x];
 }
+#define CALL(x) if(0!=x){int a=4;}
 
 int main() {
   float *d_A, *d_B, *d_C;
   cudaError_t status;
 
   //CHECK: dpctexp::codepin::get_ptr_size_map()[d_A] = VECTOR_SIZE * sizeof(float);
-  cudaMalloc(&d_A, VECTOR_SIZE * sizeof(float));
+  CALL(cudaMalloc(&d_A, VECTOR_SIZE * sizeof(float)));
   //CHECK: dpctexp::codepin::get_ptr_size_map()[d_B] = VECTOR_SIZE * sizeof(float);
   cudaMalloc(&d_B, VECTOR_SIZE * sizeof(float));
   //CHECK: dpctexp::codepin::get_ptr_size_map()[d_C] = VECTOR_SIZE * sizeof(float);

@@ -8,6 +8,7 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/bindless_images.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/device.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/image.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/graph.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/math.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/memory.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/util.hpp
@@ -22,6 +23,8 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/sparse_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/fft_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/lapack_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/group_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/blas_gemm_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/algorithm.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/functional.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/iterators.h
@@ -47,6 +50,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpct.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/graph.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/math.hpp.inc
@@ -58,6 +62,8 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/group_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_gemm_utils.hpp.inc
 )
 
 add_custom_command(
@@ -117,6 +123,7 @@ add_clang_library(DPCT
   Rewriters/CUB/RewriterDeviceSelect.cpp
   Rewriters/CUB/RewriterUtilityFunctions.cpp
   Rewriters/CUB/RewriterDevicePartition.cpp
+  Rewriters/CUB/RewriterDeviceSpmv.cpp
   Rewriters/Math/CallExprRewriterMath.cpp
   Rewriters/Math/RewriterSTDFunctions.cpp
   Rewriters/Math/RewriterHalfArithmeticFunctions.cpp

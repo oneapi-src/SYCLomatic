@@ -304,7 +304,7 @@ void foo_test_3()
 // CHECK-NEXT:                    kernel(d_a, value);
 // CHECK-NEXT:                });
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1124:{{[0-9]+}}: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+// CHECK-NEXT:    DPCT1124:{{[0-9]+}}: cudaMemcpyAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(dpct::get_in_order_queue().memcpy(h_a, d_a, nbytes)));
 // CHECK-NEXT:    /*
@@ -317,7 +317,7 @@ void foo_test_3()
     CHECK(cudaEventRecord(stop));
 
     unsigned long int counter = 0;
-// CHECK:    while ((int)stop->get_info<sycl::info::event::command_execution_status>() != 0) {
+// CHECK:    while (dpct::sycl_event_query(stop) == 1) {
 // CHECK-NEXT:        counter++;
 // CHECK-NEXT:    }
     while (cudaEventQuery(stop) == cudaErrorNotReady) {
@@ -449,4 +449,36 @@ void foo_test_2184() {
     counter++;
   }
   CHECK(cudaEventElapsedTime(&gpu_time, start, stop));
+}
+
+struct foo_node {
+  cudaEvent_t readyEvent;
+  struct foo_node *next;
+};
+
+void cudaEventQuery_foo_test() {
+  struct foo_node *next;
+  struct foo_node *curr;
+
+  while (next != NULL) {
+    curr = next;
+    next = curr->next;
+
+    // CHECK:    if (!curr->readyEvent != 0) {
+    // CHECK-NEXT:      dpct::err0 e = dpct::sycl_event_query(curr->readyEvent);
+    // CHECK-NEXT:      if (e == 0) {
+    // CHECK-NEXT:        // to do some thing.
+    // CHECK-NEXT:      } else if (e != 1) {
+    // CHECK-NEXT:        // to do error handling.
+    // CHECK-NEXT:      }
+    // CHECK-NEXT:    }
+    if (!curr->readyEvent != 0) {
+      cudaError_t e = cudaEventQuery(curr->readyEvent);
+      if (e == cudaSuccess) {
+        // to do some thing.
+      } else if (e != cudaErrorNotReady) {
+        // to do error handling.
+      }
+    }
+  }
 }

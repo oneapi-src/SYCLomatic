@@ -25,6 +25,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+#include "clang/AST/TypeLoc.h"
 
 extern clang::tooling::UnifiedPath DpctInstallPath;
 namespace clang {
@@ -482,6 +483,8 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
                          isCGAPI(DRE->getNameInfo().getAsString());
                          // for thrust::log10 and thrust::sinh ...
+    if (Qualifier->getKind() == NestedNameSpecifier::TypeSpec)
+      analyzeType(DRE->getQualifierLoc().getTypeLoc());
     // log10 is a math function
     if (Qualifier->getAsNamespace() &&
         Qualifier->getAsNamespace()->getName() == "thrust" &&
@@ -1189,6 +1192,13 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     RewriteType(TyName, TL);
     break;
   }
+  case TypeLoc::SubstTemplateTypeParm:
+    // Used for Instantiated class.
+    return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
+                          TYPELOC_CAST(SubstTemplateTypeParmTypeLoc)
+                              .getType()
+                              ->getAs<SubstTemplateTypeParmType>()
+                              ->getIndex());
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
@@ -1689,6 +1699,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(UnaryOperator)
     ANALYZE_EXPR(BinaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
+    ANALYZE_EXPR(DependentScopeDeclRefExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
     ANALYZE_EXPR(CXXTemporaryObjectExpr)
@@ -1711,6 +1722,10 @@ void KernelArgumentAnalysis::analyzeExpr(
   if (!Arg->isImplicitAccess()) {
     KernelArgumentAnalysis::dispatch(Arg->getBase());
   }
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const DependentScopeDeclRefExpr *Arg) {
+  IsRedeclareRequired = true;
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {

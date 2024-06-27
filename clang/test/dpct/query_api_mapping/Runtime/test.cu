@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Device Management
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetAttribute | FileCheck %s -check-prefix=CUDADEVICEGETATTRIBUTE
@@ -76,11 +74,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetStreamPriorityRange | FileCheck %s -check-prefix=CUDADEVICEGETSTREAMPRIORITYRANGE
 // CUDADEVICEGETSTREAMPRIORITYRANGE: CUDA API:
 // CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   cudaDeviceGetStreamPriorityRange(pi1 /*int **/, pi2 /*int **/);
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT: Is migrated to:
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   /*
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   DPCT1014:0: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   */
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   *(pi1) = 0, *(pi2) = 0;
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceReset | FileCheck %s -check-prefix=CUDADEVICERESET
 // CUDADEVICERESET: CUDA API:
@@ -312,7 +306,7 @@
 // CUDAEVENTQUERY-NEXT:   cudaEventQuery(e /*cudaEvent_t*/);
 // CUDAEVENTQUERY-NEXT: Is migrated to:
 // CUDAEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUDAEVENTQUERY-NEXT:   e->get_info<sycl::info::event::command_execution_status>();
+// CUDAEVENTQUERY-NEXT:   dpct::sycl_event_query(e /*cudaEvent_t*/)
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventRecord | FileCheck %s -check-prefix=CUDAEVENTRECORD
 // CUDAEVENTRECORD: CUDA API:

@@ -78,50 +78,37 @@ void reportInvalidWarningID(const std::string &Str) {
 }
 
 void initWarningIDs() {
-  // Separate string into list by comma
-  if (SuppressWarnings != "") {
-    auto WarningStrs = split(SuppressWarnings, ',');
-    for (const auto &Str : WarningStrs) {
-      auto Range = split(Str, '-');
-      if (Range.size() == 1) {
-        // Invalid number format: 100e
-        if (!containOnlyDigits(Str))
-          reportInvalidWarningID(Str);
-        size_t ID = std::stoi(Str);
-        // Invalid warning ID, not in range: 999 or 1025
-        if (ID < DiagnosticsMessage::MinID || ID > DiagnosticsMessage::MaxID)
-          reportInvalidWarningID(Str);
-        WarningIDs.insert(std::stoi(Str));
-      } else if (Range.size() == 2) {
-        // Invalid hyphen-separated range: -1000 or 1000-
-        if (startsWith(Str, '-') || endsWith(Str, '-'))
-          reportInvalidWarningID(Str);
-        // Invalid number format for begin: 100e
-        if (!containOnlyDigits(Range[0]))
-          reportInvalidWarningID(Range[0]);
-        // Invalid number format for end: 100e
-        if (!containOnlyDigits(Range[1]))
-          reportInvalidWarningID(Range[1]);
-        size_t RangeBegin = std::stoi(Range[0]);
-        size_t RangeEnd = std::stoi(Range[1]);
-        // Invalid warning ID for begin, not in range: 999 or 1025
-        if (RangeBegin < DiagnosticsMessage::MinID ||
-            RangeBegin > DiagnosticsMessage::MaxID)
-          reportInvalidWarningID(Range[0]);
-        // Invalid warning ID for end, not in range: 999 or 1025
-        if (RangeEnd < DiagnosticsMessage::MinID ||
-            RangeEnd > DiagnosticsMessage::MaxID)
-          reportInvalidWarningID(Range[1]);
-        // Invalid range (begin > end): 1011-1010
-        if (RangeBegin > RangeEnd)
-          reportInvalidWarningID(Str);
-        for (auto I = RangeBegin; I <= RangeEnd; ++I)
+  for (const auto &ID : SuppressWarnings) {
+    auto Cur = ID.c_str();
+    auto ParseNumber = [&]() {
+      size_t Value = 0;
+      char CurCh = *Cur;
+      while (CurCh) {
+        int Digit = *Cur - '0';
+        if (Digit < 0 || Digit > 9)
+          break;
+        Value = Value * 10 + Digit;
+        CurCh = *++Cur;
+      }
+      if (Value < DiagnosticsMessage::MinID || Value > DiagnosticsMessage::MaxID)
+        reportInvalidWarningID(ID);
+      return Value;
+    };
+    int Begin = ParseNumber();
+
+    if (*Cur == '\0') {
+      WarningIDs.insert(Begin);
+      continue;
+    } else if (*Cur == '-') {
+      ++Cur;
+      auto End = ParseNumber();
+      if (*Cur == '\0' && Begin < End) {
+        for (size_t I = Begin; I < End; ++I)
           WarningIDs.insert(I);
-      } else {
-        // Invalid hyphen-separated range: 1000-1024-1
-        reportInvalidWarningID(Str);
+        continue;
       }
     }
+    reportInvalidWarningID(ID);
   }
 }
 } // namespace dpct

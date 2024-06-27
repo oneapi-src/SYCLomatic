@@ -29,7 +29,10 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
+#include <cstddef>
 #include <fstream>
+#include <optional>
+#include <string>
 
 using namespace llvm;
 using namespace clang;
@@ -3259,6 +3262,10 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
     ND = getNamedDecl(ET->getNamedType().getTypePtr());
   } else if (auto TST = dyn_cast<clang::TemplateSpecializationType>(TypePtr)) {
     ND = TST->getTemplateName().getAsTemplateDecl();
+  } else if (auto LVRT = dyn_cast<clang::LValueReferenceType>(TypePtr)) {
+    ND = getNamedDecl(LVRT->getPointeeType().getTypePtr());
+  } else if (auto RVRT = dyn_cast<clang::RValueReferenceType>(TypePtr)) {
+    ND = getNamedDecl(RVRT->getPointeeType().getTypePtr());
   }
   return ND;
 }
@@ -4860,7 +4867,7 @@ void createDirectories(const clang::tooling::UnifiedPath &FilePath,
       if (IgnoreExisting &&
           llvm::sys::fs::is_directory(FilePath.getCanonicalPath())) {
         auto perm = sys::fs::getPermissions(FilePath.getCanonicalPath());
-        if (perm && (perm.get() & sys::fs::perms::owner_all)) {
+        if (perm && (perm.get() & sys::fs::perms::owner_write)) {
           return;
         }
       }
@@ -5001,6 +5008,283 @@ int isArgumentInitialized(
   }
 
   return DeclsRequireInit.empty();
+}
+const DeclRefExpr *getAddressedRef(const Expr *E) {
+  E = E->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
+    if (DRE->getDecl()->getKind() == Decl::Function) {
+      return DRE;
+    }
+  } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
+    return getAddressedRef(Paren->getSubExpr());
+  } else if (auto Cast = dyn_cast<CastExpr>(E)) {
+    return getAddressedRef(Cast->getSubExprAsWritten());
+  } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      return getAddressedRef(UO->getSubExpr());
+    }
+  }
+  return nullptr;
+}
+
+// This function emits warning to tell user which part of that type violate the
+// trivally-copyable requirements.
+// TODO: Emit warning for non-instantiated template.
+void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
+  const auto &Ctx = DpctGlobalInfo::getContext();
+  if (QT.isTriviallyCopyableType(Ctx))
+    return;
+  QualType CanonicalType = QT.getCanonicalType();
+  if (CanonicalType->isArrayType()) {
+    return checkTrivallyCopyable(Ctx.getBaseElementType(CanonicalType), Rule);
+  }
+  if (const auto *RT = CanonicalType->getAs<RecordType>()) {
+    if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
+      if (!isUserDefinedDecl(ClassDecl))
+        return;
+      std::vector<std::string> Messages;
+      // [0] for T&, [1] for volatile T&
+      std::array<std::pair<bool, SourceLocation>, 2>
+          CtorConstQualifierInsertLocations;
+      for (const auto &C : ClassDecl->ctors()) {
+        if (!C->isImplicit() && !C->isDeleted()) {
+          if (C->isCopyConstructor()) {
+            Messages.push_back("copy constructor");
+            // The 1st parameter of the copy constructor need "const" qualifier.
+            const auto *FirstParam = C->getParamDecl(0);
+            const ReferenceType *RT =
+                dyn_cast<ReferenceType>(FirstParam->getType().getTypePtr());
+            if (RT) {
+              Qualifiers Q = RT->getPointeeType().getQualifiers();
+              unsigned int CVQualifiers = Q.getCVRQualifiers();
+              bool HasVolatile = CVQualifiers & Qualifiers::Volatile;
+              CtorConstQualifierInsertLocations[HasVolatile].first |=
+                  CVQualifiers & Qualifiers::Const;
+              CtorConstQualifierInsertLocations[HasVolatile].second =
+                  FirstParam->getBeginLoc();
+            }
+          } else if (C->isMoveConstructor()) {
+            Messages.push_back("copy assignment");
+          }
+        }
+      }
+      for (const auto &P : CtorConstQualifierInsertLocations) {
+        if (P.first || P.second.isInvalid())
+          continue;
+        auto *NT = new InsertText(P.second, "const ");
+        if (Rule) {
+          Rule->emplaceTransformation(NT);
+        } else {
+          DpctGlobalInfo::getInstance().addReplacement(
+              NT->getReplacement(DpctGlobalInfo::getContext()));
+        }
+      }
+      for (const auto &M : ClassDecl->methods()) {
+        if (!M->isImplicit() && !M->isDeleted()) {
+          if (M->isCopyAssignmentOperator()) {
+            Messages.push_back("move constructor");
+          } else if (M->isMoveAssignmentOperator()) {
+            Messages.push_back("move assignment");
+          }
+        }
+        if (M->isVirtual()) {
+          Messages.push_back("virtual method \"" + M->getNameAsString() + "\"");
+        }
+      }
+      if (!ClassDecl->hasSimpleDestructor()) {
+        Messages.push_back("destructor");
+      }
+      for (const auto &B : ClassDecl->bases()) {
+        if (B.isVirtual()) {
+          Messages.push_back("virtual base class \"" +
+                             DpctGlobalInfo::getOriginalTypeName(B.getType()) +
+                             "\"");
+        }
+        if (!B.getType().isTriviallyCopyableType(Ctx)) {
+          Messages.push_back("non trivially copyable base class \"" +
+                             DpctGlobalInfo::getOriginalTypeName(B.getType()) +
+                             "\"");
+          checkTrivallyCopyable(B.getType(), Rule);
+        }
+      }
+      // Check each field
+      for (const auto *F : ClassDecl->fields()) {
+        QualType FQT = F->getType();
+        if (!FQT.isTriviallyCopyableType(Ctx)) {
+          checkTrivallyCopyable(FQT, Rule);
+          Messages.push_back("non trivially copyable field \"" +
+                             F->getNameAsString() + "\"");
+        }
+      }
+      std::string MsgStr;
+      if (Messages.empty()) {
+        assert(0 && "Messages is empty.");
+      } else if (Messages.size() == 1) {
+        MsgStr = Messages[0];
+      } else if (Messages.size() == 2) {
+        MsgStr = Messages[0] + " and " + Messages[1];
+      } else {
+        for (auto I = Messages.begin(); I < Messages.end() - 2; I++) {
+          MsgStr += (*I + ", ");
+        }
+        MsgStr += (Messages[Messages.size() - 2] + " and " +
+                   Messages[Messages.size() - 1]);
+      }
+      MsgStr += " breaking the device copyable requirement";
+
+      if (Rule) {
+        Rule->report(ClassDecl->getBeginLoc(), Diagnostics::NOT_DEVICE_COPYABLE,
+                     true, DpctGlobalInfo::getOriginalTypeName(QT), MsgStr);
+      } else {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(ClassDecl->getBeginLoc());
+        DiagnosticsUtils::report(
+            LocInfo.first, LocInfo.second, Diagnostics::NOT_DEVICE_COPYABLE,
+            true, true, DpctGlobalInfo::getOriginalTypeName(QT), MsgStr);
+      }
+    }
+  }
+}
+
+// This function inserts code like:
+// template <>
+// struct sycl::is_device_copyable<UserDefinedType> : std::true_type {};
+void insertIsDeviceCopyableSpecialization(QualType Type,
+                                          clang::dpct::MigrationRule *Rule,
+                                          const Decl *D) {
+  const auto &Ctx = DpctGlobalInfo::getContext();
+  const auto &SM = DpctGlobalInfo::getSourceManager();
+
+  // Emit warning DPCT1128
+  checkTrivallyCopyable(Type, Rule);
+
+  // Find insert location
+  auto getInsertLocation = [&Ctx, &SM](SourceLocation InsertLoc,
+                                       tok::TokenKind TK) {
+    Token Tok;
+    std::optional<Token> OptTok = std::nullopt;
+    Lexer::getRawToken(InsertLoc, Tok, SM, Ctx.getLangOpts());
+    if (Tok.is(TK)) {
+      InsertLoc = Tok.getEndLoc();
+    } else {
+      while (OptTok = Lexer::findNextToken(InsertLoc, SM, Ctx.getLangOpts())) {
+        InsertLoc = OptTok.value().getEndLoc();
+        if (OptTok.value().is(TK)) {
+          break;
+        }
+      }
+      assert(OptTok && "OptTok is empty.");
+    }
+    InsertLoc = InsertLoc.getLocWithOffset(
+        Lexer::MeasureTokenLength(InsertLoc, SM, Ctx.getLangOpts()));
+    return InsertLoc;
+  };
+
+  std::string NamespaceStr;
+  SourceLocation InsertLoc;
+
+  const DeclContext *DC = D->getDeclContext();
+  SourceLocation StartSearchLoc = D->getEndLoc();
+  tok::TokenKind FindTok = tok::TokenKind::semi;
+  while (DC) {
+    if (const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(DC)) {
+      NamespaceStr = ND->getNameAsString() + "::" + NamespaceStr;
+      StartSearchLoc = ND->getEndLoc();
+      DC = ND->getDeclContext();
+      FindTok = tok::TokenKind::r_brace;
+    } else if (isa<TranslationUnitDecl>(DC)) {
+      break;
+    } else {
+      return;
+    }
+  }
+  if (StartSearchLoc.isMacroID())
+    return;
+  InsertLoc = getInsertLocation(StartSearchLoc, FindTok);
+
+  // Prepare replacemet
+  std::string Repl = getNL();
+  if (const auto *CTSD = dyn_cast<ClassTemplateSpecializationDecl>(D)) {
+    D = CTSD->getSpecializedTemplate();
+  }
+  if (const auto *CTD = dyn_cast<ClassTemplateDecl>(D)) {
+    llvm::raw_string_ostream OS(Repl);
+    CTD->getTemplateParameters()->print(OS, Ctx);
+    OS << getNL();
+    OS << "struct sycl::is_device_copyable<";
+    std::string TArgs;
+    for (const auto *ND : CTD->getTemplateParameters()->asArray()) {
+      TArgs += ND->getNameAsString();
+      TArgs += ", ";
+    }
+    if (!TArgs.empty()) {
+      TArgs = TArgs.substr(0, TArgs.size() - 2);
+    }
+    OS << NamespaceStr << CTD->getNameAsString() << "<" << TArgs << ">";
+    OS << "> : std::true_type {};";
+  } else if (const auto *RD = dyn_cast<RecordDecl>(D)) {
+    Repl += "template <>";
+    Repl += getNL();
+    Repl += "struct sycl::is_device_copyable<";
+    Repl += NamespaceStr;
+    Repl += RD->getNameAsString();
+    Repl += "> : std::true_type {};";
+  }
+
+  // Insert replacement
+  if (Rule) {
+    Rule->emplaceTransformation(new ReplaceText(InsertLoc, 0, std::move(Repl)));
+  } else {
+    auto FileNameAndOffset = DpctGlobalInfo::getLocInfo(InsertLoc);
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FileNameAndOffset.first,
+                                         FileNameAndOffset.second, 0, Repl,
+                                         nullptr));
+  }
+}
+
+// Check if the given type is device copyable.
+// We use the requirements of is_trivally_copyable to determine if the type is
+// device copyable.
+// For non-trivally-copyable type:
+// 1. Try to insert specialization sycl::is_device_copyable for it.
+// 2. Try to tell which part of that type violate the trivally-copyable
+// requirements.
+bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule) {
+  if (Type->isPointerType())
+    return true;
+  const Decl *D = nullptr;
+  QualType QT = Type;
+  while (true) {
+    auto Class = QT->getTypeClass();
+    if (Class == Type::TypeClass::Elaborated) {
+      QT = QT.getTypePtr()->castAs<ElaboratedType>()->desugar();
+    } else if (Class == Type::TypeClass::TemplateSpecialization) {
+      D = QT.getTypePtr()
+              ->getAs<TemplateSpecializationType>()
+              ->getTemplateName()
+              .getAsTemplateDecl();
+      break;
+    } else if (Class == Type::TypeClass::Record) {
+      D = QT.getTypePtr()->getAs<RecordType>()->getDecl();
+      break;
+    } else if (Class == Type::TypeClass::SubstTemplateTypeParm) {
+      QT = QT.getTypePtr()
+               ->castAs<SubstTemplateTypeParmType>()
+               ->getReplacementType();
+    } else {
+      return true;
+    }
+  }
+
+  if (!D)
+    return true;
+  if (!isUserDefinedDecl(D))
+    return true;
+  if (Type.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
+    return true;
+
+  insertIsDeviceCopyableSpecialization(Type, Rule, D);
+  return false;
 }
 } // namespace dpct
 } // namespace clang

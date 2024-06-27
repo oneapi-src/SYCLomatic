@@ -218,7 +218,8 @@ static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
 }
 
 void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
-                            clang::tooling::UnifiedPath &OutRoot) {
+                            clang::tooling::UnifiedPath &OutRoot,
+                            bool IsForSYCL) {
   for (const auto &File : FilesNotInCompilationDB) {
     if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
       // Skip the files parsed by dpct parser.
@@ -241,8 +242,10 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
 
     // Make sure that the output file corresponds to a single and unique input
     // file.
-    if (checkOverwriteAndWarn(OutputFile.getCanonicalPath(), File))
+    if (IsForSYCL &&
+        checkOverwriteAndWarn(OutputFile.getCanonicalPath(), File)) {
       continue;
+    }
 
     createDirectories(path::parent_path(OutputFile.getCanonicalPath()));
     clang::dpct::RawFDOStream Out(OutputFile.getCanonicalPath().str());
@@ -251,7 +254,9 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     Out << buffer.str();
     In.close();
 
-    OutFilePath2InFilePath[OutputFile.getCanonicalPath().str()] = File;
+    if (IsForSYCL) {
+      OutFilePath2InFilePath[OutputFile.getCanonicalPath().str()] = File;
+    }
   }
 }
 
@@ -823,6 +828,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     OutRootStr = OutRootStr + "_codepin_sycl";
   }
   clang::tooling::UnifiedPath SYCLMigratedOutRoot(OutRootStr);
+  clang::tooling::UnifiedPath CUDAMigratedOutRoot(CodePinCUDAFolder);
   std::string YamlFile =
       appendPath(OutRootStr, DpctGlobalInfo::getYamlFileName());
   if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
@@ -1077,8 +1083,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
 
     clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
     genCodePinHeader(SchemaStreamSYCL, false);
+
+    processallOptionAction(InRoot, CUDAMigratedOutRoot, false);
   }
-  processallOptionAction(InRoot, SYCLMigratedOutRoot);
+  processallOptionAction(InRoot, SYCLMigratedOutRoot, true);
 
   return status;
 }
