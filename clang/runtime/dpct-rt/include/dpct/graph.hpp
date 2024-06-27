@@ -22,6 +22,7 @@ typedef sycl::ext::oneapi::experimental::command_graph<
     sycl::ext::oneapi::experimental::graph_state::executable>
     *command_graph_exec_ptr;
 
+namespace detail {
 class graph_mgr {
 public:
   graph_mgr() = default;
@@ -60,15 +61,16 @@ public:
 private:
   std::unordered_map<sycl::queue *, command_graph_ptr> queue_graph_map;
 };
+} // namespace detail
 
 static inline bool command_graph_begin_recording(sycl::queue *queue_ptr) {
-  return graph_mgr::instance().begin_recording(queue_ptr);
+  return detail::graph_mgr::instance().begin_recording(queue_ptr);
 }
 
 static inline bool
 command_graph_end_recording(sycl::queue *queue_ptr,
                             dpct::experimental::command_graph_ptr &graph) {
-  return graph_mgr::instance().end_recording(queue_ptr, graph);
+  return detail::graph_mgr::instance().end_recording(queue_ptr, graph);
 }
 
 } // namespace experimental
