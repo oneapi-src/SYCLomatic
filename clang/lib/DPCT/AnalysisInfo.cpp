@@ -1440,21 +1440,6 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   }
 }
 std::optional<clang::tooling::UnifiedPath>
-DpctGlobalInfo::getAbsolutePath(FileID ID) {
-  assert(SM && "SourceManager must be initialized");
-  if (auto FileEntryRef = SM->getFileEntryRefForID(ID))
-    return getAbsolutePath(*FileEntryRef);
-  return std::nullopt;
-}
-std::optional<clang::tooling::UnifiedPath>
-DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
-  llvm::SmallString<512> FilePathAbs(File.getName());
-  SM->getFileManager().makeAbsolutePath(FilePathAbs);
-  llvm::outs() << " Unifiedpath is " << FilePathAbs.c_str() << "\n";
-  return clang::tooling::UnifiedPath(FilePathAbs);
-}
-
-std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getUnifiedPath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
   if (auto FileEntryRef = SM->getFileEntryRefForID(ID))
@@ -1463,22 +1448,19 @@ DpctGlobalInfo::getUnifiedPath(FileID ID) {
 }
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getUnifiedPath(FileEntryRef File) {
-  if (auto RealPath = File.getFileEntry().tryGetRealPathName();
-      !RealPath.empty())
-    return clang::tooling::UnifiedPath(RealPath);
-
-  llvm::SmallString<512> FilePathAbs(File.getName());
-  SM->getFileManager().makeAbsolutePath(FilePathAbs);
-  return clang::tooling::UnifiedPath(FilePathAbs);
+  if (!File.getName().empty()) {
+    return clang::tooling::UnifiedPath(File.getName());
+  }
+  return clang::tooling::UnifiedPath(".");
 }
+
 std::pair<clang::tooling::UnifiedPath, unsigned>
 DpctGlobalInfo::getLocInfo(SourceLocation Loc, bool *IsInvalid) {
   if (SM->isMacroArgExpansion(Loc)) {
     Loc = SM->getImmediateSpellingLoc(Loc);
   }
   auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
-  auto AbsPath = getAbsolutePath(LocInfo.first);
-  // auto AbsPath = getUnifiedPath(LocInfo.first);
+  auto AbsPath = getUnifiedPath(LocInfo.first);
   if (AbsPath)
     return std::make_pair(AbsPath.value(), LocInfo.second);
   if (IsInvalid)

@@ -1039,14 +1039,9 @@ public:
   getLocInfo(const TypeLoc &TL, bool *IsInvalid = nullptr /*out*/) {
     return getLocInfo(TL.getBeginLoc(), IsInvalid);
   }
-  // Return the absolute path of \p ID
-  static std::optional<clang::tooling::UnifiedPath> getAbsolutePath(FileID ID);
-  // Return the absolute path of \p File
-  static std::optional<clang::tooling::UnifiedPath>
-  getAbsolutePath(FileEntryRef File);
-
+  // Return the Unified path of \p ID
   static std::optional<clang::tooling::UnifiedPath> getUnifiedPath(FileID ID);
-  // Return the unified path of \p File
+  // Return the Unified path of \p File
   static std::optional<clang::tooling::UnifiedPath>
   getUnifiedPath(FileEntryRef File);
 

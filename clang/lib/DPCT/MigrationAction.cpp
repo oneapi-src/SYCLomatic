@@ -96,7 +96,7 @@ void DpctConsumer::Initialize(ASTContext &Context) {
   DpctGlobalInfo::setContext(Context);
   auto &SM = Context.getSourceManager();
   auto Path = DpctGlobalInfo::getUnifiedPath(SM.getMainFileID());
-  assert(Path && "Can not find absolute path");
+  assert(Path && "Can not find Unified path");
   DpctGlobalInfo::getInstance().setMainFile(
       Info->MainFile = DpctGlobalInfo::getInstance().insertFile(Path.value()));
 }

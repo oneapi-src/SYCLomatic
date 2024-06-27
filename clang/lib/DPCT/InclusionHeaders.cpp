@@ -132,8 +132,7 @@ void IncludesCallbacks::InclusionDirective(
   LastInclusionLocationUpdater Updater(FileInfo, FilenameRange.getEnd());
 
   clang::tooling::UnifiedPath IncludedFile;
-  // if (auto OptionalAbs = Global.getUnifiedPath(*File))
-  if (auto OptionalAbs = Global.getAbsolutePath(*File))
+  if (auto OptionalAbs = Global.getUnifiedPath(*File))
     IncludedFile = OptionalAbs.value();
 
   if (Global.isExcluded(IncludedFile))
