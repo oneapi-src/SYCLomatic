@@ -39,6 +39,15 @@ enum class pointer_mode_t {
   alpha_device_vector_beta_zero,
   alpha_device_vector_beta_host
 };
+enum class epilogue_t {
+  nop = 1,
+  dgelu_bgrad,
+  gelu_aux_bias,
+  bgradb,
+  bias,
+  dgelu,
+  gelu_aux
+};
 
 class descriptor;
 using descriptor_ptr = descriptor *;
@@ -128,17 +137,29 @@ public:
     trans_a,
     trans_b,
     trans_c,
-    epilogue
+    epilogue,
+    a_scale_pointer,
+    b_scale_pointer,
+    d_scale_pointer,
+    amax_d_pointer,
+    bias_data_type,
+    bias_pointer,
+    epilogue_aux_pointer,
+    epilogue_aux_ld,
+    epilogue_aux_data_type,
+    unsupport
   };
 
   matmul_desc_t(compute_type compute_type, library_data_t scale_type)
       : _compute_type(compute_type), _scale_type(scale_type) {}
 
   void set_attribute(attribute attr, const void *mem) {
-    get_set_attr<true>(attr, const_cast<void *>(mem));
+    if (attr != attribute::unsupport)
+      get_set_attr<true>(attr, const_cast<void *>(mem));
   }
   void get_attribute(attribute attr, void *mem) {
-    get_set_attr<false>(attr, mem);
+    if (attr != attribute::unsupport)
+      get_set_attr<false>(attr, mem);
   }
 
 private:
@@ -159,6 +180,15 @@ private:
       CASE(trans_b)
       CASE(trans_c)
       CASE(epilogue)
+      CASE(a_scale_pointer)
+      CASE(b_scale_pointer)
+      CASE(d_scale_pointer)
+      CASE(amax_d_pointer)
+      CASE(bias_data_type)
+      CASE(bias_pointer)
+      CASE(epilogue_aux_pointer)
+      CASE(epilogue_aux_ld)
+      CASE(epilogue_aux_data_type)
     }
 #undef CASE
   }
@@ -169,7 +199,16 @@ private:
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_c = oneapi::mkl::transpose::nontrans;
-  int _epilogue = 1;
+  epilogue_t _epilogue = epilogue_t::nop;
+  void *_a_scale_pointer = nullptr;
+  void *_b_scale_pointer = nullptr;
+  void *_d_scale_pointer = nullptr;
+  void *_amax_d_pointer = nullptr;
+  library_data_t _bias_data_type = -1;
+  void *_bias_pointer = nullptr;
+  void *_epilogue_aux_pointer = nullptr;
+  int64_t _epilogue_aux_ld = 0;
+  library_data_t _epilogue_aux_data_type = -1;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
@@ -488,7 +527,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                                "not support non-zero beta currently.");
   }
 
-  if (compute_desc->_epilogue != 1) {
+  if (compute_desc->_epilogue != epilogue_t::nop) {
     throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does "
                              "not support epilogue currently.");
   }

@@ -3612,8 +3612,7 @@ REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
 void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUBLAS_STATUS.*)|(CUDA_R_.*)|(CUDA_C_.*)|("
-                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)|("
-                                "CUBLASLT_EPILOGUE_.*)"))))
+                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)"))))
                     .bind("BLASStatusConstants"),
                 this);
   MF.addMatcher(
@@ -3623,7 +3622,7 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
                       "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
                       "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
                       "(CUBLASLT_MATMUL_DESC_.*)|(CUBLASLT_MATRIX_TRANSFORM_"
-                      "DESC_.*)"))))
+                      "DESC_.*)|(CUBLASLT_EPILOGUE_.*)"))))
           .bind("BLASNamedValueConstants"),
       this);
 }
