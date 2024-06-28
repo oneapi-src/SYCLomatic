@@ -18,6 +18,23 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphExec_t execGraph;
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphInstantiate is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphInstantiate(&execGraph, graph, nullptr, nullptr, 0);
+
+  cudaStream_t stream;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphLaunch is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphLaunch(execGraph, stream);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphExecDestroy is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphExecDestroy(execGraph);
+
   return 0;
 }
 
