@@ -15115,3 +15115,25 @@ void AssertRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 REGISTER_RULE(AssertRule, PassKind::PK_Migration)
+
+void GraphRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
+                      "cudaGraphExecDestroy");
+  };
+  MF.addMatcher(
+      callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
+      this);
+}
+
+void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  if (!CE) {
+    return;
+  }
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
+}
+
+REGISTER_RULE(GraphRule, PassKind::PK_Migration)
