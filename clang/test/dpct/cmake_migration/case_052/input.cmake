@@ -1,0 +1,3 @@
+if (CUDA_FOUND)
+if(CUDA_FOUND)
+if( CUDA_FOUND )

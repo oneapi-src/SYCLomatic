@@ -80,7 +80,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel<sycl::float2>(d, item_ct1, a_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel<sycl::float2>(d, item_ct1, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel<float2><<<1,1>>>(d);
@@ -92,7 +92,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel<sycl::int4>(d, item_ct1, a_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel<sycl::int4>(d, item_ct1, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel<int4><<<1,1>>>(d);
@@ -104,7 +104,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel1(d, item_ct1, (int *)a_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel1(d, item_ct1, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel1<<<1,1>>>(d);
@@ -117,7 +117,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel2<int>(d, d1, item_ct1, a1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), (sycl::float2 *)a2_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel2<int>(d, d1, item_ct1, a1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), (sycl::float2 *)a2_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel2<int><<<1,1>>>(d, d1);
@@ -129,7 +129,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel3<20>(d, item_ct1, (int *)a_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         kernel3<20>(d, item_ct1, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel3<20><<<1,1>>>(d);

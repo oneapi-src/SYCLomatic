@@ -1,0 +1,502 @@
+[
+  {
+    "ID": "example.cu:27:3:prolog",
+    "Free Device Memory": "16374431744",
+    "Total Device Memory": "16882663424",
+    "Elapse Time(ms)": "0",
+    "CheckPoint": {
+      "d_a": {
+        "Type": "Pointer",
+        "Data": [
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "d_result": {
+        "Type": "Pointer",
+        "Data": [
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    0
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "ID": "example.cu:27:3:epilog",
+    "Free Device Memory": "16374431744",
+    "Total Device Memory": "16882663424",
+    "Elapse Time(ms)": "0.21312",
+    "CheckPoint": {
+      "d_a": {
+        "Type": "Pointer",
+        "Data": [
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    1
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "d_result": {
+        "Type": "Pointer",
+        "Data": [
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    4
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "Type": "int3",
+            "Data": [
+              {
+                "x": {
+                  "Type": "int",
+                  "Data": [
+                    2
+                  ]
+                }
+              },
+              {
+                "y": {
+                  "Type": "int",
+                  "Data": [
+                    3
+                  ]
+                }
+              },
+              {
+                "z": {
+                  "Type": "int",
+                  "Data": [
+                    4
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+]

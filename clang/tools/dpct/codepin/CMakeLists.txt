@@ -1,10 +1,7 @@
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_BINARY_DIR}/bin/codepin-report.py
-                COMMAND ${CMAKE_COMMAND} -E copy
+add_custom_target(dpct-codepin-report-files ALL DEPENDS  ${CMAKE_CURRENT_SOURCE_DIR}/codepin-report.py
+                    COMMAND ${CMAKE_COMMAND} -E copy
                         ${CMAKE_CURRENT_SOURCE_DIR}/codepin-report.py
                         ${CMAKE_BINARY_DIR}/bin)
-list(APPEND dpct-codepin-report-dependends ${CMAKE_BINARY_DIR}/bin/codepin-report.py)
-
-add_custom_target(dpct-codepin-report-files ALL DEPENDS ${dpct-codepin-report-dependends})
 
 install(PROGRAMS codepin-report.py
     DESTINATION ./bin

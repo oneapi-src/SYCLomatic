@@ -1,0 +1,3 @@
+cmake_dependent_option(QUDA_LARGE_KERNEL_ARG "enable large kernel arg support" OFF "${CMAKE_CUDA_COMPILER_VERSION} VERSION_GREATER_EQUAL 12.1" OFF )
+if(${CMAKE_CUDA_COMPILER_VERSION} VERSION_LESS "11.3")
+endif()

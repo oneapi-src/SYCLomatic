@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__assert_fail | FileCheck %s -check-prefix=__ASSERT_FAIL
 // __ASSERT_FAIL: CUDA API:
 // __ASSERT_FAIL-NEXT:   __assert_fail(msg /*const char **/, file /*const char **/, line /*unsigned*/,
@@ -49,6 +47,19 @@
 // CUCDIVF-NEXT:   cuCdivf(c1 /*cuFloatComplex*/, c2 /*cuFloatComplex*/);
 // CUCDIVF-NEXT: Is migrated to:
 // CUCDIVF-NEXT:   dpct::cdiv<float>(c1, c2);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCfma | FileCheck %s -check-prefix=CUCFMA
+// CUCFMA: CUDA API:
+// CUCFMA-NEXT:   cuCfma(c1 /*cuDoubleComplex*/, c2 /*cuDoubleComplex*/,
+// CUCFMA-NEXT:          c3 /*cuDoubleComplex*/);
+// CUCFMA-NEXT: Is migrated to:
+// CUCFMA-NEXT:   dpct::cmul<double>(c1, c2) + c3;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCfmaf | FileCheck %s -check-prefix=CUCFMAF
+// CUCFMAF: CUDA API:
+// CUCFMAF-NEXT:   cuCfmaf(c1 /*cuFloatComplex*/, c2 /*cuFloatComplex*/, c3 /*cuFloatComplex*/);
+// CUCFMAF-NEXT: Is migrated to:
+// CUCFMAF-NEXT:   dpct::cmul<float>(c1, c2) + c3;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCimag | FileCheck %s -check-prefix=CUCIMAG
 // CUCIMAG: CUDA API:

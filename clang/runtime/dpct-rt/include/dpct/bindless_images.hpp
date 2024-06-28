@@ -29,8 +29,11 @@ public:
                     unsigned int num_levels = 1)
       : _channel(channel),
         _desc(sycl::ext::oneapi::experimental::image_descriptor(
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
             range, _channel.get_channel_order(), _channel.get_channel_type(),
-            type, num_levels)) {
+            type, num_levels
+#endif
+            )) {
     auto q = get_default_queue();
     _handle = alloc_image_mem(_desc, q);
     if (type == sycl::ext::oneapi::experimental::image_type::mipmap) {
@@ -46,11 +49,12 @@ public:
   }
   /// Create bindless image memory wrapper.
   /// \param [in] channel The image channel used to create bindless image
-  /// \param [in] size The sizes of each dimension of bindless image memory.
-  /// memory.
-  template <typename... Args>
-  image_mem_wrapper(image_channel channel, Args... size)
-      : image_mem_wrapper(channel, sycl::range{size...}) {}
+  /// \param [in] width The width of bindless image memory.
+  /// \param [in] height The height of bindless image memory.
+  /// \param [in] depth The depth of bindless image memory.
+  image_mem_wrapper(image_channel channel, size_t width, size_t height = 0,
+                    size_t depth = 0)
+      : image_mem_wrapper(channel, {width, height, depth}) {}
   image_mem_wrapper(const image_mem_wrapper &) = delete;
   image_mem_wrapper &operator=(const image_mem_wrapper &) = delete;
   /// Destroy bindless image memory wrapper.
@@ -129,7 +133,8 @@ inline image_mem_wrapper *&get_img_mem_map(
 
 static inline size_t
 get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
-  size_t channel_num, channel_size;
+  size_t channel_num = 4, channel_size;
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
   switch (decs.channel_order) {
   case sycl::image_channel_order::r:
     channel_num = 1;
@@ -147,6 +152,7 @@ get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
     throw std::runtime_error("Unsupported channel_order in get_ele_size!");
     break;
   }
+#endif
   switch (decs.channel_type) {
   case sycl::image_channel_type::signed_int8:
   case sycl::image_channel_type::unsigned_int8:
@@ -218,7 +224,8 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
 }
 
 static inline sycl::event
-dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
+dpct_memcpy(const void *src,
+            sycl::ext::oneapi::experimental::image_mem_handle dest,
             const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
             size_t w_offset_dest, size_t h_offset_dest, size_t p, size_t w,
             size_t h, sycl::queue q) {
@@ -228,12 +235,14 @@ dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
   const auto dest_offset =
       sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
   const auto copy_extend = sycl::range<3>(w / ele_size, h, 0);
-  return q.ext_oneapi_copy(src, src_offset, src_extend, dest, dest_offset,
-                           desc_dest, copy_extend);
+  // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
+  return q.ext_oneapi_copy(const_cast<void *>(src), src_offset, src_extend,
+                           dest, dest_offset, desc_dest, copy_extend);
 }
 
 static inline std::vector<sycl::event>
-dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
+dpct_memcpy(const void *src,
+            sycl::ext::oneapi::experimental::image_mem_handle dest,
             const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
             size_t w_offset_dest, size_t h_offset_dest, size_t s,
             sycl::queue q = get_default_queue()) {
@@ -248,9 +257,10 @@ dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
         sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
     const auto copy_extend =
         sycl::range<3>((w - w_offset_dest) / ele_size, 1, 0);
-    event_list.push_back(q.ext_oneapi_copy(src, src_offset, src_extend, dest,
-                                           dest_offset, desc_dest,
-                                           copy_extend));
+    // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
+    event_list.push_back(q.ext_oneapi_copy(const_cast<void *>(src), src_offset,
+                                           src_extend, dest, dest_offset,
+                                           desc_dest, copy_extend));
     offset_src += w - w_offset_dest;
     w_offset_dest = 0;
     ++h_offset_dest;
@@ -261,8 +271,10 @@ dpct_memcpy(void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
       sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
   const auto copy_extend =
       sycl::range<3>((s - offset_src - w_offset_dest) / ele_size, 1, 0);
-  event_list.push_back(q.ext_oneapi_copy(src, src_offset, src_extend, dest,
-                                         dest_offset, desc_dest, copy_extend));
+  // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
+  event_list.push_back(q.ext_oneapi_copy(const_cast<void *>(src), src_offset,
+                                         src_extend, dest, dest_offset,
+                                         desc_dest, copy_extend));
   return event_list;
 }
 
@@ -339,8 +351,11 @@ create_bindless_image(image_data data, sampling_info info,
     q.wait_and_throw();
 #else
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
         {data.get_x(), data.get_y()}, data.get_channel().get_channel_order(),
-        data.get_channel_type());
+        data.get_channel_type()
+#endif
+    );
     auto img = sycl::ext::oneapi::experimental::create_image(
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
     detail::get_img_mem_map(img) = nullptr;
@@ -465,8 +480,10 @@ public:
     q.wait_and_throw();
 #else
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
-        {width, height}, channel.get_channel_order(),
-        channel.get_channel_type());
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
+        {width, height}, channel.get_channel_order(), channel.get_channel_type()
+#endif
+    );
     _img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
                                                          desc, q);
     detail::get_img_mem_map(_img) = nullptr;
@@ -587,17 +604,18 @@ private:
 /// Asynchronously copies from the image memory to memory specified by a
 /// pointer, The return of the function does NOT guarantee the copy is
 /// completed.
+/// \param [in] dest The destination memory address.
+/// \param [in] p The pitch of destination memory.
 /// \param [in] src The source image memory.
 /// \param [in] w_offset_src The x offset of source image memory.
 /// \param [in] h_offset_src The y offset of source image memory.
-/// \param [in] dest The destination memory address.
-/// \param [in] p The pitch of destination memory.
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void async_dpct_memcpy(image_mem_wrapper *src,
+static inline void async_dpct_memcpy(void *dest, size_t p,
+                                     const image_mem_wrapper *src,
                                      size_t w_offset_src, size_t h_offset_src,
-                                     void *dest, size_t p, size_t w, size_t h,
+                                     size_t w, size_t h,
                                      sycl::queue q = get_default_queue()) {
   detail::dpct_memcpy(src->get_handle(), src->get_desc(), w_offset_src,
                       h_offset_src, dest, p, w, h, q);
@@ -605,16 +623,17 @@ static inline void async_dpct_memcpy(image_mem_wrapper *src,
 
 /// Synchronously copies from the image memory to memory specified by a
 /// pointer, The function will return after the copy is completed.
+/// \param [in] dest The destination memory address.
+/// \param [in] p The pitch of destination memory.
 /// \param [in] src The source image memory.
 /// \param [in] w_offset_src The x offset of source image memory.
 /// \param [in] h_offset_src The y offset of source image memory.
-/// \param [in] dest The destination memory address.
-/// \param [in] p The pitch of destination memory.
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
-                               size_t h_offset_src, void *dest, size_t p,
+static inline void dpct_memcpy(void *dest, size_t p,
+                               const image_mem_wrapper *src,
+                               size_t w_offset_src, size_t h_offset_src,
                                size_t w, size_t h,
                                sycl::queue q = get_default_queue()) {
   detail::dpct_memcpy(src->get_handle(), src->get_desc(), w_offset_src,
@@ -625,15 +644,15 @@ static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
 /// Asynchronously copies from the image memory to memory specified by a
 /// pointer, The return of the function does NOT guarantee the copy is
 /// completed.
+/// \param [in] dest The destination memory address.
 /// \param [in] src The source image memory.
 /// \param [in] w_offset_src The x offset of source image memory.
 /// \param [in] h_offset_src The y offset of source image memory.
-/// \param [in] dest The destination memory address.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void async_dpct_memcpy(image_mem_wrapper *src,
+static inline void async_dpct_memcpy(void *dest, const image_mem_wrapper *src,
                                      size_t w_offset_src, size_t h_offset_src,
-                                     void *dest, size_t s,
+                                     size_t s,
                                      sycl::queue q = get_default_queue()) {
   detail::dpct_memcpy(src->get_handle(), src->get_desc(), w_offset_src,
                       h_offset_src, dest, s, q);
@@ -641,15 +660,15 @@ static inline void async_dpct_memcpy(image_mem_wrapper *src,
 
 /// Synchronously copies from the image memory to memory specified by a
 /// pointer, The function will return after the copy is completed.
+/// \param [in] dest The destination memory address.
 /// \param [in] src The source image memory.
 /// \param [in] w_offset_src The x offset of source image memory.
 /// \param [in] h_offset_src The y offset of source image memory.
-/// \param [in] dest The destination memory address.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
-                               size_t h_offset_src, void *dest, size_t s,
-                               sycl::queue q = get_default_queue()) {
+static inline void dpct_memcpy(void *dest, const image_mem_wrapper *src,
+                               size_t w_offset_src, size_t h_offset_src,
+                               size_t s, sycl::queue q = get_default_queue()) {
   sycl::event::wait(detail::dpct_memcpy(src->get_handle(), src->get_desc(),
                                         w_offset_src, h_offset_src, dest, s,
                                         q));
@@ -657,17 +676,18 @@ static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
 
 /// Asynchronously copies from memory specified by a pointer to the image
 /// memory, The return of the function does NOT guarantee the copy is completed.
-/// \param [in] src The source memory address.
 /// \param [in] dest The destination image memory.
 /// \param [in] w_offset_dest The x offset of destination image memory.
 /// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] src The source memory address.
 /// \param [in] p The pitch of source memory.
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void async_dpct_memcpy(void *src, image_mem_wrapper *dest,
+static inline void async_dpct_memcpy(image_mem_wrapper *dest,
                                      size_t w_offset_dest, size_t h_offset_dest,
-                                     size_t p, size_t w, size_t h,
+                                     const void *src, size_t p, size_t w,
+                                     size_t h,
                                      sycl::queue q = get_default_queue()) {
   detail::dpct_memcpy(src, dest->get_handle(), dest->get_desc(), w_offset_dest,
                       h_offset_dest, p, w, h, q);
@@ -675,17 +695,17 @@ static inline void async_dpct_memcpy(void *src, image_mem_wrapper *dest,
 
 /// Synchronously copies from memory specified by a pointer to the image
 /// memory, The function will return after the copy is completed.
-/// \param [in] src The source memory address.
 /// \param [in] dest The destination image memory.
 /// \param [in] w_offset_dest The x offset of destination image memory.
 /// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] src The source memory address.
 /// \param [in] p The pitch of source memory.
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(void *src, image_mem_wrapper *dest,
-                               size_t w_offset_dest, size_t h_offset_dest,
-                               size_t p, size_t w, size_t h,
+static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
+                               size_t h_offset_dest, const void *src, size_t p,
+                               size_t w, size_t h,
                                sycl::queue q = get_default_queue()) {
   detail::dpct_memcpy(src, dest->get_handle(), dest->get_desc(), w_offset_dest,
                       h_offset_dest, p, w, h, q)
@@ -694,15 +714,15 @@ static inline void dpct_memcpy(void *src, image_mem_wrapper *dest,
 
 /// Asynchronously copies from memory specified by a pointer to the image
 /// memory, The return of the function does NOT guarantee the copy is completed.
-/// \param [in] src The source memory address.
 /// \param [in] dest The destination image memory.
 /// \param [in] w_offset_dest The x offset of destination image memory.
 /// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] src The source memory address.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void async_dpct_memcpy(void *src, image_mem_wrapper *dest,
+static inline void async_dpct_memcpy(image_mem_wrapper *dest,
                                      size_t w_offset_dest, size_t h_offset_dest,
-                                     size_t s,
+                                     const void *src, size_t s,
                                      sycl::queue q = get_default_queue()) {
   detail::dpct_memcpy(src, dest->get_handle(), dest->get_desc(), w_offset_dest,
                       h_offset_dest, s, q);
@@ -710,15 +730,15 @@ static inline void async_dpct_memcpy(void *src, image_mem_wrapper *dest,
 
 /// Synchronously copies from memory specified by a pointer to the image
 /// memory, The function will return after the copy is completed.
-/// \param [in] src The source memory address.
 /// \param [in] dest The destination image memory.
 /// \param [in] w_offset_dest The x offset of destination image memory.
 /// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] src The source memory address.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(void *src, image_mem_wrapper *dest,
-                               size_t w_offset_dest, size_t h_offset_dest,
-                               size_t s, sycl::queue q = get_default_queue()) {
+static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
+                               size_t h_offset_dest, const void *src, size_t s,
+                               sycl::queue q = get_default_queue()) {
   sycl::event::wait(detail::dpct_memcpy(src, dest->get_handle(),
                                         dest->get_desc(), w_offset_dest,
                                         h_offset_dest, s, q));
@@ -726,45 +746,47 @@ static inline void dpct_memcpy(void *src, image_mem_wrapper *dest,
 
 /// Synchronously copies from image memory to the image memory, The function
 /// will return after the copy is completed.
-/// \param [in] src The source image memory.
-/// \param [in] w_offset_src The x offset of source image memory.
-/// \param [in] h_offset_src The y offset of source image memory.
 /// \param [in] dest The destination image memory.
 /// \param [in] w_offset_dest The x offset of destination image memory.
 /// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
 /// \param [in] w The width of matrix to be copied.
 /// \param [in] h The height of matrix to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
-                               size_t h_offset_src, image_mem_wrapper *dest,
-                               size_t w_offset_dest, size_t h_offset_dest,
+static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
+                               size_t h_offset_dest,
+                               const image_mem_wrapper *src,
+                               size_t w_offset_src, size_t h_offset_src,
                                size_t w, size_t h,
                                sycl::queue q = get_default_queue()) {
   auto temp = (void *)sycl::malloc_device(w * h, q);
   // TODO: Need change logic when sycl support image_mem to image_mem copy.
-  dpct_memcpy(src, w_offset_src, h_offset_src, temp, w, w, h, q);
-  dpct_memcpy(temp, dest, w_offset_dest, h_offset_dest, w, w, h, q);
+  dpct_memcpy(temp, w, src, w_offset_src, h_offset_src, w, h, q);
+  dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, w, w, h, q);
   sycl::free(temp, q);
 }
 
 /// Synchronously copies from image memory to the image memory, The function
 /// will return after the copy is completed.
-/// \param [in] src The source image memory.
-/// \param [in] w_offset_src The x offset of source image memory.
-/// \param [in] h_offset_src The y offset of source image memory.
 /// \param [in] dest The destination image memory.
 /// \param [in] w_offset_dest The x offset of destination image memory.
 /// \param [in] h_offset_dest The y offset of destination image memory.
+/// \param [in] src The source image memory.
+/// \param [in] w_offset_src The x offset of source image memory.
+/// \param [in] h_offset_src The y offset of source image memory.
 /// \param [in] s The size to be copied.
 /// \param [in] q The queue to execute the copy task.
-static inline void dpct_memcpy(image_mem_wrapper *src, size_t w_offset_src,
-                               size_t h_offset_src, image_mem_wrapper *dest,
-                               size_t w_offset_dest, size_t h_offset_dest,
+static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
+                               size_t h_offset_dest,
+                               const image_mem_wrapper *src,
+                               size_t w_offset_src, size_t h_offset_src,
                                size_t s, sycl::queue q = get_default_queue()) {
   auto temp = (void *)sycl::malloc_device(s, q);
   // TODO: Need change logic when sycl support image_mem to image_mem copy.
-  dpct_memcpy(src, w_offset_src, h_offset_src, temp, s, q);
-  dpct_memcpy(temp, dest, w_offset_dest, h_offset_dest, s, q);
+  dpct_memcpy(temp, src, w_offset_src, h_offset_src, s, q);
+  dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, s, q);
   sycl::free(temp, q);
 }
 

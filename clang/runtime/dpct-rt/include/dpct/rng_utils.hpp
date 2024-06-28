@@ -530,16 +530,20 @@ private:
                                        const random_mode mode) {
 #ifdef __INTEL_MKL__
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mrg32k3a>) {
-      switch (mode) {
-      case random_mode::best:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::custom{81920});
-      case random_mode::legacy:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::custom{4096});
-      case random_mode::optimal:
-        return engine_t(*queue, seed,
-                        oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
+      // oneapi::mkl::rng::mrg32k3a_mode is only supported for GPU device. For
+      // other devices, this argument will be ignored.
+      if (queue->get_device().is_gpu()) {
+        switch (mode) {
+        case random_mode::best:
+          return engine_t(*queue, seed,
+                          oneapi::mkl::rng::mrg32k3a_mode::custom{81920});
+        case random_mode::legacy:
+          return engine_t(*queue, seed,
+                          oneapi::mkl::rng::mrg32k3a_mode::custom{4096});
+        case random_mode::optimal:
+          return engine_t(*queue, seed,
+                          oneapi::mkl::rng::mrg32k3a_mode::optimal_v);
+        }
       }
     }
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>

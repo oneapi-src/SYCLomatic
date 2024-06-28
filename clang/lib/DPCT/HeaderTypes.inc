@@ -65,12 +65,15 @@ DPCT_HEADER(CCL_Utils, "<dpct/ccl_utils.hpp>")
 DPCT_HEADER(BLAS_Utils, "<dpct/blas_utils.hpp>")
 DPCT_HEADER(DNNL_Utils, "<dpct/dnnl_utils.hpp>")
 DPCT_HEADER(LAPACK_Utils, "<dpct/lapack_utils.hpp>")
+DPCT_HEADER(GROUP_Utils, "<dpct/group_utils.hpp>")
 DPCT_HEADER(COMMON_Utils, "<dpct/lib_common_utils.hpp>")
 DPCT_HEADER(Atomic, "<dpct/atomic.hpp>")
 DPCT_HEADER(SPBLAS_Utils, "<dpct/sparse_utils.hpp>")
 DPCT_HEADER(Math, "<dpct/math.hpp>")
+DPCT_HEADER(BLAS_GEMM_Utils, "<dpct/blas_gemm_utils.hpp>")
 DPCT_HEADER(CodePin_SYCL, "<dpct/codepin/codepin.hpp>")
 DPCT_HEADER(CodePin_CUDA, "<dpct/codepin/codepin.hpp>")
+DPCT_HEADER(Graph, "<dpct/graph.hpp>")
 
 #undef MKL_HEADER
 #undef ONEDPL_HEADER

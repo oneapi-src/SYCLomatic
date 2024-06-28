@@ -40,6 +40,9 @@ const std::string DeviceAllContentStr =
 const std::string DplUtilsAllContentStr =
 #include "clang/DPCT/dpl_utils.hpp.inc"
     ;
+const std::string GraphAllContentStr =
+#include "clang/DPCT/graph.hpp.inc"
+    ;
 const std::string ImageAllContentStr =
 #include "clang/DPCT/image.hpp.inc"
     ;
@@ -72,6 +75,12 @@ const std::string FftUtilsAllContentStr =
     ;
 const std::string LapackUtilsAllContentStr =
 #include "clang/DPCT/lapack_utils.hpp.inc"
+    ;
+const std::string GroupUtilsAllContentStr =
+#include "clang/DPCT/group_utils.hpp.inc"
+    ;
+const std::string BlasGemmUtilsAllContentStr =
+#include "clang/DPCT/blas_gemm_utils.hpp.inc"
     ;
 const std::string DplExtrasAlgorithmAllContentStr =
 #include "clang/DPCT/dpl_extras/algorithm.h.inc"
@@ -151,6 +160,7 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(Dpct, ".", dpct.hpp)
   GENERATE_ALL_FILE_CONTENT(DplUtils, ".", dpl_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(DnnlUtils, ".", dnnl_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(Graph, ".", graph.hpp)
   GENERATE_ALL_FILE_CONTENT(Image, ".", image.hpp)
   GENERATE_ALL_FILE_CONTENT(Kernel, ".", kernel.hpp)
   GENERATE_ALL_FILE_CONTENT(Math, ".", math.hpp)
@@ -162,6 +172,8 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(SparseUtils, ".", sparse_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(FftUtils, ".", fft_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(LapackUtils, ".", lapack_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(GroupUtils, ".", group_utils.hpp)
+  GENERATE_ALL_FILE_CONTENT(BlasGemmUtils, ".", blas_gemm_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic, "codepin/serialization",
                             basic.hpp)

@@ -9,6 +9,7 @@ llvm_canonicalize_cmake_booleans(
   CLANG_ENABLE_STATIC_ANALYZER
   CLANG_PLUGIN_SUPPORT
   CLANG_SPAWN_CC1
+  CLANG_ENABLE_CIR
   ENABLE_BACKTRACES
   LLVM_ENABLE_ZLIB
   LLVM_ENABLE_ZSTD
@@ -80,7 +81,11 @@ list(APPEND CLANG_TEST_DEPS
   clang-offload-packager
   diagtool
   hmaptool
+
   dpct-binary
+  dpct-codepin-report-files
+  scan-build-py
+  pattern-rewriter-binary
   )
 
 if(CLANG_ENABLE_STATIC_ANALYZER)

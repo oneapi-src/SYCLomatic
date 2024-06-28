@@ -41,6 +41,17 @@ private:
   oneapi::mkl::uplo _uplo = oneapi::mkl::uplo::upper;
   oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
 };
+class descriptor {
+public:
+  descriptor() {}
+  void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
+  sycl::queue &get_queue() noexcept { return *_queue_ptr; }
+
+private:
+  queue_ptr _queue_ptr = &dpct::get_default_queue();
+};
+
+using descriptor_ptr = descriptor *;
 
 enum class conversion_scope : int { index = 0, index_and_value };
 
@@ -161,6 +172,31 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            T *y) {
   detail::csrmv_impl<T>()(queue, trans, num_rows, num_cols, alpha, info, val,
                           row_ptr, col_ind, x, beta, y);
+}
+
+/// Computes a CSR format sparse matrix-dense vector product. y = A * x
+///
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] values An array containing the non-zero elements of the matrix.
+/// \param [in] row_offsets An array of length \p num_rows + 1.
+/// \param [in] column_indices An array containing the column indices in
+/// index-based numbering.
+/// \param [in] vector_x Data of the vector x.
+/// \param [in, out] vector_y Data of the vector y.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+template <typename T>
+void csrmv(sycl::queue &queue, const T *values, const int *row_offsets,
+           const int *column_indices, const T *vector_x, T *vector_y,
+           int num_rows, int num_cols) {
+  T alpha{1}, beta{0};
+  auto matrix_info = std::make_shared<dpct::sparse::matrix_info>();
+  matrix_info->set_index_base(oneapi::mkl::index_base::zero);
+  matrix_info->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
+  detail::csrmv_impl<T>()(queue, oneapi::mkl::transpose::nontrans, num_rows,
+                          num_cols, &alpha, matrix_info, values, row_offsets,
+                          column_indices, vector_x, &beta, vector_y);
 }
 
 /// Computes a CSR format sparse matrix-dense vector product.
@@ -504,9 +540,7 @@ private:
 };
 
 /// Sparse matrix data format
-enum matrix_format : int {
-  csr = 1,
-};
+enum matrix_format : int { csr = 1, coo = 2 };
 
 /// Sparse matrix attribute
 enum matrix_attribute : int { uplo = 0, diag };
@@ -540,7 +574,8 @@ public:
         _col_ind(col_ind), _value(value), _row_ptr_type(row_ptr_type),
         _col_ind_type(col_ind_type), _base(base), _value_type(value_type),
         _data_format(data_format) {
-    if (_data_format != matrix_format::csr) {
+    if (_data_format != matrix_format::csr &&
+        _data_format != matrix_format::coo) {
       throw std::runtime_error("the sparse matrix data format is unsupported");
     }
     oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
@@ -764,11 +799,18 @@ private:
     _data_row_ptr = dpct::detail::get_memory<index_t>(row_ptr);
     _data_col_ind = dpct::detail::get_memory<index_t>(_col_ind);
     _data_value = dpct::detail::get_memory<value_t>(_value);
-    oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,
-                                      _row_num, _col_num, _base,
-                                      std::get<data_index_t>(_data_row_ptr),
-                                      std::get<data_index_t>(_data_col_ind),
-                                      std::get<data_value_t>(_data_value));
+    if (_data_format == matrix_format::csr)
+      oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,
+                                        _row_num, _col_num, _base,
+                                        std::get<data_index_t>(_data_row_ptr),
+                                        std::get<data_index_t>(_data_col_ind),
+                                        std::get<data_value_t>(_data_value));
+    else
+      oneapi::mkl::sparse::set_coo_data(get_default_queue(), _matrix_handle,
+                                        _row_num, _col_num, _nnz, _base,
+                                        std::get<data_index_t>(_data_row_ptr),
+                                        std::get<data_index_t>(_data_col_ind),
+                                        std::get<data_value_t>(_data_value));
     get_default_queue().wait();
   }
 
