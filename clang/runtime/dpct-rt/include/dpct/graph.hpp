@@ -37,6 +37,7 @@ public:
   }
 
   bool begin_recording(sycl::queue *queue_ptr) {
+    // Calling begin_recording on an already recording queue is a no-op in SYCL
     if (queue_graph_map.find(queue_ptr) != queue_graph_map.end()) {
       return false;
     }
@@ -45,8 +46,8 @@ public:
         queue_ptr->get_context(), queue_ptr->get_device());
     auto result = queue_graph_map.insert({queue_ptr, graph});
     if (!result.second) {
-      return false;
       delete graph;
+      return false;
     }
     return graph->begin_recording(*queue_ptr);
   }
