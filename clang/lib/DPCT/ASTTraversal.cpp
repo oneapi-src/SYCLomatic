@@ -1738,7 +1738,14 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
-              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR"))))))
+              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR", "cublasLtHandle_t",
+              "cublasLtMatmulDesc_t", "cublasLtOrder_t",
+              "cublasLtPointerMode_t", "cublasLtMatrixLayout_t",
+              "cublasLtMatrixLayoutAttribute_t",
+              "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
+              "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
+              "cublasLtMatmulHeuristicResult_t",
+              "cublasLtMatrixTransformDesc_t"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -3605,14 +3612,18 @@ REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
 void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUBLAS_STATUS.*)|(CUDA_R_.*)|(CUDA_C_.*)|("
-                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)"))))
+                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)|("
+                                "CUBLASLT_EPILOGUE_.*)"))))
                     .bind("BLASStatusConstants"),
                 this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUBLAS_OP.*)|(CUBLAS_SIDE.*)|(CUBLAS_FILL_"
                       "MODE.*)|(CUBLAS_DIAG.*)|(CUBLAS_.*_MATH)|CUBLAS_MATH_"
-                      "DISALLOW_REDUCED_PRECISION_REDUCTION"))))
+                      "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
+                      "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
+                      "(CUBLASLT_MATMUL_DESC_.*)|(CUBLASLT_MATRIX_TRANSFORM_"
+                      "DESC_.*)"))))
           .bind("BLASNamedValueConstants"),
       this);
 }
@@ -4349,7 +4360,20 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasDsyr2k_v2_64", "cublasCsyr2k_v2_64", "cublasZsyr2k_v2_64",
         "cublasCher2k_v2_64", "cublasZher2k_v2_64", "cublasSgeam_64",
         "cublasDgeam_64", "cublasCgeam_64", "cublasZgeam_64", "cublasSdgmm_64",
-        "cublasDdgmm_64", "cublasCdgmm_64", "cublasZdgmm_64");
+        "cublasDdgmm_64", "cublasCdgmm_64", "cublasZdgmm_64",
+        /*cublasLt*/
+        "cublasLtCreate", "cublasLtDestroy", "cublasLtMatmulDescCreate",
+        "cublasLtMatmulDescDestroy", "cublasLtMatmulDescSetAttribute",
+        "cublasLtMatmulDescGetAttribute", "cublasLtMatrixLayoutCreate",
+        "cublasLtMatrixLayoutDestroy", "cublasLtMatrixLayoutGetAttribute",
+        "cublasLtMatrixLayoutSetAttribute", "cublasLtMatmul",
+        "cublasLtMatmulPreferenceCreate", "cublasLtMatmulPreferenceDestroy",
+        "cublasLtMatmulPreferenceSetAttribute",
+        "cublasLtMatmulPreferenceGetAttribute",
+        "cublasLtMatmulAlgoGetHeuristic", "cublasLtMatrixTransformDescCreate",
+        "cublasLtMatrixTransformDescDestroy",
+        "cublasLtMatrixTransformDescSetAttribute",
+        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -6219,7 +6243,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
         "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
-        "cudaProfilerStop", "__trap");
+        "cudaProfilerStop", "__trap", "cuCtxEnablePeerAccess");
   };
 
   MF.addMatcher(
@@ -15078,8 +15102,36 @@ void AssertRule::registerMatcher(MatchFinder &MF) {
 }
 void AssertRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  // The std assert is a macro, it will expand to __assert_fail.
+  // But we should not touch the std assert.
+  auto SpellingLoc =
+      DpctGlobalInfo::getSourceManager().getSpellingLoc(CE->getBeginLoc());
+  if (DpctGlobalInfo::isInAnalysisScope(SpellingLoc)) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+REGISTER_RULE(AssertRule, PassKind::PK_Migration)
+
+void GraphRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
+                      "cudaGraphExecDestroy");
+  };
+  MF.addMatcher(
+      callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
+      this);
+}
+
+void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  if (!CE) {
+    return;
+  }
   ExprAnalysis EA(CE);
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
 }
-REGISTER_RULE(AssertRule, PassKind::PK_Migration)
+
+REGISTER_RULE(GraphRule, PassKind::PK_Migration)
