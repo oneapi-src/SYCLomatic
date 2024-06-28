@@ -2882,9 +2882,16 @@ void VectorTypeOperatorRule::registerMatcher(MatchFinder &MF) {
                 this);
 
   // Matches call of user overloaded operator
-  MF.addMatcher(cxxOperatorCallExpr(callee(vectorTypeOverLoadedOperator()))
-                    .bind("callOverloadedOperator"),
+  MF.addMatcher(cxxOperatorCallExpr(callee(vectorTypeOverLoadedOperator()),
+                                    hasAncestor(vectorTypeOverLoadedOperator()))
+                    .bind("callOverloadedOperatorInOverloadedOperator"),
                 this);
+
+  MF.addMatcher(
+      cxxOperatorCallExpr(callee(vectorTypeOverLoadedOperator()),
+                          unless(hasAncestor(vectorTypeOverLoadedOperator())))
+          .bind("callOverloadedOperatorNotInOverloadedOperator"),
+      this);
 }
 
 const char VectorTypeOperatorRule::NamespaceName[] =
@@ -2966,10 +2973,15 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
 }
 
 void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
-    const MatchFinder::MatchResult &Result, const CXXOperatorCallExpr *CE) {
+    const MatchFinder::MatchResult &Result, const CXXOperatorCallExpr *CE,
+    bool InOverloadedOperator) {
   if (!CE)
     return;
-
+  if (!InOverloadedOperator &&
+      (DpctGlobalInfo::findAncestor<FunctionTemplateDecl>(CE) ||
+       DpctGlobalInfo::findAncestor<ClassTemplateDecl>(CE))) {
+    return;
+  }
   // Explicitly call user overloaded operator
   //
   // For non-assignment operator:
@@ -3003,8 +3015,17 @@ void VectorTypeOperatorRule::runRule(const MatchFinder::MatchResult &Result) {
       Result, getNodeAsType<FunctionDecl>(Result, "overloadedOperatorDecl"));
 
   // Explicitly call user overloaded operator
-  MigrateOverloadedOperatorCall(Result, getNodeAsType<CXXOperatorCallExpr>(
-                                            Result, "callOverloadedOperator"));
+  MigrateOverloadedOperatorCall(
+      Result,
+      getNodeAsType<CXXOperatorCallExpr>(
+          Result, "callOverloadedOperatorInOverloadedOperator"),
+      true);
+
+  MigrateOverloadedOperatorCall(
+      Result,
+      getNodeAsType<CXXOperatorCallExpr>(
+          Result, "callOverloadedOperatorNotInOverloadedOperator"),
+      false);
 }
 
 REGISTER_RULE(VectorTypeOperatorRule, PassKind::PK_Migration)
