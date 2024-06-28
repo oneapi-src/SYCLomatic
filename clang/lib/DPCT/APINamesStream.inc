@@ -47,7 +47,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("cudaStreamEndCapture",
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::command_graph_end_recording",
-                            ARG(0), DEREF(1))),
+                            ARG(0), ARG(1))),
     UNSUPPORT_FACTORY_ENTRY("cudaStreamEndCapture",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaStreamEndCapture"),

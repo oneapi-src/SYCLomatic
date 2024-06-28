@@ -15,9 +15,9 @@ int main() {
   cudaStreamCreate(&stream);
 
   // CHECK: dpct::experimental::command_graph_begin_recording(stream);
-  // CHECK-NEXT: dpct::experimental::command_graph_end_recording(stream, graph);
-  // CHECK-NEXT: dpct::experimental::command_graph_end_recording(stream, *graph2);
-  // CHECK-NEXT: dpct::experimental::command_graph_end_recording(stream, **graph3);
+  // CHECK-NEXT: dpct::experimental::command_graph_end_recording(stream, &graph);
+  // CHECK-NEXT: dpct::experimental::command_graph_end_recording(stream, graph2);
+  // CHECK-NEXT: dpct::experimental::command_graph_end_recording(stream, *graph3);
   cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
   cudaStreamEndCapture(stream, &graph);
   cudaStreamEndCapture(stream, graph2);

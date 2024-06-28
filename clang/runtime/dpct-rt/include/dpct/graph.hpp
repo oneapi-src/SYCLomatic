@@ -48,14 +48,14 @@ public:
   }
 
   bool end_recording(sycl::queue *queue_ptr,
-                     dpct::experimental::command_graph_ptr &graph) {
+                     dpct::experimental::command_graph_ptr *graph) {
     auto it = queue_graph_map.find(queue_ptr);
     if (it == queue_graph_map.end()) {
       return false;
     }
-    graph = it->second;
+    *graph = it->second;
     queue_graph_map.erase(it);
-    return graph->end_recording();
+    return (*graph)->end_recording();
   }
 
 private:
@@ -69,7 +69,7 @@ static inline bool command_graph_begin_recording(sycl::queue *queue_ptr) {
 
 static inline bool
 command_graph_end_recording(sycl::queue *queue_ptr,
-                            dpct::experimental::command_graph_ptr &graph) {
+                            dpct::experimental::command_graph_ptr *graph) {
   return detail::graph_mgr::instance().end_recording(queue_ptr, graph);
 }
 
