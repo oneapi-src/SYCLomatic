@@ -37,12 +37,16 @@ public:
   }
 
   bool begin_recording(sycl::queue *queue_ptr) {
+    if (queue_graph_map.find(queue_ptr) != queue_graph_map.end()) {
+      return false;
+    }
     auto graph = new sycl::ext::oneapi::experimental::command_graph<
         sycl::ext::oneapi::experimental::graph_state::modifiable>(
         queue_ptr->get_context(), queue_ptr->get_device());
     auto result = queue_graph_map.insert({queue_ptr, graph});
     if (!result.second) {
       return false;
+      delete graph;
     }
     return graph->begin_recording(*queue_ptr);
   }
