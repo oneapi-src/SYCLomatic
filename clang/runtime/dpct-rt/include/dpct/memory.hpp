@@ -508,6 +508,20 @@ public:
   }
 };
 
+static sycl::event dpct_memcpy(sycl::queue &q, void *to_ptr, unsigned to_dev_id,
+                               const void *from_ptr, unsigned from_dev_id,
+                               size_t size) {
+  // Now we need not use device number.
+  std::vector<sycl::event> event_list;
+  host_buffer buf(size, q, event_list);
+  auto copy_events = dpct_memcpy(q, buf.get_ptr(), from_ptr, size,
+                                 memcpy_direction::device_to_host);
+  event_list.push_back(dpct::detail::dpct_memcpy(
+      q, to_ptr, buf.get_ptr(), size, memcpy_direction::host_to_device,
+      {copy_events}));
+  return event_list[0];
+}
+
 /// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
 /// and \p from_range to another specified by \p to_ptr and \p to_range.
 static inline std::vector<sycl::event>
@@ -952,6 +966,24 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
   detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction).wait();
 }
 
+/// Synchronously copies \p size bytes from the address specified by \p from_ptr
+/// on device specified by \p from_dev_id to the address specified by \p to_ptr
+/// on device specified by \p to_dev_id. The function will return after the copy
+/// is completed.
+///
+/// \param to_ptr Pointer to destination memory address.
+/// \param to_dev_id Destination device ID.
+/// \param from_ptr Pointer to source memory address.
+/// \param from_dev_id Source device ID.
+/// \param size Number of bytes to be copied.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static void dpct_memcpy(void *to_ptr, unsigned to_dev_id, const void *from_ptr,
+                        unsigned from_dev_id, size_t size,
+                        sycl::queue &q = get_default_queue()) {
+  detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size).wait();
+}
+
 /// Asynchronously copies \p size bytes from the address specified by \p
 /// from_ptr to the address specified by \p to_ptr. The value of \p direction is
 /// used to set the copy direction, it can be \a host_to_host, \a
@@ -968,6 +1000,25 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               memcpy_direction direction = automatic,
                               sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction);
+}
+
+/// Asynchronously copies \p size bytes from the address specified by \p
+/// from_ptr on device specified by \p from_dev_id to the address specified by
+/// \p to_ptr on device specified by \p to_dev_id. The return of the function
+/// does NOT guarantee the copy is completed.
+///
+/// \param to_ptr Pointer to destination memory address.
+/// \param to_dev_id Destination device ID.
+/// \param from_ptr Pointer to source memory address.
+/// \param from_dev_id Source device ID.
+/// \param size Number of bytes to be copied.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static void async_dpct_memcpy(void *to_ptr, unsigned to_dev_id,
+                              const void *from_ptr, unsigned from_dev_id,
+                              size_t size,
+                              sycl::queue &q = get_default_queue()) {
+  detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size);
 }
 
 /// Synchronously copies 2D matrix specified by \p x and \p y from the address

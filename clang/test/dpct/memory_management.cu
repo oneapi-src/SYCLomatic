@@ -124,12 +124,12 @@ void fooo() {
   // CHECK: dpct::async_dpct_memcpy(parms, *stream);
   cudaMemcpy3DAsync(&parms, stream);
 
-  // CHECK: dpct::dpct_memcpy(d_B, d_A, size, dpct::device_to_device);
+  // CHECK: dpct::dpct_memcpy(d_B, id1, d_A, id2, size);
   cudaMemcpyPeer(d_B, id1, d_A, id2, size);
   // CHECK: /*
   // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cudaMemcpyPeerAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::async_dpct_memcpy(d_B, d_A, size, dpct::device_to_device, *stream);
+  // CHECK-NEXT: dpct::async_dpct_memcpy(d_B, id1, d_A, id2, size, *stream);
   cudaMemcpyPeerAsync(d_B, id1, d_A, id2, size, stream);
 
   // CHECK: dpct::async_dpct_memcpy((char *)(constData.get_ptr()) + 1, h_A, size, dpct::host_to_device);

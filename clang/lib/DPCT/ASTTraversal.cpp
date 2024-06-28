@@ -10380,11 +10380,6 @@ void MemoryMigrationRule::memcpyMigration(
     }
   } else if (!NameRef.compare("cudaMemcpyPeer") ||
              !NameRef.compare("cuMemcpyPeer")) {
-    emplaceTransformation(removeArg(C, 1, *Result.SourceManager));
-    emplaceTransformation(removeArg(C, 3, *Result.SourceManager));
-    emplaceTransformation(
-        new InsertAfterStmt(C->getArg(4), ", " + MapNames::getDpctNamespace() +
-                                              "device_to_device"));
     handleAsync(C, 5, Result);
   }
 
