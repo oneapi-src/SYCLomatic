@@ -491,6 +491,7 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
+  int CodeCount = 0;
   bool CodeElementExist = false;
   for (const auto &Element : Pattern) {
     if (std::holds_alternative<CodeElement>(Element)) {
@@ -542,7 +543,8 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         }
 
         if (isIdentifiedChar(Input[Index - PatternSize]) &&
-            Input[Index - PatternSize + 1] != '.') {
+            Input[Index - PatternSize + 1] != '.' &&
+            Input[Index - PatternSize + 1] != ')') {
           return {};
         }
       }
@@ -567,6 +569,14 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
 
     if (std::holds_alternative<CodeElement>(Element)) {
       const auto &Code = std::get<CodeElement>(Element);
+
+      CodeCount++;
+      if (SrcFileType == SourceFileType::SFT_CMakeScript && CodeCount == 1 &&
+          Code.PrefixLength > 1 && Index - Code.PrefixLength - 1 > 0 &&
+          isIdentifiedChar(Input[Index - Code.PrefixLength - 1])) {
+        return {};
+      }
+
       MatchPattern Suffix(Pattern.begin() + PatternIndex + 1,
                           Pattern.begin() + PatternIndex + 1 +
                               Code.SuffixLength);
@@ -604,7 +614,6 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
-  int CodeCount = 0;
   while (PatternIndex < PatternSize && Index < Size) {
 
     if (SrcFileType == SourceFileType::SFT_CMakeScript) {
@@ -640,14 +649,6 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
 
     if (std::holds_alternative<CodeElement>(Element)) {
       const auto &Code = std::get<CodeElement>(Element);
-
-      CodeCount++;
-      if (SrcFileType == SourceFileType::SFT_CMakeScript && CodeCount == 1 &&
-          Code.PrefixLength > 1 && Index - Code.PrefixLength - 1 > 0 &&
-          isIdentifiedChar(Input[Index - Code.PrefixLength - 1])) {
-        return {};
-      }
-
       MatchPattern Suffix(Pattern.begin() + PatternIndex + 1,
                           Pattern.begin() + PatternIndex + 1 +
                               Code.SuffixLength);

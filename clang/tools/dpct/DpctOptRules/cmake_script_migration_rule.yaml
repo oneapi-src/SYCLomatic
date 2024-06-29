@@ -686,10 +686,13 @@
   CmakeSyntax: cuda_add_executable
   In: cuda_add_executable(${value})
   Out: add_executable(${value})
-  Subrules:
-    value:
-      In: OPTIONS -arch=${arg}
-      Out: ""
+
+- Rule: rule_add_executable
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_executable
+  In: add_executable(${value} OPTIONS {options})
+  Out: add_executable(${value})
 
 - Rule: rule_add_executable_opts
   Kind: CMakeRule
@@ -971,6 +974,7 @@
 - Rule: rule_cuda_add_library
   Kind: CMakeRule
   Priority: Fallback
+  MatchMode: Full
   CmakeSyntax: cuda_add_library
   In: cuda_add_library(${arg})
   Out: add_library(${arg})

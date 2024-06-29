@@ -1,5 +1,5 @@
-add_executable(cudasift ${cuda_sources} ${sources} )
-add_executable(cudasift ${cuda_sources} ${sources} )
+add_executable(cudasift ${cuda_sources} ${sources})
+add_executable(cudasift ${cuda_sources} ${sources})
 
 add_executable(cudasift src/a.cpp src/main.cpp src/utils.cpp src/b.cpp)
 
