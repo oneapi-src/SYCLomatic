@@ -535,6 +535,12 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
 
       std::string ElementContents = Input.substr(Index, Next - Index);
       if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+        if (Code.Name == "empty" && !ElementContents.empty() &&
+            ElementContents.find_first_not_of(' ') != std::string::npos) {
+          // For reversed variable ${empty}, it should be empty string or string
+          // only including spaces.
+          return {};
+        }
         updateExtentionName(Input, Next, Result.Bindings);
       }
 
@@ -607,6 +613,12 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
       std::string ElementContents = Input.substr(Index, Next - Index);
 
       if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+        if (Code.Name == "empty" && !ElementContents.empty() &&
+            ElementContents.find_first_not_of(' ') != std::string::npos) {
+          // For reversed variable ${empty}, it should be empty string or string
+          // only including spaces.
+          return {};
+        }
         updateCplusplusStandard(Result.Bindings);
       }
 
