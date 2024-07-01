@@ -743,24 +743,24 @@ public:
   /// Update the device stack for the current thread id
   void push_device(unsigned int id) {
     auto tid = get_tid();
-    auto it = _thread2dev_map.find(id);
+    auto it = _thread2dev_map.find(tid);
     if (it == _thread2dev_map.end())
       _thread2dev_map[tid] = std::stack<unsigned int>();
     _thread2dev_map[tid].push(id);
   }
 
   /// Remove the device from top of the stack if it exist
-  unsigned int pop_device(unsigned int id) {
+  unsigned int pop_device() {
     auto tid = get_tid();
-    auto it = _thread2dev_map.find(id);
+    auto it = _thread2dev_map.find(tid);
     if (it == _thread2dev_map.end())
-      return id;
+      return -1;
 
-    if (it->second.top() != id)
-      // TODO: Raise exception for incorrect API usage?
-      return id;
+    if (it->second.empty())
+      return -1;
 
-    _thread2dev_map.pop();
+    auto id = it->second.top();
+    it->second.pop();
 
     return id;
   }
@@ -968,8 +968,7 @@ static inline unsigned int push_device_for_curr_thread(unsigned int id) {
 }
 
 static inline unsigned int pop_device_for_curr_thread(void) {
-  dev_mgr::instance().pop_device(id);
-  return id;
+  return dev_mgr::instance().pop_device();
 }
 
 } // namespace dpct
