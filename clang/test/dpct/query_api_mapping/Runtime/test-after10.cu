@@ -13,7 +13,7 @@
 // CUDASTREAMENDCAPTURE: CUDA API:
 // CUDASTREAMENDCAPTURE-NEXT:   cudaStreamEndCapture(s /*cudaStream_t*/, pg /*cudaGraph_t **/);
 // CUDASTREAMENDCAPTURE-NEXT: Is migrated to (with the option --use-experimental-features=graph):
-// CUDASTREAMENDCAPTURE-NEXT: dpct::experimental::command_graph_end_recording(s, *pg);
+// CUDASTREAMENDCAPTURE-NEXT: dpct::experimental::command_graph_end_recording(s, pg);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamIsCapturing | FileCheck %s -check-prefix=CUDASTREAMISCAPTURING
 // CUDASTREAMISCAPTURING: CUDA API:
