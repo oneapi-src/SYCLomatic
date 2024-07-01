@@ -35,7 +35,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
     CALL_FACTORY_ENTRY("cudaStreamBeginCapture",
                        CALL(MapNames::getDpctNamespace() +
-                                "experimental::command_graph_begin_recording",
+                                "experimental::begin_recording",
                             ARG(0))),
     UNSUPPORT_FACTORY_ENTRY("cudaStreamBeginCapture",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
@@ -46,7 +46,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
     CALL_FACTORY_ENTRY("cudaStreamEndCapture",
                        CALL(MapNames::getDpctNamespace() +
-                                "experimental::command_graph_end_recording",
+                                "experimental::end_recording",
                             ARG(0), ARG(1))),
     UNSUPPORT_FACTORY_ENTRY("cudaStreamEndCapture",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,

@@ -71,7 +71,7 @@ private:
 /// Begins recording commands into a command graph for a specific SYCL queue.
 /// \param [in] queue_ptr A pointer to the SYCL queue on which the commands will be recorded.
 /// \returns `true` if the recording is successfully started.
-static inline bool command_graph_begin_recording(sycl::queue *queue_ptr) {
+static inline bool begin_recording(sycl::queue *queue_ptr) {
   return detail::graph_mgr::instance().begin_recording(queue_ptr);
 }
 
@@ -79,9 +79,8 @@ static inline bool command_graph_begin_recording(sycl::queue *queue_ptr) {
 /// \param [in] queue_ptr A pointer to the SYCL queue on which the commands were recorded.
 /// \param [out] graph A pointer to a command_graph_ptr pointer where the command graph will be assigned.
 /// \returns `true` if the recording is successfully ended and the graph is assigned.
-static inline bool
-command_graph_end_recording(sycl::queue *queue_ptr,
-                            dpct::experimental::command_graph_ptr *graph) {
+static inline bool end_recording(sycl::queue *queue_ptr,
+                                 dpct::experimental::command_graph_ptr *graph) {
   return detail::graph_mgr::instance().end_recording(queue_ptr, graph);
 }
 
