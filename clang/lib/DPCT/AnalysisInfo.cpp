@@ -1446,19 +1446,21 @@ DpctGlobalInfo::getAbsolutePath(FileID ID) {
 }
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
-  llvm::outs() << "HHH111 \n";
+  try {
   auto FileName = File.getName();
-  llvm::outs() << "HHH122" << FileName <<"\n";
 
   llvm::SmallString<512> FilePathAbs(FileName);
-  llvm::outs() << "HHH33 " << FilePathAbs.c_str() << "\n";
 
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
-  llvm::outs() << "HHH44 " << FilePathAbs.c_str() << "\n";
 
   auto unifiedPPP = clang::tooling::UnifiedPath(FilePathAbs);
-  llvm::outs() << "HHH55 \n";
   return unifiedPPP;
+  } catch (const std::runtime_error& err) {
+    llvm::outs() <<  "Name " << File.getName() << "\n";
+    llvm::SmallString<512> FilePathAbs(File.getName());
+    SM->getFileManager().makeAbsolutePath(FilePathAbs);
+    llvm::outs() <<  "Name " <<FilePathAbs << "\n";
+  }
   }
 std::pair<clang::tooling::UnifiedPath, unsigned>
 DpctGlobalInfo::getLocInfo(SourceLocation Loc, bool *IsInvalid) {
