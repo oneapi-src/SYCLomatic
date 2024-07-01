@@ -686,10 +686,6 @@
   CmakeSyntax: cuda_add_executable
   In: cuda_add_executable(${value})
   Out: add_executable(${value})
-  Subrules:
-    value:
-      In: OPTIONS -arch=${arg}
-      Out: ""
 
 - Rule: rule_add_executable_opts
   Kind: CMakeRule
