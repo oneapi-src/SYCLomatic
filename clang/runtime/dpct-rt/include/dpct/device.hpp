@@ -9,6 +9,7 @@
 #ifndef __DPCT_DEVICE_HPP__
 #define __DPCT_DEVICE_HPP__
 
+#include <stack>
 #include <sycl/sycl.hpp>
 #include <algorithm>
 #include <array>
@@ -652,7 +653,7 @@ public:
    std::lock_guard<std::recursive_mutex> lock(m_mutex);
    auto it=_thread2dev_map.find(get_tid());
    if(it != _thread2dev_map.end())
-      return it->second;
+      return it->second.top();
     return DEFAULT_DEVICE_ID;
   }
 
@@ -662,7 +663,14 @@ public:
   void select_device(unsigned int id) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
-    _thread2dev_map[get_tid()] = id;
+    auto curr_tid = get_tid();
+
+    // make sure the device stack exist
+    auto it = _thread2dev_map.find(curr_tid);
+    if (it == _thread2dev_map.end())
+      _thread2dev_map[curr_tid] = std::stack<unsigned int>();
+
+    _thread2dev_map[curr_tid].push(id);
   }
   unsigned int device_count() { return _devs.size(); }
 
@@ -732,6 +740,31 @@ public:
     select_device(selected_device_id);
   }
 
+  /// Update the device stack for the current thread id
+  void push_device(unsigned int id) {
+    auto tid = get_tid();
+    auto it = _thread2dev_map.find(id);
+    if (it == _thread2dev_map.end())
+      _thread2dev_map[tid] = std::stack<unsigned int>();
+    _thread2dev_map[tid].push(id);
+  }
+
+  /// Remove the device from top of the stack if it exist
+  unsigned int pop_device(unsigned int id) {
+    auto tid = get_tid();
+    auto it = _thread2dev_map.find(id);
+    if (it == _thread2dev_map.end())
+      return id;
+
+    if (it->second.top() != id)
+      // TODO: Raise exception for incorrect API usage?
+      return id;
+
+    _thread2dev_map.pop();
+
+    return id;
+  }
+
   /// Returns the instance of device manager singleton.
   static dev_mgr &instance() {
     static dev_mgr d_m;
@@ -778,7 +811,7 @@ private:
   /// for the current thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
   /// thread-id to device-id map.
-  std::map<unsigned int, unsigned int> _thread2dev_map;
+  std::map<unsigned int, std::stack<unsigned int> _thread2dev_map;
   int _cpu_device = -1;
 };
 
@@ -928,6 +961,17 @@ inline void sync_barrier(sycl::event *event_ptr,
   *event_ptr = queue->single_task([=]() {});
 #endif
 }
+
+static inline unsigned int push_device_for_curr_thread(unsigned int id) {
+  dev_mgr::instance().push_device(id);
+  return id;
+}
+
+static inline unsigned int pop_device_for_curr_thread(void) {
+  dev_mgr::instance().pop_device(id);
+  return id;
+}
+
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__
