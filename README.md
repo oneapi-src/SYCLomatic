@@ -27,6 +27,8 @@ in daily releases. None of the branches in the project are stable or rigorously
 tested for production quality control, so the quality of these releases is
 expected to be similar to the daily releases.
 
+SYCLomatic supports migrating programs implemented with CUDA versions 8.0, 9.x, 10.x, 11.x, 12.0-12.4. The list of supported languages and versions may be extended in the future.
+
 ## Build from source code
 ### Prerequisites
 
@@ -170,7 +172,6 @@ The end to end test executes the migration, build and run steps. Follow instruct
 
 * SYCL\* 2020 support work is in progress.
 * 32-bit host/target is not supported.
-* SYCLomatic supports migrating programs implemented with CUDA versions 8.0, 9.x, 10.x, 11.x, 12.0-12.4. The list of supported languages and versions may be extended in the future.
 
 
 ## Useful Links
