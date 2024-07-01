@@ -286,6 +286,8 @@ DEF_WARNING(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"%0\" is not dev
 DEF_COMMENT(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"{0}\" is not device copyable for {1}. It is used in the SYCL kernel, please rewrite the code.")
 DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"%0\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
 DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
+DEF_WARNING(CALLED_EXPLICIT_DELETE, 1130, LOW_LEVEL, "The '%0' has been explicitly marked deleted. You may need to adjust the code.")
+DEF_COMMENT(CALLED_EXPLICIT_DELETE, 1130, LOW_LEVEL, "The '{0}' has been explicitly marked deleted. You may need to adjust the code.")
 // clang-format on
 
 #undef DEF_COMMENT
