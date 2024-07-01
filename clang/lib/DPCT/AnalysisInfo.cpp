@@ -1446,25 +1446,18 @@ DpctGlobalInfo::getAbsolutePath(FileID ID) {
 }
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
-  try {
   auto FileName = File.getName();
 
   llvm::SmallString<512> FilePathAbs(FileName);
 
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
   auto unifiedPPP = clang::tooling::UnifiedPath(FilePathAbs);
+return unifiedPPP;
 
  if (auto RealPath = File.getFileEntry().tryGetRealPathName();
       !RealPath.empty())
     return clang::tooling::UnifiedPath(RealPath);
-  return unifiedPPP;
-  } catch (const std::runtime_error& err) {
-    llvm::outs() <<  "Name " << File.getName() << "\n";
-    llvm::SmallString<512> FilePathAbs(File.getName());
-    SM->getFileManager().makeAbsolutePath(FilePathAbs);
-    llvm::outs() <<  "Name " <<FilePathAbs << "\n";
-  }
-  }
+}
 std::pair<clang::tooling::UnifiedPath, unsigned>
 DpctGlobalInfo::getLocInfo(SourceLocation Loc, bool *IsInvalid) {
   if (SM->isMacroArgExpansion(Loc)) {
