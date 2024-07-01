@@ -1452,10 +1452,11 @@ DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
   llvm::SmallString<512> FilePathAbs(FileName);
 
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
+  auto unifiedPPP = clang::tooling::UnifiedPath(FilePathAbs);
+
  if (auto RealPath = File.getFileEntry().tryGetRealPathName();
       !RealPath.empty())
     return clang::tooling::UnifiedPath(RealPath);
-  auto unifiedPPP = clang::tooling::UnifiedPath(FilePathAbs);
   return unifiedPPP;
   } catch (const std::runtime_error& err) {
     llvm::outs() <<  "Name " << File.getName() << "\n";
