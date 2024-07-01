@@ -292,6 +292,8 @@ enum class math_mode : int {
   mm_tf32,
 };
 
+using ::dpct::compute_type;
+
 class descriptor {
 public:
   void set_queue(queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
