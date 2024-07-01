@@ -4,18 +4,23 @@
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
+#include <cassert>
 
 __global__ void kernel_assert(int *d_ptr, int length) {
   // CHECK: assert(0);
   // CHECK-NEXT: assert(0);
+  // CHECK-NEXT: assert(d_ptr);
   __assert_fail("", "", 1, "");  
   __assertfail("", "", 1, "", sizeof(char));
+  assert(d_ptr);
 }
 
 __device__ void device_assert(int *d_ptr, int length) {
   // CHECK: assert(0);
   // CHECK-NEXT: assert(0);
+  // CHECK-NEXT: assert(d_ptr);
   __assert_fail("", "", 1, "");  
   __assertfail("", "", 1, "", sizeof(char));
+  assert(d_ptr);
 }
 
