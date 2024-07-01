@@ -189,6 +189,8 @@ private:
       CASE(epilogue_aux_pointer)
       CASE(epilogue_aux_ld)
       CASE(epilogue_aux_data_type)
+    default:
+      break;
     }
 #undef CASE
   }
@@ -204,11 +206,11 @@ private:
   void *_b_scale_pointer = nullptr;
   void *_d_scale_pointer = nullptr;
   void *_amax_d_pointer = nullptr;
-  library_data_t _bias_data_type = -1;
+  library_data_t _bias_data_type;
   void *_bias_pointer = nullptr;
   void *_epilogue_aux_pointer = nullptr;
   int64_t _epilogue_aux_ld = 0;
-  library_data_t _epilogue_aux_data_type = -1;
+  library_data_t _epilogue_aux_data_type;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
