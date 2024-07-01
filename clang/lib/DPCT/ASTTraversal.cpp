@@ -14423,7 +14423,8 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
         "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
-        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit");
+        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit",
+        "cuCtxPushCurrent_v2", "cuCtxPopCurrent_v2");
   };
 
   MF.addMatcher(
