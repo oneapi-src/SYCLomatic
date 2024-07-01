@@ -811,7 +811,7 @@ private:
   /// for the current thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
   /// thread-id to device-id map.
-  std::map<unsigned int, std::stack<unsigned int> _thread2dev_map;
+  std::map<unsigned int, std::stack<unsigned int>> _thread2dev_map;
   int _cpu_device = -1;
 };
 
