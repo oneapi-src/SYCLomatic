@@ -46,20 +46,23 @@ template <sycl::access::address_space addressSpace =
           sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
           sycl::memory_scope memoryScope = sycl::memory_scope::device>
 inline sycl::half2 atomic_fetch_add(sycl::half2 *addr, sycl::half2 operand) {
-  auto ptr = reinterpret_cast<unsigned *>(addr);
   auto atm = sycl::atomic_ref<unsigned, memoryOrder, memoryScope, addressSpace>(
-      ptr[0]);
-  unsigned old;
+      *reinterpret_cast<unsigned *>(addr));
+
+  union bit_32_storage {
+    unsigned i;
+    sycl::half2 h;
+  };
+  bit_32_storage output{0};
 
   while (true) {
-    old = atm.load();
-    if (atm.compare_exchange_strong(
-            old, (sycl::vec<unsigned, 1>(old).as<sycl::half2>() + operand)
-                     .as<sycl::vec<unsigned, 1>>()[0]))
+    bit_32_storage old{atm.load()};
+    output.h = old.h + operand;
+    if (atm.compare_exchange_strong(old.i, output.i))
       break;
   }
 
-  return sycl::vec<unsigned, 1>(old).as<sycl::half2>();
+  return output.h;
 }
 
 /// Atomically add the value operand to the value at the addr and assign the

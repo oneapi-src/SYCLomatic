@@ -1551,7 +1551,7 @@ void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
   };
 
   // Support all integer type, float, double and half2
-  // Type half are not supported
+  // Type half is not supported
   auto supportedTypes = [&]() {
     return anyOf(hasType(pointsTo(isInteger())),
                  hasType(pointsTo(asString("float"))),
@@ -1582,7 +1582,7 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
     return;
 
   std::ostringstream OSS;
-  // Atomic functions with __half is not supported.
+  // Atomic functions with __half are not supported.
   if (!CE->getDirectCallee())
     return;
   OSS << "half version of "
