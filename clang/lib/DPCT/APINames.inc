@@ -102,7 +102,7 @@ ENTRY(cudaStreamGetCaptureInfo_v3, cudaStreamGetCaptureInfo_v3, false, NO_FLAG, 
 ENTRY(cudaStreamGetFlags, cudaStreamGetFlags, true, NO_FLAG, P4, "DPCT1014")
 ENTRY(cudaStreamGetId, cudaStreamGetId, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamGetPriority, cudaStreamGetPriority, true, NO_FLAG, P4, "DPCT1014")
-ENTRY(cudaStreamIsCapturing, cudaStreamIsCapturing, true, API_CALL_REMOVED, P4, "DPCT1026/DPCT1027")
+ENTRY(cudaStreamIsCapturing, cudaStreamIsCapturing, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cudaStreamQuery, cudaStreamQuery, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamSetAttribute, cudaStreamSetAttribute, true, NO_FLAG, P7, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamSynchronize, cudaStreamSynchronize, true, NO_FLAG, P0, "Successful")
