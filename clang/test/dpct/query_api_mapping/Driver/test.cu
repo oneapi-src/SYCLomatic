@@ -86,6 +86,18 @@
 // CUCTXGETDEVICE-NEXT: Is migrated to:
 // CUCTXGETDEVICE-NEXT:   *pd = dpct::get_current_device_id();
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxPushCurrent | FileCheck %s -check-prefix=CUCTXPUSHCURRENT
+// CUCTXPUSHCURRENT: CUDA API:
+// CUCTXPUSHCURRENT-NEXT:   cuCtxPushCurrent(c /*CUcontext*/);
+// CUCTXPUSHCURRENT-NEXT: Is migrated to:
+// CUCTXPUSHCURRENT-NEXT:   c = dpct::push_device_for_curr_thread();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxPopCurrent | FileCheck %s -check-prefix=CUCTXPOPCURRENT
+// CUCTXPOPCURRENT: CUDA API:
+// CUCTXPOPCURRENT-NEXT:   cuCtxPopCurrent(&c /*CUcontext **/);
+// CUCTXPOPCURRENT-NEXT: Is migrated to:
+// CUCTXPOPCURRENT-NEXT:   c = dpct::pop_device_for_curr_thread();
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxSetCacheConfig | FileCheck %s -check-prefix=CUCTXSETCACHECONFIG
 // CUCTXSETCACHECONFIG: CUDA API:
 // CUCTXSETCACHECONFIG-NEXT:   cuCtxSetCacheConfig(f /*CUfunc_cache*/);

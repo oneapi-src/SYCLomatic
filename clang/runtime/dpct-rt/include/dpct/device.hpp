@@ -650,9 +650,9 @@ public:
     return *_devs[id];
   }
   unsigned int current_device_id() const {
-   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-   auto it=_thread2dev_map.find(get_tid());
-   if(it != _thread2dev_map.end())
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    auto it=_thread2dev_map.find(get_tid());
+    if(it != _thread2dev_map.end())
       return it->second.top();
     return DEFAULT_DEVICE_ID;
   }
