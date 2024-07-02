@@ -10,7 +10,6 @@
 #define CALL_EXPR_REWRITER_H
 
 #include "Diagnostics.h"
-#include <type_traits>
 
 
 namespace clang {
