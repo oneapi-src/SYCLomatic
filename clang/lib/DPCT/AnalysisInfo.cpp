@@ -1455,7 +1455,7 @@ DpctGlobalInfo::getUnifiedPath(FileEntryRef File) {
     if (auto RealPath = File.getFileEntry().tryGetRealPathName();
         !RealPath.empty())
       return clang::tooling::UnifiedPath(RealPath);
-      return std::nullopt;
+    return std::nullopt;
   }
   return UnifiedFilePath;
 }
