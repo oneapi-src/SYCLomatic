@@ -598,6 +598,8 @@
 // CHECK-NEXT: cuCtxGetApiVersion
 // CHECK-NEXT: cuCtxGetCurrent
 // CHECK-NEXT: cuCtxGetDevice
+// CHECK-NEXT: cuCtxPopCurrent
+// CHECK-NEXT: cuCtxPushCurrent
 // CHECK-NEXT: cuCtxSetCacheConfig
 // CHECK-NEXT: cuCtxSetCurrent
 // CHECK-NEXT: cuCtxSynchronize
