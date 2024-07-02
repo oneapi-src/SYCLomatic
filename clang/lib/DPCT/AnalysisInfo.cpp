@@ -1459,8 +1459,10 @@ DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
     llvm::sys::fs::current_path(TempPath);
     llvm::outs() <<  "PWD " << TempPath.c_str() << "\n";
     if (auto RealPath = File.getFileEntry().tryGetRealPathName();
-        !RealPath.empty())
-      return clang::tooling::UnifiedPath(RealPath);
+        !RealPath.empty()) {
+        llvm::outs() << "Real path " << RealPath << "\n";
+        return clang::tooling::UnifiedPath(RealPath);
+        }
   }
   return unifiedPPP;
 }
