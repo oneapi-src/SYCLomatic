@@ -534,39 +534,42 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                              "not support epilogue currently.");
   }
 
-  if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
-    throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-                             "supports non-transposed matrix A currently.");
-  }
-  if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
-    throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-                             "supports transposed matrix B currently.");
-  }
+  //if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
+  //  throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
+  //                           "supports non-transposed matrix A currently.");
+  //}
+  //if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
+  //  throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
+  //                           "supports transposed matrix B currently.");
+  //}
 
-  if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
-        a_desc->_type == library_data_t::real_int8 &&
-        b_desc->_type == library_data_t::real_int8 &&
-        c_desc->_type == library_data_t::real_int32) &&
-      !(compute_desc->_scale_type == library_data_t::real_float &&
-        a_desc->_type == library_data_t::real_int8 &&
-        b_desc->_type == library_data_t::real_int8 &&
-        c_desc->_type == library_data_t::real_int8) &&
-      !(compute_desc->_scale_type == library_data_t::real_float &&
-        a_desc->_type == library_data_t::real_int8 &&
-        b_desc->_type == library_data_t::real_int8 &&
-        c_desc->_type == library_data_t::real_int32)) {
-    throw std::runtime_error(
-        "dpct::blas_gemm::experimental::matmul() only supports data type "
-        "combinataions:\n  scale_type==int32 && a_type==int8 && b_type==int8 "
-        "&& c_type==int32,\n  scale_type==float && a_type==int8 && "
-        "b_type==int8 && c_type==int8 or\n  scale_type==float && a_type==int8 "
-        "&& b_type==int8 && c_type==int32.");
-  }
+  //if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
+  //      a_desc->_type == library_data_t::real_int8 &&
+  //      b_desc->_type == library_data_t::real_int8 &&
+  //      c_desc->_type == library_data_t::real_int32) &&
+  //    !(compute_desc->_scale_type == library_data_t::real_float &&
+  //      a_desc->_type == library_data_t::real_int8 &&
+  //      b_desc->_type == library_data_t::real_int8 &&
+  //      c_desc->_type == library_data_t::real_int8) &&
+  //    !(compute_desc->_scale_type == library_data_t::real_float &&
+  //      a_desc->_type == library_data_t::real_int8 &&
+  //      b_desc->_type == library_data_t::real_int8 &&
+  //      c_desc->_type == library_data_t::real_int32)) {
+  //  throw std::runtime_error(
+  //      "dpct::blas_gemm::experimental::matmul() only supports data type "
+  //      "combinataions:\n  scale_type==int32 && a_type==int8 && b_type==int8 "
+  //      "&& c_type==int32,\n  scale_type==float && a_type==int8 && "
+  //      "b_type==int8 && c_type==int8 or\n  scale_type==float && a_type==int8 "
+  //      "&& b_type==int8 && c_type==int32.");
+  //}
 
   // For non-col_major matrix, convert it to col_major.
   const void *new_a = a;
   const void *new_b = b;
   void *new_d = d;
+  bool new_a_allocated = false;
+  bool new_b_allocated = false;
+  bool new_d_allocated = false;
   size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldd = d_desc->_ld;
   std::vector<sycl::event> transform_events;
   if (a_desc->_order != order_t::col) {
@@ -574,6 +577,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     if (a_desc->_type == library_data_t::real_int8) {
       new_a =
           dpct_malloc(sizeof(std::int8_t) * a_desc->_cols * new_lda, *q_ptr);
+      new_a_allocated = true;
       sycl::event e = detail::matrix_transform<std::int8_t>(
           q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
           (const std::int8_t *)a, new_lda, order_t::col, (std::int8_t *)new_a,
@@ -581,6 +585,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       transform_events.push_back(e);
     } else {
       new_a = dpct_malloc(sizeof(int) * a_desc->_cols * new_lda, *q_ptr);
+      new_a_allocated = true;
       sycl::event e = detail::matrix_transform<int>(
           q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
           (const int *)a, new_lda, order_t::col, (int *)new_a, {});
@@ -592,6 +597,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     if (b_desc->_type == library_data_t::real_int8) {
       new_b =
           dpct_malloc(sizeof(std::int8_t) * b_desc->_cols * new_ldb, *q_ptr);
+      new_b_allocated = true;
       sycl::event e = detail::matrix_transform<std::int8_t>(
           q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld, b_desc->_order,
           (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b,
@@ -599,6 +605,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       transform_events.push_back(e);
     } else {
       new_b = dpct_malloc(sizeof(int) * b_desc->_cols * new_ldb, *q_ptr);
+      new_b_allocated = true;
       sycl::event e = detail::matrix_transform<int>(
           q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld, b_desc->_order,
           (const int *)b, new_ldb, order_t::col, (int *)new_b, {});
@@ -610,16 +617,22 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     if (d_desc->_type == library_data_t::real_int8) {
       new_d =
           dpct_malloc(sizeof(std::int8_t) * d_desc->_cols * new_ldd, *q_ptr);
+      new_d_allocated = true;
     } else {
       new_d = dpct_malloc(sizeof(int) * d_desc->_cols * new_ldd, *q_ptr);
+      new_d_allocated = true;
     }
   }
 
   // start to call oneDNN matmul primitive
   // a,d are col_major, b is row_major
-  const size_t m = a_desc->_rows;
+  const size_t m = compute_desc->_trans_a == oneapi::mkl::transpose::nontrans
+                       ? a_desc->_rows
+                       : a_desc->_cols;
   const size_t n = d_desc->_cols;
-  const size_t k = b_desc->_cols;
+  const size_t k = compute_desc->_trans_b == oneapi::mkl::transpose::nontrans
+                       ? b_desc->_rows
+                       : b_desc->_cols;
   const ::dnnl::memory::dim M = m;
   const ::dnnl::memory::dim N = n;
   const ::dnnl::memory::dim K = k;
@@ -633,9 +646,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   ::dnnl::memory::dims dst_dims = {M, N};
 
   const ::dnnl::memory::dims src_strides =
-      ::dnnl::memory::dims{1, static_cast<long>(new_lda)};
+      compute_desc->_trans_a == oneapi::mkl::transpose::nontrans
+          ? ::dnnl::memory::dims{1, static_cast<long>(new_lda)}
+          : ::dnnl::memory::dims{static_cast<long>(new_lda), 1};
   const ::dnnl::memory::dims weights_strides =
-      ::dnnl::memory::dims{static_cast<long>(new_ldb), 1};
+      compute_desc->_trans_b == oneapi::mkl::transpose::nontrans
+          ? ::dnnl::memory::dims{1, static_cast<long>(new_ldb)}
+          : ::dnnl::memory::dims{static_cast<long>(new_ldb), 1};
   const ::dnnl::memory::dims dst_strides =
       ::dnnl::memory::dims{1, static_cast<long>(new_ldd)};
 
@@ -756,9 +773,12 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       delete dst_mem;
       if (!vector_alpha)
         delete scales_alpha;
-      dpct::detail::dpct_free((void *)new_a, *q_ptr);
-      dpct::detail::dpct_free((void *)new_b, *q_ptr);
-      dpct::detail::dpct_free((void *)new_d, *q_ptr);
+      if (new_a_allocated)
+        dpct::detail::dpct_free((void *)new_a, *q_ptr);
+      if (new_b_allocated)
+        dpct::detail::dpct_free((void *)new_b, *q_ptr);
+      if (new_d_allocated)
+        dpct::detail::dpct_free((void *)new_d, *q_ptr);
     });
   });
   return free_event;
