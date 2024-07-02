@@ -6780,8 +6780,8 @@ EventQueryTraversal::buildCallReplacement(const CallExpr *Call) {
   static std::string MemberName = "get_info<" + MapNames::getClNamespace() +
                                   "info::event::command_execution_status>";
   std::string ReplStr;
-  MemberCallPrinter<const Expr *, StringRef> Printer(Call->getArg(0), true,
-                                                     MemberName);
+  MemberCallPrinter<const Expr *, StringRef, false> Printer(Call->getArg(0),
+                                                            true, MemberName);
   llvm::raw_string_ostream OS(ReplStr);
   Printer.print(OS);
   return new ReplaceStmt(Call, std::move(OS.str()));
@@ -13466,7 +13466,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       std::shared_ptr<CallExprRewriter> Rewriter =
           std::make_shared<AssignableRewriter>(
               CE, std::make_shared<PrinterRewriter<MemberCallPrinter<
-                      const Expr *, RenameWithSuffix, StringRef>>>(
+                      const Expr *, RenameWithSuffix, false, StringRef>>>(
                       CE, Name, CE->getArg(0), true,
                       RenameWithSuffix("set", MethodName), Value));
       std::optional<std::string> Result = Rewriter->rewrite();
@@ -13824,8 +13824,8 @@ bool TextureRule::SettersMerger::applyResult() {
 
   std::string ReplacedText;
   llvm::raw_string_ostream OS(ReplacedText);
-  MemberCallPrinter<StringRef, StringRef, std::vector<std::string>> Printer(
-      D->getName(), IsArrow, "set", std::move(ArgsList));
+  MemberCallPrinter<StringRef, StringRef, false, std::vector<std::string>>
+      Printer(D->getName(), IsArrow, "set", std::move(ArgsList));
   Printer.print(OS);
 
   Inserter.success(OS.str());

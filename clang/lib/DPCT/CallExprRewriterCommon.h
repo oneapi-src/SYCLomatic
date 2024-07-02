@@ -370,33 +370,32 @@ inline std::function<std::string(const CallExpr *)> makeDeviceStr() {
   };
 }
 
-template <class BaseT, class... CallArgsT>
-using MemberCallPrinterCreator =
-    PrinterCreator<MemberCallPrinter<BaseT, StringRef, CallArgsT...>,
-                   std::function<BaseT(const CallExpr *)>, bool, std::string,
-                   std::function<CallArgsT(const CallExpr *)>...>;
+template <class BaseT, bool HasExplicitTemplateArg, class... CallArgsT>
+using MemberCallPrinterCreator = PrinterCreator<
+    MemberCallPrinter<BaseT, StringRef, HasExplicitTemplateArg, CallArgsT...>,
+    std::function<BaseT(const CallExpr *)>, bool, std::string,
+    std::function<CallArgsT(const CallExpr *)>...>;
 
-template <class BaseT, class... CallArgsT>
-inline std::function<
-    MemberCallPrinter<BaseT, StringRef, CallArgsT...>(const CallExpr *)>
+template <bool HasExplicitTemplateArg, class BaseT, class... CallArgsT>
+inline std::function<MemberCallPrinter<BaseT, StringRef, HasExplicitTemplateArg,
+                                       CallArgsT...>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow, std::string Member,
                       std::function<CallArgsT(const CallExpr *)>... Args) {
-  return MemberCallPrinterCreator<BaseT, CallArgsT...>(BaseFunc, IsArrow,
-                                                       Member, Args...);
+  return MemberCallPrinterCreator<BaseT, HasExplicitTemplateArg, CallArgsT...>(
+      BaseFunc, IsArrow, Member, Args...);
 }
 
-template <class BaseT, class MemberT>
+template <bool HasExplicitTemplateArg, class BaseT, class MemberT>
 inline std::function<
-    MemberCallPrinter<BaseT, MemberT>(const CallExpr *)>
+    MemberCallPrinter<BaseT, MemberT, HasExplicitTemplateArg>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow,
                       std::function<MemberT(const CallExpr *)> Member) {
-
-  return PrinterCreator<MemberCallPrinter<BaseT, MemberT>,
-    std::function<BaseT(const CallExpr *)>, bool,
-    std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow,
-                                              Member);
+  return PrinterCreator<
+      MemberCallPrinter<BaseT, MemberT, HasExplicitTemplateArg>,
+      std::function<BaseT(const CallExpr *)>, bool,
+      std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow, Member);
 }
 
 template <class... StmtT>
@@ -623,10 +622,10 @@ makeArgWithAddressSpaceCast(int ArgIdx) {
 }
 
 template <class BaseT, class MemberT>
-inline std::function<MemberExprPrinter<BaseT, MemberT>(const CallExpr *)>
+inline std::function<MemberExprPrinter<BaseT, MemberT, false>(const CallExpr *)>
 makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
                       std::function<MemberT(const CallExpr *)> Member) {
-  return PrinterCreator<MemberExprPrinter<BaseT, MemberT>,
+  return PrinterCreator<MemberExprPrinter<BaseT, MemberT, false>,
                         std::function<BaseT(const CallExpr *)>, bool,
                         std::function<MemberT(const CallExpr *)>>(Base, IsArrow,
                                                                   Member);
@@ -1144,7 +1143,8 @@ createNewDeleteRewriterFactory(
 }
 
 template <class BaseT, class MemberT>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createMemberExprRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createMemberExprRewriterFactory(
     const std::string &SourceName,
     std::function<BaseT(const CallExpr *)> &&BaseCreator, bool IsArrow,
     std::function<MemberT(const CallExpr *)> &&MemberCreator) {
@@ -1217,7 +1217,7 @@ createTemplatedCallExprRewriterFactory(
 /// \p BaseCreator use to get base expr from original call expr.
 /// \p IsArrow the member operator is arrow or dot as default.
 /// \p ArgsCreator use to get call args from original call expr.
-template <class BaseT, class... ArgsT>
+template <bool HasExplicitTemplateArg, class BaseT, class... ArgsT>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMemberCallExprRewriterFactory(
     const std::string &SourceName,
@@ -1225,7 +1225,7 @@ createMemberCallExprRewriterFactory(
     std::string MemberName,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, ArgsT...>,
+      MemberCallExprRewriter<BaseT, HasExplicitTemplateArg, ArgsT...>,
       std::function<BaseT(const CallExpr *)>, bool, std::string,
       std::function<ArgsT(const CallExpr *)>...>>(
       SourceName,
@@ -1234,15 +1234,15 @@ createMemberCallExprRewriterFactory(
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
-template <class BaseT, class... ArgsT>
+template <bool HasExplicitTemplateArg, class BaseT, class... ArgsT>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMemberCallExprRewriterFactory(
     const std::string &SourceName, BaseT BaseCreator, bool IsArrow,
     std::string MemberName,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, ArgsT...>, BaseT, bool, std::string,
-      std::function<ArgsT(const CallExpr *)>...>>(
+      MemberCallExprRewriter<BaseT, HasExplicitTemplateArg, ArgsT...>, BaseT,
+      bool, std::string, std::function<ArgsT(const CallExpr *)>...>>(
       SourceName, BaseCreator, IsArrow, MemberName,
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
@@ -1507,19 +1507,19 @@ createBindTextureRewriterFactory(const std::string &Source) {
 
   return std::make_shared<ConditionalRewriterFactory>(
       makePointerChecker(StartIdx + 0),
-      createMemberCallExprRewriterFactory(
+      createMemberCallExprRewriterFactory<false>(
           Source, makeDerefExprCreator(StartIdx + 0), true, "attach",
           makeCallArgCreator(StartIdx + 1),
           makeCallArgCreator(StartIdx + Idx + 1)...,
           makeDerefExprCreator(StartIdx + 2)),
       std::make_shared<ConditionalRewriterFactory>(
           TypeChecker,
-          createMemberCallExprRewriterFactory(
+          createMemberCallExprRewriterFactory<false>(
               Source, makeCallArgCreatorWithCall(StartIdx + 0), false, "attach",
               makeCallArgCreatorWithCall(StartIdx + 1),
               makeCallArgCreatorWithCall(StartIdx + Idx + 1)...,
               makeCallArgCreatorWithCall(StartIdx + 2)),
-          createMemberCallExprRewriterFactory(
+          createMemberCallExprRewriterFactory<false>(
               Source, makeCallArgCreatorWithCall(StartIdx + 0), false, "attach",
               makeCallArgCreatorWithCall(StartIdx + 1),
               makeCallArgCreatorWithCall(StartIdx + Idx)...)));
@@ -2034,7 +2034,9 @@ const std::string MipmapNeedBindlessImage =
 #define UO(Op, E) makeUnaryOperatorCreator<Op>(E)
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define PAREN(E) makeParenExprCreator(E)
-#define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
+#define MEMBER_CALL(...) makeMemberCallCreator<false>(__VA_ARGS__)
+#define MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG(...)                                 \
+  makeMemberCallCreator<true>(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)
 #define STATIC_MEMBER_EXPR(...) makeStaticMemberExprCreator(__VA_ARGS__)
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
@@ -2096,8 +2098,11 @@ const std::string MipmapNeedBindlessImage =
 #define CALL_FACTORY_ENTRY(FuncName, C)                                        \
   std::make_pair(FuncName, createCallExprRewriterFactory(FuncName, C)),
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
-  std::make_pair(FuncName,                                                     \
-                 createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)),
+  std::make_pair(FuncName, createMemberCallExprRewriterFactory<false>(         \
+                               FuncName, __VA_ARGS__)),
+#define MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(FuncName, ...)         \
+  std::make_pair(FuncName, createMemberCallExprRewriterFactory<true>(          \
+                               FuncName, __VA_ARGS__)),
 #define ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(FuncName, ...)                       \
   std::make_pair(FuncName, createArraySubscriptExprRewriterFactory(            \
                                FuncName, __VA_ARGS__)),
