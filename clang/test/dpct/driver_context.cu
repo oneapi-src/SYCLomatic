@@ -7,7 +7,9 @@
 #include <cuda_runtime_api.h>
 
 #define NUM 1
-#define MY_SAFE_CALL(CALL) if (!CALL);
+#define MY_SAFE_CALL(CALL) do {    \
+  int Error = CALL;                \
+} while (0)
 
 int main(){
 
@@ -64,8 +66,15 @@ int main(){
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx2 = dpct::dev_mgr::instance().current_device_id()));
   MY_SAFE_CALL(cuCtxGetCurrent(&ctx2));
 
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::push_device_for_curr_thread()));
+  // CHECK: dpct::push_device_for_curr_thread(ctx);
+  cuCtxPushCurrent(ctx);
+
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::push_device_for_curr_thread(ctx)));
   MY_SAFE_CALL(cuCtxPushCurrent(ctx));
+
+  CUcontext *ctx_ptr;
+  // CHECK: *ctx_ptr = dpct::pop_device_for_curr_thread();
+  cuCtxPopCurrent(ctx_ptr);
 
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::pop_device_for_curr_thread()));
   MY_SAFE_CALL(cuCtxPopCurrent(&ctx));

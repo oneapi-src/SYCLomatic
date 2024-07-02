@@ -185,10 +185,10 @@ CONDITIONAL_FACTORY_ENTRY(
                     "--helper-function-preference=no-queue-device which declares a global SYCL device "
                     "and queue.")),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                                "cuCtxPushCurrent_v2", ARG(0),
-                                CALL(MapNames::getDpctNamespace() +
-                                     "push_device_for_curr_thread")))))
+                            ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                              "cuCtxPushCurrent_v2", CALL(
+                                MapNames::getDpctNamespace() + "push_device_for_curr_thread",
+                                ARG(0))))))
 
 CONDITIONAL_FACTORY_ENTRY(
     clang::dpct::checkIsUseNoQueueDevice(),
