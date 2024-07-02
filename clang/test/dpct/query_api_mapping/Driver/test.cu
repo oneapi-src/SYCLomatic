@@ -59,7 +59,7 @@
 // CUDEVICEPRIMARYCTXRETAIN: CUDA API:
 // CUDEVICEPRIMARYCTXRETAIN-NEXT:   cuDevicePrimaryCtxRetain(pc /*CUcontext **/, d /*CUdevice*/);
 // CUDEVICEPRIMARYCTXRETAIN-NEXT: Is migrated to:
-// CUDEVICEPRIMARYCTXRETAIN-NEXT:   *pc = dpct::select_device(d);
+// CUDEVICEPRIMARYCTXRETAIN-NEXT:   *pc = d;
 
 /// Context Management
 

@@ -35,7 +35,7 @@ int main(){
   // CHECK: ctx = dpct::select_device(device);
   cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);
 
-  // CHECK: ctx = dpct::select_device(device);
+  // CHECK: ctx = device;
   cuDevicePrimaryCtxRetain(&ctx, device);
 
   // CHECK: /*

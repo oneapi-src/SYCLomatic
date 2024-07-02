@@ -112,9 +112,7 @@ CONDITIONAL_FACTORY_ENTRY(
                     "and queue.")),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "cuDevicePrimaryCtxRetain", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(1))))))
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuDevicePrimaryCtxRetain", DEREF(0), ARG(1)))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaHostGetFlags", DEREF(0), ARG("0")))
 
