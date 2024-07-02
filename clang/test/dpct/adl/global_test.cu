@@ -24,6 +24,8 @@ void __global__ my_test() {
 
   // CHECK: ::norm2(hello);
   ::norm2(hello);
+  // CHECK: ::norm2(hello);
+  norm2(hello);
   // CHECK: hello::norm2(hello);
   hello::norm2(hello);
 }

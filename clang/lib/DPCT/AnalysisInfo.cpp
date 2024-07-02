@@ -4092,17 +4092,13 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
           break;
         }
         SourceLocation ParamLoc = Type->getAsRecordDecl()->getBeginLoc();
-llvm::outs() << "TTTTTTTTTTTTTTTTTTT \n";
-        if (DpctGlobalInfo::isInCudaPath(ParamLoc) &&
-        dyn_cast<DeclRefExpr>(CE->getCallee()) &&
-            !dyn_cast<DeclRefExpr>(CE->getCallee())->getQualifier()) {
-        //   CE->getCallee();
-        // if (DpctGlobalInfo::isInCudaPath(ParamLoc)) {
-llvm::outs() << "TTTTTTTTTTTTTTTTTTT22222 \n";
+        const auto *DRE =
+            dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts());
+        if (DpctGlobalInfo::isInCudaPath(ParamLoc) && DRE &&
+            !DRE->getQualifier()) {
           IsGlobalFunc = true;
           break;
         }
-llvm::outs() << "TTTTTTTTTTTTTTTTTTT3333 \n";
       }
     }
   }
