@@ -9,18 +9,18 @@
 #ifndef __DPCT_DEVICE_HPP__
 #define __DPCT_DEVICE_HPP__
 
-#include <stack>
-#include <sycl/sycl.hpp>
 #include <algorithm>
 #include <array>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <set>
 #include <sstream>
-#include <map>
-#include <vector>
+#include <stack>
+#include <sycl/sycl.hpp>
 #include <thread>
+#include <vector>
 #if defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -651,8 +651,8 @@ public:
   }
   unsigned int current_device_id() const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    auto it=_thread2dev_map.find(get_tid());
-    if(it != _thread2dev_map.end())
+    auto it = _thread2dev_map.find(get_tid());
+    if (it != _thread2dev_map.end())
       return it->second.top();
     return DEFAULT_DEVICE_ID;
   }
