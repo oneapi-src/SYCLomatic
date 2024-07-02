@@ -471,6 +471,13 @@ inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
     });
   }
 }
+
+inline void multiply(queue_ptr q_ptr, float *result, float *a, float *b) {
+  q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.single_task<dpct_kernel_name<class multiply>>(
+        [=]() { result[0] = result[0] * a[0] * b[0]; });
+  });
+}
 #endif
 } // namespace detail
 
@@ -515,6 +522,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     vector_alpha = true;
   }
 
+  bool beta_is_zero = true;
   if (beta != nullptr) {
     size_t beta_size =
         dpct::detail::library_data_size[static_cast<unsigned int>(
@@ -525,8 +533,10 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     std::memset(beta_zero, 0, beta_size);
     q_ptr->memcpy(beta_host, beta, beta_size).wait();
     if (std::memcmp(beta_host, beta_zero, beta_size))
-      throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does "
-                               "not support non-zero beta currently.");
+      beta_is_zero = false;
+    // throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does "
+    //                          "not support non-zero beta currently.");
+    // TODO: throw exception when beta is not 1
   }
 
   if (compute_desc->_epilogue != epilogue_t::nop) {
@@ -534,43 +544,48 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                              "not support epilogue currently.");
   }
 
-  //if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
-  //  throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-  //                           "supports non-transposed matrix A currently.");
-  //}
-  //if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
-  //  throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-  //                           "supports transposed matrix B currently.");
-  //}
+  // if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
+  //   throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
+  //                            "supports non-transposed matrix A currently.");
+  // }
+  // if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
+  //   throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
+  //                            "supports transposed matrix B currently.");
+  // }
 
-  //if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
-  //      a_desc->_type == library_data_t::real_int8 &&
-  //      b_desc->_type == library_data_t::real_int8 &&
-  //      c_desc->_type == library_data_t::real_int32) &&
-  //    !(compute_desc->_scale_type == library_data_t::real_float &&
-  //      a_desc->_type == library_data_t::real_int8 &&
-  //      b_desc->_type == library_data_t::real_int8 &&
-  //      c_desc->_type == library_data_t::real_int8) &&
-  //    !(compute_desc->_scale_type == library_data_t::real_float &&
-  //      a_desc->_type == library_data_t::real_int8 &&
-  //      b_desc->_type == library_data_t::real_int8 &&
-  //      c_desc->_type == library_data_t::real_int32)) {
-  //  throw std::runtime_error(
-  //      "dpct::blas_gemm::experimental::matmul() only supports data type "
-  //      "combinataions:\n  scale_type==int32 && a_type==int8 && b_type==int8 "
-  //      "&& c_type==int32,\n  scale_type==float && a_type==int8 && "
-  //      "b_type==int8 && c_type==int8 or\n  scale_type==float && a_type==int8 "
-  //      "&& b_type==int8 && c_type==int32.");
-  //}
+  // if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
+  //       a_desc->_type == library_data_t::real_int8 &&
+  //       b_desc->_type == library_data_t::real_int8 &&
+  //       c_desc->_type == library_data_t::real_int32) &&
+  //     !(compute_desc->_scale_type == library_data_t::real_float &&
+  //       a_desc->_type == library_data_t::real_int8 &&
+  //       b_desc->_type == library_data_t::real_int8 &&
+  //       c_desc->_type == library_data_t::real_int8) &&
+  //     !(compute_desc->_scale_type == library_data_t::real_float &&
+  //       a_desc->_type == library_data_t::real_int8 &&
+  //       b_desc->_type == library_data_t::real_int8 &&
+  //       c_desc->_type == library_data_t::real_int32)) {
+  //   throw std::runtime_error(
+  //       "dpct::blas_gemm::experimental::matmul() only supports data type "
+  //       "combinataions:\n  scale_type==int32 && a_type==int8 && b_type==int8
+  //       "
+  //       "&& c_type==int32,\n  scale_type==float && a_type==int8 && "
+  //       "b_type==int8 && c_type==int8 or\n  scale_type==float && a_type==int8
+  //       "
+  //       "&& b_type==int8 && c_type==int32.");
+  // }
 
   // For non-col_major matrix, convert it to col_major.
   const void *new_a = a;
   const void *new_b = b;
+  const void *new_c = c;
   void *new_d = d;
   bool new_a_allocated = false;
   bool new_b_allocated = false;
+  bool new_c_allocated = false;
   bool new_d_allocated = false;
-  size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldd = d_desc->_ld;
+  size_t new_lda = a_desc->_ld, new_ldb = b_desc->_ld, new_ldc = c_desc->_ld,
+         new_ldd = d_desc->_ld;
   std::vector<sycl::event> transform_events;
   if (a_desc->_order != order_t::col) {
     new_lda = a_desc->_rows;
@@ -612,6 +627,28 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       transform_events.push_back(e);
     }
   }
+
+  if (!beta_is_zero && c_desc->_order != order_t::col) {
+    new_ldc = c_desc->_rows;
+    if (c_desc->_type == library_data_t::real_int8) {
+      new_c =
+          dpct_malloc(sizeof(std::int8_t) * c_desc->_cols * new_ldc, *q_ptr);
+      new_c_allocated = true;
+      sycl::event e = detail::matrix_transform<std::int8_t>(
+          q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld, c_desc->_order,
+          (const std::int8_t *)c, new_ldc, order_t::col, (std::int8_t *)new_c,
+          {});
+      transform_events.push_back(e);
+    } else {
+      new_c = dpct_malloc(sizeof(int) * c_desc->_cols * new_ldc, *q_ptr);
+      new_c_allocated = true;
+      sycl::event e = detail::matrix_transform<int>(
+          q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld, c_desc->_order,
+          (const int *)c, new_ldc, order_t::col, (int *)new_c, {});
+      transform_events.push_back(e);
+    }
+  }
+
   if (d_desc->_order != order_t::col) {
     new_ldd = d_desc->_rows;
     if (d_desc->_type == library_data_t::real_int8) {
@@ -638,11 +675,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   const ::dnnl::memory::dim K = k;
   const library_data_t a_type = a_desc->_type;
   const library_data_t b_type = b_desc->_type;
+  const library_data_t c_type = c_desc->_type;
   const library_data_t d_type = d_desc->_type;
   const library_data_t scale_type = compute_desc->_scale_type;
 
   ::dnnl::memory::dims src_dims = {M, K};
   ::dnnl::memory::dims weights_dims = {K, N};
+  ::dnnl::memory::dims bias_dims = {M, N};
   ::dnnl::memory::dims dst_dims = {M, N};
 
   const ::dnnl::memory::dims src_strides =
@@ -653,6 +692,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       compute_desc->_trans_b == oneapi::mkl::transpose::nontrans
           ? ::dnnl::memory::dims{1, static_cast<long>(new_ldb)}
           : ::dnnl::memory::dims{static_cast<long>(new_ldb), 1};
+  const ::dnnl::memory::dims bias_strides =
+      ::dnnl::memory::dims{1, static_cast<long>(new_ldc)};
   const ::dnnl::memory::dims dst_strides =
       ::dnnl::memory::dims{1, static_cast<long>(new_ldd)};
 
@@ -662,6 +703,9 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   auto weights_md = ::dnnl::memory::desc(
       weights_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(b_type),
       weights_strides);
+  auto bias_md = ::dnnl::memory::desc(
+      bias_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(c_type),
+      bias_strides);
   auto dst_md = ::dnnl::memory::desc(
       dst_dims, dpct::dnnl::memory_desc_ext::to_dnnl_data_type(d_type),
       dst_strides);
@@ -670,6 +714,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       new ::dnnl::memory(src_md, handle->get_engine(), DNNL_MEMORY_NONE);
   auto *weights_mem =
       new ::dnnl::memory(weights_md, handle->get_engine(), DNNL_MEMORY_NONE);
+  auto *bias_mem =
+      new ::dnnl::memory(bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
   auto *dst_mem =
       new ::dnnl::memory(dst_md, handle->get_engine(), DNNL_MEMORY_NONE);
 
@@ -697,17 +743,23 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   SET_BUFFER(src_mem, a_type, new_a);
   SET_BUFFER(weights_mem, b_type, new_b);
+  if (!beta_is_zero)
+    SET_BUFFER(bias_mem, c_type, new_c);
   SET_BUFFER(dst_mem, d_type, new_d);
 #undef SET_BUFFER
 #else
   src_mem->set_data_handle(const_cast<void *>(new_a));
   weights_mem->set_data_handle(const_cast<void *>(new_b));
+  if (!beta_is_zero)
+    bias_mem->set_data_handle(const_cast<void *>(new_c));
   dst_mem->set_data_handle(new_d);
 #endif
 
   std::unordered_map<int, ::dnnl::memory> matmul_args;
   matmul_args.insert({DNNL_ARG_SRC, *src_mem});
   matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
+  if (!beta_is_zero)
+    matmul_args.insert({DNNL_ARG_BIAS, *bias_mem});
   matmul_args.insert({DNNL_ARG_DST, *dst_mem});
   ::dnnl::primitive_attr matmul_attr;
   ::dnnl::memory *scales_alpha = nullptr;
@@ -734,21 +786,51 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha, sizeof(float),
                         automatic, *q_ptr);
     }
+    // multiply scale_a and scale_b
+    detail::multiply(q_ptr, (float *)(scales_alpha->get_data_handle()),
+                     (float *)(compute_desc->_a_scale_pointer),
+                     (float *)(compute_desc->_b_scale_pointer));
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
 
-  auto matmul_pd = ::dnnl::matmul::primitive_desc(
-      handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
+  auto matmul_pd =
+      beta_is_zero
+          ? ::dnnl::matmul::primitive_desc(handle->get_engine(), src_md,
+                                           weights_md, dst_md, matmul_attr)
+          : ::dnnl::matmul::primitive_desc(handle->get_engine(), src_md,
+                                           weights_md, bias_md, dst_md,
+                                           matmul_attr);
   auto matmul_prim = ::dnnl::matmul(matmul_pd);
   sycl::event matmul_prim_event = ::dnnl::sycl_interop::execute(
       matmul_prim, handle->get_engine_stream(), matmul_args, transform_events);
+
+  // end of calling oneDNN
 
   sycl::event scale_d_event;
   if (vector_alpha)
     scale_d_event = detail::scale_d_with_vector_alpha(
         q_ptr, m, n, new_d, d_type, alpha, scale_type, {matmul_prim_event});
-  // end of calling oneDNN
+
+  sycl::event amax_d_event;
+  if (auto amax_ptr = compute_desc->_amax_d_pointer) {
+    size_t ld = new_ldd;
+    size_t rows = d_desc->_rows;
+    size_t cols = d_desc->_cols;
+    amax_d_event = q_ptr->submit([&](sycl::handler &cgh) {
+      auto max_reduction =
+          sycl::reduction((float *)(amax_ptr), sycl::maximum<>());
+      cgh.parallel_for(sycl::range<2>(ld, cols), max_reduction,
+                       [=](sycl::id<2> idx, auto &max) {
+                         size_t row_idx = idx.get(0);
+                         size_t col_idx = idx.get(1);
+                         if (row_idx < rows) {
+                           size_t linear_idx = row_idx + ld * col_idx;
+                           max.combine(((float *)new_d)[linear_idx]);
+                         }
+                       });
+    });
+  }
 
   sycl::event transform_d_event;
   if (d_desc->_order != order_t::col) {
@@ -756,20 +838,22 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       transform_d_event = detail::matrix_transform<std::int8_t>(
           q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
           (const std::int8_t *)new_d, d_desc->_ld, d_desc->_order,
-          (std::int8_t *)d, {scale_d_event, matmul_prim_event});
+          (std::int8_t *)d, {scale_d_event, amax_d_event, matmul_prim_event});
     } else {
       transform_d_event = detail::matrix_transform<int>(
           q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
           (const int *)new_d, d_desc->_ld, d_desc->_order, (int *)d,
-          {scale_d_event, matmul_prim_event});
+          {scale_d_event, amax_d_event, matmul_prim_event});
     }
   }
 
   sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.depends_on({transform_d_event, scale_d_event, matmul_prim_event});
+    cgh.depends_on(
+        {transform_d_event, scale_d_event, amax_d_event, matmul_prim_event});
     cgh.host_task([=] {
       delete src_mem;
       delete weights_mem;
+      delete bias_mem;
       delete dst_mem;
       if (!vector_alpha)
         delete scales_alpha;
@@ -777,6 +861,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         dpct::detail::dpct_free((void *)new_a, *q_ptr);
       if (new_b_allocated)
         dpct::detail::dpct_free((void *)new_b, *q_ptr);
+      if (new_c_allocated)
+        dpct::detail::dpct_free((void *)new_c, *q_ptr);
       if (new_d_allocated)
         dpct::detail::dpct_free((void *)new_d, *q_ptr);
     });
