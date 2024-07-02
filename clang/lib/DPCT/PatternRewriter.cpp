@@ -448,12 +448,6 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
   int PatternIndex = 0;
   const int PatternSize = Pattern.size();
   const int Size = Input.size();
-  bool CodeElementExist = false;
-  for (const auto &Element : Pattern) {
-    if (std::holds_alternative<CodeElement>(Element)) {
-      CodeElementExist = true;
-    }
-  }
 
   while (PatternIndex < PatternSize && Index < Size) {
 
@@ -483,37 +477,22 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      if (!CodeElementExist && Index - PatternSize >= 0 && Index <= Size - 1 &&
-          PatternIndex == PatternSize - 1) {
-        if (!isIdentifiedChar(Input[Index - PatternSize]) &&
-            !isIdentifiedChar(Input[Index + 1])) {
-          if (Index < Size - 1 && Input[Index - PatternSize] != '{' &&
-              Input[Index + 1] != '}' &&
-              !isWhitespace(Input[Index - PatternSize]) &&
-              !isWhitespace(Input[Index + 1]) &&
-              Input[Index - PatternSize] != '*' &&
-              Input[Index - PatternSize] != '"' &&
-              Input[Index - PatternSize] != ';' && Input[Index + 1] != '\\') {
-            return {};
-          }
-        }
-
-        if (isIdentifiedChar(Input[Index - PatternSize]) &&
-            Input[Index - PatternSize + 1] != '.') {
-          return {};
-        }
+      if (PatternIndex == 0 && Index - 1 >= 0 &&
+          isIdentifiedChar(Input[Index - 1]) &&
+          isIdentifiedChar(Input[Index])) {
+        return {};
       }
 
-      // If input value has been matched to the end but match pattern still has
-      // value, it is considered not matched case.
+      // If input value has been matched to the end but match pattern template
+      // still has value, it is considered not matched case.
       if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
         return {};
       }
 
-      // To make sure first character after the matched word isn't an
-      // identified character or suffix match '('.
-      if (Index < Size - 1 && isIdentifiedChar(Input[Index + 1]) &&
-          PatternIndex + 1 == PatternSize && Literal.Value != '(') {
+      // If match pattern template has been matched to the end but input value
+      // still not the end, it is considered not matched case.
+      if (PatternIndex == PatternSize - 1 &&
+          isIdentifiedChar(Input[Index + 1])) {
         return {};
       }
 
