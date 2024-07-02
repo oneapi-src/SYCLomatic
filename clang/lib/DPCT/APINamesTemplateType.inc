@@ -393,3 +393,12 @@ TYPE_REWRITE_ENTRY(
                          "experimental::command_graph_exec_ptr")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=graph"))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraphNode_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::node_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))

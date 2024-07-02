@@ -1749,12 +1749,13 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
           .bind("cudaTypeDef"),
       this);
 
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                            "cooperative_groups::__v1::coalesced_group",
-                            "cooperative_groups::__v1::thread_block_tile",
-                            "cudaGraph_t", "cudaGraphExec_t"))))))
-                    .bind("cudaTypeDefEA"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                  "cooperative_groups::__v1::coalesced_group",
+                  "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
+                  "cudaGraphExec_t", "cudaGraphNode_t"))))))
+          .bind("cudaTypeDefEA"),
+      this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
                             hasAnyTemplateArgument(refersToType(hasDeclaration(
                                 namedDecl(hasName("use_default"))))))))
@@ -15117,7 +15118,8 @@ REGISTER_RULE(AssertRule, PassKind::PK_Migration)
 void GraphRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
-                      "cudaGraphExecDestroy");
+                      "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
+                      "cudaGraphAddDependencies");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),

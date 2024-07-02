@@ -25,11 +25,26 @@ int main() {
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamBeginCapture is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
-  
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamEndCapture is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaStreamEndCapture(stream, &graph);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNode_t is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphNode_t node;
+
+  // CHECK: /*
+  // CHECK: DPCT1119:{{[0-9]+}}: Migration of cudaGraphAddEmptyNode is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphAddEmptyNode(&node, graph, NULL, 0);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphAddDependencies is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaGraphAddDependencies(graph, NULL, NULL, 0);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphInstantiate is not supported, please try to remigrate with option: --use-experimental-features=graph.
