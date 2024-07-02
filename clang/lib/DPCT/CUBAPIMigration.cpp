@@ -190,7 +190,7 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
                          "DeviceCountUncached", "DeviceCountCachedValue",
                          "PtxVersion", "PtxVersionUncached", "SmVersion",
-                         "SmVersionUncached"),
+                         "SmVersionUncached", "RowMajorTid"),
               hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
