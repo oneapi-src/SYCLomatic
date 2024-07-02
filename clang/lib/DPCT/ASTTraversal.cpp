@@ -170,7 +170,7 @@ void IncludesCallbacks::insertCudaArchRepl(
 }
 
 std::shared_ptr<clang::dpct::ReplaceToken>
-generateReplacement(SourceLocation SL, MacroMigrationRule Rule) {
+generateReplacement(SourceLocation SL, MacroMigrationRule &Rule) {
   requestFeature(Rule.HelperFeature);
   for (auto ItHeader = Rule.Includes.begin(); ItHeader != Rule.Includes.end();
        ItHeader++) {
