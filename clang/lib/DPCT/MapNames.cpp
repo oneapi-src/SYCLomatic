@@ -1531,21 +1531,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLASLT_MATMUL_DESC_AMAX_D_POINTER",
        getDpctNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::amax_d_pointer"},
-      {"CUBLASLT_MATMUL_DESC_BIAS_DATA_TYPE",
-       getDpctNamespace() +
-           "blas_gemm::experimental::matmul_desc_t::attribute::bias_data_type"},
-      {"CUBLASLT_MATMUL_DESC_BIAS_POINTER",
-       getDpctNamespace() +
-           "blas_gemm::experimental::matmul_desc_t::attribute::bias_pointer"},
-      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER",
-       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":epilogue_aux_pointer"},
-      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD",
-       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":epilogue_aux_ld"},
-      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_DATA_TYPE",
-       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":epilogue_aux_data_type"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS",
        getDpctNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
@@ -1560,19 +1545,8 @@ void MapNames::setExplicitNamespaceMap() {
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_EPILOGUE_DEFAULT",
        getDpctNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
-      {"CUBLASLT_EPILOGUE_DGELU_BGRAD",
-       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::dgelu_bgrad"},
-      {"CUBLASLT_EPILOGUE_GELU_AUX_BIAS",
-       getDpctNamespace() +
-           "blas_gemm::experimental::epilogue_t::gelu_aux_bias"},
-      {"CUBLASLT_EPILOGUE_BGRADB",
-       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::bgradb"},
-      {"CUBLASLT_EPILOGUE_BIAS",
-       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::bias"},
-      {"CUBLASLT_EPILOGUE_DGELU",
-       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::dgelu"},
-      {"CUBLASLT_EPILOGUE_GELU_AUX",
-       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::gelu_aux"},
+      {"CUBLASLT_EPILOGUE_RELU",
+       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        getDpctNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},

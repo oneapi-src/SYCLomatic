@@ -39,15 +39,7 @@ enum class pointer_mode_t {
   alpha_device_vector_beta_zero,
   alpha_device_vector_beta_host
 };
-enum class epilogue_t {
-  nop = 1,
-  dgelu_bgrad,
-  gelu_aux_bias,
-  bgradb,
-  bias,
-  dgelu,
-  gelu_aux
-};
+enum class epilogue_t { nop = 1, relu };
 
 class descriptor;
 using descriptor_ptr = descriptor *;
@@ -142,11 +134,6 @@ public:
     b_scale_pointer,
     d_scale_pointer,
     amax_d_pointer,
-    bias_data_type,
-    bias_pointer,
-    epilogue_aux_pointer,
-    epilogue_aux_ld,
-    epilogue_aux_data_type,
     unsupport
   };
 
@@ -184,11 +171,6 @@ private:
       CASE(b_scale_pointer)
       CASE(d_scale_pointer)
       CASE(amax_d_pointer)
-      CASE(bias_data_type)
-      CASE(bias_pointer)
-      CASE(epilogue_aux_pointer)
-      CASE(epilogue_aux_ld)
-      CASE(epilogue_aux_data_type)
     default:
       break;
     }
@@ -206,11 +188,6 @@ private:
   void *_b_scale_pointer = nullptr;
   void *_d_scale_pointer = nullptr;
   void *_amax_d_pointer = nullptr;
-  library_data_t _bias_data_type;
-  void *_bias_pointer = nullptr;
-  void *_epilogue_aux_pointer = nullptr;
-  int64_t _epilogue_aux_ld = 0;
-  library_data_t _epilogue_aux_data_type;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
@@ -539,10 +516,10 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     // TODO: throw exception when beta is not 1
   }
 
-  if (compute_desc->_epilogue != epilogue_t::nop) {
-    throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does "
-                             "not support epilogue currently.");
-  }
+  // if (compute_desc->_epilogue != epilogue_t::nop) {
+  //   throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does "
+  //                            "not support epilogue currently.");
+  // }
 
   // if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
   //   throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
@@ -794,6 +771,12 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
 
+  if (compute_desc->_epilogue != epilogue_t::nop) {
+    ::dnnl::post_ops matmul_ops;
+    matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
+    matmul_attr.set_post_ops(matmul_ops);
+  }
+
   auto matmul_pd =
       beta_is_zero
           ? ::dnnl::matmul::primitive_desc(handle->get_engine(), src_md,
@@ -807,9 +790,9 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   // end of calling oneDNN
 
-  sycl::event scale_d_event;
+  sycl::event scale_d_with_alpha_event;
   if (vector_alpha)
-    scale_d_event = detail::scale_d_with_vector_alpha(
+    scale_d_with_alpha_event = detail::scale_d_with_vector_alpha(
         q_ptr, m, n, new_d, d_type, alpha, scale_type, {matmul_prim_event});
 
   sycl::event amax_d_event;
@@ -820,15 +803,38 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     amax_d_event = q_ptr->submit([&](sycl::handler &cgh) {
       auto max_reduction =
           sycl::reduction((float *)(amax_ptr), sycl::maximum<>());
-      cgh.parallel_for(sycl::range<2>(ld, cols), max_reduction,
-                       [=](sycl::id<2> idx, auto &max) {
-                         size_t row_idx = idx.get(0);
-                         size_t col_idx = idx.get(1);
-                         if (row_idx < rows) {
-                           size_t linear_idx = row_idx + ld * col_idx;
-                           max.combine(((float *)new_d)[linear_idx]);
-                         }
-                       });
+      cgh.depends_on({matmul_prim_event, scale_d_with_alpha_event});
+      cgh.parallel_for<dpct_kernel_name<class max_reduction>>(
+          sycl::range<2>(ld, cols), max_reduction,
+          [=](sycl::id<2> idx, auto &max) {
+            size_t row_idx = idx.get(0);
+            size_t col_idx = idx.get(1);
+            if (row_idx < rows) {
+              size_t linear_idx = row_idx + ld * col_idx;
+              max.combine(((float *)new_d)[linear_idx]);
+            }
+          });
+    });
+  }
+
+  sycl::event scale_d_event;
+  if (auto d_scale_ptr = compute_desc->_d_scale_pointer) {
+    size_t ld = new_ldd;
+    size_t rows = d_desc->_rows;
+    size_t cols = d_desc->_cols;
+    scale_d_event = q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(
+          {matmul_prim_event, scale_d_with_alpha_event, amax_d_event});
+      cgh.parallel_for<dpct_kernel_name<class scale_d>>(
+          sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
+            size_t row_idx = idx.get(0);
+            size_t col_idx = idx.get(1);
+            if (row_idx < rows) {
+              size_t linear_idx = row_idx + ld * col_idx;
+              ((float *)new_d)[linear_idx] =
+                  ((float *)new_d)[linear_idx] * ((float *)d_scale_ptr)[0];
+            }
+          });
     });
   }
 
@@ -838,18 +844,19 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       transform_d_event = detail::matrix_transform<std::int8_t>(
           q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
           (const std::int8_t *)new_d, d_desc->_ld, d_desc->_order,
-          (std::int8_t *)d, {scale_d_event, amax_d_event, matmul_prim_event});
+          (std::int8_t *)d,
+          {scale_d_with_alpha_event, amax_d_event, matmul_prim_event});
     } else {
       transform_d_event = detail::matrix_transform<int>(
           q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
           (const int *)new_d, d_desc->_ld, d_desc->_order, (int *)d,
-          {scale_d_event, amax_d_event, matmul_prim_event});
+          {scale_d_with_alpha_event, amax_d_event, matmul_prim_event});
     }
   }
 
   sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.depends_on(
-        {transform_d_event, scale_d_event, amax_d_event, matmul_prim_event});
+    cgh.depends_on({transform_d_event, scale_d_with_alpha_event, amax_d_event,
+                    matmul_prim_event});
     cgh.host_task([=] {
       delete src_mem;
       delete weights_mem;
