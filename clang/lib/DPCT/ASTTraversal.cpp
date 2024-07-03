@@ -10378,6 +10378,9 @@ void MemoryMigrationRule::memcpyMigration(
         handleAsync(C, 3, Result);
       }
     }
+  } else if (!NameRef.compare("cudaMemcpyPeer") ||
+             !NameRef.compare("cuMemcpyPeer")) {
+    handleAsync(C, 5, Result);
   }
 
   if (ReplaceStr.empty()) {
@@ -11151,7 +11154,9 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemsetD2D32_v2", "cuMemsetD2D32Async", "cuMemsetD2D8_v2",
         "cuMemsetD2D8Async", "cuMemsetD32_v2", "cuMemsetD32Async",
         "cuMemsetD8_v2", "cuMemsetD8Async", "cudaMallocMipmappedArray",
-        "cudaGetMipmappedArrayLevel", "cudaFreeMipmappedArray");
+        "cudaGetMipmappedArrayLevel", "cudaFreeMipmappedArray",
+        "cudaMemcpyPeer", "cudaMemcpyPeerAsync", "cuMemcpyPeer",
+        "cuMemcpyPeerAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11338,6 +11343,10 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemcpy3DAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy2DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpyPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpyPeerAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyPeerAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaGetMipmappedArrayLevel", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DArrayToArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DFromArray", &MemoryMigrationRule::arrayMigration},
