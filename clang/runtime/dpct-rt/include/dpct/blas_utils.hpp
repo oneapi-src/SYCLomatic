@@ -1844,6 +1844,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
                                                 ldc, batch_size, cm);
     break;
   }
+#endif
   case dpct::detail::get_type_combination_id(
       library_data_t::real_int8, library_data_t::real_int8,
       library_data_t::real_int32, library_data_t::real_int32): {
@@ -1873,7 +1874,6 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
         batch_size, cm);
     break;
   }
-#endif
   case dpct::detail::get_type_combination_id(
       library_data_t::real_half, library_data_t::real_half,
       library_data_t::real_half, library_data_t::real_float): {
@@ -2022,13 +2022,18 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
         beta, c, ldc, stride_c, batch_size, cm);
     break;
   }
+#endif
   case dpct::detail::get_type_combination_id(
       library_data_t::real_int8, library_data_t::real_int8,
       library_data_t::real_int32, library_data_t::real_int32): {
+    float alpha_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(alpha), q);
+    float beta_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
     dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
-                                  std::int32_t>(
-        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size, cm);
+                                  float>(
+        q, a_trans, b_trans, m, n, k, &alpha_float, a, lda, stride_a, b, ldb,
+        stride_b, &beta_float, c, ldc, stride_c, batch_size, cm);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -2047,7 +2052,6 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
         beta, c, ldc, stride_c, batch_size, cm);
     break;
   }
-#endif
   case dpct::detail::get_type_combination_id(
       library_data_t::real_half, library_data_t::real_half,
       library_data_t::real_half, library_data_t::real_float): {
