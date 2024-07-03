@@ -90,7 +90,7 @@
 // CUCTXPUSHCURRENT: CUDA API:
 // CUCTXPUSHCURRENT-NEXT:   cuCtxPushCurrent(c /*CUcontext*/);
 // CUCTXPUSHCURRENT-NEXT: Is migrated to:
-// CUCTXPUSHCURRENT-NEXT:   c = dpct::push_device_for_curr_thread();
+// CUCTXPUSHCURRENT-NEXT:   dpct::push_device_for_curr_thread(c);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxPopCurrent | FileCheck %s -check-prefix=CUCTXPOPCURRENT
 // CUCTXPOPCURRENT: CUDA API:

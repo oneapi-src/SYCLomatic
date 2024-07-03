@@ -671,9 +671,8 @@ public:
       _thread2dev_map[curr_tid] = std::stack<unsigned int>({id});
     else
       it->second.push(id);
-
-    _thread2dev_map[curr_tid].push(id);
   }
+
   unsigned int device_count() { return _devs.size(); }
 
   unsigned int get_device_id(const sycl::device &dev) {
