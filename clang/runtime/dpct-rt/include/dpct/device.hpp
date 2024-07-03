@@ -668,7 +668,7 @@ public:
     // make sure the device stack exist
     auto it = _thread2dev_map.find(curr_tid);
     if (it == _thread2dev_map.end())
-      _thread2dev_map[curr_tid] = std::stack<unsigned int>({id});
+      _thread2dev_map.insert({curr_tid, std::stack<unsigned int>({id})});
     else
       it->second.push(id);
   }
@@ -746,7 +746,7 @@ public:
     auto tid = get_tid();
     auto it = _thread2dev_map.find(tid);
     if (it == _thread2dev_map.end())
-      _thread2dev_map[curr_tid] = std::stack<unsigned int>({id});
+      _thread2dev_map.insert({curr_tid, std::stack<unsigned int>({id})});
     else
       it->second.push(id);
   }
