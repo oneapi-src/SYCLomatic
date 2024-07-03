@@ -746,15 +746,14 @@ public:
     auto tid = get_tid();
     auto it = _thread2dev_map.find(tid);
     if (it == _thread2dev_map.end())
-      _thread2dev_map.insert({curr_tid, std::stack<unsigned int>({id})});
+      _thread2dev_map.insert({tid, std::stack<unsigned int>({id})});
     else
       it->second.push(id);
   }
 
   /// Remove the device from top of the stack if it exist
   unsigned int pop_device() {
-    auto tid = get_tid();
-    auto it = _thread2dev_map.find(tid);
+    auto it = _thread2dev_map.find(get_tid());
     if (it == _thread2dev_map.end())
       return -1;
 
