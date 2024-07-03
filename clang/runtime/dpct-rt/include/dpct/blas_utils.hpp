@@ -1853,9 +1853,9 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     float beta_float =
         dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
     dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
-                                  float>(q, a_trans, b_trans, m, n, k,
-                                         &alpha_float, a, lda, b, ldb,
-                                         &beta_float, c, ldc, batch_size, cm);
+                                  float>(
+        q, a_trans, b_trans, m, n, k, &alpha_float, a, lda, b, ldb, &beta_float,
+        c, ldc, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1863,7 +1863,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_float, library_data_t::real_float): {
     dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size, cm);
+        batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -1871,7 +1871,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_float, library_data_t::real_float): {
     dpct::detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
-        batch_size, cm);
+        batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -2033,7 +2033,8 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
                                   float>(
         q, a_trans, b_trans, m, n, k, &alpha_float, a, lda, stride_a, b, ldb,
-        stride_b, &beta_float, c, ldc, stride_c, batch_size, cm);
+        stride_b, &beta_float, c, ldc, stride_c,
+        batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -2041,7 +2042,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_float, library_data_t::real_float): {
     dpct::detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size, cm);
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
@@ -2049,7 +2050,7 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
       library_data_t::real_float, library_data_t::real_float): {
     dpct::detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
-        beta, c, ldc, stride_c, batch_size, cm);
+        beta, c, ldc, stride_c, batch_size DPCT_COMPUTE_MODE_ARG);
     break;
   }
   case dpct::detail::get_type_combination_id(
