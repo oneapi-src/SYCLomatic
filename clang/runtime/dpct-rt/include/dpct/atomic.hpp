@@ -49,14 +49,13 @@ inline sycl::half2 atomic_fetch_add(sycl::half2 *addr, sycl::half2 operand) {
   auto atm = sycl::atomic_ref<unsigned, memoryOrder, memoryScope, addressSpace>(
       *reinterpret_cast<unsigned *>(addr));
 
-  union bit_32_storage {
+  union {
     unsigned i;
     sycl::half2 h;
-  };
-  bit_32_storage output{0};
+  } old{0}, output{0};
 
   while (true) {
-    bit_32_storage old{atm.load()};
+    old.i = atm.load();
     output.h = old.h + operand;
     if (atm.compare_exchange_strong(old.i, output.i))
       break;
