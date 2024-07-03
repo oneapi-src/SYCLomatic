@@ -363,60 +363,75 @@ get_linear_idx_map(size_t rows, size_t cols, size_t src_ld, order_t src_order,
   return std::make_tuple(from_linear_idx, to_linear_idx);
 }
 
-template <class T>
-sycl::event matrix_transform(queue_ptr q_ptr, size_t rows, size_t cols,
-                             size_t a_ld, order_t a_order, const T *a,
-                             size_t c_ld, order_t c_order, T *c,
-                             std::vector<sycl::event> deps) {
-  if ((a_order != order_t::col && c_order != order_t::col) ||
-      (a_order == order_t::col && c_order == order_t::col)) {
-    throw std::runtime_error(
-        "dpct::blas_gemm::experimental::detail::matrix_transform() does not "
-        "support the order combination currently.");
+template <template <typename> typename functor_t, typename... args_t>
+inline auto type_dispatch(library_data_t type, args_t &&...args) {
+  switch (type) {
+  case library_data_t::real_float:
+    return functor_t<float>()(std::forward<args_t>(args)...);
+  case library_data_t::real_int8:
+    return functor_t<std::int8_t>()(std::forward<args_t>(args)...);
+  case library_data_t::real_int32:
+    return functor_t<int>()(std::forward<args_t>(args)...);
+  default:
+    throw std::runtime_error("the data type is unsupported");
   }
-
-  return q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.depends_on(deps);
-#ifdef DPCT_USM_LEVEL_NONE
-    access_wrapper<const T *> a_acc(a, cgh);
-    access_wrapper<T *> c_acc(c, cgh);
-#endif
-    cgh.parallel_for<dpct_kernel_name<class matrix_transform_col_to_row, T>>(
-        sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
-#ifdef DPCT_USM_LEVEL_NONE
-          auto a_data = a_acc.get_raw_pointer();
-          auto c_data = c_acc.get_raw_pointer();
-#else
-            auto a_data = a;
-            auto c_data = c;
-#endif
-          size_t row_idx = index.get(0);
-          size_t col_idx = index.get(1);
-          if (row_idx < rows) {
-            size_t from_linear_idx, to_linear_idx;
-            std::tie(from_linear_idx, to_linear_idx) = get_linear_idx_map(
-                rows, cols, a_ld, a_order, c_ld, c_order, row_idx, col_idx);
-            c_data[to_linear_idx] = a_data[from_linear_idx];
-          }
-        });
-  });
 }
+
+template <typename T> struct matrix_transform_impl {
+  sycl::event operator()(queue_ptr q_ptr, size_t rows, size_t cols, size_t a_ld,
+                         order_t a_order, const void *a, size_t c_ld,
+                         order_t c_order, void *c,
+                         std::vector<sycl::event> deps) {
+    if ((a_order != order_t::col && c_order != order_t::col) ||
+        (a_order == order_t::col && c_order == order_t::col)) {
+      throw std::runtime_error("dpct::blas_gemm::experimental::detail::matrix_"
+                               "transform_impl() does not "
+                               "support the order combination currently.");
+    }
+
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(deps);
+#ifdef DPCT_USM_LEVEL_NONE
+      access_wrapper<const T *> a_acc(a, cgh);
+      access_wrapper<T *> c_acc(c, cgh);
+#endif
+      cgh.parallel_for<dpct_kernel_name<class matrix_transform_col_to_row, T>>(
+          sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
+#ifdef DPCT_USM_LEVEL_NONE
+            auto a_data = a_acc.get_raw_pointer();
+            auto c_data = c_acc.get_raw_pointer();
+#else
+            auto a_data = (const T *)a;
+            auto c_data = (T *)c;
+#endif
+            size_t row_idx = index.get(0);
+            size_t col_idx = index.get(1);
+            if (row_idx < rows) {
+              size_t from_linear_idx, to_linear_idx;
+              std::tie(from_linear_idx, to_linear_idx) = get_linear_idx_map(
+                  rows, cols, a_ld, a_order, c_ld, c_order, row_idx, col_idx);
+              c_data[to_linear_idx] = a_data[from_linear_idx];
+            }
+          });
+    });
+  }
+};
 
 // Convert an integer to an float.
 // The integer may on the host or the device, the float is on the device.
 #ifdef DPCT_USM_LEVEL_NONE
-inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
-                      sycl::buffer<float, 1> float_buffer) {
+inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
+                             sycl::buffer<float, 1> float_buffer) {
   if (is_host_ptr) {
     int alpha_host = *reinterpret_cast<int *>(int_ptr);
-    q_ptr->submit([&](sycl::handler &cgh) {
+    return q_ptr->submit([&](sycl::handler &cgh) {
       sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
                                sycl::no_init);
       cgh.single_task<dpct_kernel_name<class inthost2float>>(
           [=]() { float_acc[0] = alpha_host; });
     });
   } else {
-    q_ptr->submit([&](sycl::handler &cgh) {
+    return q_ptr->submit([&](sycl::handler &cgh) {
       access_wrapper<int *> int_acc(int_ptr, cgh);
       sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
                                sycl::no_init);
@@ -428,18 +443,18 @@ inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 #else
-inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
-                      void *float_ptr) {
+inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
+                             void *float_ptr) {
   if (is_host_ptr) {
     int alpha_host = *reinterpret_cast<int *>(int_ptr);
-    q_ptr->submit([&](sycl::handler &cgh) {
+    return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.single_task<dpct_kernel_name<class inthost2float>>([=]() {
         auto float_data = (float *)float_ptr;
         float_data[0] = alpha_host;
       });
     });
   } else {
-    q_ptr->submit([&](sycl::handler &cgh) {
+    return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.single_task<dpct_kernel_name<class intdevice2float>>([=]() {
         auto int_data = (int *)int_ptr;
         auto float_data = (float *)float_ptr;
@@ -449,20 +464,92 @@ inline void int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 
-inline void multiply(queue_ptr q_ptr, float *result, float *a, float *b) {
-  q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.single_task<dpct_kernel_name<class multiply>>(
-        [=]() { result[0] = result[0] * a[0] * b[0]; });
-  });
-}
+template <typename T> struct multiply_impl {
+  sycl::event operator()(queue_ptr q_ptr, void *result, void *a, void *b,
+                         std::vector<sycl::event> deps) {
+    auto result_T = (T *)result;
+    auto a_T = (T *)a;
+    auto b_T = (T *)b;
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(deps);
+      cgh.single_task<dpct_kernel_name<class multiply, T>>(
+          [=]() { result_T[0] = result_T[0] * a_T[0] * b_T[0]; });
+    });
+  }
+};
 #endif
+
+template <typename T> struct get_beta_value_impl {
+  int operator()(const void *beta, dpct::queue_ptr q_ptr) {
+    T beta_host;
+    q_ptr->memcpy(&beta_host, beta, sizeof(T)).wait();
+    T zero = T(0);
+    T one = T(1);
+    if (beta_host == zero)
+      return 0;
+    else if (beta_host == one)
+      return 1;
+    return -1;
+  }
+};
+
+template <typename T> struct scale_d_impl {
+  sycl::event operator()(const void *d_scale_ptr, void *d, size_t ld,
+                         size_t rows, size_t cols, dpct::queue_ptr q_ptr,
+                         dpct::library_data_t scale_type,
+                         std::vector<sycl::event> deps) {
+    auto new_d = (T *)d;
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(deps);
+      cgh.parallel_for<dpct_kernel_name<class scale_d, T>>(
+          sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
+            size_t row_idx = idx.get(0);
+            size_t col_idx = idx.get(1);
+            float scale_factor;
+            if (scale_type == dpct::library_data_t::real_float)
+              scale_factor = static_cast<const float *>(d_scale_ptr)[0];
+            else {
+              // int type
+              scale_factor =
+                  static_cast<float>(static_cast<const int *>(d_scale_ptr)[0]);
+            }
+            if (row_idx < rows) {
+              size_t linear_idx = row_idx + ld * col_idx;
+              new_d[linear_idx] = new_d[linear_idx] * scale_factor;
+            }
+          });
+    });
+  }
+};
+
+template <typename T> struct amax_impl {
+  sycl::event operator()(void *amax_ptr, const void *new_d, size_t ld,
+                         size_t rows, size_t cols, dpct::queue_ptr q_ptr,
+                         std::vector<sycl::event> deps) {
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      auto max_reduction = sycl::reduction((T *)(amax_ptr), sycl::maximum<>());
+      cgh.depends_on(deps);
+      cgh.parallel_for<dpct_kernel_name<class max_reduction, T>>(
+          sycl::range<2>(ld, cols), max_reduction,
+          [=](sycl::id<2> idx, auto &max) {
+            size_t row_idx = idx.get(0);
+            size_t col_idx = idx.get(1);
+            if (row_idx < rows) {
+              size_t linear_idx = row_idx + ld * col_idx;
+              max.combine(((T *)new_d)[linear_idx]);
+            }
+          });
+    });
+  }
+};
 } // namespace detail
 
 /// This function does operation: D = alpha*(A*B) + beta*(C).
 /// Currently supports type combinations:
 ///   scale_type==int32 && a_type==int8 && b_type==int8 && c_type==int32;
 ///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int8;
-///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int32.
+///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int32;
+///   scale_type==float && a_type==float && b_type==float && c_type==float.
 /// Currently it only supports beta==0.
 /// NOTE: Non-col-major matrix will be converted to col-major matrix before.
 /// TODO: Impl row-major matmul without layout conversion.
@@ -501,56 +588,48 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   bool beta_is_zero = true;
   if (beta != nullptr) {
-    size_t beta_size =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            compute_desc->_scale_type)] /
-        8;
-    void *beta_host = std::malloc(beta_size);
-    void *beta_zero = std::malloc(beta_size);
-    std::memset(beta_zero, 0, beta_size);
-    q_ptr->memcpy(beta_host, beta, beta_size).wait();
-    if (std::memcmp(beta_host, beta_zero, beta_size))
+    int beta_value = detail::type_dispatch<detail::get_beta_value_impl>(
+        compute_desc->_scale_type, beta, q_ptr);
+    if (beta_value != 0) {
       beta_is_zero = false;
-    // throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does "
-    //                          "not support non-zero beta currently.");
-    // TODO: throw exception when beta is not 1
+      if (beta_value != 1)
+        throw std::runtime_error(
+            "dpct::blas_gemm::experimental::matmul() does "
+            "not support non-zero and non-one beta currently.");
+    }
   }
 
-  // if (compute_desc->_epilogue != epilogue_t::nop) {
-  //   throw std::runtime_error("dpct::blas_gemm::experimental::matmul() does "
-  //                            "not support epilogue currently.");
-  // }
+  if (compute_desc->_epilogue != epilogue_t::nop &&
+      compute_desc->_epilogue != epilogue_t::relu) {
+    throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
+                             "supports relu epilogue currently.");
+  }
 
-  // if (compute_desc->_trans_a != oneapi::mkl::transpose::nontrans) {
-  //   throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-  //                            "supports non-transposed matrix A currently.");
-  // }
-  // if (compute_desc->_trans_b != oneapi::mkl::transpose::trans) {
-  //   throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-  //                            "supports transposed matrix B currently.");
-  // }
-
-  // if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
-  //       a_desc->_type == library_data_t::real_int8 &&
-  //       b_desc->_type == library_data_t::real_int8 &&
-  //       c_desc->_type == library_data_t::real_int32) &&
-  //     !(compute_desc->_scale_type == library_data_t::real_float &&
-  //       a_desc->_type == library_data_t::real_int8 &&
-  //       b_desc->_type == library_data_t::real_int8 &&
-  //       c_desc->_type == library_data_t::real_int8) &&
-  //     !(compute_desc->_scale_type == library_data_t::real_float &&
-  //       a_desc->_type == library_data_t::real_int8 &&
-  //       b_desc->_type == library_data_t::real_int8 &&
-  //       c_desc->_type == library_data_t::real_int32)) {
-  //   throw std::runtime_error(
-  //       "dpct::blas_gemm::experimental::matmul() only supports data type "
-  //       "combinataions:\n  scale_type==int32 && a_type==int8 && b_type==int8
-  //       "
-  //       "&& c_type==int32,\n  scale_type==float && a_type==int8 && "
-  //       "b_type==int8 && c_type==int8 or\n  scale_type==float && a_type==int8
-  //       "
-  //       "&& b_type==int8 && c_type==int32.");
-  // }
+  if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
+        a_desc->_type == library_data_t::real_int8 &&
+        b_desc->_type == library_data_t::real_int8 &&
+        c_desc->_type == library_data_t::real_int32) &&
+      !(compute_desc->_scale_type == library_data_t::real_float &&
+        a_desc->_type == library_data_t::real_int8 &&
+        b_desc->_type == library_data_t::real_int8 &&
+        c_desc->_type == library_data_t::real_int8) &&
+      !(compute_desc->_scale_type == library_data_t::real_float &&
+        a_desc->_type == library_data_t::real_int8 &&
+        b_desc->_type == library_data_t::real_int8 &&
+        c_desc->_type == library_data_t::real_int32) &&
+      !(compute_desc->_scale_type == library_data_t::real_float &&
+        a_desc->_type == library_data_t::real_float &&
+        b_desc->_type == library_data_t::real_float &&
+        c_desc->_type == library_data_t::real_float)) {
+    throw std::runtime_error(
+        "dpct::blas_gemm::experimental::matmul() only supports data type "
+        "combinataions:\n  scale_type==int32 && a_type==int8 && b_type==int8"
+        "&& c_type==int32,\n  scale_type==float && a_type==int8 && "
+        "b_type==int8 && c_type==int8,\n  scale_type==float && a_type==int8"
+        "&& b_type==int8 && c_type==int32 or\n  scale_type==float && "
+        "a_type==float"
+        "&& b_type==float && c_type==float.");
+  }
 
   // For non-col_major matrix, convert it to col_major.
   const void *new_a = a;
@@ -566,76 +645,56 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   std::vector<sycl::event> transform_events;
   if (a_desc->_order != order_t::col) {
     new_lda = a_desc->_rows;
-    if (a_desc->_type == library_data_t::real_int8) {
-      new_a =
-          dpct_malloc(sizeof(std::int8_t) * a_desc->_cols * new_lda, *q_ptr);
-      new_a_allocated = true;
-      sycl::event e = detail::matrix_transform<std::int8_t>(
-          q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
-          (const std::int8_t *)a, new_lda, order_t::col, (std::int8_t *)new_a,
-          {});
-      transform_events.push_back(e);
-    } else {
-      new_a = dpct_malloc(sizeof(int) * a_desc->_cols * new_lda, *q_ptr);
-      new_a_allocated = true;
-      sycl::event e = detail::matrix_transform<int>(
-          q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
-          (const int *)a, new_lda, order_t::col, (int *)new_a, {});
-      transform_events.push_back(e);
-    }
+    size_t size_of_element =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            a_desc->_type)] /
+        8;
+    new_a = dpct_malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
+    new_a_allocated = true;
+    sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
+        a_desc->_type, q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld,
+        a_desc->_order, (const std::int8_t *)a, new_lda, order_t::col,
+        (std::int8_t *)new_a, std::vector<sycl::event>{});
+    transform_events.push_back(e);
   }
   if (b_desc->_order != order_t::col) {
     new_ldb = b_desc->_rows;
-    if (b_desc->_type == library_data_t::real_int8) {
-      new_b =
-          dpct_malloc(sizeof(std::int8_t) * b_desc->_cols * new_ldb, *q_ptr);
-      new_b_allocated = true;
-      sycl::event e = detail::matrix_transform<std::int8_t>(
-          q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld, b_desc->_order,
-          (const std::int8_t *)b, new_ldb, order_t::col, (std::int8_t *)new_b,
-          {});
-      transform_events.push_back(e);
-    } else {
-      new_b = dpct_malloc(sizeof(int) * b_desc->_cols * new_ldb, *q_ptr);
-      new_b_allocated = true;
-      sycl::event e = detail::matrix_transform<int>(
-          q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld, b_desc->_order,
-          (const int *)b, new_ldb, order_t::col, (int *)new_b, {});
-      transform_events.push_back(e);
-    }
+    size_t size_of_element =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            b_desc->_type)] /
+        8;
+    new_b = dpct_malloc(size_of_element * b_desc->_cols * new_ldb, *q_ptr);
+    new_b_allocated = true;
+    sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
+        b_desc->_type, q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld,
+        b_desc->_order, b, new_ldb, order_t::col, const_cast<void *>(new_b),
+        std::vector<sycl::event>{});
+    transform_events.push_back(e);
   }
 
   if (!beta_is_zero && c_desc->_order != order_t::col) {
     new_ldc = c_desc->_rows;
-    if (c_desc->_type == library_data_t::real_int8) {
-      new_c =
-          dpct_malloc(sizeof(std::int8_t) * c_desc->_cols * new_ldc, *q_ptr);
-      new_c_allocated = true;
-      sycl::event e = detail::matrix_transform<std::int8_t>(
-          q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld, c_desc->_order,
-          (const std::int8_t *)c, new_ldc, order_t::col, (std::int8_t *)new_c,
-          {});
-      transform_events.push_back(e);
-    } else {
-      new_c = dpct_malloc(sizeof(int) * c_desc->_cols * new_ldc, *q_ptr);
-      new_c_allocated = true;
-      sycl::event e = detail::matrix_transform<int>(
-          q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld, c_desc->_order,
-          (const int *)c, new_ldc, order_t::col, (int *)new_c, {});
-      transform_events.push_back(e);
-    }
+    size_t size_of_element =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            c_desc->_type)] /
+        8;
+    new_c = dpct_malloc(size_of_element * c_desc->_cols * new_ldc, *q_ptr);
+    new_c_allocated = true;
+    sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
+        c_desc->_type, q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld,
+        c_desc->_order, c, new_ldc, order_t::col, const_cast<void *>(new_c),
+        std::vector<sycl::event>{});
+    transform_events.push_back(e);
   }
 
   if (d_desc->_order != order_t::col) {
     new_ldd = d_desc->_rows;
-    if (d_desc->_type == library_data_t::real_int8) {
-      new_d =
-          dpct_malloc(sizeof(std::int8_t) * d_desc->_cols * new_ldd, *q_ptr);
-      new_d_allocated = true;
-    } else {
-      new_d = dpct_malloc(sizeof(int) * d_desc->_cols * new_ldd, *q_ptr);
-      new_d_allocated = true;
-    }
+    size_t size_of_element =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            d_desc->_type)] /
+        8;
+    new_d = dpct_malloc(size_of_element * d_desc->_cols * new_ldd, *q_ptr);
+    new_d_allocated = true;
   }
 
   // start to call oneDNN matmul primitive
@@ -744,13 +803,14 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
     scales_alpha = new ::dnnl::memory(
         {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine());
+    sycl::event scalar_alpha_e;
     if (scale_type != library_data_t::real_float) {
 #ifdef DPCT_USM_LEVEL_NONE
       *scales_alpha = ::dnnl::sycl_interop::make_memory(
           {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine(),
           ::dnnl::sycl_interop::memory_kind::buffer);
 #endif
-      detail::int2float(
+      scalar_alpha_e = detail::int2float(
           q_ptr, const_cast<void *>(alpha),
           compute_desc->_pointer_mode == pointer_mode_t::host,
 #ifdef DPCT_USM_LEVEL_NONE
@@ -760,13 +820,16 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 #endif
       );
     } else {
-      dpct::dpct_memcpy(scales_alpha->get_data_handle(), alpha, sizeof(float),
-                        automatic, *q_ptr);
+      scalar_alpha_e =
+          dpct::detail::dpct_memcpy(*q_ptr, scales_alpha->get_data_handle(),
+                                    alpha, sizeof(float), automatic);
     }
     // multiply scale_a and scale_b
-    detail::multiply(q_ptr, (float *)(scales_alpha->get_data_handle()),
-                     (float *)(compute_desc->_a_scale_pointer),
-                     (float *)(compute_desc->_b_scale_pointer));
+    sycl::event multiply_impl_e = detail::type_dispatch<detail::multiply_impl>(
+        compute_desc->_scale_type, q_ptr, scales_alpha->get_data_handle(),
+        compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
+        std::vector<sycl::event>{scalar_alpha_e});
+    transform_events.push_back(multiply_impl_e);
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
@@ -797,61 +860,28 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   sycl::event amax_d_event;
   if (auto amax_ptr = compute_desc->_amax_d_pointer) {
-    size_t ld = new_ldd;
-    size_t rows = d_desc->_rows;
-    size_t cols = d_desc->_cols;
-    amax_d_event = q_ptr->submit([&](sycl::handler &cgh) {
-      auto max_reduction =
-          sycl::reduction((float *)(amax_ptr), sycl::maximum<>());
-      cgh.depends_on({matmul_prim_event, scale_d_with_alpha_event});
-      cgh.parallel_for<dpct_kernel_name<class max_reduction>>(
-          sycl::range<2>(ld, cols), max_reduction,
-          [=](sycl::id<2> idx, auto &max) {
-            size_t row_idx = idx.get(0);
-            size_t col_idx = idx.get(1);
-            if (row_idx < rows) {
-              size_t linear_idx = row_idx + ld * col_idx;
-              max.combine(((float *)new_d)[linear_idx]);
-            }
-          });
-    });
+    amax_d_event = detail::type_dispatch<detail::amax_impl>(
+        d_desc->_type, amax_ptr, new_d, new_ldd, d_desc->_rows, d_desc->_cols,
+        q_ptr,
+        std::vector<sycl::event>{matmul_prim_event, scale_d_with_alpha_event});
   }
 
   sycl::event scale_d_event;
   if (auto d_scale_ptr = compute_desc->_d_scale_pointer) {
-    size_t ld = new_ldd;
-    size_t rows = d_desc->_rows;
-    size_t cols = d_desc->_cols;
-    scale_d_event = q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(
-          {matmul_prim_event, scale_d_with_alpha_event, amax_d_event});
-      cgh.parallel_for<dpct_kernel_name<class scale_d>>(
-          sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
-            size_t row_idx = idx.get(0);
-            size_t col_idx = idx.get(1);
-            if (row_idx < rows) {
-              size_t linear_idx = row_idx + ld * col_idx;
-              ((float *)new_d)[linear_idx] =
-                  ((float *)new_d)[linear_idx] * ((float *)d_scale_ptr)[0];
-            }
-          });
-    });
+    scale_d_event = detail::type_dispatch<detail::scale_d_impl>(
+        d_desc->_type, d_scale_ptr, new_d, new_ldd, d_desc->_rows,
+        d_desc->_cols, q_ptr, compute_desc->_scale_type,
+        std::vector<sycl::event>{matmul_prim_event, scale_d_with_alpha_event,
+                                 amax_d_event});
   }
 
   sycl::event transform_d_event;
   if (d_desc->_order != order_t::col) {
-    if (d_desc->_type == library_data_t::real_int8) {
-      transform_d_event = detail::matrix_transform<std::int8_t>(
-          q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
-          (const std::int8_t *)new_d, d_desc->_ld, d_desc->_order,
-          (std::int8_t *)d,
-          {scale_d_with_alpha_event, amax_d_event, matmul_prim_event});
-    } else {
-      transform_d_event = detail::matrix_transform<int>(
-          q_ptr, d_desc->_rows, d_desc->_cols, new_ldd, order_t::col,
-          (const int *)new_d, d_desc->_ld, d_desc->_order, (int *)d,
-          {scale_d_with_alpha_event, amax_d_event, matmul_prim_event});
-    }
+    detail::type_dispatch<detail::matrix_transform_impl>(
+        d_desc->_type, q_ptr, d_desc->_rows, d_desc->_cols, new_ldd,
+        order_t::col, new_d, d_desc->_ld, d_desc->_order, d,
+        std::vector<sycl::event>{scale_d_with_alpha_event, amax_d_event,
+                                 matmul_prim_event});
   }
 
   sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
@@ -984,16 +1014,10 @@ inline sycl::event matrix_transform(transform_desc_ptr transform_desc,
         "a_type==real_int32&&c_type==real_int32.");
   }
 
-  if (a_desc->_type == library_data_t::real_int8) {
-    return detail::matrix_transform<std::int8_t>(
-        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
-        (const std::int8_t *)a, c_desc->_ld, c_desc->_order, (std::int8_t *)c,
-        {});
-  } else {
-    return detail::matrix_transform<int>(
-        q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld, a_desc->_order,
-        (const int *)a, c_desc->_ld, c_desc->_order, (int *)c, {});
-  }
+  return detail::type_dispatch<detail::matrix_transform_impl>(
+      a_desc->_type, q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld,
+      a_desc->_order, a, c_desc->_ld, c_desc->_order, c,
+      std::vector<sycl::event>{});
 }
 } // namespace experimental
 } // namespace blas_gemm
