@@ -508,11 +508,11 @@ public:
   }
 };
 
-static sycl::event dpct_memcpy_across_device(sycl::queue &q, void *to_ptr,
-                                             const void *from_ptr,
-                                             size_t size) {
+static sycl::event dpct_memcpy(sycl::queue &q, void *to_ptr, unsigned to_dev_id,
+                               const void *from_ptr, unsigned from_dev_id,
+                               size_t size) {
   // Now, different device have different context, and memcpy API cannot copy
-  // date between different context. So we need use host buffer to copy the date
+  // data between different context. So we need use host buffer to copy the data
   // between devices.
   std::vector<sycl::event> event_list;
   host_buffer buf(size, q, event_list);
@@ -983,7 +983,7 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 static void dpct_memcpy(void *to_ptr, unsigned to_dev_id, const void *from_ptr,
                         unsigned from_dev_id, size_t size,
                         sycl::queue &q = get_default_queue()) {
-  detail::dpct_memcpy_across_device(q, to_ptr, from_ptr, size).wait();
+  detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size).wait();
 }
 
 /// Asynchronously copies \p size bytes from the address specified by \p
@@ -1020,7 +1020,7 @@ static void async_dpct_memcpy(void *to_ptr, unsigned to_dev_id,
                               const void *from_ptr, unsigned from_dev_id,
                               size_t size,
                               sycl::queue &q = get_default_queue()) {
-  detail::dpct_memcpy_across_device(q, to_ptr, from_ptr, size);
+  detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size);
 }
 
 /// Synchronously copies 2D matrix specified by \p x and \p y from the address
