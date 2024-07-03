@@ -37,6 +37,8 @@ int main(){
     CUdeviceptr f_D = 0;
     // CHECK: dpct::device_ptr f_D2 = 0;
     CUdeviceptr f_D2 = 0;
+    // CHECK: int c1, c2;
+    CUcontext c1, c2;
     // CHECK: f_D = (dpct::device_ptr)sycl::malloc_device(size, q_ct1);
     cuMemAlloc(&f_D, size);
 
@@ -91,6 +93,15 @@ int main(){
     CALL(cuMemcpyAsync(f_D, f_D2, size, 0));
     // CHECK: r = DPCT_CHECK_ERROR(q_ct1.memcpy(f_D, f_D2, size));
     r = cuMemcpyAsync(f_D, f_D2, size, 0);
+
+    // CHECK: dpct::dpct_memcpy(f_D, c1, f_D2, c2, size);
+    cuMemcpyPeer(f_D, c1, f_D2, c2, size);
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cuMemcpyPeerAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: dpct::async_dpct_memcpy(f_D, c1, f_D2, c2, size, *stream);
+    cuMemcpyPeerAsync(f_D, c1, f_D2, c2, size, stream);
+
     unsigned int v32 = 50000;
     unsigned short v16 = 20000;
     unsigned char v8 = (unsigned char) 200;
