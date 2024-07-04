@@ -48,14 +48,27 @@ int main() {
   // CHECK: dpct::experimental::node_ptr node6, *node7, **node8;
   cudaGraphNode_t node6, *node7, **node8;
 
+  // CHECK: const dpct::experimental::node_ptr node9 = nullptr;
+  // CHECK-NEXT: const dpct::experimental::node_ptr node10[1] = {node};
+  // CHECK-NEXT: const dpct::experimental::node_ptr node11[1] = {*node2};
+  const cudaGraphNode_t node9 = nullptr;
+  const cudaGraphNode_t node10[1] = {node};
+  const cudaGraphNode_t node11[1] = {*node2};
+
   // CHECK: dpct::experimental::add_empty_node(&node, graph, node4, 10);
   cudaGraphAddEmptyNode(&node, graph, node4, 10);
 
   // CHECK: dpct::experimental::add_empty_node(node2, *graph2, NULL, 0);
   cudaGraphAddEmptyNode(node2, *graph2, NULL, 0);
 
+  // CHECK: dpct::experimental::add_empty_node(&node, graph, node10, 1);
+  cudaGraphAddEmptyNode(&node, graph, node10, 1);
+
   // CHECK: dpct::experimental::add_dependencies(graph, node4, node5, 10);
   cudaGraphAddDependencies(graph, node4, node5, 10);
+
+  // CHECK: dpct::experimental::add_dependencies(graph, node10, node11, 1);
+  cudaGraphAddDependencies(graph, node10, node11, 1);
 
   // CHECK: execGraph = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>((*graph2)->finalize());
   // CHECK-NEXT: *execGraph2 = new sycl::ext::oneapi::experimental::command_graph<sycl::ext::oneapi::experimental::graph_state::executable>(graph->finalize());
