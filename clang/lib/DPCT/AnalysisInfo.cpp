@@ -1461,6 +1461,9 @@ DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
     if (auto RealPath = File.getFileEntry().tryGetRealPathName();
         !RealPath.empty()) {
         llvm::outs() << "Real path " << RealPath << "\n";
+        if (!llvm::sys::fs::exists(RealPath)) {
+          return std::nullopt;
+        }
         return clang::tooling::UnifiedPath(RealPath);
         }
   }
