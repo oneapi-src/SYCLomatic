@@ -57,3 +57,12 @@ CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphAddDependencies"),
                             ARG("--use-experimental-features=graph")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    MEMBER_CALL_FACTORY_ENTRY("cudaGraphExecUpdate", ARG(0), true, "update",
+                              DEREF(1)),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphExecUpdate",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphExecUpdate"),
+                            ARG("--use-experimental-features=graph")))
