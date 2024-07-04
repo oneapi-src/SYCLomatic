@@ -8975,7 +8975,10 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         auto InitStr = getInitForDeviceGlobal(Decl);
         if (!InitStr.empty()) {
           report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-          report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE, false, "device_global");
+          if (dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
+            report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
+                   false, "device_global");
+          }
           Info->setInitForDeviceGlobal(InitStr);
         }
       }

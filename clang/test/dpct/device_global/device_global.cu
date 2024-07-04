@@ -31,9 +31,6 @@ struct B{
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: /*
-// CHECK: DPCT1130:{{[0-9]+}}: The 'device_global' has been explicitly marked deleted. You may need to adjust the code.
-// CHECK: */
 // CHECK: sycl::ext::oneapi::experimental::device_global<const int> var_init{3};
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
@@ -78,6 +75,7 @@ __device__ B arr_f[10];
 
 __device__ void test_var() {
     int a  = 10 < var_ee;
+    int aa  = 10 < var_ee2;
     int a2  = 10 < var_init;
 }
 // CHECK: int device_func() {
