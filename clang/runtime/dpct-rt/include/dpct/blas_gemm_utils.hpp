@@ -898,13 +898,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     matmul_attr.set_scales_mask(DNNL_ARG_WEIGHTS, 0);
     scales_alpha = new ::dnnl::memory(
         {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine());
+#ifdef DPCT_USM_LEVEL_NONE
+    *scales_alpha = ::dnnl::sycl_interop::make_memory(
+        {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine(),
+        ::dnnl::sycl_interop::memory_kind::buffer);
+#endif
     sycl::event scalar_alpha_e;
     if (scale_type != library_data_t::real_float) {
-#ifdef DPCT_USM_LEVEL_NONE
-      *scales_alpha = ::dnnl::sycl_interop::make_memory(
-          {{1}, ::dnnl::memory::data_type::f32, {1}}, handle->get_engine(),
-          ::dnnl::sycl_interop::memory_kind::buffer);
-#endif
       scalar_alpha_e = detail::int2float(
           q_ptr, const_cast<void *>(alpha),
           compute_desc->_pointer_mode == pointer_mode_t::host,
@@ -915,16 +915,37 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 #endif
       );
     } else {
+#ifdef DPCT_USM_LEVEL_NONE
+      auto buf = ::dnnl::sycl_interop::get_buffer<float, 1>(*scales_alpha);
+      if (dpct::is_device_ptr(alpha)) {
+        scalar_alpha_e = q_ptr->submit([&](sycl::handler &cgh) {
+          access_wrapper<const float *> alpha_acc(alpha, cgh);
+          sycl::accessor acc(buf, cgh, sycl::write_only, sycl::no_init);
+          cgh.single_task<dpct_kernel_name<class copy_alpha_dev_ptr>>(
+              [=]() { acc[0] = alpha_acc.get_raw_pointer()[0]; });
+        });
+      } else {
+        float alpha_host = *static_cast<const float *>(alpha);
+        scalar_alpha_e = q_ptr->submit([&](sycl::handler &cgh) {
+          sycl::accessor acc(buf, cgh, sycl::write_only, sycl::no_init);
+          cgh.single_task<dpct_kernel_name<class copy_alpha_host_ptr>>(
+              [=]() { acc[0] = alpha_host; });
+        });
+      }
+#else
       scalar_alpha_e =
-          dpct::detail::dpct_memcpy(*q_ptr, scales_alpha->get_data_handle(),
-                                    alpha, sizeof(float), automatic);
+          q_ptr->memcpy(scales_alpha->get_data_handle(), alpha, sizeof(float));
+#endif
     }
+#ifndef DPCT_USM_LEVEL_NONE
     // alpha = alpha * scale_a * scale_b
     sycl::event multiply_impl_e = detail::type_dispatch<detail::multiply_impl>(
         compute_desc->_scale_type, q_ptr, scales_alpha,
         compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
         std::vector<sycl::event>{scalar_alpha_e});
     transform_events.push_back(multiply_impl_e);
+#endif
+    transform_events.push_back(scalar_alpha_e);
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
