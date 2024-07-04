@@ -56,11 +56,11 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
 void driverMemoryManagement() {
   size_t s, s1, s2;
   unsigned u;
+  void *pV;
   // CHECK: sycl::image_channel_type f;
   CUarray_format f;
   // CHECK: dpct::experimental::image_mem_wrapper_ptr *pArr;
   CUarray *pArr;
-  void *pV;
   // CHECK: dpct::device_ptr pD;
   CUdeviceptr pD;
   // CHECK: dpct::queue_ptr st;

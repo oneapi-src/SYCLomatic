@@ -61,7 +61,7 @@ public:
       const sycl::ext::oneapi::experimental::image_descriptor *desc)
       : _desc(*desc) {
     _channel.set_channel_type(desc->channel_type);
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240625)
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240725)
     _channel.set_channel_num(desc->num_channels);
 #endif
     auto q = get_default_queue();
@@ -202,10 +202,10 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
                            dest_extend, copy_extend);
 }
 
-static inline std::vector<sycl::event> dpct_memcpy_host(
+static inline std::vector<sycl::event> dpct_memcpy_to_host(
     sycl::ext::oneapi::experimental::image_mem_handle src,
     const sycl::ext::oneapi::experimental::image_descriptor &desc_src,
-    size_t w_offset_src, size_t h_offset_src, void *dest, size_t s,
+    size_t w_offset_src, size_t h_offset_src, void *dest_host_ptr, size_t s,
     sycl::queue q) {
   std::vector<sycl::event> event_list;
   const auto ele_size = get_ele_size(desc_src);
@@ -218,9 +218,9 @@ static inline std::vector<sycl::event> dpct_memcpy_host(
     const auto dest_extend = sycl::range<3>(0, 0, 0);
     const auto copy_extend =
         sycl::range<3>((w - w_offset_src) / ele_size, 1, 0);
-    event_list.push_back(q.ext_oneapi_copy(src, src_offset, desc_src, dest,
-                                           dest_offset, dest_extend,
-                                           copy_extend));
+    event_list.push_back(q.ext_oneapi_copy(src, src_offset, desc_src,
+                                           dest_host_ptr, dest_offset,
+                                           dest_extend, copy_extend));
     offset_dest += w - w_offset_src;
     w_offset_src = 0;
     ++h_offset_src;
@@ -230,8 +230,9 @@ static inline std::vector<sycl::event> dpct_memcpy_host(
   const auto dest_offset = sycl::range<3>(offset_dest / ele_size, 0, 0);
   const auto dest_extend = sycl::range<3>(0, 0, 0);
   const auto copy_extend = sycl::range<3>((s - w_offset_src) / ele_size, 1, 0);
-  event_list.push_back(q.ext_oneapi_copy(
-      src, src_offset, desc_src, dest, dest_offset, dest_extend, copy_extend));
+  event_list.push_back(q.ext_oneapi_copy(src, src_offset, desc_src,
+                                         dest_host_ptr, dest_offset,
+                                         dest_extend, copy_extend));
   return event_list;
 }
 
@@ -244,15 +245,15 @@ dpct_memcpy(sycl::ext::oneapi::experimental::image_mem_handle src,
       dpct::detail::pointer_access_attribute::device_only) {
     std::vector<sycl::event> event_list;
     dpct::detail::host_buffer buf(s, q, event_list);
-    auto copy_events = dpct_memcpy_host(src, desc_src, w_offset_src,
-                                        h_offset_src, buf.get_ptr(), s, q);
+    auto copy_events = dpct_memcpy_to_host(src, desc_src, w_offset_src,
+                                           h_offset_src, buf.get_ptr(), s, q);
     event_list.push_back(dpct::detail::dpct_memcpy(
         q, dest, buf.get_ptr(), s, memcpy_direction::host_to_device,
         copy_events));
     return event_list;
   }
-  return dpct_memcpy_host(src, desc_src, w_offset_src, h_offset_src, dest, s,
-                          q);
+  return dpct_memcpy_to_host(src, desc_src, w_offset_src, h_offset_src, dest, s,
+                             q);
 }
 
 static inline sycl::event
@@ -272,8 +273,9 @@ dpct_memcpy(const void *src,
                            dest, dest_offset, desc_dest, copy_extend);
 }
 
-static inline std::vector<sycl::event> dpct_memcpy_host(
-    const void *src, sycl::ext::oneapi::experimental::image_mem_handle dest,
+static inline std::vector<sycl::event> dpct_memcpy_from_host(
+    const void *src_host_ptr,
+    sycl::ext::oneapi::experimental::image_mem_handle dest,
     const sycl::ext::oneapi::experimental::image_descriptor &desc_dest,
     size_t w_offset_dest, size_t h_offset_dest, size_t s, sycl::queue q) {
   std::vector<sycl::event> event_list;
@@ -288,9 +290,9 @@ static inline std::vector<sycl::event> dpct_memcpy_host(
     const auto copy_extend =
         sycl::range<3>((w - w_offset_dest) / ele_size, 1, 0);
     // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
-    event_list.push_back(q.ext_oneapi_copy(const_cast<void *>(src), src_offset,
-                                           src_extend, dest, dest_offset,
-                                           desc_dest, copy_extend));
+    event_list.push_back(q.ext_oneapi_copy(
+        const_cast<void *>(src_host_ptr), src_offset, src_extend, dest,
+        dest_offset, desc_dest, copy_extend));
     offset_src += w - w_offset_dest;
     w_offset_dest = 0;
     ++h_offset_dest;
@@ -302,9 +304,9 @@ static inline std::vector<sycl::event> dpct_memcpy_host(
   const auto copy_extend =
       sycl::range<3>((s - offset_src - w_offset_dest) / ele_size, 1, 0);
   // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
-  event_list.push_back(q.ext_oneapi_copy(const_cast<void *>(src), src_offset,
-                                         src_extend, dest, dest_offset,
-                                         desc_dest, copy_extend));
+  event_list.push_back(q.ext_oneapi_copy(const_cast<void *>(src_host_ptr),
+                                         src_offset, src_extend, dest,
+                                         dest_offset, desc_dest, copy_extend));
   return event_list;
 }
 
@@ -318,13 +320,13 @@ static inline std::vector<sycl::event> dpct_memcpy(
     dpct::detail::host_buffer buf(s, q, event_list);
     event_list.push_back(dpct::detail::dpct_memcpy(
         q, buf.get_ptr(), src, s, memcpy_direction::device_to_host));
-    auto copy_events = dpct_memcpy_host(buf.get_ptr(), dest, desc_dest,
-                                        w_offset_dest, h_offset_dest, s, q);
+    auto copy_events = dpct_memcpy_from_host(
+        buf.get_ptr(), dest, desc_dest, w_offset_dest, h_offset_dest, s, q);
     event_list.insert(event_list.end(), copy_events.begin(), copy_events.end());
     return event_list;
   }
-  return dpct_memcpy_host(src, dest, desc_dest, w_offset_dest, h_offset_dest, s,
-                          q);
+  return dpct_memcpy_from_host(src, dest, desc_dest, w_offset_dest,
+                               h_offset_dest, s, q);
 }
 
 static inline sycl::event
