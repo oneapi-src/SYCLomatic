@@ -103,6 +103,7 @@ struct memcpy_parameter {
   struct data_wrapper {
     pitched_data pitched{};
     sycl::id<3> pos{};
+    int dev_id{0};
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
     experimental::image_mem_wrapper *image_bindless{nullptr};
 #endif
@@ -508,8 +509,8 @@ public:
   }
 };
 
-static sycl::event dpct_memcpy(sycl::queue &q, void *to_ptr, unsigned to_dev_id,
-                               const void *from_ptr, unsigned from_dev_id,
+static sycl::event dpct_memcpy(sycl::queue &q, void *to_ptr, int to_dev_id,
+                               const void *from_ptr, int from_dev_id,
                                size_t size) {
   // Now, different device have different context, and memcpy API cannot copy
   // data between different context. So we need use host buffer to copy the data
@@ -666,6 +667,28 @@ dpct_memcpy(sycl::queue &q, pitched_data to, sycl::id<3> to_id,
                      size, direction);
 }
 
+/// memcpy 2D/3D matrix between different devices.
+static inline std::vector<sycl::event>
+dpct_memcpy(sycl::queue &q, pitched_data to, sycl::id<3> to_id, int to_dev_id,
+            pitched_data from, sycl::id<3> from_id, int from_dev_id,
+            sycl::range<3> size) {
+  const auto from_range = sycl::range<3>(from.get_pitch(), from.get_y(), 1);
+  const auto to_range = sycl::range<3>(to.get_pitch(), to.get_y(), 1);
+  std::vector<sycl::event> event_list;
+  host_buffer buf(std::max(get_copy_range(size, from.get_y() * from.get_pitch(),
+                                          from.get_pitch()),
+                           get_copy_range(size, to.get_y() * to.get_pitch(),
+                                          to.get_pitch())),
+                  q, event_list);
+  dpct_memcpy(q, buf.get_ptr(), from.get_data_ptr(),
+              sycl::range<3>(buf.get_size(), 1, 1), from_range,
+              sycl::id<3>(0, 0, 0), from_id, size, device_to_host);
+  event_list = dpct_memcpy(q, to.get_data_ptr(), buf.get_ptr(), to_range,
+                           sycl::range<3>(buf.get_size(), 1, 1), to_id,
+                           sycl::id<3>(0, 0, 0), size, host_to_device);
+  return event_list;
+}
+
 /// memcpy 2D matrix with pitch.
 static inline std::vector<sycl::event>
 dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
@@ -711,6 +734,9 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
   if (param.from.image != nullptr) {
     from = to_pitched_data(param.from.image);
   }
+  if (param.to.dev_id != param.from.dev_id)
+    return dpct_memcpy(q, to, param.to.pos, param.to.dev_id, from,
+                       param.from.pos, param.from.dev_id, param.size);
   return dpct_memcpy(q, to, param.to.pos, from, param.from.pos, param.size,
                      param.direction);
 }
@@ -980,8 +1006,8 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \param size Number of bytes to be copied.
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
-static void dpct_memcpy(void *to_ptr, unsigned to_dev_id, const void *from_ptr,
-                        unsigned from_dev_id, size_t size,
+static void dpct_memcpy(void *to_ptr, int to_dev_id, const void *from_ptr,
+                        int from_dev_id, size_t size,
                         sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size).wait();
 }
@@ -1016,9 +1042,8 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \param size Number of bytes to be copied.
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
-static void async_dpct_memcpy(void *to_ptr, unsigned to_dev_id,
-                              const void *from_ptr, unsigned from_dev_id,
-                              size_t size,
+static void async_dpct_memcpy(void *to_ptr, int to_dev_id, const void *from_ptr,
+                              int from_dev_id, size_t size,
                               sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size);
 }
