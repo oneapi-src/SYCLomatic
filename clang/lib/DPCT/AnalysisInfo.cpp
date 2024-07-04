@@ -4248,6 +4248,9 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
   return std::shared_ptr<TextureObjectInfo>();
 }
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
+  if (!Info) {
+    return;
+  }
   if (std::find(FuncInfo.begin(), FuncInfo.end(), Info) == FuncInfo.end()) {
     FuncInfo.push_back(Info);
   }
@@ -6482,19 +6485,14 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
 }
 
 std::shared_ptr<DeviceFunctionInfo> CallFunctionExpr::getFuncInfo() {
-  for (auto &Info : FuncInfo) {
-    if (Info) {
-      return Info;
-    }
+  if (FuncInfo.empty()) {
+    return std::shared_ptr<DeviceFunctionInfo>();
   }
-  return std::shared_ptr<DeviceFunctionInfo>();
+  return FuncInfo.front();
 }
 
 void CallFunctionExpr::buildInfo() {
-  bool RunOnceFlag = false;
   for (auto &Info : FuncInfo) {
-    if (!Info)
-      continue;
     const clang::tooling::UnifiedPath &DefFilePath =
         Info->getDefinitionFilePath();
     // SYCL_EXTERNAL macro is not needed if the device function is lambda
@@ -6525,24 +6523,19 @@ void CallFunctionExpr::buildInfo() {
     }
 
     Info->buildInfo();
-    if (!RunOnceFlag) {
-      RunOnceFlag = true;
-      VarMap.merge(Info->getVarMap(), TemplateArgs);
-      mergeTextureObjectInfo(Info);
-    }
   }
   size_t FuncInfoSize = FuncInfo.size();
+  if (FuncInfoSize) {
+    VarMap.merge(FuncInfo.front()->getVarMap(), TemplateArgs);
+    mergeTextureObjectInfo(FuncInfo.front());
+  }
   for (size_t i = 0; i < FuncInfoSize; i++) {
-    if (!FuncInfo[i])
-      continue;
     for (size_t j = i + 1; j < FuncInfoSize; j++) {
-      if (FuncInfo[j]) {
-        if (!FuncInfo[i]->getVarMap().isSameAs(FuncInfo[j]->getVarMap())) {
-          DiagnosticsUtils::report(getFilePath(), getOffset(),
-                                   Warnings::DEVICE_CALL_DIFFERENT, true, false,
-                                   FuncInfo[i]->getFunctionName());
-          return;
-        }
+      if (!FuncInfo[i]->getVarMap().isSameAs(FuncInfo[j]->getVarMap())) {
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                 Warnings::DEVICE_CALL_DIFFERENT, true, false,
+                                 FuncInfo[i]->getFunctionName());
+        return;
       }
     }
   }
