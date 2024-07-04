@@ -663,6 +663,8 @@ public:
 
 class IndexedMemProfReader {
 private:
+  /// The MemProf version.
+  memprof::IndexedVersion Version = memprof::Version0;
   /// MemProf profile schema (if available).
   memprof::MemProfSchema Schema;
   /// MemProf record profile data on-disk indexed via llvm::md5(FunctionName).
