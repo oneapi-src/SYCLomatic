@@ -31,11 +31,13 @@ T __spirv_GroupNonUniformShuffleUp(__spv::Scope::Flag, T, unsigned) noexcept;
 #endif
 
 namespace dpct {
+/// dim3 is used to store 3 component dimensions.
 class dim3 {
 public:
   unsigned x, y, z;
 
-  constexpr dim3(size_t x = 1, size_t y = 1, size_t z = 1) : x(x), y(y), z(z) {}
+  constexpr dim3(unsigned x = 1, unsigned y = 1, unsigned z = 1)
+      : x(x), y(y), z(z) {}
 
   dim3(const sycl::id<3> &r) : dim3(r[2], r[1], r[0]) {}
 
