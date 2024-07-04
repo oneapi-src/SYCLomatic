@@ -443,48 +443,45 @@ inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 
-template <typename T> struct multiply_impl {
-  sycl::event operator()(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
-                         const void *a, const void *b,
-                         std::vector<sycl::event> deps) {
-    auto result = ::dnnl::sycl_interop::get_buffer<float, 1>(*dnnl_memory);
-    if (a && b)
-      return q_ptr->submit([&](sycl::handler &cgh) {
-        cgh.depends_on(deps);
-        sycl::accessor result_acc(result, cgh);
-        access_wrapper<const T *> a_acc(a, cgh);
-        access_wrapper<const T *> b_acc(b, cgh);
-        cgh.single_task<dpct_kernel_name<class multiply_a_b, T>>([=]() {
-          auto a_ptr = a_acc.get_raw_pointer();
-          auto b_ptr = b_acc.get_raw_pointer();
-          result_acc[0] = result_acc[0] * static_cast<float>(a_ptr[0]) *
-                          static_cast<float>(b_ptr[0]);
-        });
+sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
+                          const void *a, const void *b,
+                          std::vector<sycl::event> deps) {
+  auto result = ::dnnl::sycl_interop::get_buffer<float, 1>(*dnnl_memory);
+  if (a && b)
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(deps);
+      sycl::accessor result_acc(result, cgh);
+      access_wrapper<const float *> a_acc(a, cgh);
+      access_wrapper<const float *> b_acc(b, cgh);
+      cgh.single_task<dpct_kernel_name<class multiply_a_b>>([=]() {
+        auto a_ptr = a_acc.get_raw_pointer();
+        auto b_ptr = b_acc.get_raw_pointer();
+        result_acc[0] = result_acc[0] * a_ptr[0] * b_ptr[0];
       });
-    else if (a)
-      return q_ptr->submit([&](sycl::handler &cgh) {
-        cgh.depends_on(deps);
-        sycl::accessor result_acc(result, cgh);
-        access_wrapper<const T *> a_acc(a, cgh);
-        cgh.single_task<dpct_kernel_name<class multiply_a, T>>([=]() {
-          auto a_ptr = a_acc.get_raw_pointer();
-          result_acc[0] = result_acc[0] * static_cast<float>(a_ptr[0]);
-        });
+    });
+  else if (a)
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(deps);
+      sycl::accessor result_acc(result, cgh);
+      access_wrapper<const float *> a_acc(a, cgh);
+      cgh.single_task<dpct_kernel_name<class multiply_a>>([=]() {
+        auto a_ptr = a_acc.get_raw_pointer();
+        result_acc[0] = result_acc[0] * a_ptr[0];
       });
-    else if (b)
-      return q_ptr->submit([&](sycl::handler &cgh) {
-        cgh.depends_on(deps);
-        sycl::accessor result_acc(result, cgh);
-        access_wrapper<const T *> b_acc(b, cgh);
-        cgh.single_task<dpct_kernel_name<class multiply_b, T>>([=]() {
-          auto b_ptr = b_acc.get_raw_pointer();
-          result_acc[0] = result_acc[0] * static_cast<float>(b_ptr[0]);
-        });
+    });
+  else if (b)
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(deps);
+      sycl::accessor result_acc(result, cgh);
+      access_wrapper<const float *> b_acc(b, cgh);
+      cgh.single_task<dpct_kernel_name<class multiply_b>>([=]() {
+        auto b_ptr = b_acc.get_raw_pointer();
+        result_acc[0] = result_acc[0] * b_ptr[0];
       });
-    else
-      return sycl::event();
-  }
-};
+    });
+  else
+    return sycl::event();
+}
 
 template <typename T> struct scale_d_impl {
   sycl::event operator()(const void *d_scale_ptr, void *d, size_t ld,
@@ -561,27 +558,25 @@ inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 
-template <typename T> struct multiply_impl {
-  sycl::event operator()(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
-                         const void *a, const void *b,
-                         std::vector<sycl::event> deps) {
-    auto result_T = (float *)(dnnl_memory->get_data_handle());
-    auto a_T = (const T *)a;
-    auto b_T = (const T *)b;
-    if (a_T || b_T)
-      return q_ptr->submit([&](sycl::handler &cgh) {
-        cgh.depends_on(deps);
-        cgh.single_task<dpct_kernel_name<class multiply, T>>([=]() {
-          if (a_T)
-            result_T[0] = result_T[0] * static_cast<float>(a_T[0]);
-          if (b_T)
-            result_T[0] = result_T[0] * static_cast<float>(b_T[0]);
-        });
+sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
+                          const void *a, const void *b,
+                          std::vector<sycl::event> deps) {
+  auto result_T = (float *)(dnnl_memory->get_data_handle());
+  auto a_T = (const float *)a;
+  auto b_T = (const float *)b;
+  if (a_T || b_T)
+    return q_ptr->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(deps);
+      cgh.single_task<dpct_kernel_name<class multiply>>([=]() {
+        if (a_T)
+          result_T[0] = result_T[0] * a_T[0];
+        if (b_T)
+          result_T[0] = result_T[0] * b_T[0];
       });
-    else
-      return sycl::event();
-  }
-};
+    });
+  else
+    return sycl::event();
+}
 
 template <typename T> struct scale_d_impl {
   sycl::event operator()(const void *d_scale_ptr, void *d, size_t ld,
@@ -937,14 +932,12 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
           q_ptr->memcpy(scales_alpha->get_data_handle(), alpha, sizeof(float));
 #endif
     }
-#ifndef DPCT_USM_LEVEL_NONE
     // alpha = alpha * scale_a * scale_b
-    sycl::event multiply_impl_e = detail::type_dispatch<detail::multiply_impl>(
-        compute_desc->_scale_type, q_ptr, scales_alpha,
-        compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
+    sycl::event multiply_impl_e = detail::multiply_impl(
+        q_ptr, scales_alpha, compute_desc->_a_scale_pointer,
+        compute_desc->_b_scale_pointer,
         std::vector<sycl::event>{scalar_alpha_e});
     transform_events.push_back(multiply_impl_e);
-#endif
     transform_events.push_back(scalar_alpha_e);
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
