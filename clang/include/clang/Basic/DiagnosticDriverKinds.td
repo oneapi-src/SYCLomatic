@@ -119,7 +119,7 @@ def warn_drv_partially_supported_cuda_version: Warning<
   "CUDA version %0 is only partially supported">,
   InGroup<CudaUnknownVersion>;
 // SYCLomatic_CUSTOMIZATION begin
-def err_drv_cuda_host_arch : Error<"unsupported option -target '%0'.">;
+def err_drv_cuda_host_arch : Error<"unsupported option -target '%0'">;
 // SYCLomatic_CUSTOMIZATION end
 
 def err_drv_no_sycl_libspirv : Error<
