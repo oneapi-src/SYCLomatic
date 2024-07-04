@@ -470,11 +470,18 @@ template <typename T> struct multiply_impl {
     auto result_T = (T *)result;
     auto a_T = (T *)a;
     auto b_T = (T *)b;
-    return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(deps);
-      cgh.single_task<dpct_kernel_name<class multiply, T>>(
-          [=]() { result_T[0] = result_T[0] * a_T[0] * b_T[0]; });
-    });
+    if (a_T || b_T)
+      return q_ptr->submit([&](sycl::handler &cgh) {
+        cgh.depends_on(deps);
+        cgh.single_task<dpct_kernel_name<class multiply, T>>([=]() {
+          if (a_T)
+            result_T[0] = result_T[0] * a_T[0];
+          if (b_T)
+            result_T[0] = result_T[0] * b_T[0];
+        });
+      });
+    else
+      return sycl::event();
   }
 };
 #endif
@@ -824,7 +831,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
           dpct::detail::dpct_memcpy(*q_ptr, scales_alpha->get_data_handle(),
                                     alpha, sizeof(float), automatic);
     }
-    // multiply scale_a and scale_b
+    // alpha = alpha * scale_a * scale_b
     sycl::event multiply_impl_e = detail::type_dispatch<detail::multiply_impl>(
         compute_desc->_scale_type, q_ptr, scales_alpha->get_data_handle(),
         compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
