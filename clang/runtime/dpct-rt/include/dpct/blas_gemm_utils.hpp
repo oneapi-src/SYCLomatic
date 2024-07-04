@@ -973,6 +973,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         d_desc->_type, amax_ptr, new_d, new_ldd, d_desc->_rows, d_desc->_cols,
         q_ptr,
         std::vector<sycl::event>{matmul_prim_event, scale_d_with_alpha_event});
+    // TODO: Remove this wait. This wait is a WA to make sure the amax is
+    // correct when using buffer on CPU device. The failure rate is about 2%.
+#ifdef DPCT_USM_LEVEL_NONE
+    amax_d_event.wait();
+#endif
   }
 
   sycl::event scale_d_event;
