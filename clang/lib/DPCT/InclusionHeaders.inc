@@ -48,8 +48,7 @@ REGIST_INCLUSION("curand_kernel.h", FullMatch, Rng, Replace, false,
                  HeaderType::HT_DPCT_RNG_Utils)
 
 REGIST_INCLUSION("cusparse.h", FullMatch, Sparse, Replace, false,
-                 HeaderType::HT_DPCT_SPBLAS_Utils,
-                 HeaderType::HT_DPCT_BLAS_Utils)
+                 HeaderType::HT_DPCT_SPBLAS_Utils)
 REGIST_INCLUSION("cusparse_v2.h", FullMatch, Sparse, Replace, false,
                  HeaderType::HT_DPCT_SPBLAS_Utils,
                  HeaderType::HT_DPCT_BLAS_Utils)
@@ -106,3 +105,6 @@ REGIST_INCLUSION("cub/", Startwith, Thrust, Replace, false,
 REGIST_INCLUSION("CL/", Startwith, Common, DoNothing, false)
 
 REGIST_INCLUSION("cuda_rutime.h", FullMatch, Libcu, Remove, true)
+
+REGIST_INCLUSION("cublasLt.h", FullMatch, BLas, Replace, false,
+                 HeaderType::HT_DPCT_BLAS_GEMM_Utils)

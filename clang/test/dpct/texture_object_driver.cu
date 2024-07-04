@@ -45,14 +45,12 @@ int main() {
 
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
-  // CHECK-NEXT: size_t desc42_x_ct1, desc42_y_ct1;
-  // CHECK-NEXT: unsigned desc42_channel_num_ct1;
-  // CHECK-NEXT: sycl::image_channel_type desc42_channel_type_ct1;
-  // CHECK-NEXT: desc42_channel_num_ct1 = 4;
-  // CHECK-NEXT: desc42_channel_type_ct1 = sycl::image_channel_type::fp32;
-  // CHECK-NEXT: desc42_x_ct1 = 32;
-  // CHECK-NEXT: desc42_y_ct1 = 32;
-  // CHECK-NEXT: a42 = new dpct::image_matrix(desc42_channel_type_ct1, desc42_channel_num_ct1, desc42_x_ct1, desc42_y_ct1);
+  // CHECK-NEXT: dpct::image_matrix_desc desc42;
+  // CHECK-NEXT: desc42.channel_num = 4;
+  // CHECK-NEXT: desc42.channel_type = sycl::image_channel_type::fp32;
+  // CHECK-NEXT: desc42.width = 32;
+  // CHECK-NEXT: desc42.height = 32;
+  // CHECK-NEXT: a42 = new dpct::image_matrix(&desc42);
   // CHECK-NEXT: dpct::image_wrapper_base_p tex42;
   // CHECK-NEXT: dpct::image_data res42;
   // CHECK-NEXT: dpct::sampling_info texDesc42;

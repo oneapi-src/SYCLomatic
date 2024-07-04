@@ -63,7 +63,7 @@ public:
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
-  bool ReplaceCuMacro(const Token &MacroNameTok);
+  bool ReplaceCuMacro(const Token &MacroNameTok, MacroInfo *MI = nullptr);
   void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
@@ -1527,8 +1527,6 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   const static std::vector<std::string> RemoveMember;
 
 public:
-  void emplaceCuArrayDescDeclarations(const VarDecl *VD);
-
   static std::string getArrayDescMemberName(StringRef BaseName,
                                             const std::string &Member) {
     auto Itr = ArrayDescMemberNames.find(Member);
@@ -1801,6 +1799,12 @@ public:
 };
 
 class CompatWithClangRule : public NamedMigrationRule<CompatWithClangRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class GraphRule : public NamedMigrationRule<GraphRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriterCUB.h"
+#include "CallExprRewriterCommon.h"
 
 using namespace clang::dpct;
 
@@ -86,5 +87,32 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                            LITERAL("DPCT_COMPATIBILITY_TEMP"))
       // cub::PtxVersionUncached
       ASSIGN_FACTORY_ENTRY("cub::PtxVersionUncached", ARG(0),
-                           LITERAL("DPCT_COMPATIBILITY_TEMP"))};
+                           LITERAL("DPCT_COMPATIBILITY_TEMP"))
+      // cub::SmVersion
+      ASSIGN_FACTORY_ENTRY(
+          "cub::SmVersion", ARG(0),
+          BO(BO_Add,
+             BO(BO_Mul,
+                CALL(MapNames::getDpctNamespace() + "get_major_version",
+                     makeDeviceStr()),
+                LITERAL("100")),
+             BO(BO_Mul,
+                CALL(MapNames::getDpctNamespace() + "get_minor_version",
+                     makeDeviceStr()),
+                LITERAL("10"))))
+      // cub::SmVersionUncached
+      ASSIGN_FACTORY_ENTRY(
+          "cub::SmVersionUncached", ARG(0),
+          BO(BO_Add,
+             BO(BO_Mul,
+                CALL(MapNames::getDpctNamespace() + "get_major_version",
+                     makeDeviceStr()),
+                LITERAL("100")),
+             BO(BO_Mul,
+                CALL(MapNames::getDpctNamespace() + "get_minor_version",
+                     makeDeviceStr()),
+                LITERAL("10"))))
+      // cub::RowMajorTid
+      MEMBER_CALL_FACTORY_ENTRY("cub::RowMajorTid", NDITEM, /*IsArrow=*/false,
+                                "get_local_linear_id")};
 }

@@ -83,7 +83,7 @@ public:
 
   bool equal(std::shared_ptr<ExtReplacement> RHS) {
     return getLength() == RHS->getLength() &&
-           getReplacementText().equals(RHS->getReplacementText());
+           getReplacementText() == RHS->getReplacementText();
   }
 
   /// merge the constant info to LHS

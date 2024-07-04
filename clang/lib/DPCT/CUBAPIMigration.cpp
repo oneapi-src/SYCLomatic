@@ -67,14 +67,14 @@ auto isDeviceFuncCallExpr = []() {
         "If", "StableSortKeys", "StableSortKeysDescending", "StableSortPairs",
         "StableSortPairsDescending", "NonTrivialRuns", "HistogramEven",
         "MultiHistogramEven", "HistogramRange", "MultiHistogramRange",
-        "SortKeysCopy", "StableSortKeys");
+        "SortKeysCopy", "StableSortKeys", "CsrMV");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
                       "DeviceSegmentedSort", "DeviceHistogram",
-                      "DeviceMergeSort", "DevicePartition");
+                      "DeviceMergeSort", "DevicePartition", "DeviceSpmv");
   };
   return callExpr(callee(functionDecl(allOf(
       hasDeviceFuncName(),
@@ -97,7 +97,7 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cub::KeyValuePair", "cub::CountingInputIterator",
         "cub::TransformInputIterator", "cub::ConstantInputIterator",
         "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
-        "cub::DoubleBuffer", "cub::NullType");
+        "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin");
   };
 
   MF.addMatcher(
@@ -189,7 +189,8 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
               hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
                          "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
                          "DeviceCountUncached", "DeviceCountCachedValue",
-                         "PtxVersion", "PtxVersionUncached"),
+                         "PtxVersion", "PtxVersionUncached", "SmVersion",
+                         "SmVersionUncached", "RowMajorTid"),
               hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);

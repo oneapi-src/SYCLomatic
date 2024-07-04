@@ -109,8 +109,8 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cmake_cxx_standard
-  In: set${empty}(${empty}CMAKE_CXX_STANDARD ${version})
-  Out: set(CMAKE_CXX_STANDARD 17)
+  In: set${empty}(${empty}CMAKE_CXX_STANDARD ${cplusplus_version})
+  Out: set(CMAKE_CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_cmake_cxx_compiler
   Kind: CMakeRule
@@ -621,8 +621,8 @@
   Out: target_compile_options(${arg})
   Subrules:
     arg:
-      In: $<$<COMPILE_LANGUAGE:CUDA>:${flags}>
-      Out: ""
+      In: $<$<COMPILE_LANGUAGE:CUDA${rest}>:${flags}>
+      Out: $<$<COMPILE_LANGUAGE:CXX>:${flags}>
       RuleId: "target_compile_options_cuda_arg"
 
 - Rule: rule_CUDA_HAS_FP16
@@ -648,8 +648,8 @@
   Out: target_compile_features(${value})
   Subrules:
     value:
-      In: cxx_std_${ver}
-      Out: cxx_std_17
+      In: cxx_std_${cplusplus_version}
+      Out: cxx_std_${rewrite_cplusplus_version}
       RuleId: "adjust_cxx_ver"
 
 # Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
@@ -662,8 +662,8 @@
   Out: target_compile_features(${value})
   Subrules:
     value:
-      In: cuda_std_${ver}
-      Out: cxx_std_17
+      In: cuda_std_${cplusplus_version}
+      Out: cxx_std_${rewrite_cplusplus_version}
       RuleId: "adjust_cuda_ver"
 
 - Rule: rule_file_include_cuh_header_file
@@ -685,13 +685,6 @@
   Priority: Fallback
   CmakeSyntax: cuda_add_executable
   In: cuda_add_executable(${value})
-  Out: add_executable(${value})
-
-- Rule: rule_add_executable
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_executable
-  In: add_executable(${value} OPTIONS {options})
   Out: add_executable(${value})
 
 - Rule: rule_add_executable_opts
@@ -974,6 +967,7 @@
 - Rule: rule_cuda_add_library
   Kind: CMakeRule
   Priority: Fallback
+  MatchMode: Full
   CmakeSyntax: cuda_add_library
   In: cuda_add_library(${arg})
   Out: add_library(${arg})
@@ -2046,22 +2040,22 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cuda_standard
-  In: set_property(${target} PROPERTY CUDA_STANDARD ${version})
-  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+  In: set_property(${target} PROPERTY CUDA_STANDARD ${cplusplus_version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_property_cxx_standard
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cxx_standard
-  In: set_property(${target} PROPERTY CXX_STANDARD ${version})
-  Out: set_property(${target} PROPERTY CXX_STANDARD 17)
+  In: set_property(${target} PROPERTY CXX_STANDARD ${cplusplus_version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_cxx_target_properties
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_cxx_target_properties
-  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
+  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${cplusplus_version})
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_target_properties_cuda_standard
   Kind: CMakeRule
@@ -2071,16 +2065,15 @@
   Out: set_target_properties(${targets} PROPERTIES ${properties})
   Subrules:
     properties:
-      In: CUDA_STANDARD ${version} ${other_properties}
-      Out: CXX_STANDARD 17 ${other_properties}
-      MatchMode: Full
+      In: CUDA_STANDARD ${cplusplus_version} ${other_properties}
+      Out: CXX_STANDARD ${rewrite_cplusplus_version} ${other_properties}
 
 - Rule: rule_set_target_properties_cuda_standard-only
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_target_properties_cuda_standard-only
-  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD 17)
+  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${cplusplus_version})
+  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_set_cmake_cuda_required
   Kind: CMakeRule
@@ -2154,8 +2147,8 @@
   Out: ${func_name}(${value})
   Subrules:
     value:
-      In:  -std=c++${version}
-      Out: -std=c++17
+      In:  -std=c++${cplusplus_version}
+      Out: -std=c++${rewrite_cplusplus_version}
 
 # to handle the case like "list(APPEND PMEMD_NVCC_FLAGS --std c++11)"
 - Rule: rule_user_defined_variable_format_2
@@ -2167,8 +2160,8 @@
   Out: ${func_name}(${arg0} --std ${value})
   Subrules:
     value:
-      In:  c++${version}
-      Out: c++17
+      In:  c++${cplusplus_version}
+      Out: c++${rewrite_cplusplus_version}
 
 - Rule: rule_add_link_options
   Kind: CMakeRule
@@ -2565,3 +2558,16 @@
       MatchMode: Full
       In: --use_fast_math
       Out: -ffast-math
+
+- Rule: rule_CMAKE_CUDA_COMPILER_VERSION
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_COMPILER_VERSION
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER_VERSION
+      Out: COMPATIBILITY_VERSION

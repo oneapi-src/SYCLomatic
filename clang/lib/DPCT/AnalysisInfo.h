@@ -1118,7 +1118,8 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
                            ReplTy &ReplSetsSYCL /*out*/);
-  std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
+  std::shared_ptr<KernelCallExpr>
+  buildLaunchKernelInfo(const CallExpr *, bool IsAssigned = false);
   void insertCudaMalloc(const CallExpr *CE);
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
@@ -1272,6 +1273,9 @@ public:
   }
   static bool useExtBindlessImages() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
+  }
+  static bool useExtGraph() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Graph>();
   }
   static bool useExpNonUniformGroups() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
@@ -1919,7 +1923,7 @@ private:
   const DeclStmt *DeclStmtOfVarType = nullptr;
   std::string LocalTypeName = "";
 
-  static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  static std::unordered_map<std::string, int> AnonymousTypeDeclStmtMap;
   bool UsedBySymbolAPIFlag = false;
   bool UseHelperFuncFlag = true;
   bool UseDeviceGlobalFlag = false;
@@ -2496,6 +2500,7 @@ protected:
   virtual std::string getExtraParameters(LocInfo LI);
 
   unsigned Offset;
+  unsigned OffsetForAttr;
   const clang::tooling::UnifiedPath FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
@@ -2694,6 +2699,7 @@ class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
   bool NeedLambda = false;
+  bool NeedDefaultRetValue = false;
 
 private:
   struct ArgInfo {
@@ -2723,6 +2729,7 @@ private:
     int Index;
     int ArgSize = 0;
     bool IsDeviceRandomGeneratorType = false;
+    bool HasImplicitConversion = false;
     bool IsDoublePointer = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
@@ -2760,7 +2767,7 @@ public:
 
   static std::shared_ptr<KernelCallExpr> buildFromCudaLaunchKernel(
       const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
-      const CallExpr *);
+      const CallExpr *, bool IsAssigned = false);
   static std::shared_ptr<KernelCallExpr>
   buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *,
                   std::shared_ptr<DeviceFunctionInfo>);
@@ -2784,6 +2791,8 @@ private:
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
   void setNeedAddLambda(const CUDAKernelCallExpr *KernelCall);
+  void setNeedAddLambda();
+  void setNeedDefaultRet();
   void buildNeedBracesInfo(const CallExpr *KernelCall);
   void buildLocationInfo(const CallExpr *KernelCall);
   template <class ArgsRange>

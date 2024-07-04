@@ -8,7 +8,7 @@ $(program): main.cpp test
 
 
 test: 
-	$(CC) -c kernels/test.cu -o test.o 
+	$(CC) -c kernels/test.cu -o test.o -arch=all -arch=native -arch=all-major --gpu-architecture=all --gpu-architecture=native --gpu-architecture=all-major
 
 clean:
 	rm -rf *.o all compile_commands.json

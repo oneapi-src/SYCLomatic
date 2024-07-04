@@ -14,11 +14,23 @@ stages:
 * `Stage 2: Migrate Your Code`_. Review tool options and migrate your code with the
   tool.
 * `Stage 3: Review the Migrated Code`_. Review and manually convert any unmigrated code.
-* `Stage 4: Build and Validate the New  SYCL Code Base`_. Build your project with the
+* `Stage 4: Build the New  SYCL Code Base`_. Build your project with the
   migrated code.
+* `Stage 5: Validate the New SYCL Application`_. Validate your new SYCL application to
+  check for correct functionality after migration.
 
 This document describes the steps in each stage with general recommendations and
 optional steps.
+
+.. note::
+
+   CUDA* API migration support is broad but not complete. If you encounter CUDA
+   APIs that were not migrated due to a lack of tool support, please report it
+   to the |sycl_forum|_ or
+   `priority support <https://www.intel.com/content/www/us/en/developer/get-help/priority-support.html>`_.
+   Alternatively, `submit an issue <https://github.com/oneapi-src/SYCLomatic/issues>`_ or
+   `contribute to the SYCLomatic project <https://github.com/oneapi-src/SYCLomatic/blob/SYCLomatic/CONTRIBUTING.md>`_.
+   This helps prioritize which CUDA APIs will be supported in future releases.
 
 Prerequisites
 -------------
@@ -85,6 +97,23 @@ in the migration results:
 
 For detailed information about dialect differences between Clang and nvcc, refer to llvm.org's
 `Compiling CUDA with clang <https://www.llvm.org/docs/CompileCudaWithLLVM.html>`_ page.
+
+Run CodePin to Capture Application Signature
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CodePin is a feature that helps reduce the effort of debugging inconsistencies in
+runtime behavior. CodePin generates reports from the CUDA and SYCL programs
+that, when compared, can help identify the source of divergent runtime behavior.
+
+Enable the CodePin tool during the migration in order to capture the project
+signature.
+
+This signature will be used later for validation after migration.
+
+Enable CodePin with the ``–enable-codepin`` option.
+
+For detailed information about debugging using the CodePin tool, refer to
+`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html>`_.
 
 Configure the Tool
 ******************
@@ -197,6 +226,24 @@ Command-line options provide control to
 Refer to the :ref:`alpha_opt` for a full list of all available command-line
 options.
 
+Buffer vs USM Code Generation
+*****************************
+
+Intel promotes both buffer and USM in the SYCL/oneAPI context. Some oneAPI libraries preferentially support buffer versus USM, so there may be some design consideration in configuring your migration. USM is used by default, but buffer may be a better fit for some projects.
+
+The buffer model sets up a 1-3 dimensional array (buffer) and accesses its components via a C++ accessor class. This grants more control over the exact nature and size of the allocated memory, and how host and offload target compute units access it.
+However, the buffer model can also create extra class management overhead, which can require more manual intervention and may yield less performance.
+
+USM (unified shared memory) is a newer model, beginning with SYCL2020. USM is a pointer-based memory management model using
+``malloc_device/malloc_shared/malloc_host``  allocator functions, similar to how C++ code usually handles memory accesses when no GPU device offload is involved. Choosing the USM model can make it easier to add to existing code and migrate from CUDA code.  Management of the USM memory space is however very much done by the SYCL runtime, reducing granularity of control for the developer.
+
+* `SYCL Buffer Specification <https://registry.khronos.org/SYCL/specs/sycl-2020/html/sycl-2020.html#sec:data.access.and.storage>`_
+* `SYCL USM Specification <https://registry.khronos.org/SYCL/specs/sycl-2020/html/sycl-2020.html#sec:usm>`_
+
+For more information on USM versus Buffer modes, please see the following sections of the GPU Optimization Guide:
+* `Unified Shared Memory Allocations <https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-1/usm-allocation.html>`_
+* `Buffer Accessor Modes <https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-1/buffer-accessors.html>`_
+
 What to Expect in Migrated Code
 *******************************
 
@@ -285,11 +332,10 @@ your CUDA source.
    `contribute to the SYCLomatic project <https://github.com/oneapi-src/SYCLomatic/blob/SYCLomatic/CONTRIBUTING.md>`_.
    This helps prioritize which CUDA APIs will be supported in future releases.
 
-Stage 4: Build and Validate the New SYCL Code Base
---------------------------------------------------
+Stage 4: Build the New SYCL Code Base
+-------------------------------------
 
-After you have completed any manual migration steps, build your converted code
-and validate your new code base.
+After you have completed any manual migration steps, build your converted code.
 
 Install New SYCL Code Base Dependencies
 ***************************************
@@ -354,6 +400,33 @@ in the Codeplay plugin documentation:
 * `Install the oneAPI for AMD GPUs plugin <https://developer.codeplay.com/products/oneapi/amd/guides/>`_ from Codeplay.
 * `Install the oneAPI for NVIDIA GPUs plugin <https://developer.codeplay.com/products/oneapi/nvidia/guides/>`_ from Codeplay.
 
+Stage 5: Validate the New SYCL Application
+------------------------------------------
+
+After you have built your converted code, validate your new SYCL application to
+check for correct functionality after migration.
+
+Use a Debugger to Validate Migrated Code
+****************************************
+
+After you have successfully compiled your new SYCL application, run the app in
+debug mode using a debugger such as 
+`Intel Distribution for GDB <https://www.intel.com/content/www/us/en/developer/tools/oneapi/distribution-for-gdb.html>`_ to verify that your application runs
+as expected after migration.
+
+Learn more about `Debugging with Intel Distribution for GDB <https://www.intel.com/content/www/us/en/docs/distribution-for-gdb/tutorial-debugging-dpcpp-linux/2024-1/overview.html>`_. 
+
+Use CodePIN to Validate Migrated Code
+*************************************
+
+If the CodePin feature has been enabled during the migration time,
+project signature will be logged during the execution time.
+
+The signature contains the data value of each execution checkpoint, which can be verified manually or with an auto-analysis tool.
+
+For detailed information about debugging using the CodePin tool, refer to
+`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html>`_.
+
 Optimize Your Code
 ------------------
 
@@ -403,3 +476,7 @@ Find More
      - Forum to get assistance when migrating your CUDA code to SYCL.
    * - `Intel® oneAPI Math Kernel Library Link Line Advisor <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html>`_
      - Intel® oneAPI Math Kernel Library tool to help determine how to include oneMKL libraries for your specific use case.
+   * - `Tutorial: Debugging with Intel® Distribution for GDB* <https://www.intel.com/content/www/us/en/docs/distribution-for-gdb/tutorial-debugging-dpcpp-linux/2024-1/overview.html>`_
+     - This tutorial describes the basic scenarios of debugging applications using Intel® Distribution for GDB*.
+   * - `Intel® VTune™ Profiler Tutorials <https://www.intel.com/content/www/us/en/developer/articles/training/vtune-profiler-tutorials.html>`_
+     - Tutorials demonstrating an end-to-end workflow using Intel® VTune™ Profiler that you can ultimately apply to your own applications.

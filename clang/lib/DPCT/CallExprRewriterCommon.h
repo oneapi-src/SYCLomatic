@@ -324,23 +324,6 @@ makeCombinedArg(std::function<T1(const CallExpr *)> Part1,
   };
 }
 
-inline std::function<std::vector<RenameWithSuffix>(const CallExpr *)>
-makeStructDismantler(unsigned Idx, const std::vector<std::string> &Suffixes) {
-  return [=](const CallExpr *C) -> std::vector<RenameWithSuffix> {
-    std::vector<RenameWithSuffix> Ret;
-    if (auto DRE = dyn_cast_or_null<DeclRefExpr>(
-            getDereferencedExpr(C->getArg(Idx)))) {
-      Ret.reserve(Suffixes.size());
-      auto Origin = DRE->getDecl()->getName();
-      std::transform(Suffixes.begin(), Suffixes.end(), std::back_inserter(Ret),
-                     [&](StringRef Suffix) -> RenameWithSuffix {
-                       return RenameWithSuffix(Origin, Suffix);
-                     });
-    }
-    return Ret;
-  };
-}
-
 inline std::function<std::string(const CallExpr *)>
 makeExtendStr(unsigned Idx, const std::string Suffix) {
   return [=](const CallExpr *C) -> std::string {
@@ -1561,17 +1544,6 @@ createDerefExprRewriterFactory(
       std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
 }
 
-class CheckWarning1073 {
-  unsigned Idx;
-
-public:
-  CheckWarning1073(unsigned I) : Idx(I) {}
-  bool operator()(const CallExpr *C) {
-    auto DerefE = getDereferencedExpr(C->getArg(Idx));
-    return DerefE && isa<DeclRefExpr>(DerefE);
-  }
-};
-
 // sycl has 2 overloading of malloc_device
 // 1. sycl::malloc_device(Addr, Size)
 // 2. sycl::malloc_device<type>(Addr, Size)
@@ -1726,6 +1698,10 @@ inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
 
 inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtBindlessImages();
+};
+
+inline auto UseExtGraph = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtGraph();
 };
 
 inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
@@ -2050,7 +2026,6 @@ const std::string MipmapNeedBindlessImage =
 #define ADDROF(x) makeAddrOfExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define DEREF_CAST_IF_NEED(T, S) makeDerefCastIfNeedExprCreator(T, S)
-#define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)
 #define TEMPLATE_ARG(x) makeCallArgCreatorFromTemplateArg(x)

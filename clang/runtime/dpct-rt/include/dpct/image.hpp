@@ -139,6 +139,14 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 
 } // namespace detail
 
+struct image_matrix_desc {
+  size_t width = 0;
+  size_t height = 0;
+  sycl::image_channel_type channel_type =
+      sycl::image_channel_type::signed_int32;
+  unsigned channel_num = 0;
+};
+
 /// Image channel info, include channel number, order, data width and type
 class image_channel {
   image_channel_data_type _type = image_channel_data_type::signed_int;
@@ -331,6 +339,9 @@ public:
     }
     _host_data = std::malloc(_range[0] * _range[1] * _channel.get_total_size());
   }
+  image_matrix(const image_matrix_desc *desc)
+      : image_matrix(desc->channel_type, desc->channel_num, desc->width,
+                     desc->height) {}
 
   /// Construct a new image class with the matrix data.
   template <int dimensions> sycl::image<dimensions> *create_image() {
@@ -626,6 +637,15 @@ public:
     image_wrapper_base::set_data(
         image_data(const_cast<void *>(data), x, y, pitch, channel));
   }
+  /// Attach device_ptr data to this class.
+  void attach(const image_matrix_desc *desc, device_ptr ptr, size_t pitch) {
+    detach();
+    image_channel channel;
+    channel.set_channel_num(desc->channel_num);
+    channel.set_channel_type(desc->channel_type);
+    image_wrapper_base::set_data(
+        image_data(ptr, desc->width, desc->height, pitch, channel));
+  }
   /// Detach data.
   virtual void detach() {}
 
@@ -777,7 +797,7 @@ public:
                               IsImageArray>::accessor_t;
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
-  ~image_wrapper() { detach(); }
+  ~image_wrapper() override { detach(); }
 
   /// Get image accessor.
   accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {

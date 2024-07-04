@@ -342,13 +342,13 @@ By default, these extensions are used in migrated code.
 
 The values are:
 
-- ``=bfloat16``: Disable the SYCL extensions for bfloat16.
+- ``=bfloat16``: Disable the SYCL extensions for bfloat16. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_bfloat16.asciidoc>`__.
 - ``=device_info``: Disable the Intel extensions for device information, if supported
-  by the compiler and the backend.
-- ``=enqueued_barriers``: Disable the enqueued barriers extension.
-- ``=peer_access``: Disable the peer access extension.
-- ``=assert``: Disable the assert extension.
-- ``=queue_empty``: Disable the queue empty extension.
+  by the compiler and the backend. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_intel_device_info.md>`__.
+- ``=enqueued_barriers``: Disable the enqueued barriers extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_enqueue_barrier.asciidoc>`__.
+- ``=peer_access``: Disable the peer access extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_peer_access.asciidoc>`__.
+- ``=assert``: Disable the assert extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_assert.asciidoc>`__.
+- ``=queue_empty``: Disable the queue empty extension. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_queue_empty.asciidoc>`__.
 - ``=all``: Disable all extensions listed in this option.
 
 .. _end-no-dpcpp-extensions:
@@ -655,10 +655,10 @@ By default, these extensions are not used in migrated code.
 - ``=c_cxx_standard_library``: Use std functions from the libdevice library
   (provided by |dpcpp_compiler|_) and C/C++ Standard Library to migrate functions
   which have no mapping in the SYCL standard. If this value is used together with
-  ``intel_device_math``, the ``intel_device_math`` functions take precedence.
+  ``intel_device_math``, the ``intel_device_math`` functions take precedence. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/C-CXX-StandardLibrary.rst>`__.
 - ``=intel_device_math``: Use ``sycl::ext::intel::math`` functions from the libdevice
   library (provided by |dpcpp_compiler|) to migrate functions which have no
-  mapping in the SYCL standard.
+  mapping in the SYCL standard. `See more details <https://github.com/intel/llvm/tree/sycl/libdevice>`__.
 - ``all``: Enable all DPC++ extensions listed in this option.
 
 .. _end-use-dpcpp-extensions:
@@ -676,27 +676,27 @@ By default, experimental features will not be used in migrated code.
 
 The values are:
 
-- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions.
-- ``=bindless_images``: Experimental extension that allows use of bindless images APIs.
+- ``=bfloat16_math_functions``: Experimental extension that allows use of bfloat16 math functions. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bfloat16_math_functions.asciidoc>`__.
+- ``=bindless_images``: Experimental extension that allows use of bindless images APIs. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_bindless_images.asciidoc>`__.
 - ``=dpl-experimental-api``: Experimental extension that allows use of experimental
-  oneDPL APIs.
+  oneDPL APIs. `See more details <https://github.com/oneapi-src/oneDPL/tree/main/include/oneapi/dpl/pstl/experimental>`__.
 - ``=free-function-queries``: Experimental extension that allows getting
   ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances
-  globally.
+  globally. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_free_function_queries.asciidoc>`__.
 - ``=local-memory-kernel-scope-allocation``: Experimental extension that
-  allows allocation of local memory objects at the kernel functor scope.
+  allows allocation of local memory objects at the kernel functor scope. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_local_memory.asciidoc>`__.
 - ``=logical-group``: Experimental helper function used to logically
-  group work-items.
+  group work-items. See more details in ``dpct::experimental::logical_group`` in header file ``util.hpp``.
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
-  sub-group operation with mask.
-- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``.
-- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration.
-- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
+  sub-group operation with mask. See more details in ``dpct::experimental::select_from_sub_group``, ``dpct::experimental::shift_sub_group_left``, ``dpct::experimental::shift_sub_group_right`` and ``dpct::experimental::shift_sub_group_right`` in header file ``util.hpp``.
+- ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_matrix/sycl_ext_oneapi_matrix.asciidoc>`__.
+- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration. See more details in ``dpct::experimental::nd_range_barrier`` in header file ``util.hpp``.
+- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy. See more details in ``dpct::experimental::calculate_max_active_wg_per_xecore`` and ``dpct::experimental::calculate_max_potential_wg`` in header file ``util.hpp``.
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
-  reductions.
-- ``=non-uniform-groups``: Experimental extension that allows use of non-uniform groups.
+  reductions. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_user_defined_reductions.asciidoc>`__.
+- ``=non-uniform-groups``: Experimental extension that allows use of non-uniform groups. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_non_uniform_groups.asciidoc>`__.
 - ``=device_global``: Experimental extension that allows device scoped memory allocations into SYCL that can
-  be accessed within a kernel using syntax similar to C++ global variables.
+  be accessed within a kernel using syntax similar to C++ global variables. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_device_global.asciidoc>`__.
 - ``=all``: Enable all experimental extensions listed in this option.
 
 .. _end-use-experimental-features:
