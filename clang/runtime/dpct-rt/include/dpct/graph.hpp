@@ -109,10 +109,8 @@ add_empty_node(dpct::experimental::node_ptr *newNode,
     *newNode = new sycl::ext::oneapi::experimental::node(graph->add());
     return;
   }
-  std::vector<sycl::ext::oneapi::experimental::node> dependencies;
-  for (std::size_t i = 0; i < numberOfDependencies; i++) {
-    dependencies.push_back(*dependenciesArray[i]);
-  }
+  std::vector<sycl::ext::oneapi::experimental::node> dependencies{
+      *dependenciesArray, *(dependenciesArray + numberOfDependencies)};
   *newNode =
       new sycl::ext::oneapi::experimental::node(graph->add(sycl::property_list{
           sycl::ext::oneapi::experimental::property::node::depends_on(
