@@ -554,8 +554,8 @@ __dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
 }
 
 /// Stores a striped arrangement of work items linear segment of items.
-template <size_t ITEMS_PER_WORK_ITEM, typename InputT,
-          typename OutputIteratorT, typename Item>
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
+          typename Item>
 __dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
