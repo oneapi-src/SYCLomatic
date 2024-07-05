@@ -52,7 +52,7 @@ __global__ void ShuffleIndexKernel2(int* data) {
   int input = data[threadid];
   int output = 0;
 // CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleIndex is not supported.
+// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleIndex(int, int, unsigned int) is not supported.
 // CHECK-NEXT: */
 // CHECK-NEXT: output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
   output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
