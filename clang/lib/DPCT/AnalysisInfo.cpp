@@ -4030,11 +4030,12 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 
   SourceLocation InsertLocation;
   auto &SM = DpctGlobalInfo::getSourceManager();
-  if (FuncInfo) {
-    if (FuncInfo->NonDefaultParamNum) {
-      if (Ctor->getNumArgs() >= FuncInfo->NonDefaultParamNum) {
+  auto Info = getFuncInfo();
+  if (Info) {
+    if (Info->NonDefaultParamNum) {
+      if (Ctor->getNumArgs() >= Info->NonDefaultParamNum) {
         InsertLocation =
-            Ctor->getArg(FuncInfo->NonDefaultParamNum - 1)->getEndLoc();
+            Ctor->getArg(Info->NonDefaultParamNum - 1)->getEndLoc();
       } else {
         ExtraArgLoc = 0;
         return;
@@ -4076,12 +4077,12 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   } else {
     HasArgs = CE->getNumArgs();
   }
-
-  if (FuncInfo) {
-    if (FuncInfo->ParamsNum == 0) {
+  auto Info = getFuncInfo();
+  if (Info) {
+    if (Info->ParamsNum == 0) {
       ExtraArgLoc =
           DpctGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
-    } else if (FuncInfo->NonDefaultParamNum == 0) {
+    } else if (Info->NonDefaultParamNum == 0) {
       // if all params have default value
       if (CE->getNumArgs()) {
         ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
@@ -4093,14 +4094,14 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
-      if (CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
+      if (CE->getNumArgs() > Info->NonDefaultParamNum - 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
         auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
         auto TempLoc = Lexer::getLocForEndOfToken(
             CERange.getEnd(), 0, SM,
             DpctGlobalInfo::getContext().getLangOpts());
         auto PairRange = getRangeInRange(
-            CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg),
+            CE->getArg(Info->NonDefaultParamNum - 1 + HasImplicitArg),
             CERange.getBegin(), TempLoc);
         auto RealEnd = PairRange.second;
         auto IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
@@ -4108,11 +4109,11 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
         if (IT !=
                 dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
             IT->second->TokenIndex == IT->second->NumTokens) {
-          RealEnd = SM.getImmediateExpansionRange(
-                          CE->getArg(FuncInfo->NonDefaultParamNum - 1 +
-                                     HasImplicitArg)
-                              ->getEndLoc())
-                        .getEnd();
+          RealEnd =
+              SM.getImmediateExpansionRange(
+                    CE->getArg(Info->NonDefaultParamNum - 1 + HasImplicitArg)
+                        ->getEndLoc())
+                  .getEnd();
           RealEnd = Lexer::getLocForEndOfToken(
               RealEnd, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
           IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
@@ -4184,11 +4185,11 @@ std::string CallFunctionExpr::getTemplateArguments(bool &IsNeedWarning,
   return (Result.empty()) ? Result : Result.erase(Result.size() - 2);
 }
 std::string CallFunctionExpr::getExtraArguments() {
-  if (!FuncInfo)
+  auto Info = getFuncInfo();
+  if (!Info)
     return "";
-  return getVarMap().getExtraCallArguments(FuncInfo->NonDefaultParamNum,
-                                           FuncInfo->ParamsNum -
-                                               FuncInfo->NonDefaultParamNum);
+  return getVarMap().getExtraCallArguments(
+      Info->NonDefaultParamNum, Info->ParamsNum - Info->NonDefaultParamNum);
 }
 std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArgInfo(
     unsigned ArgIdx, std::shared_ptr<TextureObjectInfo> Info) {
@@ -4250,14 +4251,12 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
   return std::shared_ptr<TextureObjectInfo>();
 }
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
-  if (FuncInfo && Info && (FuncInfo != Info)) {
-    if (!FuncInfo->getVarMap().isSameAs(Info->getVarMap())) {
-      DiagnosticsUtils::report(getFilePath(), getOffset(),
-                               Warnings::DEVICE_CALL_DIFFERENT, true, false,
-                               FuncInfo->getFunctionName());
-    }
+  if (!Info) {
+    return;
   }
-  FuncInfo = Info;
+  if (std::find(FuncInfo.begin(), FuncInfo.end(), Info) == FuncInfo.end()) {
+    FuncInfo.push_back(Info);
+  }
 }
 void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
                                        std::optional<unsigned int> NumArgs) {
@@ -4420,12 +4419,13 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
     ArgItr++;
   }
 }
-void CallFunctionExpr::mergeTextureObjectInfo() {
+void CallFunctionExpr::mergeTextureObjectInfo(
+    std::shared_ptr<DeviceFunctionInfo> Info) {
   if (BaseTextureObject)
-    BaseTextureObject->merge(FuncInfo->getBaseTextureObject());
+    BaseTextureObject->merge(Info->getBaseTextureObject());
   for (unsigned Idx = 0; Idx < TextureObjectList.size(); ++Idx) {
     if (auto &Obj = TextureObjectList[Idx]) {
-      Obj->merge(FuncInfo->getTextureObject(Idx));
+      Obj->merge(Info->getTextureObject(Idx));
     }
   }
 }
@@ -6515,41 +6515,61 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
   deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
 }
 
+std::shared_ptr<DeviceFunctionInfo> CallFunctionExpr::getFuncInfo() {
+  if (FuncInfo.empty()) {
+    return std::shared_ptr<DeviceFunctionInfo>();
+  }
+  return FuncInfo.front();
+}
+
 void CallFunctionExpr::buildInfo() {
-  if (!FuncInfo)
-    return;
+  for (auto &Info : FuncInfo) {
+    const clang::tooling::UnifiedPath &DefFilePath =
+        Info->getDefinitionFilePath();
+    // SYCL_EXTERNAL macro is not needed if the device function is lambda
+    // expression, becuase 'sycl_device' attribute cannot be applied or will be
+    // ignored.
+    //
+    // e.g.,
+    // [] (T a, T b ) -> SYCL_EXTERNAL T { return a * b; }
+    // [] (T a, T b ) SYCL_EXTERNAL { return a * b; }
+    //
+    // Intel(R) oneAPI DPC++ Compiler emits warning of ignoring SYCL_EXTERNAL in
+    // the first example and emits error when compiling the second example.
+    //
+    // TODO: Need to revisit the condition to add SYCL_EXTERNAL macro if issues
+    // are observed in the future.
+    if (!DefFilePath.getCanonicalPath().empty() &&
+        DefFilePath != getFilePath() &&
+        !isIncludedFile(getFilePath(), DefFilePath) && !Info->isLambda()) {
+      Info->setNeedSyclExternMacro();
+    }
 
-  const clang::tooling::UnifiedPath &DefFilePath =
-      FuncInfo->getDefinitionFilePath();
-  // SYCL_EXTERNAL macro is not needed if the device function is lambda
-  // expression, becuase 'sycl_device' attribute cannot be applied or will be
-  // ignored.
-  //
-  // e.g.,
-  // [] (T a, T b ) -> SYCL_EXTERNAL T { return a * b; }
-  // [] (T a, T b ) SYCL_EXTERNAL { return a * b; }
-  //
-  // Intel(R) oneAPI DPC++ Compiler emits warning of ignoring SYCL_EXTERNAL in
-  // the first example and emits error when compiling the second example.
-  //
-  // TODO: Need to revisit the condition to add SYCL_EXTERNAL macro if issues
-  // are observed in the future.
-  if (!DefFilePath.getCanonicalPath().empty() && DefFilePath != getFilePath() &&
-      !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
-    FuncInfo->setNeedSyclExternMacro();
+    if (DpctGlobalInfo::isOptimizeMigration() && !Info->isInlined() &&
+        !Info->IsSyclExternMacroNeeded()) {
+      if (Info->isKernel())
+        Info->setForceInlineDevFunc();
+      else
+        Info->setAlwaysInlineDevFunc();
+    }
+
+    Info->buildInfo();
   }
-
-  if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
-      !FuncInfo->IsSyclExternMacroNeeded()) {
-    if (FuncInfo->isKernel())
-      FuncInfo->setForceInlineDevFunc();
-    else
-      FuncInfo->setAlwaysInlineDevFunc();
+  size_t FuncInfoSize = FuncInfo.size();
+  if (FuncInfoSize) {
+    VarMap.merge(FuncInfo.front()->getVarMap(), TemplateArgs);
+    mergeTextureObjectInfo(FuncInfo.front());
   }
-
-  FuncInfo->buildInfo();
-  VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
-  mergeTextureObjectInfo();
+  for (size_t i = 0; i < FuncInfoSize; i++) {
+    for (size_t j = i + 1; j < FuncInfoSize; j++) {
+      if (!FuncInfo[i]->getVarMap().isSameAs(FuncInfo[j]->getVarMap())) {
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                 Warnings::DEVICE_CALL_DIFFERENT, true, false,
+                                 FuncInfo[i]->getFunctionName());
+        return;
+      }
+    }
+  }
 }
 
 bool isInSameLine(SourceLocation First, SourceLocation Second,

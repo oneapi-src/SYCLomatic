@@ -22,7 +22,7 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriter>
   createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
     const static std::string MemberName = "read";
-    using ReaderPrinter = decltype(makeMemberCallCreator(
+    using ReaderPrinter = decltype(makeMemberCallCreator<false>(
         std::declval<std::function<BaseT(const CallExpr *)>>(), false,
         MemberName, makeCallArgCreatorWithCall(Idx)...)(C));
     if (RetAssign) {
