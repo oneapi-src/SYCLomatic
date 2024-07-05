@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriterCUB.h"
+#include "CallExprRewriterCommon.h"
 
 using namespace clang::dpct;
 
@@ -110,5 +111,8 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
              BO(BO_Mul,
                 CALL(MapNames::getDpctNamespace() + "get_minor_version",
                      makeDeviceStr()),
-                LITERAL("10"))))};
+                LITERAL("10"))))
+      // cub::RowMajorTid
+      MEMBER_CALL_FACTORY_ENTRY("cub::RowMajorTid", NDITEM, /*IsArrow=*/false,
+                                "get_local_linear_id")};
 }

@@ -45,7 +45,7 @@ R"(
       $ dpct -in-root=/path/to/project --in-root-exclude=/path/to/project/dir1                                    # Exclude migration of a dir or file
     
     Migrate/generate build scripts for migrated SYCL code
-      $ dpct --migrate-build-script=cmake -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project        # Migrate src code and CMake scripts
+      $ dpct --migrate-build-script=CMake -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project        # Migrate src code and CMake scripts
       $ dpct --migrate-build-script-only -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project         # Migrate build script only
       $ dpct --gen-build-script -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project                  # Migrate src code and generate Makefile script
 

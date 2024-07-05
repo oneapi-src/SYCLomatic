@@ -175,6 +175,10 @@ int peer_access() {
   // CHECK:  DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because SYCL currently does not support memory access across peer devices. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.
   // CHECK:  */
   cudaDeviceDisablePeerAccess(0);
+  // CHECK:  /*
+  // CHECK:  DPCT1026:{{[0-9]+}}: The call to cuCtxEnablePeerAccess was removed because SYCL currently does not support memory access across peer devices. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.
+  // CHECK:  */
+  cuCtxEnablePeerAccess(0, 0);
 
   return 0;
 }

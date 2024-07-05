@@ -56,6 +56,7 @@ private:
   static void initRewriterMapCUSPARSE();
   static void initRewriterMapComplex();
   static void initRewriterMapDriver();
+  static void initRewriterMapGraph();
   static void initRewriterMapMemory();
   static void initRewriterMapMisc();
   static void initRewriterMapNccl();
