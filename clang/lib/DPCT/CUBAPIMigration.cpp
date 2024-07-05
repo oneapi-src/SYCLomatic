@@ -21,6 +21,7 @@
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/OperationKinds.h"
+#include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/Type.h"
 #include "clang/AST/TypeLoc.h"
@@ -39,6 +40,7 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
+#include <cstdlib>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -862,6 +864,27 @@ void CubRule::processThreadLevelFuncCall(const CallExpr *CE,
   }
 }
 
+static std::string GetFunctionName(const CallExpr *CE) {
+  std::string s;
+  llvm::raw_string_ostream OS(s);
+  if (isa<CXXMemberCallExpr>(CE)) {
+    CE->getDirectCallee()->getNameForDiagnostic(
+      OS, DpctGlobalInfo::getContext().getLangOpts(), /*Qualified=*/true);
+  } else {
+    OS << "cub::" << CE->getDirectCallee()->getName();
+  }
+
+  OS << '(';
+  for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
+    auto *Arg = CE->getArg(I);
+    Arg->getType().print(OS, DpctGlobalInfo::getContext().getLangOpts());
+    if (I < E - 1)
+      OS << ", ";
+  }
+  OS << ')';
+  return s;
+}
+
 void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
   std::string Repl;
   size_t WarpSize = 32;
@@ -894,7 +917,7 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
       }
     } else {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
+             GetFunctionName(CE));
     }
   }
 }
@@ -971,7 +994,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
             IsReferenceOutput = true;
           } else {
             report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-                   "cub::" + FuncName);
+                   GetFunctionName(BlockMC));
             return;
           }
         } else {
@@ -1016,7 +1039,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                                                      HT_DPCT_DPL_Utils);
         } else {
           report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-                 "cub::" + FuncName);
+                 GetFunctionName(BlockMC));
           return;
         }
       }
@@ -1044,7 +1067,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 ->getType()
                 ->isLValueReferenceType()) {
           report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-                 "cub::" + FuncName);
+                 GetFunctionName(BlockMC));
           return;
         }
         GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
@@ -1098,7 +1121,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                                                      HT_DPCT_DPL_Utils);
         } else {
           report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-                 "cub::" + FuncName);
+                 GetFunctionName(BlockMC));
           return;
         }
       }
@@ -1126,7 +1149,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 ->getType()
                 ->isLValueReferenceType()) {
           report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-                 "cub::" + FuncName);
+                 GetFunctionName(BlockMC));
           return;
         }
         GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
@@ -1140,7 +1163,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       }
     } else {
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
+             GetFunctionName(BlockMC));
       return;
     }
     if (IsReferenceOutput) {
@@ -1275,7 +1298,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       ValidItemParamIdx = 1;
     } else {
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
+             GetFunctionName(BlockMC));
       return;
     }
     std::string In;
@@ -1352,7 +1375,7 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
         OpRepl = getOpRepl(FuncArgs[3]);
       } else {
         report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               "cub::" + FuncName);
+               GetFunctionName(WarpMC));
         return;
       }
       NewFuncName = "exclusive_scan_over_group";
@@ -1367,7 +1390,7 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
       NewFuncName = "inclusive_scan_over_group";
     } else {
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
+             GetFunctionName(WarpMC));
       return;
     }
     ExprAnalysis InEA(InData);
@@ -1413,7 +1436,7 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
     }
     default:
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
+             GetFunctionName(WarpMC));
       return;
     }
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
@@ -1439,7 +1462,7 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
              ", " + OpRepl + ")";
     } else {
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-             "cub::" + FuncName);
+             GetFunctionName(WarpMC));
       return;
     }
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
