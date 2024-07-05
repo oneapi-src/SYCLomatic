@@ -35,3 +35,34 @@ CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphLaunch"),
                             ARG("--use-experimental-features=graph")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaGraphAddEmptyNode",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::add_empty_node",
+                            ARG(0), ARG(1), ARG(2), ARG(3))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphAddEmptyNode",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphAddEmptyNode"),
+                            ARG("--use-experimental-features=graph")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaGraphAddDependencies",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::add_dependencies",
+                            ARG(0), ARG(1), ARG(2), ARG(3))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphAddDependencies",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphAddDependencies"),
+                            ARG("--use-experimental-features=graph")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    MEMBER_CALL_FACTORY_ENTRY("cudaGraphExecUpdate", ARG(0), true, "update",
+                              DEREF(1)),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphExecUpdate",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphExecUpdate"),
+                            ARG("--use-experimental-features=graph")))
