@@ -57,7 +57,7 @@ def err_pch_version_too_new : Error<
 
 // SYCLomatic_CUSTOMIZATION begin
 def err_pch_different_branch : Error<
-    "PCH file is built by (%0), expected (%1).">;
+    "PCH file is built by (%0), expected (%1)">;
 def err_pch_with_compiler_errors : Error<
     "PCH file contains syntax errors">;
 // SYCLomatic_CUSTOMIZATION end

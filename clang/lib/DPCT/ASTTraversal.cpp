@@ -170,7 +170,7 @@ void IncludesCallbacks::insertCudaArchRepl(
 }
 
 std::shared_ptr<clang::dpct::ReplaceToken>
-generateReplacement(SourceLocation SL, MacroMigrationRule Rule) {
+generateReplacement(SourceLocation SL, MacroMigrationRule &Rule) {
   requestFeature(Rule.HelperFeature);
   for (auto ItHeader = Rule.Includes.begin(); ItHeader != Rule.Includes.end();
        ItHeader++) {
@@ -1550,12 +1550,13 @@ void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
         new internal::HasNameMatcher(AtomicFuncNames));
   };
 
-  // Support all integer type, float and double
-  // Type half and half2 are not supported
+  // Support all integer type, float, double and half2
+  // Type half is not supported
   auto supportedTypes = [&]() {
     return anyOf(hasType(pointsTo(isInteger())),
                  hasType(pointsTo(asString("float"))),
-                 hasType(pointsTo(asString("double"))));
+                 hasType(pointsTo(asString("double"))),
+                 hasType(pointsTo(asString("__half2"))));
   };
 
   auto supportedAtomicFunctions = [&]() {
@@ -1581,7 +1582,7 @@ void AtomicFunctionRule::ReportUnsupportedAtomicFunc(const CallExpr *CE) {
     return;
 
   std::ostringstream OSS;
-  // Atomic functions with __half and half2 are not supported.
+  // Atomic functions with __half are not supported.
   if (!CE->getDirectCallee())
     return;
   OSS << "half version of "
@@ -8341,8 +8342,6 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamAttachMemAsync" ||
-             FuncName == "cudaStreamBeginCapture" ||
-             FuncName == "cudaStreamEndCapture" ||
              FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery" ||
              FuncName == "cudaDeviceGetStreamPriorityRange") {
@@ -10380,6 +10379,9 @@ void MemoryMigrationRule::memcpyMigration(
         handleAsync(C, 3, Result);
       }
     }
+  } else if (!NameRef.compare("cudaMemcpyPeer") ||
+             !NameRef.compare("cuMemcpyPeer")) {
+    handleAsync(C, 5, Result);
   }
 
   if (ReplaceStr.empty()) {
@@ -11153,7 +11155,9 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemsetD2D32_v2", "cuMemsetD2D32Async", "cuMemsetD2D8_v2",
         "cuMemsetD2D8Async", "cuMemsetD32_v2", "cuMemsetD32Async",
         "cuMemsetD8_v2", "cuMemsetD8Async", "cudaMallocMipmappedArray",
-        "cudaGetMipmappedArrayLevel", "cudaFreeMipmappedArray");
+        "cudaGetMipmappedArrayLevel", "cudaFreeMipmappedArray",
+        "cudaMemcpyPeer", "cudaMemcpyPeerAsync", "cuMemcpyPeer",
+        "cuMemcpyPeerAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11340,6 +11344,10 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemcpy3DAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy2DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpyPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpyPeerAsync", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyPeerAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaGetMipmappedArrayLevel", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DArrayToArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpy2DFromArray", &MemoryMigrationRule::arrayMigration},
@@ -15104,8 +15112,36 @@ void AssertRule::registerMatcher(MatchFinder &MF) {
 }
 void AssertRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  // The std assert is a macro, it will expand to __assert_fail.
+  // But we should not touch the std assert.
+  auto SpellingLoc =
+      DpctGlobalInfo::getSourceManager().getSpellingLoc(CE->getBeginLoc());
+  if (DpctGlobalInfo::isInAnalysisScope(SpellingLoc)) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+REGISTER_RULE(AssertRule, PassKind::PK_Migration)
+
+void GraphRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
+                      "cudaGraphExecDestroy");
+  };
+  MF.addMatcher(
+      callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
+      this);
+}
+
+void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  if (!CE) {
+    return;
+  }
   ExprAnalysis EA(CE);
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
 }
-REGISTER_RULE(AssertRule, PassKind::PK_Migration)
+
+REGISTER_RULE(GraphRule, PassKind::PK_Migration)
