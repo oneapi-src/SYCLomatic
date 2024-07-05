@@ -30,10 +30,10 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                        CALL(MapNames::getClNamespace() +
                                 "ext::intel::math::float2half_rn",
                             ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))),
-          MEMBER_CALL_FACTORY_ENTRY("__float22half2_rn", ARG(0), false,
-                                    "convert<" + MapNames::getClNamespace() +
-                                        "half, " + MapNames::getClNamespace() +
-                                        "rounding_mode::rte>"))
+          MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(
+              "__float22half2_rn", ARG(0), false,
+              "convert<" + MapNames::getClNamespace() + "half, " +
+                  MapNames::getClNamespace() + "rounding_mode::rte>"))
       // __float2half
       CONDITIONAL_FACTORY_ENTRY(
           math::UseIntelDeviceMath,
@@ -169,10 +169,10 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
                        CALL(MapNames::getClNamespace() +
                                 "ext::intel::math::half2float",
                             ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))))),
-          MEMBER_CALL_FACTORY_ENTRY("__half22float2", ARG(0), false,
-                                    "convert<float, " +
-                                        MapNames::getClNamespace() +
-                                        "rounding_mode::automatic>"))
+          MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(
+              "__half22float2", ARG(0), false,
+              "convert<float, " + MapNames::getClNamespace() +
+                  "rounding_mode::automatic>"))
       // __half2float
       CONDITIONAL_FACTORY_ENTRY(
           math::UseIntelDeviceMath,

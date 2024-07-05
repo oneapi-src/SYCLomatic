@@ -58,7 +58,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
   for (const auto &Arg : CE->arguments())
     DeviceFunctionCallArgs.insert(Arg);
 
-  if (FuncName == "__syncthreads") {
+  if (FuncName == "__syncthreads" || FuncName == "__barrier_sync") {
     SyncCallInfo SCI;
     SCI.Predecessors.push_back(
         SourceRange(FD->getBody()->getBeginLoc(), CE->getBeginLoc()));

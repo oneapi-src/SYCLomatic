@@ -165,4 +165,15 @@ __global__ void kernelFuncHalfConversion() {
   h = __ushort_as_half(us);
 }
 
+template <int BS>
+void __global__ kernel(){
+  int idx = threadIdx.x;
+  half2 local_val1[BS];
+  float2 local_val2[BS];
+  // CHECK: sycl::float2 tmp_float2 = local_val1[idx].template convert<float, sycl::rounding_mode::automatic>();
+  // CHECK-NEXT: sycl::half2 tmp_half2 = local_val2[idx].template convert<sycl::half, sycl::rounding_mode::rte>();
+  float2 tmp_float2 = __half22float2(local_val1[idx]);
+  half2 tmp_half2 = __float22half2_rn(local_val2[idx]);
+}
+
 int main() { return 0; }
