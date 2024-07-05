@@ -22,6 +22,8 @@ typedef sycl::ext::oneapi::experimental::command_graph<
     sycl::ext::oneapi::experimental::graph_state::executable>
     *command_graph_exec_ptr;
 
+typedef sycl::ext::oneapi::experimental::node *node_ptr;
+
 namespace detail {
 class graph_mgr {
 public:
@@ -82,11 +84,56 @@ static inline bool begin_recording(sycl::queue *queue_ptr) {
 /// were recorded.
 /// \param [out] graph A pointer to a command_graph_ptr pointer where the
 /// command graph will be assigned.
-/// \returns `true` if the recording is successfully ended and the graph is
-/// assigned.
+/// \returns `true` if the recording is successfully ended and the
+/// graph is assigned.
 static inline bool end_recording(sycl::queue *queue_ptr,
                                  dpct::experimental::command_graph_ptr *graph) {
   return detail::graph_mgr::instance().end_recording(queue_ptr, graph);
+}
+
+/// Adds an empty node to the command graph with optional
+/// dependencies.
+/// \param [out] newNode A pointer to the node_ptr that will be
+/// added to the graph.
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] dependenciesArray An array of node pointers
+/// representing the dependencies of the new node.
+/// \param [in] numberOfDependencies The number of dependencies in
+/// the dependenciesArray.
+static void
+add_empty_node(dpct::experimental::node_ptr *newNode,
+               dpct::experimental::command_graph_ptr graph,
+               const dpct::experimental::node_ptr *dependenciesArray,
+               std::size_t numberOfDependencies) {
+  if (numberOfDependencies == 0) {
+    *newNode = new sycl::ext::oneapi::experimental::node(graph->add());
+    return;
+  }
+  std::vector<sycl::ext::oneapi::experimental::node> dependencies;
+  for (std::size_t i = 0; i < numberOfDependencies; i++) {
+    dependencies.push_back(*dependenciesArray[i]);
+  }
+  *newNode =
+      new sycl::ext::oneapi::experimental::node(graph->add(sycl::property_list{
+          sycl::ext::oneapi::experimental::property::node::depends_on(
+              dependencies)}));
+}
+
+/// Adds dependencies between nodes in the command graph.
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] fromNodes An array of node pointers representing
+/// the source nodes.
+/// \param [in] toNodes An array of node pointers representing
+/// the destination nodes.
+/// \param [in] numberOfDependencies The number of dependencies
+/// to be added.
+static void add_dependencies(dpct::experimental::command_graph_ptr graph,
+                             const dpct::experimental::node_ptr *fromNodes,
+                             const dpct::experimental::node_ptr *toNodes,
+                             std::size_t numberOfDependencies) {
+  for (std::size_t i = 0; i < numberOfDependencies; i++) {
+    graph->make_edge(*fromNodes[i], *toNodes[i]);
+  }
 }
 
 } // namespace experimental
