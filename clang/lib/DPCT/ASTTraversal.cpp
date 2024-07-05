@@ -1694,35 +1694,35 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "thrust::device_ptr", "thrust::device_reference",
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
               "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
-              "cudaDeviceProp", "cudaPitchedPtr", "thrust::counting_iterator",
-              "thrust::transform_iterator", "thrust::permutation_iterator",
-              "thrust::iterator_difference", "cusolverDnHandle_t",
-              "cusolverDnParams_t", "gesvdjInfo_t", "syevjInfo_t",
-              "thrust::device_malloc_allocator", "thrust::divides",
-              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
-              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
-              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-              "cuFloatComplex", "cuDoubleComplex", "CUevent",
-              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
-              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
-              "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t",
-              "cusparseAlgMode_t", "cusparseOperation_t", "cusparseMatDescr_t",
-              "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
-              "cusparsePointerMode_t", "cublasGemmAlgo_t",
-              "cusparseSolveAnalysisInfo_t", "cudaDataType", "cublasDataType_t",
-              "curandState_t", "curandState", "curandStateXORWOW_t",
-              "curandStateXORWOW", "curandStatePhilox4_32_10_t",
-              "curandStatePhilox4_32_10", "curandStateMRG32k3a_t",
-              "curandStateMRG32k3a", "thrust::minus", "thrust::negate",
-              "thrust::logical_or", "thrust::equal_to", "thrust::less",
-              "cudaSharedMemConfig", "curandGenerator_t", "curandRngType_t",
-              "curandOrdering_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
-              "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
-              "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
-              "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
-              "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
+              "cudaDeviceProp", "cudaGraphExecUpdateResult", "cudaPitchedPtr",
+              "thrust::counting_iterator", "thrust::transform_iterator",
+              "thrust::permutation_iterator", "thrust::iterator_difference",
+              "cusolverDnHandle_t", "cusolverDnParams_t", "gesvdjInfo_t",
+              "syevjInfo_t", "thrust::device_malloc_allocator",
+              "thrust::divides", "thrust::tuple", "thrust::maximum",
+              "thrust::multiplies", "thrust::plus", "cudaDataType_t",
+              "cudaError_t", "CUresult", "CUdevice", "cudaEvent_t",
+              "cublasStatus_t", "cuComplex", "cuFloatComplex",
+              "cuDoubleComplex", "CUevent", "cublasFillMode_t",
+              "cublasDiagType_t", "cublasSideMode_t", "cublasOperation_t",
+              "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
+              "curandStatus_t", "cudaStream_t", "cusparseStatus_t",
+              "cusparseDiagType_t", "cusparseFillMode_t", "cusparseIndexBase_t",
+              "cusparseMatrixType_t", "cusparseAlgMode_t",
+              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
+              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
+              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
+              "cublasDataType_t", "curandState_t", "curandState",
+              "curandStateXORWOW_t", "curandStateXORWOW",
+              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
+              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
+              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
+              "curandRngType_t", "curandOrdering_t", "cufftHandle", "cufftReal",
+              "cufftDoubleReal", "cufftComplex", "cufftDoubleComplex",
+              "cufftResult_t", "cufftResult", "cufftType_t", "cufftType",
+              "thrust::pair", "CUdeviceptr", "cudaDeviceAttr", "CUmodule",
+              "CUjit_option", "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
               "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
@@ -2285,6 +2285,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string CanonicalTypeStr = DpctGlobalInfo::getUnqualifiedTypeName(
         TL->getType().getCanonicalType());
 
+    if (CanonicalTypeStr == "cudaGraphExecUpdateResult") {
+      report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             CanonicalTypeStr);
+      return;
+    }
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
         CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
@@ -15129,7 +15134,7 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
                       "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
-                      "cudaGraphAddDependencies");
+                      "cudaGraphAddDependencies", "cudaGraphExecUpdate");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
