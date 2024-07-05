@@ -198,65 +198,43 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
              ARG(18), ARG(19), ARG(20), ARG(21)))))
 
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasSsyrkx",
-        CALL(MapNames::getDpctNamespace() + "blas::syrk", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12)))))
+#define SYRKX(FUNC)                                                            \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #FUNC, CALL(MapNames::getDpctNamespace() + "blas::syrk", ARG(0),     \
+                      BLAS_ENUM_ARG(                                           \
+                          1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),   \
+                      BLAS_ENUM_ARG(                                           \
+                          2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),  \
+                      ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),  \
+                      ARG(10), ARG(11), ARG(12)))))
+SYRKX(cublasSsyrkx)
+SYRKX(cublasDsyrkx)
+SYRKX(cublasCsyrkx)
+SYRKX(cublasZsyrkx)
+SYRKX(cublasSsyrkx_64)
+SYRKX(cublasDsyrkx_64)
+SYRKX(cublasCsyrkx_64)
+SYRKX(cublasZsyrkx_64)
+#undef SYRKX
 
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasDsyrkx",
-        CALL(MapNames::getDpctNamespace() + "blas::syrk", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12)))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasCsyrkx",
-        CALL(MapNames::getDpctNamespace() + "blas::syrk", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12)))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasZsyrkx",
-        CALL(MapNames::getDpctNamespace() + "blas::syrk", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12)))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasCherkx",
-        CALL(MapNames::getDpctNamespace() + "blas::herk", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12)))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasZherkx",
-        CALL(MapNames::getDpctNamespace() + "blas::herk", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12)))))
+#define CHERKX(FUNC)                                                           \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #FUNC, CALL(MapNames::getDpctNamespace() + "blas::herk", ARG(0),     \
+                      BLAS_ENUM_ARG(                                           \
+                          1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),   \
+                      BLAS_ENUM_ARG(                                           \
+                          2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),  \
+                      ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),  \
+                      ARG(10), ARG(11), ARG(12)))))
+CHERKX(cublasCherkx)
+CHERKX(cublasZherkx)
+CHERKX(cublasCherkx_64)
+CHERKX(cublasZherkx_64)
+#undef CHERKX
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cublasSgeam",
@@ -412,50 +390,29 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              ARG(MapNames::getDpctNamespace() +
                  "library_data_t::complex_double")))))
 
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasStrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "blas::trmm", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
-             ARG(13)))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasDtrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "blas::trmm", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
-             ARG(13)))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasCtrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "blas::trmm", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
-             ARG(13)))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasZtrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "blas::trmm", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
-             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
-             ARG(13)))))
+#define TRMM(FUNC)                                                             \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #FUNC,                                                               \
+          CALL(                                                                \
+              MapNames::getDpctNamespace() + "blas::trmm", ARG(0),             \
+              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side), \
+              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo), \
+              BLAS_ENUM_ARG(3,                                                 \
+                            clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+              BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag), \
+              ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),        \
+              ARG(12), ARG(13)))))
+TRMM(cublasStrmm_v2)
+TRMM(cublasDtrmm_v2)
+TRMM(cublasCtrmm_v2)
+TRMM(cublasZtrmm_v2)
+TRMM(cublasStrmm_v2_64)
+TRMM(cublasDtrmm_v2_64)
+TRMM(cublasCtrmm_v2_64)
+TRMM(cublasZtrmm_v2_64)
+#undef TRMM
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
