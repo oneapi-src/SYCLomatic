@@ -4025,7 +4025,6 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 
   SourceLocation InsertLocation;
   auto &SM = DpctGlobalInfo::getSourceManager();
-  CallFuncExprOffset = SM.getFileOffset(SM.getFileLoc(Ctor->getBeginLoc()));
   if (FuncInfo) {
     if (FuncInfo->NonDefaultParamNum) {
       if (Ctor->getNumArgs() >= FuncInfo->NonDefaultParamNum) {
@@ -4071,36 +4070,6 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     HasArgs = CE->getNumArgs() == 1;
   } else {
     HasArgs = CE->getNumArgs();
-  }
-
-  // If the function declaration is defined in global namespace.
-  const FunctionDecl *FD = CE->getDirectCallee();
-  if (FD) {
-    if (isa<TranslationUnitDecl>(FD->getDeclContext()) &&
-        DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc())) {
-      for (unsigned i = 0; i < CE->getNumArgs(); i++) {
-        auto Type = FD->getParamDecl(i)
-                        ->getOriginalType()
-                        .getCanonicalType()
-                        ->getUnqualifiedDesugaredType();
-
-        while (Type && Type->isAnyPointerType()) {
-          Type = Type->getPointeeType().getTypePtrOrNull();
-        }
-        if (Type->isBuiltinType() || Type->isTemplateTypeParmType() ||
-            !Type->getAsRecordDecl() || isa<CXXOperatorCallExpr>(CE)) {
-          break;
-        }
-        SourceLocation ParamLoc = Type->getAsRecordDecl()->getBeginLoc();
-        const auto *DRE =
-            dyn_cast<DeclRefExpr>(CE->getCallee()->IgnoreImpCasts());
-        if (DpctGlobalInfo::isInCudaPath(ParamLoc) && DRE &&
-            !DRE->getQualifier()) {
-          IsGlobalFunc = true;
-          break;
-        }
-      }
-    }
   }
 
   if (FuncInfo) {
@@ -4301,6 +4270,27 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments(),
                              Callee->getSourceRange());
+    }
+    const auto *DRE = dyn_cast<DeclRefExpr>(Callee->IgnoreImpCasts());
+    if (isa<TranslationUnitDecl>(CallDecl->getDeclContext()) &&
+        DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) && DRE &&
+        !DRE->getQualifier() && !CallDecl->isOverloadedOperator()) {
+      for (unsigned i = 0; i < NumArgs; i++) {
+        auto Type = CallDecl->getParamDecl(i)
+                        ->getOriginalType()
+                        .getCanonicalType()
+                        ->getUnqualifiedDesugaredType();
+        while (Type && Type->isAnyPointerType()) {
+          Type = Type->getPointeeType().getTypePtrOrNull();
+        }
+        if (!Type->getAsRecordDecl())
+          break;
+        if (DpctGlobalInfo::isInCudaPath(
+                DpctGlobalInfo::getLocInfo(Type->getAsRecordDecl()).first)) {
+          IsGlobalFunc = true;
+          break;
+        }
+      }
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = "";
