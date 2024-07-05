@@ -1693,8 +1693,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUstream_st", "thrust::complex", "thrust::device_vector",
               "thrust::device_ptr", "thrust::device_reference",
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
-              "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
-              "cudaDeviceProp", "cudaPitchedPtr", "thrust::counting_iterator",
+              "half", "__half2", "half2", "cudaMemoryAdvise",
+              "cudaStreamCaptureStatus", "cudaError_enum", "cudaDeviceProp",
+              "cudaPitchedPtr", "thrust::counting_iterator",
               "thrust::transform_iterator", "thrust::permutation_iterator",
               "thrust::iterator_difference", "cusolverDnHandle_t",
               "cusolverDnParams_t", "gesvdjInfo_t", "syevjInfo_t",
@@ -3363,7 +3364,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
           to(enumConstantDecl(anyOf(
               hasType(enumDecl(hasAnyName(
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
-                  "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
+                  "cudaStreamCaptureStatus", "cudaDeviceAttr",
+                  "libraryPropertyType_t", "cudaDataType_t",
                   "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
@@ -3431,6 +3433,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaComputeModeProhibited" ||
       EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
+    return;
+  } else if (EnumName == "cudaStreamCaptureStatusInvalidated") {
+    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+           "cudaStreamCaptureStatusInvalidated");
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
