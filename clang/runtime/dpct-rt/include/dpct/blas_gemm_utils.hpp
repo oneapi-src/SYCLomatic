@@ -443,9 +443,9 @@ inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 
-sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
-                          const void *a, const void *b,
-                          std::vector<sycl::event> deps) {
+inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
+                                 const void *a, const void *b,
+                                 std::vector<sycl::event> deps) {
   auto result = ::dnnl::sycl_interop::get_buffer<float, 1>(*dnnl_memory);
   if (a && b)
     return q_ptr->submit([&](sycl::handler &cgh) {
@@ -558,9 +558,9 @@ inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 
-sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
-                          const void *a, const void *b,
-                          std::vector<sycl::event> deps) {
+inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
+                                 const void *a, const void *b,
+                                 std::vector<sycl::event> deps) {
   auto result_T = (float *)(dnnl_memory->get_data_handle());
   auto a_T = (const float *)a;
   auto b_T = (const float *)b;
@@ -656,16 +656,19 @@ template <typename T> struct amax_impl {
 };
 } // namespace detail
 
-/// This function does operation: D = alpha*(A*B) + beta*(C).
+/// This function does operations:
+/// D_temp = epilogue(alpha * scale_a * op(A) * scale_b * op(B) + beta * C)
+/// Aux_d = absmax(D_temp)
+/// D = scale_d * D_temp
 /// Currently supports type combinations:
 ///   scale_type==int32 && a_type==int8 && b_type==int8 && c_type==int32;
 ///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int8;
 ///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int32;
 ///   scale_type==float && a_type==float && b_type==float && c_type==float.
-/// Currently it only supports beta==0.
+/// Currently it only supports beta==0 and beta==1.
+/// Currently it only supports relu epilogue.
 /// NOTE: Non-col-major matrix will be converted to col-major matrix before.
 /// TODO: Impl row-major matmul without layout conversion.
-/// TODO: Impl epilogue for the matmul.
 /// multiplication and converted back after multiplication.
 /// \param [in] handle A handle containing context info.
 /// \param [in] compute_desc Describe the computation.
