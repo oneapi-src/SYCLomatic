@@ -2298,7 +2298,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
              CanonicalTypeStr);
       return;
     }
-    
+
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
         CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
