@@ -574,7 +574,7 @@ private:
       const FunctionDecl *FD);
   void MigrateOverloadedOperatorCall(
       const ast_matchers::MatchFinder::MatchResult &Result,
-      const CXXOperatorCallExpr *CE);
+      const CXXOperatorCallExpr *CE, bool InOverloadedOperator);
 
 private:
   static const char NamespaceName[];
