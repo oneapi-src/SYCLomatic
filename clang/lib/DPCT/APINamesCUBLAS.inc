@@ -113,6 +113,7 @@ GEMM(cublasSgemm_v2, "float", false)
 GEMM(cublasDgemm_v2, "double", false)
 GEMM(cublasCgemm_v2, "std::complex<float>", true)
 GEMM(cublasZgemm_v2, "std::complex<double>", true)
+GEMM(cublasHgemm_64, MapNames::getClNamespace() + "half", false)
 GEMM(cublasSgemm_v2_64, "float", false)
 GEMM(cublasDgemm_v2_64, "double", false)
 GEMM(cublasCgemm_v2_64, "std::complex<float>", true)
@@ -1548,30 +1549,23 @@ TPSV(cublasCtpsv_v2_64, std::complex<float>)
 TPSV(cublasZtpsv_v2_64, std::complex<double>)
 #undef TPSV
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasCgemm3m",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), "std::complex<double>"),
-         BUFFER_OR_USM_PTR(ARG(7), "std::complex<float>"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<float>"), ARG(10),
-         SCALAR_INPUT(ARG(11), "std::complex<double>"),
-         BUFFER_OR_USM_PTR(ARG(12), "std::complex<float>"), ARG(13),
-         ARG("oneapi::mkl::blas::compute_mode::complex_3m"))))
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cublasZgemm3m",
-    CALL("oneapi::mkl::blas::column_major::gemm",
-         MEMBER_CALL(ARG(0), true, "get_queue"),
-         BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-         ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), "std::complex<double>"),
-         BUFFER_OR_USM_PTR(ARG(7), "std::complex<double>"), ARG(8),
-         BUFFER_OR_USM_PTR(ARG(9), "std::complex<double>"), ARG(10),
-         SCALAR_INPUT(ARG(11), "std::complex<double>"),
-         BUFFER_OR_USM_PTR(ARG(12), "std::complex<double>"), ARG(13),
-         ARG("oneapi::mkl::blas::compute_mode::complex_3m"))))
+#define GEMM_3M(FUNC, TYPE1)                                                   \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #FUNC,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::gemm",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           ARG(3), ARG(4), ARG(5), SCALAR_INPUT(ARG(6), TYPE1),                \
+           BUFFER_OR_USM_PTR(ARG(7), TYPE1), ARG(8),                           \
+           BUFFER_OR_USM_PTR(ARG(9), TYPE1), ARG(10),                          \
+           SCALAR_INPUT(ARG(11), TYPE1), BUFFER_OR_USM_PTR(ARG(12), TYPE1),    \
+           ARG(13), ARG("oneapi::mkl::blas::compute_mode::complex_3m"))))
+GEMM_3M(cublasCgemm3m, "std::complex<float>")
+GEMM_3M(cublasZgemm3m, "std::complex<double>")
+GEMM_3M(cublasCgemm3m_64, "std::complex<float>")
+GEMM_3M(cublasZgemm3m_64, "std::complex<double>")
+#undef GEMM_3M
 
 #define GEMM_BATCH(NAME, TYPE, IS_COMPLEX)                                     \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
