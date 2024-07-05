@@ -1700,6 +1700,10 @@ inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExtBindlessImages();
 };
 
+inline auto UseExtGraph = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtGraph();
+};
+
 inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExpNonUniformGroups();
 };
