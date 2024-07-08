@@ -970,10 +970,12 @@ MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.num_threads",
                           MemberExprBase(), false, "get_local_linear_range")
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.get_type",
                           MemberExprBase(), false, "get_type")
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index", MemberExprBase(),
-                          false, "get_group_id")
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index", MemberExprBase(),
-                          false, "get_local_id")
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index",
+                   CALL(MapNames::getDpctNamespace() + "dim3",
+                        MEMBER_CALL(MemberExprBase(), false, "get_group_id")))
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index",
+                   CALL(MapNames::getDpctNamespace() + "dim3",
+                        MEMBER_CALL(MemberExprBase(), false, "get_local_id")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseNonUniformGroups,

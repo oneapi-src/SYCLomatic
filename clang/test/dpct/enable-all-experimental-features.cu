@@ -29,13 +29,13 @@ __device__ void testThreadGroup(cg::thread_group g) {
   g.size();
 
   auto block = cg::this_thread_block();
-  // CHECK: block.get_local_id();
+  // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
 }
 
 __global__ void kernelFunc() {
   auto block = cg::this_thread_block();
-  // CHECK: block.get_local_id();
+  // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
   // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
@@ -94,7 +94,7 @@ namespace cg = cooperative_groups;
 
 __global__ void kernelFunc1() {
   auto block = cg::this_thread_block();
-  // CHECK: block.get_local_id();
+  // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
   // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
   auto threadBlockGroup = cg::this_thread_block();

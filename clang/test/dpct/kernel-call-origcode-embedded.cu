@@ -54,11 +54,11 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // CHECK:  /* DPCT_ORIG   dim3 griddim = 2;*/
-  // CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
+  // CHECK-NEXT:  dpct::dim3 griddim = 2;
   dim3 griddim = 2;
 
   // CHECK:  /* DPCT_ORIG   dim3 threaddim = 32;*/
-  // CHECK-NEXT:   sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
+  // CHECK-NEXT:   dpct::dim3 threaddim = 32;
   dim3 threaddim = 32;
 
   void *karg1 = 0;
@@ -130,7 +130,7 @@ int main() {
   // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim[2]) * sycl::range<3>(1, 1, griddim[1] + 2), sycl::range<3>(1, 1, griddim[1] + 2)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim.x) * sycl::range<3>(1, 1, griddim.y + 2), sycl::range<3>(1, 1, griddim.y + 2)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });

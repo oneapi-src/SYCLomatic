@@ -14,7 +14,7 @@ __device__ inline void foo1(__half2 *array, __half a) {
 }
 
 // CHECK: void foo2(int a, int b) {
-// CHECK-NEXT:   sycl::range<3> block{1, 1, dpct::min(512, uint32_t(a * b))};
+// CHECK-NEXT:   dpct::dim3 block{dpct::min(512, uint32_t(a * b))};
 // CHECK-NEXT: }
 void foo2(int a, int b) {
   dim3 block{min(512, uint32_t(a * b))};
