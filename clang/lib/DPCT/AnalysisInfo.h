@@ -2381,7 +2381,7 @@ public:
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
                       bool isKernelCall = false);
-  std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
+  std::shared_ptr<DeviceFunctionInfo> getFuncInfo();
   bool IsAllTemplateArgsSpecified = false;
 
   virtual ~CallFunctionExpr() = default;
@@ -2410,12 +2410,12 @@ private:
   void buildTextureObjectArgsInfo(const CallExpr *CE);
 
   template <class CallT> void buildTextureObjectArgsInfo(const CallT *C);
-  void mergeTextureObjectInfo();
+  void mergeTextureObjectInfo(std::shared_ptr<DeviceFunctionInfo> Info);
 
   const clang::tooling::UnifiedPath FilePath;
   unsigned Offset = 0;
   unsigned ExtraArgLoc = 0;
-  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  std::vector<std::shared_ptr<DeviceFunctionInfo>> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
 
   // <ParameterIndex, ParameterName>
