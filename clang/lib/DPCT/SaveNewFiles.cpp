@@ -184,18 +184,22 @@ bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
 
 void createSymLink(const clang::tooling::UnifiedPath &FilePath,
                    const clang::tooling::UnifiedPath &InRoot,
-                   const clang::tooling::UnifiedPath &OutRoot) {
+                   const clang::tooling::UnifiedPath &OutRoot,
+                   bool RewriteFileName) {
   if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
     auto SourcePath = FilePath;
     while (
         isChildPath(InRoot.getAbsolutePath(), SourcePath.getAbsolutePath())) {
       auto AbsolutePath = SourcePath.getAbsolutePath();
       if (llvm::sys::fs::is_symlink_file(AbsolutePath)) {
-        std::filesystem::path RealPathLink =
+        tooling::UnifiedPath SymbolPath =
             std::filesystem::read_symlink(
                 std::filesystem::path(AbsolutePath.str()))
                 .string();
-
+        if (RewriteFileName) {
+          rewriteFileName(SymbolPath);
+          rewriteFileName(SourcePath);
+        }
         // The code is to create symbol file and link the file to target file.
         // The code will iterate to get the parent path of the
         // absolute path of the file. Then create the target directory if the
@@ -213,7 +217,7 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
         auto AbsoluteParentPath = sys::path::parent_path(AbsolutePath);
 
         if (llvm::sys::fs::is_symlink_file(AbsoluteParentPath)) {
-          createSymLink(AbsoluteParentPath, InRoot, OutRoot);
+          createSymLink(AbsoluteParentPath, InRoot, OutRoot, RewriteFileName);
         }
         auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
         rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
@@ -222,7 +226,7 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
         }
         try {
           std::filesystem::create_symlink(
-              std::filesystem::path(RealPathLink),
+              std::filesystem::path(SymbolPath.getPath().str()),
               std::filesystem::path(ReplPath.getAbsolutePath().str()));
         } catch (const std::filesystem::filesystem_error &e) {
           std::cerr << "Error creating symbolic link: " << e.what()
@@ -230,6 +234,9 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
         }
       }
       SourcePath = path::parent_path(AbsolutePath);
+      if (!isChildOrSamePath(OutRoot, SourcePath)) {
+        return;
+      }
     }
   }
 }
@@ -303,6 +310,25 @@ static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
 void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
                             clang::tooling::UnifiedPath &OutRoot,
                             bool IsForSYCL) {
+  extern DpctOption<clang::dpct::opt, bool> ProcessAll;
+  if (ProcessAll) {
+    std::error_code EC;
+    for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC),
+         End;
+         Iter != End; Iter.increment(EC)) {
+      if (Iter->type() == fs::file_type::symlink_file) {
+
+        tooling::UnifiedPath RootSource = Iter->path();
+        if (IncludeFleMap.find(Iter->path()) != IncludeFileMap.end()) {
+          if (IncludeFileMap[RootSource]) {
+            rewriteFileName(RootSource);
+          }
+        }
+        createSymLink(Iter->path(), InRoot, OutRoot,
+                      IncludeFileMap[Iter->path()]);
+      }
+    }
+  }
   for (const auto &File : FilesNotInCompilationDB) {
     if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
       // Skip the files parsed by dpct parser.
@@ -355,7 +381,6 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     }
 
     auto FilePath = Iter->path();
-
     // Skip output directory if it is in the in-root directory.
     if (isChildOrSamePath(OutRoot.str(), FilePath))
       continue;
@@ -1145,9 +1170,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                       DebugFilePath.getCanonicalPath());
       }
     }
-    createSymLink(Entry.first, InRoot, SYCLMigratedOutRoot);
-    if (dpct::DpctGlobalInfo::isCodePinEnabled())
-      createSymLink(Entry.first, InRoot, CodePinCUDAFolder);
   }
 
   std::string ScriptFineName = "Makefile.dpct";

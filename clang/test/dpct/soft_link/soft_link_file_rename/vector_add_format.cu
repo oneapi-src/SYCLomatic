@@ -1,11 +1,12 @@
-// RUN: cd %S/link/test && rm -rf test.hpp && ln -nfs ../../target/test/test.hpp test.hpp 
-// RUN: dpct  --in-root=%S --out-root=%T/out  %s --cuda-include-path="%cuda-path/include"  --enable-codepin -- -I %S/link -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/out_codepin_cuda/link/test/test.hpp --match-full-lines %S/link/test/test.hpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out_codepin_sycl/vector_add_format.dp.cpp -o %T/out_codepin_sycl/vector_add_format.dp.o -I %T/out_codepin_sycl/link %}
+// RUN: cd %S/link/test &&  rm test.cuh && ln -nfs  ../../target/test/test.cuh test.cuh
+// RUN: dpct  --in-root=%S --out-root=%T/out  %s --cuda-include-path="%cuda-path/include" --process-all -- -I %S/link -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/out/vector_add_format.dp.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/out/link/test/test.dp.hpp --match-full-lines %S/link/test/test.cuh
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out/vector_add_format.dp.cpp -o %T/out/vector_add_format.dp.o -I %T/out/link %}
 
 #include <cuda.h>
 #include <stdio.h>
-#include "test/test.hpp"
+#include "test/test.cuh"
 #define VECTOR_SIZE 256
 
 __global__ void VectorAddKernel(float* A, float* B, float* C)

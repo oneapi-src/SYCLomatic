@@ -1440,14 +1440,14 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   }
 }
 std::optional<clang::tooling::UnifiedPath>
-DpctGlobalInfo::getUnifiedPath(FileID ID) {
+DpctGlobalInfo::getAbsolutePath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
   if (auto FileEntryRef = SM->getFileEntryRefForID(ID))
-    return getUnifiedPath(*FileEntryRef);
+    return getAbsolutePath(*FileEntryRef);
   return std::nullopt;
 }
 std::optional<clang::tooling::UnifiedPath>
-DpctGlobalInfo::getUnifiedPath(FileEntryRef File) {
+DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
   llvm::SmallString<512> FilePathAbs(File.getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
   auto UnifiedFilePath = clang::tooling::UnifiedPath(FilePathAbs);
@@ -1466,7 +1466,7 @@ DpctGlobalInfo::getLocInfo(SourceLocation Loc, bool *IsInvalid) {
     Loc = SM->getImmediateSpellingLoc(Loc);
   }
   auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
-  auto AbsPath = getUnifiedPath(LocInfo.first);
+  auto AbsPath = getAbsolutePath(LocInfo.first);
   if (AbsPath)
     return std::make_pair(AbsPath.value(), LocInfo.second);
   if (IsInvalid)
