@@ -2584,10 +2584,10 @@
       In: -Xcompiler=${arg}
       Out: ${arg}
 
-- Rule: rule_xcudae_remove
+- Rule: rule_xcudafe_filter
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: xcudae_remove
+  CmakeSyntax: xcudafe_filter
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
