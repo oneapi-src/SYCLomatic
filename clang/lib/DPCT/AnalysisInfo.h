@@ -2648,6 +2648,8 @@ public:
   bool IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
   void setForceInlineDevFunc() { ForceInlineDevFunc = true; }
   bool IsForceInlineDevFunc() { return ForceInlineDevFunc; }
+  void setOperatorOverload() { OperatorOverloadFlag = true; }
+  bool IsOperatorOverload() { return OperatorOverloadFlag; }
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -2693,6 +2695,7 @@ private:
   bool IsKernelInvoked = false;
   bool CallGroupFunctionInControlFlow = false;
   bool HasCheckedCallGroupFunctionInControlFlow = false;
+  bool OperatorOverloadFlag = false;
 };
 
 class KernelCallExpr : public CallFunctionExpr {

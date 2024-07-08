@@ -4076,6 +4076,9 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   }
   auto Info = getFuncInfo();
   if (Info) {
+    if (Info->IsOperatorOverload()) {
+      return;
+    }
     if (Info->ParamsNum == 0) {
       ExtraArgLoc =
           DpctGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
@@ -4091,7 +4094,7 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
-      if (CE->getNumArgs() > Info->NonDefaultParamNum) {
+      if (CE->getNumArgs() > Info->NonDefaultParamNum - 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
         auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
         auto TempLoc = Lexer::getLocForEndOfToken(
