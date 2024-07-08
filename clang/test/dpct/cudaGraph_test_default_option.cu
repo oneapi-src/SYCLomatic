@@ -32,6 +32,32 @@ int main() {
   cudaStreamEndCapture(stream, &graph);
 
   // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamCaptureStatus is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaStreamCaptureStatus captureStatus;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamCaptureStatusActive is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  captureStatus = cudaStreamCaptureStatusActive;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamCaptureStatusNone is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  captureStatus = cudaStreamCaptureStatusNone;
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaStreamCaptureStatusInvalidated is not supported.
+  // CHECK-NEXT: */
+  captureStatus = cudaStreamCaptureStatusInvalidated;
+
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaStreamIsCapturing is not supported, please try to remigrate with option: --use-experimental-features=graph.
+  // CHECK-NEXT: */
+  cudaStreamIsCapturing(stream, &captureStatus);
+
+  // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphNode_t is not supported, please try to remigrate with option: --use-experimental-features=graph.
   // CHECK-NEXT: */
   cudaGraphNode_t node;

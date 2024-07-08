@@ -12,10 +12,10 @@
 
 void case_1(void) {
 {
-// CHECK: sycl::range<3> var1(1, 1, 1);
-// CHECK-NEXT: sycl::range<3> *var2;
-// CHECK-NEXT: sycl::range<3> &var3 = var1;
-// CHECK-NEXT: sycl::range<3> &&var4 = std::move(var1);
+// CHECK: dpct::dim3 var1;
+// CHECK-NEXT: dpct::dim3 *var2;
+// CHECK-NEXT: dpct::dim3 &var3 = var1;
+// CHECK-NEXT: dpct::dim3 &&var4 = std::move(var1);
 dim3 var1;
 dim3 *var2;
 dim3 &var3 = var1;
@@ -240,8 +240,8 @@ CUstream_st *var2;
 // case 2
 void case_2(void) {
 {
-// CHECK:  new sycl::range<3>(1, 1, 1);
-// CHECK-NEXT:  new sycl::range<3> *();
+// CHECK:  new dpct::dim3();
+// CHECK-NEXT:  new dpct::dim3 *();
   new dim3();
   new dim3 *();
 }
@@ -386,9 +386,9 @@ void case_2(void) {
 }
 
 // case 3
-// CHECK: sycl::range<3> foo0();
-// CHECK-NEXT: sycl::range<3> *foo1();
-// CHECK-NEXT: sycl::range<3> &foo2();
+// CHECK: dpct::dim3 foo0();
+// CHECK-NEXT: dpct::dim3 *foo1();
+// CHECK-NEXT: dpct::dim3 &foo2();
 dim3 foo0();
 dim3 *foo1();
 dim3 &foo2();
@@ -535,10 +535,10 @@ CUstream_st *foo_2();
 // case 4
 template <typename T> struct S {};
 
-// CHECK: template <> struct S<sycl::range<3>> {};
-// CHECK-NEXT: template <> struct S<sycl::range<3> *> {};
-// CHECK-NEXT: template <> struct S<sycl::range<3> &> {};
-// CHECK-NEXT: template <> struct S<sycl::range<3> &&> {};
+// CHECK: template <> struct S<dpct::dim3> {};
+// CHECK-NEXT: template <> struct S<dpct::dim3 *> {};
+// CHECK-NEXT: template <> struct S<dpct::dim3 &> {};
+// CHECK-NEXT: template <> struct S<dpct::dim3 &&> {};
 template <> struct S<dim3> {};
 template <> struct S<dim3 *> {};
 template <> struct S<dim3 &> {};
@@ -710,10 +710,10 @@ template <> struct S<cudaStream_t &&> {};
 template <typename T> void template_foo() {}
 void case_5(){
 
-// CHECK: template_foo<sycl::range<3>>();
-// CHECK-NEXT: template_foo<sycl::range<3> *>();
-// CHECK-NEXT: template_foo<sycl::range<3> &>();
-// CHECK-NEXT: template_foo<sycl::range<3> &&>();
+// CHECK: template_foo<dpct::dim3>();
+// CHECK-NEXT: template_foo<dpct::dim3 *>();
+// CHECK-NEXT: template_foo<dpct::dim3 &>();
+// CHECK-NEXT: template_foo<dpct::dim3 &&>();
 template_foo<dim3>();
 template_foo<dim3 *>();
 template_foo<dim3 &>();
@@ -903,10 +903,10 @@ template_foo<CUstream_st &&>();
 
 
 // case 6
-// CHECK: using UT0 = sycl::range<3>;
-// CHECK-NEXT: using UT1 = sycl::range<3> *;
-// CHECK-NEXT: using UT2 = sycl::range<3> &;
-// CHECK-NEXT: using UT3 = sycl::range<3> &&;
+// CHECK: using UT0 = dpct::dim3;
+// CHECK-NEXT: using UT1 = dpct::dim3 *;
+// CHECK-NEXT: using UT2 = dpct::dim3 &;
+// CHECK-NEXT: using UT3 = dpct::dim3 &&;
 using UT0 = dim3;
 using UT1 = dim3 *;
 using UT2 = dim3 &;
@@ -1095,10 +1095,10 @@ using UT_4 = CUstream_st &&;
 
 
 // case 7
-// CHECK: typedef sycl::range<3> T0;
-// CHECK-NEXT: typedef sycl::range<3>* T1;
-// CHECK-NEXT: typedef sycl::range<3>& T2;
-// CHECK-NEXT: typedef sycl::range<3>&& T3;
+// CHECK: typedef dpct::dim3 T0;
+// CHECK-NEXT: typedef dpct::dim3* T1;
+// CHECK-NEXT: typedef dpct::dim3& T2;
+// CHECK-NEXT: typedef dpct::dim3&& T3;
 typedef dim3 T0;
 typedef dim3* T1;
 typedef dim3& T2;
@@ -1289,11 +1289,11 @@ typedef CUstream_st&& T_4;
 __device__ void foo_t(){
 
 {
-// CHECK: #define T8_0 sycl::range<3>
-// CHECK-NEXT: #define T8_1 sycl::range<3> *
-// CHECK-NEXT: #define T8_2 sycl::range<3> &
-// CHECK-NEXT: #define T8_3 sycl::range<3> &&
-// CHECK-NEXT:     T8_0 a1(1, 1, 1);
+// CHECK: #define T8_0 dpct::dim3
+// CHECK-NEXT: #define T8_1 dpct::dim3 *
+// CHECK-NEXT: #define T8_2 dpct::dim3 &
+// CHECK-NEXT: #define T8_3 dpct::dim3 &&
+// CHECK-NEXT:     T8_0 a1;
 // CHECK-NEXT:     T8_1 a2;
 // CHECK-NEXT:     T8_2 a3=a1;
 // CHECK-NEXT:     T8_3 a4=std::move(a1);
@@ -1716,10 +1716,10 @@ template <typename T> void template_foo(T var) {}
 #define foo3(DataType) template_foo(DataType & varname)
 #define foo4(DataType) template_foo(DataType && varname)
 
-// CHECK: template <> void foo1(sycl::range<3>){}
-// CHECK-NEXT: template <> void foo2(sycl::range<3>){}
-// CHECK-NEXT: template <> void foo3(sycl::range<3>){}
-// CHECK-NEXT: template <> void foo4(sycl::range<3>){}
+// CHECK: template <> void foo1(dpct::dim3){}
+// CHECK-NEXT: template <> void foo2(dpct::dim3){}
+// CHECK-NEXT: template <> void foo3(dpct::dim3){}
+// CHECK-NEXT: template <> void foo4(dpct::dim3){}
 template <> void foo1(dim3){}
 template <> void foo2(dim3){}
 template <> void foo3(dim3){}

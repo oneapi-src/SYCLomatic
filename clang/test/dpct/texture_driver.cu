@@ -24,7 +24,7 @@ int main() {
   // CHECK-NEXT: halfDesc.height = 32;
   // CHECK-NEXT: halfDesc.width = 64;
   // CHECK-NEXT: halfDesc.channel_type = sycl::image_channel_type::fp16;
-  // CHECK-NEXT: halfDesc.channel_num = 1;
+  // CHECK-NEXT: halfDesc.num_channels = 1;
   CUDA_ARRAY_DESCRIPTOR halfDesc;
   halfDesc.Height = 32;
   halfDesc.Width = 64;
@@ -34,7 +34,7 @@ int main() {
   // CHECK: dpct::image_matrix_desc float4Desc;
   // CHECK-NEXT: float4Desc.width = 64;
   // CHECK-NEXT: float4Desc.channel_type = sycl::image_channel_type::fp32;
-  // CHECK-NEXT: float4Desc.channel_num = 4;
+  // CHECK-NEXT: float4Desc.num_channels = 4;
   // CHECK-NEXT: float4Desc.height = 32;
   CUDA_ARRAY_DESCRIPTOR float4Desc;
   float4Desc.Width = 64;
