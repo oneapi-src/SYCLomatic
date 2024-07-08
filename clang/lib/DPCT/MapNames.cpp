@@ -364,6 +364,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseHandle_t", std::make_shared<TypeNameRule>(
                                getDpctNamespace() + "sparse::descriptor_ptr")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
+      {"cudaStreamCaptureStatus",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() + "ext::oneapi::experimental::queue_state"
+               : "cudaStreamCaptureStatus")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
       {"cudaExtent",
@@ -1067,6 +1072,21 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>("0")},
       {"cudaMemAdviseSetAccessedBy", std::make_shared<EnumNameRule>("0")},
       {"cudaMemAdviseUnsetAccessedBy", std::make_shared<EnumNameRule>("0")},
+      // enum cudaStreamCaptureStatus
+      {"cudaStreamCaptureStatusNone",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::queue_state::executing"
+               : "cudaStreamCaptureStatusNone")},
+      {"cudaStreamCaptureStatusActive",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::queue_state::recording"
+               : "cudaStreamCaptureStatusActive")},
+      {"cudaStreamCaptureStatusInvalidated",
+       std::make_shared<EnumNameRule>("cudaStreamCaptureStatusInvalidated")},
       // enum CUmem_advise_enum
       {"CU_MEM_ADVISE_SET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},

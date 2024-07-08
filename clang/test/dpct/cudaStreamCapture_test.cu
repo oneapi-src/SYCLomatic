@@ -23,5 +23,10 @@ int main() {
   cudaStreamEndCapture(stream, graph2);
   cudaStreamEndCapture(stream, *graph3);
 
+  cudaStreamCaptureStatus captureStatus;
+
+  // CHECK: captureStatus = stream->ext_oneapi_get_state();
+  cudaStreamIsCapturing(stream, &captureStatus);
+
   return 0;
 }
