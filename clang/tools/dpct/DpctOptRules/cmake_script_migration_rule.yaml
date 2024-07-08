@@ -2571,3 +2571,51 @@
       MatchMode: Full
       In: CMAKE_CUDA_COMPILER_VERSION
       Out: COMPATIBILITY_VERSION
+
+- Rule: rule_xcompiler_option_filter
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: xcompiler_option_filter
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -Xcompiler=${arg}
+      Out: ${arg}
+
+- Rule: rule_xcudafe_filter
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: xcudafe_filter
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -Xcudafe=${arg}
+      Out: ""
+
+- Rule: rule_extended_lambda_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: extended_lambda_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --extended-lambda
+      Out: ""
+
+- Rule: rule_expt_relaxed_constexpr_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_relaxed_constexpr_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --expt-relaxed-constexpr
+      Out: ""
