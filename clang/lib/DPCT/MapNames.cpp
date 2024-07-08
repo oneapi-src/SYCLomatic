@@ -466,7 +466,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data_type",
                                       HelperFeatureEnum::device_ext)},
       {"CUtexref", std::make_shared<TypeNameRule>(
-                       getDpctNamespace() + "image_wrapper_base_p",
+                       DpctGlobalInfo::useExtBindlessImages()
+                           ? getDpctNamespace() +
+                                 "experimental::bindless_image_wrapper_base_p"
+                           : getDpctNamespace() + "image_wrapper_base_p",
                        HelperFeatureEnum::device_ext)},
       {"cudaDeviceAttr", std::make_shared<TypeNameRule>("int")},
       {"__nv_bfloat16", std::make_shared<TypeNameRule>(
