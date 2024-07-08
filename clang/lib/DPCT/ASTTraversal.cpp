@@ -8644,7 +8644,7 @@ void DeviceFunctionDeclRule::runRule(
     return;
 
   if (FD->isOverloadedOperator()) {
-    FuncInfo->setOperatorOverload();
+    FuncInfo->setOverloadedOperatorKind(FD->getOverloadedOperator());
   }
 
   if (FD->doesThisDeclarationHaveABody()) {

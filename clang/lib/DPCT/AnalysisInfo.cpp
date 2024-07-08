@@ -4076,7 +4076,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   }
   auto Info = getFuncInfo();
   if (Info) {
-    if (Info->IsOperatorOverload()) {
+    if ((Info->getOverloadedOperatorKind() !=
+         OverloadedOperatorKind::OO_None) &&
+        (Info->getOverloadedOperatorKind() !=
+         OverloadedOperatorKind::OO_Call)) {
       return;
     }
     if (Info->ParamsNum == 0) {
