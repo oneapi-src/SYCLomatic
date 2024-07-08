@@ -4279,6 +4279,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
 #include "APINames_wmma.inc"
+#include "APINames_cudnn_frontend.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };

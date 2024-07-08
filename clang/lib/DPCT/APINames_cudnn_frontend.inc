@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 /****************************************************************************
 *
-* ENTRY(cub::Interface APIName, APINAME, ProcessedOrNot, Flag, Priority, MigrationDesc)
+* ENTRY(namespace::Interface APIName, APINAME, ProcessedOrNot, Flag, Priority, MigrationDesc)
 *  Interface APIName: name of CUDA Interface API available in official document
 *  APIName: name of CUDA API
 *
@@ -34,7 +34,7 @@
 
 /****************************************************************************
 *
-* ENTRY_MEMBER_FUNCTION(Interface ObjectName, cub::ObjectName, Interface APIName, APINAME, ProcessedOrNot, Flag, Priority, MigrationDesc)
+* ENTRY_MEMBER_FUNCTION(Interface ObjectName, namespace::ObjectName, Interface APIName, APINAME, ProcessedOrNot, Flag, Priority, MigrationDesc)
 *  Interface ObjectName: name of Object of underlying which user used.
 *  ObjectName: name of Object of underlying which library real defined.
 *
