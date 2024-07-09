@@ -1653,6 +1653,23 @@ template <typename T>
 using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::shared>;
 } // namespace deprecated
 
+enum class attribute_type {
+  context,
+  memory_type,
+  device_pointer,
+  host_pointer,
+  p2p_tokens,
+  sync_memps,
+  buffer_id,
+  is_managed,
+  device_id,
+  is_legacy_ipc_capable,
+  range_start_addr,
+  range_size,
+  mapped,
+  allowed_handle_types
+};
+
 class pointer_attributes {
 public:
   void init(const void *ptr,
@@ -1674,6 +1691,41 @@ public:
     sycl::device device_obj = sycl::get_pointer_device(ptr, q.get_context());
     device_id = dpct::dev_mgr::instance().get_device_id(device_obj);
 #endif
+  }
+
+  static void get(unsigned int numAttributes,
+                  attribute_type *attributes, void **data,
+                  device_ptr ptr) {
+    pointer_attributes sycl_attributes;
+
+    sycl_attributes.init(ptr);
+
+    for (int i = 0; i < numAttributes; i++) {
+      switch (attributes[i]) {
+      case attribute_type::memory_type:
+        *static_cast<int *>(data[i]) =
+            static_cast<int>(sycl_attributes.get_memory_type());
+        break;
+      case attribute_type::device_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_device_pointer());
+        break;
+      case attribute_type::host_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_host_pointer());
+        break;
+      case attribute_type::is_managed:
+        *static_cast<unsigned int *>(data[i]) =
+            sycl_attributes.is_memory_shared();
+        break;
+      case attribute_type::device_id:
+        *static_cast<unsigned int *>(data[i]) = sycl_attributes.get_device_id();
+        break;
+      default:
+        data[i] = nullptr;
+        break;
+      }
+    }
   }
 
   sycl::usm::alloc get_memory_type() {
@@ -1702,5 +1754,6 @@ private:
   const void *host_pointer = nullptr;
   unsigned int device_id = -1;
 };
+
 } // namespace dpct
 #endif // __DPCT_MEMORY_HPP__

@@ -693,6 +693,7 @@
 // CHECK-NEXT: cuModuleLoadDataEx
 // CHECK-NEXT: cuModuleUnload
 // CHECK-NEXT: cuOccupancyMaxActiveBlocksPerMultiprocessor
+// CHECK-NEXT: cuPointerGetAttributes
 // CHECK-NEXT: cuStreamAddCallback
 // CHECK-NEXT: cuStreamAttachMemAsync
 // CHECK-NEXT: cuStreamCreate

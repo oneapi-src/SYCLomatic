@@ -1577,7 +1577,7 @@ cuMemPrefetchAsync,YES, Partial
 cuMemRangeGetAttribute,NO,
 cuMemRangeGetAttributes,NO,
 cuPointerGetAttribute,NO,
-cuPointerGetAttributes,NO,
+cuPointerGetAttributes,YES, Partial
 cuPointerSetAttribute,NO,
 cuGraphicsVDPAURegisterOutputSurface,NO,
 cuGraphicsVDPAURegisterVideoSurface,NO,
