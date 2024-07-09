@@ -224,7 +224,7 @@ void run_foo6() {
   dim3 grid;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    auto grid_x_grid_y_ct0 = grid[2] * grid[1];
+  //CHECK-NEXT:    auto grid_x_grid_y_ct0 = grid.x * grid.y;
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -235,7 +235,7 @@ void run_foo6() {
   foo_kernel5<<<1, 1>>>(grid.x * grid.y);
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    auto grid_x_ct0 = ++grid[2];
+  //CHECK-NEXT:    auto grid_x_ct0 = ++grid.x;
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 

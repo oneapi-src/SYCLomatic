@@ -126,3 +126,6 @@ set(SYCL_TOOLKIT_INCLUDE "${SYCL_INCLUDE_DIR}")
 set(SYCLToolkit_LIBRARY_DIR "${SYCL_INCLUDE_DIR}/../lib")
 set(SYCL_HOST_COMPILER "icpx")
 set(SYCL_HOST_FLAGS "")
+
+# 'SYCL_COMPILER_EXECUTABLE' is used to specify the path to the SYCL Compiler (icpx).
+set(SYCL_COMPILER_EXECUTABLE "${SYCL_INCLUDE_DIR}/../bin/icpx")
