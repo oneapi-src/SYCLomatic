@@ -46,7 +46,8 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
   for (const auto &Arg : CE->arguments())
     DeviceFunctionCallArgs.insert(Arg);
 
-  if (FuncName == "__syncthreads" || isUserDefinedDecl(FuncDecl)) {
+  if (FuncName == "__syncthreads" || FuncName == "__barrier_sync" ||
+      isUserDefinedDecl(FuncDecl)) {
     SyncCallInfo SCI;
     SCI.IsRealSyncCall = FuncName == "__syncthreads";
     SCI.Predecessors.insert(

@@ -1235,7 +1235,8 @@ createMemberCallExprRewriterFactory(
 }
 
 template <bool HasExplicitTemplateArg, class BaseT, class... ArgsT>
-inline std::shared_ptr<CallExprRewriterFactoryBase>
+inline std::shared_ptr<std::enable_if_t<
+    !std::is_invocable_v<BaseT, const CallExpr *>, CallExprRewriterFactoryBase>>
 createMemberCallExprRewriterFactory(
     const std::string &SourceName, BaseT BaseCreator, bool IsArrow,
     std::string MemberName,
