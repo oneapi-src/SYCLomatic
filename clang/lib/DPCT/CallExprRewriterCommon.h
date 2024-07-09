@@ -802,7 +802,8 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
         auto *TDecl = TDT->getDecl();
         if (dpct::DpctGlobalInfo::isInCudaPath(TDecl->getLocation()) ||
-            MapNames::TypeNamesMap.find(TDecl->getNameAsString()) != MapNames::TypeNamesMap.end())
+            MapNames::TypeNamesMap.find(TDecl->getNameAsString()) !=
+                MapNames::TypeNamesMap.end())
           break;
         DerefQT = TDecl->getUnderlyingType();
       }
