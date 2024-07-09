@@ -3996,7 +3996,6 @@ loadAndParseConfigFile(StringRef ConfigFile, llvm::vfs::FileSystem *FS,
 Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
                                StringRef FallbackStyleName, StringRef Code,
                                llvm::vfs::FileSystem *FS,
-<<<<<<< HEAD
                                bool AllowUnknownOptions) {
 #ifdef SYCLomatic_CUSTOMIZATION
   FormatStyle Style = getLLVMStyle(FormatStyle::LanguageKind::LK_Cpp);
@@ -4004,10 +4003,6 @@ Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
   // Default fallback style is LLVM
   getPredefinedStyle(DefaultFallbackStyle, Style.Language, &FallbackStyle);
 #else
-=======
-                               bool AllowUnknownOptions,
-                               llvm::SourceMgr::DiagHandlerTy DiagHandler) {
->>>>>>> origin/sycl
   FormatStyle Style = getLLVMStyle(guessLanguage(FileName, Code));
   FormatStyle FallbackStyle = getNoStyle();
   if (!getPredefinedStyle(FallbackStyleName, Style.Language, &FallbackStyle))
