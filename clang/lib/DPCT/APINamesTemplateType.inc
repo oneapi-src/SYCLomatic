@@ -102,7 +102,14 @@ FEATURE_REQUEST_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
                            TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "key_value_pair"),
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
-
+TYPE_REWRITE_ENTRY("cub::ArgMax",
+                    HEADER_INSERTION_FACTORY(
+                           HeaderType::HT_DPCT_DPL_Utils,
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmax"))))
+TYPE_REWRITE_ENTRY("cub::ArgMin",
+                    HEADER_INSERTION_FACTORY(
+                           HeaderType::HT_DPCT_DPL_Utils,
+                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmin"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
@@ -274,59 +281,59 @@ TYPE_REWRITE_ENTRY("thrust::random::uniform_int_distribution",
                    TYPE_FACTORY(STR("oneapi::dpl::uniform_int_distribution"), TEMPLATE_ARG(0)))
 
 TYPE_REWRITE_ENTRY("nvcuda::wmma::matrix_a",
-    TYPE_CONDITIONAL_FACTORY(
-        checkEnableJointMatrixForType(),
-        TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                         "ext::oneapi::experimental::matrix::use::a")),
-        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+                   TYPE_CONDITIONAL_FACTORY(
+                       checkEnableJointMatrixForType(),
+                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                        "experimental::matrix::a")),
+                       WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE,
+                                       TYPESTR)))
 
 TYPE_REWRITE_ENTRY("nvcuda::wmma::matrix_b",
-    TYPE_CONDITIONAL_FACTORY(
-        checkEnableJointMatrixForType(),
-        TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                         "ext::oneapi::experimental::matrix::use::b")),
-        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+                   TYPE_CONDITIONAL_FACTORY(
+                       checkEnableJointMatrixForType(),
+                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                        "experimental::matrix::b")),
+                       WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE,
+                                       TYPESTR)))
 
 TYPE_REWRITE_ENTRY("nvcuda::wmma::row_major",
-    TYPE_CONDITIONAL_FACTORY(
-        checkEnableJointMatrixForType(),
-        TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                         "ext::oneapi::experimental::matrix::layout::row_major")),
-        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+                   TYPE_CONDITIONAL_FACTORY(
+                       checkEnableJointMatrixForType(),
+                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                        "experimental::matrix::row_major")),
+                       WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE,
+                                       TYPESTR)))
 
 TYPE_REWRITE_ENTRY("nvcuda::wmma::col_major",
-    TYPE_CONDITIONAL_FACTORY(
-        checkEnableJointMatrixForType(),
-        TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                         "ext::oneapi::experimental::matrix::layout::col_major")),
-        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+                   TYPE_CONDITIONAL_FACTORY(
+                       checkEnableJointMatrixForType(),
+                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                        "experimental::matrix::col_major")),
+                       WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE,
+                                       TYPESTR)))
 
 TYPE_REWRITE_ENTRY("nvcuda::wmma::accumulator",
-    TYPE_CONDITIONAL_FACTORY(
-        checkEnableJointMatrixForType(),
-        TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                         "ext::oneapi::experimental::matrix::use::accumulator")),
-        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
+                   TYPE_CONDITIONAL_FACTORY(
+                       checkEnableJointMatrixForType(),
+                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                        "experimental::matrix::accumulator")),
+                       WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE,
+                                       TYPESTR)))
 
-TYPE_REWRITE_ENTRY("nvcuda::wmma::fragment",
+TYPE_REWRITE_ENTRY(
+    "nvcuda::wmma::fragment",
     TYPE_CONDITIONAL_FACTORY(
         checkEnableJointMatrixForType(),
         TYPE_CONDITIONAL_FACTORY(
             CheckTemplateArgCount(5),
-            TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                             "ext::oneapi::experimental::matrix::joint_matrix"),
-                         STR("sycl::sub_group"),TEMPLATE_ARG(4),TEMPLATE_ARG(0),
-                         TEMPLATE_ARG(1),TEMPLATE_ARG(2)),
-            TYPE_CONDITIONAL_FACTORY(
-                checkTemplateArgSpelling(0, "nvcuda::wmma::matrix_a"),
-                    TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                                     "ext::oneapi::experimental::matrix::joint_matrix"),
-                                 STR("sycl::sub_group"),TEMPLATE_ARG(4),TEMPLATE_ARG(0),
-                                 TEMPLATE_ARG(1),TEMPLATE_ARG(3),TEMPLATE_ARG(5)),
-                    TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                                     "ext::oneapi::experimental::matrix::joint_matrix"),
-                                 STR("sycl::sub_group"),TEMPLATE_ARG(4),TEMPLATE_ARG(0),
-                                 TEMPLATE_ARG(2),TEMPLATE_ARG(3),TEMPLATE_ARG(5)))),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::matrix::joint_matrix"),
+                         TEMPLATE_ARG(0), TEMPLATE_ARG(1), TEMPLATE_ARG(2),
+                         TEMPLATE_ARG(3), TEMPLATE_ARG(4)),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::matrix::joint_matrix"),
+                         TEMPLATE_ARG(0), TEMPLATE_ARG(1), TEMPLATE_ARG(2),
+                         TEMPLATE_ARG(3), TEMPLATE_ARG(4), TEMPLATE_ARG(5))),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
 
 TYPE_REWRITE_ENTRY(
@@ -368,3 +375,30 @@ TYPE_REWRITE_ENTRY(
                              "experimental::logical_group")),
             WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                             STR("--use-experimental-features=logical-group")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraph_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::command_graph_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraphExec_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::command_graph_exec_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraphNode_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableGraphForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::node_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=graph"))))

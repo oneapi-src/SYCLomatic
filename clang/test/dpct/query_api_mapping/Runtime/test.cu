@@ -74,11 +74,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetStreamPriorityRange | FileCheck %s -check-prefix=CUDADEVICEGETSTREAMPRIORITYRANGE
 // CUDADEVICEGETSTREAMPRIORITYRANGE: CUDA API:
 // CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   cudaDeviceGetStreamPriorityRange(pi1 /*int **/, pi2 /*int **/);
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT: Is migrated to:
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   /*
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   DPCT1014:0: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   */
-// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   *(pi1) = 0, *(pi2) = 0;
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceReset | FileCheck %s -check-prefix=CUDADEVICERESET
 // CUDADEVICERESET: CUDA API:

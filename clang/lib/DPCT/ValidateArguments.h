@@ -88,6 +88,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_Matrix,
   Exp_BFloat16Math,
   Exp_BindlessImages,
+  Exp_Graph,
   Exp_NonUniformGroups,
   Exp_DeviceGlobal,
   Exp_ExperimentalFeaturesEnumSize,

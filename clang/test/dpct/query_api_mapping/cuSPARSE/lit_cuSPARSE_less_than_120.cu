@@ -75,7 +75,7 @@
 // cusparseCsrmvEx-NEXT:       beta /*const void **/, beta_type /*cudaDataType*/, y /*void **/,
 // cusparseCsrmvEx-NEXT:       y_type /*cudaDataType*/, exec_type /*cudaDataType*/, buffer /*void **/);
 // cusparseCsrmvEx-NEXT: Is migrated to:
-// cusparseCsrmvEx-NEXT:   dpct::sparse::csrmv(*handle, trans, m, n, alpha, alpha_type, desc, value, value_type, row_ptr, col_idx, x, x_type, beta, beta_type, y, y_type);
+// cusparseCsrmvEx-NEXT:   dpct::sparse::csrmv(handle->get_queue(), trans, m, n, alpha, alpha_type, desc, value, value_type, row_ptr, col_idx, x, x_type, beta, beta_type, y, y_type);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCsrmvEx_bufferSize | FileCheck %s -check-prefix=cusparseCsrmvEx_bufferSize
 // cusparseCsrmvEx_bufferSize: CUDA API:
@@ -150,7 +150,7 @@
 // cusparseScsrsv2_analysis-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseScsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseScsrsv2_analysis-NEXT: Is migrated to:
-// cusparseScsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(*handle, trans, m, desc, value, row_ptr, col_idx, info);
+// cusparseScsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(handle->get_queue(), trans, m, desc, value, row_ptr, col_idx, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseDcsrsv2_analysis | FileCheck %s -check-prefix=cusparseDcsrsv2_analysis
 // cusparseDcsrsv2_analysis: CUDA API:
@@ -160,7 +160,7 @@
 // cusparseDcsrsv2_analysis-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseDcsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseDcsrsv2_analysis-NEXT: Is migrated to:
-// cusparseDcsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(*handle, trans, m, desc, value, row_ptr, col_idx, info);
+// cusparseDcsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(handle->get_queue(), trans, m, desc, value, row_ptr, col_idx, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseCcsrsv2_analysis | FileCheck %s -check-prefix=cusparseCcsrsv2_analysis
 // cusparseCcsrsv2_analysis: CUDA API:
@@ -170,7 +170,7 @@
 // cusparseCcsrsv2_analysis-NEXT:       row_ptr /*const int **/, col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseCcsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseCcsrsv2_analysis-NEXT: Is migrated to:
-// cusparseCcsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(*handle, trans, m, desc, value, row_ptr, col_idx, info);
+// cusparseCcsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(handle->get_queue(), trans, m, desc, value, row_ptr, col_idx, info);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseZcsrsv2_analysis | FileCheck %s -check-prefix=cusparseZcsrsv2_analysis
 // cusparseZcsrsv2_analysis: CUDA API:
@@ -181,4 +181,4 @@
 // cusparseZcsrsv2_analysis-NEXT:       col_idx /*const int **/, info /*csrsv2Info_t*/,
 // cusparseZcsrsv2_analysis-NEXT:       policy /*cusparseSolvePolicy_t*/, buffer /*void **/);
 // cusparseZcsrsv2_analysis-NEXT: Is migrated to:
-// cusparseZcsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(*handle, trans, m, desc, value, row_ptr, col_idx, info);
+// cusparseZcsrsv2_analysis-NEXT:   dpct::sparse::optimize_csrsv(handle->get_queue(), trans, m, desc, value, row_ptr, col_idx, info);

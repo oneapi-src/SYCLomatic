@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
   thrust::optional<int> c = 1;
 }
 
-// CHECK: void foo_1(dpct::blas::compute_type a1) {
-// CHECK-NEXT:   dpct::blas::compute_type b1 = a1;
+// CHECK: void foo_1(dpct::compute_type a1) {
+// CHECK-NEXT:   dpct::compute_type b1 = a1;
 // CHECK-NEXT: }
 void foo_1(cublasComputeType_t a1) {
   cublasComputeType_t b1 = a1;

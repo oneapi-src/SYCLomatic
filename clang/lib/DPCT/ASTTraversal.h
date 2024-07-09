@@ -574,26 +574,10 @@ private:
       const FunctionDecl *FD);
   void MigrateOverloadedOperatorCall(
       const ast_matchers::MatchFinder::MatchResult &Result,
-      const CXXOperatorCallExpr *CE);
+      const CXXOperatorCallExpr *CE, bool InOverloadedOperator);
 
 private:
   static const char NamespaceName[];
-};
-
-class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {
-  ReplaceDim3Ctor *getReplaceDim3Modification(
-      const ast_matchers::MatchFinder::MatchResult &Result);
-
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for dim3 types member fields replacements.
-class Dim3MemberFieldsRule : public NamedMigrationRule<Dim3MemberFieldsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class CudaExtentRule : public NamedMigrationRule<CudaExtentRule> {
@@ -1799,6 +1783,12 @@ public:
 };
 
 class CompatWithClangRule : public NamedMigrationRule<CompatWithClangRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class GraphRule : public NamedMigrationRule<GraphRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

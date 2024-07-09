@@ -251,76 +251,77 @@ the following execution log files will be generated.
    * - .. code-block::
           :linenos:
 
-        [
-            {
-                "ID": "example.cu:26:3:prolog",
-                "Free Device Memory": "16374562816",
-                "Total Device Memory": "16882663424",
-                "Elapse Time(ms)": "0",
-                "CheckPoint": {
-                    "d_a": {
-                        "Type": "Pointer",
-                        "Data": [
-                            {
-                                "Type": "int3",
-                                "Data": [
-                                    {
-                                        "x": {
-                                            "Type": "int",
-                                            "Data": [
-                                                1
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "y": {
-                                            "Type": "int",
-                                            "Data": [
-                                                2
-                                            ]
-                                        }
-                                    },
-          ...
+          [
+              {
+                  "ID": "example.cu:26:3:prolog",
+                  "Free Device Memory": "16374562816",
+                  "Total Device Memory": "16882663424",
+                  "Elapse Time(ms)": "0",
+                  "CheckPoint": {
+                      "d_a": {
+                          "Type": "Pointer",
+                          "Data": [
+                              {
+                                  "Type": "int3",
+                                  "Data": [
+                                      {
+                                          "x": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  1
+                                              ]
+                                          }
+                                      },
+                                      {
+                                          "y": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  2
+                                              ]
+                                          }
+                                      },
+            ...
 
      - .. code-block::
-           :linenos:
+          :linenos:
 
-        [
-            {
-                "ID": "example.cu:26:3:prolog",
-                "Free Device Memory": "0",
-                "Total Device Memory": "31023112192",
-                "Elapse Time(ms)": "0",
-                "CheckPoint": {
-                    "d_a": {
-                        "Type": "Pointer",
-                        "Data": [
-                            {
-                                "Type": "sycl::int3",
-                                "Data": [
-                                    {
-                                        "x": {
-                                            "Type": "int",
-                                            "Data": [
-                                                1
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "y": {
-                                            "Type": "int",
-                                            "Data": [
-                                                2
-                                            ]
-                                        }
-                                    },
-            ...
+          [
+              {
+                  "ID": "example.cu:26:3:prolog",
+                  "Free Device Memory": "0",
+                  "Total Device Memory": "31023112192",
+                  "Elapse Time(ms)": "0",
+                  "CheckPoint": {
+                      "d_a": {
+                          "Type": "Pointer",
+                          "Data": [
+                              {
+                                  "Type": "sycl::int3",
+                                  "Data": [
+                                      {
+                                          "x": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  1
+                                              ]
+                                          }
+                                      },
+                                      {
+                                          "y": {
+                                              "Type": "int",
+                                              "Data": [
+                                                  2
+                                              ]
+                                          }
+                                      },
+              ...
 
 The report helps identify where the runtime behavior of the CUDA and the SYCL
 programs start to diverge from one another.
 
-Analysis the CodePin Result
--------
+Analyse the CodePin Result
+--------------------------
+
 codepin-report.py (also can be triggered by dpct/c2s --codepin-report) is a functionality of
 the compatibility tool that consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
 codepin-report.py can identify the inconsistent data value and report the stats data of the execution.

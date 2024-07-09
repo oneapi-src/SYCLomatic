@@ -21,8 +21,8 @@ __global__ void kernel(int a, int b){
 // CHECK-NEXT:   void run(){
 // CHECK-NEXT:     dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         int this_a_ct0 = this->a;
-// CHECK-NEXT:         int ptest_data_ct1 = ptest->data;
+// CHECK-NEXT:         auto this_a_ct0 = this->a;
+// CHECK-NEXT:         auto ptest_data_ct1 = ptest->data;
 // CHECK-EMPTY:
 // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -564,4 +564,30 @@ void test_host() {
   // CHECK-NEXT:    test_kernel();
   // CHECK-NEXT:  });
   test_kernel<<<vec.size(), 1>>>();
+}
+
+template <typename T, typename T2> class A {
+public:
+  __device__ void foo() { int i = threadIdx.x; };
+  __device__ void f1() { foo(); }
+};
+
+template <typename T> class A<T, int> {
+public:
+  __device__ void f1() { foo(); }
+  __device__ void foo(){};
+};
+
+template <typename T> __global__ void kernel2() {
+  A<int, T> a;
+//CHECK:  /*
+//CHECK:  DPCT1084:{{[0-9]+}}: The function call "A::f1" has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
+//CHECK:  */
+  a.f1();
+}
+
+int main() {
+  kernel2<int><<<1, 1>>>();
+  kernel2<float><<<1, 1>>>();
+  return 0;
 }

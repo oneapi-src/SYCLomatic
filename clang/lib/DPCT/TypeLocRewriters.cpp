@@ -132,6 +132,10 @@ std::function<bool(const TypeLoc)> checkEnableJointMatrixForType() {
   };
 }
 
+std::function<bool(const TypeLoc)> checkEnableGraphForType() {
+  return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useExtGraph(); };
+}
+
 std::function<bool(const TypeLoc)> isUseNonUniformGroupsForType() {
   return [=](const TypeLoc) -> bool {
     return DpctGlobalInfo::useExpNonUniformGroups();

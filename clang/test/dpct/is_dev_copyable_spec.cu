@@ -9,7 +9,7 @@
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct1 {
 // CHECK-NEXT:   UserStruct1() {}
-// CHECK-NEXT:   UserStruct1(UserStruct1 const &) {}
+// CHECK-NEXT:   UserStruct1(const UserStruct1&) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: template <class T1, class T2>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct1<T1, T2>> : std::true_type {};
@@ -18,18 +18,18 @@
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct2 {
 // CHECK-NEXT:   UserStruct2() {}
-// CHECK-NEXT:   UserStruct2(UserStruct2 const &) {}
+// CHECK-NEXT:   UserStruct2(const UserStruct2&) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: template <>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct2> : std::true_type {};
 template<class T1, class T2>
 struct UserStruct1 {
   UserStruct1() {}
-  UserStruct1(UserStruct1 const &) {}
+  UserStruct1(UserStruct1&) {}
 };
 struct UserStruct2 {
   UserStruct2() {}
-  UserStruct2(UserStruct2 const &) {}
+  UserStruct2(UserStruct2&) {}
 };
 
 template<class V1, class V2>
@@ -51,7 +51,7 @@ template void foo1<float, int>();
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct3 {
 // CHECK-NEXT:   UserStruct3() {}
-// CHECK-NEXT:   UserStruct3(UserStruct3 const &) {}
+// CHECK-NEXT:   UserStruct3(const UserStruct3&) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: template <class T1, class T2>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct3<T1, T2>> : std::true_type {};
@@ -60,18 +60,18 @@ template void foo1<float, int>();
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct4 {
 // CHECK-NEXT:   UserStruct4() {}
-// CHECK-NEXT:   UserStruct4(UserStruct4 const &) {}
+// CHECK-NEXT:   UserStruct4(const UserStruct4&) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: template <>
 // CHECK-NEXT: struct sycl::is_device_copyable<UserStruct4> : std::true_type {};
 template<class T1, class T2>
 struct UserStruct3 {
   UserStruct3() {}
-  UserStruct3(UserStruct3 const &) {}
+  UserStruct3(UserStruct3&) {}
 };
 struct UserStruct4 {
   UserStruct4() {}
-  UserStruct4(UserStruct4 const &) {}
+  UserStruct4(UserStruct4&) {}
 };
 
 template<class V1, class V2>
@@ -334,14 +334,14 @@ __global__ void k11(T) {}
 // CHECK-NEXT: */
 // CHECK-NEXT: struct B2 {
 // CHECK-NEXT:   B2() {}
-// CHECK-NEXT:   B2(B2& other) {}
+// CHECK-NEXT:   B2(const B2& other) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "F" is not device copyable for copy constructor breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct F {
 // CHECK-NEXT:   F() {}
-// CHECK-NEXT:   F(F& other) {}
+// CHECK-NEXT:   F(const F& other) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct16" is not device copyable for copy constructor, copy assignment, move constructor, move assignment, virtual method "m", destructor, virtual base class "B1", non trivially copyable base class "B2" and non trivially copyable field "f" breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
@@ -414,4 +414,36 @@ void test11() {
   // CHECK-NEXT:     k11(us17);
   // CHECK-NEXT:   });
   k11<<<1, 1>>>(us17);
+}
+
+// Case12: test adding const qualifier
+// CHECK: struct UserStruct18 {
+// CHECK-NEXT:   UserStruct18() {}
+// CHECK-NEXT:   UserStruct18(const volatile UserStruct18& other) {}
+// CHECK-NEXT:   UserStruct18(const UserStruct18& other) {}
+// CHECK-NEXT: };
+struct UserStruct18 {
+  UserStruct18() {}
+  UserStruct18(volatile UserStruct18& other) {}
+  UserStruct18(const UserStruct18& other) {}
+};
+
+// CHECK: struct UserStruct19 {
+// CHECK-NEXT:   UserStruct19() {}
+// CHECK-NEXT:   UserStruct19(const volatile UserStruct19& other) {}
+// CHECK-NEXT:   UserStruct19(const UserStruct19& other) {}
+// CHECK-NEXT: };
+// CHECK-NEXT: template <>
+// CHECK-NEXT: struct sycl::is_device_copyable<UserStruct19> : std::true_type {};
+struct UserStruct19 {
+  UserStruct19() {}
+  UserStruct19(volatile UserStruct19& other) {}
+  UserStruct19(UserStruct19& other) {}
+};
+
+void test12() {
+  volatile UserStruct18 us18;
+  k11<<<1, 1>>>(us18);
+  UserStruct19 us19;
+  k11<<<1, 1>>>(us19);
 }

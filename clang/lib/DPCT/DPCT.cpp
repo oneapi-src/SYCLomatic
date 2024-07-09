@@ -854,6 +854,8 @@ int runDPCT(int argc, const char **argv) {
                 ExperimentalFeatures::Exp_MaskedSubGroupFunction);
           else if (Option.ends_with("bindless_images"))
             Experimentals.addValue(ExperimentalFeatures::Exp_BindlessImages);
+          else if (Option.ends_with("graph"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_Graph);
         } else if (Option == "--no-dry-pattern") {
           NoDRYPattern.setValue(true);
         }
