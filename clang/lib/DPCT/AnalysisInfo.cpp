@@ -4047,8 +4047,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  CallFuncExprOffset = SM.getFileOffset(SM.getFileLoc(CE->getBeginLoc()));
+  CallFuncExprOffset = DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).second;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
@@ -4134,7 +4133,7 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 }
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-  if (IsGlobalFunc)
+  if (!IsADLEnable)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, CallFuncExprOffset, 0,
                                          "::", nullptr));
@@ -4287,7 +4286,7 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
           break;
         if (DpctGlobalInfo::isInCudaPath(
                 DpctGlobalInfo::getLocInfo(Type->getAsRecordDecl()).first)) {
-          IsGlobalFunc = true;
+          IsADLEnable = false;
           break;
         }
       }

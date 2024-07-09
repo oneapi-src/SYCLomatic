@@ -2420,7 +2420,7 @@ private:
   std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
-  bool IsGlobalFunc = false;
+  bool IsADLEnable = true;
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;
