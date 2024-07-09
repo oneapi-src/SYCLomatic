@@ -30,9 +30,6 @@ ENTRY(cudaStreamAttachMemAsync,        "SYCL currently does not support associat
 ENTRY(cuStreamAttachMemAsync,          "SYCL currently does not support associating USM with a specific queue.")
 ENTRY(cudaStreamQuery,                 "SYCL currently does not support query operations on queues.")
 ENTRY(cuStreamQuery,                   "SYCL currently does not support query operations on queues.")
-ENTRY(cudaStreamBeginCapture,          "SYCL currently does not support capture operations on queues.")
-ENTRY(cudaStreamEndCapture,            "SYCL currently does not support capture operations on queues.")
-ENTRY(cudaStreamIsCapturing,           "SYCL currently does not support capture operations on queues.")
 ENTRY(cudaDeviceGetStreamPriorityRange, "SYCL currently does not support get queue priority range.")
 
 ENTRY(cudaHostRegister,                "SYCL currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")

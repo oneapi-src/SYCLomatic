@@ -30,6 +30,8 @@ __global__ void k() {
   cg::thread_block block = cg::this_thread_block();
   // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
+  __barrier_sync(0);
   // CHECK: item_ct1.barrier();
   block.sync();
   // CHECK: item_ct1.barrier();

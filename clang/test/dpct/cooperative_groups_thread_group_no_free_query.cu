@@ -25,13 +25,13 @@ __device__ void testThreadGroup(cg::thread_group g) {
   g.size();
 
   auto block = cg::this_thread_block();
-  // CHECK: block.get_local_id();
+  // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
 }
 
 __global__ void kernelFunc() {
   auto block = cg::this_thread_block();
-  // CHECK: block.get_local_id();
+  // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
   // CHECK:  auto threadBlockGroup = item_ct1.get_group();
   auto threadBlockGroup = cg::this_thread_block();
