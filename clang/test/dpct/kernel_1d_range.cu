@@ -647,8 +647,8 @@ int query_block(const int x) {
 
 void foo7() {
   int n = 128;
-  //CHECK:sycl::range<3> block(1, 1, n);
-  //CHECK-NEXT:sycl::range<3> grid(1, 1, query_block(n));
+  //CHECK:dpct::dim3 block(n);
+  //CHECK-NEXT:dpct::dim3 grid(query_block(n));
   dim3 block(n);
   dim3 grid(query_block(n));
   //CHECK:dpct::get_in_order_queue().parallel_for(
