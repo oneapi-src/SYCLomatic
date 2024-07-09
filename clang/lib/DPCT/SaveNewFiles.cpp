@@ -205,19 +205,11 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
         // absolute path of the file. Then create the target directory if the
         // canonical path is not exists in the out root path.
         auto ReplPath = SourcePath;
-        auto ReplCanonicalPath =
-            tooling::UnifiedPath(SourcePath.getCanonicalPath());
         rewriteAbsoluteDir(ReplPath, InRoot, OutRoot);
-        rewriteDir(ReplCanonicalPath, InRoot, OutRoot);
-        if (llvm::sys::fs::is_directory(SourcePath.getAbsolutePath())) {
-          if (!llvm::sys::fs::exists(ReplCanonicalPath.getCanonicalPath()))
-            createDirectories(ReplCanonicalPath.getCanonicalPath());
-        }
 
         auto AbsoluteParentPath = sys::path::parent_path(AbsolutePath);
-
         if (llvm::sys::fs::is_symlink_file(AbsoluteParentPath)) {
-          createSymLink(AbsoluteParentPath, InRoot, OutRoot, RewriteFileName);
+          createSymLink(AbsoluteParentPath, InRoot, OutRoot, false);
         }
         auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
         rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
@@ -317,8 +309,6 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
          End;
          Iter != End; Iter.increment(EC)) {
           // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot.str(), FilePath))
-      continue;
       if (Iter->type() == fs::file_type::symlink_file) {
 
         tooling::UnifiedPath RootSource = Iter->path();

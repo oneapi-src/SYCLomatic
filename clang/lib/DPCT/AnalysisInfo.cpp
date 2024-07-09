@@ -1448,16 +1448,12 @@ DpctGlobalInfo::getAbsolutePath(FileID ID) {
 }
 std::optional<clang::tooling::UnifiedPath>
 DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
+  if (auto RealPath = File.getFileEntry().tryGetRealPathName();
+      !RealPath.empty())
+    return clang::tooling::UnifiedPath(RealPath);
   llvm::SmallString<512> FilePathAbs(File.getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
-  auto UnifiedFilePath = clang::tooling::UnifiedPath(FilePathAbs);
-  if (!llvm::sys::fs::exists(UnifiedFilePath.getCanonicalPath())) {
-    if (auto RealPath = File.getFileEntry().tryGetRealPathName();
-        !RealPath.empty())
-      return clang::tooling::UnifiedPath(RealPath);
-    return std::nullopt;
-  }
-  return UnifiedFilePath;
+  return clang::tooling::UnifiedPath(FilePathAbs);
 }
 
 std::pair<clang::tooling::UnifiedPath, unsigned>
