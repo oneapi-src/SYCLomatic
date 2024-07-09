@@ -53,3 +53,6 @@ if(FOO_OPENMP)
         endif()
     endif()
 endif()
+
+if(SYCL_COMPILER_EXECUTABLE)
+endif()

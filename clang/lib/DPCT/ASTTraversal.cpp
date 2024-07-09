@@ -9009,6 +9009,10 @@ void DeviceFunctionDeclRule::runRule(
   if (!FuncInfo)
     return;
 
+  if (FD->isOverloadedOperator()) {
+    FuncInfo->setOverloadedOperatorKind(FD->getOverloadedOperator());
+  }
+
   if (FD->doesThisDeclarationHaveABody()) {
     size_t ParamCounter = 0;
     for (auto &Param : FD->parameters()) {
