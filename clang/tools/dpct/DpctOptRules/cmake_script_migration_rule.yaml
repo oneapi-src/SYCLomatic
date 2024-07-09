@@ -2619,3 +2619,15 @@
       MatchMode: Full
       In: --expt-relaxed-constexpr
       Out: ""
+
+- Rule: rule_CUDA_NVCC_EXECUTABLE
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_NVCC_EXECUTABLE
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_NVCC_EXECUTABLE
+      Out: SYCL_COMPILER_EXECUTABLE
