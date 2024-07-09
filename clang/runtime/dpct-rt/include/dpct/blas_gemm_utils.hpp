@@ -623,22 +623,30 @@ template <typename T> struct get_beta_value_impl {
   }
 };
 
+template <typename T> struct abs_max_op {
+  auto operator()(const T &lhs, const T &rhs) {
+    T abs_lhs = lhs >= 0 ? lhs : -lhs;
+    T abs_rhs = rhs >= 0 ? rhs : -rhs;
+    return (abs_lhs < abs_rhs) ? abs_rhs : abs_lhs;
+  }
+};
+
 template <typename T> struct amax_impl {
   sycl::event operator()(void *amax_ptr, const void *new_d, size_t ld,
                          size_t rows, size_t cols, dpct::queue_ptr q_ptr,
                          std::vector<sycl::event> deps) {
     return q_ptr->submit([&](sycl::handler &cgh) {
 #ifdef DPCT_USM_LEVEL_NONE
-      auto max_reduction =
-          sycl::reduction(get_buffer<T>(amax_ptr), cgh, sycl::maximum<>());
+      auto amax_reduction =
+          sycl::reduction(get_buffer<T>(amax_ptr), cgh, abs_max_op<T>());
       access_wrapper<const T *> new_d_acc(new_d, cgh);
 #else
-      auto max_reduction = sycl::reduction((T *)(amax_ptr), sycl::maximum<>());
+      auto amax_reduction = sycl::reduction((T *)(amax_ptr), abs_max_op<T>());
 #endif
       cgh.depends_on(deps);
-      cgh.parallel_for<dpct_kernel_name<class max_reduction, T>>(
-          sycl::range<2>(ld, cols), max_reduction,
-          [=](sycl::id<2> idx, auto &max) {
+      cgh.parallel_for<dpct_kernel_name<class amax_reduction, T>>(
+          sycl::range<2>(ld, cols), amax_reduction,
+          [=](sycl::id<2> idx, auto &amax) {
 #ifdef DPCT_USM_LEVEL_NONE
             auto new_d_data = new_d_acc.get_raw_pointer();
 #else
@@ -648,7 +656,7 @@ template <typename T> struct amax_impl {
             size_t col_idx = idx.get(1);
             if (row_idx < rows) {
               size_t linear_idx = row_idx + ld * col_idx;
-              max.combine(new_d_data[linear_idx]);
+              amax.combine(new_d_data[linear_idx]);
             }
           });
     });
