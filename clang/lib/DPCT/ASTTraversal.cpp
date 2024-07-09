@@ -1689,12 +1689,13 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
           loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "cudaError", "curandStatus", "cublasStatus", "CUstream",
+              "dim3", "cudaError", "curandStatus", "cublasStatus", "CUstream",
               "CUstream_st", "thrust::complex", "thrust::device_vector",
               "thrust::device_ptr", "thrust::device_reference",
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
               "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
-              "cudaDeviceProp", "cudaGraphExecUpdateResult", "cudaPitchedPtr",
+              "cudaDeviceProp", "cudaStreamCaptureStatus",
+              "cudaGraphExecUpdateResult", "cudaPitchedPtr",
               "thrust::counting_iterator", "thrust::transform_iterator",
               "thrust::permutation_iterator", "thrust::iterator_difference",
               "cusolverDnHandle_t", "cusolverDnParams_t", "gesvdjInfo_t",
@@ -2285,11 +2286,19 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string CanonicalTypeStr = DpctGlobalInfo::getUnqualifiedTypeName(
         TL->getType().getCanonicalType());
 
+    if (CanonicalTypeStr == "cudaStreamCaptureStatus") {
+      if (!DpctGlobalInfo::useExtGraph()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               "cudaStreamCaptureStatus", "--use-experimental-features=graph");
+      }
+    }
+
     if (CanonicalTypeStr == "cudaGraphExecUpdateResult") {
       report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              CanonicalTypeStr);
       return;
     }
+
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
         CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
@@ -3037,198 +3046,6 @@ void VectorTypeOperatorRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(VectorTypeOperatorRule, PassKind::PK_Migration)
 
-void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
-  // Find dim3 constructors which are part of different casts (representing
-  // different syntaxes). This includes copy constructors. All constructors
-  // will be visited once.
-  MF.addMatcher(cxxConstructExpr(hasType(namedDecl(hasName("dim3"))),
-                                 argumentCountIs(1),
-                                 unless(hasAncestor(cxxConstructExpr(
-                                     hasType(namedDecl(hasName("dim3")))))))
-                    .bind("dim3Top"),
-                this);
-
-  MF.addMatcher(cxxConstructExpr(
-                    hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
-                    anyOf(hasParent(varDecl()), hasParent(exprWithCleanups())),
-                    unless(hasParent(initListExpr())),
-                    unless(hasAncestor(
-                        cxxConstructExpr(hasType(namedDecl(hasName("dim3")))))))
-                    .bind("dim3CtorDecl"),
-                this);
-
-  MF.addMatcher(
-      cxxConstructExpr(hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
-                       // skip fields in a struct.  The source loc is
-                       // messed up (points to the start of the struct)
-                       unless(hasParent(initListExpr())),
-                       unless(hasAncestor(cxxRecordDecl())),
-                       unless(hasParent(varDecl())),
-                       unless(hasParent(exprWithCleanups())),
-                       unless(hasAncestor(cxxConstructExpr(
-                           hasType(namedDecl(hasName("dim3")))))))
-          .bind("dim3CtorNoDecl"),
-      this);
-
-  MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(anyOf(
-                  namedDecl(hasAnyName("dim3")),
-                  typedefDecl(hasAnyName("dim3")))))))
-          .bind("dim3Type"),
-      this);
-}
-
-ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
-    const MatchFinder::MatchResult &Result) {
-  if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3CtorDecl")) {
-    if(getParentKernelCall(Ctor))
-      return nullptr;
-    // dim3 a; or dim3 a(1);
-    return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
-  } else if (auto Ctor =
-                 getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
-    if(getParentKernelCall(Ctor))
-      return nullptr;
-    // deflt = dim3(3);
-    return new ReplaceDim3Ctor(Ctor, false /*isDecl*/);
-  } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
-    if(getParentKernelCall(Ctor))
-      return nullptr;
-    // dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
-    if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
-      // strip the top CXXConstructExpr, if there's a CXXConstructExpr further
-      // down
-      return new ReplaceDim3Ctor(Ctor, A);
-    } else {
-      // Copy constructor case: dim3 a(copyfrom)
-      // No replacements are needed
-      return nullptr;
-    }
-  }
-
-  return nullptr;
-}
-
-void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
-  ReplaceDim3Ctor *R = getReplaceDim3Modification(Result);
-  if (R) {
-    emplaceTransformation(R);
-  }
-
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "dim3Type")) {
-    if (TL->getBeginLoc().isInvalid())
-      return;
-
-    auto BeginLoc =
-        getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
-    SourceManager *SM = Result.SourceManager;
-
-    // WA for concatenated macro token
-    if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
-      BeginLoc = SM->getExpansionLoc(TL->getBeginLoc());
-    }
-
-    Token Tok;
-    auto LOpts = Result.Context->getLangOpts();
-    Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
-    if (Tok.isAnyIdentifier()) {
-      if (TL->getType()->isElaboratedTypeSpecifier()) {
-        // To handle case like "struct cudaExtent extent;"
-        auto ETC = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
-        auto NTL = ETC.getNamedTypeLoc();
-
-        if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
-          auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
-
-          const std::string TyName =
-              dpct::DpctGlobalInfo::getTypeName(TSL.getType());
-          std::string Str =
-              MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
-          insertHeaderForTypeRule(TyName, BeginLoc);
-          requestHelperFeatureForTypeNames(TyName);
-
-          if (!Str.empty()) {
-            emplaceTransformation(
-                new ReplaceToken(BeginLoc, TSL.getEndLoc(), std::move(Str)));
-            return;
-          }
-        }
-      }
-
-      std::string TypeName = Tok.getRawIdentifier().str();
-      std::string Str =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
-      insertHeaderForTypeRule(TypeName, BeginLoc);
-      requestHelperFeatureForTypeNames(TypeName);
-      if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-        auto TypeStr = VD->getType().getAsString();
-        if (VD->getKind() == Decl::Var && TypeStr == "dim3") {
-          std::string Replacement;
-          std::string ReplacedType = "range";
-          llvm::raw_string_ostream OS(Replacement);
-          DpctGlobalInfo::printCtadClass(
-              OS, buildString(MapNames::getClNamespace(), ReplacedType), 3);
-          Str = OS.str();
-        }
-      }
-
-      if (!Str.empty()) {
-        SrcAPIStaticsMap[TypeName]++;
-        emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
-        return;
-      }
-    }
-  }
-}
-
-REGISTER_RULE(ReplaceDim3CtorRule, PassKind::PK_Migration)
-
-// rule for dim3 types member fields replacements.
-void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
-  // dim3->x/y/z => (*dim3)[0]/[1]/[2]
-  // dim3.x/y/z => dim3[0]/[1]/[2]
-  // int64_t{dim3->x/y/z} => int64_t((*dim3)[0]/[1]/[2])
-  // int64_t{dim3.x/y/z} => int64_t(dim3[0]/[1]/[2])
-  auto Dim3MemberExpr = [&]() {
-    return memberExpr(anyOf(
-        has(implicitCastExpr(hasType(pointsTo(typedefDecl(hasName("dim3")))))),
-        hasObjectExpression(hasType(qualType(hasCanonicalType(
-            recordType(hasDeclaration(cxxRecordDecl(hasName("dim3"))))))))));
-  };
-  MF.addMatcher(Dim3MemberExpr().bind("Dim3MemberExpr"), this);
-  MF.addMatcher(
-      cxxFunctionalCastExpr(
-          allOf(hasTypeLoc(loc(isSignedInteger())),
-                hasDescendant(
-                    initListExpr(hasInit(0, ignoringImplicit(Dim3MemberExpr())))
-                        .bind("InitListExpr")))),
-      this);
-}
-
-void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
-  // E.g.
-  // dim3 *pd3, d3;
-  // pd3->z; d3.z;
-  // int64_t{d3.x}, int64_t{pd3->x};
-  // will migrate to:
-  // (*pd3)[0]; d3[0];
-  // sycl::range<3> *pd3, d3;
-  // int64_t(d3[0]), int64_t((*pd3)[0]);
-  ExprAnalysis EA;
-  if (const auto *ILE = getNodeAsType<InitListExpr>(Result, "InitListExpr")) {
-    EA.analyze(ILE);
-  } else if (const auto *ME =
-                 getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
-    EA.analyze(ME);
-  } else {
-    return;
-  }
-  emplaceTransformation(EA.getReplacement());
-  EA.applyAllSubExprRepl();
-}
-
-REGISTER_RULE(Dim3MemberFieldsRule, PassKind::PK_Migration)
-
 void DeviceInfoVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       memberExpr(
@@ -3389,7 +3206,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
           to(enumConstantDecl(anyOf(
               hasType(enumDecl(hasAnyName(
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
-                  "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
+                  "cudaStreamCaptureStatus", "cudaDeviceAttr",
+                  "libraryPropertyType_t", "cudaDataType_t",
                   "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
@@ -3457,6 +3275,15 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaComputeModeProhibited" ||
       EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
+    return;
+  } else if ((EnumName == "cudaStreamCaptureStatusActive" ||
+              EnumName == "cudaStreamCaptureStatusNone") &&
+             !DpctGlobalInfo::useExtGraph()) {
+    report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+           EnumName, "--use-experimental-features=graph");
+    return;
+  } else if (EnumName == "cudaStreamCaptureStatusInvalidated") {
+    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
@@ -8370,7 +8197,6 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamAttachMemAsync" ||
-             FuncName == "cudaStreamIsCapturing" ||
              FuncName == "cudaStreamQuery" ||
              FuncName == "cudaDeviceGetStreamPriorityRange") {
 
@@ -8817,6 +8643,10 @@ void DeviceFunctionDeclRule::runRule(
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;
+
+  if (FD->isOverloadedOperator()) {
+    FuncInfo->setOverloadedOperatorKind(FD->getOverloadedOperator());
+  }
 
   if (FD->doesThisDeclarationHaveABody()) {
     size_t ParamCounter = 0;
@@ -11948,9 +11778,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
                    internal::Matcher<NamedDecl>(
                        new internal::HasNameMatcher(MathFunctionsCallExpr)),
                    anyOf(unless(hasDeclContext(namespaceDecl(anything()))),
-                         hasDeclContext(namespaceDecl(hasName("std")))))),
-               unless(hasAncestor(
-                   cxxConstructExpr(hasType(typedefDecl(hasName("dim3")))))))
+                         hasDeclContext(namespaceDecl(hasName("std")))))))
           .bind("math"),
       this);
 
@@ -12176,7 +12004,8 @@ void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
   auto SyncAPI = [&]() {
     return hasAnyName("__syncthreads", "__threadfence_block", "__threadfence",
                       "__threadfence_system", "__syncthreads_and",
-                      "__syncthreads_or", "__syncthreads_count", "__syncwarp");
+                      "__syncthreads_or", "__syncthreads_count", "__syncwarp",
+                      "__barrier_sync");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(SyncAPI())), parentStmt(),
@@ -12210,7 +12039,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  if (FuncName == "__syncthreads") {
+  if (FuncName == "__syncthreads" || FuncName == "__barrier_sync") {
     DpctGlobalInfo::registerNDItemUser(CE);
     const FunctionDecl *FD = nullptr;
     if (FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl")) {
@@ -12290,7 +12119,9 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(SyncThreadsRule, PassKind::PK_Analysis)
 
 void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
-  auto SyncAPI = [&]() { return hasAnyName("__syncthreads"); };
+  auto SyncAPI = [&]() {
+    return hasAnyName("__syncthreads", "__barrier_sync");
+  };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(SyncAPI())), parentStmt(),
                      hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
@@ -12337,7 +12168,7 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  if (FuncName == "__syncthreads") {
+  if (FuncName == "__syncthreads" || FuncName == "__barrier_sync") {
     BarrierFenceSpaceAnalyzer A;
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {
