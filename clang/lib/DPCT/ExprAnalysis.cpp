@@ -923,7 +923,14 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
     if (auto F = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD)) {
-      if (auto C = F->getFuncInfo()->findCallee(CE)) {
+      auto FuncInfo = F->getFuncInfo();
+      if ((FuncInfo->getOverloadedOperatorKind() !=
+           OverloadedOperatorKind::OO_None) &&
+          (FuncInfo->getOverloadedOperatorKind() !=
+           OverloadedOperatorKind::OO_Call)) {
+        return;
+      }
+      if (auto C = FuncInfo->findCallee(CE)) {
         auto Extra = C->getExtraArguments();
         if (Extra.empty())
           return;
