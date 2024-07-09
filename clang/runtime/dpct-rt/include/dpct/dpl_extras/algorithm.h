@@ -1679,9 +1679,9 @@ inline void __histogram_general_private_global_atomics(
       policy.queue()
           .get_device()
           .template get_info<sycl::info::device::global_mem_size>();
-  const ::std::size_t max_segments =
-      ::(std::min)(__global_mem_size / (num_bins * sizeof(BinType)),
-                 __ceiling_div(N, work_group_size * __min_iters_per_work_item));
+  const ::std::size_t max_segments = ::(std::min)(
+      __global_mem_size / (num_bins * sizeof(BinType)),
+      __ceiling_div(N, work_group_size * __min_iters_per_work_item));
   const ::std::size_t iters_per_work_item =
       __ceiling_div(N, max_segments * work_group_size);
   ::std::size_t segments =
