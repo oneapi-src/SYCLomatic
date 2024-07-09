@@ -111,7 +111,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaPointerAttributes",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
                                       HelperFeatureEnum::device_ext)},
-      {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
+      {"dim3", std::make_shared<TypeNameRule>(getDpctNamespace() + "dim3")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"__half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
@@ -364,6 +364,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseHandle_t", std::make_shared<TypeNameRule>(
                                getDpctNamespace() + "sparse::descriptor_ptr")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
+      {"cudaStreamCaptureStatus",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() + "ext::oneapi::experimental::queue_state"
+               : "cudaStreamCaptureStatus")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
       {"cudaExtent",
@@ -373,8 +378,12 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
-      {"CUDA_ARRAY_DESCRIPTOR", std::make_shared<TypeNameRule>(
-                                    getDpctNamespace() + "image_matrix_desc")},
+      {"CUDA_ARRAY_DESCRIPTOR",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::image_descriptor"
+               : getDpctNamespace() + "image_matrix_desc")},
       {"cudaMemcpy3DParms",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"CUDA_MEMCPY3D",
@@ -402,11 +411,17 @@ void MapNames::setExplicitNamespaceMap() {
                           HelperFeatureEnum::device_ext)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper"
+               : getDpctNamespace() + "image_matrix",
+           HelperFeatureEnum::device_ext)},
       {"CUarray",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix_p",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
+               : getDpctNamespace() + "image_matrix_p",
+           HelperFeatureEnum::device_ext)},
       {"CUarray_format",
        std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
       {"CUarray_format_enum",
@@ -1067,6 +1082,21 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>("0")},
       {"cudaMemAdviseSetAccessedBy", std::make_shared<EnumNameRule>("0")},
       {"cudaMemAdviseUnsetAccessedBy", std::make_shared<EnumNameRule>("0")},
+      // enum cudaStreamCaptureStatus
+      {"cudaStreamCaptureStatusNone",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::queue_state::executing"
+               : "cudaStreamCaptureStatusNone")},
+      {"cudaStreamCaptureStatusActive",
+       std::make_shared<EnumNameRule>(
+           DpctGlobalInfo::useExtGraph()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::queue_state::recording"
+               : "cudaStreamCaptureStatusActive")},
+      {"cudaStreamCaptureStatusInvalidated",
+       std::make_shared<EnumNameRule>("cudaStreamCaptureStatusInvalidated")},
       // enum CUmem_advise_enum
       {"CU_MEM_ADVISE_SET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
@@ -4322,7 +4352,7 @@ const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
     {"Width", "width"},
     {"Height", "height"},
     {"Format", "channel_type"},
-    {"NumChannels", "channel_num"}};
+    {"NumChannels", "num_channels"}};
 
 const MapNames::MapTy MemoryDataTypeRule::DirectReplMemberNames{
     // cudaMemcpy3DParms fields.
