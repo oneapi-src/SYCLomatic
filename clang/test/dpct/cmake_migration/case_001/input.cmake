@@ -43,3 +43,6 @@ if(FOO_OPENMP)
         endif()
     endif()
 endif()
+
+if(CUDA_NVCC_EXECUTABLE)
+endif()
