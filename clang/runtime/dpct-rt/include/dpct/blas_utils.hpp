@@ -2244,6 +2244,50 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                                         unit_diag, m, n, alpha_val, data_a, lda,
                                         data_c, ldc DPCT_COMPUTE_MODE_ARG);
 }
+
+/// Uses the QR factorization to solve a grouped batch of linear systems with
+/// full rank matrices.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] trans Operation applied to \p a.
+/// \param [in] m The number of rows of \p a.
+/// \param [in] n The number of columns of \p a.
+/// \param [in] nrhs The number of columns of \p b.
+/// \param [in, out] a Array of pointers to matrices.
+/// \param [in] lda The leading dimension of \p a.
+/// \param [in, out] b Array of pointers to matrices.
+/// \param [in] ldb The leading dimension of \p b.
+/// \param [out] info A value stores the error information.
+/// \param [in] batch_size The size of the batch.
+template <typename T>
+inline void gels_batch_wrapper(descriptor_ptr desc_ptr,
+                               oneapi::mkl::transpose trans, int m, int n,
+                               int nrhs, T *a[], int lda, T *b[], int ldb,
+                               int *info, int batch_size) {
+#ifdef DPCT_USM_LEVEL_NONE
+  throw std::runtime_error("this API is unsupported when USM level is none");
+#else
+  using Ty = typename DataType<T>::T2;
+  sycl::queue exec_queue = desc_ptr->get_queue();
+  *info = 0;
+  std::int64_t m_int64 = m;
+  std::int64_t n_int64 = n;
+  std::int64_t nrhs_int64 = nrhs;
+  std::int64_t lda_int64 = lda;
+  std::int64_t ldb_int64 = ldb;
+  std::int64_t group_sizes = batch_size;
+  std::int64_t scratchpad_size =
+      oneapi::mkl::lapack::gels_batch_scratchpad_size<Ty>(
+          exec_queue, &trans, &m_int64, &n_int64, &nrhs_int64, &lda_int64,
+          &ldb_int64, 1, &group_sizes);
+  Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
+
+  sycl::event e = oneapi::mkl::lapack::gels_batch(
+      exec_queue, &trans, &m_int64, &n_int64, &nrhs_int64, a, &lda_int64, b,
+      &ldb_int64, 1, &group_sizes, scratchpad, scratchpad_size);
+  std::vector<void *> ptrs{scratchpad};
+  dpct::async_dpct_free(ptrs, {e}, exec_queue);
+#endif
+}
 } // namespace blas
 
 /// Computes matrix-matrix product with general matrices.
