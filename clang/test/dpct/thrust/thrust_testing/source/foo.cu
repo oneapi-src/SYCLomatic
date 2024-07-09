@@ -33,7 +33,7 @@ void baz(ForwardIterator1 first1, ForwardIterator1 last1,
 
 int main() {
 
-  // CHECK: sycl::range<3> t(1, 1, 1);
+  // CHECK: dpct::dim3 t;
   dim3 t;
   return 0;
 }

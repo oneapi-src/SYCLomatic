@@ -144,7 +144,7 @@ struct image_matrix_desc {
   size_t height = 0;
   sycl::image_channel_type channel_type =
       sycl::image_channel_type::signed_int32;
-  unsigned channel_num = 0;
+  unsigned num_channels = 0;
 };
 
 /// Image channel info, include channel number, order, data width and type
@@ -340,7 +340,7 @@ public:
     _host_data = std::malloc(_range[0] * _range[1] * _channel.get_total_size());
   }
   image_matrix(const image_matrix_desc *desc)
-      : image_matrix(desc->channel_type, desc->channel_num, desc->width,
+      : image_matrix(desc->channel_type, desc->num_channels, desc->width,
                      desc->height) {}
 
   /// Construct a new image class with the matrix data.
@@ -641,7 +641,7 @@ public:
   void attach(const image_matrix_desc *desc, device_ptr ptr, size_t pitch) {
     detach();
     image_channel channel;
-    channel.set_channel_num(desc->channel_num);
+    channel.set_channel_num(desc->num_channels);
     channel.set_channel_type(desc->channel_type);
     image_wrapper_base::set_data(
         image_data(ptr, desc->width, desc->height, pitch, channel));

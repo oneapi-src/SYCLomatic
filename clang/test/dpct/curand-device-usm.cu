@@ -110,9 +110,9 @@ int main(int argc, char **argv) {
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * 10));
   //CHECK: CHECK(DPCT_CHECK_ERROR(RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *)sycl::malloc_device(sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>) * 10 * 10, q_ct1)));
   CHECK(cudaMalloc((void **)&RandomStates, sizeof(curandState) * 10 * 10));
-  //CHECK: sycl::range<3> grid(1, 1, 10);
+  //CHECK: dpct::dim3 grid(10, 1);
   dim3 grid(10, 1);
-  //CHECK: CHECK(DPCT_CHECK_ERROR(dOut = sycl::malloc_device<int>(grid[2], q_ct1)));
+  //CHECK: CHECK(DPCT_CHECK_ERROR(dOut = sycl::malloc_device<int>(grid.x, q_ct1)));
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * grid.x));
 
   return 0;

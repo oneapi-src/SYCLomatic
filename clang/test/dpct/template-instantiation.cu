@@ -136,11 +136,11 @@ int main() {
 
     unsigned u;
     dim3 dim;
-    // CHECK: func_2_same_pram(u, (unsigned int)dim[1]);
+    // CHECK: func_2_same_pram(u, dim.y);
     func_2_same_pram(u, dim.y);
-    // CHECK: func_2_same_pram(u, (unsigned int)dim[1] + 1);
+    // CHECK: func_2_same_pram(u, dim.y + 1);
     func_2_same_pram(u, dim.y + 1);
-    // CHECK: func_2_same_pram(u, func_same_return((unsigned int)dim[1]));
+    // CHECK: func_2_same_pram(u, func_same_return(dim.y));
     func_2_same_pram(u, func_same_return(dim.y));
 }
 

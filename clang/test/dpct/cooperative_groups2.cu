@@ -17,8 +17,8 @@ __device__ void foo() {
   // CHECK: auto block = item_ct1.get_group();
   auto block = cg::this_thread_block();
 
-  // CHECK: auto group_x = block.get_group_id()[2];
-  // CHECK-NEXT: auto thread_x = block.get_local_id()[2];
+  // CHECK: auto group_x = dpct::dim3(block.get_group_id()).x;
+  // CHECK-NEXT: auto thread_x = dpct::dim3(block.get_local_id()).x;
   auto group_x = block.group_index().x;
   auto thread_x = block.thread_index().x;
 
