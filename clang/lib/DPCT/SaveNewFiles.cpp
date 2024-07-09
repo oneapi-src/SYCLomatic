@@ -316,10 +316,13 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC),
          End;
          Iter != End; Iter.increment(EC)) {
+          // Skip output directory if it is in the in-root directory.
+    if (isChildOrSamePath(OutRoot.str(), FilePath))
+      continue;
       if (Iter->type() == fs::file_type::symlink_file) {
 
         tooling::UnifiedPath RootSource = Iter->path();
-        if (IncludeFleMap.find(Iter->path()) != IncludeFileMap.end()) {
+        if (IncludeFileMap.find(Iter->path()) != IncludeFileMap.end()) {
           if (IncludeFileMap[RootSource]) {
             rewriteFileName(RootSource);
           }
@@ -381,6 +384,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     }
 
     auto FilePath = Iter->path();
+
     // Skip output directory if it is in the in-root directory.
     if (isChildOrSamePath(OutRoot.str(), FilePath))
       continue;
@@ -1084,8 +1088,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   for (const auto &Entry : IncludeFileMap) {
     // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
     clang::tooling::UnifiedPath FilePath = Entry.first;
-    // Generated CUDA file in outroot_codepin. E.g.,
-    // /path/to/outroot_codepin/a.cu
+    // Generated CUDA file in outroot_debug. E.g., /path/to/outroot_debug/a.cu
     clang::tooling::UnifiedPath DebugFilePath = Entry.first;
     // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
     clang::tooling::UnifiedPath OriginalFilePath = Entry.first;

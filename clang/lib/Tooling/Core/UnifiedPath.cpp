@@ -46,7 +46,7 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
 
   llvm::sys::path::remove_dots(Path, /* remove_dot_dot= */ true);
   llvm::sys::path::native(Path);
-  _AbsolutePath = Path.str();
+
   llvm::SmallString<512> RealPath;
   // We need make sure the input `Path` for llvm::sys::fs::real_path is
   // exsiting, or else the behavior of real_path() is unexpected. 
