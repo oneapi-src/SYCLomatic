@@ -3077,15 +3077,6 @@ public:
   }
 
 #endif
-  FunctionEffectsRef getFunctionEffects() const {
-    // Effects may differ between declarations, but they should be propagated
-    // from old to new on any redeclaration, so it suffices to look at
-    // getMostRecentDecl().
-    if (const auto *FPT =
-            getMostRecentDecl()->getType()->getAs<FunctionProtoType>())
-      return FPT->getFunctionEffects();
-    return {};
-  }
 
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
