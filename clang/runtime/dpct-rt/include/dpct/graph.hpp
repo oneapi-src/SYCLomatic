@@ -132,7 +132,6 @@ static inline void end_recording(sycl::queue *queue_ptr,
 #endif
 }
 
-
 /// Adds an empty node to the command graph with optional
 /// dependencies.
 /// \param [out] newNode A pointer to the node_ptr that will be
