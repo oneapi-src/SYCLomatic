@@ -88,7 +88,7 @@ public:
     *graph = it->second;
     queue_graph_map.erase(it);
 #if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-    return;
+    return (*graph)->end_recording();
 #else
     (*graph)->end_recording();
     return;
