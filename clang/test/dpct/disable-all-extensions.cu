@@ -175,6 +175,10 @@ int peer_access() {
   // CHECK:  DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because SYCL currently does not support memory access across peer devices. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.
   // CHECK:  */
   cudaDeviceDisablePeerAccess(0);
+  // CHECK:  /*
+  // CHECK:  DPCT1026:{{[0-9]+}}: The call to cuCtxEnablePeerAccess was removed because SYCL currently does not support memory access across peer devices. You can migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.
+  // CHECK:  */
+  cuCtxEnablePeerAccess(0, 0);
 
   return 0;
 }
@@ -345,14 +349,13 @@ static void func() {
   int priority_low;
   int priority_hi;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceGetStreamPriorityRange was removed because SYCL currently does not support get queue priority range.
   // CHECK-NEXT: */
-  // CHECK-NEXT: *(&priority_low) = 0, *(&priority_hi) = 0;
   cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceGetStreamPriorityRange was replaced with 0 because SYCL currently does not support get queue priority range.
   // CHECK-NEXT: */
-  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR((*(&priority_low) = 0, *(&priority_hi) = 0)));
+  // CHECK: MY_ERROR_CHECKER(0);
   MY_ERROR_CHECKER(cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi));
 
   int priority;

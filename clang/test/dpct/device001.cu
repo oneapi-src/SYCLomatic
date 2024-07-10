@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:size_t share_multi_proc_mem_size = deviceProp.get_local_mem_size();
   size_t share_multi_proc_mem_size = deviceProp.sharedMemPerMultiprocessor;
 
-  // CHECK: sycl::range<3> grid(1, 1, deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_max_sub_group_size()));
+  // CHECK: dpct::dim3 grid(deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_max_sub_group_size()));
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*
@@ -251,9 +251,9 @@ void test3() {
   //CHECK-NEXT:size_t a3 = deviceProp.get_global_mem_size();
   size_t a3 = deviceProp.totalConstMem;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1090:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with regsPerBlock. It was not migrated. You need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with regsPerBlock. It was migrated to get_max_register_size_per_work_group. You may need to adjust the value of get_max_register_size_per_work_group for the specific device.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a4 = deviceProp.regsPerBlock;
+  //CHECK:int a4 = deviceProp.get_max_register_size_per_work_group();
   int a4 = deviceProp.regsPerBlock;
   //CHECK:/*
   //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to adjust the value of dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>() for the specific device.

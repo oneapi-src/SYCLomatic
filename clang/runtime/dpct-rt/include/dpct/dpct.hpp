@@ -26,6 +26,7 @@ template <int Arg> class dpct_kernel_scalar;
 #include "util.hpp"
 
 #include "bindless_images.hpp"
+#include "graph.hpp"
 
 #if defined(_MSC_VER)
 #define __dpct_align__(n) __declspec(align(n))

@@ -24,7 +24,7 @@ int main() {
   thrust::device_ptr<thrust::complex<double>> d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
   // CHECK:  q_ct1.submit(
   // CHECK-NEXT:    [&](sycl::handler &cgh) {
-  // CHECK-NEXT:      std::complex<double> * thrust_raw_pointer_cast_d_ptr_ct0 = dpct::get_raw_pointer(d_ptr);
+  // CHECK-NEXT:      auto thrust_raw_pointer_cast_d_ptr_ct0 = dpct::get_raw_pointer(d_ptr);
   // CHECK-EMPTY:
   // CHECK-NEXT:      cgh.parallel_for(
   // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
@@ -45,7 +45,7 @@ __global__ void kernel2(float *p) {}
 void foo(thrust::device_vector<float> &vec, const int i, const int j) {
   //CHECK:dpct::get_in_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    float * thrust_raw_pointer_cast_vec_data_i_j_ct0 = dpct::get_raw_pointer(vec.data()) + i * j;
+  //CHECK-NEXT:    auto thrust_raw_pointer_cast_vec_data_i_j_ct0 = dpct::get_raw_pointer(vec.data()) + i * j;
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

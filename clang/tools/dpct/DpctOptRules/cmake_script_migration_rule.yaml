@@ -687,13 +687,6 @@
   In: cuda_add_executable(${value})
   Out: add_executable(${value})
 
-- Rule: rule_add_executable
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_executable
-  In: add_executable(${value} OPTIONS {options})
-  Out: add_executable(${value})
-
 - Rule: rule_add_executable_opts
   Kind: CMakeRule
   Priority: Fallback
@@ -974,6 +967,7 @@
 - Rule: rule_cuda_add_library
   Kind: CMakeRule
   Priority: Fallback
+  MatchMode: Full
   CmakeSyntax: cuda_add_library
   In: cuda_add_library(${arg})
   Out: add_library(${arg})
@@ -2577,3 +2571,63 @@
       MatchMode: Full
       In: CMAKE_CUDA_COMPILER_VERSION
       Out: COMPATIBILITY_VERSION
+
+- Rule: rule_xcompiler_option_filter
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: xcompiler_option_filter
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -Xcompiler=${arg}
+      Out: ${arg}
+
+- Rule: rule_xcudafe_filter
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: xcudafe_filter
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -Xcudafe=${arg}
+      Out: ""
+
+- Rule: rule_extended_lambda_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: extended_lambda_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --extended-lambda
+      Out: ""
+
+- Rule: rule_expt_relaxed_constexpr_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_relaxed_constexpr_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --expt-relaxed-constexpr
+      Out: ""
+
+- Rule: rule_CUDA_NVCC_EXECUTABLE
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_NVCC_EXECUTABLE
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_NVCC_EXECUTABLE
+      Out: SYCL_COMPILER_EXECUTABLE

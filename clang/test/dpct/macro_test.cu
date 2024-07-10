@@ -58,7 +58,7 @@ public:
 #define CALL(x) x;
 
 #define EMPTY_MACRO(x) x
-//CHECK:#define GET_MEMBER_MACRO(x) x[1] = 5
+//CHECK:#define GET_MEMBER_MACRO(x) x.y = 5
 #define GET_MEMBER_MACRO(x) x.y = 5
 
 __global__ void foo_kernel() {}
@@ -99,9 +99,9 @@ void foo() {
 #endif
 
 
-  // CHECK: (*d3.A)[2] = 3;
-  // CHECK-NEXT: d3.B[2] = 2;
-  // CHECK-NEXT: EMPTY_MACRO(d3.B[2]);
+  // CHECK: d3.A->x = 3;
+  // CHECK-NEXT: d3.B.x = 2;
+  // CHECK-NEXT: EMPTY_MACRO(d3.B.x);
   // CHECK-NEXT: GET_MEMBER_MACRO(d3.B);
   d3.A->x = 3;
   d3.B.x = 2;
@@ -233,8 +233,8 @@ MACRO_KC
 
 //CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     int c_ct0 = c;                                                            \
-//CHECK-NEXT:     int d_ct1 = d;                                                            \
+//CHECK-NEXT:     auto c_ct0 = c;                                                            \
+//CHECK-NEXT:     auto d_ct1 = d;                                                            \
 //CHECK:     cgh.parallel_for(                                                          \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, a) * sycl::range<3>(1, 1, b),   \
 //CHECK-NEXT:                           sycl::range<3>(1, 1, b)),                            \
@@ -251,8 +251,8 @@ HARD_KC(foo3,3,2,1,0)
 
 //CHECK: #define MACRO_KC2(a, b, c, d)                                                       \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     int c_ct0 = c;                                                            \
-//CHECK-NEXT:     int d_ct1 = d;                                                            \
+//CHECK-NEXT:     auto c_ct0 = c;                                                            \
+//CHECK-NEXT:     auto d_ct1 = d;                                                            \
 //CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                  \
 //CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
@@ -268,7 +268,7 @@ MACRO_KC2(griddim,threaddim,1,0)
 // CHECK: MACRO_KC2(3,2,1,0)
 MACRO_KC2(3,2,1,0)
 
-// CHECK: MACRO_KC2(sycl::range<3>(5, 4, 3), 2, 1, 0)
+// CHECK: MACRO_KC2(dpct::dim3(5, 4, 3), 2, 1, 0)
 MACRO_KC2(dim3(5,4,3),2,1,0)
 
 int *a;
@@ -1161,7 +1161,7 @@ class ArgClass{};
 //CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
 //CHECK-NEXT: #define VACALL(x)                                                              \
 //CHECK-NEXT:   dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {                   \
-//CHECK-NEXT:     int i_ct0 = i;                                                            \
+//CHECK-NEXT:     auto i_ct0 = i;                                                            \
 //CHECK-NEXT:     auto ac_ct0 = ac;                                                          \
 //CHECK:     cgh.parallel_for(                                                          \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *                            \
@@ -1355,7 +1355,7 @@ void foo38() {
 template<typename T>
 void foo38(T *t);
 
-//CHECK: #define GRID grid[2] = 3;
+//CHECK: #define GRID grid.x = 3;
 #define GRID grid.x = 3;
 
 template<typename T>
