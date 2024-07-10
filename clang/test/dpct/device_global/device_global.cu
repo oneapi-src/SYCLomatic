@@ -14,7 +14,6 @@ struct B{
   int data = 1;
 };
 
-
 // CHECK: sycl::ext::oneapi::experimental::device_global<int> var_a;
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
@@ -33,12 +32,14 @@ struct B{
 // CHECK: */
 // CHECK: sycl::ext::oneapi::experimental::device_global<const int> var_init{3};
 // CHECK: /*
-// CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
-// CHECK: */
-// CHECK: /*
-// CHECK: DPCT1130:{{[0-9]+}}: The 'device_global' has been explicitly marked deleted. You may need to adjust the code.
+// CHECK: DPCT1130:{{[0-9]+}}: The copy constructor of device_global has been explicitly deleted. You may need to adjust the code.
 // CHECK: */
 // CHECK: sycl::ext::oneapi::experimental::device_global<const int> var_ee{var_init};
+// CHECK: const int val = 3;
+// CHECK: /*
+// CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
+// CHECK: */
+// CHECK: sycl::ext::oneapi::experimental::device_global<const int> var_ee2{val};
 // CHECK: sycl::ext::oneapi::experimental::device_global<A> var_e;
 // CHECK: static sycl::ext::oneapi::experimental::device_global<const B> var_f;
 // CHECK: dpct::global_memory<int, 0> var_g;
@@ -46,8 +47,10 @@ __device__ int var_a;
 __device__ int var_b = 0;
 __constant__ float var_c = 2.f;
 __constant__ float var_d = 1.f;
- const int __device__ var_init = 3;
- const int __device__  var_ee = var_init;
+const int __device__ var_init = 3;
+const int __device__ var_ee = var_init;
+const int val = 3;
+const int __device__ var_ee2 = val;
 __device__ A var_e;
 __constant__ B var_f;
 __device__ int var_g;

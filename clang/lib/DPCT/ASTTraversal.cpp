@@ -8859,10 +8859,19 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
       if (Decl->hasInit()) {
         auto InitStr = getInitForDeviceGlobal(Decl);
         if (!InitStr.empty()) {
-          report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-          if (dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
-            report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
-                   false, "device_global");
+          bool EmittedWarning = false;
+          if (auto DRE =
+                  dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
+            auto VarDeclInfo =
+                Global.findMemVarInfo(dyn_cast<VarDecl>(DRE->getDecl()));
+            if (VarDeclInfo && VarDeclInfo->isUseDeviceGlobal()) {
+              report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
+                     false, "copy constructor of device_global");
+              EmittedWarning = true;
+            }
+          }
+          if (!EmittedWarning) {
+            report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
           }
           Info->setInitForDeviceGlobal(InitStr);
         }
@@ -9005,7 +9014,21 @@ void ConstantMemVarMigrationRule::runRule(
       if (MemVar->hasInit()) {
         auto InitStr = getInitForDeviceGlobal(MemVar);
         if (!InitStr.empty()) {
-          report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+          bool EmittedWarning = false;
+          if (auto DRE =
+                  dyn_cast<DeclRefExpr>(MemVar->getInit()->IgnoreImplicit())) {
+            auto VarDeclInfo = DpctGlobalInfo::getInstance().findMemVarInfo(
+                dyn_cast<VarDecl>(DRE->getDecl()));
+            if (VarDeclInfo && VarDeclInfo->isUseDeviceGlobal()) {
+              report(MemVar->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
+                     false, "copy constructor of device_global");
+              EmittedWarning = true;
+            }
+          }
+          if (!EmittedWarning) {
+            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
+                   false);
+          }
           Info->setInitForDeviceGlobal(InitStr);
         }
       }
@@ -9451,7 +9474,21 @@ void MemVarMigrationRule::runRule(
       if (MemVar->hasInit()) {
         auto InitStr = getInitForDeviceGlobal(MemVar);
         if (!InitStr.empty()) {
-          report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+          bool EmittedWarning = false;
+          if (auto DRE =
+                  dyn_cast<DeclRefExpr>(MemVar->getInit()->IgnoreImplicit())) {
+            auto VarDeclInfo = DpctGlobalInfo::getInstance().findMemVarInfo(
+                dyn_cast<VarDecl>(DRE->getDecl()));
+            if (VarDeclInfo && VarDeclInfo->isUseDeviceGlobal()) {
+              report(MemVar->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
+                     false, "copy constructor of device_global");
+              EmittedWarning = true;
+            }
+          }
+          if (!EmittedWarning) {
+            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
+                   false);
+          }
           Info->setInitForDeviceGlobal(InitStr);
         }
       }
