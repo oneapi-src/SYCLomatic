@@ -193,7 +193,6 @@ void foo3() {
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::a_scale_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::b_scale_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::d_scale_pointer;
-  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::amax_d_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
@@ -211,7 +210,6 @@ void foo3() {
   d = CUBLASLT_MATMUL_DESC_A_SCALE_POINTER;
   d = CUBLASLT_MATMUL_DESC_B_SCALE_POINTER;
   d = CUBLASLT_MATMUL_DESC_D_SCALE_POINTER;
-  d = CUBLASLT_MATMUL_DESC_AMAX_D_POINTER;
   d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS;
   d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_COLS;
   d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_OUT_COUNTERS_POINTER;
