@@ -1678,7 +1678,7 @@ void TypePrinter::printTemplateId(const TemplateSpecializationType *T,
   IncludeStrongLifetimeRAII Strong(Policy);
 
   TemplateDecl *TD = T->getTemplateName().getAsTemplateDecl();
-<<<<<<< HEAD
+
 #ifdef SYCLomatic_CUSTOMIZATION
   StringRef Name;
   if (getReplacedNamePtr)
@@ -1687,10 +1687,8 @@ void TypePrinter::printTemplateId(const TemplateSpecializationType *T,
     OS << Name;
   else
 #endif // SYCLomatic_CUSTOMIZATION
-  // FIXME: Null TD never excercised in test suite.
-=======
+
   // FIXME: Null TD never exercised in test suite.
->>>>>>> origin/sycl
   if (FullyQualify && TD) {
     if (!Policy.SuppressScope)
       AppendScope(TD->getDeclContext(), OS, TD->getDeclName());
