@@ -744,11 +744,7 @@ public:
   /// Update the device stack for the current thread id
   void push_device(unsigned int id) {
     auto tid = get_tid();
-    auto it = _thread2dev_map.find(tid);
-    if (it == _thread2dev_map.end())
-      _thread2dev_map.insert({tid, std::stack<unsigned int>({id})});
-    else
-      it->second.push(id);
+    _thread2dev_map[tid].push(id);
   }
 
   /// Remove the device from top of the stack if it exist
