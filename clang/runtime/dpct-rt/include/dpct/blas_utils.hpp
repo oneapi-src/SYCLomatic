@@ -2261,8 +2261,8 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
 template <typename T>
 inline void gels_batch_wrapper(descriptor_ptr desc_ptr,
                                oneapi::mkl::transpose trans, int m, int n,
-                               int nrhs, T *a[], int lda, T *b[], int ldb,
-                               int *info, int batch_size) {
+                               int nrhs, T *const a[], int lda, T *const b[],
+                               int ldb, int *info, int batch_size) {
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
@@ -2282,8 +2282,8 @@ inline void gels_batch_wrapper(descriptor_ptr desc_ptr,
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
 
   sycl::event e = oneapi::mkl::lapack::gels_batch(
-      exec_queue, &trans, &m_int64, &n_int64, &nrhs_int64, a, &lda_int64, b,
-      &ldb_int64, 1, &group_sizes, scratchpad, scratchpad_size);
+      exec_queue, &trans, &m_int64, &n_int64, &nrhs_int64, (Ty **)a, &lda_int64,
+      (Ty **)b, &ldb_int64, 1, &group_sizes, scratchpad, scratchpad_size);
   std::vector<void *> ptrs{scratchpad};
   dpct::async_dpct_free(ptrs, {e}, exec_queue);
 #endif
