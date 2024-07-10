@@ -621,17 +621,23 @@ template <typename T> struct get_beta_value_impl {
 };
 } // namespace detail
 
-/// This function does operations:
-/// D_temp = epilogue(alpha * scale_a * op(A) * scale_b * op(B) + beta * C)
-/// Aux_d = absmax(D_temp)
-/// D = scale_d * D_temp
+/// This function does the following operations:
+/// D = scale_d * epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta * C)
+/// "op_a" is specified by the matmul_desc_t::attribute::trans_a
+/// "op_b" is specified by the matmul_desc_t::attribute::trans_b
+/// "scale_a" is specified by the matmul_desc_t::attribute::a_scale_pointer
+/// "scale_b" is specified by the matmul_desc_t::attribute::b_scale_pointer
+/// "scale_d" is specified by the matmul_desc_t::attribute::d_scale_pointer
+/// "alpha" can be a scalar value or a vector, which is specified by the
+/// matmul_desc_tattribute::::pointer_mode
+/// "epilogue" is specified by the matmul_desc_t::attribute::epilogue
 /// Currently supports type combinations:
 ///   scale_type==int32 && a_type==int8 && b_type==int8 && c_type==int32;
 ///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int8;
 ///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int32;
 ///   scale_type==float && a_type==float && b_type==float && c_type==float.
-/// Currently it only supports beta==0 and beta==1.
-/// Currently it only supports relu epilogue.
+/// Currently, it only supports beta==0 and beta==1.
+/// Currently, it only supports the relu epilogue.
 /// NOTE: Non-col-major matrix will be converted to col-major matrix before.
 /// TODO: Impl row-major matmul without layout conversion.
 /// multiplication and converted back after multiplication.
