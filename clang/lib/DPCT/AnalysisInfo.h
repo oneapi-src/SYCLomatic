@@ -2381,7 +2381,7 @@ public:
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
                       bool isKernelCall = false);
-  std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
+  std::shared_ptr<DeviceFunctionInfo> getFuncInfo();
   bool IsAllTemplateArgsSpecified = false;
 
   virtual ~CallFunctionExpr() = default;
@@ -2410,12 +2410,12 @@ private:
   void buildTextureObjectArgsInfo(const CallExpr *CE);
 
   template <class CallT> void buildTextureObjectArgsInfo(const CallT *C);
-  void mergeTextureObjectInfo();
+  void mergeTextureObjectInfo(std::shared_ptr<DeviceFunctionInfo> Info);
 
   const clang::tooling::UnifiedPath FilePath;
   unsigned Offset = 0;
   unsigned ExtraArgLoc = 0;
-  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  std::vector<std::shared_ptr<DeviceFunctionInfo>> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
 
   // <ParameterIndex, ParameterName>
@@ -2648,6 +2648,10 @@ public:
   bool IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
   void setForceInlineDevFunc() { ForceInlineDevFunc = true; }
   bool IsForceInlineDevFunc() { return ForceInlineDevFunc; }
+  void setOverloadedOperatorKind(OverloadedOperatorKind Kind) {
+    OO_Kind = Kind;
+  }
+  OverloadedOperatorKind getOverloadedOperatorKind() { return OO_Kind; }
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -2693,6 +2697,7 @@ private:
   bool IsKernelInvoked = false;
   bool CallGroupFunctionInControlFlow = false;
   bool HasCheckedCallGroupFunctionInControlFlow = false;
+  OverloadedOperatorKind OO_Kind = OverloadedOperatorKind::OO_None;
 };
 
 class KernelCallExpr : public CallFunctionExpr {
