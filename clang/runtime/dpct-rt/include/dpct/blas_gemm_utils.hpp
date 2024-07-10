@@ -227,25 +227,25 @@ sycl::event scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols,
   });
 }
 
-// d is col major without padding
-inline sycl::event scale_d_with_vector_alpha(queue_ptr q_ptr, int rows,
-                                             int cols, void *d,
-                                             library_data_t d_type,
+// a is col major without padding
+inline sycl::event scale_a_with_vector_alpha(queue_ptr q_ptr, int rows,
+                                             int cols, void *a,
+                                             library_data_t a_type,
                                              const void *alpha,
                                              library_data_t alpha_type,
                                              std::vector<sycl::event> deps) {
-  std::uint64_t key = dpct::detail::get_type_combination_id(d_type, alpha_type);
+  std::uint64_t key = dpct::detail::get_type_combination_id(a_type, alpha_type);
   sycl::event e;
   switch (key) {
   case dpct::detail::get_type_combination_id(library_data_t::real_int8,
                                              library_data_t::real_float): {
     e = scale_d_with_vector_alpha_impl<std::int8_t, float>(
-        q_ptr, rows, cols, (std::int8_t *)d, (const float *)alpha, deps);
+        q_ptr, rows, cols, (std::int8_t *)a, (const float *)alpha, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_int32,
                                              library_data_t::real_float): {
-    e = scale_d_with_vector_alpha_impl<int, float>(q_ptr, rows, cols, (int *)d,
+    e = scale_d_with_vector_alpha_impl<int, float>(q_ptr, rows, cols, (int *)a,
                                                    (const float *)alpha, deps);
     break;
   }
@@ -697,6 +697,19 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                           matrix_layout_ptr b_desc, const void *beta,
                           const void *c, matrix_layout_ptr c_desc, void *d,
                           matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
+  const size_t m = compute_desc->_trans_a == oneapi::mkl::transpose::nontrans
+                       ? a_desc->_rows
+                       : a_desc->_cols;
+  const size_t n = d_desc->_cols;
+  const size_t k = compute_desc->_trans_b == oneapi::mkl::transpose::nontrans
+                       ? b_desc->_rows
+                       : b_desc->_cols;
+  const library_data_t a_type = a_desc->_type;
+  const library_data_t b_type = b_desc->_type;
+  const library_data_t c_type = c_desc->_type;
+  const library_data_t d_type = d_desc->_type;
+  const library_data_t scale_type = compute_desc->_scale_type;
+
   if (!q_ptr)
     q_ptr = &get_default_queue();
   handle->init(q_ptr);
@@ -779,6 +792,27 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         a_desc->_order, (const std::int8_t *)a, new_lda, order_t::col,
         (std::int8_t *)new_a, std::vector<sycl::event>{});
     transform_events.push_back(e);
+
+    if (vector_alpha) {
+      sycl::event e_scale_d_with_vec_alpha;
+      e_scale_d_with_vec_alpha = detail::scale_a_with_vector_alpha(
+          q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, {e});
+      transform_events.push_back(e_scale_d_with_vec_alpha);
+    }
+  } else if (vector_alpha) {
+    size_t size_of_element =
+        dpct::detail::library_data_size[static_cast<unsigned int>(
+            a_desc->_type)] /
+        8;
+    new_a = dpct_malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
+    new_a_allocated = true;
+    sycl::event e_cp = dpct::detail::dpct_memcpy(
+        *q_ptr, (void *)new_a, a, size_of_element * a_desc->_cols * new_lda,
+        dpct::memcpy_direction::device_to_device);
+    sycl::event e_scale_d_with_vec_alpha;
+    e_scale_d_with_vec_alpha = detail::scale_a_with_vector_alpha(
+        q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, {e_cp});
+    transform_events.push_back(e_scale_d_with_vec_alpha);
   }
   if (b_desc->_order != order_t::col) {
     new_ldb = b_desc->_rows;
@@ -822,21 +856,9 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   // start to call oneDNN matmul primitive
   // a,d are col_major, b is row_major
-  const size_t m = compute_desc->_trans_a == oneapi::mkl::transpose::nontrans
-                       ? a_desc->_rows
-                       : a_desc->_cols;
-  const size_t n = d_desc->_cols;
-  const size_t k = compute_desc->_trans_b == oneapi::mkl::transpose::nontrans
-                       ? b_desc->_rows
-                       : b_desc->_cols;
   const ::dnnl::memory::dim M = m;
   const ::dnnl::memory::dim N = n;
   const ::dnnl::memory::dim K = k;
-  const library_data_t a_type = a_desc->_type;
-  const library_data_t b_type = b_desc->_type;
-  const library_data_t c_type = c_desc->_type;
-  const library_data_t d_type = d_desc->_type;
-  const library_data_t scale_type = compute_desc->_scale_type;
 
   ::dnnl::memory::dims src_dims = {M, K};
   ::dnnl::memory::dims weights_dims = {K, N};
@@ -973,22 +995,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   // end of calling oneDNN
 
-  sycl::event scale_d_with_alpha_event;
-  if (vector_alpha)
-    scale_d_with_alpha_event = detail::scale_d_with_vector_alpha(
-        q_ptr, m, n, new_d, d_type, alpha, scale_type, {matmul_prim_event});
-
   sycl::event amax_d_event;
   if (auto amax_ptr = compute_desc->_amax_d_pointer) {
+    // FIXME: The amax is not always correct when using buffer on CPU device.
+    // The failure rate is about 2%.
     amax_d_event = detail::type_dispatch<detail::amax_impl>(
         d_desc->_type, amax_ptr, new_d, new_ldd, d_desc->_rows, d_desc->_cols,
-        q_ptr,
-        std::vector<sycl::event>{matmul_prim_event, scale_d_with_alpha_event});
-    // TODO: Remove this wait. This wait is a WA to make sure the amax is
-    // correct when using buffer on CPU device. The failure rate is about 2%.
-#ifdef DPCT_USM_LEVEL_NONE
-    amax_d_event.wait();
-#endif
+        q_ptr, std::vector<sycl::event>{matmul_prim_event});
   }
 
   sycl::event scale_d_event;
@@ -996,8 +1009,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     scale_d_event = detail::type_dispatch<detail::scale_d_impl>(
         d_desc->_type, d_scale_ptr, new_d, new_ldd, d_desc->_rows,
         d_desc->_cols, q_ptr, compute_desc->_scale_type,
-        std::vector<sycl::event>{matmul_prim_event, scale_d_with_alpha_event,
-                                 amax_d_event});
+        std::vector<sycl::event>{matmul_prim_event, amax_d_event});
   }
 
   sycl::event transform_d_event;
@@ -1005,13 +1017,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     detail::type_dispatch<detail::matrix_transform_impl>(
         d_desc->_type, q_ptr, d_desc->_rows, d_desc->_cols, new_ldd,
         order_t::col, new_d, d_desc->_ld, d_desc->_order, d,
-        std::vector<sycl::event>{scale_d_with_alpha_event, amax_d_event,
-                                 matmul_prim_event});
+        std::vector<sycl::event>{amax_d_event, matmul_prim_event});
   }
 
   sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.depends_on({transform_d_event, scale_d_with_alpha_event, amax_d_event,
-                    matmul_prim_event});
+    cgh.depends_on({transform_d_event, amax_d_event, matmul_prim_event});
     cgh.host_task([=] {
       delete src_mem;
       delete weights_mem;
