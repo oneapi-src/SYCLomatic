@@ -1142,7 +1142,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       }
     }
     if (OS.str() != "cub::WarpScan" && OS.str() != "cub::WarpReduce" &&
-        OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan" && OS.str() != "cub::BlockLoad") {
+        OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan" && OS.str()) {
       SR.setEnd(TSTL.getTemplateNameLoc());
     }
     analyzeTemplateSpecializationType(TSTL);
