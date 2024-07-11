@@ -21,6 +21,7 @@
 #include "IncrementalMigrationUtility.h"
 #include "MemberExprRewriter.h"
 #include "MigrateCmakeScript.h"
+#include "MigratePythonSetupScript.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "PatternRewriter.h"
@@ -114,6 +115,11 @@ const char *const CtHelpHint =
 const char *const CmakeScriptMigrationHelpHint =
     "Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.";
 
+const char *const SetupScriptMigrationHelpHint =
+    "Warning: Python setup build script file like setup.py is not found, so no setup build script file will be migrated.";
+
+const char *const BuildScriptMigrationHelpHint =
+    "Warning: CMake or Python setup build script file like CMakeLists.txt/package.cmake or setup.py is not found, so no CMake/ Python setup build script file will be migrated.";
 
 static extrahelp CommonHelp(CtHelpMessage);
 
@@ -711,9 +717,10 @@ int runDPCT(int argc, const char **argv) {
 
   if (MigrateBuildScriptOnly) {
     if (InRootPath.getPath().empty() &&
-        !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
-      ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
-      dpctExit(MigrationErrorNoExplicitInRootAndCMakeScript);
+        !cmakeScriptFileSpecified(OptParser->getSourcePathList()) &&
+        !pythonSetupScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrationErrorNoExplicitInRootAndCMakeOrPythonSetupScript);
+      dpctExit(MigrationErrorNoExplicitInRootAndCMakeOrPythonSetupScript);
     }
   }
 
@@ -738,25 +745,32 @@ int runDPCT(int argc, const char **argv) {
       dpctExit(MigrateCmakeScriptOnlyNotSpecifed);
     }
 
+    if (pythonSetupScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigratePythonSetupScriptOnlyNotSpecifed);
+      dpctExit(MigratePythonSetupScriptOnlyNotSpecifed);
+    }
+
   } else {
-    // To validate the path of cmake file script or directory
+    // To validate the path of CMake/ Python setup file script or directory
     int ValidPath =
-        validateCmakeScriptPaths(InRootPath, OptParser->getSourcePathList());
+        validateBuildScriptPaths(InRootPath, OptParser->getSourcePathList());
     if (ValidPath == -1) {
       ShowStatus(MigrationErrorInvalidInRootPath);
       dpctExit(MigrationErrorInvalidInRootPath);
     } else if (ValidPath < -1) {
-      ShowStatus(MigrationErrorCMakeScriptPathInvalid);
-      dpctExit(MigrationErrorCMakeScriptPathInvalid);
+      ShowStatus(MigrationErrorCMakeAndPythonSetupScriptPathInvalid);
+      dpctExit(MigrationErrorCMakeAndPythonSetupScriptPathInvalid);
     }
   }
 
-  if (BuildScript == BuildScriptKind::BS_Cmake &&
+  if ((BuildScript == BuildScriptKind::BS_Cmake || 
+       BuildScript == BuildScriptKind::BS_PySetup) &&
       !OptParser->getSourcePathList().empty()) {
     ShowStatus(MigrateBuildScriptIncorrectUse);
     dpctExit(MigrateBuildScriptIncorrectUse);
   }
-  if (BuildScript == BuildScriptKind::BS_Cmake && MigrateBuildScriptOnly) {
+  if ((BuildScript == BuildScriptKind::BS_Cmake || 
+       BuildScript == BuildScriptKind::BS_PySetup) && MigrateBuildScriptOnly) {
     ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
     dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
   }
@@ -944,7 +958,8 @@ int runDPCT(int argc, const char **argv) {
   } else {
     IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
     bool NeedCheckOutRootEmpty =
-        !(BuildScript == BuildScriptKind::BS_Cmake) && !MigrateBuildScriptOnly;
+        !(BuildScript == BuildScriptKind::BS_Cmake ||
+          BuildScript == BuildScriptKind::BS_PySetup) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
         !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -1091,6 +1106,20 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
+  if (MigrateBuildScriptOnly ||
+      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_PySetup) {
+    SmallString<128> PythonSetupRuleFilePath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(PythonSetupRuleFilePath,
+                            Twine("extensions/python_setup_rules/"
+                                  "python_setup_script_migration_rule.yaml"));
+    if (llvm::sys::fs::exists(PythonSetupRuleFilePath)) {
+      std::vector<clang::tooling::UnifiedPath> PythonSetupRuleFiles{
+          PythonSetupRuleFilePath};
+      importRules(PythonSetupRuleFiles);
+      // generage helper functions file in the outroot dir here
+    }
+  }
+
   if (!RuleFilePath.empty()) {
     importRules(RuleFilePath);
   }
@@ -1180,16 +1209,28 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateBuildScriptOnly) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    runWithCrashGuard(
+    collectPythonSetupScriptsSpecified(OptParser, InRootPath, OutRootPath);
+
+    if (!cmakeScriptNotFound()) {
+      runWithCrashGuard(
         [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
         "Error: dpct internal error. Migrating CMake scripts in \"" +
             InRootPath.getCanonicalPath().str() +
             "\" causing the error skipped. Migration continues.\n");
-
-    if (cmakeScriptNotFound()) {
-      std::cout << CmakeScriptMigrationHelpHint << "\n";
     }
-    ShowStatus(MigrationCmakeScriptCompleted);
+
+    if (!pythonSetupScriptNotFound()) {
+      runWithCrashGuard(
+        [&]() { doPythonSetupScriptMigration(InRootPath, OutRootPath); },
+        "Error: dpct internal error. Migrating Python scripts in \"" +
+            InRootPath.getCanonicalPath().str() +
+            "\" causing the error skipped. Migration continues.\n");
+    }
+
+    if (cmakeScriptNotFound() && pythonSetupScriptNotFound()) {
+      std::cout << BuildScriptMigrationHelpHint << "\n";
+    }
+    ShowStatus(MigrationBuildScriptCompleted);
     return MigrationSucceeded;
   }
   ReplTy ReplCUDA, ReplSYCL;
@@ -1364,6 +1405,16 @@ int runDPCT(int argc, const char **argv) {
 
     if (cmakeScriptNotFound()) {
       std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
+  }
+
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_PySetup) {
+    loadMainSrcFileInfo(OutRootPath);
+    collectPythonSetupScripts(InRootPath, OutRootPath);
+    doPythonSetupScriptMigration(InRootPath, OutRootPath);
+
+    if (pythonSetupScriptNotFound()) {
+      std::cout << SetupScriptMigrationHelpHint << "\n";
     }
   }
 

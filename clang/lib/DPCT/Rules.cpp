@@ -11,6 +11,7 @@
 #include "Error.h"
 #include "MapNames.h"
 #include "MigrateCmakeScript.h"
+#include "MigratePythonSetupScript.h"
 #include "MigrationRuleManager.h"
 #include "NCCLAPIMigration.h"
 #include "Utility.h"
@@ -287,6 +288,7 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     Subrules = PR.Subrules;
     Priority = PR.Priority;
     CmakeSyntax = PR.CmakeSyntax;
+    PySetupSyntax = PR.PySetupSyntax;
   }
   return *this;
 }
@@ -364,6 +366,9 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
         break;
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
+        break;
+      case (RuleKind::PySetupRule):
+        registerPythonSetupMigrationRule(*r);
         break;
       default:
         break;

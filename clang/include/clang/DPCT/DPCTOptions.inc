@@ -467,7 +467,10 @@ DPCT_ENUM_OPTION(clang::dpct::opt, BuildScriptKind, BuildScript,
                  "migrate-build-script",
                  DPCT_OPTION_VALUES(DPCT_OPTION_ENUM_VALUE(
                      "CMake", int(BuildScriptKind::BS_Cmake),
-                     "Migrate the CMake file(s).", false)),
+                     "Migrate the CMake file(s).", false),
+                    DPCT_OPTION_ENUM_VALUE(
+                     "Python_Setup", int(BuildScriptKind::BS_PySetup),
+                     "Migrate the python setup build file(s).", false)),
                  llvm::cl::desc("EXPERIMENTAL: Migrate build script(s).\n"),
                  llvm::cl::init(BuildScriptKind::BS_None),
                  llvm::cl::value_desc("value"), llvm::cl::Optional)

@@ -148,10 +148,10 @@ int validatePaths(const clang::tooling::UnifiedPath &InRoot,
   return Ok;
 }
 
-int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
-                             const std::vector<std::string> &CmakeScriptPaths) {
+int validateBuildScriptPaths(const clang::tooling::UnifiedPath &InRoot,
+                             const std::vector<std::string> &BuildScriptPaths) {
   int Ok = 0;
-  for (const auto &FilePath : CmakeScriptPaths) {
+  for (const auto &FilePath : BuildScriptPaths) {
     clang::tooling::UnifiedPath Canonical(FilePath);
     if (!llvm::sys::fs::exists(Canonical.getCanonicalPath())) {
       Ok = -2;
@@ -178,10 +178,13 @@ int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
     if (fs::is_regular_file(Canonical.getCanonicalPath())) {
       llvm::StringRef Name =
           llvm::sys::path::filename(Canonical.getCanonicalPath());
-      if (Name != "CMakeLists.txt" && !Name.ends_with(".cmake")) {
+      if (Name != "CMakeLists.txt" && !Name.ends_with(".cmake") &&
+          !Name.ends_with(".py")) {
         Ok = -5;
         llvm::errs() << "Error: File '" << Canonical.getCanonicalPath()
-                     << "' is not valid cmake script file.\n";
+                     << "' is not a valid CMake or Python setup script file. "
+                     << "CMakeLists.txt/package.cmake or setup.py files are "
+                     << "expected\n";
       }
     }
   }

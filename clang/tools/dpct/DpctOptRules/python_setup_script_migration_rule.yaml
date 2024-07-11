@@ -1,0 +1,114 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/opt_rules.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/opt_rules/setup_rules/setup_script_migration_rule.yaml
+
+- Rule: rule_import_torch
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: import_torch
+  In: import torch
+  Out: |
+    import torch
+    import intel_extension_for_pytorch
+    SYCL_HOME = True
+
+- Rule: rule_from_torch_utils_import_cpp_extension_only
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: from_torch_utils_import_cpp_extension_only
+  In: from torch.utils import cpp_extension
+  Out: from intel_extension_for_pytorch.xpu import cpp_extension
+
+- Rule: rule_torch_utils_cpp_extension
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: torch_utils_cpp_extension
+  In: torch.utils.cpp_extension
+  Out: intel_extension_for_pytorch.xpu.cpp_extension
+
+- Rule: rule_utils_cpp_extension
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: utils_cpp_extension
+  In: utils.cpp_extension
+  Out: intel_extension_for_pytorch.xpu.cpp_extension
+
+- Rule: rule_cpp_extension_import_CppExtension
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: cpp_extension_import_CppExtension
+  In: from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}CppExtension,${class_suffix})
+  Out: |
+    from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}${class_suffix})
+    from torch.utils.cpp_extension import CppExtension
+
+- Rule: rule_CUDA_HOME
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: CUDA_HOME
+  In: CUDA_HOME
+  Out: SYCL_HOME
+
+- Rule: rule_cpp_extension_import_SYCL_HOME
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: cpp_extension_import_SYCL_HOME
+  In: from ${mod_prefix}cpp_extension import${ws}(${class_prefix}SYCL_HOME,${class_suffix})
+  Out: from ${mod_prefix}cpp_extension import${ws}(${class_prefix}${class_suffix})
+
+- Rule: rule_CUDAExtension
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: CUDAExtension
+  In: CUDAExtension
+  Out: DPCPPExtension
+
+- Rule: rule_cuda_is_available
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: cuda_is_available
+  In: cuda.is_available
+  Out: xpu.is_available
+
+- Rule: rule_include_dirs
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: include_dirs
+  In: DPCPPExtension(${args})
+  Out: DPCPPExtension(${args}, include_dirs=cpp_extension.include_paths(),)
+
+- Rule: rule_BuildExtension
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: BuildExtension
+  In: BuildExtension
+  Out: DpcppBuildExtension
+
+- Rule: rule_cu_file
+  Kind: PySetupRule
+  Priority: Fallback
+  MatchMode: Partial
+  PySetupSyntax: cu_file
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cu
+      Out: ${arg}.cpp

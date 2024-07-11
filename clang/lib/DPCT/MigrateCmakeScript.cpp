@@ -208,7 +208,10 @@ void collectCmakeScriptsSpecified(
 
         collectCmakeScripts(FilePath, OutRoot);
       } else {
-        CmakeScriptFilesSet.push_back(FilePath);
+        if (llvm::sys::path::filename(FilePath).ends_with(".cmake") ||
+            llvm::sys::path::filename(FilePath).ends_with(".txt")) {
+          CmakeScriptFilesSet.push_back(FilePath);
+        }
       }
     }
   } else {

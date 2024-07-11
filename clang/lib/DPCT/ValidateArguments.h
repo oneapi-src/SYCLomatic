@@ -35,7 +35,7 @@ enum class OutputVerbosityLevel {
   OVL_Detailed,
   OVL_Diagnostics
 };
-enum class BuildScriptKind { BS_None, BS_Cmake };
+enum class BuildScriptKind { BS_None, BS_Cmake, BS_PySetup };
 enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
 enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
 enum class HelperFilesCustomizationLevel {
@@ -119,14 +119,14 @@ int validatePaths(const clang::tooling::UnifiedPath &InRoot,
 
 /// Make sure cmake script path is valide file path or directory path.
 /// return value:
-/// 0: success (InRoot and CmakeScriptPaths are valid)
+/// 0: success (InRoot and BuildScriptPaths are valid)
 /// -1: fail for InRoot not valid
-/// -2: fail for there is file or directory not existing in CmakeScriptPaths
-/// -3: fail for there is directory not in InRoot directory in CmakeScriptPaths
-/// -4: fail for there is file not in InRoot directory in CmakeScriptPaths
-/// -5: fail for there is file that is is not a cmake script file in CmakeScriptPaths
-int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
-                             const std::vector<std::string> &CmakeScriptPaths);
+/// -2: fail for there is file or directory not existing in BuildScriptPaths
+/// -3: fail for there is directory not in InRoot directory in BuildScriptPaths
+/// -4: fail for there is file not in InRoot directory in BuildScriptPaths
+/// -5: fail for there is file that is is not a cmake or setup script file in BuildScriptPaths
+int validateBuildScriptPaths(const clang::tooling::UnifiedPath &InRoot,
+                             const std::vector<std::string> &BuildScriptPaths);
 
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
                      std::string &RFile, bool ROnly, bool &GenReport,

@@ -28,8 +28,8 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped.";
     break;
-  case MigrationCmakeScriptCompleted:
-    StatusString = "Migration of CMake script completed.";
+  case MigrationBuildScriptCompleted:
+    StatusString = "Migration of CMake/ Python setup script completed.";
     break;
   case MigrationError:
     StatusString = "An error has occurred during migration.";
@@ -191,13 +191,18 @@ void ShowStatus(int Status, std::string Message) {
   case CallIndependentToolError:
     StatusString = "Error: Call to " + Message + " failed.";
     break;
-  case MigrationErrorCMakeScriptPathInvalid:
-    StatusString = "Error: Path of CMake Script is invalid.";
+  case MigrationErrorCMakeAndPythonSetupScriptPathInvalid:
+    StatusString = "Error: Path of CMake and Python setup Script is invalid.";
     break;
   case MigrateCmakeScriptOnlyNotSpecifed:
     StatusString =
         "Error: option '-migrate-build-script-only' is not specified "
         "for CMake script migration.";
+    break;
+  case MigratePythonSetupScriptOnlyNotSpecifed:
+    StatusString =
+        "Error: option '-migrate-build-script-only' is not specified "
+        "for Python setup script migration.";
     break;
   case MigrateBuildScriptIncorrectUse:
     StatusString = "Error: option '-migrate-build-script' is only used for "
@@ -207,10 +212,11 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: option '-migrate-build-script' and "
                    "'-migrate-build-script-only' cannot be used together.";
     break;
-  case MigrationErrorNoExplicitInRootAndCMakeScript:
+  case MigrationErrorNoExplicitInRootAndCMakeOrPythonSetupScript:
     StatusString =
         "Error: The option -migrate-build-script-only requires that either "
-        "the option '--in-root' or the CMake file(s) be specified explicitly.";
+        "the option '--in-root' or the CMake/ Python setup file(s) be "
+        "specified explicitly.";
     break;
   case MigrationErrorInvalidInstallPath:
     StatusString = "Error: " + Message + " not found.";

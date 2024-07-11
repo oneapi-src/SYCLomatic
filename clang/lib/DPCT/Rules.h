@@ -24,7 +24,8 @@ enum RuleKind {
   Enum,
   DisableAPIMigration,
   PatternRewriter,
-  CMakeRule
+  CMakeRule,
+  PySetupRule
 };
 
 enum RulePriority { Takeover, Default, Fallback };
@@ -36,6 +37,7 @@ struct TypeNameRule {
   RulePriority Priority;
   RuleMatchMode MatchMode;
   std::string CmakeSyntax;
+  std::string PySetupSyntax;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
       : NewName(Name), RequestFeature(clang::dpct::HelperFeatureEnum::none),
@@ -101,6 +103,7 @@ public:
     RuleMatchMode MatchMode = RuleMatchMode::Partial;
     std::string Warning = "";
     std::string CmakeSyntax = "";
+    std::string PySetupSyntax = "";
     std::string RuleId = "";
     RulePriority Priority = RulePriority::Default;
     std::map<std::string, PatternRewriter> Subrules;
@@ -122,6 +125,7 @@ public:
   RuleMatchMode MatchMode;
   std::string Warning;
   std::string CmakeSyntax;
+  std::string PySetupSyntax;
   RuleKind Kind;
   std::string In;
   std::string Out;
@@ -209,6 +213,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "DisableAPIMigration", RuleKind::DisableAPIMigration);
     Io.enumCase(Value, "PatternRewriter", RuleKind::PatternRewriter);
     Io.enumCase(Value, "CMakeRule", RuleKind::CMakeRule);
+    Io.enumCase(Value, "PySetupRule", RuleKind::PySetupRule);
   }
 };
 
@@ -220,6 +225,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("Kind", Doc->Kind);
     Io.mapRequired("Priority", Doc->Priority);
     Io.mapOptional("CmakeSyntax", Doc->CmakeSyntax);
+    Io.mapOptional("PySetupSyntax", Doc->PySetupSyntax);
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
     Io.mapOptional("Includes", Doc->Includes);
