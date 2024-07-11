@@ -1,5 +1,6 @@
 //RUN: dpct -out-root %T/curand-cross-function-placeholder %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand-cross-function-placeholder/curand-cross-function-placeholder.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/curand-cross-function-placeholder/curand-cross-function-placeholder.dp.cpp -o %T/curand-cross-function-placeholder/curand-cross-function-placeholder.dp.o %}
 
 #include <cuda.h>
 #include <stdio.h>

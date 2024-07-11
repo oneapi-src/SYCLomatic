@@ -29,6 +29,7 @@
 #include <cassert>
 #include <climits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -119,6 +120,11 @@ public:
     RM_Disabled,
   };
 
+  enum ExceptionsMode {
+    EM_Enabled,
+    EM_Disabled,
+  };
+
   struct BitCodeLibraryInfo {
     std::string Path;
     bool ShouldInternalize;
@@ -139,6 +145,8 @@ private:
   const llvm::opt::Arg *const CachedRTTIArg;
 
   const RTTIMode CachedRTTIMode;
+
+  const ExceptionsMode CachedExceptionsMode;
 
   /// The list of toolchain specific path prefixes to search for libraries.
   path_list LibraryPaths;
@@ -197,6 +205,9 @@ private:
     EffectiveTriple = std::move(ET);
   }
 
+  std::optional<std::string>
+  getFallbackAndroidTargetPath(StringRef BaseDir) const;
+
   mutable std::optional<CXXStdlibType> cxxStdlibType;
   mutable std::optional<RuntimeLibType> runtimeLibType;
   mutable std::optional<UnwindLibType> unwindLibType;
@@ -224,6 +235,11 @@ protected:
                                               StringRef Component,
                                               FileType Type,
                                               bool AddArch) const;
+
+  /// Find the target-specific subdirectory for the current target triple under
+  /// \p BaseDir, doing fallback triple searches as necessary.
+  /// \return The subdirectory path if it exists.
+  std::optional<std::string> getTargetSubDirPath(StringRef BaseDir) const;
 
   /// \name Utilities for implementing subclasses.
   ///@{
@@ -325,6 +341,9 @@ public:
 
   // Returns the RTTIMode for the toolchain with the current arguments.
   RTTIMode getRTTIMode() const { return CachedRTTIMode; }
+
+  // Returns the ExceptionsMode for the toolchain with the current arguments.
+  ExceptionsMode getExceptionsMode() const { return CachedExceptionsMode; }
 
   /// Return any implicit target and/or mode flag for an invocation of
   /// the compiler driver as `ProgName`.
@@ -519,11 +538,11 @@ public:
                                     StringRef Component,
                                     FileType Type = ToolChain::FT_Static) const;
 
-  // Returns target specific runtime paths.
-  path_list getRuntimePaths() const;
+  // Returns the target specific runtime path if it exists.
+  std::optional<std::string> getRuntimePath() const;
 
-  // Returns target specific standard library paths.
-  path_list getStdlibPaths() const;
+  // Returns target specific standard library path if it exists.
+  std::optional<std::string> getStdlibPath() const;
 
   // Returns <ResourceDir>/lib/<OSName>/<arch> or <ResourceDir>/lib/<triple>.
   // This is used by runtimes (such as OpenMP) to find arch-specific libraries.

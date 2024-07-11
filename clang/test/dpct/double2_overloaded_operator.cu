@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/double2_overloaded_operator %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/double2_overloaded_operator/double2_overloaded_operator.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/double2_overloaded_operator/double2_overloaded_operator.dp.cpp -o %T/double2_overloaded_operator/double2_overloaded_operator.dp.o %}
 
 #include <cuda_runtime.h>
 
@@ -519,4 +520,41 @@ void foo(){
   int2 i2;
   A2 a;
   a - i2;
+}
+
+inline __device__ float2 operator+(const float2 & a, const float2 & b) {
+  return {a.x + b.x, a.y + b.y};
+}
+
+// CHECK: template<typename T>
+// CHECK: struct Sum {
+// CHECK:   inline Sum() {}
+// CHECK:   inline T operator()(const T &a, const T &b) const {
+// CHECK:       return a + b;
+// CHECK:   }
+// CHECK: };
+template<typename T>
+struct Sum {
+  inline __device__ Sum() {}
+  inline __device__ T operator()(const T &a, const T &b) const {
+      return a + b;
+  }
+};
+
+// CHECK: template <typename T>
+// CHECK: void bar() {
+// CHECK:   T a, b, c;
+// CHECK:   c = a + b;
+// CHECK: }
+template <typename T>
+__device__ void bar() {
+  T a, b, c;
+  c = a + b;
+}
+
+__global__ void kernel() {
+  bar<float2>();
+  bar<float>();
+  Sum<float2> a;
+  Sum<float> b;
 }

@@ -1,13 +1,14 @@
-// REQUIRES: level_zero, gpu
 // RUN: %{build_pthread_inc} -o %t.out
 // RUN: %{run} %t.out
-// RUN: %if ext_oneapi_level_zero %{env ZE_DEBUG=4 %{run} %t.out 2>&1 | FileCheck %s %}
-//
-// CHECK-NOT: LEAK
+// RUN: %if level_zero %{env SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=0 %{l0_leak_check} %{run} %t.out 2>&1 | FileCheck %s --implicit-check-not=LEAK %}
+// Extra run to check for immediate-command-list in Level Zero
+// RUN: %if level_zero %{env SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1 %{l0_leak_check} %{run} %t.out 2>&1 | FileCheck %s --implicit-check-not=LEAK %}
 
-// Test calling queue::submit(graph) in a threaded situation.
-// The second run is to check that there are no leaks reported with the embedded
-// ZE_DEBUG=4 testing capability.
+// Test submitting a graph multiple times in a threaded situation.
+// According to spec: If graph is submitted multiple times, dependencies are
+// automatically added by the runtime to prevent concurrent executions of an
+// identical graph, and so the result is deterministic and we can check the
+// results.
 
 #include "../graph_common.hpp"
 
@@ -19,6 +20,7 @@ int main() {
   using T = int;
 
   const unsigned NumThreads = std::thread::hardware_concurrency();
+  const unsigned SubmitsPerThread = 128;
   std::vector<T> DataA(Size), DataB(Size), DataC(Size);
 
   std::iota(DataA.begin(), DataA.end(), 1);
@@ -26,8 +28,8 @@ int main() {
   std::iota(DataC.begin(), DataC.end(), 1000);
 
   std::vector<T> ReferenceA(DataA), ReferenceB(DataB), ReferenceC(DataC);
-  calculate_reference_data(NumThreads, Size, ReferenceA, ReferenceB,
-                           ReferenceC);
+  calculate_reference_data(NumThreads * SubmitsPerThread, Size, ReferenceA,
+                           ReferenceB, ReferenceC);
 
   exp_ext::command_graph Graph{Queue.get_context(), Queue.get_device()};
 
@@ -44,12 +46,16 @@ int main() {
   run_kernels_usm(Queue, Size, PtrA, PtrB, PtrC);
   Graph.end_recording();
 
+  auto GraphExec = Graph.finalize();
+
   Barrier SyncPoint{NumThreads};
 
-  auto GraphExec = Graph.finalize();
   auto SubmitGraph = [&]() {
     SyncPoint.wait();
-    Queue.submit([&](handler &CGH) { CGH.ext_oneapi_graph(GraphExec); });
+    for (unsigned i = 0; i < SubmitsPerThread; ++i) {
+      Queue.submit(
+          [&](sycl::handler &CGH) { CGH.ext_oneapi_graph(GraphExec); });
+    }
   };
 
   std::vector<std::thread> Threads;
@@ -63,20 +69,20 @@ int main() {
     Threads[i].join();
   }
 
-  Queue.wait_and_throw();
-
   Queue.copy(PtrA, DataA.data(), Size);
   Queue.copy(PtrB, DataB.data(), Size);
   Queue.copy(PtrC, DataC.data(), Size);
   Queue.wait_and_throw();
 
+  for (int i = 0; i < Size; ++i) {
+    check_value(i, ReferenceA[i], DataA[i], "A");
+    check_value(i, ReferenceB[i], DataB[i], "B");
+    check_value(i, ReferenceC[i], DataC[i], "C");
+  }
+
   free(PtrA, Queue);
   free(PtrB, Queue);
   free(PtrC, Queue);
-
-  assert(ReferenceA == DataA);
-  assert(ReferenceB == DataB);
-  assert(ReferenceC == DataC);
 
   return 0;
 }

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/accessor-offset %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/accessor-offset/accessor-offset.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/accessor-offset/accessor-offset.dp.cpp -o %T/accessor-offset/accessor-offset.dp.o %}
 
 __global__ void hello(int *d) {
 }

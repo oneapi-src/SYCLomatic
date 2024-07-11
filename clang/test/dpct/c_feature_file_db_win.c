@@ -12,6 +12,7 @@
 // RUN: echo "]" >> compile_commands.json
 // RUN: dpct -p=. --out-root=./out --cuda-include-path="%cuda-path/include" --extra-arg="-xc"  --stop-on-parse-err --extra-arg="-I%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/c_feature_file_db_win/out/c_feature_file_db_win.c.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/c_feature_file_db_win/out/c_feature_file_db_win.c.dp.cpp -o %T/c_feature_file_db_win/out/c_feature_file_db_win.c.dp.o %}
 // RUN: cd ..
 // RUN: rm -rf ./c_feature_file_db_win
 

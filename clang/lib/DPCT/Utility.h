@@ -9,6 +9,7 @@
 #ifndef DPCT_UTILITY_H
 #define DPCT_UTILITY_H
 
+#include <fstream>
 #include <functional>
 #include <ios>
 #include <iostream>
@@ -18,11 +19,13 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "Error.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
@@ -30,6 +33,7 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -64,6 +68,7 @@ enum class FFTTypeEnum;
 class DeviceFunctionInfo;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
+class MigrationRule;
 } // namespace dpct
 
 namespace tooling {
@@ -73,7 +78,7 @@ class Replacements;
 } // namespace clang
 
 extern bool IsUsingDefaultOutRoot;
-void removeDefaultOutRootFolder(const std::string &DefaultOutRoot);
+void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot);
 void dpctExit(int ExitCode, bool NeedCleanUp = true);
 
 // classes for keeping track of Stmt->String mappings
@@ -112,131 +117,90 @@ public:
   ~CurlyBracketsPrinter() { OS << "}"; }
 };
 
-bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
-bool makeCanonical(std::string &Path);
-bool isCanonical(llvm::StringRef Path);
-
-extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
-extern std::unordered_map<std::string, bool> ChildPathCache;
+//extern std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 extern std::unordered_map<std::string, bool> IsDirectoryCache;
+extern std::unordered_map<std::string, bool> ChildPathCache;
+extern std::unordered_map<std::string, bool> ChildOrSameCache;
 
 /// Check \param FilePath is whether a directory path
 /// \param [in] FilePath is a file path.
 /// \return true: directory path, false: not directory path.
-inline bool isDirectory(const std::string &FilePath) {
-  const auto &Key = FilePath;
-  auto Iter = IsDirectoryCache.find(Key);
+inline bool isDirectory(clang::tooling::UnifiedPath FilePath) {
+  std::string CanonicalFilePath = !FilePath.getCanonicalPath().empty()
+                                      ? FilePath.getCanonicalPath().str()
+                                      : FilePath.getPath().str();
+  auto Iter = IsDirectoryCache.find(CanonicalFilePath);
   if (Iter != IsDirectoryCache.end()) {
     return Iter->second;
   } else {
-    auto Ret = llvm::sys::fs::is_directory(FilePath);
-    IsDirectoryCache[Key] = Ret;
+    auto Ret = llvm::sys::fs::is_directory(CanonicalFilePath);
+    IsDirectoryCache[CanonicalFilePath] = Ret;
     return Ret;
   }
 }
 
-/// Check \param Child is whether the child path of \param RootAbs
-/// \param [in] RootAbs An absolute path as reference.
+/// Check \param Child is whether the child path of \param Root
+/// \param [in] RootAbs A path as reference.
 /// \param [in] Child A path to be checked.
 /// \return true: child path, false: not child path
 /// /x/y and /x/y/z -> true
 /// /x/y and /x/y   -> false
 /// /x/y and /x/yy/ -> false (not a prefix in terms of a path)
-inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
-                        bool IsChildRelative = true) {
-  // 1st make Child as absolute path, then do compare.
-  llvm::SmallString<256> ChildAbs;
-  std::error_code EC;
-  bool InChildAbsValid = true;
-
-  if (IsChildRelative) {
-    auto &RealPath = RealPathCache[Child];
-    if (!RealPath.empty()) {
-      ChildAbs = RealPath;
-    } else {
-      EC = llvm::sys::fs::real_path(Child, ChildAbs, true);
-      if ((bool)EC) {
-        InChildAbsValid = false;
-      } else {
-        RealPathCache[Child] = ChildAbs;
-      }
-    }
-  } else {
-    ChildAbs = Child;
+inline bool isChildPath(const clang::tooling::UnifiedPath &Root,
+                        const clang::tooling::UnifiedPath &Child) {
+  if (Child.getPath().empty()) {
+    return false;
   }
 
-#if defined(_WIN64)
-  std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild =
-      InChildAbsValid ? ChildAbs.str().lower() : llvm::StringRef(Child).lower();
-#elif defined(__linux__)
-  std::string LocalRoot = RootAbs.c_str();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
-#else
-#error Only support windows and Linux.
-#endif
-  auto Key = LocalRoot + ":" + LocalChild;
+  std::string RootCanonicalPath = !Root.getCanonicalPath().empty()
+                                      ? Root.getCanonicalPath().str()
+                                      : Root.getPath().str();
+  std::string ChildCanonicalPath = !Child.getCanonicalPath().empty()
+                                       ? Child.getCanonicalPath().str()
+                                       : Child.getPath().str();
+  auto Key = RootCanonicalPath + ":" + ChildCanonicalPath;
   auto Iter = ChildPathCache.find(Key);
   if (Iter != ChildPathCache.end()) {
     return Iter->second;
   }
 
-  auto Diff = std::mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                            path::begin(LocalChild));
-  // LocalRoot is not considered prefix of LocalChild if they are equal.
-  bool Ret = Diff.first == path::end(LocalRoot) &&
-             Diff.second != path::end(LocalChild);
+  auto Diff = std::mismatch(path::begin(RootCanonicalPath),
+                            path::end(RootCanonicalPath),
+                            path::begin(ChildCanonicalPath));
+  // RootCanonicalPath is not considered prefix of ChildCanonicalPath if they
+  // are equal.
+  bool Ret = Diff.first == path::end(RootCanonicalPath) &&
+             Diff.second != path::end(ChildCanonicalPath);
   ChildPathCache[Key] = Ret;
   return Ret;
 }
 
-extern std::unordered_map<std::string, bool> ChildOrSameCache;
-
-/// Check \param Child is whether the child or same path of \param RootAbs
-/// \param [in] RootAbs An absolute path as reference.
+/// Check \param Child is whether the child or same path of \param Root
+/// \param [in] Root A path as reference.
 /// \param [in] Child A path to be checked.
 /// \return true: child path, false: not child path
-inline bool isChildOrSamePath(const std::string &RootAbs,
-                              const std::string &Child) {
-  if (Child.empty()) {
+inline bool isChildOrSamePath(clang::tooling::UnifiedPath Root,
+                              clang::tooling::UnifiedPath Child) {
+  if (Child.getPath().empty()) {
     return false;
   }
 
-  auto Key = RootAbs + ":" + Child;
+  std::string RootCanonicalPath = !Root.getCanonicalPath().empty()
+                                      ? Root.getCanonicalPath().str()
+                                      : Root.getPath().str();
+  std::string ChildCanonicalPath = !Child.getCanonicalPath().empty()
+                                       ? Child.getCanonicalPath().str()
+                                       : Child.getPath().str();
+  auto Key = RootCanonicalPath + ":" + ChildCanonicalPath;
   auto Iter = ChildOrSameCache.find(Key);
   if (Iter != ChildOrSameCache.end()) {
     return Iter->second;
   }
-  // 1st make Child as absolute path, then do compare.
-  llvm::SmallString<256> ChildAbs;
-  std::error_code EC;
-  bool InChildAbsValid = true;
 
-  auto &RealPath = RealPathCache[Child];
-  if (!RealPath.empty()) {
-    ChildAbs = RealPath;
-  } else {
-    EC = llvm::sys::fs::real_path(Child, ChildAbs, true);
-    if ((bool)EC) {
-      InChildAbsValid = false;
-    } else {
-      RealPath = ChildAbs;
-    }
-  }
-
-#if defined(_WIN64)
-  std::string LocalRoot = llvm::StringRef(RootAbs).lower();
-  std::string LocalChild =
-      InChildAbsValid ? ChildAbs.str().lower() : llvm::StringRef(Child).lower();
-#elif defined(__linux__)
-  std::string LocalRoot = RootAbs.c_str();
-  std::string LocalChild = InChildAbsValid ? ChildAbs.c_str() : Child;
-#else
-#error Only support windows and Linux.
-#endif
-  auto Diff = std::mismatch(path::begin(LocalRoot), path::end(LocalRoot),
-                            path::begin(LocalChild));
-  bool Ret = Diff.first == path::end(LocalRoot);
+  auto Diff = std::mismatch(path::begin(RootCanonicalPath),
+                            path::end(RootCanonicalPath),
+                            path::begin(ChildCanonicalPath));
+  bool Ret = Diff.first == path::end(RootCanonicalPath);
   ChildOrSameCache[Key] = Ret;
   return Ret;
 }
@@ -294,7 +258,7 @@ enum SourceProcessType {
   SPT_CppHeader = 8,
 };
 
-SourceProcessType GetSourceFileType(llvm::StringRef SourcePath);
+SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePath);
 
 const std::string &getFmtEndStatement(void);
 const std::string &getFmtStatementIndent(std::string &BaseIndent);
@@ -352,7 +316,13 @@ clang::SourceRange
 getScopeInsertRange(const clang::Expr *CE,
                     const clang::SourceLocation &FuncNameBegin,
                     const clang::SourceLocation &FuncCallEnd);
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E);
+const clang::DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const clang::DynTypedNode &N);
+template <typename T>
+const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const T *SD) {
+  return findNearestNonExprNonDeclAncestorNode(clang::DynTypedNode::create(*SD))
+      .template get<clang::Stmt>();
+}
 std::string getCanonicalPath(clang::SourceLocation Loc);
 bool containOnlyDigits(const std::string &str);
 void replaceSubStr(std::string &Str, const std::string &SubStr,
@@ -445,6 +415,7 @@ bool isSameSizeofTypeWithTypeStr(const clang::Expr *E,
 bool isInReturnStmt(const clang::Expr *E,
                     clang::SourceLocation &OuterInsertLoc);
 std::string getHashStrFromLoc(clang::SourceLocation Loc);
+std::string getStrFromLoc(clang::SourceLocation Loc);
 const clang::FunctionDecl *getFunctionDecl(const clang::Stmt *S);
 const clang::CXXRecordDecl *getParentRecordDecl(const clang::ValueDecl *DD);
 bool IsTypeChangedToPointer(const clang::DeclRefExpr *DRE);
@@ -456,6 +427,7 @@ std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 
 bool needExtraParens(const clang::Expr *);
+bool needExtraParensInMemberExpr(const clang::Expr *);
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End);
@@ -476,8 +448,8 @@ getRangeInRange(clang::SourceRange Range, clang::SourceLocation RangeBegin,
                 clang::SourceLocation RangeEnd, bool IncludeLastToken = true);
 unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag);
-bool isIncludedFile(const std::string &CurrentFile,
-                    const std::string &CheckingFile);
+bool isIncludedFile(const clang::tooling::UnifiedPath &CurrentFile,
+                    const clang::tooling::UnifiedPath &CheckingFile);
 clang::SourceRange getRangeInsideFuncLikeMacro(const clang::Stmt *S);
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc);
 
@@ -491,6 +463,7 @@ const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
 bool checkPointerInStructRecursively(const clang::RecordDecl *);
 clang::RecordDecl *getRecordDecl(clang::QualType QT);
+std::string getRecordTypeStr(const CXXRecordDecl *RD);
 clang::SourceLocation
 getImmSpellingLocRecursive(const clang::SourceLocation Loc);
 clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
@@ -549,7 +522,11 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      const clang::CompoundStmt *CS,
                      std::vector<const clang::DeclRefExpr *> &Refs);
 llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U>
-findDREInScope(const clang::Stmt *Scope);
+findDREInScope(const clang::Stmt *Scope,
+               const std::vector<std::string> &IgnoreTypes = {});
+void findDREs(const Expr *E, std::set<const clang::DeclRefExpr *> &DRESet,
+              bool &HasCallExpr,
+              const std::vector<std::string> &IgnoreTypes = {});
 
 enum class MemcpyOrderAnalysisNodeKind {
   MOANK_Memcpy = 0,
@@ -562,8 +539,9 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE);
 bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
-bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo);
 bool isCubVar(const clang::VarDecl *VD);
+bool isCubTempStorageType(QualType T);
+bool isCubCollectiveRecordType(QualType T);
 void findAllVarRef(const clang::DeclRefExpr *DRE,
                    std::vector<const clang::DeclRefExpr *> &RefMatchResult,
                    bool IsGlobalScopeAllowed = false);
@@ -587,8 +565,12 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
-std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
 std::string getNameSpace(const NamespaceDecl *NSD);
+std::string getInitForDeviceGlobal(const VarDecl *VD);
+void getNameSpace(const NamespaceDecl *NSD,
+                  std::vector<std::string> &Namespaces);
+std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
+                                        const clang::ASTContext &Ctx);
 bool isFromCUDA(const Decl *D);
 namespace clang {
 namespace dpct {
@@ -616,7 +598,48 @@ public:
   }
   ~PairedPrinter() { OS << Postfix; }
 };
+std::string appendPath(const std::string &P1, const std::string &P2);
 
+void writeDataToFile(const std::string &FileName, const std::string &Data);
+void appendDataToFile(const std::string &FileName, const std::string &Data);
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                       bool IgnoreExisting = true);
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
+class RawFDOStream : public llvm::raw_fd_ostream {
+  StringRef FileName;
+  std::error_code EC;
+
+public:
+  RawFDOStream(StringRef FileName);
+  RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF);
+
+  template <class T> RawFDOStream &operator<<(T &&var) {
+    llvm::raw_fd_ostream::operator<<(std::forward<T>(var));
+    if ((bool)this->error()) {
+      std::string ErrMsg =
+          "[ERROR] Write data to " + FileName.str() + " Fail!\n";
+      dpct::PrintMsg(ErrMsg);
+      dpctExit(MigrationErrorCannotWrite);
+    }
+    return *this;
+  }
+  ~RawFDOStream();
+};
+
+std::set<const clang::DeclRefExpr *>
+matchTargetDREInScope(const clang::VarDecl *TargetDecl,
+                      const clang::Stmt *Range);
+/// @brief Check if an argument is initialized.
+/// @param Arg Function call argument (may be an expression).
+/// @param DeclsRequireInit UnInitialized VarDecl(s).
+/// @return  1: Initialized
+///          0: Not initialized.
+///         -1: Cannot deduce.
+int isArgumentInitialized(
+    const clang::Expr *Arg,
+    std::vector<const clang::VarDecl *> &DeclsRequireInit);
+const DeclRefExpr *getAddressedRef(const Expr *E);
+bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

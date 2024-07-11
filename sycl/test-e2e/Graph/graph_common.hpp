@@ -1,9 +1,11 @@
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
+#include <sycl/usm.hpp>
 
 #include <sycl/ext/oneapi/experimental/graph.hpp>
 
 #include <condition_variable> // std::conditional_variable
-#include <mutex>              // std::mutex, std::unique_lock
+#include <fstream>
+#include <mutex> // std::mutex, std::unique_lock
 #include <numeric>
 
 // Test constants.
@@ -401,13 +403,13 @@ auto add_empty_node(
 }
 
 // Values for dotp tests
-constexpr float Alpha = 1.0f;
-constexpr float Beta = 2.0f;
-constexpr float Gamma = 3.0f;
+constexpr int Alpha = 1;
+constexpr int Beta = 2;
+constexpr int Gamma = 3;
 
 // Reference function for dotp
-float dotp_reference_result(size_t N) {
-  return N * (Alpha * 1.0f + Beta * 2.0f) * (Gamma * 3.0f + Beta * 2.0f);
+int dotp_reference_result(size_t N) {
+  return N * (Alpha * 1 + Beta * 2) * (Gamma * 3 + Beta * 2);
 }
 
 /* Single use thread barrier which makes threads wait until defined number of
@@ -432,3 +434,49 @@ private:
   std::condition_variable cv;
   std::size_t threadNum;
 };
+
+template <typename T>
+bool inline check_value(const T &Ref, const T &Got,
+                        const std::string &VariableName) {
+  if (Got != Ref) {
+    std::cout << "Unexpected value of " << VariableName << ": " << Got
+              << " (got) vs " << Ref << " (expected)" << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+template <typename T>
+bool inline check_value(const size_t index, const T &Ref, const T &Got,
+                        const std::string &VariableName) {
+  if (Got != Ref) {
+    std::cout << "Unexpected value at index " << index << " for "
+              << VariableName << ": " << Got << " (got) vs " << Ref
+              << " (expected)" << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+kernel_bundle<bundle_state::executable>
+loadKernelsFromFile(queue &Q, std::string FileName) {
+  // Read the SPIR-V module from disk.
+  std::ifstream SpvStream(FileName, std::ios::binary);
+  SpvStream.seekg(0, std::ios::end);
+  size_t sz = SpvStream.tellg();
+  SpvStream.seekg(0);
+  std::vector<std::byte> Spv(sz);
+  SpvStream.read(reinterpret_cast<char *>(Spv.data()), sz);
+
+  // Create a kernel bundle from the binary SPIR-V.
+  kernel_bundle<bundle_state::ext_oneapi_source> KernelBundleSrc =
+      exp_ext::create_kernel_bundle_from_source(
+          Q.get_context(), exp_ext::source_language::spirv, Spv);
+
+  // Build the SPIR-V module for our device.
+  kernel_bundle<bundle_state::executable> KernelBundleExe =
+      exp_ext::build(KernelBundleSrc);
+  return KernelBundleExe;
+}

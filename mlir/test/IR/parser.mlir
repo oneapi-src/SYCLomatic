@@ -460,7 +460,7 @@ func.func @verbose_terminators() -> (i1, i17) {
 
 ^bb1(%x : i1, %y : i17):
 // CHECK:  cf.cond_br %{{.*}}, ^bb2(%{{.*}} : i17), ^bb3(%{{.*}}, %{{.*}} : i1, i17)
-  "cf.cond_br"(%x, %y, %x, %y) [^bb2, ^bb3] {operand_segment_sizes = array<i32: 1, 1, 2>} : (i1, i17, i1, i17) -> ()
+  "cf.cond_br"(%x, %y, %x, %y) [^bb2, ^bb3] {operandSegmentSizes = array<i32: 1, 1, 2>} : (i1, i17, i1, i17) -> ()
 
 ^bb2(%a : i17):
   %true = arith.constant true
@@ -597,7 +597,7 @@ func.func @funcattrwithblock() -> ()
   return
 }
 
-// CHECK-label func @funcsimplemap
+// CHECK-LABEL: func @funcsimplemap
 #map_simple0 = affine_map<()[] -> (10)>
 #map_simple1 = affine_map<()[s0] -> (s0)>
 #map_non_simple0 = affine_map<(d0)[] -> (d0)>
@@ -1105,6 +1105,30 @@ func.func @bfloat16_special_values() {
   return
 }
 
+// CHECK-LABEL: @f80_special_values
+func.func @f80_special_values() {
+  // F80 signaling NaNs.
+  // CHECK: arith.constant 0x7FFFE000000000000001 : f80
+  %0 = arith.constant 0x7FFFE000000000000001 : f80
+  // CHECK: arith.constant 0x7FFFB000000000000011 : f80
+  %1 = arith.constant 0x7FFFB000000000000011 : f80
+
+  // F80 quiet NaNs.
+  // CHECK: arith.constant 0x7FFFC000000000100000 : f80
+  %2 = arith.constant 0x7FFFC000000000100000 : f80
+  // CHECK: arith.constant 0x7FFFE000000001000000 : f80
+  %3 = arith.constant 0x7FFFE000000001000000 : f80
+
+  // F80 positive infinity.
+  // CHECK: arith.constant 0x7FFF8000000000000000 : f80
+  %4 = arith.constant 0x7FFF8000000000000000 : f80
+  // F80 negative infinity.
+  // CHECK: arith.constant 0xFFFF8000000000000000 : f80
+  %5 = arith.constant 0xFFFF8000000000000000 : f80
+
+  return
+}
+
 // We want to print floats in exponential notation with 6 significant digits,
 // but it may lead to precision loss when parsing back, in which case we print
 // the decimal form instead.
@@ -1358,7 +1382,7 @@ func.func @graph_region_kind() -> () {
 // CHECK: [[VAL2:%.*]]:3 = "bar"([[VAL3:%.*]]) : (i64) -> (i1, i1, i1)
 // CHECK: [[VAL3]] = "baz"([[VAL2]]#0) : (i1) -> i64
   test.graph_region {
-    // %1 OK here in in graph region.
+    // %1 OK here in graph region.
     %2:3 = "bar"(%1) : (i64) -> (i1,i1,i1)
     %1 = "baz"(%2#0) : (i1) -> (i64)
   }

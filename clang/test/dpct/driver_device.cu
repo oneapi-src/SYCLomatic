@@ -1,5 +1,7 @@
 // RUN: dpct --format-range=none -out-root %T/driver_device %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/driver_device/driver_device.dp.cpp
+// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/driver_device/driver_device.dp.cpp -o %T/driver_device/driver_device.dp.o %}
+
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <iostream>
@@ -11,13 +13,15 @@
 
 void test() {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   cuInit(0);
   CUdevice device;
+  CUdevice peerDevice;
+
   cuDeviceGet(&device, 0);
 
-  int result0, result1, result2, result3, result4, result5;
+  int result0, result1, result2, result3, result4, result5, result6;
   // CHECK: /*
   // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY. It was migrated to get_global_mem_size. You may need to adjust the value of get_global_mem_size for the specific device.
   // CHECK-NEXT: */
@@ -31,9 +35,9 @@ void test() {
   cuDeviceGetAttribute(&result2,CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
   std::cout << " result2 " << result2 << std::endl;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align. You may need to adjust the value of get_mem_base_addr_align for the specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align_in_bytes. You may need to adjust the value of get_mem_base_addr_align_in_bytes for the specific device.
   // CHECK-NEXT: */
-  // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align();
+  // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align_in_bytes();
   cuDeviceGetAttribute(&result3,CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
   std::cout << " result3 " << result3 << std::endl;
   // CHECK: /*
@@ -42,9 +46,14 @@ void test() {
   // CHECK: result4 = dpct::dev_mgr::instance().get_device(device).get_max_register_size_per_work_group();
   cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
   std::cout << " result4 " << result4 << std::endl;
-  // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).has(sycl::aspect::usm_host_allocations)();
+
+  // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).has(sycl::aspect::usm_host_allocations);
   cuDeviceGetAttribute(&result5,CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, device);
   std::cout << " result5 " << result5 << std::endl;
+
+  // CHECK: result6 = dpct::dev_mgr::instance().get_device(device).ext_oneapi_can_access_peer(dpct::dev_mgr::instance().get_device(peerDevice));
+  cuDeviceCanAccessPeer(&result6, device, peerDevice);
+  std::cout << " result6 " << result6 << std::endl;
 }
 
 int main(){
@@ -73,12 +82,14 @@ int main(){
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(device = 0));
   MY_SAFE_CALL(cuDeviceGet(&device, 0));
 
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuDeviceGetAttribute(&result1, attr, device);
   CUdevice_attribute attr = CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK;
   cuDeviceGetAttribute(&result1, attr, device);
+#endif
 
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device);
@@ -134,12 +145,13 @@ int main(){
 
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units()));
   MY_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
-
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetAttribute was not migrated because parameter CU_DEVICE_ATTRIBUTE_GPU_OVERLAP is unsupported.
   // CHECK-NEXT: */
   // CHECK-NEXT: cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
+#endif
 
   // CHECK: result1 = dpct::get_major_version(dpct::dev_mgr::instance().get_device(device));
   // CHECK: result2 = dpct::get_minor_version(dpct::dev_mgr::instance().get_device(device));

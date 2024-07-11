@@ -11,11 +11,9 @@
 #include <detail/program_manager/program_manager.hpp>
 #include <detail/spec_constant_impl.hpp>
 #include <sycl/context.hpp>
-#include <sycl/detail/common_info.hpp>
 #include <sycl/detail/kernel_desc.hpp>
 #include <sycl/device.hpp>
 #include <sycl/property_list.hpp>
-#include <sycl/stl.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -136,9 +134,6 @@ public:
   /// not retained before return.
   const sycl::detail::pi::PiProgram &getHandleRef() const { return MProgram; }
 
-  /// \return true if this SYCL program is a host program.
-  bool is_host() const { return MContext->is_host(); }
-
   /// Compiles the SYCL kernel function into the encapsulated raw program.
   ///
   /// The kernel function is defined by its name. This member function
@@ -217,16 +212,11 @@ public:
 
   /// \return the SYCL context that this program was constructed with.
   context get_context() const {
-    if (is_host())
-      return context();
     return createSyclObjFromImpl<context>(MContext);
   }
 
   /// \return the Plugin associated with the context of this program.
-  const PluginPtr &getPlugin() const {
-    assert(!is_host() && "Plugin is not available for Host.");
-    return MContext->getPlugin();
-  }
+  const PluginPtr &getPlugin() const { return MContext->getPlugin(); }
 
   ContextImplPtr getContextImplPtr() const { return MContext; }
 
@@ -315,9 +305,9 @@ private:
   void check_device_feature_support(const std::vector<device> &Devices) {
     for (const auto &Device : Devices) {
       if (!Device.get_info<Param>()) {
-        throw feature_not_supported(
-            "Online compilation is not supported by this device",
-            PI_ERROR_COMPILER_NOT_AVAILABLE);
+        throw sycl::exception(
+            sycl::errc::feature_not_supported,
+            "Online compilation is not supported by this device");
       }
     }
   }

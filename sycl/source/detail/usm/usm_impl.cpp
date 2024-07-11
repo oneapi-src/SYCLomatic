@@ -14,6 +14,7 @@
 #include <sycl/detail/pi.hpp>
 #include <sycl/device.hpp>
 #include <sycl/ext/intel/experimental/usm_properties.hpp>
+#include <sycl/ext/oneapi/memcpy2d.hpp>
 #include <sycl/usm.hpp>
 
 #include <array>
@@ -59,67 +60,60 @@ void *alignedAllocHost(size_t Alignment, size_t Size, const context &Ctxt,
   PrepareNotify.scopedNotify(
       (uint16_t)xpti::trace_point_type_t::mem_alloc_begin);
 #endif
+  const auto &devices = Ctxt.get_devices();
+  if (!std::any_of(devices.begin(), devices.end(), [&](const auto &device) {
+        return device.has(sycl::aspect::usm_host_allocations);
+      })) {
+    throw sycl::exception(
+        sycl::errc::feature_not_supported,
+        "No device in this context supports USM host allocations!");
+  }
   void *RetVal = nullptr;
   if (Size == 0)
     return nullptr;
 
   std::shared_ptr<context_impl> CtxImpl = detail::getSyclObjImpl(Ctxt);
-  if (CtxImpl->is_host()) {
-    if (!Alignment) {
-      // worst case default
-      Alignment = 128;
+  pi_context C = CtxImpl->getHandleRef();
+  const PluginPtr &Plugin = CtxImpl->getPlugin();
+  pi_result Error = PI_ERROR_INVALID_VALUE;
+
+  switch (Kind) {
+  case alloc::host: {
+    std::array<pi_usm_mem_properties, 3> Props;
+    auto PropsIter = Props.begin();
+
+    if (PropList.has_property<
+            sycl::ext::intel::experimental::property::usm::buffer_location>() &&
+        Ctxt.get_platform().has_extension(
+            "cl_intel_mem_alloc_buffer_location")) {
+      *PropsIter++ = PI_MEM_USM_ALLOC_BUFFER_LOCATION;
+      *PropsIter++ = PropList
+                         .get_property<sycl::ext::intel::experimental::
+                                           property::usm::buffer_location>()
+                         .get_buffer_location();
     }
 
-    aligned_allocator<char> Alloc(Alignment);
-    try {
-      RetVal = Alloc.allocate(Size);
-    } catch (const std::bad_alloc &) {
-      // Conform with Specification behavior
-      RetVal = nullptr;
-    }
-  } else {
-    pi_context C = CtxImpl->getHandleRef();
-    const PluginPtr &Plugin = CtxImpl->getPlugin();
-    pi_result Error;
+    assert(PropsIter >= Props.begin() && PropsIter < Props.end());
+    *PropsIter++ = 0; // null-terminate property list
 
-    switch (Kind) {
-    case alloc::host: {
-      std::array<pi_usm_mem_properties, 3> Props;
-      auto PropsIter = Props.begin();
+    Error = Plugin->call_nocheck<PiApiKind::piextUSMHostAlloc>(
+        &RetVal, C, Props.data(), Size, Alignment);
 
-      if (PropList.has_property<sycl::ext::intel::experimental::property::usm::
-                                    buffer_location>() &&
-          Ctxt.get_platform().has_extension(
-              "cl_intel_mem_alloc_buffer_location")) {
-        *PropsIter++ = PI_MEM_USM_ALLOC_BUFFER_LOCATION;
-        *PropsIter++ = PropList
-                           .get_property<sycl::ext::intel::experimental::
-                                             property::usm::buffer_location>()
-                           .get_buffer_location();
-      }
-
-      assert(PropsIter >= Props.begin() && PropsIter < Props.end());
-      *PropsIter++ = 0; // null-terminate property list
-
-      Error = Plugin->call_nocheck<PiApiKind::piextUSMHostAlloc>(
-          &RetVal, C, Props.data(), Size, Alignment);
-
-      break;
-    }
-    case alloc::device:
-    case alloc::shared:
-    case alloc::unknown: {
-      RetVal = nullptr;
-      Error = PI_ERROR_INVALID_VALUE;
-      break;
-    }
-    }
-
-    // Error is for debugging purposes.
-    // The spec wants a nullptr returned, not an exception.
-    if (Error != PI_SUCCESS)
-      return nullptr;
+    break;
   }
+  case alloc::device:
+  case alloc::shared:
+  case alloc::unknown: {
+    RetVal = nullptr;
+    Error = PI_ERROR_INVALID_VALUE;
+    break;
+  }
+  }
+
+  // Error is for debugging purposes.
+  // The spec wants a nullptr returned, not an exception.
+  if (Error != PI_SUCCESS)
+    return nullptr;
 #ifdef XPTI_ENABLE_INSTRUMENTATION
   xpti::addMetadata(PrepareNotify.traceEvent(), "memory_ptr",
                     reinterpret_cast<size_t>(RetVal));
@@ -131,102 +125,93 @@ void *alignedAllocInternal(size_t Alignment, size_t Size,
                            const context_impl *CtxImpl,
                            const device_impl *DevImpl, alloc Kind,
                            const property_list &PropList) {
+  if (Kind == alloc::device &&
+      !DevImpl->has(sycl::aspect::usm_device_allocations)) {
+    throw sycl::exception(sycl::errc::feature_not_supported,
+                          "Device does not support USM device allocations!");
+  }
+  if (Kind == alloc::shared &&
+      !DevImpl->has(sycl::aspect::usm_shared_allocations)) {
+    throw sycl::exception(sycl::errc::feature_not_supported,
+                          "Device does not support shared USM allocations!");
+  }
   void *RetVal = nullptr;
   if (Size == 0)
     return nullptr;
 
-  if (CtxImpl->is_host()) {
-    if (Kind == alloc::unknown) {
-      RetVal = nullptr;
-    } else {
-      if (!Alignment) {
-        // worst case default
-        Alignment = 128;
-      }
+  pi_context C = CtxImpl->getHandleRef();
+  const PluginPtr &Plugin = CtxImpl->getPlugin();
+  pi_result Error = PI_ERROR_INVALID_VALUE;
+  pi_device Id;
 
-      aligned_allocator<char> Alloc(Alignment);
-      try {
-        RetVal = Alloc.allocate(Size);
-      } catch (const std::bad_alloc &) {
-        // Conform with Specification behavior
-        RetVal = nullptr;
-      }
-    }
-  } else {
-    pi_context C = CtxImpl->getHandleRef();
-    const PluginPtr &Plugin = CtxImpl->getPlugin();
-    pi_result Error;
-    pi_device Id;
+  switch (Kind) {
+  case alloc::device: {
+    Id = DevImpl->getHandleRef();
 
-    switch (Kind) {
-    case alloc::device: {
-      Id = DevImpl->getHandleRef();
+    std::array<pi_usm_mem_properties, 3> Props;
+    auto PropsIter = Props.begin();
 
-      std::array<pi_usm_mem_properties, 3> Props;
-      auto PropsIter = Props.begin();
-
-      // Buffer location is only supported on FPGA devices
-      if (PropList.has_property<sycl::ext::intel::experimental::property::usm::
-                                    buffer_location>() &&
-          DevImpl->has_extension("cl_intel_mem_alloc_buffer_location")) {
-        *PropsIter++ = PI_MEM_USM_ALLOC_BUFFER_LOCATION;
-        *PropsIter++ = PropList
-                           .get_property<sycl::ext::intel::experimental::
-                                             property::usm::buffer_location>()
-                           .get_buffer_location();
-      }
-
-      assert(PropsIter >= Props.begin() && PropsIter < Props.end());
-      *PropsIter++ = 0; // null-terminate property list
-
-      Error = Plugin->call_nocheck<PiApiKind::piextUSMDeviceAlloc>(
-          &RetVal, C, Id, Props.data(), Size, Alignment);
-
-      break;
-    }
-    case alloc::shared: {
-      Id = DevImpl->getHandleRef();
-
-      std::array<pi_usm_mem_properties, 5> Props;
-      auto PropsIter = Props.begin();
-
-      if (PropList.has_property<
-              sycl::ext::oneapi::property::usm::device_read_only>()) {
-        *PropsIter++ = PI_MEM_ALLOC_FLAGS;
-        *PropsIter++ = PI_MEM_ALLOC_DEVICE_READ_ONLY;
-      }
-
-      if (PropList.has_property<sycl::ext::intel::experimental::property::usm::
-                                    buffer_location>() &&
-          DevImpl->has_extension("cl_intel_mem_alloc_buffer_location")) {
-        *PropsIter++ = PI_MEM_USM_ALLOC_BUFFER_LOCATION;
-        *PropsIter++ = PropList
-                           .get_property<sycl::ext::intel::experimental::
-                                             property::usm::buffer_location>()
-                           .get_buffer_location();
-      }
-
-      assert(PropsIter >= Props.begin() && PropsIter < Props.end());
-      *PropsIter++ = 0; // null-terminate property list
-
-      Error = Plugin->call_nocheck<PiApiKind::piextUSMSharedAlloc>(
-          &RetVal, C, Id, Props.data(), Size, Alignment);
-
-      break;
-    }
-    case alloc::host:
-    case alloc::unknown: {
-      RetVal = nullptr;
-      Error = PI_ERROR_INVALID_VALUE;
-      break;
-    }
+    // Buffer location is only supported on FPGA devices
+    if (PropList.has_property<
+            sycl::ext::intel::experimental::property::usm::buffer_location>() &&
+        DevImpl->has_extension("cl_intel_mem_alloc_buffer_location")) {
+      *PropsIter++ = PI_MEM_USM_ALLOC_BUFFER_LOCATION;
+      *PropsIter++ = PropList
+                         .get_property<sycl::ext::intel::experimental::
+                                           property::usm::buffer_location>()
+                         .get_buffer_location();
     }
 
-    // Error is for debugging purposes.
-    // The spec wants a nullptr returned, not an exception.
-    if (Error != PI_SUCCESS)
-      return nullptr;
+    assert(PropsIter >= Props.begin() && PropsIter < Props.end());
+    *PropsIter++ = 0; // null-terminate property list
+
+    Error = Plugin->call_nocheck<PiApiKind::piextUSMDeviceAlloc>(
+        &RetVal, C, Id, Props.data(), Size, Alignment);
+
+    break;
   }
+  case alloc::shared: {
+    Id = DevImpl->getHandleRef();
+
+    std::array<pi_usm_mem_properties, 5> Props;
+    auto PropsIter = Props.begin();
+
+    if (PropList.has_property<
+            sycl::ext::oneapi::property::usm::device_read_only>()) {
+      *PropsIter++ = PI_MEM_ALLOC_FLAGS;
+      *PropsIter++ = PI_MEM_ALLOC_DEVICE_READ_ONLY;
+    }
+
+    if (PropList.has_property<
+            sycl::ext::intel::experimental::property::usm::buffer_location>() &&
+        DevImpl->has_extension("cl_intel_mem_alloc_buffer_location")) {
+      *PropsIter++ = PI_MEM_USM_ALLOC_BUFFER_LOCATION;
+      *PropsIter++ = PropList
+                         .get_property<sycl::ext::intel::experimental::
+                                           property::usm::buffer_location>()
+                         .get_buffer_location();
+    }
+
+    assert(PropsIter >= Props.begin() && PropsIter < Props.end());
+    *PropsIter++ = 0; // null-terminate property list
+
+    Error = Plugin->call_nocheck<PiApiKind::piextUSMSharedAlloc>(
+        &RetVal, C, Id, Props.data(), Size, Alignment);
+
+    break;
+  }
+  case alloc::host:
+  case alloc::unknown: {
+    RetVal = nullptr;
+    Error = PI_ERROR_INVALID_VALUE;
+    break;
+  }
+  }
+
+  // Error is for debugging purposes.
+  // The spec wants a nullptr returned, not an exception.
+  if (Error != PI_SUCCESS)
+    return nullptr;
   return RetVal;
 }
 
@@ -265,14 +250,9 @@ void *alignedAlloc(size_t Alignment, size_t Size, const context &Ctxt,
 void freeInternal(void *Ptr, const context_impl *CtxImpl) {
   if (Ptr == nullptr)
     return;
-  if (CtxImpl->is_host()) {
-    // need to use alignedFree here for Windows
-    detail::OSUtil::alignedFree(Ptr);
-  } else {
-    pi_context C = CtxImpl->getHandleRef();
-    const PluginPtr &Plugin = CtxImpl->getPlugin();
-    Plugin->call<PiApiKind::piextUSMFree>(C, Ptr);
-  }
+  pi_context C = CtxImpl->getHandleRef();
+  const PluginPtr &Plugin = CtxImpl->getPlugin();
+  Plugin->call<PiApiKind::piextUSMFree>(C, Ptr);
 }
 
 void free(void *Ptr, const context &Ctxt,
@@ -559,10 +539,6 @@ alloc get_pointer_type(const void *Ptr, const context &Ctxt) {
 
   std::shared_ptr<detail::context_impl> CtxImpl = detail::getSyclObjImpl(Ctxt);
 
-  // Everything on a host device is just system malloc so call it host
-  if (CtxImpl->is_host())
-    return alloc::host;
-
   pi_context PICtx = CtxImpl->getHandleRef();
   pi_usm_type AllocTy;
 
@@ -611,10 +587,6 @@ device get_pointer_device(const void *Ptr, const context &Ctxt) {
                         PI_ERROR_INVALID_VALUE);
 
   std::shared_ptr<detail::context_impl> CtxImpl = detail::getSyclObjImpl(Ctxt);
-
-  // Just return the host device in the host context
-  if (CtxImpl->is_host())
-    return Ctxt.get_devices()[0];
 
   // Check if ptr is a host allocation
   if (get_pointer_type(Ptr, Ctxt) == alloc::host) {

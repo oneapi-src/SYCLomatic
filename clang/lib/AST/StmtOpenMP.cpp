@@ -531,6 +531,23 @@ OMPSectionDirective *OMPSectionDirective::CreateEmpty(const ASTContext &C,
                                                    /*HasAssociatedStmt=*/true);
 }
 
+OMPScopeDirective *OMPScopeDirective::Create(const ASTContext &C,
+                                             SourceLocation StartLoc,
+                                             SourceLocation EndLoc,
+                                             ArrayRef<OMPClause *> Clauses,
+                                             Stmt *AssociatedStmt) {
+  return createDirective<OMPScopeDirective>(C, Clauses, AssociatedStmt,
+                                            /*NumChildren=*/0, StartLoc,
+                                            EndLoc);
+}
+
+OMPScopeDirective *OMPScopeDirective::CreateEmpty(const ASTContext &C,
+                                                  unsigned NumClauses,
+                                                  EmptyShell) {
+  return createEmptyDirective<OMPScopeDirective>(C, NumClauses,
+                                                 /*HasAssociatedStmt=*/true);
+}
+
 OMPSingleDirective *OMPSingleDirective::Create(const ASTContext &C,
                                                SourceLocation StartLoc,
                                                SourceLocation EndLoc,
@@ -2414,7 +2431,7 @@ OMPTeamsGenericLoopDirective::CreateEmpty(const ASTContext &C,
 OMPTargetTeamsGenericLoopDirective *OMPTargetTeamsGenericLoopDirective::Create(
     const ASTContext &C, SourceLocation StartLoc, SourceLocation EndLoc,
     unsigned CollapsedNum, ArrayRef<OMPClause *> Clauses, Stmt *AssociatedStmt,
-    const HelperExprs &Exprs) {
+    const HelperExprs &Exprs, bool CanBeParallelFor) {
   auto *Dir = createDirective<OMPTargetTeamsGenericLoopDirective>(
       C, Clauses, AssociatedStmt,
       numLoopChildren(CollapsedNum, OMPD_target_teams_loop), StartLoc, EndLoc,
@@ -2456,6 +2473,7 @@ OMPTargetTeamsGenericLoopDirective *OMPTargetTeamsGenericLoopDirective::Create(
   Dir->setCombinedNextUpperBound(Exprs.DistCombinedFields.NUB);
   Dir->setCombinedDistCond(Exprs.DistCombinedFields.DistCond);
   Dir->setCombinedParForInDistCond(Exprs.DistCombinedFields.ParForInDistCond);
+  Dir->setCanBeParallelFor(CanBeParallelFor);
   return Dir;
 }
 

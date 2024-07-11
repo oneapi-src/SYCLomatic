@@ -9,6 +9,8 @@
 #ifndef DPCT_VALIDATE_ARGUMENTS_H
 #define DPCT_VALIDATE_ARGUMENTS_H
 
+#include "clang/Tooling/Tooling.h"
+
 #include <string>
 #include <vector>
 
@@ -33,6 +35,7 @@ enum class OutputVerbosityLevel {
   OVL_Detailed,
   OVL_Diagnostics
 };
+enum class BuildScriptKind { BS_None, BS_Cmake };
 enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
 enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
 enum class HelperFilesCustomizationLevel {
@@ -51,7 +54,7 @@ enum class ReportTypeEnum {
 enum class AssumedNDRangeDimEnum : unsigned int { ARE_Dim1 = 1, ARE_Dim3 = 3 };
 enum class ExplicitNamespace : unsigned int {
   EN_None = 0,
-  EN_CL = 1,
+  // 1 means EN_CL and it has already been removed
   EN_SYCL = 2,
   EN_SYCL_Math = 3,
   EN_DPCT = 4
@@ -60,12 +63,17 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0,
   ExtDE_DeviceInfo,
   ExtDE_BFloat16,
-  ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
+  ExtDE_PeerAccess,
+  ExtDE_Assert,
+  ExtDE_QueueEmpty,
+  ExtDE_DPCPPExtensionsDefaultEnabledEnumSize,
+  ExtDE_All
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
   ExtDD_CCXXStandardLibrary = 0,
   ExtDD_IntelDeviceMath,
-  ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
+  ExtDD_DPCPPExtensionsDefaultDisabledEnumSize,
+  ExtDD_All
 };
 enum class ExperimentalFeatures : unsigned int {
   Exp_NdRangeBarrier = 0, // Using nd_range_barrier.
@@ -79,32 +87,50 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_OccupancyCalculation,
   Exp_Matrix,
   Exp_BFloat16Math,
-  Exp_ExperimentalFeaturesEnumSize
+  Exp_BindlessImages,
+  Exp_Graph,
+  Exp_NonUniformGroups,
+  Exp_DeviceGlobal,
+  Exp_ExperimentalFeaturesEnumSize,
+  Exp_All
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
+enum class SYCLFileExtensionEnum { DP_CPP, SYCL_CPP, CPP };
 
 bool makeInRootCanonicalOrSetDefaults(
-    std::string &InRoot, const std::vector<std::string> SourceFiles);
-bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
-bool makeAnalysisScopeCanonicalOrSetDefaults(std::string &AnalysisScope,
-                                             const std::string &InRoot);
-
+    clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);
+bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::UnifiedPath &AnalysisScope,
+                                             const clang::tooling::UnifiedPath &InRoot);
+bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
+                       bool NeedCheckOutRootEmpty = true);
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.
 /// return value:
 /// 0: success (InRoot and SourceFiles are valid)
 /// -1: fail for InRoot not valid or there is file SourceFiles not in InRoot
 /// -2: fail for there is file in SourceFiles without extension
-int validatePaths(const std::string &InRoot,
+int validatePaths(const clang::tooling::UnifiedPath &InRoot,
                   const std::vector<std::string> &SourceFiles);
+
+/// Make sure cmake script path is valide file path or directory path.
+/// return value:
+/// 0: success (InRoot and CmakeScriptPaths are valid)
+/// -1: fail for InRoot not valid
+/// -2: fail for there is file or directory not existing in CmakeScriptPaths
+/// -3: fail for there is directory not in InRoot directory in CmakeScriptPaths
+/// -4: fail for there is file not in InRoot directory in CmakeScriptPaths
+/// -5: fail for there is file that is is not a cmake script file in CmakeScriptPaths
+int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
+                             const std::vector<std::string> &CmakeScriptPaths);
+
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
-                     std::string &RFile, bool &ROnly, bool &GenReport,
+                     std::string &RFile, bool ROnly, bool &GenReport,
                      std::string &DVerbose);
 
 /// Return value:
 ///  0: Path is valid
 ///  1: Path is empty, option SDK include path is not used
 /// -1: Path is invalid
-int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
+int checkSDKPathOrIncludePath(clang::tooling::UnifiedPath &Path);
 
 #endif // DPCT_VALIDATE_ARGUMENTS_H

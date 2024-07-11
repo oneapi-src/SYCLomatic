@@ -14,7 +14,6 @@
 #include <sycl/detail/host_profiling_info.hpp>
 #include <sycl/detail/pi.hpp>
 #include <sycl/info/info_desc.hpp>
-#include <sycl/stl.hpp>
 
 #include <atomic>
 #include <cassert>
@@ -50,8 +49,14 @@ public:
   /// Normally constructs a host event, use std::nullopt to instead instantiate
   /// a device event.
   event_impl(std::optional<HostEventState> State = HES_Complete)
-      : MIsInitialized(false), MHostEvent(State), MIsFlushed(true),
-        MState(State.value_or(HES_Complete)) {}
+      : MIsFlushed(true), MState(State.value_or(HES_Complete)),
+        MIsDefaultConstructed(!State), MIsHostEvent(State) {
+    // Need to fail in event() constructor  if there are problems with the
+    // ONEAPI_DEVICE_SELECTOR. Deferring may lead to conficts with noexcept
+    // event methods. This ::get() call uses static vars to read and parse the
+    // ODS env var exactly once.
+    SYCLConfig<ONEAPI_DEVICE_SELECTOR>::get();
+  }
 
   /// Constructs an event instance from a plug-in event handle.
   ///
@@ -63,20 +68,17 @@ public:
   event_impl(sycl::detail::pi::PiEvent Event, const context &SyclContext);
   event_impl(const QueueImplPtr &Queue);
 
-  /// Checks if this event is a SYCL host event.
-  ///
-  /// All devices that do not support OpenCL interoperability are treated as
-  /// host device to avoid attempts to call method get on such events.
-  //
-  /// \return true if this event is a SYCL host event.
-  bool is_host();
-
   /// Waits for the event.
   ///
   /// Self is needed in order to pass shared_ptr to Scheduler.
   ///
   /// \param Self is a pointer to this event.
-  void wait(std::shared_ptr<sycl::detail::event_impl> Self);
+  /// \param Success is an optional parameter that, when set to a non-null
+  ///        pointer, indicates that failure is a valid outcome for this wait
+  ///        (e.g., in case of a non-blocking read from a pipe), and the value
+  ///        it's pointing to is then set according to the outcome.
+  void wait(std::shared_ptr<sycl::detail::event_impl> Self,
+            bool *Success = nullptr);
 
   /// Waits for the event.
   ///
@@ -106,10 +108,20 @@ public:
   /// \return depends on the information being requested.
   template <typename Param> typename Param::return_type get_info();
 
+  /// Queries this SYCL event for SYCL backend-specific information.
+  ///
+  /// \return depends on information being queried.
+  template <typename Param>
+  typename Param::return_type get_backend_info() const;
+
   ~event_impl();
 
   /// Waits for the event with respect to device type.
-  void waitInternal();
+  /// \param Success is an optional parameter that, when set to a non-null
+  ///        pointer, indicates that failure is a valid outcome for this wait
+  ///        (e.g., in case of a non-blocking read from a pipe), and the value
+  ///        it's pointing to is then set according to the outcome.
+  void waitInternal(bool *Success = nullptr);
 
   /// Marks this event as completed.
   void setComplete();
@@ -157,7 +169,7 @@ public:
   /// Scheduler mutex must be locked in write mode when this is called.
   ///
   /// @param Command is a generic pointer to Command object instance.
-  void setCommand(void *Command) { MCommand = Command; }
+  void setCommand(void *Command);
 
   /// Returns host profiling information.
   ///
@@ -224,6 +236,12 @@ public:
     MSubmittedQueue = SubmittedQueue;
   };
 
+  /// Indicates if this event is not associated with any command and doesn't
+  /// have native handle.
+  ///
+  /// @return true if no associated command and no event handle.
+  bool isNOP() { return !MCommand && !getHandleRef(); }
+
   /// Calling this function queries the current device timestamp and sets it as
   /// submission time for the command associated with this event.
   void setSubmissionTime();
@@ -237,34 +255,31 @@ public:
 
   QueueImplPtr getSubmittedQueue() const { return MSubmittedQueue.lock(); };
 
-  /// Checks if an event is in a fully intialized state. Default-constructed
-  /// events will return true only after having initialized its native event,
-  /// while other events will assume that they are fully initialized at
-  /// construction, relying on external sources to supply member data.
-  ///
-  /// \return true if the event is considered to be in a fully initialized
-  /// state.
-  bool isInitialized() const noexcept { return MIsInitialized; }
-
   /// Checks if this event is complete.
   ///
   /// \return true if this event is complete.
   bool isCompleted();
+
+  /// Checks if associated command is enqueued
+  ///
+  /// \return true if command passed enqueue
+  bool isEnqueued() const noexcept { return MIsEnqueued; };
 
   void attachEventToComplete(const EventImplPtr &Event) {
     std::lock_guard<std::mutex> Lock(MMutex);
     MPostCompleteEvents.push_back(Event);
   }
 
-  bool isContextInitialized() const noexcept { return MIsContextInitialized; }
+  bool isDefaultConstructed() const noexcept { return MIsDefaultConstructed; }
 
   ContextImplPtr getContextImplPtr() {
-    ensureContextInitialized();
+    if (MIsDefaultConstructed)
+      initContextIfNeeded();
     return MContext;
   }
 
   // Sets a sync point which is used when this event represents an enqueue to a
-  // Command Bufferr.
+  // Command Buffer.
   void setSyncPoint(sycl::detail::pi::PiExtSyncPoint SyncPoint) {
     MSyncPoint = SyncPoint;
   }
@@ -282,13 +297,38 @@ public:
     return MGraph.lock();
   }
 
-  void setEventFromSubmitedExecCommandBuffer(bool value) {
-    MEventFromSubmitedExecCommandBuffer = value;
+  void setEventFromSubmittedExecCommandBuffer(bool value) {
+    MEventFromSubmittedExecCommandBuffer = value;
   }
 
-  bool isEventFromSubmitedExecCommandBuffer() const {
-    return MEventFromSubmitedExecCommandBuffer;
+  bool isEventFromSubmittedExecCommandBuffer() const {
+    return MEventFromSubmittedExecCommandBuffer;
   }
+
+  void setProfilingEnabled(bool Value) { MIsProfilingEnabled = Value; }
+
+  // Sets a command-buffer command when this event represents an enqueue to a
+  // Command Buffer.
+  void
+  setCommandBufferCommand(sycl::detail::pi::PiExtCommandBufferCommand Command) {
+    MCommandBufferCommand = Command;
+  }
+
+  sycl::detail::pi::PiExtCommandBufferCommand getCommandBufferCommand() const {
+    return MCommandBufferCommand;
+  }
+
+  const std::vector<EventImplPtr> &getPostCompleteEvents() const {
+    return MPostCompleteEvents;
+  }
+
+  void setEnqueued() { MIsEnqueued = true; }
+
+  bool isHost() { return MIsHostEvent; }
+
+  void markAsProfilingTagEvent() { MProfilingTagEvent = true; }
+
+  bool isProfilingTagEvent() const noexcept { return MProfilingTagEvent; }
 
 protected:
   // When instrumentation is enabled emits trace event for event wait begin and
@@ -299,22 +339,17 @@ protected:
   void instrumentationEpilog(void *TelementryEvent, const std::string &Name,
                              int32_t StreamID, uint64_t IId) const;
   void checkProfilingPreconditions() const;
-  // Events constructed without a context will lazily use the default context
-  // when needed.
-  void ensureContextInitialized();
-  bool MIsInitialized = true;
-  bool MIsContextInitialized = false;
+
   sycl::detail::pi::PiEvent MEvent = nullptr;
   // Stores submission time of command associated with event
   uint64_t MSubmitTime = 0;
   uint64_t MHostBaseTime = 0;
   ContextImplPtr MContext;
-  bool MHostEvent = true;
   std::unique_ptr<HostProfilingInfo> MHostProfilingInfo;
   void *MCommand = nullptr;
   std::weak_ptr<queue_impl> MQueue;
-  const bool MIsProfilingEnabled = false;
-  const bool MFallbackProfiling = false;
+  bool MIsProfilingEnabled = false;
+  bool MFallbackProfiling = false;
 
   std::weak_ptr<queue_impl> MWorkerQueue;
   std::weak_ptr<queue_impl> MSubmittedQueue;
@@ -340,17 +375,42 @@ protected:
   /// Store the command graph associated with this event, if any.
   /// This event is also be stored in the graph so a weak_ptr is used.
   std::weak_ptr<ext::oneapi::experimental::detail::graph_impl> MGraph;
-  /// Indicates that the event results from a command graph submission
-  bool MEventFromSubmitedExecCommandBuffer = false;
+  /// Indicates that the event results from a command graph submission.
+  bool MEventFromSubmittedExecCommandBuffer = false;
 
   // If this event represents a submission to a
   // sycl::detail::pi::PiExtCommandBuffer the sync point for that submission is
   // stored here.
   sycl::detail::pi::PiExtSyncPoint MSyncPoint;
 
+  // If this event represents a submission to a
+  // sycl::detail::pi::PiExtCommandBuffer the command-buffer command
+  // (if any) associated with that submission is stored here.
+  sycl::detail::pi::PiExtCommandBufferCommand MCommandBufferCommand = nullptr;
+
+  // Signifies whether this event is the result of a profiling tag command. This
+  // allows for profiling, even if the queue does not have profiling enabled.
+  bool MProfilingTagEvent = false;
+
   friend std::vector<sycl::detail::pi::PiEvent>
   getOrWaitEvents(std::vector<sycl::event> DepEvents,
                   std::shared_ptr<sycl::detail::context_impl> Context);
+
+  std::atomic_bool MIsEnqueued{false};
+
+  // Events constructed without a context will lazily use the default context
+  // when needed.
+  void initContextIfNeeded();
+  // Event class represents 3 different kinds of operations:
+  // | type  | has PI event | MContext | MIsHostTask | MIsDefaultConstructed |
+  // | dev   | true         | !nullptr | false       | false                 |
+  // | host  | false        | nullptr  | true        | false                 |
+  // |default|   *          |    *     | false       | true                  |
+  // Default constructed event is created with empty ctor in host code, MContext
+  // is lazily initialized with default device context on first context query.
+  // MEvent is lazily created in first pi handle query.
+  bool MIsDefaultConstructed = false;
+  bool MIsHostEvent = false;
 };
 
 } // namespace detail

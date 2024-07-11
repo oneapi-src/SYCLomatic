@@ -24,6 +24,7 @@
 
 #include <cassert>
 #include <filesystem>
+#include <system_error>
 
 #ifdef _WIN32
 
@@ -70,8 +71,8 @@ std::wstring getCurrentDSODir() {
   auto Handle = getOSModuleHandle(reinterpret_cast<void *>(&getCurrentDSODir));
   DWORD Ret = GetModuleFileName(
       reinterpret_cast<HMODULE>(ExeModuleHandle == Handle ? 0 : Handle), Path,
-      sizeof(Path));
-  assert(Ret < sizeof(Path) && "Path is longer than PATH_MAX?");
+      MAX_PATH);
+  assert(Ret < MAX_PATH && "Path is longer than MAX_PATH?");
   assert(Ret > 0 && "GetModuleFileName failed");
   (void)Ret;
 
@@ -88,15 +89,13 @@ std::wstring getCurrentDSODir() {
 #define __SYCL_OPENCL_PLUGIN_NAME "pi_opencl.dll"
 #define __SYCL_LEVEL_ZERO_PLUGIN_NAME "pi_level_zero.dll"
 #define __SYCL_CUDA_PLUGIN_NAME "pi_cuda.dll"
-#define __SYCL_ESIMD_EMULATOR_PLUGIN_NAME "pi_esimd_emulator.dll"
-#define __SYCL_HIP_PLUGIN_NAME "libpi_hip.dll"
+#define __SYCL_HIP_PLUGIN_NAME "pi_hip.dll"
 #define __SYCL_UNIFIED_RUNTIME_PLUGIN_NAME "pi_unified_runtime.dll"
 #define __SYCL_NATIVE_CPU_PLUGIN_NAME "pi_native_cpu.dll"
 #else // llvm-mingw
 #define __SYCL_OPENCL_PLUGIN_NAME "libpi_opencl.dll"
 #define __SYCL_LEVEL_ZERO_PLUGIN_NAME "libpi_level_zero.dll"
 #define __SYCL_CUDA_PLUGIN_NAME "libpi_cuda.dll"
-#define __SYCL_ESIMD_EMULATOR_PLUGIN_NAME "libpi_esimd_emulator.dll"
 #define __SYCL_HIP_PLUGIN_NAME "libpi_hip.dll"
 #define __SYCL_UNIFIED_RUNTIME_PLUGIN_NAME "libpi_unified_runtime.dll"
 #define __SYCL_NATIVE_CPU_PLUGIN_NAME "libpi_native_cpu.dll"
@@ -133,31 +132,22 @@ void preloadLibraries() {
 
   MapT &dllMap = getDllMap();
 
-  auto ocl_path = LibSYCLDir / __SYCL_OPENCL_PLUGIN_NAME;
-  dllMap.emplace(ocl_path,
-                 LoadLibraryEx(ocl_path.wstring().c_str(), NULL, NULL));
-
-  auto l0_path = LibSYCLDir / __SYCL_LEVEL_ZERO_PLUGIN_NAME;
-  dllMap.emplace(l0_path, LoadLibraryEx(l0_path.wstring().c_str(), NULL, NULL));
-
-  auto cuda_path = LibSYCLDir / __SYCL_CUDA_PLUGIN_NAME;
-  dllMap.emplace(cuda_path,
-                 LoadLibraryEx(cuda_path.wstring().c_str(), NULL, NULL));
-
-  auto esimd_path = LibSYCLDir / __SYCL_ESIMD_EMULATOR_PLUGIN_NAME;
-  dllMap.emplace(esimd_path,
-                 LoadLibraryEx(esimd_path.wstring().c_str(), NULL, NULL));
-
-  auto hip_path = LibSYCLDir / __SYCL_HIP_PLUGIN_NAME;
-  dllMap.emplace(hip_path,
-                 LoadLibraryEx(hip_path.wstring().c_str(), NULL, NULL));
-
-  auto ur_path = LibSYCLDir / __SYCL_UNIFIED_RUNTIME_PLUGIN_NAME;
-  dllMap.emplace(ur_path, LoadLibraryEx(ur_path.wstring().c_str(), NULL, NULL));
-
-  auto nativecpu_path = LibSYCLDir / __SYCL_NATIVE_CPU_PLUGIN_NAME;
-  dllMap.emplace(nativecpu_path,
-                 LoadLibraryEx(nativecpu_path.wstring().c_str(), NULL, NULL));
+  // When searching for dependencies of the plugins limit the
+  // list of directories to %windows%\system32 and the directory that contains
+  // the loaded DLL (the plugin). This is necessary to avoid loading dlls from
+  // current directory and some other directories which are considered unsafe.
+  auto loadPlugin = [&](auto pluginName,
+                        DWORD flags = LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR |
+                                      LOAD_LIBRARY_SEARCH_SYSTEM32) {
+    auto path = LibSYCLDir / pluginName;
+    dllMap.emplace(path, LoadLibraryEx(path.wstring().c_str(), NULL, flags));
+  };
+  loadPlugin(__SYCL_OPENCL_PLUGIN_NAME);
+  loadPlugin(__SYCL_LEVEL_ZERO_PLUGIN_NAME);
+  loadPlugin(__SYCL_CUDA_PLUGIN_NAME);
+  loadPlugin(__SYCL_HIP_PLUGIN_NAME);
+  loadPlugin(__SYCL_UNIFIED_RUNTIME_PLUGIN_NAME);
+  loadPlugin(__SYCL_NATIVE_CPU_PLUGIN_NAME);
 
   // Restore system error handling.
   (void)SetErrorMode(SavedMode);
@@ -173,8 +163,24 @@ __declspec(dllexport) void *getPreloadedPlugin(
 
   MapT &dllMap = getDllMap();
 
-  auto match = dllMap.find(PluginPath); // result might be nullptr (not found),
-                                        // which is perfectly valid.
+  // All entries in the dllMap have the same parent directory.
+  // To avoid case sensivity issues, we don't want to do string comparison but
+  // just make sure that directory of the entires in the map and directory of
+  // the PluginPath are equivalent (point to the same physical location).
+  auto match = dllMap.end();
+  std::error_code ec;
+  if (!dllMap.empty() &&
+      std::filesystem::equivalent((dllMap.begin())->first.parent_path(),
+                                  PluginPath.parent_path(), ec)) {
+    // Now we can search only by filename. Result might be nullptr (not found),
+    // which is perfectly valid.
+    match =
+        std::find_if(dllMap.begin(), dllMap.end(),
+                     [&](const std::pair<std::filesystem::path, void *> &v) {
+                       return v.first.filename() == PluginPath.filename();
+                     });
+  }
+
   if (match == dllMap.end()) {
     // unit testing? return nullptr (not found) rather than risk asserting below
     if (PluginPath.string().find("unittests") != std::string::npos)
@@ -215,8 +221,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, // handle to DLL module
     if (PrintPiTrace)
       std::cout << "---> DLL_PROCESS_DETACH pi_win_proxy_loader.dll\n"
                 << std::endl;
-
+    break;
   case DLL_THREAD_ATTACH:
+    break;
   case DLL_THREAD_DETACH:
     break;
   }

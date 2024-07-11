@@ -1,5 +1,6 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/group_local_memory %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -use-experimental-features=local-memory-kernel-scope-allocation -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/group_local_memory %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -use-experimental-features=local-memory-kernel-scope-allocation -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/group_local_memory/group_local_memory.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/group_local_memory/group_local_memory.dp.cpp -o %T/group_local_memory/group_local_memory.dp.o %}
 
 #include <stdio.h>
 #include <complex>
@@ -9,9 +10,9 @@ class TestObject{
 public:
   // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1) {
   // CHECK-NEXT:    /*
-  // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
+  // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
   // CHECK-NEXT:    */
-  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory<int>(item_ct1.get_group()); // the size of s is static
+  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory_for_overwrite<int>(item_ct1.get_group()); // the size of s is static
   // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
   __device__ static void run(int *in, int *out) {
     __shared__ int a0; // the size of s is static
@@ -21,7 +22,7 @@ public:
 };
 
 // CHECK: void memberAcc(const sycl::nd_item<3> &item_ct1) {
-// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory<TestObject>(item_ct1.get_group()); // the size of s is static
+// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TestObject>(item_ct1.get_group()); // the size of s is static
 // CHECK-NEXT: s.test();
 // CHECK-NEXT: }
 __global__ void memberAcc() {
@@ -30,7 +31,7 @@ __global__ void memberAcc() {
 }
 
 // CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
-// CHECK-NEXT:  auto &s = *sycl::ext::oneapi::group_local_memory<sycl::int2[2*ArraySize*ArraySize]>(item_ct1.get_group()); // the size of s is dependent on parameter
+// CHECK-NEXT:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<sycl::int2[2*ArraySize*ArraySize]>(item_ct1.get_group()); // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
   __shared__ int2 s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
@@ -43,7 +44,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
 // CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
-  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory<int[size]>(item_ct1.get_group()); // the size of s is static
+  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<int[size]>(item_ct1.get_group()); // the size of s is static
   __shared__ int s[size]; // the size of s is static
   int t = threadIdx.x;
   if (t < 64) {
@@ -58,8 +59,8 @@ __global__ void staticReverse(int *d, int n) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;
-  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory<TData[size * 2][size * 4]>(item_ct1.get_group()); // the size of s is static
-  // CHECK-NEXT:  auto &s3 = *sycl::ext::oneapi::group_local_memory<TData[size * 2][size * 4][size]>(item_ct1.get_group()); // the size of s is static
+  // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4]>(item_ct1.get_group()); // the size of s is static
+  // CHECK-NEXT:  auto &s3 = *sycl::ext::oneapi::group_local_memory_for_overwrite<TData[size * 2][size * 4][size]>(item_ct1.get_group()); // the size of s is static
   __shared__ TData s[size * 2][size * 4]; // the size of s is static
   __shared__ TData s3[size * 2][size * 4][size]; // the size of s is static
   int t = threadIdx.x;
@@ -144,3 +145,26 @@ int main(void) {
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
 }
 
+extern __shared__ int smem[];
+
+// CHECK: void foo(int *pd, int len, const sycl::nd_item<3> &item_ct1, int *smem) { smem[item_ct1.get_local_id(2)] = 0; }
+__global__ void foo(int *pd, int len) { smem[threadIdx.x] = 0; }
+
+// CHECK: void bar(int *pd, int len) {
+// CHECK-NEXT:   int shareSz = 1024;
+// CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>(shareSz), cgh);
+// CHECK-NEXT:       dpct::access_wrapper<int *> pd_acc_ct0(pd, cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 32) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           foo(pd_acc_ct0.get_raw_pointer(), len, item_ct1, smem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+void bar(int *pd, int len) {
+  int shareSz = 1024;
+  foo<<<32, 8, shareSz>>>(pd, len);
+}

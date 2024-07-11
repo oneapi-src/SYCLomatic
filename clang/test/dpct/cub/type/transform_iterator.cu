@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/type/transform_iterator %S/transform_iterator.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/type/transform_iterator/transform_iterator.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/type/transform_iterator/transform_iterator.dp.cpp -o %T/type/transform_iterator/transform_iterator.dp.o %}
 
 // CHECK:#include <oneapi/dpl/iterator>
 #include <cub/cub.cuh>
@@ -48,7 +49,7 @@ void print_array(double *d) {
 // CHECK:d_in = sycl::malloc_device<double>(N, q_ct1);
 // CHECK:d_out = sycl::malloc_device<double>(N, q_ct1);
 // CHECK:for (int i = 0; i < N; ++i) h_in[i] = i;
-// CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(double) * N).wait();
+// CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(double) * N);
 // CHECK:oneapi::dpl::transform_iterator<double *, UserDefMul> iter(d_in, UserDefMul());
 // CHECK:q_ct1.parallel_for(
 // CHECK:sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 

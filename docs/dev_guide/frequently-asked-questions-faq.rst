@@ -163,6 +163,8 @@ expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
 
+.. _faq-hang-wg-synch:
+
 How do I fix the issue of SYCL\* code hanging due to work group level synchronization, such as a group barrier used in a conditional statement?
 ***********************************************************************************************************************************************
 

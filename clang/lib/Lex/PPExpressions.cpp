@@ -142,7 +142,9 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   Result.Val.setIsUnsigned(false); // Result is signed intmax_t.
   DT.IncludedUndefinedIds = !Macro;
 
-  PP.emitMacroExpansionWarnings(PeekTok);
+  PP.emitMacroExpansionWarnings(
+      PeekTok,
+      (II->getName() == "INFINITY" || II->getName() == "NAN") ? true : false);
 
   // If there is a macro, mark it used.
   if (Result.Val != 0 && ValueLive)
@@ -285,7 +287,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
             const StringRef IdentifierName = II->getName();
             if (llvm::any_of(UndefPrefixes,
                              [&IdentifierName](const std::string &Prefix) {
-                               return IdentifierName.startswith(Prefix);
+                               return IdentifierName.starts_with(Prefix);
                              }))
               PP.Diag(PeekTok, diag::warn_pp_undef_prefix)
                   << AddFlagValue{llvm::join(UndefPrefixes, ",")} << II;
@@ -293,11 +295,14 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
         }
         Result.Val = 0;
 #ifdef SYCLomatic_CUSTOMIZATION
-        // If macro name is '__CUDA_ARCH__' and is inside analysis-scope-path folder, handle
-        // it as defined '600'
+        // If macro name is '__CUDA_ARCH__' and is inside analysis-scope-path
+        // folder, handle it as defined '900'
         if (II->getName() == "__CUDA_ARCH__" &&
             IsInAnalysisScopeFunc(PeekTok.getLocation())) {
-          Result.Val = 600;
+          if (GetRunRound() == 0)
+            Result.Val = 900;
+          else
+            Result.Val = 0;
         }
 #endif // SYCLomatic_CUSTOMIZATION
         Result.Val.setIsUnsigned(false); // "0" is signed intmax_t 0.
@@ -357,13 +362,13 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
                                  : diag::ext_cxx23_size_t_suffix
                            : diag::err_cxx23_size_t_suffix);
 
-    // 'wb/uwb' literals are a C2x feature. We explicitly do not support the
-    // suffix in C++ as an extension because a library-based UDL that resolves
-    // to a library type may be more appropriate there.
+    // 'wb/uwb' literals are a C23 feature.
+    // '__wb/__uwb' are a C++ extension.
     if (Literal.isBitInt)
-      PP.Diag(PeekTok, PP.getLangOpts().C2x
-                           ? diag::warn_c2x_compat_bitint_suffix
-                           : diag::ext_c2x_bitint_suffix);
+      PP.Diag(PeekTok, PP.getLangOpts().CPlusPlus ? diag::ext_cxx_bitint_suffix
+                       : PP.getLangOpts().C23
+                           ? diag::warn_c23_compat_bitint_suffix
+                           : diag::ext_c23_bitint_suffix);
 
     // Parse the integer literal into Result.
     if (Literal.GetIntegerValue(Result.Val)) {

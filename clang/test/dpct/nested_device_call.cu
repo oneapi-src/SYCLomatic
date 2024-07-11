@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/nested_device_call %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/nested_device_call/nested_device_call.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/nested_device_call/nested_device_call.dp.cpp -o %T/nested_device_call/nested_device_call.dp.o %}
 
 #include <cstdio>
 

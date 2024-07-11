@@ -7,14 +7,13 @@
 //===----------------------------------------------------------------------===//
 // REQUIRES: matrix
 
-// RUN: %{build} -o %t.out -DSYCL_EXT_ONEAPI_MATRIX_VERSION=4
+// RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 
 // XFAIL:*
 
 #include "common.hpp"
 
-constexpr size_t SG_SZ = 16;
 constexpr size_t TN = 16;
 static constexpr size_t MATRIX_K = 1024 + 14;
 

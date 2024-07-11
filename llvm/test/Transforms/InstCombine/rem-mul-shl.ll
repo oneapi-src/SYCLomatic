@@ -35,8 +35,8 @@ define <vscale x 16 x i8> @urem_XY_XZ_with_CY_rem_CZ_eq_0_scalable(<vscale x 16 
 ; CHECK-LABEL: @urem_XY_XZ_with_CY_rem_CZ_eq_0_scalable(
 ; CHECK-NEXT:    ret <vscale x 16 x i8> zeroinitializer
 ;
-  %BO0 = mul nuw <vscale x 16 x i8> %X, shufflevector(<vscale x 16 x i8> insertelement(<vscale x 16 x i8> poison, i8 15, i64 0) , <vscale x 16 x i8> poison, <vscale x 16 x i32> zeroinitializer)
-  %BO1 = mul <vscale x 16 x i8> %X, shufflevector(<vscale x 16 x i8> insertelement(<vscale x 16 x i8> poison, i8 5, i64 0) , <vscale x 16 x i8> poison, <vscale x 16 x i32> zeroinitializer)
+  %BO0 = mul nuw <vscale x 16 x i8> %X, splat (i8 15)
+  %BO1 = mul <vscale x 16 x i8> %X, splat (i8 5)
   %r = urem <vscale x 16 x i8> %BO0, %BO1
   ret <vscale x 16 x i8> %r
 }
@@ -253,8 +253,8 @@ define <vscale x 16 x i8> @srem_XY_XZ_with_CY_rem_CZ_eq_0_scalable(<vscale x 16 
 ; CHECK-LABEL: @srem_XY_XZ_with_CY_rem_CZ_eq_0_scalable(
 ; CHECK-NEXT:    ret <vscale x 16 x i8> zeroinitializer
 ;
-  %BO0 = mul nsw <vscale x 16 x i8> %X, shufflevector(<vscale x 16 x i8> insertelement(<vscale x 16 x i8> poison, i8 15, i64 0) , <vscale x 16 x i8> poison, <vscale x 16 x i32> zeroinitializer)
-  %BO1 = mul <vscale x 16 x i8> %X, shufflevector(<vscale x 16 x i8> insertelement(<vscale x 16 x i8> poison, i8 5, i64 0) , <vscale x 16 x i8> poison, <vscale x 16 x i32> zeroinitializer)
+  %BO0 = mul nsw <vscale x 16 x i8> %X, splat (i8 15)
+  %BO1 = mul <vscale x 16 x i8> %X, splat (i8 5)
   %r = srem <vscale x 16 x i8> %BO0, %BO1
   ret <vscale x 16 x i8> %r
 }
@@ -930,10 +930,9 @@ define i32 @and_add_shl_vscale_not_power2_negative() vscale_range(1,16) {
 ; Negative test: the %sign may be 0, https://alive2.llvm.org/ce/z/WU_j4a
 define i32 @and_add_and (i32 %x) {
 ; CHECK-LABEL: @and_add_and(
-; CHECK-NEXT:    [[X1:%.*]] = lshr i32 [[X:%.*]], 7
-; CHECK-NEXT:    [[SIGN:%.*]] = and i32 [[X1]], 1
-; CHECK-NEXT:    [[ADD:%.*]] = add nsw i32 [[SIGN]], -1
-; CHECK-NEXT:    [[AND:%.*]] = and i32 [[ADD]], -2147483648
+; CHECK-NEXT:    [[TMP1:%.*]] = shl i32 [[X:%.*]], 24
+; CHECK-NEXT:    [[TMP2:%.*]] = and i32 [[TMP1]], -2147483648
+; CHECK-NEXT:    [[AND:%.*]] = xor i32 [[TMP2]], -2147483648
 ; CHECK-NEXT:    ret i32 [[AND]]
 ;
   %x1 = lshr i32 %x, 7

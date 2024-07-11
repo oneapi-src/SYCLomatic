@@ -20,6 +20,12 @@ using namespace CodeGen;
 
 CGCXXABI::~CGCXXABI() { }
 
+Address CGCXXABI::getThisAddress(CodeGenFunction &CGF) {
+  return CGF.makeNaturalAddressForPointer(
+      CGF.CXXABIThisValue, CGF.CXXABIThisDecl->getType()->getPointeeType(),
+      CGF.CXXABIThisAlignment);
+}
+
 void CGCXXABI::ErrorUnsupportedABI(CodeGenFunction &CGF, StringRef S) {
   DiagnosticsEngine &Diags = CGF.CGM.getDiags();
   unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
@@ -44,18 +50,14 @@ CGCallee CGCXXABI::EmitLoadOfMemberFunctionPointer(
     llvm::Value *MemPtr, const MemberPointerType *MPT) {
   ErrorUnsupportedABI(CGF, "calls through member pointers");
 
-  ThisPtrForCall = This.getPointer();
-  const auto *FPT = MPT->getPointeeType()->castAs<FunctionProtoType>();
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
-  llvm::Constant *FnPtr = llvm::Constant::getNullValue(
-      llvm::PointerType::getUnqual(CGM.getLLVMContext()));
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
   const auto *RD =
       cast<CXXRecordDecl>(MPT->getClass()->castAs<RecordType>()->getDecl());
-  llvm::FunctionType *FTy = CGM.getTypes().GetFunctionType(
-      CGM.getTypes().arrangeCXXMethodType(RD, FPT, /*FD=*/nullptr));
-  llvm::Constant *FnPtr = llvm::Constant::getNullValue(FTy->getPointerTo());
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
+  ThisPtrForCall =
+      CGF.getAsNaturalPointerTo(This, CGF.getContext().getRecordType(RD));
+  const FunctionProtoType *FPT =
+      MPT->getPointeeType()->getAs<FunctionProtoType>();
+  llvm::Constant *FnPtr = llvm::Constant::getNullValue(
+      llvm::PointerType::getUnqual(CGM.getLLVMContext()));
   return CGCallee::forDirect(FnPtr, FPT);
 }
 
@@ -64,13 +66,8 @@ CGCXXABI::EmitMemberDataPointerAddress(CodeGenFunction &CGF, const Expr *E,
                                        Address Base, llvm::Value *MemPtr,
                                        const MemberPointerType *MPT) {
   ErrorUnsupportedABI(CGF, "loads of member pointers");
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
   llvm::Type *Ty =
       llvm::PointerType::get(CGF.getLLVMContext(), Base.getAddressSpace());
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-  llvm::Type *Ty = CGF.ConvertType(MPT->getPointeeType())
-                         ->getPointerTo(Base.getAddressSpace());
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
   return llvm::Constant::getNullValue(Ty);
 }
 
@@ -133,10 +130,10 @@ void CGCXXABI::buildThisParam(CodeGenFunction &CGF, FunctionArgList &params) {
 
   // FIXME: I'm not entirely sure I like using a fake decl just for code
   // generation. Maybe we can come up with a better way?
-  auto *ThisDecl = ImplicitParamDecl::Create(
-      CGM.getContext(), nullptr, MD->getLocation(),
-      &CGM.getContext().Idents.get("this"), MD->getThisType(),
-      ImplicitParamDecl::CXXThis);
+  auto *ThisDecl =
+      ImplicitParamDecl::Create(CGM.getContext(), nullptr, MD->getLocation(),
+                                &CGM.getContext().Idents.get("this"),
+                                MD->getThisType(), ImplicitParamKind::CXXThis);
   params.push_back(ThisDecl);
   CGF.CXXABIThisDecl = ThisDecl;
 
@@ -264,16 +261,15 @@ void CGCXXABI::ReadArrayCookie(CodeGenFunction &CGF, Address ptr,
 
   // If we don't need an array cookie, bail out early.
   if (!requiresArrayCookie(expr, eltTy)) {
-    allocPtr = ptr.getPointer();
+    allocPtr = ptr.emitRawPointer(CGF);
     numElements = nullptr;
     cookieSize = CharUnits::Zero();
     return;
   }
 
   cookieSize = getArrayCookieSizeImpl(eltTy);
-  Address allocAddr =
-    CGF.Builder.CreateConstInBoundsByteGEP(ptr, -cookieSize);
-  allocPtr = allocAddr.getPointer();
+  Address allocAddr = CGF.Builder.CreateConstInBoundsByteGEP(ptr, -cookieSize);
+  allocPtr = allocAddr.emitRawPointer(CGF);
   numElements = readArrayCookieImpl(CGF, allocAddr, cookieSize);
 }
 
@@ -325,8 +321,7 @@ void CGCXXABI::setCXXDestructorDLLStorage(llvm::GlobalValue *GV,
 llvm::GlobalValue::LinkageTypes CGCXXABI::getCXXDestructorLinkage(
     GVALinkage Linkage, const CXXDestructorDecl *Dtor, CXXDtorType DT) const {
   // Delegate back to CGM by default.
-  return CGM.getLLVMLinkageForDeclarator(Dtor, Linkage,
-                                         /*IsConstantVariable=*/false);
+  return CGM.getLLVMLinkageForDeclarator(Dtor, Linkage);
 }
 
 bool CGCXXABI::NeedsVTTParameter(GlobalDecl GD) {

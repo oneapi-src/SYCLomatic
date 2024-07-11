@@ -23,7 +23,6 @@ class DpctFileInfo;
 struct TranslationUnitInfo {
   std::unique_ptr<ASTUnit> AST;
   TransformSetTy Transforms;
-  IncludeMapSetTy IncludeMapSet;
   std::shared_ptr<DpctFileInfo> MainFile;
   RuleGroups Groups;
 };
@@ -56,8 +55,9 @@ private:
 
 class DpctToolAction : public tooling::ToolAction {
 public:
-  DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
-                 const std::string &RuleNames, std::vector<PassKind> Passes,
+  DpctToolAction(llvm::raw_ostream &DS, ReplTy &ReplCUDA,
+                 ReplTy &ReplSYCL, const std::string &RuleNames,
+                 std::vector<PassKind> Passes,
                  llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS);
   /// Perform an action for an invocation.
   bool runInvocation(std::shared_ptr<CompilerInvocation> Invocation,
@@ -93,7 +93,8 @@ private:
         : TU(T) {}
   };
   DpctGlobalInfo &Global;
-  ReplTy &Repls;
+  ReplTy &ReplsCUDA;
+  ReplTy &ReplsSYCL;
   std::vector<std::string> MigrationRuleNames;
   std::vector<PassKind> Passes;
   std::vector<InvocationOrTranslationUnit> IOTUs;

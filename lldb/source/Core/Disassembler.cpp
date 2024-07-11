@@ -201,8 +201,8 @@ Disassembler::GetFunctionDeclLineEntry(const SymbolContext &sc) {
   uint32_t func_decl_line;
   sc.function->GetStartLineSourceInfo(func_decl_file, func_decl_line);
 
-  if (func_decl_file != prologue_end_line.file &&
-      func_decl_file != prologue_end_line.original_file)
+  if (func_decl_file != prologue_end_line.GetFile() &&
+      func_decl_file != prologue_end_line.original_file_sp->GetSpecOnly())
     return {};
 
   SourceLine decl_line;
@@ -354,7 +354,7 @@ void Disassembler::PrintInstructions(Debugger &debugger, const ArchSpec &arch,
             }
             if (sc.line_entry.IsValid()) {
               SourceLine this_line;
-              this_line.file = sc.line_entry.file;
+              this_line.file = sc.line_entry.GetFile();
               this_line.line = sc.line_entry.line;
               this_line.column = sc.line_entry.column;
               if (!ElideMixedSourceAndDisassemblyLine(exe_ctx, sc, this_line))
@@ -406,8 +406,9 @@ void Disassembler::PrintInstructions(Debugger &debugger, const ArchSpec &arch,
                   uint32_t func_decl_line;
                   sc.function->GetStartLineSourceInfo(func_decl_file,
                                                       func_decl_line);
-                  if (func_decl_file == prologue_end_line.file ||
-                      func_decl_file == prologue_end_line.original_file) {
+                  if (func_decl_file == prologue_end_line.GetFile() ||
+                      func_decl_file ==
+                          prologue_end_line.original_file_sp->GetSpecOnly()) {
                     // Add all the lines between the function declaration and
                     // the first non-prologue source line to the list of lines
                     // to print.
@@ -438,7 +439,7 @@ void Disassembler::PrintInstructions(Debugger &debugger, const ArchSpec &arch,
 
               if (sc != prev_sc && sc.comp_unit && sc.line_entry.IsValid()) {
                 SourceLine this_line;
-                this_line.file = sc.line_entry.file;
+                this_line.file = sc.line_entry.GetFile();
                 this_line.line = sc.line_entry.line;
 
                 if (!ElideMixedSourceAndDisassemblyLine(exe_ctx, sc,
@@ -645,18 +646,29 @@ void Instruction::Dump(lldb_private::Stream *s, uint32_t max_opcode_byte_size,
                            instruction_control_flow_kind));
   }
 
+  bool show_color = false;
+  if (exe_ctx) {
+    if (TargetSP target_sp = exe_ctx->GetTargetSP()) {
+      show_color = target_sp->GetDebugger().GetUseColor();
+    }
+  }
   const size_t opcode_pos = ss.GetSizeOfLastLine();
+  const std::string &opcode_name =
+      show_color ? m_markup_opcode_name : m_opcode_name;
+  const std::string &mnemonics = show_color ? m_markup_mnemonics : m_mnemonics;
 
   // The default opcode size of 7 characters is plenty for most architectures
   // but some like arm can pull out the occasional vqrshrun.s16.  We won't get
-  // consistent column spacing in these cases, unfortunately.
+  // consistent column spacing in these cases, unfortunately. Also note that we
+  // need to directly use m_opcode_name here (instead of opcode_name) so we
+  // don't include color codes as characters.
   if (m_opcode_name.length() >= opcode_column_width) {
     opcode_column_width = m_opcode_name.length() + 1;
   }
 
-  ss.PutCString(m_opcode_name);
+  ss.PutCString(opcode_name);
   ss.FillLastLineToColumn(opcode_pos + opcode_column_width, ' ');
-  ss.PutCString(m_mnemonics);
+  ss.PutCString(mnemonics);
 
   if (!m_comment.empty()) {
     ss.FillLastLineToColumn(
@@ -1105,8 +1117,7 @@ size_t Disassembler::ParseInstructions(Target &target, Address start,
 
 // Disassembler copy constructor
 Disassembler::Disassembler(const ArchSpec &arch, const char *flavor)
-    : m_arch(arch), m_instruction_list(), m_base_addr(LLDB_INVALID_ADDRESS),
-      m_flavor() {
+    : m_arch(arch), m_instruction_list(), m_flavor() {
   if (flavor == nullptr)
     m_flavor.assign("default");
   else

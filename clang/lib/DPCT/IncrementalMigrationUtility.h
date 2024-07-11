@@ -21,13 +21,11 @@ namespace dpct {
 const std::string OPTION_AsyncHandler = "AsyncHandler";
 const std::string OPTION_NDRangeDim = "NDRangeDim";
 const std::string OPTION_CommentsEnabled = "CommentsEnabled";
-const std::string OPTION_CustomHelperFileName = "CustomHelperFileName";
 const std::string OPTION_CtadEnabled = "CtadEnabled";
-const std::string OPTION_ExplicitClNamespace = "ExplicitClNamespace";
+const std::string OPTION_CodePinEnabled = "CodePinEnabled";
 const std::string OPTION_ExtensionDEFlag = "ExtensionDEFlag";
 const std::string OPTION_ExtensionDDFlag = "ExtensionDDFlag";
 const std::string OPTION_NoDRYPattern = "NoDRYPattern";
-const std::string OPTION_NoUseGenericSpace = "NoUseGenericSpace";
 const std::string OPTION_CompilationsDir = "CompilationsDir";
 #ifdef _WIN32
 const std::string OPTION_VcxprojFile = "VcxprojFile";
@@ -38,6 +36,7 @@ const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_HelperFuncPreferenceFlag = "HelperFuncPreferenceFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
+const std::string OPTION_BuildScript = "BuildScript";
 const std::string OPTION_OptimizeMigration = "OptimizeMigration";
 const std::string OPTION_EnablepProfiling = "EnablepProfiling";
 const std::string OPTION_RuleFile = "RuleFile";
@@ -62,6 +61,11 @@ inline void setValueToOptMap(std::string Key, std::string Value,
                              bool Specified) {
   DpctGlobalInfo::getCurrentOptMap()[Key] =
       clang::tooling::OptionInfo(Value, Specified);
+}
+template <>
+inline void setValueToOptMap(std::string Key, clang::tooling::UnifiedPath Value,
+                             bool Specified) {
+  setValueToOptMap(Key, Value.getCanonicalPath().str(), Specified);
 }
 template <>
 inline void setValueToOptMap(std::string Key, bool Value, bool Specified) {
@@ -90,6 +94,18 @@ inline void setValueToOptMap(std::string Key, std::vector<std::string> StrVec,
   std::sort(StrVec.begin(), StrVec.end());
   DpctGlobalInfo::getCurrentOptMap()[Key] =
       clang::tooling::OptionInfo(StrVec, Specified);
+}
+template <>
+inline void setValueToOptMap(std::string Key,
+                             std::vector<clang::tooling::UnifiedPath> Value,
+                             bool Specified) {
+  std::vector<std::string> StrVec;
+  std::transform(Value.begin(), Value.end(),
+                 std::back_insert_iterator<std::vector<std::string>>(StrVec),
+                 [](const clang::tooling::UnifiedPath &DP) {
+                   return DP.getCanonicalPath().str();
+                 });
+  setValueToOptMap(Key, StrVec, Specified);
 }
 
 bool canContinueMigration(std::string &Msg);

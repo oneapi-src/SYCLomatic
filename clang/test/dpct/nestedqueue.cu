@@ -1,7 +1,8 @@
-// UNSUPPORTED: cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-11.9, cuda-12.0, cuda-12.1, cuda-12.2
-// UNSUPPORTED: v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v11.9, v12.0, v12.1, v12.2
+// UNSUPPORTED: cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-11.9, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
+// UNSUPPORTED: v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v11.9, v12.0, v12.1, v12.2, v12.3, v12.4
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/nestedqueue %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/nestedqueue/nestedqueue.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/nestedqueue/nestedqueue.dp.cpp -o %T/nestedqueue/nestedqueue.dp.o %}
 
 #include <cstdio>
 #include <cublas_v2.h>
@@ -59,13 +60,17 @@ __global__ void foo3(){
 }
 
 __host__ void foo4(){
-  // CHECK: dpct::queue_ptr handle;
+  // CHECK: dpct::blas::descriptor_ptr handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
   int incx=1;
   int* result =0;
-  // CHECK: oneapi::mkl::blas::column_major::iamax(*handle, n, x_S_buf_ct1, incx, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
+  // CHECK: [&]() {
+  // CHECK-NEXT: dpct::blas::wrapper_int_to_int64_out res_wrapper_ct4(handle->get_queue(), result);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<std::int64_t>(res_wrapper_ct4.get_ptr())), oneapi::mkl::index_base::one);
+  // CHECK-NEXT: return 0;
+  // CHECK-NEXT: }();
   cublasIsamax(handle, n, x_S, incx, result);
 }
 

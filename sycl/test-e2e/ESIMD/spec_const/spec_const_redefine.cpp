@@ -1,4 +1,3 @@
-// UNSUPPORTED: esimd_emulator
 // RUN: %{build} -o %t.out
 // RUN: env SYCL_PI_TRACE=2 %{run} %t.out 2>&1 | FileCheck %s
 
@@ -18,10 +17,8 @@
 
 #include "../esimd_test_utils.hpp"
 
-#include <sycl/ext/intel/esimd.hpp>
-#include <sycl/sycl.hpp>
+#include <sycl/specialization_id.hpp>
 
-#include <iostream>
 #include <vector>
 
 using namespace sycl;

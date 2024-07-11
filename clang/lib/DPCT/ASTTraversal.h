@@ -20,6 +20,7 @@
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Basic/DiagnosticIDs.h"
+#include "clang/Basic/SourceLocation.h"
 #include "clang/Frontend/CompilerInstance.h"
 
 #include <algorithm>
@@ -35,7 +36,6 @@ enum class PassKind : unsigned { PK_Analysis = 0, PK_Migration, PK_End };
 /// including directives rewriting.
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
-  IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
   RuleGroups &Groups;
 
@@ -43,16 +43,15 @@ class IncludesCallbacks : public PPCallbacks {
   bool IsFileInCmd = true;
 
 public:
-  IncludesCallbacks(TransformSetTy &TransformSet,
-                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
+  IncludesCallbacks(TransformSetTy &TransformSet, SourceManager &SM,
                     RuleGroups &G)
-      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
-        Groups(G) {}
+      : TransformSet(TransformSet), SM(SM), Groups(G) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange,
                           OptionalFileEntryRef File, StringRef SearchPath,
-                          StringRef RelativePath, const Module *Imported,
+                          StringRef RelativePath, const Module *SuggestedModule,
+                          bool ModuleImported,
                           SrcMgr::CharacteristicKind FileType) override;
   /// Hook called whenever a macro definition is seen.
   void MacroDefined(const Token &MacroNameTok,
@@ -64,7 +63,7 @@ public:
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
-  bool ReplaceCuMacro(const Token &MacroNameTok);
+  bool ReplaceCuMacro(const Token &MacroNameTok, MacroInfo *MI = nullptr);
   void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
@@ -117,46 +116,10 @@ class MigrationRule : public ASTTraversal {
 
 protected:
   TransformSetTy *TransformSet = nullptr;
-  /// Add \a TM to the set of transformations.
-  ///
-  /// The ownership of the TM is transferred to the TransformSet.
-  void emplaceTransformation(TextModification *TM);
 
   inline static unsigned incPairID() { return ++PairID; }
 
   const CompilerInstance &getCompilerInstance();
-
-  // Emits a warning/error/note and/or comment depending on MsgID. For details
-  // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
-  template <typename IDTy, typename... Ts>
-  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    return DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, TransformSet, UseTextBegin,
-        std::forward<Ts>(Vals)...);
-  }
-  // Extend version of report()
-  // Pass Stmt to process macro more precisely.
-  // The location should be consistent with the result of
-  // ReplaceStmt::getReplacement
-  template <typename IDTy, typename... Ts>
-  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    SourceLocation Begin(S->getBeginLoc());
-    if (Begin.isMacroID() && !isOuterMostMacro(S)) {
-      if (SM.isMacroArgExpansion(Begin)) {
-        Begin =
-            SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
-      } else {
-        Begin = SM.getSpellingLoc(Begin);
-      }
-    } else {
-      Begin = SM.getExpansionLoc(Begin);
-    }
-
-    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, TransformSet,
-                                          UseTextBegin,
-                                          std::forward<Ts>(Vals)...);
-  }
 
   // Get node from match result map. And also check if the node's host file is
   // in the InRoot path and if the node has been processed by the same rule.
@@ -210,6 +173,42 @@ public:
 
   void print(llvm::raw_ostream &OS);
   void printStatistics(llvm::raw_ostream &OS);
+
+  /// Add \a TM to the set of transformations.
+  ///
+  /// The ownership of the TM is transferred to the TransformSet.
+  void emplaceTransformation(TextModification *TM);
+
+  // Emits a warning/error/note and/or comment depending on MsgID. For details
+  // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
+  template <typename IDTy, typename... Ts>
+  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    return DiagnosticsUtils::report<IDTy, Ts...>(
+        SL, MsgID, TransformSet, UseTextBegin, std::forward<Ts>(Vals)...);
+  }
+
+  // Extend version of report()
+  // Pass Stmt to process macro more precisely.
+  // The location should be consistent with the result of
+  // ReplaceStmt::getReplacement
+  template <typename IDTy, typename... Ts>
+  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    SourceLocation Begin(S->getBeginLoc());
+    if (Begin.isMacroID() && !isOuterMostMacro(S)) {
+      if (SM.isMacroArgExpansion(Begin)) {
+        Begin =
+            SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
+      } else {
+        Begin = SM.getSpellingLoc(Begin);
+      }
+    } else {
+      Begin = SM.getExpansionLoc(Begin);
+    }
+
+    DiagnosticsUtils::report<IDTy, Ts...>(
+        Begin, MsgID, TransformSet, UseTextBegin, std::forward<Ts>(Vals)...);
+  }
 };
 
 /// Migration rules with names
@@ -256,6 +255,29 @@ protected:
     }
     emplaceTransformation(std::move(PIT));
     emplaceTransformation(std::move(SIT));
+  }
+
+  /// @brief If necessary, initialize an argument or emit warning.
+  /// @param Call Function CallExpr
+  /// @param Arg An argument (may be an expression) of \p Call .
+  void analyzeUninitializedDeviceVar(const clang::Expr *Call,
+                                     const clang::Expr *Arg) {
+    if (!Call || !Arg)
+      return;
+    std::vector<const clang::VarDecl *> DeclsRequireInit;
+    int Res = isArgumentInitialized(Arg, DeclsRequireInit);
+    if (Res == 0) {
+      for (const auto D : DeclsRequireInit) {
+        emplaceTransformation(new InsertText(
+            D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                DpctGlobalInfo::getContext().getLangOpts())),
+            " = 0"));
+      }
+    } else if (Res == -1) {
+      report(Call->getBeginLoc(), Diagnostics::UNINITIALIZED_DEVICE_VAR, false,
+             ExprAnalysis::ref(Arg));
+    }
   }
 
   void addReplacementForLibraryAPI(LibraryMigrationFlags Flags,
@@ -552,26 +574,10 @@ private:
       const FunctionDecl *FD);
   void MigrateOverloadedOperatorCall(
       const ast_matchers::MatchFinder::MatchResult &Result,
-      const CXXOperatorCallExpr *CE);
+      const CXXOperatorCallExpr *CE, bool InOverloadedOperator);
 
 private:
   static const char NamespaceName[];
-};
-
-class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {
-  ReplaceDim3Ctor *getReplaceDim3Modification(
-      const ast_matchers::MatchFinder::MatchResult &Result);
-
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for dim3 types member fields replacements.
-class Dim3MemberFieldsRule : public NamedMigrationRule<Dim3MemberFieldsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 class CudaExtentRule : public NamedMigrationRule<CudaExtentRule> {
@@ -740,7 +746,7 @@ public:
       ResultStr = ResultStr + ", " + CallExprArguReplVec[i];
     }
 
-    return FuncName + "(*" + ResultStr + ")" +
+    return FuncName + "(" + ResultStr + ")" +
            (NeedWaitAPICall ? ".wait()" : "");
   }
 
@@ -750,10 +756,10 @@ public:
     auto getIfStmtStr = [=](const std::string Ptr) -> std::string {
       return "if(" + MapNames::getClNamespace() + "get_pointer_type(" + Ptr +
              ", " + CallExprArguReplVec[0] +
-             "->get_context())!=" + MapNames::getClNamespace() +
+             ".get_context())!=" + MapNames::getClNamespace() +
              "usm::alloc::device && " + MapNames::getClNamespace() +
              "get_pointer_type(" + Ptr + ", " + CallExprArguReplVec[0] +
-             "->get_context())!=" + MapNames::getClNamespace() +
+             ".get_context())!=" + MapNames::getClNamespace() +
              "usm::alloc::shared) {";
     };
 
@@ -823,7 +829,7 @@ public:
 
         Prefix = Prefix + std::string("}") + getNL() + IndentStr;
         Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
-                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+                 IndentStr + "  " + CallExprArguReplVec[0] + ".wait();";
 
         copyBack(D1Ptr, "1", Type, 1);
         copyBack(D2Ptr, "1", Type, 2);
@@ -895,7 +901,7 @@ public:
 
         Prefix = Prefix + std::string("}") + getNL() + IndentStr;
         Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
-                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+                 IndentStr + "  " + CallExprArguReplVec[0] + ".wait();";
 
         copyBack(APtr, "1", Type, 1);
         copyBack(BPtr, "1", Type, 2);
@@ -914,46 +920,6 @@ public:
       }
       PrefixInsertStr = Prefix + PrefixInsertStr;
       SuffixInsertStr = Suffix + SuffixInsertStr;
-    } else if (MapNames::MaySyncBLASFunc.find(FuncName) !=
-               MapNames::MaySyncBLASFunc.end()) {
-      auto MaySyncI = MapNames::MaySyncBLASFunc.find(FuncName);
-      int ArgIndex = MaySyncI->second.second;
-      std::string Type = MaySyncI->second.first;
-      ExprAnalysis EA(CE->getArg(ArgIndex));
-      std::string ResultTempPtr =
-          "res_temp_ptr_ct" +
-          std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-
-      std::string OriginType;
-      if (Type == "std::complex<float>") {
-        OriginType = MapNames::getClNamespace() + "float2";
-        CallExprArguReplVec[ArgIndex] =
-            "(std::complex<float>*)" + ResultTempPtr;
-      } else if (Type == "std::complex<double>") {
-        OriginType = MapNames::getClNamespace() + "double2";
-        CallExprArguReplVec[ArgIndex] =
-            "(std::complex<double>*)" + ResultTempPtr;
-      } else {
-        OriginType = Type;
-        CallExprArguReplVec[ArgIndex] = ResultTempPtr;
-      }
-
-      std::string IfStmtStr = getIfStmtStr(EA.getReplacedString());
-
-      requestFeature(HelperFeatureEnum::device_ext);
-      PrefixInsertStr = OriginType + "* " + ResultTempPtr + " = " +
-                        EA.getReplacedString() + ";" + getNL() + IndentStr +
-                        IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
-                        " = " + MapNames::getClNamespace() + "malloc_shared<" +
-                        OriginType + ">(1, " + DefaultQueue + ");" + getNL() +
-                        IndentStr + "}" + getNL() + IndentStr + PrefixInsertStr;
-      SuffixInsertStr = getNL() + IndentStr + IfStmtStr + getNL() + IndentStr +
-                        "  " + CallExprArguReplVec[0] + "->wait();" + getNL() +
-                        IndentStr + "  " + getDrefName(CE->getArg(ArgIndex)) +
-                        " = *" + ResultTempPtr + ";" + getNL() + IndentStr +
-                        "  " + MapNames::getClNamespace() + "free(" +
-                        ResultTempPtr + ", " + DefaultQueue + ");" + getNL() +
-                        IndentStr + "}" + SuffixInsertStr;
     }
   }
 
@@ -1019,17 +985,8 @@ public:
       PrefixInsertStr = PrefixInsertStr + IfStmtStr;
     };
 
-    if (MapNames::MaySyncBLASFunc.find(FuncName) !=
-        MapNames::MaySyncBLASFunc.end()) {
-      auto MaySyncAPIIter = MapNames::MaySyncBLASFunc.find(FuncName);
-      PointerStr = ExprAnalysis::ref(CE->getArg(MaySyncAPIIter->second.second));
-      assembleIfStmt();
-    } else if (MapNames::MustSyncBLASFunc.find(FuncName) !=
-               MapNames::MustSyncBLASFunc.end()) {
-      PointerStr = ExprAnalysis::ref(CE->getArg(4));
-      assembleIfStmt();
-    } else if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
-               MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
+    if (MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName) !=
+        MapNames::MaySyncBLASFuncWithMultiArgs.end()) {
       auto MaySyncAPIWithMultiArgsIter =
           MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
       PointerStr = ExprAnalysis::ref(
@@ -1300,13 +1257,16 @@ public:
 /// Migration rule for kernel API calls
 class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
   std::unordered_set<unsigned> Insertions;
+  std::set<clang::SourceLocation> CodePinInstrumentation;
 
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-  void
+  SourceLocation
   removeTrailingSemicolon(const CallExpr *KCall,
                           const ast_matchers::MatchFinder::MatchResult &Result);
+  void instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
+                                      SourceLocation &EpilogLocation);
 };
 
 /// Migration rule for device function calls
@@ -1318,7 +1278,23 @@ public:
 };
 
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
-class MemVarRule : public NamedMigrationRule<MemVarRule> {
+class MemVarAnalysisRule : public NamedMigrationRule<MemVarAnalysisRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class MemVarMigrationRule : public NamedMigrationRule<MemVarMigrationRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+
+private:
+  void processTypeDeclaredLocal(const VarDecl *MemVar,
+                                std::shared_ptr<MemVarInfo> Info);
+};
+
+class ConstantMemVarMigrationRule : public NamedMigrationRule<ConstantMemVarMigrationRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1327,10 +1303,21 @@ private:
   void previousHCurrentD(const VarDecl *VD, tooling::Replacement &R);
   void previousDCurrentH(const VarDecl *VD, tooling::Replacement &R);
   void removeHostConstantWarning(tooling::Replacement &R);
-  void processTypeDeclaredLocal(const VarDecl *MemVar,
-                                std::shared_ptr<MemVarInfo> Info);
   bool currentIsDevice(const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info);
   bool currentIsHost(const VarDecl *VD, std::string VarName);
+};
+
+class MemVarRefMigrationRule : public NamedMigrationRule<MemVarRefMigrationRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class ProfilingEnableOnDemandRule
+    : public NamedMigrationRule<ProfilingEnableOnDemandRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for memory management routine.
@@ -1466,6 +1453,8 @@ private:
       emplaceTransformation(new InsertBeforeStmt(C->getArg(InsertArgIndex),
                                                  std::string(InsertedText)));
   }
+  void instrumentAddressToSizeRecordForCodePin(const CallExpr *C, int PtrArgLoc,
+                                               int AllocMemSizeLoc);
 };
 
 class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
@@ -1514,24 +1503,18 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
                                       std::forward<RestNamesT>(Rest)...);
   }
 
-  const static MapNames::MapTy MemberNames;
+  const static MapNames::MapTy DirectReplMemberNames;
+  const static MapNames::MapTy GetSetReplMemberNames;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
-  const static MapNames::MapTy PitchMemberToSetter;
-  const static std::map<std::string, HelperFeatureEnum> PitchMemberToFeature;
-  const static MapNames::MapTy SizeOrPosToMember;
+  const static MapNames::MapTy ArrayDescMemberNames;
   const static std::vector<std::string> RemoveMember;
 
 public:
-  void emplaceCuArrayDescDeclarations(const VarDecl *VD);
-  void emplaceMemcpy3DDeclarations(const VarDecl *VD, bool hasDirection);
-  static std::string getMemcpy3DArguments(StringRef BaseName,
-                                          bool hasDirection);
-
-  static std::string getMemberName(StringRef BaseName,
-                                   const std::string &Member) {
-    auto Itr = MemberNames.find(Member);
-    if (Itr != MemberNames.end()) {
+  static std::string getArrayDescMemberName(StringRef BaseName,
+                                            const std::string &Member) {
+    auto Itr = ArrayDescMemberNames.find(Member);
+    if (Itr != ArrayDescMemberNames.end()) {
       std::string ReplacedName;
       llvm::raw_string_ostream OS(ReplacedName);
       printParamName(OS, BaseName, Itr->second);
@@ -1539,13 +1522,6 @@ public:
     }
     return Member;
   }
-
-  static std::string getPitchMemberSetter(StringRef BaseName,
-                                          const std::string &Member,
-                                          const Expr *E);
-
-  static std::string getSizeOrPosMember(StringRef BaseName,
-                                        const std::string &Member);
 
   static bool isRemove(std::string Name) {
     return std::find(RemoveMember.begin(), RemoveMember.end(), Name) !=
@@ -1791,6 +1767,34 @@ public:
 };
 
 class TypeRemoveRule : public NamedMigrationRule<TypeRemoveRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class TypeMmberRule : public NamedMigrationRule<TypeMmberRule> {
+  std::optional<SourceLocation>
+  findTokenEndBeforeColonColon(SourceLocation TokStart,
+                               const SourceManager &SM);
+
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class CompatWithClangRule : public NamedMigrationRule<CompatWithClangRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class GraphRule : public NamedMigrationRule<GraphRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class AssertRule : public NamedMigrationRule<AssertRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

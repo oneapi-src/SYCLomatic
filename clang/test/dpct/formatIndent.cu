@@ -2,6 +2,7 @@
 // RUN: cd %T
 // RUN: dpct -out-root %T/formatIndent formatIndent.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatIndent.cu --match-full-lines --input-file %T/formatIndent/formatIndent.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/formatIndent/formatIndent.dp.cpp -o %T/formatIndent/formatIndent.dp.o %}
 
 #include <cuda_runtime.h>
 
@@ -16,7 +17,7 @@ void foo(){
 //CHECK:void foo1(){
 //CHECK-NEXT:                  //some comments
 //CHECK-NEXT:    //some comments
-//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
+//CHECK-NEXT:    dpct::dim3 griddim = 2;
 //CHECK-NEXT:}
 void foo1(){
                   //some comments
@@ -26,7 +27,7 @@ void foo1(){
 
 //CHECK:void foo2(){
 //CHECK-NEXT:                //some comments
-//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
+//CHECK-NEXT:    dpct::dim3 griddim = 2;
 //CHECK-NEXT:}
 void foo2(){
                 //some comments
@@ -35,7 +36,7 @@ void foo2(){
 
 //CHECK:void foo3(){
 //CHECK-NEXT:                  int test;
-//CHECK-NEXT:    sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
+//CHECK-NEXT:    dpct::dim3 griddim = 2;
 //CHECK-NEXT:}
 void foo3(){
                   int test;

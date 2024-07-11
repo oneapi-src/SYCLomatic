@@ -8,6 +8,16 @@
 #
 #===------------------------------------------------------------------------===#
 
+# This script converts header files to literal `std::string`s.
+# Each header file is converted to a `std::string`.
+# Simply put, the work is add "R\"Delimiter(" and ")Delimiter\"\n" around each header file.
+# But on Windows, there are some length limitation about literal string,
+# so this script will split a long string into some shorter ones.
+# 
+# Usage:
+# python3 processFiles.py build-folder
+# Note: This file (processFiles.py) can only be moved to other locations.
+
 import os
 import sys
 import re
@@ -16,35 +26,27 @@ import argparse
 
 cur_file_dir = os.path.dirname(os.path.realpath(__file__))
 
-runtime_header_src_files_dir = os.path.join(cur_file_dir, "include")
+runtime_header_src_files_dir = os.path.join(cur_file_dir, "include", "dpct")
+cmake_header_src_files_dir = os.path.join(cur_file_dir, "..", "..", "tools", "dpct", "cmake")
 
 def exit_script():
     sys.exit()
 
-def get_file_paths(runtime_src_file, inc_files_dir, is_dpl_extras):
-    if (is_dpl_extras):
-        cont_file_result = os.path.join(runtime_header_src_files_dir, "dpl_extras/", runtime_src_file)
-        inc_files_all_dir_result = os.path.join(inc_files_dir, "dpl_extras/", runtime_src_file + ".inc")
-        return [cont_file_result, inc_files_all_dir_result]
-    else:
-        cont_file_result = os.path.join(runtime_header_src_files_dir, runtime_src_file)
-        inc_files_all_dir_result = os.path.join(inc_files_dir, runtime_src_file + ".inc")
-        return [cont_file_result, inc_files_all_dir_result]
+def get_file_paths(runtime_src_file, inc_files_dir):
+    split_str = os.path.join("include", "dpct", "")
+    inc_files_all_dir_result = os.path.join(inc_files_dir, runtime_src_file.split(split_str)[1]) + ".inc"
+    return [runtime_src_file, inc_files_all_dir_result]
 
-
-def create_dir(inc_files_dir):
-    if (not os.path.exists(os.path.join(inc_files_dir))):
-        os.makedirs(os.path.join(inc_files_dir))
-    if (not os.path.exists(os.path.join(inc_files_dir, "dpl_extras/"))):
-        os.makedirs(os.path.join(inc_files_dir, "dpl_extras/"))
+def get_cmake_file_paths(runtime_src_file, inc_files_dir):
+    split_str = os.path.join("dpct","cmake", "")
+    inc_files_all_dir_result = os.path.join(inc_files_dir, runtime_src_file.split(split_str)[1]) + ".inc"
+    return [runtime_src_file, inc_files_all_dir_result]
 
 def convert_to_cxx_code(line_code):
     return bytes("R\"Delimiter(", 'utf-8') + line_code + bytes(")Delimiter\"\n", 'utf-8')
 
-def process_a_file(runtime_src_file, inc_files_dir, is_dpl_extras):
-    file_names = get_file_paths(runtime_src_file, inc_files_dir, is_dpl_extras)
+def process_a_file(runtime_src_file, file_names):
     cont_file_handle = io.open(file_names[0], "rb")
-    inc_all_file_handle = io.open(file_names[1], "w+b")
 
     inc_all_file_lines = []
 
@@ -79,19 +81,18 @@ def process_a_file(runtime_src_file, inc_files_dir, is_dpl_extras):
             inc_all_file_str = inc_all_file_str + line
             string_literal_length_counter = len(line)
     inc_all_file_str = inc_all_file_str + bytes(")", 'utf-8')
-
-    inc_all_file_handle.write(inc_all_file_str)
+    os.makedirs(os.path.dirname(file_names[1]), exist_ok=True)
+    with open(file_names[1], "w+b") as f:
+        f.write(inc_all_file_str)
 
     cont_file_handle.close()
-    inc_all_file_handle.close()
 
-def get_files(path):
-    items = os.listdir(path)
-    files = []
-    for item in items:
-        if (os.path.isfile(os.path.join(path, item))):
-            files.append(item)
-    return files
+def get_header_files(path):
+    header_files = []
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            header_files.append(os.path.join(root, file))
+    return header_files
 
 def main():
     if (sys.version_info.major < 3):
@@ -111,15 +112,17 @@ def main():
         print("Error: build-dir is empty.")
         exit_script()
 
-    create_dir(inc_files_dir)
-
-    helper_files_list = get_files(runtime_header_src_files_dir)
-    dpl_extras_helper_files_list = get_files(os.path.join(runtime_header_src_files_dir, "dpl_extras"))
+    helper_files_list = get_header_files(runtime_header_src_files_dir)
 
     for runtime_src_file in helper_files_list:
-        process_a_file(runtime_src_file, inc_files_dir, False)
-    for runtime_src_file in dpl_extras_helper_files_list:
-        process_a_file(runtime_src_file, inc_files_dir, True)
+        file_names = get_file_paths(runtime_src_file, inc_files_dir)
+        process_a_file(runtime_src_file, file_names)
+
+    cmake_helper_files_list = get_header_files(cmake_header_src_files_dir)
+
+    for cmake_src_file in cmake_helper_files_list:
+        file_names = get_cmake_file_paths(cmake_src_file, inc_files_dir)
+        process_a_file(cmake_src_file, file_names)
 
     print("[Note] DPCT *.inc files are generated successfully!")
 

@@ -67,7 +67,7 @@ private:
   bool tryCreateStridedLoadStore(IntrinsicInst *II, Type *DataType, Value *Ptr,
                                  Value *AlignOp);
 
-  std::pair<Value *, Value *> determineBaseAndStride(GetElementPtrInst *GEP,
+  std::pair<Value *, Value *> determineBaseAndStride(Instruction *Ptr,
                                                      IRBuilderBase &Builder);
 
   bool matchStridedRecurrence(Value *Index, Loop *L, Value *&Stride,
@@ -136,8 +136,13 @@ static std::pair<Value *, Value *> matchStridedStart(Value *Start,
   // multipled.
   auto *BO = dyn_cast<BinaryOperator>(Start);
   if (!BO || (BO->getOpcode() != Instruction::Add &&
+              BO->getOpcode() != Instruction::Or &&
               BO->getOpcode() != Instruction::Shl &&
               BO->getOpcode() != Instruction::Mul))
+    return std::make_pair(nullptr, nullptr);
+
+  if (BO->getOpcode() == Instruction::Or &&
+      !cast<PossiblyDisjointInst>(BO)->isDisjoint())
     return std::make_pair(nullptr, nullptr);
 
   // Look for an operand that is splatted.
@@ -163,6 +168,10 @@ static std::pair<Value *, Value *> matchStridedStart(Value *Start,
   switch (BO->getOpcode()) {
   default:
     llvm_unreachable("Unexpected opcode");
+  case Instruction::Or:
+    // TODO: We'd be better off creating disjoint or here, but we don't yet
+    // have an IRBuilder API for that.
+    [[fallthrough]];
   case Instruction::Add:
     Start = Builder.CreateAdd(Start, Splat);
     break;
@@ -220,9 +229,9 @@ bool RISCVGatherScatterLowering::matchStridedRecurrence(Value *Index, Loop *L,
 
     // Build scalar phi and increment.
     BasePtr =
-        PHINode::Create(Start->getType(), 2, Phi->getName() + ".scalar", Phi);
+        PHINode::Create(Start->getType(), 2, Phi->getName() + ".scalar", Phi->getIterator());
     Inc = BinaryOperator::CreateAdd(BasePtr, Step, Inc->getName() + ".scalar",
-                                    Inc);
+                                    Inc->getIterator());
     BasePtr->addIncoming(Start, Phi->getIncomingBlock(1 - IncrementingBlock));
     BasePtr->addIncoming(Inc, Phi->getIncomingBlock(IncrementingBlock));
 
@@ -241,7 +250,7 @@ bool RISCVGatherScatterLowering::matchStridedRecurrence(Value *Index, Loop *L,
     return false;
   case Instruction::Or:
     // We need to be able to treat Or as Add.
-    if (!haveNoCommonBitsSet(BO->getOperand(0), BO->getOperand(1), *DL))
+    if (!cast<PossiblyDisjointInst>(BO)->isDisjoint())
       return false;
     break;
   case Instruction::Add:
@@ -321,8 +330,18 @@ bool RISCVGatherScatterLowering::matchStridedRecurrence(Value *Index, Loop *L,
 }
 
 std::pair<Value *, Value *>
-RISCVGatherScatterLowering::determineBaseAndStride(GetElementPtrInst *GEP,
+RISCVGatherScatterLowering::determineBaseAndStride(Instruction *Ptr,
                                                    IRBuilderBase &Builder) {
+
+  // A gather/scatter of a splat is a zero strided load/store.
+  if (auto *BasePtr = getSplatValue(Ptr)) {
+    Type *IntPtrTy = DL->getIntPtrType(BasePtr->getType());
+    return std::make_pair(BasePtr, ConstantInt::get(IntPtrTy, 0));
+  }
+
+  auto *GEP = dyn_cast<GetElementPtrInst>(Ptr);
+  if (!GEP)
+    return std::make_pair(nullptr, nullptr);
 
   auto I = StridedAddrs.find(GEP);
   if (I != StridedAddrs.end())
@@ -352,7 +371,7 @@ RISCVGatherScatterLowering::determineBaseAndStride(GetElementPtrInst *GEP,
 
     VecOperand = i;
 
-    TypeSize TS = DL->getTypeAllocSize(GTI.getIndexedType());
+    TypeSize TS = GTI.getSequentialElementStride(*DL);
     if (TS.isScalable())
       return std::make_pair(nullptr, nullptr);
 
@@ -366,11 +385,19 @@ RISCVGatherScatterLowering::determineBaseAndStride(GetElementPtrInst *GEP,
   // We can't extract the stride if the arithmetic is done at a different size
   // than the pointer type. Adding the stride later may not wrap correctly.
   // Technically we could handle wider indices, but I don't expect that in
-  // practice.
+  // practice.  Handle one special case here - constants.  This simplifies
+  // writing test cases.
   Value *VecIndex = Ops[*VecOperand];
   Type *VecIntPtrTy = DL->getIntPtrType(GEP->getType());
-  if (VecIndex->getType() != VecIntPtrTy)
-    return std::make_pair(nullptr, nullptr);
+  if (VecIndex->getType() != VecIntPtrTy) {
+    auto *VecIndexC = dyn_cast<Constant>(VecIndex);
+    if (!VecIndexC)
+      return std::make_pair(nullptr, nullptr);
+    if (VecIndex->getType()->getScalarSizeInBits() > VecIntPtrTy->getScalarSizeInBits())
+      VecIndex = ConstantFoldCastInstruction(Instruction::Trunc, VecIndexC, VecIntPtrTy);
+    else
+      VecIndex = ConstantFoldCastInstruction(Instruction::SExt, VecIndexC, VecIntPtrTy);
+  }
 
   // Handle the non-recursive case.  This is what we see if the vectorizer
   // decides to use a scalar IV + vid on demand instead of a vector IV.
@@ -452,17 +479,17 @@ bool RISCVGatherScatterLowering::tryCreateStridedLoadStore(IntrinsicInst *II,
   if (!TLI->isTypeLegal(DataTypeVT))
     return false;
 
-  // Pointer should be a GEP.
-  auto *GEP = dyn_cast<GetElementPtrInst>(Ptr);
-  if (!GEP)
+  // Pointer should be an instruction.
+  auto *PtrI = dyn_cast<Instruction>(Ptr);
+  if (!PtrI)
     return false;
 
-  LLVMContext &Ctx = GEP->getContext();
+  LLVMContext &Ctx = PtrI->getContext();
   IRBuilder<InstSimplifyFolder> Builder(Ctx, *DL);
-  Builder.SetInsertPoint(GEP);
+  Builder.SetInsertPoint(PtrI);
 
   Value *BasePtr, *Stride;
-  std::tie(BasePtr, Stride) = determineBaseAndStride(GEP, Builder);
+  std::tie(BasePtr, Stride) = determineBaseAndStride(PtrI, Builder);
   if (!BasePtr)
     return false;
   assert(Stride != nullptr);
@@ -485,8 +512,8 @@ bool RISCVGatherScatterLowering::tryCreateStridedLoadStore(IntrinsicInst *II,
   II->replaceAllUsesWith(Call);
   II->eraseFromParent();
 
-  if (GEP->use_empty())
-    RecursivelyDeleteTriviallyDeadInstructions(GEP);
+  if (PtrI->use_empty())
+    RecursivelyDeleteTriviallyDeadInstructions(PtrI);
 
   return true;
 }

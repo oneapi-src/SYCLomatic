@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cudaStream_init_test %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cudaStream_init_test/cudaStream_init_test.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cudaStream_init_test/cudaStream_init_test.dp.cpp -o %T/cudaStream_init_test/cudaStream_init_test.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>

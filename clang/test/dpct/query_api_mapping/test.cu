@@ -11,6 +11,12 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=" __HfMa " | FileCheck %s
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping hfma | FileCheck %s
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" -query-api-mapping hfma | FileCheck %s
+
+// RUN: dpct -cuda-include-path "%cuda-path/include" -query-api-mapping=hfma | FileCheck %s
+
 // CHECK: CUDA API:
 // CHECK-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // CHECK-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
@@ -27,3 +33,15 @@
 
 // RUN: not dpct --cuda-include-path=%S --query-api-mapping=ncclBroadcast 2>&1 | FileCheck %s -check-prefix=NO_CUDA_HEADER
 // NO_CUDA_HEADER: dpct exited with code: -45 (Error: Cannot find 'ncclBroadcast' in current CUDA header file: {{(.+)}}. Please specify the header file for 'ncclBroadcast' with option "--extra-arg".)
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__hadd --query-api-mapping=__hfma 2>&1 | FileCheck %s -check-prefix=MULTI_QUERY
+// MULTI_QUERY: Warning: Option --query-api-mapping is specified multi times, only the last one is used, all other are ignored.
+// MULTI_QUERY-NEXT: CUDA API:
+// MULTI_QUERY-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
+// MULTI_QUERY-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
+// MULTI_QUERY-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// MULTI_QUERY-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
+// MULTI_QUERY-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc --usm-level=none 2>&1 | FileCheck %s -check-prefix=CONFLICT_OPT
+// CONFLICT_OPT: Warning: Option "-usm-level" is ignored because it conflicts with option "-query-api-mapping".

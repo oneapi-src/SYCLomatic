@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/device_copyable_check %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device_copyable_check/device_copyable_check.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/device_copyable_check/device_copyable_check.dp.cpp -o %T/device_copyable_check/device_copyable_check.dp.o %}
 
 class CudaImage {
 public:
@@ -36,8 +37,8 @@ int main()
   CudaImage res;
   // CHECK: dpct::get_in_order_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       float *res_d_data_ct0 = res.d_data;
-  // CHECK-NEXT:       float res_f_data_ct1 = res.f_data;
+  // CHECK-NEXT:       auto res_d_data_ct0 = res.d_data;
+  // CHECK-NEXT:       auto res_f_data_ct1 = res.f_data;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

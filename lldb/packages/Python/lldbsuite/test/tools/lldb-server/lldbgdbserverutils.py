@@ -1,8 +1,6 @@
 """Module for supporting unit testing of the lldb-server debug monitor exe.
 """
 
-from __future__ import division, print_function
-
 import binascii
 import os
 import os.path
@@ -52,7 +50,7 @@ def get_debugserver_exe():
 
 
 _LOG_LINE_REGEX = re.compile(
-    r"^(lldb-server|debugserver)\s+<\s*(\d+)>" + "\s+(read|send)\s+packet:\s+(.+)$"
+    r"^(lldb-server|debugserver)\s+<\s*(\d+)>\s+(read|send)\s+packet:\s+(.+)$"
 )
 
 

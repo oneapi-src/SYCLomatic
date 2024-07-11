@@ -4,6 +4,7 @@
 // RUN: dpct -p=%S --out-root=%T --cuda-include-path="%cuda-path/include"
 // RUN: ls Output > default.log
 // RUN: FileCheck --input-file default.log --match-full-lines %T/main.dp.cpp -check-prefix=DEFAULT
+// RUN: %if build_lit %{icpx -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
 // DEFAULT: main.dp.cpp
 // DEFAULT: test.cpp.dp.cpp
 // DEFAULT: test.dp.hpp
@@ -13,6 +14,7 @@
 // RUN: dpct -p=%S --out-root=%T --cuda-include-path="%cuda-path/include" --change-cuda-files-extension-only
 // RUN: ls Output > set.log
 // RUN: FileCheck --input-file set.log --match-full-lines %T/main.dp.cpp -check-prefix=SET
+// RUN: %if build_lit %{icpx -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
 // SET: main.dp.cpp
 // SET: test.cpp
 // SET: test.dp.hpp

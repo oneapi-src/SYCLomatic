@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 #endif
   std::vector<std::pair<llvm::UTF32, SmallVector<llvm::UTF32>>> Entries;
   for (StringRef Line : Lines) {
-    if (Line.startswith("#"))
+    if (Line.starts_with("#"))
       continue;
 
     SmallVector<StringRef> Values;

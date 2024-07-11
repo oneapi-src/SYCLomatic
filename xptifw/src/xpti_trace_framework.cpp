@@ -19,6 +19,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -40,6 +41,9 @@ static_assert(
     std::is_trivially_destructible<xpti::utils::PlatformHelper>::value,
     "PlatformHelper is not trivial");
 
+// TLS variables to support stashing tupples and universal IDs
+using stash_tuple_t = std::tuple<const char *, uint64_t>;
+static thread_local stash_tuple_t g_tls_stash_tuple = stash_tuple_t(nullptr, 0);
 static thread_local uint64_t g_tls_uid = xpti::invalid_uid;
 
 namespace xpti {
@@ -334,6 +338,14 @@ public:
       return nullptr;
   }
 
+  void releaseEvent(xpti::trace_event_data_t *Event) {
+    if (!Event)
+      return;
+    std::lock_guard<std::mutex> Lock(MEventMutex);
+    std::ignore = MEvents.erase(Event->unique_id);
+    std::ignore = MPayloads.erase(Event->unique_id);
+  }
+
   // Sometimes, the user may want to add key-value pairs as metadata associated
   // with an event; this would be in addition to the source_file, line_no and
   // column_no fields that may already be present. Since we are not sure of the
@@ -351,12 +363,16 @@ public:
 
     // Protect simultaneous insert operations on the metadata tables
     {
+      xpti::result_t res;
       std::lock_guard<std::mutex> HashLock(MMetadataMutex);
       if (Event->reserved.metadata.count(KeyID)) {
-        return xpti::result_t::XPTI_RESULT_DUPLICATE;
+        // One already existed, but we overwrote it
+        res = xpti::result_t::XPTI_RESULT_DUPLICATE;
+      } else {
+        res = xpti::result_t::XPTI_RESULT_SUCCESS;
       }
       Event->reserved.metadata[KeyID] = ValueID;
-      return xpti::result_t::XPTI_RESULT_SUCCESS;
+      return res;
     }
   }
 
@@ -552,6 +568,8 @@ public:
       }
     }
 #endif
+    // If reader-writer locks were emplyed, this is where the writer lock can be
+    // used
     std::lock_guard<std::mutex> Lock(MCBsLock);
     auto &StreamCBs =
         MCallbacksByStream[StreamID]; // thread-safe
@@ -594,6 +612,9 @@ public:
     if (!cbFunc)
       return xpti::result_t::XPTI_RESULT_INVALIDARG;
 
+    // Since we do not remove the callback function when they are unregistered
+    // and only reset the flag, the writer lock is not held for very long; use
+    // writer lock here.
     std::lock_guard<std::mutex> Lock(MCBsLock);
     auto &StreamCBs =
         MCallbacksByStream[StreamID]; // thread-safe
@@ -624,7 +645,8 @@ public:
 
   xpti::result_t unregisterStream(uint8_t StreamID) {
     // If there are no callbacks registered for the requested stream ID, we
-    // return not found
+    // return not found; use reader lock here if the implementation moves to
+    // reaer-writer locks.
     std::lock_guard<std::mutex> Lock(MCBsLock);
     if (MCallbacksByStream.count(StreamID) == 0)
       return xpti::result_t::XPTI_RESULT_NOTFOUND;
@@ -644,6 +666,8 @@ public:
     if (StreamID == 0)
       return false;
 
+    // If the notification framework moves to reader-writer locks, use reader
+    // lock here
     std::lock_guard<std::mutex> Lock(MCBsLock);
     auto &StreamCBs =
         MCallbacksByStream[StreamID]; // thread-safe
@@ -663,17 +687,31 @@ public:
                                    xpti::trace_event_data_t *Object,
                                    uint64_t InstanceNo, const void *UserData) {
     {
-      std::lock_guard<std::mutex> Lock(MCBsLock);
-      cb_t &Stream = MCallbacksByStream[StreamID]; // Thread-safe
-      auto Acc = Stream.find(TraceType);
-      bool Success = (Acc != Stream.end());
-
-      if (Success) {
-        // Go through all registered callbacks and invoke them
-        for (auto &Ele : Acc->second) {
-          if (Ele.first)
-            (Ele.second)(TraceType, Parent, Object, InstanceNo, UserData);
+      bool Success = false;
+      xpti::Notifications::cb_t::iterator Acc;
+      std::vector<xpti::tracepoint_callback_api_t> LocalCBs;
+      {
+        // Addresses bug reported against XPTI where the lock was held for the
+        // entire duration of the notification calls; now the logic will grab
+        // the notification functions when the lock is held and then releases
+        // the lock before calling the notification functions. When using
+        // reader-writer locks, use reader lock here.
+        std::lock_guard<std::mutex> Lock(MCBsLock);
+        cb_t &Stream = MCallbacksByStream[StreamID]; // Thread-safe
+        Acc = Stream.find(TraceType);
+        Success = (Acc != Stream.end());
+        if (Success) {
+          // Go through all registered callbacks and copy them
+          for (auto &Ele : Acc->second) {
+            if (Ele.first)
+              LocalCBs.push_back(Ele.second);
+          }
         }
+      }
+
+      // Go through all local copies of the callbacks and invoke them
+      for (auto &CB : LocalCBs) {
+        (CB)(TraceType, Parent, Object, InstanceNo, UserData);
       }
     }
 #ifdef XPTI_STATISTICS
@@ -788,6 +826,38 @@ public:
 
   void setUniversalID(uint64_t uid) noexcept { g_tls_uid = uid; }
 
+  xpti::result_t stashTuple(const char *key, uint64_t value) {
+    if (!key)
+      return xpti::result_t::XPTI_RESULT_FAIL;
+
+    std::get<0>(g_tls_stash_tuple) = key;
+    std::get<1>(g_tls_stash_tuple) = value;
+    return xpti::result_t::XPTI_RESULT_SUCCESS;
+  }
+
+  xpti::result_t getStashedTuple(char **key, uint64_t &value) {
+    if (!key)
+      return xpti::result_t::XPTI_RESULT_INVALIDARG;
+
+    const char *tls_key = std::get<0>(g_tls_stash_tuple);
+    if (!tls_key)
+      return xpti::result_t::XPTI_RESULT_NOTFOUND;
+
+    (*key) = const_cast<char *>(tls_key);
+    value = std::get<1>(g_tls_stash_tuple);
+    return xpti::result_t::XPTI_RESULT_SUCCESS;
+  }
+
+  void unstashTuple() {
+    if (!std::get<0>(g_tls_stash_tuple))
+      return;
+
+    // std::get<0>(g_tls_stash_tuple) = nullptr;
+    // std::get<1>(g_tls_stash_tuple) = 0;
+    // We will use the actual unstash code when we implement a stack to allow
+    // multiple stashes/thread
+  }
+
   bool checkTraceEnabled(uint16_t stream, uint16_t type) {
     if (MTraceEnabled) {
       return MNotifier.checkSubscribed(stream, type);
@@ -824,6 +894,10 @@ public:
     Event->event_type = EventType;
     Event->activity_type = (uint16_t)ActivityType;
     return Event;
+  }
+
+  void releaseEvent(xpti::trace_event_data_t *event) {
+    MTracepoints.releaseEvent(event);
   }
 
   inline const xpti::trace_event_data_t *findEvent(uint64_t UniversalID) {
@@ -1052,6 +1126,19 @@ XPTI_EXPORT_API void xptiSetUniversalId(uint64_t uid) {
   xpti::Framework::instance().setUniversalID(uid);
 }
 
+XPTI_EXPORT_API xpti::result_t xptiStashTuple(const char *key, uint64_t value) {
+  return xpti::Framework::instance().stashTuple(key, value);
+}
+
+XPTI_EXPORT_API xpti::result_t xptiGetStashedTuple(char **key,
+                                                   uint64_t &value) {
+  return xpti::Framework::instance().getStashedTuple(key, value);
+}
+
+XPTI_EXPORT_API void xptiUnstashTuple() {
+  xpti::Framework::instance().unstashTuple();
+}
+
 XPTI_EXPORT_API uint16_t
 xptiRegisterUserDefinedTracePoint(const char *ToolName, uint8_t UserDefinedTP) {
   uint8_t ToolID = xpti::Framework::instance().registerVendor(ToolName);
@@ -1179,6 +1266,10 @@ xptiQueryMetadata(xpti::trace_event_data_t *Event) {
 
 XPTI_EXPORT_API void xptiForceSetTraceEnabled(bool YesOrNo) {
   xpti::Framework::instance().setTraceEnabled(YesOrNo);
+}
+
+XPTI_EXPORT_API void xptiReleaseEvent(xpti::trace_event_data_t *Event) {
+  return xpti::Framework::instance().releaseEvent(Event);
 }
 } // extern "C"
 

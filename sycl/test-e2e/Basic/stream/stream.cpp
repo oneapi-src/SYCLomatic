@@ -9,7 +9,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <sycl/sycl.hpp>
+// https://github.com/intel/llvm/issues/14397
+// UNSUPPORTED: windows && gpu-intel-gen12
+
+#include <sycl/detail/core.hpp>
+
+#include <sycl/properties/all_properties.hpp>
+#include <sycl/stream.hpp>
 
 #include <cassert>
 

@@ -19,15 +19,26 @@ using namespace clang::ast_matchers;
 void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
   auto functionName = [&]() { return hasAnyName("on"); };
+  // Both THRUST_200302___CUDA_ARCH_LIST___NS and __4 are newly imported inline
+  // namespace by thrust library in CUDA header file 12.4.
   MF.addMatcher(
       callExpr(
           anyOf(callee(functionDecl(anyOf(
+                    hasDeclContext(namespaceDecl(
+                        hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))),
+                    hasDeclContext(namespaceDecl(hasName(
+                        "THRUST_200302___CUDA_ARCH_LIST___NS::detail"))),
+                    hasDeclContext(namespaceDecl(hasName(
+                        "THRUST_200302___CUDA_ARCH_LIST___NS::system"))),
                     hasDeclContext(namespaceDecl(hasName("thrust"))),
                     hasDeclContext(namespaceDecl(hasName("thrust::detail"))),
                     hasDeclContext(namespaceDecl(hasName("thrust::system"))),
+                    hasDeclContext(namespaceDecl(hasName("__4"))),
                     functionName()))),
-                callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
-                    hasDeclContext(namespaceDecl(hasName("thrust")))))))))
+                callee(unresolvedLookupExpr(hasAnyDeclaration(
+                    namedDecl(hasDeclContext(namespaceDecl(anyOf(
+                        hasName("thrust"),
+                        hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))))))))))
           .bind("thrustFuncCall"),
       this);
   // THRUST_STATIC_ASSERT macro register
@@ -80,7 +91,7 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
     PP.PrintCanonicalTypes = true;
     auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
     StringRef BaseTypeRef(BaseType);
-    if (BaseTypeRef.startswith("thrust::cuda_cub::execute_on_stream_base<") &&
+    if (BaseTypeRef.starts_with("thrust::cuda_cub::execute_on_stream_base<") &&
         ThrustFuncName == "on") {
       std::string ReplStr = "oneapi::dpl::execution::make_device_policy(" +
                             getDrefName(CMCE->getArg(0)) + ")";
@@ -218,7 +229,9 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::system::detail::bad_alloc", "thrust::iterator_traits",
         "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt",
         "thrust::system::system_error", "thrust::system::error_code",
-        "enum thrust::system::errc::errc_t", "thrust::system::error_condition");
+        "enum thrust::system::errc::errc_t", "thrust::system::error_condition",
+        "thrust::device_system_tag", "thrust::pointer",
+        "thrust::device_allocator", "thrust::reverse_iterator");
   };
 
   MF.addMatcher(

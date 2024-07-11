@@ -34,7 +34,7 @@
 #include "llvm/Support/FileUtilities.h"
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/FormattedStream.h"
-#include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/LLVMDriver.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Process.h"
@@ -82,7 +82,7 @@ static Triple GetTriple(StringRef ProgName, opt::InputArgList &Args) {
   StringRef DefaultBitness = "32";
   SmallString<255> Program = ProgName;
   sys::path::replace_extension(Program, "");
-  if (Program.endswith("ml64"))
+  if (Program.ends_with("ml64"))
     DefaultBitness = "64";
 
   StringRef TripleName =
@@ -185,8 +185,7 @@ static int AssembleInput(StringRef ProgName, const Target *TheTarget,
   return Res;
 }
 
-int main(int Argc, char **Argv) {
-  InitLLVM X(Argc, Argv);
+int llvm_ml_main(int Argc, char **Argv, const llvm::ToolContext &) {
   StringRef ProgName = sys::path::filename(Argv[0]);
 
   // Initialize targets and assembly printers/parsers.
@@ -428,9 +427,6 @@ int main(int Argc, char **Argv) {
     Str->emitSymbolAttribute(Feat00Sym, MCSA_Global);
     Str->emitAssignment(Feat00Sym, MCConstantExpr::create(Feat00Flags, Ctx));
   }
-
-  // Use Assembler information for parsing.
-  Str->setUseAssemblerInfoForParsing(true);
 
   int Res = 1;
   if (InputArgs.hasArg(OPT_as_lex)) {

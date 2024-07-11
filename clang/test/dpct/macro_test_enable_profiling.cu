@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --enable-profiling   -out-root %T/macro_test_enable_profiling %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_enable_profiling/macro_test_enable_profiling.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/macro_test_enable_profiling/macro_test_enable_profiling.dp.cpp -o %T/macro_test_enable_profiling/macro_test_enable_profiling.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
@@ -45,7 +46,7 @@
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start = new sycl::event();                                                 \
 //CHECK-NEXT:    stop = new sycl::event();                                                  \
-//CHECK-NEXT:    *start = q_ct1.ext_oneapi_submit_barrier();                                \
+//CHECK-NEXT:    dpct::sync_barrier(start);                                            \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
   cudaEvent_t start;                                                                                               \
@@ -57,12 +58,13 @@
     cudaGetLastError();                                                                                            \
     cudaEventRecord(start);                                                                                        \
   }
-
+//CHECK: const int eventFlags = 0;
+const int eventFlags = cudaEventDefault;
 //     CHECK:#define CMC_PROFILING_END(lineno)                                                                                                                                         \
 //CHECK-NEXT:  if (CMC_profile)                                                                                                                                                        \
 //CHECK-NEXT:  {                                                                                                                                                                       \
-//CHECK-NEXT:    *stop = q_ct1.ext_oneapi_submit_barrier();                                                                                                                            \
-//CHECK-NEXT:    stop->wait_and_throw();                                                                                                                                               \
+//CHECK-NEXT:    dpct::sync_barrier(stop);                                                                                                                                        \
+//CHECK-NEXT:    stop->wait_and_throw();                                                                                                                                   \
 //CHECK-NEXT:    float time = 0.0f;                                                                                                                                                    \
 //CHECK-NEXT:    time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f; \
 //CHECK-NEXT:    dpct::destroy_event(start);                                                                                                                                           \

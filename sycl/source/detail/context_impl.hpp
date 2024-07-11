@@ -17,7 +17,6 @@
 #include <sycl/exception_list.hpp>
 #include <sycl/info/info_desc.hpp>
 #include <sycl/property_list.hpp>
-#include <sycl/stl.hpp>
 
 #include <map>
 #include <memory>
@@ -67,9 +66,12 @@ public:
   /// \param PiContext is an instance of a valid plug-in context handle.
   /// \param AsyncHandler is an instance of async_handler.
   /// \param Plugin is the reference to the underlying Plugin that this
-  /// context is associated with.
+  /// \param OwnedByRuntime is the flag if ownership is kept by user or
+  /// transferred to runtime
   context_impl(sycl::detail::pi::PiContext PiContext,
-               async_handler AsyncHandler, const PluginPtr &Plugin);
+               async_handler AsyncHandler, const PluginPtr &Plugin,
+               const std::vector<sycl::device> &DeviceList = {},
+               bool OwnedByRuntime = true);
 
   ~context_impl();
 
@@ -95,11 +97,6 @@ public:
   /// \return an instance of OpenCL cl_context.
   cl_context get() const;
 
-  /// Checks if this context is a host context.
-  ///
-  /// \return true if this context is a host context.
-  bool is_host() const;
-
   /// Gets asynchronous exception handler.
   ///
   /// \return an instance of SYCL async_handler.
@@ -115,6 +112,12 @@ public:
   ///
   /// The return type depends on information being queried.
   template <typename Param> typename Param::return_type get_info() const;
+
+  /// Queries SYCL queue for SYCL backend-specific information.
+  ///
+  /// The return type depends on information being queried.
+  template <typename Param>
+  typename Param::return_type get_backend_info() const;
 
   /// Gets the underlying context object (if any) without reference count
   /// modification.
@@ -171,15 +174,24 @@ public:
   /// it returns true if the device is either a member of the context or a
   /// descendant of a member.
   bool isDeviceValid(DeviceImplPtr Device) {
-    // OpenCL does not support using descendants of context members within that
-    // context yet.
-    // TODO remove once this limitation is lifted
-    if (!is_host() && Device->getBackend() == backend::opencl)
-      return hasDevice(Device);
-
     while (!hasDevice(Device)) {
-      if (Device->isRootDevice())
+      if (Device->isRootDevice()) {
+        if (Device->has(aspect::ext_oneapi_is_component)) {
+          // Component devices should be implicitly usable in context created
+          // for a composite device they belong to.
+          auto CompositeDevice = Device->get_info<
+              ext::oneapi::experimental::info::device::composite_device>();
+          return hasDevice(detail::getSyclObjImpl(CompositeDevice));
+        }
+
         return false;
+      } else if (Device->getBackend() == backend::opencl) {
+        // OpenCL does not support using descendants of context members within
+        // that context yet. We make the exception in case it supports
+        // component/composite devices.
+        // TODO remove once this limitation is lifted
+        return false;
+      }
       Device = detail::getSyclObjImpl(
           Device->get_info<info::device::parent_device>());
     }
@@ -188,7 +200,10 @@ public:
   }
 
   // Returns the backend of this context
-  backend getBackend() const { return MPlatform->getBackend(); }
+  backend getBackend() const {
+    assert(MPlatform && "MPlatform must be not null");
+    return MPlatform->getBackend();
+  }
 
   /// Given a PiDevice, returns the matching shared_ptr<device_impl>
   /// within this context. May return nullptr if no match discovered.
@@ -241,15 +256,17 @@ public:
                        const std::set<std::uintptr_t> &ImgIdentifiers,
                        const std::string &ObjectTypeName);
 
+  bool isOwnedByRuntime() { return MOwnedByRuntime; };
+
   enum PropertySupport { NotSupported = 0, Supported = 1, NotChecked = 2 };
 
 private:
+  bool MOwnedByRuntime;
   async_handler MAsyncHandler;
   std::vector<device> MDevices;
   sycl::detail::pi::PiContext MContext;
   PlatformImplPtr MPlatform;
   property_list MPropList;
-  bool MHostContext;
   CachedLibProgramsT MCachedLibPrograms;
   std::mutex MCachedLibProgramsMutex;
   mutable KernelProgramCache MKernelProgramCache;

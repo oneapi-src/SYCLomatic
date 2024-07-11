@@ -26,9 +26,9 @@
 
 #include <vector>
 
-namespace llvm::CodeGenOpt {
-enum Level : int;
-} // namespace llvm::CodeGenOpt
+namespace llvm {
+enum class CodeGenOptLevel;
+} // namespace llvm
 
 namespace lld {
 namespace macho {
@@ -135,6 +135,7 @@ struct Configuration {
   bool emitEncryptionInfo = false;
   bool emitInitOffsets = false;
   bool emitChainedFixups = false;
+  bool emitRelativeMethodLists = false;
   bool thinLTOEmitImportsFiles;
   bool thinLTOEmitIndexFiles;
   bool thinLTOIndexOnly;
@@ -167,7 +168,7 @@ struct Configuration {
   llvm::StringRef thinLTOJobs;
   llvm::StringRef umbrella;
   uint32_t ltoo = 2;
-  llvm::CodeGenOpt::Level ltoCgo;
+  llvm::CodeGenOptLevel ltoCgo;
   llvm::CachePruningPolicy thinLTOCachePolicy;
   llvm::StringRef thinLTOCacheDir;
   llvm::StringRef thinLTOIndexOnlyArg;
@@ -192,6 +193,7 @@ struct Configuration {
   UndefinedSymbolTreatment undefinedSymbolTreatment =
       UndefinedSymbolTreatment::error;
   ICFLevel icfLevel = ICFLevel::none;
+  bool keepICFStabs = false;
   ObjCStubsMode objcStubsMode = ObjCStubsMode::fast;
   llvm::MachO::HeaderFileType outputType;
   std::vector<llvm::StringRef> systemLibraryRoots;
@@ -208,6 +210,7 @@ struct Configuration {
   bool ltoDebugPassManager = false;
   bool csProfileGenerate = false;
   llvm::StringRef csProfilePath;
+  bool pgoWarnMismatch;
 
   bool callGraphProfileSort = false;
   llvm::StringRef printSymbolOrder;

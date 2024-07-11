@@ -153,7 +153,7 @@ class CGDebugInfo {
   llvm::BumpPtrAllocator DebugInfoNames;
   StringRef CWDName;
 
-  llvm::StringMap<llvm::TrackingMDRef> DIFileCache;
+  llvm::DenseMap<const char *, llvm::TrackingMDRef> DIFileCache;
   llvm::DenseMap<const FunctionDecl *, llvm::TrackingMDRef> SPCache;
   /// Cache declarations relevant to DW_TAG_imported_declarations (C++
   /// using declarations and global alias variables) that aren't covered
@@ -341,6 +341,9 @@ class CGDebugInfo {
   llvm::DIDerivedType *createBitFieldType(const FieldDecl *BitFieldDecl,
                                           llvm::DIScope *RecordTy,
                                           const RecordDecl *RD);
+
+  /// Create type for binding declarations.
+  llvm::DIType *CreateBindingDeclType(const BindingDecl *BD);
 
   /// Create an anonnymous zero-size separator for bit-field-decl if needed on
   /// the target.
@@ -628,7 +631,8 @@ private:
     llvm::DIType *WrappedType;
   };
 
-  std::string GetName(const Decl*, bool Qualified = false) const;
+  bool HasReconstitutableArgs(ArrayRef<TemplateArgument> Args) const;
+  std::string GetName(const Decl *, bool Qualified = false) const;
 
   /// Build up structure info for the byref.  See \a BuildByRefType.
   BlockByRefType EmitTypeForVarWithBlocksAttr(const VarDecl *VD,
@@ -802,6 +806,11 @@ private:
                            llvm::MDTuple *&TemplateParameters,
                            llvm::DIScope *&VDContext);
 
+  /// Create a DIExpression representing the constant corresponding
+  /// to the specified 'Val'. Returns nullptr on failure.
+  llvm::DIExpression *createConstantValueExpression(const clang::ValueDecl *VD,
+                                                    const APValue &Val);
+
   /// Allocate a copy of \p A using the DebugInfoNames allocator
   /// and return a reference to it. If multiple arguments are given the strings
   /// are concatenated.
@@ -837,8 +846,10 @@ public:
 
   // Define copy assignment operator.
   ApplyDebugLocation &operator=(ApplyDebugLocation &&Other) {
-    CGF = Other.CGF;
-    Other.CGF = nullptr;
+    if (this != &Other) {
+      CGF = Other.CGF;
+      Other.CGF = nullptr;
+    }
     return *this;
   }
 
@@ -890,6 +901,8 @@ public:
   /// Restore everything back to the original state.
   ~ApplyInlineDebugLocation();
 };
+
+bool noSystemDebugInfo(const Decl *D, const CodeGenModule &CGM);
 
 } // namespace CodeGen
 } // namespace clang

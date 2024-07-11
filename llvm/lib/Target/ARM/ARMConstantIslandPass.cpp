@@ -343,9 +343,9 @@ LLVM_DUMP_METHOD void ARMConstantIslands::dumpBBs() {
 
 // Align blocks where the previous block does not fall through. This may add
 // extra NOP's but they will not be executed. It uses the PrefLoopAlignment as a
-// measure of how much to align, and only runs at CodeGenOpt::Aggressive.
+// measure of how much to align, and only runs at CodeGenOptLevel::Aggressive.
 static bool AlignBlocks(MachineFunction *MF, const ARMSubtarget *STI) {
-  if (MF->getTarget().getOptLevel() != CodeGenOpt::Aggressive ||
+  if (MF->getTarget().getOptLevel() != CodeGenOptLevel::Aggressive ||
       MF->getFunction().hasOptSize())
     return false;
 
@@ -1937,7 +1937,7 @@ bool ARMConstantIslands::optimizeThumb2Branches() {
 
     // If the conditional branch doesn't kill CPSR, then CPSR can be liveout
     // so this transformation is not safe.
-    if (!Br.MI->killsRegister(ARM::CPSR))
+    if (!Br.MI->killsRegister(ARM::CPSR, /*TRI=*/nullptr))
       return false;
 
     Register PredReg;

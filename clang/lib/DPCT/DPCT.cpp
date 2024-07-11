@@ -14,13 +14,16 @@
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "CrashRecovery.h"
+#include "Error.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "MemberExprRewriter.h"
+#include "MigrateCmakeScript.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
+#include "PatternRewriter.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
@@ -34,8 +37,10 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Core/UnifiedPath.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -59,6 +64,7 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
+#include "clang/DPCT/DpctOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 
@@ -73,57 +79,44 @@ using namespace llvm::cl;
 
 namespace clang {
 namespace tooling {
-std::string getFormatSearchPath();
+UnifiedPath getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
 #ifdef _WIN32
-extern std::string VcxprojFilePath;
+extern UnifiedPath VcxprojFilePath;
 #endif
 } // namespace tooling
 namespace dpct {
 llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
+llvm::cl::OptionCategory &DPCTBasicCat = llvm::cl::getDPCTBasicCategory();
+llvm::cl::OptionCategory &DPCTAdvancedCat = llvm::cl::getDPCTAdvancedCategory();
+llvm::cl::OptionCategory &DPCTCodeGenCat = llvm::cl::getDPCTCodeGenCategory();
+llvm::cl::OptionCategory &DPCTReportGenCat =
+    llvm::cl::getDPCTReportGenCategory();
+llvm::cl::OptionCategory &DPCTBuildScriptCat =
+    llvm::cl::getDPCTBuildScriptCategory();
+llvm::cl::OptionCategory &DPCTQueryAPICat = llvm::cl::getDPCTQueryAPICategory();
+llvm::cl::OptionCategory &DPCTWarningsCat = llvm::cl::getDPCTWarningsCategory();
+llvm::cl::OptionCategory &DPCTHelpInfoCat = llvm::cl::getDPCTHelpInfoCategory();
+llvm::cl::OptionCategory &DPCTInterceptBuildCat =
+    llvm::cl::getDPCTInterceptBuildCategory();
 void initWarningIDs();
 } // namespace dpct
 } // namespace clang
 
 // clang-format off
-const char *const CtHelpMessage =
-    "\n"
-    "<source0> ... Paths of input source files. These paths are looked up in "
-    "the compilation database.\n\n"
-    "EXAMPLES:\n\n"
-    "Migrate single source file:\n\n"
-    "  dpct source.cpp\n\n"
-    "Migrate single source file with C++11 features:\n\n"
-    "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
-    "Migrate all files available in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
-    "Migrate one file in compilation database:\n\n"
-    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
-#if defined(_WIN32)
-    "Migrate all files available in vcxprojfile:\n\n"
-    "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
-#endif
-    DiagRef
-    ;
+const char *const CtHelpMessage = DiagRef;
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
     "  To get help on the tool usage, run: dpct --help\n"
     "\n";
 
+const char *const CmakeScriptMigrationHelpHint =
+    "Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.";
+
+
 static extrahelp CommonHelp(CtHelpMessage);
 
-bool ReportOnlyFlag = false;
-bool KeepOriginalCodeFlag = false;
-bool SuppressWarningsAllFlag = false;
-bool StopOnParseErr = false;
-bool CheckUnicodeSecurityFlag = false;
-bool EnablepProfilingFlag = false;
-bool SyclNamedLambdaFlag = false;
-bool ExplicitClNamespace = false;
-bool NoDRYPatternFlag = false;
-bool ProcessAllFlag = false;
-bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
                 "from " + std::to_string(DiagnosticsMessage::MinID) + " to " +
@@ -131,43 +124,10 @@ static std::string SuppressWarningsMessage = "A comma separated list of migratio
                 ". Hyphen separated ranges are also allowed. For example:\n"
                 "--suppress-warnings=1000-1010,1011.";
 
-#define DPCT_OPTIONS_IN_CLANG_DPCT
-#define DPCT_OPT_TYPE(...) __VA_ARGS__
-#define DPCT_OPT_ENUM(NAME, ...)                                   \
-llvm::cl::OptionEnumValue{NAME, __VA_ARGS__}
-#define DPCT_OPTION_VALUES(...)                                    \
-llvm::cl::values(__VA_ARGS__)
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
-OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
-#define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)      \
-OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#define DPCT_OPTIONS_VAR 1
+#define DPCT_OPTIONS_IN_CLANG_DPCT 1
 #include "clang/DPCT/DPCTOptions.inc"
-#undef DPCT_ENUM_OPTION
-#undef DPCT_NON_ENUM_OPTION
-#undef DPCT_OPTION_VALUES
-#undef DPCT_OPT_ENUM
-#undef DPCT_OPT_TYPE
-#undef DPCT_OPTIONS_IN_CLANG_DPCT
 
-static llvm::cl::opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
-                                llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
-                                llvm::cl::Optional, llvm::cl::Hidden);
-static llvm::cl::opt<std::string> Passes(
-    "passes",
-    llvm::cl::desc("Comma separated list of migration passes, which will be applied.\n"
-         "Only the specified passes are applied."),
-    llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
-               llvm::cl::Hidden);
-#ifdef DPCT_DEBUG_BUILD
-static llvm::cl::opt<std::string>
-    DiagsContent("report-diags-content",
-                 llvm::cl::desc("Diagnostics verbosity level. \"pass\": Basic migration "
-                      "pass information. "
-                      "\"transformation\": Detailed migration pass "
-                      "transformation information."),
-                 llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
-                 llvm::cl::Optional, llvm::cl::Hidden);
-#endif
 #ifdef __linux__
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
@@ -177,16 +137,22 @@ static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> A
 // clang-format on
 
 // TODO: implement one of this for each source language.
-std::string CudaPath;
-std::string DpctInstallPath;
+UnifiedPath CudaPath;
+UnifiedPath DpctInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
-std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 std::unordered_map<std::string, bool> IsDirectoryCache;
 extern bool StopOnParseErrTooling;
-extern std::string InRootTooling;
+extern UnifiedPath InRootTooling;
 
-std::string getCudaInstallPath(int argc, const char **argv) {
+clang::tooling::UnifiedPath InRootPath;
+clang::tooling::UnifiedPath OutRootPath;
+clang::tooling::UnifiedPath CudaIncludePath;
+clang::tooling::UnifiedPath SDKPath;
+std::vector<clang::tooling::UnifiedPath> RuleFilePath;
+clang::tooling::UnifiedPath AnalysisScope;
+
+UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
   Argv.reserve(argc);
   // do not copy "--" so the driver sees a possible SDK include path option
@@ -214,83 +180,73 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   driver::CudaInstallationDetector CudaIncludeDetector(
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
-  std::string Path = CudaIncludeDetector.getInstallPath().str();
+  UnifiedPath Path = CudaIncludeDetector.getIncludePath().str();
   dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
-
-  if (!CudaIncludePath.empty()) {
+  if (!CudaIncludePath.getPath().empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       ShowStatus(MigrationErrorInvalidCudaIncludePath);
       dpctExit(MigrationErrorInvalidCudaIncludePath);
     }
-
-    if (!CudaIncludeDetector.isVersionSupported()) {
+    if (!CudaIncludeDetector.isVersionSupported() &&
+        !CudaIncludeDetector.isVersionPartSupported()) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
       dpctExit(MigrationErrorCudaVersionUnsupported);
     }
-  } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
-    ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
-    dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
+  } else if (!CudaIncludeDetector.isIncludePathValid()) {
+    ShowStatus(MigrationErrorCannotDetectCudaPath);
+    dpctExit(MigrationErrorCannotDetectCudaPath);
+  } else if (!CudaIncludeDetector.isVersionSupported() &&
+             !CudaIncludeDetector.isVersionPartSupported()) {
+    ShowStatus(MigrationErrorDetectedCudaVersionUnsupported);
+    dpctExit(MigrationErrorDetectedCudaVersionUnsupported);
   }
 
-  makeCanonical(Path);
-
-  SmallString<512> CudaPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs, true);
-  if ((bool)EC) {
+  if (Path.getCanonicalPath().empty()) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   }
-  return CudaPathAbs.str().str();
+  return Path;
 }
 
-std::string getInstallPath(const char *invokeCommand) {
-  SmallString<512> InstalledPath(invokeCommand);
+static bool isCUDAHeaderRequired() { return !MigrateBuildScriptOnly; }
+
+UnifiedPath getInstallPath(const char *invokeCommand) {
+  SmallString<512> InstalledPathStr(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
-  if (llvm::sys::path::filename(InstalledPath) == InstalledPath) {
+  if (llvm::sys::path::filename(InstalledPathStr) == InstalledPathStr) {
     if (llvm::ErrorOr<std::string> Tmp = llvm::sys::findProgramByName(
-            llvm::sys::path::filename(InstalledPath.str()))) {
-      InstalledPath = *Tmp;
+            llvm::sys::path::filename(InstalledPathStr.str()))) {
+      InstalledPathStr = *Tmp;
     }
   }
 
-  makeCanonical(InstalledPath);
-  llvm::sys::fs::real_path(InstalledPath, InstalledPath, true);
-  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
+  UnifiedPath InstalledPath(InstalledPathStr);
+  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath.getCanonicalPath()));
   // Move up to parent directory of bin directory
-  StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
-
-  SmallString<512> InstallPathAbs;
-  std::error_code EC =
-      llvm::sys::fs::real_path(InstallPath, InstallPathAbs, true);
-  if ((bool)EC) {
-    ShowStatus(MigrationErrorInvalidInstallPath);
-    dpctExit(MigrationErrorInvalidInstallPath);
-  }
-  return InstallPathAbs.str().str();
+  InstalledPath = llvm::sys::path::parent_path(InstalledPathParent);
+  return InstalledPath;
 }
 
 // To validate the root path of the project to be migrated.
-void ValidateInputDirectory(std::string &InRoot) {
-
-  if (isChildOrSamePath(CudaPath, InRoot)) {
+void ValidateInputDirectory(UnifiedPath InRootPath) {
+  if (isChildOrSamePath(CudaPath, InRootPath)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
     dpctExit(MigrationErrorRunFromSDKFolder);
   }
-
-  if (isChildOrSamePath(InRoot, CudaPath)) {
+  if (isChildOrSamePath(InRootPath, CudaPath)) {
     ShowStatus(MigrationErrorInputDirContainSDKFolder);
     dpctExit(MigrationErrorInputDirContainSDKFolder);
   }
 
-  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
+  if (isChildOrSamePath(InRootPath, DpctInstallPath)) {
     ShowStatus(MigrationErrorInputDirContainCTTool);
     dpctExit(MigrationErrorInputDirContainCTTool);
   }
 }
 
 unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
-                            StringRef Path) {
+                            UnifiedPath Path) {
   // Set up Rewriter and to get source manager.
   LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
@@ -302,14 +258,14 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   Rewriter Rewrite(Sources, DefaultLangOptions);
   SourceManager &SM = Rewrite.getSourceMgr();
 
-  const FileEntry *Entry = SM.getFileManager().getFile(Path).get();
+  auto Entry = SM.getFileManager().getOptionalFileRef(Path.getCanonicalPath());
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
     dpctExit(MigrationErrorInvalidFilePath);
   }
 
-  FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
+  FileID FID = SM.getOrCreateFileID(*Entry, SrcMgr::C_User);
 
   SourceLocation EndOfFile = SM.getLocForEndOfFile(FID);
   unsigned int LineNumber = SM.getSpellingLineNumber(EndOfFile, nullptr);
@@ -360,32 +316,27 @@ static void saveApisReport(void) {
     OS << "-------------------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile =
-        OutRoot + "/" + ReportFilePrefix +
-        (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
-                                                              : ".apis.log");
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
+    std::string RFile = appendPath(
+        OutRootPath.getCanonicalPath().str(),
+        ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                                ? ".apis.csv"
+                                : ".apis.log"));
 
-    std::string Str;
-    llvm::raw_string_ostream Title(Str);
-    Title << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
-                  ? " API name, Frequency "
-                  : "API name\t\t\t\tFrequency");
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    RawFDOStream File(RFile);
 
-    File << Title.str() << std::endl;
+    File << (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                 ? " API name, Frequency "
+                 : "API name\t\t\t\tFrequency");
+
+    File << "\n";
     for (const auto &Elem : SrcAPIStaticsMap) {
       std::string APIName = Elem.first;
       unsigned int Count = Elem.second;
       if (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV) {
-        File << "\"" << APIName << "\"," << std::to_string(Count) << std::endl;
+        File << "\"" << APIName << "\"," << std::to_string(Count) << "\n";
       } else {
-        std::string Str;
-        llvm::raw_string_ostream OS(Str);
-        OS << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
-        File << OS.str();
+        File << llvm::format("%-30s%16u\n", APIName.c_str(), Count);
       }
     }
   }
@@ -405,15 +356,13 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile =
-        OutRoot + "/" + ReportFilePrefix +
-        (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".stats.csv"
-                                                              : ".stats.log");
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctStatsStr() << "\n";
+    std::string RFile = appendPath(
+        OutRootPath.getCanonicalPath().str(),
+        ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                                ? ".stats.csv"
+                                : ".stats.log"));
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -428,12 +377,10 @@ static void saveDiagsReport() {
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
-    std::string RFile = OutRoot + "/" + ReportFilePrefix + ".diags.log";
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(RFile));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(RFile, std::ios::binary);
-    File << getDpctDiagsStr() << "\n";
+    std::string RFile = appendPath(OutRootPath.getCanonicalPath().str(),
+                                   ReportFilePrefix + ".diags.log");
+    createDirectories(llvm::sys::path::parent_path(RFile));
+    writeDataToFile(RFile, getDpctStatsStr() + "\n");
   }
 }
 
@@ -443,38 +390,30 @@ std::string printCTVersion() {
   llvm::raw_string_ostream OS(buf);
 
   OS << "\n"
-     << TOOL_NAME << " version " << DPCT_VERSION_MAJOR << "."
-     << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
+     << TOOL_NAME << " version " << getDpctVersionStr() << "."
      << " Codebase:";
-  // getClangRepositoryPath() export the machine name of repo in release build.
-  // so skip the repo name.
-  std::string Path = "";
   std::string Revision = getClangRevision();
-  if (!Path.empty() || !Revision.empty()) {
+  if (!Revision.empty()) {
     OS << '(';
-    if (!Path.empty())
-      OS << Path;
     if (!Revision.empty()) {
-      if (!Path.empty())
-        OS << ' ';
       OS << Revision;
     }
-    OS << ')';
+    OS << ").";
   }
 
-  OS << "\n";
+  OS << " clang version " << CLANG_VERSION_MAJOR << "." << CLANG_VERSION_MINOR
+     << "." << CLANG_VERSION_PATCHLEVEL << "\n";
+
   return OS.str();
 }
 
 static void DumpOutputFile(void) {
   // Redirect stdout/stderr output to <file> if option "-output-file" is set
   if (!OutputFile.empty()) {
-    std::string FilePath = OutRoot + "/" + OutputFile;
-    llvm::sys::fs::create_directories(llvm::sys::path::parent_path(FilePath));
-    // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
-    // on windows.
-    std::ofstream File(FilePath, std::ios::binary);
-    File << getDpctTermStr() << "\n";
+    std::string FilePath =
+        appendPath(OutRootPath.getCanonicalPath().str(), OutputFile);
+    createDirectories(llvm::sys::path::parent_path(FilePath));
+    writeDataToFile(FilePath, getDpctTermStr() + "\n");
   }
 }
 
@@ -486,25 +425,16 @@ void PrintReportOnFault(const std::string &FaultMsg) {
   if (ReportFilePrefix == "stdcout")
     return;
 
-  std::string FileApis =
-      OutRoot + "/" + ReportFilePrefix +
-      (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV ? ".apis.csv"
-                                                            : ".apis.log");
-  std::string FileDiags = OutRoot + "/" + ReportFilePrefix + ".diags.log";
+  std::string FileApis = appendPath(
+      OutRootPath.getCanonicalPath().str(),
+      ReportFilePrefix + (ReportFormat.getValue() == ReportFormatEnum::RFE_CSV
+                              ? ".apis.csv"
+                              : ".apis.log"));
+  std::string FileDiags = appendPath(OutRootPath.getCanonicalPath().str(),
+                                     ReportFilePrefix + ".diags.log");
 
-  std::ofstream File;
-  File.open(FileApis, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
-  File.open(FileDiags, std::ios::app);
-  if (File) {
-    File << FaultMsg;
-    File.close();
-  }
-
+  appendDataToFile(FileApis, FaultMsg);
+  appendDataToFile(FileDiags, FaultMsg);
   DumpOutputFile();
 }
 
@@ -517,11 +447,13 @@ void parseFormatStyle() {
              DPCTFormatStyle::FS_LLVM) {
     StyleStr = "llvm";
   }
-  std::string StyleSearchPath = clang::tooling::getFormatSearchPath().empty()
-                                    ? clang::dpct::DpctGlobalInfo::getInRoot()
-                                    : clang::tooling::getFormatSearchPath();
+  UnifiedPath StyleSearchPath =
+      clang::tooling::getFormatSearchPath().getCanonicalPath().empty()
+          ? clang::dpct::DpctGlobalInfo::getInRoot()
+          : clang::tooling::getFormatSearchPath();
   llvm::Expected<clang::format::FormatStyle> StyleOrErr =
-      clang::format::getStyle(StyleStr, StyleSearchPath, "llvm");
+      clang::format::getStyle(StyleStr, StyleSearchPath.getCanonicalPath(),
+                              "llvm");
   clang::format::FormatStyle Style;
   if (!StyleOrErr) {
     PrintMsg(llvm::toString(StyleOrErr.takeError()) + "\n");
@@ -537,6 +469,35 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
+static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
+  std::string YamlFilePath = appendPath(OutRoot.getCanonicalPath().str(),
+                                        DpctGlobalInfo::getYamlFileName());
+  auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
+  if (llvm::sys::fs::exists(YamlFilePath)) {
+    if (loadFromYaml(YamlFilePath, *PreTU) != 0) {
+      llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
+    }
+  }
+  for (auto &Entry : PreTU->MainSourceFilesDigest) {
+    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+  }
+
+  // Currently, when "--use-experimental-features=device_global" and
+  // "--use-experimental-features=all" are specified, the migrated code should
+  // be compiled with C++20 or later.
+  auto Iter = PreTU->OptionMap.find("ExperimentalFlag");
+  if (Iter != PreTU->OptionMap.end()) {
+    if (Iter->second.Specified) {
+      const std::string Value = Iter->second.Value;
+      unsigned int UValue = std::stoul(Value);
+      if (UValue & (1 << static_cast<unsigned>(
+                        ExperimentalFeatures::Exp_DeviceGlobal))) {
+        LANG_Cplusplus_20_Used = true;
+      }
+    }
+  }
+}
+
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -545,15 +506,16 @@ int runDPCT(int argc, const char **argv) {
   }
   clang::dpct::initCrashRecovery();
 
+  clang::dpct::DpctOptionBase::init();
+
 #if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.
   llvm::InitLLVM X(argc, argv);
 #endif
-
   // Set handle for libclangTooling to process message for dpct
   clang::tooling::SetPrintHandle(PrintMsg);
-  clang::tooling::SetFileSetInCompiationDB(
-      dpct::DpctGlobalInfo::getFileSetInCompiationDB());
+  clang::tooling::SetFileSetInCompilationDB(
+      dpct::DpctGlobalInfo::getFileSetInCompilationDB());
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
@@ -590,53 +552,94 @@ int runDPCT(int argc, const char **argv) {
     dpct::ShowStatus(MigrationOptionParsingError);
     dpctExit(MigrationOptionParsingError);
   }
+  DpctOptionBase::check();
+
+  DpctInstallPath = getInstallPath(argv[0]);
+
+  InRootPath = InRoot;
+  OutRootPath = OutRoot;
+  CudaIncludePath = CudaInclude;
+  SDKPath = SDKPathOpt;
+  std::transform(
+      RuleFile.begin(), RuleFile.end(),
+      std::back_insert_iterator<std::vector<clang::tooling::UnifiedPath>>(
+          RuleFilePath),
+      [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
+  AnalysisScope = AnalysisScopeOpt;
+
+  if (PathToHelperFunction) {
+    SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(HelperFunctionPathStr, "include");
+    if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
+      ShowStatus(MigrationErrorInvalidInstallPath, "Helper functions");
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    std::cout << HelperFunctionPathStr.c_str() << "\n";
+    ShowStatus(MigrationSucceeded);
+    dpctExit(MigrationSucceeded);
+  }
 
   if (!OutputFile.empty()) {
     // Set handle for libclangTooling to redirect warning message to DpctTerm
     clang::tooling::SetDiagnosticOutput(DpctTerm());
   }
-
   initWarningIDs();
-
-  DpctInstallPath = getInstallPath(argv[0]);
-
-  if (PathToHelperFunction) {
-    SmallString<512> pathToHelperFunction(DpctInstallPath);
-    llvm::sys::path::append(pathToHelperFunction, "include");
-    if (!llvm::sys::fs::exists(pathToHelperFunction)) {
-      DpctLog() << "Error: Helper functions not found"
-                << "/n";
-      ShowStatus(MigrationErrorInvalidInstallPath);
+  auto CallIndependentTool = [&](const std::string IndependentTool) {
+    SmallString<512> ExecutableScriptPath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(ExecutableScriptPath, "bin", IndependentTool);
+    if (!llvm::sys::fs::exists(ExecutableScriptPath)) {
+      ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::cout << pathToHelperFunction.c_str() << "\n";
-    ShowStatus(MigrationSucceeded);
-    dpctExit(MigrationSucceeded);
-  }
+    std::string SystemCallCommand =
+        "python3 " + std::string(ExecutableScriptPath.str());
+    for (int Index = 2; Index < argc; Index++) {
+      SystemCallCommand.append(" ");
+      SystemCallCommand.append(std::string(argv[Index]));
+    }
+    int ProcessExitCode = system(SystemCallCommand.c_str());
+    if (ProcessExitCode) {
+      ShowStatus(CallIndependentToolError, IndependentTool);
+      dpctExit(CallIndependentToolError);
+    }
+    dpctExit(CallIndependentToolSucceeded);
+  };
+#ifndef _WIN32
+  if (InterceptBuildCommand)
+    CallIndependentTool("intercept-build");
+#endif
+  if (CodePinReport)
+    CallIndependentTool("codepin-report.py");
 
-  if (InRoot.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
+  if (AnalysisMode)
+    DpctGlobalInfo::enableAnalysisMode();
+
+  if (InRootPath.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --in-root '" << InRootPath.getPath() << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (OutRoot.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --out-root '" << OutRoot << "' is too long\n";
+  if (OutRootPath.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --out-root '" << OutRootPath.getPath()
+              << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (AnalysisScope.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --analysis-scope-path '" << AnalysisScope << "' is too long\n";
+  if (AnalysisScope.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --analysis-scope-path '" << AnalysisScope.getPath()
+              << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
-  if (CudaIncludePath.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath
+  if (CudaIncludePath.getPath().size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath.getPath()
               << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
   if (OutputFile.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
+    DpctLog() << "Error: --output-file '" << OutputFile
+              << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
@@ -667,40 +670,78 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::addChangeExtensions(".cuh");
   }
 
-  if (InRoot.empty() && ProcessAllFlag) {
+  if (InRootPath.getPath().empty() && ProcessAll) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
   }
 
-  if (!makeInRootCanonicalOrSetDefaults(InRoot,
+  if (MigrateBuildScriptOnly) {
+    if (InRootPath.getPath().empty() &&
+        !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
+      dpctExit(MigrationErrorNoExplicitInRootAndCMakeScript);
+    }
+  }
+
+  if (!makeInRootCanonicalOrSetDefaults(InRootPath,
                                         OptParser->getSourcePathList())) {
     ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
     dpctExit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
-  int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
-  if (ValidPath == -1) {
-    ShowStatus(MigrationErrorInvalidInRootPath);
-    dpctExit(MigrationErrorInvalidInRootPath);
-  } else if (ValidPath == -2) {
-    ShowStatus(MigrationErrorNoFileTypeAvail);
-    dpctExit(MigrationErrorNoFileTypeAvail);
+  if (!MigrateBuildScriptOnly) {
+    int ValidPath = validatePaths(InRootPath, OptParser->getSourcePathList());
+    if (ValidPath == -1) {
+      ShowStatus(MigrationErrorInvalidInRootPath);
+      dpctExit(MigrationErrorInvalidInRootPath);
+    } else if (ValidPath == -2) {
+      ShowStatus(MigrationErrorNoFileTypeAvail);
+      dpctExit(MigrationErrorNoFileTypeAvail);
+    }
+
+    if (cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrateCmakeScriptOnlyNotSpecifed);
+      dpctExit(MigrateCmakeScriptOnlyNotSpecifed);
+    }
+
+  } else {
+    // To validate the path of cmake file script or directory
+    int ValidPath =
+        validateCmakeScriptPaths(InRootPath, OptParser->getSourcePathList());
+    if (ValidPath == -1) {
+      ShowStatus(MigrationErrorInvalidInRootPath);
+      dpctExit(MigrationErrorInvalidInRootPath);
+    } else if (ValidPath < -1) {
+      ShowStatus(MigrationErrorCMakeScriptPathInvalid);
+      dpctExit(MigrationErrorCMakeScriptPathInvalid);
+    }
   }
 
-  int SDKIncPathRes =
-      checkSDKPathOrIncludePath(CudaIncludePath, RealSDKIncludePath);
+  if (BuildScript == BuildScriptKind::BS_Cmake &&
+      !OptParser->getSourcePathList().empty()) {
+    ShowStatus(MigarteBuildScriptIncorrectUse);
+    dpctExit(MigarteBuildScriptIncorrectUse);
+  }
+  if (BuildScript == BuildScriptKind::BS_Cmake && MigrateBuildScriptOnly) {
+    ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
+    dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
+  }
+
+  int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
   if (SDKIncPathRes == -1) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKIncPathRes == 0) {
+    RealSDKIncludePath = CudaIncludePath.getCanonicalPath();
     HasSDKIncludeOption = true;
   }
 
-  int SDKPathRes = checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
+  int SDKPathRes = checkSDKPathOrIncludePath(SDKPath);
   if (SDKPathRes == -1) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKPathRes == 0) {
+    RealSDKPath = SDKPath.getCanonicalPath();
     HasSDKPathOption = true;
   }
 
@@ -710,9 +751,8 @@ int runDPCT(int argc, const char **argv) {
 #else
   std::string DVerbose = "";
 #endif
-  if (checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
-                      ReportFilePrefix, ReportOnlyFlag, GenReport,
-                      DVerbose) == false) {
+  if (!checkReportArgs(ReportType.getValue(), ReportFormat.getValue(),
+                       ReportFilePrefix, ReportOnly, GenReport, DVerbose)) {
     ShowStatus(MigrationErrorInvalidReportArgs);
     dpctExit(MigrationErrorInvalidReportArgs);
   }
@@ -739,17 +779,31 @@ int runDPCT(int argc, const char **argv) {
 
   ExtraIncPaths = OptParser->getExtraIncPathList();
 
-  // TODO: implement one of this for each source language.
-  CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
+  if (isCUDAHeaderRequired()) {
+    // TODO: implement one of this for each source language.
+    CudaPath = getCudaInstallPath(OriginalArgc, argv);
+    DpctDiags() << "Cuda Include Path found: " << CudaPath.getCanonicalPath()
+                << "\n";
+  }
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
+    if (QueryAPIMapping.getNumOccurrences() > 1) {
+      llvm::outs()
+          << "Warning: Option --query-api-mapping is specified multi times, "
+             "only the last one is used, all other are ignored.\n";
+    }
     // Set a virtual file for --query-api-mapping.
-    llvm::SmallString<16> VirtFile;
-    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
-    llvm::sys::path::append(VirtFile, "temp.cu");
-    SourcePathList.emplace_back(VirtFile);
+    llvm::SmallString<16> VirtFolderSS;
+    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFolderSS);
+    UnifiedPath VirtFolderPath(VirtFolderSS);
+
+    // Need set a virtual path and it will used by AnalysisScope.
+    InRootPath = VirtFolderPath;
+
+    llvm::SmallString<16> VirtFileSS(VirtFolderPath.getCanonicalPath());
+    llvm::sys::path::append(VirtFileSS, "temp.cu");
+    SourcePathList.emplace_back(VirtFileSS);
     DpctGlobalInfo::setIsQueryAPIMapping(true);
   } else {
     SourcePathList = OptParser->getSourcePathList();
@@ -795,8 +849,15 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
           else if (Option.ends_with("logical-group"))
             Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+          else if (Option.ends_with("masked-sub-group-operation"))
+            Experimentals.addValue(
+                ExperimentalFeatures::Exp_MaskedSubGroupFunction);
+          else if (Option.ends_with("bindless_images"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_BindlessImages);
+          else if (Option.ends_with("graph"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_Graph);
         } else if (Option == "--no-dry-pattern") {
-          NoDRYPatternFlag = true;
+          NoDRYPattern.setValue(true);
         }
         // Need add more option.
       }
@@ -827,44 +888,48 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
-    NoIncrementalMigration = true;
-    StopOnParseErr = true;
+#ifdef _WIN32 // Avoid some error on windows platform.
+    if (DpctGlobalInfo::getSDKVersion() <= CudaVersion::CUDA_100) {
+      Tool.appendArgumentsAdjuster(
+          getInsertArgumentAdjuster("-D_MSC_VER=1900"));
+    }
+#endif
+    NoIncrementalMigration.setValue(true);
+    StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);
-    // Need set a virtual path and it will used by AnalysisScope.
-    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   } else {
-    IsUsingDefaultOutRoot = OutRoot.empty();
-    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+    IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
+    bool NeedCheckOutRootEmpty =
+        !(BuildScript == BuildScriptKind::BS_Cmake) && !MigrateBuildScriptOnly;
+    if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
+        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
-    dpct::DpctGlobalInfo::setOutRoot(OutRoot);
+    dpct::DpctGlobalInfo::setOutRoot(OutRootPath);
   }
 
   if (GenBuildScript) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
   }
 
-  std::string CompilationsDir = OptParser->getCompilationsDir();
-  if (!CompilationsDir.empty()) {
-    // To convert the relative path to absolute path.
-    llvm::SmallString<128> AbsPath(CompilationsDir);
-    llvm::sys::fs::make_absolute(AbsPath);
-    llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
-    CompilationsDir = std::string(AbsPath.str());
-  }
+  UnifiedPath CompilationsDir(OptParser->getCompilationsDir());
 
-  Tool.setCompilationDatabaseDir(CompilationsDir);
-  ValidateInputDirectory(InRoot);
+  Tool.setCompilationDatabaseDir(CompilationsDir.getCanonicalPath().str());
+
+  if (isCUDAHeaderRequired())
+    ValidateInputDirectory(InRootPath);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
-  if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRoot) ||
-      (!InRoot.empty() && !isChildOrSamePath(AnalysisScope, InRoot))) {
+  if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRootPath) ||
+      (!InRootPath.getPath().empty() && !isChildOrSamePath(AnalysisScope, InRootPath))) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
-  ValidateInputDirectory(AnalysisScope);
+
+  if (isCUDAHeaderRequired())
+    ValidateInputDirectory(AnalysisScope);
 
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
@@ -876,39 +941,31 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "--cuda-host-only", ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMajor =
-      "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+  if (DefineCUDAVerMajorMinor) {
+    std::string CUDAVerMajor =
+        "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
+    std::string CUDAVerMinor =
+        "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+        CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
+  }
+  std::string CUDADotHFilePathMacro =
+      "-D__CUDA_DOT_H_FILE_PATH__=\"" +
+      appendPath(CudaPath.getCanonicalPath().str(), "cuda.h") + "\"";
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMajor.c_str(), ArgumentInsertPosition::BEGIN));
+      CUDADotHFilePathMacro.c_str(), ArgumentInsertPosition::BEGIN));
 
-  std::string CUDAVerMinor =
-      "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
-      CUDAVerMinor.c_str(), ArgumentInsertPosition::BEGIN));
-  Tool.appendArgumentsAdjuster(
-      getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
+      "-fno-delayed-template-parsing", ArgumentInsertPosition::END));
 
-  SetSDKIncludePath(CudaPath);
+  SetSDKIncludePath(CudaPath.getCanonicalPath().str());
 
 #ifdef _WIN32
-  if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 3) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 4) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 1) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 2)) {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
-                                  ArgumentInsertPosition::BEGIN));
-  } else {
-    Tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-fms-compatibility-version=19.00.24215.1",
-                                  ArgumentInsertPosition::BEGIN));
-  }
+  Tool.appendArgumentsAdjuster(
+      getInsertArgumentAdjuster("-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
+                                ArgumentInsertPosition::BEGIN));
 #endif
   Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
       "-fcuda-allow-variadic-functions", ArgumentInsertPosition::BEGIN));
@@ -916,31 +973,40 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
 
-  DpctGlobalInfo::setInRoot(InRoot);
-  DpctGlobalInfo::setOutRoot(OutRoot);
+  Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster(
+      "-Wno-c++11-narrowing", ArgumentInsertPosition::BEGIN));
+
+  DpctGlobalInfo::setInRoot(InRootPath);
+  DpctGlobalInfo::setOutRoot(OutRootPath);
   DpctGlobalInfo::setAnalysisScope(AnalysisScope);
   DpctGlobalInfo::setCudaPath(CudaPath);
-  DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
-  DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
+  DpctGlobalInfo::setKeepOriginCode(KeepOriginalCode);
+  DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambda);
   DpctGlobalInfo::setUsmLevel(USMLevel);
-  DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
-  DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
+  DpctGlobalInfo::setBuildScript(BuildScript);
+  // When enable codepin feature, the incremental migration will be disabled.
+  DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration && !EnableCodePin &&
+                                    !MigrateBuildScriptOnly);
+  DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurity);
+  DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfiling);
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
+  DpctGlobalInfo::setCodePinEnabled(EnableCodePin);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
+  DpctGlobalInfo::setMigrateBuildScriptOnlyEnabled(MigrateBuildScriptOnly);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
-  DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  DpctGlobalInfo::setUsingDRYPattern(!NoDRYPattern);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
+  DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
   StopOnParseErrTooling = StopOnParseErr;
-  InRootTooling = InRoot;
+  InRootTooling = InRootPath;
 
   if (ExcludePathList.getNumOccurrences()) {
     DpctGlobalInfo::setExcludePath(ExcludePathList);
@@ -948,42 +1014,37 @@ int runDPCT(int argc, const char **argv) {
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
       ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
-  if (NoClNamespaceInline.getNumOccurrences()) {
-    if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-      clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated and will be "
-          "ignored. Option --use-explicit-namespace is used instead.\n");
-    } else {
-      if (ExplicitClNamespace) {
-        DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
-            ExplicitNamespace::EN_CL, ExplicitNamespace::EN_DPCT});
-      } else {
-        DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-      }
-      clang::dpct::PrintMsg(
-          "Note: Option --no-cl-namespace-inline is deprecated. Use "
-          "--use-explicit-namespace instead.\n");
-    }
-  } else {
-    if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-    } else {
-      DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-    }
-  }
+  if (UseExplicitNamespace.getNumOccurrences())
+    DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
+  else
+    DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
 
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   clang::dpct::initHeaderSpellings();
-  if (!RuleFile.empty()) {
-    importRules(RuleFile);
+
+  if (MigrateBuildScriptOnly ||
+      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
+    SmallString<128> CmakeRuleFilePath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(CmakeRuleFilePath,
+                            Twine("extensions/cmake_rules/"
+                                  "cmake_script_migration_rule.yaml"));
+    if (llvm::sys::fs::exists(CmakeRuleFilePath)) {
+      std::vector<clang::tooling::UnifiedPath> CmakeRuleFiles{
+          CmakeRuleFilePath};
+      importRules(CmakeRuleFiles);
+      dpct::genCmakeHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
+    }
+  }
+
+  if (!RuleFilePath.empty()) {
+    importRules(RuleFilePath);
   }
 
   {
-    setValueToOptMap(clang::dpct::OPTION_AsyncHandler, AsyncHandlerFlag,
+    setValueToOptMap(clang::dpct::OPTION_AsyncHandler, AsyncHandler.getValue(),
                      AsyncHandler.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NDRangeDim,
                      static_cast<unsigned int>(NDRangeDim.getValue()),
@@ -994,35 +1055,33 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
-                     ExplicitClNamespace,
-                     NoClNamespaceInline.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_CodePinEnabled,
+                     DpctGlobalInfo::isCodePinEnabled(),
+                     EnableCodePin.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExtensionDEFlag,
                      DpctGlobalInfo::getExtensionDEFlag(),
                      NoDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExtensionDDFlag,
                      DpctGlobalInfo::getExtensionDDFlag(),
                      UseDPCPPExtensions.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
+    setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPattern.getValue(),
                      NoDRYPattern.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
-    if (!VcxprojFilePath.empty()) {
-      // To convert the relative path to absolute path.
-      llvm::SmallString<128> AbsPath(VcxprojFilePath);
-      llvm::sys::fs::make_absolute(AbsPath);
-      llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile, AbsPath.str().str(),
+    if (!VcxprojFilePath.getPath().empty()) {
+      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
+                       VcxprojFilePath.getCanonicalPath().str(),
                        OptParser->isVcxprojfileSpecified());
     } else {
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile, VcxprojFilePath,
+      setValueToOptMap(clang::dpct::OPTION_VcxprojFile,
+                       VcxprojFilePath.getPath().str(),
                        OptParser->isVcxprojfileSpecified());
     }
 #endif
-    setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAllFlag,
+    setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAll.getValue(),
                      ProcessAll.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambdaFlag,
+    setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambda.getValue(),
                      SyclNamedLambda.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
@@ -1036,18 +1095,22 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
                      USMLevel.getNumOccurrences());
+    setValueToOptMap(
+        clang::dpct::OPTION_BuildScript,
+        static_cast<unsigned int>(DpctGlobalInfo::getBuildScript()),
+        BuildScript.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
-                     EnablepProfilingFlag, EnablepProfilingFlag);
+    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling, EnablepProfiling.getValue(),
+                     EnablepProfiling.getValue());
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
-                     AnalysisScope.getNumOccurrences());
-
-    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+                     AnalysisScopeOpt.getNumOccurrences());
+    if (!MigrateBuildScriptOnly &&
+        clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
       if (!canContinueMigration(Msg)) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);
@@ -1075,6 +1138,18 @@ int runDPCT(int argc, const char **argv) {
     parseFormatStyle();
   }
 
+  if (MigrateBuildScriptOnly) {
+    loadMainSrcFileInfo(OutRootPath);
+    collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
+    doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
+    ShowStatus(MigrationCmakeScriptCompleted);
+    return MigrationSucceeded;
+  }
+  ReplTy ReplCUDA, ReplSYCL;
   volatile int RunCount = 0;
   do {
     if (RunCount == 1) {
@@ -1088,12 +1163,14 @@ int runDPCT(int argc, const char **argv) {
                                   !DpctGlobalInfo::isQueryAPIMapping()
                               ? llvm::errs()
                               : DpctTerm(),
-                          Tool.getReplacements(), Passes,
+                          ReplCUDA, ReplSYCL, Passes,
                           {PassKind::PK_Analysis, PassKind::PK_Migration},
                           Tool.getFiles().getVirtualFileSystemPtr());
 
-    if (ProcessAllFlag) {
-      clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
+    if (ProcessAll) {
+      clang::tooling::SetFileProcessHandle(InRootPath.getCanonicalPath(),
+                                           OutRootPath.getCanonicalPath(),
+                                           processAllFiles);
     }
 
     int RunResult = Tool.run(&Action);
@@ -1139,8 +1216,7 @@ int runDPCT(int argc, const char **argv) {
 
   if (DpctGlobalInfo::isQueryAPIMapping()) {
     llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
-                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET
-                 << "Is migrated to" << QueryAPIMappingOpt << ":";
+                 << QueryAPIMappingSrc << llvm::raw_ostream::RESET;
     DiagnosticsEngine Diagnostics(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
         IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
@@ -1148,13 +1224,13 @@ int runDPCT(int argc, const char **argv) {
     LangOptions DefaultLangOptions;
     Rewriter Rewrite(Sources, DefaultLangOptions);
     // Must be only 1 file.
-    tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
+    tooling::applyAllReplacements(ReplSYCL.begin()->second,
                                   Rewrite);
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
+    std::string MigratedStr{""};
     bool Flag = false;
-    llvm::outs() << llvm::raw_ostream::BLUE;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
       size_t StartPos = 0;
@@ -1171,10 +1247,27 @@ int runDPCT(int argc, const char **argv) {
           EndPos = TempStr.find_last_of('\n') + 1;
           Flag = false;
         }
-        llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
+        MigratedStr += I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
-    llvm::outs() << llvm::raw_ostream::RESET;
+    if (MigratedStr.find_first_not_of(" \n") == std::string::npos) {
+      llvm::outs() << "The API is Removed.\n";
+    } else {
+      llvm::outs() << "Is migrated to" << QueryAPIMappingOpt << ":"
+                   << llvm::raw_ostream::BLUE << MigratedStr
+                   << llvm::raw_ostream::RESET;
+    }
+    return MigrationSucceeded;
+  }
+
+  if (DpctGlobalInfo::isAnalysisModeEnabled()) {
+    if (AnalysisModeOutputFile.getValue().empty()) {
+      dumpAnalysisModeStatics(llvm::outs());
+    } else {
+      dpct::RawFDOStream Out(AnalysisModeOutputFile);
+      Out.enable_colors(false);
+      dumpAnalysisModeStatics(Out);
+    }
     return MigrationSucceeded;
   }
 
@@ -1194,16 +1287,26 @@ int runDPCT(int argc, const char **argv) {
     if (ReportType.getValue() == ReportTypeEnum::RTE_Diags) {
       saveDiagsReport();
     }
-    if (ReportOnlyFlag) {
+    if (ReportOnly) {
       DumpOutputFile();
       return MigrationSucceeded;
     }
   }
 
   // if run was successful
-  int Status = saveNewFiles(Tool, InRoot, OutRoot);
-  ShowStatus(Status);
+  int Status = saveNewFiles(Tool, InRootPath, OutRootPath, ReplCUDA, ReplSYCL);
 
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
+    loadMainSrcFileInfo(OutRootPath);
+    collectCmakeScripts(InRootPath, OutRootPath);
+    doCmakeScriptMigration(InRootPath, OutRootPath);
+
+    if (cmakeScriptNotFound()) {
+      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
+  }
+
+  ShowStatus(Status);
   DumpOutputFile();
   return Status;
 }
@@ -1211,7 +1314,7 @@ int runDPCT(int argc, const char **argv) {
 int run(int argc, const char **argv) {
   int Status = runDPCT(argc, argv);
   if (IsUsingDefaultOutRoot) {
-    removeDefaultOutRootFolder(OutRoot);
+    removeDefaultOutRootFolder(OutRootPath.getCanonicalPath());
   }
   return Status;
 }

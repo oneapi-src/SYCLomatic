@@ -24,8 +24,7 @@ void *buffer_impl::allocateMem(ContextImplPtr Context, bool InitFromUserData,
                                sycl::detail::pi::PiEvent &OutEventToWait) {
   bool HostPtrReadOnly = false;
   BaseT::determineHostPtr(Context, InitFromUserData, HostPtr, HostPtrReadOnly);
-
-  assert(!(nullptr == HostPtr && BaseT::useHostPtr() && Context->is_host()) &&
+  assert(!(nullptr == HostPtr && BaseT::useHostPtr() && !Context) &&
          "Internal error. Allocating memory on the host "
          "while having use_host_ptr property");
   return MemoryManager::allocateMemBuffer(
@@ -71,21 +70,27 @@ buffer_impl::getNativeVector(backend BackendName) const {
     sycl::detail::pi::PiMem NativeMem =
         pi::cast<sycl::detail::pi::PiMem>(Cmd->getMemAllocation());
     auto Ctx = Cmd->getWorkerContext();
-    auto Platform = Ctx->getPlatformImpl();
     // If Host Shared Memory is not supported then there is alloca for host that
-    // doesn't have platform
-    if (!Platform)
+    // doesn't have context and platform
+    if (!Ctx)
       continue;
-    auto Plugin = Platform->getPlugin();
-
+    PlatformImplPtr Platform = Ctx->getPlatformImpl();
+    assert(Platform && "Platform must be present for device context");
     if (Platform->getBackend() != BackendName)
       continue;
+
+    auto Plugin = Platform->getPlugin();
+
     if (Platform->getBackend() == backend::opencl) {
       Plugin->call<PiApiKind::piMemRetain>(NativeMem);
     }
 
     pi_native_handle Handle;
-    Plugin->call<PiApiKind::piextMemGetNativeHandle>(NativeMem, &Handle);
+    // When doing buffer interop we don't know what device the memory should be
+    // resident on, so pass nullptr for Device param. Buffer interop may not be
+    // supported by all backends.
+    Plugin->call<PiApiKind::piextMemGetNativeHandle>(NativeMem, /*Dev*/ nullptr,
+                                                     &Handle);
     Handles.push_back(Handle);
   }
 

@@ -32,13 +32,14 @@ public:
 
   /// Creates a new frame for a method call.
   InterpFrame(InterpState &S, const Function *Func, InterpFrame *Caller,
-              CodePtr RetPC);
+              CodePtr RetPC, unsigned ArgSize);
 
   /// Creates a new frame with the values that make sense.
   /// I.e., the caller is the current frame of S,
   /// the This() pointer is the current Pointer on the top of S's stack,
   /// and the RVO pointer is before that.
-  InterpFrame(InterpState &S, const Function *Func, CodePtr RetPC);
+  InterpFrame(InterpState &S, const Function *Func, CodePtr RetPC,
+              unsigned VarArgSize = 0);
 
   /// Destroys the frame, killing all live pointers to stack slots.
   ~InterpFrame();
@@ -56,7 +57,7 @@ public:
   Frame *getCaller() const override;
 
   /// Returns the location of the call to the frame.
-  SourceLocation getCallLocation() const override;
+  SourceRange getCallRange() const override;
 
   /// Returns the caller.
   const FunctionDecl *getCallee() const override;
@@ -122,6 +123,9 @@ public:
 
   unsigned getDepth() const { return Depth; }
 
+  void dump() const { dump(llvm::errs(), 0); }
+  void dump(llvm::raw_ostream &OS, unsigned Indent = 0) const;
+
 private:
   /// Returns an original argument from the stack.
   template <typename T> const T &stackRef(unsigned Offset) const {
@@ -139,7 +143,7 @@ private:
     return reinterpret_cast<Block *>(Locals.get() + Offset - sizeof(Block));
   }
 
-  // Returns the inline descriptor of the local.
+  /// Returns the inline descriptor of the local.
   InlineDescriptor *localInlineDesc(unsigned Offset) const {
     return reinterpret_cast<InlineDescriptor *>(Locals.get() + Offset);
   }

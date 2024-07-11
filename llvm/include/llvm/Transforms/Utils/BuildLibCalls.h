@@ -62,6 +62,13 @@ namespace llvm {
                      LibFunc TheLibFunc, AttributeList AttributeList,
                      FunctionType *Invalid, ArgsTy... Args) = delete;
 
+  // Handle -mregparm for the given function.
+  // Note that this function is a rough approximation that only works for simple
+  // function signatures; it does not apply other relevant attributes for
+  // function signatures, including sign/zero-extension for arguments and return
+  // values.
+  void markRegisterParameterAttributes(Function *F);
+
   /// Check whether the library function is available on target and also that
   /// it in the current Module is a Function with the right type.
   bool isLibFuncEmittable(const Module *M, const TargetLibraryInfo *TLI,
@@ -80,11 +87,6 @@ namespace llvm {
                        LibFunc DoubleFn, LibFunc FloatFn, LibFunc LongDoubleFn,
                        LibFunc &TheLibFunc);
 
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  /// Return V if it is an i8*, otherwise cast it to i8*.
-  Value *castToCStr(Value *V, IRBuilderBase &B);
-
-#endif //INTEL_SYCL_OPAQUEPOINTER_READY
   /// Emit a call to the strlen function to the builder, for the specified
   /// pointer. Ptr is required to be some pointer type, and the return value has
   /// 'size_t' type.

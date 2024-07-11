@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/auto_deref %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/auto_deref/auto_deref.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/auto_deref/auto_deref.dp.cpp -o %T/auto_deref/auto_deref.dp.o %}
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>

@@ -1,0 +1,13 @@
+CMake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.10...3.26)
+set  (  VER 
+  3.15)
+set(MIN_VER 3.10)
+set(MAX_VER 3.26)
+cmake_minimum_required(VERSION ${VER})
+cmake_minimum_required(VERSION 3.10...${VER})
+cmake_minimum_required(VERSION ${MIN_VER}...${MAX_VER})
+cmake_minimum_required(VERSION ${MIN_VER_SEPARATE})
+cmake_minimum_required(VERSION 3.10...${MAX_VER_SEPARATE})
+cmake_minimum_required(VERSION ${MIN_VER_SEPARATE}...${MAX_VER_SEPARATE})

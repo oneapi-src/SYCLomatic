@@ -1,0 +1,13 @@
+# Compiler options
+set_source_files_properties(fused_softmax/scaled_masked_softmax.dp.cpp
+                            fused_softmax/scaled_upper_triang_masked_softmax.dp.cpp
+                            fused_softmax/scaled_aligned_causal_masked_softmax.dp.cpp
+                            PROPERTIES
+                            COMPILE_OPTIONS "-ffast-math")
+
+# Compiler options
+set_source_files_properties(fused_softmax/scaled_masked_softmax.dp.cpp
+                            fused_softmax/scaled_upper_triang_masked_softmax.dp.cpp
+                            fused_softmax/scaled_aligned_causal_masked_softmax.dp.cpp
+                            PROPERTIES
+                            COMPILE_OPTIONS "-ffast-math")

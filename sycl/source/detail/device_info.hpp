@@ -8,23 +8,27 @@
 
 #pragma once
 #include <detail/device_impl.hpp>
+#include <detail/jit_compiler.hpp>
 #include <detail/platform_impl.hpp>
 #include <detail/platform_util.hpp>
 #include <detail/plugin.hpp>
 #include <detail/program_manager/program_manager.hpp>
-#include <sycl/detail/common_info.hpp>
 #include <sycl/detail/defines.hpp>
 #include <sycl/detail/os_util.hpp>
 #include <sycl/detail/pi.hpp>
 #include <sycl/device.hpp>
 #include <sycl/ext/oneapi/experimental/device_architecture.hpp>
+#include <sycl/ext/oneapi/matrix/query-types.hpp>
 #include <sycl/feature_test.hpp>
 #include <sycl/info/info_desc.hpp>
 #include <sycl/memory_enums.hpp>
 #include <sycl/platform.hpp>
 
 #include <chrono>
+#include <sstream>
 #include <thread>
+
+#include "split_string.hpp"
 
 namespace sycl {
 inline namespace _V1 {
@@ -297,25 +301,6 @@ struct get_device_info_impl<std::vector<memory_scope>,
   }
 };
 
-// Specialization for bf16 math functions
-template <>
-struct get_device_info_impl<bool,
-                            info::device::ext_oneapi_bfloat16_math_functions> {
-  static bool get(const DeviceImplPtr &Dev) {
-    bool result = false;
-
-    sycl::detail::pi::PiResult Err =
-        Dev->getPlugin()->call_nocheck<PiApiKind::piDeviceGetInfo>(
-            Dev->getHandleRef(),
-            PiInfoCode<info::device::ext_oneapi_bfloat16_math_functions>::value,
-            sizeof(result), &result, nullptr);
-    if (Err != PI_SUCCESS) {
-      return false;
-    }
-    return result;
-  }
-};
-
 // Specialization for exec_capabilities, OpenCL returns a bitfield
 template <>
 struct get_device_info_impl<std::vector<info::execution_capability>,
@@ -497,10 +482,16 @@ struct get_device_info_impl<std::vector<size_t>,
         Dev->getHandleRef(), PiInfoCode<info::device::sub_group_sizes>::value,
         0, nullptr, &resultSize);
 
-    std::vector<size_t> result(resultSize / sizeof(size_t));
+    std::vector<uint32_t> result32(resultSize / sizeof(uint32_t));
     Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
         Dev->getHandleRef(), PiInfoCode<info::device::sub_group_sizes>::value,
-        resultSize, result.data(), nullptr);
+        resultSize, result32.data(), nullptr);
+
+    std::vector<size_t> result;
+    result.reserve(result32.size());
+    for (uint32_t value : result32) {
+      result.push_back(value);
+    }
     return result;
   }
 };
@@ -556,91 +547,115 @@ struct get_device_info_impl<range<Dimensions>,
   }
 };
 
-// This macro is only for AMD and NVIDIA GPU architectures
-#define NVIDIA_AMD_ARCHES(X)                                                   \
-  X("5.0", oneapi_exp_arch::nvidia_gpu_sm_50)                                  \
-  X("5.2", oneapi_exp_arch::nvidia_gpu_sm_52)                                  \
-  X("5.3", oneapi_exp_arch::nvidia_gpu_sm_53)                                  \
-  X("6.0", oneapi_exp_arch::nvidia_gpu_sm_60)                                  \
-  X("6.1", oneapi_exp_arch::nvidia_gpu_sm_61)                                  \
-  X("6.2", oneapi_exp_arch::nvidia_gpu_sm_62)                                  \
-  X("7.0", oneapi_exp_arch::nvidia_gpu_sm_70)                                  \
-  X("7.2", oneapi_exp_arch::nvidia_gpu_sm_72)                                  \
-  X("7.5", oneapi_exp_arch::nvidia_gpu_sm_75)                                  \
-  X("8.0", oneapi_exp_arch::nvidia_gpu_sm_80)                                  \
-  X("8.6", oneapi_exp_arch::nvidia_gpu_sm_86)                                  \
-  X("8.7", oneapi_exp_arch::nvidia_gpu_sm_87)                                  \
-  X("8.9", oneapi_exp_arch::nvidia_gpu_sm_89)                                  \
-  X("9.0", oneapi_exp_arch::nvidia_gpu_sm_90)                                  \
-  X("gfx701", oneapi_exp_arch::amd_gpu_gfx701)                                 \
-  X("gfx702", oneapi_exp_arch::amd_gpu_gfx702)                                 \
-  X("gfx801", oneapi_exp_arch::amd_gpu_gfx801)                                 \
-  X("gfx802", oneapi_exp_arch::amd_gpu_gfx802)                                 \
-  X("gfx803", oneapi_exp_arch::amd_gpu_gfx803)                                 \
-  X("gfx805", oneapi_exp_arch::amd_gpu_gfx805)                                 \
-  X("gfx810", oneapi_exp_arch::amd_gpu_gfx810)                                 \
-  X("gfx900", oneapi_exp_arch::amd_gpu_gfx900)                                 \
-  X("gfx902", oneapi_exp_arch::amd_gpu_gfx902)                                 \
-  X("gfx904", oneapi_exp_arch::amd_gpu_gfx904)                                 \
-  X("gfx906", oneapi_exp_arch::amd_gpu_gfx906)                                 \
-  X("gfx908", oneapi_exp_arch::amd_gpu_gfx908)                                 \
-  X("gfx90a", oneapi_exp_arch::amd_gpu_gfx90a)                                 \
-  X("gfx1010", oneapi_exp_arch::amd_gpu_gfx1010)                               \
-  X("gfx1011", oneapi_exp_arch::amd_gpu_gfx1011)                               \
-  X("gfx1012", oneapi_exp_arch::amd_gpu_gfx1012)                               \
-  X("gfx1013", oneapi_exp_arch::amd_gpu_gfx1013)                               \
-  X("gfx1030", oneapi_exp_arch::amd_gpu_gfx1030)                               \
-  X("gfx1031", oneapi_exp_arch::amd_gpu_gfx1031)                               \
-  X("gfx1032", oneapi_exp_arch::amd_gpu_gfx1032)                               \
-  X("gfx1034", oneapi_exp_arch::amd_gpu_gfx1034)
+using oneapi_exp_arch = sycl::ext::oneapi::experimental::architecture;
 
-// This macro is only for Intel GPU architectures
-#define INTEL_ARCHES(X)                                                        \
-  X(0x02000000, oneapi_exp_arch::intel_gpu_bdw)                                \
-  X(0x02400009, oneapi_exp_arch::intel_gpu_skl)                                \
-  X(0x02404009, oneapi_exp_arch::intel_gpu_kbl)                                \
-  X(0x02408009, oneapi_exp_arch::intel_gpu_cfl)                                \
-  X(0x0240c000, oneapi_exp_arch::intel_gpu_apl)                                \
-  X(0x02410000, oneapi_exp_arch::intel_gpu_glk)                                \
-  X(0x02414000, oneapi_exp_arch::intel_gpu_whl)                                \
-  X(0x02418000, oneapi_exp_arch::intel_gpu_aml)                                \
-  X(0x0241c000, oneapi_exp_arch::intel_gpu_cml)                                \
-  X(0x02c00000, oneapi_exp_arch::intel_gpu_icllp)                              \
-  X(0x02c08000, oneapi_exp_arch::intel_gpu_ehl)                                \
-  X(0x03000000, oneapi_exp_arch::intel_gpu_tgllp)                              \
-  X(0x03004000, oneapi_exp_arch::intel_gpu_rkl)                                \
-  X(0x03008000, oneapi_exp_arch::intel_gpu_adl_s)                              \
-  X(0x0300c000, oneapi_exp_arch::intel_gpu_adl_p)                              \
-  X(0x03010000, oneapi_exp_arch::intel_gpu_adl_n)                              \
-  X(0x03028000, oneapi_exp_arch::intel_gpu_dg1)                                \
-  X(0x030dc008, oneapi_exp_arch::intel_gpu_acm_g10)                            \
-  X(0x030e0005, oneapi_exp_arch::intel_gpu_acm_g11)                            \
-  X(0x030e4000, oneapi_exp_arch::intel_gpu_acm_g12)                            \
-  X(0x030f0007, oneapi_exp_arch::intel_gpu_pvc)
+// Only for NVIDIA and AMD GPU architectures
+constexpr std::pair<const char *, oneapi_exp_arch> NvidiaAmdGPUArchitectures[] =
+    {
+        {"5.0", oneapi_exp_arch::nvidia_gpu_sm_50},
+        {"5.2", oneapi_exp_arch::nvidia_gpu_sm_52},
+        {"5.3", oneapi_exp_arch::nvidia_gpu_sm_53},
+        {"6.0", oneapi_exp_arch::nvidia_gpu_sm_60},
+        {"6.1", oneapi_exp_arch::nvidia_gpu_sm_61},
+        {"6.2", oneapi_exp_arch::nvidia_gpu_sm_62},
+        {"7.0", oneapi_exp_arch::nvidia_gpu_sm_70},
+        {"7.2", oneapi_exp_arch::nvidia_gpu_sm_72},
+        {"7.5", oneapi_exp_arch::nvidia_gpu_sm_75},
+        {"8.0", oneapi_exp_arch::nvidia_gpu_sm_80},
+        {"8.6", oneapi_exp_arch::nvidia_gpu_sm_86},
+        {"8.7", oneapi_exp_arch::nvidia_gpu_sm_87},
+        {"8.9", oneapi_exp_arch::nvidia_gpu_sm_89},
+        {"9.0", oneapi_exp_arch::nvidia_gpu_sm_90},
+        {"gfx701", oneapi_exp_arch::amd_gpu_gfx701},
+        {"gfx702", oneapi_exp_arch::amd_gpu_gfx702},
+        {"gfx801", oneapi_exp_arch::amd_gpu_gfx801},
+        {"gfx802", oneapi_exp_arch::amd_gpu_gfx802},
+        {"gfx803", oneapi_exp_arch::amd_gpu_gfx803},
+        {"gfx805", oneapi_exp_arch::amd_gpu_gfx805},
+        {"gfx810", oneapi_exp_arch::amd_gpu_gfx810},
+        {"gfx900", oneapi_exp_arch::amd_gpu_gfx900},
+        {"gfx902", oneapi_exp_arch::amd_gpu_gfx902},
+        {"gfx904", oneapi_exp_arch::amd_gpu_gfx904},
+        {"gfx906", oneapi_exp_arch::amd_gpu_gfx906},
+        {"gfx908", oneapi_exp_arch::amd_gpu_gfx908},
+        {"gfx909", oneapi_exp_arch::amd_gpu_gfx909},
+        {"gfx90a", oneapi_exp_arch::amd_gpu_gfx90a},
+        {"gfx90c", oneapi_exp_arch::amd_gpu_gfx90c},
+        {"gfx940", oneapi_exp_arch::amd_gpu_gfx940},
+        {"gfx941", oneapi_exp_arch::amd_gpu_gfx941},
+        {"gfx942", oneapi_exp_arch::amd_gpu_gfx942},
+        {"gfx1010", oneapi_exp_arch::amd_gpu_gfx1010},
+        {"gfx1011", oneapi_exp_arch::amd_gpu_gfx1011},
+        {"gfx1012", oneapi_exp_arch::amd_gpu_gfx1012},
+        {"gfx1013", oneapi_exp_arch::amd_gpu_gfx1013},
+        {"gfx1030", oneapi_exp_arch::amd_gpu_gfx1030},
+        {"gfx1031", oneapi_exp_arch::amd_gpu_gfx1031},
+        {"gfx1032", oneapi_exp_arch::amd_gpu_gfx1032},
+        {"gfx1033", oneapi_exp_arch::amd_gpu_gfx1033},
+        {"gfx1034", oneapi_exp_arch::amd_gpu_gfx1034},
+        {"gfx1035", oneapi_exp_arch::amd_gpu_gfx1035},
+        {"gfx1036", oneapi_exp_arch::amd_gpu_gfx1036},
+        {"gfx1100", oneapi_exp_arch::amd_gpu_gfx1100},
+        {"gfx1101", oneapi_exp_arch::amd_gpu_gfx1101},
+        {"gfx1102", oneapi_exp_arch::amd_gpu_gfx1102},
+        {"gfx1103", oneapi_exp_arch::amd_gpu_gfx1103},
+        {"gfx1150", oneapi_exp_arch::amd_gpu_gfx1150},
+        {"gfx1151", oneapi_exp_arch::amd_gpu_gfx1151},
+        {"gfx1200", oneapi_exp_arch::amd_gpu_gfx1200},
+        {"gfx1201", oneapi_exp_arch::amd_gpu_gfx1201},
+};
 
-#define CMP_NVIDIA_AMD(s, i)                                                   \
-  if (strcmp(s, arch) == 0)                                                    \
-    return i;
+// Only for Intel GPU architectures
+constexpr std::pair<const int, oneapi_exp_arch> IntelGPUArchitectures[] = {
+    {0x02000000, oneapi_exp_arch::intel_gpu_bdw},
+    {0x02400009, oneapi_exp_arch::intel_gpu_skl},
+    {0x02404009, oneapi_exp_arch::intel_gpu_kbl},
+    {0x02408009, oneapi_exp_arch::intel_gpu_cfl},
+    {0x0240c000, oneapi_exp_arch::intel_gpu_apl},
+    {0x02410000, oneapi_exp_arch::intel_gpu_glk},
+    {0x02414000, oneapi_exp_arch::intel_gpu_whl},
+    {0x02418000, oneapi_exp_arch::intel_gpu_aml},
+    {0x0241c000, oneapi_exp_arch::intel_gpu_cml},
+    {0x02c00000, oneapi_exp_arch::intel_gpu_icllp},
+    {0x02c08000, oneapi_exp_arch::intel_gpu_ehl},
+    {0x03000000, oneapi_exp_arch::intel_gpu_tgllp},
+    {0x03004000, oneapi_exp_arch::intel_gpu_rkl},
+    {0x03008000, oneapi_exp_arch::intel_gpu_adl_s},
+    {0x0300c000, oneapi_exp_arch::intel_gpu_adl_p},
+    {0x03010000, oneapi_exp_arch::intel_gpu_adl_n},
+    {0x03028000, oneapi_exp_arch::intel_gpu_dg1},
+    {0x030dc008, oneapi_exp_arch::intel_gpu_acm_g10},
+    {0x030e0005, oneapi_exp_arch::intel_gpu_acm_g11},
+    {0x030e4000, oneapi_exp_arch::intel_gpu_acm_g12},
+    {0x030f0007, oneapi_exp_arch::intel_gpu_pvc},
+    {0x030f4007, oneapi_exp_arch::intel_gpu_pvc_vg},
+    {0x03118004, oneapi_exp_arch::intel_gpu_mtl_u},
+    {0x0311c004, oneapi_exp_arch::intel_gpu_mtl_h},
+    {0x03128004, oneapi_exp_arch::intel_gpu_arl_h},
+    {0x05004004, oneapi_exp_arch::intel_gpu_bmg_g21},
+    {0x05010004, oneapi_exp_arch::intel_gpu_lnl_m},
+};
 
-#define CMP_INTEL(p, i)                                                        \
-  if (p == arch)                                                               \
-    return i;
+// Only for Intel CPU architectures
+constexpr std::pair<const int, oneapi_exp_arch> IntelCPUArchitectures[] = {
+    {8, oneapi_exp_arch::intel_cpu_spr},
+    {9, oneapi_exp_arch::intel_cpu_gnr},
+};
 
 template <>
 struct get_device_info_impl<
     ext::oneapi::experimental::architecture,
     ext::oneapi::experimental::info::device::architecture> {
   static ext::oneapi::experimental::architecture get(const DeviceImplPtr &Dev) {
-    using oneapi_exp_arch = sycl::ext::oneapi::experimental::architecture;
     backend CurrentBackend = Dev->getBackend();
     if (Dev->is_gpu() && (backend::ext_oneapi_level_zero == CurrentBackend ||
                           backend::opencl == CurrentBackend)) {
       auto MapArchIDToArchName = [](const int arch) {
-        INTEL_ARCHES(CMP_INTEL);
-        throw sycl::exception(
-            make_error_code(errc::runtime),
-            "The current device architecture is not supported by "
-            "sycl_ext_oneapi_device_architecture.");
+        for (const auto &Item : IntelGPUArchitectures) {
+          if (Item.first == arch)
+            return Item.second;
+        }
+        return ext::oneapi::experimental::architecture::unknown;
       };
       uint32_t DeviceIp;
       Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
@@ -652,11 +667,11 @@ struct get_device_info_impl<
     } else if (Dev->is_gpu() && (backend::ext_oneapi_cuda == CurrentBackend ||
                                  backend::ext_oneapi_hip == CurrentBackend)) {
       auto MapArchIDToArchName = [](const char *arch) {
-        NVIDIA_AMD_ARCHES(CMP_NVIDIA_AMD);
-        throw sycl::exception(
-            make_error_code(errc::runtime),
-            "The current device architecture is not supported by "
-            "sycl_ext_oneapi_device_architecture.");
+        for (const auto &Item : NvidiaAmdGPUArchitectures) {
+          if (std::string_view(Item.first) == arch)
+            return Item.second;
+        }
+        return ext::oneapi::experimental::architecture::unknown;
       };
       size_t ResultSize = 0;
       Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
@@ -666,28 +681,238 @@ struct get_device_info_impl<
       Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
           Dev->getHandleRef(), PiInfoCode<info::device::version>::value,
           ResultSize, DeviceArch.get(), nullptr);
-      return MapArchIDToArchName(DeviceArch.get());
+      std::string DeviceArchCopy(DeviceArch.get());
+      std::string DeviceArchSubstr =
+          DeviceArchCopy.substr(0, DeviceArchCopy.find(":"));
+      return MapArchIDToArchName(DeviceArchSubstr.data());
     } else if (Dev->is_cpu() && backend::opencl == CurrentBackend) {
-      // TODO: add support of different CPU architectures to
-      // sycl_ext_oneapi_device_architecture
-      return sycl::ext::oneapi::experimental::architecture::x86_64;
+      auto MapArchIDToArchName = [](const int arch) {
+        for (const auto &Item : IntelCPUArchitectures) {
+          if (Item.first == arch)
+            return Item.second;
+        }
+        return sycl::ext::oneapi::experimental::architecture::x86_64;
+      };
+      uint32_t DeviceIp;
+      Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
+          Dev->getHandleRef(),
+          PiInfoCode<
+              ext::oneapi::experimental::info::device::architecture>::value,
+          sizeof(DeviceIp), &DeviceIp, nullptr);
+      return MapArchIDToArchName(DeviceIp);
     } // else is not needed
     // TODO: add support of other architectures by extending with else if
-    // Generating a user-friendly error message
-    std::string DeviceStr;
-    if (Dev->is_gpu())
-      DeviceStr = "GPU";
-    else if (Dev->is_cpu())
-      DeviceStr = "CPU";
-    else if (Dev->is_accelerator())
-      DeviceStr = "accelerator";
-    // else if not needed
-    std::stringstream ErrorMessage;
-    ErrorMessage
-        << "sycl_ext_oneapi_device_architecture feature is not supported on "
-        << DeviceStr << " device with sycl::backend::" << CurrentBackend
-        << " backend.";
-    throw sycl::exception(make_error_code(errc::runtime), ErrorMessage.str());
+    return ext::oneapi::experimental::architecture::unknown;
+  }
+};
+
+template <>
+struct get_device_info_impl<
+    std::vector<ext::oneapi::experimental::matrix::combination>,
+    ext::oneapi::experimental::info::device::matrix_combinations> {
+  static std::vector<ext::oneapi::experimental::matrix::combination>
+  get(const DeviceImplPtr &Dev) {
+    using namespace ext::oneapi::experimental::matrix;
+    using namespace ext::oneapi::experimental;
+    backend CurrentBackend = Dev->getBackend();
+    auto get_current_architecture = [&Dev]() -> std::optional<architecture> {
+      // this helper lambda ignores all runtime-related exceptions from
+      // quering the device architecture. For instance, if device architecture
+      // on user's machine is not supported by
+      // sycl_ext_oneapi_device_architecture, the runtime exception is omitted,
+      // and std::nullopt is returned.
+      try {
+        return get_device_info_impl<
+            architecture,
+            ext::oneapi::experimental::info::device::architecture>::get(Dev);
+      } catch (sycl::exception &e) {
+        if (e.code() != errc::runtime)
+          std::rethrow_exception(std::make_exception_ptr(e));
+      }
+      return std::nullopt;
+    };
+    std::optional<architecture> DeviceArchOpt = get_current_architecture();
+    if (!DeviceArchOpt.has_value())
+      return {};
+    architecture DeviceArch = DeviceArchOpt.value();
+    if (architecture::intel_cpu_spr == DeviceArch)
+      return {
+          {16, 16, 64, 0, 0, 0, matrix_type::uint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 64, 0, 0, 0, matrix_type::uint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 64, 0, 0, 0, matrix_type::sint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 64, 0, 0, 0, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 32, 0, 0, 0, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+      };
+    else if (architecture::intel_cpu_gnr == DeviceArch)
+      return {
+          {16, 16, 64, 0, 0, 0, matrix_type::uint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 64, 0, 0, 0, matrix_type::uint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 64, 0, 0, 0, matrix_type::sint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 64, 0, 0, 0, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {16, 16, 32, 0, 0, 0, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {16, 16, 32, 0, 0, 0, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+      };
+    else if (architecture::intel_gpu_pvc == DeviceArch)
+      return {
+          {8, 0, 0, 0, 16, 32, matrix_type::uint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 16, 32, matrix_type::uint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 16, 32, matrix_type::sint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 16, 32, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 16, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+          {8, 0, 0, 0, 16, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 16, 16, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 1, 64, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 32, 64, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {8, 0, 0, 0, 16, 8, matrix_type::tf32, matrix_type::tf32,
+           matrix_type::fp32, matrix_type::fp32},
+      };
+    else if ((architecture::intel_gpu_dg2_g10 == DeviceArch) ||
+             (architecture::intel_gpu_dg2_g11 == DeviceArch) ||
+             (architecture::intel_gpu_dg2_g12 == DeviceArch))
+      return {
+          {8, 0, 0, 0, 8, 32, matrix_type::uint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 8, 32, matrix_type::uint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 8, 32, matrix_type::sint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 8, 32, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {8, 0, 0, 0, 8, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+          {8, 0, 0, 0, 8, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+      };
+    else if (architecture::amd_gpu_gfx90a == DeviceArch)
+      return {
+          {0, 0, 0, 32, 32, 8, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 16, 16, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 32, 32, 8, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {0, 0, 0, 16, 16, 16, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {0, 0, 0, 32, 32, 8, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 16, 16, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 16, 16, 4, matrix_type::fp64, matrix_type::fp64,
+           matrix_type::fp64, matrix_type::fp64},
+      };
+    else if (backend::ext_oneapi_cuda == CurrentBackend) {
+      // TODO: Tho following can be simplified when comparison of architectures
+      // using < and > will be implemented
+      using oneapi_exp_arch = sycl::ext::oneapi::experimental::architecture;
+      constexpr std::pair<float, oneapi_exp_arch> NvidiaArchNumbs[] = {
+          {5.0, oneapi_exp_arch::nvidia_gpu_sm_50},
+          {5.2, oneapi_exp_arch::nvidia_gpu_sm_52},
+          {5.3, oneapi_exp_arch::nvidia_gpu_sm_53},
+          {6.0, oneapi_exp_arch::nvidia_gpu_sm_60},
+          {6.1, oneapi_exp_arch::nvidia_gpu_sm_61},
+          {6.2, oneapi_exp_arch::nvidia_gpu_sm_62},
+          {7.0, oneapi_exp_arch::nvidia_gpu_sm_70},
+          {7.2, oneapi_exp_arch::nvidia_gpu_sm_72},
+          {7.5, oneapi_exp_arch::nvidia_gpu_sm_75},
+          {8.0, oneapi_exp_arch::nvidia_gpu_sm_80},
+          {8.6, oneapi_exp_arch::nvidia_gpu_sm_86},
+          {8.7, oneapi_exp_arch::nvidia_gpu_sm_87},
+          {8.9, oneapi_exp_arch::nvidia_gpu_sm_89},
+          {9.0, oneapi_exp_arch::nvidia_gpu_sm_90},
+      };
+      auto GetArchNum = [&](const architecture &arch) {
+        for (const auto &Item : NvidiaArchNumbs)
+          if (Item.second == arch)
+            return Item.first;
+        return 0.f;
+      };
+      float ComputeCapability = GetArchNum(DeviceArch);
+      std::vector<combination> sm_70_combinations = {
+          {0, 0, 0, 16, 16, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 8, 32, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 32, 8, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 16, 16, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp16, matrix_type::fp16},
+          {0, 0, 0, 8, 32, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp16, matrix_type::fp16},
+          {0, 0, 0, 32, 8, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp16, matrix_type::fp16},
+          {0, 0, 0, 16, 16, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp16},
+          {0, 0, 0, 8, 32, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp16},
+          {0, 0, 0, 32, 8, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp32, matrix_type::fp16},
+          {0, 0, 0, 16, 16, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp16, matrix_type::fp32},
+          {0, 0, 0, 8, 32, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp16, matrix_type::fp32},
+          {0, 0, 0, 32, 8, 16, matrix_type::fp16, matrix_type::fp16,
+           matrix_type::fp16, matrix_type::fp32}};
+      std::vector<combination> sm_72_combinations = {
+          {0, 0, 0, 16, 16, 16, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {0, 0, 0, 8, 32, 16, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {0, 0, 0, 32, 8, 16, matrix_type::sint8, matrix_type::sint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {0, 0, 0, 16, 16, 16, matrix_type::uint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {0, 0, 0, 8, 32, 16, matrix_type::uint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32},
+          {0, 0, 0, 32, 8, 16, matrix_type::uint8, matrix_type::uint8,
+           matrix_type::sint32, matrix_type::sint32}};
+      std::vector<combination> sm_80_combinations = {
+          {0, 0, 0, 16, 16, 8, matrix_type::tf32, matrix_type::tf32,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 16, 16, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 8, 32, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 32, 8, 16, matrix_type::bf16, matrix_type::bf16,
+           matrix_type::fp32, matrix_type::fp32},
+          {0, 0, 0, 8, 8, 4, matrix_type::fp64, matrix_type::fp64,
+           matrix_type::fp64, matrix_type::fp64}};
+      if (ComputeCapability >= 8.0) {
+        sm_80_combinations.insert(sm_80_combinations.end(),
+                                  sm_72_combinations.begin(),
+                                  sm_72_combinations.end());
+        sm_80_combinations.insert(sm_80_combinations.end(),
+                                  sm_70_combinations.begin(),
+                                  sm_70_combinations.end());
+        return sm_80_combinations;
+      } else if (ComputeCapability >= 7.2) {
+        sm_72_combinations.insert(sm_72_combinations.end(),
+                                  sm_70_combinations.begin(),
+                                  sm_70_combinations.end());
+        return sm_72_combinations;
+      } else if (ComputeCapability >= 7.0)
+        return sm_70_combinations;
+    }
+    return {};
   }
 };
 
@@ -903,11 +1128,22 @@ struct get_device_info_impl<
     bool, ext::codeplay::experimental::info::device::supports_fusion> {
   static bool get(const DeviceImplPtr &Dev) {
 #if SYCL_EXT_CODEPLAY_KERNEL_FUSION
-    // Currently fusion is only supported for SPIR-V based backends, i.e. OpenCL
-    // and LevelZero.
+    // If the JIT library can't be loaded or entry points in the JIT library
+    // can't be resolved, fusion is not available.
+    if (!jit_compiler::get_instance().isAvailable()) {
+      return false;
+    }
+    // Currently fusion is only supported for SPIR-V based backends,
+    // CUDA and HIP.
+    if (Dev->getBackend() == backend::opencl) {
+      // Exclude all non-CPU or non-GPU devices on OpenCL, in particular
+      // accelerators.
+      return Dev->is_cpu() || Dev->is_gpu();
+    }
+
     return (Dev->getBackend() == backend::ext_oneapi_level_zero) ||
-           (Dev->getBackend() == backend::opencl) ||
-           (Dev->getBackend() == backend::ext_oneapi_cuda);
+           (Dev->getBackend() == backend::ext_oneapi_cuda) ||
+           (Dev->getBackend() == backend::ext_oneapi_hip);
 #else  // SYCL_EXT_CODEPLAY_KERNEL_FUSION
     (void)Dev;
     return false;
@@ -931,32 +1167,70 @@ struct get_device_info_impl<
   }
 };
 
-// Specialization for graph extension support
+// Specialization for composite devices extension.
 template <>
 struct get_device_info_impl<
-    ext::oneapi::experimental::info::graph_support_level,
-    ext::oneapi::experimental::info::device::graph_support> {
-  static ext::oneapi::experimental::info::graph_support_level
-  get(const DeviceImplPtr &Dev) {
+    std::vector<sycl::device>,
+    ext::oneapi::experimental::info::device::component_devices> {
+  static std::vector<sycl::device> get(const DeviceImplPtr &Dev) {
     size_t ResultSize = 0;
-    Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
-        Dev->getHandleRef(), PI_DEVICE_INFO_EXTENSIONS, 0, nullptr,
-        &ResultSize);
-    if (ResultSize == 0)
-      return ext::oneapi::experimental::info::graph_support_level::unsupported;
+    // First call to get DevCount.
+    pi_result Err = Dev->getPlugin()->call_nocheck<PiApiKind::piDeviceGetInfo>(
+        Dev->getHandleRef(),
+        PiInfoCode<
+            ext::oneapi::experimental::info::device::component_devices>::value,
+        0, nullptr, &ResultSize);
 
-    std::unique_ptr<char[]> Result(new char[ResultSize]);
-    Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
-        Dev->getHandleRef(), PI_DEVICE_INFO_EXTENSIONS, ResultSize,
-        Result.get(), nullptr);
+    // If the feature is unsupported or if the result was empty, return an empty
+    // list of devices.
+    if (Err == PI_ERROR_INVALID_VALUE || (Err == PI_SUCCESS && ResultSize == 0))
+      return {};
 
-    std::string_view ExtensionsString(Result.get());
-    bool CmdBufferSupport =
-        ExtensionsString.find("ur_exp_command_buffer") != std::string::npos;
-    return CmdBufferSupport
-               ? ext::oneapi::experimental::info::graph_support_level::native
-               : ext::oneapi::experimental::info::graph_support_level::
-                     unsupported;
+    // Otherwise, if there was an error from PI it is unexpected and we should
+    // handle it accordingly.
+    Dev->getPlugin()->checkPiResult(Err);
+
+    size_t DevCount = ResultSize / sizeof(pi_device);
+    // Second call to get the list.
+    std::vector<pi_device> Devs(DevCount);
+    Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
+        Dev->getHandleRef(),
+        PiInfoCode<
+            ext::oneapi::experimental::info::device::component_devices>::value,
+        ResultSize, Devs.data(), nullptr);
+    std::vector<sycl::device> Result;
+    const auto &Platform = Dev->getPlatformImpl();
+    for (const auto &d : Devs)
+      Result.push_back(createSyclObjFromImpl<device>(
+          Platform->getOrMakeDeviceImpl(d, Platform)));
+
+    return Result;
+  }
+};
+template <>
+struct get_device_info_impl<
+    sycl::device, ext::oneapi::experimental::info::device::composite_device> {
+  static sycl::device get(const DeviceImplPtr &Dev) {
+    if (!Dev->has(sycl::aspect::ext_oneapi_is_component))
+      throw sycl::exception(make_error_code(errc::invalid),
+                            "Only devices with aspect::ext_oneapi_is_component "
+                            "can call this function.");
+
+    typename sycl_to_pi<device>::type Result;
+    Dev->getPlugin()->call<PiApiKind::piDeviceGetInfo>(
+        Dev->getHandleRef(),
+        PiInfoCode<
+            ext::oneapi::experimental::info::device::composite_device>::value,
+        sizeof(Result), &Result, nullptr);
+
+    if (Result) {
+      const auto &Platform = Dev->getPlatformImpl();
+      return createSyclObjFromImpl<device>(
+          Platform->getOrMakeDeviceImpl(Result, Platform));
+    }
+    throw sycl::exception(make_error_code(errc::invalid),
+                          "A component with aspect::ext_oneapi_is_component "
+                          "must have a composite device.");
   }
 };
 
@@ -974,938 +1248,92 @@ typename Param::return_type get_device_info(const DeviceImplPtr &Dev) {
   return get_device_info_impl<typename Param::return_type, Param>::get(Dev);
 }
 
-// SYCL host device information
-
-// Default template is disabled, all possible instantiations are
-// specified explicitly.
-template <typename Param>
-inline typename Param::return_type get_device_info_host() = delete;
-
-template <>
-inline std::vector<sycl::aspect> get_device_info_host<info::device::aspects>() {
-  return std::vector<sycl::aspect>();
-}
-
-template <>
-inline ext::oneapi::experimental::architecture
-get_device_info_host<ext::oneapi::experimental::info::device::architecture>() {
-  return ext::oneapi::experimental::architecture::x86_64;
-}
-
-template <>
-inline info::device_type get_device_info_host<info::device::device_type>() {
-  return info::device_type::host;
-}
-
-template <> inline uint32_t get_device_info_host<info::device::vendor_id>() {
-  return 0x8086;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::max_compute_units>() {
-  return std::thread::hardware_concurrency();
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::max_work_item_dimensions>() {
-  return 3;
-}
-
-template <>
-inline range<1> get_device_info_host<info::device::max_work_item_sizes<1>>() {
-  // current value is the required minimum
-  return {1};
-}
-
-template <>
-inline range<2> get_device_info_host<info::device::max_work_item_sizes<2>>() {
-  // current value is the required minimum
-  return {1, 1};
-}
-
-template <>
-inline range<3> get_device_info_host<info::device::max_work_item_sizes<3>>() {
-  // current value is the required minimum
-  return {1, 1, 1};
-}
-
-template <>
-inline constexpr size_t get_device_info_host<
-    ext::oneapi::experimental::info::device::max_global_work_groups>() {
-  // See handler.hpp for the maximum value :
-  return static_cast<size_t>((std::numeric_limits<int>::max)());
-}
-
-template <>
-inline id<1> get_device_info_host<
-    ext::oneapi::experimental::info::device::max_work_groups<1>>() {
-  // See handler.hpp for the maximum value :
-  static constexpr size_t Limit = get_device_info_host<
-      ext::oneapi::experimental::info::device::max_global_work_groups>();
-  return {Limit};
-}
-
-template <>
-inline id<2> get_device_info_host<
-    ext::oneapi::experimental::info::device::max_work_groups<2>>() {
-  // See handler.hpp for the maximum value :
-  static constexpr size_t Limit = get_device_info_host<
-      ext::oneapi::experimental::info::device::max_global_work_groups>();
-  return {Limit, Limit};
-}
-
-template <>
-inline id<3> get_device_info_host<
-    ext::oneapi::experimental::info::device::max_work_groups<3>>() {
-  // See handler.hpp for the maximum value :
-  static constexpr size_t Limit = get_device_info_host<
-      ext::oneapi::experimental::info::device::max_global_work_groups>();
-  return {Limit, Limit, Limit};
-}
-
-// TODO:remove with deprecated feature
-// device::get_info<info::device::ext_oneapi_max_global_work_groups>
-template <>
-inline constexpr size_t
-get_device_info_host<info::device::ext_oneapi_max_global_work_groups>() {
-  return get_device_info_host<
-      ext::oneapi::experimental::info::device::max_global_work_groups>();
-}
-
-// TODO:remove with deprecated feature
-// device::get_info<info::device::ext_oneapi_max_work_groups_1d>
-template <>
-inline id<1>
-get_device_info_host<info::device::ext_oneapi_max_work_groups_1d>() {
-
-  return get_device_info_host<
-      ext::oneapi::experimental::info::device::max_work_groups<1>>();
-}
-
-// TODO:remove with deprecated feature
-// device::get_info<info::device::ext_oneapi_max_work_groups_2d>
-template <>
-inline id<2>
-get_device_info_host<info::device::ext_oneapi_max_work_groups_2d>() {
-  return get_device_info_host<
-      ext::oneapi::experimental::info::device::max_work_groups<2>>();
-}
-
-// TODO:remove with deprecated feature
-// device::get_info<info::device::ext_oneapi_max_work_groups_3d>
-template <>
-inline id<3>
-get_device_info_host<info::device::ext_oneapi_max_work_groups_3d>() {
-  return get_device_info_host<
-      ext::oneapi::experimental::info::device::max_work_groups<3>>();
-}
-
-template <>
-inline size_t get_device_info_host<info::device::max_work_group_size>() {
-  // current value is the required minimum
-  return 1;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::preferred_vector_width_char>() {
-  // TODO update when appropriate
-  return 1;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::preferred_vector_width_short>() {
-  // TODO update when appropriate
-  return 1;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::preferred_vector_width_int>() {
-  // TODO update when appropriate
-  return 1;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::preferred_vector_width_long>() {
-  // TODO update when appropriate
-  return 1;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::preferred_vector_width_float>() {
-  // TODO update when appropriate
-  return 1;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::preferred_vector_width_double>() {
-  // TODO update when appropriate
-  return 1;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::preferred_vector_width_half>() {
-  // TODO update when appropriate
-  return 0;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::native_vector_width_char>() {
-  return PlatformUtil::getNativeVectorWidth(PlatformUtil::TypeIndex::Char);
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::native_vector_width_short>() {
-  return PlatformUtil::getNativeVectorWidth(PlatformUtil::TypeIndex::Short);
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::native_vector_width_int>() {
-  return PlatformUtil::getNativeVectorWidth(PlatformUtil::TypeIndex::Int);
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::native_vector_width_long>() {
-  return PlatformUtil::getNativeVectorWidth(PlatformUtil::TypeIndex::Long);
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::native_vector_width_float>() {
-  return PlatformUtil::getNativeVectorWidth(PlatformUtil::TypeIndex::Float);
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::native_vector_width_double>() {
-  return PlatformUtil::getNativeVectorWidth(PlatformUtil::TypeIndex::Double);
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::native_vector_width_half>() {
-  return PlatformUtil::getNativeVectorWidth(PlatformUtil::TypeIndex::Half);
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::max_clock_frequency>() {
-  return PlatformUtil::getMaxClockFrequency();
-}
-
-template <> inline uint32_t get_device_info_host<info::device::address_bits>() {
-  return sizeof(void *) * 8;
-}
-
-template <>
-inline uint64_t get_device_info_host<info::device::global_mem_size>() {
-  return static_cast<uint64_t>(OSUtil::getOSMemSize());
-}
-
-template <>
-inline uint64_t get_device_info_host<info::device::max_mem_alloc_size>() {
-  // current value is the required minimum
-  const uint64_t a = get_device_info_host<info::device::global_mem_size>() / 4;
-  const uint64_t b = 128ul * 1024 * 1024;
-  return (a > b) ? a : b;
-}
-
-template <> inline bool get_device_info_host<info::device::image_support>() {
-  return true;
-}
-
-template <> inline bool get_device_info_host<info::device::atomic64>() {
-  return false;
-}
-
-template <>
-inline std::vector<memory_order>
-get_device_info_host<info::device::atomic_memory_order_capabilities>() {
-  return {memory_order::relaxed, memory_order::acquire, memory_order::release,
-          memory_order::acq_rel, memory_order::seq_cst};
-}
-
-template <>
-inline std::vector<memory_order>
-get_device_info_host<info::device::atomic_fence_order_capabilities>() {
-  return {memory_order::relaxed, memory_order::acquire, memory_order::release,
-          memory_order::acq_rel};
-}
-
-template <>
-inline std::vector<memory_scope>
-get_device_info_host<info::device::atomic_memory_scope_capabilities>() {
-  return {memory_scope::work_item, memory_scope::sub_group,
-          memory_scope::work_group, memory_scope::device, memory_scope::system};
-}
-
-template <>
-inline std::vector<memory_scope>
-get_device_info_host<info::device::atomic_fence_scope_capabilities>() {
-  return {memory_scope::work_item, memory_scope::sub_group,
-          memory_scope::work_group, memory_scope::device, memory_scope::system};
-}
-
-template <>
-inline bool
-get_device_info_host<info::device::ext_oneapi_bfloat16_math_functions>() {
-  return false;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::max_read_image_args>() {
-  // current value is the required minimum
-  return 128;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::max_write_image_args>() {
-  // current value is the required minimum
-  return 8;
-}
-
-template <>
-inline size_t get_device_info_host<info::device::image2d_max_width>() {
-  // SYCL guarantees at least 8192. Some devices already known to provide more
-  // than that (i.e. it is 16384 for opencl:gpu), which may create issues during
-  // image object allocation on host.
-  // Using any fixed number (i.e. 16384) brings the risk of having similar
-  // issues on newer devices in future. Thus it does not make sense limiting
-  // the returned value on host. Practially speaking the returned value on host
-  // depends only on memory required for the image, which also depends on
-  // the image channel_type and the image height. Both are not known in this
-  // query, thus it becomes user's responsibility to choose proper image
-  // parameters depending on similar query to (non-host device) and amount
-  // of available/allocatable memory.
-  return std::numeric_limits<std::size_t>::max();
-}
-
-template <>
-inline size_t get_device_info_host<info::device::image2d_max_height>() {
-  // SYCL guarantees at least 8192. Some devices already known to provide more
-  // than that (i.e. it is 16384 for opencl:gpu), which may create issues during
-  // image object allocation on host.
-  // Using any fixed number (i.e. 16384) brings the risk of having similar
-  // issues on newer devices in future. Thus it does not make sense limiting
-  // the returned value on host. Practially speaking the returned value on host
-  // depends only on memory required for the image, which also depends on
-  // the image channel_type and the image width. Both are not known in this
-  // query, thus it becomes user's responsibility to choose proper image
-  // parameters depending on similar query to (non-host device) and amount
-  // of available/allocatable memory.
-  return std::numeric_limits<std::size_t>::max();
-}
-
-template <>
-inline size_t get_device_info_host<info::device::image3d_max_width>() {
-  // SYCL guarantees at least 8192. Some devices already known to provide more
-  // than that (i.e. it is 16384 for opencl:gpu), which may create issues during
-  // image object allocation on host.
-  // Using any fixed number (i.e. 16384) brings the risk of having similar
-  // issues on newer devices in future. Thus it does not make sense limiting
-  // the returned value on host. Practially speaking the returned value on host
-  // depends only on memory required for the image, which also depends on
-  // the image channel_type and the image height/depth. Both are not known
-  // in this query, thus it becomes user's responsibility to choose proper image
-  // parameters depending on similar query to (non-host device) and amount
-  // of available/allocatable memory.
-  return std::numeric_limits<std::size_t>::max();
-}
-
-template <>
-inline size_t get_device_info_host<info::device::image3d_max_height>() {
-  // SYCL guarantees at least 8192. Some devices already known to provide more
-  // than that (i.e. it is 16384 for opencl:gpu), which may create issues during
-  // image object allocation on host.
-  // Using any fixed number (i.e. 16384) brings the risk of having similar
-  // issues on newer devices in future. Thus it does not make sense limiting
-  // the returned value on host. Practially speaking the returned value on host
-  // depends only on memory required for the image, which also depends on
-  // the image channel_type and the image width/depth. Both are not known
-  // in this query, thus it becomes user's responsibility to choose proper image
-  // parameters depending on similar query to (non-host device) and amount
-  // of available/allocatable memory.
-  return std::numeric_limits<std::size_t>::max();
-}
-
-template <>
-inline size_t get_device_info_host<info::device::image3d_max_depth>() {
-  // SYCL guarantees at least 8192. Some devices already known to provide more
-  // than that (i.e. it is 16384 for opencl:gpu), which may create issues during
-  // image object allocation on host.
-  // Using any fixed number (i.e. 16384) brings the risk of having similar
-  // issues on newer devices in future. Thus it does not make sense limiting
-  // the returned value on host. Practially speaking the returned value on host
-  // depends only on memory required for the image, which also depends on
-  // the image channel_type and the image height/width, which are not known
-  // in this query, thus it becomes user's responsibility to choose proper image
-  // parameters depending on similar query to (non-host device) and amount
-  // of available/allocatable memory.
-  return std::numeric_limits<std::size_t>::max();
-}
-
-template <>
-inline size_t get_device_info_host<info::device::image_max_buffer_size>() {
-  // Not supported in SYCL
-  return 0;
-}
-
-template <>
-inline size_t get_device_info_host<info::device::image_max_array_size>() {
-  // current value is the required minimum
-  return 2048;
-}
-
-template <> inline uint32_t get_device_info_host<info::device::max_samplers>() {
-  // current value is the required minimum
-  return 16;
-}
-
-template <>
-inline size_t get_device_info_host<info::device::max_parameter_size>() {
-  // current value is the required minimum
-  return 1024;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::mem_base_addr_align>() {
-  return 1024;
-}
-
-template <>
-inline std::vector<info::fp_config>
-get_device_info_host<info::device::half_fp_config>() {
-  // current value is the required minimum
-  return {};
-}
-
-template <>
-inline std::vector<info::fp_config>
-get_device_info_host<info::device::single_fp_config>() {
-  // current value is the required minimum
-  return {info::fp_config::round_to_nearest, info::fp_config::inf_nan};
-}
-
-template <>
-inline std::vector<info::fp_config>
-get_device_info_host<info::device::double_fp_config>() {
-  // current value is the required minimum
-  return {info::fp_config::fma,           info::fp_config::round_to_nearest,
-          info::fp_config::round_to_zero, info::fp_config::round_to_inf,
-          info::fp_config::inf_nan,       info::fp_config::denorm};
-}
-
-template <>
-inline info::global_mem_cache_type
-get_device_info_host<info::device::global_mem_cache_type>() {
-  return info::global_mem_cache_type::read_write;
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::global_mem_cache_line_size>() {
-  return PlatformUtil::getMemCacheLineSize();
-}
-
-template <>
-inline uint64_t get_device_info_host<info::device::global_mem_cache_size>() {
-  return PlatformUtil::getMemCacheSize();
-}
-
-template <>
-inline uint64_t get_device_info_host<info::device::max_constant_buffer_size>() {
-  // current value is the required minimum
-  return 64 * 1024;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::max_constant_args>() {
-  // current value is the required minimum
-  return 8;
-}
-
-template <>
-inline info::local_mem_type
-get_device_info_host<info::device::local_mem_type>() {
-  return info::local_mem_type::global;
-}
-
-template <>
-inline uint64_t get_device_info_host<info::device::local_mem_size>() {
-  // current value is the required minimum
-  return 32 * 1024;
-}
-
-template <>
-inline bool get_device_info_host<info::device::error_correction_support>() {
-  return false;
-}
-
-template <>
-inline bool get_device_info_host<info::device::host_unified_memory>() {
-  return true;
-}
-
-template <>
-inline size_t get_device_info_host<info::device::profiling_timer_resolution>() {
-  typedef std::ratio_divide<std::chrono::high_resolution_clock::period,
-                            std::nano>
-      ns_period;
-  return ns_period::num / ns_period::den;
-}
-
-template <> inline bool get_device_info_host<info::device::is_endian_little>() {
-  union {
-    uint16_t a;
-    uint8_t b[2];
-  } u = {0x0100};
-
-  return u.b[1];
-}
-
-template <> inline bool get_device_info_host<info::device::is_available>() {
-  return true;
-}
-
-template <>
-inline bool get_device_info_host<info::device::is_compiler_available>() {
-  return true;
-}
-
-template <>
-inline bool get_device_info_host<info::device::is_linker_available>() {
-  return true;
-}
-
-template <>
-inline std::vector<info::execution_capability>
-get_device_info_host<info::device::execution_capabilities>() {
-  return {info::execution_capability::exec_kernel};
-}
-
-template <> inline bool get_device_info_host<info::device::queue_profiling>() {
-  return true;
-}
-
-template <>
-inline std::vector<kernel_id>
-get_device_info_host<info::device::built_in_kernel_ids>() {
-  return {};
-}
-
-template <>
-inline std::vector<std::string>
-get_device_info_host<info::device::built_in_kernels>() {
-  return {};
-}
-
-template <> inline platform get_device_info_host<info::device::platform>() {
-  return createSyclObjFromImpl<platform>(platform_impl::getHostPlatformImpl());
-}
-
-template <> inline std::string get_device_info_host<info::device::name>() {
-  return "SYCL host device";
-}
-
-template <> inline std::string get_device_info_host<info::device::vendor>() {
-  return "";
-}
-
-template <>
-inline std::string get_device_info_host<info::device::driver_version>() {
-  return "1.2";
-}
-
-template <> inline std::string get_device_info_host<info::device::profile>() {
-  return "FULL PROFILE";
-}
-
-template <> inline std::string get_device_info_host<info::device::version>() {
-  return "1.2";
-}
-
-template <>
-inline std::string get_device_info_host<info::device::opencl_c_version>() {
-  return "not applicable";
-}
-
-template <>
-inline std::vector<std::string>
-get_device_info_host<info::device::extensions>() {
-  // TODO update when appropriate
-  return {};
-}
-
-template <>
-inline size_t get_device_info_host<info::device::printf_buffer_size>() {
-  // current value is the required minimum
-  return 1024 * 1024;
-}
-
-template <>
-inline bool get_device_info_host<info::device::preferred_interop_user_sync>() {
-  return false;
-}
-
-template <> inline device get_device_info_host<info::device::parent_device>() {
-  throw invalid_object_error(
-      "Partitioning to subdevices of the host device is not implemented",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline uint32_t
-get_device_info_host<info::device::partition_max_sub_devices>() {
-  // TODO update once subdevice creation is enabled
-  return 1;
-}
-
-template <>
-inline std::vector<info::partition_property>
-get_device_info_host<info::device::partition_properties>() {
-  // TODO update once subdevice creation is enabled
-  return {};
-}
-
-template <>
-inline std::vector<info::partition_affinity_domain>
-get_device_info_host<info::device::partition_affinity_domains>() {
-  // TODO update once subdevice creation is enabled
-  return {};
-}
-
-template <>
-inline info::partition_property
-get_device_info_host<info::device::partition_type_property>() {
-  return info::partition_property::no_partition;
-}
-
-template <>
-inline info::partition_affinity_domain
-get_device_info_host<info::device::partition_type_affinity_domain>() {
-  // TODO update once subdevice creation is enabled
-  return info::partition_affinity_domain::not_applicable;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::reference_count>() {
-  // TODO update once subdevice creation is enabled
-  return 1;
-}
-
-template <>
-inline uint32_t get_device_info_host<info::device::max_num_sub_groups>() {
-  // TODO update once subgroups are enabled
-  throw runtime_error("Sub-group feature is not supported on HOST device.",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline std::vector<size_t>
-get_device_info_host<info::device::sub_group_sizes>() {
-  // TODO update once subgroups are enabled
-  throw runtime_error("Sub-group feature is not supported on HOST device.",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline bool
-get_device_info_host<info::device::sub_group_independent_forward_progress>() {
-  // TODO update once subgroups are enabled
-  throw runtime_error("Sub-group feature is not supported on HOST device.",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline bool get_device_info_host<info::device::kernel_kernel_pipe_support>() {
-  return false;
-}
-
-template <>
-inline std::string get_device_info_host<info::device::backend_version>() {
-  throw runtime_error(
-      "Backend version feature is not supported on HOST device.",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline bool get_device_info_host<info::device::usm_device_allocations>() {
-  return true;
-}
-
-template <>
-inline bool get_device_info_host<info::device::usm_host_allocations>() {
-  return true;
-}
-
-template <>
-inline bool get_device_info_host<info::device::usm_shared_allocations>() {
-  return true;
-}
-
-template <>
-inline bool
-get_device_info_host<info::device::usm_restricted_shared_allocations>() {
-  return true;
-}
-
-template <>
-inline bool get_device_info_host<info::device::usm_system_allocations>() {
-  return true;
-}
-
-template <>
-inline bool get_device_info_host<info::device::ext_intel_mem_channel>() {
-  return false;
-}
-
-// Specializations for intel extensions for Level Zero low-level
-// detail device descriptors (not support on host).
-template <>
-inline uint32_t get_device_info_host<ext::intel::info::device::device_id>() {
-  throw runtime_error("Obtaining the device ID is not supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline std::string
-get_device_info_host<ext::intel::info::device::pci_address>() {
-  throw runtime_error(
-      "Obtaining the PCI address is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline uint32_t get_device_info_host<ext::intel::info::device::gpu_eu_count>() {
-  throw runtime_error("Obtaining the EU count is not supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline uint32_t
-get_device_info_host<ext::intel::info::device::gpu_eu_simd_width>() {
-  throw runtime_error(
-      "Obtaining the EU SIMD width is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline uint32_t get_device_info_host<ext::intel::info::device::gpu_slices>() {
-  throw runtime_error(
-      "Obtaining the number of slices is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline uint32_t
-get_device_info_host<ext::intel::info::device::gpu_subslices_per_slice>() {
-  throw runtime_error("Obtaining the number of subslices per slice is not "
-                      "supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline uint32_t
-get_device_info_host<ext::intel::info::device::gpu_eu_count_per_subslice>() {
-  throw runtime_error(
-      "Obtaining the EU count per subslice is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline uint32_t
-get_device_info_host<ext::intel::info::device::gpu_hw_threads_per_eu>() {
-  throw runtime_error(
-      "Obtaining the HW threads count per EU is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline uint64_t
-get_device_info_host<ext::intel::info::device::max_mem_bandwidth>() {
-  throw runtime_error(
-      "Obtaining the maximum memory bandwidth is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-template <>
-inline detail::uuid_type
-get_device_info_host<ext::intel::info::device::uuid>() {
-  throw runtime_error(
-      "Obtaining the device uuid is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_pci_address>()
-template <>
-inline std::string get_device_info_host<info::device::ext_intel_pci_address>() {
-  throw runtime_error(
-      "Obtaining the PCI address is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_gpu_eu_count>()
-template <>
-inline uint32_t get_device_info_host<info::device::ext_intel_gpu_eu_count>() {
-  throw runtime_error("Obtaining the EU count is not supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_gpu_eu_simd_width>()
-template <>
-inline uint32_t
-get_device_info_host<info::device::ext_intel_gpu_eu_simd_width>() {
-  throw runtime_error(
-      "Obtaining the EU SIMD width is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_gpu_slices>()
-template <>
-inline uint32_t get_device_info_host<info::device::ext_intel_gpu_slices>() {
-  throw runtime_error(
-      "Obtaining the number of slices is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_gpu_subslices_per_slice>()
-template <>
-inline uint32_t
-get_device_info_host<info::device::ext_intel_gpu_subslices_per_slice>() {
-  throw runtime_error("Obtaining the number of subslices per slice is not "
-                      "supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_gpu_eu_count_per_subslices>()
-template <>
-inline uint32_t
-get_device_info_host<info::device::ext_intel_gpu_eu_count_per_subslice>() {
-  throw runtime_error(
-      "Obtaining the EU count per subslice is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_gpu_hw_threads_per_eu>()
-template <>
-inline uint32_t
-get_device_info_host<info::device::ext_intel_gpu_hw_threads_per_eu>() {
-  throw runtime_error(
-      "Obtaining the HW threads count per EU is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_max_mem_bandwidth>()
-template <>
-inline uint64_t
-get_device_info_host<info::device::ext_intel_max_mem_bandwidth>() {
-  throw runtime_error(
-      "Obtaining the maximum memory bandwidth is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-// TODO:Move to namespace ext::intel::info::device
-template <> inline bool get_device_info_host<info::device::ext_oneapi_srgb>() {
-  return false;
-}
-
-// TODO: Remove with deprecated feature
-// device::get_info<info::device::ext_intel_device_info_uuid>()
-template <>
-inline detail::uuid_type
-get_device_info_host<info::device::ext_intel_device_info_uuid>() {
-  throw runtime_error(
-      "Obtaining the device uuid is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline uint64_t get_device_info_host<ext::intel::info::device::free_memory>() {
-  throw runtime_error(
-      "Obtaining the device free memory is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline uint32_t
-get_device_info_host<ext::intel::info::device::memory_clock_rate>() {
-  throw runtime_error(
-      "Obtaining the device memory clock rate is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline uint32_t
-get_device_info_host<ext::intel::info::device::memory_bus_width>() {
-  throw runtime_error(
-      "Obtaining the device memory bus width is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline int32_t
-get_device_info_host<ext::intel::info::device::max_compute_queue_indices>() {
-  throw runtime_error(
-      "Obtaining max compute queue indices is not supported on HOST device",
-      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline bool get_device_info_host<
-    ext::codeplay::experimental::info::device::supports_fusion>() {
-  // No support for fusion on the host device.
-  return false;
-}
-
-template <>
-inline uint32_t get_device_info_host<
-    ext::codeplay::experimental::info::device::max_registers_per_work_group>() {
-  throw runtime_error("Obtaining the maximum number of available registers per "
-                      "work-group is not supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline ext::oneapi::experimental::info::graph_support_level
-get_device_info_host<ext::oneapi::experimental::info::device::graph_support>() {
-  // No support for graphs on the host device.
-  return ext::oneapi::experimental::info::graph_support_level::unsupported;
-}
-
-template <>
-inline uint32_t get_device_info_host<
-    ext::oneapi::experimental::info::device::image_row_pitch_align>() {
-  throw runtime_error("Obtaining image pitch alignment is not "
-                      "supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline uint32_t get_device_info_host<
-    ext::oneapi::experimental::info::device::max_image_linear_row_pitch>() {
-  throw runtime_error("Obtaining max image linear pitch is not "
-                      "supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline uint32_t get_device_info_host<
-    ext::oneapi::experimental::info::device::max_image_linear_width>() {
-  throw runtime_error("Obtaining max image linear width is not "
-                      "supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline uint32_t get_device_info_host<
-    ext::oneapi::experimental::info::device::max_image_linear_height>() {
-  throw runtime_error("Obtaining max image linear height is not "
-                      "supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
-
-template <>
-inline float get_device_info_host<
-    ext::oneapi::experimental::info::device::mipmap_max_anisotropy>() {
-  throw runtime_error("Bindless image mipaps are not supported on HOST device",
-                      PI_ERROR_INVALID_DEVICE);
-}
+// Returns the list of all progress guarantees that can be requested for
+// work_groups from the coordination level of root_group when using the device
+// given by Dev. First it calls getProgressGuarantee to get the strongest
+// guarantee available and then calls getProgressGuaranteesUpTo to get a list of
+// all guarantees that are either equal to the strongest guarantee or weaker
+// than it. The next 5 definitions follow the same model but for different
+// scopes.
+template <typename ReturnT>
+struct get_device_info_impl<
+    ReturnT,
+    ext::oneapi::experimental::info::device::work_group_progress_capabilities<
+        ext::oneapi::experimental::execution_scope::root_group>> {
+  static ReturnT get(const DeviceImplPtr &Dev) {
+    using execution_scope = ext::oneapi::experimental::execution_scope;
+    return device_impl::getProgressGuaranteesUpTo<ReturnT>(
+        Dev->getProgressGuarantee(execution_scope::work_group,
+                                  execution_scope::root_group));
+  }
+};
+template <typename ReturnT>
+struct get_device_info_impl<
+    ReturnT,
+    ext::oneapi::experimental::info::device::sub_group_progress_capabilities<
+        ext::oneapi::experimental::execution_scope::root_group>> {
+  static ReturnT get(const DeviceImplPtr &Dev) {
+    using execution_scope = ext::oneapi::experimental::execution_scope;
+    return device_impl::getProgressGuaranteesUpTo<ReturnT>(
+        Dev->getProgressGuarantee(execution_scope::sub_group,
+                                  execution_scope::root_group));
+  }
+};
+
+template <typename ReturnT>
+struct get_device_info_impl<
+    ReturnT,
+    ext::oneapi::experimental::info::device::sub_group_progress_capabilities<
+        ext::oneapi::experimental::execution_scope::work_group>> {
+  static ReturnT get(const DeviceImplPtr &Dev) {
+
+    using execution_scope = ext::oneapi::experimental::execution_scope;
+    return device_impl::getProgressGuaranteesUpTo<ReturnT>(
+        Dev->getProgressGuarantee(execution_scope::sub_group,
+                                  execution_scope::work_group));
+  }
+};
+
+template <typename ReturnT>
+struct get_device_info_impl<
+    ReturnT,
+    ext::oneapi::experimental::info::device::work_item_progress_capabilities<
+        ext::oneapi::experimental::execution_scope::root_group>> {
+  static ReturnT get(const DeviceImplPtr &Dev) {
+
+    using execution_scope = ext::oneapi::experimental::execution_scope;
+    return device_impl::getProgressGuaranteesUpTo<ReturnT>(
+        Dev->getProgressGuarantee(execution_scope::work_item,
+                                  execution_scope::root_group));
+  }
+};
+template <typename ReturnT>
+struct get_device_info_impl<
+    ReturnT,
+    ext::oneapi::experimental::info::device::work_item_progress_capabilities<
+        ext::oneapi::experimental::execution_scope::work_group>> {
+  static ReturnT get(const DeviceImplPtr &Dev) {
+
+    using execution_scope = ext::oneapi::experimental::execution_scope;
+    return device_impl::getProgressGuaranteesUpTo<ReturnT>(
+        Dev->getProgressGuarantee(execution_scope::work_item,
+                                  execution_scope::work_group));
+  }
+};
+
+template <typename ReturnT>
+struct get_device_info_impl<
+    ReturnT,
+    ext::oneapi::experimental::info::device::work_item_progress_capabilities<
+        ext::oneapi::experimental::execution_scope::sub_group>> {
+  static ReturnT get(const DeviceImplPtr &Dev) {
+
+    using execution_scope = ext::oneapi::experimental::execution_scope;
+    return device_impl::getProgressGuaranteesUpTo<ReturnT>(
+        Dev->getProgressGuarantee(execution_scope::work_item,
+                                  execution_scope::sub_group));
+  }
+};
 
 } // namespace detail
 } // namespace _V1

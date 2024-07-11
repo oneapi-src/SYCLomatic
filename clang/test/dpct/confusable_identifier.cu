@@ -1,5 +1,6 @@
 // RUN: dpct --check-unicode-security --format-range=none -out-root %T/confusable_identifier %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/confusable_identifier/confusable_identifier.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/confusable_identifier/confusable_identifier.dp.cpp -o %T/confusable_identifier/confusable_identifier.dp.o %}
 
 // CHECK: /*
 // CHECK: DPCT1095:{{[0-9]+}}: The identifier "fo" is confusable with another identifier "𝐟o".

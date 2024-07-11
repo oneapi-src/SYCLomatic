@@ -1,11 +1,12 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/kernel_lambda_arg %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel_lambda_arg/kernel_lambda_arg.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel_lambda_arg/kernel_lambda_arg.dp.cpp -o %T/kernel_lambda_arg/kernel_lambda_arg.dp.o %}
 
 #include <curand_kernel.h>
 #include <tuple>
 
-// The kernel function can be migrated on windows with v8.0 SDK with -fno-delayed-template-parsing option.
+// The kernel function can be migrated on windows with v8.0 SDK.
 // But the kernel call which has device lambda as argument has a parsing error on windows with v8.0 SDK.
 // So we disable this test on windows with v8.0 SDK.
 

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/array_size_fold %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/array_size_fold/array_size_fold.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/array_size_fold/array_size_fold.dp.cpp -o %T/array_size_fold/array_size_fold.dp.o %}
 
 #define S 3
 class C {};

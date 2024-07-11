@@ -17,6 +17,7 @@
 
 #include "mlir/Analysis/DataFlowFramework.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/Interfaces/CallInterfaces.h"
 #include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "llvm/ADT/SmallPtrSet.h"
 
@@ -131,14 +132,15 @@ public:
   /// analysis, lattices will only have a `join`, no `meet`, but we want to use
   /// the same `Lattice` class for both directions.
   template <typename T, typename... Args>
-  using has_meet = decltype(std::declval<T>().meet());
+  using has_meet = decltype(&T::meet);
   template <typename T>
   using lattice_has_meet = llvm::is_detected<has_meet, T>;
 
   /// Meet (intersect) the information contained in the 'rhs' value with this
   /// lattice. Returns if the state of the current lattice changed.  If the
   /// lattice elements don't have a `meet` method, this is a no-op (see below.)
-  template <typename VT, std::enable_if_t<lattice_has_meet<VT>::value>>
+  template <typename VT,
+            std::enable_if_t<lattice_has_meet<VT>::value> * = nullptr>
   ChangeResult meet(const VT &rhs) {
     ValueT newValue = ValueT::meet(value, rhs);
     assert(ValueT::meet(newValue, value) == newValue &&
@@ -154,7 +156,8 @@ public:
     return ChangeResult::Change;
   }
 
-  template <typename VT>
+  template <typename VT,
+            std::enable_if_t<!lattice_has_meet<VT>::value> * = nullptr>
   ChangeResult meet(const VT &rhs) {
     return ChangeResult::NoChange;
   }
@@ -198,6 +201,12 @@ protected:
   visitOperationImpl(Operation *op,
                      ArrayRef<const AbstractSparseLattice *> operandLattices,
                      ArrayRef<AbstractSparseLattice *> resultLattices) = 0;
+
+  /// The transfer function for calls to external functions.
+  virtual void visitExternalCallImpl(
+      CallOpInterface call,
+      ArrayRef<const AbstractSparseLattice *> argumentLattices,
+      ArrayRef<AbstractSparseLattice *> resultLattices) = 0;
 
   /// Given an operation with region control-flow, the lattices of the operands,
   /// and a region successor, compute the lattice values for block arguments
@@ -243,7 +252,7 @@ private:
   /// regions or the parent operation itself, and set either the argument or
   /// parent result lattices.
   void visitRegionSuccessors(ProgramPoint point, RegionBranchOpInterface branch,
-                             std::optional<unsigned> successorIndex,
+                             RegionBranchPoint successor,
                              ArrayRef<AbstractSparseLattice *> lattices);
 };
 
@@ -270,6 +279,14 @@ public:
   /// expected to set the lattices of the operation's results.
   virtual void visitOperation(Operation *op, ArrayRef<const StateT *> operands,
                               ArrayRef<StateT *> results) = 0;
+
+  /// Visit a call operation to an externally defined function given the
+  /// lattices of its arguments.
+  virtual void visitExternalCall(CallOpInterface call,
+                                 ArrayRef<const StateT *> argumentLattices,
+                                 ArrayRef<StateT *> resultLattices) {
+    setAllToEntryStates(resultLattices);
+  }
 
   /// Given an operation with possible region control-flow, the lattices of the
   /// operands, and a region successor, compute the lattice values for block
@@ -321,6 +338,17 @@ private:
         {reinterpret_cast<StateT *const *>(resultLattices.begin()),
          resultLattices.size()});
   }
+  void visitExternalCallImpl(
+      CallOpInterface call,
+      ArrayRef<const AbstractSparseLattice *> argumentLattices,
+      ArrayRef<AbstractSparseLattice *> resultLattices) override {
+    visitExternalCall(
+        call,
+        {reinterpret_cast<const StateT *const *>(argumentLattices.begin()),
+         argumentLattices.size()},
+        {reinterpret_cast<StateT *const *>(resultLattices.begin()),
+         resultLattices.size()});
+  }
   void visitNonControlFlowArgumentsImpl(
       Operation *op, const RegionSuccessor &successor,
       ArrayRef<AbstractSparseLattice *> argLattices,
@@ -363,8 +391,16 @@ protected:
       Operation *op, ArrayRef<AbstractSparseLattice *> operandLattices,
       ArrayRef<const AbstractSparseLattice *> resultLattices) = 0;
 
-  // Visit operands on branch instructions that are not forwarded
+  /// The transfer function for calls to external functions.
+  virtual void visitExternalCallImpl(
+      CallOpInterface call, ArrayRef<AbstractSparseLattice *> operandLattices,
+      ArrayRef<const AbstractSparseLattice *> resultLattices) = 0;
+
+  // Visit operands on branch instructions that are not forwarded.
   virtual void visitBranchOperand(OpOperand &operand) = 0;
+
+  // Visit operands on call instructions that are not forwarded.
+  virtual void visitCallOperand(OpOperand &operand) = 0;
 
   /// Set the given lattice element(s) at control flow exit point(s).
   virtual void setToExitState(AbstractSparseLattice *lattice) = 0;
@@ -397,13 +433,13 @@ private:
   void visitRegionSuccessors(RegionBranchOpInterface branch,
                              ArrayRef<AbstractSparseLattice *> operands);
 
-  /// Visit a terminator (an op implementing `RegionBranchTerminatorOpInterface`
-  /// or a return-like op) to compute the lattice values of its operands, given
-  /// its parent op `branch`. The lattice value of an operand is determined
-  /// based on the corresponding arguments in `terminator`'s region
-  /// successor(s).
-  void visitRegionSuccessorsFromTerminator(Operation *terminator,
-                                           RegionBranchOpInterface branch);
+  /// Visit a `RegionBranchTerminatorOpInterface` to compute the lattice values
+  /// of its operands, given its parent op `branch`. The lattice value of an
+  /// operand is determined based on the corresponding arguments in
+  /// `terminator`'s region successor(s).
+  void visitRegionSuccessorsFromTerminator(
+      RegionBranchTerminatorOpInterface terminator,
+      RegionBranchOpInterface branch);
 
   /// Get the lattice element for a value, and also set up
   /// dependencies so that the analysis on the given ProgramPoint is re-invoked
@@ -441,6 +477,19 @@ public:
   virtual void visitOperation(Operation *op, ArrayRef<StateT *> operands,
                               ArrayRef<const StateT *> results) = 0;
 
+  /// Visit a call to an external function. This function is expected to set
+  /// lattice values of the call operands. By default, calls `visitCallOperand`
+  /// for all operands.
+  virtual void visitExternalCall(CallOpInterface call,
+                                 ArrayRef<StateT *> argumentLattices,
+                                 ArrayRef<const StateT *> resultLattices) {
+    (void)argumentLattices;
+    (void)resultLattices;
+    for (OpOperand &operand : call->getOpOperands()) {
+      visitCallOperand(operand);
+    }
+  };
+
 protected:
   /// Get the lattice element for a value.
   StateT *getLatticeElement(Value value) override {
@@ -466,6 +515,17 @@ private:
       ArrayRef<const AbstractSparseLattice *> resultLattices) override {
     visitOperation(
         op,
+        {reinterpret_cast<StateT *const *>(operandLattices.begin()),
+         operandLattices.size()},
+        {reinterpret_cast<const StateT *const *>(resultLattices.begin()),
+         resultLattices.size()});
+  }
+
+  void visitExternalCallImpl(
+      CallOpInterface call, ArrayRef<AbstractSparseLattice *> operandLattices,
+      ArrayRef<const AbstractSparseLattice *> resultLattices) override {
+    visitExternalCall(
+        call,
         {reinterpret_cast<StateT *const *>(operandLattices.begin()),
          operandLattices.size()},
         {reinterpret_cast<const StateT *const *>(resultLattices.begin()),

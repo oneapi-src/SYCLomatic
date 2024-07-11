@@ -10,6 +10,7 @@ add_mlir_library(MLIRTestAnalysis
   TestMemRefDependenceCheck.cpp
   TestMemRefStrideCalculation.cpp
   TestSlice.cpp
+  TestTopologicalSort.cpp
 
   DataFlow/TestDeadCodeAnalysis.cpp
   DataFlow/TestDenseBackwardDataFlowAnalysis.cpp
@@ -22,6 +23,7 @@ add_mlir_library(MLIRTestAnalysis
   LINK_LIBS PUBLIC
   MLIRAffineDialect
   MLIRAnalysis
+  MLIRFunctionInterfaces
   MLIRMemRefDialect
   MLIRPass
   MLIRTestDialect

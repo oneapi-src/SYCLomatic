@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/qualified_template_func %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -ptx
 // RUN: FileCheck %s --match-full-lines --input-file %T/qualified_template_func/qualified_template_func.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/qualified_template_func/qualified_template_func.dp.cpp -o %T/qualified_template_func/qualified_template_func.dp.o %}
 
 #include<cuda.h>
 //CHECK: #define DEFINE_CHECK_FUNC(name, op)                               \

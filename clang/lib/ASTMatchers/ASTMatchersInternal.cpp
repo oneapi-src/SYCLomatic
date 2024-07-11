@@ -87,7 +87,7 @@ bool matchesAnyBase(const CXXRecordDecl &Node,
       [Finder, Builder, &BaseSpecMatcher](const CXXBaseSpecifier *BaseSpec,
                                           CXXBasePath &IgnoredParam) {
         BoundNodesTreeBuilder Result(*Builder);
-        if (BaseSpecMatcher.matches(*BaseSpec, Finder, Builder)) {
+        if (BaseSpecMatcher.matches(*BaseSpec, Finder, &Result)) {
           *Builder = std::move(Result);
           return true;
         }
@@ -480,11 +480,11 @@ HasNameMatcher::HasNameMatcher(std::vector<std::string> N)
 
 static bool consumeNameSuffix(StringRef &FullName, StringRef Suffix) {
   StringRef Name = FullName;
-  if (!Name.endswith(Suffix))
+  if (!Name.ends_with(Suffix))
     return false;
   Name = Name.drop_back(Suffix.size());
   if (!Name.empty()) {
-    if (!Name.endswith("::"))
+    if (!Name.ends_with("::"))
       return false;
     Name = Name.drop_back(2);
   }
@@ -531,9 +531,9 @@ public:
     Patterns.reserve(Names.size());
     for (StringRef Name : Names)
 #ifdef SYCLomatic_CUSTOMIZATION
-      Patterns.push_back({Name, Name.startswith("::"), true});
+      Patterns.push_back({Name, Name.starts_with("::"), true});
 #else
-      Patterns.push_back({Name, Name.startswith("::")});
+      Patterns.push_back({Name, Name.starts_with("::")});
 #endif // SYCLomatic_CUSTOMIZATION
   }
 
@@ -693,11 +693,11 @@ bool HasNameMatcher::matchesNodeFullSlow(const NamedDecl &Node) const {
     const StringRef FullName = OS.str();
 
     for (const StringRef Pattern : Names) {
-      if (Pattern.startswith("::")) {
+      if (Pattern.starts_with("::")) {
         if (FullName == Pattern)
           return true;
-      } else if (FullName.endswith(Pattern) &&
-                 FullName.drop_back(Pattern.size()).endswith("::")) {
+      } else if (FullName.ends_with(Pattern) &&
+                 FullName.drop_back(Pattern.size()).ends_with("::")) {
         return true;
       }
     }
@@ -934,6 +934,7 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, CXXOperatorCallExpr>
     cxxOperatorCallExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CXXRewrittenBinaryOperator>
     cxxRewrittenBinaryOperator;
+const internal::VariadicDynCastAllOfMatcher<Stmt, CXXFoldExpr> cxxFoldExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, Expr> expr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, DeclRefExpr> declRefExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, ObjCIvarRefExpr> objcIvarRefExpr;
@@ -1103,6 +1104,7 @@ const AstTypeMatcher<FunctionType> functionType;
 const AstTypeMatcher<FunctionProtoType> functionProtoType;
 const AstTypeMatcher<ParenType> parenType;
 const AstTypeMatcher<BlockPointerType> blockPointerType;
+const AstTypeMatcher<MacroQualifiedType> macroQualifiedType;
 const AstTypeMatcher<MemberPointerType> memberPointerType;
 const AstTypeMatcher<PointerType> pointerType;
 const AstTypeMatcher<ObjCObjectPointerType> objcObjectPointerType;

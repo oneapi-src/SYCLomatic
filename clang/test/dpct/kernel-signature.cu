@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/kernel-signature %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-signature/kernel-signature.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel-signature/kernel-signature.dp.cpp -o %T/kernel-signature/kernel-signature.dp.o %}
 
 // CHECK: void test_01();
 // CHECK: void test_06();

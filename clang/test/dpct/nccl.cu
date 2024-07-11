@@ -1,10 +1,14 @@
 // RUN: dpct --format-range=none -out-root %T/nccl %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/nccl/nccl.dp.cpp
-
+// CHECK: #define DPCT_COMPAT_CCL_VERSION {{[1-9][0-9]+}}
 // CHECK: #include <dpct/ccl_utils.hpp>
 #include <nccl.h>
 
 int check(ncclResult_t);
+
+// CHECK: #if DPCT_COMPAT_CCL_VERSION >= 21300
+#if NCCL_VERSION_CODE >= NCCL_VERSION(2,13,0)
+#endif
 
 int main() {
     int version, nranks, rank, device, rank_rev;
@@ -12,6 +16,10 @@ int main() {
     ncclUniqueId id;
     // CHECK: dpct::ccl::comm_ptr comm;
     ncclComm_t comm;
+    // CHECK: int major = {{[0-9]+}};
+    int major = NCCL_MAJOR;
+    // CHECK: int minor = {{[0-9]+}};
+    int minor = NCCL_MINOR;
 
     // CHECK: version = dpct::ccl::get_version();
     ncclGetVersion(&version);

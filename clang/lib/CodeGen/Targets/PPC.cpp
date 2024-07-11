@@ -8,6 +8,7 @@
 
 #include "ABIInfoImpl.h"
 #include "TargetInfo.h"
+#include "clang/Basic/DiagnosticFrontend.h"
 
 using namespace clang;
 using namespace clang::CodeGen;
@@ -145,6 +146,9 @@ public:
 
   bool initDwarfEHRegSizeTable(CodeGen::CodeGenFunction &CGF,
                                llvm::Value *Address) const override;
+
+  void setTargetAttributes(const Decl *D, llvm::GlobalValue *GV,
+                           CodeGen::CodeGenModule &M) const override;
 };
 } // namespace
 
@@ -263,6 +267,61 @@ Address AIXABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
 bool AIXTargetCodeGenInfo::initDwarfEHRegSizeTable(
     CodeGen::CodeGenFunction &CGF, llvm::Value *Address) const {
   return PPC_initDwarfEHRegSizeTable(CGF, Address, Is64Bit, /*IsAIX*/ true);
+}
+
+void AIXTargetCodeGenInfo::setTargetAttributes(
+    const Decl *D, llvm::GlobalValue *GV, CodeGen::CodeGenModule &M) const {
+  if (!isa<llvm::GlobalVariable>(GV))
+    return;
+
+  auto *GVar = cast<llvm::GlobalVariable>(GV);
+  auto GVId = GV->getName();
+
+  // Is this a global variable specified by the user as toc-data?
+  bool UserSpecifiedTOC =
+      llvm::binary_search(M.getCodeGenOpts().TocDataVarsUserSpecified, GVId);
+  // Assumes the same variable cannot be in both TocVarsUserSpecified and
+  // NoTocVars.
+  if (UserSpecifiedTOC ||
+      ((M.getCodeGenOpts().AllTocData) &&
+       !llvm::binary_search(M.getCodeGenOpts().NoTocDataVars, GVId))) {
+    const unsigned long PointerSize =
+        GV->getParent()->getDataLayout().getPointerSizeInBits() / 8;
+    auto *VarD = dyn_cast<VarDecl>(D);
+    assert(VarD && "Invalid declaration of global variable.");
+
+    ASTContext &Context = D->getASTContext();
+    unsigned Alignment = Context.toBits(Context.getDeclAlign(D)) / 8;
+    const auto *Ty = VarD->getType().getTypePtr();
+    const RecordDecl *RDecl =
+        Ty->isRecordType() ? Ty->getAs<RecordType>()->getDecl() : nullptr;
+
+    bool EmitDiagnostic = UserSpecifiedTOC && GV->hasExternalLinkage();
+    auto reportUnsupportedWarning = [&](bool ShouldEmitWarning, StringRef Msg) {
+      if (ShouldEmitWarning)
+        M.getDiags().Report(D->getLocation(), diag::warn_toc_unsupported_type)
+            << GVId << Msg;
+    };
+    if (!Ty || Ty->isIncompleteType())
+      reportUnsupportedWarning(EmitDiagnostic, "of incomplete type");
+    else if (RDecl && RDecl->hasFlexibleArrayMember())
+      reportUnsupportedWarning(EmitDiagnostic,
+                               "it contains a flexible array member");
+    else if (VarD->getTLSKind() != VarDecl::TLS_None)
+      reportUnsupportedWarning(EmitDiagnostic, "of thread local storage");
+    else if (PointerSize < Context.getTypeInfo(VarD->getType()).Width / 8)
+      reportUnsupportedWarning(EmitDiagnostic,
+                               "variable is larger than a pointer");
+    else if (PointerSize < Alignment)
+      reportUnsupportedWarning(EmitDiagnostic,
+                               "variable is aligned wider than a pointer");
+    else if (D->hasAttr<SectionAttr>())
+      reportUnsupportedWarning(EmitDiagnostic,
+                               "variable has a section attribute");
+    else if (GV->hasExternalLinkage() ||
+             (M.getCodeGenOpts().AllTocData && !GV->hasLocalLinkage()))
+      GVar->addAttribute("toc-data");
+  }
 }
 
 // PowerPC-32
@@ -431,11 +490,7 @@ Address PPC32_SVR4_ABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAList,
 
   llvm::Type *DirectTy = CGF.ConvertType(Ty), *ElementTy = DirectTy;
   if (isIndirect)
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
-    DirectTy = llvm::PointerType::getUnqual(CGF.getLLVMContext());
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-    DirectTy = DirectTy->getPointerTo(0);
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
+    DirectTy = CGF.UnqualPtrTy;
 
   // Case 1: consume registers.
   Address RegAddr = Address::invalid();
@@ -458,9 +513,10 @@ Address PPC32_SVR4_ABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAList,
     CharUnits RegSize = CharUnits::fromQuantity((isInt || IsSoftFloatABI) ? 4 : 8);
     llvm::Value *RegOffset =
         Builder.CreateMul(NumRegs, Builder.getInt8(RegSize.getQuantity()));
-    RegAddr = Address(
-        Builder.CreateInBoundsGEP(CGF.Int8Ty, RegAddr.getPointer(), RegOffset),
-        DirectTy, RegAddr.getAlignment().alignmentOfArrayElement(RegSize));
+    RegAddr = Address(Builder.CreateInBoundsGEP(
+                          CGF.Int8Ty, RegAddr.emitRawPointer(CGF), RegOffset),
+                      DirectTy,
+                      RegAddr.getAlignment().alignmentOfArrayElement(RegSize));
 
     // Increase the used-register count.
     NumRegs =
@@ -496,7 +552,7 @@ Address PPC32_SVR4_ABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAList,
     // Round up address of argument to alignment
     CharUnits Align = CGF.getContext().getTypeAlignInChars(Ty);
     if (Align > OverflowAreaAlign) {
-      llvm::Value *Ptr = OverflowArea.getPointer();
+      llvm::Value *Ptr = OverflowArea.emitRawPointer(CGF);
       OverflowArea = Address(emitRoundPointerUpToAlignment(CGF, Ptr, Align),
                              OverflowArea.getElementType(), Align);
     }
@@ -505,7 +561,7 @@ Address PPC32_SVR4_ABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAList,
 
     // Increase the overflow area.
     OverflowArea = Builder.CreateConstInBoundsByteGEP(OverflowArea, Size);
-    Builder.CreateStore(OverflowArea.getPointer(), OverflowAreaAddr);
+    Builder.CreateStore(OverflowArea.emitRawPointer(CGF), OverflowAreaAddr);
     CGF.EmitBranch(Cont);
   }
 
@@ -624,6 +680,9 @@ public:
 
   bool initDwarfEHRegSizeTable(CodeGen::CodeGenFunction &CGF,
                                llvm::Value *Address) const override;
+  void emitTargetMetadata(CodeGen::CodeGenModule &CGM,
+                          const llvm::MapVector<GlobalDecl, StringRef>
+                              &MangledDeclNames) const override;
 };
 
 class PPC64TargetCodeGenInfo : public TargetCodeGenInfo {
@@ -942,6 +1001,24 @@ PPC64_SVR4_TargetCodeGenInfo::initDwarfEHRegSizeTable(
   llvm::Value *Address) const {
   return PPC_initDwarfEHRegSizeTable(CGF, Address, /*Is64Bit*/ true,
                                      /*IsAIX*/ false);
+}
+
+void PPC64_SVR4_TargetCodeGenInfo::emitTargetMetadata(
+    CodeGen::CodeGenModule &CGM,
+    const llvm::MapVector<GlobalDecl, StringRef> &MangledDeclNames) const {
+  if (CGM.getTypes().isLongDoubleReferenced()) {
+    llvm::LLVMContext &Ctx = CGM.getLLVMContext();
+    const auto *flt = &CGM.getTarget().getLongDoubleFormat();
+    if (flt == &llvm::APFloat::PPCDoubleDouble())
+      CGM.getModule().addModuleFlag(llvm::Module::Error, "float-abi",
+                                    llvm::MDString::get(Ctx, "doubledouble"));
+    else if (flt == &llvm::APFloat::IEEEquad())
+      CGM.getModule().addModuleFlag(llvm::Module::Error, "float-abi",
+                                    llvm::MDString::get(Ctx, "ieeequad"));
+    else if (flt == &llvm::APFloat::IEEEdouble())
+      CGM.getModule().addModuleFlag(llvm::Module::Error, "float-abi",
+                                    llvm::MDString::get(Ctx, "ieeedouble"));
+  }
 }
 
 bool

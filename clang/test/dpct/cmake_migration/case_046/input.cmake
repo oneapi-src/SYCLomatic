@@ -1,0 +1,5 @@
+find_path(CUDA_TOOLKIT_ROOT_DIR NAME some.exe PATHS /usr/lib)
+
+GLOBAL_SET(TPL_INCLUDE_DIRS ${CUDA_TOOLKIT_INCLUDE})
+
+mark_as_advanced(FORCE ${CUDAToolkit_LIBRARY_DIR})

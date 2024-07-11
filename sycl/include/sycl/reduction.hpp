@@ -45,6 +45,14 @@
 #include <sycl/sycl_span.hpp>                       // for dynamic_e...
 #include <sycl/usm.hpp>                             // for malloc_de...
 
+// reduction::withAuxHandler calls handler::~handler() and that, in turn, needs
+// all the dtors from std::unique_pointer handler's data members, including the
+// host_task-related stuff. That's not the case for <sycl/detail/core.hpp>
+// because handler object is only ctor/dtor'ed inside SYCL shared library but
+// not in the current translation unit. It would be nice to find a better way
+// than this include in future.
+#include <sycl/detail/host_task_impl.hpp>
+
 #include <algorithm>   // for min
 #include <array>       // for array
 #include <assert.h>    // for assert
@@ -60,32 +68,6 @@
 
 namespace sycl {
 inline namespace _V1 {
-namespace detail {
-
-/// Base non-template class which is a base class for all reduction
-/// implementation classes. It is needed to detect the reduction classes.
-class reduction_impl_base {};
-
-/// Predicate returning true if a type is a reduction.
-template <typename T> struct IsReduction {
-  static constexpr bool value =
-      std::is_base_of_v<reduction_impl_base, std::remove_reference_t<T>>;
-};
-
-/// Predicate returning true if all template type parameters except the last one
-/// are reductions.
-template <typename FirstT, typename... RestT> struct AreAllButLastReductions {
-  static constexpr bool value =
-      IsReduction<FirstT>::value && AreAllButLastReductions<RestT...>::value;
-};
-
-/// Helper specialization of AreAllButLastReductions for one element only.
-/// Returns true if the template parameter is not a reduction.
-template <typename T> struct AreAllButLastReductions<T> {
-  static constexpr bool value = !IsReduction<T>::value;
-};
-} // namespace detail
-
 /// Class that is used to represent objects that are passed to user's lambda
 /// functions and representing users' reduction variable.
 /// The generic version of the class represents those reductions of those
@@ -117,8 +99,8 @@ using IsReduOptForFastAtomicFetch =
 #ifdef SYCL_REDUCTION_DETERMINISTIC
     std::bool_constant<false>;
 #else
-    std::bool_constant<((is_sgenfloat<T>::value && sizeof(T) == 4) ||
-                        is_sgeninteger<T>::value) &&
+    std::bool_constant<((is_sgenfloat_v<T> && sizeof(T) == 4) ||
+                        is_sgeninteger_v<T>) &&
                        IsValidAtomicType<T>::value &&
                        (IsPlus<T, BinaryOperation>::value ||
                         IsMinimum<T, BinaryOperation>::value ||
@@ -144,7 +126,7 @@ using IsReduOptForAtomic64Op =
     std::bool_constant<(IsPlus<T, BinaryOperation>::value ||
                         IsMinimum<T, BinaryOperation>::value ||
                         IsMaximum<T, BinaryOperation>::value) &&
-                       is_sgenfloat<T>::value && sizeof(T) == 8>;
+                       is_sgenfloat_v<T> && sizeof(T) == 8>;
 #endif
 
 // This type trait is used to detect if the group algorithm reduce() used with
@@ -157,9 +139,9 @@ using IsReduOptForFastReduce =
 #ifdef SYCL_REDUCTION_DETERMINISTIC
     std::bool_constant<false>;
 #else
-    std::bool_constant<((is_sgeninteger<T>::value &&
+    std::bool_constant<((is_sgeninteger_v<T> &&
                          (sizeof(T) == 4 || sizeof(T) == 8)) ||
-                        is_sgenfloat<T>::value) &&
+                        is_sgenfloat_v<T>) &&
                        (IsPlus<T, BinaryOperation>::value ||
                         IsMinimum<T, BinaryOperation>::value ||
                         IsMaximum<T, BinaryOperation>::value)>;
@@ -257,7 +239,7 @@ template <class Reducer> class combiner {
 public:
   template <typename _T = Ty, int _Dims = Dims>
   std::enable_if_t<(_Dims == 0) && IsPlus<_T, BinaryOp>::value &&
-                       is_geninteger<_T>::value,
+                       is_geninteger_v<_T>,
                    Reducer &>
   operator++() {
     return static_cast<Reducer *>(this)->combine(static_cast<_T>(1));
@@ -265,7 +247,7 @@ public:
 
   template <typename _T = Ty, int _Dims = Dims>
   std::enable_if_t<(_Dims == 0) && IsPlus<_T, BinaryOp>::value &&
-                       is_geninteger<_T>::value,
+                       is_geninteger_v<_T>,
                    Reducer &>
   operator++(int) {
     return static_cast<Reducer *>(this)->combine(static_cast<_T>(1));
@@ -530,7 +512,20 @@ public:
 private:
   value_type MValue;
 };
+} // namespace detail
 
+// We explicitly claim std::optional as device-copyable in sycl/types.hpp.
+// However, that information isn't propagated to the struct/class types that use
+// it as a member, so we need to provide this partial specialization as well.
+// This is needed to support GNU STL where
+// std::is_trivially_copyable_v<std::optional> is false (e.g., 7.5.* ).
+template <typename T, class BinaryOperation, bool IsOptional>
+struct is_device_copyable<
+    detail::ReducerElement<T, BinaryOperation, IsOptional>>
+    : is_device_copyable<std::conditional_t<IsOptional, std::optional<T>, T>> {
+};
+
+namespace detail {
 template <typename T, class BinaryOperation, int Dims> class reducer_common {
 public:
   using value_type = T;
@@ -842,6 +837,10 @@ using __sycl_init_mem_for =
     std::conditional_t<std::is_same_v<KernelName, auto_name>, auto_name,
                        reduction::InitMemKrn<KernelName>>;
 
+__SYCL_EXPORT void
+addCounterInit(handler &CGH, std::shared_ptr<sycl::detail::queue_impl> &Queue,
+               std::shared_ptr<int> &Counter);
+
 template <typename T, class BinaryOperation, int Dims, size_t Extent,
           bool ExplicitIdentity, typename RedOutVar>
 class reduction_impl_algo {
@@ -1082,8 +1081,7 @@ public:
     std::shared_ptr<int> Counter(malloc_device<int>(1, q), Deleter);
     CGH.addReduction(Counter);
 
-    auto Event = q.memset(Counter.get(), 0, sizeof(int));
-    CGH.depends_on(Event);
+    addCounterInit(CGH, CGH.MQueue, Counter);
 
     return Counter.get();
   }
@@ -1180,8 +1178,9 @@ namespace reduction {
 inline void finalizeHandler(handler &CGH) { CGH.finalize(); }
 template <class FunctorTy> void withAuxHandler(handler &CGH, FunctorTy Func) {
   event E = CGH.finalize();
-  handler AuxHandler(CGH.MQueue, CGH.MIsHost);
-  AuxHandler.depends_on(E);
+  handler AuxHandler(CGH.MQueue, CGH.MIsHost, CGH.eventNeeded());
+  if (!createSyclObjFromImpl<queue>(CGH.MQueue).is_in_order())
+    AuxHandler.depends_on(E);
   AuxHandler.saveCodeLoc(CGH.MCodeLoc);
   Func(AuxHandler);
   CGH.MLastEvent = AuxHandler.finalize();
@@ -1349,7 +1348,10 @@ struct NDRangeReduction<
           // We're done.
           return;
 
-        // Signal this work-group has finished after all values are reduced
+        // Signal this work-group has finished after all values are reduced. We
+        // had an implicit work-group barrier in reduce_over_group and all the
+        // work since has been done in (LID == 0) work-item, so no extra sync is
+        // needed.
         if (LID == 0) {
           auto NFinished =
               sycl::atomic_ref<int, memory_order::acq_rel, memory_scope::device,
@@ -1561,7 +1563,10 @@ template <> struct NDRangeReduction<reduction::strategy::range_basic> {
         }
       }
 
-      // Signal this work-group has finished after all values are reduced
+      // Signal this work-group has finished after all values are reduced. We
+      // had an implicit work-group barrier in doTreeReduction and all the
+      // work since has been done in (LID == 0) work-item, so no extra sync is
+      // needed.
       if (LID == 0) {
         auto NFinished =
             sycl::atomic_ref<int, memory_order::acq_rel, memory_scope::device,

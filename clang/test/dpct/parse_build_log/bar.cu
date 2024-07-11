@@ -12,6 +12,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/check_compilation_db.txt %T/check_compilation_db.txt
 // RUN: dpct --format-range=none -p=./ -out-root %T/out %T/bar.cu --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck  %T/bar.cu  --match-full-lines --input-file %T/out/bar.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/bar.dp.cpp -o %T/out/bar.dp.o %}
 
 // ----- Test to use default value of option '--work-directory'
 // RUN: rm compile_commands.json
@@ -19,6 +20,7 @@
 // RUN: intercept-build -vvv  --parse-build-log ./build_log.txt
 // RUN: dpct --format-range=none -p=./ -out-root %T/out %T/bar.cu --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck  %T/bar.cu  --match-full-lines --input-file %T/out/bar.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/bar.dp.cpp -o %T/out/bar.dp.o %}
 
 // ----- Test option '--work-directory' is not set correctly
 // RUN: rm compile_commands.json

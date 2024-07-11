@@ -1,9 +1,6 @@
 Variable Formatting
 ===================
 
-.. contents::
-   :local:
-
 LLDB has a data formatters subsystem that allows users to define custom display
 options for their variables.
 
@@ -132,8 +129,8 @@ This is done by typing
 
 at the LLDB command line.
 
-The ``--format`` (which you can shorten to -f) option accepts a :doc:`format
-name<formatting>`. Then, you provide one or more types to which you want the
+The ``--format`` (which you can shorten to -f) option accepts a `format
+name`_. Then, you provide one or more types to which you want the
 new format applied.
 
 A frequent scenario is that your program has a typedef for a numeric type that
@@ -248,6 +245,8 @@ format or till you let your program run again.
 
 Finally, this is a list of formatting options available out of which you can
 pick:
+
+.. _`format name`:
 
 +-----------------------------------------------+------------------+--------------------------------------------------------------------------+
 | **Format name**                               | **Abbreviation** | **Description**                                                          |
@@ -460,6 +459,15 @@ discussed previously, you can also customize the way variables are displayed in
 summary strings, regardless of the format they have applied to their types. To
 do that, you can use %format inside an expression path, as in ${var.x->x%u},
 which would display the value of x as an unsigned integer.
+
+Additionally, custom output can be achieved by using an LLVM format string,
+commencing with the ``:`` marker. To illustrate, compare ``${var.byte%x}`` and
+``${var.byte:x-}``. The former uses lldb's builtin hex formatting (``x``),
+which unconditionally inserts a ``0x`` prefix, and also zero pads the value to
+match the size of the type. The latter uses ``llvm::formatv`` formatting
+(``:x-``), and will print only the hex value, with no ``0x`` prefix, and no
+padding. This raw control is useful when composing multiple pieces into a
+larger whole.
 
 You can also use some other special format markers, not available for formats
 themselves, but which carry a special meaning when used in this context:

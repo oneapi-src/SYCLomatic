@@ -24,8 +24,6 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/KnownBits.h"
 
-#include <set>
-
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
@@ -78,7 +76,7 @@ static Instruction *lookThroughAnd(PHINode *Phi, Type *&RT,
 
   // Matches either I & 2^x-1 or 2^x-1 & I. If we find a match, we update RT
   // with a new integer type of the corresponding bit width.
-  if (match(J, m_c_And(m_Instruction(I), m_APInt(M)))) {
+  if (match(J, m_And(m_Instruction(I), m_APInt(M)))) {
     int32_t Bits = (*M + 1).exactLogBase2();
     if (Bits > 0) {
       RT = IntegerType::get(Phi->getContext(), Bits);
@@ -123,7 +121,7 @@ static std::pair<Type *, bool> computeRecurrenceType(Instruction *Exit,
       // meaning that we will use sext instructions instead of zext
       // instructions to restore the original type.
       IsSigned = true;
-      // Make sure at at least one sign bit is included in the result, so it
+      // Make sure at least one sign bit is included in the result, so it
       // will get properly sign-extended.
       ++MaxBitWidth;
     }

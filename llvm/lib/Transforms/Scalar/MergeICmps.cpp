@@ -74,7 +74,7 @@ namespace {
 struct BCEAtom {
   BCEAtom() = default;
   BCEAtom(GetElementPtrInst *GEP, LoadInst *LoadI, int BaseId, APInt Offset)
-      : GEP(GEP), LoadI(LoadI), BaseId(BaseId), Offset(Offset) {}
+      : GEP(GEP), LoadI(LoadI), BaseId(BaseId), Offset(std::move(Offset)) {}
 
   BCEAtom(const BCEAtom &) = delete;
   BCEAtom &operator=(const BCEAtom &) = delete;
@@ -275,7 +275,7 @@ void BCECmpBlock::split(BasicBlock *NewParent, AliasAnalysis &AA) const {
 
   // Do the actual spliting.
   for (Instruction *Inst : reverse(OtherInsts))
-    Inst->moveBefore(*NewParent, NewParent->begin());
+    Inst->moveBeforePreserving(*NewParent, NewParent->begin());
 }
 
 bool BCECmpBlock::canSplit(AliasAnalysis &AA) const {

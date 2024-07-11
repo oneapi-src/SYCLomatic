@@ -7,6 +7,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/check_output-file.txt %T/check_output-file.txt
 
 // RUN: FileCheck --input-file %T/p_test_2.dp.cpp --match-full-lines %S/p_test_2.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/p_test_2.dp.cpp -o %T/p_test_2.dp.o %}
 // RUN: FileCheck --match-full-lines --input-file %S/readme_2_ref.txt %T/readme_2.txt
 
 // This test case is used to verify that if process-all conflicts

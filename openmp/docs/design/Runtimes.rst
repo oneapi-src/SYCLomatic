@@ -409,17 +409,17 @@ threads in the team was reduced, but the program will continue execution.
 KMP_BLOCKTIME
 """""""""""""
 
-Sets the time, in milliseconds, that a thread should wait, after completing
-the execution of a parallel region, before sleeping.
+Sets the time that a thread should wait, after completing the
+execution of a parallel region, before sleeping.
 
-Use the optional character suffixes: ``s`` (seconds), ``m`` (minutes),
-``h`` (hours), or ``d`` (days) to specify the units.
+Use the optional suffixes: ``ms`` (milliseconds), or ``us`` (microseconds) to
+specify/change the units. Defaults units is milliseconds.
 
-Specify infinite for an unlimited wait time.
+Specify ``infinite`` for an unlimited wait time.
 
 | **Default:** 200 milliseconds
 | **Related Environment Variable:** ``KMP_LIBRARY``
-| **Example:** ``KMP_BLOCKTIME=1s``
+| **Example:** ``KMP_BLOCKTIME=1ms``
 
 KMP_CPUINFO_FILE
 """"""""""""""""
@@ -496,7 +496,9 @@ An extended syntax is available when ``KMP_TOPOLOGY_METHOD=hwloc``. Depending on
 resources are detected, you may be able to specify additional resources, such as
 NUMA domains and groups of hardware resources that share certain cache levels.
 
-**Basic syntax:** ``[num_units|*]ID[@offset][:attribute] [,[num_units|*]ID[@offset][:attribute]...]``
+**Basic syntax:** ``[:][num_units|*]ID[@offset][:attribute] [,[num_units|*]ID[@offset][:attribute]...]``
+
+An optional colon (:) can be specified at the beginning of the syntax to specify an explicit hardware subset. The default is an implicit hardware subset.
 
 Supported unit IDs are not case-insensitive.
 
@@ -547,6 +549,18 @@ When any numa or tile units are specified in ``KMP_HW_SUBSET`` and the hwloc
 topology method is available, the ``KMP_TOPOLOGY_METHOD`` will be automatically
 set to hwloc, so there is no need to set it explicitly.
 
+For an **explicit hardware subset**, if one or more topology layers detected by the
+runtime are omitted from the subset, then those topology layers are ignored.
+Only explicitly specified topology layers are used in the subset.
+
+For an **implicit hardware subset**, it is implied that the socket, core, and thread
+topology types should be included in the subset. Other topology layers are not
+implicitly included and are ignored if they are not specified in the subset.
+Because the socket, core and thread topology types are always included in
+implicit hardware subsets, when they are omitted, it is assumed that all
+available resources of that type should be used. Implicit hardware subsets are
+the default.
+
 If you don't specify one or more types of resource, such as socket or thread,
 all available resources of that type are used.
 
@@ -565,7 +579,7 @@ This variable does not work if ``KMP_AFFINITY=disabled``.
 **Default:** If omitted, the default value is to use all the
 available hardware resources.
 
-**Examples:**
+**Implicit Hardware Subset Examples:**
 
 * ``2s,4c,2t``: Use the first 2 sockets (s0 and s1), the first 4 cores on each
   socket (c0 - c3), and 2 threads per core.
@@ -589,6 +603,12 @@ available hardware resources.
   run-time library.
 * ``*c:eff1@3``: Use all available sockets, skip the first three cores of
   efficiency 1, and then use the rest of the available cores of efficiency 1.
+
+Explicit Hardware Subset Examples:
+
+* ``:2s,6t`` Use exactly the first two sockets and 6 threads per socket.
+* ``:1t@7`` Skip the first 7 threads (t0-t6) and use exactly one thread (t7).
+* ``:5c,1t`` Use exactly the first 5 cores (c0-c4) and the first thread on each core.
 
 To see the result of the setting, you can specify ``verbose`` modifier in
 ``KMP_AFFINITY`` environment variable. The OpenMP run-time library will output
@@ -708,6 +728,7 @@ variables is defined below.
 
     * ``LIBOMPTARGET_DEBUG=<Num>``
     * ``LIBOMPTARGET_PROFILE=<Filename>``
+    * ``LIBOMPTARGET_PROFILE_GRANULARITY=<Num> (default 500, in us)``
     * ``LIBOMPTARGET_MEMORY_MANAGER_THRESHOLD=<Num>``
     * ``LIBOMPTARGET_INFO=<Num>``
     * ``LIBOMPTARGET_HEAP_SIZE=<Num>``
@@ -748,6 +769,12 @@ for time trace output. Note that this will turn ``libomp`` into a C++ library.
 .. _`Speedscope App`: https://www.speedscope.app/
 
 .. _`LLVM Support Library`: https://llvm.org/docs/SupportLibrary.html
+
+LIBOMPTARGET_PROFILE_GRANULARITY
+""""""""""""""""""""""""""""""""
+
+``LIBOMPTARGET_PROFILE_GRANULARITY`` allows to change the time profile
+granularity measured in `us`. Default is 500 (`us`).
 
 LIBOMPTARGET_MEMORY_MANAGER_THRESHOLD
 """""""""""""""""""""""""""""""""""""
@@ -1016,9 +1043,9 @@ default. The solution is to add an explicit map clause in the target region.
 LIBOMPTARGET_STACK_SIZE
 """""""""""""""""""""""
 
-This environment variable sets the stack size in bytes for the CUDA plugin. This
-can be used to increase or decrease the standard amount of memory reserved for
-each thread's stack.
+This environment variable sets the stack size in bytes for the AMDGPU and CUDA
+plugins. This can be used to increase or decrease the standard amount of memory
+reserved for each thread's stack.
 
 LIBOMPTARGET_HEAP_SIZE
 """""""""""""""""""""""
@@ -1130,7 +1157,7 @@ LIBOMPTARGET_MIN_THREADS_FOR_LOW_TRIP_COUNT
 This environment variable defines a lower bound for the number of threads if a
 combined kernel, e.g., `target teams distribute parallel for`, has insufficient
 parallelism. Especially if the trip count of the loops is lower than the number
-of threads possible times the number of teams (aka. blocks) the device preferes
+of threads possible times the number of teams (aka. blocks) the device prefers
 (see also :ref:`LIBOMPTARGET_AMDGPU_TEAMS_PER_CU`), we will reduce the thread
 count to increase outer (team/block) parallelism. The thread count will never
 be reduced below the value passed for this environment variable though.
@@ -1341,22 +1368,22 @@ This is the maximum amount of time the client will wait for a response from the 
 LLVM/OpenMP support for C library routines
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Support for calling standard C library routines on GPU targets is provided by 
-the `LLVM C Library <https://libc.llvm.org/gpu/>`_. This project provides two 
-static libraries, ``libcgpu.a`` and ``libllvmlibc_rpc_server.a``, which are used 
-by the OpenMP runtime to provide ``libc`` support. The ``libcgpu.a`` library 
-contains the GPU device code, while ``libllvmlibc_rpc_server.a`` provides the 
-interface to the RPC interface. More information on the RPC construction can be 
+Support for calling standard C library routines on GPU targets is provided by
+the `LLVM C Library <https://libc.llvm.org/gpu/>`_. This project provides two
+static libraries, ``libcgpu.a`` and ``libllvmlibc_rpc_server.a``, which are used
+by the OpenMP runtime to provide ``libc`` support. The ``libcgpu.a`` library
+contains the GPU device code, while ``libllvmlibc_rpc_server.a`` provides the
+interface to the RPC interface. More information on the RPC construction can be
 found in the `associated documentation <https://libc.llvm.org/gpu/rpc.html>`_.
 
-To provide host services, we run an RPC server inside of the runtime. This 
-allows the host to respond to requests made from the GPU asynchronously. For 
-``libc`` calls that require an RPC server, such as printing, an external handle 
-to the RPC client running on the GPU will be present in the GPU executable. If 
-we find this symbol, we will initialize a client and server and run it in the 
+To provide host services, we run an RPC server inside of the runtime. This
+allows the host to respond to requests made from the GPU asynchronously. For
+``libc`` calls that require an RPC server, such as printing, an external handle
+to the RPC client running on the GPU will be present in the GPU executable. If
+we find this symbol, we will initialize a client and server and run it in the
 background while the kernel is executing.
 
-For example, consider the following simple OpenMP offloading code. Here we will 
+For example, consider the following simple OpenMP offloading code. Here we will
 simply print a string to the user from the GPU.
 
 .. code-block:: c++
@@ -1368,11 +1395,11 @@ simply print a string to the user from the GPU.
       { fputs("Hello World!\n", stderr); }
    }
 
-We can compile this using the ``libcgpu.a`` library to resolve the symbols. 
-Because this function requires RPC support, this will also pull in an externally 
-visible symbol called ``__llvm_libc_rpc_client`` into the device image. When 
-loading the device image, the runtime will check for this symbol and initialize 
-an RPC interface if it is found. The following example shows the RPC server 
+We can compile this using the ``libcgpu.a`` library to resolve the symbols.
+Because this function requires RPC support, this will also pull in an externally
+visible symbol called ``__llvm_libc_rpc_client`` into the device image. When
+loading the device image, the runtime will check for this symbol and initialize
+an RPC interface if it is found. The following example shows the RPC server
 being used.
 
 .. code-block:: console
@@ -1465,3 +1492,4 @@ debugging features are supported.
 
     * Enable debugging assertions in the device. ``0x01``
     * Enable diagnosing common problems during offloading . ``0x4``
+    * Enable device malloc statistics (amdgpu only). ``0x8``

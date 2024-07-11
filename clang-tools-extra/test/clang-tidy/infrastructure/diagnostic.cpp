@@ -25,6 +25,7 @@
 // RUN: not clang-tidy -checks='-*,modernize-use-override' %T/diagnostics/input.cpp -- -DCOMPILATION_ERROR 2>&1 | FileCheck -check-prefix=CHECK6 -implicit-check-not='{{warning:|error:}}' %s
 // RUN: clang-tidy -checks='-*,modernize-use-override,clang-diagnostic-macro-redefined' %s -- -DMACRO_FROM_COMMAND_LINE -std=c++20 | FileCheck -check-prefix=CHECK4 -implicit-check-not='{{warning:|error:}}' %s
 // RUN: clang-tidy -checks='-*,modernize-use-override,clang-diagnostic-macro-redefined,clang-diagnostic-literal-conversion' %s -- -DMACRO_FROM_COMMAND_LINE -std=c++20 -Wno-macro-redefined | FileCheck --check-prefix=CHECK7 -implicit-check-not='{{warning:|error:}}' %s
+// RUN: clang-tidy -checks='-*,modernize-use-override' %s -- -std=c++20 -DPR64602
 
 // CHECK1: error: no input files [clang-diagnostic-error]
 // CHECK1: error: no such file or directory: '{{.*}}nonexistent.cpp' [clang-diagnostic-error]
@@ -52,5 +53,19 @@ class A { A(int) {} };
 void f(int a) {
   &(a + 1);
   // CHECK6: :[[@LINE-1]]:3: error: cannot take the address of an rvalue of type 'int' [clang-diagnostic-error]
+}
+#endif
+
+#ifdef PR64602 // Should not crash
+template <class T = void>
+struct S
+{
+    auto foo(auto);
+};
+
+template <>
+auto S<>::foo(auto)
+{
+    return 1;
 }
 #endif

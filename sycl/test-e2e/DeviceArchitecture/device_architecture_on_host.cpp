@@ -1,9 +1,9 @@
-// UNSUPPORTED: esimd_emulator, accelerator
+// UNSUPPORTED: accelerator
 
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
 
 int main() {
   sycl::queue q;

@@ -15,8 +15,8 @@
 #include "TestTransformStateExtension.h"
 #include "mlir/Dialect/PDL/IR/PDL.h"
 #include "mlir/Dialect/Transform/IR/TransformDialect.h"
-#include "mlir/Dialect/Transform/IR/TransformInterfaces.h"
 #include "mlir/Dialect/Transform/IR/TransformOps.h"
+#include "mlir/Dialect/Transform/Interfaces/TransformInterfaces.h"
 #include "mlir/Dialect/Transform/PDLExtension/PDLExtensionOps.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/PatternMatch.h"
@@ -55,7 +55,9 @@ public:
     return DiagnosedSilenceableFailure::success();
   }
 
-  Attribute getMessage() { return getOperation()->getAttr("message"); }
+  Attribute getMessage() {
+    return getOperation()->getDiscardableAttr("message");
+  }
 
   static ParseResult parse(OpAsmParser &parser, OperationState &state) {
     StringAttr message;
@@ -134,7 +136,7 @@ DiagnosedSilenceableFailure
 mlir::test::TestProduceValueHandleToSelfOperand::apply(
     transform::TransformRewriter &rewriter,
     transform::TransformResults &results, transform::TransformState &state) {
-  results.setValues(llvm::cast<OpResult>(getOut()), getIn());
+  results.setValues(llvm::cast<OpResult>(getOut()), {getIn()});
   return DiagnosedSilenceableFailure::success();
 }
 
@@ -244,49 +246,6 @@ void mlir::test::TestSucceedIfOperandOfOpKind::getEffects(
   transform::onlyReadsPayload(effects);
 }
 
-DiagnosedSilenceableFailure mlir::test::TestPrintRemarkAtOperandOp::apply(
-    transform::TransformRewriter &rewriter,
-    transform::TransformResults &results, transform::TransformState &state) {
-  auto payload = state.getPayloadOps(getOperand());
-  for (Operation *op : payload)
-    op->emitRemark() << getMessage();
-
-  return DiagnosedSilenceableFailure::success();
-}
-
-void mlir::test::TestPrintRemarkAtOperandOp::getEffects(
-    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
-  transform::onlyReadsHandle(getOperand(), effects);
-  transform::onlyReadsPayload(effects);
-}
-
-DiagnosedSilenceableFailure mlir::test::TestPrintRemarkAtOperandValue::apply(
-    transform::TransformRewriter &rewriter,
-    transform::TransformResults &results, transform::TransformState &state) {
-  ArrayRef<Value> values = state.getPayloadValues(getIn());
-  for (Value value : values) {
-    std::string note;
-    llvm::raw_string_ostream os(note);
-    if (auto arg = llvm::dyn_cast<BlockArgument>(value)) {
-      os << "a block argument #" << arg.getArgNumber() << " in block #"
-         << std::distance(arg.getOwner()->getParent()->begin(),
-                          arg.getOwner()->getIterator())
-         << " in region #" << arg.getOwner()->getParent()->getRegionNumber();
-    } else {
-      os << "an op result #" << llvm::cast<OpResult>(value).getResultNumber();
-    }
-    InFlightDiagnostic diag = ::emitRemark(value.getLoc()) << getMessage();
-    diag.attachNote() << "value handle points to " << os.str();
-  }
-  return DiagnosedSilenceableFailure::success();
-}
-
-void mlir::test::TestPrintRemarkAtOperandValue::getEffects(
-    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
-  transform::onlyReadsHandle(getIn(), effects);
-  transform::onlyReadsPayload(effects);
-}
-
 DiagnosedSilenceableFailure mlir::test::TestAddTestExtensionOp::apply(
     transform::TransformRewriter &rewriter,
     transform::TransformResults &results, transform::TransformState &state) {
@@ -388,7 +347,7 @@ DiagnosedSilenceableFailure mlir::test::TestEmitRemarkAndEraseOperandOp::apply(
     transform::TransformResults &results, transform::TransformState &state) {
   emitRemark() << getRemark();
   for (Operation *op : state.getPayloadOps(getTarget()))
-    op->erase();
+    rewriter.eraseOp(op);
 
   if (getFailAfterErase())
     return emitSilenceableError() << "silenceable error";
@@ -456,51 +415,6 @@ mlir::test::TestMixedSuccessAndSilenceableOp::applyToOne(
 }
 
 DiagnosedSilenceableFailure
-mlir::test::TestPrintNumberOfAssociatedPayloadIROps::apply(
-    transform::TransformRewriter &rewriter,
-    transform::TransformResults &results, transform::TransformState &state) {
-  if (!getHandle())
-    emitRemark() << 0;
-  emitRemark() << llvm::range_size(state.getPayloadOps(getHandle()));
-  return DiagnosedSilenceableFailure::success();
-}
-
-void mlir::test::TestPrintNumberOfAssociatedPayloadIROps::getEffects(
-    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
-  transform::onlyReadsHandle(getHandle(), effects);
-}
-
-DiagnosedSilenceableFailure
-mlir::test::TestPrintNumberOfAssociatedPayloadIRValues::apply(
-    transform::TransformRewriter &rewriter,
-    transform::TransformResults &results, transform::TransformState &state) {
-  if (!getValueHandle())
-    emitRemark() << 0;
-  emitRemark() << llvm::range_size(state.getPayloadValues(getValueHandle()));
-  return DiagnosedSilenceableFailure::success();
-}
-
-void mlir::test::TestPrintNumberOfAssociatedPayloadIRValues::getEffects(
-    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
-  transform::onlyReadsHandle(getValueHandle(), effects);
-}
-
-DiagnosedSilenceableFailure
-mlir::test::TestPrintNumberOfAssociatedPayloadIRParams::apply(
-    transform::TransformRewriter &rewriter,
-    transform::TransformResults &results, transform::TransformState &state) {
-  if (!getParam())
-    emitRemark() << 0;
-  emitRemark() << llvm::range_size(state.getParams(getParam()));
-  return DiagnosedSilenceableFailure::success();
-}
-
-void mlir::test::TestPrintNumberOfAssociatedPayloadIRParams::getEffects(
-    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
-  transform::onlyReadsHandle(getParam(), effects);
-}
-
-DiagnosedSilenceableFailure
 mlir::test::TestCopyPayloadOp::apply(transform::TransformRewriter &rewriter,
                                      transform::TransformResults &results,
                                      transform::TransformState &state) {
@@ -562,32 +476,6 @@ mlir::test::TestReportNumberOfTrackedHandlesNestedUnder::apply(
     });
   }
   emitRemark() << count << " handles nested under";
-  return DiagnosedSilenceableFailure::success();
-}
-
-void mlir::test::TestPrintParamOp::getEffects(
-    SmallVectorImpl<MemoryEffects::EffectInstance> &effects) {
-  transform::onlyReadsHandle(getParam(), effects);
-  if (getAnchor())
-    transform::onlyReadsHandle(getAnchor(), effects);
-  transform::onlyReadsPayload(effects);
-}
-
-DiagnosedSilenceableFailure
-mlir::test::TestPrintParamOp::apply(transform::TransformRewriter &rewriter,
-                                    transform::TransformResults &results,
-                                    transform::TransformState &state) {
-  std::string str;
-  llvm::raw_string_ostream os(str);
-  if (getMessage())
-    os << *getMessage() << " ";
-  llvm::interleaveComma(state.getParams(getParam()), os);
-  if (!getAnchor()) {
-    emitRemark() << os.str();
-    return DiagnosedSilenceableFailure::success();
-  }
-  for (Operation *payload : state.getPayloadOps(getAnchor()))
-    ::mlir::emitRemark(payload->getLoc()) << os.str();
   return DiagnosedSilenceableFailure::success();
 }
 
@@ -710,7 +598,7 @@ void mlir::test::TestProduceNullValueOp::getEffects(
 DiagnosedSilenceableFailure mlir::test::TestProduceNullValueOp::apply(
     transform::TransformRewriter &rewriter,
     transform::TransformResults &results, transform::TransformState &state) {
-  results.setValues(llvm::cast<OpResult>(getOut()), Value());
+  results.setValues(llvm::cast<OpResult>(getOut()), {Value()});
   return DiagnosedSilenceableFailure::success();
 }
 
@@ -954,17 +842,20 @@ namespace {
 class TestTypeConverter : public TypeConverter {
 public:
   TestTypeConverter() {
+    addConversion([](Type t) { return t; });
     addConversion([](RankedTensorType type) -> Type {
       return MemRefType::get(type.getShape(), type.getElementType());
     });
-    addSourceMaterialization([&](OpBuilder &builder, Type resultType,
-                                 ValueRange inputs,
-                                 Location loc) -> std::optional<Value> {
+    auto unrealizedCastConverter = [&](OpBuilder &builder, Type resultType,
+                                       ValueRange inputs,
+                                       Location loc) -> std::optional<Value> {
       if (inputs.size() != 1)
         return std::nullopt;
       return builder.create<UnrealizedConversionCastOp>(loc, resultType, inputs)
           .getResult(0);
-    });
+    };
+    addSourceMaterialization(unrealizedCastConverter);
+    addTargetMaterialization(unrealizedCastConverter);
   }
 };
 } // namespace
@@ -996,7 +887,7 @@ public:
 #include "TestTransformDialectExtensionTypes.cpp.inc"
         >();
 
-    auto verboseConstraint = [](PatternRewriter &rewriter,
+    auto verboseConstraint = [](PatternRewriter &rewriter, PDLResultList &,
                                 ArrayRef<PDLValue> pdlValues) {
       for (const PDLValue &pdlValue : pdlValues) {
         if (Operation *op = pdlValue.dyn_cast<Operation *>()) {

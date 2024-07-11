@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/types006 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types006/types006.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/types006/types006.dp.cpp -o %T/types006/types006.dp.o %}
 
 #include <curand_kernel.h>
 

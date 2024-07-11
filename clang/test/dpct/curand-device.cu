@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, NBLOCKS) * sycl::range<3>(1, 1, WARP_SIZE), sycl::range<3>(1, 1, WARP_SIZE)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:        picount(dOut_acc_ct0.get_raw_pointer(), item_ct1, counter_acc_ct1.get_pointer());
+  //CHECK-NEXT:        picount(dOut_acc_ct0.get_raw_pointer(), item_ct1, counter_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   picount<<<NBLOCKS, WARP_SIZE>>>(dOut);

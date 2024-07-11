@@ -13,10 +13,12 @@
 #ifndef LLVM_LIB_TARGET_NVPTX_NVPTXUTILITIES_H
 #define LLVM_LIB_TARGET_NVPTX_NVPTXUTILITIES_H
 
+#include "llvm/CodeGen/ValueTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Value.h"
+#include "llvm/Support/Alignment.h"
 #include <cstdarg>
 #include <set>
 #include <string>
@@ -54,12 +56,13 @@ bool getReqNTIDx(const Function &, unsigned &);
 bool getReqNTIDy(const Function &, unsigned &);
 bool getReqNTIDz(const Function &, unsigned &);
 
+bool getMaxClusterRank(const Function &, unsigned &);
 bool getMinCTASm(const Function &, unsigned &);
 bool getMaxNReg(const Function &, unsigned &);
 bool isKernelFunction(const Function &);
 
-bool getAlign(const Function &, unsigned index, unsigned &);
-bool getAlign(const CallInst &, unsigned index, unsigned &);
+MaybeAlign getAlign(const Function &, unsigned);
+MaybeAlign getAlign(const CallInst &, unsigned);
 Function *getMaybeBitcastedCallee(const CallBase *CB);
 
 // PTX ABI requires all scalar argument/return values to have
@@ -74,6 +77,8 @@ inline unsigned promoteScalarArgumentSize(unsigned size) {
 }
 
 bool shouldEmitPTXNoReturn(const Value *V, const TargetMachine &TM);
+
+bool Isv2x16VT(EVT VT);
 }
 
 #endif

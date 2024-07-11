@@ -74,6 +74,15 @@ config.substitutions.append(("%target_triple", config.target_triple))
 
 config.substitutions.append(("%PATH%", config.environment["PATH"]))
 
+#SYCLomatic Code
+dpct_header_path = os.path.join(config.clang_src_dir, "runtime", "dpct-rt", "include")
+if platform.system() == "Linux":
+    llvm_config.with_system_environment(['LD_LIBRARY_PATH','LIBRARY_PATH','CPATH'])
+    llvm_config.with_environment('CPATH', dpct_header_path, append_path=True)
+elif platform.system() == "Windows":
+    llvm_config.with_system_environment(['LIB','CPATH','INCLUDE'])
+    llvm_config.with_environment('INCLUDE', dpct_header_path, append_path=True)
+#End SYCLomatic
 
 # For each occurrence of a clang tool name, replace it with the full path to
 # the build directory holding that tool.  We explicitly specify the directories
@@ -90,6 +99,7 @@ tools = [
     "clang-offload-packager",
     "clang-tblgen",
     "clang-scan-deps",
+    "clang-installapi",
     "opt",
     "llvm-ifs",
     "yaml2obj",
@@ -97,6 +107,7 @@ tools = [
     "llvm-lto",
     "llvm-lto2",
     "llvm-profdata",
+    "llvm-readtapi",
     ToolSubst(
         "%clang_extdef_map",
         command=FindTool("clang-extdef-mapping"),
@@ -213,9 +224,6 @@ if config.has_plugins and config.llvm_plugin_ext:
 
 if config.clang_default_pie_on_linux:
     config.available_features.add("default-pie-on-linux")
-
-if config.clang_enable_opaque_pointers:
-    config.available_features.add('enable-opaque-pointers')
 
 # Set available features we allow tests to conditionalize on.
 #
@@ -334,43 +342,10 @@ if config.clang_vendor_uti:
 if config.have_llvm_driver:
     config.available_features.add("llvm-driver")
 
-
-def exclude_unsupported_files_for_aix(dirname):
-    for filename in os.listdir(dirname):
-        source_path = os.path.join(dirname, filename)
-        if os.path.isdir(source_path):
-            continue
-        f = open(source_path, "r", encoding="ISO-8859-1")
-        try:
-            data = f.read()
-            # 64-bit object files are not supported on AIX, so exclude the tests.
-            if (
-                any(
-                    option in data
-                    for option in (
-                        "-emit-obj",
-                        "-fmodule-format=obj",
-                        "-fintegrated-as",
-                    )
-                )
-                and "64" in config.target_triple
-            ):
-                config.excludes += [filename]
-        finally:
-            f.close()
-
-
-if "aix" in config.target_triple:
-    for directory in (
-        "/CodeGenCXX",
-        "/Misc",
-        "/Modules",
-        "/PCH",
-        "/Driver",
-        "/ASTMerge/anonymous-fields",
-        "/ASTMerge/injected-class-name-decl",
-    ):
-        exclude_unsupported_files_for_aix(config.test_source_root + directory)
+#SYCLomatic Code
+if "BUILD_LIT" in os.environ and os.environ["BUILD_LIT"] == 'TRUE':
+    config.available_features.add("build_lit")
+#End SYCLomatic
 
 # Some tests perform deep recursion, which requires a larger pthread stack size
 # than the relatively low default of 192 KiB for 64-bit processes on AIX. The
@@ -383,16 +358,17 @@ if "AIXTHREAD_STK" in os.environ:
 elif platform.system() == "AIX":
     config.environment["AIXTHREAD_STK"] = "4194304"
 
-# The llvm-nm tool supports an environment variable "OBJECT_MODE" on AIX OS, which
+# Some tools support an environment variable "OBJECT_MODE" on AIX OS, which
 # controls the kind of objects they will support. If there is no "OBJECT_MODE"
 # environment variable specified, the default behaviour is to support 32-bit
 # objects only. In order to not affect most test cases, which expect to support
 # 32-bit and 64-bit objects by default, set the environment variable
-# "OBJECT_MODE" to 'any' for llvm-nm on AIX OS.
+# "OBJECT_MODE" to "any" by default on AIX OS.
 
 if "system-aix" in config.available_features:
-    config.substitutions.append(("llvm-nm", "env OBJECT_MODE=any llvm-nm"))
-    config.substitutions.append(("llvm-ar", "env OBJECT_MODE=any llvm-ar"))
+   config.substitutions.append(("llvm-nm", "env OBJECT_MODE=any llvm-nm"))
+   config.substitutions.append(("llvm-ar", "env OBJECT_MODE=any llvm-ar"))
+   config.substitutions.append(("llvm-ranlib", "env OBJECT_MODE=any llvm-ranlib"))
 
 # It is not realistically possible to account for all options that could
 # possibly be present in system and user configuration files, so disable

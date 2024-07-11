@@ -16,11 +16,7 @@
 #include "ByteCodeEmitter.h"
 #include "ByteCodeExprGen.h"
 #include "EvalEmitter.h"
-#include "Pointer.h"
 #include "PrimType.h"
-#include "Record.h"
-#include "clang/AST/Decl.h"
-#include "clang/AST/Expr.h"
 #include "clang/AST/StmtVisitor.h"
 
 namespace clang {
@@ -67,7 +63,8 @@ private:
   bool visitSwitchStmt(const SwitchStmt *S);
   bool visitCaseStmt(const CaseStmt *S);
   bool visitDefaultStmt(const DefaultStmt *S);
-  bool visitAsmStmt(const AsmStmt *S);
+  bool visitAttributedStmt(const AttributedStmt *S);
+  bool visitCXXTryStmt(const CXXTryStmt *S);
 
   bool emitLambdaStaticInvokerBody(const CXXMethodDecl *MD);
 
@@ -85,6 +82,7 @@ private:
   OptLabelTy DefaultLabel;
 };
 
+extern template class ByteCodeStmtGen<ByteCodeEmitter>;
 extern template class ByteCodeExprGen<EvalEmitter>;
 
 } // namespace interp

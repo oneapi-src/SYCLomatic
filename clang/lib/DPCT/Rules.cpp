@@ -10,12 +10,13 @@
 #include "CallExprRewriter.h"
 #include "Error.h"
 #include "MapNames.h"
+#include "MigrateCmakeScript.h"
 #include "MigrationRuleManager.h"
+#include "NCCLAPIMigration.h"
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
-#include "NCCLAPIMigration.h"
 
-std::vector<std::string> MetaRuleObject::RuleFiles;
+std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
 template <class Functor>
@@ -63,6 +64,21 @@ void registerAPIRule(MetaRuleObject &R) {
     return std::make_unique<clang::dpct::UserDefinedAPIRule>(
         R.In, R.RuleAttributes.HasExplicitTemplateArgs);
   });
+
+  if (R.RuleAPIRestrictCondition.ArgCount < -1) {
+    llvm::outs() << "warning: In Rule " << R.RuleId
+                 << ", the APIRestrictCondition::ArgCount is set to a negative "
+                 << "value, and thus the ArgCount restriction is ignored.";
+  }
+
+  auto FilterChecker = [=](const CallExpr *C) {
+    if (R.RuleAPIRestrictCondition.ArgCount < 0)
+      return true;
+    if ((size_t)R.RuleAPIRestrictCondition.ArgCount == C->getNumArgs())
+      return true;
+    return false;
+  };
+
   // create and register rewriter
   // RewriterMap contains entries like {"FunctionName", RewriterFactory}
   // The priority of all the default rules are RulePriority::Fallback and
@@ -76,12 +92,17 @@ void registerAPIRule(MetaRuleObject &R) {
   auto Factory = createUserDefinedRewriterFactory(R.In, R);
   auto &Entry = (*CallExprRewriterFactoryBase::RewriterMap)[R.In];
   if (!Entry) {
-    Entry = Factory;
+    Entry = std::make_shared<ConditionalRewriterFactory>(FilterChecker, Factory,
+                                                         Entry);
   } else if (R.RuleAttributes.HasExplicitTemplateArgs) {
     Entry = std::make_shared<ConditionalRewriterFactory>(
-        UserDefinedRewriterFactory::hasExplicitTemplateArgs, Factory, Entry);
+        UserDefinedRewriterFactory::hasExplicitTemplateArgs,
+        std::make_shared<ConditionalRewriterFactory>(
+            FilterChecker, Factory, std::make_shared<NullRewriterFactory>()),
+        Entry);
   } else if (Entry->Priority > R.Priority) {
-    Entry = Factory;
+    Entry = std::make_shared<ConditionalRewriterFactory>(FilterChecker, Factory,
+                                                         Entry);
   }
 }
 
@@ -225,16 +246,43 @@ void deregisterAPIRule(MetaRuleObject &R) {
 }
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
-  MapNames::PatternRewriters.emplace_back(
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules));
+  MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
+      R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId, R.CmakeSyntax, R.Priority));
 }
 
-void importRules(llvm::cl::list<std::string> &RuleFiles) {
+MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
+    const MetaRuleObject::PatternRewriter &PR) {
+  if (this != &PR) {
+    RuleId = PR.RuleId;
+    In = PR.In;
+    Out = PR.Out;
+    MatchMode = PR.MatchMode;
+    Subrules = PR.Subrules;
+    Priority = PR.Priority;
+    CmakeSyntax = PR.CmakeSyntax;
+  }
+  return *this;
+}
+
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const MetaRuleObject::PatternRewriter &PR)
+    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), CmakeSyntax(PR.CmakeSyntax),
+      RuleId(PR.RuleId), Priority(PR.Priority), Subrules(PR.Subrules) {}
+
+MetaRuleObject::PatternRewriter::PatternRewriter(
+    const std::string &I, const std::string &O,
+    const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
+    std::string RuleId, std::string CmakeSyntax, RulePriority Priority)
+    : In(I), Out(O), MatchMode(MatchMode), CmakeSyntax(CmakeSyntax),
+      RuleId(RuleId), Priority(Priority) {
+  Subrules = S;
+}
+
+void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
-    makeCanonical(RuleFile);
     // open the yaml file
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
-        llvm::MemoryBuffer::getFile(RuleFile);
+        llvm::MemoryBuffer::getFile(RuleFile.getCanonicalPath());
     if (!Buffer) {
       llvm::errs() << "Error: failed to read " << RuleFile << ": "
                    << Buffer.getError().message() << "\n";
@@ -285,6 +333,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
       case (RuleKind::PatternRewriter):
         registerPatternRewriterRule(*r);
         break;
+      case (RuleKind::CMakeRule):
+        registerCmakeMigrationRule(*r);
+        break;
       default:
         break;
       }
@@ -318,7 +369,8 @@ void OutputBuilder::parse(std::string &RuleOutputString) {
       SubBuilders.push_back(StringBuilder);
       SubBuilders.push_back(consumeKeyword(RuleOutputString, i));
       StrStartIdx = i;
-    } break;
+      break;
+    }
     default:
       break;
     }
@@ -371,7 +423,6 @@ void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx,
 int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
                                    std::string &&Keyword) {
   ignoreWhitespaces(OutStr, Idx);
-
   if (Idx >= OutStr.size() || OutStr[Idx] != '$') {
     llvm::errs() << RuleFile << ":Error: in rule " << RuleName
                  << ", a positive integer is expected after "
@@ -469,6 +520,12 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
     ResultBuilder->Kind = Kind::Deref;
     ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$deref");
     consumeRParen(OutStr, Idx, "$deref");
+  } else if (OutStr.substr(Idx, 13) == "$template_arg") {
+    Idx += 13;
+    consumeLParen(OutStr, Idx, "$template_arg");
+    ResultBuilder->Kind = Kind::TemplateArg;
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$template_arg");
+    consumeRParen(OutStr, Idx, "$template_arg");
   } else {
     ResultBuilder->Kind = Kind::Arg;
     ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$");
@@ -485,15 +542,15 @@ class RefMatcherInterface
   bool HasQualifier = true;
 
   static bool consumeSuffix(StringRef &RefName, StringRef InputName) {
-    if (InputName.startswith("::"))
+    if (InputName.starts_with("::"))
       InputName = InputName.drop_front(2);
 
-    if (!RefName.endswith(InputName))
+    if (!RefName.ends_with(InputName))
       return false;
 
     RefName = RefName.drop_back(InputName.size());
     if (!RefName.empty())
-      return RefName.endswith("::");
+      return RefName.ends_with("::");
 
     return true;
   }
@@ -528,7 +585,7 @@ class RefMatcherInterface
 public:
   RefMatcherInterface(StringRef APIName, bool HasAnyExplicitTemplateArgs)
       : Name(APIName), HasExplicitTemplateArgs(HasAnyExplicitTemplateArgs) {
-    if (Name.startswith("::"))
+    if (Name.starts_with("::"))
       Name = Name.drop_front(2);
 
     HasQualifier = Name.find("::") != StringRef::npos;

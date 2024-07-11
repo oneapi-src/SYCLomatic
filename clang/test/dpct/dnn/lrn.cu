@@ -20,10 +20,7 @@
 // CHECK:     typedef float type;
 // CHECK: };
 // CHECK: template <>
-// CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_DATA_DOUBLE is not supported.
-// CHECK: */
-// CHECK: struct dt_trait<CUDNN_DATA_DOUBLE> {
+// CHECK: struct dt_trait<dpct::library_data_t::real_double> {
 // CHECK:     typedef double type;
 // CHECK: };
 // CHECK: template <>
@@ -115,7 +112,7 @@ void test1() {
     float lrn_k = 1.f;
     // CHECK: dpct::dnnl::lrn_desc desc;
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateLRNDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateLRNDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     // CHECK: desc.set(local_size, lrn_alpha, lrn_beta, lrn_k);
 

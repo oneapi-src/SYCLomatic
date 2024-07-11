@@ -7,7 +7,7 @@ the DPC++ Compiler.  This leverages the existing community Offloading
 design [OffloadingDesign][1] which covers the Clang driver and code generation
 steps for creating offloading applications.
 
-[1]: <../../../clang/docs/OffloadingDesign.rst>
+[1]: <https://github.com/intel/llvm/blob/clang/docs/OffloadingDesign.rst>
 
 The current offloading model is completely encapsulated within the Clang
 Compiler Driver requiring the driver to perform all of the additional steps
@@ -107,7 +107,7 @@ to be taken.
 For example, when an embedded device binary is of the `OFK_SYCL` kind and of
 the `spir64_gen` architecture triple, the resulting extracted binary is linked,
 post-link processed and converted to SPIR-V before being passed to `ocloc` to
-generate the final device binary.  Options passed via `--gen-tool-arg=` will
+generate the final device binary.  Options passed via `--gpu-tool-arg=` will
 be applied to the `ocloc` step as well.
 
 Binaries generated during the offload compilation will be 'bundled' together
@@ -189,7 +189,7 @@ the driver.  The driver is also responsible for letting the
 
 |            Option                    |   Expected Behavior   |
 |--------------------------------------|-----------------------|
-| `--sycl-device-libraries=<arg>`      | A comma separated list of device libraries that are linked during the device link. |
+| `--sycl-device-libraries=<arg>`      | A comma separated list of device libraries that are linked during the device link |
 | `--sycl-device-library-location=<arg>`    | The location in which the device libraries reside |
 
 *Table: Options to pass device libraries to the clang-linker-wrapper*
@@ -208,9 +208,17 @@ The `sycl-post-link` tool is used after the device link is performed,
 applying any changes such as optimizations and code splitting before passing
 off to the `llvm-spirv` tool, which translates the LLVM-IR to SPIR-V.
 
-At this point, the SPIR-V binary is sent to the Ahead of Time compilation
-step to produce the final device binary or is wrapped before being linked into
-the final executable.
+|            Option                    |   Expected Behavior   |
+|--------------------------------------|-----------------------|
+| `--sycl-post-link-options=<arg>`     | Options that will control sycl-post-link step |
+| `--llvm-spirv-options=<arg>`         | Options that will control llvm-spirv step |
+
+*Table: Options to pass sycl-post-link and llvm-spirv options to the clang-linker-wrapper*
+
+Options that will be used by clang-linker-wrapper when invoking the `sycl-post-link`
+tool are provided by the driver via the `--sycl-post-link-options=<arg>` option.
+Options that will be used by clang-linker-wrapper when invoking the `llvm-spirv`
+tool are provided by the driver via the `--llvm-spirv-options=<arg>` option.
 
 ### Ahead Of Time Compilation
 
@@ -231,7 +239,7 @@ are needed to pass along this information.
 | Target | Triple        | Offline Tool   | Option for Additional Args |
 |--------|---------------|----------------|----------------------------|
 | CPU    | spir64_x86_64 | opencl-aot     | `--cpu-tool-arg=<arg>`     |
-| GPU    | spir64_gen    | ocloc          | `--gen-tool-arg=<arg>`     |
+| GPU    | spir64_gen    | ocloc          | `--gpu-tool-arg=<arg>`     |
 | FPGA   | spir64_fpga   | aoc/opencl-aot | `--fpga-tool-arg=<arg>`    |
 
 *Table: Ahead of Time Info*
@@ -259,10 +267,10 @@ step performed by `sycl-post-link` and the SPIR-V translation step which is done
 by `llvm-spirv`.  Additional options passed by the user via the
 `-Xsycl-target-backend=spir64_gen <opts>` command as well as the implied
 options set via target options such as `-fsycl-targets=intel_gpu_skl`
-will be processed by a new options to the wrapper, `--gen-tool-arg=<arg>`
+will be processed by a new options to the wrapper, `--gpu-tool-arg=<arg>`
 
 To support multiple target specifications, for instance:
-`-fsycl-targets=intel_gpu_skl,intel_gpu_pvc`, multiple `--gen-tool-arg`
+`-fsycl-targets=intel_gpu_skl,intel_gpu_pvc`, multiple `--gpu-tool-arg`
 options can be passed on the command line.  Each instance will be considered
 a separate OCLOC call passing along the `<args>` as options to the OCLOC call.
 The compiler driver will be responsible for putting together the full option
@@ -274,8 +282,8 @@ list to be passed along.
 
 *Example: spir64_gen enabling options*
 
-> --gen-tool-arg="-device pvc -options extraopt_pvc"
---gen-tool-arg="-device skl -options -extraopt_skl"
+> --gpu-tool-arg="-device pvc -options extraopt_pvc"
+--gpu-tool-arg="-device skl -options -extraopt_skl"
 
 *Example: clang-linker-wrapper options*
 
@@ -284,7 +292,7 @@ individually wrapped and linked into the final executable.
 
 Additionally, the syntax can be expanded to enable the ability to pass specific
 options to a specific device GPU target for spir64_gen.  The syntax will
-resemble `--gen-tool-arg=<arch> <arg>`.  This corresponds to the existing
+resemble `--gpu-tool-arg=<arch> <arg>`.  This corresponds to the existing
 option syntax of `-fsycl-targets=intel_gpu_arch` where `arch` can be a fixed
 set of targets.
 

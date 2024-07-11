@@ -78,12 +78,55 @@ CONDITIONAL_FACTORY_ENTRY(
 */
 CONDITIONAL_FACTORY_ENTRY(
     argHasThreadBlockTileType(0, 32),
-        CALL_FACTORY_ENTRY("reduce", CALL(MapNames::getClNamespace() + "reduce_over_group",
-                                    SUBGROUP, ARG(1), ARG(2))),
-        UNSUPPORT_FACTORY_ENTRY("reduce",
-                                    Diagnostics::API_NOT_MIGRATED,
-                                    ARG("reduce")))
+    CALL_FACTORY_ENTRY("reduce",
+                       CALL(MapNames::getClNamespace() + "reduce_over_group",
+                            SUBGROUP, ARG(1), ARG(2))),
+    UNSUPPORT_FACTORY_ENTRY("reduce", Diagnostics::API_NOT_MIGRATED,
+                            ARG("reduce")))
 
+CASE_FACTORY_ENTRY(
+    CASE(CheckArgCount(2),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("inclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "inclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG("sycl::plus<>()"))),
+             UNSUPPORT_FACTORY_ENTRY("inclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("inclusive_scan")))),
+    CASE(CheckArgCount(3),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("inclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "inclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG(2))),
+             UNSUPPORT_FACTORY_ENTRY("inclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("inclusive_scan")))))
+
+CASE_FACTORY_ENTRY(
+    CASE(CheckArgCount(2),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("exclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "exclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG("sycl::plus<>()"))),
+             UNSUPPORT_FACTORY_ENTRY("exclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("exclusive_scan")))),
+    CASE(CheckArgCount(3),
+         CONDITIONAL_FACTORY_ENTRY(
+             argHasThreadBlockTileType(0, 32),
+             CALL_FACTORY_ENTRY("exclusive_scan",
+                                CALL(MapNames::getClNamespace() +
+                                         "exclusive_scan_over_group",
+                                     SUBGROUP, ARG(1), ARG(2))),
+             UNSUPPORT_FACTORY_ENTRY("exclusive_scan",
+                                     Diagnostics::API_NOT_MIGRATED,
+                                     ARG("exclusive_scan")))))
 /*
   --- cg::thread_rank(X) ---
   cg::thread_rank(cg::thread_block)
@@ -123,14 +166,39 @@ CONDITIONAL_FACTORY_ENTRY(
                                         Diagnostics::API_NOT_MIGRATED, ARG("thread_rank")))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckParamType(0, "const class cooperative_groups::__v1::thread_block &"), CheckIntergerTemplateArgValueLE(0, 32)),
+    makeCheckAnd(CheckParamType(
+                     0, "const class cooperative_groups::__v1::thread_block &"),
+                 CheckIntergerTemplateArgValueLE(0, 32)),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckIntergerTemplateArgValueNE(0, 32),
         CONDITIONAL_FACTORY_ENTRY(
-            makeCheckAnd(CheckIntergerTemplateArgValueNE(0, 32), UseLogicalGroup),
+            UseLogicalGroup,
             FEATURE_REQUEST_FACTORY(
                 HelperFeatureEnum::device_ext,
-                CALL_FACTORY_ENTRY("tiled_partition", CALL(MapNames::getDpctNamespace() + "experimental::logical_group", NDITEM, GROUP, makeCallArgCreatorFromTemplateArg(0)))),
-            TOSTRING_FACTORY_ENTRY("tiled_partition", SUBGROUP)),
-        UNSUPPORT_FACTORY_ENTRY("tiled_partition", Diagnostics::API_NOT_MIGRATED, ARG("tiled_partition")))
+                CALL_FACTORY_ENTRY("tiled_partition",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "experimental::logical_group",
+                                        NDITEM, GROUP,
+                                        makeCallArgCreatorFromTemplateArg(0)))),
+            UNSUPPORT_FACTORY_ENTRY("tiled_partition",
+                                    Diagnostics::API_NOT_MIGRATED,
+                                    ARG("tiled_partition"))),
+        TOSTRING_FACTORY_ENTRY("tiled_partition", SUBGROUP)),
+    UNSUPPORT_FACTORY_ENTRY("tiled_partition", Diagnostics::API_NOT_MIGRATED,
+                            ARG("tiled_partition")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    CALL_FACTORY_ENTRY(
+        "coalesced_threads",
+        CALL(
+            MapNames::getClNamespace() +
+            "ext::oneapi::experimental::this_kernel::get_opportunistic_group")),
+    UNSUPPORT_FACTORY_ENTRY(
+        "coalesced_threads",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("coalesced_threads"),
+        ARG("--use-experimental-features=non-uniform-groups")))
 #endif
 
 #ifdef CLASS_METHOD_CALL
@@ -206,6 +274,9 @@ CONDITIONAL_FACTORY_ENTRY(
 */
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.size", GROUP,
                           false, "get_local_linear_range")
+
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block::size", GROUP,
+                          false, "get_local_linear_range")
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
@@ -244,6 +315,61 @@ CASE_FACTORY_ENTRY(
                                 Diagnostics::API_NOT_MIGRATED, ARG("size"))))
 
 /*
+  --- X.num_threads() ---
+  cg::thread_block::num_threads()
+  => item_ct1.get_group().get_local_linear_range()
+
+  cg::thread_block_tile<32>::num_threads()
+  => item_ct1.get_subgroup().get_local_linear_range()
+
+  cg::thread_block_tile<N>::num_threads() if n in {1,2,4,8,16}
+  => if UseLogicalGroup then
+     MemberBase().get_local_linear_id()
+*/
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.num_threads", GROUP,
+                          false, "get_local_linear_range")
+
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block::num_threads",
+                   GROUP, false, "get_local_linear_range")
+// for cuda <= 10.2
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.num_threads",
+                                   SUBGROUP, false, "get_local_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
+                        baseHasThreadBlockTileType(16),
+                        baseHasThreadBlockTileType(8),
+                        baseHasThreadBlockTileType(4),
+                        baseHasThreadBlockTileType(2),
+                        baseHasThreadBlockTileType(1))),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.num_threads",
+                                       MemberExprBase(), false, "get_local_linear_range"))),
+    OTHERWISE(
+        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.num_threads",
+                                Diagnostics::API_NOT_MIGRATED, ARG("num_threads"))))
+// for cuda >= 11.0
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.num_threads",
+                                   SUBGROUP, false, "get_local_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
+                        baseHasThreadBlockTileType(16),
+                        baseHasThreadBlockTileType(8),
+                        baseHasThreadBlockTileType(4),
+                        baseHasThreadBlockTileType(2),
+                        baseHasThreadBlockTileType(1))),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.num_threads",
+                                       MemberExprBase(), false, "get_local_linear_range"))),
+    OTHERWISE(
+        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.num_threads",
+                                Diagnostics::API_NOT_MIGRATED, ARG("num_threads"))))
+
+
+/*
   --- X.thread_rank() ---
   cg::thread_block::thread_rank()
   => item_ct1.size()
@@ -255,8 +381,8 @@ CASE_FACTORY_ENTRY(
   => if UseLogicalGroup then
      MemberBase().get_local_linear_id()
 */
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_rank", NDITEM,
-                          false, "get_local_linear_id")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_rank",
+                          NDITEM, false, "get_local_linear_id")
 
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
@@ -352,94 +478,129 @@ CASE_FACTORY_ENTRY(
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         CALL_FACTORY_ENTRY(
-             "cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-             CALL(MapNames::getClNamespace() + "shift_group_left",
-                  SUBGROUP, ARG(0), ARG(1)))),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
+                 CALL(MapNames::getClNamespace() + "shift_group_left", SUBGROUP,
+                      ARG(0), ARG(1))))),
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__thread_block_"
+                     "tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("16")))))),
     CASE(baseHasThreadBlockTileType(8),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__thread_block_"
+                     "tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("8")))))),
     CASE(baseHasThreadBlockTileType(4),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__thread_block_"
+                     "tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("4")))))),
     CASE(baseHasThreadBlockTileType(2),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__thread_block_"
+                     "tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("2")))))),
     CASE(baseHasThreadBlockTileType(1),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
-    OTHERWISE(
-         UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-                                 Diagnostics::API_NOT_MIGRATED, ARG("shfl_down"))))
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__thread_block_"
+                     "tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("1")))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
+        Diagnostics::API_NOT_MIGRATED, ARG("shfl_down"))))
 
 // for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         CALL_FACTORY_ENTRY(
-             "cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-             CALL(MapNames::getClNamespace() + "shift_group_left",
-                  SUBGROUP, ARG(0), ARG(1)))),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                   "thread_block_tile_base.shfl_down",
+                                   CALL(MapNames::getClNamespace() +
+                                            "shift_group_left",
+                                        SUBGROUP, ARG(0), ARG(1))))),
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__static_size_"
+                     "thread_block_tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("16")))))),
     CASE(baseHasThreadBlockTileType(8),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__static_size_"
+                     "thread_block_tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("8")))))),
     CASE(baseHasThreadBlockTileType(4),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__static_size_"
+                     "thread_block_tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("4")))))),
     CASE(baseHasThreadBlockTileType(2),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__static_size_"
+                     "thread_block_tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("2")))))),
     CASE(baseHasThreadBlockTileType(1),
          FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
-    OTHERWISE(
-         UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-                                 Diagnostics::API_NOT_MIGRATED, ARG("shfl_down"))))
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0,
+                 CALL_FACTORY_ENTRY(
+                     "cooperative_groups::__v1::__static_size_"
+                     "thread_block_tile_base.shfl_down",
+                     CALL(MapNames::getDpctNamespace() + "shift_sub_group_left",
+                          SUBGROUP, ARG(0), ARG(1), ARG("1")))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                      "thread_block_tile_base.shfl_down",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      ARG("shfl_down"))))
 
 /*
   --- X.shfl_up() ---
@@ -452,45 +613,62 @@ CASE_FACTORY_ENTRY(
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         CALL_FACTORY_ENTRY(
-             "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
-             CALL(MapNames::getClNamespace() + "shift_group_right", SUBGROUP,
-                  ARG(0), ARG(1)))),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+                 CALL(MapNames::getClNamespace() + "shift_group_right",
+                      SUBGROUP, ARG(0), ARG(1))))),
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
-                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
-                      SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__thread_block_"
+                        "tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("16")))))),
     CASE(baseHasThreadBlockTileType(8),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
-                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
-                      SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__thread_block_"
+                        "tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("8")))))),
     CASE(baseHasThreadBlockTileType(4),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
-                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
-                      SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__thread_block_"
+                        "tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("4")))))),
     CASE(baseHasThreadBlockTileType(2),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
-                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
-                      SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__thread_block_"
+                        "tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("2")))))),
     CASE(baseHasThreadBlockTileType(1),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
-                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
-                      SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__thread_block_"
+                        "tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("1")))))),
     OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
         "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
         Diagnostics::API_NOT_MIGRATED, ARG("shfl_up"))))
@@ -498,49 +676,179 @@ CASE_FACTORY_ENTRY(
 // for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
-                            CALL(MapNames::getClNamespace() +
-                                     "shift_group_right",
-                                 SUBGROUP, ARG(0), ARG(1)))),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                   "thread_block_tile_base.shfl_up",
+                                   CALL(MapNames::getClNamespace() +
+                                            "shift_group_right",
+                                        SUBGROUP, ARG(0), ARG(1))))),
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
-                                CALL(MapNames::getDpctNamespace() +
-                                         "shift_sub_group_right",
-                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("16")))))),
     CASE(baseHasThreadBlockTileType(8),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
-                                CALL(MapNames::getDpctNamespace() +
-                                         "shift_sub_group_right",
-                                     SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("8")))))),
     CASE(baseHasThreadBlockTileType(4),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
-                                CALL(MapNames::getDpctNamespace() +
-                                         "shift_sub_group_right",
-                                     SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("4")))))),
     CASE(baseHasThreadBlockTileType(2),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
-                                CALL(MapNames::getDpctNamespace() +
-                                         "shift_sub_group_right",
-                                     SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("2")))))),
     CASE(baseHasThreadBlockTileType(1),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
-                                CALL(MapNames::getDpctNamespace() +
-                                         "shift_sub_group_right",
-                                     SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
-    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl_up",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "shift_sub_group_right",
+                             SUBGROUP, ARG(0), ARG(1), ARG("1")))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                      "thread_block_tile_base.shfl_up",
                                       Diagnostics::API_NOT_MIGRATED,
                                       ARG("shfl_up"))))
 
+/*
+  --- X.shfl() ---
+  cg::thread_block_tile<32>::shfl(v, src_rank)
+  => sycl::select_from_group(item_ct1.get_sub_group(), v, src_rank)
+
+  cg::thread_block_tile<N>::shfl(v, src_rank) if N in {1,2,4,8,16}
+  => dpct::select_from_sub_group(item_ct1.get_sub_group(), v, src_rank, N)
+*/
+// for cuda <= 10.2
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY(
+                    "cooperative_groups::__v1::__thread_block_tile_base.shfl",
+                    CALL(MapNames::getClNamespace() + "select_from_group",
+                         SUBGROUP, ARG(0), ARG(1))))),
+    CASE(baseHasThreadBlockTileType(16),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY(
+                    "cooperative_groups::__v1::__thread_block_tile_base.shfl",
+                    CALL(MapNames::getDpctNamespace() + "select_from_sub_group",
+                         SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+    CASE(baseHasThreadBlockTileType(8),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY(
+                    "cooperative_groups::__v1::__thread_block_tile_base.shfl",
+                    CALL(MapNames::getDpctNamespace() + "select_from_sub_group",
+                         SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+    CASE(baseHasThreadBlockTileType(4),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY(
+                    "cooperative_groups::__v1::__thread_block_tile_base.shfl",
+                    CALL(MapNames::getDpctNamespace() + "select_from_sub_group",
+                         SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+    CASE(baseHasThreadBlockTileType(2),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY(
+                    "cooperative_groups::__v1::__thread_block_tile_base.shfl",
+                    CALL(MapNames::getDpctNamespace() + "select_from_sub_group",
+                         SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+    CASE(baseHasThreadBlockTileType(1),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY(
+                    "cooperative_groups::__v1::__thread_block_tile_base.shfl",
+                    CALL(MapNames::getDpctNamespace() + "select_from_sub_group",
+                         SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.shfl",
+        Diagnostics::API_NOT_MIGRATED, ARG("shfl"))))
+
+// for cuda >= 11.0
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         ANALYZE_UNINIT_DEV_VAR_FACTORY(
+             0, CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                   "thread_block_tile_base.shfl",
+                                   CALL(MapNames::getClNamespace() +
+                                            "select_from_group",
+                                        SUBGROUP, ARG(0), ARG(1))))),
+    CASE(baseHasThreadBlockTileType(16),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "select_from_sub_group",
+                             SUBGROUP, ARG(0), ARG(1), ARG("16")))))),
+    CASE(baseHasThreadBlockTileType(8),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "select_from_sub_group",
+                             SUBGROUP, ARG(0), ARG(1), ARG("8")))))),
+    CASE(baseHasThreadBlockTileType(4),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "select_from_sub_group",
+                             SUBGROUP, ARG(0), ARG(1), ARG("4")))))),
+    CASE(baseHasThreadBlockTileType(2),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "select_from_sub_group",
+                             SUBGROUP, ARG(0), ARG(1), ARG("2")))))),
+    CASE(baseHasThreadBlockTileType(1),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                 0, CALL_FACTORY_ENTRY(
+                        "cooperative_groups::__v1::__static_size_"
+                        "thread_block_tile_base.shfl",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "select_from_sub_group",
+                             SUBGROUP, ARG(0), ARG(1), ARG("1")))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl",
+        Diagnostics::API_NOT_MIGRATED, ARG("shfl"))))
 /*
   --- X.shfl_xor() ---
   cg::thread_block_tile<32>::shfl_xor(v, mask)
@@ -559,38 +867,43 @@ CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
-                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
-                      SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_"
+                                "tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
-                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
-                      SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_"
+                                "tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
-                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
-                      SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_"
+                                "tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
-                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
-                      SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_"
+                                "tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY(
-                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
-                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
-                      SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_"
+                                "tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
     OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
         "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
         Diagnostics::API_NOT_MIGRATED, ARG("shfl_xor"))))
@@ -598,46 +911,53 @@ CASE_FACTORY_ENTRY(
 // for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+         CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                            "thread_block_tile_base.shfl_xor",
                             CALL(MapNames::getClNamespace() +
                                      "permute_group_by_xor",
                                  SUBGROUP, ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                "thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                "thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                "thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                "thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                "thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
-    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_"
+                                      "thread_block_tile_base.shfl_xor",
                                       Diagnostics::API_NOT_MIGRATED,
                                       ARG("shfl_xor"))))
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.thread_rank",
@@ -650,8 +970,43 @@ MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.num_threads",
                           MemberExprBase(), false, "get_local_linear_range")
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.get_type",
                           MemberExprBase(), false, "get_type")
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index", NDITEM,
-                          false, "get_global_id")
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index", NDITEM,
-                          false, "get_local_id")
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index",
+                   CALL(MapNames::getDpctNamespace() + "dim3",
+                        MEMBER_CALL(MemberExprBase(), false, "get_group_id")))
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index",
+                   CALL(MapNames::getDpctNamespace() + "dim3",
+                        MEMBER_CALL(MemberExprBase(), false, "get_local_id")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.thread_rank",
+        MemberExprBase(), false, "get_local_linear_id"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.thread_rank",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::coalesced_group.thread_rank"),
+        ARG("--use-experimental-features=non-uniform-groups")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.size",
+                              MemberExprBase(), false, "get_local_linear_id"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.size",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::coalesced_group.size"),
+        ARG("--use-experimental-features=non-uniform-groups")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseNonUniformGroups,
+    CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.shfl",
+                              CALL(MapNames::getClNamespace() +
+                                       "select_from_group",
+                                   MemberExprBase(), ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::coalesced_group.shfl",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::coalesced_group.shfl"),
+        ARG("--use-experimental-features=non-uniform-groups")))
 #endif

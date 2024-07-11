@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/cuda_vardecl %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda_vardecl/cuda_vardecl.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cuda_vardecl/cuda_vardecl.dp.cpp -o %T/cuda_vardecl/cuda_vardecl.dp.o %}
 
 #include <vector>
 #include <list>

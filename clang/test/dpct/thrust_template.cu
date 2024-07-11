@@ -1,7 +1,8 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct -out-root %T/thrust_template %s --cuda-include-path="%cuda-path/include" --extra-arg="-fno-delayed-template-parsing" -- -ferror-limit=50
+// RUN: dpct -out-root %T/thrust_template %s --cuda-include-path="%cuda-path/include" -- -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust_template/thrust_template.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_template/thrust_template.dp.cpp -o %T/thrust_template/thrust_template.dp.o %}
 
 #include <thrust/device_vector.h>
 #include <thrust/replace.h>
@@ -19,6 +20,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/unique.h>
 #include <thrust/sort.h>
+#include <thrust/iterator/constant_iterator.h>
 
 // for cuda 12.0
 #include <thrust/execution_policy.h>

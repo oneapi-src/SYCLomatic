@@ -22,15 +22,15 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/Analysis/CFG.h"
-#include "clang/Analysis/FlowSensitive/ControlFlowContext.h"
+#include "clang/Analysis/FlowSensitive/AdornedCFG.h"
 #include "clang/Analysis/FlowSensitive/DataflowEnvironment.h"
 #include "clang/Analysis/FlowSensitive/DataflowLattice.h"
 #include "clang/Analysis/FlowSensitive/MatchSwitch.h"
 #include "clang/Analysis/FlowSensitive/TypeErasedDataflowAnalysis.h"
 #include "clang/Analysis/FlowSensitive/WatchedLiteralsSolver.h"
-#include "llvm/ADT/Any.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/STLFunctionalExtras.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Errc.h"
 #include "llvm/Support/Error.h"
 
@@ -54,10 +54,9 @@ namespace dataflow {
 ///                         Environment &Env)` - applies the analysis transfer
 ///    function for a given edge from a CFG block of a conditional statement.
 ///
-///  `Derived` can optionally override the following members:
-///   * `bool merge(QualType, const Value &, const Value &, Value &,
-///     Environment &)` -  joins distinct values. This could be a strict
-///     lattice join or a more general widening operation.
+///  `Derived` can optionally override the virtual functions in the
+///  `Environment::ValueModel` interface (which is an indirect base class of
+///  this class).
 ///
 ///  `LatticeT` is a bounded join-semilattice that is used by `Derived` and must
 ///  provide the following public members:
@@ -84,14 +83,6 @@ public:
   using Lattice = LatticeT;
 
   explicit DataflowAnalysis(ASTContext &Context) : Context(Context) {}
-
-  /// Deprecated. Use the `DataflowAnalysisOptions` constructor instead.
-  explicit DataflowAnalysis(ASTContext &Context, bool ApplyBuiltinTransfer)
-      : DataflowAnalysis(
-            Context,
-            {ApplyBuiltinTransfer
-                 ? DataflowAnalysisContext::Options{}
-                 : std::optional<DataflowAnalysisContext::Options>()}) {}
 
   explicit DataflowAnalysis(ASTContext &Context,
                             DataflowAnalysisOptions Options)
@@ -194,15 +185,21 @@ template <typename LatticeT> struct DataflowAnalysisState {
 /// the dataflow analysis cannot be performed successfully. Otherwise, calls
 /// `PostVisitCFG` on each CFG element with the final analysis results at that
 /// program point.
+///
+/// `MaxBlockVisits` caps the number of block visits during analysis. See
+/// `runTypeErasedDataflowAnalysis` for a full description. The default value is
+/// essentially arbitrary -- large enough to accommodate what seems like any
+/// reasonable CFG, but still small enough to limit the cost of hitting the
+/// limit.
 template <typename AnalysisT>
 llvm::Expected<std::vector<
     std::optional<DataflowAnalysisState<typename AnalysisT::Lattice>>>>
 runDataflowAnalysis(
-    const ControlFlowContext &CFCtx, AnalysisT &Analysis,
-    const Environment &InitEnv,
+    const AdornedCFG &ACFG, AnalysisT &Analysis, const Environment &InitEnv,
     std::function<void(const CFGElement &, const DataflowAnalysisState<
                                                typename AnalysisT::Lattice> &)>
-        PostVisitCFG = nullptr) {
+        PostVisitCFG = nullptr,
+    std::int32_t MaxBlockVisits = 20'000) {
   std::function<void(const CFGElement &,
                      const TypeErasedDataflowAnalysisState &)>
       PostVisitCFGClosure = nullptr;
@@ -220,7 +217,7 @@ runDataflowAnalysis(
   }
 
   auto TypeErasedBlockStates = runTypeErasedDataflowAnalysis(
-      CFCtx, Analysis, InitEnv, PostVisitCFGClosure);
+      ACFG, Analysis, InitEnv, PostVisitCFGClosure, MaxBlockVisits);
   if (!TypeErasedBlockStates)
     return TypeErasedBlockStates.takeError();
 
@@ -242,6 +239,22 @@ runDataflowAnalysis(
   return std::move(BlockStates);
 }
 
+// Create an analysis class that is derived from `DataflowAnalysis`. This is an
+// SFINAE adapter that allows us to call two different variants of constructor
+// (either with or without the optional `Environment` parameter).
+// FIXME: Make all classes derived from `DataflowAnalysis` take an `Environment`
+// parameter in their constructor so that we can get rid of this abomination.
+template <typename AnalysisT>
+auto createAnalysis(ASTContext &ASTCtx, Environment &Env)
+    -> decltype(AnalysisT(ASTCtx, Env)) {
+  return AnalysisT(ASTCtx, Env);
+}
+template <typename AnalysisT>
+auto createAnalysis(ASTContext &ASTCtx, Environment &Env)
+    -> decltype(AnalysisT(ASTCtx)) {
+  return AnalysisT(ASTCtx);
+}
+
 /// Runs a dataflow analysis over the given function and then runs `Diagnoser`
 /// over the results. Returns a list of diagnostics for `FuncDecl` or an
 /// error. Currently, errors can occur (at least) because the analysis requires
@@ -253,25 +266,28 @@ runDataflowAnalysis(
 ///   iterations.
 /// - This limit is still low enough to keep runtimes acceptable (on typical
 ///   machines) in cases where we hit the limit.
+///
+/// `MaxBlockVisits` caps the number of block visits during analysis. See
+/// `runDataflowAnalysis` for a full description and explanation of the default
+/// value.
 template <typename AnalysisT, typename Diagnostic>
-llvm::Expected<std::vector<Diagnostic>> diagnoseFunction(
+llvm::Expected<llvm::SmallVector<Diagnostic>> diagnoseFunction(
     const FunctionDecl &FuncDecl, ASTContext &ASTCtx,
-    llvm::function_ref<std::vector<Diagnostic>(
+    llvm::function_ref<llvm::SmallVector<Diagnostic>(
         const CFGElement &, ASTContext &,
         const TransferStateForDiagnostics<typename AnalysisT::Lattice> &)>
         Diagnoser,
-    std::int64_t MaxSATIterations = 1'000'000'000) {
-  llvm::Expected<ControlFlowContext> Context =
-      ControlFlowContext::build(FuncDecl);
+    std::int64_t MaxSATIterations = 1'000'000'000,
+    std::int32_t MaxBlockVisits = 20'000) {
+  llvm::Expected<AdornedCFG> Context = AdornedCFG::build(FuncDecl);
   if (!Context)
     return Context.takeError();
 
-  auto OwnedSolver = std::make_unique<WatchedLiteralsSolver>(MaxSATIterations);
-  const WatchedLiteralsSolver *Solver = OwnedSolver.get();
-  DataflowAnalysisContext AnalysisContext(std::move(OwnedSolver));
+  auto Solver = std::make_unique<WatchedLiteralsSolver>(MaxSATIterations);
+  DataflowAnalysisContext AnalysisContext(*Solver);
   Environment Env(AnalysisContext, FuncDecl);
-  AnalysisT Analysis(ASTCtx);
-  std::vector<Diagnostic> Diagnostics;
+  AnalysisT Analysis = createAnalysis<AnalysisT>(ASTCtx, Env);
+  llvm::SmallVector<Diagnostic> Diagnostics;
   if (llvm::Error Err =
           runTypeErasedDataflowAnalysis(
               *Context, Analysis, Env,
@@ -285,7 +301,8 @@ llvm::Expected<std::vector<Diagnostic>> diagnoseFunction(
                             State.Lattice.Value),
                         State.Env));
                 llvm::move(EltDiagnostics, std::back_inserter(Diagnostics));
-              })
+              },
+              MaxBlockVisits)
               .takeError())
     return std::move(Err);
 

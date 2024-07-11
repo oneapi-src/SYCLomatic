@@ -1,4 +1,4 @@
-// RUN: %{build} -o %t.out
+// RUN: %{build} -o %t.out -DSYCL_DISABLE_IMAGE_ASPECT_WARNING
 // RUN: %{run-unfiltered-devices} %t.out
 //
 // Hip is missing some of the parameters tested here so it fails with NVIDIA
@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <iostream>
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
 
 using namespace sycl;
 
@@ -50,9 +50,6 @@ int main() {
     }
     if (plt.has(aspect::fp64)) {
       std::cout << "  fp64" << std::endl;
-    }
-    if (plt.has(aspect::ext_oneapi_bfloat16_math_functions)) {
-      std::cout << " ext_oneapi_bfloat16_math_functions" << std::endl;
     }
     if (plt.has(aspect::atomic64)) {
       std::cout << "  atomic64" << std::endl;

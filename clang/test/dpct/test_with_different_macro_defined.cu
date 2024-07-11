@@ -3,6 +3,7 @@
 // RUN: dpct -format-range=none -out-root %T/test_with_different_macro_defined_output %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -DFOO_1
 // RUN: dpct -format-range=none -out-root %T/test_with_different_macro_defined_output %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -DFOO_2
 // RUN: FileCheck --input-file %T/test_with_different_macro_defined_output/test_with_different_macro_defined.dp.cpp --match-full-lines %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/test_with_different_macro_defined_output/test_with_different_macro_defined.dp.cpp -o %T/test_with_different_macro_defined_output/test_with_different_macro_defined.dp.o %}
 
 // RUN: cat %S/test_with_different_macro_defined_ref.txt > %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu
 // RUN: dpct -format-range=none -out-root %T/test_with_different_macro_defined_output %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -DFOO_1
@@ -12,6 +13,7 @@
 // RUN: echo " " >> %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu
 // RUN: dpct -format-range=none -out-root %T/test_with_different_macro_defined_output %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -DFOO_2
 // RUN: FileCheck --input-file %T/test_with_different_macro_defined_output/test_with_different_macro_defined.dp.cpp --match-full-lines %T/test_with_different_macro_defined_output/test_with_different_macro_defined.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/test_with_different_macro_defined_output/test_with_different_macro_defined.dp.cpp -o %T/test_with_different_macro_defined_output/test_with_different_macro_defined.dp.o %}
 // RUN: rm %T/test_with_different_macro_defined_output -rf
 
 

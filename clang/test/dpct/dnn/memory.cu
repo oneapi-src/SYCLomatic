@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/memory %S/memory.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/memory/memory.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/memory/memory.dp.cpp -o %T/memory/memory.dp.o %}
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>
@@ -20,10 +21,7 @@
 // CHECK:     typedef float type;
 // CHECK: };
 // CHECK: template <>
-// CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_DATA_DOUBLE is not supported.
-// CHECK: */
-// CHECK: struct dt_trait<CUDNN_DATA_DOUBLE> {
+// CHECK: struct dt_trait<dpct::library_data_t::real_double> {
 // CHECK:     typedef double type;
 // CHECK: };
 // CHECK: template <>

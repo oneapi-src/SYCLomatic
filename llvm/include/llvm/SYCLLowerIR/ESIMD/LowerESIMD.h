@@ -34,11 +34,14 @@ class PassRegistry;
 /// like intrinsics to a form parsable by the ESIMD-aware SPIRV translator.
 class SYCLLowerESIMDPass : public PassInfoMixin<SYCLLowerESIMDPass> {
 public:
+  SYCLLowerESIMDPass(bool ModuleContainsScalar = true)
+      : ModuleContainsScalarCode(ModuleContainsScalar) {}
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &);
 
 private:
   bool prepareForAlwaysInliner(Module &M);
   size_t runOnFunction(Function &F, SmallPtrSetImpl<Type *> &);
+  bool ModuleContainsScalarCode;
 };
 
 ModulePass *createSYCLLowerESIMDPass();
@@ -63,10 +66,6 @@ public:
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &);
 };
 
-// Lowers calls __esimd_slm_alloc, __esimd_slm_free and __esimd_slm_init APIs.
-// See more details in the .cpp file.
-size_t lowerSLMReservationCalls(Module &M);
-
 // Lowers calls to __esimd_set_kernel_properties
 class SYCLLowerESIMDKernelPropsPass
     : public PassInfoMixin<SYCLLowerESIMDKernelPropsPass> {
@@ -80,6 +79,26 @@ class SYCLFixupESIMDKernelWrapperMDPass
 public:
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &);
 };
+
+class ESIMDRemoveHostCodePass : public PassInfoMixin<ESIMDRemoveHostCodePass> {
+public:
+  PreservedAnalyses run(Module &M, ModuleAnalysisManager &);
+};
+
+class ESIMDRemoveOptnoneNoinlinePass
+    : public PassInfoMixin<ESIMDRemoveOptnoneNoinlinePass> {
+public:
+  PreservedAnalyses run(Module &M, ModuleAnalysisManager &);
+};
+
+// Lowers calls __esimd_slm_alloc, __esimd_slm_free and __esimd_slm_init APIs.
+// See more details in the .cpp file.
+class ESIMDLowerSLMReservationCalls
+    : public PassInfoMixin<ESIMDLowerSLMReservationCalls> {
+public:
+  PreservedAnalyses run(Module &M, ModuleAnalysisManager &);
+};
+
 } // namespace llvm
 
 #endif // LLVM_SYCLLOWERIR_LOWERESIMD_H

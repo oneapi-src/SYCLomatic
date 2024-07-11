@@ -1,0 +1,56 @@
+.. _DPCT1122:
+
+DPCT1122
+========
+
+Message
+-------
+
+.. _msg-1122-start:
+
+'*<original type>*' is migrated to '*<migrated type>*' in the template declaration; it may cause
+template function or class redefinition; please adjust the code.
+
+.. _msg-1122-end:
+
+Detailed Help
+-------------
+
+SYCL\* vector types like sycl::long4 are defined by 'using <type><elems> = vec<<storage-type>, <elems>>'
+in SYCL2020 Vector types section 4.12.2, but sycl::longlong4 is not defined. In the migration, both
+'long4' and 'longlong4' are migrated to sycl::long4, this may cause template function or class redefinition.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <typename T> struct C { T a; };
+   template <> struct C<longlong4> { longlong4 a; };
+   template <> struct C<long4> { long4 a; };
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <typename T> struct C { T a; };
+   /*
+   DPCT1122:0: 'longlong4' is migrated to 'sycl::long4' in the template
+   declaration; it may cause template function or class redefinition; please adjust
+   the code.
+   */
+   template <> struct C<sycl::long4> { sycl::long4 a; };
+   template <> struct C<sycl::long4> { sycl::long4 a; };
+
+which needs to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <typename T> struct C { T a; };
+   template <> struct C<sycl::long4> { sycl::long4 a; };
+

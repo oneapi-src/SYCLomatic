@@ -1,14 +1,16 @@
-// UNSUPPORTED: hip
 // RUN: %{build} -fsycl-device-code-split=per_kernel -I . -o %t.out
 // RUN: %{run} %t.out
 
+#include "../helpers.hpp"
 #include "support.h"
 #include <algorithm>
 #include <cassert>
+#include <complex>
 #include <iostream>
 #include <limits>
 #include <numeric>
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
+#include <sycl/group_algorithm.hpp>
 #include <vector>
 using namespace sycl;
 
@@ -16,24 +18,6 @@ queue q;
 
 template <class SpecializationKernelName, int TestNumber>
 class inclusive_scan_kernel;
-
-// std::inclusive_scan isn't implemented yet, so use serial implementation
-// instead
-// TODO: use std::inclusive_scan when it will be supported
-namespace emu {
-template <typename InputIterator, typename OutputIterator,
-          class BinaryOperation, typename T>
-OutputIterator inclusive_scan(InputIterator first, InputIterator last,
-                              OutputIterator result, BinaryOperation binary_op,
-                              T init) {
-  T partial = init;
-  for (InputIterator it = first; it != last; ++it) {
-    partial = binary_op(partial, *it);
-    *(result++) = partial;
-  }
-  return result;
-}
-} // namespace emu
 
 template <typename SpecializationKernelName, typename InputContainer,
           class BinaryOperation>

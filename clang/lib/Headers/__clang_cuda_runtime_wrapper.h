@@ -53,20 +53,16 @@
 // WARNING: Preprocessor hacks below are based on specific details of
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
-#include "cuda.h"
-#ifdef SYCLomatic_CUSTOMIZATION
-#if !defined(CUDA_VERSION)
-#error "cuda.h did not define CUDA_VERSION"
-#elif CUDA_VERSION < 7000
-#error "Unsupported CUDA version!"
-#endif
+#if defined(SYCLomatic_CUSTOMIZATION) && defined(__CUDA_DOT_H_FILE_PATH__)
+#include __CUDA_DOT_H_FILE_PATH__
 #else
+#include "cuda.h"
+#endif // SYCLomatic_CUSTOMIZATION
 #if !defined(CUDA_VERSION)
 #error "cuda.h did not define CUDA_VERSION"
 #elif CUDA_VERSION < 7000
 #error "Unsupported CUDA version!"
 #endif
-#endif // SYCLomatic_CUSTOMIZATION
 
 #if defined(SYCLomatic_CUSTOMIZATION) && CUDA_VERSION >= 10000
 #pragma push_macro("__clang_major__")
@@ -519,6 +515,7 @@ __device__ inline __cuda_builtin_gridDim_t::operator uint3() const {
 #ifdef SYCLomatic_CUSTOMIZATION
 #include "__clang_dpct_math.h"
 #include <math.h>
+#include <algorithm>
 #endif // SYCLomatic_CUSTOMIZATION
 // curand_mtgp32_kernel helpfully redeclares blockDim and threadIdx in host
 // mode, giving them their "proper" types of dim3 and uint3.  This is

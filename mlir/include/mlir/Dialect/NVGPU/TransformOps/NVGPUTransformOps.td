@@ -11,9 +11,24 @@
 
 include "mlir/Dialect/Transform/IR/TransformAttrs.td"
 include "mlir/Dialect/Transform/IR/TransformDialect.td"
-include "mlir/Dialect/Transform/IR/TransformInterfaces.td"
+include "mlir/Dialect/Transform/Interfaces/TransformInterfaces.td"
 include "mlir/Dialect/Transform/IR/TransformTypes.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+
+//===----------------------------------------------------------------------===//
+// Apply...ConversionPatternsOp
+//===----------------------------------------------------------------------===//
+
+def ApplyNVGPUToNVVMConversionPatternsOp : Op<Transform_Dialect,
+    "apply_conversion_patterns.nvgpu.nvgpu_to_nvvm",
+    [DeclareOpInterfaceMethods<ConversionPatternDescriptorOpInterface,
+                               ["verifyTypeConverter"]>]> {
+  let description = [{
+    Collects patterns that convert NVGPU dialect ops to NVVM dialect ops. These
+    patterns require an "LLVMTypeConverter".
+  }];
+  let assemblyFormat = "attr-dict";
+}
 
 //===----------------------------------------------------------------------===//
 // CreateAsyncGroupsOp

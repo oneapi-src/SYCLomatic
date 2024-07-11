@@ -1,6 +1,7 @@
 // RUN: cd %S/../build
 // RUN: dpct -in-root ../src -out-root=%T -p ./  --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/test.cpp.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/test.cpp.dp.cpp -o %T/test.o.dp.o %}
 #include <iostream>
 #include <cuda_runtime.h>
 void test() {

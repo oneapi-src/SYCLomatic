@@ -4,6 +4,7 @@
 // RUN: echo "TabWidth: 4" >> %T/.clang-format
 // RUN: dpct use_format_file.cu --out-root=%T --cuda-include-path="%cuda-path/include" -- --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/use_format_file.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/use_format_file.dp.cpp -o %T/use_format_file.dp.o %}
 #include "cuda.h"
 
 void bar();

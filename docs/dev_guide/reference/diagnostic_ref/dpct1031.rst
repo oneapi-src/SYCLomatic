@@ -1,0 +1,31 @@
+.. _DPCT1031:
+
+DPCT1031
+========
+
+Message
+-------
+
+.. _msg-1031-start:
+
+Memory access across peer devices is an implementation-specific feature which
+may not be supported by some SYCL backends and compilers. The output parameter(s)
+are set to 0. You can migrate the code with peer access extension if you do not
+specify -no-dpcpp-extensions=peer_access.
+
+.. _msg-1031-end:
+
+Detailed Help
+-------------
+
+Memory access across peer devices is an implementation-specific feature which
+may not be supported by some SYCL\* backends and compilers. The output parameter(s)
+are set to 0. You can migrate the code with peer access extension by default without
+specifying -no-dpcpp-extensions=peer_access.
+
+.. include:: /_include_files/support-msg.txt
+
+Suggestions to Fix
+------------------
+
+Migrate the code with peer access extension by not specifying -no-dpcpp-extensions=peer_access.

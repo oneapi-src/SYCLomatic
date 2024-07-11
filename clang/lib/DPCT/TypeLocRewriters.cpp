@@ -132,6 +132,22 @@ std::function<bool(const TypeLoc)> checkEnableJointMatrixForType() {
   };
 }
 
+std::function<bool(const TypeLoc)> checkEnableGraphForType() {
+  return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useExtGraph(); };
+}
+
+std::function<bool(const TypeLoc)> isUseNonUniformGroupsForType() {
+  return [=](const TypeLoc) -> bool {
+    return DpctGlobalInfo::useExpNonUniformGroups();
+  };
+}
+
+std::function<bool(const TypeLoc)> isUseLogicalGroupsForType() {
+  return [=](const TypeLoc) -> bool {
+    return DpctGlobalInfo::useLogicalGroup();
+  };
+}
+
 // Print a templated type. Pass a STR("") as a template argument for types with
 // no template argument e.g. MyType<>
 template <class TypeNameT, class... TemplateArgsT>
@@ -247,10 +263,9 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #define HEADER_INSERTION_FACTORY(HEADER, SUB)                                  \
   createHeaderInsertionFactory(HEADER, SUB)
 #define TYPESTR makeTypeStrCreator()
-#define WARNING_FACTORY(MSGID, ARGS) \
-  createReportWarningTypeLocRewriterFactory(MSGID, ARGS)
-#define ADD_POINTER(CREATOR) \
-  makeAddPointerCreator(CREATOR)
+#define WARNING_FACTORY(MSGID, ...)                                            \
+  createReportWarningTypeLocRewriterFactory(MSGID, __VA_ARGS__)
+#define ADD_POINTER(CREATOR) makeAddPointerCreator(CREATOR)
 #include "APINamesTemplateType.inc"
 #undef WARNING_FACTORY
 #undef ADD_POINTER

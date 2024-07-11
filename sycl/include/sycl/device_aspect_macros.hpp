@@ -183,11 +183,6 @@
 #define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_cuda_async_barrier__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bfloat16_math_functions__
-// __SYCL_ASPECT(ext_oneapi_bfloat16_math_functions, 35)
-#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bfloat16_math_functions__ 0
-#endif
-
 #ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_free_memory__
 // __SYCL_ASPECT(ext_intel_free_memory, 36)
 #define __SYCL_ALL_DEVICES_HAVE_ext_intel_free_memory__ 0
@@ -271,6 +266,119 @@
 #ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_mipmap_level_reference__
 //__SYCL_ASPECT(ext_oneapi_mipmap_level_reference, 52)
 #define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_mipmap_level_reference__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_esimd__
+//__SYCL_ASPECT(ext_intel_esimd, 53)
+#define __SYCL_ALL_DEVICES_HAVE_ext_intel_esimd__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_ballot_group__
+// __SYCL_ASPECT(ext_oneapi_ballot_group, 54)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_ballot_group__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_fixed_size_group__
+// __SYCL_ASPECT(ext_oneapi_fixed_size_group, 55)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_fixed_size_group__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_opportunistic_group__
+// __SYCL_ASPECT(ext_oneapi_opportunistic_group, 56)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_opportunistic_group__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_tangle_group__
+// __SYCL_ASPECT(ext_oneapi_tangle_group, 57)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_tangle_group__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_matrix__
+// __SYCL_ASPECT(ext_intel_matrix, 58)
+#define __SYCL_ALL_DEVICES_HAVE_ext_intel_matrix__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_is_composite__
+// __SYCL_ASPECT(ext_oneapi_is_composite, 59)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_is_composite__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_is_component__
+// __SYCL_ASPECT(ext_oneapi_is_component, 60)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_is_component__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_graph__
+// __SYCL_ASPECT(ext_oneapi_graph, 61)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_graph__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_fpga_task_sequence__
+// __SYCL_ASPECT(ext_intel_fpga_task_sequence, 62)
+#define __SYCL_ALL_DEVICES_HAVE_ext_intel_fpga_task_sequence__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_limited_graph__
+// __SYCL_ASPECT(ext_oneapi_limited_graph, 63)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_limited_graph__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_private_alloca__
+// __SYCL_ASPECT(ext_oneapi_private_alloca, 64)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_private_alloca__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_cubemap__
+// __SYCL_ASPECT(ext_oneapi_cubemap, 65)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_cubemap__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_cubemap_seamless_filtering__
+// __SYCL_ASPECT(ext_oneapi_cubemap_seamless_filtering, 66)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_cubemap_seamless_filtering__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_1d_usm__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_1d_usm, 67)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_1d_usm__ \
+  0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_1d__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_1d, 68)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_1d__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_2d_usm__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_2d_usm, 69)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_2d_usm__ \
+  0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_2d__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_2d, 70)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_2d__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_3d_usm__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_3d_usm, 71)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_3d_usm__ \
+  0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_3d__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_3d, 72)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_bindless_sampled_image_fetch_3d__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_queue_profiling_tag__
+// __SYCL_ASPECT(ext_oneapi_queue_profiling_tag, 73)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_queue_profiling_tag__ 0
+#endif
+
+#ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_virtual_mem__
+// __SYCL_ASPECT(ext_oneapi_virtual_mem, 74)
+#define __SYCL_ALL_DEVICES_HAVE_ext_oneapi_virtual_mem__ 0
 #endif
 
 #ifndef __SYCL_ANY_DEVICE_HAS_host__
@@ -448,11 +556,6 @@
 #define __SYCL_ANY_DEVICE_HAS_ext_oneapi_cuda_async_barrier__ 0
 #endif
 
-#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_bfloat16_math_functions__
-// __SYCL_ASPECT(ext_oneapi_bfloat16_math_functions, 35)
-#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_bfloat16_math_functions__ 0
-#endif
-
 #ifndef __SYCL_ANY_DEVICE_HAS_ext_intel_free_memory__
 // __SYCL_ASPECT(ext_intel_free_memory, 36)
 #define __SYCL_ANY_DEVICE_HAS_ext_intel_free_memory__ 0
@@ -536,4 +639,114 @@
 #ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_mipmap_level_reference__
 //__SYCL_ASPECT(ext_oneapi_mipmap_level_reference, 52)
 #define __SYCL_ANY_DEVICE_HAS_ext_oneapi_mipmap_level_reference__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_intel_esimd__
+//__SYCL_ASPECT(ext_intel_esimd, 53)
+#define __SYCL_ANY_DEVICE_HAS_ext_intel_esimd__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_ballot_group__
+// __SYCL_ASPECT(ext_oneapi_ballot_group, 54)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_ballot_group__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_fixed_size_group__
+// __SYCL_ASPECT(ext_oneapi_fixed_size_group, 55)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_fixed_size_group__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_opportunistic_group__
+// __SYCL_ASPECT(ext_oneapi_opportunistic_group, 56)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_opportunistic_group__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_tangle_group__
+// __SYCL_ASPECT(ext_oneapi_tangle_group, 57)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_tangle_group__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_intel_matrix__
+// __SYCL_ASPECT(ext_intel_matrix, 58)
+#define __SYCL_ANY_DEVICE_HAS_ext_intel_matrix__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_is_composite__
+// __SYCL_ASPECT(ext_oneapi_is_composite, 59)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_is_composite__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_is_component__
+// __SYCL_ASPECT(ext_oneapi_is_component, 60)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_is_component__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_graph__
+// __SYCL_ASPECT(ext_oneapi_graph, 61)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_graph__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_intel_fpga_task_sequence__
+// __SYCL_ASPECT(ext_intel_fpga_task_sequence__, 62)
+#define __SYCL_ANY_DEVICE_HAS_ext_intel_fpga_task_sequence__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_limited_graph__
+// __SYCL_ASPECT(ext_oneapi_limited_graph, 63)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_limited_graph__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_private_alloca__
+// __SYCL_ASPECT(ext_oneapi_private_alloca, 64)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_private_alloca__ 1
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_cubemap__
+// __SYCL_ASPECT(ext_oneapi_cubemap, 65)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_cubemap__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_cubemap_seamless_filtering__
+// __SYCL_ASPECT(ext_oneapi_cubemap_seamless_filtering, 66)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_cubemap_seamless_filtering__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_1d_usm__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_1d_usm, 67)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_1d_usm__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_1d__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_1d, 68)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_1d__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_2d_usm__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_2d_usm, 69)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_2d_usm__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_2d__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_2d, 70)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_2d__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_3d_usm__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_3d_usm, 71)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_3d_usm__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_3d__
+//__SYCL_ASPECT(ext_oneapi_bindless_sampled_image_fetch_3d, 72)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_bindless_sampled_image_fetch_3d__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_queue_profiling_tag__
+// __SYCL_ASPECT(ext_oneapi_queue_profiling_tag, 73)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_queue_profiling_tag__ 0
+#endif
+
+#ifndef __SYCL_ANY_DEVICE_HAS_ext_oneapi_virtual_mem__
+// __SYCL_ASPECT(ext_oneapi_virtual_mem, 74)
+#define __SYCL_ANY_DEVICE_HAS_ext_oneapi_virtual_mem__ 0
 #endif

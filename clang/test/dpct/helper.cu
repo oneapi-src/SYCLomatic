@@ -1,5 +1,6 @@
 // RUN: dpct --process-all -in-root %S --format-range=none -out-root %T/helper %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/helper/helper.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/helper/helper.dp.cpp -o %T/helper/helper.dp.o %}
 
 // CHECK: #pragma once
 // CHECK-NEXT: #include <stdio.h>

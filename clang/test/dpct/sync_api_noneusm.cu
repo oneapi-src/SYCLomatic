@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/sync_api_noneusm %s --cuda-include-path="%cuda-path/include" --usm-level=none --use-experimental-features=nd_range_barrier -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api_noneusm/sync_api_noneusm.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/sync_api_noneusm/sync_api_noneusm.dp.cpp -o %T/sync_api_noneusm/sync_api_noneusm.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -18,12 +19,12 @@ __device__ void foo(int i) {}
 
 // CHECK: void k(const sycl::nd_item<3> &item_ct1) {
 __global__ void k() {
-  // CHECK: auto cta = item_ct1.get_group();
+  // CHECK: sycl::group<3> cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
   // CHECK: item_ct1.barrier();
   cg::sync(cta);
 
-  // CHECK: auto block = item_ct1.get_group();
+  // CHECK: sycl::group<3> block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
   // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
@@ -36,7 +37,7 @@ __global__ void k() {
   // CHECK: item_ct1.barrier();
   cg::sync(cg::this_thread_block());
 
-  // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
+  // CHECK: sycl::group<3> b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
 
   TB(blk);

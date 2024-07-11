@@ -127,9 +127,7 @@ func.func @placement1() {
   return
 }
 // CHECK:      func.func @placement1() {
-// CHECK-NEXT:   %[[ONE:.*]] = arith.constant 1 : index
-// CHECK-NEXT:   %[[TWO:.*]] = arith.constant 2 : index
-// CHECK-NEXT:   %[[ARG:.*]] = arith.addi %[[ONE]], %[[TWO]] : index
+// CHECK-NEXT:   %[[ARG:.*]] = arith.constant 3 : index
 // CHECK-NEXT:   %[[MEM:.*]] = fir.alloca !fir.array<?xi32>, %[[ARG]]
 // CHECK-NEXT:   return
 // CHECK-NEXT: }
@@ -176,9 +174,9 @@ func.func @placement3() {
 // CHECK-NEXT:   %[[C10:.*]] = arith.constant 10 : index
 // CHECK-NEXT:   fir.do_loop
 // CHECK-NEXT:     %[[SUM:.*]] = arith.addi %[[C1]], %[[C2]] : index
-// CHECK-NEXT:     %[[SP:.*]] = fir.call @llvm.stacksave() : () -> !fir.ref<i8>
+// CHECK-NEXT:     %[[SP:.*]] = fir.call @llvm.stacksave.p0() : () -> !fir.ref<i8>
 // CHECK-NEXT:     %[[MEM:.*]] = fir.alloca !fir.array<?xi32>, %[[SUM]]
-// CHECK-NEXT:     fir.call @llvm.stackrestore(%[[SP]])
+// CHECK-NEXT:     fir.call @llvm.stackrestore.p0(%[[SP]])
 // CHECK-NEXT:     fir.result
 // CHECK-NEXT:   }
 // CHECK-NEXT:   return
@@ -204,14 +202,13 @@ func.func @placement4(%arg0 : i1) {
 // CHECK:      func.func @placement4(%arg0: i1) {
 // CHECK-NEXT:   %[[C1:.*]] = arith.constant 1 : index
 // CHECK-NEXT:   %[[C1_I32:.*]] = fir.convert %[[C1]] : (index) -> i32
-// CHECK-NEXT:   %[[C2:.*]] = arith.constant 2 : index
 // CHECK-NEXT:   %[[C10:.*]] = arith.constant 10 : index
 // CHECK-NEXT:   cf.br ^bb1
 // CHECK-NEXT: ^bb1:
-// CHECK-NEXT:   %[[SUM:.*]] = arith.addi %[[C1]], %[[C2]] : index
-// CHECK-NEXT:   %[[SP:.*]] = fir.call @llvm.stacksave() : () -> !fir.ref<i8>
-// CHECK-NEXT:   %[[MEM:.*]] = fir.alloca !fir.array<?xi32>, %[[SUM]]
-// CHECK-NEXT:   fir.call @llvm.stackrestore(%[[SP]]) : (!fir.ref<i8>) -> ()
+// CHECK-NEXT:   %[[C3:.*]] = arith.constant 3 : index
+// CHECK-NEXT:   %[[SP:.*]] = fir.call @llvm.stacksave.p0() : () -> !fir.ref<i8>
+// CHECK-NEXT:   %[[MEM:.*]] = fir.alloca !fir.array<?xi32>, %[[C3]]
+// CHECK-NEXT:   fir.call @llvm.stackrestore.p0(%[[SP]]) : (!fir.ref<i8>) -> ()
 // CHECK-NEXT:   cf.cond_br %arg0, ^bb1, ^bb2
 // CHECK-NEXT: ^bb2:
 // CHECK-NEXT:   return

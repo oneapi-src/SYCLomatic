@@ -338,7 +338,7 @@ protected:
   unsigned nSymbol;
 
   /// The matrix representing the tableau.
-  Matrix tableau;
+  IntMatrix tableau;
 
   /// This is true if the tableau has been detected to be empty, false
   /// otherwise.
@@ -771,6 +771,12 @@ public:
   std::pair<MaybeOptimum<MPInt>, MaybeOptimum<MPInt>>
   computeIntegerBounds(ArrayRef<MPInt> coeffs);
 
+  /// Check if the simplex takes only one rational value along the
+  /// direction of `coeffs`.
+  ///
+  /// `this` must be nonempty.
+  bool isFlatAlong(ArrayRef<MPInt> coeffs);
+
   /// Returns true if the polytope is unbounded, i.e., extends to infinity in
   /// some direction. Otherwise, returns false.
   bool isUnbounded();
@@ -861,7 +867,7 @@ private:
 
   /// Reduce the given basis, starting at the specified level, using general
   /// basis reduction.
-  void reduceBasis(Matrix &basis, unsigned level);
+  void reduceBasis(IntMatrix &basis, unsigned level);
 };
 
 /// Takes a snapshot of the simplex state on construction and rolls back to the

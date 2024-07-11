@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/convolutionex %S/convolutionex.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/convolutionex/convolutionex.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/convolutionex/convolutionex.dp.cpp -o %T/convolutionex/convolutionex.dp.o %}
 
 #include <cuda_runtime.h>
 #include <cudnn.h>

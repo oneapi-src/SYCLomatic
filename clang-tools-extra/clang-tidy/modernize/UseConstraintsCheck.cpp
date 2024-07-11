@@ -41,6 +41,8 @@ AST_MATCHER(FunctionDecl, hasOtherDeclarations) {
 void UseConstraintsCheck::registerMatchers(MatchFinder *Finder) {
   Finder->addMatcher(
       functionTemplateDecl(
+          // Skip external libraries included as system headers
+          unless(isExpansionInSystemHeader()),
           has(functionDecl(unless(hasOtherDeclarations()), isDefinition(),
                            hasReturnTypeLoc(typeLoc().bind("return")))
                   .bind("function")))
@@ -53,10 +55,12 @@ matchEnableIfSpecializationImplTypename(TypeLoc TheType) {
   if (const auto Dep = TheType.getAs<DependentNameTypeLoc>()) {
     const IdentifierInfo *Identifier = Dep.getTypePtr()->getIdentifier();
     if (!Identifier || Identifier->getName() != "type" ||
-        Dep.getTypePtr()->getKeyword() != ETK_Typename) {
+        Dep.getTypePtr()->getKeyword() != ElaboratedTypeKeyword::Typename) {
       return std::nullopt;
     }
     TheType = Dep.getQualifierLoc().getTypeLoc();
+    if (TheType.isNull())
+      return std::nullopt;
   }
 
   if (const auto SpecializationLoc =
@@ -105,7 +109,7 @@ matchEnableIfSpecializationImplTrait(TypeLoc TheType) {
     if (const auto *AliasedType =
             dyn_cast<DependentNameType>(Specialization->getAliasedType())) {
       if (AliasedType->getIdentifier()->getName() != "type" ||
-          AliasedType->getKeyword() != ETK_Typename) {
+          AliasedType->getKeyword() != ElaboratedTypeKeyword::Typename) {
         return std::nullopt;
       }
     } else {
@@ -168,13 +172,16 @@ matchTrailingTemplateParam(const FunctionTemplateDecl *FunctionTemplate) {
     return {matchEnableIfSpecialization(
                 LastTemplateParam->getTypeSourceInfo()->getTypeLoc()),
             LastTemplateParam};
-  } else if (const auto *LastTemplateParam =
-                 dyn_cast<TemplateTypeParmDecl>(LastParam)) {
+  }
+  if (const auto *LastTemplateParam =
+          dyn_cast<TemplateTypeParmDecl>(LastParam)) {
     if (LastTemplateParam->hasDefaultArgument() &&
         LastTemplateParam->getIdentifier() == nullptr) {
-      return {matchEnableIfSpecialization(
-                  LastTemplateParam->getDefaultArgumentInfo()->getTypeLoc()),
-              LastTemplateParam};
+      return {
+          matchEnableIfSpecialization(LastTemplateParam->getDefaultArgument()
+                                          .getTypeSourceInfo()
+                                          ->getTypeLoc()),
+          LastTemplateParam};
     }
   }
   return {};
@@ -199,14 +206,13 @@ getConditionRange(ASTContext &Context,
   const SourceManager &SM = Context.getSourceManager();
   if (EnableIf.getNumArgs() > 1) {
     TemplateArgumentLoc NextArg = EnableIf.getArgLoc(1);
-    return SourceRange(
-        EnableIf.getLAngleLoc().getLocWithOffset(1),
-        utils::lexer::findPreviousTokenKind(NextArg.getSourceRange().getBegin(),
-                                            SM, LangOpts, tok::comma));
+    return {EnableIf.getLAngleLoc().getLocWithOffset(1),
+            utils::lexer::findPreviousTokenKind(
+                NextArg.getSourceRange().getBegin(), SM, LangOpts, tok::comma)};
   }
 
-  return SourceRange(EnableIf.getLAngleLoc().getLocWithOffset(1),
-                     getRAngleFileLoc(SM, EnableIf));
+  return {EnableIf.getLAngleLoc().getLocWithOffset(1),
+          getRAngleFileLoc(SM, EnableIf)};
 }
 
 static SourceRange getTypeRange(ASTContext &Context,
@@ -214,11 +220,10 @@ static SourceRange getTypeRange(ASTContext &Context,
   TemplateArgumentLoc Arg = EnableIf.getArgLoc(1);
   const LangOptions &LangOpts = Context.getLangOpts();
   const SourceManager &SM = Context.getSourceManager();
-  return SourceRange(
-      utils::lexer::findPreviousTokenKind(Arg.getSourceRange().getBegin(), SM,
-                                          LangOpts, tok::comma)
-          .getLocWithOffset(1),
-      getRAngleFileLoc(SM, EnableIf));
+  return {utils::lexer::findPreviousTokenKind(Arg.getSourceRange().getBegin(),
+                                              SM, LangOpts, tok::comma)
+              .getLocWithOffset(1),
+          getRAngleFileLoc(SM, EnableIf)};
 }
 
 // Returns the original source text of the second argument of a call to
@@ -255,7 +260,7 @@ findInsertionForConstraint(const FunctionDecl *Function, ASTContext &Context) {
         return utils::lexer::findPreviousTokenKind(Init->getSourceLocation(),
                                                    SM, LangOpts, tok::colon);
     }
-    if (Constructor->init_begin() != Constructor->init_end())
+    if (!Constructor->inits().empty())
       return std::nullopt;
   }
   if (Function->isDeleted()) {
@@ -353,7 +358,7 @@ static std::vector<FixItHint> handleReturnType(const FunctionDecl *Function,
 
   SmallVector<const Expr *, 3> ExistingConstraints;
   Function->getAssociatedConstraints(ExistingConstraints);
-  if (ExistingConstraints.size() > 0) {
+  if (!ExistingConstraints.empty()) {
     // FIXME - Support adding new constraints to existing ones. Do we need to
     // consider subsumption?
     return {};
@@ -401,7 +406,7 @@ handleTrailingTemplateType(const FunctionTemplateDecl *FunctionTemplate,
 
   SmallVector<const Expr *, 3> ExistingConstraints;
   Function->getAssociatedConstraints(ExistingConstraints);
-  if (ExistingConstraints.size() > 0) {
+  if (!ExistingConstraints.empty()) {
     // FIXME - Support adding new constraints to existing ones. Do we need to
     // consider subsumption?
     return {};

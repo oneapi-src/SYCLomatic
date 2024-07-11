@@ -173,6 +173,10 @@ class MockScheduler;
 
 namespace sycl {
 inline namespace _V1 {
+namespace ext::oneapi::experimental::detail {
+class exec_graph_impl;
+class node_impl;
+} // namespace ext::oneapi::experimental::detail
 namespace detail {
 class queue_impl;
 class event_impl;
@@ -200,7 +204,6 @@ struct MemObjRecord {
                LeavesCollection::AllocateDependencyF AllocateDependency)
       : MReadLeaves{this, LeafLimit, AllocateDependency},
         MWriteLeaves{this, LeafLimit, AllocateDependency}, MCurContext{Ctx} {}
-
   // Contains all allocation commands for the memory object.
   std::vector<AllocaCommandBase *> MAllocaCommands;
 
@@ -213,8 +216,8 @@ struct MemObjRecord {
   // The context which has the latest state of the memory object.
   ContextImplPtr MCurContext;
 
-  // The mode this object can be accessed with from the host context.
-  // Valid only if the current context is host.
+  // The mode this object can be accessed from the host (host_accessor).
+  // Valid only if the current usage is on host.
   access::mode MHostAccess = access::mode::read_write;
 
   // The flag indicates that the content of the memory object was/will be
@@ -368,6 +371,7 @@ public:
   ///
   /// \param CommandGroup is a unique_ptr to a command group to be added.
   /// \param Queue Queue that is registering the command-group.
+  /// \param EventNeeded Specifies whether an event is explicitly required.
   /// \param CommandBuffer Optional command buffer to enqueue to instead of
   /// directly to the queue.
   /// \param Dependencies Optional list of dependency
@@ -375,6 +379,7 @@ public:
   /// \return an event object to wait on for command group completion.
   EventImplPtr
   addCG(std::unique_ptr<detail::CG> CommandGroup, const QueueImplPtr &Queue,
+        bool EventNeeded,
         sycl::detail::pi::PiExtCommandBuffer CommandBuffer = nullptr,
         const std::vector<sycl::detail::pi::PiExtSyncPoint> &Dependencies = {});
 
@@ -392,7 +397,12 @@ public:
   /// corresponding function of device API.
   ///
   /// \param Event is a pointer to event to wait on.
-  void waitForEvent(const EventImplPtr &Event);
+  /// \param Success is an optional parameter that, when set to a non-null
+  ///        pointer, indicates that failure is a valid outcome for this wait
+  ///        (e.g., in case of a non-blocking read from a pipe), and the value
+  ///        it's pointing to is then set according to the outcome.
+
+  void waitForEvent(const EventImplPtr &Event, bool *Success = nullptr);
 
   /// Removes buffer from the graph.
   ///
@@ -438,10 +448,8 @@ public:
 
   /// \return an instance of the scheduler object.
   static Scheduler &getInstance();
-
-  QueueImplPtr getDefaultHostQueue() { return DefaultHostQueue; }
-
-  const QueueImplPtr &getDefaultHostQueue() const { return DefaultHostQueue; }
+  /// \return true if an instance of the scheduler object exists.
+  static bool isInstanceAlive();
 
   static MemObjRecord *getMemObjRecord(const Requirement *const Req);
 
@@ -449,20 +457,41 @@ public:
 
   void startFusion(QueueImplPtr Queue);
 
+  void cleanUpCmdFusion(sycl::detail::queue_impl *Queue);
+
   void cancelFusion(QueueImplPtr Queue);
 
   EventImplPtr completeFusion(QueueImplPtr Queue, const property_list &);
 
   bool isInFusionMode(QueueIdT Queue);
 
-  Scheduler();
-  ~Scheduler();
-  void releaseResources();
+  void releaseResources(BlockingT Blocking = BlockingT::BLOCKING);
   bool isDeferredMemObjectsEmpty();
 
   void enqueueCommandForCG(EventImplPtr NewEvent,
                            std::vector<Command *> &AuxilaryCmds,
                            BlockingT Blocking = NON_BLOCKING);
+
+  /// Adds a command buffer update operation to the execution graph. This is
+  /// required when buffers/accessors are updated to ensure that the memory has
+  /// been allocated when updating.
+  /// \param Graph The executable graph to be updated.
+  /// \param Nodes The list of Nodes which are to be updated in the graph.
+  /// \param Requirements List of accessor requirements for this update.
+  /// \param Events List of events that this update operation depends on
+  EventImplPtr addCommandGraphUpdate(
+      ext::oneapi::experimental::detail::exec_graph_impl *Graph,
+      std::vector<std::shared_ptr<ext::oneapi::experimental::detail::node_impl>>
+          Nodes,
+      const QueueImplPtr &Queue, std::vector<Requirement *> Requirements,
+      std::vector<detail::EventImplPtr> &Events);
+
+  static bool
+  areEventsSafeForSchedulerBypass(const std::vector<sycl::event> &DepEvents,
+                                  ContextImplPtr Context);
+  static bool
+  areEventsSafeForSchedulerBypass(const std::vector<EventImplPtr> &DepEvents,
+                                  ContextImplPtr Context);
 
 protected:
   using RWLockT = std::shared_timed_mutex;
@@ -488,9 +517,32 @@ protected:
     return Lock;
   }
 
+  /// Provides exclusive access to std::shared_timed_mutex object with deadlock
+  /// avoidance to the Fusion map
+  WriteLockT acquireFusionWriteLock() {
+#ifdef _WIN32
+    WriteLockT Lock(MFusionMapLock, std::defer_lock);
+    while (!Lock.try_lock_for(std::chrono::milliseconds(10))) {
+      // Without yield while loop acts like endless while loop and occupies the
+      // whole CPU when multiple command groups are created in multiple host
+      // threads
+      std::this_thread::yield();
+    }
+#else
+    WriteLockT Lock(MFusionMapLock);
+    // It is a deadlock on UNIX in implementation of lock and lock_shared, if
+    // try_lock in the loop above will be executed, so using a single lock here
+#endif // _WIN32
+    return Lock;
+  }
+
   /// Provides shared access to std::shared_timed_mutex object with deadlock
   /// avoidance
   ReadLockT acquireReadLock() { return ReadLockT{MGraphLock}; }
+
+  /// Provides shared access to std::shared_timed_mutex object with deadlock
+  /// avoidance to the Fusion map
+  ReadLockT acquireFusionReadLock() { return ReadLockT{MFusionMapLock}; }
 
   void cleanupCommands(const std::vector<Command *> &Cmds);
 
@@ -516,6 +568,8 @@ protected:
     bool ShouldEnqueue;
   };
 
+  /// Assign \p Src's auxiliary resources to \p Dst.
+  void takeAuxiliaryResources(const EventImplPtr &Dst, const EventImplPtr &Src);
   void registerAuxiliaryResources(
       EventImplPtr &Event, std::vector<std::shared_ptr<const void>> Resources);
   void cleanupAuxiliaryResources(BlockingT Blocking);
@@ -543,7 +597,7 @@ protected:
     /// processor right away or not.
     GraphBuildResult addCG(
         std::unique_ptr<detail::CG> CommandGroup, const QueueImplPtr &Queue,
-        std::vector<Command *> &ToEnqueue,
+        std::vector<Command *> &ToEnqueue, bool EventNeeded,
         sycl::detail::pi::PiExtCommandBuffer CommandBuffer = nullptr,
         const std::vector<sycl::detail::pi::PiExtSyncPoint> &Dependencies = {});
 
@@ -552,7 +606,6 @@ protected:
     ///
     /// \return a command that represents command group execution.
     Command *addCGUpdateHost(std::unique_ptr<detail::CG> CommandGroup,
-                             const QueueImplPtr &HostQueue,
                              std::vector<Command *> &ToEnqueue);
 
     /// Enqueues a command to update memory to the latest state.
@@ -590,8 +643,7 @@ protected:
     /// \return a pointer to MemObjRecord for pointer to memory object. If the
     /// record is not found, nullptr is returned.
     MemObjRecord *getOrInsertMemObjRecord(const QueueImplPtr &Queue,
-                                          const Requirement *Req,
-                                          std::vector<Command *> &ToEnqueue);
+                                          const Requirement *Req);
 
     /// Decrements leaf counters for all leaves of the record.
     void decrementLeafCountersForRecord(MemObjRecord *Record);
@@ -627,6 +679,10 @@ protected:
 
     void startFusion(QueueImplPtr Queue);
 
+    /// Clean up the internal fusion commands held for the given queue.
+    /// @param Queue the queue for which to remove the fusion commands.
+    void cleanUpCmdFusion(sycl::detail::queue_impl *Queue);
+
     void cancelFusion(QueueImplPtr Queue, std::vector<Command *> &ToEnqueue);
 
     EventImplPtr completeFusion(QueueImplPtr Queue,
@@ -634,6 +690,23 @@ protected:
                                 const property_list &);
 
     bool isInFusionMode(QueueIdT queue);
+
+    /// Adds a command buffer update operation to the execution graph. This is
+    /// required when buffers/accessors are updated to ensure that the memory
+    /// has been allocated when updating.
+    /// \param Graph The executable graph to be updated.
+    /// \param Nodes The list of Nodes which are to be updated in the graph.
+    /// \param Requirements List of accessor requirements for this update.
+    /// \param Events List of events that this operation depends on.
+    /// \param ToEnqueue List of commands which need to be enqueued.
+    Command *addCommandGraphUpdate(
+        ext::oneapi::experimental::detail::exec_graph_impl *Graph,
+        std::vector<
+            std::shared_ptr<ext::oneapi::experimental::detail::node_impl>>
+            Nodes,
+        const QueueImplPtr &Queue, std::vector<Requirement *> Requirements,
+        std::vector<detail::EventImplPtr> &Events,
+        std::vector<Command *> &ToEnqueue);
 
     std::vector<SYCLMemObjI *> MMemObjs;
 
@@ -669,10 +742,8 @@ protected:
 
     EmptyCommand *addEmptyCmd(Command *Cmd,
                               const std::vector<Requirement *> &Req,
-                              const QueueImplPtr &Queue,
                               Command::BlockReason Reason,
-                              std::vector<Command *> &ToEnqueue,
-                              const bool AddDepsToLeaves = true);
+                              std::vector<Command *> &ToEnqueue);
 
     void createGraphForCommand(Command *NewCmd, CG &CG, bool isInteropTask,
                                std::vector<Requirement *> &Reqs,
@@ -818,13 +889,17 @@ protected:
     /// \param GraphReadLock read-lock which is already acquired for reading
     /// \param ToCleanUp container for commands that can be cleaned up.
     /// \param LockTheLock selects if graph lock should be locked upon return
+    /// \param Success is an optional parameter that, when set to a non-null
+    ///        pointer, indicates that failure is a valid outcome for this wait
+    ///        (e.g., in case of a non-blocking read from a pipe), and the value
+    ///        it's pointing to is then set according to the outcome.
     ///
     /// The function may unlock and lock GraphReadLock as needed. Upon return
     /// the lock is left in locked state if and only if LockTheLock is true.
     static void waitForEvent(const EventImplPtr &Event,
                              ReadLockT &GraphReadLock,
                              std::vector<Command *> &ToCleanUp,
-                             bool LockTheLock = true);
+                             bool LockTheLock = true, bool *Success = nullptr);
 
     /// Enqueues the command and all its dependencies.
     ///
@@ -870,6 +945,7 @@ protected:
 
   GraphBuilder MGraphBuilder;
   RWLockT MGraphLock;
+  RWLockT MFusionMapLock;
 
   std::vector<Command *> MDeferredCleanupCommands;
   std::mutex MDeferredCleanupMutex;
@@ -880,8 +956,6 @@ protected:
   std::unordered_map<EventImplPtr, std::vector<std::shared_ptr<const void>>>
       MAuxiliaryResources;
   std::mutex MAuxiliaryResourcesMutex;
-
-  QueueImplPtr DefaultHostQueue;
 
   friend class Command;
   friend class DispatchHostTask;

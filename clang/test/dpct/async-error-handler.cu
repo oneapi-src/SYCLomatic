@@ -1,5 +1,6 @@
 // RUN: dpct --usm-level=none -out-root %T/async-error-handler %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --always-use-async-handler -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/async-error-handler/async-error-handler.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/async-error-handler/async-error-handler.dp.cpp -o %T/async-error-handler/async-error-handler.dp.o %}
 
 
 int main() {

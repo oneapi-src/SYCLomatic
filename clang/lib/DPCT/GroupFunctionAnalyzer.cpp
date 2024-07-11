@@ -85,7 +85,10 @@ void GroupFunctionCallInControlFlowAnalyzer::PostVisit(CallExpr *) {}
 bool GroupFunctionCallInControlFlowAnalyzer::isSyncThreadsCallExpr(
     const CallExpr *CE) const {
   const auto *FD = CE->getDirectCallee();
-  return FD && FD->getName() == "__syncthreads" &&
+
+  return FD && !isa<CXXMethodDecl>(FD) &&
+         (FD->getName() == "__syncthreads" ||
+          FD->getName() == "__barrier_sync") &&
          (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>());
 }
 
@@ -105,6 +108,8 @@ void GroupFunctionCallInControlFlowAnalyzer::
   llvm::SaveAndRestore<bool> SvaedSideEffects(SideEffects);
   llvm::SaveAndRestore<FunctionDecl *> SavedFD(this->FD);
   auto FnInfo = DeviceFunctionDecl::LinkRedecls(FD);
+  if (!FnInfo)
+    return;
 
   if (FnInfo->hasSideEffectsAnalyzed())
     return;

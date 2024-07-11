@@ -169,14 +169,15 @@ TEST(ParseAllowListTests, CheckAllValidBackendNameValuesAreProcessed) {
   sycl::detail::AllowListParsedT ExpectedValue{
       {{"BackendName", "host"}},       {{"BackendName", "opencl"}},
       {{"BackendName", "level_zero"}}, {{"BackendName", "cuda"}},
-      {{"BackendName", "hip"}},        {{"BackendName", "esimd_emulator"}},
-      {{"BackendName", "native_cpu"}}, {{"BackendName", "*"}}};
+      {{"BackendName", "hip"}},        {{"BackendName", "native_cpu"}},
+      {{"BackendName", "*"}}};
   EXPECT_EQ(ExpectedValue, ActualValue);
 }
 
 TEST(ParseAllowListTests, CheckAllValidDeviceTypeValuesAreProcessed) {
   std::string AllowList;
-  for (const auto &SyclDeviceType : sycl::detail::getSyclDeviceTypeMap()) {
+  for (const auto &SyclDeviceType :
+       sycl::detail::getSyclDeviceTypeMap<true /*Enable 'acc'*/>()) {
     if (!AllowList.empty())
       AllowList += "|";
     AllowList += "DeviceType:" + SyclDeviceType.first;

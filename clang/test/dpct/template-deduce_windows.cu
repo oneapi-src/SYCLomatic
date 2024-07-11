@@ -1,6 +1,7 @@
 // UNSUPPORTED: system-linux
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/template-deduce_windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/template-deduce_windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce_windows/template-deduce_windows.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/template-deduce_windows/template-deduce_windows.dp.cpp -o %T/template-deduce_windows/template-deduce_windows.dp.o %}
 
 template<class T1, class T2> class TemplateClass {};
 
@@ -41,7 +42,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel1<T2, T1>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel1<T2, T1>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel1<T2, T1><<<1,1>>>();
 
@@ -50,7 +51,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel2<T2>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel2<T2>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel2<T2><<<1,1>>>();
 
@@ -59,7 +60,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel3<T1, S>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel3<T1, S>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel3<T1, S><<<1,1>>>();
 
@@ -68,7 +69,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel4<T2>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel4<T2>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel4<T2><<<1,1>>>();
 }
@@ -80,7 +81,7 @@ int main() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel1<sycl::float4, int>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel1<sycl::float4, int>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel1<float4, int><<<1,1>>>();
 
@@ -89,7 +90,7 @@ int main() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel2<sycl::float2>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel2<sycl::float2>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel2<float2><<<1,1>>>();
 
@@ -98,7 +99,7 @@ int main() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel3<sycl::float2, 3>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel3<sycl::float2, 3>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel3<float2, 3><<<1,1>>>();
 
@@ -107,7 +108,7 @@ int main() {
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel4<sycl::float2>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel4<sycl::float2>(a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
     // CHECK-NEXT:    });
     template_kernel4<float2><<<1,1>>>();
 }

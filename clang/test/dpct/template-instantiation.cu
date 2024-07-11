@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/template-instantiation %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-instantiation/template-instantiation.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/template-instantiation/template-instantiation.dp.cpp -o %T/template-instantiation/template-instantiation.dp.o %}
 
 #include <vector>
 
@@ -63,6 +64,10 @@ __global__ void kernel3(T *) {
 // CHECK: template void kernel3<20>(int *, const sycl::nd_item<3> &item_ct1, int *a);
 template __global__ void kernel3<20>(int *);
 
+template <typename T> void func_2_same_pram(T a, T b) {}
+
+template <typename T> T func_same_return(T a) { return a; }
+
 int main() {
     int *d;
     float2 *d1;
@@ -75,7 +80,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel<sycl::float2>(d, item_ct1, a_acc_ct1.get_pointer());
+// CHECK-NEXT:         kernel<sycl::float2>(d, item_ct1, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel<float2><<<1,1>>>(d);
@@ -87,7 +92,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel<sycl::int4>(d, item_ct1, a_acc_ct1.get_pointer());
+// CHECK-NEXT:         kernel<sycl::int4>(d, item_ct1, a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel<int4><<<1,1>>>(d);
@@ -99,7 +104,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel1(d, item_ct1, (int *)a_acc_ct1.get_pointer());
+// CHECK-NEXT:         kernel1(d, item_ct1, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel1<<<1,1>>>(d);
@@ -112,7 +117,7 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel2<int>(d, d1, item_ct1, a1_acc_ct1.get_pointer(), (sycl::float2 *)a2_acc_ct1.get_pointer());
+// CHECK-NEXT:         kernel2<int>(d, d1, item_ct1, a1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), (sycl::float2 *)a2_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel2<int><<<1,1>>>(d, d1);
@@ -124,10 +129,19 @@ int main() {
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:         kernel3<20>(d, item_ct1, (int *)a_acc_ct1.get_pointer());
+// CHECK-NEXT:         kernel3<20>(d, item_ct1, (int *)a_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:     });
 // CHECK-NEXT: });
     kernel3<20><<<1,1>>>(d);
+
+    unsigned u;
+    dim3 dim;
+    // CHECK: func_2_same_pram(u, dim.y);
+    func_2_same_pram(u, dim.y);
+    // CHECK: func_2_same_pram(u, dim.y + 1);
+    func_2_same_pram(u, dim.y + 1);
+    // CHECK: func_2_same_pram(u, func_same_return(dim.y));
+    func_2_same_pram(u, func_same_return(dim.y));
 }
 
 // CHECK: void kernel(int *, const sycl::nd_item<3> &item_ct1, T *a) {
@@ -137,3 +151,13 @@ __global__ void kernel(int *) {
   int b = blockDim.x;
 }
 
+template <typename T> void f() {}
+template <typename T> class CCCCCCCCCCC {};
+// CHECK: template void f<CCCCCCCCCCC<CCCCCCCCCCC<CCCCCCCCCCC<sycl::int3>>>>();
+template void f<CCCCCCCCCCC<CCCCCCCCCCC<CCCCCCCCCCC<int3>>>>();
+// CHECK: template void f<CCCCCCCCCCC<CCCCCCCCCCC<sycl::int3>>>();
+template void f<CCCCCCCCCCC<CCCCCCCCCCC<int3>>>();
+// CHECK: template void f<CCCCCCCCCCC<sycl::int3>>();
+template void f<CCCCCCCCCCC<int3>>();
+// CHECK: template void f<sycl::int3>();
+template void f<int3>();

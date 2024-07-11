@@ -200,7 +200,7 @@ void LTOCodeGenerator::setOptLevel(unsigned Level) {
   Config.OptLevel = Level;
   Config.PTO.LoopVectorization = Config.OptLevel > 1;
   Config.PTO.SLPVectorization = Config.OptLevel > 1;
-  std::optional<CodeGenOpt::Level> CGOptLevelOrNone =
+  std::optional<CodeGenOptLevel> CGOptLevelOrNone =
       CodeGenOpt::getLevel(Config.OptLevel);
   assert(CGOptLevelOrNone && "Unknown optimization level!");
   Config.CGOptLevel = *CGOptLevelOrNone;
@@ -306,7 +306,7 @@ bool LTOCodeGenerator::runAIXSystemAssembler(SmallString<128> &AssemblyFile) {
 
 bool LTOCodeGenerator::compileOptimizedToFile(const char **Name) {
   if (useAIXSystemAssembler())
-    setFileType(CGFT_AssemblyFile);
+    setFileType(CodeGenFileType::AssemblyFile);
 
   // make unique temp output file to put generated code
   SmallString<128> Filename;
@@ -314,7 +314,8 @@ bool LTOCodeGenerator::compileOptimizedToFile(const char **Name) {
   auto AddStream =
       [&](size_t Task,
           const Twine &ModuleName) -> std::unique_ptr<CachedFileStream> {
-    StringRef Extension(Config.CGFileType == CGFT_AssemblyFile ? "s" : "o");
+    StringRef Extension(
+        Config.CGFileType == CodeGenFileType::AssemblyFile ? "s" : "o");
 
     int FD;
     std::error_code EC =
@@ -408,18 +409,8 @@ bool LTOCodeGenerator::determineTarget() {
   SubtargetFeatures Features(join(Config.MAttrs, ""));
   Features.getDefaultSubtargetFeatures(Triple);
   FeatureStr = Features.getString();
-  // Set a default CPU for Darwin triples.
-  if (Config.CPU.empty() && Triple.isOSDarwin()) {
-    if (Triple.getArch() == llvm::Triple::x86_64)
-      Config.CPU = "core2";
-    else if (Triple.getArch() == llvm::Triple::x86)
-      Config.CPU = "yonah";
-    else if (Triple.isArm64e())
-      Config.CPU = "apple-a12";
-    else if (Triple.getArch() == llvm::Triple::aarch64 ||
-             Triple.getArch() == llvm::Triple::aarch64_32)
-      Config.CPU = "cyclone";
-  }
+  if (Config.CPU.empty())
+    Config.CPU = lto::getThinLTODefaultCPU(Triple);
 
   // If data-sections is not explicitly set or unset, set data-sections by
   // default to match the behaviour of lld and gold plugin.
@@ -581,6 +572,9 @@ bool LTOCodeGenerator::optimize() {
   if (!this->determineTarget())
     return false;
 
+  // libLTO parses options late, so re-set them here.
+  Context.setDiscardValueNames(LTODiscardValueNames);
+
   auto DiagFileOrErr = lto::setupLLVMOptimizationRemarks(
       Context, RemarksFilename, RemarksPasses, RemarksFormat,
       RemarksWithHotness, RemarksHotnessThreshold);
@@ -604,11 +598,14 @@ bool LTOCodeGenerator::optimize() {
   // pipeline run below.
   updatePublicTypeTestCalls(*MergedModule,
                             /* WholeProgramVisibilityEnabledInLTO */ false);
-  updateVCallVisibilityInModule(*MergedModule,
-                                /* WholeProgramVisibilityEnabledInLTO */ false,
-                                // FIXME: This needs linker information via a
-                                // TBD new interface.
-                                /* DynamicExportSymbols */ {});
+  updateVCallVisibilityInModule(
+      *MergedModule,
+      /* WholeProgramVisibilityEnabledInLTO */ false,
+      // FIXME: These need linker information via a
+      // TBD new interface.
+      /*DynamicExportSymbols=*/{},
+      /*ValidateAllVtablesHaveTypeInfos=*/false,
+      /*IsVisibleToRegularObj=*/[](StringRef) { return true; });
 
   // We always run the verifier once on the merged module, the `DisableVerify`
   // parameter only applies to subsequent verify.

@@ -7,11 +7,13 @@
 // CHECK: int global_id(const sycl::nd_item<3> &item_ct1);
 __device__ int global_id();
 
-
 // CHECK: void simple_kernel(unsigned *i_array, const sycl::nd_item<3> &item_ct1) {
 __global__ void simple_kernel(unsigned *i_array) {
   int index;
+#ifndef  BUILD_TEST
   index = global_id();
+#endif
+
   if (index < 360) {
     i_array[index] = index;
     ATOMIC_UPDATE(i_array[index])
@@ -45,7 +47,7 @@ void sgemm() {
 // CHECK-NEXT:   oneapi::mkl::rng::philox4x32x10* rng;
 // CHECK-NEXT:   rng = new oneapi::mkl::rng::philox4x32x10(dpct::get_out_of_order_queue(), 1337ull);
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed, because this call is redundant in SYCL.
+// CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed, because this functionality is redundant in SYCL.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   float *d_data;
 // CHECK-NEXT:   {

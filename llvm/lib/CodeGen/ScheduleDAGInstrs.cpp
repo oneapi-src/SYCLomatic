@@ -223,9 +223,9 @@ void ScheduleDAGInstrs::addSchedBarrierDeps() {
     // uses all the registers that are livein to the successor blocks.
     for (const MachineBasicBlock *Succ : BB->successors()) {
       for (const auto &LI : Succ->liveins()) {
-        // TODO: Use LI.LaneMask to refine this.
-        for (MCRegUnit Unit : TRI->regunits(LI.PhysReg)) {
-          if (!Uses.contains(Unit))
+        for (MCRegUnitMaskIterator U(LI.PhysReg, TRI); U.isValid(); ++U) {
+          auto [Unit, Mask] = *U;
+          if ((Mask & LI.LaneMask).any() && !Uses.contains(Unit))
             Uses.insert(PhysRegSUOper(&ExitSU, -1, Unit));
         }
       }
@@ -249,7 +249,8 @@ void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx) {
   bool ImplicitPseudoDef = (OperIdx >= DefMIDesc.getNumOperands() &&
                             !DefMIDesc.hasImplicitDefOfPhysReg(Reg));
   for (MCRegUnit Unit : TRI->regunits(Reg)) {
-    for (Reg2SUnitsMap::iterator I = Uses.find(Unit); I != Uses.end(); ++I) {
+    for (RegUnit2SUnitsMap::iterator I = Uses.find(Unit); I != Uses.end();
+         ++I) {
       SUnit *UseSU = I->SU;
       if (UseSU == SU)
         continue;
@@ -281,7 +282,7 @@ void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx) {
       } else {
         Dep.setLatency(0);
       }
-      ST.adjustSchedDependency(SU, OperIdx, UseSU, UseOpIdx, Dep);
+      ST.adjustSchedDependency(SU, OperIdx, UseSU, UseOpIdx, Dep, &SchedModel);
       UseSU->addPred(Dep);
     }
   }
@@ -308,7 +309,8 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx) {
   //       there's no cost for reusing registers.
   SDep::Kind Kind = MO.isUse() ? SDep::Anti : SDep::Output;
   for (MCRegUnit Unit : TRI->regunits(Reg)) {
-    for (Reg2SUnitsMap::iterator I = Defs.find(Unit); I != Defs.end(); ++I) {
+    for (RegUnit2SUnitsMap::iterator I = Defs.find(Unit); I != Defs.end();
+         ++I) {
       SUnit *DefSU = I->SU;
       if (DefSU == &ExitSU)
         continue;
@@ -321,7 +323,8 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx) {
           Dep.setLatency(
               SchedModel.computeOutputLatency(MI, OperIdx, DefInstr));
         }
-        ST.adjustSchedDependency(SU, OperIdx, DefSU, I->OpIdx, Dep);
+        ST.adjustSchedDependency(SU, OperIdx, DefSU, I->OpIdx, Dep,
+                                 &SchedModel);
         DefSU->addPred(Dep);
       }
     }
@@ -353,9 +356,9 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx) {
       // the block. Instead, we leave only one call at the back of the
       // DefList.
       for (MCRegUnit Unit : TRI->regunits(Reg)) {
-        Reg2SUnitsMap::RangePair P = Defs.equal_range(Unit);
-        Reg2SUnitsMap::iterator B = P.first;
-        Reg2SUnitsMap::iterator I = P.second;
+        RegUnit2SUnitsMap::RangePair P = Defs.equal_range(Unit);
+        RegUnit2SUnitsMap::iterator B = P.first;
+        RegUnit2SUnitsMap::iterator I = P.second;
         for (bool isBegin = I == B; !isBegin; /* empty */) {
           isBegin = (--I) == B;
           if (!I->SU->isCall)
@@ -451,7 +454,8 @@ void ScheduleDAGInstrs::addVRegDefDeps(SUnit *SU, unsigned OperIdx) {
         SDep Dep(SU, SDep::Data, Reg);
         Dep.setLatency(SchedModel.computeOperandLatency(MI, OperIdx, Use,
                                                         I->OperandIndex));
-        ST.adjustSchedDependency(SU, OperIdx, UseSU, I->OperandIndex, Dep);
+        ST.adjustSchedDependency(SU, OperIdx, UseSU, I->OperandIndex, Dep,
+                                 &SchedModel);
         UseSU->addPred(Dep);
       }
 
@@ -1101,7 +1105,7 @@ void ScheduleDAGInstrs::reduceHugeMemNodeMaps(Value2SUsMap &stores,
              dbgs() << "Loading SUnits:\n"; loads.dump());
 }
 
-static void toggleKills(const MachineRegisterInfo &MRI, LivePhysRegs &LiveRegs,
+static void toggleKills(const MachineRegisterInfo &MRI, LiveRegUnits &LiveRegs,
                         MachineInstr &MI, bool addToLiveRegs) {
   for (MachineOperand &MO : MI.operands()) {
     if (!MO.isReg() || !MO.readsReg())
@@ -1111,8 +1115,10 @@ static void toggleKills(const MachineRegisterInfo &MRI, LivePhysRegs &LiveRegs,
       continue;
 
     // Things that are available after the instruction are killed by it.
-    bool IsKill = LiveRegs.available(MRI, Reg);
-    MO.setIsKill(IsKill);
+    bool IsKill = LiveRegs.available(Reg);
+
+    // Exception: Do not kill reserved registers
+    MO.setIsKill(IsKill && !MRI.isReserved(Reg));
     if (addToLiveRegs)
       LiveRegs.addReg(Reg);
   }
@@ -1142,7 +1148,7 @@ void ScheduleDAGInstrs::fixupKills(MachineBasicBlock &MBB) {
           continue;
         LiveRegs.removeReg(Reg);
       } else if (MO.isRegMask()) {
-        LiveRegs.removeRegsInMask(MO);
+        LiveRegs.removeRegsNotPreserved(MO.getRegMask());
       }
     }
 

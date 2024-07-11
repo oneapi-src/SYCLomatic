@@ -63,8 +63,8 @@
 ; REMARK-NEXT: DebugLoc:        { File: foo.cl, Line: 27, Column: 0 }
 ; REMARK-NEXT: Function:        test_kernel
 ; REMARK-NEXT: Args:
-; REMARK-NEXT:   - String: ' Dynamic Stack: 
-; REMARK-NEXT:   - DynamicStack: 'False' 
+; REMARK-NEXT:   - String: ' Dynamic Stack:
+; REMARK-NEXT:   - DynamicStack: 'False'
 ; REMARK-NEXT: ..
 ; REMARK-NEXT: --- !Analysis
 ; REMARK-NEXT: Pass:            kernel-resource-usage
@@ -179,7 +179,7 @@ define amdgpu_kernel void @test_indirect_call() !dbg !9 {
 ; STDERR-NEXT: remark: foo.cl:74:0:     SGPRs: 39
 ; STDERR-NEXT: remark: foo.cl:74:0:     VGPRs: 32
 ; STDERR-NEXT: remark: foo.cl:74:0:     AGPRs: 10
-; STDERR-NEXT: remark: foo.cl:74:0:     ScratchSize [bytes/lane]: 64
+; STDERR-NEXT: remark: foo.cl:74:0:     ScratchSize [bytes/lane]: 144
 ; STDERR-NEXT: remark: foo.cl:74:0:     Dynamic Stack: True
 ; STDERR-NEXT: remark: foo.cl:74:0:     Occupancy [waves/SIMD]: 8
 ; STDERR-NEXT: remark: foo.cl:74:0:     SGPRs Spill: 0
@@ -187,7 +187,7 @@ define amdgpu_kernel void @test_indirect_call() !dbg !9 {
 ; STDERR-NEXT: remark: foo.cl:74:0:     LDS Size [bytes/block]: 0
 
 declare void @llvm.memset.p5.i64(ptr addrspace(5) nocapture readonly, i8, i64, i1 immarg)
- 
+
 define amdgpu_kernel void @test_indirect_w_static_stack() !dbg !10 {
   %alloca = alloca <10 x i64>, align 16, addrspace(5)
   call void @llvm.memset.p5.i64(ptr addrspace(5) %alloca, i8 0, i64 40, i1 false)
@@ -211,4 +211,4 @@ define amdgpu_kernel void @test_indirect_w_static_stack() !dbg !10 {
 !8 = distinct !DISubprogram(name: "empty_func", scope: !1, file: !1, type: !4, scopeLine: 52, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0)
 !9 = distinct !DISubprogram(name: "test_indirect_call", scope: !1, file: !1, type: !4, scopeLine: 64, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0)
 !10 = distinct !DISubprogram(name: "test_indirect_w_static_stack", scope: !1, file: !1, type: !4, scopeLine: 74, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0)
-!11 = !{i32 1, !"amdgpu_code_object_version", i32 500}
+!11 = !{i32 1, !"amdhsa_code_object_version", i32 500}

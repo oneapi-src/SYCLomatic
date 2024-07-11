@@ -1,0 +1,120 @@
+.. _DPCT1128:
+
+DPCT1128
+========
+
+Message
+-------
+
+.. _msg-1128-start:
+
+The type "*<type name>*" is not device copyable for *<reason>*. It is used in the SYCL kernel, please rewrite the code.
+
+.. _msg-1128-end:
+
+Detailed Help
+-------------
+
+SYCL\* 2020 needs the type of argument passed to the kernel function to be device copyable (Spec 3.13.1 device copyable),
+while CUDA\* just does memory copy for all those arguments directly without emitting any error/warning. If a type does not
+meet the requirements of device copyable, the tool will try to add the specialization of the sycl::is_device_copyable for
+this type, as well as warn the user. The warning will specify which part of that type does not meet the requirements.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <class T1, class T2> struct UserStruct {
+     UserStruct() {}
+     UserStruct(UserStruct const &other) : a(other.a) {}
+     int a;
+   };
+   
+   template <class V1, class V2> __global__ void k(UserStruct<V1, V2>) {}
+   
+   void foo() {
+     UserStruct<float, int> us;
+     k<<<1, 1>>>(us);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1128:0: The type "UserStruct<float, int>" is not device copyable for copy
+   constructor breaking the device copyable requirement. It is used in the SYCL
+   kernel, please rewrite the code.
+   */
+   template <class T1, class T2> struct UserStruct {
+     UserStruct() {}
+     UserStruct(UserStruct const &other) : a(other.a) {}
+     int a;
+   };
+   template <class T1, class T2>
+   struct sycl::is_device_copyable<UserStruct<T1, T2>> : std::true_type {};
+   
+   template <class V1, class V2> void k(UserStruct<V1, V2>) {}
+   
+   void foo() {
+     UserStruct<float, int> us;
+     /*
+     DPCT1129:1: The type "UserStruct<float, int>" is used in the SYCL kernel, but
+     it is not device copyable. The sycl::is_device_copyable specialization has
+     been added for this type. Please review the code.
+     */
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(us);
+         });
+   }
+
+which needs to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <class T1, class T2> struct UserStruct {
+     UserStruct() {}
+     UserStruct(UserStruct const &other) : a(other.a) {}
+     int a;
+   };
+   template <class T1, class T2>
+   struct sycl::is_device_copyable<UserStruct<T1, T2>> : std::true_type {};
+   
+   template <class V1, class V2> void k(UserStruct<V1, V2>) {}
+   
+   void foo() {
+     UserStruct<float, int> us;
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(us);
+         });
+   }
+
+.. code-block:: cpp
+   :linenos:
+
+   template <class T1, class T2> struct UserStruct {
+     UserStruct() {}
+     int a;
+   };
+   
+   template <class V1, class V2> void k(UserStruct<V1, V2>) {}
+   
+   void foo() {
+     UserStruct<float, int> us;
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(us);
+         });
+   }
+

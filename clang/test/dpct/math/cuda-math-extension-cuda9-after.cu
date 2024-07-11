@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/math/cuda-math-extension-cuda9-after %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-extension-cuda9-after/cuda-math-extension-cuda9-after.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math/cuda-math-extension-cuda9-after/cuda-math-extension-cuda9-after.dp.cpp -o %T/math/cuda-math-extension-cuda9-after/cuda-math-extension-cuda9-after.dp.o %}
 
 #include "cuda_fp16.h"
 

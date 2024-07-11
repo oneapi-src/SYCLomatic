@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/type/binop %S/binop.cu --cuda-include-path="%cuda-path/include" -- -std=c++17 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/type/binop/binop.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/type/binop/binop.dp.cpp -o %T/type/binop/binop.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -9,6 +10,12 @@
 
 // CHECK: void foo(sycl::plus<> sum) {}
 __global__ void foo(cub::Sum sum) {}
+
+// CHECK: void foo(dpct::argmax argMax) {}
+__global__ void foo(cub::ArgMax argMax) {}
+
+// CHECK: void foo(dpct::argmin argMin) {}
+__global__ void foo(cub::ArgMin argMin) {}
 
 template<typename BinOp>
 void foo1(BinOp op) {
@@ -28,6 +35,12 @@ int main() {
   // CHECK: std::equal_to<> eq;
   cub::Equality eq;
 
+  // CHECK: dpct::argmax argMax;
+  cub::ArgMax argMax;
+
+  // CHECK: dpct::argmin argMin;
+  cub::ArgMin argMin;
+
   // CHECK: dpct::get_in_order_queue().parallel_for(
   // CHECK:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
   // CHECK:   [=](sycl::nd_item<3> item_ct1) {
@@ -43,5 +56,25 @@ int main() {
 
   // CHECK: foo1<std::equal_to<>>(eq);
   foo1<cub::Equality>(eq);
+
+  // CHECK: foo1<dpct::argmax>(argMax);
+  foo1<cub::ArgMax>(argMax);
+
+  // CHECK: foo1<dpct::argmin>(argMin);
+  foo1<cub::ArgMin>(argMin);
+
+  // CHECK: dpct::get_in_order_queue().parallel_for(
+  // CHECK:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK:   [=](sycl::nd_item<3> item_ct1) {
+  // CHECK:     foo(dpct::argmax());
+  // CHECK:   });
+  foo<<<1, 1>>>(cub::ArgMax());
+
+  // CHECK: dpct::get_in_order_queue().parallel_for(
+  // CHECK:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK:   [=](sycl::nd_item<3> item_ct1) {
+  // CHECK:     foo(dpct::argmin());
+  // CHECK:   });
+  foo<<<1, 1>>>(cub::ArgMin());
   return 0;
 }

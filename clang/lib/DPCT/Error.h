@@ -9,6 +9,7 @@
 #ifndef DPCT_ERROR_H
 #define DPCT_ERROR_H
 
+#include "clang/Tooling/Tooling.h"
 #include <string>
 
 /// ProcessStatus defines various statuses of dpct workflow
@@ -16,6 +17,8 @@ enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
+  CallIndependentToolSucceeded = 3,
+  MigrationCmakeScriptCompleted = 4,
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
@@ -44,7 +47,7 @@ enum ProcessStatus {
   MigrationErrorCannotAccessDirInDatabase = -29,
   MigrationErrorInconsistentFileInDatabase = -30,
   MigrationErrorCudaVersionUnsupported = -31,
-  MigrationErrorSupportedCudaVersionNotAvailable = -32,
+  MigrationErrorDetectedCudaVersionUnsupported = -32,
   MigrationErrorInvalidExplicitNamespace = -33,
   MigrationErrorDifferentOptSet = -37,
   MigrationErrorInvalidRuleFilePath = -38,
@@ -55,13 +58,21 @@ enum ProcessStatus {
   MigrationErrorNoAPIMapping = -43,
   MigrationErrorAPIMappingWrongCUDAHeader = -44,
   MigrationErrorAPIMappingNoCUDAHeader = -45,
+  MigrationErrorCannotDetectCudaPath = -46,
+  CallIndependentToolError = -47,
+  MigrationErrorCMakeScriptPathInvalid = -48,
+  MigrateCmakeScriptOnlyNotSpecifed = -49,
+  MigarteBuildScriptIncorrectUse = -50,
+  MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse = -51,
+  MigrationErrorNoExplicitInRootAndCMakeScript = -52,
+  MigrationErrorCannotWrite = -53,
 };
 
 namespace clang {
 namespace dpct {
 
 void ShowStatus(int Status, std::string Message = "");
-std::string getLoadYamlFailWarning(std::string YamlPath);
+std::string getLoadYamlFailWarning(const clang::tooling::UnifiedPath& YamlPath);
 std::string getCheckVersionFailWarning();
 } // namespace dpct
 } // namespace clang

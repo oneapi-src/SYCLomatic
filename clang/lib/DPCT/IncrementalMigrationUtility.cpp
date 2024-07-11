@@ -134,12 +134,7 @@ int checkDpctOptionSet(
       }
 #endif
     } else {
-      if (CurrentOpt.first == OPTION_NoUseGenericSpace) {
-        if (CurrentOpt.second.Value == "true")
-          return -1;
-      } else {
-        return -2;
-      }
+      return -2;
     }
   }
   return 0;
@@ -173,16 +168,9 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--comments");
     }
-    if (Key == clang::dpct::OPTION_CustomHelperFileName && Specified) {
-      Opts.emplace_back("--custom-helper-name=" + Value);
-    }
     if (Key == clang::dpct::OPTION_CtadEnabled) {
       if ("true" == Value)
         Opts.emplace_back("--enable-ctad");
-    }
-    if (Key == clang::dpct::OPTION_ExplicitClNamespace) {
-      if ("true" == Value)
-        Opts.emplace_back("--no-cl-namespace-inline");
     }
     if (Key == clang::dpct::OPTION_ExtensionDEFlag && Specified) {
       std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
@@ -206,6 +194,15 @@ bool printOptions(
         if (!(UValue & (1 << static_cast<unsigned>(
                             DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16))))
           Str += "bfloat16,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess))))
+          Str += "peer_access,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_Assert))))
+          Str += "assert,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty))))
+          Str += "queue_empty,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;
@@ -237,10 +234,6 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_NoDRYPattern) {
       if ("true" == Value)
         Opts.emplace_back("--no-dry-pattern");
-    }
-    if (Key == clang::dpct::OPTION_NoUseGenericSpace) {
-      if ("true" == Value)
-        Opts.emplace_back("--no-use-generic-space");
     }
     if (Key == clang::dpct::OPTION_CompilationsDir && Specified) {
       Opts.emplace_back("--compilation-database=\"" + Value + "\"");
@@ -302,9 +295,6 @@ bool printOptions(
       if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_None))) {
         Values.emplace_back("none");
       }
-      if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_CL))) {
-        Values.emplace_back("cl");
-      }
       if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_SYCL))) {
         Values.emplace_back("sycl");
       }
@@ -365,20 +355,21 @@ bool printOptions(
 bool canContinueMigration(std::string &Msg) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   // Try to load the MainSourceFiles.yaml file
-  SmallString<128> YamlFilePath(DpctGlobalInfo::getOutRoot());
-  llvm::sys::path::append(YamlFilePath, "MainSourceFiles.yaml");
+  SmallString<128> YamlFilePathStr(DpctGlobalInfo::getOutRoot().getCanonicalPath());
+  llvm::sys::path::append(YamlFilePathStr, "MainSourceFiles.yaml");
+  clang::tooling::UnifiedPath YamlFilePath = YamlFilePathStr;
 
-  if (!llvm::sys::fs::exists(YamlFilePath))
+  if (!llvm::sys::fs::exists(YamlFilePath.getCanonicalPath()))
     return true;
-  if (loadFromYaml(std::move(YamlFilePath), *PreTU) != 0) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+  if (loadFromYaml(YamlFilePath.getCanonicalPath(), *PreTU) != 0) {
+    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
     return true;
   }
 
   // check version
   auto VerCompRes = compareToolVersion(PreTU->DpctVersion);
   if (VerCompRes == VersionCmpResult::VCR_CMP_FAILED) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
     return true;
   }
   if (VerCompRes == VersionCmpResult::VCR_CURRENT_IS_NEWER ||
@@ -391,7 +382,7 @@ bool canContinueMigration(std::string &Msg) {
   int Res =
       checkDpctOptionSet(DpctGlobalInfo::getCurrentOptMap(), PreTU->OptionMap);
   if (Res == -2) {
-    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+    llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
     return true;
   }
 
@@ -400,7 +391,7 @@ bool canContinueMigration(std::string &Msg) {
     bool Ret = printOptions(PreTU->OptionMap, Msg);
     if (!Ret) {
       // parsing error, skip yaml
-      llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
+      llvm::errs() << getLoadYamlFailWarning(YamlFilePath.getCanonicalPath());
       return true;
     }
     return false;

@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --report-type=all -out-root %T/cusolverHelper %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolverHelper/cusolverHelper.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusolverHelper/cusolverHelper.dp.cpp -o %T/cusolverHelper/cusolverHelper.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -21,12 +22,12 @@ cusolverStatus_t foo3(int m, int n)
     return CUSOLVER_STATUS_SUCCESS;
 }
 
-// CHECK: extern sycl::queue* cusolverH2 = NULL;
+// CHECK: extern dpct::queue_ptr cusolverH2 = NULL;
 extern cusolverDnHandle_t cusolverH2 = NULL;
 
 int main(int argc, char *argv[])
 {
-    // CHECK: sycl::queue* cusolverH = NULL;
+    // CHECK: dpct::queue_ptr cusolverH = NULL;
     // CHECK-NEXT: int status = 0;
     // CHECK-NEXT: status = 1;
     cusolverDnHandle_t cusolverH = NULL;
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
     status = cusolverDnDestroy(cusolverH);
 
     // CHECK: int a = sizeof(int);
-    // CHECK-NEXT: int b = sizeof(sycl::queue*);
+    // CHECK-NEXT: int b = sizeof(dpct::queue_ptr);
     int a = sizeof(cublasStatus_t);
     int b = sizeof(cusolverDnHandle_t);
 

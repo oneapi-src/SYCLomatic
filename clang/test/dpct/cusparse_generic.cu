@@ -2,6 +2,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2
 // RUN: dpct --format-range=none --out-root %T/cusparse_generic %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cusparse_generic/cusparse_generic.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse_generic/cusparse_generic.dp.cpp -o %T/cusparse_generic/cusparse_generic.dp.o %}
 
 #include "cusparse.h"
 
@@ -82,7 +83,7 @@ int main() {
   cusparseDnVecDescr_t dnVecDescr;
   int64_t size;
 
-  //CHECK:sycl::queue* handle;
+  //CHECK:dpct::sparse::descriptor_ptr handle;
   //CHECK-NEXT:const void *alpha;
   //CHECK-NEXT:const void *beta;
   //CHECK-NEXT:dpct::sparse::sparse_matrix_desc_t matA;
@@ -94,9 +95,9 @@ int main() {
   //CHECK-NEXT:void *externalBuffer;
   //CHECK-NEXT:bufferSize = 0;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpMM_preprocess was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpMM_preprocess was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:dpct::sparse::spmm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA, matB, beta, matC, computeType);
+  //CHECK-NEXT:dpct::sparse::spmm(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA, matB, beta, matC, computeType);
   cusparseHandle_t handle;
   const void *alpha;
   const void *beta;
@@ -115,7 +116,7 @@ int main() {
   //CHECK-NEXT:std::shared_ptr<dpct::sparse::dense_vector_desc> vecY;
   //CHECK-NEXT:int alg2;
   //CHECK-NEXT:bufferSize = 0;
-  //CHECK-NEXT:dpct::sparse::spmv(*handle, oneapi::mkl::transpose::nontrans, alpha, matA, vecX, beta, vecY, computeType);
+  //CHECK-NEXT:dpct::sparse::spmv(handle->get_queue(), oneapi::mkl::transpose::nontrans, alpha, matA, vecX, beta, vecY, computeType);
   cusparseConstDnVecDescr_t vecX;
   cusparseDnVecDescr_t vecY;
   cusparseSpMVAlg_t alg2;
@@ -141,9 +142,9 @@ int main() {
   //CHECK-NEXT:size_t workspace_size;
   //CHECK-NEXT:void *workspace;
   //CHECK-NEXT:oneapi::mkl::sparse::init_matmat_descr(&descr);
-  //CHECK-NEXT:dpct::sparse::spgemm_work_estimation(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr, &workspace_size, workspace);
-  //CHECK-NEXT:dpct::sparse::spgemm_compute(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr, &workspace_size, workspace);
-  //CHECK-NEXT:dpct::sparse::spgemm_finalize(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr);
+  //CHECK-NEXT:dpct::sparse::spgemm_work_estimation(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr, &workspace_size, workspace);
+  //CHECK-NEXT:dpct::sparse::spgemm_compute(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr, &workspace_size, workspace);
+  //CHECK-NEXT:dpct::sparse::spgemm_finalize(handle->get_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, matB_sparse, beta, matC_sparse, descr);
   //CHECK-NEXT:oneapi::mkl::sparse::release_matmat_descr(&descr);
   cusparseSpGEMMDescr_t descr;
   cusparseSpMatDescr_t matA_sparse;
@@ -161,15 +162,13 @@ int main() {
   //CHECK:int spsvDescr;
   //CHECK-NEXT:int alg4;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_createDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_createDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
+  //CHECK-NEXT:workspace_size = 0;
+  //CHECK-NEXT:dpct::sparse::spsv_optimize(handle->get_queue(), oneapi::mkl::transpose::nontrans, matA_sparse);
+  //CHECK-NEXT:dpct::sparse::spsv(handle->get_queue(), oneapi::mkl::transpose::nontrans, alpha, matA_sparse, vecX, vecY, computeType);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_bufferSize was removed because this call is redundant in SYCL.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:dpct::sparse::spsv_optimize(*handle, oneapi::mkl::transpose::nontrans, matA_sparse);
-  //CHECK-NEXT:dpct::sparse::spsv(*handle, oneapi::mkl::transpose::nontrans, alpha, matA_sparse, vecX, vecY, computeType);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_destroyDescr was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusparseSpSV_destroyDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   cusparseSpSVDescr_t spsvDescr;
   cusparseSpSVAlg_t alg4;
@@ -197,6 +196,8 @@ void foo1() {
 
   //CHECK:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrRowOffsetsType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::csr);
   cusparseCreateCsr(&spMatDescr, rows, cols, nnz, NULL, NULL, NULL, csrRowOffsetsType, csrColIndType, idxBase, valueType);
+  //CHECK:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, nullptr, nullptr, nullptr, csrColIndType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::coo);
+  cusparseCreateCoo(&spMatDescr, rows, cols, nnz, NULL, NULL, NULL, csrColIndType, idxBase, valueType);
 }
 
 //CHECK:void foo2(oneapi::mkl::sparse::matmat_descr_t *descr) {

@@ -129,6 +129,13 @@ int integrated = -1;
 // CHECK: checkError(DPCT_CHECK_ERROR(integrated = dpct::dev_mgr::instance().get_device(dev_id).get_integrated()));
 checkError(cudaDeviceGetAttribute(&integrated, cudaDevAttrIntegrated, dev_id));
 
+int alignment;
+// CHECK: /*
+// CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with cudaDevAttrTextureAlignment. It was migrated to get_mem_base_addr_align_in_bytes. You may need to adjust the value of get_mem_base_addr_align_in_bytes for the specific device.
+// CHECK-NEXT: */
+// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(alignment = dpct::dev_mgr::instance().get_device(dev_id).get_mem_base_addr_align_in_bytes()));
+checkError(cudaDeviceGetAttribute(&alignment, cudaDevAttrTextureAlignment, dev_id));
+
 int device1 = 0;
 int device2 = 1;
 int perfRank = 0;
@@ -198,7 +205,7 @@ int e = cudaGetLastError();
 // CHECK-NEXT:*/
 // CHECK-NEXT: int e1 = 0;
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cudaPeekAtLastError was removed because this call is redundant in SYCL.
+// CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cudaPeekAtLastError was removed because this functionality is redundant in SYCL.
 // CHECK-NEXT:*/
 // CHECK-NEXT:dpct::get_current_device().queues_wait_and_throw();
 int e1 = cudaPeekAtLastError();

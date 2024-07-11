@@ -2,6 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/memory_management_restricted %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted/memory_management_restricted.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/memory_management_restricted/memory_management_restricted.dp.cpp -o %T/memory_management_restricted/memory_management_restricted.dp.o %}
 
 #include <cuda_runtime.h>
 #include <cuda.h>
@@ -95,11 +96,11 @@ int main(){
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, stream_array[0]);
 
     // CHECK: q_ct1.memcpy(h_A, d_A, size2);
-    // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
-    // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
-    // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
-    // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
-    // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
+    // CHECK: q_ct1.memcpy(h_A, d_A, size2);
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
+    // CHECK: q_ct1.memcpy(h_A, d_A, size2);
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault);
     MY_ERROR_CHECKER(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -376,8 +377,8 @@ __managed__ char *a2;
 void foo2() {
   // CHECK: *(a1.get_ptr()) = (char *)sycl::malloc_shared(4, q_ct1);
   // CHECK-NEXT: *(a2.get_ptr()) = sycl::malloc_shared<char>(1, q_ct1);
-  // CHECK-NEXT: sycl::free(*(a1.get_ptr()), q_ct1);
-  // CHECK-NEXT: sycl::free(*(a2.get_ptr()), q_ct1);
+  // CHECK-NEXT: dpct::dpct_free(*(a1.get_ptr()), q_ct1);
+  // CHECK-NEXT: dpct::dpct_free(*(a2.get_ptr()), q_ct1);
   cudaMallocManaged((void **)&a1, 4);
   cudaMallocManaged((void **)&a2, sizeof(char));
   cudaFree(a1);

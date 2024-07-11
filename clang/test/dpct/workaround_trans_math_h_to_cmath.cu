@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/workaround_trans_math_h_to_cmath %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/workaround_trans_math_h_to_cmath/workaround_trans_math_h_to_cmath.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/workaround_trans_math_h_to_cmath/workaround_trans_math_h_to_cmath.dp.cpp -o %T/workaround_trans_math_h_to_cmath/workaround_trans_math_h_to_cmath.dp.o %}
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK://math header

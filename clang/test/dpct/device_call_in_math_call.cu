@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/device_call_in_math_call %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device_call_in_math_call/device_call_in_math_call.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/device_call_in_math_call/device_call_in_math_call.dp.cpp -o %T/device_call_in_math_call/device_call_in_math_call.dp.o %}
 
 __device__ float g(int width = 32)
 {

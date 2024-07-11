@@ -64,14 +64,14 @@ cub::DeviceHistogram::HistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::MultiHistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::HistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::MultiHistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DevicePartition::Flagged,NO,
-cub::DevicePartition::If,NO,
-cub::DeviceMergeSort::SortPairs,NO,
+cub::DevicePartition::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DevicePartition::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceMergeSort::SortPairsCopy,NO,
-cub::DeviceMergeSort::SortKeys,NO,
-cub::DeviceMergeSort::SortKeysCopy,NO,
-cub::DeviceMergeSort::StableSortPairs,NO,
-cub::DeviceMergeSort::StableSortKeys,NO,
+cub::DeviceMergeSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::SortKeysCopy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::StableSortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceMergeSort::StableSortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -97,7 +97,7 @@ cub::DeviceSelect::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::Unique,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::UniqueByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceSpmv::CsrMV,NO,
+cub::DeviceSpmv::CsrMV,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -126,10 +126,10 @@ cub::LoadDirectStriped,NO,
 cub::StoreDirectStriped,NO,
 cub::LoadDirectWarpStriped,NO,
 cub::StoreDirectWarpStriped,NO,
-cub::SHR_ADD,NO,
-cub::SHL_ADD,NO,
-cub::BFE,NO,
-cub::BFI,NO,
+cub::SHR_ADD,YES,
+cub::SHL_ADD,YES,
+cub::BFE,YES,
+cub::BFI,YES,
 cub::IADD3,YES,
 cub::PRMT,NO,
 cub::ThreadExit,NO,
@@ -148,13 +148,13 @@ cub::CachingDeviceAllocator::FreeAllCached,NO,
 cub::ChainedPolicy::Invoke,NO,
 cub::Debug,NO,
 cub::MaxSmOccupancy,NO,
-cub::PtxVersion,NO,
+cub::PtxVersion,YES,
 cub::SmVersion,NO,
 cub::CurrentDevice,YES,
 cub::DeviceCount,YES,
 cub::DeviceCountUncached,YES,
 cub::DeviceCountCachedValue,YES,
-cub::PtxVersionUncached,NO,
+cub::PtxVersionUncached,YES,
 cub::SmVersionUncached,NO,
 cub::SyncStream,YES,
 cub::ArgIndexInputIterator::normalize,YES,

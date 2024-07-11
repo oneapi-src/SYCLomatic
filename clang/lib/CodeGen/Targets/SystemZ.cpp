@@ -302,16 +302,11 @@ Address SystemZABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
     Address OverflowArgArea =
         Address(CGF.Builder.CreateLoad(OverflowArgAreaPtr, "overflow_arg_area"),
                 CGF.Int8Ty, TyInfo.Align);
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
     Address MemAddr = OverflowArgArea.withElementType(DirectTy);
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-    Address MemAddr =
-        CGF.Builder.CreateElementBitCast(OverflowArgArea, DirectTy, "mem_addr");
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
 
     // Update overflow_arg_area_ptr pointer
     llvm::Value *NewOverflowArgArea = CGF.Builder.CreateGEP(
-        OverflowArgArea.getElementType(), OverflowArgArea.getPointer(),
+        OverflowArgArea.getElementType(), OverflowArgArea.emitRawPointer(CGF),
         PaddedSizeV, "overflow_arg_area");
     CGF.Builder.CreateStore(NewOverflowArgArea, OverflowArgAreaPtr);
 
@@ -364,12 +359,7 @@ Address SystemZABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
   Address RawRegAddr(
       CGF.Builder.CreateGEP(CGF.Int8Ty, RegSaveArea, RegOffset, "raw_reg_addr"),
       CGF.Int8Ty, PaddedSize);
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
   Address RegAddr = RawRegAddr.withElementType(DirectTy);
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-  Address RegAddr =
-      CGF.Builder.CreateElementBitCast(RawRegAddr, DirectTy, "reg_addr");
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
 
   // Update the register count
   llvm::Value *One = llvm::ConstantInt::get(IndexTy, 1);
@@ -389,18 +379,12 @@ Address SystemZABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
               CGF.Int8Ty, PaddedSize);
   Address RawMemAddr =
       CGF.Builder.CreateConstByteGEP(OverflowArgArea, Padding, "raw_mem_addr");
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
   Address MemAddr = RawMemAddr.withElementType(DirectTy);
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-  Address MemAddr =
-    CGF.Builder.CreateElementBitCast(RawMemAddr, DirectTy, "mem_addr");
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
 
   // Update overflow_arg_area_ptr pointer
-  llvm::Value *NewOverflowArgArea =
-    CGF.Builder.CreateGEP(OverflowArgArea.getElementType(),
-                          OverflowArgArea.getPointer(), PaddedSizeV,
-                          "overflow_arg_area");
+  llvm::Value *NewOverflowArgArea = CGF.Builder.CreateGEP(
+      OverflowArgArea.getElementType(), OverflowArgArea.emitRawPointer(CGF),
+      PaddedSizeV, "overflow_arg_area");
   CGF.Builder.CreateStore(NewOverflowArgArea, OverflowArgAreaPtr);
   CGF.EmitBranch(ContBlock);
 

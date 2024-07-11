@@ -377,7 +377,8 @@ public:
       // If the spelling location is inside the parent range, add string
       // replacement. The String replacement will be added to ExtReplacement
       // other where.
-      auto LocInfo = getOffsetAndLength(SR.getBegin(), SR.getEnd(), ParentExpr);
+      auto LocInfo = getOffsetAndLength(ResultRange.getBegin(),
+                                        ResultRange.getEnd(), ParentExpr);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }
   }
@@ -827,8 +828,10 @@ private:
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
+  inline void analyzeExpr(const BinaryOperator *);
   inline void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
+  inline void analyzeExpr(const DependentScopeDeclRefExpr *Arg);
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);
   inline void analyzeExpr(const LambdaExpr *LE);
 
@@ -929,6 +932,40 @@ private:
 
 private:
   bool HasSideEffects = false;
+};
+
+class IndexAnalysis : public ExprAnalysis {
+public:
+  explicit IndexAnalysis(const Expr *E) : ExprAnalysis() { dispatch(E); }
+  // Based on isStrictlyMonotonic(), also check if threadIdx.x is under
+  // non-additive BinaryOP.
+  inline bool isDifferenceBetweenThreadIdxXAndIndexConstant() {
+    return isStrictlyMonotonic() && !IsThreadIdxXUnderNonAdditiveOp;
+  }
+  // Check if sub nodes only have threadIdx.x, DRE, UnaryOP(+,-) and
+  // BinaryOP(+,-,*,/,%)
+  inline bool isStrictlyMonotonic() {
+    return HasThreadIdxX && !ContainUnknownNode;
+  }
+
+protected:
+  void dispatch(const Stmt *Expression) override;
+
+private:
+  using Base = ExprAnalysis;
+  void analyzeExpr(const UnaryOperator *UO);
+  void analyzeExpr(const BinaryOperator *BO);
+  void analyzeExpr(const ImplicitCastExpr *ICE);
+  void analyzeExpr(const DeclRefExpr *DRE);
+  void analyzeExpr(const PseudoObjectExpr *POE);
+  void analyzeExpr(const ParenExpr *PE);
+  void analyzeExpr(const IntegerLiteral *IL);
+
+private:
+  bool ContainUnknownNode = false;
+  bool HasThreadIdxX = false;
+  bool IsThreadIdxXUnderNonAdditiveOp = false;
+  std::stack<bool> ContainNonAdditiveOp;
 };
 
 } // namespace dpct

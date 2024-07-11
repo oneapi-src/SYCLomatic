@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/sizeof_int2_insert_namespace %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sizeof_int2_insert_namespace/sizeof_int2_insert_namespace.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/sizeof_int2_insert_namespace/sizeof_int2_insert_namespace.dp.cpp -o %T/sizeof_int2_insert_namespace/sizeof_int2_insert_namespace.dp.o %}
 
 void fun() {
   // CHECK:  sycl::int2 a, b, c, d[2], *e[2];

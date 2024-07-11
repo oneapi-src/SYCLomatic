@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cpp_lang_extensions %s --cuda-include-path="%cuda-path/include" -extra-arg="-I%S" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cpp_lang_extensions/cpp_lang_extensions.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cpp_lang_extensions/cpp_lang_extensions.dp.cpp -o %T/cpp_lang_extensions/cpp_lang_extensions.dp.o %}
 
 #include "cpp_lang_extensions.cuh"
 

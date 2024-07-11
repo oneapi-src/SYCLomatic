@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none -extra-arg-before=-std=c++14 -out-root %T/curand-device-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/curand-device-usm/curand-device-usm.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/curand-device-usm/curand-device-usm.dp.cpp -o %T/curand-device-usm/curand-device-usm.dp.o %}
 
+#ifndef BUILD_TEST
 //CHECK: #include <sycl/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
 //CHECK-NEXT: #include <dpct/rng_utils.hpp>
@@ -108,9 +110,9 @@ int main(int argc, char **argv) {
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * 10));
   //CHECK: CHECK(DPCT_CHECK_ERROR(RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *)sycl::malloc_device(sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>) * 10 * 10, q_ct1)));
   CHECK(cudaMalloc((void **)&RandomStates, sizeof(curandState) * 10 * 10));
-  //CHECK: sycl::range<3> grid(1, 1, 10);
+  //CHECK: dpct::dim3 grid(10, 1);
   dim3 grid(10, 1);
-  //CHECK: CHECK(DPCT_CHECK_ERROR(dOut = sycl::malloc_device<int>(grid[2], q_ct1)));
+  //CHECK: CHECK(DPCT_CHECK_ERROR(dOut = sycl::malloc_device<int>(grid.x, q_ct1)));
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * grid.x));
 
   return 0;
@@ -151,7 +153,7 @@ __global__ void kernel(curandState *states) {}
 // CHECK-NEXT:   static dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states = states_input;
 // CHECK-NEXT:   dpct::get_in_order_queue().submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
-// CHECK-NEXT:       dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> * states_ct0 = states;
+// CHECK-NEXT:       auto states_ct0 = states;
 // CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -164,3 +166,4 @@ void foo2(curandState *states_input) {
   static curandState *states = states_input;
   kernel<<<1, 1>>>(states);
 }
+#endif

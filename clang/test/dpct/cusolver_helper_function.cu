@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cusolver_helper_function %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolver_helper_function/cusolver_helper_function.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusolver_helper_function/cusolver_helper_function.dp.cpp -o %T/cusolver_helper_function/cusolver_helper_function.dp.o %}
 
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>

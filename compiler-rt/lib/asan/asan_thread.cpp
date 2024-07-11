@@ -44,6 +44,10 @@ static ThreadRegistry *asan_thread_registry;
 static ThreadArgRetval *thread_data;
 
 static Mutex mu_for_thread_context;
+// TODO(leonardchan@): It should be possible to make LowLevelAllocator
+// threadsafe and consolidate this one into the GlobalLoweLevelAllocator.
+// We should be able to do something similar to what's in
+// sanitizer_stack_store.cpp.
 static LowLevelAllocator allocator_for_thread_context;
 
 static ThreadContextBase *GetAsanThreadContext(u32 tid) {

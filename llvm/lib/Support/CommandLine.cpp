@@ -164,16 +164,31 @@ public:
   // This collects the different subcommands that have been registered.
   SmallPtrSet<SubCommand *, 4> RegisteredSubCommands;
 
-  CommandLineParser() {
-    registerSubCommand(&SubCommand::getTopLevel());
-    registerSubCommand(&SubCommand::getAll());
-  }
+  CommandLineParser() { registerSubCommand(&SubCommand::getTopLevel()); }
 
   void ResetAllOptionOccurrences();
 
   bool ParseCommandLineOptions(int argc, const char *const *argv,
                                StringRef Overview, raw_ostream *Errs = nullptr,
                                bool LongOptionsUseDoubleDash = false);
+
+  void forEachSubCommand(Option &Opt, function_ref<void(SubCommand &)> Action) {
+    if (Opt.Subs.empty()) {
+      Action(SubCommand::getTopLevel());
+      return;
+    }
+    if (Opt.Subs.size() == 1 && *Opt.Subs.begin() == &SubCommand::getAll()) {
+      for (auto *SC : RegisteredSubCommands)
+        Action(*SC);
+      Action(SubCommand::getAll());
+      return;
+    }
+    for (auto *SC : Opt.Subs) {
+      assert(SC != &SubCommand::getAll() &&
+             "SubCommand::getAll() should not be used with other subcommands");
+      Action(*SC);
+    }
+  }
 
   void addLiteralOption(Option &Opt, SubCommand *SC, StringRef Name) {
     if (Opt.hasArgStr())
@@ -183,25 +198,11 @@ public:
              << "' registered more than once!\n";
       report_fatal_error("inconsistency in registered CommandLine options");
     }
-
-    // If we're adding this to all sub-commands, add it to the ones that have
-    // already been registered.
-    if (SC == &SubCommand::getAll()) {
-      for (auto *Sub : RegisteredSubCommands) {
-        if (SC == Sub)
-          continue;
-        addLiteralOption(Opt, Sub, Name);
-      }
-    }
   }
 
   void addLiteralOption(Option &Opt, StringRef Name) {
-    if (Opt.Subs.empty())
-      addLiteralOption(Opt, &SubCommand::getTopLevel(), Name);
-    else {
-      for (auto *SC : Opt.Subs)
-        addLiteralOption(Opt, SC, Name);
-    }
+    forEachSubCommand(
+        Opt, [&](SubCommand &SC) { addLiteralOption(Opt, &SC, Name); });
   }
 
   void addOption(Option *O, SubCommand *SC) {
@@ -238,16 +239,6 @@ public:
     // linked LLVM distribution.
     if (HadErrors)
       report_fatal_error("inconsistency in registered CommandLine options");
-
-    // If we're adding this to all sub-commands, add it to the ones that have
-    // already been registered.
-    if (SC == &SubCommand::getAll()) {
-      for (auto *Sub : RegisteredSubCommands) {
-        if (SC == Sub)
-          continue;
-        addOption(O, Sub);
-      }
-    }
   }
 
   void addOption(Option *O, bool ProcessDefaultOption = false) {
@@ -255,13 +246,7 @@ public:
       DefaultOptions.push_back(O);
       return;
     }
-
-    if (O->Subs.empty()) {
-      addOption(O, &SubCommand::getTopLevel());
-    } else {
-      for (auto *SC : O->Subs)
-        addOption(O, SC);
-    }
+    forEachSubCommand(*O, [&](SubCommand &SC) { addOption(O, &SC); });
   }
 
   void removeOption(Option *O, SubCommand *SC) {
@@ -298,17 +283,7 @@ public:
   }
 
   void removeOption(Option *O) {
-    if (O->Subs.empty())
-      removeOption(O, &SubCommand::getTopLevel());
-    else {
-      if (O->isInAllSubCommands()) {
-        for (auto *SC : RegisteredSubCommands)
-          removeOption(O, SC);
-      } else {
-        for (auto *SC : O->Subs)
-          removeOption(O, SC);
-      }
-    }
+    forEachSubCommand(*O, [&](SubCommand &SC) { removeOption(O, &SC); });
   }
 
   bool hasOptions(const SubCommand &Sub) const {
@@ -321,6 +296,13 @@ public:
       if (hasOptions(*S))
         return true;
     }
+    return false;
+  }
+
+  bool hasNamedSubCommands() const {
+    for (const auto *S : RegisteredSubCommands)
+      if (!S->getName().empty())
+        return true;
     return false;
   }
 
@@ -337,17 +319,8 @@ public:
   }
 
   void updateArgStr(Option *O, StringRef NewName) {
-    if (O->Subs.empty())
-      updateArgStr(O, NewName, &SubCommand::getTopLevel());
-    else {
-      if (O->isInAllSubCommands()) {
-        for (auto *SC : RegisteredSubCommands)
-          updateArgStr(O, NewName, SC);
-      } else {
-        for (auto *SC : O->Subs)
-          updateArgStr(O, NewName, SC);
-      }
-    }
+    forEachSubCommand(*O,
+                      [&](SubCommand &SC) { updateArgStr(O, NewName, &SC); });
   }
 
   void printOptionValues();
@@ -373,15 +346,15 @@ public:
 
     // For all options that have been registered for all subcommands, add the
     // option to this subcommand now.
-    if (sub != &SubCommand::getAll()) {
-      for (auto &E : SubCommand::getAll().OptionsMap) {
-        Option *O = E.second;
-        if ((O->isPositional() || O->isSink() || O->isConsumeAfter()) ||
-            O->hasArgStr())
-          addOption(O, sub);
-        else
-          addLiteralOption(*O, sub, E.first());
-      }
+    assert(sub != &SubCommand::getAll() &&
+           "SubCommand::getAll() should not be registered");
+    for (auto &E : SubCommand::getAll().OptionsMap) {
+      Option *O = E.second;
+      if ((O->isPositional() || O->isSink() || O->isConsumeAfter()) ||
+          O->hasArgStr())
+        addOption(O, sub);
+      else
+        addLiteralOption(*O, sub, E.first());
     }
   }
 
@@ -409,7 +382,6 @@ public:
     SubCommand::getTopLevel().reset();
     SubCommand::getAll().reset();
     registerSubCommand(&SubCommand::getTopLevel());
-    registerSubCommand(&SubCommand::getAll());
 
     DefaultOptions.clear();
   }
@@ -425,7 +397,7 @@ private:
       return nullptr;
     return Opt;
   }
-  SubCommand *LookupSubCommand(StringRef Name);
+  SubCommand *LookupSubCommand(StringRef Name, std::string &NearestString);
 };
 
 } // namespace
@@ -450,7 +422,7 @@ void Option::removeArgument() { GlobalParser->removeOption(this); }
 void Option::setArgStr(StringRef S) {
   if (FullyInitialized)
     GlobalParser->updateArgStr(this, S);
-  assert((S.empty() || S[0] != '-') && "Option can't start with '-");
+  assert(!S.starts_with("-") && "Option can't start with '-");
   ArgStr = S;
   if (ArgStr.size() == 1)
     setMiscFlag(Grouping);
@@ -550,18 +522,28 @@ Option *CommandLineParser::LookupOption(SubCommand &Sub, StringRef &Arg,
   return I->second;
 }
 
-SubCommand *CommandLineParser::LookupSubCommand(StringRef Name) {
+SubCommand *CommandLineParser::LookupSubCommand(StringRef Name,
+                                                std::string &NearestString) {
   if (Name.empty())
     return &SubCommand::getTopLevel();
+  // Find a subcommand with the edit distance == 1.
+  SubCommand *NearestMatch = nullptr;
   for (auto *S : RegisteredSubCommands) {
-    if (S == &SubCommand::getAll())
-      continue;
+    assert(S != &SubCommand::getAll() &&
+           "SubCommand::getAll() is not expected in RegisteredSubCommands");
     if (S->getName().empty())
       continue;
 
-    if (StringRef(S->getName()) == StringRef(Name))
+    if (S->getName() == Name)
       return S;
+
+    if (!NearestMatch && S->getName().edit_distance(Name) < 2)
+      NearestMatch = S;
   }
+
+  if (NearestMatch)
+    NearestString = NearestMatch->getName();
+
   return &SubCommand::getTopLevel();
 }
 
@@ -1527,16 +1509,50 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
   int FirstArg = 1;
   SubCommand *ChosenSubCommand = &SubCommand::getTopLevel();
-  if (argc >= 2 && argv[FirstArg][0] != '-') {
+  std::string NearestSubCommandString;
+  bool MaybeNamedSubCommand =
+      argc >= 2 && argv[FirstArg][0] != '-' && hasNamedSubCommands();
+  if (MaybeNamedSubCommand) {
     // If the first argument specifies a valid subcommand, start processing
     // options from the second argument.
-    ChosenSubCommand = LookupSubCommand(StringRef(argv[FirstArg]));
+    ChosenSubCommand =
+        LookupSubCommand(StringRef(argv[FirstArg]), NearestSubCommandString);
     if (ChosenSubCommand != &SubCommand::getTopLevel())
       FirstArg = 2;
   }
   GlobalParser->ActiveSubCommand = ChosenSubCommand;
 
   assert(ChosenSubCommand);
+
+#ifdef SYCLomatic_CUSTOMIZATION
+  auto HandleLongOptionCommand = [&](const std::string &option) {
+    const std::string arg = argv[FirstArg];
+    if (arg == "--" + option || arg == "-" + option || arg == option) {
+      StringRef ArgName(option);
+      StringRef Value;
+      Option *Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
+                                         LongOptionsUseDoubleDash, false);
+      if (Handler) {
+        Handler->addOccurrence(0, ArgName, Value);
+        return true;
+      }
+    }
+    return false;
+  };
+#ifndef _WIN32
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("intercept-build") !=
+       std::string::npos)) {
+    return HandleLongOptionCommand("intercept-build");
+  }
+#endif
+  if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("codepin-report") !=
+       std::string::npos)) {
+    return HandleLongOptionCommand("codepin-report");
+  }
+#endif // SYCLomatic_CUSTOMIZATION
+
   auto &ConsumeAfterOpt = ChosenSubCommand->ConsumeAfterOpt;
   auto &PositionalOpts = ChosenSubCommand->PositionalOpts;
   auto &SinkOpts = ChosenSubCommand->SinkOpts;
@@ -1602,7 +1618,6 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
   bool DashDashFound = false; // Have we read '--'?
   for (int i = FirstArg; i < argc; ++i) {
     Option *Handler = nullptr;
-    Option *NearestHandler = nullptr;
     std::string NearestHandlerString;
     StringRef Value;
     StringRef ArgName = "";
@@ -1645,10 +1660,8 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
       // otherwise feed it to the eating positional.
       ArgName = StringRef(argv[i] + 1);
       // Eat second dash.
-      if (!ArgName.empty() && ArgName[0] == '-') {
+      if (ArgName.consume_front("-"))
         HaveDoubleDash = true;
-        ArgName = ArgName.substr(1);
-      }
 
       Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
                                  LongOptionsUseDoubleDash, HaveDoubleDash);
@@ -1659,13 +1672,18 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
     } else { // We start with a '-', must be an argument.
       ArgName = StringRef(argv[i] + 1);
       // Eat second dash.
-      if (!ArgName.empty() && ArgName[0] == '-') {
+      if (ArgName.consume_front("-"))
         HaveDoubleDash = true;
-        ArgName = ArgName.substr(1);
-      }
 
       Handler = LookupLongOption(*ChosenSubCommand, ArgName, Value,
                                  LongOptionsUseDoubleDash, HaveDoubleDash);
+
+      // If Handler is not found in a specialized subcommand, look up handler
+      // in the top-level subcommand.
+      // cl::opt without cl::sub belongs to top-level subcommand.
+      if (!Handler && ChosenSubCommand != &SubCommand::getTopLevel())
+        Handler = LookupLongOption(SubCommand::getTopLevel(), ArgName, Value,
+                                   LongOptionsUseDoubleDash, HaveDoubleDash);
 
       // Check to see if this "option" is really a prefixed or grouped argument.
       if (!Handler && !(LongOptionsUseDoubleDash && HaveDoubleDash))
@@ -1675,35 +1693,48 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
       // Otherwise, look for the closest available option to report to the user
       // in the upcoming error.
       if (!Handler && SinkOpts.empty())
-        NearestHandler =
-            LookupNearestOption(ArgName, OptionsMap, NearestHandlerString);
+        LookupNearestOption(ArgName, OptionsMap, NearestHandlerString);
     }
 
     if (!Handler) {
-      if (SinkOpts.empty()) {
-#ifdef SYCLomatic_CUSTOMIZATION
-        *Errs << "Unknown command line argument '" << argv[i] << "'. ";
-#else
-        *Errs << ProgramName << ": Unknown command line argument '" << argv[i]
-              << "'.  Try: '" << argv[0] << " --help'\n";
-#endif // SYCLomatic_CUSTOMIZATION
-
-        if (NearestHandler) {
-          // If we know a near match, report it as well.
-#ifdef SYCLomatic_CUSTOMIZATION
-          *Errs << "Did you mean '"
-                << PrintArg(NearestHandlerString, 0) << "'?\n";
-#else
-          *Errs << ProgramName << ": Did you mean '"
-                << PrintArg(NearestHandlerString, 0) << "'?\n";
-#endif // SYCLomatic_CUSTOMIZATION
-		}
-
-        ErrorParsing = true;
-      } else {
+      if (!SinkOpts.empty()) {
         for (Option *SinkOpt : SinkOpts)
           SinkOpt->addOccurrence(i, "", StringRef(argv[i]));
+        continue;
       }
+
+      auto ReportUnknownArgument = [&](bool IsArg,
+                                       StringRef NearestArgumentName) {
+#ifdef SYCLomatic_CUSTOMIZATION
+        *Errs << "Unknown " << (IsArg ? "command line argument" : "subcommand")
+              << " '" << argv[i] << "'.  Try: '" << argv[0] << " --help'\n";
+#else
+        *Errs << ProgramName << ": Unknown "
+              << (IsArg ? "command line argument" : "subcommand") << " '"
+              << argv[i] << "'.  Try: '" << argv[0] << " --help'\n";
+#endif // SYCLomatic_CUSTOMIZATION
+
+        if (NearestArgumentName.empty())
+          return;
+
+#ifdef SYCLomatic_CUSTOMIZATION
+        *Errs << "Did you mean '";
+#else
+        *Errs << ProgramName << ": Did you mean '";
+#endif // SYCLomatic_CUSTOMIZATION
+        if (IsArg)
+          *Errs << PrintArg(NearestArgumentName, 0);
+        else
+          *Errs << NearestArgumentName;
+        *Errs << "'?\n";
+      };
+
+      if (i > 1 || !MaybeNamedSubCommand)
+        ReportUnknownArgument(/*IsArg=*/true, NearestHandlerString);
+      else
+        ReportUnknownArgument(/*IsArg=*/false, NearestSubCommandString);
+
+      ErrorParsing = true;
       continue;
     }
 
@@ -2193,7 +2224,7 @@ void generic_parser_base::printGenericOptionDiff(
 
   unsigned NumOpts = getNumOptions();
   for (unsigned i = 0; i != NumOpts; ++i) {
-    if (Value.compare(getOptionValue(i)))
+    if (!Value.compare(getOptionValue(i)))
       continue;
 
     outs() << "= " << getOption(i);
@@ -2201,7 +2232,7 @@ void generic_parser_base::printGenericOptionDiff(
     size_t NumSpaces = MaxOptWidth > L ? MaxOptWidth - L : 0;
     outs().indent(NumSpaces) << " (default: ";
     for (unsigned j = 0; j != NumOpts; ++j) {
-      if (Default.compare(getOptionValue(j)))
+      if (!Default.compare(getOptionValue(j)))
         continue;
       outs() << getOption(j);
       break;
@@ -2322,9 +2353,31 @@ sortSubCommands(const SmallPtrSetImpl<SubCommand *> &SubMap,
 
 namespace {
 
+#ifdef SYCLomatic_CUSTOMIZATION
+/// HelpCategory defines various category groups for dpct options
+enum class HelpCategory {
+  HC_All,
+  HC_Basic,
+  HC_Advanced,
+  HC_CodeGen,
+  HC_ReportGen,
+  HC_BuildScript,
+  HC_QueryAPI,
+  HC_Warnings,
+  HC_HelpInfo,
+  HC_InterceptBuild,
+  HC_Examples
+};
+
+#include "llvm/migration_cmd_examples.inc"
+#endif // SYCLomatic_CUSTOMIZATION
+
 class HelpPrinter {
 protected:
   const bool ShowHidden;
+#ifdef SYCLomatic_CUSTOMIZATION
+  HelpCategory helpCatEnum = HelpCategory::HC_All;
+#endif // SYCLomatic_CUSTOMIZATION
   typedef SmallVector<std::pair<const char *, Option *>, 128>
       StrOptionPairVector;
   typedef SmallVector<std::pair<const char *, SubCommand *>, 128>
@@ -2345,6 +2398,55 @@ protected:
       outs() << "\n";
     }
   }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Store the user requested category
+  void setReqCategory(HelpCategory reqCatEnumVal) {
+    helpCatEnum = reqCatEnumVal;
+  }
+
+  // Return the user requested category
+  OptionCategory &getReqCategory(HelpCategory reqCatEnumVal) {
+    switch (reqCatEnumVal) {
+    case HelpCategory::HC_All:
+      return cl::getDPCTCategory();
+      break;
+    case HelpCategory::HC_Basic:
+      return cl::getDPCTBasicCategory();
+      break;
+    case HelpCategory::HC_Advanced:
+      return cl::getDPCTAdvancedCategory();
+      break;
+    case HelpCategory::HC_CodeGen:
+      return cl::getDPCTCodeGenCategory();
+      break;
+    case HelpCategory::HC_ReportGen:
+      return cl::getDPCTReportGenCategory();
+      break;
+    case HelpCategory::HC_BuildScript:
+      return cl::getDPCTBuildScriptCategory();
+      break;
+    case HelpCategory::HC_QueryAPI:
+      return cl::getDPCTQueryAPICategory();
+      break;
+    case HelpCategory::HC_Warnings:
+      return cl::getDPCTWarningsCategory();
+      break;
+    case HelpCategory::HC_HelpInfo:
+      return cl::getDPCTHelpInfoCategory();
+      break;
+    case HelpCategory::HC_InterceptBuild:
+      return cl::getDPCTInterceptBuildCategory();
+      break;
+    case HelpCategory::HC_Examples:
+      return cl::getDPCTExamplesCategory();
+      break;
+    default:
+      return cl::getDPCTCategory();
+      break;
+    }
+  }
+#endif // SYCLomatic_CUSTOMIZATION
 
 public:
   explicit HelpPrinter(bool showHidden) : ShowHidden(showHidden) {}
@@ -2372,12 +2474,19 @@ public:
     StrSubCommandPairVector Subs;
     sortSubCommands(GlobalParser->RegisteredSubCommands, Subs);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (helpCatEnum == HelpCategory::HC_Examples) {
+      outs() << DPCTExamplesMsg;
+      return;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
+
     if (!GlobalParser->ProgramOverview.empty())
       outs() << "OVERVIEW: " << GlobalParser->ProgramOverview << "\n";
 
     if (Sub == &SubCommand::getTopLevel()) {
       outs() << "USAGE: " << GlobalParser->ProgramName;
-      if (Subs.size() > 2)
+      if (!Subs.empty())
         outs() << " [subcommand]";
       outs() << " [options]";
     } else {
@@ -2421,12 +2530,55 @@ public:
     for (size_t i = 0, e = Opts.size(); i != e; ++i)
       MaxArgLen = std::max(MaxArgLen, Opts[i].second->getOptionWidth());
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    OptionCategory &requestedCat(getReqCategory(helpCatEnum));
+
+    if (helpCatEnum != HelpCategory::HC_All)
+      outs() << "OPTIONS: " << requestedCat.getName() << "\n";
+    else
+      outs() << "OPTIONS:\n";
+#else
     outs() << "OPTIONS:\n";
+#endif // SYCLomatic_CUSTOMIZATION
     printOptions(Opts, MaxArgLen);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    const char *const CtHelpTrailMsg = "\n"
+                                       "<source0> ... Paths of input source "
+                                       "files. These paths are looked up in "
+                                       "the compilation database.\n\n";
+
+    outs() << CtHelpTrailMsg;
+
+    if (helpCatEnum == HelpCategory::HC_All) {
+      outs() << DPCTExamplesMsg;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
+
     // Print any extra help the user has declared.
+#ifdef SYCLomatic_CUSTOMIZATION
+    bool showDiagMsg = false;
+
+    switch (helpCatEnum) {
+    case HelpCategory::HC_All:
+    case HelpCategory::HC_Advanced:
+    case HelpCategory::HC_Basic:
+    case HelpCategory::HC_BuildScript:
+    case HelpCategory::HC_CodeGen:
+      showDiagMsg = true;
+      break;
+    default:
+      showDiagMsg = false;
+    }
+
+    if (showDiagMsg) {
+      for (const auto &I : GlobalParser->MoreHelp)
+        outs() << I;
+    }
+#else
     for (const auto &I : GlobalParser->MoreHelp)
       outs() << I;
+#endif // SYCLomatic_CUSTOMIZATION
     GlobalParser->MoreHelp.clear();
   }
 };
@@ -2446,6 +2598,7 @@ public:
 
   // Make sure we inherit our base class's operator=()
   using HelpPrinter::operator=;
+  using HelpPrinter::setReqCategory;
 
 protected:
   void printOptions(StrOptionPairVector &Opts, size_t MaxArgLen) override {
@@ -2474,19 +2627,23 @@ protected:
       }
     }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    OptionCategory &requestedCat(getReqCategory(helpCatEnum));
+#endif // SYCLomatic_CUSTOMIZATION
+
     // Now do printing.
     for (OptionCategory *Category : SortedCategories) {
       // Hide empty categories for --help, but show for --help-hidden.
       const auto &CategoryOptions = CategorizedOptions[Category];
-      bool IsEmptyCategory = CategoryOptions.empty();
-#ifdef SYCLomatic_CUSTOMIZATION
-      if (IsEmptyCategory)
-#else
-      if (!ShowHidden && IsEmptyCategory)
-#endif // SYCLomatic_CUSTOMIZATION
+      if (CategoryOptions.empty())
         continue;
 
-      // Print category information.
+#ifdef SYCLomatic_CUSTOMIZATION
+      if (&requestedCat != Category)
+        continue;
+#endif // SYCLomatic_CUSTOMIZATION
+
+        // Print category information.
 #ifdef SYCLomatic_CUSTOMIZATION
       // outs() << "\n";
       // outs() << Category->getName() << ":\n";
@@ -2501,12 +2658,6 @@ protected:
       else
         outs() << "\n";
 
-      // When using --help-hidden explicitly state if the category has no
-      // options associated with it.
-      if (IsEmptyCategory) {
-        outs() << "  This option category has no options.\n";
-        continue;
-      }
       // Loop over the options in the category and print.
       for (const Option *Opt : CategoryOptions)
         Opt->printOptionInfo(MaxArgLen);
@@ -2529,6 +2680,9 @@ public:
 
   // Invoke the printer.
   void operator=(bool Value);
+#ifdef SYCLomatic_CUSTOMIZATION
+  void operator=(HelpCategory Value);
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 } // End anonymous namespace
@@ -2628,11 +2782,48 @@ struct CommandLineCommonOptions {
   // behaviour at runtime depending on whether one or more Option categories
   // have been declared.
 #ifdef SYCLomatic_CUSTOMIZATION
-  cl::opt<HelpPrinterWrapper, true, parser<bool>>
-      HOp{"help",
-          cl::desc("Provides a list of available options."),
-          cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
-          cl::cat(cl::getDPCTCategory()), cl::sub(*AllSubCommands)};
+  cl::opt<HelpPrinterWrapper, true, cl::parser<HelpCategory>> HOp{
+      "help",
+      cl::values(
+          cl::OptionEnumValue{
+              "", int(HelpCategory::HC_All),
+              "List all options in alphabetical order. (default)", true},
+          cl::OptionEnumValue{"basic", int(HelpCategory::HC_Basic),
+                              "List options for basic migration.", false},
+          cl::OptionEnumValue{"advanced", int(HelpCategory::HC_Advanced),
+                              "List options for advanced migration.", false},
+          cl::OptionEnumValue{"code-gen", int(HelpCategory::HC_CodeGen),
+                              "List options to customize how code is migrated.",
+                              false},
+          cl::OptionEnumValue{
+              "report-gen", int(HelpCategory::HC_ReportGen),
+              "List option(s) to control report generation during migration.",
+              false},
+          cl::OptionEnumValue{"build-script", int(HelpCategory::HC_BuildScript),
+                              "List options to migrate build script(s).",
+                              false},
+          cl::OptionEnumValue{"query-api", int(HelpCategory::HC_QueryAPI),
+                              "List options to query API mapping support.",
+                              false},
+          cl::OptionEnumValue{
+              "warnings", int(HelpCategory::HC_Warnings),
+              "List options to manage warnings generated by the tool.", false},
+          cl::OptionEnumValue{"help-info", int(HelpCategory::HC_HelpInfo),
+                              "List options to display tool information.",
+                              false},
+          cl::OptionEnumValue{"intercept-build",
+                              int(HelpCategory::HC_InterceptBuild),
+                              "List options of intercept-build tool.", false},
+          cl::OptionEnumValue{"examples", int(HelpCategory::HC_Examples),
+                              "List examples of common DPCT options usage.",
+                              false}),
+      cl::desc("Display available options.\n"),
+      cl::value_desc("value"),
+      cl::location(WrappedNormalPrinter),
+      cl::ValueOptional,
+      cl::cat(cl::getDPCTCategory()),
+      cl::cat(cl::getDPCTHelpInfoCategory()),
+      cl::sub(*AllSubCommands)};
 #else
   cl::opt<HelpPrinterWrapper, true, parser<bool>> HOp{
       "help",
@@ -2679,10 +2870,13 @@ struct CommandLineCommonOptions {
   VersionPrinter VersionPrinterInstance;
 
 #ifdef SYCLomatic_CUSTOMIZATION
-  cl::opt<VersionPrinter, true, parser<bool>>
-      VersOp{"version", cl::desc("Shows the version of the tool."),
-             cl::location(VersionPrinterInstance), cl::ValueDisallowed,
-             cl::cat(cl::getDPCTCategory())};
+  cl::opt<VersionPrinter, true, parser<bool>> VersOp{
+      "version",
+      cl::desc("Shows the version of the tool."),
+      cl::location(VersionPrinterInstance),
+      cl::ValueDisallowed,
+      cl::cat(cl::getDPCTCategory()),
+      cl::cat(cl::getDPCTHelpInfoCategory())};
 #else
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Display the version of this program"),
@@ -2718,6 +2912,46 @@ OptionCategory &cl::getGeneralCategory() {
 OptionCategory &cl::getDPCTCategory() {
   static OptionCategory DPCTCat{"dpct"};
   return DPCTCat;
+}
+OptionCategory &cl::getDPCTBasicCategory() {
+  static OptionCategory DPCTBasicCat{"basic"};
+  return DPCTBasicCat;
+}
+OptionCategory &cl::getDPCTAdvancedCategory() {
+  static OptionCategory DPCTAdvancedCat{"advanced"};
+  return DPCTAdvancedCat;
+}
+OptionCategory &cl::getDPCTCodeGenCategory() {
+  static OptionCategory DPCTCodeGenCat{"code-gen"};
+  return DPCTCodeGenCat;
+}
+OptionCategory &cl::getDPCTReportGenCategory() {
+  static OptionCategory DPCTReportGenCat{"report-gen"};
+  return DPCTReportGenCat;
+}
+OptionCategory &cl::getDPCTBuildScriptCategory() {
+  static OptionCategory DPCTTBuildScriptCat{"build-script"};
+  return DPCTTBuildScriptCat;
+}
+OptionCategory &cl::getDPCTQueryAPICategory() {
+  static OptionCategory DPCTQueryAPICat{"query-api"};
+  return DPCTQueryAPICat;
+}
+OptionCategory &cl::getDPCTWarningsCategory() {
+  static OptionCategory DPCTWarningsCat{"warnings"};
+  return DPCTWarningsCat;
+}
+OptionCategory &cl::getDPCTHelpInfoCategory() {
+  static OptionCategory DPCTHelpInfoCat{"help-info"};
+  return DPCTHelpInfoCat;
+}
+OptionCategory &cl::getDPCTInterceptBuildCategory() {
+  static OptionCategory DPCTInterceptBuildCat{"intercept-build"};
+  return DPCTInterceptBuildCat;
+}
+OptionCategory &cl::getDPCTExamplesCategory() {
+  static OptionCategory DPCTExamplesCat{"examples"};
+  return DPCTExamplesCat;
 }
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -2755,6 +2989,14 @@ void HelpPrinterWrapper::operator=(bool Value) {
     UncategorizedPrinter = true; // Invoke uncategorized printer
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+void HelpPrinterWrapper::operator=(HelpCategory Value) {
+  CategorizedPrinter.setReqCategory(Value);
+
+  *this = true;
+}
+#endif // SYCLomatic_CUSTOMIZATION
+
 // Print the value of each option.
 void cl::PrintOptionValues() { GlobalParser->printOptionValues(); }
 
@@ -2784,6 +3026,52 @@ void cl::PrintHelpMessage(bool Hidden, bool Categorized) {
     CommonOptions->UncategorizedHiddenPrinter.printHelp();
   else
     CommonOptions->CategorizedHiddenPrinter.printHelp();
+}
+
+ArrayRef<StringRef> cl::getCompilerBuildConfig() {
+  static const StringRef Config[] = {
+      // Placeholder to ensure the array always has elements, since it's an
+      // error to have a zero-sized array. Slice this off before returning.
+      "",
+  // Actual compiler build config feature list:
+#if LLVM_IS_DEBUG_BUILD
+      "+unoptimized",
+#endif
+#ifndef NDEBUG
+      "+assertions",
+#endif
+#ifdef EXPENSIVE_CHECKS
+      "+expensive-checks",
+#endif
+#if __has_feature(address_sanitizer)
+      "+asan",
+#endif
+#if __has_feature(dataflow_sanitizer)
+      "+dfsan",
+#endif
+#if __has_feature(hwaddress_sanitizer)
+      "+hwasan",
+#endif
+#if __has_feature(memory_sanitizer)
+      "+msan",
+#endif
+#if __has_feature(thread_sanitizer)
+      "+tsan",
+#endif
+#if __has_feature(undefined_behavior_sanitizer)
+      "+ubsan",
+#endif
+  };
+  return ArrayRef(Config).drop_front(1);
+}
+
+// Utility function for printing the build config.
+void cl::printBuildConfig(raw_ostream &OS) {
+#if LLVM_VERSION_PRINTER_SHOW_BUILD_CONFIG
+  OS << "Build config: ";
+  llvm::interleaveComma(cl::getCompilerBuildConfig(), OS);
+  OS << '\n';
+#endif
 }
 
 /// Utility function for printing version number.

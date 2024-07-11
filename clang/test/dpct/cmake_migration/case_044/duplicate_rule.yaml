@@ -1,0 +1,27 @@
+#this rule is duplicated with rule_gen_codes_add_link_options
+- Rule: rule_gen_codes_add_link_options_test_dup
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: gen_codes_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --gen-codes=${arch}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_gen_codes"
+
+- Rule: rule_a_old
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: a
+  In: a(${options})
+  Out: a(${options})
+
+- Rule: rule_a_new
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: a
+  In: a(${options})
+  Out: a(${options})

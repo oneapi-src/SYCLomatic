@@ -10,6 +10,7 @@
 
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include <iostream>
 
 #include "AnalysisInfo.h"
 #include "MigrationRuleManager.h"
@@ -81,9 +82,8 @@ bool canCacheMoreTranslateUnit() {
 
 DpctConsumer::DpctConsumer(TranslationUnitInfo *TUI, Preprocessor &PP)
     : Info(TUI) {
-  PP.addPPCallbacks(
-      std::make_unique<IncludesCallbacks>(Info->Transforms, Info->IncludeMapSet,
-                                          PP.getSourceManager(), Info->Groups));
+  PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
+      Info->Transforms, PP.getSourceManager(), Info->Groups));
   if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
     Handler =
         std::make_unique<MisleadingBidirectionalHandler>(Info->Transforms);
@@ -109,7 +109,9 @@ void DpctConsumer::HandleCXXExplicitFunctionInstantiation(
   ExplicitInstantiationDecl::processFunctionTypeLoc(FTL);
   ExplicitInstantiationDecl::processTemplateArgumentList(TAList);
   if (Specialization->getTemplateSpecializationKind() !=
-      TSK_ExplicitInstantiationDefinition)
+          TSK_ExplicitInstantiationDefinition &&
+      Specialization->getTemplateSpecializationKind() !=
+          TSK_ExplicitInstantiationDeclaration)
     return;
   if (Specialization->hasAttr<CUDADeviceAttr>() ||
       Specialization->hasAttr<CUDAGlobalAttr>()) {
@@ -130,11 +132,12 @@ void DpctFrontEndAction::EndSourceFileAction() {
 }
 
 DpctToolAction::DpctToolAction(
-    llvm::raw_ostream &DS, ReplTy &Replacements, const std::string &RuleNames,
-    std::vector<PassKind> Passes,
+    llvm::raw_ostream &DS, ReplTy &ReplCUDA, ReplTy &ReplSYCL,
+    const std::string &RuleNames, std::vector<PassKind> Passes,
     llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS)
-    : Global(DpctGlobalInfo::getInstance()), Repls(Replacements),
-      Passes(std::move(Passes)), DiagnosticStream(DS), FS(FS) {
+    : Global(DpctGlobalInfo::getInstance()), ReplsCUDA(ReplCUDA),
+      ReplsSYCL(ReplSYCL), Passes(std::move(Passes)), DiagnosticStream(DS),
+      FS(FS) {
   if (RuleNames.empty())
     return;
   auto Names = split(RuleNames, ',');
@@ -174,6 +177,7 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfo(
 
 std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoImpl(
     std::shared_ptr<CompilerInvocation> Invocation, bool &Success) {
+  Invocation->getDiagnosticOpts().IgnoreWarnings = true;
   auto DiagConsumer = new TextDiagnosticPrinter(
       DiagnosticStream, &Invocation->getDiagnosticOpts());
   auto Info = std::make_shared<TranslationUnitInfo>();
@@ -216,14 +220,12 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
                                             TranslationUnitInfo &Info) {
   auto &Context = Info.AST->getASTContext();
   auto &Transforms = Info.Transforms;
-  auto &IncludeMap = Info.IncludeMapSet;
   Info.AST->getDiagnostics().getClient()->BeginSourceFile(
       Context.getLangOpts());
   DpctGlobalInfo::setContext(Context);
   DpctGlobalInfo::getInstance().setMainFile(Info.MainFile);
   MigrationRuleManager MRM(Pass, Transforms, Info.Groups);
-  Global.getProcessedFile().insert(Info.MainFile->getFilePath());
-  printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath());
+  printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath().getCanonicalPath());
   MRM.matchAST(Context, MigrationRuleNames);
   for (const auto &I : Transforms) {
     auto Repl = I->getReplacement(Context);
@@ -237,13 +239,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
     // If a file has replacement, all include statement need change, so we add
     // them to global replacement here.
     const auto FilePath = Repl->getFilePath().str();
-    auto Find = IncludeMap.find(FilePath);
-    if (Find != IncludeMap.end()) {
-      for (const auto &Entry : Find->second) {
-        Global.addReplacement(Entry->getReplacement(Context));
-      }
-      IncludeMap.erase(FilePath);
-    }
+
     Global.addReplacement(Repl);
 
     StaticsInfo::printReplacements(Transforms, Context);
@@ -272,12 +268,11 @@ void DpctToolAction::runPasses() {
   for (auto Pass : Passes) {
     runPass(Pass);
   }
-
   runWithCrashGuard(
       [&]() {
         Global.buildReplacements();
         Global.postProcess();
-        Global.emplaceReplacements(Repls);
+        Global.emplaceReplacements(ReplsCUDA, ReplsSYCL);
       },
       PostProcessFaultMsg);
 }

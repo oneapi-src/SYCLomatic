@@ -1,0 +1,148 @@
+.. _DPCT1113:
+
+DPCT1113
+========
+
+Message
+-------
+
+.. _msg-1113-start:
+
+Consider replacing ``sycl::nd_item::barrier(sycl::access::fence_space::local_space)``
+with ``sycl::nd_item::barrier()`` if function *<function name>* is called in a
+multidimensional kernel.
+
+.. _msg-1113-end:
+
+Detailed Help
+-------------
+
+If there is no overlap global device memory access among each work-item in a
+work-group, the ``__syncthreads()`` API calls in kernel with 1D index space of a
+kernel execution that can be migrated to ``sycl::nd_item::barrier(sycl::access::fence_space::local_space)``.
+If you call the kernel with 2D/3D index space, the global memory access
+from each work-item in a work-group may overlap and may result in data
+dependency between work-items across the barrier. If this is the case, you may
+need to update the ``sycl::nd_item::barrier()`` call with
+``sycl::access::fence_space::global_and_local``.
+
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel(float *mem) {
+     unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
+     ...
+     mem[tid] = ...;
+     __syncthreads();
+     ...
+     ... = mem[tid];
+   }
+
+   void foo(float *mem) {
+     kernel<<<16, 16>>>(mem); //1D index space of a SYCL kernel execution
+   }
+
+
+results in the following migrated SYCL* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(float *mem, const sycl::nd_item<3> &item_ct1) {
+     unsigned int tid = item_ct1.get_local_id(2) +
+                        item_ct1.get_local_range(2) * item_ct1.get_group(2);
+     ...
+     mem[tid] = ...; // global memory access without overlap among each work-item in a work-group
+     /*
+     DPCT1113:0: Consider replacing
+     sycl::nd_item::barrier(sycl::access::fence_space::local_space) with
+     sycl::nd_item::barrier() if function "kernel" is called in a multidimensional
+     kernel.
+     */
+     item_ct1.barrier(sycl::access::fence_space::local_space);
+     ...
+     ... = mem[tid]; // global memory access without overlap among each work-item in a work-group
+   }
+
+   void foo(float *mem) {
+     dpct::get_default_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16),
+                           sycl::range<3>(1, 1, 16)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel(mem, item_ct1);
+         });
+   }
+
+
+After migration, update the migrated SYCL kernel code to a 2D kernel:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(float *mem, const sycl::nd_item<3> &item_ct1) {
+     unsigned int tidx = item_ct1.get_local_id(2) +
+                         item_ct1.get_local_range(2) * item_ct1.get_group(2);
+     unsigned int tidy = item_ct1.get_local_id(1) +
+                         item_ct1.get_local_range(1) * item_ct1.get_group(1);
+
+     ...
+     mem[tidx] = ...; // global memory access with overlap among each work-item in a work-group
+     mem[tidy] = ...; // global memory access with overlap among each work-item in a work-group
+     /*
+     DPCT1113:0: Consider replacing
+     sycl::nd_item::barrier(sycl::access::fence_space::local_space) with
+     sycl::nd_item::barrier() if function "kernel" is called in a multidimensional
+     kernel.
+     */
+     item_ct1.barrier(sycl::access::fence_space::local_space);
+     ...
+     ... = mem[tidx]; // global memory access with overlap among each work-item in a work-group
+     ... = mem[tidy]; // global memory access with overlap among each work-item in a work-group
+   }
+
+   void foo(float *mem) {
+     dpct::get_default_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 4, 4) * sycl::range<3>(1, 4, 4),
+                           sycl::range<3>(1, 4, 4)), /*2D  index space of a SYCL kernel execution */
+
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel(mem, item_ct1);
+         });
+   }
+
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(float *mem, const sycl::nd_item<3> &item_ct1) {
+     unsigned int tidx = item_ct1.get_local_id(2) +
+                         item_ct1.get_local_range(2) * item_ct1.get_group(2);
+     unsigned int tidy = item_ct1.get_local_id(1) +
+                         item_ct1.get_local_range(1) * item_ct1.get_group(1);
+
+     ...
+     mem[tidx] = ...; // global memory access with overlap among each work-item in a work-group
+     mem[tidy] = ...; // global memory access with overlap among each work-item in a work-group
+     item_ct1.barrier(sycl::access::fence_space::global_and_local);
+     ...
+     ... = mem[tidx]; // global memory access with overlap among each work-item in a work-group
+     ... = mem[tidy]; // global memory access with overlap among each work-item in a work-group
+   }
+
+   void foo(float *mem) {
+     dpct::get_default_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 4, 4) * sycl::range<3>(1, 4, 4),
+                           sycl::range<3>(1, 4, 4)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel(mem, item_ct1);
+         });
+   }

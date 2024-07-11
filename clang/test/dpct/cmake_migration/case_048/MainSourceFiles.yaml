@@ -1,0 +1,83 @@
+---
+MainSourceFile:  '/path/to/MainSrcFiles_placehold'
+Replacements:
+  - FilePath:        '/path/to/src/foo.cpp'
+    Offset:          0
+    Length:          0
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/path/to/src/baz.cpp'
+    Offset:          0
+    Length:          0
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  
+MainSourceFilesDigest:
+  - MainSourceFile:  '/path/to/src/foo.cpp'
+    Digest:          e2636fb8d174ac319083b0306294d3bd
+  - MainSourceFile:  '/path/to/src/baz.cpp'
+    Digest:          991d7e4825fc597205bf68f2eda27acd
+  - MainSourceFile:  '/path/to/src/layer.cudnn.cpp'
+    Digest:          991d7e4825fc597205bf68f2eda27ace
+DpctVersion:     19.0.0
+MainHelperFileName: ''
+USMLevel:        ''
+FeatureMap:      {}
+CompileTargets:  {}
+OptionMap:
+  AnalysisScopePath:
+    Value:           '/path/to//target'
+    Specified:       false
+  AsyncHandler:
+    Value:           'false'
+    Specified:       false
+  BuildScript:
+    Value:           '1'
+    Specified:       true
+  CodePinEnabled:
+    Value:           'false'
+    Specified:       false
+  CommentsEnabled:
+    Value:           'false'
+    Specified:       false
+  CompilationsDir:
+    Value:           '/path/to/build'
+    Specified:       true
+  CtadEnabled:
+    Value:           'false'
+    Specified:       false
+  EnablepProfiling:
+    Value:           'true'
+    Specified:       true
+  ExperimentalFlag:
+    Value:           '8192'
+    Specified:       true
+  ExplicitNamespace:
+    Value:           '20'
+    Specified:       false
+  ExtensionDDFlag:
+    Value:           '0'
+    Specified:       false
+  ExtensionDEFlag:
+    Value:           '4294967295'
+    Specified:       false
+  RuleFile:
+    Value:           ''
+    ValueVec:
+      - '/path/to/cmake_script_migration_rule.yaml'
+    Specified:       false
+  SyclNamedLambda:
+    Value:           'false'
+    Specified:       false
+  UsmLevel:
+    Value:           '1'
+    Specified:       false
+...

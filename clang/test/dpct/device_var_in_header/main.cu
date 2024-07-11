@@ -4,7 +4,9 @@
 // RUN: dpct --process-all -in-root %S -out-root %T --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/common.dp.hpp --match-full-lines %S/common.cuh
 // RUN: FileCheck --input-file %T/f.dp.cpp --match-full-lines %S/f.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/f.dp.cpp -o %T/f.dp.o %}
 // RUN: FileCheck --input-file %T/main.dp.cpp --match-full-lines %S/main.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
 
 #include "common.h"
 #include "common.cuh"

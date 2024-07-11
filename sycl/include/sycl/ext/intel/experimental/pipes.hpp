@@ -39,7 +39,7 @@ namespace ext {
 namespace intel {
 namespace experimental {
 
-// A helper templateless base class to get the host_pipe name.
+// A helper templateless base class.
 class pipe_base {
 
 protected:
@@ -47,6 +47,7 @@ protected:
   ~pipe_base();
 
   __SYCL_EXPORT static std::string get_pipe_name(const void *HostPipePtr);
+  __SYCL_EXPORT static bool wait_non_blocking(const event &E);
 };
 
 template <class _name, class _dataT, int32_t _min_capacity = 0,
@@ -95,15 +96,13 @@ public:
       CGH.ext_intel_read_host_pipe(PipeName, DataPtr,
                                    sizeof(_dataT) /* non-blocking */);
     });
-    E.wait();
-    if (E.get_info<sycl::info::event::command_execution_status>() ==
-        sycl::info::event_command_status::complete) {
-      Success = true;
-      return *(_dataT *)DataPtr;
-    } else {
-      Success = false;
-      return _dataT();
-    }
+    // In OpenCL 1.0 waiting for a failed event does not return an error, so we
+    // need to check the execution status here as well.
+    Success = wait_non_blocking(E) &&
+              E.get_info<sycl::info::event::command_execution_status>() ==
+                  sycl::info::event_command_status::complete;
+    ;
+    return Success ? *(_dataT *)DataPtr : _dataT();
   }
 
   static void write(queue &Q, const _dataT &Data, bool &Success,
@@ -126,15 +125,17 @@ public:
       CGH.ext_intel_write_host_pipe(PipeName, DataPtr,
                                     sizeof(_dataT) /* non-blocking */);
     });
-    E.wait();
-    Success = E.get_info<sycl::info::event::command_execution_status>() ==
-              sycl::info::event_command_status::complete;
+    // In OpenCL 1.0 waiting for a failed event does not return an error, so we
+    // need to check the execution status here as well.
+    Success = wait_non_blocking(E) &&
+              E.get_info<sycl::info::event::command_execution_status>() ==
+                  sycl::info::event_command_status::complete;
   }
 
   // Reading from pipe is lowered to SPIR-V instruction OpReadPipe via SPIR-V
   // friendly LLVM IR.
   template <typename _functionPropertiesT>
-  static _dataT read(bool &Success, _functionPropertiesT Properties) {
+  static _dataT read(bool &Success, _functionPropertiesT) {
 #ifdef __SYCL_DEVICE_ONLY__
     // Get latency control properties
     using _latency_anchor_id_prop = typename detail::GetOrDefaultValT<
@@ -169,7 +170,6 @@ public:
     return TempData;
 #else
     (void)Success;
-    (void)Properties;
     throw sycl::exception(
         sycl::make_error_code(sycl::errc::feature_not_supported),
         "Device-side API are not supported on a host device. Please use "
@@ -184,8 +184,7 @@ public:
   // Writing to pipe is lowered to SPIR-V instruction OpWritePipe via SPIR-V
   // friendly LLVM IR.
   template <typename _functionPropertiesT>
-  static void write(const _dataT &Data, bool &Success,
-                    _functionPropertiesT Properties) {
+  static void write(const _dataT &Data, bool &Success, _functionPropertiesT) {
 #ifdef __SYCL_DEVICE_ONLY__
     // Get latency control properties
     using _latency_anchor_id_prop = typename detail::GetOrDefaultValT<
@@ -219,7 +218,6 @@ public:
 #else
     (void)Success;
     (void)Data;
-    (void)Properties;
     throw sycl::exception(
         sycl::make_error_code(sycl::errc::feature_not_supported),
         "Device-side API are not supported on a host device. Please use "
@@ -282,7 +280,7 @@ public:
   // Reading from pipe is lowered to SPIR-V instruction OpReadPipe via SPIR-V
   // friendly LLVM IR.
   template <typename _functionPropertiesT>
-  static _dataT read(_functionPropertiesT Properties) {
+  static _dataT read(_functionPropertiesT) {
 #ifdef __SYCL_DEVICE_ONLY__
     // Get latency control properties
     using _latency_anchor_id_prop = typename detail::GetOrDefaultValT<
@@ -316,7 +314,6 @@ public:
                                       _relative_cycle);
     return TempData;
 #else
-    (void)Properties;
     throw sycl::exception(
         sycl::make_error_code(sycl::errc::feature_not_supported),
         "Device-side API are not supported on a host device. Please use "
@@ -329,7 +326,7 @@ public:
   // Writing to pipe is lowered to SPIR-V instruction OpWritePipe via SPIR-V
   // friendly LLVM IR.
   template <typename _functionPropertiesT>
-  static void write(const _dataT &Data, _functionPropertiesT Properties) {
+  static void write(const _dataT &Data, _functionPropertiesT) {
 #ifdef __SYCL_DEVICE_ONLY__
     // Get latency control properties
     using _latency_anchor_id_prop = typename detail::GetOrDefaultValT<
@@ -362,7 +359,6 @@ public:
                                        _relative_cycle);
 #else
     (void)Data;
-    (void)Properties;
     throw sycl::exception(
         sycl::make_error_code(sycl::errc::feature_not_supported),
         "Device-side API are not supported on a host device. Please use "
@@ -412,40 +408,36 @@ private:
   // FPGA BE will recognize this function and extract its arguments.
   // TODO: Pass latency control parameters via the __spirv_* builtin when ready.
   template <typename _T>
-  static int32_t
-  __latency_control_nb_read_wrapper(__ocl_RPipeTy<_T> Pipe, _T *Data,
-                                    int32_t AnchorID, int32_t TargetAnchor,
-                                    int32_t Type, int32_t Cycle) {
+  static int32_t __latency_control_nb_read_wrapper(
+      __ocl_RPipeTy<_T> Pipe, _T *Data, int32_t /* AnchorID */,
+      int32_t /* TargetAnchor */, int32_t /* Type */, int32_t /* Cycle */) {
     return __spirv_ReadPipe(Pipe, Data, m_Size, m_Alignment);
   }
 
   // FPGA BE will recognize this function and extract its arguments.
   // TODO: Pass latency control parameters via the __spirv_* builtin when ready.
   template <typename _T>
-  static int32_t
-  __latency_control_nb_write_wrapper(__ocl_WPipeTy<_T> Pipe, const _T *Data,
-                                     int32_t AnchorID, int32_t TargetAnchor,
-                                     int32_t Type, int32_t Cycle) {
+  static int32_t __latency_control_nb_write_wrapper(
+      __ocl_WPipeTy<_T> Pipe, const _T *Data, int32_t /* AnchorID */,
+      int32_t /* TargetAnchor */, int32_t /* Type */, int32_t /* Cycle */) {
     return __spirv_WritePipe(Pipe, Data, m_Size, m_Alignment);
   }
 
   // FPGA BE will recognize this function and extract its arguments.
   // TODO: Pass latency control parameters via the __spirv_* builtin when ready.
   template <typename _T>
-  static void __latency_control_bl_read_wrapper(__ocl_RPipeTy<_T> Pipe,
-                                                _T *Data, int32_t AnchorID,
-                                                int32_t TargetAnchor,
-                                                int32_t Type, int32_t Cycle) {
+  static void __latency_control_bl_read_wrapper(
+      __ocl_RPipeTy<_T> Pipe, _T *Data, int32_t /* AnchorID */,
+      int32_t /* TargetAnchor */, int32_t /* Type */, int32_t /* Cycle */) {
     return __spirv_ReadPipeBlockingINTEL(Pipe, Data, m_Size, m_Alignment);
   }
 
   // FPGA BE will recognize this function and extract its arguments.
   // TODO: Pass latency control parameters via the __spirv_* builtin when ready.
   template <typename _T>
-  static void
-  __latency_control_bl_write_wrapper(__ocl_WPipeTy<_T> Pipe, const _T *Data,
-                                     int32_t AnchorID, int32_t TargetAnchor,
-                                     int32_t Type, int32_t Cycle) {
+  static void __latency_control_bl_write_wrapper(
+      __ocl_WPipeTy<_T> Pipe, const _T *Data, int32_t /* AnchorID*/,
+      int32_t /* TargetAnchor */, int32_t /* Type */, int32_t /* Cycle */) {
     return __spirv_WritePipeBlockingINTEL(Pipe, Data, m_Size, m_Alignment);
   }
 #endif // __SYCL_DEVICE_ONLY__

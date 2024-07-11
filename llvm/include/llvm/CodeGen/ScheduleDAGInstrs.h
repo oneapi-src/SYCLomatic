@@ -20,7 +20,7 @@
 #include "llvm/ADT/SparseMultiSet.h"
 #include "llvm/ADT/SparseSet.h"
 #include "llvm/ADT/identity.h"
-#include "llvm/CodeGen/LivePhysRegs.h"
+#include "llvm/CodeGen/LiveRegUnits.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/ScheduleDAG.h"
 #include "llvm/CodeGen/TargetRegisterInfo.h"
@@ -88,7 +88,7 @@ namespace llvm {
   /// Use a SparseMultiSet to track physical registers. Storage is only
   /// allocated once for the pass. It can be cleared in constant time and reused
   /// without any frees.
-  using Reg2SUnitsMap =
+  using RegUnit2SUnitsMap =
       SparseMultiSet<PhysRegSUOper, identity<unsigned>, uint16_t>;
 
   /// Use SparseSet as a SparseMap by relying on the fact that it never
@@ -166,8 +166,8 @@ namespace llvm {
     /// iterate upward through the instructions. This is allocated here instead
     /// of inside BuildSchedGraph to avoid the need for it to be initialized and
     /// destructed for each block.
-    Reg2SUnitsMap Defs;
-    Reg2SUnitsMap Uses;
+    RegUnit2SUnitsMap Defs;
+    RegUnit2SUnitsMap Uses;
 
     /// Tracks the last instruction(s) in this region defining each virtual
     /// register. There may be multiple current definitions for a register with
@@ -191,7 +191,19 @@ namespace llvm {
     /// applicable).
     using SUList = std::list<SUnit *>;
 
+    /// The direction that should be used to dump the scheduled Sequence.
+    enum DumpDirection {
+      TopDown,
+      BottomUp,
+      Bidirectional,
+      NotSet,
+    };
+
+    void setDumpDirection(DumpDirection D) { DumpDir = D; }
+
   protected:
+    DumpDirection DumpDir = NotSet;
+
     /// A map from ValueType to SUList, used during DAG construction, as
     /// a means of remembering which SUs depend on which memory locations.
     class Value2SUsMap;
@@ -251,7 +263,7 @@ namespace llvm {
     MachineInstr *FirstDbgValue = nullptr;
 
     /// Set of live physical registers for updating kill flags.
-    LivePhysRegs LiveRegs;
+    LiveRegUnits LiveRegs;
 
   public:
     explicit ScheduleDAGInstrs(MachineFunction &mf,

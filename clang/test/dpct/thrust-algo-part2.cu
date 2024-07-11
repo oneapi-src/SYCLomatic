@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-algo-part2 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust-algo-part2/thrust-algo-part2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-algo-part2/thrust-algo-part2.dp.cpp -o %T/thrust-algo-part2/thrust-algo-part2.dp.o %}
 
 #include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>

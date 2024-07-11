@@ -40,11 +40,16 @@ sampler_impl::sampler_impl(cl_sampler clSampler, const context &syclContext) {
 }
 
 sampler_impl::~sampler_impl() {
-  std::lock_guard<std::mutex> Lock(MMutex);
-  for (auto &Iter : MContextToSampler) {
-    // TODO catch an exception and add it to the list of asynchronous exceptions
-    const PluginPtr &Plugin = getSyclObjImpl(Iter.first)->getPlugin();
-    Plugin->call<PiApiKind::piSamplerRelease>(Iter.second);
+  try {
+    std::lock_guard<std::mutex> Lock(MMutex);
+    for (auto &Iter : MContextToSampler) {
+      // TODO catch an exception and add it to the list of asynchronous
+      // exceptions
+      const PluginPtr &Plugin = getSyclObjImpl(Iter.first)->getPlugin();
+      Plugin->call<PiApiKind::piSamplerRelease>(Iter.second);
+    }
+  } catch (std::exception &e) {
+    __SYCL_REPORT_EXCEPTION_TO_STREAM("exception in ~sample_impl", e);
   }
 }
 
@@ -73,9 +78,9 @@ sampler_impl::getOrCreateSampler(const context &Context) {
   errcode_ret = Plugin->call_nocheck<PiApiKind::piSamplerCreate>(
       getSyclObjImpl(Context)->getHandleRef(), sprops, &resultSampler);
 
-  if (errcode_ret == PI_ERROR_INVALID_OPERATION)
-    throw feature_not_supported("Images are not supported by this device.",
-                                errcode_ret);
+  if (errcode_ret == PI_ERROR_UNSUPPORTED_FEATURE)
+    throw sycl::exception(sycl::errc::feature_not_supported,
+                          "Images are not supported by this device.");
 
   Plugin->checkPiResult(errcode_ret);
   std::lock_guard<std::mutex> Lock(MMutex);

@@ -1,8 +1,9 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing -ferror-limit=50
+// RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp --match-full-lines %s
-
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp -o %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.o %}
+#ifndef BUILD_TEST
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
@@ -643,3 +644,9 @@ template <bool is_ture> void foo() {
         }
       });
 }
+
+template <class T> auto foo2(T t) {
+  // CHECK: return dpct::make_constant_iterator(std::make_tuple(t, false));
+  return thrust::make_constant_iterator(thrust::make_tuple<T, bool>(t, false));
+}
+#endif

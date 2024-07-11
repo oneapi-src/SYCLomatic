@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_reduce_sum %S/device_reduce_sum.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/device_reduce_sum/device_reduce_sum.dp.cpp  %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/device_reduce_sum/device_reduce_sum.dp.cpp -o %T/devicelevel/device_reduce_sum/device_reduce_sum.dp.o %}
 
 // CHECK:#include <oneapi/dpl/execution>
 // CHECK:#include <oneapi/dpl/algorithm>

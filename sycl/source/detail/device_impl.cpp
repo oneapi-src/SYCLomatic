@@ -17,11 +17,6 @@ namespace sycl {
 inline namespace _V1 {
 namespace detail {
 
-device_impl::device_impl()
-    : MIsHostDevice(true), MPlatform(platform_impl::getHostPlatformImpl()),
-      // assert is natively supported by host
-      MIsAssertFailSupported(true) {}
-
 device_impl::device_impl(pi_native_handle InteropDeviceHandle,
                          const PluginPtr &Plugin)
     : device_impl(InteropDeviceHandle, nullptr, nullptr, Plugin) {}
@@ -39,8 +34,7 @@ device_impl::device_impl(sycl::detail::pi::PiDevice Device,
 device_impl::device_impl(pi_native_handle InteropDeviceHandle,
                          sycl::detail::pi::PiDevice Device,
                          PlatformImplPtr Platform, const PluginPtr &Plugin)
-    : MDevice(Device), MIsHostDevice(false),
-      MDeviceHostBaseTime(std::make_pair(0, 0)) {
+    : MDevice(Device), MDeviceHostBaseTime(std::make_pair(0, 0)) {
 
   bool InteroperabilityConstructor = false;
   if (Device == nullptr) {
@@ -84,13 +78,11 @@ device_impl::device_impl(pi_native_handle InteropDeviceHandle,
 }
 
 device_impl::~device_impl() {
-  if (!MIsHostDevice) {
-    // TODO catch an exception and put it to list of asynchronous exceptions
-    const PluginPtr &Plugin = getPlugin();
-    sycl::detail::pi::PiResult Err =
-        Plugin->call_nocheck<PiApiKind::piDeviceRelease>(MDevice);
-    __SYCL_CHECK_OCL_CODE_NO_EXC(Err);
-  }
+  // TODO catch an exception and put it to list of asynchronous exceptions
+  const PluginPtr &Plugin = getPlugin();
+  sycl::detail::pi::PiResult Err =
+      Plugin->call_nocheck<PiApiKind::piDeviceRelease>(MDevice);
+  __SYCL_CHECK_OCL_CODE_NO_EXC(Err);
 }
 
 bool device_impl::is_affinity_supported(
@@ -101,11 +93,6 @@ bool device_impl::is_affinity_supported(
 }
 
 cl_device_id device_impl::get() const {
-  if (MIsHostDevice) {
-    throw invalid_object_error(
-        "This instance of device doesn't support OpenCL interoperability.",
-        PI_ERROR_INVALID_DEVICE);
-  }
   // TODO catch an exception and put it to list of asynchronous exceptions
   getPlugin()->call<PiApiKind::piDeviceRetain>(MDevice);
   return pi::cast<cl_device_id>(getNative());
@@ -117,9 +104,6 @@ platform device_impl::get_platform() const {
 
 template <typename Param>
 typename Param::return_type device_impl::get_info() const {
-  if (is_host()) {
-    return get_device_info_host<Param>();
-  }
   return get_device_info<Param>(
       MPlatform->getOrMakeDeviceImpl(MDevice, MPlatform));
 }
@@ -143,10 +127,43 @@ typename Param::return_type device_impl::get_info() const {
 #include <sycl/info/ext_oneapi_device_traits.def>
 #undef __SYCL_PARAM_TRAITS_SPEC
 
+template <>
+typename info::platform::version::return_type
+device_impl::get_backend_info<info::platform::version>() const {
+  if (getBackend() != backend::opencl) {
+    throw sycl::exception(errc::backend_mismatch,
+                          "the info::platform::version info descriptor can "
+                          "only be queried with an OpenCL backend");
+  }
+  return get_platform().get_info<info::platform::version>();
+}
+
+template <>
+typename info::device::version::return_type
+device_impl::get_backend_info<info::device::version>() const {
+  if (getBackend() != backend::opencl) {
+    throw sycl::exception(errc::backend_mismatch,
+                          "the info::device::version info descriptor can only "
+                          "be queried with an OpenCL backend");
+  }
+  return get_info<info::device::version>();
+}
+
+template <>
+typename info::device::backend_version::return_type
+device_impl::get_backend_info<info::device::backend_version>() const {
+  if (getBackend() != backend::ext_oneapi_level_zero) {
+    throw sycl::exception(errc::backend_mismatch,
+                          "the info::device::backend_version info descriptor "
+                          "can only be queried with a Level Zero backend");
+  }
+  return "";
+  // Currently The Level Zero backend does not define the value of this
+  // information descriptor and implementations are encouraged to return the
+  // empty string as per specification.
+}
+
 bool device_impl::has_extension(const std::string &ExtensionName) const {
-  if (MIsHostDevice)
-    // TODO: implement extension management for host device;
-    return false;
   std::string AllExtensionNames =
       get_device_info_string(PiInfoCode<info::device::extensions>::value);
   return (AllExtensionNames.find(ExtensionName) != std::string::npos);
@@ -188,8 +205,6 @@ device_impl::create_sub_devices(const cl_device_partition_property *Properties,
 }
 
 std::vector<device> device_impl::create_sub_devices(size_t ComputeUnits) const {
-  assert(!MIsHostDevice && "Partitioning is not supported on host.");
-
   if (!is_partition_supported(info::partition_property::partition_equally)) {
     throw sycl::feature_not_supported(
         "Device does not support "
@@ -212,8 +227,6 @@ std::vector<device> device_impl::create_sub_devices(size_t ComputeUnits) const {
 
 std::vector<device>
 device_impl::create_sub_devices(const std::vector<size_t> &Counts) const {
-  assert(!MIsHostDevice && "Partitioning is not supported on host.");
-
   if (!is_partition_supported(info::partition_property::partition_by_counts)) {
     throw sycl::feature_not_supported(
         "Device does not support "
@@ -255,8 +268,6 @@ device_impl::create_sub_devices(const std::vector<size_t> &Counts) const {
 
 std::vector<device> device_impl::create_sub_devices(
     info::partition_affinity_domain AffinityDomain) const {
-  assert(!MIsHostDevice && "Partitioning is not supported on host.");
-
   if (!is_partition_supported(
           info::partition_property::partition_by_affinity_domain)) {
     throw sycl::feature_not_supported(
@@ -283,8 +294,6 @@ std::vector<device> device_impl::create_sub_devices(
 }
 
 std::vector<device> device_impl::create_sub_devices() const {
-  assert(!MIsHostDevice && "Partitioning is not supported on host.");
-
   if (!is_partition_supported(
           info::partition_property::ext_intel_partition_by_cslice)) {
     throw sycl::feature_not_supported(
@@ -318,7 +327,8 @@ bool device_impl::has(aspect Aspect) const {
 
   switch (Aspect) {
   case aspect::host:
-    return is_host();
+    // Deprecated
+    return false;
   case aspect::cpu:
     return is_cpu();
   case aspect::gpu:
@@ -327,7 +337,7 @@ bool device_impl::has(aspect Aspect) const {
     return is_accelerator();
   case aspect::custom:
     return false;
-  // TODO: Implement this for FPGA and ESIMD emulators.
+  // TODO: Implement this for FPGA emulator.
   case aspect::emulated:
     return false;
   case aspect::host_debuggable:
@@ -336,8 +346,6 @@ bool device_impl::has(aspect Aspect) const {
     return has_extension("cl_khr_fp16");
   case aspect::fp64:
     return has_extension("cl_khr_fp64");
-  case aspect::ext_oneapi_bfloat16_math_functions:
-    return get_info<info::device::ext_oneapi_bfloat16_math_functions>();
   case aspect::int64_base_atomics:
     return has_extension("cl_khr_int64_base_atomics");
   case aspect::int64_extended_atomics:
@@ -359,16 +367,14 @@ bool device_impl::has(aspect Aspect) const {
   case aspect::ext_intel_mem_channel:
     return get_info<info::device::ext_intel_mem_channel>();
   case aspect::usm_atomic_host_allocations:
-    return is_host() ||
-           (get_device_info_impl<pi_usm_capabilities,
+    return (get_device_info_impl<pi_usm_capabilities,
                                  info::device::usm_host_allocations>::
                 get(MPlatform->getDeviceImpl(MDevice)) &
             PI_USM_CONCURRENT_ATOMIC_ACCESS);
   case aspect::usm_shared_allocations:
     return get_info<info::device::usm_shared_allocations>();
   case aspect::usm_atomic_shared_allocations:
-    return is_host() ||
-           (get_device_info_impl<pi_usm_capabilities,
+    return (get_device_info_impl<pi_usm_capabilities,
                                  info::device::usm_shared_allocations>::
                 get(MPlatform->getDeviceImpl(MDevice)) &
             PI_USM_CONCURRENT_ATOMIC_ACCESS);
@@ -546,16 +552,181 @@ bool device_impl::has(aspect Aspect) const {
             sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
     return call_successful && support;
   }
+  case aspect::ext_oneapi_bindless_sampled_image_fetch_1d_usm: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice,
+            PI_EXT_ONEAPI_DEVICE_INFO_BINDLESS_SAMPLED_IMAGE_FETCH_1D_USM,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
   }
-  throw runtime_error("This device aspect has not been implemented yet.",
-                      PI_ERROR_INVALID_DEVICE);
-}
+  case aspect::ext_oneapi_bindless_sampled_image_fetch_1d: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_BINDLESS_SAMPLED_IMAGE_FETCH_1D,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_bindless_sampled_image_fetch_2d_usm: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice,
+            PI_EXT_ONEAPI_DEVICE_INFO_BINDLESS_SAMPLED_IMAGE_FETCH_2D_USM,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_bindless_sampled_image_fetch_2d: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_BINDLESS_SAMPLED_IMAGE_FETCH_2D,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_bindless_sampled_image_fetch_3d_usm: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice,
+            PI_EXT_ONEAPI_DEVICE_INFO_BINDLESS_SAMPLED_IMAGE_FETCH_3D_USM,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_bindless_sampled_image_fetch_3d: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_BINDLESS_SAMPLED_IMAGE_FETCH_3D,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_cubemap: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_CUBEMAP_SUPPORT, sizeof(pi_bool),
+            &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_cubemap_seamless_filtering: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice,
+            PI_EXT_ONEAPI_DEVICE_INFO_CUBEMAP_SEAMLESS_FILTERING_SUPPORT,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_intel_esimd: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_INTEL_DEVICE_INFO_ESIMD_SUPPORT, sizeof(pi_bool),
+            &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_ballot_group:
+  case aspect::ext_oneapi_fixed_size_group:
+  case aspect::ext_oneapi_opportunistic_group: {
+    return (this->getBackend() == backend::ext_oneapi_level_zero) ||
+           (this->getBackend() == backend::opencl) ||
+           (this->getBackend() == backend::ext_oneapi_cuda);
+  }
+  case aspect::ext_oneapi_tangle_group: {
+    // TODO: tangle_group is not currently supported for CUDA devices. Add when
+    //       implemented.
+    return (this->getBackend() == backend::ext_oneapi_level_zero) ||
+           (this->getBackend() == backend::opencl);
+  }
+  case aspect::ext_intel_matrix: {
+    using arch = sycl::ext::oneapi::experimental::architecture;
+    const std::vector<arch> supported_archs = {
+        arch::intel_cpu_spr, arch::intel_gpu_pvc, arch::intel_gpu_dg2_g10,
+        arch::intel_gpu_dg2_g11, arch::intel_gpu_dg2_g12};
+    try {
+      return std::any_of(
+          supported_archs.begin(), supported_archs.end(),
+          [=](const arch a) { return this->extOneapiArchitectureIs(a); });
+    } catch (const sycl::exception &) {
+      // If we're here it means the device does not support architecture
+      // querying
+      return false;
+    }
+  }
+  case aspect::ext_oneapi_is_composite: {
+    auto components = get_info<
+        sycl::ext::oneapi::experimental::info::device::component_devices>();
+    // Any device with ext_oneapi_is_composite aspect will have at least two
+    // constituent component devices.
+    return components.size() >= 2;
+  }
+  case aspect::ext_oneapi_is_component: {
+    typename sycl_to_pi<device>::type Result = nullptr;
+    bool CallSuccessful = getPlugin()->call_nocheck<PiApiKind::piDeviceGetInfo>(
+                              getHandleRef(),
+                              PiInfoCode<ext::oneapi::experimental::info::
+                                             device::composite_device>::value,
+                              sizeof(Result), &Result, nullptr) == PI_SUCCESS;
 
-std::shared_ptr<device_impl> device_impl::getHostDeviceImpl() {
-  static std::shared_ptr<device_impl> HostImpl =
-      std::make_shared<device_impl>();
+    return CallSuccessful && Result != nullptr;
+  }
+  case aspect::ext_oneapi_graph: {
+    pi_bool SupportsCommandBufferUpdate = false;
+    bool CallSuccessful =
+        getPlugin()->call_nocheck<PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_COMMAND_BUFFER_UPDATE_SUPPORT,
+            sizeof(SupportsCommandBufferUpdate), &SupportsCommandBufferUpdate,
+            nullptr) == PI_SUCCESS;
+    if (!CallSuccessful) {
+      return PI_FALSE;
+    }
 
-  return HostImpl;
+    return has(aspect::ext_oneapi_limited_graph) && SupportsCommandBufferUpdate;
+  }
+  case aspect::ext_oneapi_limited_graph: {
+    pi_bool SupportsCommandBuffers = false;
+    bool CallSuccessful =
+        getPlugin()->call_nocheck<PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_COMMAND_BUFFER_SUPPORT,
+            sizeof(SupportsCommandBuffers), &SupportsCommandBuffers,
+            nullptr) == PI_SUCCESS;
+    if (!CallSuccessful) {
+      return PI_FALSE;
+    }
+
+    return SupportsCommandBuffers;
+  }
+  case aspect::ext_intel_fpga_task_sequence: {
+    return is_accelerator();
+  }
+  case aspect::ext_oneapi_private_alloca: {
+    // Extension only supported on SPIR-V targets.
+    backend be = getBackend();
+    return be == sycl::backend::ext_oneapi_level_zero ||
+           be == sycl::backend::opencl;
+  }
+  case aspect::ext_oneapi_queue_profiling_tag: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_TIMESTAMP_RECORDING_SUPPORT,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  case aspect::ext_oneapi_virtual_mem: {
+    pi_bool support = PI_FALSE;
+    bool call_successful =
+        getPlugin()->call_nocheck<detail::PiApiKind::piDeviceGetInfo>(
+            MDevice, PI_EXT_ONEAPI_DEVICE_INFO_SUPPORTS_VIRTUAL_MEM,
+            sizeof(pi_bool), &support, nullptr) == PI_SUCCESS;
+    return call_successful && support;
+  }
+  }
+
+  return false; // This device aspect has not been implemented yet.
 }
 
 bool device_impl::isAssertFailSupported() const {
@@ -578,8 +749,8 @@ ext::oneapi::experimental::architecture device_impl::getDeviceArch() const {
   return MDeviceArch;
 }
 
-// On first call this function queries for device timestamp
-// along with host synchronized timestamp and stores it in memeber varaible
+// On the first call this function queries for device timestamp
+// along with host synchronized timestamp and stores it in member variable
 // MDeviceHostBaseTime. Subsequent calls to this function would just retrieve
 // the host timestamp, compute difference against the host timestamp in
 // MDeviceHostBaseTime and calculate the device timestamp based on the
@@ -594,21 +765,32 @@ uint64_t device_impl::getCurrentDeviceTime() {
   uint64_t HostTime =
       duration_cast<nanoseconds>(steady_clock::now().time_since_epoch())
           .count();
-  if (MIsHostDevice) {
-    return HostTime;
-  }
 
   // To account for potential clock drift between host clock and device clock.
   // The value set is arbitrary: 200 seconds
   constexpr uint64_t TimeTillRefresh = 200e9;
+  assert(HostTime >= MDeviceHostBaseTime.second);
   uint64_t Diff = HostTime - MDeviceHostBaseTime.second;
 
-  if (Diff > TimeTillRefresh || Diff <= 0) {
+  // If getCurrentDeviceTime is called for the first time or we have to refresh.
+  if (!MDeviceHostBaseTime.second || Diff > TimeTillRefresh) {
     const auto &Plugin = getPlugin();
     auto Result =
         Plugin->call_nocheck<detail::PiApiKind::piGetDeviceAndHostTimer>(
             MDevice, &MDeviceHostBaseTime.first, &MDeviceHostBaseTime.second);
-
+    // We have to remember base host timestamp right after PI call and it is
+    // going to be used for calculation of the device timestamp at the next
+    // getCurrentDeviceTime() call. We need to do it here because getPlugin()
+    // and piGetDeviceAndHostTimer calls may take significant amount of time,
+    // for example on the first call to getPlugin plugins may need to be
+    // initialized. If we use timestamp from the beginning of the function then
+    // the difference between host timestamps of the current
+    // getCurrentDeviceTime and the next getCurrentDeviceTime will be incorrect
+    // because it will include execution time of the code before we get device
+    // timestamp from piGetDeviceAndHostTimer.
+    HostTime =
+        duration_cast<nanoseconds>(steady_clock::now().time_since_epoch())
+            .count();
     if (Result == PI_ERROR_INVALID_OPERATION) {
       char *p = nullptr;
       Plugin->call_nocheck<detail::PiApiKind::piPluginGetLastError>(&p);
@@ -635,6 +817,104 @@ bool device_impl::isGetDeviceAndHostTimerSupported() {
       Plugin->call_nocheck<detail::PiApiKind::piGetDeviceAndHostTimer>(
           MDevice, &DeviceTime, &HostTime);
   return Result != PI_ERROR_INVALID_OPERATION;
+}
+
+bool device_impl::extOneapiCanCompile(
+    ext::oneapi::experimental::source_language Language) {
+  try {
+    return sycl::ext::oneapi::experimental::detail::
+        is_source_kernel_bundle_supported(getBackend(), Language);
+  } catch (sycl::exception &) {
+    return false;
+  }
+}
+
+// Returns the strongest guarantee that can be provided by the host device for
+// threads created at threadScope from a coordination scope given by
+// coordinationScope
+sycl::ext::oneapi::experimental::forward_progress_guarantee
+device_impl::getHostProgressGuarantee(
+    ext::oneapi::experimental::execution_scope,
+    ext::oneapi::experimental::execution_scope) {
+  return sycl::ext::oneapi::experimental::forward_progress_guarantee::
+      weakly_parallel;
+}
+
+// Returns the strongest progress guarantee that can be provided by this device
+// for threads created at threadScope from the coordination scope given by
+// coordinationScope.
+sycl::ext::oneapi::experimental::forward_progress_guarantee
+device_impl::getProgressGuarantee(
+    ext::oneapi::experimental::execution_scope threadScope,
+    ext::oneapi::experimental::execution_scope coordinationScope) const {
+  using forward_progress_guarantee =
+      ext::oneapi::experimental::forward_progress_guarantee;
+  using execution_scope = ext::oneapi::experimental::execution_scope;
+  const int executionScopeSize = 4;
+  (void)coordinationScope;
+  int threadScopeNum = static_cast<int>(threadScope);
+  // we get the immediate progress guarantee that is provided by each scope
+  // between root_group and threadScope and then return the weakest of these.
+  // Counterintuitively, this corresponds to taking the max of the enum values
+  // because of how the forward_progress_guarantee enum values are declared.
+  int guaranteeNum = static_cast<int>(
+      getImmediateProgressGuarantee(execution_scope::root_group));
+  for (int currentScope = executionScopeSize - 2; currentScope > threadScopeNum;
+       --currentScope) {
+    guaranteeNum = std::max(guaranteeNum,
+                            static_cast<int>(getImmediateProgressGuarantee(
+                                static_cast<execution_scope>(currentScope))));
+  }
+  return static_cast<forward_progress_guarantee>(guaranteeNum);
+}
+
+bool device_impl::supportsForwardProgress(
+    ext::oneapi::experimental::forward_progress_guarantee guarantee,
+    ext::oneapi::experimental::execution_scope threadScope,
+    ext::oneapi::experimental::execution_scope coordinationScope) const {
+  using ReturnT =
+      std::vector<ext::oneapi::experimental::forward_progress_guarantee>;
+  auto guarantees = getProgressGuaranteesUpTo<ReturnT>(
+      getProgressGuarantee(threadScope, coordinationScope));
+  return std::find(guarantees.begin(), guarantees.end(), guarantee) !=
+         guarantees.end();
+}
+
+// Returns the progress guarantee provided for a coordination scope
+// given by coordination_scope for threads created at a scope
+// immediately below coordination_scope. For example, for root_group
+// coordination scope it returns the progress guarantee provided
+// at root_group for threads created at work_group.
+ext::oneapi::experimental::forward_progress_guarantee
+device_impl::getImmediateProgressGuarantee(
+    ext::oneapi::experimental::execution_scope coordination_scope) const {
+  using forward_progress_guarantee =
+      ext::oneapi::experimental::forward_progress_guarantee;
+  using execution_scope = ext::oneapi::experimental::execution_scope;
+  if (is_cpu() && getBackend() == backend::opencl) {
+    switch (coordination_scope) {
+    case execution_scope::root_group:
+      return forward_progress_guarantee::parallel;
+    case execution_scope::work_group:
+    case execution_scope::sub_group:
+      return forward_progress_guarantee::weakly_parallel;
+    default:
+      throw sycl::exception(sycl::errc::invalid,
+                            "Work item is not a valid coordination scope!");
+    }
+  } else if (is_gpu() && getBackend() == backend::ext_oneapi_level_zero) {
+    switch (coordination_scope) {
+    case execution_scope::root_group:
+    case execution_scope::work_group:
+      return forward_progress_guarantee::concurrent;
+    case execution_scope::sub_group:
+      return forward_progress_guarantee::weakly_parallel;
+    default:
+      throw sycl::exception(sycl::errc::invalid,
+                            "Work item is not a valid coordination scope!");
+    }
+  }
+  return forward_progress_guarantee::weakly_parallel;
 }
 
 } // namespace detail

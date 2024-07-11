@@ -2,6 +2,7 @@
 
 // RUN: dpct --format-range=none --out-root %T/unused_atomic_macro %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/unused_atomic_macro/unused_atomic_macro.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/unused_atomic_macro/unused_atomic_macro.dp.cpp -o %T/unused_atomic_macro/unused_atomic_macro.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>

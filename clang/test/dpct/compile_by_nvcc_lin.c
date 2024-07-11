@@ -13,6 +13,7 @@
 // RUN: echo "]" >> %T/compile_by_nvcc/compile_commands.json
 // RUN: dpct --format-range=none --out-root %T/compile_by_nvcc -p=./ --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/compile_by_nvcc/compile_by_nvcc_lin.c.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/compile_by_nvcc/compile_by_nvcc_lin.c.dp.cpp -o %T/compile_by_nvcc/compile_by_nvcc_lin.c.dp.o %}
 // RUN: rm -rf %T/compile_by_nvcc
 
 

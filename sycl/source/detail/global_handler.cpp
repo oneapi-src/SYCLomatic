@@ -36,6 +36,11 @@ namespace detail {
 using LockGuard = std::lock_guard<SpinLock>;
 SpinLock GlobalHandler::MSyclGlobalHandlerProtector{};
 
+// forward decl
+void shutdown_win(); // TODO: win variant will go away soon
+void shutdown_early();
+void shutdown_late();
+
 // Utility class to track references on object.
 // Used for GlobalHandler now and created as thread_local object on the first
 // Scheduler usage. Origin idea is to track usage of Scheduler from main and
@@ -49,16 +54,18 @@ public:
       MCounter++;
   }
   ~ObjectUsageCounter() {
-    if (!MModifyCounter)
-      return;
+    try {
+      if (!MModifyCounter)
+        return;
 
-    MCounter--;
-    if (!MCounter) {
       LockGuard Guard(GlobalHandler::MSyclGlobalHandlerProtector);
+      MCounter--;
       GlobalHandler *RTGlobalObjHandler = GlobalHandler::getInstancePtr();
       if (RTGlobalObjHandler) {
-        RTGlobalObjHandler->prepareSchedulerToRelease();
+        RTGlobalObjHandler->prepareSchedulerToRelease(!MCounter);
       }
+    } catch (std::exception &e) {
+      __SYCL_REPORT_EXCEPTION_TO_STREAM("exception in ~ObjectUsageCounter", e);
     }
   }
 
@@ -142,7 +149,7 @@ void GlobalHandler::attachScheduler(Scheduler *Scheduler) {
   // The method is used in unit tests only. Do not protect with lock since
   // releaseResources will cause dead lock due to host queue release
   if (MScheduler.Inst)
-    prepareSchedulerToRelease();
+    prepareSchedulerToRelease(true);
   MScheduler.Inst.reset(Scheduler);
 }
 
@@ -167,6 +174,8 @@ Scheduler &GlobalHandler::getScheduler() {
   enableOnCrashStackPrinting();
   return *MScheduler.Inst;
 }
+
+bool GlobalHandler::isSchedulerAlive() const { return MScheduler.Inst.get(); }
 
 void GlobalHandler::registerSchedulerUsage(bool ModifyCounter) {
   thread_local ObjectUsageCounter SchedulerCounter(ModifyCounter);
@@ -202,10 +211,6 @@ std::vector<PluginPtr> &GlobalHandler::getPlugins() {
   enableOnCrashStackPrinting();
   return getOrCreate(MPlugins);
 }
-device_filter_list &
-GlobalHandler::getDeviceFilterList(const std::string &InitValue) {
-  return getOrCreate(MDeviceFilterList, InitValue);
-}
 
 ods_target_list &
 GlobalHandler::getOneapiDeviceSelectorTargets(const std::string &InitValue) {
@@ -225,31 +230,35 @@ ThreadPool &GlobalHandler::getHostTaskThreadPool() {
 
 void GlobalHandler::releaseDefaultContexts() {
   // Release shared-pointers to SYCL objects.
-#ifndef _WIN32
+  // Note that on Windows the destruction of the default context
+  // races with the detaching of the DLL object that calls piTearDown.
+
   MPlatformToDefaultContextCache.Inst.reset(nullptr);
-#else
-  // Windows does not maintain dependencies between dynamically loaded libraries
-  // and can unload SYCL runtime dependencies before sycl.dll's DllMain has
-  // finished. To avoid calls to nowhere, intentionally leak platform to device
-  // cache. This will prevent destructors from being called, thus no PI cleanup
-  // routines will be called in the end.
-  // Update: the pi_win_proxy_loader addresses this for SYCL's own dependencies,
-  // but the GPU device dlls seem to manually load yet another DLL which may
-  // have been released when this function is called. So we still release() and
-  // leak until that is addressed. context destructs fine on CPU device.
-  MPlatformToDefaultContextCache.Inst.release();
-#endif
 }
 
-struct DefaultContextReleaseHandler {
-  ~DefaultContextReleaseHandler() {
-    GlobalHandler::instance().releaseDefaultContexts();
+struct EarlyShutdownHandler {
+  ~EarlyShutdownHandler() {
+    try {
+#ifdef _WIN32
+      // on Windows we keep to the existing shutdown procedure
+      GlobalHandler::instance().releaseDefaultContexts();
+#else
+      shutdown_early();
+#endif
+    } catch (std::exception &e) {
+      __SYCL_REPORT_EXCEPTION_TO_STREAM("exception in ~EarlyShutdownHandler",
+                                        e);
+    }
   }
 };
 
-void GlobalHandler::registerDefaultContextReleaseHandler() {
-  static DefaultContextReleaseHandler handler{};
+void GlobalHandler::registerEarlyShutdownHandler() {
+  static EarlyShutdownHandler handler{};
 }
+
+bool GlobalHandler::isOkToDefer() const { return OkToDefer; }
+
+void GlobalHandler::endDeferredRelease() { OkToDefer = false; }
 
 // Note: Split from shutdown so it is available to the unittests for ensuring
 //       that the mock plugin is the lone plugin.
@@ -259,11 +268,11 @@ void GlobalHandler::unloadPlugins() {
   // there's no need to load and unload plugins.
   if (MPlugins.Inst) {
     for (const PluginPtr &Plugin : getPlugins()) {
-      // PluginParameter is reserved for future use that can control
-      // some parameters in the plugin tear-down process.
-      // Currently, it is not used.
-      void *PluginParameter = nullptr;
-      Plugin->call<PiApiKind::piTearDown>(PluginParameter);
+      // PluginParameter for Teardown is the boolean tracking if a
+      // given plugin has been teardown successfully.
+      // This tracking prevents usage of this plugin after teardown
+      // has been completed to avoid invalid resource access.
+      Plugin->call<PiApiKind::piTearDown>(&Plugin->pluginReleased);
       Plugin->unload();
     }
   }
@@ -271,11 +280,13 @@ void GlobalHandler::unloadPlugins() {
   getPlugins().clear();
 }
 
-void GlobalHandler::prepareSchedulerToRelease() {
+void GlobalHandler::prepareSchedulerToRelease(bool Blocking) {
 #ifndef _WIN32
-  drainThreadPool();
+  if (Blocking)
+    drainThreadPool();
   if (MScheduler.Inst)
-    MScheduler.Inst->releaseResources();
+    MScheduler.Inst->releaseResources(Blocking ? BlockingT::BLOCKING
+                                               : BlockingT::NON_BLOCKING);
 #endif
 }
 
@@ -291,30 +302,37 @@ void GlobalHandler::drainThreadPool() {
 // itself is very aggressive about reclaiming memory. Thus,
 // we focus solely on unloading the plugins, so as to not
 // accidentally retain device handles. etc
-void shutdown() {
+void shutdown_win() {
   GlobalHandler *&Handler = GlobalHandler::getInstancePtr();
   Handler->unloadPlugins();
 }
 #else
-void shutdown() {
+void shutdown_early() {
   const LockGuard Lock{GlobalHandler::MSyclGlobalHandlerProtector};
   GlobalHandler *&Handler = GlobalHandler::getInstancePtr();
   if (!Handler)
     return;
 
+  // Now that we are shutting down, we will no longer defer MemObj releases.
+  Handler->endDeferredRelease();
+
   // Ensure neither host task is working so that no default context is accessed
   // upon its release
-  Handler->prepareSchedulerToRelease();
+  Handler->prepareSchedulerToRelease(true);
 
   if (Handler->MHostTaskThreadPool.Inst)
     Handler->MHostTaskThreadPool.Inst->finishAndWait();
 
-  // If default contexts are requested after the first default contexts have
-  // been released there may be a new default context. These must be released
-  // prior to closing the plugins.
-  // Note: Releasing a default context here may cause failures in plugins with
-  // global state as the global state may have been released.
+  // This releases OUR reference to the default context, but
+  // other may yet have refs
   Handler->releaseDefaultContexts();
+}
+
+void shutdown_late() {
+  const LockGuard Lock{GlobalHandler::MSyclGlobalHandlerProtector};
+  GlobalHandler *&Handler = GlobalHandler::getInstancePtr();
+  if (!Handler)
+    return;
 
   // First, release resources, that may access plugins.
   Handler->MPlatformCache.Inst.reset(nullptr);
@@ -322,10 +340,11 @@ void shutdown() {
   Handler->MProgramManager.Inst.reset(nullptr);
 
   // Clear the plugins and reset the instance if it was there.
-  Handler->MXPTIRegistry.Inst.reset(nullptr);
   Handler->unloadPlugins();
   if (Handler->MPlugins.Inst)
     Handler->MPlugins.Inst.reset(nullptr);
+
+  Handler->MXPTIRegistry.Inst.reset(nullptr);
 
   // Release the rest of global resources.
   delete Handler;
@@ -356,12 +375,14 @@ extern "C" __SYCL_EXPORT BOOL WINAPI DllMain(HINSTANCE hinstDLL,
                    // TODO: figure out what XPTI is doing that prevents release.
 #endif
 
-    shutdown();
+    shutdown_win();
     break;
   case DLL_PROCESS_ATTACH:
     if (PrintPiTrace)
       std::cout << "---> DLL_PROCESS_ATTACH syclx.dll\n" << std::endl;
+    break;
   case DLL_THREAD_ATTACH:
+    break;
   case DLL_THREAD_DETACH:
     break;
   }
@@ -372,7 +393,7 @@ extern "C" __SYCL_EXPORT BOOL WINAPI DllMain(HINSTANCE hinstDLL,
 // destructors. Priorities 0-100 are reserved by the compiler. The priority
 // value 110 allows SYCL users to run their destructors after runtime library
 // deinitialization.
-__attribute__((destructor(110))) static void syclUnload() { shutdown(); }
+__attribute__((destructor(110))) static void syclUnload() { shutdown_late(); }
 #endif
 } // namespace detail
 } // namespace _V1

@@ -577,30 +577,6 @@ func.func @test_remf_scalable_vector(%arg0 : vector<[8]xf64>, %arg1 : vector<[8]
   return %0 : vector<[8]xf64>
 }
 
-// CHECK-LABEL: test_is_nan
-func.func @test_is_nan(%arg0 : f32) -> i1 {
-  %0 = arith.is_nan %arg0 : f32
-  func.return %0 : i1
-}
-
-// CHECK-LABEL: test_is_nan_vector
-func.func @test_is_nan_vector(%arg0 : vector<2x2xf32>) -> vector<2x2xi1> {
-  %0 = arith.is_nan %arg0 : vector<2x2xf32>
-  func.return %0 : vector<2x2xi1>
-}
-
-// CHECK-LABEL: test_is_inf
-func.func @test_is_inf(%arg0 : f32) -> i1 {
-  %0 = arith.is_inf %arg0 : f32
-  func.return %0 : i1
-}
-
-// CHECK-LABEL: test_is_inf_vector
-func.func @test_is_inf_vector(%arg0 : vector<2x2xf32>) -> vector<2x2xi1> {
-  %0 = arith.is_inf %arg0 : vector<2x2xf32>
-  func.return %0 : vector<2x2xi1>
-}
-
 // CHECK-LABEL: test_extui
 func.func @test_extui(%arg0 : i32) -> i64 {
   %0 = arith.extui %arg0 : i32 to i64
@@ -725,6 +701,16 @@ func.func @test_truncf_vector(%arg0 : vector<8xf32>) -> vector<8xbf16> {
 func.func @test_truncf_scalable_vector(%arg0 : vector<[8]xf32>) -> vector<[8]xbf16> {
   %0 = arith.truncf %arg0 : vector<[8]xf32> to vector<[8]xbf16>
   return %0 : vector<[8]xbf16>
+}
+
+// CHECK-LABEL: test_truncf_rounding_mode
+func.func @test_truncf_rounding_mode(%arg0 : f64) -> (f32, f32, f32, f32, f32) {
+  %0 = arith.truncf %arg0 to_nearest_even : f64 to f32
+  %1 = arith.truncf %arg0 downward : f64 to f32
+  %2 = arith.truncf %arg0 upward : f64 to f32
+  %3 = arith.truncf %arg0 toward_zero : f64 to f32
+  %4 = arith.truncf %arg0 to_nearest_away : f64 to f32
+  return %0, %1, %2, %3, %4 : f32, f32, f32, f32, f32
 }
 
 // CHECK-LABEL: test_uitofp
@@ -1095,9 +1081,12 @@ func.func @maximum(%v1: vector<4xf32>, %v2: vector<4xf32>,
                %sv1: vector<[4]xf32>, %sv2: vector<[4]xf32>,
                %f1: f32, %f2: f32,
                %i1: i32, %i2: i32) {
-  %max_vector = arith.maxf %v1, %v2 : vector<4xf32>
-  %max_scalable_vector = arith.maxf %sv1, %sv2 : vector<[4]xf32>
-  %max_float = arith.maxf %f1, %f2 : f32
+  %maximum_vector = arith.maximumf %v1, %v2 : vector<4xf32>
+  %maximum_scalable_vector = arith.maximumf %sv1, %sv2 : vector<[4]xf32>
+  %maximum_float = arith.maximumf %f1, %f2 : f32
+  %maxnum_vector = arith.maxnumf %v1, %v2 : vector<4xf32>
+  %maxnum_scalable_vector = arith.maxnumf %sv1, %sv2 : vector<[4]xf32>
+  %maxnum_float = arith.maxnumf %f1, %f2 : f32
   %max_signed = arith.maxsi %i1, %i2 : i32
   %max_unsigned = arith.maxui %i1, %i2 : i32
   return
@@ -1108,9 +1097,12 @@ func.func @minimum(%v1: vector<4xf32>, %v2: vector<4xf32>,
                %sv1: vector<[4]xf32>, %sv2: vector<[4]xf32>,
                %f1: f32, %f2: f32,
                %i1: i32, %i2: i32) {
-  %min_vector = arith.minf %v1, %v2 : vector<4xf32>
-  %min_scalable_vector = arith.minf %sv1, %sv2 : vector<[4]xf32>
-  %min_float = arith.minf %f1, %f2 : f32
+  %minimum_vector = arith.minimumf %v1, %v2 : vector<4xf32>
+  %minimum_scalable_vector = arith.minimumf %sv1, %sv2 : vector<[4]xf32>
+  %minimum_float = arith.minimumf %f1, %f2 : f32
+  %minnum_vector = arith.minnumf %v1, %v2 : vector<4xf32>
+  %minnum_scalable_vector = arith.minnumf %sv1, %sv2 : vector<[4]xf32>
+  %minnum_float = arith.minnumf %f1, %f2 : f32
   %min_signed = arith.minsi %i1, %i2 : i32
   %min_unsigned = arith.minui %i1, %i2 : i32
   return
@@ -1136,6 +1128,8 @@ func.func @fastmath(%arg0: f32, %arg1: f32, %arg2: i32) {
   %7 = arith.addf %arg0, %arg1 fastmath<nnan,ninf> : f32
 // CHECK: {{.*}} = arith.mulf %arg0, %arg1 fastmath<fast> : f32
   %8 = arith.mulf %arg0, %arg1 fastmath<reassoc,nnan,ninf,nsz,arcp,contract,afn> : f32
+// CHECK: {{.*}} = arith.cmpf oeq, %arg0, %arg1 fastmath<fast> : f32
+  %9 = arith.cmpf oeq, %arg0, %arg1 fastmath<fast> : f32
 
   return
 }
@@ -1153,4 +1147,17 @@ func.func @select_tensor_encoding(
   // CHECK: = arith.select %{{.*}}, %{{.*}}, %{{.*}} : tensor<8xi1, "foo">, tensor<8xi32, "foo">
   %0 = arith.select %arg0, %arg1, %arg2 : tensor<8xi1, "foo">, tensor<8xi32, "foo">
   return %0 : tensor<8xi32, "foo">
+}
+
+// CHECK-LABEL: @intflags_func
+func.func @intflags_func(%arg0: i64, %arg1: i64) {
+  // CHECK: %{{.*}} = arith.addi %{{.*}}, %{{.*}} overflow<nsw> : i64
+  %0 = arith.addi %arg0, %arg1 overflow<nsw> : i64
+  // CHECK: %{{.*}} = arith.subi %{{.*}}, %{{.*}} overflow<nuw> : i64
+  %1 = arith.subi %arg0, %arg1 overflow<nuw> : i64
+  // CHECK: %{{.*}} = arith.muli %{{.*}}, %{{.*}} overflow<nsw, nuw> : i64
+  %2 = arith.muli %arg0, %arg1 overflow<nsw, nuw> : i64
+  // CHECK: %{{.*}} = arith.shli %{{.*}}, %{{.*}} overflow<nsw, nuw> : i64
+  %3 = arith.shli %arg0, %arg1 overflow<nsw, nuw> : i64
+  return
 }

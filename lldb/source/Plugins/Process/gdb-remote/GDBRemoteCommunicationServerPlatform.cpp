@@ -239,9 +239,9 @@ GDBRemoteCommunicationServerPlatform::Handle_qLaunchGDBServer(
   llvm::StringRef value;
   std::optional<uint16_t> port;
   while (packet.GetNameColonValue(name, value)) {
-    if (name.equals("host"))
+    if (name == "host")
       hostname = std::string(value);
-    else if (name.equals("port")) {
+    else if (name == "port") {
       // Make the Optional valid so we can use its value
       port = 0;
       value.getAsInteger(0, *port);
@@ -500,7 +500,7 @@ GDBRemoteCommunicationServerPlatform::Handle_jSignalsInfo(
     auto dictionary = std::make_shared<StructuredData::Dictionary>();
 
     dictionary->AddIntegerItem("signo", signo);
-    dictionary->AddStringItem("name", signals->GetSignalAsCString(signo));
+    dictionary->AddStringItem("name", signals->GetSignalAsStringRef(signo));
 
     bool suppress, stop, notify;
     signals->GetSignalInfo(signo, suppress, stop, notify);

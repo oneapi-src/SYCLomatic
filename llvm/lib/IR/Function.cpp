@@ -24,6 +24,7 @@
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constant.h"
+#include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/GlobalValue.h"
@@ -37,12 +38,14 @@
 #include "llvm/IR/IntrinsicsBPF.h"
 #include "llvm/IR/IntrinsicsDirectX.h"
 #include "llvm/IR/IntrinsicsHexagon.h"
+#include "llvm/IR/IntrinsicsLoongArch.h"
 #include "llvm/IR/IntrinsicsMips.h"
 #include "llvm/IR/IntrinsicsNVPTX.h"
 #include "llvm/IR/IntrinsicsPowerPC.h"
 #include "llvm/IR/IntrinsicsR600.h"
 #include "llvm/IR/IntrinsicsRISCV.h"
 #include "llvm/IR/IntrinsicsS390.h"
+#include "llvm/IR/IntrinsicsSPIRV.h"
 #include "llvm/IR/IntrinsicsVE.h"
 #include "llvm/IR/IntrinsicsWebAssembly.h"
 #include "llvm/IR/IntrinsicsX86.h"
@@ -76,9 +79,36 @@ using ProfileCount = Function::ProfileCount;
 // are not in the public header file...
 template class llvm::SymbolTableListTraits<BasicBlock>;
 
-static cl::opt<unsigned> NonGlobalValueMaxNameSize(
+static cl::opt<int> NonGlobalValueMaxNameSize(
     "non-global-value-max-name-size", cl::Hidden, cl::init(1024),
     cl::desc("Maximum size for the name of non-global values."));
+
+void Function::convertToNewDbgValues() {
+  IsNewDbgInfoFormat = true;
+  for (auto &BB : *this) {
+    BB.convertToNewDbgValues();
+  }
+}
+
+void Function::convertFromNewDbgValues() {
+  IsNewDbgInfoFormat = false;
+  for (auto &BB : *this) {
+    BB.convertFromNewDbgValues();
+  }
+}
+
+void Function::setIsNewDbgInfoFormat(bool NewFlag) {
+  if (NewFlag && !IsNewDbgInfoFormat)
+    convertToNewDbgValues();
+  else if (!NewFlag && IsNewDbgInfoFormat)
+    convertFromNewDbgValues();
+}
+void Function::setNewDbgInfoFormatFlag(bool NewFlag) {
+  for (auto &BB : *this) {
+    BB.setNewDbgInfoFormatFlag(NewFlag);
+  }
+  IsNewDbgInfoFormat = NewFlag;
+}
 
 //===----------------------------------------------------------------------===//
 // Argument Implementation
@@ -231,6 +261,13 @@ uint64_t Argument::getDereferenceableOrNullBytes() const {
 
 FPClassTest Argument::getNoFPClass() const {
   return getParent()->getParamNoFPClass(getArgNo());
+}
+
+std::optional<ConstantRange> Argument::getRange() const {
+  const Attribute RangeAttr = getAttribute(llvm::Attribute::Range);
+  if (RangeAttr.isValid())
+    return RangeAttr.getRange();
+  return std::nullopt;
 }
 
 bool Argument::hasNestAttr() const {
@@ -401,7 +438,7 @@ Function::Function(FunctionType *Ty, LinkageTypes Linkage, unsigned AddrSpace,
     : GlobalObject(Ty, Value::FunctionVal,
                    OperandTraits<Function>::op_begin(this), 0, Linkage, name,
                    computeAddrSpace(AddrSpace, ParentModule)),
-      NumArgs(Ty->getNumParams()) {
+      NumArgs(Ty->getNumParams()), IsNewDbgInfoFormat(false) {
   assert(FunctionType::isValidReturnType(getReturnType()) &&
          "invalid return type");
   setGlobalObjectSubClassData(0);
@@ -414,10 +451,12 @@ Function::Function(FunctionType *Ty, LinkageTypes Linkage, unsigned AddrSpace,
   if (Ty->getNumParams())
     setValueSubclassData(1);   // Set the "has lazy arguments" bit.
 
-  if (ParentModule)
+  if (ParentModule) {
     ParentModule->getFunctionList().push_back(this);
+    IsNewDbgInfoFormat = ParentModule->IsNewDbgInfoFormat;
+  }
 
-  HasLLVMReservedName = getName().startswith("llvm.");
+  HasLLVMReservedName = getName().starts_with("llvm.");
   // Ensure intrinsics have the right parameter attributes.
   // Note, the IntID field will have been set in Value::setName if this function
   // name is a valid intrinsic ID.
@@ -460,15 +499,7 @@ static MutableArrayRef<Argument> makeArgArray(Argument *Args, size_t Count) {
 }
 
 bool Function::isConstrainedFPIntrinsic() const {
-  switch (getIntrinsicID()) {
-#define INSTRUCTION(NAME, NARG, ROUND_MODE, INTRINSIC)                         \
-  case Intrinsic::INTRINSIC:
-#include "llvm/IR/ConstrainedOps.def"
-    return true;
-#undef INSTRUCTION
-  default:
-    return false;
-  }
+  return Intrinsic::isConstrainedFPIntrinsic(getIntrinsicID());
 }
 
 void Function::clearArguments() {
@@ -517,15 +548,7 @@ void Function::stealArgumentListFrom(Function &Src) {
   Src.setValueSubclassData(Src.getSubclassDataFromValue() | (1 << 0));
 }
 
-// dropAllReferences() - This function causes all the subinstructions to "let
-// go" of all references that they are maintaining.  This allows one to
-// 'delete' a whole class at a time, even though there may be circular
-// references... first all references are dropped, and all use counts go to
-// zero.  Then everything is deleted for real.  Note that no operations are
-// valid on an object that has "dropped all references", except operator
-// delete.
-//
-void Function::dropAllReferences() {
+void Function::deleteBodyImpl(bool ShouldDrop) {
   setIsMaterializable(false);
 
   for (BasicBlock &BB : *this)
@@ -536,10 +559,18 @@ void Function::dropAllReferences() {
   while (!BasicBlocks.empty())
     BasicBlocks.begin()->eraseFromParent();
 
-  // Drop uses of any optional data (real or placeholder).
   if (getNumOperands()) {
-    User::dropAllReferences();
-    setNumHungOffUseOperands(0);
+    if (ShouldDrop) {
+      // Drop uses of any optional data (real or placeholder).
+      User::dropAllReferences();
+      setNumHungOffUseOperands(0);
+    } else {
+      // The code needs to match Function::allocHungoffUselist().
+      auto *CPN = ConstantPointerNull::get(PointerType::get(getContext(), 0));
+      Op<0>().set(CPN);
+      Op<1>().set(CPN);
+      Op<2>().set(CPN);
+    }
     setValueSubclassData(getSubclassDataFromValue() & ~0xe);
   }
 
@@ -675,6 +706,10 @@ Attribute Function::getFnAttribute(StringRef Kind) const {
   return AttributeSets.getFnAttr(Kind);
 }
 
+Attribute Function::getRetAttribute(Attribute::AttrKind Kind) const {
+  return AttributeSets.getRetAttr(Kind);
+}
+
 uint64_t Function::getFnAttributeAsParsedInteger(StringRef Name,
                                                  uint64_t Default) const {
   Attribute A = getFnAttribute(Name);
@@ -698,6 +733,10 @@ void Function::addDereferenceableOrNullParamAttr(unsigned ArgNo,
                                                  uint64_t Bytes) {
   AttributeSets = AttributeSets.addDereferenceableOrNullParamAttr(getContext(),
                                                                   ArgNo, Bytes);
+}
+
+void Function::addRangeRetAttr(const ConstantRange &CR) {
+  AttributeSets = AttributeSets.addRangeRetAttr(getContext(), CR);
 }
 
 DenormalMode Function::getDenormalMode(const fltSemantics &FPType) const {
@@ -854,7 +893,7 @@ bool Function::isTargetIntrinsic() const {
 ///
 /// Returns the relevant slice of \c IntrinsicNameTable
 static ArrayRef<const char *> findTargetSubtable(StringRef Name) {
-  assert(Name.startswith("llvm."));
+  assert(Name.starts_with("llvm."));
 
   ArrayRef<IntrinsicTargetInfo> Targets(TargetInfos);
   // Drop "llvm." and take the first dotted component. That will be the target
@@ -890,9 +929,10 @@ Intrinsic::ID Function::lookupIntrinsicID(StringRef Name) {
                                                      : Intrinsic::not_intrinsic;
 }
 
-void Function::recalculateIntrinsicID() {
+void Function::updateAfterNameChange() {
+  LibFuncCache = UnknownLibFunc;
   StringRef Name = getName();
-  if (!Name.startswith("llvm.")) {
+  if (!Name.starts_with("llvm.")) {
     HasLLVMReservedName = false;
     IntID = Intrinsic::not_intrinsic;
     return;
@@ -917,13 +957,6 @@ static std::string getMangledTypeStr(Type *Ty, bool &HasUnnamedType) {
   std::string Result;
   if (PointerType *PTyp = dyn_cast<PointerType>(Ty)) {
     Result += "p" + utostr(PTyp->getAddressSpace());
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-    // Opaque pointer doesn't have pointee type information, so we just mangle
-    // address space for opaque pointer.
-    if (!PTyp->isOpaque())
-      Result += getMangledTypeStr(PTyp->getNonOpaquePointerElementType(),
-                                  HasUnnamedType);
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
   } else if (ArrayType *ATyp = dyn_cast<ArrayType>(Ty)) {
     Result += "a" + utostr(ATyp->getNumElements()) +
               getMangledTypeStr(ATyp->getElementType(), HasUnnamedType);
@@ -1135,8 +1168,16 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
     OutputTable.push_back(IITDescriptor::getVector(4, IsScalableVector));
     DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
+  case IIT_V6:
+    OutputTable.push_back(IITDescriptor::getVector(6, IsScalableVector));
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
+    return;
   case IIT_V8:
     OutputTable.push_back(IITDescriptor::getVector(8, IsScalableVector));
+    DecodeIITType(NextElt, Infos, Info, OutputTable);
+    return;
+  case IIT_V10:
+    OutputTable.push_back(IITDescriptor::getVector(10, IsScalableVector));
     DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
   case IIT_V16:
@@ -1169,22 +1210,17 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
     return;
   case IIT_EXTERNREF:
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Pointer, 10));
-    OutputTable.push_back(IITDescriptor::get(IITDescriptor::Struct, 0));
     return;
   case IIT_FUNCREF:
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Pointer, 20));
-    OutputTable.push_back(IITDescriptor::get(IITDescriptor::Integer, 8));
     return;
   case IIT_PTR:
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Pointer, 0));
-    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
-  case IIT_ANYPTR: {  // [ANYPTR addrspace, subtype]
+  case IIT_ANYPTR: // [ANYPTR addrspace]
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Pointer,
                                              Infos[NextElt++]));
-    DecodeIITType(NextElt, Infos, Info, OutputTable);
     return;
-  }
   case IIT_ARG: {
     unsigned ArgInfo = (NextElt == Infos.size() ? 0 : Infos[NextElt++]);
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Argument, ArgInfo));
@@ -1214,26 +1250,6 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
                                              ArgInfo));
     return;
   }
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  case IIT_PTR_TO_ARG: {
-    unsigned ArgInfo = (NextElt == Infos.size() ? 0 : Infos[NextElt++]);
-    OutputTable.push_back(IITDescriptor::get(IITDescriptor::PtrToArgument,
-                                             ArgInfo));
-    return;
-  }
-  case IIT_PTR_TO_ELT: {
-    unsigned ArgInfo = (NextElt == Infos.size() ? 0 : Infos[NextElt++]);
-    OutputTable.push_back(IITDescriptor::get(IITDescriptor::PtrToElt, ArgInfo));
-    return;
-  }
-  case IIT_ANYPTR_TO_ELT: {
-    unsigned short ArgNo = (NextElt == Infos.size() ? 0 : Infos[NextElt++]);
-    unsigned short RefNo = (NextElt == Infos.size() ? 0 : Infos[NextElt++]);
-    OutputTable.push_back(
-        IITDescriptor::get(IITDescriptor::AnyPtrToElt, ArgNo, RefNo));
-    return;
-  }
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
   case IIT_VEC_OF_ANYPTRS_TO_ELT: {
     unsigned short ArgNo = (NextElt == Infos.size() ? 0 : Infos[NextElt++]);
     unsigned short RefNo = (NextElt == Infos.size() ? 0 : Infos[NextElt++]);
@@ -1356,8 +1372,7 @@ static Type *DecodeFixedType(ArrayRef<Intrinsic::IITDescriptor> &Infos,
     return VectorType::get(DecodeFixedType(Infos, Tys, Context),
                            D.Vector_Width);
   case IITDescriptor::Pointer:
-    return PointerType::get(DecodeFixedType(Infos, Tys, Context),
-                            D.Pointer_AddressSpace);
+    return PointerType::get(Context, D.Pointer_AddressSpace);
   case IITDescriptor::Struct: {
     SmallVector<Type *, 8> Elts;
     for (unsigned i = 0, e = D.Struct_NumElements; i != e; ++i)
@@ -1400,20 +1415,6 @@ static Type *DecodeFixedType(ArrayRef<Intrinsic::IITDescriptor> &Infos,
       return VectorType::get(EltTy, VTy->getElementCount());
     return EltTy;
   }
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  case IITDescriptor::PtrToArgument: {
-    Type *Ty = Tys[D.getArgumentNumber()];
-    return PointerType::getUnqual(Ty);
-  }
-  case IITDescriptor::PtrToElt: {
-    Type *Ty = Tys[D.getArgumentNumber()];
-    VectorType *VTy = dyn_cast<VectorType>(Ty);
-    if (!VTy)
-      llvm_unreachable("Expected an argument of Vector Type");
-    Type *EltTy = VTy->getElementType();
-    return PointerType::getUnqual(EltTy);
-  }
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
   case IITDescriptor::VecElementArgument: {
     Type *Ty = Tys[D.getArgumentNumber()];
     if (VectorType *VTy = dyn_cast<VectorType>(Ty))
@@ -1429,11 +1430,6 @@ static Type *DecodeFixedType(ArrayRef<Intrinsic::IITDescriptor> &Infos,
   case IITDescriptor::VecOfAnyPtrsToElt:
     // Return the overloaded type (which determines the pointers address space)
     return Tys[D.getOverloadArgNumber()];
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  case IITDescriptor::AnyPtrToElt:
-    // Return the overloaded type (which determines the pointers address space)
-    return Tys[D.getOverloadArgNumber()];
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
   }
   llvm_unreachable("unhandled");
 }
@@ -1490,6 +1486,30 @@ Function *Intrinsic::getDeclaration(Module *M, ID id, ArrayRef<Type*> Tys) {
 #include "llvm/IR/IntrinsicImpl.inc"
 #undef GET_LLVM_INTRINSIC_FOR_MS_BUILTIN
 
+bool Intrinsic::isConstrainedFPIntrinsic(ID QID) {
+  switch (QID) {
+#define INSTRUCTION(NAME, NARG, ROUND_MODE, INTRINSIC)                         \
+  case Intrinsic::INTRINSIC:
+#include "llvm/IR/ConstrainedOps.def"
+#undef INSTRUCTION
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool Intrinsic::hasConstrainedFPRoundingModeOperand(Intrinsic::ID QID) {
+  switch (QID) {
+#define INSTRUCTION(NAME, NARG, ROUND_MODE, INTRINSIC)                         \
+  case Intrinsic::INTRINSIC:                                                   \
+    return ROUND_MODE == 1;
+#include "llvm/IR/ConstrainedOps.def"
+#undef INSTRUCTION
+  default:
+    return false;
+  }
+}
+
 using DeferredIntrinsicMatchPair =
     std::pair<Type *, ArrayRef<Intrinsic::IITDescriptor>>;
 
@@ -1538,33 +1558,7 @@ static bool matchIntrinsicType(
     }
     case IITDescriptor::Pointer: {
       PointerType *PT = dyn_cast<PointerType>(Ty);
-      if (!PT || PT->getAddressSpace() != D.Pointer_AddressSpace)
-        return true;
-      if (!PT->isOpaque()) {
-        /* Manually consume a pointer to empty struct descriptor, which is
-         * used for externref. We don't want to enforce that the struct is
-         * anonymous in this case. (This renders externref intrinsics
-         * non-unique, but this will go away with opaque pointers anyway.) */
-        if (Infos.front().Kind == IITDescriptor::Struct &&
-            Infos.front().Struct_NumElements == 0) {
-          Infos = Infos.slice(1);
-          return false;
-        }
-        return matchIntrinsicType(PT->getNonOpaquePointerElementType(), Infos,
-                                  ArgTys, DeferredChecks, IsDeferredCheck);
-      }
-      // Consume IIT descriptors relating to the pointer element type.
-      // FIXME: Intrinsic type matching of nested single value types or even
-      // aggregates doesn't work properly with opaque pointers but hopefully
-      // doesn't happen in practice.
-      while (Infos.front().Kind == IITDescriptor::Pointer ||
-             Infos.front().Kind == IITDescriptor::Vector)
-        Infos = Infos.slice(1);
-      assert((Infos.front().Kind != IITDescriptor::Argument ||
-              Infos.front().getArgumentKind() == IITDescriptor::AK_MatchType) &&
-             "Unsupported polymorphic pointer type with opaque pointer");
-      Infos = Infos.slice(1);
-      return false;
+      return !PT || PT->getAddressSpace() != D.Pointer_AddressSpace;
     }
 
     case IITDescriptor::Struct: {
@@ -1662,52 +1656,6 @@ static bool matchIntrinsicType(
       return matchIntrinsicType(EltTy, Infos, ArgTys, DeferredChecks,
                                 IsDeferredCheck);
     }
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-    case IITDescriptor::PtrToArgument: {
-      if (D.getArgumentNumber() >= ArgTys.size())
-        return IsDeferredCheck || DeferCheck(Ty);
-      Type * ReferenceType = ArgTys[D.getArgumentNumber()];
-      PointerType *ThisArgType = dyn_cast<PointerType>(Ty);
-      return (!ThisArgType ||
-              !ThisArgType->isOpaqueOrPointeeTypeMatches(ReferenceType));
-    }
-    case IITDescriptor::PtrToElt: {
-      if (D.getArgumentNumber() >= ArgTys.size())
-        return IsDeferredCheck || DeferCheck(Ty);
-      VectorType * ReferenceType =
-        dyn_cast<VectorType> (ArgTys[D.getArgumentNumber()]);
-      PointerType *ThisArgType = dyn_cast<PointerType>(Ty);
-
-      if (!ThisArgType || !ReferenceType)
-        return true;
-      return !ThisArgType->isOpaqueOrPointeeTypeMatches(
-          ReferenceType->getElementType());
-    }
-    case IITDescriptor::AnyPtrToElt: {
-      unsigned RefArgNumber = D.getRefArgNumber();
-      if (RefArgNumber >= ArgTys.size()) {
-        if (IsDeferredCheck)
-          return true;
-        // If forward referencing, already add the pointer type and
-        // defer the checks for later.
-        ArgTys.push_back(Ty);
-        return DeferCheck(Ty);
-      }
-
-      if (!IsDeferredCheck) {
-        assert(D.getOverloadArgNumber() == ArgTys.size() &&
-               "Table consistency error");
-        ArgTys.push_back(Ty);
-      }
-
-      auto *ReferenceType = dyn_cast<VectorType>(ArgTys[RefArgNumber]);
-      auto *ThisArgType = dyn_cast<PointerType>(Ty);
-      if (!ThisArgType || !ReferenceType)
-        return true;
-      return !ThisArgType->isOpaqueOrPointeeTypeMatches(
-          ReferenceType->getElementType());
-    }
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
     case IITDescriptor::VecOfAnyPtrsToElt: {
       unsigned RefArgNumber = D.getRefArgNumber();
       if (RefArgNumber >= ArgTys.size()) {
@@ -1814,9 +1762,8 @@ Intrinsic::matchIntrinsicVarArg(bool isVarArg,
   return true;
 }
 
-bool Intrinsic::getIntrinsicSignature(Function *F,
+bool Intrinsic::getIntrinsicSignature(Intrinsic::ID ID, FunctionType *FT,
                                       SmallVectorImpl<Type *> &ArgTys) {
-  Intrinsic::ID ID = F->getIntrinsicID();
   if (!ID)
     return false;
 
@@ -1824,15 +1771,19 @@ bool Intrinsic::getIntrinsicSignature(Function *F,
   getIntrinsicInfoTableEntries(ID, Table);
   ArrayRef<Intrinsic::IITDescriptor> TableRef = Table;
 
-  if (Intrinsic::matchIntrinsicSignature(F->getFunctionType(), TableRef,
-                                         ArgTys) !=
+  if (Intrinsic::matchIntrinsicSignature(FT, TableRef, ArgTys) !=
       Intrinsic::MatchIntrinsicTypesResult::MatchIntrinsicTypes_Match) {
     return false;
   }
-  if (Intrinsic::matchIntrinsicVarArg(F->getFunctionType()->isVarArg(),
-                                      TableRef))
+  if (Intrinsic::matchIntrinsicVarArg(FT->isVarArg(), TableRef))
     return false;
   return true;
+}
+
+bool Intrinsic::getIntrinsicSignature(Function *F,
+                                      SmallVectorImpl<Type *> &ArgTys) {
+  return getIntrinsicSignature(F->getIntrinsicID(), F->getFunctionType(),
+                               ArgTys);
 }
 
 std::optional<Function *> Intrinsic::remangleIntrinsicFunction(Function *F) {
@@ -1875,7 +1826,8 @@ std::optional<Function *> Intrinsic::remangleIntrinsicFunction(Function *F) {
 bool Function::hasAddressTaken(const User **PutOffender,
                                bool IgnoreCallbackUses,
                                bool IgnoreAssumeLikeCalls, bool IgnoreLLVMUsed,
-                               bool IgnoreARCAttachedCall) const {
+                               bool IgnoreARCAttachedCall,
+                               bool IgnoreCastedDirectCall) const {
   for (const Use &U : uses()) {
     const User *FU = U.getUser();
     if (isa<BlockAddress>(FU))
@@ -1907,8 +1859,8 @@ bool Function::hasAddressTaken(const User **PutOffender,
         if (llvm::all_of(FUU->users(), [](const User *U) {
               if (const auto *GV = dyn_cast<GlobalVariable>(U))
                 return GV->hasName() &&
-                       (GV->getName().equals("llvm.compiler.used") ||
-                        GV->getName().equals("llvm.used"));
+                       (GV->getName() == "llvm.compiler.used" ||
+                        GV->getName() == "llvm.used");
               return false;
             }))
           continue;
@@ -1924,7 +1876,8 @@ bool Function::hasAddressTaken(const User **PutOffender,
           continue;
     }
 
-    if (!Call->isCallee(&U) || Call->getFunctionType() != getFunctionType()) {
+    if (!Call->isCallee(&U) || (!IgnoreCastedDirectCall &&
+                                Call->getFunctionType() != getFunctionType())) {
       if (IgnoreARCAttachedCall &&
           Call->isOperandBundleOfType(LLVMContext::OB_clang_arc_attachedcall,
                                       U.getOperandNo()))
@@ -2002,11 +1955,7 @@ void Function::allocHungoffUselist() {
   setNumHungOffUseOperands(3);
 
   // Initialize the uselist with placeholder operands to allow traversal.
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  auto *CPN = ConstantPointerNull::get(Type::getInt1PtrTy(getContext(), 0));
-#else
   auto *CPN = ConstantPointerNull::get(PointerType::get(getContext(), 0));
-#endif
   Op<0>().set(CPN);
   Op<1>().set(CPN);
   Op<2>().set(CPN);
@@ -2018,12 +1967,7 @@ void Function::setHungoffOperand(Constant *C) {
     allocHungoffUselist();
     Op<Idx>().set(C);
   } else if (getNumOperands()) {
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-    Op<Idx>().set(
-        ConstantPointerNull::get(Type::getInt1PtrTy(getContext(), 0)));
-#else
     Op<Idx>().set(ConstantPointerNull::get(PointerType::get(getContext(), 0)));
-#endif
   }
 }
 
@@ -2061,7 +2005,7 @@ std::optional<ProfileCount> Function::getEntryCount(bool AllowSynthetic) const {
   MDNode *MD = getMetadata(LLVMContext::MD_prof);
   if (MD && MD->getOperand(0))
     if (MDString *MDS = dyn_cast<MDString>(MD->getOperand(0))) {
-      if (MDS->getString().equals("function_entry_count")) {
+      if (MDS->getString() == "function_entry_count") {
         ConstantInt *CI = mdconst::extract<ConstantInt>(MD->getOperand(1));
         uint64_t Count = CI->getValue().getZExtValue();
         // A value of -1 is used for SamplePGO when there were no samples.
@@ -2070,7 +2014,7 @@ std::optional<ProfileCount> Function::getEntryCount(bool AllowSynthetic) const {
           return std::nullopt;
         return ProfileCount(Count, PCT_Real);
       } else if (AllowSynthetic &&
-                 MDS->getString().equals("synthetic_function_entry_count")) {
+                 MDS->getString() == "synthetic_function_entry_count") {
         ConstantInt *CI = mdconst::extract<ConstantInt>(MD->getOperand(1));
         uint64_t Count = CI->getValue().getZExtValue();
         return ProfileCount(Count, PCT_Synthetic);
@@ -2083,7 +2027,7 @@ DenseSet<GlobalValue::GUID> Function::getImportGUIDs() const {
   DenseSet<GlobalValue::GUID> R;
   if (MDNode *MD = getMetadata(LLVMContext::MD_prof))
     if (MDString *MDS = dyn_cast<MDString>(MD->getOperand(0)))
-      if (MDS->getString().equals("function_entry_count"))
+      if (MDS->getString() == "function_entry_count")
         for (unsigned i = 2; i < MD->getNumOperands(); i++)
           R.insert(mdconst::extract<ConstantInt>(MD->getOperand(i))
                        ->getValue()
@@ -2099,9 +2043,8 @@ void Function::setSectionPrefix(StringRef Prefix) {
 
 std::optional<StringRef> Function::getSectionPrefix() const {
   if (MDNode *MD = getMetadata(LLVMContext::MD_section_prefix)) {
-    assert(cast<MDString>(MD->getOperand(0))
-               ->getString()
-               .equals("function_section_prefix") &&
+    assert(cast<MDString>(MD->getOperand(0))->getString() ==
+               "function_section_prefix" &&
            "Metadata not match");
     return cast<MDString>(MD->getOperand(1))->getString();
   }

@@ -344,7 +344,7 @@ void generateCompilationDatabase(const std::string &BuildDir) {
     TotalCount += Entry.second.size();
   }
 
-  std::string FilePath = BuildDir + "/compile_commands.json";
+  std::string FilePath = dpct::appendPath(BuildDir, "compile_commands.json");
   std::ofstream OutFile(FilePath);
   if (!OutFile) {
     std::string ErrMsg =

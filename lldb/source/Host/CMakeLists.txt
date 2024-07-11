@@ -13,6 +13,7 @@ macro(add_host_subdirectory group)
 endmacro()
 
 add_host_subdirectory(common
+  common/Alarm.cpp
   common/FileAction.cpp
   common/FileCache.cpp
   common/File.cpp
@@ -36,6 +37,7 @@ add_host_subdirectory(common
   common/ProcessLaunchInfo.cpp
   common/ProcessRunLock.cpp
   common/PseudoTerminal.cpp
+  common/StreamFile.cpp
   common/SocketAddress.cpp
   common/Socket.cpp
   common/TCPSocket.cpp

@@ -27,7 +27,7 @@ std::unique_ptr<LLVMTargetMachine> createTargetMachine(const std::string &CPU) {
 
   return std::unique_ptr<LLVMTargetMachine>(static_cast<LLVMTargetMachine *>(
       TheTarget->createTargetMachine(TT, CPU, "", TargetOptions(), std::nullopt,
-                                     std::nullopt, CodeGenOpt::Default)));
+                                     std::nullopt, CodeGenOptLevel::Default)));
 }
 
 std::unique_ptr<AArch64InstrInfo> createInstrInfo(TargetMachine *TM) {
@@ -105,6 +105,14 @@ void runSVEPseudoTestForCPU(const std::string &CPU) {
 // TODO : Add more CPUs that support SVE/SVE2
 TEST(AArch64SVESchedPseudoTesta510, IsCorrect) {
   runSVEPseudoTestForCPU("cortex-a510");
+}
+
+TEST(AArch64SVESchedPseudoTestn1, IsCorrect) {
+  runSVEPseudoTestForCPU("neoverse-n2");
+}
+
+TEST(AArch64SVESchedPseudoTestv1, IsCorrect) {
+  runSVEPseudoTestForCPU("neoverse-v1");
 }
 
 TEST(AArch64SVESchedPseudoTestv2, IsCorrect) {

@@ -40,9 +40,13 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnConvolutionFwdAlgo_t", "cudnnConvolutionBwdDataAlgo_t",
               "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t",
               "cudnnRNNMode_t", "cudnnRNNBiasMode_t", "cudnnDirectionMode_t",
-              "cudnnRNNDescriptor_t", "cudnnForwardMode_t", "cudnnRNNDataDescriptor_t",
-              "cudnnRNNDataLayout_t", "cudnnDropoutDescriptor_t",
-              "cudnnMathType_t", "cudnnConvolutionFwdAlgoPerf_t"))))))
+              "cudnnRNNDescriptor_t", "cudnnForwardMode_t",
+              "cudnnRNNDataDescriptor_t", "cudnnRNNDataLayout_t",
+              "cudnnDropoutDescriptor_t", "cudnnMathType_t",
+              "cudnnConvolutionFwdAlgoPerf_t",
+              "cudnnConvolutionBwdFilterAlgoPerf_t",
+              "cudnnConvolutionBwdDataAlgoPerf_t", "cudnnConvolutionMode_t",
+              "cudnnNanPropagation_t"))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
@@ -100,15 +104,26 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto *E =
                  getNodeAsType<DeclRefExpr>(Result, "CuDNNEnumConstant")) {
     std::string EnumName = E->getNameInfo().getName().getAsString();
-
-    if (EnumName.find("CUDNN_STATUS_") != std::string::npos) {
+    auto ReplaceWithInitVal = [&]() {
       if (auto EC = dyn_cast<EnumConstantDecl>(E->getDecl())) {
         std::string Repl = toString(EC->getInitVal(), 10);
         emplaceTransformation(new ReplaceStmt(E, Repl));
         return;
       }
-    } else if(EnumName == "CUDNN_BATCHNORM_SPATIAL_PERSISTENT") {
+    };
+    if (EnumName.find("CUDNN_STATUS_") != std::string::npos) {
+      ReplaceWithInitVal();
+      return;
+    } else if (EnumName == "CUDNN_BATCHNORM_SPATIAL_PERSISTENT") {
       report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
+    } else if (EnumName == "CUDNN_CONVOLUTION" ||
+               EnumName == "CUDNN_CROSS_CORRELATION") {
+      ReplaceWithInitVal();
+      return;
+    } else if (EnumName == "CUDNN_NOT_PROPAGATE_NAN" ||
+               EnumName == "CUDNN_PROPAGATE_NAN") {
+      ReplaceWithInitVal();
+      return;
     }
 
     auto Search = CuDNNEnumNamesMap.find(EnumName);
@@ -197,7 +212,9 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnGetConvolutionBackwardFilterAlgorithm",
         "cudnnGetConvolutionBackwardDataAlgorithm",
         "cudnnGetConvolutionForwardAlgorithm", "cudnnSetConvolutionMathType",
-        "cudnnFindConvolutionForwardAlgorithm");
+        "cudnnFindConvolutionForwardAlgorithm", "cudnnFindConvolutionBackwardDataAlgorithm",
+        "cudnnFindConvolutionBackwardFilterAlgorithm", "cudnnGetConvolutionBackwardFilterAlgorithm_v7",
+        "cudnnGetConvolutionBackwardDataAlgorithm_v7", "cudnnGetConvolutionForwardAlgorithm_v7");
   };
 
   MF.addMatcher(
@@ -251,7 +268,8 @@ void CuDNNAPIRule::runRule(
 
     if (auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE, Condition)) {
       auto LocInfo = Global.getLocInfo(CS->getBeginLoc());
-      FuncInfo.CompoundLoc = LocInfo.first + std::to_string(LocInfo.second);
+      FuncInfo.CompoundLoc = LocInfo.first.getCanonicalPath().str() +
+                             std::to_string(LocInfo.second);
     } else {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, FuncName);
       return;
@@ -277,8 +295,9 @@ void CuDNNAPIRule::runRule(
         if (auto RnnInputDecl = RnnInputDRE->getDecl()) {
           auto ArgName = RnnInputDecl->getName();
           auto DeclLocInfo = Global.getLocInfo(RnnInputDecl->getBeginLoc());
-          std::string MapKey =
-              DeclLocInfo.first + std::to_string(DeclLocInfo.second) + ArgName.str();
+          std::string MapKey = DeclLocInfo.first.getCanonicalPath().str() +
+                               std::to_string(DeclLocInfo.second) +
+                               ArgName.str();
           auto &SubMap = RnnInputMap[MapKey];
           if (SubMap.empty()) {
             std::vector<const clang::DeclRefExpr *> MatchResults;

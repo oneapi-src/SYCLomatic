@@ -39,16 +39,17 @@
 #include <string>
 #include <vector>
 
-#include <ur/adapters/hip/command_buffer.hpp>
-#include <ur/adapters/hip/context.hpp>
-#include <ur/adapters/hip/device.hpp>
-#include <ur/adapters/hip/event.hpp>
-#include <ur/adapters/hip/kernel.hpp>
-#include <ur/adapters/hip/memory.hpp>
-#include <ur/adapters/hip/platform.hpp>
-#include <ur/adapters/hip/program.hpp>
-#include <ur/adapters/hip/queue.hpp>
-#include <ur/adapters/hip/sampler.hpp>
+#include <adapters/hip/command_buffer.hpp>
+#include <adapters/hip/context.hpp>
+#include <adapters/hip/device.hpp>
+#include <adapters/hip/event.hpp>
+#include <adapters/hip/kernel.hpp>
+#include <adapters/hip/memory.hpp>
+#include <adapters/hip/physical_mem.hpp>
+#include <adapters/hip/platform.hpp>
+#include <adapters/hip/program.hpp>
+#include <adapters/hip/queue.hpp>
+#include <adapters/hip/sampler.hpp>
 
 #include "pi2ur.hpp"
 
@@ -92,6 +93,10 @@ struct _pi_sampler : ur_sampler_handle_t_ {
 
 struct _pi_ext_command_buffer : ur_exp_command_buffer_handle_t_ {
   using ur_exp_command_buffer_handle_t_::ur_exp_command_buffer_handle_t_;
+};
+
+struct _pi_physical_mem : ur_physical_mem_handle_t_ {
+  using ur_physical_mem_handle_t_::ur_physical_mem_handle_t_;
 };
 
 #endif // PI_HIP_HPP

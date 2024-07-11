@@ -1,5 +1,6 @@
 // RUN: dpct -in-root %S -out-root %T/dropout %S/dropout.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/dropout/dropout.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/dropout/dropout.dp.cpp -o %T/dropout/dropout.dp.o %}
 
 #include<cuda_runtime.h>
 #include<cudnn.h>
@@ -79,7 +80,7 @@ int main(){
     cudaDeviceSynchronize();
 
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnDestroyDropoutDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnDestroyDropoutDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     cudnnDestroyDropoutDescriptor(desc);
     for(int i = 0; i < ele_num; i++){

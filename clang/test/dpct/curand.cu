@@ -3,6 +3,7 @@
 // RUN: cd %T
 //RUN: dpct -out-root %T/curand curand.cu --usm-level=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand/curand.dp.cpp --match-full-lines curand.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/curand/curand.dp.cpp -o %T/curand/curand.dp.o %}
 //CHECK:// CHECKME
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
@@ -77,6 +78,11 @@ int main(){
   //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng2->skip_ahead(200));
   curandSetGeneratorOffset(rng, 100);
   s1 = curandSetGeneratorOffset(rng2, 200);
+
+  //CHECK:rng->set_mode(dpct::rng::random_mode::best);
+  //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng2->set_mode(dpct::rng::random_mode::best));
+  curandSetGeneratorOrdering(rng, CURAND_ORDERING_PSEUDO_BEST);
+  s1 = curandSetGeneratorOrdering(rng2, CURAND_ORDERING_PSEUDO_DEFAULT);
 
   //CHECK:rng.reset();
   //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng.reset());
@@ -250,6 +256,6 @@ void bar7() {
   curandRngType_t rngT9 = CURAND_RNG_QUASI_SCRAMBLED_SOBOL32;
   curandRngType_t rngT10 = CURAND_RNG_QUASI_SOBOL64;
   curandRngType_t rngT11 = CURAND_RNG_QUASI_SCRAMBLED_SOBOL64;
-  // CHECK: rng = dpct::rng::create_host_rng(rngT);
+  // CHECK: rng = dpct::rng::create_host_rng(rngT, dpct::cpu_device().default_queue());
   curandCreateGeneratorHost(&rng, rngT);
 }

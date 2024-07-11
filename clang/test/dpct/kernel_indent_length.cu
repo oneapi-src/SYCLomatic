@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/kernel_indent_length %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace --input-file %T/kernel_indent_length/kernel_indent_length.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/kernel_indent_length/kernel_indent_length.dp.cpp -o %T/kernel_indent_length/kernel_indent_length.dp.o %}
 
 #include <cuda.h>
 #include <cstdio>

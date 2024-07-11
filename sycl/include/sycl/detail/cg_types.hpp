@@ -19,7 +19,6 @@
 #include <sycl/group.hpp>                      // for group
 #include <sycl/h_item.hpp>                     // for h_item
 #include <sycl/id.hpp>                         // for id
-#include <sycl/interop_handle.hpp>             // for interop_handle
 #include <sycl/item.hpp>                       // for item
 #include <sycl/kernel_handler.hpp>             // for kernel_handler
 #include <sycl/nd_item.hpp>                    // for nd_item
@@ -33,7 +32,10 @@
 
 namespace sycl {
 inline namespace _V1 {
+class interop_handle;
+class handler;
 namespace detail {
+class HostTask;
 
 // The structure represents kernel argument.
 class ArgDesc {
@@ -64,7 +66,8 @@ class NDRDescT {
 
 public:
   NDRDescT()
-      : GlobalSize{0, 0, 0}, LocalSize{0, 0, 0}, NumWorkGroups{0, 0, 0} {}
+      : GlobalSize{0, 0, 0}, LocalSize{0, 0, 0}, NumWorkGroups{0, 0, 0},
+        Dims{0} {}
 
   template <int Dims_> void set(sycl::range<Dims_> NumWorkItems) {
     for (int I = 0; I < Dims_; ++I) {
@@ -229,21 +232,6 @@ public:
   virtual ~HostKernelBase() = default;
 };
 
-class HostTask {
-  std::function<void()> MHostTask;
-  std::function<void(interop_handle)> MInteropTask;
-
-public:
-  HostTask() : MHostTask([]() {}) {}
-  HostTask(std::function<void()> &&Func) : MHostTask(Func) {}
-  HostTask(std::function<void(interop_handle)> &&Func) : MInteropTask(Func) {}
-
-  bool isInteropTask() const { return !!MInteropTask; }
-
-  void call() { MHostTask(); }
-  void call(interop_handle handle) { MInteropTask(handle); }
-};
-
 // Class which stores specific lambda object.
 template <class KernelType, class KernelArgType, int Dims>
 class HostKernel : public HostKernelBase {
@@ -384,7 +372,8 @@ public:
           GlobalSize, LocalSize, GroupSize, GroupID);
 
       detail::NDLoop<Dims>::iterate(LocalSize, [&](const id<Dims> &LocalID) {
-        id<Dims> GlobalID = GroupID * LocalSize + LocalID + GlobalOffset;
+        id<Dims> GlobalID =
+            GroupID * id<Dims>{LocalSize} + LocalID + GlobalOffset;
         const sycl::item<Dims, /*Offset=*/true> GlobalItem =
             IDBuilder::createItem<Dims, true>(GlobalSize, GlobalID,
                                               GlobalOffset);

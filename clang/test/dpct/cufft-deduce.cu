@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cufft-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/cufft-deduce/cufft-deduce.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cufft-deduce/cufft-deduce.dp.cpp -o %T/cufft-deduce/cufft-deduce.dp.o %}
 #include <cstdio>
 #include <cufft.h>
 #include <cuda_runtime.h>
@@ -47,7 +48,7 @@ int main() {
   //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" aligns with the related "compute" function call.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan1->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
   cufftHandle plan1;
@@ -58,7 +59,7 @@ int main() {
   //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" aligns with the related "compute" function call.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan2->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
   cufftHandle plan2;
@@ -69,7 +70,7 @@ int main() {
   //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" aligns with the related "compute" function call.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan3->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, work_size);
   cufftHandle plan3;

@@ -16,14 +16,14 @@ apt update && apt install -yqq \
       libffi-dev \
       libva-dev \
       libtool \
-      libdw1 \
       wget \
       sudo \
       zstd \
       zip \
       unzip \
       jq \
-      curl
+      curl \
+      libhwloc-dev
 
 pip3 install psutil
 

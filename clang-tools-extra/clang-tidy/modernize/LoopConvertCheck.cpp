@@ -38,7 +38,7 @@ template <> struct OptionEnumMapping<modernize::Confidence::Level> {
         Mapping[] = {{modernize::Confidence::CL_Reasonable, "reasonable"},
                      {modernize::Confidence::CL_Safe, "safe"},
                      {modernize::Confidence::CL_Risky, "risky"}};
-    return ArrayRef(Mapping);
+    return {Mapping};
   }
 };
 
@@ -51,7 +51,7 @@ template <> struct OptionEnumMapping<modernize::VariableNamer::NamingStyle> {
                      {modernize::VariableNamer::NS_CamelBack, "camelBack"},
                      {modernize::VariableNamer::NS_LowerCase, "lower_case"},
                      {modernize::VariableNamer::NS_UpperCase, "UPPER_CASE"}};
-    return ArrayRef(Mapping);
+    return {Mapping};
   }
 };
 
@@ -368,15 +368,15 @@ static std::optional<ContainerCall> getContainerExpr(const Expr *Call) {
       return ContainerCall{TheCall->getImplicitObjectArgument(),
                            Member->getMemberDecl()->getName(),
                            Member->isArrow(), CallKind};
-    } else {
-      if (TheCall->getDirectCallee() == nullptr ||
-          !MemberNames.contains(TheCall->getDirectCallee()->getName()))
-        return std::nullopt;
-      return ContainerCall{TheCall->getArg(0),
-                           TheCall->getDirectCallee()->getName(), false,
-                           CallKind};
     }
-  } else if (const auto *TheCall = dyn_cast_or_null<CallExpr>(Dug)) {
+    if (TheCall->getDirectCallee() == nullptr ||
+        !MemberNames.contains(TheCall->getDirectCallee()->getName()))
+      return std::nullopt;
+    return ContainerCall{TheCall->getArg(0),
+                         TheCall->getDirectCallee()->getName(), false,
+                         CallKind};
+  }
+  if (const auto *TheCall = dyn_cast_or_null<CallExpr>(Dug)) {
     if (TheCall->getNumArgs() != 1)
       return std::nullopt;
 
@@ -421,7 +421,7 @@ getContainerFromBeginEndCall(const Expr *Init, bool IsBegin, bool *IsArrow,
     return {};
   if (IsReverse && !Call->Name.consume_back("r"))
     return {};
-  if (!Call->Name.empty() && !Call->Name.equals("c"))
+  if (!Call->Name.empty() && Call->Name != "c")
     return {};
   return std::make_pair(Call->Container, Call->CallKind);
 }
@@ -465,7 +465,7 @@ static StringRef getStringFromRange(SourceManager &SourceMgr,
                                     SourceRange Range) {
   if (SourceMgr.getFileID(Range.getBegin()) !=
       SourceMgr.getFileID(Range.getEnd())) {
-    return StringRef(); // Empty string.
+    return {}; // Empty string.
   }
 
   return Lexer::getSourceText(CharSourceRange(Range, true), SourceMgr,
@@ -706,13 +706,17 @@ void LoopConvertCheck::doConversion(
         ReplaceText = Usage.Kind == Usage::UK_MemberThroughArrow
                           ? VarNameOrStructuredBinding + "."
                           : VarNameOrStructuredBinding;
-        auto Parents = Context->getParents(*Usage.Expression);
+        const DynTypedNodeList Parents = Context->getParents(*Usage.Expression);
         if (Parents.size() == 1) {
           if (const auto *Paren = Parents[0].get<ParenExpr>()) {
             // Usage.Expression will be replaced with the new index variable,
             // and parenthesis around a simple DeclRefExpr can always be
-            // removed.
-            Range = Paren->getSourceRange();
+            // removed except in case of a `sizeof` operator call.
+            const DynTypedNodeList GrandParents = Context->getParents(*Paren);
+            if (GrandParents.size() != 1 ||
+                GrandParents[0].get<UnaryExprOrTypeTraitExpr>() == nullptr) {
+              Range = Paren->getSourceRange();
+            }
           } else if (const auto *UOP = Parents[0].get<UnaryOperator>()) {
             // If we are taking the address of the loop variable, then we must
             // not use a copy, as it would mean taking the address of the loop's
@@ -753,6 +757,7 @@ void LoopConvertCheck::doConversion(
   bool IsCheapToCopy =
       !Descriptor.ElemType.isNull() &&
       Descriptor.ElemType.isTriviallyCopyableType(*Context) &&
+      !Descriptor.ElemType->isDependentSizedArrayType() &&
       // TypeInfo::Width is in bits.
       Context->getTypeInfo(Descriptor.ElemType).Width <= 8 * MaxCopySize;
   bool UseCopy = CanCopy && ((VarNameFromAlias && !AliasVarIsRef) ||
@@ -941,11 +946,15 @@ bool LoopConvertCheck::isConvertible(ASTContext *Context,
         CanonicalInitVarType->isPointerType()) {
       // If the initializer and the variable are both pointers check if the
       // un-qualified pointee types match, otherwise we don't use auto.
-      if (!Context->hasSameUnqualifiedType(
-              CanonicalBeginType->getPointeeType(),
-              CanonicalInitVarType->getPointeeType()))
-        return false;
+      return Context->hasSameUnqualifiedType(
+          CanonicalBeginType->getPointeeType(),
+          CanonicalInitVarType->getPointeeType());
     }
+
+    if (CanonicalBeginType->isBuiltinType() ||
+        CanonicalInitVarType->isBuiltinType())
+      return false;
+
   } else if (FixerKind == LFK_PseudoArray) {
     if (const auto *EndCall = Nodes.getNodeAs<CXXMemberCallExpr>(EndCallName)) {
       // This call is required to obtain the container.
@@ -962,8 +971,8 @@ void LoopConvertCheck::check(const MatchFinder::MatchResult &Result) {
   Confidence ConfidenceLevel(Confidence::CL_Safe);
   ASTContext *Context = Result.Context;
 
-  const ForStmt *Loop;
-  LoopFixerKind FixerKind;
+  const ForStmt *Loop = nullptr;
+  LoopFixerKind FixerKind{};
   RangeDescriptor Descriptor;
 
   if ((Loop = Nodes.getNodeAs<ForStmt>(LoopNameArray))) {

@@ -72,16 +72,20 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), item_ct1, dpct_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), item_ct1, dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   cudaLaunchKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
 
   void *kernel_func = (void *)&kernel;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaLaunchKernel is not supported.
+  // CHECK-NEXT: DPCT1123:{{[0-9]+}}: The kernel function pointer cannot be used in the device code. You need to call the kernel function with the correct argument(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may also be required.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, &q_ct1);
+  // CHECK-NEXT: q_ct1.parallel_for(
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)), 
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:     kernel_func();
+  // CHECK-NEXT:   });
   cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);

@@ -13,7 +13,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
+#include <sycl/usm.hpp>
 
 #include <vector>
 
@@ -79,12 +80,12 @@ int main() {
   }
 
   q.submit([&](handler &h) {
-    h.single_task<class foo1>([=]() {
-      for (size_t i = 0; i < count; ++i) {
-        *ptrs[i] = 1;
-      }
-    });
-  });
+     h.single_task<class foo1>([=]() {
+       for (size_t i = 0; i < count; ++i) {
+         *ptrs[i] = 1;
+       }
+     });
+   }).wait();
 
   size_t *res =
       (size_t *)aligned_alloc_shared(alignof(size_t), sizeof(size_t), q);

@@ -111,7 +111,7 @@ class MockHandler : public sycl::handler {
 
 public:
   MockHandler(std::shared_ptr<sycl::detail::queue_impl> Queue)
-      : sycl::handler(Queue, /* IsHost */ false) {}
+      : sycl::handler(Queue, /* IsHost */ false, /*CallerNeedsEvent*/ true) {}
 
   std::unique_ptr<sycl::detail::CG> finalize() {
     auto CGH = static_cast<sycl::handler *>(this);
@@ -122,9 +122,9 @@ public:
           std::move(CGH->MNDRDesc), std::move(CGH->MHostKernel),
           std::move(CGH->MKernel), std::move(MImpl->MKernelBundle),
           std::move(CGH->CGData), std::move(CGH->MArgs),
-          std::move(CGH->MKernelName), std::move(CGH->MStreamStorage),
+          CGH->MKernelName.c_str(), std::move(CGH->MStreamStorage),
           std::move(MImpl->MAuxiliaryResources), CGH->MCGType, {},
-          CGH->MCodeLoc));
+          MImpl->MKernelIsCooperative, CGH->MCodeLoc));
       break;
     }
     default:

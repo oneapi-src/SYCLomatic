@@ -17,25 +17,7 @@
 
 using namespace sycl;
 
-// Define type with the only methods called by finalizeHandler
-class LimitedHandler {
-public:
-  virtual ~LimitedHandler() {}
-  virtual void depends_on(sycl::event) {}
-
-  virtual event finalize() {
-    sycl::detail::EventImplPtr NewEvent =
-        std::make_shared<detail::event_impl>();
-    return sycl::detail::createSyclObjFromImpl<sycl::event>(NewEvent);
-  }
-};
-
-// Needed to use EXPECT_CALL to verify depends_on that originally appends lst
-// event as dependency to the new CG
-class LimitedHandlerSimulation : public LimitedHandler {
-public:
-  MOCK_METHOD1(depends_on, void(sycl::event));
-};
+using ::testing::An;
 
 class MockQueueImpl : public sycl::detail::queue_impl {
 public:
@@ -44,6 +26,44 @@ public:
                 const sycl::property_list &PropList)
       : sycl::detail::queue_impl(Device, AsyncHandler, PropList) {}
   using sycl::detail::queue_impl::finalizeHandler;
+};
+
+// Define type with the only methods called by finalizeHandler
+class LimitedHandler {
+public:
+  LimitedHandler(sycl::detail::CG::CGTYPE CGType,
+                 std::shared_ptr<MockQueueImpl> Queue)
+      : MCGType(CGType), MQueue(Queue) {}
+
+  virtual ~LimitedHandler() {}
+  virtual void depends_on(const sycl::detail::EventImplPtr &) {}
+  virtual void depends_on(const std::vector<detail::EventImplPtr> &Events) {}
+  virtual void depends_on(event Event) {};
+
+  virtual event finalize() {
+    sycl::detail::EventImplPtr NewEvent =
+        std::make_shared<detail::event_impl>();
+    return sycl::detail::createSyclObjFromImpl<sycl::event>(NewEvent);
+  }
+
+  sycl::detail::CG::CGTYPE getType() { return MCGType; }
+
+  sycl::detail::CG::CGTYPE MCGType;
+  std::shared_ptr<MockQueueImpl> MQueue;
+};
+
+// Needed to use EXPECT_CALL to verify depends_on that originally appends lst
+// event as dependency to the new CG
+class LimitedHandlerSimulation : public LimitedHandler {
+public:
+  LimitedHandlerSimulation(sycl::detail::CG::CGTYPE CGType,
+                           std::shared_ptr<MockQueueImpl> Queue)
+      : LimitedHandler(CGType, Queue) {}
+
+  MOCK_METHOD1(depends_on, void(const sycl::detail::EventImplPtr &));
+  MOCK_METHOD1(depends_on, void(event Event));
+  MOCK_METHOD1(depends_on,
+               void(const std::vector<detail::EventImplPtr> &Events));
 };
 
 // Only check events dependency in queue_impl::finalizeHandler
@@ -56,48 +76,21 @@ TEST_F(SchedulerTest, InOrderQueueSyncCheck) {
       sycl::detail::getSyclObjImpl(Dev), sycl::async_handler{},
       sycl::property::queue::in_order());
 
-  // What we are testing here:
-  // Task type  | Must depend on
-  //  host      | yes - always, separate sync management
-  //  host      | yes - always, separate sync management
-  //  kernel    | yes - change of sync approach
-  //  kernel    | no  - sync between pi calls must be done by backend
-  //  host      | yes - always, separate sync management
-
+  // Check that tasks submitted to an in-order queue implicitly depend_on the
+  // previous task, this is needed to properly sync blocking & blocked tasks.
   sycl::event Event;
-  // host task
   {
-    LimitedHandlerSimulation MockCGH;
-    EXPECT_CALL(MockCGH, depends_on).Times(1);
-    Queue->finalizeHandler<LimitedHandlerSimulation>(
-        MockCGH, detail::CG::CGTYPE::CodeplayHostTask, Event);
+    LimitedHandlerSimulation MockCGH{detail::CG::CGTYPE::CodeplayHostTask,
+                                     Queue};
+    EXPECT_CALL(MockCGH, depends_on(An<const sycl::detail::EventImplPtr &>()))
+        .Times(0);
+    Queue->finalizeHandler<LimitedHandlerSimulation>(MockCGH, Event);
   }
-  // host task
   {
-    LimitedHandlerSimulation MockCGH;
-    EXPECT_CALL(MockCGH, depends_on).Times(1);
-    Queue->finalizeHandler<LimitedHandlerSimulation>(
-        MockCGH, detail::CG::CGTYPE::CodeplayHostTask, Event);
-  }
-  // kernel task
-  {
-    LimitedHandlerSimulation MockCGH;
-    EXPECT_CALL(MockCGH, depends_on).Times(1);
-    Queue->finalizeHandler<LimitedHandlerSimulation>(
-        MockCGH, detail::CG::CGTYPE::Kernel, Event);
-  }
-  // kernel task
-  {
-    LimitedHandlerSimulation MockCGH;
-    EXPECT_CALL(MockCGH, depends_on).Times(0);
-    Queue->finalizeHandler<LimitedHandlerSimulation>(
-        MockCGH, detail::CG::CGTYPE::Kernel, Event);
-  }
-  // host task
-  {
-    LimitedHandlerSimulation MockCGH;
-    EXPECT_CALL(MockCGH, depends_on).Times(1);
-    Queue->finalizeHandler<LimitedHandlerSimulation>(
-        MockCGH, detail::CG::CGTYPE::CodeplayHostTask, Event);
+    LimitedHandlerSimulation MockCGH{detail::CG::CGTYPE::CodeplayHostTask,
+                                     Queue};
+    EXPECT_CALL(MockCGH, depends_on(An<const sycl::detail::EventImplPtr &>()))
+        .Times(1);
+    Queue->finalizeHandler<LimitedHandlerSimulation>(MockCGH, Event);
   }
 }

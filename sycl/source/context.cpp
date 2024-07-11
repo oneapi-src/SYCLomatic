@@ -16,7 +16,6 @@
 #include <sycl/exception_list.hpp>
 #include <sycl/platform.hpp>
 #include <sycl/properties/all_properties.hpp>
-#include <sycl/stl.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -57,31 +56,20 @@ context::context(const std::vector<device> &DeviceList,
     throw invalid_parameter_error("DeviceList is empty.",
                                   PI_ERROR_INVALID_VALUE);
   }
-  auto NonHostDeviceIter = std::find_if_not(
-      DeviceList.begin(), DeviceList.end(), [&](const device &CurrentDevice) {
-        return detail::getSyclObjImpl(CurrentDevice)->is_host();
-      });
-  if (NonHostDeviceIter == DeviceList.end())
-    impl = std::make_shared<detail::context_impl>(DeviceList[0], AsyncHandler,
+
+  const auto &RefPlatform =
+      detail::getSyclObjImpl(DeviceList[0].get_platform())->getHandleRef();
+  if (std::any_of(DeviceList.begin(), DeviceList.end(),
+                  [&](const device &CurrentDevice) {
+                    return (detail::getSyclObjImpl(CurrentDevice.get_platform())
+                                ->getHandleRef() != RefPlatform);
+                  }))
+    throw invalid_parameter_error(
+        "Can't add devices across platforms to a single context.",
+        PI_ERROR_INVALID_DEVICE);
+  else
+    impl = std::make_shared<detail::context_impl>(DeviceList, AsyncHandler,
                                                   PropList);
-  else {
-    const device &NonHostDevice = *NonHostDeviceIter;
-    const auto &NonHostPlatform =
-        detail::getSyclObjImpl(NonHostDevice.get_platform())->getHandleRef();
-    if (std::any_of(DeviceList.begin(), DeviceList.end(),
-                    [&](const device &CurrentDevice) {
-                      return (
-                          detail::getSyclObjImpl(CurrentDevice)->is_host() ||
-                          (detail::getSyclObjImpl(CurrentDevice.get_platform())
-                               ->getHandleRef() != NonHostPlatform));
-                    }))
-      throw invalid_parameter_error(
-          "Can't add devices across platforms to a single context.",
-          PI_ERROR_INVALID_DEVICE);
-    else
-      impl = std::make_shared<detail::context_impl>(DeviceList, AsyncHandler,
-                                                    PropList);
-  }
 }
 context::context(cl_context ClContext, async_handler AsyncHandler) {
   const auto &Plugin = sycl::detail::pi::getPlugin<backend::opencl>();
@@ -101,6 +89,20 @@ context::get_info() const {
       const;
 
 #include <sycl/info/context_traits.def>
+
+#undef __SYCL_PARAM_TRAITS_SPEC
+
+template <typename Param>
+typename detail::is_backend_info_desc<Param>::return_type
+context::get_backend_info() const {
+  return impl->get_backend_info<Param>();
+}
+
+#define __SYCL_PARAM_TRAITS_SPEC(DescType, Desc, ReturnT, Picode)              \
+  template __SYCL_EXPORT ReturnT                                               \
+  context::get_backend_info<info::DescType::Desc>() const;
+
+#include <sycl/info/sycl_backend_traits.def>
 
 #undef __SYCL_PARAM_TRAITS_SPEC
 
@@ -125,9 +127,8 @@ context::get_info() const {
 cl_context context::get() const { return impl->get(); }
 
 bool context::is_host() const {
-  bool IsHost = impl->is_host();
-  assert(!IsHost && "context::is_host should not be called in implementation.");
-  return IsHost;
+  assert(false && "context::is_host should not be called in implementation.");
+  return false;
 }
 
 backend context::get_backend() const noexcept { return impl->getBackend(); }

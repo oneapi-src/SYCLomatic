@@ -380,18 +380,17 @@ public:
     };
     std::vector<QuickFix> QuickFixes;
     std::vector<TweakRef> TweakRefs;
+    struct Rename {
+      DiagRef Diag;
+      std::string FixMessage;
+      std::string NewName;
+    };
+    std::vector<Rename> Renames;
   };
   /// Surface code actions (quick-fixes for diagnostics, or available code
   /// tweaks) for a given range in a file.
   void codeAction(const CodeActionInputs &Inputs,
                   Callback<CodeActionResult> CB);
-
-  /// Enumerate the code tweaks available to the user at a specified point.
-  /// Tweaks where Filter returns false will not be checked or included.
-  /// Deprecated, use codeAction instead.
-  void enumerateTweaks(PathRef File, Range Sel,
-                       llvm::unique_function<bool(const Tweak &)> Filter,
-                       Callback<std::vector<TweakRef>> CB);
 
   /// Apply the code tweak with a specified \p ID.
   void applyTweak(PathRef File, Range Sel, StringRef ID,

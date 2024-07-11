@@ -78,8 +78,12 @@ RewriterMap createDeviceRadixSortRewriterMap();
 RewriterMap createDeviceSegmentedRadixSortRewriterMap();
 RewriterMap createDeviceSegmentedSortRewriterMap();
 RewriterMap createDeviceHistgramRewriterMap();
+RewriterMap createDeviceMergeSortRewriterMap();
 RewriterMap createClassMethodsRewriterMap();
 RewriterMap createUtilityFunctionsRewriterMap();
+RewriterMap createDevicePartitionRewriterMap();
+RewriterMap createDeviceSpmvRewriterMap();
+
 } // namespace clang::dpct
 
 #endif // CLANG_DPCT_CALL_EXPR_REWRITER_CUB_H

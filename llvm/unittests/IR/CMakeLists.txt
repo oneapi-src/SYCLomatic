@@ -5,6 +5,7 @@ set(LLVM_LINK_COMPONENTS
   Support
   Passes
   SYCLLowerIR
+  TargetParser
   TransformUtils
   ScalarOpts
   )
@@ -14,6 +15,7 @@ add_llvm_unittest(IRTests
   AsmWriterTest.cpp
   AttributesTest.cpp
   BasicBlockTest.cpp
+  BasicBlockDbgInfoTest.cpp
   CFGBuilder.cpp
   ConstantRangeTest.cpp
   ConstantsTest.cpp
@@ -31,6 +33,7 @@ add_llvm_unittest(IRTests
   IntrinsicsTest.cpp
   LegacyPassManagerTest.cpp
   MDBuilderTest.cpp
+  MemoryModelRelaxationAnnotationsTest.cpp
   ManglerTest.cpp
   MetadataTest.cpp
   ModuleTest.cpp
@@ -49,6 +52,7 @@ add_llvm_unittest(IRTests
   VectorBuilderTest.cpp
   VectorTypesTest.cpp
   VerifierTest.cpp
+  VFABIDemanglerTest.cpp
   VPIntrinsicTest.cpp
   CoreBindings.cpp
   )

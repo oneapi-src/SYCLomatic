@@ -1,4 +1,5 @@
-// Migration desc: The API is Removed.
+// Option: --use-experimental-features=graph
+
 void test(cudaStream_t s, enum cudaStreamCaptureStatus *ps) {
   // Start
   cudaStreamIsCapturing(s /*cudaStream_t*/,

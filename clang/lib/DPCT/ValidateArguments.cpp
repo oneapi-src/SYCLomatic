@@ -11,6 +11,7 @@
 #include "Statics.h"
 #include "Utility.h"
 
+#include "clang/DPCT/DpctOptions.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
@@ -22,41 +23,46 @@ using namespace llvm;
 using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
+bool isOutRootAccess(SmallString<256> &OutRoot) {
+  if (!fs::can_write(OutRoot)) {
+    llvm::errs() << "Could not access out-root directory.\n";
+    return false;
+  }
+  return true;
+}
+bool isOutRootEmpty(SmallString<256> &OutRoot) {
+  std::error_code EC;
+  fs::directory_iterator Iter(OutRoot, EC);
+  fs::directory_iterator End;
+  if (Iter != End) {
+    llvm::errs() << "dpct_output directory is not empty. Please use option"
+                    " \"--out-root\" to set output directory.\n";
+    return false;
+  }
+  return true;
+}
 
 // Set OutRoot to the current working directory.
-static bool getDefaultOutRoot(std::string &OutRootPar) {
+bool getDefaultOutRoot(clang::tooling::UnifiedPath &DefaultOutRoot,
+                       bool NeedCheckOutRootEmpty) {
   SmallString<256> OutRoot;
   if (fs::current_path(OutRoot) != std::error_code()) {
     llvm::errs() << "Could not get current path.\n";
     return false;
   }
   OutRoot.append("/dpct_output");
-  if (fs::is_directory(OutRoot)) {
-    std::error_code EC;
-    fs::directory_iterator Iter(OutRoot, EC);
-    if ((bool)EC) {
-      llvm::errs() << "Could not access output directory.\n";
-      return false;
-    }
-    fs::directory_iterator End;
-    if (Iter != End) {
-      llvm::errs() << "dpct_output directory is not empty. Please use option"
-                      " \"--out-root\" to set output directory.\n";
-      return false;
-    } else {
-      clang::dpct::PrintMsg(
-          "The directory \"dpct_output\" is used as \"out-root\"\n");
+  DefaultOutRoot.setPath(OutRoot.str().str());
+  if (fs::is_directory(OutRoot) && isOutRootAccess(OutRoot)) {
+    if (NeedCheckOutRootEmpty) {
+      if (!isOutRootEmpty(OutRoot)) {
+        return false;
+      }
     }
   } else {
-    std::error_code EC = fs::create_directory(OutRoot, false);
-    if ((bool)EC) {
-      llvm::errs() << "Could not create dpct_output directory.\n";
-      return false;
-    }
-    clang::dpct::PrintMsg(
-        "The directory \"dpct_output\" is used as \"out-root\"\n");
+    clang::dpct::createDirectories(OutRoot, false);
   }
-  OutRootPar.assign(begin(OutRoot), end(OutRoot));
+  clang::dpct::PrintMsg(
+      "The directory \"dpct_output\" is used as \"out-root\"\n");
   return true;
 }
 
@@ -64,106 +70,77 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
 // set InRoot to the directory of the first input source file.
 // If input source file does not exist,
 // set InRoot to ".".
-static bool getDefaultInRoot(std::string &InRootPar,
+static bool getDefaultInRoot(clang::tooling::UnifiedPath &InRootPar,
                              const vector<string> &SourceFiles) {
   if (SourceFiles.size() == 0) {
-    InRootPar = ".";
+    InRootPar.setPath(".");
     return true;
   }
 
-  SmallString<256> InRoot = StringRef(SourceFiles.front());
+  clang::tooling::UnifiedPath InRoot = SourceFiles.front();
   // Remove the last component from path.
-  path::remove_filename(InRoot);
-  if (!makeCanonical(InRoot))
+  SmallString<512> InRootStr(InRoot.getCanonicalPath());
+  path::remove_filename(InRootStr);
+  InRootPar.setPath(InRootStr.str().str());
+  if (InRootPar.getCanonicalPath().empty())
     return false;
-
-  InRootPar.assign(begin(InRoot), end(InRoot));
   return true;
 }
 
 bool makeInRootCanonicalOrSetDefaults(
-    string &InRoot, const std::vector<std::string> SourceFiles) {
-  if (InRoot.empty()) {
+    clang::tooling::UnifiedPath &InRoot,
+    const std::vector<std::string> SourceFiles) {
+  if (InRoot.getPath().empty()) {
     if (!getDefaultInRoot(InRoot, SourceFiles))
       return false;
-  } else if (!makeCanonical(InRoot)) {
-    return false;
-  }
-  if (fs::get_file_type(InRoot) != fs::file_type::directory_file) {
-    llvm::errs() << "Error: '" << InRoot << "' is not a directory.\n";
-    return false;
-  }
-
-  SmallString<512> InRootAbs;
-  std::error_code EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
-  if ((bool)EC) {
+  } else if (InRoot.getCanonicalPath().empty()) {
     clang::dpct::ShowStatus(MigrationErrorInvalidInRootPath);
     dpctExit(MigrationErrorInvalidInRootPath);
   }
-  InRoot = InRootAbs.str().str();
-  return true;
-}
-
-bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
-  if (OutRoot.empty()) {
-    if (!getDefaultOutRoot(OutRoot))
-      return false;
-  }
-
-  if (!makeCanonical(OutRoot)) {
+  if (fs::get_file_type(InRoot.getCanonicalPath()) !=
+      fs::file_type::directory_file) {
+    llvm::errs() << "Error: '" << InRoot.getCanonicalPath()
+                 << "' is not a directory.\n";
     return false;
   }
-
-  llvm::SmallString<512> AbsOutRootNative(OutRoot);
-  llvm::sys::path::native(AbsOutRootNative);
-  OutRoot = std::string(AbsOutRootNative.str());
-
   return true;
 }
 
-bool makeAnalysisScopeCanonicalOrSetDefaults(string &AnalysisScope,
-                                             const string &InRoot) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
-  if (AnalysisScope.empty()) {
+bool makeAnalysisScopeCanonicalOrSetDefaults(
+    clang::tooling::UnifiedPath &AnalysisScope,
+    const clang::tooling::UnifiedPath &InRoot) {
+  if (AnalysisScope.getPath().empty()) {
     // AnalysisScope defaults to the value of InRoot
     AnalysisScope = InRoot;
     return true;
   }
-  if (!makeCanonical(AnalysisScope)) {
+  if (AnalysisScope.getCanonicalPath().empty()) {
     return false;
   }
-  SmallString<512> AnalysisScopeAbs;
-  std::error_code EC =
-      llvm::sys::fs::real_path(AnalysisScope, AnalysisScopeAbs, true);
-  if ((bool)EC) {
-    return false;
-  }
-  AnalysisScope = AnalysisScopeAbs.str().str();
   return true;
 }
 
 // Make sure all files have an extension and are under InRoot.
-int validatePaths(const std::string &InRoot,
+int validatePaths(const clang::tooling::UnifiedPath &InRoot,
                   const std::vector<std::string> &SourceFiles) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   int Ok = 0;
   for (const auto &FilePath : SourceFiles) {
-    auto AbsPath = FilePath;
-    if (!makeCanonical(AbsPath)) {
+    clang::tooling::UnifiedPath CanonicalPath(FilePath);
+    if (CanonicalPath.getCanonicalPath().empty()) {
       Ok = -1;
       continue;
     }
 
-    if (!isChildPath(InRoot, AbsPath)) {
+    if (!isChildPath(InRoot, CanonicalPath)) {
       Ok = -1;
-      llvm::errs() << "Error: File '" << AbsPath
+      llvm::errs() << "Error: File '" << CanonicalPath.getCanonicalPath()
                    << "' is not under the specified input root directory '"
-                   << InRoot << "'\n";
+                   << InRoot.getCanonicalPath() << "'\n";
     }
 
-    if (!path::has_extension(AbsPath)) {
+    if (!path::has_extension(CanonicalPath.getCanonicalPath())) {
       Ok = -2;
-      llvm::errs() << "Error: File '" << AbsPath
+      llvm::errs() << "Error: File '" << CanonicalPath.getCanonicalPath()
                    << "' does not have an extension.\n";
     }
   }
@@ -171,31 +148,56 @@ int validatePaths(const std::string &InRoot,
   return Ok;
 }
 
-int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath) {
-  if (Path.empty()) {
-    return 1;
-  }
-  SmallString<512> AbsPath;
-  auto EC = llvm::sys::fs::real_path(Path, AbsPath, true);
-  if ((bool)EC) {
-    return -1;
-  }
+int validateCmakeScriptPaths(const clang::tooling::UnifiedPath &InRoot,
+                             const std::vector<std::string> &CmakeScriptPaths) {
+  int Ok = 0;
+  for (const auto &FilePath : CmakeScriptPaths) {
+    clang::tooling::UnifiedPath Canonical(FilePath);
+    if (!llvm::sys::fs::exists(Canonical.getCanonicalPath())) {
+      Ok = -2;
+      std::string Name =
+          fs::is_directory(Canonical.getCanonicalPath()) ? "Directory" : "File";
+      llvm::errs() << "Error: " << Name << "'" << Canonical.getCanonicalPath()
+                   << "' does not exit.\n";
+    }
+    if (fs::is_directory(Canonical.getCanonicalPath()) &&
+        !isChildOrSamePath(InRoot, Canonical)) {
+      Ok = -3;
+      llvm::errs() << "Error: Directory '" << Canonical.getCanonicalPath()
+                   << "' is not under the specified input root directory '"
+                   << InRoot << "'\n";
+    }
+    if (fs::is_regular_file(Canonical.getCanonicalPath()) &&
+        !isChildPath(InRoot, Canonical)) {
+      Ok = -4;
+      llvm::errs() << "Error: File '" << Canonical.getCanonicalPath()
+                   << "' is not under the specified input root directory '"
+                   << InRoot << "'\n";
+    }
 
-#if defined(_WIN32)
-  RealPath = AbsPath.str().lower();
-  if (RealPath.size() >= 3 && RealPath.substr(0, 3) == "unc") {
-    RealPath = "\\" + RealPath.substr(3);
+    if (fs::is_regular_file(Canonical.getCanonicalPath())) {
+      llvm::StringRef Name =
+          llvm::sys::path::filename(Canonical.getCanonicalPath());
+      if (Name != "CMakeLists.txt" && !Name.ends_with(".cmake")) {
+        Ok = -5;
+        llvm::errs() << "Error: File '" << Canonical.getCanonicalPath()
+                     << "' is not valid cmake script file.\n";
+      }
+    }
   }
-#elif defined(__linux__)
-  RealPath = AbsPath.c_str();
-#else
-#error Only support windows and Linux.
-#endif
+  return Ok;
+}
+
+int checkSDKPathOrIncludePath(clang::tooling::UnifiedPath &Path) {
+  if (Path.getPath().empty())
+    return 1;
+  if (Path.getCanonicalPath().empty())
+    return -1;
   return 0;
 }
 
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
-                     std::string &RFile, bool &ROnly, bool &GenReport,
+                     std::string &RFile, bool ROnly, bool &GenReport,
                      std::string &DVerbose) {
   bool Success = true;
   if (ROnly || !RFile.empty() || !DVerbose.empty() ||

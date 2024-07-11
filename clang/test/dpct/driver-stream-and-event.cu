@@ -1,5 +1,6 @@
 // RUN: dpct -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event/driver-stream-and-event.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/driver-stream-and-event/driver-stream-and-event.dp.cpp -o %T/driver-stream-and-event/driver-stream-and-event.dp.o %}
 
 #include "cuda.h"
 #include <vector>
@@ -91,10 +92,10 @@ void test_stream() {
   unsigned int flag;
   size_t length;
   CUdeviceptr  cuPtr;
-  // CHECK: std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); });
+  // CHECK: std::async([&]() { hStream->wait(); callback<char>(hStream, 0, data); });
   cuStreamAddCallback(hStream, callback<char>, data, flag);
 
-  // CHECK: int result = DPCT_CHECK_ERROR(std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); }));
+  // CHECK: int result = DPCT_CHECK_ERROR(std::async([&]() { hStream->wait(); callback<char>(hStream, 0, data); }));
   CUresult result = cuStreamAddCallback(hStream, callback<char>, data, flag);
 
   //CHECK: /*
@@ -121,4 +122,10 @@ void test_stream() {
 
   // CHECK: dpct::get_current_device().destroy_queue(hStream);
   cuStreamDestroy(hStream);
+}
+
+void test_cuEventRecord_crash(CUevent hEvent, CUstream hStream)
+{
+  // CHECK: int result = DPCT_CHECK_ERROR(*(dpct::event_ptr)hEvent = ((dpct::queue_ptr)hStream)->ext_oneapi_submit_barrier());
+  CUresult result = cuEventRecord((CUevent)hEvent, (CUstream)hStream);
 }

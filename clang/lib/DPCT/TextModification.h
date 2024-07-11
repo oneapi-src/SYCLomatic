@@ -21,17 +21,18 @@ namespace dpct {
 
 class KernelCallExpr;
 class TextModification;
+class ExtReplacement;
 using TransformSetTy = std::vector<std::shared_ptr<TextModification>>;
-
-class ReplaceInclude;
-using IncludeMapSetTy =
-    std::map<std::string, std::vector<std::unique_ptr<ReplaceInclude>>>;
+using IncludeMapSetTy = std::vector<
+    std::pair<clang::tooling::UnifiedPath, std::shared_ptr<ExtReplacement>>>;
 
 enum InsertPosition {
   IP_AlwaysLeft = 0,
   IP_Left,
   IP_Right,
 };
+
+enum ReplacementType { RT_ForSYCLMigration = 0, RT_CUDAWithCodePin };
 
 /// Extend Replacement to contain more meta info of Replacement inserted by
 /// AST Rule. Further Analysis Pass like Merge Pass can happen based
@@ -48,9 +49,9 @@ public:
   /// \param FilePath A source file accessible via a SourceManager.
   /// \param Offset The byte offset of the start of the range in the file.
   /// \param Length The length of the range in bytes.
-  ExtReplacement(StringRef FilePath, unsigned Offset, unsigned Length,
+  ExtReplacement(clang::tooling::UnifiedPath FilePath, unsigned Offset, unsigned Length,
                  StringRef ReplacementText, const TextModification *_TM)
-      : Replacement(FilePath, Offset, Length, ReplacementText), TM(_TM) {}
+      : Replacement(FilePath.getCanonicalPath(), Offset, Length, ReplacementText), TM(_TM) {}
 
   /// Creates a Replacement of the range [Start, Start+Length) with
   /// ReplacementText.
@@ -82,7 +83,7 @@ public:
 
   bool equal(std::shared_ptr<ExtReplacement> RHS) {
     return getLength() == RHS->getLength() &&
-           getReplacementText().equals(RHS->getReplacementText());
+           getReplacementText() == RHS->getReplacementText();
   }
 
   /// merge the constant info to LHS
@@ -122,6 +123,7 @@ public:
 
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
+  ReplacementType IsForCodePin = RT_ForSYCLMigration;
 
 private:
   InsertPosition InsertPos = IP_Left;
@@ -199,6 +201,7 @@ public:
     BlockLevelFormatFlag = Flag;
   }
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
+  ReplacementType IsForCodePin = RT_ForSYCLMigration;
 
 private:
   const TMID ID;
@@ -224,14 +227,19 @@ class InsertText : public TextModification {
   SourceLocation Begin;
   std::string T;
   unsigned PairID;
+  bool IsSYCLHeaderNeeded = true;
 
 public:
-  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0)
-      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {}
+  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0,
+             ReplacementType IsForCodePin = RT_ForSYCLMigration)
+      : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {
+    this->IsForCodePin = IsForCodePin;
+  }
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+  void setSYCLHeaderNeeded(bool Flag) { IsSYCLHeaderNeeded = Flag; };
 };
 
 /// For macros and typedefs source location is unreliable (begin and end of the
@@ -241,6 +249,7 @@ class ReplaceToken : public TextModification {
   SourceLocation Begin;
   SourceLocation End;
   std::string T;
+  bool IsSYCLHeaderNeeded = true;
 
 public:
   ReplaceToken(SourceLocation Loc, std::string &&S)
@@ -251,6 +260,7 @@ public:
   getReplacement(const ASTContext &Context) const override;
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
+  void setSYCLHeaderNeeded(bool Flag) { IsSYCLHeaderNeeded = Flag; };
 };
 
 /// Replace a statement (w/o semicolon) with a specified string.
@@ -519,39 +529,6 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-/// Replace Dim3 constructors
-class ReplaceDim3Ctor : public TextModification {
-  bool isDecl;
-  const CXXConstructExpr *Ctor;
-  const CXXConstructExpr *FinalCtor;
-  CharSourceRange CSR;
-  mutable std::string ReplacementString;
-
-  void setRange();
-  const Stmt *getReplaceStmt(const Stmt *S) const;
-  std::string getSyclRangeCtor(const CXXConstructExpr *Ctor) const;
-  std::string getReplaceString() const;
-
-public:
-  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor, bool _isDecl = false)
-      : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(_isDecl),
-        Ctor(_Ctor), FinalCtor(nullptr) {
-    setRange();
-  }
-  ReplaceDim3Ctor(const CXXConstructExpr *_Ctor,
-                  const CXXConstructExpr *_FinalCtor)
-      : TextModification(TMID::ReplaceDim3Ctor, G2), isDecl(false), Ctor(_Ctor),
-        FinalCtor(_FinalCtor) {
-    setRange();
-  }
-  static const CXXConstructExpr *getConstructExpr(const Expr *E);
-  ReplaceInclude *getEmpty();
-  std::shared_ptr<ExtReplacement>
-  getReplacement(const ASTContext &Context) const override;
-  void print(llvm::raw_ostream &OS, ASTContext &Context,
-             const bool PrintDetail = true) const override;
-};
-
 class InsertBeforeStmt : public TextModification {
   const Stmt *S;
   std::string T;
@@ -624,16 +601,21 @@ class ReplaceText : public TextModification {
   std::string T;
 
 public:
-  ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S)
-      : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
-        T(std::move(S)) {
-    this->NotFormatFlag = false;
-  }
   ReplaceText(const SourceLocation &Begin, unsigned Len, std::string &&S,
-              bool NotFormatFlag)
+              bool NotFormatFlag = false,
+              ReplacementType IsForCodePin = RT_ForSYCLMigration)
       : TextModification(TMID::ReplaceText), BeginLoc(Begin), Len(Len),
         T(std::move(S)) {
     this->NotFormatFlag = NotFormatFlag;
+    this->IsForCodePin = IsForCodePin;
+  }
+  ReplaceText(const SourceLocation &Begin, const SourceLocation &End,
+              std::string &&S,
+              ReplacementType IsForCodePin = RT_ForSYCLMigration)
+      : TextModification(TMID::ReplaceText), BeginLoc(Begin),
+        Len(End.getRawEncoding() - Begin.getRawEncoding()), T(std::move(S)) {
+    this->NotFormatFlag = false;
+    this->IsForCodePin = IsForCodePin;
   }
 
   std::shared_ptr<ExtReplacement>

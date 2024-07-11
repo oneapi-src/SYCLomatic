@@ -11,6 +11,7 @@
 // RUN: dpct --format-range=none  -p=%S  -in-root=%S -out-root=%T/2 --process-all --cuda-include-path="%cuda-path/include"
 
 // RUN: FileCheck --input-file %T/2/a_kernel.dp.cpp --match-full-lines %S/a_kernel.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/2/a_kernel.dp.cpp -o %T/2/a_kernel.dp.o %}
 // RUN: FileCheck --match-full-lines --input-file %T/2/readme_1.txt %T/2/readme_1.txt
 
 #include "cuda_runtime.h"

@@ -14,10 +14,10 @@
 #ifndef LLVM_LIB_TARGET_WEBASSEMBLY_MCTARGETDESC_WEBASSEMBLYMCTARGETDESC_H
 #define LLVM_LIB_TARGET_WEBASSEMBLY_MCTARGETDESC_WEBASSEMBLYMCTARGETDESC_H
 
-#include "../WebAssemblySubtarget.h"
 #include "llvm/BinaryFormat/Wasm.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCInstrDesc.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/DataTypes.h"
 #include <memory>
 
@@ -206,6 +206,8 @@ inline unsigned GetDefaultP2AlignAny(unsigned Opc) {
   WASM_LOAD_STORE(LOAD16_SPLAT)
   WASM_LOAD_STORE(LOAD_LANE_I16x8)
   WASM_LOAD_STORE(STORE_LANE_I16x8)
+  WASM_LOAD_STORE(LOAD_F16_F32)
+  WASM_LOAD_STORE(STORE_F16_F32)
   return 1;
   WASM_LOAD_STORE(LOAD_I32)
   WASM_LOAD_STORE(LOAD_F32)
@@ -343,6 +345,8 @@ inline bool isArgument(unsigned Opc) {
   case WebAssembly::ARGUMENT_v4i32_S:
   case WebAssembly::ARGUMENT_v2i64:
   case WebAssembly::ARGUMENT_v2i64_S:
+  case WebAssembly::ARGUMENT_v8f16:
+  case WebAssembly::ARGUMENT_v8f16_S:
   case WebAssembly::ARGUMENT_v4f32:
   case WebAssembly::ARGUMENT_v4f32_S:
   case WebAssembly::ARGUMENT_v2f64:
@@ -425,8 +429,8 @@ inline bool isCallIndirect(unsigned Opc) {
   }
 }
 
-inline bool isBrTable(const MachineInstr &MI) {
-  switch (MI.getOpcode()) {
+inline bool isBrTable(unsigned Opc) {
+  switch (Opc) {
   case WebAssembly::BR_TABLE_I32:
   case WebAssembly::BR_TABLE_I32_S:
   case WebAssembly::BR_TABLE_I64:
@@ -535,7 +539,18 @@ inline bool isLocalTee(unsigned Opc) {
   }
 }
 
+static const unsigned UnusedReg = -1u;
+
+// For a given stackified WAReg, return the id number to print with push/pop.
+unsigned inline getWARegStackId(unsigned Reg) {
+  assert(Reg & INT32_MIN);
+  return Reg & INT32_MAX;
+}
+
 } // end namespace WebAssembly
 } // end namespace llvm
+
+#define GET_SUBTARGETINFO_ENUM
+#include "WebAssemblyGenSubtargetInfo.inc"
 
 #endif

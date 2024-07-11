@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/unnamed-struct %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/unnamed-struct/unnamed-struct.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/unnamed-struct/unnamed-struct.dp.cpp -o %T/unnamed-struct/unnamed-struct.dp.o %}
 
 #include <vector>
 #include <algorithm>

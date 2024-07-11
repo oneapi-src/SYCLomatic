@@ -1,0 +1,3 @@
+if (IntelSYCL_FOUND)
+if(IntelSYCL_FOUND)
+if( IntelSYCL_FOUND )

@@ -57,8 +57,8 @@ TEST(AsmParserTest, SlotMappingTest) {
   EXPECT_TRUE(Mod != nullptr);
   EXPECT_TRUE(Error.getMessage().empty());
 
-  ASSERT_EQ(Mapping.GlobalValues.size(), 1u);
-  EXPECT_TRUE(isa<GlobalVariable>(Mapping.GlobalValues[0]));
+  ASSERT_EQ(Mapping.GlobalValues.getNext(), 1u);
+  EXPECT_TRUE(isa<GlobalVariable>(Mapping.GlobalValues.get(0)));
 
   EXPECT_EQ(Mapping.MetadataNodes.size(), 2u);
   EXPECT_EQ(Mapping.MetadataNodes.count(0), 1u);
@@ -253,11 +253,6 @@ TEST(AsmParserTest, TypeWithSlotMappingParsing) {
   ASSERT_TRUE(Ty);
   ASSERT_TRUE(Ty->isPointerTy());
 
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  PointerType *PT = cast<PointerType>(Ty);
-  ASSERT_TRUE(PT->isOpaque());
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
-
   // Check that we reject types with garbage.
   Ty = parseType("i32 garbage", Error, M, &Mapping);
   ASSERT_TRUE(!Ty);
@@ -372,11 +367,6 @@ TEST(AsmParserTest, TypeAtBeginningWithSlotMappingParsing) {
   ASSERT_TRUE(Ty);
   ASSERT_TRUE(Ty->isPointerTy());
   ASSERT_TRUE(Read == 3);
-
-#ifndef INTEL_SYCL_OPAQUEPOINTER_READY
-  PointerType *PT = cast<PointerType>(Ty);
-  ASSERT_TRUE(PT->isOpaque());
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
 
   // Check that we reject types with garbage.
   Ty = parseTypeAtBeginning("i32 garbage", Read, Error, M, &Mapping);

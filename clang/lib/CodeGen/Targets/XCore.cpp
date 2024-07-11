@@ -164,22 +164,14 @@ Address XCoreABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
     break;
   case ABIArgInfo::Extend:
   case ABIArgInfo::Direct:
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
     Val = AP.withElementType(ArgTy);
-#else
-    Val = Builder.CreateElementBitCast(AP, ArgTy);
-#endif //INTEL_SYCL_OPAQUEPOINTER_READY
     ArgSize = CharUnits::fromQuantity(
         getDataLayout().getTypeAllocSize(AI.getCoerceToType()));
     ArgSize = ArgSize.alignTo(SlotSize);
     break;
   case ABIArgInfo::Indirect:
   case ABIArgInfo::IndirectAliased:
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
     Val = AP.withElementType(ArgPtrTy);
-#else
-    Val = Builder.CreateElementBitCast(AP, ArgPtrTy);
-#endif //INTEL_SYCL_OPAQUEPOINTER_READY
     Val = Address(Builder.CreateLoad(Val), ArgTy, TypeAlign);
     ArgSize = SlotSize;
     break;
@@ -188,7 +180,7 @@ Address XCoreABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
   // Increment the VAList.
   if (!ArgSize.isZero()) {
     Address APN = Builder.CreateConstInBoundsByteGEP(AP, ArgSize);
-    Builder.CreateStore(APN.getPointer(), VAListAddr);
+    Builder.CreateStore(APN.emitRawPointer(CGF), VAListAddr);
   }
 
   return Val;
@@ -551,7 +543,7 @@ static bool appendArrayType(SmallStringEnc &Enc, QualType QT,
                             const ArrayType *AT,
                             const CodeGen::CodeGenModule &CGM,
                             TypeStringCache &TSC, StringRef NoSizeEnc) {
-  if (AT->getSizeModifier() != ArrayType::Normal)
+  if (AT->getSizeModifier() != ArraySizeModifier::Normal)
     return false;
   Enc += "a(";
   if (const ConstantArrayType *CAT = dyn_cast<ConstantArrayType>(AT))

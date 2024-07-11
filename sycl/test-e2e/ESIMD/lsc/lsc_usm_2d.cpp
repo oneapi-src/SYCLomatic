@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-// REQUIRES: gpu-intel-pvc || esimd_emulator
+// REQUIRES: gpu-intel-pvc
 // RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 
@@ -15,8 +15,6 @@
 #include <cmath>
 #include <numeric>
 #include <random>
-#include <sycl/ext/intel/esimd.hpp>
-#include <sycl/sycl.hpp>
 
 int main() {
   using namespace sycl;

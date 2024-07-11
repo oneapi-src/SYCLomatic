@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5
 // RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/math/cuda-math-extension-cuda11-after %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-extension-cuda11-after/cuda-math-extension-cuda11-after.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math/cuda-math-extension-cuda11-after/cuda-math-extension-cuda11-after.dp.cpp -o %T/math/cuda-math-extension-cuda11-after/cuda-math-extension-cuda11-after.dp.o %}
 
 // CHECK: #include <sycl/ext/intel/math.hpp>
 #include "cuda_fp16.h"

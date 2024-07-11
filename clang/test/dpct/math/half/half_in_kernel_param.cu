@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0
 // RUN: dpct --format-range=none -out-root %T/math/half/ %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/half/half_in_kernel_param.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math/half/half_in_kernel_param.dp.cpp -o %T/math/half/half_in_kernel_param.dp.o %}
 
 #include "cuda_fp16.h"
 

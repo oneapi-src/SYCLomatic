@@ -74,6 +74,13 @@ private:
   MBBSectionID(SectionType T) : Type(T), Number(0) {}
 };
 
+// This structure represents the information for a basic block pertaining to
+// the basic block sections profile.
+struct UniqueBBID {
+  unsigned BaseID;
+  unsigned CloneID;
+};
+
 template <> struct ilist_traits<MachineInstr> {
 private:
   friend class MachineBasicBlock; // Set by the owning MachineBasicBlock.
@@ -104,6 +111,10 @@ public:
 
     RegisterMaskPair(MCPhysReg PhysReg, LaneBitmask LaneMask)
         : PhysReg(PhysReg), LaneMask(LaneMask) {}
+
+    bool operator==(const RegisterMaskPair &other) const {
+      return PhysReg == other.PhysReg && LaneMask == other.LaneMask;
+    }
   };
 
 private:
@@ -180,7 +191,7 @@ private:
 
   /// Fixed unique ID assigned to this basic block upon creation. Used with
   /// basic block sections and basic block labels.
-  std::optional<unsigned> BBID;
+  std::optional<UniqueBBID> BBID;
 
   /// With basic block sections, this stores the Section ID of the basic block.
   MBBSectionID SectionID{0};
@@ -233,7 +244,7 @@ public:
   /// Return a formatted string to identify this block and its parent function.
   std::string getFullName() const;
 
-  /// Test whether this block is used as as something other than the target
+  /// Test whether this block is used as something other than the target
   /// of a terminator, exception-handling target, or jump table. This is
   /// either the result of an IR-level "blockaddress", or some form
   /// of target-specific branch lowering.
@@ -430,6 +441,10 @@ public:
   /// Clear live in list.
   void clearLiveIns();
 
+  /// Clear the live in list, and return the removed live in's in \p OldLiveIns.
+  /// Requires that the vector \p OldLiveIns is empty.
+  void clearLiveIns(std::vector<RegisterMaskPair> &OldLiveIns);
+
   /// Add PhysReg as live in to this block, and ensure that there is a copy of
   /// PhysReg to a virtual register of class RC. Return the virtual register
   /// that is a copy of the live in PhysReg.
@@ -465,6 +480,8 @@ public:
 
   /// Remove entry from the livein set and return iterator to the next.
   livein_iterator removeLiveIn(livein_iterator I);
+
+  const std::vector<RegisterMaskPair> &getLiveIns() const { return LiveIns; }
 
   class liveout_iterator {
   public:
@@ -633,13 +650,7 @@ public:
 
   void setIsEndSection(bool V = true) { IsEndSection = V; }
 
-  std::optional<unsigned> getBBID() const { return BBID; }
-
-  /// Returns the BBID of the block when BBAddrMapVersion >= 2, otherwise
-  /// returns `MachineBasicBlock::Number`.
-  /// TODO: Remove this function when version 1 is deprecated and replace its
-  /// uses with `getBBID()`.
-  unsigned getBBIDOrNumber() const;
+  std::optional<UniqueBBID> getBBID() const { return BBID; }
 
   /// Returns the section ID of this basic block.
   MBBSectionID getSectionID() const { return SectionID; }
@@ -651,7 +662,7 @@ public:
   }
 
   /// Sets the fixed BBID of this basic block.
-  void setBBID(unsigned V) {
+  void setBBID(const UniqueBBID &V) {
     assert(!BBID.has_value() && "Cannot change BBID.");
     BBID = V;
   }
@@ -759,7 +770,7 @@ public:
   ///
   /// This is useful when doing a partial clone of successors. Afterward, the
   /// probabilities may need to be normalized.
-  void copySuccessor(MachineBasicBlock *Orig, succ_iterator I);
+  void copySuccessor(const MachineBasicBlock *Orig, succ_iterator I);
 
   /// Split the old successor into old plus new and updates the probability
   /// info.
@@ -800,6 +811,15 @@ public:
         static_cast<const MachineBasicBlock *>(this)->getSingleSuccessor());
   }
 
+  /// Return the predecessor of this block if it has a single predecessor.
+  /// Otherwise return a null pointer.
+  ///
+  const MachineBasicBlock *getSinglePredecessor() const;
+  MachineBasicBlock *getSinglePredecessor() {
+    return const_cast<MachineBasicBlock *>(
+        static_cast<const MachineBasicBlock *>(this)->getSinglePredecessor());
+  }
+
   /// Return the fallthrough block if the block can implicitly
   /// transfer control to the block after it by falling off the end of
   /// it. If an explicit branch to the fallthrough block is not allowed,
@@ -836,8 +856,10 @@ public:
 
   /// Return the first instruction in MBB after I that is not a PHI, label or
   /// debug.  This is the correct point to insert copies at the beginning of a
-  /// basic block.
-  iterator SkipPHIsLabelsAndDebug(iterator I, bool SkipPseudoOp = true);
+  /// basic block. \p Reg is the register being used by a spill or defined for a
+  /// restore/split during register allocation.
+  iterator SkipPHIsLabelsAndDebug(iterator I, Register Reg = Register(),
+                                  bool SkipPseudoOp = true);
 
   /// Returns an iterator to the first terminator instruction of this basic
   /// block. If a terminator does not exist, it returns end().

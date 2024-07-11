@@ -155,6 +155,10 @@ public:
   void enableDebugTypeODRUniquing();
   void disableDebugTypeODRUniquing();
 
+  /// generateMachineFunctionNum - Get a unique number for MachineFunction
+  /// that associated with the given Function.
+  unsigned generateMachineFunctionNum(Function &);
+
   /// Defines the type of a yield callback.
   /// \see LLVMContext::setYieldCallback.
   using YieldCallbackTy = void (*)(LLVMContext *Context, void *OpaqueHandle);
@@ -312,9 +316,6 @@ public:
   /// LLVMContext is used by compilation.
   void setOptPassGate(OptPassGate&);
 
-  /// Whether we've decided on using opaque pointers or typed pointers yet.
-  bool hasSetOpaquePointersValue() const;
-
   /// Set whether opaque pointers are enabled. The method may be called multiple
   /// times, but only with the same value. Note that creating a pointer type or
   /// otherwise querying the opaque pointer mode performs an implicit set to
@@ -335,7 +336,7 @@ private:
   void addModule(Module*);
 
   /// removeModule - Unregister a module from this context.
-  void removeModule(Module*);
+  void removeModule(Module *);
 };
 
 // Create wrappers for C Binding types (see CBindingWrapping.h).

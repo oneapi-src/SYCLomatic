@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/cusolver_helper_function_4 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolver_helper_function_4/cusolver_helper_function_4.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusolver_helper_function_4/cusolver_helper_function_4.dp.cpp -o %T/cusolver_helper_function_4/cusolver_helper_function_4.dp.o %}
 
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>

@@ -26,6 +26,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Path.h"
 
 using namespace clang::tooling;
 using namespace llvm;
@@ -54,14 +55,20 @@ const char *const CommonOptionsParser::HelpMessage =
 
 
 #ifdef SYCLomatic_CUSTOMIZATION
+
+#include "clang/DPCT/DpctOptions.h"
+
+extern int SDKVersionMajor;
+extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
+bool DefineCUDAVerMajorMinor = false;
 #ifdef _WIN32
-std::string VcxprojFilePath;
+UnifiedPath VcxprojFilePath;
 #endif
 
-static std::string FormatSearchPath = "";
-std::string getFormatSearchPath() { return FormatSearchPath; }
+static UnifiedPath FormatSearchPath;
+UnifiedPath getFormatSearchPath() { return FormatSearchPath; }
 extern bool SpecifyLanguageInOption;
 void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
                                            bool SpecifyLanguageInOption);
@@ -117,24 +124,10 @@ llvm::Error CommonOptionsParser::init(
   bool IsCudaFile = false;
   int OriArgc = argc;
   SpecifyLanguageInOption = false;
-#define DPCT_OPTIONS_IN_CLANG_TOOLING
-#define DPCT_OPT_TYPE(...) __VA_ARGS__
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
-OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#define DPCT_OPTIONS_IN_CLANG_TOOLING 1
+#define DPCT_OPTIONS_VAR 1
 #include "clang/DPCT/DPCTOptions.inc"
-#undef DPCT_NON_ENUM_OPTION
-#undef DPCT_OPT_TYPE
-#undef DPCT_OPTIONS_IN_CLANG_TOOLING
 
-  static llvm::cl::list<std::string> SourcePaths(
-      llvm::cl::Positional, llvm::cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
-      llvm::cl::cat(Category), llvm::cl::sub(*llvm::cl::AllSubCommands));
-
-  static cl::list<std::string> ArgsBefore(
-     "extra-arg-before",
-     cl::desc("Additional argument to prepend to the compiler command line.\n"
-              "Refer to extra-arg option.\n"),
-     cl::cat(Category), cl::sub(*cl::AllSubCommands), llvm::cl::Hidden);
 #else
   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),
@@ -176,6 +169,28 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
   SourcePathList = SourcePaths;
 #ifdef SYCLomatic_CUSTOMIZATION
+  bool IsMigrateCmakeScriptOnlySpecified = false;
+  for (auto i = 0; i < argc; i++) {
+    int Res1 = strcmp(argv[i], "--migrate-build-script-only");
+    int Res2 = strcmp(argv[i], "-migrate-build-script-only");
+    if (Res1 == 0 || Res2 == 0) {
+      IsMigrateCmakeScriptOnlySpecified = true;
+      break;
+    }
+  }
+  if (IsMigrateCmakeScriptOnlySpecified) {
+    Compilations.reset(
+        new FixedCompilationDatabase(".", std::vector<std::string>()));
+    return llvm::Error::success();
+  }
+
+#ifndef _WIN32
+  if (std::string(argv[1]) == "--intercept-build" ||
+      std::string(argv[1]) == "-intercept-build" ||
+      std::string(argv[1]) == "intercept-build") {
+    return llvm::Error::success();
+  }
+#endif
   if(!SourcePathList.empty()) {
     clang::tooling::FormatSearchPath = SourcePaths[0];
   }
@@ -247,7 +262,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
     if (!Compilations) {
 #ifdef SYCLomatic_CUSTOMIZATION
-      if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
+      if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()) {
         std::string buf;
         llvm::raw_string_ostream OS(buf);
         OS << "Error while trying to load a compilation database:\n";
@@ -394,6 +409,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       std::vector<CompileCommand> CompileCommandsForFile =
           AdjustingCompilations->getCompileCommands(SourceFile);
       for (CompileCommand &CompileCommand : CompileCommandsForFile) {
+        bool IsIncludeSearchPathOpt = false;
         for (auto &I : CompileCommand.CommandLine) {
           if (I.size() > 2 && I.substr(0, 2) == "-I") {
             std::string IncPath = I.substr(2);
@@ -401,6 +417,11 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
             if (StartPos != std::string::npos)
               IncPath = IncPath.substr(StartPos);
             ExtraIncPathList.push_back(IncPath);
+          } else if (I == "-I") {
+            IsIncludeSearchPathOpt = true;
+          } else if (IsIncludeSearchPathOpt) {
+            ExtraIncPathList.push_back(I);
+            IsIncludeSearchPathOpt = false;
           }
         }
       }
@@ -411,6 +432,14 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
     Adjuster = combineAdjusters(
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
+    DefineCUDAVerMajorMinor = true;
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
+    Adjuster = combineAdjusters(
+        std::move(Adjuster),
+        getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
+                                  ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);

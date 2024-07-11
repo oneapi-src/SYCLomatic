@@ -11,7 +11,8 @@
 // CHECK:   pi_image_offset x/y/z : 0/0/0
 // CHECK:   pi_image_region width/height/depth : 4/4/1
 
-#include <sycl/sycl.hpp>
+#include <sycl/accessor_image.hpp>
+#include <sycl/detail/core.hpp>
 #include <vector>
 
 using namespace sycl;
@@ -29,11 +30,15 @@ int main() {
   {
     sycl::image<2> Img(ImgHostData.data(), ChanOrder, ChanType, ImgSize);
     queue Q;
+
+// legacy Images uses an API that is not supported in hip 4.x
+#if HIP_VERSION_MAJOR >= 5
     Q.submit([&](sycl::handler &CGH) {
       auto ImgAcc = Img.get_access<sycl::float4, SYCLWrite>(CGH);
 
       CGH.single_task<class EmptyTask>([=]() {});
     });
+#endif
   }
   return 0;
 }

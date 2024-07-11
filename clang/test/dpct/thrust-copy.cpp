@@ -2,6 +2,9 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/thrust-copy -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-copy/thrust-copy.cpp.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-copy/thrust-copy.cpp.dp.cpp -o %T/thrust-copy/thrust-copy.o.dp.o %}
+
+#ifndef  BUILD_TEST
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE
@@ -43,7 +46,7 @@ int main(void) {
   thrust::copy(data, data + N, dst_data);
   //CHECK: std::copy(oneapi::dpl::execution::seq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
-  //CHECK: std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
+  //CHECK: std::copy(oneapi::dpl::execution::seq, input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
   //CHECK: std::copy(oneapi::dpl::execution::seq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(thrust::host, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
@@ -84,3 +87,4 @@ int main(void) {
 
   std::cout << std::endl << std::endl;
 }
+#endif

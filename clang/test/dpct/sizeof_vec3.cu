@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/sizeof_vec3 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sizeof_vec3/sizeof_vec3.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/sizeof_vec3/sizeof_vec3.dp.cpp -o %T/sizeof_vec3/sizeof_vec3.dp.o %}
 
 #include <cuda_runtime.h>
 

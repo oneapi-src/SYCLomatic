@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -usm-level=none -out-root %T/memcpy_from_symbol %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/memcpy_from_symbol/memcpy_from_symbol.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/memcpy_from_symbol/memcpy_from_symbol.dp.cpp -o %T/memcpy_from_symbol/memcpy_from_symbol.dp.o %}
 
 #include <cuda_runtime.h>
 

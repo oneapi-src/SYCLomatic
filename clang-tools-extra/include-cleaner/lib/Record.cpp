@@ -12,6 +12,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/DeclGroup.h"
 #include "clang/Basic/FileEntry.h"
+#include "clang/Basic/FileManager.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
@@ -24,16 +25,21 @@
 #include "clang/Tooling/Inclusions/HeaderAnalysis.h"
 #include "clang/Tooling/Inclusions/StandardLibrary.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/Support/Allocator.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/FileSystem/UniqueID.h"
 #include "llvm/Support/StringSaver.h"
 #include <algorithm>
 #include <assert.h>
 #include <memory>
 #include <optional>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -59,7 +65,8 @@ public:
                           StringRef SpelledFilename, bool IsAngled,
                           CharSourceRange FilenameRange,
                           OptionalFileEntryRef File, StringRef SearchPath,
-                          StringRef RelativePath, const Module *,
+                          StringRef RelativePath, const Module *SuggestedModule,
+                          bool ModuleImported,
                           SrcMgr::CharacteristicKind) override {
     if (!Active)
       return;
@@ -172,7 +179,8 @@ public:
       : RecordPragma(CI.getPreprocessor(), Out) {}
   RecordPragma(const Preprocessor &P, PragmaIncludes *Out)
       : SM(P.getSourceManager()), HeaderInfo(P.getHeaderSearchInfo()), Out(Out),
-        UniqueStrings(Arena) {}
+        Arena(std::make_shared<llvm::BumpPtrAllocator>()),
+        UniqueStrings(*Arena) {}
 
   void FileChanged(SourceLocation Loc, FileChangeReason Reason,
                    SrcMgr::CharacteristicKind FileType,
@@ -182,8 +190,8 @@ public:
     if (Reason == PPCallbacks::ExitFile) {
       // At file exit time HeaderSearchInfo is valid and can be used to
       // determine whether the file was a self-contained header or not.
-      if (const FileEntry *FE = SM.getFileEntryForID(PrevFID)) {
-        if (tooling::isSelfContainedHeader(FE, SM, HeaderInfo))
+      if (OptionalFileEntryRef FE = SM.getFileEntryRefForID(PrevFID)) {
+        if (tooling::isSelfContainedHeader(*FE, SM, HeaderInfo))
           Out->NonSelfContainedFiles.erase(FE->getUniqueID());
         else
           Out->NonSelfContainedFiles.insert(FE->getUniqueID());
@@ -198,7 +206,7 @@ public:
           std::unique(It.getSecond().begin(), It.getSecond().end()),
           It.getSecond().end());
     }
-    Out->Arena = std::move(Arena);
+    Out->Arena.emplace_back(std::move(Arena));
   }
 
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
@@ -207,7 +215,8 @@ public:
                           OptionalFileEntryRef File,
                           llvm::StringRef /*SearchPath*/,
                           llvm::StringRef /*RelativePath*/,
-                          const clang::Module * /*Imported*/,
+                          const clang::Module * /*SuggestedModule*/,
+                          bool /*ModuleImported*/,
                           SrcMgr::CharacteristicKind FileKind) override {
     FileID HashFID = SM.getFileID(HashLoc);
     int HashLine = SM.getLineNumber(HashFID, SM.getFileOffset(HashLoc));
@@ -218,7 +227,7 @@ public:
         IncludedHeader = *StandardHeader;
       }
     if (!IncludedHeader && File)
-      IncludedHeader = &File->getFileEntry();
+      IncludedHeader = *File;
     checkForExport(HashFID, HashLine, std::move(IncludedHeader), File);
     checkForKeep(HashLine, File);
   }
@@ -234,20 +243,10 @@ public:
     // Make sure current include is covered by the export pragma.
     if ((Top.Block && HashLine > Top.SeenAtLine) ||
         Top.SeenAtLine == HashLine) {
-      if (IncludedHeader) {
-        switch (IncludedHeader->kind()) {
-        case Header::Physical:
-          Out->IWYUExportBy[IncludedHeader->physical()->getUniqueID()]
-              .push_back(Top.Path);
-          break;
-        case Header::Standard:
-          Out->StdIWYUExportBy[IncludedHeader->standard()].push_back(Top.Path);
-          break;
-        case Header::Verbatim:
-          assert(false && "unexpected Verbatim header");
-          break;
-        }
-      }
+      if (IncludedFile)
+        Out->IWYUExportBy[IncludedFile->getUniqueID()].push_back(Top.Path);
+      if (IncludedHeader && IncludedHeader->kind() == Header::Standard)
+        Out->StdIWYUExportBy[IncludedHeader->standard()].push_back(Top.Path);
       // main-file #include with export pragma should never be removed.
       if (Top.SeenAtFile == SM.getMainFileID() && IncludedFile)
         Out->ShouldKeep.insert(IncludedFile->getUniqueID());
@@ -281,7 +280,7 @@ public:
     int CommentLine = SM.getLineNumber(CommentFID, CommentOffset);
 
     if (InMainFile) {
-      if (Pragma->startswith("keep")) {
+      if (Pragma->starts_with("keep")) {
         KeepStack.push_back({CommentLine, false});
       } else if (Pragma->starts_with("begin_keep")) {
         KeepStack.push_back({CommentLine, true});
@@ -304,9 +303,10 @@ public:
       StringRef PublicHeader;
       if (Pragma->consume_front(", include ")) {
         // We always insert using the spelling from the pragma.
-        PublicHeader = save(Pragma->startswith("<") || Pragma->startswith("\"")
-                                ? (*Pragma)
-                                : ("\"" + *Pragma + "\"").str());
+        PublicHeader =
+            save(Pragma->starts_with("<") || Pragma->starts_with("\"")
+                     ? (*Pragma)
+                     : ("\"" + *Pragma + "\"").str());
       }
       Out->IWYUPublic.insert({CommentUID, PublicHeader});
       return false;
@@ -317,11 +317,11 @@ public:
     }
     auto Filename = FE->getName();
     // Record export pragma.
-    if (Pragma->startswith("export")) {
+    if (Pragma->starts_with("export")) {
       ExportStack.push_back({CommentLine, CommentFID, save(Filename), false});
-    } else if (Pragma->startswith("begin_exports")) {
+    } else if (Pragma->starts_with("begin_exports")) {
       ExportStack.push_back({CommentLine, CommentFID, save(Filename), true});
-    } else if (Pragma->startswith("end_exports")) {
+    } else if (Pragma->starts_with("end_exports")) {
       // FIXME: be robust on unmatching cases. We should only pop the stack if
       // the begin_exports and end_exports is in the same file.
       if (!ExportStack.empty()) {
@@ -339,7 +339,7 @@ private:
   const SourceManager &SM;
   const HeaderSearch &HeaderInfo;
   PragmaIncludes *Out;
-  llvm::BumpPtrAllocator Arena;
+  std::shared_ptr<llvm::BumpPtrAllocator> Arena;
   /// Intern table for strings. Contents are on the arena.
   llvm::StringSaver UniqueStrings;
 
@@ -387,18 +387,18 @@ llvm::StringRef PragmaIncludes::getPublic(const FileEntry *F) const {
   return It->getSecond();
 }
 
-static llvm::SmallVector<const FileEntry *>
+static llvm::SmallVector<FileEntryRef>
 toFileEntries(llvm::ArrayRef<StringRef> FileNames, FileManager &FM) {
-  llvm::SmallVector<const FileEntry *> Results;
+  llvm::SmallVector<FileEntryRef> Results;
 
   for (auto FName : FileNames) {
     // FIMXE: log the failing cases?
-    if (auto FE = expectedToOptional(FM.getFileRef(FName)))
+    if (auto FE = FM.getOptionalFileRef(FName))
       Results.push_back(*FE);
   }
   return Results;
 }
-llvm::SmallVector<const FileEntry *>
+llvm::SmallVector<FileEntryRef>
 PragmaIncludes::getExporters(const FileEntry *File, FileManager &FM) const {
   auto It = IWYUExportBy.find(File->getUniqueID());
   if (It == IWYUExportBy.end())
@@ -406,7 +406,7 @@ PragmaIncludes::getExporters(const FileEntry *File, FileManager &FM) const {
 
   return toFileEntries(It->getSecond(), FM);
 }
-llvm::SmallVector<const FileEntry *>
+llvm::SmallVector<FileEntryRef>
 PragmaIncludes::getExporters(tooling::stdlib::Header StdHeader,
                              FileManager &FM) const {
   auto It = StdIWYUExportBy.find(StdHeader);
@@ -424,7 +424,8 @@ bool PragmaIncludes::isPrivate(const FileEntry *FE) const {
 }
 
 bool PragmaIncludes::shouldKeep(const FileEntry *FE) const {
-  return ShouldKeep.contains(FE->getUniqueID());
+  return ShouldKeep.contains(FE->getUniqueID()) ||
+         NonSelfContainedFiles.contains(FE->getUniqueID());
 }
 
 namespace {

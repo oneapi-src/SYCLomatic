@@ -62,18 +62,18 @@ DiffScalarVal<bool, AD_Diff_Scalar_Bool>::print(raw_ostream &OS,
 
 } // end namespace llvm
 
-StringLiteral SymScalar::getSymbolNamePrefix(MachO::SymbolKind Kind) {
+StringLiteral SymScalar::getSymbolNamePrefix(MachO::EncodeKind Kind) {
   switch (Kind) {
-  case MachO::SymbolKind::GlobalSymbol:
+  case MachO::EncodeKind::GlobalSymbol:
     return StringLiteral("");
-  case MachO::SymbolKind::ObjectiveCClass:
+  case MachO::EncodeKind::ObjectiveCClass:
     return ObjC2MetaClassNamePrefix;
-  case MachO::SymbolKind ::ObjectiveCClassEHType:
+  case MachO::EncodeKind ::ObjectiveCClassEHType:
     return ObjC2EHTypePrefix;
-  case MachO::SymbolKind ::ObjectiveCInstanceVariable:
+  case MachO::EncodeKind ::ObjectiveCInstanceVariable:
     return ObjC2IVarPrefix;
   }
-  llvm_unreachable("Unknown llvm::MachO::SymbolKind enum");
+  llvm_unreachable("Unknown llvm::MachO::EncodeKind enum");
 }
 
 std::string SymScalar::getFlagString(const MachO::Symbol *Sym) {
@@ -99,7 +99,7 @@ std::string SymScalar::getFlagString(const MachO::Symbol *Sym) {
 }
 
 void SymScalar::print(raw_ostream &OS, std::string Indent, MachO::Target Targ) {
-  if (Val->getKind() == MachO::SymbolKind::ObjectiveCClass) {
+  if (Val->getKind() == MachO::EncodeKind::ObjectiveCClass) {
     if (Targ.Arch == MachO::AK_i386 && Targ.Platform == MachO::PLATFORM_MACOS) {
       OS << Indent << "\t\t" << ((Order == lhs) ? "< " : "> ")
          << ObjC1ClassNamePrefix << Val->getName() << getFlagString(Val)
@@ -224,7 +224,7 @@ std::vector<DiffOutput> getSingleIF(InterfaceFile *Interface,
                 Order);
   diffAttribute("Parent Umbrellas", Output, Interface->umbrellas(), Order);
   diffAttribute("Symbols", Output, Interface->symbols(), Order);
-  for (auto Doc : Interface->documents()) {
+  for (const auto &Doc : Interface->documents()) {
     DiffOutput Documents("Inlined Reexported Frameworks/Libraries");
     Documents.Kind = AD_Inline_Doc;
     Documents.Values.push_back(std::make_unique<InlineDoc>(
@@ -363,10 +363,29 @@ DiffEngine::findDifferences(const InterfaceFile *IFLHS,
                               rhs, IFRHS->isApplicationExtensionSafe()),
                           "Application Extension Safe"));
 
+  if (IFLHS->hasSimulatorSupport() != IFRHS->hasSimulatorSupport())
+    Output.push_back(recordDifferences(DiffScalarVal<bool, AD_Diff_Scalar_Bool>(
+                                           lhs, IFLHS->hasSimulatorSupport()),
+                                       DiffScalarVal<bool, AD_Diff_Scalar_Bool>(
+                                           rhs, IFRHS->hasSimulatorSupport()),
+                                       "Simulator Support"));
+
+  if (IFLHS->isOSLibNotForSharedCache() != IFRHS->isOSLibNotForSharedCache())
+    Output.push_back(
+        recordDifferences(DiffScalarVal<bool, AD_Diff_Scalar_Bool>(
+                              lhs, IFLHS->isOSLibNotForSharedCache()),
+                          DiffScalarVal<bool, AD_Diff_Scalar_Bool>(
+                              rhs, IFRHS->isOSLibNotForSharedCache()),
+                          "Shared Cache Ineligible"));
+
   if (IFLHS->reexportedLibraries() != IFRHS->reexportedLibraries())
     Output.push_back(recordDifferences(IFLHS->reexportedLibraries(),
                                        IFRHS->reexportedLibraries(),
                                        "Reexported Libraries"));
+
+  if (IFLHS->rpaths() != IFRHS->rpaths())
+    Output.push_back(recordDifferences(IFLHS->rpaths(), IFRHS->rpaths(),
+                                       "Run Path Search Paths"));
 
   if (IFLHS->allowableClients() != IFRHS->allowableClients())
     Output.push_back(recordDifferences(IFLHS->allowableClients(),
@@ -440,10 +459,10 @@ T *castValues(const std::unique_ptr<AttributeDiff> &RawAttr) {
 
 template <typename T> void sortTargetValues(std::vector<T> &TargValues) {
   llvm::stable_sort(TargValues, [](const auto &ValA, const auto &ValB) {
+    if (ValA.getOrder() == ValB.getOrder()) {
+      return ValA.getVal() < ValB.getVal();
+    }
     return ValA.getOrder() < ValB.getOrder();
-  });
-  llvm::stable_sort(TargValues, [](const auto &ValA, const auto &ValB) {
-    return ValA.getOrder() == ValB.getOrder() && ValA.getVal() < ValB.getVal();
   });
 }
 
@@ -541,13 +560,11 @@ void DiffEngine::printDifferences(raw_ostream &OS,
 }
 
 bool DiffEngine::compareFiles(raw_ostream &OS) {
-  const auto *IFLHS = &(FileLHS->getInterfaceFile());
-  const auto *IFRHS = &(FileRHS->getInterfaceFile());
-  if (*IFLHS == *IFRHS)
+  if (*FileLHS == *FileRHS)
     return false;
-  OS << "< " << std::string(IFLHS->getPath().data()) << "\n> "
-     << std::string(IFRHS->getPath().data()) << "\n\n";
-  std::vector<DiffOutput> Diffs = findDifferences(IFLHS, IFRHS);
+  OS << "< " << std::string(FileLHS->getPath().data()) << "\n> "
+     << std::string(FileRHS->getPath().data()) << "\n\n";
+  std::vector<DiffOutput> Diffs = findDifferences(FileLHS, FileRHS);
   printDifferences(OS, Diffs, 0);
   return true;
 }

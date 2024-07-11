@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none -out-root %T/Out/cudaPointerAttributes2 %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/Out/cudaPointerAttributes2/cudaPointerAttributes2.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/Out/cudaPointerAttributes2/cudaPointerAttributes2.dp.cpp -o %T/Out/cudaPointerAttributes2/cudaPointerAttributes2.dp.o %}
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <stdlib.h>
@@ -26,13 +27,16 @@ int main() {
   cudaPointerAttributes attributes;
   // CHECK: attributes.init(h_A);
   cudaPointerGetAttributes(&attributes, h_A);
-  // CHECK: std::cout << attributes.get_device_id() << std::endl;
-  // CHECK: std::cout << attributes.get_memory_type() << std::endl;
+  // CHECK: if (attributes.get_device_id() != (unsigned int)-1) {
+  // CHECK: attributes.get_memory_type();
   // CHECK: std::cout << attributes.get_host_pointer() << std::endl;
   // CHECK: std::cout << attributes.get_device_pointer() << std::endl;
   std::cout << "====== Host Attributes =======" << std::endl;
-  std::cout << attributes.device << std::endl;
-  std::cout << attributes.type << std::endl;
+  // The malloc memory is not a USM allocation memory. So the device attr is the default value(-1);
+  if (attributes.device != (unsigned int)-1) {
+    return -1;
+  }
+  attributes.type;
   std::cout << attributes.hostPointer << std::endl;
   std::cout << attributes.devicePointer << std::endl;
 
@@ -43,7 +47,7 @@ int main() {
   std::cout << "====== Malloc Host Attributes =======" << std::endl;
   std::cout << "malloc host " << malloc_host << std::endl;
   std::cout << attributes2.device << std::endl;
-  std::cout << attributes2.type << std::endl;
+  attributes2.type;
   std::cout << attributes2.hostPointer << std::endl;
   std::cout << attributes2.devicePointer << std::endl;
 
@@ -52,10 +56,10 @@ int main() {
   // CHECK: attributes3->init(d_A);
   cudaPointerGetAttributes (attributes3, d_A);
   // CHECK: std::cout << attributes3->get_device_id() << std::endl;
-  // CHECK: std::cout << attributes3->get_memory_type() << std::endl;
+  // CHECK: attributes3->get_memory_type();
   std::cout << "====== Device Attributes =======" << std::endl;
   std::cout << attributes3->device << std::endl;
-  std::cout << attributes3->type << std::endl;
+  attributes3->type;
   std::cout << attributes3->hostPointer << std::endl;
   std::cout << attributes3->devicePointer << std::endl;
   // CHECK: if (attributes3->get_memory_type() == sycl::usm::alloc::host) {
@@ -69,6 +73,19 @@ int main() {
   } else if (attributes3->type == cudaMemoryTypeManaged) {
     return 2;
   } else if (attributes3->type == cudaMemoryTypeUnregistered) {
+    return 3;
+  }
+  // CHECK: if (attributes3->get_memory_type() == sycl::usm::alloc::unknown) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::host) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::device) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::shared) {
+  if (attributes3->type == 0) {
+    return 0;
+  } else if (attributes3->type == 1) {
+    return 1;
+  } else if (attributes3->type == 2) {
+    return 2;
+  } else if (attributes3->type == 3) {
     return 3;
   }
 }

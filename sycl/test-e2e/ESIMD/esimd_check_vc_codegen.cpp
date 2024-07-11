@@ -5,16 +5,10 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-// esimd_emulator does not support online-compiler that invokes 'piProgramBuild'
-// UNSUPPORTED: esimd_emulator
 // RUN: %{build} -o %t.out
 // RUN: env SYCL_PI_TRACE=-1 %{run} %t.out 2>&1 | FileCheck %s
 
 #include "esimd_test_utils.hpp"
-
-#include <iostream>
-#include <sycl/ext/intel/esimd.hpp>
-#include <sycl/sycl.hpp>
 
 using namespace sycl;
 

@@ -32,7 +32,7 @@ namespace hlfir {
 } // namespace hlfir
 
 /// If the elemental has only two uses and those two are an apply operation and
-/// a destory operation, return those two, otherwise return {}
+/// a destroy operation, return those two, otherwise return {}
 static std::optional<std::pair<hlfir::ApplyOp, hlfir::DestroyOp>>
 getTwoUses(hlfir::ElementalOp elemental) {
   mlir::Operation::user_range users = elemental->getUsers();
@@ -40,6 +40,11 @@ getTwoUses(hlfir::ElementalOp elemental) {
   if (std::distance(users.begin(), users.end()) != 2) {
     return std::nullopt;
   }
+
+  // If the ElementalOp must produce a temporary (e.g. for
+  // finalization purposes), then we cannot inline it.
+  if (hlfir::elementalOpMustProduceTemp(elemental))
+    return std::nullopt;
 
   hlfir::ApplyOp apply;
   hlfir::DestroyOp destroy;
@@ -110,7 +115,6 @@ class InlineElementalsPass
     : public hlfir::impl::InlineElementalsBase<InlineElementalsPass> {
 public:
   void runOnOperation() override {
-    mlir::func::FuncOp func = getOperation();
     mlir::MLIRContext *context = &getContext();
 
     mlir::GreedyRewriteConfig config;
@@ -121,14 +125,11 @@ public:
     patterns.insert<InlineElementalConversion>(context);
 
     if (mlir::failed(mlir::applyPatternsAndFoldGreedily(
-            func, std::move(patterns), config))) {
-      mlir::emitError(func->getLoc(), "failure in HLFIR elemental inlining");
+            getOperation(), std::move(patterns), config))) {
+      mlir::emitError(getOperation()->getLoc(),
+                      "failure in HLFIR elemental inlining");
       signalPassFailure();
     }
   }
 };
 } // namespace
-
-std::unique_ptr<mlir::Pass> hlfir::createInlineElementalsPass() {
-  return std::make_unique<InlineElementalsPass>();
-}

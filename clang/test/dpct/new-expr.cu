@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/new-expr %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/new-expr/new-expr.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/new-expr/new-expr.dp.cpp -o %T/new-expr/new-expr.dp.o %}
 #include <stdio.h>
 
 // CHECK: #define NEW_STREAM new dpct::queue_ptr

@@ -3,6 +3,7 @@
 // RUN: cd %T/vector_add_format
 // RUN: dpct -out-root %T/vector_add_format vector_add_format.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/vector_add_format/vector_add_format.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/vector_add_format/vector_add_format.dp.cpp -o %T/vector_add_format/vector_add_format.dp.o %}
 // RUN: cd ..
 // RUN: rm -rf ./vector_add_format
 
@@ -29,9 +30,8 @@ __global__ void VectorAddKernel(float* A, float* B, float* C)
 
 int main()
 {
-  //      CHECK:    sycl::device dev_ct1;
-  // CHECK-NEXT:    sycl::queue q_ct1(dev_ct1,
-  // CHECK-NEXT:                      sycl::property_list{sycl::property::queue::in_order()});
+  //      CHECK:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK-NEXT:    sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   float *d_A, *d_B, *d_C;
 
   //     CHECK:  d_A = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
@@ -53,9 +53,9 @@ int main()
   float Result[VECTOR_SIZE] = {};
   cudaMemcpy(Result, d_C, VECTOR_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
 
-  //     CHECK:  sycl::free(d_A, q_ct1);
-  // CHECK-NEXT:  sycl::free(d_B, q_ct1);
-  // CHECK-NEXT:  sycl::free(d_C, q_ct1);
+  //      CHECK:  dpct::dpct_free(d_A, q_ct1);
+  // CHECK-NEXT:  dpct::dpct_free(d_B, q_ct1);
+  // CHECK-NEXT:  dpct::dpct_free(d_C, q_ct1);
   cudaFree(d_A);
   cudaFree(d_B);
   cudaFree(d_C);

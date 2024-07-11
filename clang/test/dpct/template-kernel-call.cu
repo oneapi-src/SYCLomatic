@@ -21,8 +21,8 @@ __global__ void kernel(int a, int b){
 // CHECK-NEXT:   void run(){
 // CHECK-NEXT:     dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         int this_a_ct0 = this->a;
-// CHECK-NEXT:         int ptest_data_ct1 = ptest->data;
+// CHECK-NEXT:         auto this_a_ct0 = this->a;
+// CHECK-NEXT:         auto ptest_data_ct1 = ptest->data;
 // CHECK-EMPTY:
 // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -163,6 +163,9 @@ void runTest() {
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:*/
+  // CHECK-NEXT:/*
+  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
+  // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
@@ -177,6 +180,9 @@ void runTest() {
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:/*
+  // CHECK-NEXT:DPCT1129:{{[0-9]+}}: The type "TestTemplate<T>" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
@@ -251,6 +257,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:  T b;
 // CHECK-NEXT:  {
 // CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_out_of_order_queue().get_device(), {sycl::aspect::fp64});
+// CHECK-EMPTY:
 // CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::local_accessor<int, 1> aaa_acc_ct1(sycl::range<1>(0), cgh);
@@ -259,7 +266,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_pointer(), bbb_acc_ct1);
+// CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), bbb_acc_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
 // CHECK-NEXT:  }
@@ -557,4 +564,30 @@ void test_host() {
   // CHECK-NEXT:    test_kernel();
   // CHECK-NEXT:  });
   test_kernel<<<vec.size(), 1>>>();
+}
+
+template <typename T, typename T2> class A {
+public:
+  __device__ void foo() { int i = threadIdx.x; };
+  __device__ void f1() { foo(); }
+};
+
+template <typename T> class A<T, int> {
+public:
+  __device__ void f1() { foo(); }
+  __device__ void foo(){};
+};
+
+template <typename T> __global__ void kernel2() {
+  A<int, T> a;
+//CHECK:  /*
+//CHECK:  DPCT1084:{{[0-9]+}}: The function call "A::f1" has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
+//CHECK:  */
+  a.f1();
+}
+
+int main() {
+  kernel2<int><<<1, 1>>>();
+  kernel2<float><<<1, 1>>>();
+  return 0;
 }

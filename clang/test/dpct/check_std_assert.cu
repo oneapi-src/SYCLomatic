@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/check_std_assert %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_std_assert/check_std_assert.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/check_std_assert/check_std_assert.dp.cpp -o %T/check_std_assert/check_std_assert.dp.o %}
 
 #include <cassert>
 #include <thrust/copy.h>

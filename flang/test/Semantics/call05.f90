@@ -1,4 +1,4 @@
-! RUN: %python %S/test_errors.py %s %flang_fc1
+! RUN: %python %S/test_errors.py %s %flang_fc1 -pedantic
 ! Test 15.5.2.5 constraints and restrictions for POINTER & ALLOCATABLE
 ! arguments when both sides of the call have the same attributes.
 
@@ -73,9 +73,9 @@ module m
     call sma(ma) ! ok
     call spp(pp) ! ok
     call spa(pa) ! ok
-    !ERROR: If a POINTER or ALLOCATABLE dummy or actual argument is polymorphic, both must be so
+    !PORTABILITY: If a POINTER or ALLOCATABLE actual argument is polymorphic, the corresponding dummy argument should also be so
     call smp(pp)
-    !ERROR: If a POINTER or ALLOCATABLE dummy or actual argument is polymorphic, both must be so
+    !PORTABILITY: If a POINTER or ALLOCATABLE actual argument is polymorphic, the corresponding dummy argument should also be so
     call sma(pa)
     !ERROR: If a POINTER or ALLOCATABLE dummy or actual argument is polymorphic, both must be so
     call spp(mp)
@@ -155,6 +155,15 @@ module m2
     integer, allocatable, intent(in) :: b(:)
   end
 
+  function return_deferred_length_ptr()
+    character(len=:), pointer :: return_deferred_length_ptr
+  end function
+
+  function return_explicit_length_ptr(n)
+    integer :: n
+    character(len=n), pointer :: return_explicit_length_ptr
+  end function
+
   subroutine test()
 
     !ERROR: Dummy and actual arguments must defer the same type parameters when POINTER or ALLOCATABLE
@@ -166,6 +175,16 @@ module m2
     call smp(p1)
 
     call smp2(p1) ! ok
+
+    call smp(return_deferred_length_ptr()) ! ok
+
+    !ERROR: Dummy and actual arguments must defer the same type parameters when POINTER or ALLOCATABLE
+    call smp2(return_deferred_length_ptr())
+
+    !ERROR: Dummy and actual arguments must defer the same type parameters when POINTER or ALLOCATABLE
+    call smp(return_explicit_length_ptr(10))
+
+    call smp2(return_explicit_length_ptr(10)) ! ok
 
     !ERROR: ALLOCATABLE dummy argument 'a=' must be associated with an ALLOCATABLE actual argument
     call sma(t2(:))

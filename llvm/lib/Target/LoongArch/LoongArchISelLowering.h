@@ -21,15 +21,18 @@
 
 namespace llvm {
 class LoongArchSubtarget;
-struct LoongArchRegisterInfo;
 namespace LoongArchISD {
 enum NodeType : unsigned {
   FIRST_NUMBER = ISD::BUILTIN_OP_END,
 
   // TODO: add more LoongArchISDs
   CALL,
+  CALL_MEDIUM,
+  CALL_LARGE,
   RET,
   TAIL,
+  TAIL_MEDIUM,
+  TAIL_LARGE,
 
   // 32-bit shifts, directly matching the semantics of the named LoongArch
   // instructions.
@@ -39,6 +42,10 @@ enum NodeType : unsigned {
 
   ROTL_W,
   ROTR_W,
+
+  // unsigned 32-bit integer division
+  DIV_WU,
+  MOD_WU,
 
   // FPR<->GPR transfer operations
   MOVGR2FR_W_LA64,
@@ -110,6 +117,20 @@ enum NodeType : unsigned {
 
   // Read CPU configuration information operation
   CPUCFG,
+
+  // Vector Shuffle
+  VREPLVE,
+
+  // Extended vector element extraction
+  VPICK_SEXT_ELT,
+  VPICK_ZEXT_ELT,
+
+  // Vector comparisons
+  VALL_ZERO,
+  VANY_ZERO,
+  VALL_NONZERO,
+  VANY_NONZERO,
+
   // Intrinsic operations end =============================================
 };
 } // end namespace LoongArchISD
@@ -189,6 +210,8 @@ public:
     return ISD::SIGN_EXTEND;
   }
 
+  ISD::NodeType getExtendForAtomicCmpSwapArg() const override;
+
   Register getRegisterByName(const char *RegName, LLT VT,
                              const MachineFunction &MF) const override;
   bool mayBeEmittedAsTailCall(const CallInst *CI) const override;
@@ -216,6 +239,13 @@ public:
       MachineMemOperand::Flags Flags = MachineMemOperand::MONone,
       unsigned *Fast = nullptr) const override;
 
+  bool isShuffleMaskLegal(ArrayRef<int> Mask, EVT VT) const override {
+    return false;
+  }
+  bool shouldConsiderGEPOffsetSplit() const override { return true; }
+  bool shouldSignExtendTypeInLibCall(EVT Type, bool IsSigned) const override;
+  bool shouldExtendTypeInLibCall(EVT Type) const override;
+
 private:
   /// Target-specific function used to lower LoongArch calling conventions.
   typedef bool LoongArchCCAssignFn(const DataLayout &DL, LoongArchABI::ABI ABI,
@@ -233,11 +263,14 @@ private:
                          LoongArchCCAssignFn Fn) const;
 
   template <class NodeTy>
-  SDValue getAddr(NodeTy *N, SelectionDAG &DAG, bool IsLocal = true) const;
+  SDValue getAddr(NodeTy *N, SelectionDAG &DAG, CodeModel::Model M,
+                  bool IsLocal = true) const;
   SDValue getStaticTLSAddr(GlobalAddressSDNode *N, SelectionDAG &DAG,
                            unsigned Opc, bool Large = false) const;
   SDValue getDynamicTLSAddr(GlobalAddressSDNode *N, SelectionDAG &DAG,
                             unsigned Opc, bool Large = false) const;
+  SDValue getTLSDescAddr(GlobalAddressSDNode *N, SelectionDAG &DAG,
+                         unsigned Opc, bool Large = false) const;
   SDValue lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerBlockAddress(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerJumpTable(SDValue Op, SelectionDAG &DAG) const;
@@ -248,6 +281,7 @@ private:
   MachineBasicBlock *
   EmitInstrWithCustomInserter(MachineInstr &MI,
                               MachineBasicBlock *BB) const override;
+  SDValue lowerATOMIC_FENCE(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerConstantPool(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerEH_DWARF_CFA(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerFP_TO_SINT(SDValue Op, SelectionDAG &DAG) const;
@@ -261,6 +295,10 @@ private:
   SDValue lowerFRAMEADDR(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerRETURNADDR(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerWRITE_REGISTER(SDValue Op, SelectionDAG &DAG) const;
+  SDValue lowerEXTRACT_VECTOR_ELT(SDValue Op, SelectionDAG &DAG) const;
+  SDValue lowerINSERT_VECTOR_ELT(SDValue Op, SelectionDAG &DAG) const;
+  SDValue lowerBUILD_VECTOR(SDValue Op, SelectionDAG &DAG) const;
+  SDValue lowerVECTOR_SHUFFLE(SDValue Op, SelectionDAG &DAG) const;
 
   bool isFPImmLegal(const APFloat &Imm, EVT VT,
                     bool ForCodeSize) const override;
@@ -269,13 +307,14 @@ private:
 
   ConstraintType getConstraintType(StringRef Constraint) const override;
 
-  unsigned getInlineAsmMemConstraint(StringRef ConstraintCode) const override;
+  InlineAsm::ConstraintCode
+  getInlineAsmMemConstraint(StringRef ConstraintCode) const override;
 
   std::pair<unsigned, const TargetRegisterClass *>
   getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI,
                                StringRef Constraint, MVT VT) const override;
 
-  void LowerAsmOperandForConstraint(SDValue Op, std::string &Constraint,
+  void LowerAsmOperandForConstraint(SDValue Op, StringRef Constraint,
                                     std::vector<SDValue> &Ops,
                                     SelectionDAG &DAG) const override;
 

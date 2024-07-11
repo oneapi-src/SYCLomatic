@@ -12,7 +12,6 @@
 #include <sycl/device.hpp>
 #include <sycl/device_selector.hpp>
 #include <sycl/exception.hpp>
-#include <sycl/stl.hpp>
 
 #include <cctype>
 #include <regex>
@@ -74,8 +73,6 @@ filter create_filter(const std::string &Input) {
       Result.Backend = backend::ext_oneapi_cuda;
     } else if (Token == "hip" && !Result.Backend) {
       Result.Backend = backend::ext_oneapi_hip;
-    } else if (Token == "esimd_emulator" && !Result.Backend) {
-      Result.Backend = backend::ext_intel_esimd_emulator;
     } else if (std::regex_match(Token, IntegerExpr) && !Result.DeviceNum) {
       try {
         Result.DeviceNum = std::stoi(Token);
@@ -102,9 +99,6 @@ filter_selector_impl::filter_selector_impl(const std::string &Input)
 }
 
 int filter_selector_impl::operator()(const device &Dev) const {
-  assert(!sycl::detail::getSyclObjImpl(Dev)->is_host() &&
-         "filter_selector_impl should not be used with host.");
-
   int Score = REJECT_DEVICE_SCORE;
 
   for (auto &Filter : mFilters) {

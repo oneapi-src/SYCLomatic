@@ -6,6 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AnalysisInfo.h"
+#include "Rules.h"
+#include "SaveNewFiles.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Path.h"
 #include <PatternRewriter.h>
 
 #include <optional>
@@ -15,6 +20,9 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+
+std::set<std::string> MainSrcFilesHasCudaSyntex;
+bool LANG_Cplusplus_20_Used = false;
 
 struct SpacingElement {};
 
@@ -36,6 +44,8 @@ struct MatchResult {
   int End;
   std::unordered_map<std::string, std::string> Bindings;
 };
+
+static SourceFileType SrcFileType = SourceFileType::SFT_CAndCXXSource;
 
 static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
@@ -95,30 +105,10 @@ static std::string indent(const std::string &Input, int Indentation) {
   const auto Lines = split(Input, '\n');
   for (const auto &Line : Lines) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
-    Output.push_back(ContainsNonWhitespace ? (Indent + Line) : "");
+    Output.push_back(ContainsNonWhitespace ? (Indent + trim(Line)) : "");
   }
-  return trim(join(Output, "\n"));
-}
-
-static std::string dedent(const std::string &Input, int Indentation) {
-  std::stringstream OutputStream;
-  const int Size = Input.size();
-  int Index = 0;
-  int Skip = 0;
-  while (Index < Size) {
-    char Character = Input[Index];
-    if (Skip > 0 && Character == ' ') {
-      Skip--;
-      Index++;
-      continue;
-    }
-    if (Character == '\n') {
-      Skip = Indentation;
-    }
-    OutputStream << Character;
-    Index++;
-  }
-  return OutputStream.str();
+  std::string Str = trim(join(Output, "\n"));
+  return Str;
 }
 
 /*
@@ -172,8 +162,12 @@ static void removeTrailingSpacingElement(MatchPattern &Pattern) {
 static MatchPattern parseMatchPattern(std::string Pattern) {
   MatchPattern Result;
 
-  const int Size = Pattern.size();
-  int Index = 0;
+  const size_t Size = Pattern.size();
+  size_t Index = 0;
+
+  if (Size == 0) {
+    return Result;
+  }
   while (Index < Size) {
     const char Character = Pattern[Index];
 
@@ -182,6 +176,24 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
         Result.push_back(SpacingElement{});
       }
       while (Index < Size && isWhitespace(Pattern[Index])) {
+        Index++;
+      }
+      continue;
+    }
+
+    // Treat variable name with escape character(like "\${var_name}") as a
+    // normal string
+    if (Index < (Size - 2) && Pattern[Index] == '\\' &&
+        Pattern[Index + 1] == '$' && Pattern[Index + 2] == '{') {
+      Index += 1; // Skip '\\'
+      auto RightCurly = Pattern.find('}', Index);
+      if (RightCurly == std::string::npos) {
+        throw std::runtime_error("Invalid rewrite pattern expression");
+      }
+      RightCurly += 1; // Skip '}'
+
+      while (Index < RightCurly) {
+        Result.push_back(LiteralElement{Pattern[Index]});
         Index++;
       }
       continue;
@@ -214,11 +226,17 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                                             const std::string &Input,
                                             const int Start);
 
+static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
+                                                const std::string &Input,
+                                                const int Start);
+
 static int parseCodeElement(const MatchPattern &Suffix,
-                            const std::string &Input, const int Start);
+                            const std::string &Input, const int Start,
+                            bool IsPartialMatch = true);
 
 static int parseBlock(char LeftDelimiter, char RightDelimiter,
-                      const std::string &Input, const int Start) {
+                      const std::string &Input, const int Start,
+                      bool IsPartialMatch) {
   const int Size = Input.size();
   int Index = Start;
 
@@ -227,7 +245,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
   }
   Index++;
 
-  Index = parseCodeElement({}, Input, Index);
+  Index = parseCodeElement({}, Input, Index, IsPartialMatch);
   if (Index == -1) {
     return -1;
   }
@@ -240,14 +258,33 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
 }
 
 static int parseCodeElement(const MatchPattern &Suffix,
-                            const std::string &Input, const int Start) {
+                            const std::string &Input, const int Start,
+                            bool IsPartialMatch) {
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
-    const auto Character = Input[Index];
 
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+        continue;
+      }
+    }
+
+    const auto Character = Input[Index];
+    if(Suffix.size() == 0 && Character =='"') {
+      return Index;
+    }
     if (Suffix.size() > 0) {
-      const auto SuffixMatch = findMatch(Suffix, Input, Index);
+      std::optional<MatchResult> SuffixMatch;
+
+      if (IsPartialMatch) {
+        SuffixMatch = findMatch(Suffix, Input, Index);
+      } else {
+        SuffixMatch = findFullMatch(Suffix, Input, Index);
+      }
+
       if (SuffixMatch.has_value()) {
         return Index;
       }
@@ -258,17 +295,17 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     if (Character == '{') {
-      Index = parseBlock('{', '}', Input, Index);
+      Index = parseBlock('{', '}', Input, Index, IsPartialMatch);
       continue;
     }
 
     if (Character == '[') {
-      Index = parseBlock('[', ']', Input, Index);
+      Index = parseBlock('[', ']', Input, Index, IsPartialMatch);
       continue;
     }
 
     if (Character == '(') {
-      Index = parseBlock('(', ')', Input, Index);
+      Index = parseBlock('(', ')', Input, Index, IsPartialMatch);
       continue;
     }
 
@@ -281,6 +318,21 @@ static int parseCodeElement(const MatchPattern &Suffix,
     comments. These tokens are skipped since they may contain unbalanced
     delimiters.
     */
+
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Index - 1 >= 0 && Character == '"' && Input[Index - 1] == '\\') {
+        Index++;
+        while (Index < Size &&
+               !(Input[Index - 1] == '\\' && Input[Index] == '"')) {
+          Index++;
+        }
+        if (Index >= Size) {
+          return -1;
+        }
+        Index++;
+        continue;
+      }
+    }
 
     if (Character == '\'') {
       Index++;
@@ -338,9 +390,58 @@ static int parseCodeElement(const MatchPattern &Suffix,
   return Suffix.size() == 0 ? Index : -1;
 }
 
-static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
-                                            const std::string &Input,
-                                            const int Start) {
+// Add '-' as a valid identified char, as cmake target name including '-' is
+// valid
+static bool isIdentifiedChar(char Char) {
+
+  if ((Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z') ||
+      (Char >= '0' && Char <= '9') || (Char == '_') || (Char == '-')) {
+    return true;
+  }
+
+  return false;
+}
+
+static void
+updateExtentionName(const std::string &Input, size_t Next,
+                    std::unordered_map<std::string, std::string> &Bindings) {
+  auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
+  if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
+    size_t Pos = Next - 1;
+    for (; Pos > 0 && (isIdentifiedChar(Input[Pos]) || Input[Pos] == '.');
+         Pos--) {
+    }
+    Pos = Pos == 0 ? 0 : Pos + 1;
+    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - Pos);
+    bool HasCudaSyntax = false;
+    for (const auto &File : MainSrcFilesHasCudaSyntex) {
+      if (llvm::sys::path::filename(File) == FileName) {
+        HasCudaSyntax = true;
+      }
+    }
+
+    if (HasCudaSyntax)
+      Bindings["rewrite_extention_name"] = "cpp" + Extension;
+    else
+      Bindings["rewrite_extention_name"] = "cpp";
+  } else {
+    Bindings["rewrite_extention_name"] = Extension.erase(0, 1);
+  }
+}
+
+static void updateCplusplusStandard(
+    std::unordered_map<std::string, std::string> &Bindings) {
+  if (LANG_Cplusplus_20_Used) {
+    Bindings["rewrite_cplusplus_version"] = "20";
+  } else {
+    Bindings["rewrite_cplusplus_version"] = "17";
+  }
+}
+
+static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
+                                                const std::string &Input,
+                                                const int Start) {
+
   MatchResult Result;
 
   int Index = Start;
@@ -349,6 +450,14 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
   const int Size = Input.size();
 
   while (PatternIndex < PatternSize && Index < Size) {
+
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+      }
+    }
+
     const auto &Element = Pattern[PatternIndex];
 
     if (std::holds_alternative<SpacingElement>(Element)) {
@@ -367,6 +476,104 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
       if (Input[Index] != Literal.Value) {
         return {};
       }
+
+      if (PatternIndex == 0 && Index - 1 >= 0 &&
+          isIdentifiedChar(Input[Index - 1]) &&
+          isIdentifiedChar(Input[Index])) {
+        return {};
+      }
+
+      // If input value has been matched to the end but match pattern template
+      // still has value, it is considered not matched case.
+      if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
+        return {};
+      }
+
+      // If match pattern template has been matched to the end but input value
+      // still not the end, it is considered not matched case.
+      if (PatternIndex == PatternSize - 1 &&
+          isIdentifiedChar(Input[Index + 1])) {
+        return {};
+      }
+
+      Index++;
+      PatternIndex++;
+      continue;
+    }
+
+    if (std::holds_alternative<CodeElement>(Element)) {
+      const auto &Code = std::get<CodeElement>(Element);
+      MatchPattern Suffix(Pattern.begin() + PatternIndex + 1,
+                          Pattern.begin() + PatternIndex + 1 +
+                              Code.SuffixLength);
+
+      int Next = parseCodeElement(Suffix, Input, Index, false);
+      if (Next == -1) {
+        return {};
+      }
+
+      std::string ElementContents = Input.substr(Index, Next - Index);
+      if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+        if (Code.Name == "empty" && !ElementContents.empty() &&
+            ElementContents.find_first_not_of(' ') != std::string::npos) {
+          // For reversed variable ${empty}, it should be empty string or string
+          // only including spaces.
+          return {};
+        }
+        updateExtentionName(Input, Next, Result.Bindings);
+      }
+
+      Result.Bindings[Code.Name] = std::move(ElementContents);
+      Index = Next;
+      PatternIndex++;
+      continue;
+    }
+
+    throw std::runtime_error("Internal error: invalid pattern element");
+  }
+
+  Result.Start = Start;
+  Result.End = Index;
+  return Result;
+}
+
+static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
+                                            const std::string &Input,
+                                            const int Start) {
+  MatchResult Result;
+
+  int Index = Start;
+  int PatternIndex = 0;
+  const int PatternSize = Pattern.size();
+  const int Size = Input.size();
+  while (PatternIndex < PatternSize && Index < Size) {
+
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (Input[Index] == '#') {
+        for (; Index < Size && Input[Index] != '\n'; Index++) {
+        }
+      }
+    }
+
+    const auto &Element = Pattern[PatternIndex];
+
+    if (std::holds_alternative<SpacingElement>(Element)) {
+      if (!isWhitespace(Input[Index])) {
+        return {};
+      }
+      while (Index < Size && isWhitespace(Input[Index])) {
+        Index++;
+      }
+      PatternIndex++;
+      continue;
+    }
+
+    if (std::holds_alternative<LiteralElement>(Element)) {
+      const auto &Literal = std::get<LiteralElement>(Element);
+      if (Input[Index] != Literal.Value) {
+        return {};
+      }
+
       Index++;
       PatternIndex++;
       continue;
@@ -382,16 +589,19 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
       if (Next == -1) {
         return {};
       }
-      const int Indentation = detectIndentation(Input, Index);
-      std::string ElementContents =
-          dedent(Input.substr(Index, Next - Index), Indentation);
-      if (Result.Bindings.count(Code.Name)) {
-        if (Result.Bindings[Code.Name] != ElementContents) {
+      std::string ElementContents = Input.substr(Index, Next - Index);
+
+      if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+        if (Code.Name == "empty" && !ElementContents.empty() &&
+            ElementContents.find_first_not_of(' ') != std::string::npos) {
+          // For reversed variable ${empty}, it should be empty string or string
+          // only including spaces.
           return {};
         }
-      } else {
-        Result.Bindings[Code.Name] = std::move(ElementContents);
+        updateCplusplusStandard(Result.Bindings);
       }
+
+      Result.Bindings[Code.Name] = std::move(ElementContents);
       Index = Next;
       PatternIndex++;
       continue;
@@ -423,10 +633,22 @@ static void instantiateTemplate(
   }
 
   while (Index <= End) {
-    const auto Character = Template[Index];
 
+    // Skip variable name with escape character, like "\${var_name}"
+    if (Index < (Size - 2) && Template[Index] == '\\' &&
+        Template[Index + 1] == '$' && Template[Index + 2] == '{') {
+      Index += 1; // Skip '\\'
+      auto RightCurly = Template.find('}', Index);
+      if (RightCurly == std::string::npos) {
+        throw std::runtime_error("Invalid rewrite pattern expression");
+      }
+      RightCurly += 1; // Skip '}'
+      std::string Name = Template.substr(Index, RightCurly - Index);
+      OutputStream << Name;
+    }
+
+    auto Character = Template[Index];
     if (Index < (Size - 1) && Character == '$' && Template[Index + 1] == '{') {
-      const int BindingStart = Index;
       Index += 2;
 
       const auto RightCurly = Template.find('}', Index);
@@ -438,10 +660,7 @@ static void instantiateTemplate(
 
       const auto &BindingIterator = Bindings.find(Name);
       if (BindingIterator != Bindings.end()) {
-        const int BindingIndentation =
-            detectIndentation(Template, BindingStart) + Indentation;
-        const std::string Contents =
-            indent(BindingIterator->second, BindingIndentation);
+        const std::string Contents = BindingIterator->second;
         OutputStream << Contents;
       }
       continue;
@@ -474,14 +693,57 @@ bool fixLineEndings(const std::string &Input, std::string &Output) {
   return isCRLF;
 }
 
+bool skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
+                       int &Index) {
+  const int Size = Input.size();
+  bool CommentFound = false;
+  if (Input[Index] == '#') {
+    CommentFound = true;
+    for (; Index < Size && Input[Index] != '\n'; Index++) {
+      OutputStream << Input[Index];
+    }
+    if (Index != Size) {
+      OutputStream << "\n";
+    }
+    Index++;
+    if (Index < Size && isWhitespace(Input[Index])) {
+      for (; Index < Size && isWhitespace(Input[Index]); Index++) {
+        OutputStream << Input[Index];
+      }
+    }
+  }
+  return CommentFound;
+}
+
+void setFileTypeProcessed(enum SourceFileType FileType) {
+  SrcFileType = FileType;
+}
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input) {
   std::stringstream OutputStream;
+
+  if (PP.In.size() == 0) {
+    return Input;
+  }
+
   const auto Pattern = parseMatchPattern(PP.In);
   const int Size = Input.size();
   int Index = 0;
   while (Index < Size) {
-    auto Result = findMatch(Pattern, Input, Index);
+
+    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (skipCmakeComments(OutputStream, Input, Index)) {
+        continue;
+      }
+    }
+
+    std::optional<MatchResult> Result;
+    if (PP.MatchMode) {
+      Result = findFullMatch(Pattern, Input, Index);
+    } else {
+      Result = findMatch(Pattern, Input, Index);
+    }
 
     if (Result.has_value()) {
       auto &Match = Result.value();
@@ -494,15 +756,17 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       }
 
       const int Indentation = detectIndentation(Input, Index);
-      instantiateTemplate(PP.Out, Match.Bindings, Indentation,
-                                            OutputStream);
+      instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
+      while (Input[Index] == '\n') {
+        OutputStream << Input[Index];
+        Index++;
+      }
       continue;
     }
 
     OutputStream << Input[Index];
     Index++;
   }
-
   return OutputStream.str();
 }

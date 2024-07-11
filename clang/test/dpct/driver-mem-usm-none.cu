@@ -69,40 +69,38 @@ int main(){
     // CHECK: r = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic));
     r = cuMemcpyAsync(f_D, f_D2, size, 0);
 
-    // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
-    // CHECK: sycl::id<3> cpy_from_pos_ct1(0, 0, 0), cpy_to_pos_ct1(0, 0, 0);
-    // CHECK: sycl::range<3> cpy_size_ct1(1, 1, 1);
+    // CHECK: dpct::memcpy_parameter cpy;
+    // CHECK-NEXT: cpy.to.pitched.set_data_ptr(f_A);
+    // CHECK-NEXT: cpy.to.pitched.set_pitch(20);
+    // CHECK-NEXT: cpy.to.pos[1] = 10;
+    // CHECK-NEXT: cpy.to.pos[0] = 15;
+    // CHECK-EMPTY:
+    // CHECK-NEXT: cpy.from.pitched.set_data_ptr(f_D);
+    // CHECK-NEXT: cpy.from.pitched.set_pitch(20);
+    // CHECK-NEXT: cpy.from.pos[1] = 10;
+    // CHECK-NEXT: cpy.from.pos[0] = 15;
+    // CHECK-EMPTY:
+    // CHECK-NEXT: cpy.size[0] = 4;
+    // CHECK-NEXT: cpy.size[1] = 7;
     CUDA_MEMCPY2D cpy;
-    //
     cpy.dstMemoryType = CU_MEMORYTYPE_HOST;
-    // CHECK: cpy_to_data_ct1.set_data_ptr(f_A);
     cpy.dstHost = f_A;
-    // CHECK: cpy_to_data_ct1.set_pitch(20);
     cpy.dstPitch = 20;
-    // CHECK: cpy_to_pos_ct1[1] = 10;
     cpy.dstY = 10;
-    // CHECK: cpy_to_pos_ct1[0] = 15;
     cpy.dstXInBytes = 15;
 
-    //
     cpy.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    // CHECK: cpy_from_data_ct1.set_data_ptr(f_D);
     cpy.srcDevice = f_D;
-    // CHECK: cpy_from_data_ct1.set_pitch(20);
     cpy.srcPitch = 20;
-    // CHECK: cpy_from_pos_ct1[1] = 10;
     cpy.srcY = 10;
-    // CHECK: cpy_from_pos_ct1[0] = 15;
     cpy.srcXInBytes = 15;
 
-    // CHECK: cpy_size_ct1[0] = 4;
     cpy.WidthInBytes = 4;
-    // CHECK: cpy_size_ct1[1] = 7;
     cpy.Height = 7;
 
-    // CHECK: dpct::dpct_memcpy(cpy_to_data_ct1, cpy_to_pos_ct1, cpy_from_data_ct1, cpy_from_pos_ct1, cpy_size_ct1);
+    // CHECK: dpct::dpct_memcpy(cpy);
     cuMemcpy2D(&cpy);
-    // CHECK: dpct::async_dpct_memcpy(cpy_to_data_ct1, cpy_to_pos_ct1, cpy_from_data_ct1, cpy_from_pos_ct1, cpy_size_ct1, dpct::automatic, *stream);
+    // CHECK: dpct::async_dpct_memcpy(cpy, *stream);
     cuMemcpy2DAsync(&cpy, stream);
 
     CUdeviceptr devicePtr;
@@ -212,58 +210,56 @@ int main(){
     cuMemsetD2D16Async(f_D, 1, v16, 4 * 2, 6, stream);
     cuMemsetD2D8Async(f_D, 1, v8, 4 * 4, 6, stream);
 
-    // CHECK: dpct::pitched_data cpy2_from_data_ct1, cpy2_to_data_ct1;
-    // CHECK: sycl::id<3> cpy2_from_pos_ct1(0, 0, 0), cpy2_to_pos_ct1(0, 0, 0);
-    // CHECK: sycl::range<3> cpy2_size_ct1(1, 1, 1);
+    // CHECK: dpct::memcpy_parameter cpy2;
+    // CHECK-EMPTY:
+    // CHECK-NEXT: dpct::image_matrix_p ca;
+    // CHECK-NEXT: cpy2.to.image = ca;
+    // CHECK-NEXT: cpy2.to.pitched.set_pitch(5);
+    // CHECK-NEXT: cpy2.to.pitched.set_y(4);
+    // CHECK-NEXT: cpy2.to.pos[1] = 3;
+    // CHECK-NEXT: cpy2.to.pos[2] = 2;
+    // CHECK-NEXT: cpy2.to.pos[0] = 1;
+    // CHECK-EMPTY:
+    // CHECK-NEXT: cpy2.from.pitched.set_data_ptr(f_A);
+    // CHECK-NEXT: cpy2.from.pitched.set_pitch(5);
+    // CHECK-NEXT: cpy2.from.pitched.set_y(4);
+    // CHECK-NEXT: cpy2.from.pos[1] = 3;
+    // CHECK-NEXT: cpy2.from.pos[2] = 2;
+    // CHECK-NEXT: cpy2.from.pos[0] = 1;
+    // CHECK-EMPTY:
+    // CHECK-NEXT: cpy2.size[0] = 3;
+    // CHECK-NEXT: cpy2.size[1] = 2;
+    // CHECK-NEXT: cpy2.size[2] = 1;
     CUDA_MEMCPY3D cpy2;
 
     CUarray ca;
-    //
     cpy2.dstMemoryType = CU_MEMORYTYPE_ARRAY;
-    // CHECK: cpy2_to_data_ct1 = ca->to_pitched_data();
     cpy2.dstArray = ca;
-    // CHECK: cpy2_to_data_ct1.set_pitch(5);
     cpy2.dstPitch = 5;
-    // CHECK: cpy2_to_data_ct1.set_y(4);
     cpy2.dstHeight = 4;
-    // CHECK: cpy2_to_pos_ct1[1] = 3;
     cpy2.dstY = 3;
-    // CHECK: cpy2_to_pos_ct1[2] = 2;
     cpy2.dstZ = 2;
-    // CHECK: cpy2_to_pos_ct1[0] = 1;
     cpy2.dstXInBytes = 1;
-    //
     cpy2.dstLOD = 0;
 
-    //
     cpy2.srcMemoryType = CU_MEMORYTYPE_HOST;
-    // CHECK: cpy2_from_data_ct1.set_data_ptr(f_A);
     cpy2.srcHost = f_A;
-    // CHECK: cpy2_from_data_ct1.set_pitch(5);
     cpy2.srcPitch = 5;
-    // CHECK: cpy2_from_data_ct1.set_y(4);
     cpy2.srcHeight = 4;
-    // CHECK: cpy2_from_pos_ct1[1] = 3;
     cpy2.srcY = 3;
-    // CHECK: cpy2_from_pos_ct1[2] = 2;
     cpy2.srcZ = 2;
-    // CHECK: cpy2_from_pos_ct1[0] = 1;
     cpy2.srcXInBytes = 1;
-    //
     cpy2.srcLOD = 0;
 
-    // CHECK: cpy2_size_ct1[0] = 3;
     cpy2.WidthInBytes = 3;
-    // CHECK: cpy2_size_ct1[1] = 2;
     cpy2.Height = 2;
-    // CHECK: cpy2_size_ct1[2] = 1;
     cpy2.Depth = 1;
 
-    // CHECK: dpct::dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1);
+    // CHECK: dpct::dpct_memcpy(cpy2);
     cuMemcpy3D(&cpy2);
 
     CUstream cs;
-    // CHECK: dpct::async_dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1, dpct::automatic, *cs);
+    // CHECK: dpct::async_dpct_memcpy(cpy2, *cs);
     cuMemcpy3DAsync(&cpy2, cs);
 
     // CHECK: dpct::dpct_free(f_D);

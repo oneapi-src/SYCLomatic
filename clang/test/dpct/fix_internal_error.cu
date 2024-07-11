@@ -2,6 +2,7 @@
 // RUN: grep "dpct internal error" %T/fix_internal_error_output.txt | wc -l > %T/fix_internal_error_wc_output.txt || true
 // RUN: FileCheck %S/check_no_internal_error.txt --match-full-lines --input-file %T/fix_internal_error_wc_output.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/fix_internal_error/fix_internal_error.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/fix_internal_error/fix_internal_error.dp.cpp -o %T/fix_internal_error/fix_internal_error.dp.o %}
 
 // Test description:
 // This test is to cover un-instantiate member call.
@@ -42,6 +43,10 @@ __device__ __host__ inline bool bar1() { return foo<FOO>(); }
 
 __device__ __host__ inline bool bar2() { return foo<FOO>(false); }
 
+// Test description:
+// The return location of getEndLocOfFollowingEmptyMacro() may be a MacroID.
+// SM.getExpansionLoc() is necessary for it in ExprAnalysis::getOffsetAndLength().
+// Below case can test above scenario.
 
 #include <exception>
 #include <string>
@@ -55,7 +60,7 @@ public:
 //CHECK-NEXT:  do {                                                                         \
 //CHECK-NEXT:    dpct::err0 e = ARG;                                                       \
 //CHECK-NEXT:    if (e != 0) {                                                    \
-//CHECK-NEXT:      throw MY_EXCEPTION(uint32_t(__LINE__), "cudaGetErrorString is not supported"/*cudaGetErrorString(e)*/);           \
+//CHECK-NEXT:      throw MY_EXCEPTION(uint32_t(__LINE__), "<Placeholder string>");           \
 //CHECK-NEXT:    }                                                                          \
 //CHECK-NEXT:  } while (0)
 
@@ -87,3 +92,18 @@ void foo2() {
 #undef MACRO_BBB
 #undef MACRO_CCC
 #undef MACRO_DDD
+
+// Test description:
+// When template is not instantiated, the member call is not recognized (treated
+// as CallExpr without linking the correct declaration). Then the info saved in
+// DeviceFunctionInfo is not correct. So when try to get argument, we need double
+// check the argument number.
+// In below case, norm is a class method, so it has 2 parameters (this and a default
+// parameter). But when template is not instantiated, the argument number of CallExpr
+// norm is 0.
+template <typename T, int a, int b> struct AAA;
+template <typename T_> struct AAA<T_, 1, 2> {
+  using T = T_;
+  __host__ __device__ T norm(T x = T()) const { return x; }
+  __host__ __device__ T foo() const { return norm(); }
+};

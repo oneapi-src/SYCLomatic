@@ -16,6 +16,7 @@
 #include <sycl/detail/pi.h>
 #include <sycl/detail/pi.hpp>
 #include <sycl/device.hpp>
+#include <sycl/ext/oneapi/experimental/root_group.hpp>
 #include <sycl/info/info_desc.hpp>
 
 #include <cassert>
@@ -31,6 +32,7 @@ class kernel_bundle_impl;
 using ContextImplPtr = std::shared_ptr<context_impl>;
 using ProgramImplPtr = std::shared_ptr<program_impl>;
 using KernelBundleImplPtr = std::shared_ptr<kernel_bundle_impl>;
+using sycl::detail::pi::PiProgram;
 class kernel_impl {
 public:
   /// Constructs a SYCL kernel instance from a PiKernel
@@ -73,7 +75,8 @@ public:
   kernel_impl(sycl::detail::pi::PiKernel Kernel, ContextImplPtr ContextImpl,
               DeviceImageImplPtr DeviceImageImpl,
               KernelBundleImplPtr KernelBundleImpl,
-              const KernelArgMask *ArgMask);
+              const KernelArgMask *ArgMask, PiProgram ProgramPI,
+              std::mutex *CacheMutex);
 
   /// Constructs a SYCL kernel for host device
   ///
@@ -100,19 +103,9 @@ public:
   ///
   /// \return a valid cl_kernel instance
   cl_kernel get() const {
-    if (is_host()) {
-      throw invalid_object_error(
-          "This instance of kernel doesn't support OpenCL interoperability.",
-          PI_ERROR_INVALID_KERNEL);
-    }
     getPlugin()->call<PiApiKind::piKernelRetain>(MKernel);
     return pi::cast<cl_kernel>(MKernel);
   }
-
-  /// Check if the associated SYCL context is a SYCL host context.
-  ///
-  /// \return true if this SYCL kernel is a host kernel.
-  bool is_host() const { return MContext->is_host(); }
 
   const PluginPtr &getPlugin() const { return MContext->getPlugin(); }
 
@@ -121,6 +114,12 @@ public:
   ///
   /// \return depends on information being queried.
   template <typename Param> typename Param::return_type get_info() const;
+
+  /// Queries the kernel object for SYCL backend-specific information.
+  ///
+  /// \return depends on information being queried.
+  template <typename Param>
+  typename Param::return_type get_backend_info() const;
 
   /// Query device-specific information from a kernel object using the
   /// info::kernel_device_specific descriptor.
@@ -140,6 +139,9 @@ public:
   template <typename Param>
   typename Param::return_type get_info(const device &Device,
                                        const range<3> &WGSize) const;
+
+  template <typename Param>
+  typename Param::return_type ext_oneapi_get_info(const queue &q) const;
 
   /// Get a reference to a raw kernel object.
   ///
@@ -175,7 +177,7 @@ public:
 
   bool isInterop() const { return MIsInterop; }
 
-  ProgramImplPtr getProgramImpl() const { return MProgramImpl; }
+  PiProgram getProgramRef() const { return MProgram; }
   ContextImplPtr getContextImplPtr() const { return MContext; }
 
   std::mutex &getNoncacheableEnqueueMutex() {
@@ -183,17 +185,19 @@ public:
   }
 
   const KernelArgMask *getKernelArgMask() const { return MKernelArgMaskPtr; }
+  std::mutex *getCacheMutex() const { return MCacheMutex; }
 
 private:
   sycl::detail::pi::PiKernel MKernel;
   const ContextImplPtr MContext;
-  const ProgramImplPtr MProgramImpl;
+  const PiProgram MProgram = nullptr;
   bool MCreatedFromSource = true;
   const DeviceImageImplPtr MDeviceImageImpl;
   const KernelBundleImplPtr MKernelBundleImpl;
   bool MIsInterop = false;
   std::mutex MNoncacheableEnqueueMutex;
   const KernelArgMask *MKernelArgMaskPtr;
+  std::mutex *MCacheMutex = nullptr;
 
   bool isBuiltInKernel(const device &Device) const;
   void checkIfValidForNumArgsInfoQuery() const;
@@ -203,11 +207,6 @@ template <typename Param>
 inline typename Param::return_type kernel_impl::get_info() const {
   static_assert(is_kernel_info_desc<Param>::value,
                 "Invalid kernel information descriptor");
-  if (is_host()) {
-    // TODO implement
-    assert(0 && "Not implemented");
-  }
-
   if constexpr (std::is_same_v<Param, info::kernel::num_args>)
     checkIfValidForNumArgsInfoQuery();
 
@@ -234,9 +233,6 @@ kernel_impl::get_info(const device &Device) const {
           "is a built-in kernel.");
   }
 
-  if (is_host()) {
-    return get_kernel_device_specific_info_host<Param>(Device);
-  }
   return get_kernel_device_specific_info<Param>(
       this->getHandleRef(), getSyclObjImpl(Device)->getHandleRef(),
       getPlugin());
@@ -246,13 +242,25 @@ template <typename Param>
 inline typename Param::return_type
 kernel_impl::get_info(const device &Device,
                       const sycl::range<3> &WGSize) const {
-  if (is_host()) {
-    throw runtime_error("Sub-group feature is not supported on HOST device.",
-                        PI_ERROR_INVALID_DEVICE);
-  }
   return get_kernel_device_specific_info_with_input<Param>(
       this->getHandleRef(), getSyclObjImpl(Device)->getHandleRef(), WGSize,
       getPlugin());
+}
+
+template <>
+inline typename ext::oneapi::experimental::info::kernel_queue_specific::
+    max_num_work_group_sync::return_type
+    kernel_impl::ext_oneapi_get_info<
+        ext::oneapi::experimental::info::kernel_queue_specific::
+            max_num_work_group_sync>(const queue &Queue) const {
+  const auto &Plugin = getPlugin();
+  const auto &Handle = getHandleRef();
+  const auto MaxWorkGroupSize =
+      Queue.get_device().get_info<info::device::max_work_group_size>();
+  pi_uint32 GroupCount = 0;
+  Plugin->call<PiApiKind::piextKernelSuggestMaxCooperativeGroupCount>(
+      Handle, MaxWorkGroupSize, /* DynamicSharedMemorySize */ 0, &GroupCount);
+  return GroupCount;
 }
 
 } // namespace detail

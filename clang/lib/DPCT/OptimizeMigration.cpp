@@ -95,5 +95,65 @@ void ForLoopUnrollRule::runRule(
   }
 }
 
+void DeviceConstantVarOptimizeAnalysisRule::registerMatcher(
+    ast_matchers::MatchFinder &MF) {
+  auto DeclMatcher =
+      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice)),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")));
+  MF.addMatcher(DeclMatcher.bind("ConstantVar"), this);
+  if (DpctGlobalInfo::isOptimizeMigration() ||
+      DpctGlobalInfo::useExpDeviceGlobal()) {
+    auto RuntimeSymnolAPIName = [&]() {
+      return hasAnyName("cudaGetSymbolAddress", "cudaGetSymbolSize",
+                        "cudaMemcpyToSymbol", "cudaMemcpyFromSymbol");
+    };
+
+    MF.addMatcher(callExpr(callee(functionDecl(RuntimeSymnolAPIName())))
+                      .bind("RuntimeSymnolAPICall"),
+                  this);
+  }
+}
+
+void DeviceConstantVarOptimizeAnalysisRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "ConstantVar")) {
+    if (isCubVar(MemVar)) {
+      return;
+    }
+    MemVarInfo::buildMemVarInfo(MemVar);
+    return;
+  }
+  if (!DpctGlobalInfo::isOptimizeMigration() &&
+      !DpctGlobalInfo::useExpDeviceGlobal()) {
+    return;
+  }
+  if (auto CE = getNodeAsType<CallExpr>(Result, "RuntimeSymnolAPICall")) {
+    if (auto DC = CE->getDirectCallee()) {
+      std::string FuncName = getFunctionName(DC);
+      int SymbolArgIndex = 1;
+      if (FuncName == "cudaMemcpyToSymbol") {
+        SymbolArgIndex = 0;
+      }
+      auto SymbolExpr = CE->getArg(SymbolArgIndex);
+      auto DREResults = findDREInScope(SymbolExpr);
+      for (auto &Result : DREResults) {
+        const DeclRefExpr *MatchedDRE =
+            Result.getNodeAs<DeclRefExpr>("VarReference");
+        if (!MatchedDRE)
+          continue;
+        if (auto VD = dyn_cast_or_null<VarDecl>(MatchedDRE->getDecl())) {
+          if (VD->hasAttr<CUDAConstantAttr>() ||
+              VD->hasAttr<CUDADeviceAttr>()) {
+            if (auto Info = MemVarInfo::buildMemVarInfo(VD)) {
+              Info->setUsedBySymbolAPIFlag(true);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 } // namespace dpct
 } // namespace clang

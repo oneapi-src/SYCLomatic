@@ -10,6 +10,7 @@
 
 #ifdef __SYCL_DEVICE_ONLY__
 
+#include <CL/__spirv/spirv_types.hpp>         // for __ocl_vec_t
 #include <sycl/detail/defines_elementary.hpp> // for __DPCPP_SYCL_EXTERNAL
 
 #include <cstddef> // for size_t
@@ -17,7 +18,7 @@
 
 #define __SPIRV_VAR_QUALIFIERS extern "C" const
 
-#if defined(__NVPTX__) || defined(__AMDGCN__)
+#if defined(__NVPTX__) || defined(__AMDGCN__) || defined(__SYCL_NATIVE_CPU__)
 
 __DPCPP_SYCL_EXTERNAL size_t __spirv_GlobalInvocationId_x();
 __DPCPP_SYCL_EXTERNAL size_t __spirv_GlobalInvocationId_y();

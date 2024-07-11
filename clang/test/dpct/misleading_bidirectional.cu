@@ -1,5 +1,6 @@
 // RUN: dpct --check-unicode-security --format-range=none -out-root %T/misleading_bidirectional %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/misleading_bidirectional/misleading_bidirectional.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/misleading_bidirectional/misleading_bidirectional.dp.cpp -o %T/misleading_bidirectional/misleading_bidirectional.dp.o %}
 
 #include <iostream>
 #include <string>

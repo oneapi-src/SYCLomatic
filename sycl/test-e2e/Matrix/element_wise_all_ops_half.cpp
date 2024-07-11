@@ -6,19 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 // REQUIRES: aspect-fp16
-// REQUIRES: matrix
+// REQUIRES: aspect-ext_intel_matrix
+// REQUIRES: matrix-fp16
 
-// RUN: %{build} -o %t.out -DSYCL_EXT_ONEAPI_MATRIX_VERSION=4
+// RUN: %{build} -o %t.out
 // RUN: %{run} %t.out
 
-#include <iostream>
-#include <random>
-#include <sycl/sycl.hpp>
-
-using namespace sycl;
-using namespace sycl::ext::intel;
-using namespace sycl::ext::oneapi::experimental::matrix;
-
-#define SG_SZ 16
-
+#include "common.hpp"
 #include "element_wise_all_ops_half_impl.hpp"

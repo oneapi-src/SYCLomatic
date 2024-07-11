@@ -71,6 +71,52 @@ __global__ void ExclusiveScanKernel2(int* data) {
   data[threadid] = output;
 }
 
+//CHECK: void ExclusiveScanKernel3(int* data,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
+//CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
+//CHECK-NEXT: int input = data[threadid];
+//CHECK-NEXT: int output = 0;
+//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::maximum<>());
+//CHECK-NEXT: data[threadid] = output;
+//CHECK-NEXT: }
+__global__ void ExclusiveScanKernel3(int* data) {
+  typedef cub::WarpScan<int> WarpScan;
+
+  __shared__ typename WarpScan::TempStorage temp1[10];
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  WarpScan(temp1[0]).ExclusiveScan(input, output, cub::Max());
+  data[threadid] = output;
+}
+
+//CHECK: void ExclusiveScanKernel4(int* data,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
+//CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
+//CHECK-NEXT: int input = data[threadid];
+//CHECK-NEXT: int output = 0;
+//CHECK-NEXT: output = sycl::exclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::minimum<>());
+//CHECK-NEXT: data[threadid] = output;
+//CHECK-NEXT: }
+__global__ void ExclusiveScanKernel4(int* data) {
+  typedef cub::WarpScan<int> WarpScan;
+
+  __shared__ typename WarpScan::TempStorage temp1[10];
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  WarpScan(temp1[0]).ExclusiveScan(input, output, cub::Min());
+  data[threadid] = output;
+}
+
 //CHECK: void InclusiveScanKernel(int* data,
 //CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
@@ -91,6 +137,52 @@ __global__ void InclusiveScanKernel(int* data) {
   int input = data[threadid];
   int output = 0;
   WarpScan(temp1).InclusiveScan(input, output, cub::Sum());
+  data[threadid] = output;
+}
+
+//CHECK: void InclusiveScanKernel2(int* data,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
+//CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
+//CHECK-NEXT: int input = data[threadid];
+//CHECK-NEXT: int output = 0;
+//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::maximum<>());
+//CHECK-NEXT: data[threadid] = output;
+//CHECK-NEXT: }
+__global__ void InclusiveScanKernel2(int* data) {
+  typedef cub::WarpScan<int> WarpScan;
+
+  __shared__ typename WarpScan::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  WarpScan(temp1).InclusiveScan(input, output, cub::Max());
+  data[threadid] = output;
+}
+
+//CHECK: void InclusiveScanKernel3(int* data,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
+//CHECK-EMPTY:
+//CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
+//CHECK-EMPTY:
+//CHECK-NEXT: int input = data[threadid];
+//CHECK-NEXT: int output = 0;
+//CHECK-NEXT: output = sycl::inclusive_scan_over_group(item_ct1.get_sub_group(), input, sycl::minimum<>());
+//CHECK-NEXT: data[threadid] = output;
+//CHECK-NEXT: }
+__global__ void InclusiveScanKernel3(int* data) {
+  typedef cub::WarpScan<int> WarpScan;
+
+  __shared__ typename WarpScan::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  WarpScan(temp1).InclusiveScan(input, output, cub::Min());
   data[threadid] = output;
 }
 
@@ -342,9 +434,50 @@ int main() {
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:           ExclusiveScanKernel3(dev_data, item_ct1);
+//CHECK-NEXT:         });
+  ExclusiveScanKernel3<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);
+
+  init_data(dev_data, TotalThread);
+//CHECK:   q_ct1.parallel_for(
+//CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:           ExclusiveScanKernel4(dev_data, item_ct1);
+//CHECK-NEXT:         });
+  ExclusiveScanKernel4<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);
+
+
+  init_data(dev_data, TotalThread);
+//CHECK:   q_ct1.parallel_for(
+//CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:           InclusiveScanKernel(dev_data, item_ct1);
 //CHECK-NEXT:         });
   InclusiveScanKernel<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);
+
+  init_data(dev_data, TotalThread);
+//CHECK:   q_ct1.parallel_for(
+//CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:           InclusiveScanKernel2(dev_data, item_ct1);
+//CHECK-NEXT:         });
+  InclusiveScanKernel2<<<GridSize, BlockSize>>>(dev_data);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, TotalThread);
+
+init_data(dev_data, TotalThread);
+//CHECK:   q_ct1.parallel_for(
+//CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:           InclusiveScanKernel3(dev_data, item_ct1);
+//CHECK-NEXT:         });
+  InclusiveScanKernel3<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
 

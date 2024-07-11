@@ -39,8 +39,8 @@
 // RUN: %clang -### -fsycl -fprofile-arcs -ftest-coverage -target x86_64-unknown-linux-gnu -c %s 2>&1 \
 // RUN:  | FileCheck -check-prefix=CHECK_TEST_COVERAGE %s
 // CHECK_TEST_COVERAGE: clang{{.*}} "-cc1" "-triple" "spir64-unknown-unknown"{{.*}} "-fsycl-is-device"{{.*}}
-// CHECK_TEST_COVERAGE-NOT: "-coverage-notes-file"
-// CHECK_TEST_COVERAGE: clang{{.*}} "-cc1" "-triple" "x86_64-unknown-linux-gnu"{{.*}} "-fsycl-is-host"{{.*}} "-coverage-notes-file"
+// CHECK_TEST_COVERAGE-NOT: "-coverage-notes-file={{.*}}"
+// CHECK_TEST_COVERAGE: clang{{.*}} "-cc1" "-triple" "x86_64-unknown-linux-gnu"{{.*}} "-fsycl-is-host"{{.*}} "-coverage-notes-file={{.*}}"
 
 /// check for PIC for device wrap compilation when using -shared or -fPIC
 // RUN: %clangxx -### -fsycl -target x86_64-unknown-linux-gnu -shared %s 2>&1 \
@@ -74,7 +74,7 @@
 // RUN:    | FileCheck -check-prefix IMPLIED_DEVICE_OBJ %s
 // RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_gen %S/Inputs/SYCL/objlin64.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefix IMPLIED_DEVICE_OBJ %s
-// RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fintelfpga %S/Inputs/SYCL/objlin64.o %s 2>&1 \
+// RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fintelfpga %S/Inputs/SYCL/objlin64.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefix IMPLIED_DEVICE_OBJ %s
 // IMPLIED_DEVICE_OBJ: clang-offload-bundler{{.*}} "-type=o"{{.*}} "-targets=host-x86_64-unknown-linux-gnu,sycl-spir64_{{.*}}-unknown-unknown,{{.*}}sycl-spir64-unknown-unknown"{{.*}} "-unbundle"
 
@@ -84,7 +84,7 @@
 // RUN:    | FileCheck -check-prefix IMPLIED_DEVICE_LIB %s
 // RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_gen %S/Inputs/SYCL/liblin64.a %s 2>&1 \
 // RUN:    | FileCheck -check-prefix IMPLIED_DEVICE_LIB %s
-// RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fintelfpga %S/Inputs/SYCL/liblin64.a %s 2>&1 \
+// RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fintelfpga %S/Inputs/SYCL/liblin64.a %s 2>&1 \
 // RUN:    | FileCheck -check-prefix IMPLIED_DEVICE_LIB %s
 // IMPLIED_DEVICE_LIB: clang-offload-bundler{{.*}} "-type=aoo"{{.*}} "-targets=sycl-spir64_{{.*}}-unknown-unknown,sycl-spir64-unknown-unknown"{{.*}} "-unbundle"
 
@@ -95,7 +95,7 @@
 // RUN:    | FileCheck -check-prefixes=NO_IMPLIED_DEVICE_OPT,NO_IMPLIED_DEVICE_FPGA %s
 // RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fno-sycl-link-spirv -fsycl-targets=spir64_gen %S/Inputs/SYCL/objlin64.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefixes=NO_IMPLIED_DEVICE_OPT,NO_IMPLIED_DEVICE_GEN %s
-// RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fno-sycl-link-spirv -fintelfpga %S/Inputs/SYCL/objlin64.o %s 2>&1 \
+// RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fno-sycl-link-spirv -fintelfpga %S/Inputs/SYCL/objlin64.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefixes=NO_IMPLIED_DEVICE_OPT,NO_IMPLIED_DEVICE_FPGA %s
 // NO_IMPLIED_DEVICE_CPU: clang{{.*}} "-triple" "spir64_x86_64-unknown-unknown"
 // NO_IMPLIED_DEVICE_FPGA: clang{{.*}} "-triple" "spir64_fpga-unknown-unknown"
@@ -109,7 +109,7 @@
 // RUN:    | FileCheck -check-prefix NO_IMPLIED_DEVICE %s
 // RUN:  %clangxx -### -fsycl -target x86_64-unknown-linux-gnu -fsycl-targets=spir64_gen %t_empty.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefix NO_IMPLIED_DEVICE %s
-// RUN:  %clangxx -### -fsycl -target x86_64-unknown-linux-gnu -fintelfpga %t_empty.o %s 2>&1 \
+// RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fintelfpga %t_empty.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefix NO_IMPLIED_DEVICE %s
 // NO_IMPLIED_DEVICE: clang-offload-bundler{{.*}} "-type=o" "-targets=sycl-spir64-unknown-unknown"{{.*}} "-check-section"
 // NO_IMPLIED_DEVICE-NOT: clang-offload-bundler{{.*}} "-targets={{.*}}spir64-unknown-unknown{{.*}}" "-unbundle"
@@ -120,7 +120,7 @@
 // RUN:    | FileCheck -check-prefixes=SYCL_TARGET_OPT %s
 // RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -Xsycl-target-backend=spir64 -DFOO -Xsycl-target-linker=spir64 -DFOO2 %S/Inputs/SYCL/objlin64.o 2>&1 \
 // RUN:    | FileCheck -check-prefixes=SYCL_TARGET_OPT %s
-// SYCL_TARGET_OPT: clang-offload-wrapper{{.*}} "-compile-opts=-DFOO" "-link-opts=-DFOO2"
+// SYCL_TARGET_OPT: clang-offload-wrapper{{.*}} "-compile-opts={{.*}}-DFOO" "-link-opts=-DFOO2"
 // RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_x86_64 -Xsycl-target-backend -DFOO %S/Inputs/SYCL/objlin64.o 2>&1 \
 // RUN:    | FileCheck -check-prefixes=SYCL_TARGET_OPT_AOT %s
 // RUN:  %clangxx -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_gen -Xsycl-target-backend -DFOO %S/Inputs/SYCL/objlin64.o 2>&1 \
@@ -137,7 +137,7 @@
 // RUN:    | FileCheck -check-prefix NO_DIR_CHECK %s
 // RUN:  %clangxx -### -Wl,-rpath,%S -fsycl -fsycl-targets=spir64_gen %t_empty.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefix NO_DIR_CHECK %s
-// RUN:  %clangxx -### -Wl,-rpath,%S -fsycl -fintelfpga %t_empty.o %s 2>&1 \
+// RUN:  %clangxx -### -Wl,-rpath,%S -fintelfpga %t_empty.o %s 2>&1 \
 // RUN:    | FileCheck -check-prefix NO_DIR_CHECK %s
 // NO_DIR_CHECK-NOT: clang-offload-bundler: error: '{{.*}}': Is a directory
 
@@ -146,11 +146,9 @@
 // RUN:    | FileCheck -check-prefix CHECK_SECTION %s
 // RUN:  %clangxx -### -target x86_64-unknown-linux-gnu %S/Inputs/SYCL/liblin64.a %s 2>&1 \
 // RUN:    | FileCheck -check-prefix NO_CHECK_SECTION %s
-// CHECK_SECTION: {{(/|\\)}}clang-offload-bundler{{.*}} "-type=ao" "-targets=host-x86_64-unknown-linux-gnu"{{.*}} "-check-section"
 // CHECK_SECTION: {{(/|\\)}}clang-offload-bundler{{.*}} "-type=ao" "-targets=sycl-fpga_aocr-intel-unknown"{{.*}} "-check-section"
 // CHECK_SECTION: {{(/|\\)}}clang-offload-bundler{{.*}} "-type=ao" "-targets=sycl-fpga_aocx-intel-unknown"{{.*}} "-check-section"
 // CHECK_SECTION: {{(/|\\)}}clang-offload-bundler{{.*}} "-type=ao" "-targets=sycl-fpga_aocr_emu-intel-unknown"{{.*}} "-check-section"
-// NO_CHECK_SECTION-NOT: clang-offload-bundler{{.*}} "-type=ao" "-targets=host-x86_64-unknown-linux-gnu"{{.*}} "-check-section"
 // NO_CHECK_SECTION-NOT: clang-offload-bundler{{.*}} "-type=ao" "-targets=sycl-fpga_aocr-intel-unknown"{{.*}} "-check-section"
 // NO_CHECK_SECTION-NOT: clang-offload-bundler{{.*}} "-type=ao" "-targets=sycl-fpga_aocx-intel-unknown"{{.*}} "-check-section"
 // NO_CHECK_SECTION-NOT: clang-offload-bundler{{.*}} "-type=ao" "-targets=sycl-fpga_aocr_emu-intel-unknown"{{.*}} "-check-section"
@@ -172,3 +170,33 @@
 /// Check if the clang with fsycl adds C++ libraries to the link line
 //  RUN:  %clang -### -target x86_64-unknown-linux-gnu -fsycl %s 2>&1 | FileCheck -check-prefix=CHECK-FSYCL-WITH-CLANG %s
 // CHECK-FSYCL-WITH-CLANG: "-lstdc++"
+
+/// Check selective passing of -emit-only-kernels-as-entry-points to sycl-post-link tool
+// RUN: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_fpga %s 2>&1 | FileCheck -check-prefix=CHECK_SYCL_POST_LINK_OPT_PASS %s
+// RUN: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_gen %s 2>&1 | FileCheck -check-prefix=CHECK_SYCL_POST_LINK_OPT_PASS %s
+// CHECK_SYCL_POST_LINK_OPT_PASS: sycl-post-link{{.*}}emit-only-kernels-as-entry-points
+// RUN: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_gen -fno-sycl-remove-unused-external-funcs %s 2>&1 | FileCheck -check-prefix=CHECK_SYCL_POST_LINK_OPT_NO_PASS %s
+// CHECK_SYCL_POST_LINK_OPT_NO_PASS-NOT: sycl-post-link{{.*}}emit-only-kernels-as-entry-points
+
+/// Check selective passing of -support-dynamic-linking to sycl-post-link tool
+// TODO: Enable when SYCL RT supports dynamic linking
+// RUNx: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_fpga -shared %s 2>&1 | FileCheck -check-prefix=CHECK_SYCL_POST_LINK_SHARED_PASS %s
+// RUNx: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_gen -shared %s 2>&1 | FileCheck -check-prefix=CHECK_SYCL_POST_LINK_SHARED_PASS %s
+// CHECK_SYCL_POST_LINK_SHARED_PASS: sycl-post-link{{.*}}support-dynamic-linking
+// RUNx: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64_gen %s 2>&1 | FileCheck -check-prefix=CHECK_SYCL_POST_LINK_SHARED_NO_PASS %s
+// CHECK_SYCL_POST_LINK_SHARED_NO_PASS-NOT: sycl-post-link{{.*}}support-dynamic-linking
+
+/// Check for correct handling of -fsycl-fp64-conv-emu option for different targets
+// RUN: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64 -fsycl-fp64-conv-emu %s 2>&1 | FileCheck -check-prefix=CHECK_WARNING %s
+// CHECK_WARNING: warning: '-fsycl-fp64-conv-emu' option is supported only for AOT compilation of Intel GPUs. It will be ignored for other targets [-Wunused-command-line-argument]
+// RUN: %clang -### -Wno-unused-command-line-argument -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=spir64 -fsycl-fp64-conv-emu %s 2>&1 | FileCheck -check-prefix=CHECK_NO_WARNING %s
+// CHECK_NO_WARNING-NOT: warning: '-fsycl-fp64-conv-emu' option is supported only for AOT compilation of Intel GPUs. It will be ignored for other targets [-Wunused-command-line-argument]
+// RUN: %clang -### -target x86_64-unknown-linux-gnu -fsycl -fsycl-targets=intel_gpu_pvc -fsycl-fp64-conv-emu %s 2>&1 | FileCheck -check-prefix=CHECK_FSYCL_FP64_CONV_EMU %s
+// CHECK_FSYCL_FP64_CONV_EMU-NOT: clang{{.*}} "-cc1" "-triple x86_64-unknown-linux-gnu" {{.*}} "-fsycl-fp64-conv-emu"
+// CHECK_FSYCL_FP64_CONV_EMU-DAG: clang{{.*}} "-cc1" "-triple" "spir64_gen{{.*}}" "-fsycl-fp64-conv-emu"
+// CHECK_FSYCL_FP64_CONV_EMU-DAG: ocloc{{.*}} "-options" "-ze-fp64-gen-conv-emu"
+// RUN: %clang_cl -fsycl -fsycl-targets=spir64_gen-unknown-unknown %s -fsycl-fp64-conv-emu -### 2>&1 \
+// RUN:  | FileCheck %s -check-prefixes=CHECK_FSYCL_FP64_CONV_EMU_WIN
+// CHECK_FSYCL_FP64_CONV_EMU_WIN-NOT: clang{{.*}} "-cc1" "-triple x86_64-unknown-linux-gnu" {{.*}} "-fsycl-fp64-conv-emu"
+// CHECK_FSYCL_FP64_CONV_EMU_WIN-DAG: clang{{.*}} "-cc1" "-triple" "spir64_gen{{.*}}" "-fsycl-fp64-conv-emu"
+// CHECK_FSYCL_FP64_CONV_EMU_WIN-DAG: ocloc{{.*}} "-options" "-ze-fp64-gen-conv-emu"

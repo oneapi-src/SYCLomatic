@@ -31,7 +31,7 @@ class AutoCompletePrinter {
                       const llvm::StringRef ResultPrefix) {
     for (const auto &Item : Set) {
       llvm::StringRef ItemRef(Item);
-      if (ItemRef.startswith(Prefix)) {
+      if (ItemRef.starts_with(Prefix)) {
         Suggestions.insert(ResultPrefix.str() + Item);
       }
     }

@@ -310,8 +310,11 @@ static SomeExpr StructureExpr(evaluate::StructureConstructor &&x) {
 
 static int GetIntegerKind(const Symbol &symbol) {
   auto dyType{evaluate::DynamicType::From(symbol)};
-  CHECK(dyType && dyType->category() == TypeCategory::Integer);
-  return dyType->kind();
+  CHECK((dyType && dyType->category() == TypeCategory::Integer) ||
+      symbol.owner().context().HasError(symbol));
+  return dyType && dyType->category() == TypeCategory::Integer
+      ? dyType->kind()
+      : symbol.owner().context().GetDefaultKind(TypeCategory::Integer);
 }
 
 // Save a rank-1 array constant of some numeric type as an
@@ -428,9 +431,12 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
       (typeName.front() == '.' && !context_.IsTempName(typeName))) {
     return nullptr;
   }
+  bool isPDTDefinitionWithKindParameters{
+      !derivedTypeSpec && dtScope.IsDerivedTypeWithKindParameter()};
+  bool isPDTInstantiation{derivedTypeSpec && &dtScope != dtSymbol->scope()};
   const SymbolVector *parameters{GetTypeParameters(*dtSymbol)};
   std::string distinctName{typeName};
-  if (&dtScope != dtSymbol->scope() && derivedTypeSpec) {
+  if (isPDTInstantiation) {
     // Only create new type descriptions for different kind parameter values.
     // Type with different length parameters/same kind parameters can all
     // share the same type description available in the current scope.
@@ -438,6 +444,8 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
             GetSuffixIfTypeKindParameters(*derivedTypeSpec, parameters)}) {
       distinctName += *suffix;
     }
+  } else if (isPDTDefinitionWithKindParameters) {
+    return nullptr;
   }
   std::string dtDescName{".dt."s + distinctName};
   Scope *dtSymbolScope{const_cast<Scope *>(dtSymbol->scope())};
@@ -455,9 +463,7 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
   evaluate::StructureConstructorValues dtValues;
   AddValue(dtValues, derivedTypeSchema_, "name"s,
       SaveNameAsPointerTarget(scope, typeName));
-  bool isPDTdefinitionWithKindParameters{
-      !derivedTypeSpec && dtScope.IsDerivedTypeWithKindParameter()};
-  if (!isPDTdefinitionWithKindParameters) {
+  if (!isPDTDefinitionWithKindParameters) {
     auto sizeInBytes{static_cast<common::ConstantSubscript>(dtScope.size())};
     if (auto alignment{dtScope.alignment().value_or(0)}) {
       sizeInBytes += alignment - 1;
@@ -467,10 +473,10 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
     AddValue(
         dtValues, derivedTypeSchema_, "sizeinbytes"s, IntToExpr(sizeInBytes));
   }
-  bool isPDTinstantiation{derivedTypeSpec && &dtScope != dtSymbol->scope()};
-  if (isPDTinstantiation) {
-    const Symbol *uninstDescObject{
-        DescribeType(DEREF(const_cast<Scope *>(dtSymbol->scope())))};
+  if (const Symbol *
+      uninstDescObject{isPDTInstantiation
+              ? DescribeType(DEREF(const_cast<Scope *>(dtSymbol->scope())))
+              : nullptr}) {
     AddValue(dtValues, derivedTypeSchema_, "uninstantiated"s,
         evaluate::AsGenericExpr(evaluate::Expr<evaluate::SomeDerived>{
             evaluate::Designator<evaluate::SomeDerived>{
@@ -489,22 +495,24 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
     // by their instantiated (or default) values, while LEN= type
     // parameters are described by their INTEGER kinds.
     for (SymbolRef ref : *parameters) {
-      const auto &tpd{ref->get<TypeParamDetails>()};
-      if (tpd.attr() == common::TypeParamAttr::Kind) {
-        auto value{evaluate::ToInt64(tpd.init()).value_or(0)};
-        if (derivedTypeSpec) {
-          if (const auto *pv{derivedTypeSpec->FindParameter(ref->name())}) {
-            if (pv->GetExplicit()) {
-              if (auto instantiatedValue{
-                      evaluate::ToInt64(*pv->GetExplicit())}) {
-                value = *instantiatedValue;
+      if (const auto *inst{dtScope.FindComponent(ref->name())}) {
+        const auto &tpd{inst->get<TypeParamDetails>()};
+        if (tpd.attr() == common::TypeParamAttr::Kind) {
+          auto value{evaluate::ToInt64(tpd.init()).value_or(0)};
+          if (derivedTypeSpec) {
+            if (const auto *pv{derivedTypeSpec->FindParameter(inst->name())}) {
+              if (pv->GetExplicit()) {
+                if (auto instantiatedValue{
+                        evaluate::ToInt64(*pv->GetExplicit())}) {
+                  value = *instantiatedValue;
+                }
               }
             }
           }
+          kinds.emplace_back(value);
+        } else { // LEN= parameter
+          lenKinds.emplace_back(GetIntegerKind(*inst));
         }
-        kinds.emplace_back(value);
-      } else { // LEN= parameter
-        lenKinds.emplace_back(GetIntegerKind(*ref));
       }
     }
   }
@@ -515,7 +523,7 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
       SaveNumericPointerTarget<Int1>(
           scope, SaveObjectName(".lpk."s + distinctName), std::move(lenKinds)));
   // Traverse the components of the derived type
-  if (!isPDTdefinitionWithKindParameters) {
+  if (!isPDTDefinitionWithKindParameters) {
     std::vector<const Symbol *> dataComponentSymbols;
     std::vector<evaluate::StructureConstructor> procPtrComponents;
     for (const auto &pair : dtScope) {
@@ -547,10 +555,11 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
           },
           symbol.details());
     }
-    // Sort the data component symbols by offset before emitting them
+    // Sort the data component symbols by offset before emitting them, placing
+    // the parent component first if any.
     std::sort(dataComponentSymbols.begin(), dataComponentSymbols.end(),
         [](const Symbol *x, const Symbol *y) {
-          return x->offset() < y->offset();
+          return x->test(Symbol::Flag::ParentComp) || x->offset() < y->offset();
         });
     std::vector<evaluate::StructureConstructor> dataComponents;
     for (const Symbol *symbol : dataComponentSymbols) {
@@ -634,7 +643,8 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
         IntExpr<1>(derivedTypeSpec && !derivedTypeSpec->HasDestruction()));
     // Similarly, a flag to short-circuit finalization when not needed.
     AddValue(dtValues, derivedTypeSchema_, "nofinalizationneeded"s,
-        IntExpr<1>(derivedTypeSpec && !IsFinalizable(*derivedTypeSpec)));
+        IntExpr<1>(
+            derivedTypeSpec && !MayRequireFinalization(*derivedTypeSpec)));
   }
   dtObject.get<ObjectEntityDetails>().set_init(MaybeExpr{
       StructureExpr(Structure(derivedTypeSchema_, std::move(dtValues)))});
@@ -779,20 +789,23 @@ evaluate::StructureConstructor RuntimeTableBuilder::DescribeComponent(
     const DerivedTypeSpec &spec{dyType.GetDerivedTypeSpec()};
     Scope *derivedScope{const_cast<Scope *>(
         spec.scope() ? spec.scope() : spec.typeSymbol().scope())};
-    const Symbol *derivedDescription{DescribeType(DEREF(derivedScope))};
-    AddValue(values, componentSchema_, "derived"s,
-        evaluate::AsGenericExpr(evaluate::Expr<evaluate::SomeDerived>{
-            evaluate::Designator<evaluate::SomeDerived>{
-                DEREF(derivedDescription)}}));
-    // Package values of LEN parameters, if any
-    if (const SymbolVector * specParams{GetTypeParameters(spec.typeSymbol())}) {
-      for (SymbolRef ref : *specParams) {
-        const auto &tpd{ref->get<TypeParamDetails>()};
-        if (tpd.attr() == common::TypeParamAttr::Len) {
-          if (const ParamValue * paramValue{spec.FindParameter(ref->name())}) {
-            lenParams.emplace_back(GetValue(*paramValue, parameters));
-          } else {
-            lenParams.emplace_back(GetValue(tpd.init(), parameters));
+    if (const Symbol * derivedDescription{DescribeType(DEREF(derivedScope))}) {
+      AddValue(values, componentSchema_, "derived"s,
+          evaluate::AsGenericExpr(evaluate::Expr<evaluate::SomeDerived>{
+              evaluate::Designator<evaluate::SomeDerived>{
+                  DEREF(derivedDescription)}}));
+      // Package values of LEN parameters, if any
+      if (const SymbolVector *
+          specParams{GetTypeParameters(spec.typeSymbol())}) {
+        for (SymbolRef ref : *specParams) {
+          const auto &tpd{ref->get<TypeParamDetails>()};
+          if (tpd.attr() == common::TypeParamAttr::Len) {
+            if (const ParamValue *
+                paramValue{spec.FindParameter(ref->name())}) {
+              lenParams.emplace_back(GetValue(*paramValue, parameters));
+            } else {
+              lenParams.emplace_back(GetValue(tpd.init(), parameters));
+            }
           }
         }
       }
@@ -1132,7 +1145,7 @@ void RuntimeTableBuilder::DescribeSpecialProc(
           which = scalarFinalEnum_;
           if (int rank{evaluate::GetRank(typeAndShape.shape())}; rank > 0) {
             which = IntExpr<1>(ToInt64(which).value() + rank);
-            if (!proc->dummyArguments[0].CanBePassedViaImplicitInterface()) {
+            if (dummyData.IsPassedByDescriptor(proc->IsBindC())) {
               argThatMightBeDescriptor = 1;
             }
             if (!typeAndShape.attrs().test(evaluate::characteristics::
@@ -1175,10 +1188,14 @@ void RuntimeTableBuilder::DescribeSpecialProc(
         break;
       }
     }
-    if (argThatMightBeDescriptor != 0 &&
-        !proc->dummyArguments.at(argThatMightBeDescriptor - 1)
-             .CanBePassedViaImplicitInterface()) {
-      isArgDescriptorSet |= 1 << (argThatMightBeDescriptor - 1);
+    if (argThatMightBeDescriptor != 0) {
+      if (const auto *dummyData{
+              std::get_if<evaluate::characteristics::DummyDataObject>(
+                  &proc->dummyArguments.at(argThatMightBeDescriptor - 1).u)}) {
+        if (dummyData->IsPassedByDescriptor(proc->IsBindC())) {
+          isArgDescriptorSet |= 1 << (argThatMightBeDescriptor - 1);
+        }
+      }
     }
     evaluate::StructureConstructorValues values;
     auto index{evaluate::ToInt64(which)};
@@ -1222,6 +1239,16 @@ void RuntimeTableBuilder::IncorporateDefinedIoGenericInterfaces(
 RuntimeDerivedTypeTables BuildRuntimeDerivedTypeTables(
     SemanticsContext &context) {
   RuntimeDerivedTypeTables result;
+  // Do not attempt to read __fortran_type_info.mod when compiling
+  // the module on which it depends.
+  const auto &allSources{context.allCookedSources().allSources()};
+  if (auto firstProv{allSources.GetFirstFileProvenance()}) {
+    if (const auto *srcFile{allSources.GetSourceFile(firstProv->start())}) {
+      if (srcFile->path().find("__fortran_builtins.f90") != std::string::npos) {
+        return result;
+      }
+    }
+  }
   result.schemata = context.GetBuiltinModule(typeInfoBuiltinModule);
   if (result.schemata) {
     RuntimeTableBuilder builder{context, result};

@@ -1,0 +1,6 @@
+include_directories(${SYCL_INCLUDE_DIR})
+include_directories(${somePath} ../)
+include_directories("${SYCL_INCLUDE_DIR}")
+include_directories(" ${SYCL_INCLUDE_DIR}")
+include_directories(" ${SYCL_INCLUDE_DIR}" )
+string(APPEND var ";${SYCL_INCLUDE_DIR}")

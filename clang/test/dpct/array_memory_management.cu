@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/array_memory_management %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/array_memory_management/array_memory_management.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/array_memory_management/array_memory_management.dp.cpp -o %T/array_memory_management/array_memory_management.dp.o %}
 
 #include <cuda_runtime.h>
 
@@ -229,3 +230,25 @@ void foo() {
   CHECK_ERR(cudaFreeArray(a1));
 }
 
+void foo2() {
+  // CHECK: dpct::memcpy_parameter p1 = {};
+  // CHECK-NEXT: dpct::image_matrix_p *a1;
+  // CHECK-NEXT: p1.to.image = *a1;
+  cudaMemcpy3DParms p1 = {0};
+  cudaArray_t *a1;
+  p1.dstArray = *a1;
+
+  // CHECK: dpct::memcpy_parameter p2 = {};
+  // CHECK-NEXT: dpct::image_matrix_p *a2;
+  // CHECK-NEXT: p2.to.image = *a2;
+  CUDA_MEMCPY3D p2 = {0};
+  CUarray *a2;
+  p2.dstArray = *a2;
+
+  // CHECK: dpct::memcpy_parameter p3 = {};
+  // CHECK-NEXT: dpct::image_matrix **a3;
+  // CHECK-NEXT: p3.to.image = *a3;
+  CUDA_MEMCPY3D p3 = {0};
+  CUarray_st **a3;
+  p3.dstArray = *a3;
+}

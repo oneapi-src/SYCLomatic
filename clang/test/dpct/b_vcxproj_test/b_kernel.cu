@@ -17,6 +17,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/2/check_output-file.txt %T/2/check_output-file.txt
 
 // RUN: FileCheck --input-file %T/2/b_kernel.dp.cpp --match-full-lines %S/b_kernel.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/2/b_kernel.dp.cpp -o %T/2/b_kernel.dp.o %}
 // RUN: FileCheck --match-full-lines --input-file %S/readme_2_ref.txt %T/2/readme_2.txt
 
 #include "header.cuh"

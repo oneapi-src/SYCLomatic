@@ -2,6 +2,8 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none --optimize-migration -out-root %T/thrust-complex-usmnone %s --cuda-include-path="%cuda-path/include" -usm-level=none -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp -o %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.o %}
+#ifndef BUILD_TEST
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE
@@ -107,12 +109,12 @@ int main() {
   // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> cdp_acc_ct0(reinterpret_cast<std::complex<double> *>(cdp), cgh);
   // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> thrust_raw_pointer_cast_dc_ptr_acc_ct2(dpct::get_raw_pointer(dc_ptr), cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:        std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
+  // CHECK-NEXT:       std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(cdp_acc_ct0.get_raw_pointer(), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_acc_ct2.get_raw_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:           kernel(cdp_acc_ct0.get_raw_pointer(), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_acc_ct2.get_raw_pointer(), s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp), thrust::raw_pointer_cast(dc_ptr));
@@ -125,7 +127,7 @@ int main() {
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           template_kernel<int>(nullptr, s_acc_ct1.get_pointer());
+// CHECK-NEXT:           template_kernel<int>(nullptr, s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
   template_kernel<int><<<1, 256>>>(d_i);
@@ -154,4 +156,4 @@ int foo(){
   thrust::complex<float> c3 = c1 + c2;
   printf("c1 + c2 = (%f, %f)\n", c3.real(), c3.imag());
 }
-
+#endif

@@ -1,0 +1,2 @@
+# Configure dependencies
+target_link_libraries(transformer_engine PUBLIC  CUDNN::cudnn)

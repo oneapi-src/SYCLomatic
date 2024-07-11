@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none --out-root %T/cusparse-type102 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusparse-type102/cusparse-type102.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse-type102/cusparse-type102.dp.cpp -o %T/cusparse-type102/cusparse-type102.dp.o %}
 #include <cstdio>
 #include <cuda_runtime.h>
 #include <cusparse_v2.h>
@@ -14,13 +15,13 @@ int main() {
   a6 = CUSPARSE_STATUS_NOT_SUPPORTED;
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error string: %s", "cusparseGetErrorString is not supported"/*cusparseGetErrorString(a6)*/);
+  //CHECK-NEXT:printf("Error string: %s", "<Placeholder string>");
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error name: %s", "cusparseGetErrorName is not supported"/*cusparseGetErrorName(a6)*/);
+  //CHECK-NEXT:printf("Error name: %s", "<Placeholder string>");
   printf("Error string: %s", cusparseGetErrorString(a6));
   printf("Error name: %s", cusparseGetErrorName(a6));
 

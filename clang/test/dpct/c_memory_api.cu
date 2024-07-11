@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/c_memory_api %s --cuda-include-path="%cuda-path/include" --extra-arg="-xc"
 // RUN: FileCheck %s --match-full-lines --input-file %T/c_memory_api/c_memory_api.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/c_memory_api/c_memory_api.dp.cpp -o %T/c_memory_api/c_memory_api.dp.o %}
 
 #include <cuda_runtime.h>
 #include <stdio.h>

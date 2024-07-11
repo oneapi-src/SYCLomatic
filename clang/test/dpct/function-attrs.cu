@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/function-attrs %s -passes "IterationSpaceBuiltinRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/function-attrs/function-attrs.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/function-attrs/function-attrs.dp.cpp -o %T/function-attrs/function-attrs.dp.o %}
 
 // CHECK: void test_00();
 __device__ void test_00();

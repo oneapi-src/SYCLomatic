@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --assume-nd-range-dim=1  -out-root %T/cu_jit %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cu_jit/cu_jit.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cu_jit/cu_jit.dp.cpp -o %T/cu_jit/cu_jit.dp.o %}
 
 #include "cuda.h"
 #define CU_JIT_NOT_A_CUDA_OPTION 1241

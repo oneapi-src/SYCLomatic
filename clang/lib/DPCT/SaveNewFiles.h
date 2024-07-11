@@ -9,41 +9,38 @@
 #ifndef DPCT_SAVE_NEW_FILES_H
 #define DPCT_SAVE_NEW_FILES_H
 
-#include "ValidateArguments.h"
-#include "llvm/ADT/SmallString.h"
-#include "llvm/Support/Error.h"
+#include "clang/Tooling/Refactoring.h"
+
 #include <map>
+
+using ReplTy = std::map<std::string, clang::tooling::Replacements>;
 
 #define DiagRef                                                                \
   "See Diagnostics Reference to resolve warnings and complete the "            \
   "migration:\n"                                                               \
-  "https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/"     \
-  "developer-guide-reference/current/diagnostics-reference.html\n"
+  "https://oneapi-src.github.io/SYCLomatic/dev_guide/reference/"               \
+  "diagnostics-reference.html\n"
 
 namespace llvm {
 class StringRef;
-}
-
-namespace clang {
-namespace tooling {
-class RefactoringTool;
-}
-} // namespace clang
+} // namespace llvm
 
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
 ///
 /// \returns 0 upon success. Non-zero upon failure.
 /// Prerequisite: InRoot and OutRoot are both absolute paths
-int saveNewFiles(clang::tooling::RefactoringTool &Tool, llvm::StringRef InRoot,
-                 llvm::StringRef OutRoot);
+int saveNewFiles(clang::tooling::RefactoringTool &Tool,
+                 clang::tooling::UnifiedPath InRoot,
+                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
+                 ReplTy &ReplSYCL);
 
-void loadYAMLIntoFileInfo(std::string Path);
+void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 
-// std::string:  source file name including path.
+// clang::tooling::UnifiedPath:  source file name including path.
 // bool: false: the source file has no replacement.
 //       true:  the source file has replacement.
-extern std::map<std::string, bool> IncludeFileMap;
+extern std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
 // This function is registered by SetFileProcessHandle() called by runDPCT() in
 // DPCT.cpp, and called in Tooling.cpp::DoFileProcessHandle(). It traverses all
@@ -57,15 +54,26 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 /// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
 ///
 /// \returns true if file path is rewritten, false otherwise.
-bool rewriteDir(llvm::SmallString<512> &FilePath, const llvm::StringRef InRoot,
-                const llvm::StringRef OutRoot);
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot);
 
-// Replace file name \p FileName with new migrated name.
-void rewriteFileName(llvm::SmallString<512> &FileName);
+// Replace file name \p FileName with new migrated name. For c source files, the
+// file extension needs to wait until all replacements are generated to
+// get the correct result.
+void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // Replace file name \p FileName with new migrated name.
 // This overloaded function is added because in some cases, the \p FileName is
 // relative path, and absolute path \p FullPathName is needed to determine
-// whether the file is in database.
-void rewriteFileName(llvm::SmallString<512> &FileName,
-                     llvm::StringRef FullPathName);
+// whether the file is in database. For c source files, the file
+// extension needs to wait until all replacements are generated to get the
+// correct result.
+void rewriteFileName(clang::tooling::UnifiedPath &FileName,
+                     const clang::tooling::UnifiedPath &FullPathName);
+
+// Replace file name \p FileName with new migrated name.
+void rewriteFileName(std::string &FileName, const std::string &FullPathName);
+
+// A mapping from output file path to it's corresponding input file.
+extern std::map<std::string, std::string> OutFilePath2InFilePath;
 #endif // DPCT_SAVE_NEW_FILES_H

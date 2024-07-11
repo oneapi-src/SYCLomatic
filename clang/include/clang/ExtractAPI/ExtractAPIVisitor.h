@@ -14,19 +14,23 @@
 #ifndef LLVM_CLANG_EXTRACTAPI_EXTRACT_API_VISITOR_H
 #define LLVM_CLANG_EXTRACTAPI_EXTRACT_API_VISITOR_H
 
-#include "clang/AST/DeclCXX.h"
-#include "clang/Basic/OperatorKinds.h"
-#include "clang/Basic/Specifiers.h"
-#include "clang/ExtractAPI/DeclarationFragments.h"
-#include "llvm/ADT/FunctionExtras.h"
-
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ParentMapContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Basic/Module.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/Specifiers.h"
 #include "clang/ExtractAPI/API.h"
+#include "clang/ExtractAPI/DeclarationFragments.h"
 #include "clang/ExtractAPI/TypedefUnderlyingTypeResolver.h"
+#include "clang/Index/USRGeneration.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Casting.h"
 #include <type_traits>
 
 namespace clang {
@@ -48,13 +52,65 @@ public:
 
   bool VisitEnumDecl(const EnumDecl *Decl);
 
+  bool WalkUpFromFunctionDecl(const FunctionDecl *Decl);
+
   bool WalkUpFromRecordDecl(const RecordDecl *Decl);
 
   bool WalkUpFromCXXRecordDecl(const CXXRecordDecl *Decl);
 
+  bool WalkUpFromCXXMethodDecl(const CXXMethodDecl *Decl);
+
+  bool WalkUpFromClassTemplateSpecializationDecl(
+      const ClassTemplateSpecializationDecl *Decl);
+
+  bool WalkUpFromClassTemplatePartialSpecializationDecl(
+      const ClassTemplatePartialSpecializationDecl *Decl);
+
+  bool WalkUpFromVarTemplateDecl(const VarTemplateDecl *Decl);
+
+  bool WalkUpFromVarTemplateSpecializationDecl(
+      const VarTemplateSpecializationDecl *Decl);
+
+  bool WalkUpFromVarTemplatePartialSpecializationDecl(
+      const VarTemplatePartialSpecializationDecl *Decl);
+
+  bool WalkUpFromFunctionTemplateDecl(const FunctionTemplateDecl *Decl);
+
+  bool WalkUpFromNamespaceDecl(const NamespaceDecl *Decl);
+
+  bool VisitNamespaceDecl(const NamespaceDecl *Decl);
+
   bool VisitRecordDecl(const RecordDecl *Decl);
 
   bool VisitCXXRecordDecl(const CXXRecordDecl *Decl);
+
+  bool VisitCXXMethodDecl(const CXXMethodDecl *Decl);
+
+  bool VisitFieldDecl(const FieldDecl *Decl);
+
+  bool VisitCXXConversionDecl(const CXXConversionDecl *Decl);
+
+  bool VisitCXXConstructorDecl(const CXXConstructorDecl *Decl);
+
+  bool VisitCXXDestructorDecl(const CXXDestructorDecl *Decl);
+
+  bool VisitConceptDecl(const ConceptDecl *Decl);
+
+  bool VisitClassTemplateSpecializationDecl(
+      const ClassTemplateSpecializationDecl *Decl);
+
+  bool VisitClassTemplatePartialSpecializationDecl(
+      const ClassTemplatePartialSpecializationDecl *Decl);
+
+  bool VisitVarTemplateDecl(const VarTemplateDecl *Decl);
+
+  bool
+  VisitVarTemplateSpecializationDecl(const VarTemplateSpecializationDecl *Decl);
+
+  bool VisitVarTemplatePartialSpecializationDecl(
+      const VarTemplatePartialSpecializationDecl *Decl);
+
+  bool VisitFunctionTemplateDecl(const FunctionTemplateDecl *Decl);
 
   bool VisitObjCInterfaceDecl(const ObjCInterfaceDecl *Decl);
 
@@ -73,25 +129,6 @@ protected:
   /// parent enum.
   void recordEnumConstants(EnumRecord *EnumRecord,
                            const EnumDecl::enumerator_range Constants);
-
-  /// Collect API information for the struct fields and associate with the
-  /// parent struct.
-  void recordStructFields(StructRecord *StructRecord,
-                          const RecordDecl::field_range Fields);
-
-  /// Collect API information for the class fields and associate with the parent
-  /// struct
-  void recordCXXFields(CXXClassRecord *CXXClassRecord,
-                       const RecordDecl::field_range Fields);
-
-  void recordCXXMethods(CXXClassRecord *CXXClassRecord,
-                        const CXXRecordDecl::method_range Methods);
-
-  void recordConversionMethod(CXXClassRecord *CXXClassRecord,
-                              const CXXMethodDecl *SpecialCXXMethod);
-
-  void recordSpecialCXXMethod(CXXClassRecord *CXXClassRecord,
-                              const CXXMethodDecl *SpecialCXXMethod);
 
   /// Collect API information for the Objective-C methods and associate with the
   /// parent container.
@@ -128,26 +165,98 @@ private:
   Derived &getDerivedExtractAPIVisitor() {
     return *static_cast<Derived *>(this);
   }
-};
 
-template <typename T>
-static void modifyRecords(const T &Records, const StringRef &Name) {
-  for (const auto &Record : Records) {
-    if (Name == Record.second.get()->Name) {
-      auto &DeclFragment = Record.second->Declaration;
-      DeclFragment.insert(DeclFragment.begin(), " ",
-                          DeclarationFragments::FragmentKind::Text);
-      DeclFragment.insert(DeclFragment.begin(), "typedef",
-                          DeclarationFragments::FragmentKind::Keyword, "",
-                          nullptr);
-      DeclFragment.insert(--DeclFragment.end(), " { ... } ",
-                          DeclarationFragments::FragmentKind::Text);
-      DeclFragment.insert(--DeclFragment.end(), Name,
-                          DeclarationFragments::FragmentKind::Identifier);
-      break;
+protected:
+  SmallVector<SymbolReference> getBases(const CXXRecordDecl *Decl) {
+    // FIXME: store AccessSpecifier given by inheritance
+    SmallVector<SymbolReference> Bases;
+    for (const auto &BaseSpecifier : Decl->bases()) {
+      // skip classes not inherited as public
+      if (BaseSpecifier.getAccessSpecifier() != AccessSpecifier::AS_public)
+        continue;
+      SymbolReference BaseClass;
+      if (BaseSpecifier.getType().getTypePtr()->isTemplateTypeParmType()) {
+        BaseClass.Name = API.copyString(BaseSpecifier.getType().getAsString());
+        if (auto *TTPTD = BaseSpecifier.getType()
+                              ->getAs<TemplateTypeParmType>()
+                              ->getDecl()) {
+          SmallString<128> USR;
+          index::generateUSRForDecl(TTPTD, USR);
+          BaseClass.USR = API.copyString(USR);
+          BaseClass.Source = API.copyString(getOwningModuleName(*TTPTD));
+        }
+      } else {
+        BaseClass = createSymbolReferenceForDecl(
+            *BaseSpecifier.getType().getTypePtr()->getAsCXXRecordDecl());
+      }
+      Bases.emplace_back(BaseClass);
+    }
+    return Bases;
+  }
+
+  APIRecord::RecordKind getKindForDisplay(const CXXRecordDecl *Decl) {
+    if (Decl->isUnion())
+      return APIRecord::RK_Union;
+    if (Decl->isStruct())
+      return APIRecord::RK_Struct;
+
+    return APIRecord::RK_CXXClass;
+  }
+
+  StringRef getOwningModuleName(const Decl &D) {
+    if (auto *OwningModule = D.getImportedOwningModule())
+      return OwningModule->Name;
+
+    return {};
+  }
+
+  SymbolReference createHierarchyInformationForDecl(const Decl &D) {
+    const auto *Context = cast_if_present<Decl>(D.getDeclContext());
+
+    if (!Context || isa<TranslationUnitDecl>(Context))
+      return {};
+
+    return createSymbolReferenceForDecl(*Context);
+  }
+
+  SymbolReference createSymbolReferenceForDecl(const Decl &D) {
+    SmallString<128> USR;
+    index::generateUSRForDecl(&D, USR);
+
+    APIRecord *Record = API.findRecordForUSR(USR);
+    if (Record)
+      return SymbolReference(Record);
+
+    StringRef Name;
+    if (auto *ND = dyn_cast<NamedDecl>(&D))
+      Name = ND->getName();
+
+    return API.createSymbolReference(Name, USR, getOwningModuleName(D));
+  }
+
+  bool isEmbeddedInVarDeclarator(const TagDecl &D) {
+    return D.getName().empty() && getTypedefName(&D).empty() &&
+           D.isEmbeddedInDeclarator();
+  }
+
+  void maybeMergeWithAnonymousTag(const DeclaratorDecl &D,
+                                  RecordContext *NewRecordContext) {
+    if (!NewRecordContext)
+      return;
+    auto *Tag = D.getType()->getAsTagDecl();
+    SmallString<128> TagUSR;
+    clang::index::generateUSRForDecl(Tag, TagUSR);
+    if (auto *Record = llvm::dyn_cast_if_present<TagRecord>(
+            API.findRecordForUSR(TagUSR))) {
+      if (Record->IsEmbeddedInVarDeclarator) {
+        NewRecordContext->stealRecordChain(*Record);
+        auto *NewRecord = cast<APIRecord>(NewRecordContext);
+        if (NewRecord->Comment.empty())
+          NewRecord->Comment = Record->Comment;
+      }
     }
   }
-}
+};
 
 template <typename Derived>
 bool ExtractAPIVisitorBase<Derived>::VisitVarDecl(const VarDecl *Decl) {
@@ -174,7 +283,8 @@ bool ExtractAPIVisitorBase<Derived>::VisitVarDecl(const VarDecl *Decl) {
 
   // Collect symbol information.
   StringRef Name = Decl->getName();
-  StringRef USR = API.recordUSR(Decl);
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   LinkageInfo Linkage = Decl->getLinkageAndVisibility();
@@ -189,20 +299,24 @@ bool ExtractAPIVisitorBase<Derived>::VisitVarDecl(const VarDecl *Decl) {
       DeclarationFragmentsBuilder::getFragmentsForVar(Decl);
   DeclarationFragments SubHeading =
       DeclarationFragmentsBuilder::getSubHeading(Decl);
-
   if (Decl->isStaticDataMember()) {
-    SymbolReference Context;
-    auto Record = dyn_cast<RecordDecl>(Decl->getDeclContext());
-    Context.Name = Record->getName();
-    Context.USR = API.recordUSR(Record);
     auto Access = DeclarationFragmentsBuilder::getAccessControl(Decl);
-    API.addStaticField(Name, USR, Loc, AvailabilitySet(Decl), Linkage, Comment,
-                       Declaration, SubHeading, Context, Access,
-                       isInSystemHeader(Decl));
-  } else
+    API.createRecord<StaticFieldRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Linkage, Comment, Declaration,
+        SubHeading, Access, isInSystemHeader(Decl));
+  } else {
     // Add the global variable record to the API set.
-    API.addGlobalVar(Name, USR, Loc, AvailabilitySet(Decl), Linkage, Comment,
-                     Declaration, SubHeading, isInSystemHeader(Decl));
+    auto *NewRecord = API.createRecord<GlobalVariableRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Linkage, Comment, Declaration,
+        SubHeading, isInSystemHeader(Decl));
+
+    // If this global variable has a non typedef'd anonymous tag type let's
+    // pretend the type's child records are under us in the hierarchy.
+    maybeMergeWithAnonymousTag(*Decl, NewRecord);
+  }
+
   return true;
 }
 
@@ -225,20 +339,15 @@ bool ExtractAPIVisitorBase<Derived>::VisitFunctionDecl(
       return true;
   }
 
-  // Skip templated functions.
+  // Skip templated functions that aren't processed here.
   switch (Decl->getTemplatedKind()) {
   case FunctionDecl::TK_NonTemplate:
   case FunctionDecl::TK_DependentNonTemplate:
-    break;
-  case FunctionDecl::TK_MemberSpecialization:
   case FunctionDecl::TK_FunctionTemplateSpecialization:
-    if (auto *TemplateInfo = Decl->getTemplateSpecializationInfo()) {
-      if (!TemplateInfo->isExplicitInstantiationOrSpecialization())
-        return true;
-    }
     break;
   case FunctionDecl::TK_FunctionTemplate:
   case FunctionDecl::TK_DependentFunctionTemplateSpecialization:
+  case FunctionDecl::TK_MemberSpecialization:
     return true;
   }
 
@@ -247,7 +356,8 @@ bool ExtractAPIVisitorBase<Derived>::VisitFunctionDecl(
 
   // Collect symbol information.
   StringRef Name = Decl->getName();
-  StringRef USR = API.recordUSR(Decl);
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   LinkageInfo Linkage = Decl->getLinkageAndVisibility();
@@ -258,17 +368,24 @@ bool ExtractAPIVisitorBase<Derived>::VisitFunctionDecl(
                                             Context.getDiagnostics());
 
   // Build declaration fragments, sub-heading, and signature of the function.
-  DeclarationFragments Declaration =
-      DeclarationFragmentsBuilder::getFragmentsForFunction(Decl);
   DeclarationFragments SubHeading =
       DeclarationFragmentsBuilder::getSubHeading(Decl);
   FunctionSignature Signature =
       DeclarationFragmentsBuilder::getFunctionSignature(Decl);
-
-  // Add the function record to the API set.
-  API.addGlobalFunction(Name, USR, Loc, AvailabilitySet(Decl), Linkage, Comment,
-                        Declaration, SubHeading, Signature,
-                        isInSystemHeader(Decl));
+  if (Decl->getTemplateSpecializationInfo())
+    API.createRecord<GlobalFunctionTemplateSpecializationRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Linkage, Comment,
+        DeclarationFragmentsBuilder::
+            getFragmentsForFunctionTemplateSpecialization(Decl),
+        SubHeading, Signature, isInSystemHeader(Decl));
+  else
+    // Add the function record to the API set.
+    API.createRecord<GlobalFunctionRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Linkage, Comment,
+        DeclarationFragmentsBuilder::getFragmentsForFunction(Decl), SubHeading,
+        Signature, isInSystemHeader(Decl));
   return true;
 }
 
@@ -285,10 +402,11 @@ bool ExtractAPIVisitorBase<Derived>::VisitEnumDecl(const EnumDecl *Decl) {
   if (Name.empty()) {
     llvm::raw_svector_ostream OS(QualifiedNameBuffer);
     Decl->printQualifiedName(OS);
-    Name = QualifiedNameBuffer.str();
+    Name = QualifiedNameBuffer;
   }
 
-  StringRef USR = API.recordUSR(Decl);
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   DocComment Comment;
@@ -302,15 +420,21 @@ bool ExtractAPIVisitorBase<Derived>::VisitEnumDecl(const EnumDecl *Decl) {
       DeclarationFragmentsBuilder::getFragmentsForEnum(Decl);
   DeclarationFragments SubHeading =
       DeclarationFragmentsBuilder::getSubHeading(Decl);
-
-  EnumRecord *EnumRecord =
-      API.addEnum(API.copyString(Name), USR, Loc, AvailabilitySet(Decl),
-                  Comment, Declaration, SubHeading, isInSystemHeader(Decl));
+  auto *ER = API.createRecord<EnumRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
+      isInSystemHeader(Decl), isEmbeddedInVarDeclarator(*Decl));
 
   // Now collect information about the enumerators in this enum.
-  getDerivedExtractAPIVisitor().recordEnumConstants(EnumRecord,
-                                                    Decl->enumerators());
+  getDerivedExtractAPIVisitor().recordEnumConstants(ER, Decl->enumerators());
 
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::WalkUpFromFunctionDecl(
+    const FunctionDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitFunctionDecl(Decl);
   return true;
 }
 
@@ -329,17 +453,75 @@ bool ExtractAPIVisitorBase<Derived>::WalkUpFromCXXRecordDecl(
 }
 
 template <typename Derived>
-bool ExtractAPIVisitorBase<Derived>::VisitRecordDecl(const RecordDecl *Decl) {
+bool ExtractAPIVisitorBase<Derived>::WalkUpFromCXXMethodDecl(
+    const CXXMethodDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitCXXMethodDecl(Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::WalkUpFromClassTemplateSpecializationDecl(
+    const ClassTemplateSpecializationDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitClassTemplateSpecializationDecl(Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::
+    WalkUpFromClassTemplatePartialSpecializationDecl(
+        const ClassTemplatePartialSpecializationDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitClassTemplatePartialSpecializationDecl(
+      Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::WalkUpFromVarTemplateDecl(
+    const VarTemplateDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitVarTemplateDecl(Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::WalkUpFromVarTemplateSpecializationDecl(
+    const VarTemplateSpecializationDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitVarTemplateSpecializationDecl(Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::
+    WalkUpFromVarTemplatePartialSpecializationDecl(
+        const VarTemplatePartialSpecializationDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitVarTemplatePartialSpecializationDecl(Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::WalkUpFromFunctionTemplateDecl(
+    const FunctionTemplateDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitFunctionTemplateDecl(Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::WalkUpFromNamespaceDecl(
+    const NamespaceDecl *Decl) {
+  getDerivedExtractAPIVisitor().VisitNamespaceDecl(Decl);
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitNamespaceDecl(
+    const NamespaceDecl *Decl) {
   if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
     return true;
-  // Collect symbol information.
-  StringRef Name = Decl->getName();
-  if (Name.empty())
-    Name = getTypedefName(Decl);
-  if (Name.empty())
+  if (Decl->isAnonymousNamespace())
     return true;
-
-  StringRef USR = API.recordUSR(Decl);
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  LinkageInfo Linkage = Decl->getLinkageAndVisibility();
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   DocComment Comment;
@@ -350,17 +532,53 @@ bool ExtractAPIVisitorBase<Derived>::VisitRecordDecl(const RecordDecl *Decl) {
 
   // Build declaration fragments and sub-heading for the struct.
   DeclarationFragments Declaration =
-      DeclarationFragmentsBuilder::getFragmentsForStruct(Decl);
+      DeclarationFragmentsBuilder::getFragmentsForNamespace(Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  API.createRecord<NamespaceRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Linkage, Comment, Declaration,
+      SubHeading, isInSystemHeader(Decl));
+
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitRecordDecl(const RecordDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  // Collect symbol information.
+  StringRef Name = Decl->getName();
+  if (Name.empty())
+    Name = getTypedefName(Decl);
+
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  // Build declaration fragments and sub-heading for the struct.
+  DeclarationFragments Declaration =
+      DeclarationFragmentsBuilder::getFragmentsForRecordDecl(Decl);
   DeclarationFragments SubHeading =
       DeclarationFragmentsBuilder::getSubHeading(Decl);
 
-  StructRecord *StructRecord =
-      API.addStruct(Name, USR, Loc, AvailabilitySet(Decl), Comment, Declaration,
-                    SubHeading, isInSystemHeader(Decl));
-
-  // Now collect information about the fields in this struct.
-  getDerivedExtractAPIVisitor().recordStructFields(StructRecord,
-                                                   Decl->fields());
+  if (Decl->isUnion())
+    API.createRecord<UnionRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, isInSystemHeader(Decl), isEmbeddedInVarDeclarator(*Decl));
+  else
+    API.createRecord<StructRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, isInSystemHeader(Decl), isEmbeddedInVarDeclarator(*Decl));
 
   return true;
 }
@@ -368,11 +586,16 @@ bool ExtractAPIVisitorBase<Derived>::VisitRecordDecl(const RecordDecl *Decl) {
 template <typename Derived>
 bool ExtractAPIVisitorBase<Derived>::VisitCXXRecordDecl(
     const CXXRecordDecl *Decl) {
-  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl) ||
+      Decl->isImplicit())
     return true;
 
   StringRef Name = Decl->getName();
-  StringRef USR = API.recordUSR(Decl);
+  if (Name.empty())
+    Name = getTypedefName(Decl);
+
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   DocComment Comment;
@@ -385,34 +608,396 @@ bool ExtractAPIVisitorBase<Derived>::VisitCXXRecordDecl(
   DeclarationFragments SubHeading =
       DeclarationFragmentsBuilder::getSubHeading(Decl);
 
-  APIRecord::RecordKind Kind;
-  if (Decl->isUnion())
-    Kind = APIRecord::RecordKind::RK_Union;
-  else if (Decl->isStruct())
-    Kind = APIRecord::RecordKind::RK_Struct;
-  else
-    Kind = APIRecord::RecordKind::RK_CXXClass;
+  auto Access = DeclarationFragmentsBuilder::getAccessControl(Decl);
 
-  CXXClassRecord *CXXClassRecord =
-      API.addCXXClass(Name, USR, Loc, AvailabilitySet(Decl), Comment,
-                      Declaration, SubHeading, Kind, isInSystemHeader(Decl));
-
-  // FIXME: store AccessSpecifier given by inheritance
-  for (const auto BaseSpecifier : Decl->bases()) {
-    // skip classes not inherited as public
-    if (BaseSpecifier.getAccessSpecifier() != AccessSpecifier::AS_public)
-      continue;
-    SymbolReference BaseClass;
-    CXXRecordDecl *BaseClassDecl =
-        BaseSpecifier.getType().getTypePtr()->getAsCXXRecordDecl();
-    BaseClass.Name = BaseClassDecl->getName();
-    BaseClass.USR = API.recordUSR(BaseClassDecl);
-    CXXClassRecord->Bases.emplace_back(BaseClass);
+  CXXClassRecord *Record;
+  if (Decl->getDescribedClassTemplate()) {
+    // Inject template fragments before class fragments.
+    Declaration.prepend(
+        DeclarationFragmentsBuilder::getFragmentsForRedeclarableTemplate(
+            Decl->getDescribedClassTemplate()));
+    Record = API.createRecord<ClassTemplateRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, Template(Decl->getDescribedClassTemplate()), Access,
+        isInSystemHeader(Decl));
+  } else {
+    Record = API.createRecord<CXXClassRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, APIRecord::RecordKind::RK_CXXClass, Access,
+        isInSystemHeader(Decl), isEmbeddedInVarDeclarator(*Decl));
   }
 
-  getDerivedExtractAPIVisitor().recordCXXFields(CXXClassRecord, Decl->fields());
-  getDerivedExtractAPIVisitor().recordCXXMethods(CXXClassRecord,
-                                                 Decl->methods());
+  Record->KindForDisplay = getKindForDisplay(Decl);
+  Record->Bases = getBases(Decl);
+
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitCXXMethodDecl(
+    const CXXMethodDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl) ||
+      Decl->isImplicit())
+    return true;
+
+  if (isa<CXXConversionDecl>(Decl))
+    return true;
+  if (isa<CXXConstructorDecl>(Decl) || isa<CXXDestructorDecl>(Decl))
+    return true;
+
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  auto Access = DeclarationFragmentsBuilder::getAccessControl(Decl);
+  auto Signature = DeclarationFragmentsBuilder::getFunctionSignature(Decl);
+
+  if (FunctionTemplateDecl *TemplateDecl =
+          Decl->getDescribedFunctionTemplate()) {
+    API.createRecord<CXXMethodTemplateRecord>(
+        USR, Decl->getName(), createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment,
+        DeclarationFragmentsBuilder::getFragmentsForFunctionTemplate(
+            TemplateDecl),
+        SubHeading, DeclarationFragmentsBuilder::getFunctionSignature(Decl),
+        DeclarationFragmentsBuilder::getAccessControl(TemplateDecl),
+        Template(TemplateDecl), isInSystemHeader(Decl));
+  } else if (Decl->getTemplateSpecializationInfo())
+    API.createRecord<CXXMethodTemplateSpecializationRecord>(
+        USR, Decl->getName(), createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment,
+        DeclarationFragmentsBuilder::
+            getFragmentsForFunctionTemplateSpecialization(Decl),
+        SubHeading, Signature, Access, isInSystemHeader(Decl));
+  else if (Decl->isOverloadedOperator())
+    API.createRecord<CXXInstanceMethodRecord>(
+        USR, Decl->getNameAsString(), createHierarchyInformationForDecl(*Decl),
+        Loc, AvailabilityInfo::createFromDecl(Decl), Comment,
+        DeclarationFragmentsBuilder::getFragmentsForOverloadedOperator(Decl),
+        SubHeading, Signature, Access, isInSystemHeader(Decl));
+  else if (Decl->isStatic())
+    API.createRecord<CXXStaticMethodRecord>(
+        USR, Decl->getName(), createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment,
+        DeclarationFragmentsBuilder::getFragmentsForCXXMethod(Decl), SubHeading,
+        Signature, Access, isInSystemHeader(Decl));
+  else
+    API.createRecord<CXXInstanceMethodRecord>(
+        USR, Decl->getName(), createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment,
+        DeclarationFragmentsBuilder::getFragmentsForCXXMethod(Decl), SubHeading,
+        Signature, Access, isInSystemHeader(Decl));
+
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitCXXConstructorDecl(
+    const CXXConstructorDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl) ||
+      Decl->isImplicit())
+    return true;
+
+  auto Name = Decl->getNameAsString();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  // Build declaration fragments, sub-heading, and signature for the method.
+  DeclarationFragments Declaration =
+      DeclarationFragmentsBuilder::getFragmentsForSpecialCXXMethod(Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  FunctionSignature Signature =
+      DeclarationFragmentsBuilder::getFunctionSignature(Decl);
+  AccessControl Access = DeclarationFragmentsBuilder::getAccessControl(Decl);
+
+  API.createRecord<CXXConstructorRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
+      Signature, Access, isInSystemHeader(Decl));
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitCXXDestructorDecl(
+    const CXXDestructorDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl) ||
+      Decl->isImplicit())
+    return true;
+
+  auto Name = Decl->getNameAsString();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  // Build declaration fragments, sub-heading, and signature for the method.
+  DeclarationFragments Declaration =
+      DeclarationFragmentsBuilder::getFragmentsForSpecialCXXMethod(Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  FunctionSignature Signature =
+      DeclarationFragmentsBuilder::getFunctionSignature(Decl);
+  AccessControl Access = DeclarationFragmentsBuilder::getAccessControl(Decl);
+  API.createRecord<CXXDestructorRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
+      Signature, Access, isInSystemHeader(Decl));
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitConceptDecl(const ConceptDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+  DeclarationFragments Declaration =
+      DeclarationFragmentsBuilder::getFragmentsForConcept(Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  API.createRecord<ConceptRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
+      Template(Decl), isInSystemHeader(Decl));
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitClassTemplateSpecializationDecl(
+    const ClassTemplateSpecializationDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+  DeclarationFragments Declaration =
+      DeclarationFragmentsBuilder::getFragmentsForClassTemplateSpecialization(
+          Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+
+  auto *CTSR = API.createRecord<ClassTemplateSpecializationRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
+      DeclarationFragmentsBuilder::getAccessControl(Decl),
+      isInSystemHeader(Decl));
+
+  CTSR->Bases = getBases(Decl);
+
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::
+    VisitClassTemplatePartialSpecializationDecl(
+        const ClassTemplatePartialSpecializationDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+  DeclarationFragments Declaration = DeclarationFragmentsBuilder::
+      getFragmentsForClassTemplatePartialSpecialization(Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  auto *CTPSR = API.createRecord<ClassTemplatePartialSpecializationRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
+      Template(Decl), DeclarationFragmentsBuilder::getAccessControl(Decl),
+      isInSystemHeader(Decl));
+
+  CTPSR->KindForDisplay = getKindForDisplay(Decl);
+  CTPSR->Bases = getBases(Decl);
+
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitVarTemplateDecl(
+    const VarTemplateDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  // Collect symbol information.
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  LinkageInfo Linkage = Decl->getLinkageAndVisibility();
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  // Build declaration fragments and sub-heading for the variable.
+  DeclarationFragments Declaration;
+  Declaration
+      .append(DeclarationFragmentsBuilder::getFragmentsForRedeclarableTemplate(
+          Decl))
+      .append(DeclarationFragmentsBuilder::getFragmentsForVarTemplate(
+          Decl->getTemplatedDecl()));
+  // Inject template fragments before var fragments.
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+
+  if (Decl->getDeclContext()->getDeclKind() == Decl::CXXRecord)
+    API.createRecord<CXXFieldTemplateRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, DeclarationFragmentsBuilder::getAccessControl(Decl),
+        Template(Decl), isInSystemHeader(Decl));
+  else
+    API.createRecord<GlobalVariableTemplateRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Linkage, Comment, Declaration,
+        SubHeading, Template(Decl), isInSystemHeader(Decl));
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitVarTemplateSpecializationDecl(
+    const VarTemplateSpecializationDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  // Collect symbol information.
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  LinkageInfo Linkage = Decl->getLinkageAndVisibility();
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  // Build declaration fragments and sub-heading for the variable.
+  DeclarationFragments Declaration =
+      DeclarationFragmentsBuilder::getFragmentsForVarTemplateSpecialization(
+          Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  API.createRecord<GlobalVariableTemplateSpecializationRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Linkage, Comment, Declaration,
+      SubHeading, isInSystemHeader(Decl));
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitVarTemplatePartialSpecializationDecl(
+    const VarTemplatePartialSpecializationDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  // Collect symbol information.
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  LinkageInfo Linkage = Decl->getLinkageAndVisibility();
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  // Build declaration fragments and sub-heading for the variable.
+  DeclarationFragments Declaration = DeclarationFragmentsBuilder::
+      getFragmentsForVarTemplatePartialSpecialization(Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  API.createRecord<GlobalVariableTemplatePartialSpecializationRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Linkage, Comment, Declaration,
+      SubHeading, Template(Decl), isInSystemHeader(Decl));
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitFunctionTemplateDecl(
+    const FunctionTemplateDecl *Decl) {
+  if (isa<CXXMethodDecl>(Decl->getTemplatedDecl()))
+    return true;
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
+
+  // Collect symbol information.
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  LinkageInfo Linkage = Decl->getLinkageAndVisibility();
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+  FunctionSignature Signature =
+      DeclarationFragmentsBuilder::getFunctionSignature(
+          Decl->getTemplatedDecl());
+  API.createRecord<GlobalFunctionTemplateRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Linkage, Comment,
+      DeclarationFragmentsBuilder::getFragmentsForFunctionTemplate(Decl),
+      SubHeading, Signature, Template(Decl), isInSystemHeader(Decl));
+
   return true;
 }
 
@@ -424,7 +1009,8 @@ bool ExtractAPIVisitorBase<Derived>::VisitObjCInterfaceDecl(
 
   // Collect symbol information.
   StringRef Name = Decl->getName();
-  StringRef USR = API.recordUSR(Decl);
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   LinkageInfo Linkage = Decl->getLinkageAndVisibility();
@@ -442,24 +1028,23 @@ bool ExtractAPIVisitorBase<Derived>::VisitObjCInterfaceDecl(
 
   // Collect super class information.
   SymbolReference SuperClass;
-  if (const auto *SuperClassDecl = Decl->getSuperClass()) {
-    SuperClass.Name = SuperClassDecl->getObjCRuntimeNameAsString();
-    SuperClass.USR = API.recordUSR(SuperClassDecl);
-  }
+  if (const auto *SuperClassDecl = Decl->getSuperClass())
+    SuperClass = createSymbolReferenceForDecl(*SuperClassDecl);
 
-  ObjCInterfaceRecord *ObjCInterfaceRecord = API.addObjCInterface(
-      Name, USR, Loc, AvailabilitySet(Decl), Linkage, Comment, Declaration,
+  auto *InterfaceRecord = API.createRecord<ObjCInterfaceRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Linkage, Comment, Declaration,
       SubHeading, SuperClass, isInSystemHeader(Decl));
 
   // Record all methods (selectors). This doesn't include automatically
   // synthesized property methods.
-  getDerivedExtractAPIVisitor().recordObjCMethods(ObjCInterfaceRecord,
+  getDerivedExtractAPIVisitor().recordObjCMethods(InterfaceRecord,
                                                   Decl->methods());
-  getDerivedExtractAPIVisitor().recordObjCProperties(ObjCInterfaceRecord,
+  getDerivedExtractAPIVisitor().recordObjCProperties(InterfaceRecord,
                                                      Decl->properties());
-  getDerivedExtractAPIVisitor().recordObjCInstanceVariables(ObjCInterfaceRecord,
+  getDerivedExtractAPIVisitor().recordObjCInstanceVariables(InterfaceRecord,
                                                             Decl->ivars());
-  getDerivedExtractAPIVisitor().recordObjCProtocols(ObjCInterfaceRecord,
+  getDerivedExtractAPIVisitor().recordObjCProtocols(InterfaceRecord,
                                                     Decl->protocols());
 
   return true;
@@ -473,7 +1058,8 @@ bool ExtractAPIVisitorBase<Derived>::VisitObjCProtocolDecl(
 
   // Collect symbol information.
   StringRef Name = Decl->getName();
-  StringRef USR = API.recordUSR(Decl);
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   DocComment Comment;
@@ -488,15 +1074,15 @@ bool ExtractAPIVisitorBase<Derived>::VisitObjCProtocolDecl(
   DeclarationFragments SubHeading =
       DeclarationFragmentsBuilder::getSubHeading(Decl);
 
-  ObjCProtocolRecord *ObjCProtocolRecord =
-      API.addObjCProtocol(Name, USR, Loc, AvailabilitySet(Decl), Comment,
-                          Declaration, SubHeading, isInSystemHeader(Decl));
+  auto *ProtoRecord = API.createRecord<ObjCProtocolRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
+      isInSystemHeader(Decl));
 
-  getDerivedExtractAPIVisitor().recordObjCMethods(ObjCProtocolRecord,
-                                                  Decl->methods());
-  getDerivedExtractAPIVisitor().recordObjCProperties(ObjCProtocolRecord,
+  getDerivedExtractAPIVisitor().recordObjCMethods(ProtoRecord, Decl->methods());
+  getDerivedExtractAPIVisitor().recordObjCProperties(ProtoRecord,
                                                      Decl->properties());
-  getDerivedExtractAPIVisitor().recordObjCProtocols(ObjCProtocolRecord,
+  getDerivedExtractAPIVisitor().recordObjCProtocols(ProtoRecord,
                                                     Decl->protocols());
 
   return true;
@@ -515,25 +1101,35 @@ bool ExtractAPIVisitorBase<Derived>::VisitTypedefNameDecl(
   if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
     return true;
 
-  // Add the notion of typedef for tag type (struct or enum) of the same name.
-  if (const ElaboratedType *ET =
-          dyn_cast<ElaboratedType>(Decl->getUnderlyingType())) {
-    if (const TagType *TagTy = dyn_cast<TagType>(ET->desugar())) {
-      if (Decl->getName() == TagTy->getDecl()->getName()) {
-        if (TagTy->getDecl()->isStruct()) {
-          modifyRecords(API.getStructs(), Decl->getName());
-        }
-        if (TagTy->getDecl()->isEnum()) {
-          modifyRecords(API.getEnums(), Decl->getName());
-        }
+  StringRef Name = Decl->getName();
+
+  // If the underlying type was defined as part of the typedef modify it's
+  // fragments directly and pretend the typedef doesn't exist.
+  if (auto *TagDecl = Decl->getUnderlyingType()->getAsTagDecl()) {
+    if (TagDecl->isEmbeddedInDeclarator() && TagDecl->isCompleteDefinition() &&
+        Decl->getName() == TagDecl->getName()) {
+      SmallString<128> TagUSR;
+      index::generateUSRForDecl(TagDecl, TagUSR);
+      if (auto *Record = API.findRecordForUSR(TagUSR)) {
+        DeclarationFragments LeadingFragments;
+        LeadingFragments.append("typedef",
+                                DeclarationFragments::FragmentKind::Keyword);
+        LeadingFragments.appendSpace();
+        Record->Declaration.removeTrailingSemicolon()
+            .prepend(std::move(LeadingFragments))
+            .append(" { ... } ", DeclarationFragments::FragmentKind::Text)
+            .append(Name, DeclarationFragments::FragmentKind::Identifier)
+            .appendSemicolon();
+
+        return true;
       }
     }
   }
 
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
-  StringRef Name = Decl->getName();
-  StringRef USR = API.recordUSR(Decl);
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   DocComment Comment;
   if (auto *RawComment =
           getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
@@ -545,10 +1141,12 @@ bool ExtractAPIVisitorBase<Derived>::VisitTypedefNameDecl(
       TypedefUnderlyingTypeResolver(Context).getSymbolReferenceForType(Type,
                                                                        API);
 
-  API.addTypedef(Name, USR, Loc, AvailabilitySet(Decl), Comment,
-                 DeclarationFragmentsBuilder::getFragmentsForTypedef(Decl),
-                 DeclarationFragmentsBuilder::getSubHeading(Decl), SymRef,
-                 isInSystemHeader(Decl));
+  API.createRecord<TypedefRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment,
+      DeclarationFragmentsBuilder::getFragmentsForTypedef(Decl),
+      DeclarationFragmentsBuilder::getSubHeading(Decl), SymRef,
+      isInSystemHeader(Decl));
 
   return true;
 }
@@ -560,7 +1158,8 @@ bool ExtractAPIVisitorBase<Derived>::VisitObjCCategoryDecl(
     return true;
 
   StringRef Name = Decl->getName();
-  StringRef USR = API.recordUSR(Decl);
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
   PresumedLoc Loc =
       Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   DocComment Comment;
@@ -575,20 +1174,20 @@ bool ExtractAPIVisitorBase<Derived>::VisitObjCCategoryDecl(
       DeclarationFragmentsBuilder::getSubHeading(Decl);
 
   const ObjCInterfaceDecl *InterfaceDecl = Decl->getClassInterface();
-  SymbolReference Interface(InterfaceDecl->getName(),
-                            API.recordUSR(InterfaceDecl));
+  SymbolReference Interface = createSymbolReferenceForDecl(*InterfaceDecl);
 
-  ObjCCategoryRecord *ObjCCategoryRecord = API.addObjCCategory(
-      Name, USR, Loc, AvailabilitySet(Decl), Comment, Declaration, SubHeading,
+  auto *CategoryRecord = API.createRecord<ObjCCategoryRecord>(
+      USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+      AvailabilityInfo::createFromDecl(Decl), Comment, Declaration, SubHeading,
       Interface, isInSystemHeader(Decl));
 
-  getDerivedExtractAPIVisitor().recordObjCMethods(ObjCCategoryRecord,
+  getDerivedExtractAPIVisitor().recordObjCMethods(CategoryRecord,
                                                   Decl->methods());
-  getDerivedExtractAPIVisitor().recordObjCProperties(ObjCCategoryRecord,
+  getDerivedExtractAPIVisitor().recordObjCProperties(CategoryRecord,
                                                      Decl->properties());
-  getDerivedExtractAPIVisitor().recordObjCInstanceVariables(ObjCCategoryRecord,
+  getDerivedExtractAPIVisitor().recordObjCInstanceVariables(CategoryRecord,
                                                             Decl->ivars());
-  getDerivedExtractAPIVisitor().recordObjCProtocols(ObjCCategoryRecord,
+  getDerivedExtractAPIVisitor().recordObjCProtocols(CategoryRecord,
                                                     Decl->protocols());
 
   return true;
@@ -602,7 +1201,8 @@ void ExtractAPIVisitorBase<Derived>::recordEnumConstants(
   for (const auto *Constant : Constants) {
     // Collect symbol information.
     StringRef Name = Constant->getName();
-    StringRef USR = API.recordUSR(Constant);
+    SmallString<128> USR;
+    index::generateUSRForDecl(Constant, USR);
     PresumedLoc Loc =
         Context.getSourceManager().getPresumedLoc(Constant->getLocation());
     DocComment Comment;
@@ -617,188 +1217,107 @@ void ExtractAPIVisitorBase<Derived>::recordEnumConstants(
     DeclarationFragments SubHeading =
         DeclarationFragmentsBuilder::getSubHeading(Constant);
 
-    API.addEnumConstant(EnumRecord, Name, USR, Loc, AvailabilitySet(Constant),
-                        Comment, Declaration, SubHeading,
-                        isInSystemHeader(Constant));
-  }
-}
-
-/// Collect API information for the struct fields and associate with the
-/// parent struct.
-template <typename Derived>
-void ExtractAPIVisitorBase<Derived>::recordStructFields(
-    StructRecord *StructRecord, const RecordDecl::field_range Fields) {
-  for (const auto *Field : Fields) {
-    // Collect symbol information.
-    StringRef Name = Field->getName();
-    StringRef USR = API.recordUSR(Field);
-    PresumedLoc Loc =
-        Context.getSourceManager().getPresumedLoc(Field->getLocation());
-    DocComment Comment;
-    if (auto *RawComment =
-            getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Field))
-      Comment = RawComment->getFormattedLines(Context.getSourceManager(),
-                                              Context.getDiagnostics());
-
-    // Build declaration fragments and sub-heading for the struct field.
-    DeclarationFragments Declaration =
-        DeclarationFragmentsBuilder::getFragmentsForField(Field);
-    DeclarationFragments SubHeading =
-        DeclarationFragmentsBuilder::getSubHeading(Field);
-
-    API.addStructField(StructRecord, Name, USR, Loc, AvailabilitySet(Field),
-                       Comment, Declaration, SubHeading,
-                       isInSystemHeader(Field));
+    API.createRecord<EnumConstantRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Constant), Loc,
+        AvailabilityInfo::createFromDecl(Constant), Comment, Declaration,
+        SubHeading, isInSystemHeader(Constant));
   }
 }
 
 template <typename Derived>
-void ExtractAPIVisitorBase<Derived>::recordCXXFields(
-    CXXClassRecord *CXXClassRecord, const RecordDecl::field_range Fields) {
-  for (const auto *Field : Fields) {
-    // Collect symbol information.
-    StringRef Name = Field->getName();
-    StringRef USR = API.recordUSR(Field);
-    PresumedLoc Loc =
-        Context.getSourceManager().getPresumedLoc(Field->getLocation());
-    Context.getSourceManager().getPresumedLoc(Field->getLocation());
-    DocComment Comment;
-    if (auto *RawComment =
-            getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Field))
-      Comment = RawComment->getFormattedLines(Context.getSourceManager(),
-                                              Context.getDiagnostics());
+bool ExtractAPIVisitorBase<Derived>::VisitFieldDecl(const FieldDecl *Decl) {
+  // ObjCIvars are handled separately
+  if (isa<ObjCIvarDecl>(Decl) || isa<ObjCAtDefsFieldDecl>(Decl))
+    return true;
 
-    // Build declaration fragments and sub-heading for the struct field.
-    DeclarationFragments Declaration =
-        DeclarationFragmentsBuilder::getFragmentsForField(Field);
-    DeclarationFragments SubHeading =
-        DeclarationFragmentsBuilder::getSubHeading(Field);
-    AccessControl Access = DeclarationFragmentsBuilder::getAccessControl(Field);
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl))
+    return true;
 
-    API.addCXXField(CXXClassRecord, Name, USR, Loc, AvailabilitySet(Field),
-                    Comment, Declaration, SubHeading, Access,
-                    isInSystemHeader(Field));
-  }
-}
-
-/// Collect API information for constructors and destructors and associate with
-/// the parent class.
-template <typename Derived>
-void ExtractAPIVisitorBase<Derived>::recordSpecialCXXMethod(
-    CXXClassRecord *CXXClassRecord, const CXXMethodDecl *CXXSpecialMethod) {
-  StringRef Name;
-  bool isConstructor = false;
-  if (isa<CXXConstructorDecl>(CXXSpecialMethod)) {
-    isConstructor = true;
-    Name = CXXClassRecord->Name;
-  } else if (isa<CXXDestructorDecl>(CXXSpecialMethod)) {
-    // Copy string to get name with '~'.
-    Name = API.copyString(CXXSpecialMethod->getNameAsString());
-  }
-
-  StringRef USR = API.recordUSR(CXXSpecialMethod);
-  PresumedLoc Loc = Context.getSourceManager().getPresumedLoc(
-      CXXSpecialMethod->getLocation());
+  // Collect symbol information.
+  StringRef Name = Decl->getName();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
   DocComment Comment;
-  if (auto *RawComment = getDerivedExtractAPIVisitor().fetchRawCommentForDecl(
-          CXXSpecialMethod))
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
+    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
+                                            Context.getDiagnostics());
+
+  // Build declaration fragments and sub-heading for the struct field.
+  DeclarationFragments Declaration =
+      DeclarationFragmentsBuilder::getFragmentsForField(Decl);
+  DeclarationFragments SubHeading =
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
+
+  RecordContext *NewRecord = nullptr;
+  if (isa<CXXRecordDecl>(Decl->getDeclContext())) {
+    AccessControl Access = DeclarationFragmentsBuilder::getAccessControl(Decl);
+
+    NewRecord = API.createRecord<CXXFieldRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, Access, isInSystemHeader(Decl));
+  } else if (auto *RD = dyn_cast<RecordDecl>(Decl->getDeclContext())) {
+    if (RD->isUnion())
+      NewRecord = API.createRecord<UnionFieldRecord>(
+          USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+          AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+          SubHeading, isInSystemHeader(Decl));
+    else
+      NewRecord = API.createRecord<StructFieldRecord>(
+          USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+          AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+          SubHeading, isInSystemHeader(Decl));
+  }
+
+  // If this field has a non typedef'd anonymous tag type let's pretend the
+  // type's child records are under us in the hierarchy.
+  maybeMergeWithAnonymousTag(*Decl, NewRecord);
+
+  return true;
+}
+
+template <typename Derived>
+bool ExtractAPIVisitorBase<Derived>::VisitCXXConversionDecl(
+    const CXXConversionDecl *Decl) {
+  if (!getDerivedExtractAPIVisitor().shouldDeclBeIncluded(Decl) ||
+      Decl->isImplicit())
+    return true;
+
+  auto Name = Decl->getNameAsString();
+  SmallString<128> USR;
+  index::generateUSRForDecl(Decl, USR);
+  PresumedLoc Loc =
+      Context.getSourceManager().getPresumedLoc(Decl->getLocation());
+  DocComment Comment;
+  if (auto *RawComment =
+          getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Decl))
     Comment = RawComment->getFormattedLines(Context.getSourceManager(),
                                             Context.getDiagnostics());
 
   // Build declaration fragments, sub-heading, and signature for the method.
   DeclarationFragments Declaration =
-      DeclarationFragmentsBuilder::getFragmentsForSpecialCXXMethod(
-          CXXSpecialMethod);
+      DeclarationFragmentsBuilder::getFragmentsForConversionFunction(Decl);
   DeclarationFragments SubHeading =
-      DeclarationFragmentsBuilder::getSubHeading(CXXSpecialMethod);
+      DeclarationFragmentsBuilder::getSubHeading(Decl);
   FunctionSignature Signature =
-      DeclarationFragmentsBuilder::getFunctionSignature(CXXSpecialMethod);
-  AccessControl Access =
-      DeclarationFragmentsBuilder::getAccessControl(CXXSpecialMethod);
+      DeclarationFragmentsBuilder::getFunctionSignature(Decl);
+  AccessControl Access = DeclarationFragmentsBuilder::getAccessControl(Decl);
 
-  API.addCXXSpecialMethod(CXXClassRecord, Name, USR, Loc,
-                          AvailabilitySet(CXXSpecialMethod), Comment,
-                          Declaration, SubHeading, Signature, isConstructor,
-                          Access, isInSystemHeader(CXXSpecialMethod));
-}
+  if (Decl->isStatic())
+    API.createRecord<CXXStaticMethodRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, Signature, Access, isInSystemHeader(Decl));
+  else
+    API.createRecord<CXXInstanceMethodRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Decl), Loc,
+        AvailabilityInfo::createFromDecl(Decl), Comment, Declaration,
+        SubHeading, Signature, Access, isInSystemHeader(Decl));
 
-template <typename Derived>
-void ExtractAPIVisitorBase<Derived>::recordConversionMethod(
-    CXXClassRecord *CXXClassRecord, const CXXMethodDecl *SpecialCXXMethod) {
-  StringRef Name = API.copyString(SpecialCXXMethod->getNameAsString());
-  StringRef USR = API.recordUSR(SpecialCXXMethod);
-  PresumedLoc Loc = Context.getSourceManager().getPresumedLoc(
-      SpecialCXXMethod->getLocation());
-  DocComment Comment;
-  if (auto *RawComment = getDerivedExtractAPIVisitor().fetchRawCommentForDecl(
-          SpecialCXXMethod))
-    Comment = RawComment->getFormattedLines(Context.getSourceManager(),
-                                            Context.getDiagnostics());
-
-  // Build declaration fragments, sub-heading, and signature for the method.
-  DeclarationFragments Declaration =
-      DeclarationFragmentsBuilder::getFragmentsForConversionFunction(
-          cast<CXXConversionDecl>(SpecialCXXMethod));
-  DeclarationFragments SubHeading =
-      DeclarationFragmentsBuilder::getSubHeading(SpecialCXXMethod);
-  FunctionSignature Signature =
-      DeclarationFragmentsBuilder::getFunctionSignature(SpecialCXXMethod);
-  AccessControl Access =
-      DeclarationFragmentsBuilder::getAccessControl(SpecialCXXMethod);
-
-  API.addCXXMethod(CXXClassRecord, Name, USR, Loc,
-                   AvailabilitySet(SpecialCXXMethod), Comment, Declaration,
-                   SubHeading, Signature, SpecialCXXMethod->isStatic(), Access,
-                   isInSystemHeader(SpecialCXXMethod));
-}
-
-template <typename Derived>
-void ExtractAPIVisitorBase<Derived>::recordCXXMethods(
-    CXXClassRecord *CXXClassRecord, const CXXRecordDecl::method_range Methods) {
-  for (const auto *Method : Methods) {
-    if (isa<CXXConstructorDecl>(Method) || isa<CXXDestructorDecl>(Method)) {
-      recordSpecialCXXMethod(CXXClassRecord, Method);
-      continue;
-    }
-
-    if (isa<CXXConversionDecl>(Method)) {
-      recordConversionMethod(CXXClassRecord, Method);
-      continue;
-    }
-
-    StringRef Name;
-    DeclarationFragments Declaration;
-    if (Method->isOverloadedOperator()) {
-      Name = API.copyString(Method->getNameAsString());
-      Declaration =
-          DeclarationFragmentsBuilder::getFragmentsForOverloadedOperator(
-              Method);
-    } else {
-      Name = API.copyString(Method->getNameAsString());
-      Declaration =
-          DeclarationFragmentsBuilder::getFragmentsForCXXMethod(Method);
-    }
-    StringRef USR = API.recordUSR(Method);
-    PresumedLoc Loc =
-        Context.getSourceManager().getPresumedLoc(Method->getLocation());
-    DocComment Comment;
-    if (auto *RawComment =
-            getDerivedExtractAPIVisitor().fetchRawCommentForDecl(Method))
-      Comment = RawComment->getFormattedLines(Context.getSourceManager(),
-                                              Context.getDiagnostics());
-
-    // Build declaration fragments, sub-heading, and signature for the method.
-    DeclarationFragments SubHeading =
-        DeclarationFragmentsBuilder::getSubHeading(Method);
-    FunctionSignature Signature =
-        DeclarationFragmentsBuilder::getFunctionSignature(Method);
-    AccessControl Access =
-        DeclarationFragmentsBuilder::getAccessControl(Method);
-
-    API.addCXXMethod(CXXClassRecord, Name, USR, Loc, AvailabilitySet(Method),
-                     Comment, Declaration, SubHeading, Signature,
-                     Method->isStatic(), Access, isInSystemHeader(Method));
-  }
+  return true;
 }
 
 /// Collect API information for the Objective-C methods and associate with the
@@ -812,8 +1331,9 @@ void ExtractAPIVisitorBase<Derived>::recordObjCMethods(
     if (Method->isPropertyAccessor())
       continue;
 
-    StringRef Name = API.copyString(Method->getSelector().getAsString());
-    StringRef USR = API.recordUSR(Method);
+    auto Name = Method->getSelector().getAsString();
+    SmallString<128> USR;
+    index::generateUSRForDecl(Method, USR);
     PresumedLoc Loc =
         Context.getSourceManager().getPresumedLoc(Method->getLocation());
     DocComment Comment;
@@ -830,9 +1350,16 @@ void ExtractAPIVisitorBase<Derived>::recordObjCMethods(
     FunctionSignature Signature =
         DeclarationFragmentsBuilder::getFunctionSignature(Method);
 
-    API.addObjCMethod(Container, Name, USR, Loc, AvailabilitySet(Method),
-                      Comment, Declaration, SubHeading, Signature,
-                      Method->isInstanceMethod(), isInSystemHeader(Method));
+    if (Method->isInstanceMethod())
+      API.createRecord<ObjCInstanceMethodRecord>(
+          USR, Name, createHierarchyInformationForDecl(*Method), Loc,
+          AvailabilityInfo::createFromDecl(Method), Comment, Declaration,
+          SubHeading, Signature, isInSystemHeader(Method));
+    else
+      API.createRecord<ObjCClassMethodRecord>(
+          USR, Name, createHierarchyInformationForDecl(*Method), Loc,
+          AvailabilityInfo::createFromDecl(Method), Comment, Declaration,
+          SubHeading, Signature, isInSystemHeader(Method));
   }
 }
 
@@ -842,7 +1369,8 @@ void ExtractAPIVisitorBase<Derived>::recordObjCProperties(
     const ObjCContainerDecl::prop_range Properties) {
   for (const auto *Property : Properties) {
     StringRef Name = Property->getName();
-    StringRef USR = API.recordUSR(Property);
+    SmallString<128> USR;
+    index::generateUSRForDecl(Property, USR);
     PresumedLoc Loc =
         Context.getSourceManager().getPresumedLoc(Property->getLocation());
     DocComment Comment;
@@ -857,10 +1385,8 @@ void ExtractAPIVisitorBase<Derived>::recordObjCProperties(
     DeclarationFragments SubHeading =
         DeclarationFragmentsBuilder::getSubHeading(Property);
 
-    StringRef GetterName =
-        API.copyString(Property->getGetterName().getAsString());
-    StringRef SetterName =
-        API.copyString(Property->getSetterName().getAsString());
+    auto GetterName = Property->getGetterName().getAsString();
+    auto SetterName = Property->getSetterName().getAsString();
 
     // Get the attributes for property.
     unsigned Attributes = ObjCPropertyRecord::NoAttr;
@@ -868,14 +1394,22 @@ void ExtractAPIVisitorBase<Derived>::recordObjCProperties(
         ObjCPropertyAttribute::kind_readonly)
       Attributes |= ObjCPropertyRecord::ReadOnly;
 
-    API.addObjCProperty(
-        Container, Name, USR, Loc, AvailabilitySet(Property), Comment,
-        Declaration, SubHeading,
-        static_cast<ObjCPropertyRecord::AttributeKind>(Attributes), GetterName,
-        SetterName, Property->isOptional(),
-        !(Property->getPropertyAttributes() &
-          ObjCPropertyAttribute::kind_class),
-        isInSystemHeader(Property));
+    if (Property->getPropertyAttributes() & ObjCPropertyAttribute::kind_class)
+      API.createRecord<ObjCClassPropertyRecord>(
+          USR, Name, createHierarchyInformationForDecl(*Property), Loc,
+          AvailabilityInfo::createFromDecl(Property), Comment, Declaration,
+          SubHeading,
+          static_cast<ObjCPropertyRecord::AttributeKind>(Attributes),
+          GetterName, SetterName, Property->isOptional(),
+          isInSystemHeader(Property));
+    else
+      API.createRecord<ObjCInstancePropertyRecord>(
+          USR, Name, createHierarchyInformationForDecl(*Property), Loc,
+          AvailabilityInfo::createFromDecl(Property), Comment, Declaration,
+          SubHeading,
+          static_cast<ObjCPropertyRecord::AttributeKind>(Attributes),
+          GetterName, SetterName, Property->isOptional(),
+          isInSystemHeader(Property));
   }
 }
 
@@ -887,7 +1421,9 @@ void ExtractAPIVisitorBase<Derived>::recordObjCInstanceVariables(
         Ivars) {
   for (const auto *Ivar : Ivars) {
     StringRef Name = Ivar->getName();
-    StringRef USR = API.recordUSR(Ivar);
+    SmallString<128> USR;
+    index::generateUSRForDecl(Ivar, USR);
+
     PresumedLoc Loc =
         Context.getSourceManager().getPresumedLoc(Ivar->getLocation());
     DocComment Comment;
@@ -902,12 +1438,10 @@ void ExtractAPIVisitorBase<Derived>::recordObjCInstanceVariables(
     DeclarationFragments SubHeading =
         DeclarationFragmentsBuilder::getSubHeading(Ivar);
 
-    ObjCInstanceVariableRecord::AccessControl Access =
-        Ivar->getCanonicalAccessControl();
-
-    API.addObjCInstanceVariable(Container, Name, USR, Loc,
-                                AvailabilitySet(Ivar), Comment, Declaration,
-                                SubHeading, Access, isInSystemHeader(Ivar));
+    API.createRecord<ObjCInstanceVariableRecord>(
+        USR, Name, createHierarchyInformationForDecl(*Ivar), Loc,
+        AvailabilityInfo::createFromDecl(Ivar), Comment, Declaration,
+        SubHeading, isInSystemHeader(Ivar));
   }
 }
 
@@ -916,8 +1450,7 @@ void ExtractAPIVisitorBase<Derived>::recordObjCProtocols(
     ObjCContainerRecord *Container,
     ObjCInterfaceDecl::protocol_range Protocols) {
   for (const auto *Protocol : Protocols)
-    Container->Protocols.emplace_back(Protocol->getName(),
-                                      API.recordUSR(Protocol));
+    Container->Protocols.emplace_back(createSymbolReferenceForDecl(*Protocol));
 }
 
 } // namespace impl

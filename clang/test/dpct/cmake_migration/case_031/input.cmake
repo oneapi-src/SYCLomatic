@@ -1,0 +1,6 @@
+include_directories(${CUDA_INCLUDE_DIRS})
+include_directories(${somePath} ../)
+include_directories("${CUDA_INCLUDE_DIRS}")
+include_directories(" ${CUDA_INCLUDE_DIRS}")
+include_directories(" ${CUDA_INCLUDE_DIRS}" )
+string(APPEND var ";${CUDA_INCLUDE_DIRS}")

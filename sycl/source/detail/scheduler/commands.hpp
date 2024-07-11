@@ -25,10 +25,17 @@
 
 namespace sycl {
 inline namespace _V1 {
+
+namespace ext::oneapi::experimental::detail {
+class exec_graph_impl;
+class node_impl;
+} // namespace ext::oneapi::experimental::detail
 namespace detail {
 
 #ifdef XPTI_ENABLE_INSTRUMENTATION
-bool CurrentCodeLocationValid();
+void emitInstrumentationGeneral(uint32_t StreamID, uint64_t InstanceID,
+                                xpti_td *TraceEvent, uint16_t Type,
+                                const void *Addr);
 #endif
 
 class queue_impl;
@@ -111,6 +118,7 @@ public:
     HOST_TASK,
     FUSION,
     EXEC_CMD_BUFFER,
+    UPDATE_CMD_BUFFER
   };
 
   Command(CommandType Type, QueueImplPtr Queue,
@@ -214,11 +222,7 @@ public:
 
   /// Get the context of the queue this command will be submitted to. Could
   /// differ from the context of MQueue for memory copy commands.
-  virtual const ContextImplPtr &getWorkerContext() const;
-
-  /// Get the queue this command will be submitted to. Could differ from MQueue
-  /// for memory copy commands.
-  const QueueImplPtr &getWorkerQueue() const;
+  virtual ContextImplPtr getWorkerContext() const;
 
   /// Returns true iff the command produces a PI event on non-host devices.
   virtual bool producesPiEvent() const;
@@ -240,6 +244,8 @@ public:
   getPiEventsBlocking(const std::vector<EventImplPtr> &EventImpls) const;
 
   bool isHostTask() const;
+
+  bool isFusable() const;
 
 protected:
   QueueImplPtr MQueue;
@@ -366,12 +372,12 @@ public:
   std::string MSubmissionFileName;
   std::string MSubmissionFunctionName;
 
-  // This flag allows to control whether host event should be set complete
-  // after successfull enqueue of command. Event is considered as host event if
-  // either it's is_host() return true or there is no backend representation
-  // of event (i.e. getHandleRef() return reference to nullptr value).
-  // By default the flag is set to true due to most of host operations are
-  // synchronous. The only asynchronous operation currently is host-task.
+  // This flag allows to control whether event should be set complete
+  // after successfull enqueue of command. Event is considered as "host" event
+  // if there is no backend representation of event (i.e. getHandleRef() return
+  // reference to nullptr value). By default the flag is set to true due to most
+  // of host operations are synchronous. The only asynchronous operation
+  // currently is host-task.
   bool MShouldCompleteEventIfPossible = true;
 
   /// Indicates that the node will be freed by graph cleanup. Such nodes should
@@ -404,7 +410,7 @@ protected:
 /// implement lock in the graph, or to merge several nodes into one.
 class EmptyCommand : public Command {
 public:
-  EmptyCommand(QueueImplPtr Queue);
+  EmptyCommand();
 
   void printDot(std::ostream &Stream) const final;
   const Requirement *getRequirement() const final { return &MRequirements[0]; }
@@ -576,7 +582,7 @@ public:
   void printDot(std::ostream &Stream) const final;
   const Requirement *getRequirement() const final { return &MDstReq; }
   void emitInstrumentationData() final;
-  const ContextImplPtr &getWorkerContext() const final;
+  ContextImplPtr getWorkerContext() const final;
   bool producesPiEvent() const final;
 
 private:
@@ -600,7 +606,7 @@ public:
   void printDot(std::ostream &Stream) const final;
   const Requirement *getRequirement() const final { return &MDstReq; }
   void emitInstrumentationData() final;
-  const ContextImplPtr &getWorkerContext() const final;
+  ContextImplPtr getWorkerContext() const final;
 
 private:
   pi_int32 enqueueImp() final;
@@ -626,7 +632,8 @@ pi_int32 enqueueImpKernel(
     std::vector<sycl::detail::pi::PiEvent> &RawEvents,
     const detail::EventImplPtr &Event,
     const std::function<void *(Requirement *Req)> &getMemAllocationFunc,
-    sycl::detail::pi::PiKernelCacheConfig KernelCacheConfig);
+    sycl::detail::pi::PiKernelCacheConfig KernelCacheConfig,
+    bool KernelIsCooperative);
 
 class KernelFusionCommand;
 
@@ -636,6 +643,7 @@ class ExecCGCommand : public Command {
 public:
   ExecCGCommand(
       std::unique_ptr<detail::CG> CommandGroup, QueueImplPtr Queue,
+      bool EventNeeded,
       sycl::detail::pi::PiExtCommandBuffer CommandBuffer = nullptr,
       const std::vector<sycl::detail::pi::PiExtSyncPoint> &Dependencies = {});
 
@@ -645,6 +653,7 @@ public:
 
   void printDot(std::ostream &Stream) const final;
   void emitInstrumentationData() final;
+  std::string_view getTypeString() const;
 
   detail::CG &getCG() const { return *MCommandGroup; }
 
@@ -658,6 +667,11 @@ public:
   // and allows to refer back to the corresponding KernelFusionCommand if
   // necessary.
   KernelFusionCommand *MFusionCmd = nullptr;
+
+  // MEventNeeded is true if the command needs to produce a valid event. The
+  // implementation may elect to not produce events (native or SYCL) if this
+  // is false.
+  bool MEventNeeded = true;
 
   bool producesPiEvent() const final;
 
@@ -680,12 +694,14 @@ private:
 // For XPTI instrumentation only.
 // Method used to emit data in cases when we do not create node in graph.
 // Very close to ExecCGCommand::emitInstrumentationData content.
-void emitKernelInstrumentationData(
-    const std::shared_ptr<detail::kernel_impl> &SyclKernel,
+#ifdef XPTI_ENABLE_INSTRUMENTATION
+std::pair<xpti_td *, uint64_t> emitKernelInstrumentationData(
+    int32_t StreamID, const std::shared_ptr<detail::kernel_impl> &SyclKernel,
     const detail::code_location &CodeLoc, const std::string &SyclKernelName,
     const QueueImplPtr &Queue, const NDRDescT &NDRDesc,
     const std::shared_ptr<detail::kernel_bundle_impl> &KernelBundleImplPtr,
     std::vector<ArgDesc> &CGArgs);
+#endif
 
 class UpdateHostRequirementCommand : public Command {
 public:
@@ -727,6 +743,11 @@ public:
   /// only be called under the protection of the scheduler write-lock.
   void setFusionStatus(FusionStatus Status);
 
+  /// Reset the queue. This can be required as the command is held in order
+  /// to maintain events alive, however this prevent the normal destruction of
+  /// the queue.
+  void resetQueue();
+
   bool isActive() const { return MStatus == FusionStatus::ACTIVE; }
 
   bool readyForDeletion() const { return MStatus == FusionStatus::DELETED; }
@@ -741,6 +762,26 @@ private:
   FusionStatus MStatus;
 };
 
+class UpdateCommandBufferCommand : public Command {
+public:
+  explicit UpdateCommandBufferCommand(
+      QueueImplPtr Queue,
+      ext::oneapi::experimental::detail::exec_graph_impl *Graph,
+      std::vector<std::shared_ptr<ext::oneapi::experimental::detail::node_impl>>
+          Nodes);
+
+  void printDot(std::ostream &Stream) const final;
+  void emitInstrumentationData() final;
+  bool producesPiEvent() const final;
+
+private:
+  pi_int32 enqueueImp() final;
+
+  ext::oneapi::experimental::detail::exec_graph_impl *MGraph;
+  std::vector<std::shared_ptr<ext::oneapi::experimental::detail::node_impl>>
+      MNodes;
+};
+
 // Enqueues a given kernel to a PiExtCommandBuffer
 pi_int32 enqueueImpCommandBufferKernel(
     context Ctx, DeviceImplPtr DeviceImpl,
@@ -748,6 +789,7 @@ pi_int32 enqueueImpCommandBufferKernel(
     const CGExecKernel &CommandGroup,
     std::vector<sycl::detail::pi::PiExtSyncPoint> &SyncPoints,
     sycl::detail::pi::PiExtSyncPoint *OutSyncPoint,
+    sycl::detail::pi::PiExtCommandBufferCommand *OutCommand,
     const std::function<void *(Requirement *Req)> &getMemAllocationFunc);
 
 // Sets arguments for a given kernel and device based on the argument type.
@@ -757,8 +799,7 @@ void SetArgBasedOnType(
     const detail::plugin &Plugin, sycl::detail::pi::PiKernel Kernel,
     const std::shared_ptr<device_image_impl> &DeviceImageImpl,
     const std::function<void *(Requirement *Req)> &getMemAllocationFunc,
-    const sycl::context &Context, bool IsHost, detail::ArgDesc &Arg,
-    size_t NextTrueIndex);
+    const sycl::context &Context, detail::ArgDesc &Arg, size_t NextTrueIndex);
 
 void applyFuncOnFilteredArgs(
     const KernelArgMask *EliminatedArgMask, std::vector<ArgDesc> &Args,

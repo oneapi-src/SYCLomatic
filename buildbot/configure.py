@@ -1,6 +1,7 @@
 import argparse
 import os
 import platform
+import shlex
 import subprocess
 import sys
 
@@ -40,6 +41,7 @@ def do_configure(args):
     fusion_dir = os.path.join(abs_src_dir, "sycl-fusion")
     llvm_targets_to_build = args.host_target
     llvm_enable_projects = 'clang;' + llvm_external_projects
+    libclc_build_native = 'OFF'
     libclc_targets_to_build = ''
     libclc_gen_remangled_variants = 'OFF'
     sycl_build_pi_hip_platform = 'AMD'
@@ -51,6 +53,7 @@ def do_configure(args):
     llvm_build_shared_libs = 'OFF'
     llvm_enable_lld = 'OFF'
     sycl_enabled_plugins = ["opencl"]
+    sycl_preview_lib = 'ON'
 
     sycl_enable_xpti_tracing = 'ON'
     xpti_enable_werror = 'OFF'
@@ -62,10 +65,8 @@ def do_configure(args):
     if platform.system() == 'Windows' or (args.hip and args.hip_platform == 'AMD'):
         llvm_enable_projects += ';lld'
 
-    if args.enable_esimd_emulator:
-        sycl_enabled_plugins.append("esimd_emulator")
-
-    if args.cuda or args.hip:
+    libclc_enabled = args.cuda or args.hip or args.native_cpu
+    if libclc_enabled:
         llvm_enable_projects += ';libclc'
 
     if args.cuda:
@@ -86,6 +87,15 @@ def do_configure(args):
 
         sycl_build_pi_hip_platform = args.hip_platform
         sycl_enabled_plugins.append("hip")
+
+    if args.native_cpu:
+        if args.native_cpu_libclc_targets:
+            libclc_targets_to_build += ";" + args.native_cpu_libclc_targets
+        else:
+            libclc_build_native = "ON"
+        libclc_gen_remangled_variants = "ON"
+        sycl_enabled_plugins.append("native_cpu")
+
 
     # all llvm compiler targets don't require 3rd party dependencies, so can be
     # built/tested even if specific runtimes are not available
@@ -120,6 +130,7 @@ def do_configure(args):
         llvm_enable_projects += ";clang-tools-extra;compiler-rt"
         if sys.platform != "darwin":
             # libclc is required for CI validation
+            libclc_enabled = True
             if 'libclc' not in llvm_enable_projects:
                 llvm_enable_projects += ';libclc'
             # libclc passes `--nvvm-reflect-enable=false`, build NVPTX to enable it
@@ -138,6 +149,9 @@ def do_configure(args):
     if args.enable_plugin:
         sycl_enabled_plugins += args.enable_plugin
 
+    if args.disable_preview_lib:
+        sycl_preview_lib = 'OFF'
+
     install_dir = os.path.join(abs_obj_dir, "install")
 
     cmake_cmd = [
@@ -155,8 +169,6 @@ def do_configure(args):
         "-DLLVM_EXTERNAL_LIBDEVICE_SOURCE_DIR={}".format(libdevice_dir),
         "-DLLVM_EXTERNAL_SYCL_FUSION_SOURCE_DIR={}".format(fusion_dir),
         "-DLLVM_ENABLE_PROJECTS={}".format(llvm_enable_projects),
-        "-DLIBCLC_TARGETS_TO_BUILD={}".format(libclc_targets_to_build),
-        "-DLIBCLC_GENERATE_REMANGLED_VARIANTS={}".format(libclc_gen_remangled_variants),
         "-DSYCL_BUILD_PI_HIP_PLATFORM={}".format(sycl_build_pi_hip_platform),
         "-DLLVM_BUILD_TOOLS=ON",
         "-DSYCL_ENABLE_WERROR={}".format(sycl_werror),
@@ -171,8 +183,20 @@ def do_configure(args):
         "-DSYCL_CLANG_EXTRA_FLAGS={}".format(sycl_clang_extra_flags),
         "-DSYCL_ENABLE_PLUGINS={}".format(';'.join(set(sycl_enabled_plugins))),
         "-DSYCL_ENABLE_KERNEL_FUSION={}".format(sycl_enable_fusion),
+        "-DSYCL_ENABLE_MAJOR_RELEASE_PREVIEW_LIB={}".format(sycl_preview_lib),
         "-DBUG_REPORT_URL=https://github.com/intel/llvm/issues",
     ]
+
+    if libclc_enabled:
+        cmake_cmd.extend(
+            [
+                "-DLIBCLC_TARGETS_TO_BUILD={}".format(libclc_targets_to_build),
+                "-DLIBCLC_GENERATE_REMANGLED_VARIANTS={}".format(
+                    libclc_gen_remangled_variants
+                ),
+                "-DLIBCLC_NATIVECPU_HOST_TARGET={}".format(libclc_build_native),
+            ]
+        )
 
     if args.l0_headers and args.l0_loader:
       cmake_cmd.extend([
@@ -201,7 +225,7 @@ def do_configure(args):
             "-DSYCL_LIBCXX_INCLUDE_PATH={}".format(args.libcxx_include),
             "-DSYCL_LIBCXX_LIBRARY_PATH={}".format(args.libcxx_library)])
 
-    print("[Cmake Command]: {}".format(" ".join(cmake_cmd)))
+    print("[Cmake Command]: {}".format(" ".join(map(shlex.quote, cmake_cmd))))
 
     try:
         subprocess.check_call(cmake_cmd, cwd=abs_obj_dir)
@@ -234,11 +258,11 @@ def main():
     parser.add_argument("-t", "--build-type",
                         metavar="BUILD_TYPE", default="Release", help="build type: Debug, Release")
     parser.add_argument("--cuda", action='store_true', help="switch from OpenCL to CUDA")
+    parser.add_argument("--native_cpu", action='store_true', help="Enable SYCL Native CPU")
     parser.add_argument("--hip", action='store_true', help="switch from OpenCL to HIP")
     parser.add_argument("--hip-platform", type=str, choices=['AMD', 'NVIDIA'], default='AMD', help="choose hardware platform for HIP backend")
-    parser.add_argument("--host-target", default='X86',
-                        help="host LLVM target architecture, defaults to X86, multiple targets may be provided as a semi-colon separated string")
-    parser.add_argument("--enable-esimd-emulator", action='store_true', help="build with ESIMD emulation support (deprecated)")
+    parser.add_argument("--host-target", default='host',
+                        help="host LLVM target architecture, defaults to \'host\', multiple targets may be provided as a semi-colon separated string")
     parser.add_argument("--enable-all-llvm-targets", action='store_true', help="build compiler with all supported targets, it doesn't change runtime build")
     parser.add_argument("--no-assertions", action='store_true', help="build without assertions")
     parser.add_argument("--docs", action='store_true', help="build Doxygen documentation")
@@ -253,8 +277,10 @@ def main():
     parser.add_argument("--llvm-external-projects", help="Add external projects to build. Add as comma seperated list.")
     parser.add_argument("--ci-defaults", action="store_true", help="Enable default CI parameters")
     parser.add_argument("--enable-plugin", action='append', help="Enable SYCL plugin")
+    parser.add_argument("--disable-preview-lib", action='store_true', help="Disable building of the SYCL runtime major release preview library")
     parser.add_argument("--disable-fusion", action="store_true", help="Disable the kernel fusion JIT compiler")
     parser.add_argument("--add_security_flags", type=str, choices=['none', 'default', 'sanitize'], default=None, help="Enables security flags for compile & link. Two values are supported: 'default' and 'sanitize'. 'Sanitize' option is an extension of 'default' set.")
+    parser.add_argument('--native-cpu-libclc-targets', help='Target triples for libclc, used by the Native CPU backend')
     args = parser.parse_args()
 
     print("args:{}".format(args))

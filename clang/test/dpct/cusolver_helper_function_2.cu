@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/cusolver_helper_function_2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolver_helper_function_2/cusolver_helper_function_2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusolver_helper_function_2/cusolver_helper_function_2.dp.cpp -o %T/cusolver_helper_function_2/cusolver_helper_function_2.dp.o %}
 
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
@@ -63,7 +64,7 @@ void foo3() {
 
   //CHECK:int gesvdjinfo;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnCreateGesvdjInfo was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnCreateGesvdjInfo was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   gesvdjInfo_t gesvdjinfo;
   cusolverDnCreateGesvdjInfo(&gesvdjinfo);
@@ -93,7 +94,7 @@ void foo3() {
   cusolverDnZgesvdj(handle, CUSOLVER_EIG_MODE_VECTOR, 0, 2, 2, (double2*)a_z, 2, (double*)s_z, (double2*)u_z, 2, (double2*)vt_z, 2, (double2*)device_ws_z, device_ws_size_z, info, gesvdjinfo);
 
   //CHECK:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnDestroyGesvdjInfo was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnDestroyGesvdjInfo was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   cusolverDnDestroyGesvdjInfo(gesvdjinfo);
 }
@@ -101,10 +102,10 @@ void foo3() {
 int foo4() {
   //CHECK:int params;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnCreateSyevjInfo was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnCreateSyevjInfo was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnDestroySyevjInfo was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnDestroySyevjInfo was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:return 0;
   syevjInfo_t params;

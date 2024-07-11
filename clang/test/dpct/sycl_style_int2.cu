@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sycl_style_int2 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sycl_style_int2/sycl_style_int2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/sycl_style_int2/sycl_style_int2.dp.cpp -o %T/sycl_style_int2/sycl_style_int2.dp.o %}
 
 #include <cstdint>
 
@@ -101,7 +102,7 @@ int main() {
   int2* data;
   kernel<<<1, 1>>>(data);
 
-  // CHECK: volatile int aaa1;
+  // CHECK: volatile int32_t aaa1;
   // CHECK-NEXT: aaa1 = 1;
   volatile int1 aaa1;
   aaa1.x = 1;
@@ -125,7 +126,7 @@ int main() {
   // CHECK-NEXT: sycl::int4 aaa4;
   volatile int4 aaa4;
 
-  // CHECK: volatile int *pv1;
+  // CHECK: volatile int32_t *pv1;
   volatile int1 *pv1;
 
   // CHECK: /*

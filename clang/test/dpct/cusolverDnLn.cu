@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --report-format=csv --usm-level=none -out-root %T/cusolverDnLn %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolverDnLn/cusolverDnLn.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cusolverDnLn/cusolverDnLn.dp.cpp -o %T/cusolverDnLn/cusolverDnLn.dp.o %}
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cusolverDn.h>

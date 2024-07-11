@@ -256,10 +256,44 @@ struct deduce_AS
 };
 #endif
 
+template <typename T> struct remove_decoration_impl {
+  using type = T;
+};
+
+#ifdef __SYCL_DEVICE_ONLY__
+template <typename T> struct remove_decoration_impl<__OPENCL_GLOBAL_AS__ T> {
+  using type = T;
+};
+
+#ifdef __ENABLE_USM_ADDR_SPACE__
+template <typename T>
+struct remove_decoration_impl<__OPENCL_GLOBAL_DEVICE_AS__ T> {
+  using type = T;
+};
+
+template <typename T>
+struct remove_decoration_impl<__OPENCL_GLOBAL_HOST_AS__ T> {
+  using type = T;
+};
+
+#endif // __ENABLE_USM_ADDR_SPACE__
+
+template <typename T> struct remove_decoration_impl<__OPENCL_PRIVATE_AS__ T> {
+  using type = T;
+};
+
+template <typename T> struct remove_decoration_impl<__OPENCL_LOCAL_AS__ T> {
+  using type = T;
+};
+
+template <typename T> struct remove_decoration_impl<__OPENCL_CONSTANT_AS__ T> {
+  using type = T;
+};
+#endif // __SYCL_DEVICE_ONLY__
 } // namespace detail
 
 template <typename T> struct remove_decoration {
-  using type = T;
+  using type = typename detail::remove_decoration_impl<T>::type;
 };
 
 // Propagate through const qualifier.
@@ -287,35 +321,6 @@ template <typename T> struct remove_decoration<const T &> {
   using type = const typename remove_decoration<T>::type &;
 };
 
-#ifdef __SYCL_DEVICE_ONLY__
-template <typename T> struct remove_decoration<__OPENCL_GLOBAL_AS__ T> {
-  using type = T;
-};
-
-#ifdef __ENABLE_USM_ADDR_SPACE__
-template <typename T> struct remove_decoration<__OPENCL_GLOBAL_DEVICE_AS__ T> {
-  using type = T;
-};
-
-template <typename T> struct remove_decoration<__OPENCL_GLOBAL_HOST_AS__ T> {
-  using type = T;
-};
-
-#endif // __ENABLE_USM_ADDR_SPACE__
-
-template <typename T> struct remove_decoration<__OPENCL_PRIVATE_AS__ T> {
-  using type = T;
-};
-
-template <typename T> struct remove_decoration<__OPENCL_LOCAL_AS__ T> {
-  using type = T;
-};
-
-template <typename T> struct remove_decoration<__OPENCL_CONSTANT_AS__ T> {
-  using type = T;
-};
-#endif // __SYCL_DEVICE_ONLY__
-
 template <typename T>
 using remove_decoration_t = typename remove_decoration<T>::type;
 
@@ -327,7 +332,7 @@ template <typename ToT, typename FromT> inline ToT cast_AS(FromT from) {
   constexpr access::address_space ToAS = deduce_AS<ToT>::value;
   constexpr access::address_space FromAS = deduce_AS<FromT>::value;
   if constexpr (FromAS == access::address_space::generic_space) {
-#if defined(__NVPTX__) || defined(__AMDGCN__)
+#if defined(__NVPTX__) || defined(__AMDGCN__) || defined(__SYCL_NATIVE_CPU__)
     // TODO: NVPTX and AMDGCN backends do not currently support the
     //       __spirv_GenericCastToPtrExplicit_* builtins, so to work around this
     //       we do C-style casting. This may produce warnings when targetting

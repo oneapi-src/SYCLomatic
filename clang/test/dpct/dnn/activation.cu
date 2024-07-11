@@ -20,10 +20,7 @@
 // CHECK:     typedef float type;
 // CHECK: };
 // CHECK: template <>
-// CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_DATA_DOUBLE is not supported.
-// CHECK: */
-// CHECK: struct dt_trait<CUDNN_DATA_DOUBLE> {
+// CHECK: struct dt_trait<dpct::library_data_t::real_double> {
 // CHECK:     typedef double type;
 // CHECK: };
 // CHECK: template <>
@@ -74,16 +71,16 @@ void test1() {
     cudaStreamCreate(&stream1);
     cudnnSetStream(handle, stream1);
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateTensorDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     cudnnCreateTensorDescriptor(&dataTensor);
     cudnnCreateTensorDescriptor(&outTensor);
@@ -124,7 +121,7 @@ void test1() {
     cudaMemcpy(diffout, host_diffout.data(), ele_num * sizeof(HT), cudaMemcpyHostToDevice);
     // CHECK: dpct::dnnl::activation_desc desc;
     // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateActivationDescriptor was removed because this call is redundant in SYCL.
+    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateActivationDescriptor was removed because this functionality is redundant in SYCL.
     // CHECK: */
     // CHECK: /*
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of Nan numbers propagation option is not supported.

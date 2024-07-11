@@ -6,6 +6,7 @@
 // RUN: dpct --format-range=none  -p %T  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
 // RUN: dpct --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/out/d_kernel.dp.cpp %T/d_kernel.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/d_kernel.dp.cpp -o %T/out/d_kernel.dp.o %}
 
 #include "cuda_runtime.h"
 #include <stdio.h>

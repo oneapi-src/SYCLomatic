@@ -52,7 +52,7 @@ int main() {
   // CHECK-EMPTY:
   // CHECK-NEXT:    auto tex_smpl = (*(dpct::image_wrapper_base_p *)args[1])->get_sampler();
   // CHECK-EMPTY:
-  // CHECK-NEXT:    int * d_ct0 = *(int **)args[0];
+  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
   // CHECK-EMPTY:
   // CHECK-NEXT:    cgh.parallel_for(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
@@ -70,12 +70,12 @@ int main() {
   // CHECK-NEXT:    sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
   // CHECK-NEXT:    sycl::local_accessor<int, 1> s_acc_ct1(sycl::range<1>(16), cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:    int * d_ct0 = *(int **)args[0];
+  // CHECK-NEXT:    auto d_ct0 = *(int **)args[0];
   // CHECK-EMPTY:
   // CHECK-NEXT:    cgh.parallel_for(
   // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:        template_kernel<int>(d_ct0, item_ct1, dpct_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:        template_kernel<int>(d_ct0, item_ct1, dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:      });
   // CHECK-NEXT:  });
   cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);
@@ -83,9 +83,13 @@ int main() {
   void *kernel_func = (void *)&kernel;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaLaunchCooperativeKernel is not supported.
+  // CHECK-NEXT: DPCT1123:{{[0-9]+}}: The kernel function pointer cannot be used in the device code. You need to call the kernel function with the correct argument(s) directly. According to the kernel function definition, adjusting the dimension of the sycl::nd_item may also be required.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaLaunchCooperativeKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, &q_ct1);
+  // CHECK-NEXT: q_ct1.parallel_for(
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)), 
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:     kernel_func();
+  // CHECK-NEXT:   });
   cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);

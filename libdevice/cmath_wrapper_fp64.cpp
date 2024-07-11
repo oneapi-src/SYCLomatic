@@ -9,17 +9,53 @@
 
 #include "device_math.h"
 
-#if defined(__SPIR__) || defined(__NVPTX__)
+#if defined(__SPIR__) || defined(__SPIRV__) || defined(__NVPTX__)
 
 // All exported functions in math and complex device libraries are weak
 // reference. If users provide their own math or complex functions(with
 // the prototype), functions in device libraries will be ignored and
 // overrided by users' version.
+
+DEVICE_EXTERN_C_INLINE
+double fabs(double x) { return __devicelib_fabs(x); }
+
+DEVICE_EXTERN_C_INLINE
+double ceil(double x) { return __devicelib_ceil(x); }
+
+DEVICE_EXTERN_C_INLINE
+double copysign(double x, double y) { return __devicelib_copysign(x, y); }
+
+DEVICE_EXTERN_C_INLINE
+double cospi(double x) { return __devicelib_cospi(x); }
+
+extern "C" SYCL_EXTERNAL double __devicelib_fmax(double, double);
+DEVICE_EXTERN_C_INLINE
+double fmax(double x, double y) { return __devicelib_fmax(x, y); }
+
+extern "C" SYCL_EXTERNAL double __devicelib_fmin(double, double);
+DEVICE_EXTERN_C_INLINE
+double fmin(double x, double y) { return __devicelib_fmin(x, y); }
+
+DEVICE_EXTERN_C_INLINE
+double trunc(double x) { return __devicelib_trunc(x); }
+
+DEVICE_EXTERN_C_INLINE
+double sinpi(double x) { return __devicelib_sinpi(x); }
+
+DEVICE_EXTERN_C_INLINE
+double rsqrt(double x) { return __devicelib_rsqrt(x); }
+
+DEVICE_EXTERN_C_INLINE
+double exp10(double x) { return __devicelib_exp10(x); }
+
 DEVICE_EXTERN_C_INLINE
 double log(double x) { return __devicelib_log(x); }
 
 DEVICE_EXTERN_C_INLINE
 double round(double x) { return __devicelib_round(x); }
+
+DEVICE_EXTERN_C_INLINE
+double floor(double x) { return __devicelib_floor(x); }
 
 DEVICE_EXTERN_C_INLINE
 double exp(double x) { return __devicelib_exp(x); }
@@ -139,6 +175,16 @@ double atanh(double x) { return __devicelib_atanh(x); }
 
 DEVICE_EXTERN_C_INLINE
 double scalbn(double x, int exp) { return __devicelib_scalbn(x, exp); }
+
+#ifdef __NVPTX__
+extern "C" SYCL_EXTERNAL double __nv_nearbyint(double);
+DEVICE_EXTERN_C_INLINE
+double nearbyint(double x) { return __nv_nearbyint(x); }
+
+extern "C" SYCL_EXTERNAL double __nv_rint(double);
+DEVICE_EXTERN_C_INLINE
+double rint(double x) { return __nv_rint(x); }
+#endif // __NVPTX__
 
 #if defined(_MSC_VER)
 #include <math.h>
@@ -447,4 +493,4 @@ double _Sinh(double x, double y) { // compute y * sinh(x), |y| <= 1
   }
 }
 #endif // defined(_WIN32)
-#endif // __SPIR__ || __NVPTX__
+#endif // __SPIR__ || __SPIRV__ || __NVPTX__

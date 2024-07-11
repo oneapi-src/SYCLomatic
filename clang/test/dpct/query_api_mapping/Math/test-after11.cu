@@ -329,32 +329,6 @@
 // STWT-NEXT:   /* 3 */ *pb = b;
 // STWT-NEXT:   /* 4 */ *pb2 = b2;
 
-/// Bfloat16 Precision Conversion And Data Movement
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__bfloat1622float2 | FileCheck %s -check-prefix=BFLOAT1622FLOAT2
-// BFLOAT1622FLOAT2: CUDA API:
-// BFLOAT1622FLOAT2-NEXT:   __bfloat1622float2(b /*__nv_bfloat162*/);
-// BFLOAT1622FLOAT2-NEXT: Is migrated to:
-// BFLOAT1622FLOAT2-NEXT:   sycl::float2(b[0], b[1]);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__bfloat162float | FileCheck %s -check-prefix=BFLOAT162FLOAT
-// BFLOAT162FLOAT: CUDA API:
-// BFLOAT162FLOAT-NEXT:   __bfloat162float(b /*__nv_bfloat16*/);
-// BFLOAT162FLOAT-NEXT: Is migrated to:
-// BFLOAT162FLOAT-NEXT:   static_cast<float>(b);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__float22bfloat162_rn | FileCheck %s -check-prefix=FLOAT22BFLOAT162_RN
-// FLOAT22BFLOAT162_RN: CUDA API:
-// FLOAT22BFLOAT162_RN-NEXT:   __float22bfloat162_rn(f /*float2*/);
-// FLOAT22BFLOAT162_RN-NEXT: Is migrated to:
-// FLOAT22BFLOAT162_RN-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f[0], f[1]);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__float2bfloat16 | FileCheck %s -check-prefix=FLOAT2BFLOAT16
-// FLOAT2BFLOAT16: CUDA API:
-// FLOAT2BFLOAT16-NEXT:   __float2bfloat16(f /*float*/);
-// FLOAT2BFLOAT16-NEXT: Is migrated to:
-// FLOAT2BFLOAT16-NEXT:   sycl::ext::oneapi::bfloat16(f);
-
 /// Half Math Functions
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hceil | FileCheck %s -check-prefix=HCEIL

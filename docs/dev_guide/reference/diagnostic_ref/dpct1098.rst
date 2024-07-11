@@ -1,0 +1,64 @@
+.. _DPCT1098:
+
+DPCT1098
+========
+
+Message
+-------
+
+.. _msg-1098-start:
+
+The *<expression text>* expression is used instead of the *<function name>* call.
+These two expressions do not provide the exact same functionality. Check the
+generated code for potential precision and/or performance issues.
+
+.. _msg-1098-end:
+
+Detailed Help
+-------------
+
+No exact functional equivalent of the function was found in SYCL\* so an
+expression composed of other functions was used. Code precision and/or
+performance may not be as expected. Verify the code for correctness and
+performance.
+
+Suggestions to Fix
+------------------
+
+Verify the code for correctness and performance.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ void device(float *f) {
+     float a = __ldg(f);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void device(float *f) {
+     /*
+     DPCT1098:0: The '*' expression is used instead of the __ldg call. These two
+     expressions do not provide the exact same functionality. Check the generated
+     code for potential precision and/or performance issues.
+     */
+     float a = *f;
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void device(float *f) {
+   #if defined(__NVPTX__) && defined(__SYCL_DEVICE_ONLY__)
+     float a = sycl::ext::oneapi::experimental::cuda::ldg(f);
+   #else
+     float a = *f;
+   #endif
+   }

@@ -12,11 +12,12 @@
 #include "Statics.h"
 
 #include <assert.h>
+#include <optional>
 #include <regex>
 
 namespace clang {
 namespace dpct {
-ExtReplacements::ExtReplacements(std::string FilePath) : FilePath(FilePath) {}
+ExtReplacements::ExtReplacements(clang::tooling::UnifiedPath FilePath) : FilePath(FilePath) {}
 
 bool ExtReplacements::isInvalid(std::shared_ptr<ExtReplacement> Repl,
                                 std::shared_ptr<DpctFileInfo> FileInfo) {
@@ -319,14 +320,16 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl, FileInfo))
     return;
   if (Repl->getLength()) {
-    if (Repl->IsSYCLHeaderNeeded())
+    if (Repl->IsSYCLHeaderNeeded()) {
       FileInfo->insertHeader(HT_SYCL);
+    }
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
     // If Repl is insert replacement, check whether it is alive or dead.
   } else if (checkLiveness(Repl)) {
-    if (Repl->IsSYCLHeaderNeeded())
+    if (Repl->IsSYCLHeaderNeeded()) {
       FileInfo->insertHeader(HT_SYCL);
+    }
     markAsAlive(Repl);
   } else {
     markAsDead(Repl);
@@ -358,23 +361,29 @@ void ExtReplacements::postProcess() {
     // F: free queries function migration, such as this_nd_item, this_group,
     // this_sub_group.
     // G: group dim size, used for cg::thread_block migration
+    // E: extension, used for c source file migration
     StringRef OriginalText = R.second->getReplacementText();
-    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCG][0-9]*\\}\\}");
+    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCGEPI][0-9]*\\}\\}");
     std::match_results<StringRef::const_iterator> Result;
-    std::string NewText;
+    std::optional<std::string> NewText;
     auto Begin = OriginalText.begin(), End = OriginalText.end();
     while (std::regex_search(Begin, End, Result, RE)) {
-      NewText.append(Result.prefix().first, Result.prefix().length());
-      NewText += DpctGlobalInfo::getStringForRegexReplacement(
+      if (NewText) {
+        NewText.value().append(Result.prefix().first, Result.prefix().length());
+      } else {
+        NewText = std::string(Result.prefix().first, Result.prefix().length());
+      }
+
+      NewText.value() += DpctGlobalInfo::getStringForRegexReplacement(
           StringRef(Result[0].first, Result[0].length()));
       Begin = Result.suffix().first;
     }
-    if (NewText.size()) {
-      NewText.append(Begin, End);
+    if (NewText) {
+      NewText.value().append(Begin, End);
       auto &Old = R.second;
-      auto New =
-          std::make_shared<ExtReplacement>(Old->getFilePath(), Old->getOffset(),
-                                           Old->getLength(), NewText, nullptr);
+      auto New = std::make_shared<ExtReplacement>(
+          Old->getFilePath(), Old->getOffset(), Old->getLength(),
+          NewText.value(), nullptr);
       New->setBlockLevelFormatFlag(Old->getBlockLevelFormatFlag());
       New->setInsertPosition(
           static_cast<dpct::InsertPosition>(Old->getInsertPosition()));

@@ -1,7 +1,9 @@
 // RUN: dpct --enable-profiling  --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/tm-nonusm-no-submit-barrier-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.cpp -o %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.o %}
 // RUN: rm -rf %T/tm-nonusm-no-submit-barrier-profiling/
 
+#ifndef BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT:#include <sycl/sycl.hpp>
@@ -68,7 +70,7 @@ int main() {
     // CHECK:    dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
     // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
-    // CHECK-NEXT:    stop->wait_and_throw();
+    // CHECK-NEXT:     stop->wait_and_throw();
     // CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -280,7 +282,6 @@ __global__ void readTexelsFoo1(int n, float *d_out){
 }
 __global__ void readTexelsFoo2(int n, float *d_out, int width, int height){
 }
-texture<float4, 2, cudaReadModeElementType> texA;
 
 void foo()
 {
@@ -684,3 +685,4 @@ void test_1999(void* ref_image, void* cur_image,
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
 }
+#endif

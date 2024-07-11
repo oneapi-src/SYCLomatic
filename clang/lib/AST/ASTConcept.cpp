@@ -13,10 +13,10 @@
 
 #include "clang/AST/ASTConcept.h"
 #include "clang/AST/ASTContext.h"
-#include "clang/AST/Decl.h"
-#include "clang/AST/TemplateBase.h"
+#include "clang/AST/PrettyPrinter.h"
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/FoldingSet.h"
+#include "llvm/ADT/StringExtras.h"
+
 using namespace clang;
 
 namespace {
@@ -88,4 +88,31 @@ void ConstraintSatisfaction::Profile(
   ID.AddInteger(TemplateArgs.size());
   for (auto &Arg : TemplateArgs)
     Arg.Profile(ID, C);
+}
+
+ConceptReference *
+ConceptReference::Create(const ASTContext &C, NestedNameSpecifierLoc NNS,
+                         SourceLocation TemplateKWLoc,
+                         DeclarationNameInfo ConceptNameInfo,
+                         NamedDecl *FoundDecl, ConceptDecl *NamedConcept,
+                         const ASTTemplateArgumentListInfo *ArgsAsWritten) {
+  return new (C) ConceptReference(NNS, TemplateKWLoc, ConceptNameInfo,
+                                  FoundDecl, NamedConcept, ArgsAsWritten);
+}
+
+void ConceptReference::print(llvm::raw_ostream &OS,
+                             const PrintingPolicy &Policy) const {
+  if (NestedNameSpec)
+    NestedNameSpec.getNestedNameSpecifier()->print(OS, Policy);
+  ConceptName.printName(OS, Policy);
+  if (hasExplicitTemplateArgs()) {
+    OS << "<";
+    llvm::ListSeparator Sep(", ");
+    // FIXME: Find corresponding parameter for argument
+    for (auto &ArgLoc : ArgsAsWritten->arguments()) {
+      OS << Sep;
+      ArgLoc.getArgument().print(Policy, OS, /*IncludeType*/ false);
+    }
+    OS << ">";
+  }
 }

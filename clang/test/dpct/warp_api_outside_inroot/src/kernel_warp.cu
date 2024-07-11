@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none --in-root=%S --out-root=%T/out --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/kernel_warp.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out/kernel_warp.dp.cpp -o %T/out/kernel_warp.dp.o %}
 // out/
 // ├── kernel_warp.dp.cpp
 // └── MainSourceFiles.yaml
@@ -13,6 +14,7 @@
 // RUN: bash %S/../check_script.sh %T/out/src %T
 // RUN: FileCheck --input-file %T/exist_check --match-full-lines %S/../ref
 // RUN: rm -rf %T/out
+#ifndef BUILD_TEST
 #include "../inc/utils.cuh"
 #include "../inc/empty.h"
 
@@ -34,7 +36,7 @@ void foo() {
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
-  //CHECK-NEXT:        kernel(input_acc_ct0.get_raw_pointer(), item_ct1, smem_acc_ct1.get_pointer());
+  //CHECK-NEXT:        kernel(input_acc_ct0.get_raw_pointer(), item_ct1, smem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   kernel<<<1, 128>>>(input);
@@ -78,3 +80,4 @@ void foo_2(float *ptr) {
   //CHECK-NEXT:  });
   compute_mode<8><<<1, 64>>>(ptr);
 }
+#endif

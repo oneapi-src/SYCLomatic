@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/math_functions_std %s --cuda-include-path="%cuda-path/include" --use-dpcpp-extensions=c_cxx_standard_library
 // RUN: FileCheck --input-file %T/math_functions_std/math_functions_std.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math_functions_std/math_functions_std.dp.cpp -o %T/math_functions_std/math_functions_std.dp.o %}
 
 #include <cuda_runtime.h>
 
@@ -61,3 +62,12 @@ void h() {
   ll = std::abs(ll2);
 }
 
+void foo1() {
+  int n;
+  //CHECK: dpct::dim3 abc;
+  //CHECK-NEXT: abc.y = std::min(std::max(512 / abc.x, 1u), (unsigned int) n);
+  //CHECK-NEXT: abc.z = std::min(std::max(512 / (abc.x * abc.y), 1u), (unsigned int)n);
+  dim3 abc;
+  abc.y = std::min(std::max(512 / abc.x, 1u), (unsigned int) n);
+  abc.z = std::min(std::max(512 / (abc.x * abc.y), 1u), (unsigned int)n);
+}

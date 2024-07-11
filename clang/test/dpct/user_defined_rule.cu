@@ -6,8 +6,9 @@
 // RUN: mkdir %T/user_defined_rule_output
 // RUN: dpct -out-root %T/user_defined_rule_output user_defined_rule.cu --cuda-include-path="%cuda-path/include" --usm-level=none --rule-file=user_defined_rule.yaml --rule-file=user_defined_rule_2.yaml  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/user_defined_rule_output/user_defined_rule.dp.cpp --match-full-lines user_defined_rule.cu
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/user_defined_rule_output/user_defined_rule.dp.cpp -o %T/user_defined_rule_output/user_defined_rule.dp.o %}
 
-
+#ifndef BUILD_TEST
 //CHECK: #ifdef MACRO_A
 //CHECK: #include <cmath3>
 //CHECK: #include "cmath2"
@@ -169,3 +170,38 @@ void foo7() {
   //CHECK: my_min(b, b);
   my_max(a, b);
 }
+
+template<class T1, class T2>
+void foo8(int a) {
+  T1 a;
+  T2 b;
+}
+
+void foo9(){
+  //CHECK: foo8<float, int>(0);
+  foo8<int, float>(0);
+}
+
+
+void filterfoo(){}
+void filterfoo(int i){}
+void filterfoo2(int i){}
+
+void filtergoo(){}
+void filtergoo(int i){}
+
+void foo10(){
+  //CHECK: filterfoo();
+  filterfoo();
+  //CHECK: filtergoo(3);
+  filterfoo(3);
+  //CHECK: filtergoo2(3);
+  filterfoo2(3);
+}
+
+// CHECK: #if defined(__UNDEFINED_MACRO__)
+// CHECK-NEXT: #endif
+#if defined(__NVCC__)
+#endif
+
+#endif

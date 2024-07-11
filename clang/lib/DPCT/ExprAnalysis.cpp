@@ -25,8 +25,9 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+#include "clang/AST/TypeLoc.h"
 
-extern std::string DpctInstallPath;
+extern clang::tooling::UnifiedPath DpctInstallPath;
 namespace clang {
 namespace dpct {
 
@@ -270,7 +271,6 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    SrcBeginLoc = BeginLoc;
     auto LastTokenLength = End.second;
     if(ApplyGreaterTokenWorkAround)
       LastTokenLength = 0;
@@ -289,14 +289,14 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
                                  const Expr *Parent) {
   const std::shared_ptr<DynTypedNode> P =
       std::make_shared<DynTypedNode>(DynTypedNode::create(*Parent));
-  if (BeginLoc.isMacroID() && isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
-    BeginLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(BeginLoc));
-    EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(EndLoc));
-  } else {
-    if (EndLoc.isValid()) {
-      BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
-      EndLoc = SM.getExpansionRange(EndLoc).getEnd();
-    }
+  while (BeginLoc.isMacroID() &&
+         isInsideFunctionLikeMacro(BeginLoc, EndLoc, P)) {
+    BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
+    EndLoc = SM.getImmediateSpellingLoc(EndLoc);
+  }
+  if (EndLoc.isValid()) {
+    BeginLoc = SM.getExpansionRange(BeginLoc).getBegin();
+    EndLoc = SM.getExpansionRange(EndLoc).getEnd();
   }
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
@@ -401,6 +401,7 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
   if (Range.getBegin().isValid()) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
+    SrcBeginLoc = Range.getBegin();
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
       ReplSet.init(std::string(
           FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
@@ -482,6 +483,8 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
                          isCGAPI(DRE->getNameInfo().getAsString());
                          // for thrust::log10 and thrust::sinh ...
+    if (Qualifier->getKind() == NestedNameSpecifier::TypeSpec)
+      analyzeType(DRE->getQualifierLoc().getTypeLoc());
     // log10 is a math function
     if (Qualifier->getAsNamespace() &&
         Qualifier->getAsNamespace()->getName() == "thrust" &&
@@ -498,8 +501,17 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
       }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
-      CTSName = getNestedNameSpecifierString(Qualifier) +
-                DRE->getNameInfo().getAsString();
+      if (DRE->getDecl()->isCXXClassMember()) {
+        std::string Result;
+        llvm::raw_string_ostream OS(Result);
+        DRE->getDecl()->printNestedNameSpecifier(OS);
+        DRE->getNameInfo().printName(
+            OS, DpctGlobalInfo::getContext().getPrintingPolicy());
+        CTSName = Result;
+      } else {
+        CTSName = getNestedNameSpecifierString(Qualifier) +
+                  DRE->getNameInfo().getAsString();
+      }
     }
   }
 
@@ -555,6 +567,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
       REPLACE_ENUM(MapNames::RandomEngineTypeMap);
+      REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
 #undef REPLACE_ENUM
@@ -587,19 +600,6 @@ void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
         if (QT->isPointerType()) {
           QT = QT->getPointeeType();
         }
-        if (DpctGlobalInfo::getUnqualifiedTypeName(
-                QT->getCanonicalTypeUnqualified()) == "dim3") {
-          // Replace initializer list with explicit type conversion (e.g.,
-          // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing
-          // error (e.g., 'size_t -> int64_t') for
-          // non-constant-expression in int64_t initializer list.
-          // E.g.,
-          // dim3 d3; int64_t{d3.x};
-          // will be migratd to
-          // sycl::range<3> d3; int64_t(d3[2]);
-          addReplacement(ILE->getLBraceLoc(), "(");
-          addReplacement(ILE->getRBraceLoc(), ")");
-        }
       }
     }
   }
@@ -615,44 +615,11 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
-  if (Temp->getConstructor()->getDeclName().getAsString() != "dim3") {
-    analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
-  }
+  analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-  if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
-    std::string ArgsString;
-    llvm::raw_string_ostream OS(ArgsString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3)
-        << "(";
-    ArgumentAnalysis A;
-    std::string ArgStr = "";
-    for (auto Arg : Ctor->arguments()) {
-      A.analyze(Arg);
-      ArgStr = ", " + A.getReplacedString() + ArgStr;
-    }
-    ArgStr.replace(0, 2, "");
-    OS << ArgStr << ")";
-    OS.flush();
-
-    // Special handling for implicit ctor.
-    // #define GET_BLOCKS(a) a
-    // dim3 A = GET_BLOCKS(1);
-    // Result if using SM.getExpansionRange:
-    //   sycl::range<3> A = sycl::range<3>(1, 1, GET_BLOCKS(1));
-    // Result if using addReplacement(E):
-    //   #define GET_BLOCKS(a) sycl::range<3>(1, 1, a)
-    //   sycl::range<3> A = GET_BLOCKS(1);
-    if (Ctor->getParenOrBraceRange().isInvalid() && isOuterMostMacro(Ctor)) {
-      return addReplacement(
-          SM.getExpansionRange(Ctor->getBeginLoc()).getBegin(),
-          SM.getExpansionRange(Ctor->getEndLoc()).getEnd(), ArgsString);
-    }
-    addReplacement(Ctor, ArgsString);
-    return;
-  }
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
     dispatch(*It);
   }
@@ -726,27 +693,21 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       auto TargetExpr = getTargetExpr();
       auto FD = getImmediateOuterFuncDecl(TargetExpr);
       auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-      if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                       ItemItr->second, "({{NEEDREPLACER",
-                                       std::to_string(Index), "}})"));
-        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-      } else {
-        DFI->getVarMap().Dim = 3;
-        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                       ItemItr->second, "(", FieldName, ")"));
+      if (DFI) {
+        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                         ItemItr->second, "({{NEEDREPLACER",
+                                         std::to_string(Index), "}})"));
+          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+        } else {
+          DFI->getVarMap().Dim = 3;
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                         ItemItr->second, "(", FieldName, ")"));
+        }
       }
     }
-  } else if (BaseType == "dim3") {
-    if (ME->isArrow()) {
-      addReplacement(ME->getBase(), "(" + getDrefName(ME->getBase()) + ")");
-    }
-    addReplacement(
-        ME->getOperatorLoc(), ME->getMemberLoc(),
-        MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
-                                   ME->getMemberNameInfo().getAsString()));
   } else if (BaseType == "cudaDeviceProp") {
     auto MemberName = ME->getMemberNameInfo().getAsString();
 
@@ -760,8 +721,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
       addReplacement(ME->getMemberLoc(),
                      "get_" + ReplacementStr + TmplArg + "()");
-      requestFeature(MapNames::PropToGetFeatureMap.at(
-          ME->getMemberNameInfo().getAsString()));
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
@@ -872,11 +831,6 @@ inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
 }
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
-  if (Cast->getCastKind() == CastKind::CK_ConstructorConversion) {
-    if (DpctGlobalInfo::getUnqualifiedTypeName(Cast->getTypeAsWritten()) ==
-        "dim3")
-      return dispatch(Cast->getSubExpr());
-  }
   analyzeType(Cast->getTypeInfoAsWritten(), Cast);
   dispatch(Cast->getSubExprAsWritten());
 }
@@ -969,7 +923,14 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
     if (auto F = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD)) {
-      if (auto C = F->getFuncInfo()->findCallee(CE)) {
+      auto FuncInfo = F->getFuncInfo();
+      if ((FuncInfo->getOverloadedOperatorKind() !=
+           OverloadedOperatorKind::OO_None) &&
+          (FuncInfo->getOverloadedOperatorKind() !=
+           OverloadedOperatorKind::OO_Call)) {
+        return;
+      }
+      if (auto C = FuncInfo->findCallee(CE)) {
         auto Extra = C->getExtraArguments();
         if (Extra.empty())
           return;
@@ -987,8 +948,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
     return;
 
   auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
-  if (StringRef(BaseType).startswith("cub::") ||
-      StringRef(BaseType).startswith("cuda::std::")) {
+  if (StringRef(BaseType).starts_with("cub::") ||
+      StringRef(BaseType).starts_with("cuda::std::")) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
       if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
         BaseType.clear();
@@ -1088,7 +1049,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto QualifierLoc = ETL.getQualifierLoc();
     TL = ETL.getNamedTypeLoc();
     TyName = getNestedNameSpecifierString(QualifierLoc);
-    if (ETL.getTypePtr()->getKeyword() == ETK_Typename) {
+    if (ETL.getTypePtr()->getKeyword() == ElaboratedTypeKeyword::Typename) {
       if (QualifierLoc)
         SR.setBegin(QualifierLoc.getBeginLoc());
       else
@@ -1101,6 +1062,17 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   if (NNSL) {
     SR.setBegin(NNSL->getBeginLoc());
   }
+
+  auto RewriteType = [&](std::string &TypeStr, const TypeLoc &TLoc) {
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TypeStr);
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TLoc);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value())
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+    }
+  };
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
@@ -1116,16 +1088,16 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   case TypeLoc::Elaborated:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
-    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
-      auto Rewriter = Itr->second->create(TL);
-      auto Result = Rewriter->rewrite();
-      if (Result.has_value())
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
-    }
+    RewriteType(TyName, TL);
     break;
   }
+  case TypeLoc::SubstTemplateTypeParm:
+    // Used for Instantiated class.
+    return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
+                          TYPELOC_CAST(SubstTemplateTypeParmTypeLoc)
+                              .getType()
+                              ->getAs<SubstTemplateTypeParmType>()
+                              ->getIndex());
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
@@ -1185,7 +1157,16 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     break;
   case TypeLoc::Enum: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    RewriteType(TyName, TL);
     break;
+  }
+  case TypeLoc::FunctionProto: {
+    auto FuncProtoType = TYPELOC_CAST(FunctionTypeLoc);
+    analyzeType(FuncProtoType.getReturnLoc(), CSCE);
+    for (auto *const Param : FuncProtoType.getParams()) {
+      analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), CSCE);
+    }
+    return;
   }
   default:
     return;
@@ -1223,10 +1204,6 @@ void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
       return;
     auto Name = getNestedNameSpecifierString(Qualifier);
     auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
-    // Types like 'dim3::x' should be migrated to 'size_t'.
-    if (Name == "dim3::") {
-      addReplacement(Range.getBegin(), Range.getEnd(), "size_t");
-    }
     Name.resize(Name.length() - 2); // Remove the "::".
     if (MapNames::SupportedVectorTypes.count(Name)) {
       auto ReplacedStr =
@@ -1615,7 +1592,9 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CallExpr)
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
+    ANALYZE_EXPR(DependentScopeDeclRefExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
     ANALYZE_EXPR(CXXTemporaryObjectExpr)
@@ -1640,6 +1619,10 @@ void KernelArgumentAnalysis::analyzeExpr(
   }
 }
 
+void KernelArgumentAnalysis::analyzeExpr(const DependentScopeDeclRefExpr *Arg) {
+  IsRedeclareRequired = true;
+}
+
 void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (DRE->getType()->isReferenceType()) {
     IsRedeclareRequired = true;
@@ -1658,7 +1641,7 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     }
   }
 
-  // The VarDecl in MemVarInfo are matched in MemVarRule, which only matches
+  // The VarDecl in MemVarInfo are matched in MemVarAnalysisRule, which only matches
   // variables on device. They are migrated to objects, so need add get_ptr() by
   // setting IsDefinedOnDevice flag.
   if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
@@ -1715,23 +1698,27 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   IsRedeclareRequired = false;
 }
 
-
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
-  if (UO->getOpcode() == UO_Deref) {
-    IsRedeclareRequired = true;
-    return;
-  }
+  IsRedeclareRequired = true;
   if (UO->getOpcode() == UO_AddrOf) {
     IsAddrOf = true;
+    dispatch(UO->getSubExpr());
+    /// If subexpr is variable defined on device, remove operator '&'.
+    if (IsAddrOf && IsDefinedOnDevice) {
+      addReplacement(UO->getOperatorLoc(), "");
+    }
+    /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
+    IsDefinedOnDevice = false;
+    IsAddrOf = false;
+  } else {
+    dispatch(UO->getSubExpr());
   }
-  dispatch(UO->getSubExpr());
-  /// If subexpr is variable defined on device, remove operator '&'.
-  if (IsAddrOf && IsDefinedOnDevice) {
-    addReplacement(UO->getOperatorLoc(), "");
-  }
-  /// Clear flag 'IsDefinedOnDevice' and 'IsAddrOf'
-  IsDefinedOnDevice = false;
-  IsAddrOf = false;
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  IsRedeclareRequired = true;
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
 }
 
 void KernelArgumentAnalysis::analyze(const Expr *Expression) {
@@ -2055,35 +2042,48 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
   return ArgumentAnalysis::analyzeExpr(Ctor);
 }
 
+std::pair<const clang::Expr *, bool /*NoInit*/>
+trackInitExprOfDRE(const DeclRefExpr *DRE) {
+  using namespace ast_matchers;
+  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return {nullptr, false};
+  // VD must be local variable
+  if (VD->getKind() != Decl::Var && VD->getKind() != Decl::ParmVar)
+    return {nullptr, false};
+  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FD)
+    return {nullptr, false};
+  const Stmt *VDContext = FD->getBody();
+  // VD's DRE should be used as rvalue
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
+  auto MatchedResults =
+      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() > 1) {
+    for (const auto &Res : MatchedResults) {
+      const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
+      auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
+      if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue)) {
+        return {nullptr, false};
+      }
+    }
+  }
+
+  if (!VD->hasInit())
+    return {nullptr, true};
+  return {VD->getInit(), false};
+}
+
 void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (!IsDim3Config)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
-  using namespace ast_matchers;
-  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
-  if (!VD)
+  auto Res = trackInitExprOfDRE(DRE);
+  if (Res.first) {
+    dispatch(Res.first);
+  } else {
     return ArgumentAnalysis::analyzeExpr(DRE);
-
-  // VD must be local variable and must have the same context with
-  // KernelCallExpr
-  if (VD->getKind() != Decl::Var)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
-  if (!FD)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-  const Stmt *VDContext = FD->getBody();
-
-  // VD's DRE should be only used once (as the config arg) in VDContext
-  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
-  auto MatchedResults =
-      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
-  if (MatchedResults.size() != 1)
-    return ArgumentAnalysis::analyzeExpr(DRE);
-
-  if (!VD->hasInit())
-    return ArgumentAnalysis::analyzeExpr(DRE);
-
-  dispatch(VD->getInit());
+  }
 
   if (IsTryToUseOneDimension) {
     // Insert member access expr at the end of DRE
@@ -2174,6 +2174,97 @@ void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
   }
   return ExprAnalysis::dispatch(Expression);
 }
+
+void IndexAnalysis::dispatch(const Stmt *Expression) {
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(UnaryOperator)
+    ANALYZE_EXPR(BinaryOperator)
+    ANALYZE_EXPR(ImplicitCastExpr)
+    ANALYZE_EXPR(DeclRefExpr)
+    ANALYZE_EXPR(PseudoObjectExpr)
+    ANALYZE_EXPR(ParenExpr)
+    ANALYZE_EXPR(IntegerLiteral)
+  default:
+    ContainUnknownNode = true;
+    return ExprAnalysis::dispatch(Expression);
+  }
+}
+
+void IndexAnalysis::analyzeExpr(const UnaryOperator *UO) {
+  if (UO->getOpcode() != UnaryOperatorKind::UO_Plus &&
+      UO->getOpcode() != UnaryOperatorKind::UO_Minus) {
+    ContainUnknownNode = true;
+    return;
+  }
+  dispatch(UO->getSubExpr());
+}
+void IndexAnalysis::analyzeExpr(const BinaryOperator *BO) {
+  if (!BO->isAdditiveOp() && !BO->isMultiplicativeOp()) {
+    ContainUnknownNode = true;
+    return;
+  }
+  if (!BO->isAdditiveOp())
+    ContainNonAdditiveOp.push(true);
+  dispatch(BO->getLHS());
+  dispatch(BO->getRHS());
+  if (!BO->isAdditiveOp())
+    ContainNonAdditiveOp.pop();
+}
+void IndexAnalysis::analyzeExpr(const ImplicitCastExpr *ICE) {
+  dispatch(ICE->getSubExpr());
+}
+void IndexAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  auto Res = trackInitExprOfDRE(DRE);
+  if (Res.first) {
+    dispatch(Res.first);
+  } else if (!Res.second) {
+    ContainUnknownNode = true;
+    return;
+  }
+}
+bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
+                                const std::string &BuiltinNameRef,
+                                const std::string &FieldNameRef) {
+  using namespace ast_matchers;
+  if (!Node)
+    return false;
+  auto BuiltinMatcher = findAll(
+      memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
+                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
+                                                       "blockIdx"))))
+                         .bind("declRefExpr")))),
+                 hasParent(implicitCastExpr(
+                     hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
+          .bind("memberExpr"));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() != 1)
+    return false;
+  const auto Res = MatchedResults[0];
+  auto ME = Res.getNodeAs<MemberExpr>("memberExpr");
+  auto DRE = Res.getNodeAs<DeclRefExpr>("declRefExpr");
+  if (!ME || !DRE)
+    return false;
+  StringRef BuiltinName = DRE->getDecl()->getName();
+  StringRef FieldName = ME->getMemberDecl()->getName();
+  if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
+    return true;
+  return false;
+}
+void IndexAnalysis::analyzeExpr(const PseudoObjectExpr *POE) {
+  if (isIterationSpaceBuiltinVar(POE, "threadIdx", "__fetch_builtin_x")) {
+    if (!ContainNonAdditiveOp.empty()) {
+      // To ensure the difference between index and threadIdx.x is only a
+      // constant, non-additive Op cannot apply to threadIdx.x
+      IsThreadIdxXUnderNonAdditiveOp = true;
+    }
+    HasThreadIdxX = true;
+  }
+}
+void IndexAnalysis::analyzeExpr(const ParenExpr *PE) {
+  dispatch(PE->getSubExpr());
+}
+void IndexAnalysis::analyzeExpr(const IntegerLiteral *IL) { return; }
 
 } // namespace dpct
 } // namespace clang

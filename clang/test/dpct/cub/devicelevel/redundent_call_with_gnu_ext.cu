@@ -3,6 +3,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/redundent_call_with_gnu_ext %S/redundent_call_with_gnu_ext.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/redundent_call_with_gnu_ext/redundent_call_with_gnu_ext.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/devicelevel/redundent_call_with_gnu_ext/redundent_call_with_gnu_ext.dp.cpp -o %T/devicelevel/redundent_call_with_gnu_ext/redundent_call_with_gnu_ext.dp.o %}
 
 // CHECK:#include <oneapi/dpl/execution>
 // CHECK:#include <oneapi/dpl/algorithm>

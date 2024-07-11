@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cufft-workspace %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/cufft-workspace/cufft-workspace.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cufft-workspace/cufft-workspace.dp.cpp -o %T/cufft-workspace/cufft-workspace.dp.o %}
 #include <cstdio>
 #include <cufft.h>
 #include <cuda_runtime.h>
@@ -33,28 +34,28 @@ int main() {
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], type, batch, workSize);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], type, workSize);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], n[2], type, workSize);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(rank, n, inembed, istride, idist, onembed, ostride, odist, type, batch, workSize);
   cufftEstimate1d(n[0], type, batch, workSize);
@@ -67,35 +68,35 @@ int main() {
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], type, batch, workSize);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], type, workSize);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], n[2], type, workSize);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(rank, n, inembed, istride, idist, onembed, ostride, odist, type, batch, workSize);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(rank, n_ll, inembed_ll, istride_ll, idist_ll, onembed_ll, ostride_ll, odist_ll, type, batch_ll, workSize);
   cufftGetSize1d(plan, n[0], type, batch, workSize);
@@ -113,7 +114,7 @@ int main() {
   // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
+  // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" aligns with the related "compute" function call.
   // CHECK-NEXT: */
   // CHECK-NEXT: plan->commit(&dpct::get_in_order_queue(), n[0], type, batch, workSize);
   cufftMakePlan1d(plan, n[0], type, batch, workSize);

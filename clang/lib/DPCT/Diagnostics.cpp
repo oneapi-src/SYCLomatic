@@ -34,33 +34,41 @@ bool checkDuplicated(const std::string &FileAndLine,
 std::unordered_map<int, DiagnosticsMessage> DiagnosticIDTable;
 std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 
-#define DEF_NOTE(NAME, ID, MSG)                                                \
-  DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Note, MSG);
+#define HIGH_LEVEL EffortLevel::EL_High
+#define MEDIUM_LEVEL EffortLevel::EL_Medium
+#define LOW_LEVEL EffortLevel::EL_Low
 
-#define DEF_ERROR(NAME, ID, MSG)                                               \
-  DiagnosticsMessage eg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Error, MSG);
-
-#define DEF_WARNING(NAME, ID, MSG)                                             \
+#define DEF_WARNING(NAME, ID, LEVEL, MSG)                                      \
   DiagnosticsMessage wg_##NAME(DiagnosticIDTable, ID,                          \
-                               clang::DiagnosticIDs::Warning, MSG);
+                               clang::DiagnosticIDs::Warning, LEVEL, MSG);
 
-#define DEF_COMMENT(NAME, ID, MSG)                                             \
+#define DEF_COMMENT(NAME, ID, LEVEL, MSG)                                      \
   DiagnosticsMessage cg_##NAME(CommentIDTable, ID, clang::DiagnosticIDs::Note, \
-                               MSG);
+                               LEVEL, MSG);
 
 #include "Diagnostics.inc"
 
-#undef DEF_NOTE
-#undef DEF_ERROR
-#undef DEF_WARNING
-#undef DEF_COMMENT
+std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
+    // More IDs may need to be added, like: 1007, 1008, 1028, 1030, 1031, 1037,
+    // 1051, 1053, 1067, 1069, 1076, 1082, 1090, 1107.
+    1009, // TRNA_WARNING_ERROR_HANDLING_API_COMMENTED
+    1014, // STREAM_FLAG_PRIORITY_NOT_SUPPORTED
+    1023, // MASK_UNSUPPORTED
+    1029, // DEVICE_LIMIT_NOT_SUPPORTED
+    1086, // ACTIVE_MASK
+};
 
 std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #define DEF_COMMENT(NAME, ID, MSG)                                             \
-  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note, MSG);
+  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note,     \
+                               EffortLevel::EL_Low, MSG);
 #include "DiagnosticsBuildScript.inc"
+#undef DEF_COMMENT
+
+#define DEF_COMMENT(NAME, ID, MSG)                                             \
+  DiagnosticsMessage cg_##NAME(MsgIDTable, ID, clang::DiagnosticIDs::Note,     \
+                               EffortLevel::EL_Low, MSG);
+#include "DiagnosticsCMakeScriptMigration.inc"
 #undef DEF_COMMENT
 
 void reportInvalidWarningID(const std::string &Str) {
@@ -70,50 +78,37 @@ void reportInvalidWarningID(const std::string &Str) {
 }
 
 void initWarningIDs() {
-  // Separate string into list by comma
-  if (SuppressWarnings != "") {
-    auto WarningStrs = split(SuppressWarnings, ',');
-    for (const auto &Str : WarningStrs) {
-      auto Range = split(Str, '-');
-      if (Range.size() == 1) {
-        // Invalid number format: 100e
-        if (!containOnlyDigits(Str))
-          reportInvalidWarningID(Str);
-        size_t ID = std::stoi(Str);
-        // Invalid warning ID, not in range: 999 or 1025
-        if (ID < DiagnosticsMessage::MinID || ID > DiagnosticsMessage::MaxID)
-          reportInvalidWarningID(Str);
-        WarningIDs.insert(std::stoi(Str));
-      } else if (Range.size() == 2) {
-        // Invalid hyphen-separated range: -1000 or 1000-
-        if (startsWith(Str, '-') || endsWith(Str, '-'))
-          reportInvalidWarningID(Str);
-        // Invalid number format for begin: 100e
-        if (!containOnlyDigits(Range[0]))
-          reportInvalidWarningID(Range[0]);
-        // Invalid number format for end: 100e
-        if (!containOnlyDigits(Range[1]))
-          reportInvalidWarningID(Range[1]);
-        size_t RangeBegin = std::stoi(Range[0]);
-        size_t RangeEnd = std::stoi(Range[1]);
-        // Invalid warning ID for begin, not in range: 999 or 1025
-        if (RangeBegin < DiagnosticsMessage::MinID ||
-            RangeBegin > DiagnosticsMessage::MaxID)
-          reportInvalidWarningID(Range[0]);
-        // Invalid warning ID for end, not in range: 999 or 1025
-        if (RangeEnd < DiagnosticsMessage::MinID ||
-            RangeEnd > DiagnosticsMessage::MaxID)
-          reportInvalidWarningID(Range[1]);
-        // Invalid range (begin > end): 1011-1010
-        if (RangeBegin > RangeEnd)
-          reportInvalidWarningID(Str);
-        for (auto I = RangeBegin; I <= RangeEnd; ++I)
+  for (const auto &ID : SuppressWarnings) {
+    auto Cur = ID.c_str();
+    auto ParseNumber = [&]() {
+      size_t Value = 0;
+      char CurCh = *Cur;
+      while (CurCh) {
+        int Digit = *Cur - '0';
+        if (Digit < 0 || Digit > 9)
+          break;
+        Value = Value * 10 + Digit;
+        CurCh = *++Cur;
+      }
+      if (Value < DiagnosticsMessage::MinID || Value > DiagnosticsMessage::MaxID)
+        reportInvalidWarningID(ID);
+      return Value;
+    };
+    int Begin = ParseNumber();
+
+    if (*Cur == '\0') {
+      WarningIDs.insert(Begin);
+      continue;
+    } else if (*Cur == '-') {
+      ++Cur;
+      auto End = ParseNumber();
+      if (*Cur == '\0' && Begin < End) {
+        for (size_t I = Begin; I < End; ++I)
           WarningIDs.insert(I);
-      } else {
-        // Invalid hyphen-separated range: 1000-1024-1
-        reportInvalidWarningID(Str);
+        continue;
       }
     }
+    reportInvalidWarningID(ID);
   }
 }
 } // namespace dpct

@@ -12,6 +12,7 @@
 // RUN: echo "]" >> compile_commands.json
 // RUN: dpct -p=. --out-root=./out --cuda-include-path="%cuda-path/include" > log.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/language_note_db_win/out/language_note_db_win.cpp.dp.cpp -check-prefix=CODE
+// RUN: %if build_lit %{icpx -c -fsycl %T/language_note_db_win/out/language_note_db_win.cpp.dp.cpp -o %T/language_note_db_win/out/language_note_db_win.o.dp.o %}
 // RUN: FileCheck %s --match-full-lines --input-file %T/language_note_db_win/log.txt -check-prefix=LOG
 // RUN: cd ..
 // RUN: rm -rf ./language_note_db_win

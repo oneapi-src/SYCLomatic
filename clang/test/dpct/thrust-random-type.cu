@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-random-type %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust-random-type/thrust-random-type.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-random-type/thrust-random-type.dp.cpp -o %T/thrust-random-type/thrust-random-type.dp.o %}
 
 
 #include <iostream>

@@ -2039,3 +2039,66 @@ return:
   %x = phi i8 [ 3, %sw.default ], [ 124, %sw.bb3 ], [ -99, %sw.bb2 ], [ -66, %sw.bb1 ], [ -33, %entry ]
   ret i8 %x
 }
+
+define i8 @linearmap_dec_wrapped_mon(i3 %0) {
+; CHECK-LABEL: @linearmap_dec_wrapped_mon(
+; CHECK-NEXT:  entry:
+; CHECK-NEXT:    [[SWITCH_TABLEIDX:%.*]] = sub i3 [[TMP0:%.*]], -2
+; CHECK-NEXT:    [[TMP1:%.*]] = icmp ult i3 [[SWITCH_TABLEIDX]], -4
+; CHECK-NEXT:    [[SWITCH_IDX_MULT:%.*]] = mul i3 [[SWITCH_TABLEIDX]], 2
+; CHECK-NEXT:    [[SWITCH_OFFSET:%.*]] = add i3 [[SWITCH_IDX_MULT]], -4
+; CHECK-NEXT:    [[COND:%.*]] = select i1 [[TMP1]], i3 [[SWITCH_OFFSET]], i3 2
+; CHECK-NEXT:    [[CONV:%.*]] = sext i3 [[COND]] to i8
+; CHECK-NEXT:    ret i8 [[CONV]]
+;
+entry:
+  switch i3 %0, label %cond.end [
+  i3 -1, label %cond.false
+  i3 -2, label %cond.false
+  i3 1, label %cond.false
+  i3 0, label %cond.false
+  ]
+
+cond.false:                                       ; preds = %entry, %entry, %entry, %entry
+  %mul = shl nsw i3 %0, 1
+  br label %cond.end
+
+cond.end:                                         ; preds = %entry, %cond.false
+  %cond = phi i3 [ %mul, %cond.false ], [ 2, %entry ]
+  %conv = sext i3 %cond to i8
+  ret i8 %conv
+}
+
+; Don't create a table with an unknown type
+define { i8, i8 } @test_unknown_result_type(i8 %n) {
+; CHECK-LABEL: @test_unknown_result_type(
+; CHECK-NEXT:  entry:
+; CHECK-NEXT:    switch i8 [[N:%.*]], label [[SW_DEFAULT:%.*]] [
+; CHECK-NEXT:      i8 0, label [[RETURN:%.*]]
+; CHECK-NEXT:      i8 1, label [[RETURN]]
+; CHECK-NEXT:      i8 2, label [[RETURN]]
+; CHECK-NEXT:    ]
+; CHECK:       sw.default:
+; CHECK-NEXT:    [[TMP0:%.*]] = insertvalue { i8, i8 } undef, i8 0, 0
+; CHECK-NEXT:    [[TMP1:%.*]] = insertvalue { i8, i8 } [[TMP0]], i8 1, 1
+; CHECK-NEXT:    br label [[RETURN]]
+; CHECK:       return:
+; CHECK-NEXT:    [[RETVAL_0:%.*]] = phi { i8, i8 } [ undef, [[ENTRY:%.*]] ], [ undef, [[ENTRY]] ], [ undef, [[ENTRY]] ], [ [[TMP1]], [[SW_DEFAULT]] ]
+; CHECK-NEXT:    ret { i8, i8 } [[RETVAL_0]]
+;
+entry:
+  switch i8 %n, label %sw.default [
+  i8 0, label %return
+  i8 1, label %return
+  i8 2, label %return
+  ]
+
+sw.default:                                       ; preds = %entry
+  %0 = insertvalue { i8, i8 } undef, i8 0, 0
+  %1 = insertvalue { i8, i8 } %0, i8 1, 1
+  br label %return
+
+return:                                           ; preds = %sw.default, %entry, %entry, %entry
+  %retval.0 = phi { i8, i8 } [ undef, %entry ], [ undef, %entry ], [ undef, %entry ], [ %1, %sw.default ]
+  ret { i8, i8 } %retval.0
+}

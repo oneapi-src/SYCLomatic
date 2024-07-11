@@ -1,5 +1,7 @@
-// RUN: dpct --no-cl-namespace-inline --format-range=none --usm-level=none -out-root %T/cublasLegacyHelper %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasLegacyHelper %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasLegacyHelper/cublasLegacyHelper.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/cublasLegacyHelper/cublasLegacyHelper.dp.cpp -o %T/cublasLegacyHelper/cublasLegacyHelper.dp.o %}
+
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
@@ -17,7 +19,7 @@ void cublasErrCheck_(cublasStatus_t stat, const char *file, int line) {
 }
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0 because this call is redundant in SYCL.
+// CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0 because this functionality is redundant in SYCL.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define MACRO_A 0
 #define MACRO_A cublasInit()
@@ -41,7 +43,6 @@ cublasStatus foo(int m, int n) {
 }
 
 int main() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK: foo(0, 1, 3, 7, 8, 11, 13, 14, 15, 16);
   foo(CUBLAS_STATUS_SUCCESS, CUBLAS_STATUS_NOT_INITIALIZED, CUBLAS_STATUS_ALLOC_FAILED, CUBLAS_STATUS_INVALID_VALUE, CUBLAS_STATUS_ARCH_MISMATCH, CUBLAS_STATUS_MAPPING_ERROR, CUBLAS_STATUS_EXECUTION_FAILED, CUBLAS_STATUS_INTERNAL_ERROR, CUBLAS_STATUS_NOT_SUPPORTED, CUBLAS_STATUS_LICENSE_ERROR);
   // CHECK: bar(0, 1, 3, 7, 8, 11, 13, 14, 15, 16);
@@ -49,11 +50,11 @@ int main() {
 
   // CHECK: int status;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = 0;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasInit was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasInit was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (status != 0) {
   // CHECK-NEXT:   fprintf(stderr, "!!!! CUBLAS initialization error\n");
@@ -71,9 +72,9 @@ int main() {
 
   // CHECK: int a = sizeof(int);
   // CHECK-NEXT: a = sizeof(int);
-  // CHECK-NEXT: a = sizeof(dpct::queue_ptr);
-  // CHECK-NEXT: a = sizeof(cl::sycl::float2);
-  // CHECK-NEXT: a = sizeof(cl::sycl::double2);
+  // CHECK-NEXT: a = sizeof(dpct::blas::descriptor_ptr);
+  // CHECK-NEXT: a = sizeof(sycl::float2);
+  // CHECK-NEXT: a = sizeof(sycl::double2);
   int a = sizeof(cublasStatus);
   a = sizeof(cublasStatus_t);
   a = sizeof(cublasHandle_t);
@@ -81,9 +82,9 @@ int main() {
   a = sizeof(cuDoubleComplex);
 
   // CHECK: dpct::queue_ptr stream1;
-  // CHECK-NEXT: stream1 = dev_ct1.create_queue();
-  // CHECK-NEXT: dev_ct1.set_saved_queue(stream1);
-  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dev_ct1.set_saved_queue(stream1)));
+  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: dpct::blas::descriptor::set_saved_queue(stream1);
+  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::descriptor::set_saved_queue(stream1)));
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetKernelStream(stream1);
@@ -113,7 +114,7 @@ int main() {
   MACRO_B(cublasFree(d_A));
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: MACRO_B(0);
   MACRO_B(cublasGetError());
@@ -121,43 +122,42 @@ int main() {
   MACRO_C(d_A);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetError was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetError was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = 0;
   cublasGetError();
   status = cublasGetError();
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasGetError was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: foo2(0);
   foo2(cublasGetError());
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasShutdown was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasShutdown was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: foo2(0);
   foo2(cublasShutdown());
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasInit was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: foo2(0);
   foo2(cublasInit());
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasShutdown was replaced with 0 because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cublasShutdown was replaced with 0 because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = 0;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasShutdown was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasShutdown was removed because this functionality is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: return 0;
   status = cublasShutdown();
   cublasShutdown();
   return 0;
 }
-

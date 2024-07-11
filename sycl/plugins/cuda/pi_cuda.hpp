@@ -25,16 +25,17 @@
 #define _PI_CUDA_PLUGIN_VERSION_STRING                                         \
   _PI_PLUGIN_VERSION_STRING(_PI_CUDA_PLUGIN_VERSION)
 
-#include <ur/adapters/cuda/command_buffer.hpp>
-#include <ur/adapters/cuda/context.hpp>
-#include <ur/adapters/cuda/device.hpp>
-#include <ur/adapters/cuda/event.hpp>
-#include <ur/adapters/cuda/kernel.hpp>
-#include <ur/adapters/cuda/memory.hpp>
-#include <ur/adapters/cuda/platform.hpp>
-#include <ur/adapters/cuda/program.hpp>
-#include <ur/adapters/cuda/queue.hpp>
-#include <ur/adapters/cuda/sampler.hpp>
+#include <adapters/cuda/command_buffer.hpp>
+#include <adapters/cuda/context.hpp>
+#include <adapters/cuda/device.hpp>
+#include <adapters/cuda/event.hpp>
+#include <adapters/cuda/kernel.hpp>
+#include <adapters/cuda/memory.hpp>
+#include <adapters/cuda/physical_mem.hpp>
+#include <adapters/cuda/platform.hpp>
+#include <adapters/cuda/program.hpp>
+#include <adapters/cuda/queue.hpp>
+#include <adapters/cuda/sampler.hpp>
 
 // Share code between the PI Plugin and UR Adapter
 #include <pi2ur.hpp>
@@ -79,6 +80,10 @@ struct _pi_sampler : ur_sampler_handle_t_ {
 
 struct _pi_ext_command_buffer : ur_exp_command_buffer_handle_t_ {
   using ur_exp_command_buffer_handle_t_::ur_exp_command_buffer_handle_t_;
+};
+
+struct _pi_physical_mem : ur_physical_mem_handle_t_ {
+  using ur_physical_mem_handle_t_::ur_physical_mem_handle_t_;
 };
 
 #endif // PI_CUDA_HPP

@@ -168,7 +168,8 @@ static bool isDebugHelpInitialized() {
 }
 
 static bool load64BitDebugHelp(void) {
-  HMODULE hLib = ::LoadLibraryW(L"Dbghelp.dll");
+  HMODULE hLib =
+      ::LoadLibraryExA("Dbghelp.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
   if (hLib) {
     fMiniDumpWriteDump =
         (fpMiniDumpWriteDump)::GetProcAddress(hLib, "MiniDumpWriteDump");
@@ -300,6 +301,11 @@ static bool findModulesAndOffsets(void **StackTrace, int Depth,
   Data.StrPool = &StrPool;
   fEnumerateLoadedModules(GetCurrentProcess(), findModuleCallback, &Data);
   return true;
+}
+
+static bool printMarkupContext(llvm::raw_ostream &OS,
+                               const char *MainExecutableName) {
+  return false;
 }
 
 static void PrintStackTraceForThread(llvm::raw_ostream &OS, HANDLE hProcess,

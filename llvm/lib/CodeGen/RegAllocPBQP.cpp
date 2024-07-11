@@ -192,7 +192,7 @@ public:
   void apply(PBQPRAGraph &G) override {
     LiveIntervals &LIS = G.getMetadata().LIS;
 
-    // A minimum spill costs, so that register constraints can can be set
+    // A minimum spill costs, so that register constraints can be set
     // without normalization in the [0.0:MinSpillCost( interval.
     const PBQP::PBQPNum MinSpillCost = 10.0;
 
@@ -809,7 +809,7 @@ bool RegAllocPBQP::runOnMachineFunction(MachineFunction &MF) {
   std::unique_ptr<Spiller> VRegSpiller(
       createInlineSpiller(*this, MF, VRM, DefaultVRAI));
 
-  MF.getRegInfo().freezeReservedRegs(MF);
+  MF.getRegInfo().freezeReservedRegs();
 
   LLVM_DEBUG(dbgs() << "PBQP Register Allocating for " << MF.getName() << "\n");
 

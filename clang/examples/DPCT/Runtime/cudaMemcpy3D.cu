@@ -1,5 +1,6 @@
-void test(const cudaMemcpy3DParms *pm) {
+void test() {
   // Start
-  cudaMemcpy3D(pm /*const cudaMemcpy3DParms **/);
+  const cudaMemcpy3DParms *pm;
+  cudaMemcpy3D(pm);
   // End
 }

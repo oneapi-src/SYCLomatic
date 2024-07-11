@@ -91,6 +91,15 @@ public:
     return IntegerRelation(space);
   }
 
+  /// Return an empty system containing an invalid equation 0 = 1.
+  static IntegerRelation getEmpty(const PresburgerSpace &space) {
+    IntegerRelation result(0, 1, space.getNumVars() + 1, space);
+    SmallVector<int64_t> invalidEq(space.getNumVars() + 1, 0);
+    invalidEq.back() = 1;
+    result.addEquality(invalidEq);
+    return result;
+  }
+
   /// Return the kind of this IntegerRelation.
   virtual Kind getKind() const { return Kind::IntegerRelation; }
 
@@ -112,6 +121,17 @@ public:
   /// considered as local ids. `oSpace` should not have more ids than the
   /// current space; this will result in an assert failure.
   void setSpaceExceptLocals(const PresburgerSpace &oSpace);
+
+  /// Set the identifier for the ith variable of the specified kind of the
+  /// IntegerRelation's PresburgerSpace. The index is relative to the kind of
+  /// the variable.
+  void setId(VarKind kind, unsigned i, Identifier id);
+
+  void resetIds() { space.resetIds(); }
+
+  /// Get the identifiers for the variables of specified varKind. Calls resetIds
+  /// on the relations space if identifiers are not enabled.
+  ArrayRef<Identifier> getIds(VarKind kind);
 
   /// Returns a copy of the space without locals.
   PresburgerSpace getSpaceWithoutLocals() const {
@@ -138,7 +158,7 @@ public:
   /// returns false. The equality check is performed in a plain manner, by
   /// comparing if all the equalities and inequalities in `this` and `other`
   /// are the same.
-  bool isPlainEqual(const IntegerRelation &other) const;
+  bool isObviouslyEqual(const IntegerRelation &other) const;
 
   /// Return whether this is a subset of the given IntegerRelation. This is
   /// integer-exact and somewhat expensive, since it uses the integer emptiness
@@ -211,6 +231,8 @@ public:
   inline SmallVector<int64_t, 8> getInequality64(unsigned idx) const {
     return getInt64Vec(inequalities.getRow(idx));
   }
+
+  inline IntMatrix getInequalities() const { return inequalities; }
 
   /// Get the number of vars of the specified kind.
   unsigned getNumVarKind(VarKind kind) const {
@@ -351,6 +373,9 @@ public:
   /// Returns false otherwise.
   bool isEmpty() const;
 
+  /// Performs GCD checks and invalid constraint checks.
+  bool isObviouslyEmpty() const;
+
   /// Runs the GCD test on all equality constraints. Returns true if this test
   /// fails on any equality. Returns false otherwise.
   /// This test can be used to disprove the existence of a solution. If it
@@ -366,7 +391,7 @@ public:
   /// bounded. The span of the returned vectors is guaranteed to contain all
   /// such vectors. The returned vectors are NOT guaranteed to be linearly
   /// independent. This function should not be called on empty sets.
-  Matrix getBoundedDirections() const;
+  IntMatrix getBoundedDirections() const;
 
   /// Find an integer sample point satisfying the constraints using a
   /// branch and bound algorithm with generalized basis reduction, with some
@@ -545,6 +570,10 @@ public:
 
   void removeDuplicateDivs();
 
+  /// Simplify the constraint system by removing canonicalizing constraints and
+  /// removing redundant constraints.
+  void simplify();
+
   /// Converts variables of kind srcKind in the range [varStart, varLimit) to
   /// variables of kind dstKind. If `pos` is given, the variables are placed at
   /// position `pos` of dstKind, otherwise they are placed after all the other
@@ -560,6 +589,11 @@ public:
   void convertToLocal(VarKind kind, unsigned varStart, unsigned varLimit) {
     convertVarKind(kind, varStart, varLimit, VarKind::Local);
   }
+
+  /// Merge and align symbol variables of `this` and `other` with respect to
+  /// identifiers. After this operation the symbol variables of both relations
+  /// have the same identifiers in the same order.
+  void mergeAndAlignSymbols(IntegerRelation &other);
 
   /// Adds additional local vars to the sets such that they both have the union
   /// of the local vars in each set, without changing the set of points that
@@ -646,6 +680,11 @@ public:
   /// this for uniformity with `applyDomain`.
   void applyRange(const IntegerRelation &rel);
 
+  /// Given a relation `other: (A -> B)`, this operation merges the symbol and
+  /// local variables and then takes the composition of `other` on `this: (B ->
+  /// C)`. The resulting relation represents tuples of the form: `A -> C`.
+  void mergeAndCompose(const IntegerRelation &other);
+
   /// Compute an equivalent representation of the same set, such that all local
   /// vars in all disjuncts have division representations. This representation
   /// may involve local vars that correspond to divisions, and may also be a
@@ -683,6 +722,17 @@ public:
   /// return `this \ set`.
   PresburgerRelation subtract(const PresburgerRelation &set) const;
 
+  // Remove equalities which have only zero coefficients.
+  void removeTrivialEqualities();
+
+  // Verify whether the relation is full-dimensional, i.e.,
+  // no equality holds for the relation.
+  //
+  // If there are no variables, it always returns true.
+  // If there is at least one variable and the relation is empty, it returns
+  // false.
+  bool isFullDim();
+
   void print(raw_ostream &os) const;
   void dump() const;
 
@@ -693,7 +743,7 @@ protected:
   /// false otherwise.
   bool hasInvalidConstraint() const;
 
-  /// Returns the constant lower bound bound if isLower is true, and the upper
+  /// Returns the constant lower bound if isLower is true, and the upper
   /// bound if isLower is false.
   template <bool isLower>
   std::optional<MPInt> computeConstantLowerOrUpperBound(unsigned pos);
@@ -723,6 +773,10 @@ protected:
   /// in column range [posStart, posLimit).
   /// Returns the number of variables eliminated.
   unsigned gaussianEliminateVars(unsigned posStart, unsigned posLimit);
+
+  /// Perform a Gaussian elimination operation to reduce all equations to
+  /// standard form. Returns whether the constraint system was modified.
+  bool gaussianEliminate();
 
   /// Eliminates the variable at the specified position using Fourier-Motzkin
   /// variable elimination, but uses Gaussian elimination if there is an
@@ -754,6 +808,10 @@ protected:
   /// Returns true if the pos^th column is all zero for both inequalities and
   /// equalities.
   bool isColZero(unsigned pos) const;
+
+  /// Checks for identical inequalities and eliminates redundant inequalities.
+  /// Returns whether the constraint system was modified.
+  bool removeDuplicateConstraints();
 
   /// Returns false if the fields corresponding to various variable counts, or
   /// equality/inequality buffer sizes aren't consistent; true otherwise. This
@@ -792,10 +850,10 @@ protected:
   PresburgerSpace space;
 
   /// Coefficients of affine equalities (in == 0 form).
-  Matrix equalities;
+  IntMatrix equalities;
 
   /// Coefficients of affine inequalities (in >= 0 form).
-  Matrix inequalities;
+  IntMatrix inequalities;
 };
 
 /// An IntegerPolyhedron represents the set of points from a PresburgerSpace
@@ -834,6 +892,26 @@ public:
       : IntegerPolyhedron(/*numReservedInequalities=*/0,
                           /*numReservedEqualities=*/0,
                           /*numReservedCols=*/space.getNumVars() + 1, space) {}
+
+  /// Constructs a relation with the specified number of dimensions and symbols
+  /// and adds the given inequalities.
+  explicit IntegerPolyhedron(const PresburgerSpace &space,
+                             IntMatrix inequalities)
+      : IntegerPolyhedron(space) {
+    for (unsigned i = 0, e = inequalities.getNumRows(); i < e; i++)
+      addInequality(inequalities.getRow(i));
+  }
+
+  /// Constructs a relation with the specified number of dimensions and symbols
+  /// and adds the given inequalities, after normalizing row-wise to integer
+  /// values.
+  explicit IntegerPolyhedron(const PresburgerSpace &space,
+                             FracMatrix inequalities)
+      : IntegerPolyhedron(space) {
+    IntMatrix ineqsNormalized = inequalities.normalizeRows();
+    for (unsigned i = 0, e = inequalities.getNumRows(); i < e; i++)
+      addInequality(ineqsNormalized.getRow(i));
+  }
 
   /// Construct a set from an IntegerRelation. The relation should have
   /// no domain vars.

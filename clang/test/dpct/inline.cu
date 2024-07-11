@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/inline %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/inline/inline.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/inline/inline.dp.cpp -o %T/inline/inline.dp.o %}
 #include <cuda_runtime.h>
 
 #define NUM_ELEMENTS 16
@@ -25,6 +26,11 @@ NEW_INLINE __global__ void kernel2() {
 #define INLINE_KERNEL3 __forceinline__ __global__ void kernel3() {int a = 2;}
 
 INLINE_KERNEL3
+
+// CHECK: template <typename T> __dpct_inline__ void kernel4(){};
+template <typename T> __forceinline__ __global__ void kernel4(){};
+// CHECK: template <> __dpct_inline__ void kernel4<int>(){};
+template <> __forceinline__ __global__ void kernel4<int>(){};
 
 class TestClass {
   TestClass();

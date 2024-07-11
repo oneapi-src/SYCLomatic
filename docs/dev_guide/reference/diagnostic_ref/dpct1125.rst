@@ -1,0 +1,138 @@
+.. _DPCT1125:
+
+DPCT1125
+========
+
+Message
+-------
+
+.. _msg-1125-start:
+
+The type "*<type name>*" defined in function "*<function name>*" is used as the parameter type
+in all functions in the call path from the corresponding sycl::handler::parallel_for() to the current
+function. You may need to adjust the definition location of the type.
+
+.. _msg-1125-end:
+
+Detailed Help
+-------------
+
+SYCL\* 2020 does not support declaring a local memory variable in place. A local accessor needs to
+be declared in the command group scope and passed to all functions using the local memory. So, the
+definition location of the local memory variable type needs to be changed.
+Note: The DPC++ compiler extension sycl_ext_oneapi_local_memory (https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_local_memory.asciidoc)
+supports declaring a local memory variable in place, but only in the kernel function scope.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <typename T> struct kernel_type_t {
+     using Type = T;
+   };
+   
+   template <typename T> __global__ void device(int a, int b) {
+     using Tk = typename kernel_type_t<T>::Type;
+     __shared__ Tk mem[256];
+     ...
+   }
+   
+   template <typename T> __global__ void kernel(int a, int b) { device<T>(a, b); }
+   
+   template <typename T> void foo() {
+     int i;
+     kernel<T><<<1, 1>>>(i, i);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <typename T> struct kernel_type_t {
+     using Type = T;
+   };
+   
+   /*
+   DPCT1125:1: The type "Tk" defined in function "device" is used as the parameter
+   type in all functions in the call path from the corresponding
+   sycl::handler::parallel_for() to the current function. You may need to adjust
+   the definition location of the type.
+   */
+   template <typename T> void device(int a, int b, Tk *mem) {
+     using Tk = typename kernel_type_t<T>::Type;
+   
+     ...
+   }
+   
+   /*
+   DPCT1125:2: The type "Tk" defined in function "device" is used as the parameter
+   type in all functions in the call path from the corresponding
+   sycl::handler::parallel_for() to the current function. You may need to adjust
+   the definition location of the type.
+   */
+   template <typename T>
+   void kernel(int a, int b, Tk *mem) {
+     device<T>(a, b, mem);
+   }
+   
+   template <typename T> void foo() {
+     int i;
+     /*
+     DPCT1126:0: The type "Tk" defined in function "device" is used as the
+     parameter type in all functions in the call path from the
+     sycl::handler::parallel_for() to the function "device". You may need to adjust
+     the definition location of the type.
+     */
+     dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
+       sycl::local_accessor<Tk, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel<T>(
+                 i, i,
+                 mem_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>()
+                     .get());
+           });
+     });
+   }
+
+which needs to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   template <typename T> struct kernel_type_t {
+     using Type = T;
+   };
+   
+   template <typename T> void device(int a, int b, typename kernel_type_t<T>::Type *mem) {
+     ...
+   }
+   
+   template <typename T>
+   void kernel(int a, int b, typename kernel_type_t<T>::Type *mem) {
+     device<T>(a, b, mem);
+   }
+   
+   template <typename T> void foo() {
+     int i;
+     using Tk = typename kernel_type_t<T>::Type;
+     dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
+       sycl::local_accessor<Tk, 1> mem_acc_ct1(sycl::range<1>(256), cgh);
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel<T>(
+                 i, i,
+                 mem_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
+           });
+     });
+   }
+

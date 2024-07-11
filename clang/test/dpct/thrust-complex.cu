@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex/thrust-complex.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-complex/thrust-complex.dp.cpp -o %T/thrust-complex/thrust-complex.dp.o %}
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <sycl/sycl.hpp>
@@ -103,12 +104,12 @@ int main() {
   // CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
-  // CHECK-NEXT:       std::complex<double> * thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
+  // CHECK-NEXT:       auto thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(reinterpret_cast<std::complex<double> *>(cdp), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_ct2, s_acc_ct1.get_pointer());
+  // CHECK-NEXT:           kernel(reinterpret_cast<std::complex<double> *>(cdp), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_ct2, s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp), thrust::raw_pointer_cast(dc_ptr));
@@ -121,7 +122,7 @@ int main() {
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           template_kernel<int>(d_i, s_acc_ct1.get_pointer());
+// CHECK-NEXT:           template_kernel<int>(d_i, s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
   template_kernel<int><<<1, 256>>>(d_i);

@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust-for-RapidCFD %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T/thrust-for-RapidCFD/thrust-for-RapidCFD.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust-for-RapidCFD/thrust-for-RapidCFD.dp.cpp -o %T/thrust-for-RapidCFD/thrust-for-RapidCFD.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
@@ -54,7 +55,7 @@ void foo_host(){
     thrust::logical_or<bool>();
 
     //algo
-    //CHECK: std::uninitialized_fill(h_input.begin(), h_input.end(), 10);
+    //CHECK: std::uninitialized_fill(oneapi::dpl::execution::seq, h_input.begin(), h_input.end(), 10);
     thrust::uninitialized_fill(h_input.begin(), h_input.end(), 10);
     //CHECK: std::unique(oneapi::dpl::execution::seq, h_input.begin(), h_input.end());
     thrust::unique(h_input.begin(), h_input.end());

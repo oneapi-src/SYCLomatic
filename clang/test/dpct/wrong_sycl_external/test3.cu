@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/wrong_sycl_external/test3_out %S/test3.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %S/test3.cu --match-full-lines --input-file %T/wrong_sycl_external/test3_out/test3.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/wrong_sycl_external/test3_out/test3.dp.cpp -o %T/wrong_sycl_external/test3_out/test3.dp.o %}
 // RUN: FileCheck %S/test3.cuh --match-full-lines --input-file %T/wrong_sycl_external/test3_out/test3.dp.hpp
 
 #include "test3.cuh"

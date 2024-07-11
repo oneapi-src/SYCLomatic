@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/force_inline %S/test_device.cu %S/test_global.cu --optimize-migration --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/force_inline/test_global.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/force_inline/test_global.dp.cpp -o %T/force_inline/test_global.dp.o %}
 #include <cuda.h>
 #include <stdio.h>
 // CHECK: SYCL_EXTERNAL extern void test_device(const sycl::stream &stream_ct1);

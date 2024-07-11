@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/wrong_sycl_external %S/test1.cu %S/test2.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %S/test1.cu --match-full-lines --input-file %T/wrong_sycl_external/test1.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/wrong_sycl_external/test1.dp.cpp -o %T/wrong_sycl_external/test1.dp.o %}
 // RUN: FileCheck %S/test2.cu --match-full-lines --input-file %T/wrong_sycl_external/test2.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/wrong_sycl_external/test2.dp.cpp -o %T/wrong_sycl_external/test2.dp.o %}
 #include "cuda_runtime.h"
 
 namespace {

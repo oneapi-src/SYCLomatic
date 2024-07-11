@@ -1,5 +1,6 @@
 // RUN: dpct --rule-file=%S/../../tools/dpct/DpctOptRules/intel_specific_math.yaml --format-range=none -out-root %T/math_specific_UDR_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_specific_UDR_test/math_specific_UDR_test.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/math_specific_UDR_test/math_specific_UDR_test.dp.cpp -o %T/math_specific_UDR_test/math_specific_UDR_test.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
@@ -42,14 +43,14 @@ __global__ void kernelFunc(float *deviceArray) {
 // CHECK:   memset(hostArrayDouble, 0, bytes);
 // CHECK:   double *deviceArrayDouble;
 // CHECK:   deviceArrayDouble = (double *)sycl::malloc_device(bytes, q_ct1);
-// CHECK:   q_ct1.memcpy(deviceArrayDouble, hostArrayDouble, bytes).wait();
+// CHECK:   q_ct1.memcpy(deviceArrayDouble, hostArrayDouble, bytes);
 // CHECK:   q_ct1.parallel_for(
 // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:       [=](sycl::nd_item<3> item_ct1) {
 // CHECK:         kernelFunc(deviceArrayDouble);
 // CHECK:       });
 // CHECK:   q_ct1.memcpy(hostArrayDouble, deviceArrayDouble, bytes).wait();
-// CHECK:   sycl::free(deviceArrayDouble, q_ct1);
+// CHECK:   dpct::dpct_free(deviceArrayDouble, q_ct1);
 // CHECK: }
 void testDouble() {
   const unsigned int NUM = 1;
@@ -73,14 +74,14 @@ void testDouble() {
 // CHECK:   memset(hostArrayFloat, 0, bytes);
 // CHECK:   float *deviceArrayFloat;
 // CHECK:   deviceArrayFloat = (float *)sycl::malloc_device(bytes, q_ct1);
-// CHECK:   q_ct1.memcpy(deviceArrayFloat, hostArrayFloat, bytes).wait();
+// CHECK:   q_ct1.memcpy(deviceArrayFloat, hostArrayFloat, bytes);
 // CHECK:   q_ct1.parallel_for(
 // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:       [=](sycl::nd_item<3> item_ct1) {
 // CHECK:         kernelFunc(deviceArrayFloat);
 // CHECK:       });
 // CHECK:   q_ct1.memcpy(hostArrayFloat, deviceArrayFloat, bytes).wait();
-// CHECK:   sycl::free(deviceArrayFloat, q_ct1);
+// CHECK:   dpct::dpct_free(deviceArrayFloat, q_ct1);
 // CHECK: }
 void testFloat() {
   const unsigned int NUM = 1;

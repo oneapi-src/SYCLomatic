@@ -31,7 +31,6 @@
 #endif
 #endif
 
-#include <complex>     // for complex
 #include <stddef.h>    // for size_t
 #include <type_traits> // for enable_if_t, decay_t, integra...
 
@@ -60,42 +59,25 @@ template <> inline id<3> linear_id_to_id(range<3> r, size_t linear_id) {
 }
 
 // ---- get_local_linear_range
-template <typename Group> size_t get_local_linear_range(Group g);
-template <> inline size_t get_local_linear_range<group<1>>(group<1> g) {
-  return g.get_local_range(0);
-}
-template <> inline size_t get_local_linear_range<group<2>>(group<2> g) {
-  return g.get_local_range(0) * g.get_local_range(1);
-}
-template <> inline size_t get_local_linear_range<group<3>>(group<3> g) {
-  return g.get_local_range(0) * g.get_local_range(1) * g.get_local_range(2);
-}
-template <>
-inline size_t get_local_linear_range<sycl::sub_group>(sycl::sub_group g) {
-  return g.get_local_range()[0];
+template <typename Group> inline auto get_local_linear_range(Group g) {
+  auto local_range = g.get_local_range();
+  auto result = local_range[0];
+  for (size_t i = 1; i < Group::dimensions; ++i)
+    result *= local_range[i];
+  return result;
 }
 
 // ---- get_local_linear_id
-template <typename Group>
-inline typename Group::linear_id_type get_local_linear_id(Group g);
-
+template <typename Group> inline auto get_local_linear_id(Group g) {
 #ifdef __SYCL_DEVICE_ONLY__
-#define __SYCL_GROUP_GET_LOCAL_LINEAR_ID(D)                                    \
-  template <>                                                                  \
-  inline group<D>::linear_id_type get_local_linear_id<group<D>>(group<D>) {    \
-    nd_item<D> it = sycl::detail::Builder::getNDItem<D>();                     \
-    return it.get_local_linear_id();                                           \
+  if constexpr (std::is_same_v<Group, group<1>> ||
+                std::is_same_v<Group, group<2>> ||
+                std::is_same_v<Group, group<3>>) {
+    auto it = sycl::detail::Builder::getNDItem<Group::dimensions>();
+    return it.get_local_linear_id();
   }
-__SYCL_GROUP_GET_LOCAL_LINEAR_ID(1);
-__SYCL_GROUP_GET_LOCAL_LINEAR_ID(2);
-__SYCL_GROUP_GET_LOCAL_LINEAR_ID(3);
-#undef __SYCL_GROUP_GET_LOCAL_LINEAR_ID
 #endif // __SYCL_DEVICE_ONLY__
-
-template <>
-inline sycl::sub_group::linear_id_type
-get_local_linear_id<sycl::sub_group>(sycl::sub_group g) {
-  return g.get_local_id()[0];
+  return g.get_local_linear_id();
 }
 
 // ---- is_native_op
@@ -117,29 +99,32 @@ template <typename T, typename BinaryOperation> struct is_native_op {
 // ---- is_plus
 template <typename T, typename BinaryOperation>
 using is_plus = std::integral_constant<
-    bool, std::is_same_v<BinaryOperation, sycl::plus<T>> ||
-              std::is_same_v<BinaryOperation, sycl::plus<void>>>;
+    bool,
+    std::is_same_v<BinaryOperation, sycl::plus<std::remove_const_t<T>>> ||
+        std::is_same_v<BinaryOperation, sycl::plus<std::add_const_t<T>>> ||
+        std::is_same_v<BinaryOperation, sycl::plus<void>>>;
 
 // ---- is_multiplies
 template <typename T, typename BinaryOperation>
 using is_multiplies = std::integral_constant<
-    bool, std::is_same_v<BinaryOperation, sycl::multiplies<T>> ||
-              std::is_same_v<BinaryOperation, sycl::multiplies<void>>>;
+    bool,
+    std::is_same_v<BinaryOperation, sycl::multiplies<std::remove_const_t<T>>> ||
+        std::is_same_v<BinaryOperation,
+                       sycl::multiplies<std::add_const_t<T>>> ||
+        std::is_same_v<BinaryOperation, sycl::multiplies<void>>>;
 
 // ---- is_complex
-// NOTE: std::complex<long double> not yet supported by group algorithms.
-template <typename T>
-struct is_complex
-    : std::integral_constant<bool,
-                             std::is_same_v<T, std::complex<half>> ||
-                                 std::is_same_v<T, std::complex<float>> ||
-                                 std::is_same_v<T, std::complex<double>>> {};
+// Use SFINAE so that the "true" branch could be implemented in
+// include/sycl/stl_wrappers/complex that would only be available if STL's
+// <complex> is included by users.
+template <typename T, typename = void>
+struct is_complex : public std::false_type {};
 
 // ---- is_arithmetic_or_complex
 template <typename T>
-using is_arithmetic_or_complex = std::integral_constant<
-    bool, sycl::detail::is_complex<typename std::remove_cv_t<T>>::value ||
-              sycl::detail::is_arithmetic<T>::value>;
+using is_arithmetic_or_complex =
+    std::integral_constant<bool, sycl::detail::is_complex<T>::value ||
+                                     sycl::detail::is_arithmetic<T>::value>;
 
 template <typename T>
 struct is_vector_arithmetic_or_complex
@@ -263,7 +248,7 @@ std::enable_if_t<(is_group_v<std::decay_t<Group>> &&
                   detail::is_native_op<T, sycl::plus<T>>::value &&
                   detail::is_plus<T, BinaryOperation>::value),
                  T>
-reduce_over_group(Group g, T x, BinaryOperation binary_op) {
+reduce_over_group(Group g, T x, BinaryOperation) {
 #ifdef __SYCL_DEVICE_ONLY__
   T result;
   result.real(reduce_over_group(g, x.real(), sycl::plus<>()));
@@ -272,7 +257,6 @@ reduce_over_group(Group g, T x, BinaryOperation binary_op) {
 #else
   (void)g;
   (void)x;
-  (void)binary_op;
   throw sycl::exception(make_error_code(errc::feature_not_supported),
                         "Group algorithms are not supported on host.");
 #endif
@@ -350,7 +334,7 @@ reduce_over_group(Group g, V x, T init, BinaryOperation binary_op) {
 // ---- joint_reduce
 template <typename Group, typename Ptr, typename T, class BinaryOperation>
 std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<Ptr>::value &&
+    (is_group_v<std::decay_t<Group>> && detail::is_pointer_v<Ptr> &&
      detail::is_arithmetic_or_complex<
          typename detail::remove_pointer<Ptr>::type>::value &&
      detail::is_arithmetic_or_complex<T>::value &&
@@ -378,7 +362,7 @@ joint_reduce(Group g, Ptr first, Ptr last, T init, BinaryOperation binary_op) {
 
 template <typename Group, typename Ptr, class BinaryOperation>
 std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<Ptr>::value &&
+    (is_group_v<std::decay_t<Group>> && detail::is_pointer_v<Ptr> &&
      detail::is_arithmetic_or_complex<
          typename detail::remove_pointer<Ptr>::type>::value &&
      detail::is_plus_or_multiplies_if_complex<
@@ -427,8 +411,8 @@ std::enable_if_t<is_group_v<Group>, bool> any_of_group(Group g, T x,
 
 // ---- joint_any_of
 template <typename Group, typename Ptr, class Predicate>
-std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<Ptr>::value), bool>
+std::enable_if_t<(is_group_v<std::decay_t<Group>> && detail::is_pointer_v<Ptr>),
+                 bool>
 joint_any_of(Group g, Ptr first, Ptr last, Predicate pred) {
 #ifdef __SYCL_DEVICE_ONLY__
   using T = typename detail::remove_pointer<Ptr>::type;
@@ -473,8 +457,8 @@ all_of_group(Group g, T x, Predicate pred) {
 
 // ---- joint_all_of
 template <typename Group, typename Ptr, class Predicate>
-std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<Ptr>::value), bool>
+std::enable_if_t<(is_group_v<std::decay_t<Group>> && detail::is_pointer_v<Ptr>),
+                 bool>
 joint_all_of(Group g, Ptr first, Ptr last, Predicate pred) {
 #ifdef __SYCL_DEVICE_ONLY__
   using T = typename detail::remove_pointer<Ptr>::type;
@@ -519,8 +503,8 @@ none_of_group(Group g, T x, Predicate pred) {
 
 // ---- joint_none_of
 template <typename Group, typename Ptr, class Predicate>
-std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<Ptr>::value), bool>
+std::enable_if_t<(is_group_v<std::decay_t<Group>> && detail::is_pointer_v<Ptr>),
+                 bool>
 joint_none_of(Group g, Ptr first, Ptr last, Predicate pred) {
 #ifdef __SYCL_DEVICE_ONLY__
   return !joint_any_of(g, first, last, pred);
@@ -538,14 +522,17 @@ joint_none_of(Group g, Ptr first, Ptr last, Predicate pred) {
 // TODO: remove check for detail::is_vec<T> once sycl::vec is trivially
 // copyable.
 template <typename Group, typename T>
-std::enable_if_t<(std::is_same_v<std::decay_t<Group>, sub_group> &&
+std::enable_if_t<((std::is_same_v<std::decay_t<Group>, sub_group> ||
+                   sycl::ext::oneapi::experimental::is_user_constructed_group_v<
+                       std::decay_t<Group>>) &&
                   (std::is_trivially_copyable_v<T> ||
                    detail::is_vec<T>::value)),
                  T>
-shift_group_left(Group, T x, typename Group::linear_id_type delta = 1) {
+shift_group_left(Group g, T x, typename Group::linear_id_type delta = 1) {
 #ifdef __SYCL_DEVICE_ONLY__
-  return sycl::detail::spirv::SubgroupShuffleDown(x, delta);
+  return sycl::detail::spirv::ShuffleDown(g, x, delta);
 #else
+  (void)g;
   (void)x;
   (void)delta;
   throw sycl::exception(make_error_code(errc::feature_not_supported),
@@ -557,14 +544,17 @@ shift_group_left(Group, T x, typename Group::linear_id_type delta = 1) {
 // TODO: remove check for detail::is_vec<T> once sycl::vec is trivially
 // copyable.
 template <typename Group, typename T>
-std::enable_if_t<(std::is_same_v<std::decay_t<Group>, sub_group> &&
+std::enable_if_t<((std::is_same_v<std::decay_t<Group>, sub_group> ||
+                   sycl::ext::oneapi::experimental::is_user_constructed_group_v<
+                       std::decay_t<Group>>) &&
                   (std::is_trivially_copyable_v<T> ||
                    detail::is_vec<T>::value)),
                  T>
-shift_group_right(Group, T x, typename Group::linear_id_type delta = 1) {
+shift_group_right(Group g, T x, typename Group::linear_id_type delta = 1) {
 #ifdef __SYCL_DEVICE_ONLY__
-  return sycl::detail::spirv::SubgroupShuffleUp(x, delta);
+  return sycl::detail::spirv::ShuffleUp(g, x, delta);
 #else
+  (void)g;
   (void)x;
   (void)delta;
   throw sycl::exception(make_error_code(errc::feature_not_supported),
@@ -576,14 +566,17 @@ shift_group_right(Group, T x, typename Group::linear_id_type delta = 1) {
 // TODO: remove check for detail::is_vec<T> once sycl::vec is trivially
 // copyable.
 template <typename Group, typename T>
-std::enable_if_t<(std::is_same_v<std::decay_t<Group>, sub_group> &&
+std::enable_if_t<((std::is_same_v<std::decay_t<Group>, sub_group> ||
+                   sycl::ext::oneapi::experimental::is_user_constructed_group_v<
+                       std::decay_t<Group>>) &&
                   (std::is_trivially_copyable_v<T> ||
                    detail::is_vec<T>::value)),
                  T>
-permute_group_by_xor(Group, T x, typename Group::linear_id_type mask) {
+permute_group_by_xor(Group g, T x, typename Group::linear_id_type mask) {
 #ifdef __SYCL_DEVICE_ONLY__
-  return sycl::detail::spirv::SubgroupShuffleXor(x, mask);
+  return sycl::detail::spirv::ShuffleXor(g, x, mask);
 #else
+  (void)g;
   (void)x;
   (void)mask;
   throw sycl::exception(make_error_code(errc::feature_not_supported),
@@ -595,14 +588,17 @@ permute_group_by_xor(Group, T x, typename Group::linear_id_type mask) {
 // TODO: remove check for detail::is_vec<T> once sycl::vec is trivially
 // copyable.
 template <typename Group, typename T>
-std::enable_if_t<(std::is_same_v<std::decay_t<Group>, sub_group> &&
+std::enable_if_t<((std::is_same_v<std::decay_t<Group>, sub_group> ||
+                   sycl::ext::oneapi::experimental::is_user_constructed_group_v<
+                       std::decay_t<Group>>) &&
                   (std::is_trivially_copyable_v<T> ||
                    detail::is_vec<T>::value)),
                  T>
-select_from_group(Group, T x, typename Group::id_type local_id) {
+select_from_group(Group g, T x, typename Group::id_type local_id) {
 #ifdef __SYCL_DEVICE_ONLY__
-  return sycl::detail::spirv::SubgroupShuffle(x, local_id);
+  return sycl::detail::spirv::Shuffle(g, x, local_id);
 #else
+  (void)g;
   (void)x;
   (void)local_id;
   throw sycl::exception(make_error_code(errc::feature_not_supported),
@@ -737,7 +733,7 @@ std::enable_if_t<(is_group_v<std::decay_t<Group>> &&
                   detail::is_native_op<T, sycl::plus<T>>::value &&
                   detail::is_plus<T, BinaryOperation>::value),
                  T>
-exclusive_scan_over_group(Group g, T x, BinaryOperation binary_op) {
+exclusive_scan_over_group(Group g, T x, BinaryOperation) {
 #ifdef __SYCL_DEVICE_ONLY__
   T result;
   result.real(exclusive_scan_over_group(g, x.real(), sycl::plus<>()));
@@ -746,7 +742,6 @@ exclusive_scan_over_group(Group g, T x, BinaryOperation binary_op) {
 #else
   (void)g;
   (void)x;
-  (void)binary_op;
   throw sycl::exception(make_error_code(errc::feature_not_supported),
                         "Group algorithms are not supported on host.");
 #endif
@@ -825,8 +820,8 @@ exclusive_scan_over_group(Group g, V x, T init, BinaryOperation binary_op) {
 template <typename Group, typename InPtr, typename OutPtr, typename T,
           class BinaryOperation>
 std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<InPtr>::value &&
-     detail::is_pointer<OutPtr>::value &&
+    (is_group_v<std::decay_t<Group>> && detail::is_pointer_v<InPtr> &&
+     detail::is_pointer_v<OutPtr> &&
      detail::is_arithmetic_or_complex<
          typename detail::remove_pointer<InPtr>::type>::value &&
      detail::is_arithmetic_or_complex<
@@ -848,7 +843,7 @@ joint_exclusive_scan(Group g, InPtr first, InPtr last, OutPtr result, T init,
     return ((v + divisor - 1) / divisor) * divisor;
   };
   typename std::remove_const<typename detail::remove_pointer<InPtr>::type>::type
-      x;
+      x = {};
   T carry = init;
   for (ptrdiff_t chunk = 0; chunk < roundup(N, stride); chunk += stride) {
     ptrdiff_t i = chunk + offset;
@@ -875,8 +870,8 @@ joint_exclusive_scan(Group g, InPtr first, InPtr last, OutPtr result, T init,
 template <typename Group, typename InPtr, typename OutPtr,
           class BinaryOperation>
 std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<InPtr>::value &&
-     detail::is_pointer<OutPtr>::value &&
+    (is_group_v<std::decay_t<Group>> && detail::is_pointer_v<InPtr> &&
+     detail::is_pointer_v<OutPtr> &&
      detail::is_arithmetic_or_complex<
          typename detail::remove_pointer<InPtr>::type>::value &&
      detail::is_arithmetic_or_complex<
@@ -952,7 +947,7 @@ std::enable_if_t<(is_group_v<std::decay_t<Group>> &&
                   detail::is_native_op<T, sycl::plus<T>>::value &&
                   detail::is_plus<T, BinaryOperation>::value),
                  T>
-inclusive_scan_over_group(Group g, T x, BinaryOperation binary_op) {
+inclusive_scan_over_group(Group g, T x, BinaryOperation) {
 #ifdef __SYCL_DEVICE_ONLY__
   T result;
   result.real(inclusive_scan_over_group(g, x.real(), sycl::plus<>()));
@@ -961,7 +956,6 @@ inclusive_scan_over_group(Group g, T x, BinaryOperation binary_op) {
 #else
   (void)g;
   (void)x;
-  (void)binary_op;
   throw sycl::exception(make_error_code(errc::feature_not_supported),
                         "Group algorithms are not supported on host.");
 #endif
@@ -1017,8 +1011,8 @@ inclusive_scan_over_group(Group g, V x, BinaryOperation binary_op, T init) {
 template <typename Group, typename InPtr, typename OutPtr,
           class BinaryOperation, typename T>
 std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<InPtr>::value &&
-     detail::is_pointer<OutPtr>::value &&
+    (is_group_v<std::decay_t<Group>> && detail::is_pointer_v<InPtr> &&
+     detail::is_pointer_v<OutPtr> &&
      detail::is_arithmetic_or_complex<
          typename detail::remove_pointer<InPtr>::type>::value &&
      detail::is_arithmetic_or_complex<
@@ -1040,7 +1034,7 @@ joint_inclusive_scan(Group g, InPtr first, InPtr last, OutPtr result,
     return ((v + divisor - 1) / divisor) * divisor;
   };
   typename std::remove_const<typename detail::remove_pointer<InPtr>::type>::type
-      x;
+      x = {};
   T carry = init;
   for (ptrdiff_t chunk = 0; chunk < roundup(N, stride); chunk += stride) {
     ptrdiff_t i = chunk + offset;
@@ -1066,8 +1060,8 @@ joint_inclusive_scan(Group g, InPtr first, InPtr last, OutPtr result,
 template <typename Group, typename InPtr, typename OutPtr,
           class BinaryOperation>
 std::enable_if_t<
-    (is_group_v<std::decay_t<Group>> && detail::is_pointer<InPtr>::value &&
-     detail::is_pointer<OutPtr>::value &&
+    (is_group_v<std::decay_t<Group>> && detail::is_pointer_v<InPtr> &&
+     detail::is_pointer_v<OutPtr> &&
      detail::is_arithmetic_or_complex<
          typename detail::remove_pointer<InPtr>::type>::value &&
      detail::is_native_op<typename detail::remove_pointer<OutPtr>::type,

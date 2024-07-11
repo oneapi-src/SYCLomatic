@@ -79,12 +79,16 @@ namespace clang {
   std::function<void(SourceLocation, unsigned)> RecordTokenSplit = recordTokenSplit;
 }
 #endif // SYCLomatic_CUSTOMIZATION
+
+/// Minimum distance between two check points, in tokens.
+static constexpr unsigned CheckPointStepSize = 1024;
+
 LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)
 
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
 
 Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
-                           DiagnosticsEngine &diags, LangOptions &opts,
+                           DiagnosticsEngine &diags, const LangOptions &opts,
                            SourceManager &SM, HeaderSearch &Headers,
                            ModuleLoader &TheModuleLoader,
                            IdentifierInfoLookup *IILookup, bool OwnsHeaders,
@@ -152,6 +156,10 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
     Ident_GetExceptionInfo = Ident_GetExceptionCode = nullptr;
     Ident_AbnormalTermination = nullptr;
   }
+
+  // Default incremental processing to -fincremental-extensions, clients can
+  // override with `enableIncrementalProcessing` if desired.
+  IncrementalProcessing = LangOpts.IncrementalExtensions;
 
   // If using a PCH where a #pragma hdrstop is expected, start skipping tokens.
   if (usingPCHWithPragmaHdrStop())
@@ -385,19 +393,18 @@ StringRef Preprocessor::getLastMacroWithSpelling(
 
 void Preprocessor::recomputeCurLexerKind() {
   if (CurLexer)
-    CurLexerKind = CurLexer->isDependencyDirectivesLexer()
-                       ? CLK_DependencyDirectivesLexer
-                       : CLK_Lexer;
+    CurLexerCallback = CurLexer->isDependencyDirectivesLexer()
+                           ? CLK_DependencyDirectivesLexer
+                           : CLK_Lexer;
   else if (CurTokenLexer)
-    CurLexerKind = CLK_TokenLexer;
+    CurLexerCallback = CLK_TokenLexer;
   else
-    CurLexerKind = CLK_CachingLexer;
+    CurLexerCallback = CLK_CachingLexer;
 }
 
-bool Preprocessor::SetCodeCompletionPoint(const FileEntry *File,
+bool Preprocessor::SetCodeCompletionPoint(FileEntryRef File,
                                           unsigned CompleteLine,
                                           unsigned CompleteColumn) {
-  assert(File);
   assert(CompleteLine && CompleteColumn && "Starts from 1:1");
   assert(!CodeCompletionFile && "Already set");
 
@@ -568,8 +575,8 @@ void Preprocessor::EnterMainSourceFile() {
 
     // Tell the header info that the main file was entered.  If the file is later
     // #imported, it won't be re-entered.
-    if (const FileEntry *FE = SourceMgr.getFileEntryForID(MainFileID))
-      markIncluded(FE);
+    if (OptionalFileEntryRef FE = SourceMgr.getFileEntryRefForID(MainFileID))
+      markIncluded(*FE);
   }
 
   // Preprocess Predefines to populate the initial preprocessor state.
@@ -650,23 +657,7 @@ void Preprocessor::SkipTokensWhileUsingPCH() {
   while (true) {
     bool InPredefines =
         (CurLexer && CurLexer->getFileID() == getPredefinesFileID());
-    switch (CurLexerKind) {
-    case CLK_Lexer:
-      CurLexer->Lex(Tok);
-     break;
-    case CLK_TokenLexer:
-      CurTokenLexer->Lex(Tok);
-      break;
-    case CLK_CachingLexer:
-      CachingLex(Tok);
-      break;
-    case CLK_DependencyDirectivesLexer:
-      CurLexer->LexDependencyDirectiveToken(Tok);
-      break;
-    case CLK_LexAfterModuleImport:
-      LexAfterModuleImport(Tok);
-      break;
-    }
+    CurLexerCallback(*this, Tok);
     if (Tok.is(tok::eof) && !InPredefines) {
       ReachedMainFileEOF = true;
       break;
@@ -779,7 +770,7 @@ void Preprocessor::HandlePoisonedIdentifier(Token & Identifier) {
     Diag(Identifier,it->second) << Identifier.getIdentifierInfo();
 }
 
-void Preprocessor::updateOutOfDateIdentifier(IdentifierInfo &II) const {
+void Preprocessor::updateOutOfDateIdentifier(const IdentifierInfo &II) const {
   assert(II.isOutOfDate() && "not out of date");
   getExternalSource()->updateOutOfDateIdentifier(II);
 }
@@ -824,8 +815,8 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   }
 
   // If this is a macro to be expanded, do it.
-  if (MacroDefinition MD = getMacroDefinition(&II)) {
-    auto *MI = MD.getMacroInfo();
+  if (const MacroDefinition MD = getMacroDefinition(&II)) {
+    const auto *MI = MD.getMacroInfo();
     assert(MI && "macro definition with no macro info?");
     if (!DisableMacroExpansion) {
       if (!Identifier.isExpandDisabled() && MI->isEnabled()) {
@@ -843,31 +834,18 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
       }
     }
   }
-
 #ifdef SYCLomatic_CUSTOMIZATION
-  if (LangOpts.CUDA && II.getName() == "__CUDA_ARCH__" && IsInAnalysisScopeFunc(Identifier.getLocation())) {
+  else if (LangOpts.CUDA && II.getName() == "__CUDA_ARCH__" &&
+           IsInAnalysisScopeFunc(Identifier.getLocation()) &&
+           GetRunRound() == 0) {
     // Make a MacroDefinition for __CUDA_ARCH__
     MacroInfo *MI = AllocateMacroInfo(SourceLocation());
     MI->setIsBuiltinMacro();
     DefMacroDirective DMD(MI, SourceLocation());
     ArrayRef<ModuleMacro *> MMs;
     MacroDefinition MD(&DMD, MMs, false);
-    if (!DisableMacroExpansion) {
-      if (!Identifier.isExpandDisabled() && MI->isEnabled()) {
-        // C99 6.10.3p10: If the preprocessing token immediately after the
-        // macro name isn't a '(', this macro should not be expanded.
-        if (!MI->isFunctionLike() || isNextPPTokenLParen())
-          return HandleMacroExpandedIdentifier(Identifier, MD);
-      }
-      else {
-        // C99 6.10.3.4p2 says that a disabled macro may never again be
-        // expanded, even if it's in a context where it could be expanded in the
-        // future.
-        Identifier.setFlag(Token::DisableExpand);
-        if (MI->isObjectLike() || isNextPPTokenLParen())
-          Diag(Identifier, diag::pp_disabled_macro_expansion);
-      }
-    }
+    appendDefMacroDirective(&II, MI);
+    return HandleIdentifier(Identifier);
   }
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -902,12 +880,12 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
        Identifier.is(tok::kw_import)) &&
       !InMacroArgs && !DisableMacroExpansion &&
       (getLangOpts().Modules || getLangOpts().DebuggerSupport) &&
-      CurLexerKind != CLK_CachingLexer) {
+      CurLexerCallback != CLK_CachingLexer) {
     ModuleImportLoc = Identifier.getLocation();
     NamedModuleImportPath.clear();
     IsAtImport = true;
     ModuleImportExpectsIdentifier = true;
-    CurLexerKind = CLK_LexAfterModuleImport;
+    CurLexerCallback = CLK_LexAfterModuleImport;
   }
   return true;
 }
@@ -916,27 +894,8 @@ void Preprocessor::Lex(Token &Result) {
   ++LexLevel;
 
   // We loop here until a lex function returns a token; this avoids recursion.
-  bool ReturnedToken;
-  do {
-    switch (CurLexerKind) {
-    case CLK_Lexer:
-      ReturnedToken = CurLexer->Lex(Result);
-      break;
-    case CLK_TokenLexer:
-      ReturnedToken = CurTokenLexer->Lex(Result);
-      break;
-    case CLK_CachingLexer:
-      CachingLex(Result);
-      ReturnedToken = true;
-      break;
-    case CLK_DependencyDirectivesLexer:
-      ReturnedToken = CurLexer->LexDependencyDirectiveToken(Result);
-      break;
-    case CLK_LexAfterModuleImport:
-      ReturnedToken = LexAfterModuleImport(Result);
-      break;
-    }
-  } while (!ReturnedToken);
+  while (!CurLexerCallback(*this, Result))
+    ;
 
   if (Result.is(tok::unknown) && TheModuleLoader.HadFatalFailure)
     return;
@@ -990,26 +949,29 @@ void Preprocessor::Lex(Token &Result) {
       ModuleDeclState.handlePeriod();
       break;
     case tok::identifier:
-      if (Result.getIdentifierInfo()->isModulesImport()) {
-        TrackGMFState.handleImport(StdCXXImportSeqState.afterTopLevelSeq());
-        StdCXXImportSeqState.handleImport();
-        if (StdCXXImportSeqState.afterImportSeq()) {
-          ModuleImportLoc = Result.getLocation();
-          NamedModuleImportPath.clear();
-          IsAtImport = false;
-          ModuleImportExpectsIdentifier = true;
-          CurLexerKind = CLK_LexAfterModuleImport;
-        }
-        break;
-      } else if (Result.getIdentifierInfo() == getIdentifierInfo("module")) {
-        TrackGMFState.handleModule(StdCXXImportSeqState.afterTopLevelSeq());
-        ModuleDeclState.handleModule();
-        break;
-      } else {
-        ModuleDeclState.handleIdentifier(Result.getIdentifierInfo());
-        if (ModuleDeclState.isModuleCandidate())
+      // Check "import" and "module" when there is no open bracket. The two
+      // identifiers are not meaningful with open brackets.
+      if (StdCXXImportSeqState.atTopLevel()) {
+        if (Result.getIdentifierInfo()->isModulesImport()) {
+          TrackGMFState.handleImport(StdCXXImportSeqState.afterTopLevelSeq());
+          StdCXXImportSeqState.handleImport();
+          if (StdCXXImportSeqState.afterImportSeq()) {
+            ModuleImportLoc = Result.getLocation();
+            NamedModuleImportPath.clear();
+            IsAtImport = false;
+            ModuleImportExpectsIdentifier = true;
+            CurLexerCallback = CLK_LexAfterModuleImport;
+          }
           break;
+        } else if (Result.getIdentifierInfo() == getIdentifierInfo("module")) {
+          TrackGMFState.handleModule(StdCXXImportSeqState.afterTopLevelSeq());
+          ModuleDeclState.handleModule();
+          break;
+        }
       }
+      ModuleDeclState.handleIdentifier(Result.getIdentifierInfo());
+      if (ModuleDeclState.isModuleCandidate())
+        break;
       [[fallthrough]];
     default:
       TrackGMFState.handleMisc();
@@ -1017,6 +979,11 @@ void Preprocessor::Lex(Token &Result) {
       ModuleDeclState.handleMisc();
       break;
     }
+  }
+
+  if (CurLexer && ++CheckPointCounter == CheckPointStepSize) {
+    CheckPoints[CurLexer->getFileID()].push_back(CurLexer->BufferPtr);
+    CheckPointCounter = 0;
   }
 
   LastTokenWasAt = Result.is(tok::at);
@@ -1028,6 +995,18 @@ void Preprocessor::Lex(Token &Result) {
       ++TokenCount;
     if (OnToken)
       OnToken(Result);
+  }
+}
+
+void Preprocessor::LexTokensUntilEOF(std::vector<Token> *Tokens) {
+  while (1) {
+    Token Tok;
+    Lex(Tok);
+    if (Tok.isOneOf(tok::unknown, tok::eof, tok::eod,
+                    tok::annot_repl_input_end))
+      break;
+    if (Tokens != nullptr)
+      Tokens->push_back(Tok);
   }
 }
 
@@ -1204,7 +1183,7 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
       Name += ":";
       NamedModuleImportPath.push_back(
           {getIdentifierInfo(Name), Result.getLocation()});
-      CurLexerKind = CLK_LexAfterModuleImport;
+      CurLexerCallback = CLK_LexAfterModuleImport;
       return true;
     }
   } else {
@@ -1304,7 +1283,7 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
     NamedModuleImportPath.push_back(
         std::make_pair(Result.getIdentifierInfo(), Result.getLocation()));
     ModuleImportExpectsIdentifier = false;
-    CurLexerKind = CLK_LexAfterModuleImport;
+    CurLexerCallback = CLK_LexAfterModuleImport;
     return true;
   }
 
@@ -1313,7 +1292,7 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
   // attribute-specifier-seq here under the Standard C++ Modules.)
   if (!ModuleImportExpectsIdentifier && Result.getKind() == tok::period) {
     ModuleImportExpectsIdentifier = true;
-    CurLexerKind = CLK_LexAfterModuleImport;
+    CurLexerCallback = CLK_LexAfterModuleImport;
     return true;
   }
 
@@ -1510,6 +1489,11 @@ void Preprocessor::emitRestrictExpansionWarning(const Token &Identifier) const {
   Diag(Info.Location, diag::note_pp_macro_annotation) << 1;
 }
 
+void Preprocessor::emitRestrictInfNaNWarning(const Token &Identifier,
+                                             unsigned DiagSelection) const {
+  Diag(Identifier, diag::warn_fp_nan_inf_when_disabled) << DiagSelection << 1;
+}
+
 void Preprocessor::emitFinalMacroWarning(const Token &Identifier,
                                          bool IsUndef) const {
   const MacroAnnotations &A =
@@ -1605,4 +1589,20 @@ void Preprocessor::createPreprocessingRecord() {
 
   Record = new PreprocessingRecord(getSourceManager());
   addPPCallbacks(std::unique_ptr<PPCallbacks>(Record));
+}
+
+const char *Preprocessor::getCheckPoint(FileID FID, const char *Start) const {
+  if (auto It = CheckPoints.find(FID); It != CheckPoints.end()) {
+    const SmallVector<const char *> &FileCheckPoints = It->second;
+    const char *Last = nullptr;
+    // FIXME: Do better than a linear search.
+    for (const char *P : FileCheckPoints) {
+      if (P > Start)
+        break;
+      Last = P;
+    }
+    return Last;
+  }
+
+  return nullptr;
 }

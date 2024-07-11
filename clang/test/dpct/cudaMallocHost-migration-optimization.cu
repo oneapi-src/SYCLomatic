@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cudaMallocHost-migration-optimization %s --optimize-migration --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cudaMallocHost-migration-optimization/cudaMallocHost-migration-optimization.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/cudaMallocHost-migration-optimization/cudaMallocHost-migration-optimization.dp.cpp -o %T/cudaMallocHost-migration-optimization/cudaMallocHost-migration-optimization.dp.o %}
 #include <cuda_runtime.h>
 #include <stdio.h>
 

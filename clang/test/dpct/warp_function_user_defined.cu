@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/warp_function_user_defined %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/warp_function_user_defined/warp_function_user_defined.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/warp_function_user_defined/warp_function_user_defined.dp.cpp -o %T/warp_function_user_defined/warp_function_user_defined.dp.o %}
 
 template<class T>
 __device__ T __shfl_sync(unsigned int, T, T) {

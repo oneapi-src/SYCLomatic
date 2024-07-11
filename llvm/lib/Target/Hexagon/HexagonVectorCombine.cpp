@@ -684,41 +684,10 @@ auto AlignVectors::createAdjustedPointer(IRBuilderBase &Builder, Value *Ptr,
                                          Type *ValTy, int Adjust,
                                          const InstMap &CloneMap) const
     -> Value * {
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
   if (auto *I = dyn_cast<Instruction>(Ptr))
     if (Instruction *New = CloneMap.lookup(I))
       Ptr = New;
-  return Builder.CreateGEP(Type::getInt8Ty(HVC.F.getContext()), Ptr,
-                           HVC.getConstInt(Adjust), "gep");
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-  auto remap = [&](Value *V) -> Value * {
-    if (auto *I = dyn_cast<Instruction>(V)) {
-      for (auto [Old, New] : CloneMap)
-        I->replaceUsesOfWith(Old, New);
-      return I;
-    }
-    return V;
-  };
-  // The adjustment is in bytes, but if it's a multiple of the type size,
-  // we don't need to do pointer casts.
-  auto *PtrTy = cast<PointerType>(Ptr->getType());
-  if (!PtrTy->isOpaque()) {
-    Type *ElemTy = PtrTy->getNonOpaquePointerElementType();
-    int ElemSize = HVC.getSizeOf(ElemTy, HVC.Alloc);
-    if (Adjust % ElemSize == 0 && Adjust != 0) {
-      Value *Tmp0 = Builder.CreateGEP(
-          ElemTy, Ptr, HVC.getConstInt(Adjust / ElemSize), "gep");
-      return Builder.CreatePointerCast(remap(Tmp0), ValTy->getPointerTo(),
-                                       "cst");
-    }
-  }
-
-  PointerType *CharPtrTy = Type::getInt8PtrTy(HVC.F.getContext());
-  Value *Tmp0 = Builder.CreatePointerCast(Ptr, CharPtrTy, "cst");
-  Value *Tmp1 = Builder.CreateGEP(Type::getInt8Ty(HVC.F.getContext()),
-                                  remap(Tmp0), HVC.getConstInt(Adjust), "gep");
-  return Builder.CreatePointerCast(remap(Tmp1), ValTy->getPointerTo(), "cst");
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
+  return Builder.CreatePtrAdd(Ptr, HVC.getConstInt(Adjust), "gep");
 }
 
 auto AlignVectors::createAlignedPointer(IRBuilderBase &Builder, Value *Ptr,
@@ -736,7 +705,8 @@ auto AlignVectors::createAlignedPointer(IRBuilderBase &Builder, Value *Ptr,
   Value *AsInt = Builder.CreatePtrToInt(Ptr, HVC.getIntTy(), "pti");
   Value *Mask = HVC.getConstInt(-Alignment);
   Value *And = Builder.CreateAnd(remap(AsInt), Mask, "and");
-  return Builder.CreateIntToPtr(And, ValTy->getPointerTo(), "itp");
+  return Builder.CreateIntToPtr(
+      And, PointerType::getUnqual(ValTy->getContext()), "itp");
 }
 
 auto AlignVectors::createLoad(IRBuilderBase &Builder, Type *ValTy, Value *Ptr,
@@ -1441,9 +1411,9 @@ auto AlignVectors::realignGroup(const MoveGroup &Move) const -> bool {
   // Return the element with the maximum alignment from Range,
   // where GetValue obtains the value to compare from an element.
   auto getMaxOf = [](auto Range, auto GetValue) {
-    return *std::max_element(
-        Range.begin(), Range.end(),
-        [&GetValue](auto &A, auto &B) { return GetValue(A) < GetValue(B); });
+    return *llvm::max_element(Range, [&GetValue](auto &A, auto &B) {
+      return GetValue(A) < GetValue(B);
+    });
   };
 
   const AddrList &BaseInfos = AddrGroups.at(Move.Base);

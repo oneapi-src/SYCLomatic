@@ -25,7 +25,7 @@ namespace clangd {
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &Stream,
                               const InlayHint &Hint) {
-  return Stream << Hint.label << "@" << Hint.range;
+  return Stream << Hint.joinLabels() << "@" << Hint.range;
 }
 
 namespace {
@@ -57,10 +57,11 @@ struct ExpectedHint {
 
 MATCHER_P2(HintMatcher, Expected, Code, llvm::to_string(Expected)) {
   llvm::StringRef ExpectedView(Expected.Label);
-  if (arg.label != ExpectedView.trim(" ") ||
-      arg.paddingLeft != ExpectedView.startswith(" ") ||
-      arg.paddingRight != ExpectedView.endswith(" ")) {
-    *result_listener << "label is '" << arg.label << "'";
+  std::string ResultLabel = arg.joinLabels();
+  if (ResultLabel != ExpectedView.trim(" ") ||
+      arg.paddingLeft != ExpectedView.starts_with(" ") ||
+      arg.paddingRight != ExpectedView.ends_with(" ")) {
+    *result_listener << "label is '" << ResultLabel << "'";
     return false;
   }
   if (arg.range != Code.range(Expected.RangeName)) {
@@ -72,7 +73,7 @@ MATCHER_P2(HintMatcher, Expected, Code, llvm::to_string(Expected)) {
   return true;
 }
 
-MATCHER_P(labelIs, Label, "") { return arg.label == Label; }
+MATCHER_P(labelIs, Label, "") { return arg.joinLabels() == Label; }
 
 Config noHintsConfig() {
   Config C;
@@ -89,7 +90,7 @@ void assertHintsWithHeader(InlayHintKind Kind, llvm::StringRef AnnotatedSource,
                            ExpectedHints... Expected) {
   Annotations Source(AnnotatedSource);
   TestTU TU = TestTU::withCode(Source.code());
-  TU.ExtraArgs.push_back("-std=c++20");
+  TU.ExtraArgs.push_back("-std=c++23");
   TU.HeaderCode = HeaderContent;
   auto AST = TU.build();
 
@@ -807,6 +808,70 @@ TEST(ParameterHints, Operator) {
   )cpp");
 }
 
+TEST(ParameterHints, FunctionCallOperator) {
+  assertParameterHints(R"cpp(
+    struct W {
+      void operator()(int x);
+    };
+    struct S : W {
+      using W::operator();
+      static void operator()(int x, int y);
+    };
+    void bar() {
+      auto l1 = [](int x) {};
+      auto l2 = [](int x) static {};
+
+      S s;
+      s($1[[1]]);
+      s.operator()($2[[1]]);
+      s.operator()($3[[1]], $4[[2]]);
+      S::operator()($5[[1]], $6[[2]]);
+
+      l1($7[[1]]);
+      l1.operator()($8[[1]]);
+      l2($9[[1]]);
+      l2.operator()($10[[1]]);
+
+      void (*ptr)(int a, int b) = &S::operator();
+      ptr($11[[1]], $12[[2]]);
+    }
+  )cpp",
+                       ExpectedHint{"x: ", "1"}, ExpectedHint{"x: ", "2"},
+                       ExpectedHint{"x: ", "3"}, ExpectedHint{"y: ", "4"},
+                       ExpectedHint{"x: ", "5"}, ExpectedHint{"y: ", "6"},
+                       ExpectedHint{"x: ", "7"}, ExpectedHint{"x: ", "8"},
+                       ExpectedHint{"x: ", "9"}, ExpectedHint{"x: ", "10"},
+                       ExpectedHint{"a: ", "11"}, ExpectedHint{"b: ", "12"});
+}
+
+TEST(ParameterHints, DeducingThis) {
+  assertParameterHints(R"cpp(
+    struct S {
+      template <typename This>
+      auto operator()(this This &&Self, int Param) {
+        return 42;
+      }
+
+      auto function(this auto &Self, int Param) {
+        return Param;
+      }
+    };
+    void work() {
+      S s;
+      s($1[[42]]);
+      s.function($2[[42]]);
+      S()($3[[42]]);
+      auto lambda = [](this auto &Self, char C) -> void {
+        return Self(C);
+      };
+      lambda($4[['A']]);
+    }
+  )cpp",
+                       ExpectedHint{"Param: ", "1"},
+                       ExpectedHint{"Param: ", "2"},
+                       ExpectedHint{"Param: ", "3"}, ExpectedHint{"C: ", "4"});
+}
+
 TEST(ParameterHints, Macros) {
   // Handling of macros depends on where the call's argument list comes from.
 
@@ -917,6 +982,26 @@ TEST(ParameterHints, ImplicitConstructor) {
       return 42;
     }
   )cpp");
+}
+
+TEST(ParameterHints, FunctionPointer) {
+  assertParameterHints(
+      R"cpp(
+    void (*f1)(int param);
+    void (__stdcall *f2)(int param);
+    using f3_t = void(*)(int param);
+    f3_t f3;
+    using f4_t = void(__stdcall *)(int param);
+    f4_t f4;
+    void bar() {
+      f1($f1[[42]]);
+      f2($f2[[42]]);
+      f3($f3[[42]]);
+      f4($f4[[42]]);
+    }
+  )cpp",
+      ExpectedHint{"param: ", "f1"}, ExpectedHint{"param: ", "f2"},
+      ExpectedHint{"param: ", "f3"}, ExpectedHint{"param: ", "f4"});
 }
 
 TEST(ParameterHints, ArgMatchesParam) {
@@ -1333,6 +1418,11 @@ TEST(TypeHints, DependentType) {
       // FIXME: It would be nice to show "T" as the hint.
       auto $var2[[var2]] = arg;
     }
+
+    template <typename T>
+    void bar(T arg) {
+      auto [a, b] = arg;
+    }
   )cpp");
 }
 
@@ -1620,7 +1710,8 @@ TEST(DesignatorHints, NoCrash) {
     void test() {
       Foo f{A(), $b[[1]]};
     }
-  )cpp", ExpectedHint{".b=", "b"});
+  )cpp",
+                        ExpectedHint{".b=", "b"});
 }
 
 TEST(InlayHints, RestrictRange) {
@@ -1633,6 +1724,38 @@ TEST(InlayHints, RestrictRange) {
   auto AST = TestTU::withCode(Code.code()).build();
   EXPECT_THAT(inlayHints(AST, Code.range()),
               ElementsAre(labelIs(": int"), labelIs(": char")));
+}
+
+TEST(ParameterHints, PseudoObjectExpr) {
+  Annotations Code(R"cpp(
+    struct S {
+      __declspec(property(get=GetX, put=PutX)) int x[];
+      int GetX(int y, int z) { return 42 + y; }
+      void PutX(int) { }
+
+      // This is a PseudoObjectExpression whose syntactic form is a binary
+      // operator.
+      void Work(int y) { x = y; } // Not `x = y: y`.
+    };
+
+    int printf(const char *Format, ...);
+
+    int main() {
+      S s;
+      __builtin_dump_struct(&s, printf); // Not `Format: __builtin_dump_struct()`
+      printf($Param[["Hello, %d"]], 42); // Normal calls are not affected.
+      // This builds a PseudoObjectExpr, but here it's useful for showing the
+      // arguments from the semantic form.
+      return s.x[ $one[[1]] ][ $two[[2]] ]; // `x[y: 1][z: 2]`
+    }
+  )cpp");
+  auto TU = TestTU::withCode(Code.code());
+  TU.ExtraArgs.push_back("-fms-extensions");
+  auto AST = TU.build();
+  EXPECT_THAT(inlayHints(AST, std::nullopt),
+              ElementsAre(HintMatcher(ExpectedHint{"Format: ", "Param"}, Code),
+                          HintMatcher(ExpectedHint{"y: ", "one"}, Code),
+                          HintMatcher(ExpectedHint{"z: ", "two"}, Code)));
 }
 
 TEST(ParameterHints, ArgPacksAndConstructors) {
@@ -2081,6 +2204,19 @@ TEST(BlockEndHints, Macro) {
     RBRACE;
   )cpp",
                       ExpectedHint{" // struct S1", "S1"});
+}
+
+TEST(BlockEndHints, PointerToMemberFunction) {
+  // Do not crash trying to summarize `a->*p`.
+  assertBlockEndHints(R"cpp(
+    class A {};
+    using Predicate = bool(A::*)();
+    void foo(A* a, Predicate p) {
+      if ((a->*p)()) {
+      $ptrmem[[}]]
+    } // suppress
+  )cpp",
+                      ExpectedHint{" // if", "ptrmem"});
 }
 
 // FIXME: Low-hanging fruit where we could omit a type hint:

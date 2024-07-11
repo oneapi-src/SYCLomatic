@@ -12,7 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 // Type definition for a table in an intrinsic
-def llvm_table_ty : LLVMQualPointerType<llvm_i8_ty, 1>;
+def llvm_table_ty : LLVMQualPointerType<1>;
 
 let TargetPrefix = "wasm" in {  // All intrinsics start with "llvm.wasm.".
 
@@ -144,18 +144,18 @@ def int_wasm_lsda : DefaultAttrsIntrinsic<[llvm_ptr_ty], [], [IntrNoMem]>;
 // These don't use default attributes, because they are not nosync.
 def int_wasm_memory_atomic_wait32 :
   Intrinsic<[llvm_i32_ty],
-            [LLVMPointerType<llvm_i32_ty>, llvm_i32_ty, llvm_i64_ty],
+            [llvm_ptr_ty, llvm_i32_ty, llvm_i64_ty],
             [IntrInaccessibleMemOrArgMemOnly, ReadOnly<ArgIndex<0>>,
              NoCapture<ArgIndex<0>>, IntrHasSideEffects],
             "", [SDNPMemOperand]>;
 def int_wasm_memory_atomic_wait64 :
   Intrinsic<[llvm_i32_ty],
-            [LLVMPointerType<llvm_i64_ty>, llvm_i64_ty, llvm_i64_ty],
+            [llvm_ptr_ty, llvm_i64_ty, llvm_i64_ty],
             [IntrInaccessibleMemOrArgMemOnly, ReadOnly<ArgIndex<0>>,
              NoCapture<ArgIndex<0>>, IntrHasSideEffects],
             "", [SDNPMemOperand]>;
 def int_wasm_memory_atomic_notify:
-  Intrinsic<[llvm_i32_ty], [LLVMPointerType<llvm_i32_ty>, llvm_i32_ty],
+  Intrinsic<[llvm_i32_ty], [llvm_ptr_ty, llvm_i32_ty],
             [IntrInaccessibleMemOnly, NoCapture<ArgIndex<0>>,
              IntrHasSideEffects],
             "", [SDNPMemOperand]>;
@@ -319,6 +319,31 @@ def int_wasm_relaxed_dot_i8x16_i7x16_add_signed:
 def int_wasm_relaxed_dot_bf16x8_add_f32:
   DefaultAttrsIntrinsic<[llvm_v4f32_ty],
                         [llvm_v8i16_ty, llvm_v8i16_ty, llvm_v4f32_ty],
+                        [IntrNoMem, IntrSpeculatable]>;
+
+//===----------------------------------------------------------------------===//
+// Half-precision intrinsics (experimental)
+//===----------------------------------------------------------------------===//
+
+// TODO: Replace these intrinsic with normal ISel patterns once the XXX
+// instructions are merged to the proposal.
+def int_wasm_loadf16_f32:
+  Intrinsic<[llvm_float_ty],
+            [llvm_ptr_ty],
+            [IntrReadMem, IntrArgMemOnly],
+             "", [SDNPMemOperand]>;
+def int_wasm_storef16_f32:
+  Intrinsic<[],
+            [llvm_float_ty, llvm_ptr_ty],
+            [IntrWriteMem, IntrArgMemOnly],
+             "", [SDNPMemOperand]>;
+def int_wasm_splat_f16x8:
+  DefaultAttrsIntrinsic<[llvm_v8f16_ty],
+                        [llvm_float_ty],
+                        [IntrNoMem, IntrSpeculatable]>;
+def int_wasm_extract_lane_f16x8:
+  DefaultAttrsIntrinsic<[llvm_float_ty],
+                        [llvm_v8f16_ty, llvm_i32_ty],
                         [IntrNoMem, IntrSpeculatable]>;
 
 

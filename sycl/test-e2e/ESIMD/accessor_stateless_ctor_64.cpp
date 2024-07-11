@@ -6,13 +6,12 @@
 //
 //===------------------------------------------------------------===//
 // REQUIRES: gpu-intel-pvc
-// UNSUPPORTED: esimd_emulator
 // RUN: %{build} -fsycl-esimd-force-stateless-mem -o %t.out
 // RUN: %{run} %t.out
 
 #include <iostream>
+#include <sycl/detail/core.hpp>
 #include <sycl/ext/intel/esimd.hpp>
-#include <sycl/sycl.hpp>
 
 using namespace sycl;
 using namespace sycl::ext::intel::esimd;

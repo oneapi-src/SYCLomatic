@@ -241,7 +241,7 @@ public:
 } // end anonymous namespace
 
 static bool isDwoSection(const MCSection &Sec) {
-  return Sec.getName().endswith(".dwo");
+  return Sec.getName().ends_with(".dwo");
 }
 
 //------------------------------------------------------------------------------
@@ -260,13 +260,13 @@ void COFFSymbol::set_name_offset(uint32_t Offset) {
 
 WinCOFFWriter::WinCOFFWriter(WinCOFFObjectWriter &OWriter,
                              raw_pwrite_stream &OS, DwoMode Mode)
-    : OWriter(OWriter), W(OS, support::little), Mode(Mode) {
+    : OWriter(OWriter), W(OS, llvm::endianness::little), Mode(Mode) {
   Header.Machine = OWriter.TargetObjectWriter->getMachine();
   // Some relocations on ARM64 (the 21 bit ADRP relocations) have a slightly
   // limited range for the immediate offset (+/- 1 MB); create extra offset
   // label symbols with regular intervals to allow referencing a
   // non-temporary symbol that is close enough.
-  UseOffsetLabels = Header.Machine == COFF::IMAGE_FILE_MACHINE_ARM64;
+  UseOffsetLabels = COFF::isAnyArm64(Header.Machine);
 }
 
 COFFSymbol *WinCOFFWriter::createSymbol(StringRef Name) {
@@ -847,7 +847,9 @@ void WinCOFFWriter::executePostLayoutBinding(MCAssembler &Asm,
 
   if (Mode != DwoOnly)
     for (const MCSymbol &Symbol : Asm.symbols())
-      if (!Symbol.isTemporary())
+      // Define non-temporary or temporary static (private-linkage) symbols
+      if (!Symbol.isTemporary() ||
+          cast<MCSymbolCOFF>(Symbol).getClass() == COFF::IMAGE_SYM_CLASS_STATIC)
         DefineSymbol(Symbol, Asm, Layout);
 }
 
@@ -909,7 +911,7 @@ void WinCOFFWriter::recordRelocation(MCAssembler &Asm,
   Reloc.Data.VirtualAddress = Layout.getFragmentOffset(Fragment);
 
   // Turn relocations for temporary symbols into section relocations.
-  if (A.isTemporary()) {
+  if (A.isTemporary() && !SymbolMap[&A]) {
     MCSection *TargetSection = &A.getSection();
     assert(
         SectionMap.contains(TargetSection) &&
@@ -952,7 +954,7 @@ void WinCOFFWriter::recordRelocation(MCAssembler &Asm,
        Reloc.Data.Type == COFF::IMAGE_REL_I386_REL32) ||
       (Header.Machine == COFF::IMAGE_FILE_MACHINE_ARMNT &&
        Reloc.Data.Type == COFF::IMAGE_REL_ARM_REL32) ||
-      (Header.Machine == COFF::IMAGE_FILE_MACHINE_ARM64 &&
+      (COFF::isAnyArm64(Header.Machine) &&
        Reloc.Data.Type == COFF::IMAGE_REL_ARM64_REL32))
     FixedValue += 4;
 

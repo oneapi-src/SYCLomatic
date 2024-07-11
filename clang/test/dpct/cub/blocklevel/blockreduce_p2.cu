@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/blocklevel/blockreduce_p2 %S/blockreduce_p2.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/blocklevel/blockreduce_p2/blockreduce_p2.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/blocklevel/blockreduce_p2/blockreduce_p2.dp.cpp -o %T/blocklevel/blockreduce_p2/blockreduce_p2.dp.o %}
 
 #include <iostream>
 #include <cuda_runtime.h>

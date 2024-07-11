@@ -44,7 +44,6 @@
 #include <cassert>
 #include <iterator>
 #include <utility>
-#include <vector>
 
 using namespace llvm;
 
@@ -407,7 +406,7 @@ bool MachineCSE::PhysRegDefsReach(MachineInstr *CSMI, MachineInstr *MI,
 
 bool MachineCSE::isCSECandidate(MachineInstr *MI) {
   if (MI->isPosition() || MI->isPHI() || MI->isImplicitDef() || MI->isKill() ||
-      MI->isInlineAsm() || MI->isDebugInstr())
+      MI->isInlineAsm() || MI->isDebugInstr() || MI->isJumpTableDebugInfo())
     return false;
 
   // Ignore copies.
@@ -710,7 +709,7 @@ bool MachineCSE::ProcessBlockCSE(MachineBasicBlock *MBB) {
         for (MachineBasicBlock::iterator II = CSMI, IE = &MI; II != IE; ++II)
           for (auto ImplicitDef : ImplicitDefs)
             if (MachineOperand *MO = II->findRegisterUseOperand(
-                    ImplicitDef, /*isKill=*/true, TRI))
+                    ImplicitDef, TRI, /*isKill=*/true))
               MO->setIsKill(false);
       } else {
         // If the instructions aren't in the same BB, bail out and clear the

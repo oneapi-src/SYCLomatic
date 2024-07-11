@@ -361,7 +361,7 @@ public:
     unsigned NumArgs = 0;
 
     // Function arguments
-    const Expr *const *FunArgs = nullptr;
+    llvm::PointerUnion<const Expr *const *, til::SExpr *> FunArgs = nullptr;
 
     // is Self referred to with -> or .?
     bool SelfArrow = false;
@@ -527,8 +527,10 @@ private:
   BlockInfo *CurrentBlockInfo = nullptr;
 };
 
+#ifndef NDEBUG
 // Dump an SCFG to llvm::errs().
 void printSCFG(CFGWalker &Walker);
+#endif // NDEBUG
 
 } // namespace threadSafety
 } // namespace clang

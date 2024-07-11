@@ -61,6 +61,7 @@
 #include <vector>
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <setjmp.h>
+#include <iostream>
 #endif // SYCLomatic_CUSTOMIZATION
 
 #define DEBUG_TYPE "clang-tooling"
@@ -69,32 +70,34 @@ using namespace clang;
 using namespace tooling;
 
 #ifdef SYCLomatic_CUSTOMIZATION
+extern int SDKVersionMajor;
+extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
-static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
-static std::vector<std::pair<std::string, std::vector<std::string>>>
+static std::set<std::string> *FileSetInCompilationDBPtr = nullptr;
+static std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
-static std::set<std::string> *ReProcessFilePtr = nullptr;
+static std::set<clang::tooling::UnifiedPath> *ReProcessFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
-static std::set<std::string> *ModuleFiles = nullptr;
-static std::function<bool(const std::string &, bool)> IsExcludePathPtr;
-extern std::string VcxprojFilePath;
+static std::set<clang::tooling::UnifiedPath> *ModuleFiles = nullptr;
+static std::function<bool(const UnifiedPath &)> IsExcludePathPtr;
+extern clang::tooling::UnifiedPath VcxprojFilePath;
 
 void SetPrintHandle(PrintType Handle) {
   MsgPrintHandle = Handle;
 }
 
-void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
-  FileSetInCompiationDBPtr = &FileSetInCompiationDB;
+void SetFileSetInCompilationDB(std::set<std::string> &FileSetInCompilationDB) {
+  FileSetInCompilationDBPtr = &FileSetInCompilationDB;
 }
 
 void SetCompileTargetsMap(
-    std::vector<std::pair<std::string, std::vector<std::string>>>
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::vector<std::string>>>
         &CompileTargetsMap) {
   CompileTargetsMapPtr = &CompileTargetsMap;
 }
@@ -106,8 +109,8 @@ void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
 }
 
 void CollectFileFromDB(std::string FileName) {
-  if (FileSetInCompiationDBPtr != nullptr) {
-    (*FileSetInCompiationDBPtr).insert(FileName);
+  if (FileSetInCompilationDBPtr != nullptr) {
+    (*FileSetInCompilationDBPtr).insert(FileName);
   }
 }
 
@@ -133,7 +136,7 @@ bool isFileProcessAllSet() {
   return FileProcessHandle != nullptr;
 }
 
-void SetReProcessFile(std::set<std::string> &ReProcessFile){
+void SetReProcessFile(std::set<clang::tooling::UnifiedPath> &ReProcessFile){
   ReProcessFilePtr = &ReProcessFile;
 }
 
@@ -148,18 +151,18 @@ unsigned int DoGetRunRound(){
   return 0;
 }
 
-std::set<std::string> GetReProcessFile(){
+std::set<clang::tooling::UnifiedPath> GetReProcessFile(){
   if(ReProcessFilePtr){
     return *ReProcessFilePtr;
   }
-  return std::set<std::string>();
+  return std::set<clang::tooling::UnifiedPath>();
 }
 
 void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
 void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
-void SetModuleFiles(std::set<std::string> &MF) { ModuleFiles = &MF; }
+void SetModuleFiles(std::set<clang::tooling::UnifiedPath> &MF) { ModuleFiles = &MF; }
 llvm::raw_ostream &DiagnosticsOS() {
   if (OSTerm != nullptr) {
     return *OSTerm;
@@ -188,13 +191,13 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
 #endif
 }
 
-void SetIsExcludePathHandler(std::function<bool(const std::string &, bool)> Func){
+void SetIsExcludePathHandler(std::function<bool(const UnifiedPath &)> Func) {
   IsExcludePathPtr = Func;
 }
 
-bool isExcludePath(const std::string &Path, bool IsRelative) {
+bool isExcludePath(const std::string &Path) {
   if(IsExcludePathPtr) {
-    return IsExcludePathPtr(Path, IsRelative);
+    return IsExcludePathPtr(Path);
   } else {
     return false;
   }
@@ -243,9 +246,9 @@ void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
   }
 }
 } // namespace tooling
-} // namespace 
+} // namespace clang
 bool StopOnParseErrTooling=false;
-std::string InRootTooling;
+UnifiedPath InRootTooling;
 
 // filename, error#
 //  error: high32:processed sig error, low32: parse error
@@ -445,15 +448,13 @@ llvm::Expected<std::string> getAbsolutePath(llvm::vfs::FileSystem &FS,
                                             StringRef File) {
   StringRef RelativePath(File);
   // FIXME: Should '.\\' be accepted on Win32?
-  if (RelativePath.startswith("./")) {
-    RelativePath = RelativePath.substr(strlen("./"));
-  }
+  RelativePath.consume_front("./");
 
   SmallString<1024> AbsolutePath = RelativePath;
   if (auto EC = FS.makeAbsolute(AbsolutePath))
     return llvm::errorCodeToError(EC);
   llvm::sys::path::native(AbsolutePath);
-  return std::string(AbsolutePath.str());
+  return std::string(AbsolutePath);
 }
 
 std::string getAbsolutePath(StringRef File) {
@@ -466,14 +467,14 @@ void addTargetAndModeForProgramName(std::vector<std::string> &CommandLine,
     return;
   const auto &Table = driver::getDriverOptTable();
   // --target=X
-  const std::string TargetOPT =
+  StringRef TargetOPT =
       Table.getOption(driver::options::OPT_target).getPrefixedName();
   // -target X
-  const std::string TargetOPTLegacy =
+  StringRef TargetOPTLegacy =
       Table.getOption(driver::options::OPT_target_legacy_spelling)
           .getPrefixedName();
   // --driver-mode=X
-  const std::string DriverModeOPT =
+  StringRef DriverModeOPT =
       Table.getOption(driver::options::OPT_driver_mode).getPrefixedName();
   auto TargetMode =
       driver::ToolChain::getTargetAndModeFromProgramName(InvokedAs);
@@ -484,16 +485,16 @@ void addTargetAndModeForProgramName(std::vector<std::string> &CommandLine,
   for (auto Token = ++CommandLine.begin(); Token != CommandLine.end();
        ++Token) {
     StringRef TokenRef(*Token);
-    ShouldAddTarget = ShouldAddTarget && !TokenRef.startswith(TargetOPT) &&
-                      !TokenRef.equals(TargetOPTLegacy);
-    ShouldAddMode = ShouldAddMode && !TokenRef.startswith(DriverModeOPT);
+    ShouldAddTarget = ShouldAddTarget && !TokenRef.starts_with(TargetOPT) &&
+                      TokenRef != TargetOPTLegacy;
+    ShouldAddMode = ShouldAddMode && !TokenRef.starts_with(DriverModeOPT);
   }
   if (ShouldAddMode) {
     CommandLine.insert(++CommandLine.begin(), TargetMode.DriverMode);
   }
   if (ShouldAddTarget) {
     CommandLine.insert(++CommandLine.begin(),
-                       TargetOPT + TargetMode.TargetPrefix);
+                       (TargetOPT + TargetMode.TargetPrefix).str());
   }
 }
 
@@ -704,7 +705,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
                               void *MainAddr) {
   // Allow users to override the resource dir.
   for (StringRef Arg : Args)
-    if (Arg.startswith("-resource-dir"))
+    if (Arg.starts_with("-resource-dir"))
       return;
 
   // If there's no override in place add our resource dir.
@@ -868,29 +869,22 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       if ((!CommandLine.empty() && CommandLine[0] == "None") &&
           llvm::sys::path::extension(File) == ".cu") {
         const std::string Msg =
-            "warning: " + File.str() +
-            " was found in <None> node in " + VcxprojFilePath + " and skipped; to "
-            "migrate specify CUDA* Item Type for this file in project and try "
-            "again.\n";
+            "warning: " + File.str() + " was found in <None> node in " +
+            llvm::sys::path::filename(VcxprojFilePath.getCanonicalPath())
+                .str() +
+            " and skipped; to migrate specify CUDA* Item Type for this file in "
+            "project and try again.\n";
         DoPrintHandle(Msg, false);
         return -1;
       }
 
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
-           llvm::sys::path::extension(File)==".cu")) {
-        emitDefaultLanguageWarningIfNecessary(File.str(),
-                                              SpecifyLanguageInOption);
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-      }
+           llvm::sys::path::extension(File) == ".cu")) {
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+#endif
         emitDefaultLanguageWarningIfNecessary(File.str(),
                                               SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
@@ -899,8 +893,28 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMajor =
+            "-D__CUDACC_VER_MAJOR__=" + std::to_string(SDKVersionMajor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMajor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
+        std::string CUDAVerMinor =
+            "-D__CUDACC_VER_MINOR__=" + std::to_string(SDKVersionMinor);
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster(CUDAVerMinor.c_str(),
+                                      ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
+                                      ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster =
+            combineAdjusters(std::move(CudaArgsAdjuster),
+                             getInsertArgumentAdjuster(
+                                 "-D__NVCC__", ArgumentInsertPosition::BEGIN));
       }
-#endif
+
       CommandLine = getInsertArgumentAdjuster(
           (std::string("-I") + SDKIncludePath).c_str(),
           ArgumentInsertPosition::END)(CommandLine, "");
@@ -930,7 +944,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         // FIXME: Diagnostics should be used instead.
         if (PrintErrorMessage && StopOnParseErrTooling) {
           std::string ErrMsg="Did not process 1 file(s) in -in-root folder \""
-                   + InRootTooling + "\":\n"
+                   + InRootTooling.getCanonicalPath().str() + "\":\n"
                    "    " + File.str() + ": " + std::to_string(CurFileParseErrCnt)
                    + " parsing error(s)\n";
           llvm::errs() << ErrMsg;
@@ -998,7 +1012,7 @@ int ClangTool::run(ToolAction *Action) {
   }
   } else {
      for (auto &File : GetReProcessFile())
-       AbsolutePaths.push_back(File);
+       AbsolutePaths.push_back(File.getCanonicalPath().str());
   }
 #endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.
@@ -1010,6 +1024,8 @@ int ClangTool::run(ToolAction *Action) {
                  << CWD.getError().message() << "\n";
   }
 
+  size_t NumOfTotalFiles = AbsolutePaths.size();
+  unsigned ProcessedFileCounter = 0;
   for (llvm::StringRef File : AbsolutePaths) {
 
 #ifndef SYCLomatic_CUSTOMIZATION
@@ -1069,7 +1085,11 @@ int ClangTool::run(ToolAction *Action) {
 
       // FIXME: We need a callback mechanism for the tool writer to output a
       // customized message for each file.
-      LLVM_DEBUG({ llvm::dbgs() << "Processing: " << File << ".\n"; });
+      if (NumOfTotalFiles > 1)
+        llvm::errs() << "[" + std::to_string(++ProcessedFileCounter) + "/" +
+                            std::to_string(NumOfTotalFiles) +
+                            "] Processing file " + File
+                     << ".\n";
       ToolInvocation Invocation(std::move(CommandLine), Action, Files.get(),
                                 PCHContainerOps);
       Invocation.setDiagnosticConsumer(DiagConsumer);
@@ -1082,7 +1102,9 @@ int ClangTool::run(ToolAction *Action) {
       }
     }
 #else
-    if(isExcludePath(File.str(), true)) {
+    ++ProcessedFileCounter;
+    (void)NumOfTotalFiles;
+    if(isExcludePath(File.str())) {
       continue;
     }
     int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,

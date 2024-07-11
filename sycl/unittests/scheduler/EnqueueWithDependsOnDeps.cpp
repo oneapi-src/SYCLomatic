@@ -17,6 +17,7 @@
 
 #include <vector>
 
+namespace {
 using namespace sycl;
 using EventImplPtr = std::shared_ptr<detail::event_impl>;
 
@@ -25,10 +26,6 @@ constexpr auto DisableCleanupName = "SYCL_DISABLE_EXECUTION_GRAPH_CLEANUP";
 std::vector<std::pair<pi_uint32, const pi_event *>> PassedNumEvents;
 
 bool CheckTestExecutionRequirements(const platform &plt) {
-  if (plt.is_host()) {
-    std::cout << "Not run due to host-only environment\n";
-    return false;
-  }
   // This test only contains device image for SPIR-V capable devices.
   if (plt.get_backend() != sycl::backend::opencl &&
       plt.get_backend() != sycl::backend::ext_oneapi_level_zero) {
@@ -59,7 +56,8 @@ protected:
     std::vector<detail::Command *> ToEnqueue;
 
     // Emulating processing of command group function
-    MockHandlerCustomFinalize MockCGH(QueueDevImpl, false);
+    MockHandlerCustomFinalize MockCGH(QueueDevImpl, false,
+                                      /*CallerNeedsEvent=*/true);
 
     for (auto EventImpl : Events)
       MockCGH.depends_on(detail::createSyclObjFromImpl<event>(EventImpl));
@@ -80,10 +78,10 @@ protected:
 
     std::unique_ptr<sycl::detail::CG> CmdGroup = MockCGH.finalize();
 
-    detail::Command *NewCmd = MS.addCG(
-        std::move(CmdGroup),
-        Type == TestCGType::HOST_TASK ? MS.getDefaultHostQueue() : QueueDevImpl,
-        ToEnqueue);
+    detail::Command *NewCmd =
+        MS.addCG(std::move(CmdGroup),
+                 Type == TestCGType::HOST_TASK ? nullptr : QueueDevImpl,
+                 ToEnqueue, /*EventNeeded=*/true);
     EXPECT_EQ(ToEnqueue.size(), 0u);
     return NewCmd;
   }
@@ -164,9 +162,14 @@ protected:
   };
 };
 
+#ifdef _WIN32
+// Disabled on Windows due to flaky behavior
+// https://github.com/intel/llvm/issues/14060
+TEST_F(DependsOnTests, DISABLED_EnqueueNoMemObjTwoHostTasks) {
+#else
 TEST_F(DependsOnTests, EnqueueNoMemObjTwoHostTasks) {
+#endif
   // Checks enqueue of two dependent host tasks
-  detail::QueueImplPtr QueueHostImpl = MS.getDefaultHostQueue();
   std::vector<EventImplPtr> Events;
 
   detail::Command *Cmd1 =
@@ -291,12 +294,12 @@ TEST_F(DependsOnTests, EnqueueNoMemObjDoubleKernelDepHost) {
 }
 
 std::vector<pi_event> EventsInWaitList;
-inline pi_result redefinedextUSMEnqueueMemcpy(pi_queue queue, pi_bool blocking,
-                                              void *dst_ptr,
-                                              const void *src_ptr, size_t size,
-                                              pi_uint32 num_events_in_waitlist,
-                                              const pi_event *events_waitlist,
-                                              pi_event *event) {
+pi_result redefinedextUSMEnqueueMemcpy(pi_queue queue, pi_bool blocking,
+                                       void *dst_ptr, const void *src_ptr,
+                                       size_t size,
+                                       pi_uint32 num_events_in_waitlist,
+                                       const pi_event *events_waitlist,
+                                       pi_event *event) {
   *event = createDummyHandle<pi_event>();
   for (auto i = 0u; i < num_events_in_waitlist; i++) {
     EventsInWaitList.push_back(events_waitlist[i]);
@@ -304,7 +307,7 @@ inline pi_result redefinedextUSMEnqueueMemcpy(pi_queue queue, pi_bool blocking,
   return PI_SUCCESS;
 }
 
-inline pi_result redefinedEnqueueEventsWaitWithBarrier(
+pi_result redefinedEnqueueEventsWaitWithBarrier(
     pi_queue command_queue, pi_uint32 num_events_in_wait_list,
     const pi_event *event_wait_list, pi_event *event) {
   *event = createDummyHandle<pi_event>();
@@ -388,3 +391,4 @@ TEST_F(DependsOnTests, BarrierWithWaitList) {
   EXPECT_EQ(EventsInWaitList[0], SingleTaskEventImpl->getHandleRef());
   Queue.wait();
 }
+} // anonymous namespace

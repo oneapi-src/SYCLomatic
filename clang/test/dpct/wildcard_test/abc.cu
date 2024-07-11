@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root=%T/abc -in-root=%S %S/*.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/abc/abc.dp.cpp --match-full-lines %S/abc.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/abc/abc.dp.cpp -o %T/abc/abc.dp.o %}
 // RUN: FileCheck --input-file %T/abc/abd.dp.cpp --match-full-lines %S/abd.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/abc/abd.dp.cpp -o %T/abc/abd.dp.o %}
 
 // CHECK: void testKernelPtr(const int *L, const int *M, int N,
 // CHECK: const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {

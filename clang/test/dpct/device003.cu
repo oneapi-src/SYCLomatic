@@ -1,9 +1,10 @@
 // RUN: dpct --format-range=none -out-root %T/device003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device003/device003.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/device003/device003.dp.cpp -o %T/device003/device003.dp.o %}
 
 #include<cuda_runtime.h>
 #include<cstdio>
-
+#include <cuda_profiler_api.h>
 template <typename T>
 void check(T result, char const *const func) {}
 
@@ -24,7 +25,7 @@ int deviceCount = 0;
 checkErrors(cudaGetDeviceCount(&deviceCount));
 
 int dev_id;
-// CHECK: checkErrors(dev_id = dpct::dev_mgr::instance().current_device_id());
+// CHECK: checkErrors(DPCT_CHECK_ERROR(dev_id = dpct::dev_mgr::instance().current_device_id()));
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
@@ -101,3 +102,16 @@ void get_version(void) {
     cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
 }
 
+void test_profiler() {
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaProfilerStart was removed because SYCL currently does not support this function. Remove the profiler API will not impact the outcome.
+  cudaProfilerStart();
+  // CHECK: DPCT1027:{{[0-9]+}}: The call to cudaProfilerStart was replaced with 0 because SYCL currently does not support this function. Remove the profiler API will not impact the outcome.
+  // CHECK: dpct::err0 result = 0;
+  cudaError_t result = cudaProfilerStart();
+
+  //  CHECK: DPCT1026:{{[0-9]+}}: The call to cudaProfilerStop was removed because SYCL currently does not support this function. Remove the profiler API will not impact the outcome.
+  cudaProfilerStop();
+  // CHECK: DPCT1027:{{[0-9]+}}: The call to cudaProfilerStop was replaced with 0 because SYCL currently does not support this function. Remove the profiler API will not impact the outcome.
+  // CHECK: dpct::err0 r2 = 0;
+  cudaError_t r2 = cudaProfilerStop();
+}

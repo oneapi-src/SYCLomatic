@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/sync_api %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api/sync_api.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/sync_api/sync_api.dp.cpp -o %T/sync_api/sync_api.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -20,15 +21,17 @@ __device__ void test(cg::thread_block cta) {
 }
 // CHECK: void k(const sycl::nd_item<3> &item_ct1) {
 __global__ void k() {
-  // CHECK: auto cta = item_ct1.get_group();
+  // CHECK: sycl::group<3> cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
   // CHECK: item_ct1.barrier();
   cg::sync(cta);
 
-  // CHECK: auto block = item_ct1.get_group();
+  // CHECK: sycl::group<3> block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
   // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
+  __barrier_sync(0);
   // CHECK: item_ct1.barrier();
   block.sync();
   // CHECK: item_ct1.barrier();
@@ -38,7 +41,7 @@ __global__ void k() {
   // CHECK: item_ct1.barrier();
   cg::sync(cg::this_thread_block());
 
-  // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
+  // CHECK: sycl::group<3> b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
 
   TB(blk);
@@ -107,6 +110,7 @@ int main() {
 // CHECK-NEXT:    dpct::global_memory<unsigned int, 0> d_sync_ct1(0);
 // CHECK-NEXT:    unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_in_order_queue());
 // CHECK-NEXT:    dpct::get_in_order_queue().memset(sync_ct1, 0, sizeof(int)).wait();
+// CHECK-EMPTY:
 // CHECK-NEXT:    dpct::get_in_order_queue().parallel_for(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1)  {
@@ -171,7 +175,7 @@ __device__ void foo1(cg::thread_block &tb,
 }
 
 __global__ void foo2() {
-// CHECK: auto tb = item_ct1.get_group();
+// CHECK: sycl::group<3> tb = item_ct1.get_group();
 // CHECK-NEXT: sycl::sub_group tbt32 = item_ct1.get_sub_group();
   cg::thread_block tb = cg::this_thread_block();
   cg::thread_block_tile<32> tbt32 = cg::tiled_partition<32>(tb);
@@ -179,7 +183,7 @@ __global__ void foo2() {
 }
 
 __global__ void foo_tile32() {
-// CHECK: auto ttb = item_ct1.get_group();
+// CHECK: sycl::group<3> ttb = item_ct1.get_group();
 // CHECK-NEXT: sycl::sub_group tile32 = item_ct1.get_sub_group();
 // CHECK-NEXT: double rowThreadSum = 0.0;
 // CHECK-NEXT: int offset= 32;

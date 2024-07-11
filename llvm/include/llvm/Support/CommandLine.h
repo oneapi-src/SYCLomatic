@@ -199,6 +199,16 @@ public:
 OptionCategory &getGeneralCategory();
 #ifdef SYCLomatic_CUSTOMIZATION
 OptionCategory &getDPCTCategory();
+OptionCategory &getDPCTBasicCategory();
+OptionCategory &getDPCTAdvancedCategory();
+OptionCategory &getDPCTCodeGenCategory();
+OptionCategory &getDPCTReportGenCategory();
+OptionCategory &getDPCTBuildScriptCategory();
+OptionCategory &getDPCTQueryAPICategory();
+OptionCategory &getDPCTWarningsCategory();
+OptionCategory &getDPCTHelpInfoCategory();
+OptionCategory &getDPCTInterceptBuildCategory();
+OptionCategory &getDPCTExamplesCategory();
 #endif // SYCLomatic_CUSTOMIZATION
 
 //===----------------------------------------------------------------------===//
@@ -245,6 +255,15 @@ extern ManagedStatic<SubCommand> TopLevelSubCommand;
 
 // A special subcommand that can be used to put an option into all subcommands.
 extern ManagedStatic<SubCommand> AllSubCommands;
+
+class SubCommandGroup {
+  SmallVector<SubCommand *, 4> Subs;
+
+public:
+  SubCommandGroup(std::initializer_list<SubCommand *> IL) : Subs(IL) {}
+
+  ArrayRef<SubCommand *> getSubCommands() const { return Subs; }
+};
 
 //===----------------------------------------------------------------------===//
 //
@@ -315,10 +334,6 @@ public:
 
   bool isConsumeAfter() const {
     return getNumOccurrencesFlag() == cl::ConsumeAfter;
-  }
-
-  bool isInAllSubCommands() const {
-    return Subs.contains(&SubCommand::getAll());
   }
 
   //-------------------------------------------------------------------------===
@@ -480,11 +495,19 @@ struct cat {
 
 // Specify the subcommand that this option belongs to.
 struct sub {
-  SubCommand &Sub;
+  SubCommand *Sub = nullptr;
+  SubCommandGroup *Group = nullptr;
 
-  sub(SubCommand &S) : Sub(S) {}
+  sub(SubCommand &S) : Sub(&S) {}
+  sub(SubCommandGroup &G) : Group(&G) {}
 
-  template <class Opt> void apply(Opt &O) const { O.addSubCommand(Sub); }
+  template <class Opt> void apply(Opt &O) const {
+    if (Sub)
+      O.addSubCommand(*Sub);
+    else if (Group)
+      for (SubCommand *SC : Group->getSubCommands())
+        O.addSubCommand(*SC);
+  }
 };
 
 // Specify a callback function to be called when an option is seen.
@@ -555,6 +578,7 @@ struct OptionValueBase : public GenericOptionValue {
   // Some options may take their value from a different data type.
   template <class DT> void setValue(const DT & /*V*/) {}
 
+  // Returns whether this instance matches the argument.
   bool compare(const DataType & /*V*/) const { return false; }
 
   bool compare(const GenericOptionValue & /*V*/) const override {
@@ -590,7 +614,8 @@ public:
     Value = V;
   }
 
-  bool compare(const DataType &V) const { return Valid && (Value != V); }
+  // Returns whether this instance matches V.
+  bool compare(const DataType &V) const { return Valid && (Value == V); }
 
   bool compare(const GenericOptionValue &V) const override {
     const OptionValueCopy<DataType> &VC =
@@ -898,7 +923,10 @@ public:
     OptionInfo X(Name, static_cast<DataType>(V), HelpStr, IsHidden);
 #else
   void addLiteralOption(StringRef Name, const DT &V, StringRef HelpStr) {
-    assert(findOption(Name) == Values.size() && "Option already exists!");
+#ifndef NDEBUG
+    if (findOption(Name) != Values.size())
+      report_fatal_error("Option '" + Name + "' already exists!");
+#endif
     OptionInfo X(Name, static_cast<DataType>(V), HelpStr);
 #endif // SYCLomatic_CUSTOMIZATION
     Values.push_back(X);
@@ -1480,7 +1508,7 @@ class opt
   }
 
   void printOptionValue(size_t GlobalWidth, bool Force) const override {
-    if (Force || this->getDefault().compare(this->getValue())) {
+    if (Force || !this->getDefault().compare(this->getValue())) {
       cl::printOptionDiff<ParserClass>(*this, Parser, this->getValue(),
                                        this->getDefault(), GlobalWidth);
     }
@@ -2021,6 +2049,16 @@ void PrintVersionMessage();
 /// \param Hidden if true will print hidden options
 /// \param Categorized if true print options in categories
 void PrintHelpMessage(bool Hidden = false, bool Categorized = false);
+
+/// An array of optional enabled settings in the LLVM build configuration,
+/// which may be of interest to compiler developers. For example, includes
+/// "+assertions" if assertions are enabled. Used by printBuildConfig.
+ArrayRef<StringRef> getCompilerBuildConfig();
+
+/// Prints the compiler build configuration.
+/// Designed for compiler developers, not compiler end-users.
+/// Intended to be used in --version output when enabled.
+void printBuildConfig(raw_ostream &OS);
 
 //===----------------------------------------------------------------------===//
 // Public interface for accessing registered options.

@@ -2,6 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct -in-root %S -out-root %T/norminfer %S/norminfer.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/norminfer/norminfer.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/norminfer/norminfer.dp.cpp -o %T/norminfer/norminfer.dp.o %}
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>
@@ -32,7 +33,7 @@ int main() {
     cudnnSetTensor4dDescriptor(outTensor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, on, oc, oh, ow);
     cudnnSetTensor4dDescriptor(scalebiasTensor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, sbn, sbc, sbh, sbw);
 
-    // CHECK: dpct::dnnl::derive_batch_normalization_memory_desc(outTensor, outTensor, dataTensor, dpct::dnnl::batch_normalization_mode::per_activation);
+    // CHECK: dpct::dnnl::engine_ext::derive_batch_normalization_memory_desc(outTensor, outTensor, dataTensor, dpct::dnnl::batch_normalization_mode::per_activation);
     cudnnDeriveNormTensorDescriptor(outTensor, outTensor, dataTensor, CUDNN_NORM_PER_ACTIVATION, 1);
 
     int save = 1;

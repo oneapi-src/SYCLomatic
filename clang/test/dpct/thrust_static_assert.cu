@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/thrust_static_assert %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust_static_assert/thrust_static_assert.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/thrust_static_assert/thrust_static_assert.dp.cpp -o %T/thrust_static_assert/thrust_static_assert.dp.o %}
 
 #include <thrust/detail/static_assert.h>
 

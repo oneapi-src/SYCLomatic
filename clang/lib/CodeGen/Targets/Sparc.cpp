@@ -263,7 +263,11 @@ SparcV9ABIInfo::classifyType(QualType Ty, unsigned SizeLimit) const {
 
   CoerceBuilder CB(getVMContext(), getDataLayout());
   CB.addStruct(0, StrTy);
-  CB.pad(llvm::alignTo(CB.DL.getTypeSizeInBits(StrTy), 64));
+  // All structs, even empty ones, should take up a register argument slot,
+  // so pin the minimum struct size to one bit.
+  CB.pad(llvm::alignTo(
+      std::max(CB.DL.getTypeSizeInBits(StrTy).getKnownMinValue(), uint64_t(1)),
+      64));
 
   // Try to use the original type for coercion.
   llvm::Type *CoerceTy = CB.isUsableType(StrTy) ? StrTy : CB.getType();
@@ -286,7 +290,7 @@ Address SparcV9ABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
   CGBuilderTy &Builder = CGF.Builder;
   Address Addr = Address(Builder.CreateLoad(VAListAddr, "ap.cur"),
                          getVAListElementType(CGF), SlotSize);
-  llvm::Type *ArgPtrTy = llvm::PointerType::getUnqual(ArgTy);
+  llvm::Type *ArgPtrTy = CGF.UnqualPtrTy;
 
   auto TypeInfo = getContext().getTypeInfoInChars(Ty);
 
@@ -315,11 +319,7 @@ Address SparcV9ABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
   case ABIArgInfo::Indirect:
   case ABIArgInfo::IndirectAliased:
     Stride = SlotSize;
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
     ArgAddr = Addr.withElementType(ArgPtrTy);
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-    ArgAddr = Builder.CreateElementBitCast(Addr, ArgPtrTy, "indirect");
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
     ArgAddr = Address(Builder.CreateLoad(ArgAddr, "indirect.arg"), ArgTy,
                       TypeInfo.Align);
     break;
@@ -330,13 +330,9 @@ Address SparcV9ABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,
 
   // Update VAList.
   Address NextPtr = Builder.CreateConstInBoundsByteGEP(Addr, Stride, "ap.next");
-  Builder.CreateStore(NextPtr.getPointer(), VAListAddr);
+  Builder.CreateStore(NextPtr.emitRawPointer(CGF), VAListAddr);
 
-#ifdef INTEL_SYCL_OPAQUEPOINTER_READY
   return ArgAddr.withElementType(ArgTy);
-#else // INTEL_SYCL_OPAQUEPOINTER_READY
-  return Builder.CreateElementBitCast(ArgAddr, ArgTy, "arg.addr");
-#endif // INTEL_SYCL_OPAQUEPOINTER_READY
 }
 
 void SparcV9ABIInfo::computeInfo(CGFunctionInfo &FI) const {

@@ -84,6 +84,16 @@ BINARY_OP_FACTORY_ENTRY("cuCaddf", BinaryOperatorKind::BO_Add,
 BINARY_OP_FACTORY_ENTRY("cuCsubf", BinaryOperatorKind::BO_Sub,
                         makeCallArgCreatorWithCall(0),
                         makeCallArgCreatorWithCall(1))
+BINARY_OP_FACTORY_ENTRY("cuCfma", BinaryOperatorKind::BO_Add,
+                        CALL(MapNames::getDpctNamespace() + "cmul<double>",
+                             makeCallArgCreatorWithCall(0),
+                             makeCallArgCreatorWithCall(1)),
+                        makeCallArgCreatorWithCall(2))
+BINARY_OP_FACTORY_ENTRY("cuCfmaf", BinaryOperatorKind::BO_Add,
+                        CALL(MapNames::getDpctNamespace() + "cmul<float>",
+                             makeCallArgCreatorWithCall(0),
+                             makeCallArgCreatorWithCall(1)),
+                        makeCallArgCreatorWithCall(2))
 
 MEMBER_CALL_FACTORY_ENTRY("cuComplexDoubleToFloat", ARG(0), false, "convert<float>")
 MEMBER_CALL_FACTORY_ENTRY("cuComplexFloatToDouble", ARG(0), false, "convert<double>")

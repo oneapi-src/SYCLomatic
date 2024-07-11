@@ -31,14 +31,14 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               HelperFeatureEnum::device_ext,
                               CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedReduce::Reduce",
-                                  CALL(
-                                      TEMPLATED_CALLEE_WITH_ARGS(
-                                          MapNames::getDpctNamespace() +
-                                              "device::experimental::segmented_"
-                                              "reduce",
-                                          LITERAL("128")),
-                                      STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
-                                      ARG(6), ARG(7), ARG(8)))),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                           MapNames::getDpctNamespace() +
+                                               "device::experimental::"
+                                               "segmented_"
+                                               "reduce",
+                                           LITERAL("128")),
+                                       STREAM(9), ARG(2), ARG(3), ARG(4),
+                                       ARG(5), ARG(6), ARG(7), ARG(8)))),
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
                               CONDITIONAL_FACTORY_ENTRY(
@@ -47,14 +47,16 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
                                                MapNames::getDpctNamespace() +
-                                                   "device::segmented_reduce",
+                                                   "device::segmented_"
+                                                   "reduce",
                                                LITERAL("128")),
                                            STREAM(9), ARG(2), ARG(3), ARG(4),
                                            ARG(5), ARG(6), ARG(7), ARG(8))),
                                   WARNING_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL_FACTORY_ENTRY(
-                                          "cub::DeviceSegmentedReduce::Reduce",
+                                          "cub::DeviceSegmentedReduce::"
+                                          "Reduce",
                                           CALL(
                                               TEMPLATED_CALLEE_WITH_ARGS(
                                                   MapNames::getDpctNamespace() +
@@ -73,14 +75,14 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               HelperFeatureEnum::device_ext,
                               CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedReduce::Reduce",
-                                  CALL(
-                                      TEMPLATED_CALLEE_WITH_ARGS(
-                                          MapNames::getDpctNamespace() +
-                                              "device::experimental::segmented_"
-                                              "reduce",
-                                          LITERAL("128")),
-                                      QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
-                                      ARG(6), ARG(7), ARG(8)))),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                           MapNames::getDpctNamespace() +
+                                               "device::experimental::"
+                                               "segmented_"
+                                               "reduce",
+                                           LITERAL("128")),
+                                       QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
+                                       ARG(6), ARG(7), ARG(8)))),
                           FEATURE_REQUEST_FACTORY(
                               HelperFeatureEnum::device_ext,
                               CONDITIONAL_FACTORY_ENTRY(
@@ -89,14 +91,16 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
                                                MapNames::getDpctNamespace() +
-                                                   "device::segmented_reduce",
+                                                   "device::segmented_"
+                                                   "reduce",
                                                LITERAL("128")),
                                            QUEUESTR, ARG(2), ARG(3), ARG(4),
                                            ARG(5), ARG(6), ARG(7), ARG(8))),
                                   WARNING_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL_FACTORY_ENTRY(
-                                          "cub::DeviceSegmentedReduce::Reduce",
+                                          "cub::DeviceSegmentedReduce::"
+                                          "Reduce",
                                           CALL(
                                               TEMPLATED_CALLEE_WITH_ARGS(
                                                   MapNames::getDpctNamespace() +

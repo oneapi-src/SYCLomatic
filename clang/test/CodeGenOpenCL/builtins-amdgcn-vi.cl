@@ -1,8 +1,8 @@
 // REQUIRES: amdgpu-registered-target
-// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu tonga -S -emit-llvm -o - %s | FileCheck %s
-// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu gfx900 -S -emit-llvm -o - %s | FileCheck %s
-// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu gfx1010 -S -emit-llvm -o - %s | FileCheck %s
-// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu gfx1012 -S -emit-llvm -o - %s | FileCheck %s
+// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu tonga -emit-llvm -o - %s | FileCheck %s
+// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu gfx900 -emit-llvm -o - %s | FileCheck %s
+// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu gfx1010 -emit-llvm -o - %s | FileCheck %s
+// RUN: %clang_cc1 -triple amdgcn-unknown-unknown -target-cpu gfx1012 -emit-llvm -o - %s | FileCheck %s
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
@@ -24,7 +24,7 @@ void test_rcp_f16(global half* out, half a)
 }
 
 // CHECK-LABEL: @test_sqrt_f16
-// CHECK: call half @llvm.amdgcn.sqrt.f16
+// CHECK: call half @llvm.sqrt.f16
 void test_sqrt_f16(global half* out, half a)
 {
   *out = __builtin_amdgcn_sqrth(a);
@@ -52,7 +52,8 @@ void test_cos_f16(global half* out, half a)
 }
 
 // CHECK-LABEL: @test_ldexp_f16
-// CHECK: call half @llvm.ldexp.f16.i32
+// CHECK: [[TRUNC:%[0-9a-z]+]] = trunc i32
+// CHECK: call half @llvm.ldexp.f16.i16(half %a, i16 [[TRUNC]])
 void test_ldexp_f16(global half* out, half a, int b)
 {
   *out = __builtin_amdgcn_ldexph(a, b);

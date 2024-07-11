@@ -12,26 +12,33 @@
 #include "Diagnostics.h"
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
+#include "PatternRewriter.h"
 #include "Statics.h"
+#include "TextModification.h"
+#include "Utility.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Basic/LangOptions.h"
+#include "clang/DPCT/DpctOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/Tooling/Refactoring.h"
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
 
-#include "Utility.h"
-#include "PatternRewriter.h"
-#include "llvm/Support/raw_os_ostream.h"
+#include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <queue>
+
 using namespace clang::dpct;
 using namespace llvm;
 namespace path = llvm::sys::path;
@@ -39,17 +46,17 @@ namespace fs = llvm::sys::fs;
 
 namespace clang {
 namespace tooling {
-std::string getFormatSearchPath();
-}
+UnifiedPath getFormatSearchPath();
+} // namespace tooling
 } // namespace clang
 
 extern std::map<std::string, uint64_t> ErrorCnt;
 
-static bool formatFile(StringRef FileName,
+static bool formatFile(const clang::tooling::UnifiedPath &FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
                        clang::tooling::Replacements &FormatChanges) {
   ErrorOr<std::unique_ptr<MemoryBuffer>> ErrorOrMemoryBuffer =
-      MemoryBuffer::getFileAsStream(FileName);
+      MemoryBuffer::getFileAsStream(FileName.getCanonicalPath());
   if (std::error_code EC = ErrorOrMemoryBuffer.getError()) {
     return false;
   }
@@ -97,11 +104,11 @@ static bool formatFile(StringRef FileName,
     AllLineRanges.push_back(clang::tooling::Range(
         /*Offest*/ 0, /*Length*/ FileBuffer.get()->getBufferSize()));
     FormatChanges = reformat(Style, FileBuffer->getBuffer(), AllLineRanges,
-                             FileName, &Status);
+                             FileName.getCanonicalPath(), &Status);
   } else {
     // only format migrated lines
-    FormatChanges =
-        reformat(Style, FileBuffer->getBuffer(), Ranges, FileName, &Status);
+    FormatChanges = reformat(Style, FileBuffer->getBuffer(), Ranges,
+                             FileName.getCanonicalPath(), &Status);
   }
 
   clang::tooling::applyAllReplacements(FormatChanges, Rewrite);
@@ -110,66 +117,30 @@ static bool formatFile(StringRef FileName,
 }
 
 // TODO: it's global variable, refine in future
-std::map<std::string, bool> IncludeFileMap;
+std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
-bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
-                const StringRef OutRoot) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
-  assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
-
-  SmallString<512> InRootAbs;
-  SmallString<512> OutRootAbs;
-  SmallString<512> FilePathAbs;
-  std::error_code EC;
-  bool InRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
-  if ((bool)EC) {
-    InRootAbsValid = false;
-  }
-  bool OutRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs, true);
-  if ((bool)EC) {
-    OutRootAbsValid = false;
-  }
-  bool FilePathAbsValid = true;
-  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs, true);
-  if ((bool)EC) {
-    FilePathAbsValid = false;
-  }
-
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot) {
 #if defined(_WIN64)
-  std::string Filename = sys::path::filename(FilePath).str();
-  std::string LocalFilePath = StringRef(FilePath).lower();
-  std::string LocalInRoot =
-      InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
-  std::string LocalOutRoot =
-      OutRootAbsValid ? OutRootAbs.str().lower() : OutRoot.lower();
-#elif defined(__linux__)
-  std::string LocalFilePath =
-      FilePathAbsValid ? FilePathAbs.c_str() : StringRef(FilePath).str();
-  std::string LocalInRoot = InRootAbsValid ? InRootAbs.c_str() : InRoot.str();
-  std::string LocalOutRoot =
-      OutRootAbsValid ? OutRootAbs.c_str() : OutRoot.str();
-#else
-#error Only support windows and Linux.
+  std::string Filename = sys::path::filename(FilePath.getPath()).str();
 #endif
 
-  if (!isChildPath(LocalInRoot, LocalFilePath, false) ||
-      DpctGlobalInfo::isExcluded(LocalFilePath, false)) {
-    // Skip rewriting file path if LocalFilePath is not child of LocalInRoot
+  if (!isChildPath(InRoot, FilePath) || DpctGlobalInfo::isExcluded(FilePath)) {
+    // Skip rewriting file path if FilePath is not child of InRoot
     // E.g,
-    //  LocalFilePath : /path/to/inc/util.cuh
-    //    LocalInRoot : /path/to/inroot
-    //   LocalOutRoot : /path/to/outroot
+    //  FilePath : /path/to/inc/util.cuh
+    //    InRoot : /path/to/inroot
+    //   OutRoot : /path/to/outroot
     //  AnalysisScope : /path/to
     return false;
   }
-  auto PathDiff =
-      std::mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
-                    path::begin(LocalInRoot));
-  SmallString<512> NewFilePath = StringRef(LocalOutRoot);
-  path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
-
+  auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPath()),
+                                path::end(FilePath.getCanonicalPath()),
+                                path::begin(InRoot.getCanonicalPath()));
+  SmallString<512> NewFilePath = OutRoot.getCanonicalPath();
+  path::append(NewFilePath, PathDiff.first,
+               path::end(FilePath.getCanonicalPath()));
 #if defined(_WIN64)
   sys::path::remove_filename(NewFilePath);
   sys::path::append(NewFilePath, Filename);
@@ -179,63 +150,113 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   return true;
 }
 
-void rewriteFileName(SmallString<512> &FileName) {
+void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
   rewriteFileName(FileName, FileName);
 }
 
-void rewriteFileName(llvm::SmallString<512> &FileName,
-                     llvm::StringRef FullPathName) {
-  const auto Extension = path::extension(FileName);
+void rewriteFileName(clang::tooling::UnifiedPath &FileName,
+                     const clang::tooling::UnifiedPath &FullPathName) {
+  std::string FilePath = FileName.getPath().str();
+  rewriteFileName(FilePath, FullPathName.getPath().str());
+  FileName = FilePath;
+}
+
+void rewriteFileName(std::string &FileName, const std::string &FullPathName) {
+  SmallString<512> CanonicalPathStr(FullPathName);
+  const auto Extension = path::extension(CanonicalPathStr);
   SourceProcessType FileType = GetSourceFileType(FullPathName);
   // If user does not specify which extension need be changed, we change all the
   // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
       DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
-    if (FileType & SPT_CudaSource)
-      path::replace_extension(FileName, "dp.cpp");
-    else if (FileType & SPT_CppSource)
-      path::replace_extension(FileName, Extension + ".dp.cpp");
-    else if (FileType & SPT_CudaHeader)
-      path::replace_extension(FileName, "dp.hpp");
+    if (FileType & SPT_CudaSource) {
+      path::replace_extension(CanonicalPathStr,
+                              DpctGlobalInfo::getSYCLSourceExtension());
+    } else if (FileType & SPT_CppSource) {
+      if (Extension == ".c") {
+        if (auto FileInfo = DpctGlobalInfo::getInstance().findFile(FileName)) {
+          if (FileInfo->hasCUDASyntax()) {
+            path::replace_extension(
+                CanonicalPathStr,
+                Extension + DpctGlobalInfo::getSYCLSourceExtension());
+          }
+        }
+      } else {
+        path::replace_extension(CanonicalPathStr,
+                                Extension +
+                                    DpctGlobalInfo::getSYCLSourceExtension());
+      }
+    } else if (FileType & SPT_CudaHeader) {
+      path::replace_extension(CanonicalPathStr,
+                              DpctGlobalInfo::getSYCLHeaderExtension());
+    }
   }
+  FileName = CanonicalPathStr.c_str();
 }
 
 static std::vector<std::string> FilesNotInCompilationDB;
 
-void processallOptionAction(StringRef InRoot, StringRef OutRoot) {
+std::map<std::string, std::string> OutFilePath2InFilePath;
 
+static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
+  auto SrcFilePath = OutFilePath2InFilePath.find(OutFilePath.str());
+
+  bool Overwrites = false;
+  // Make sure that the output file corresponds to a single and unique input
+  // file.
+  if (SrcFilePath != OutFilePath2InFilePath.end() &&
+      SrcFilePath->second != InFilePath) {
+    llvm::errs() << "[WARNING]: The output file of '" << InFilePath << "' and '"
+                 << SrcFilePath->second << "' have same name '" << OutFilePath
+                 << "'. To avoid overwrite, the migration of '" << InFilePath
+                 << "' is skipped. Please change the output file extension "
+                    "with option '--sycl-file-extension'."
+                 << getNL();
+    Overwrites = true;
+  }
+  return Overwrites;
+}
+
+void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
+                            clang::tooling::UnifiedPath &OutRoot,
+                            bool IsForSYCL) {
   for (const auto &File : FilesNotInCompilationDB) {
-
     if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
       // Skip the files parsed by dpct parser.
       continue;
     }
 
     std::ifstream In(File);
-    SmallString<512> OutputFile = llvm::StringRef(File);
+    clang::tooling::UnifiedPath OutputFile = File;
     if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
-    auto Parent = path::parent_path(OutputFile);
-    std::error_code EC;
-    EC = fs::create_directories(Parent);
-    if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Create Directory : " + std::string(Parent.str()) +
-          " fail: " + EC.message() + "\n";
-      PrintMsg(ErrMsg);
+
+    // Check for another file with SYCL extension. For example
+    // In in-root we have
+    //  * src.cpp
+    //  * src.cu
+    // After migration we will end up replacing src.cpp with migrated src.cu
+    // when the --sycl-file-extension is cpp
+    // In such a case warn the user.
+
+    // Make sure that the output file corresponds to a single and unique input
+    // file.
+    if (IsForSYCL &&
+        checkOverwriteAndWarn(OutputFile.getCanonicalPath(), File)) {
+      continue;
     }
 
-    std::ofstream Out(OutputFile.c_str());
-    if (Out.fail()) {
-      std::string ErrMsg =
-          "[ERROR] Create file : " + std::string(OutputFile.c_str()) +
-          " failure!\n";
-      PrintMsg(ErrMsg);
-    }
-    Out << In.rdbuf();
-    Out.close();
+    createDirectories(path::parent_path(OutputFile.getCanonicalPath()));
+    clang::dpct::RawFDOStream Out(OutputFile.getCanonicalPath().str());
+    std::stringstream buffer;
+    buffer << In.rdbuf();
+    Out << buffer.str();
     In.close();
+
+    if (IsForSYCL) {
+      OutFilePath2InFilePath[OutputFile.getCanonicalPath().str()] = File;
+    }
   }
 }
 
@@ -261,7 +282,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
                               PE = path::end(FilePath);
          PI != PE; ++PI) {
       StringRef Comp = *PI;
-      if (Comp.startswith(".")) {
+      if (Comp.starts_with(".")) {
         IsHidden = true;
         break;
       }
@@ -273,7 +294,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     }
 
     if (Iter->type() == fs::file_type::regular_file) {
-      SmallString<512> OutputFile = llvm::StringRef(FilePath);
+      clang::tooling::UnifiedPath OutputFile = FilePath;
       if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
         continue;
       }
@@ -282,7 +303,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         // calling processFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
-        if (DpctGlobalInfo::isExcluded(FilePath, false)) {
+        if (DpctGlobalInfo::isExcluded(FilePath)) {
           continue;
         }
         if (GetSourceFileType(FilePath) & SPT_CudaSource) {
@@ -297,28 +318,21 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
 
     } else if (Iter->type() == fs::file_type::directory_file) {
       const auto Path = Iter->path();
-      SmallString<512> OutDirectory = llvm::StringRef(Path);
+      clang::tooling::UnifiedPath OutDirectory = Path;
       if (!rewriteDir(OutDirectory, InRoot, OutRoot)) {
         continue;
       }
 
-      if (fs::exists(OutDirectory))
+      if (fs::exists(OutDirectory.getCanonicalPath()))
         continue;
 
-      std::error_code EC;
-      EC = fs::create_directories(OutDirectory);
-      if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create Directory : " + std::string(OutDirectory.str()) +
-            " fail: " + EC.message() + "\n";
-        PrintMsg(ErrMsg);
-      }
+      createDirectories(OutDirectory.getCanonicalPath());
     }
   }
 }
 
-extern llvm::cl::opt<std::string> BuildScriptFile;
-extern llvm::cl::opt<bool> GenBuildScript;
+extern DpctOption<dpct::opt, std::string> BuildScriptFile;
+extern DpctOption<dpct::opt, bool> GenBuildScript;
 
 static void getMainSrcFilesRepls(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
@@ -328,7 +342,8 @@ static void getMainSrcFilesRepls(
       MainSrcFilesRepls.push_back(Repl);
 }
 static void getMainSrcFilesDigest(
-    std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest) {
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+        &MainSrcFilesDigest) {
   auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap)
     MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
@@ -336,8 +351,9 @@ static void getMainSrcFilesDigest(
 
 static void saveUpdatedMigrationDataIntoYAML(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
-    std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest,
-    std::string YamlFile, std::string SrcFile,
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+        &MainSrcFilesDigest,
+    clang::tooling::UnifiedPath YamlFile, clang::tooling::UnifiedPath SrcFile,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
   // Save history repls to yaml file.
   auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
@@ -365,10 +381,11 @@ static void saveUpdatedMigrationDataIntoYAML(
 }
 
 void applyPatternRewriter(const std::string &InputString,
-                          llvm::raw_os_ostream &Stream) {
+                          llvm::raw_fd_ostream &Stream) {
   std::string LineEndingString;
   // pattern_rewriter require the input file to be LF
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
+
   for (const auto &PR : MapNames::PatternRewriters) {
     LineEndingString = applyPatternRewriter(PR, LineEndingString);
   }
@@ -385,132 +402,73 @@ void applyPatternRewriter(const std::string &InputString,
   }
 }
 
-/// Apply all generated replacements, and immediately save the results to files
-/// in output directory.
-///
-/// \returns 0 upon success. Non-zero upon failure.
-/// Prerequisite: InRoot and OutRoot are both absolute paths
-int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
-                 StringRef OutRoot) {
-  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
-  using namespace clang;
+int writeReplacementsToFiles(
+    ReplTy &Replset, Rewriter &Rewrite, const std::string &Folder,
+    clang::tooling::UnifiedPath &InRoot,
+    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+        &MainSrcFilesDigest,
+    std::unordered_map<std::string, bool> &MainSrcFileMap,
+    std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
+    std::unordered_map<clang::tooling::UnifiedPath,
+                       std::vector<clang::tooling::Range>> &FileRangesMap,
+    std::unordered_map<clang::tooling::UnifiedPath,
+                       std::vector<clang::tooling::Range>>
+        &FileBlockLevelFormatRangesMap,
+    clang::dpct::ReplacementType IsForCodePin = RT_ForSYCLMigration) {
+
   volatile ProcessStatus status = MigrationSucceeded;
-  // Set up Rewriter.
-  LangOptions DefaultLangOptions;
-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
-  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
-  DiagnosticsEngine Diagnostics(
-      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
-      &DiagnosticPrinter, false);
-  SourceManager Sources(Diagnostics, Tool.getFiles());
-  Rewriter Rewrite(Sources, DefaultLangOptions);
-  extern bool ProcessAllFlag;
-  SmallString<512> OutPath;
+  clang::tooling::UnifiedPath OutPath;
 
-  // The variable defined here assists to merge history records.
-  std::unordered_map<std::string /*FileName*/,
-                     bool /*false:Not processed in current migration*/>
-      MainSrcFileMap;
+  for (auto &Entry : Replset) {
+    OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
+        Rewrite.getSourceMgr().getFileManager(), Entry.first));
+    bool HasRealReplacements = true;
+    auto Repls = Entry.second;
 
-  std::string YamlFile =
-      OutRoot.str() + "/" + DpctGlobalInfo::getYamlFileName();
-  std::string SrcFile = "MainSrcFiles_placehold";
-
-  if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
-    auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
-    for (const auto &Repl : PreTU->Replacements) {
-      auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
-      FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
-    }
-    for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
-      auto &DigestMap = DpctGlobalInfo::getDigestMap();
-      DigestMap[FileDigest.first] = FileDigest.second;
-
-      // Mark all the main src files loaded from yaml file are not processed
-      // in current migration.
-      MainSrcFileMap[FileDigest.first] = false;
+    if (Repls.size() == 1) {
+      auto Repl = *Repls.begin();
+      if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
+        HasRealReplacements = false;
     }
 
-    for (const auto &Entry : PreTU->CompileTargets)
-      CompileCmdsPerTarget[Entry.first] = Entry.second;
-  }
-
-  std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
-  std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
-
-  if (Tool.getReplacements().empty()) {
-    // There are no rules applying on the *.cpp files,
-    // dpct just do nothing with them.
-    status = MigrationNoCodeChangeHappen;
-
-    getMainSrcFilesRepls(MainSrcFilesRepls);
-    getMainSrcFilesDigest(MainSrcFilesDigest);
-  } else {
-    std::unordered_map<std::string, std::vector<clang::tooling::Range>>
-        FileRangesMap;
-    std::unordered_map<std::string, std::vector<clang::tooling::Range>>
-        FileBlockLevelFormatRangesMap;
-    // There are matching rules for *.cpp files, *.cu files, also header files
-    // included, migrate these files into *.dp.cpp files.
-    auto GroupResult = groupReplacementsByFile(
-        Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements());
-    for (auto &Entry : GroupResult) {
-      OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
-          Rewrite.getSourceMgr().getFileManager(), Entry.first));
-      makeCanonical(OutPath);
-      bool HasRealReplacements = true;
-      auto Repls = Entry.second;
-
-      if (Repls.size() == 1) {
-        auto Repl = *Repls.begin();
-        if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
-          HasRealReplacements = false;
-      }
-      auto Find = IncludeFileMap.find(OutPath.c_str());
+    if (IsForCodePin != clang::dpct::RT_CUDAWithCodePin) {
+      auto Find = IncludeFileMap.find(OutPath);
       if (HasRealReplacements && Find != IncludeFileMap.end()) {
-        IncludeFileMap[OutPath.c_str()] = true;
+        IncludeFileMap[OutPath] = true;
       }
 
       // This operation won't fail; it already succeeded once during argument
       // validation.
-      makeCanonical(OutPath);
+
       rewriteFileName(OutPath);
-      if (!rewriteDir(OutPath, InRoot, OutRoot)) {
-        continue;
-      }
+    }
 
-      std::error_code EC;
-      EC = fs::create_directories(path::parent_path(OutPath));
-      if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create file : " + std::string(OutPath.str()) +
-            " fail: " + EC.message() + "\n";
-        status = MigrationSaveOutFail;
-        PrintMsg(ErrMsg);
-        return status;
-      }
-      // std::ios::binary prevents ofstream::operator<< from converting \n to
-      // \r\n on windows.
-      std::ofstream File(OutPath.str().str(), std::ios::binary);
-      llvm::raw_os_ostream Stream(File);
-      if (!File) {
-        std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
-        PrintMsg(ErrMsg);
-        status = MigrationSaveOutFail;
-        return status;
-      }
+    if (!rewriteDir(OutPath, InRoot, Folder)) {
+      continue;
+    }
 
-      // For header file, as it can be included from different file, it needs
-      // merge the migration triggered by each including.
-      // For main file, as it can be compiled or preprocessed with different
-      // macro defined, it also needs merge the migration triggered by each
-      // command.
+    // Check for another file with SYCL extension. For example
+    // In in-root we have
+    //  * src.cpp
+    //  * src.cu
+    // After migration we will end up replacing src.cpp with migrated src.cu
+    // when the --sycl-file-extension is cpp
+    // In such a case warn the user.
+    if (checkOverwriteAndWarn(OutPath.getCanonicalPath(), Entry.first))
+      continue;
+    createDirectories(path::parent_path(OutPath.getCanonicalPath()));
+    dpct::RawFDOStream OutStream(OutPath.getCanonicalPath());
+
+    // For header file, as it can be included from different file, it needs
+    // merge the migration triggered by each including.
+    // For main file, as it can be compiled or preprocessed with different
+    // macro defined, it also needs merge the migration triggered by each
+    // command.
+    if (IsForCodePin != clang::dpct::RT_CUDAWithCodePin) {
       SourceProcessType FileType = GetSourceFileType(Entry.first);
       if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
-        mergeExternalReps(Entry.first, OutPath.str().str(), Entry.second);
+        mergeExternalReps(Entry.first, OutPath, Entry.second);
       } else {
-
         auto Hash = llvm::sys::fs::md5_contents(Entry.first);
         MainSrcFilesDigest.push_back(
             std::make_pair(Entry.first, Hash->digest().c_str()));
@@ -540,47 +498,403 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           MainSrcFilesRepls.push_back(Repl);
         }
       }
-
-      std::vector<clang::tooling::Range> Ranges;
-      Ranges = calculateRangesWithFormatFlag(Entry.second);
-      FileRangesMap.insert(std::make_pair(OutPath.str().str(), Ranges));
-
-      std::vector<clang::tooling::Range> BlockLevelFormatRanges;
-      BlockLevelFormatRanges =
-          calculateRangesWithBlockLevelFormatFlag(Entry.second);
-      FileBlockLevelFormatRangesMap.insert(
-          std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
-
-      tooling::applyAllReplacements(Entry.second, Rewrite);
-
-      if (MapNames::PatternRewriters.empty()) {
-        Rewrite
-            .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
-            .write(Stream);
-      } else {
-        std::string OutputString;
-        llvm::raw_string_ostream RSW(OutputString);
-        Rewrite
-            .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
-            .write(RSW);
-        applyPatternRewriter(OutputString, Stream);
-      }
     }
 
+    std::vector<clang::tooling::Range> Ranges;
+    Ranges = calculateRangesWithFormatFlag(Entry.second);
+    FileRangesMap.insert(std::make_pair(OutPath, Ranges));
+
+    std::vector<clang::tooling::Range> BlockLevelFormatRanges;
+    BlockLevelFormatRanges =
+        calculateRangesWithBlockLevelFormatFlag(Entry.second);
+    FileBlockLevelFormatRangesMap.insert(
+        std::make_pair(OutPath, BlockLevelFormatRanges));
+    tooling::applyAllReplacements(Replset[Entry.first], Rewrite);
+
+    llvm::Expected<FileEntryRef> Result =
+        Rewrite.getSourceMgr().getFileManager().getFileRef(Entry.first);
+
+    if (auto E = Result.takeError()) {
+      continue;
+    }
+
+    // Do not apply PatternRewriters for CodePin CUDA debug file
+    if (MapNames::PatternRewriters.empty() ||
+        IsForCodePin == clang::dpct::RT_CUDAWithCodePin) {
+      Rewrite
+          .getEditBuffer(Rewrite.getSourceMgr().getOrCreateFileID(
+              *Result, clang::SrcMgr::C_User /*normal user code*/))
+          .write(OutStream);
+    } else {
+      std::string OutputString;
+      llvm::raw_string_ostream RSW(OutputString);
+      Rewrite
+          .getEditBuffer(Rewrite.getSourceMgr().getOrCreateFileID(
+              *Result, clang::SrcMgr::C_User /*normal user code*/))
+          .write(RSW);
+      applyPatternRewriter(OutputString, OutStream);
+    }
+    // We have written a migrated file; Update the output file path info
+    OutFilePath2InFilePath[OutPath.getCanonicalPath().str()] = Entry.first;
+  }
+  return status;
+}
+
+std::vector<std::string> codePinTypeTopologicalSort(
+    std::vector<std::pair<std::string, std::vector<std::string>>> &Graph) {
+  std::map<std::string, int> indegree;
+  std::map<std::string, std::vector<std::string>> adj;
+  std::vector<std::string> result;
+
+  for (auto &node : Graph) {
+    std::string u = node.first;
+    std::vector<std::string> &edges = node.second;
+    if (indegree.find(u) == indegree.end()) {
+      indegree[u] = 0;
+    }
+    for (auto &v : edges) {
+      adj[u].push_back(v);
+      indegree[v]++;
+    }
+  }
+
+  std::queue<std::string> q;
+  for (auto &pair : indegree) {
+    if (pair.second == 0) {
+      q.push(pair.first);
+    }
+  }
+
+  while (!q.empty()) {
+    std::string u = q.front();
+    q.pop();
+    result.push_back(u);
+    for (auto &v : adj[u]) {
+      indegree[v]--;
+      if (indegree[v] == 0) {
+        q.push(v);
+      }
+    }
+  }
+  if (result.size() != indegree.size()) {
+    return {};
+  }
+  return result;
+}
+
+std::string getCodePinPostfixName(MemberOrBaseInfoForCodePin &Info,
+                                  bool IsForCUDADebug) {
+  std::string TypeName;
+  if (IsForCUDADebug) {
+    TypeName = Info.TypeNameInCuda;
+  } else {
+    TypeName = Info.TypeNameInSycl;
+  }
+  if (Info.UserDefinedTypeFlag) {
+    auto LPos = TypeName.find('<');
+    if (LPos != std::string::npos) {
+      TypeName.insert(LPos, "_codepin");
+    } else {
+      auto BPos = TypeName.find('[');
+      if (BPos != std::string::npos) {
+        TypeName.insert(BPos, "_codepin");
+      } else {
+        TypeName.append("_codepin");
+      }
+    }
+  }
+  for (int i = 0; i < Info.PointerDepth; i++) {
+    TypeName += "*";
+  }
+  return TypeName;
+}
+
+void genCodePinDecl(dpct::RawFDOStream &RS, std::vector<std::string> &SortedVec,
+                    bool IsForwardDecl, bool IsForCUDADebug) {
+  int SortedVecSize = SortedVec.size();
+  for (int j = SortedVecSize - 1; j >= 0; --j) {
+    VarInfoForCodePin Info;
+    bool IsTemplate = false;
+    auto &CodePinTypeVec = dpct::DpctGlobalInfo::getCodePinTypeInfoVec();
+    auto &CodePinTemplateTypeVec =
+        dpct::DpctGlobalInfo::getCodePinTemplateTypeInfoVec();
+    auto Iter = std::find_if(
+        CodePinTypeVec.begin(), CodePinTypeVec.end(),
+        [&](const auto &pair) { return pair.second.HashKey == SortedVec[j]; });
+    if (Iter != CodePinTypeVec.end()) {
+      if (Iter->second.TemplateFlag) {
+        Iter =
+            std::find_if(CodePinTemplateTypeVec.begin(),
+                         CodePinTemplateTypeVec.end(), [&](const auto &pair) {
+                           return pair.second.HashKey == SortedVec[j];
+                         });
+        if (Iter != CodePinTemplateTypeVec.end()) {
+          Info = Iter->second;
+          IsTemplate = true;
+        } else {
+          continue;
+        }
+      } else {
+        Info = Iter->second;
+      }
+    } else {
+      continue;
+    }
+    if (!Info.IsValid) {
+      continue;
+    }
+    int NamespaceSize = IsForwardDecl ? Info.Namespaces.size() : 0;
+    if (NamespaceSize) {
+      for (int i = 0; i < NamespaceSize; i++) {
+        RS << "namespace " << Info.Namespaces[i] << "{" << getNL();
+      }
+    }
+    if (IsTemplate) {
+      RS << "template<";
+      int TemplateArgsNum = Info.TemplateArgs.size();
+      for (int i = 0; i < TemplateArgsNum; i++) {
+        if (i != 0) {
+          RS << ", ";
+        }
+        RS << Info.TemplateArgs[i];
+      }
+      RS << ">" << getNL();
+    }
+    RS << Info.VarRecordType;
+    if (IsForwardDecl) {
+      RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << ";" << getNL();
+    } else {
+      RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << "_codepin";
+      if (!Info.Bases.empty()) {
+        RS << " : ";
+        int BaseSize = Info.Bases.size();
+        for (int i = 0; i < BaseSize; ++i) {
+          if (i != 0) {
+            RS << ", ";
+          }
+          RS << "public "
+             << getCodePinPostfixName(Info.Bases[i], IsForCUDADebug);
+        }
+      }
+      RS << " {" << getNL() << "public:" << getNL();
+      int MemberSize = Info.Members.size();
+      for (int i = 0; i < MemberSize; ++i) {
+        if (Info.Members[i].IsBaseMember) {
+          continue;
+        }
+        RS << "  " << getCodePinPostfixName(Info.Members[i], IsForCUDADebug)
+           << " " << Info.Members[i].MemberName;
+        for (auto &D : Info.Members[i].Dims) {
+          RS << "[" << std::to_string(D) << "]";
+        }
+        RS << ";" << getNL();
+      }
+      RS << "};" << getNL();
+    }
+    if (NamespaceSize) {
+      for (int i = 0; i < NamespaceSize; i++) {
+        RS << "}" << getNL();
+      }
+    }
+    RS << getNL();
+  }
+}
+
+void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
+  auto &Vec = dpct::DpctGlobalInfo::getCodePinTypeInfoVec();
+  std::vector<std::string> SortedVec =
+      codePinTypeTopologicalSort(DpctGlobalInfo::getCodePinDumpFuncDepsVec());
+  int SortedVecSize = SortedVec.size();
+  for (int j = SortedVecSize - 1; j >= 0; --j) {
+    auto Iter = std::find_if(Vec.begin(), Vec.end(), [&](const auto &pair) {
+      return pair.first == SortedVec[j];
+    });
+    if (Iter == Vec.end()) {
+      continue;
+    }
+    if (!Iter->second.IsValid) {
+      continue;
+    }
+    auto &Name = Iter->first;
+    auto &Info = Iter->second;
+    std::string CodepinTypeName = Info.VarNameWithoutScopeAndTemplateArgs +
+                                  "_codepin" + Info.TemplateInstArgs;
+    RS << "template <> class data_ser<" << CodepinTypeName << "> {" << getNL()
+       << "public:" << getNL()
+       << "  static void dump(dpctexp::codepin::detail::json_stringstream "
+          "&ss, "
+       << CodepinTypeName << " &value," << getNL()
+       << "                   dpctexp::codepin::queue_t queue) {"
+       << getNL();
+    RS << "    auto arr = ss.array();" << getNL();
+
+    if (int MemberNum = Info.Members.size()) {
+      for (int i = 0; i < MemberNum; i++) {
+        RS << "    {" << getNL() << "      auto obj" << i << " = arr.object();"
+           << getNL() << "      obj" << i << ".key(\""
+           << Info.Members[i].MemberName << "\");" << getNL()
+           << "      auto value" << i << " = obj" << i
+           << ".value<dpctexp::codepin::detail::json_stringstream::json_obj>("
+              ");"
+           << getNL() << "      dpctexp::codepin::detail::data_ser<"
+           << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
+        for (auto &D : Info.Members[i].Dims) {
+          RS << "[" << std::to_string(D) << "]";
+        }
+        RS << ">::print_type_name(value" << i << ");" << getNL()
+           << "      obj"<<i<<".key(\"Data\");" << getNL()
+           << "      dpctexp::codepin::detail::data_ser<"
+           << getCodePinPostfixName(Info.Members[i], IsForCUDADebug);
+        for (auto &D : Info.Members[i].Dims) {
+          RS << "[" << std::to_string(D) << "]";
+        }
+        RS << ">::dump(ss, value." << Info.Members[i].MemberName << ", queue);"
+           << getNL() << "    }" << getNL();
+      }
+    }
+    RS << getNL() << "  }" << getNL();
+    RS << "  static void print_type_name(json_stringstream::json_obj &obj) {"
+       << getNL() << "    obj.key(\"Type\");" << getNL()
+       << "    obj.value(\""<< CodepinTypeName <<"\");" << getNL() << "  }"
+       << getNL() << "};" << getNL() << getNL();
+    if (Info.TopTypeFlag) {
+      RS << "template <> class data_ser<" << Name << "> {" << getNL()
+         << "public:" << getNL()
+         << "  static void dump(dpctexp::codepin::detail::json_stringstream "
+            "&ss, "
+         << Name << " &value," << getNL()
+         << "                   dpctexp::codepin::queue_t queue) {"
+         << getNL();
+      RS << "    " + CodepinTypeName << "& temp = reinterpret_cast<"
+         << CodepinTypeName << "&>(value);" << getNL();
+      RS << "    dpctexp::codepin::detail::data_ser<" << CodepinTypeName
+         << ">::dump(ss, temp, queue);" << getNL() << "  }" << getNL()
+         << "  static void print_type_name(json_stringstream::json_obj &obj) {"
+         << getNL() << "    obj.key(\"Type\");" << getNL() << "    obj.value(\""
+         << Name << "\");" << getNL() << "  }" << getNL() << "};"
+         << getNL() << getNL();
+    }
+  }
+}
+
+void genCodePinHeader(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
+  std::vector<std::string> SortedVec =
+      codePinTypeTopologicalSort(DpctGlobalInfo::getCodePinTypeDepsVec());
+  RS << "// This file is auto-generated to support the instrument API of CodePin." << getNL();
+  RS << "#ifndef __DPCT_CODEPIN_AUTOGEN_UTIL__" << getNL()
+     << "#define __DPCT_CODEPIN_AUTOGEN_UTIL__" << getNL() << getNL();
+  genCodePinDecl(RS, SortedVec, true, IsForCUDADebug);
+  RS << getNL() << "namespace dpct {" << getNL() << "namespace experimental {"
+     << getNL() << "namespace codepin {" << getNL() << "namespace detail {"
+     << getNL();
+  genCodePinDecl(RS, SortedVec, false, IsForCUDADebug);
+  genCodePinDumpFunc(RS, IsForCUDADebug);
+  RS << "}" << getNL() << "}" << getNL() << "}" << getNL() << "}" << getNL();
+  RS << "#endif" << getNL();
+}
+
+/// Apply all generated replacements, and immediately save the results to files
+/// in output directory.
+///
+/// \returns 0 upon success. Non-zero upon failure.
+/// Prerequisite: InRoot and OutRoot are both absolute paths
+int saveNewFiles(clang::tooling::RefactoringTool &Tool,
+                 clang::tooling::UnifiedPath InRoot,
+                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
+                 ReplTy &ReplSYCL) {
+  using namespace clang;
+  volatile ProcessStatus status = MigrationSucceeded;
+  // Set up Rewriter.
+  LangOptions DefaultLangOptions;
+  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts = new DiagnosticOptions();
+  TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), &*DiagOpts);
+  DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
+      &DiagnosticPrinter, false);
+  SourceManager Sources(Diagnostics, Tool.getFiles());
+  Rewriter Rewrite(Sources, DefaultLangOptions);
+  Rewriter DebugCUDARewrite(Sources, DefaultLangOptions);
+  extern DpctOption<clang::dpct::opt, bool> ProcessAll;
+
+  // The variable defined here assists to merge history records.
+  std::unordered_map<std::string /*FileName*/,
+                     bool /*false:Not processed in current migration*/>
+      MainSrcFileMap;
+
+  std::string SrcFile = "MainSrcFiles_placehold";
+  std::string OutRootStr = OutRoot.getCanonicalPath().str();
+  std::string CodePinCUDAFolder = OutRootStr + "_codepin_cuda";
+  if (DpctGlobalInfo::isCodePinEnabled()) {
+    OutRootStr = OutRootStr + "_codepin_sycl";
+  }
+  clang::tooling::UnifiedPath SYCLMigratedOutRoot(OutRootStr);
+  clang::tooling::UnifiedPath CUDAMigratedOutRoot(CodePinCUDAFolder);
+  std::string YamlFile =
+      appendPath(OutRootStr, DpctGlobalInfo::getYamlFileName());
+  if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
+    for (const auto &Repl : PreTU->Replacements) {
+      auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
+      FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
+    }
+    for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
+      auto &DigestMap = DpctGlobalInfo::getDigestMap();
+      DigestMap[FileDigest.first] = FileDigest.second;
+
+      // Mark all the main src files loaded from yaml file are not processed
+      // in current migration.
+      MainSrcFileMap[FileDigest.first] = false;
+    }
+
+    for (const auto &Entry : PreTU->CompileTargets)
+      CompileCmdsPerTarget[Entry.first] = Entry.second;
+  }
+
+  std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
+  std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+      MainSrcFilesDigest;
+
+  if (ReplSYCL.empty()) {
+    // There are no rules applying on the *.cpp files,
+    // dpct just do nothing with them.
+    status = MigrationNoCodeChangeHappen;
+
+    getMainSrcFilesRepls(MainSrcFilesRepls);
+    getMainSrcFilesDigest(MainSrcFilesDigest);
+  } else {
+    std::unordered_map<clang::tooling::UnifiedPath,
+                       std::vector<clang::tooling::Range>>
+        FileRangesMap;
+    std::unordered_map<clang::tooling::UnifiedPath,
+                       std::vector<clang::tooling::Range>>
+        FileBlockLevelFormatRangesMap;
+    // There are matching rules for *.cpp files, *.cu files, also header files
+    // included, migrate these files into *.dp.cpp files.
+    auto GroupResult = groupReplacementsByFile(
+        Rewrite.getSourceMgr().getFileManager(), ReplSYCL);
+    if (auto RewriteStatus = writeReplacementsToFiles(
+            ReplSYCL, Rewrite, OutRootStr, InRoot, MainSrcFilesDigest,
+            MainSrcFileMap, MainSrcFilesRepls, FileRangesMap,
+            FileBlockLevelFormatRangesMap, clang::dpct::RT_ForSYCLMigration))
+      return RewriteStatus;
+    if (DpctGlobalInfo::isCodePinEnabled()) {
+      if (auto RewriteStatus = writeReplacementsToFiles(
+              ReplCUDA, DebugCUDARewrite, CodePinCUDAFolder, InRoot,
+              MainSrcFilesDigest, MainSrcFileMap, MainSrcFilesRepls,
+              FileRangesMap, FileBlockLevelFormatRangesMap,
+              clang::dpct::RT_CUDAWithCodePin))
+        return RewriteStatus;
+    }
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
-    if (ProcessAllFlag) {
+    if (ProcessAll) {
       ProcessedFileNumber = IncludeFileMap.size();
     } else {
       ProcessedFileNumber = GroupResult.size();
     }
     std::string ReportMsg = "Processed " + std::to_string(ProcessedFileNumber) +
-                            " file(s) in -in-root folder \"" + InRoot.str() +
-                            "\"";
+                            " file(s) in -in-root folder \"" +
+                            InRoot.getCanonicalPath().str() + "\"";
     std::string ErrorFileMsg;
     int ErrNum = 0;
     for (const auto &KV : ErrorCnt) {
@@ -660,72 +974,91 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   // The necessary header files which have no replacements will be copied to
   // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
-    SmallString<512> FilePath = StringRef(Entry.first);
+    // Generated SYCL file in outroot. E.g., /path/to/outroot/a.dp.cpp
+    clang::tooling::UnifiedPath FilePath = Entry.first;
+    // Generated CUDA file in outroot_debug. E.g., /path/to/outroot_debug/a.cu
+    clang::tooling::UnifiedPath DebugFilePath = Entry.first;
+    // Original CUDA file in inroot. E.g., /path/to/inroot/a.cu
+    clang::tooling::UnifiedPath OriginalFilePath = Entry.first;
     if (!Entry.second) {
-      makeCanonical(FilePath);
-      bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath.str().str(), false);
+      bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
       if (IsExcluded) {
         continue;
       }
       // Always migrate *.cuh files to *.dp.hpp files,
       // Always migrate *.cu files to *.dp.cpp files.
-      SourceProcessType FileType = GetSourceFileType(FilePath.str());
+      SourceProcessType FileType = GetSourceFileType(FilePath);
+      SmallString<512> TempFilePath(FilePath.getCanonicalPath());
       if (FileType & SPT_CudaHeader) {
-        path::replace_extension(FilePath, "dp.hpp");
+        path::replace_extension(TempFilePath,
+                                DpctGlobalInfo::getSYCLHeaderExtension());
       } else if (FileType & SPT_CudaSource) {
-        path::replace_extension(FilePath, "dp.cpp");
+        path::replace_extension(TempFilePath,
+                                DpctGlobalInfo::getSYCLSourceExtension());
       }
+      FilePath = TempFilePath;
 
-      if (!rewriteDir(FilePath, InRoot, OutRoot)) {
+      if (!rewriteDir(FilePath, InRoot, SYCLMigratedOutRoot)) {
         continue;
       }
-      if (fs::exists(FilePath)) {
+
+      if (dpct::DpctGlobalInfo::isCodePinEnabled() &&
+          !rewriteDir(DebugFilePath, InRoot, CodePinCUDAFolder)) {
+        continue;
+      }
+
+      // Check for another file with SYCL extension. For example
+      // In in-root we have
+      //  * src.cpp
+      //  * src.cu
+      // After migration we will end up replacing src.cpp with migrated src.cu
+      // when the --sycl-file-extension is cpp
+      // In such a case warn the user.
+      if (checkOverwriteAndWarn(FilePath.getCanonicalPath(),
+                                Entry.first.getCanonicalPath()))
+        continue;
+
+      // If the file needs no replacement and it already exist, don't
+      // make any changes
+      if (fs::exists(FilePath.getCanonicalPath())) {
         // A header file with this name already exists.
         llvm::errs() << "File '" << FilePath
                      << "' already exists; skipping it.\n";
         continue;
       }
 
-      std::error_code EC;
-      EC = fs::create_directories(path::parent_path(FilePath));
-      if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(FilePath.str()) +
-            " fail: " + EC.message() + "\n";
-        status = MigrationSaveOutFail;
-        PrintMsg(ErrMsg);
-        return status;
-      }
-      // std::ios::binary prevents ofstream::operator<< from converting \n to
-      // \r\n on windows.
-      std::ofstream File(FilePath.str().str(), std::ios::binary);
+      createDirectories(path::parent_path(FilePath.getCanonicalPath()));
+      dpct::RawFDOStream Stream(FilePath.getCanonicalPath());
 
-      if (!File) {
-        std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(FilePath.str()) +
-            " failed.\n";
-        status = MigrationSaveOutFail;
-        PrintMsg(ErrMsg);
-        return status;
+      llvm::Expected<FileEntryRef> Result =
+          Tool.getFiles().getFileRef(Entry.first.getCanonicalPath());
+      if (auto E = Result.takeError()) {
+        continue;
       }
-      llvm::raw_os_ostream Stream(File);
-      std::string OutputString;
-      llvm::raw_string_ostream RSW(OutputString);
       if (MapNames::PatternRewriters.empty()) {
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(Stream);
       } else {
         std::string OutputString;
         llvm::raw_string_ostream RSW(OutputString);
         Rewrite
             .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
+                *Result, clang::SrcMgr::C_User /*normal user code*/))
             .write(RSW);
         applyPatternRewriter(OutputString, Stream);
+      }
+
+      // This will help us to detect the same output filename
+      // for two different input files
+      OutFilePath2InFilePath[FilePath.getCanonicalPath().str()] =
+          Entry.first.getCanonicalPath().str();
+
+      if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
+        // Copy non-replacement CUDA files into debug folder
+        fs::copy_file(OriginalFilePath.getCanonicalPath(),
+                      DebugFilePath.getCanonicalPath());
       }
     }
   }
@@ -734,33 +1067,41 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   if (!BuildScriptFile.empty())
     ScriptFineName = BuildScriptFile;
   if (GenBuildScript)
-    genBuildScript(Tool, InRoot, OutRoot, ScriptFineName);
+    genBuildScript(Tool, InRoot, SYCLMigratedOutRoot, ScriptFineName);
 
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
+  if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
+    std::string SchemaPathCUDA = CodePinCUDAFolder + "/codepin_autogen_util.hpp";
+    std::string SchemaPathSYCL = OutRootStr + "/codepin_autogen_util.hpp";
+    std::error_code EC;
+    createDirectories(path::parent_path(SchemaPathCUDA));
+    createDirectories(path::parent_path(SchemaPathSYCL));
 
-  processallOptionAction(InRoot, OutRoot);
+    dpct::RawFDOStream SchemaStreamCUDA(SchemaPathCUDA);
+    genCodePinHeader(SchemaStreamCUDA, true);
+
+    clang::dpct::RawFDOStream SchemaStreamSYCL(SchemaPathSYCL);
+    genCodePinHeader(SchemaStreamSYCL, false);
+
+    processallOptionAction(InRoot, CUDAMigratedOutRoot, false);
+  }
+  processallOptionAction(InRoot, SYCLMigratedOutRoot, true);
 
   return status;
 }
 
-void loadYAMLIntoFileInfo(std::string Path) {
-  SmallString<512> SourceFilePath(Path);
-
-  SourceFilePath = StringRef(
-      DpctGlobalInfo::removeSymlinks(DpctGlobalInfo::getFileManager(), Path));
-  makeCanonical(SourceFilePath);
-
-  std::string OriginPath = SourceFilePath.str().str();
-  rewriteFileName(SourceFilePath);
-  if (!rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
+void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path) {
+  clang::tooling::UnifiedPath OriginPath = Path;
+  rewriteFileName(Path);
+  if (!rewriteDir(Path, DpctGlobalInfo::getInRoot(),
                   DpctGlobalInfo::getOutRoot())) {
     return;
   }
 
-  std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
+  clang::tooling::UnifiedPath YamlFilePath = Path.getCanonicalPath() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
-  if (fs::exists(YamlFilePath)) {
+  if (fs::exists(YamlFilePath.getCanonicalPath())) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(

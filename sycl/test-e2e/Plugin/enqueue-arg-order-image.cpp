@@ -4,14 +4,18 @@
 // spir-v gen for legacy images at O0 not working
 // UNSUPPORTED: O0
 
+// https://github.com/intel/llvm/issues/11434
+// UNSUPPORTED: gpu-intel-dg2
+
 // RUN: %{build} -o %t.out
 // Native images are created with host pointers only with host unified memory
 // support, enforce it for this test.
 // RUN: env SYCL_HOST_UNIFIED_MEMORY=1 SYCL_PI_TRACE=2 %{run} %t.out | FileCheck %s
 
 #include <iostream>
-#include <sycl/accessor.hpp>
-#include <sycl/sycl.hpp>
+
+#include <sycl/accessor_image.hpp>
+#include <sycl/detail/core.hpp>
 
 using namespace sycl;
 

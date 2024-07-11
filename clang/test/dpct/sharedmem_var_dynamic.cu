@@ -2,6 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem_var_dynamic %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_dynamic/sharedmem_var_dynamic.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/sharedmem_var_dynamic/sharedmem_var_dynamic.dp.cpp -o %T/sharedmem_var_dynamic/sharedmem_var_dynamic.dp.o %}
 
 #include <stdio.h>
 #define SIZE 100
@@ -47,7 +48,7 @@ void testTemplate(){
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1, dpct_local_acc_ct1.get_pointer());
+  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1, dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<T><<<1, n, mem_size>>>(d_d, n);
@@ -70,7 +71,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_pointer());
+  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n, mem_size>>>(d_d, n);
@@ -87,7 +88,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_pointer());
+  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n, sizeof(int)>>>(d_d, n);
@@ -100,7 +101,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.get_pointer());
+  // CHECK-NEXT:         templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<int><<<1, n, 4>>>(d_d, n);
@@ -169,7 +170,7 @@ __host__ void foo_4_h() { char *p = Env_cuda_shared_memory(); }
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class foo_4_g_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:        foo_4_g(cuda_shared_memory_acc_ct1.get_pointer());
+// CHECK-NEXT:        foo_4_g(cuda_shared_memory_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:      });
 // CHECK-NEXT:  }); }
 void call_foo4() { foo_4_g<<<16, 64, 10>>>(); }

@@ -17,7 +17,6 @@
 #include <sycl/device_selector.hpp>
 #include <sycl/exception.hpp>
 #include <sycl/ext/oneapi/filter_selector.hpp>
-#include <sycl/stl.hpp>
 // 4.6.1 Device selection class
 
 #include <algorithm>
@@ -29,9 +28,9 @@ inline namespace _V1 {
 
 namespace detail {
 
-// SYCL_DEVICE_FILTER doesn't need to be considered in the device preferences
-// as it filters the device list returned by device::get_devices itself, so
-// only matching devices will be scored.
+// ONEAPI_DEVICE_SELECTOR doesn't need to be considered in the device
+// preferences as it filters the device list returned by device::get_devices
+// itself, so only matching devices will be scored.
 static int getDevicePreference(const device &Device) {
   int Score = 0;
 
@@ -180,13 +179,6 @@ __SYCL_EXPORT int default_selector_v(const device &dev) {
   // The default selector doesn't reject any devices.
   int Score = 0;
 
-  // we give the esimd_emulator device a score of zero to prevent it from being
-  // chosen among other devices. The same thing is done for gpu_selector_v
-  // below.
-  if (dev.get_backend() == backend::ext_intel_esimd_emulator) {
-    return 0;
-  }
-
   traceDeviceSelector("info::device_type::automatic");
 
   if (dev.is_gpu())
@@ -209,10 +201,6 @@ __SYCL_EXPORT int default_selector_v(const device &dev) {
 
 __SYCL_EXPORT int gpu_selector_v(const device &dev) {
   int Score = detail::REJECT_DEVICE_SCORE;
-
-  if (dev.get_backend() == backend::ext_intel_esimd_emulator) {
-    return 0;
-  }
 
   traceDeviceSelector("info::device_type::gpu");
   if (dev.is_gpu()) {
