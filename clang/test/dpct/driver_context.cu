@@ -32,10 +32,10 @@ int main(){
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuInit(0));
 
-  // CHECK: ctx = dpct::select_device(device);
+  // CHECK: ctx = dpct::push_device_for_curr_thread(device);
   cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);
 
-  // CHECK: ctx = device;
+  // CHECK: ctx = dpct::select_device(device);
   cuDevicePrimaryCtxRetain(&ctx, device);
 
   // CHECK: /*

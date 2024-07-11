@@ -98,7 +98,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::device_ext,
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
             "cuCtxCreate_v2", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(2))))))
+            CALL(MapNames::getDpctNamespace() + "push_device_for_curr_thread", ARG(2))))))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsUseNoQueueDevice(),
@@ -112,7 +112,9 @@ CONDITIONAL_FACTORY_ENTRY(
                     "and queue.")),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuDevicePrimaryCtxRetain", DEREF(0), ARG(1)))))
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+            "cuDevicePrimaryCtxRetain", DEREF(0),
+            CALL(MapNames::getDpctNamespace() + "select_device", ARG(1))))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaHostGetFlags", DEREF(0), ARG("0")))
 

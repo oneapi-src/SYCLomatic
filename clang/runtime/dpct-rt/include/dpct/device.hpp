@@ -649,28 +649,21 @@ public:
     check_id(id);
     return *_devs[id];
   }
+
   unsigned int current_device_id() const {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    auto it = _thread2dev_map.find(get_tid());
-    if (it != _thread2dev_map.end())
-      return it->second.top();
-    return DEFAULT_DEVICE_ID;
+    if (_dev_stack.empty())
+      return DEFAULT_DEVICE_ID;
+    return _dev_stack.top();
   }
 
   /// Select device with a device ID.
   /// \param [in] id The id of the device which can
   /// be obtained through get_device_id(const sycl::device).
   void select_device(unsigned int id) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    check_id(id);
-    auto curr_tid = get_tid();
-
-    // make sure the device stack exist
-    auto it = _thread2dev_map.find(curr_tid);
-    if (it == _thread2dev_map.end())
-      _thread2dev_map.insert({curr_tid, std::stack<unsigned int>({id})});
-    else
-      it->second.push(id);
+    /// Replace the top of the stack with the given device id
+    if (!_dev_stack.empty())
+      pop_device();
+    push_device(id);
   }
 
   unsigned int device_count() { return _devs.size(); }
@@ -726,7 +719,7 @@ public:
         break;
       }
     }
-    _thread2dev_map.clear();
+    _dev_stack = std::stack<unsigned int>();
 #ifdef DPCT_HELPER_VERBOSE
     list_devices();
 #endif
@@ -743,22 +736,17 @@ public:
 
   /// Update the device stack for the current thread id
   void push_device(unsigned int id) {
-    auto tid = get_tid();
-    _thread2dev_map[tid].push(id);
+    check_id(id);
+    _dev_stack.push(id);
   }
 
   /// Remove the device from top of the stack if it exist
   unsigned int pop_device() {
-    auto it = _thread2dev_map.find(get_tid());
-    if (it == _thread2dev_map.end())
-      return -1;
+    if (_dev_stack.empty())
+      throw std::runtime_error("can't pop an empty dpct device stack");
 
-    if (it->second.empty())
-      return -1;
-
-    auto id = it->second.top();
-    it->second.pop();
-
+    auto id = _dev_stack.top();
+    _dev_stack.pop();
     return id;
   }
 
@@ -798,17 +786,18 @@ private:
 #endif
   }
   void check_id(unsigned int id) const {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (id >= _devs.size()) {
       throw std::runtime_error("invalid device id");
     }
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
-  /// DEFAULT_DEVICE_ID is used, if current_device_id() can not find current
-  /// thread id in _thread2dev_map, which means default device should be used
-  /// for the current thread.
+  /// stack of devices resulting from CUDA context change;
+  static thread_local std::stack<unsigned int> _dev_stack;
+  /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
+  /// _dev_stack, which means the last set device should be used for the current
+  /// thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
-  /// thread-id to device-id map.
-  std::map<unsigned int, std::stack<unsigned int>> _thread2dev_map;
   int _cpu_device = -1;
 };
 
