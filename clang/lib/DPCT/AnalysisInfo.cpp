@@ -4144,7 +4144,7 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 }
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-  if (!IsADLEnable)
+  if (IsADLEnable)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, CallFuncExprOffset, 0,
                                          "::", nullptr));
@@ -4278,25 +4278,24 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments(),
                              Callee->getSourceRange());
-    }
-    const auto *DRE = dyn_cast<DeclRefExpr>(Callee->IgnoreImpCasts());
-    if (isa<TranslationUnitDecl>(CallDecl->getDeclContext()) &&
-        DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) && DRE &&
-        !DRE->getQualifier() && !CallDecl->isOverloadedOperator()) {
-      for (unsigned i = 0; i < NumArgs; i++) {
-        auto Type = CallDecl->getParamDecl(i)
-                        ->getOriginalType()
-                        .getCanonicalType()
-                        ->getUnqualifiedDesugaredType();
-        while (Type && Type->isAnyPointerType()) {
-          Type = Type->getPointeeType().getTypePtrOrNull();
-        }
-        if (!Type->getAsRecordDecl())
-          break;
-        if (DpctGlobalInfo::isInCudaPath(
-                DpctGlobalInfo::getLocInfo(Type->getAsRecordDecl()).first)) {
-          IsADLEnable = false;
-          break;
+      if (isa<TranslationUnitDecl>(CallDecl->getDeclContext()) &&
+          DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) &&
+          !DRE->getQualifier() && !CallDecl->isOverloadedOperator()) {
+        for (unsigned i = 0; i < NumArgs; i++) {
+          auto Type = CallDecl->getParamDecl(i)
+                          ->getOriginalType()
+                          .getCanonicalType()
+                          ->getUnqualifiedDesugaredType();
+          while (Type && Type->isAnyPointerType()) {
+            Type = Type->getPointeeType().getTypePtrOrNull();
+          }
+
+          if (Type->getAsRecordDecl() &&
+              DpctGlobalInfo::isInCudaPath(
+                  Type->getAsRecordDecl()->getLocation())) {
+            IsADLEnable = true;
+            break;
+          }
         }
       }
     }
