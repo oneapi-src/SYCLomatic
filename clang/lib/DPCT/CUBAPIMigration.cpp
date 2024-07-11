@@ -613,7 +613,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(cxxMemberCallExpr(has(memberExpr(member(hasAnyName(
                                       "InclusiveSum", "ExclusiveSum",
                                       "InclusiveScan", "ExclusiveScan",
-                                      "Reduce", "Sum", "Broadcast", "Scan", "Load")))))
+                                      "Reduce", "Sum", "Broadcast", "Scan")))))
                     .bind("MemberCall"),
                 this);
 
