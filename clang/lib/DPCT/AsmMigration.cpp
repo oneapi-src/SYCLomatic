@@ -8,6 +8,7 @@
 
 #include "AsmMigration.h"
 #include "AnalysisInfo.h"
+#include "Asm/AsmNodes.h"
 #include "Asm/AsmParser.h"
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
@@ -198,7 +199,7 @@ protected:
 
   // Declarations
   bool emitDeclaration(const InlineAsmDecl *D);
-  bool emitVariableDeclaration(const InlineAsmVariableDecl *D);
+  bool emitVariableDeclaration(const InlineAsmVarDecl *D);
 
   // Statements && Expressions
   bool emitStmt(const InlineAsmStmt *S);
@@ -372,8 +373,11 @@ bool SYCLGenBase::emitParenExpr(const InlineAsmParenExpr *E) {
 }
 
 bool SYCLGenBase::emitDeclRefExpr(const InlineAsmDeclRefExpr *E) {
-  if (E->getDecl().getDeclName()->isSpecialReg()) {
-    switch (E->getDecl().getDeclName()->getTokenID()) {
+  auto *VD = dyn_cast_or_null<InlineAsmVarDecl>(&E->getDecl());
+  if (!VD)
+    return SYCLGenError();
+  if (VD->getDeclName()->isSpecialReg()) {
+    switch (VD->getDeclName()->getTokenID()) {
     case asmtok::bi_laneid:
       OS() << DpctGlobalInfo::getItem(GAS)
            << ".get_sub_group().get_local_linear_id()";
@@ -391,7 +395,7 @@ bool SYCLGenBase::emitDeclRefExpr(const InlineAsmDeclRefExpr *E) {
     }
     return SYCLGenSuccess();
   }
-  OS() << E->getDecl().getDeclName()->getName();
+  OS() << VD->getDeclName()->getName();
   if (E->hasParameterizedName()) {
     OS() << '[' << E->getParameterizedNameIndex() << ']';
   }
@@ -519,14 +523,14 @@ bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
 bool SYCLGenBase::emitDeclaration(const InlineAsmDecl *D) {
   switch (D->getDeclClass()) {
   case InlineAsmDecl::VariableDeclClass:
-    return emitVariableDeclaration(dyn_cast<InlineAsmVariableDecl>(D));
+    return emitVariableDeclaration(dyn_cast<InlineAsmVarDecl>(D));
   default:
     break;
   }
   return SYCLGenError();
 }
 
-bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVariableDecl *D) {
+bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
   OS() << D->getDeclName()->getName();
   if (D->isParameterizedNameDecl())
     OS() << '[' << D->getNumParameterizedNames() << ']';
@@ -2283,6 +2287,68 @@ protected:
     OS() << " = (" << Op[2] << " >= "
          << (T1->getKind() == InlineAsmBuiltinType::f32 ? "0.0f" : "0")
          << ") ? " << Op[0] << " : " << Op[1];
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_st(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    const auto *Src = Inst->getInputOperand(0);
+    const auto *Dst =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
+    if (!Dst)
+      return false;
+    std::string Type;
+    if (tryEmitType(Type, Inst->getType(0)))
+      return SYCLGenError();
+    switch (Dst->getMemoryOpKind()) {
+    case InlineAsmAddressExpr::Imm:
+      OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type,
+                            Dst->getImmAddr()->getValue().getZExtValue());
+      break;
+    case InlineAsmAddressExpr::Reg: {
+      std::string Reg;
+      if (tryEmitStmt(Reg, Dst->getSymbol()))
+        return SYCLGenSuccess();
+      OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type, Reg);
+      break;
+    }
+    case InlineAsmAddressExpr::RegImm: {
+      std::string Reg;
+      if (tryEmitStmt(Reg, Dst->getSymbol()))
+        return SYCLGenSuccess();
+      OS() << llvm::formatv("*(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
+                            Dst->getImmAddr()->getValue().getZExtValue());
+      break;
+    }
+    case InlineAsmAddressExpr::Var: {
+      std::string Reg;
+      if (tryEmitStmt(Reg, Dst->getSymbol()))
+        return SYCLGenSuccess();
+      if (Inst->getType(0) == Dst->getSymbol()->getType())
+        OS() << llvm::formatv("{0}", Reg);
+      else
+        OS() << llvm::formatv("*(({0} *)(uintptr_t)&{1})", Type, Reg);
+      break;
+    }
+    case InlineAsmAddressExpr::VarImm: {
+      std::string Reg;
+      if (tryEmitStmt(Reg, Dst->getSymbol()))
+        return SYCLGenSuccess();
+      if (Inst->getType(0) == Dst->getSymbol()->getType())
+        OS() << llvm::formatv("*(({0} *)((uintptr_t)&{1} + {2}))", Type, Reg,
+                              Dst->getImmAddr()->getValue().getZExtValue());
+      else
+        OS() << llvm::formatv("(&{0})[{1}]", Reg,
+                              Dst->getImmAddr()->getValue().getZExtValue());
+      break;
+    }
+    }
+
+    OS() << " = ";
+    if (emitStmt(Src))
+      return SYCLGenError();
     endstmt();
     return SYCLGenSuccess();
   }

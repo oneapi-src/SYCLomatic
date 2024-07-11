@@ -135,7 +135,7 @@ public:
 /// Introduces a new scope for parsing when meet compound statement.
 /// e.g. { stmt stmt }
 class InlineAsmScope {
-  using DeclSetTy = SmallPtrSet<InlineAsmVariableDecl *, 32>;
+  using DeclSetTy = SmallPtrSet<InlineAsmVarDecl *, 32>;
   InlineAsmParser &Parser;
 
   /// Parent scope.
@@ -162,20 +162,20 @@ public:
     return decl_range(DeclsInScope.begin(), DeclsInScope.end());
   }
 
-  void addDecl(InlineAsmVariableDecl *D) { DeclsInScope.insert(D); }
+  void addDecl(InlineAsmVarDecl *D) { DeclsInScope.insert(D); }
 
-  bool isDeclScope(const InlineAsmVariableDecl *D) const {
+  bool isDeclScope(const InlineAsmVarDecl *D) const {
     return DeclsInScope.contains(D);
   }
 
   bool contains(const InlineAsmScope &rhs) const { return Depth < rhs.Depth; }
 
   /// Lookup a simple declaration in current scope and parent scopes.
-  InlineAsmVariableDecl *lookupDecl(InlineAsmIdentifierInfo *II) const;
+  InlineAsmVarDecl *lookupDecl(InlineAsmIdentifierInfo *II) const;
 
   /// Lookup a parameterized name declaration in current scope and parent
   /// scopes.
-  InlineAsmVariableDecl *
+  InlineAsmVarDecl *
   lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II, unsigned &Idx) const;
 };
 
@@ -533,6 +533,7 @@ public:
   InlineAsmExprResult ActOnNumericConstant(const InlineAsmToken &Tok);
   InlineAsmExprResult ActOnAlignment(InlineAsmExpr *Alignment);
   InlineAsmDeclResult ActOnVariableDecl(InlineAsmIdentifierInfo *Name,
+                                        AsmStateSpace StateSpace,
                                         InlineAsmType *Type);
 };
 } // namespace clang::dpct

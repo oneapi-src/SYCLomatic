@@ -153,18 +153,13 @@ public:
 
 private:
   DeclClass dClass;
-
-  /// The declaration identifier.
-  InlineAsmIdentifierInfo *Name;
-
 protected:
-  InlineAsmDecl(DeclClass DC, InlineAsmIdentifierInfo *Name)
-      : dClass(DC), Name(Name) {}
+  InlineAsmDecl(DeclClass DC)
+      : dClass(DC) {}
 
 public:
   virtual ~InlineAsmDecl();
   DeclClass getDeclClass() const { return dClass; }
-  InlineAsmIdentifierInfo *getDeclName() const { return Name; }
 
   void *operator new(size_t bytes) noexcept {
     llvm_unreachable("InlineAsmDecl cannot be allocated with regular 'new'.");
@@ -175,11 +170,28 @@ public:
   }
 };
 
+class InlineAsmNamedDecl : public InlineAsmDecl {
+  /// The declaration identifier.
+  InlineAsmIdentifierInfo *Name;
+
+protected:
+  InlineAsmNamedDecl(DeclClass DC, InlineAsmIdentifierInfo *Name)
+      : InlineAsmDecl(DC), Name(Name) {}
+
+public:
+  InlineAsmIdentifierInfo *getDeclName() const { return Name; }
+
+  static bool classof(InlineAsmDecl *D) {
+    return D->getDeclClass() >= VariableDeclClass &&
+           D->getDeclClass() <= LabelDeclClass;
+  }
+};
+
 /// Represents a variable declaration.
-class InlineAsmVariableDecl : public InlineAsmDecl {
+class InlineAsmVarDecl : public InlineAsmNamedDecl {
 
   /// The state space of a variable, e.g. '.reg', '.global', '.local', etc.
-  InlineAsmIdentifierInfo *StorageClass = nullptr;
+  AsmStateSpace StateSpace;
 
   /// The type of this variable.
   InlineAsmType *Type = nullptr;
@@ -197,11 +209,13 @@ class InlineAsmVariableDecl : public InlineAsmDecl {
   bool IsParameterizedNameDecl = false;
 
 public:
-  InlineAsmVariableDecl(InlineAsmIdentifierInfo *Name, InlineAsmType *Type)
-      : InlineAsmDecl(VariableDeclClass, Name), Type(Type) {}
+  InlineAsmVarDecl(InlineAsmIdentifierInfo *Name, AsmStateSpace SS,
+                   InlineAsmType *Type)
+      : InlineAsmNamedDecl(VariableDeclClass, Name), StateSpace(SS),
+        Type(Type) {}
 
-  const InlineAsmIdentifierInfo *getStorageClass() const {
-    return StorageClass;
+  AsmStateSpace getStorageClass() const {
+    return StateSpace;
   }
 
   InlineAsmType *getType() { return Type; }
@@ -294,6 +308,8 @@ class InlineAsmInstruction : public InlineAsmStmt {
   /// e.g. asmtok::op_mov, asmtok::op_setp, etc.
   InlineAsmIdentifierInfo *Opcode = nullptr;
 
+  std::optional<AsmStateSpace> StateSpace;
+
   /// This represents arrtibutes like: comparsion operator, rounding modifiers,
   /// ... e.g. instruction setp.eq.s32 has a comparsion operator 'eq'.
   SmallSet<InstAttr, 4> Attributes;
@@ -315,11 +331,13 @@ class InlineAsmInstruction : public InlineAsmStmt {
   SmallVector<InlineAsmExpr *, 4> InputOps;
 
 public:
-  InlineAsmInstruction(InlineAsmIdentifierInfo *Op, ArrayRef<InstAttr> Attrs,
+  InlineAsmInstruction(InlineAsmIdentifierInfo *Op,
+                       std::optional<AsmStateSpace> SS,
+                       ArrayRef<InstAttr> Attrs,
                        ArrayRef<InlineAsmType *> Types, InlineAsmExpr *Out,
                        InlineAsmExpr *Pred, ArrayRef<InlineAsmExpr *> InOps)
-      : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
-        OutputOp(Out), PredOutputOp(Pred), InputOps(InOps) {
+      : InlineAsmStmt(InstructionClass), Opcode(Op), StateSpace(SS),
+        Types(Types), OutputOp(Out), PredOutputOp(Pred), InputOps(InOps) {
     Attributes.insert(Attrs.begin(), Attrs.end());
   }
 
@@ -546,17 +564,17 @@ class InlineAsmDeclRefExpr : public InlineAsmExpr {
   unsigned ParameterizedNameIndex = 0;
 
 public:
-  InlineAsmDeclRefExpr(InlineAsmVariableDecl *D)
+  InlineAsmDeclRefExpr(InlineAsmVarDecl *D)
       : InlineAsmExpr(DeclRefExprClass, D->getType()), Decl(D) {}
 
-  InlineAsmDeclRefExpr(InlineAsmVariableDecl *D, unsigned Idx)
+  InlineAsmDeclRefExpr(InlineAsmVarDecl *D, unsigned Idx)
       : InlineAsmExpr(DeclRefExprClass, D->getType()), Decl(D),
         ParameterizedNameIndex(Idx) {}
 
   const InlineAsmDecl &getDecl() const { return *Decl; }
 
   bool hasParameterizedName() const {
-    if (const auto *Var = dyn_cast<InlineAsmVariableDecl>(Decl))
+    if (const auto *Var = dyn_cast<InlineAsmVarDecl>(Decl))
       return Var->isParameterizedNameDecl();
     return false;
   }
@@ -629,13 +647,24 @@ public:
 ///
 /// (exclude) var[immOff] an array element as described in Arrays as Operands.
 class InlineAsmAddressExpr : public InlineAsmExpr {
-  InlineAsmExpr *SubExpr;
+public:
+  enum MemOpKind { Imm, Reg, Var, RegImm, VarImm };
+
+private:
+  MemOpKind OpKind;
+  InlineAsmDeclRefExpr *SymbolRef;
+  InlineAsmIntegerLiteral *ImmAddr;
 
 public:
-  InlineAsmAddressExpr(InlineAsmBuiltinType *Type, InlineAsmExpr *SubExpr)
-      : InlineAsmExpr(AddressExprClass, Type), SubExpr(SubExpr) {}
+  InlineAsmAddressExpr(InlineAsmBuiltinType *Type, MemOpKind Kind,
+                       InlineAsmDeclRefExpr *Symbol,
+                       InlineAsmIntegerLiteral *Imm)
+      : InlineAsmExpr(AddressExprClass, Type), OpKind(Kind), SymbolRef(Symbol),
+        ImmAddr(Imm) {}
 
-  const InlineAsmExpr *getSubExpr() const { return SubExpr; }
+  MemOpKind getMemoryOpKind() const { return OpKind; }
+  InlineAsmDeclRefExpr *getSymbol() const { return SymbolRef; }
+  InlineAsmIntegerLiteral *getImmAddr() const { return ImmAddr; }
 
   static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == AddressExprClass;
@@ -765,8 +794,8 @@ public:
 
 public:
   Opcode getOpcode() const { return Op; }
-  const InlineAsmExpr *getLHS() const { return LHS; }
-  const InlineAsmExpr *getRHS() const { return RHS; }
+  InlineAsmExpr *getLHS() const { return LHS; }
+  InlineAsmExpr *getRHS() const { return RHS; }
 
   static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == BinaryOperatorClass;

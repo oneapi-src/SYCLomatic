@@ -27,5 +27,7 @@ void InlineAsmIdentifierTable::AddKeywords() {
   get(#X, asmtok::op_##X).setFlag(InlineAsmIdentifierInfo::Instruction);
 #define MODIFIER(X, Y)                                                         \
   get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::Modifier);
+#define STATE_SPACE(X, Y)                                                      \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::StateSpace);
 #include "AsmTokenKinds.def"
 }
