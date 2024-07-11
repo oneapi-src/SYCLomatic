@@ -198,12 +198,7 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
       }
       // Create a symbolic link and link the file to the target file.
       rewriteAbsoluteDir(SourcePath, InRoot, OutRoot);
-
-      auto AbsoluteParentPath = sys::path::parent_path(FilePath.getAbsolutePath());
-      if (llvm::sys::fs::is_symlink_file(AbsoluteParentPath)) {
-        createSymLink(AbsoluteParentPath, InRoot, OutRoot, false);
-      }
-      auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
+      auto ParentPath = tooling::UnifiedPath(sys::path::parent_path(FilePath.getAbsolutePath()));
       rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
       if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
         createDirectories(ParentPath.getAbsolutePath());
