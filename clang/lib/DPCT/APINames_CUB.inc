@@ -122,8 +122,6 @@ ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Offset, Offset, fals
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Rotate, Rotate, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Up, Up, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Down, Down, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::BlockLoad, cub::BlockLoad, Load, Load, true, NO_FLAG, P4, "Successful")
-
 
 // Device Level
 ENTRY_MEMBER_FUNCTION(cub::DeviceAdjacentDifference, cub::DeviceAdjacentDifference, SubtractLeftCopy, SubtractLeftCopy, false, NO_FLAGE, P4, "Comment")
@@ -192,10 +190,10 @@ ENTRY(cub::ThreadLoad, cub::ThreadLoad, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::ThreadStore, cub::ThreadStore, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::LoadDirectBlocked, cub::LoadDirectBlocked, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::LoadDirectBlockedVectorized, cub::LoadDirectBlockedVectorized, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::StoreDirectBlocked, cub::StoreDirectBlocked, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::StoreDirectBlocked, cub::StoreDirectBlocked, true, NO_FLAG, P4, "Comment")
 ENTRY(cub::StoreDirectBlockedVectorized, cub::StoreDirectBlockedVectorized, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::LoadDirectStriped, cub::LoadDirectStriped, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::StoreDirectStriped, cub::StoreDirectStriped, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::StoreDirectStriped, cub::StoreDirectStriped, true, NO_FLAG, P4, "Comment")
 ENTRY(cub::LoadDirectWarpStriped, cub::LoadDirectWarpStriped, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::StoreDirectWarpStriped, cub::StoreDirectWarpStriped, false, NO_FLAG, P4, "Comment")
 
