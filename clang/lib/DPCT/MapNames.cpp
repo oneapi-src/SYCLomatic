@@ -1558,6 +1558,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLASLT_MATMUL_DESC_D_SCALE_POINTER",
        getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
                             ":d_scale_pointer"},
+      {"CUBLASLT_MATMUL_DESC_AMAX_D_POINTER",
+       getDpctNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::amax_d_pointer"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS",
        getDpctNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
