@@ -1451,11 +1451,11 @@ DpctGlobalInfo::getAbsolutePath(FileEntryRef File) {
   if (auto RealPath = File.getFileEntry().tryGetRealPathName();
       !RealPath.empty())
     return clang::tooling::UnifiedPath(RealPath);
+
   llvm::SmallString<512> FilePathAbs(File.getName());
   SM->getFileManager().makeAbsolutePath(FilePathAbs);
   return clang::tooling::UnifiedPath(FilePathAbs);
 }
-
 std::pair<clang::tooling::UnifiedPath, unsigned>
 DpctGlobalInfo::getLocInfo(SourceLocation Loc, bool *IsInvalid) {
   if (SM->isMacroArgExpansion(Loc)) {

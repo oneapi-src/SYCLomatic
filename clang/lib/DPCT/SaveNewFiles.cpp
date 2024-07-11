@@ -188,48 +188,33 @@ void createSymLink(const clang::tooling::UnifiedPath &FilePath,
                    bool RewriteFileName) {
   if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
     auto SourcePath = FilePath;
-    while (
-        isChildPath(InRoot.getAbsolutePath(), SourcePath.getAbsolutePath())) {
-      auto AbsolutePath = SourcePath.getAbsolutePath();
-      if (llvm::sys::fs::is_symlink_file(AbsolutePath)) {
-        tooling::UnifiedPath SymbolPath =
-            std::filesystem::read_symlink(
-                std::filesystem::path(AbsolutePath.str()))
-                .string();
-        if (RewriteFileName) {
-          rewriteFileName(SymbolPath);
-          rewriteFileName(SourcePath);
-        }
-        // The code is to create symbol file and link the file to target file.
-        // The code will iterate to get the parent path of the
-        // absolute path of the file. Then create the target directory if the
-        // canonical path is not exists in the out root path.
-        auto ReplPath = SourcePath;
-        rewriteAbsoluteDir(ReplPath, InRoot, OutRoot);
+      tooling::UnifiedPath SymbolPath =
+          std::filesystem::read_symlink(
+              std::filesystem::path(FilePath.getAbsolutePath().str()))
+              .string();
+      if (RewriteFileName) {
+        rewriteFileName(SymbolPath);
+        rewriteFileName(SourcePath);
+      }
+      // Create a symbolic link and link the file to the target file.
+      rewriteAbsoluteDir(SourcePath, InRoot, OutRoot);
 
-        auto AbsoluteParentPath = sys::path::parent_path(AbsolutePath);
-        if (llvm::sys::fs::is_symlink_file(AbsoluteParentPath)) {
-          createSymLink(AbsoluteParentPath, InRoot, OutRoot, false);
-        }
-        auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
-        rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
-        if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
-          createDirectories(ParentPath.getAbsolutePath());
-        }
-        try {
-          std::filesystem::create_symlink(
-              std::filesystem::path(SymbolPath.getPath().str()),
-              std::filesystem::path(ReplPath.getAbsolutePath().str()));
-        } catch (const std::filesystem::filesystem_error &e) {
-          std::cerr << "Error creating symbolic link: " << e.what()
-                    << std::endl;
-        }
+      auto AbsoluteParentPath = sys::path::parent_path(FilePath.getAbsolutePath());
+      if (llvm::sys::fs::is_symlink_file(AbsoluteParentPath)) {
+        createSymLink(AbsoluteParentPath, InRoot, OutRoot, false);
       }
-      SourcePath = path::parent_path(AbsolutePath);
-      if (!isChildOrSamePath(OutRoot, SourcePath)) {
-        return;
+      auto ParentPath = tooling::UnifiedPath(AbsoluteParentPath);
+      rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
+      if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
+        createDirectories(ParentPath.getAbsolutePath());
       }
-    }
+      try {
+        std::filesystem::create_symlink(
+            std::filesystem::path(SymbolPath.getPath().str()),
+            std::filesystem::path(SourcePath.getAbsolutePath().str()));
+      } catch (const std::filesystem::filesystem_error &e) {
+        std::cerr << "Error creating symbolic link: " << e.what() << std::endl;
+      }
   }
 }
 void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
@@ -308,15 +293,8 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC),
          End;
          Iter != End; Iter.increment(EC)) {
-          // Skip output directory if it is in the in-root directory.
+      // Skip output directory if it is in the in-root directory.
       if (Iter->type() == fs::file_type::symlink_file) {
-
-        tooling::UnifiedPath RootSource = Iter->path();
-        if (IncludeFileMap.find(Iter->path()) != IncludeFileMap.end()) {
-          if (IncludeFileMap[RootSource]) {
-            rewriteFileName(RootSource);
-          }
-        }
         createSymLink(Iter->path(), InRoot, OutRoot,
                       IncludeFileMap[Iter->path()]);
       }
