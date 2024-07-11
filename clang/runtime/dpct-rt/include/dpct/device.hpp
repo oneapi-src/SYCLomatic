@@ -793,7 +793,7 @@ private:
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
   /// stack of devices resulting from CUDA context change;
-  static thread_local std::stack<unsigned int> _dev_stack;
+  static inline thread_local std::stack<unsigned int> _dev_stack;
   /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
   /// _dev_stack, which means the last set device should be used for the current
   /// thread.
