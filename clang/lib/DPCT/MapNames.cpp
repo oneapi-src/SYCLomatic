@@ -1590,7 +1590,6 @@ void MapNames::setExplicitNamespaceMap() {
   {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames.inc"
 #include "APINames_CUB.inc"
-#include "APINames_Graph.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
@@ -4267,7 +4266,6 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
   {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_CUB.inc"
-#include "APINames_Graph.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
 #include "APINames_NVTX.inc"
