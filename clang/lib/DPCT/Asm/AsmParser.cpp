@@ -223,10 +223,6 @@ InlineAsmBuiltinType *InlineAsmContext::getTypeFromClangType(const Type *T) {
       .Default(nullptr);
 }
 
-InlineAsmType::~InlineAsmType() = default;
-InlineAsmDecl::~InlineAsmDecl() = default;
-InlineAsmStmt::~InlineAsmStmt() = default;
-
 InlineAsmDeclResult
 InlineAsmParser::addInlineAsmOperands(const Expr *E, StringRef Operand,
                                       StringRef Constraint) {
