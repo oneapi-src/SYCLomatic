@@ -107,6 +107,8 @@ public:
     void value(std::string_view value) { js.os << "\"" << value << "\""; };
     void value(float value) { js.os << "\"" << value << "\""; };
     void value(size_t value) { js.os << "\"" << value << "\""; };
+    void value(int value) { js.os << "\"" << value << "\""; };
+    void value(void *value) { js.os << "\"" << value << "\""; };
     ~json_obj() {
       js.indent.resize(js.indent.size() - js.tab_length);
       js.os << js.newline;

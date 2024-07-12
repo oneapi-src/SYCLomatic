@@ -14,7 +14,8 @@ import sys
 from collections.abc import Container
 import math
 from argparse import RawTextHelpFormatter
-
+import graphviz as gv
+import random
 UUID = "ID"
 CHECKPOINT = "CheckPoint"
 DATA = "Data"
@@ -22,6 +23,11 @@ TYPE = "Type"
 FREE_MEM = "Free Device Memory"
 TOTAL_MEM = "Total Device Memory"
 TIME_ELAPSED = "Elapse Time(ms)"
+DEVICE_NAME = "Device Name"
+DEVICE_ID = "Device ID"
+STREAM_ADDRESS = "Stream Address"
+INDEX = "Index"
+ADDRESS = "Address"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
@@ -37,6 +43,7 @@ default_epsilons = {
     "rel_tol": 1e-3,
 }
 
+mismatch_var_map = {"epi" : {}, "pro" : {}}
 
 # Raise the warning message when the data is not matched.
 def data_value_dismatch_error(value1, value2):
@@ -165,6 +172,8 @@ def compare_list_value(cuda_list, sycl_list, var_name, var_type):
 
 def compare_dict_value(cuda_dict, sycl_dict, var_name, var_type):
     for name, data in cuda_dict.items():
+        if name == INDEX or name == ADDRESS:
+            continue
         if name not in sycl_dict:
             raise data_missed_error(name)
         if is_both_container(data, sycl_dict[name]):
@@ -192,14 +201,16 @@ def compare_cp_var(cuda_var, sycl_var, var_name):
     compare_container_value(cuda_var, sycl_var, var_name)
 
 
-def compare_checkpoint(cuda_checkpoint, sycl_checkpoint):
+def compare_checkpoint(phase, index, cuda_checkpoint, sycl_checkpoint):
     error_messages = []
+    mismatch_var_map[phase][index] = {}
     for var_name, cuda_var in cuda_checkpoint.items():
         sycl_var = sycl_checkpoint.get(var_name)
         if cuda_var is not None and sycl_var is not None:
             try:
                 compare_cp_var(cuda_var, sycl_var, var_name)
             except Exception as e:
+                mismatch_var_map[phase][index][var_name] = True
                 error_messages.append(str(e))
             continue
     if error_messages:
@@ -212,8 +223,11 @@ def is_checkpoint_length_dismatch(cuda_list, sycl_list):
     if len(cuda_list) != len(sycl_list):
         print_checkpoint_length_dismatch_warning(cuda_list, sycl_list)
 
-
 def compare_checkpoint_list(
+    ordered_pro_id_cuda,
+    ordered_epi_id_cuda,
+    ordered_pro_id_sycl,
+    ordered_epi_id_sycl,
     cuda_prolog_checkpoint_list,
     cuda_epilog_checkpoint_list,
     sycl_prolog_checkpoint_list,
@@ -230,8 +244,11 @@ def compare_checkpoint_list(
         cuda_epilog_checkpoint_list, sycl_epilog_checkpoint_list
     )
     failed_epilog = []
-
-    for id, cuda_epilog_checkpoint in cuda_epilog_checkpoint_list.items():
+    cuda_epi_size = len(ordered_epi_id_cuda)
+    for index in range(cuda_epi_size):
+        id = ordered_epi_id_cuda[index]
+        sycl_id = ordered_epi_id_sycl[index]
+        cuda_epilog_checkpoint = cuda_epilog_checkpoint_list[id]
         checkpoint_size += 1
         if not sycl_epilog_checkpoint_list.get(id):
             failed_log += get_missing_key_log(id)
@@ -239,7 +256,7 @@ def compare_checkpoint_list(
             continue
         try:
             compare_checkpoint(
-                cuda_epilog_checkpoint, sycl_epilog_checkpoint_list.get(id)
+                "epi", index, cuda_epilog_checkpoint, sycl_epilog_checkpoint_list.get(sycl_id)
             )
             match_checkpoint_num += 1
         except comparison_error as e:
@@ -247,7 +264,11 @@ def compare_checkpoint_list(
             failed_epilog.append(id)
             dismatch_checkpoint_num += 1
             continue
-    for id, cuda_prolog_checkpoint in cuda_prolog_checkpoint_list.items():
+    cuda_pro_size = len(ordered_pro_id_cuda)
+    for index in range(cuda_pro_size):
+        id = ordered_pro_id_cuda[index]
+        sycl_id = ordered_pro_id_sycl[index]
+        cuda_prolog_checkpoint = cuda_prolog_checkpoint_list[id]
         checkpoint_size += 1
         if not sycl_prolog_checkpoint_list.get(id):
             failed_log += get_missing_key_log(id)
@@ -255,7 +276,7 @@ def compare_checkpoint_list(
             continue
         try:
             compare_checkpoint(
-                cuda_prolog_checkpoint, sycl_prolog_checkpoint_list.get(id)
+                "pro", index, cuda_prolog_checkpoint, sycl_prolog_checkpoint_list.get(sycl_id)
             )
             match_checkpoint_num += 1
         except comparison_error as e:
@@ -295,13 +316,18 @@ def get_checkpoint_list_from_json_file(file_path):
     json_data_list = read_data_from_json_file(file_path)
     prolog_checkpoint_list = {}
     epilog_checkpoint_list = {}
+    ordered_pro_id = []
+    ordered_epi_id = []
+    device_stream_dic = {}
     for item in json_data_list:
         id = item[UUID]
         if "prolog" in id:
+            ordered_pro_id.append(id)
             prolog_checkpoint_list[id] = item.get(CHECKPOINT, {})
         elif "epilog" in id:
+            ordered_epi_id.append(id)
             epilog_checkpoint_list[id] = item.get(CHECKPOINT, {})
-
+        device_stream_dic[id] = (item[DEVICE_ID], item[STREAM_ADDRESS], item[DEVICE_NAME])
         total_mem = item[TOTAL_MEM]
         free_mem = item[FREE_MEM]
         used_mem = int(total_mem) - int(free_mem)
@@ -313,6 +339,9 @@ def get_checkpoint_list_from_json_file(file_path):
         epilog_checkpoint_list,
         used_mem_dic,
         elapsed_time_dic,
+        device_stream_dic,
+        ordered_pro_id,
+        ordered_epi_id
     )
 
 
@@ -339,6 +368,142 @@ def get_memory_used(cp_list):
             max_mem = used_mem
     return (cp_id, max_mem)
 
+
+def generate_data_flow_graph(
+    device_stream_dic_cuda,
+    device_stream_dic_sycl,
+    ordered_pro_id_cuda,
+    ordered_epi_id_cuda,
+    ordered_pro_id_sycl,
+    ordered_epi_id_sycl,
+    cuda_prolog_checkpoint_list,
+    cuda_epilog_checkpoint_list,
+    sycl_prolog_checkpoint_list,
+    sycl_epilog_checkpoint_list
+):
+    dot = gv.Digraph('DataFlow Graph')
+    dot.attr(layout='nop2')
+    list_size = len(cuda_prolog_checkpoint_list)
+    datapoint_map = {}
+    layers = {}
+    stream_id_map = {}
+    max_input_node_num = {}
+    device_num = 0
+    kernel_output_map = {}
+    device_name_map_cuda = {}
+    device_name_map_sycl = {}
+    for index in range(list_size):
+        pid = ordered_pro_id_cuda[index]
+        segs = pid.split(":")
+        if segs[0] not in kernel_output_map:
+            kernel_output_map[segs[0]] = {}
+        pcheckpoint = cuda_prolog_checkpoint_list[pid]
+        echeckpoint = cuda_epilog_checkpoint_list[ordered_epi_id_cuda[index]]
+        for arg in pcheckpoint:
+            if (pcheckpoint[arg]["Type"] == "Pointer") or (pcheckpoint[arg]["Type"] == "Array"):
+                if pcheckpoint[arg] != echeckpoint[arg]:
+                    kernel_output_map[segs[0]][pcheckpoint[arg]["Index"]] = True
+    for index in range(list_size):
+        pid = ordered_pro_id_cuda[index]
+        pid_sycl = ordered_pro_id_sycl[index]
+        segs = pid.split(":")
+        pcheckpoint = cuda_prolog_checkpoint_list[pid]
+        echeckpoint = cuda_epilog_checkpoint_list[ordered_epi_id_cuda[index]]
+        input_nodes = []
+        output_nodes = []
+        kernel_node = {}
+        device = int(device_stream_dic_cuda[pid][0])
+        stream = device_stream_dic_cuda[pid][1]
+        if device not in device_name_map_cuda:
+            device_name_map_cuda[device] = device_stream_dic_cuda[pid][2]
+            device_name_map_sycl[device] = device_stream_dic_sycl[pid_sycl][2]
+        if device not in max_input_node_num:
+            max_input_node_num[device] = 0
+        if device not in layers:
+            device_num += 1
+            layers[device] = []
+        if device not in stream_id_map:
+            stream_id_map[device] = {}
+        if stream in stream_id_map[device]:
+            stream_id = stream_id_map[device][stream]
+        else:
+            stream_id_map[device][stream] = len(stream_id_map[device])
+            stream_id = stream_id_map[device][stream]
+        kernel_node["stream"] = stream_id
+        kernel_node["index"] = segs[0] + "_V" + str(index)
+        kernel_node["comment"] = segs[0] + ":" + segs[1] + ":" + segs[2] + ":" + segs[3]
+        for arg in pcheckpoint:
+            input_node = {}
+            output_node = {}
+            input_node["name"] = arg
+            if arg in mismatch_var_map["pro"][index]:
+                input_node["color"] = "red"
+            else :
+                input_node["color"] = "black"
+            input_node["type"] = pcheckpoint[arg]["Type"]
+            input_node["address"] = pcheckpoint[arg]["Address"]
+            if input_node["address"] not in datapoint_map :
+                datapoint_map[input_node["address"]] = 0
+            input_node["version"] = str(datapoint_map[input_node["address"]])
+            if (input_node["type"] == "Pointer") | (input_node["type"] == "Array"):
+                if (pcheckpoint[arg] != echeckpoint[arg]) or (pcheckpoint[arg]["Index"] in kernel_output_map[segs[0]]):
+                    datapoint_map[input_node["address"]] += 1
+                    output_node["name"] = arg
+                    if arg in mismatch_var_map["epi"][index]:
+                        output_node["color"] = "red"
+                    else :
+                        output_node["color"] = "black"
+                    output_node["type"] = echeckpoint[arg]["Type"]
+                    output_node["address"] = echeckpoint[arg]["Address"]
+                    output_node["version"] = str(datapoint_map[input_node["address"]])
+            input_nodes.append(input_node)
+            if len(output_node):
+                output_nodes.append(output_node)
+        if len(input_node) > max_input_node_num[device]:
+          max_input_node_num[device] = len(input_node)
+        layers[device].append({"in" : input_nodes, "out" : output_nodes, "kernel" : kernel_node})
+
+    layer_right = 0
+    device_num = len(stream_id_map)
+    for device_id in range(device_num):
+        stream_num = len(stream_id_map[device_id])
+        layer_width = max(stream_num * 1000, max_input_node_num[device_id] * 400)
+        dot.node("Device Name:" + device_name_map_cuda[device_id] + " / " + device_name_map_sycl[device_id] + "\nDevice Id: " + str(device_id), shape="box", pos=str(layer_right + layer_width / 2) + ",150!")
+        layer_right += layer_width
+        layer_top = -50
+        stream_step = layer_width / stream_num
+        for index in range(stream_num):
+            dot.node("Stream Id: " + str(index), shape="box", pos=str(stream_step * index + stream_step / 2) + ",100!")
+        layer_size = len(layers[device_id])
+        for index in range(layer_size):
+            input_node_num = len(layers[device_id][index]["in"])
+            if input_node_num:
+                input_right_step = layer_width / input_node_num
+                input_right_pos = input_right_step / 2
+                for node in layers[device_id][index]["in"]:
+                    dot.node(node["name"] + str(index) + "i", node["name"] + ":V" + str(node["version"]) + ":" + node["address"], color=node["color"], penwidth="3" if node["color"] == "red" else "1", pos=str(input_right_pos) + "," + str(layer_top) + "!")
+                    input_right_pos += input_right_step
+                layer_top -= 100
+
+            kernel_node = layers[device_id][index]["kernel"]
+            dot.node(kernel_node["index"], kernel_node["comment"], shape="box", pos=str(stream_step * kernel_node["stream"] + stream_step / 2) + "," + str(layer_top) + "!")
+            layer_top -= 100
+
+            output_node_num = len(layers[device_id][index]["out"])
+            if output_node_num:
+                output_right_step = layer_width / output_node_num
+                output_right_pos = output_right_step / 2
+                for node in layers[device_id][index]["out"]:
+                    dot.node(node["name"] + str(index) + "o", node["name"] + ":V" + str(node["version"]) + ":" + node["address"], color=node["color"], penwidth="3" if node["color"] == "red" else "1", pos=str(output_right_pos) + "," + str(layer_top) + "!")
+                    output_right_pos += output_right_step
+                layer_top -= 100
+            if input_node_num:
+                for node in layers[device_id][index]["in"]:
+                    dot.edge(node["name"] + str(index) + "i", kernel_node["index"])
+            if output_node_num:
+                for node in layers[device_id][index]["out"]:
+                    dot.edge(kernel_node["index"], node["name"] + str(index) + "o")
+    dot.render(filename='DataFlow_Graph', format='pdf', directory='.')
 
 def main():
     global EPSILON_FILE
@@ -394,12 +559,18 @@ def main():
         cuda_epilog_checkpoint_list,
         mem_used_cuda,
         time_cuda,
+        device_stream_dic_cuda,
+        ordered_pro_id_cuda,
+        ordered_epi_id_cuda
     ) = get_checkpoint_list_from_json_file(args.instrumented_cuda_log)
     (
         sycl_prolog_checkpoint_list,
         sycl_epilog_checkpoint_list,
         mem_used_sycl,
         time_sycl,
+        device_stream_dic_sycl,
+        ordered_pro_id_sycl,
+        ordered_epi_id_sycl
     ) = get_checkpoint_list_from_json_file(args.instrumented_sycl_log)
 
     bottleneck_cuda = get_bottleneck(time_cuda)
@@ -409,6 +580,10 @@ def main():
 
     match_checkpoint_num, dismatch_checkpoint_num, checkpoint_size, failed_log = (
         compare_checkpoint_list(
+            ordered_pro_id_cuda,
+            ordered_epi_id_cuda,
+            ordered_pro_id_sycl,
+            ordered_epi_id_sycl,
             cuda_prolog_checkpoint_list,
             cuda_epilog_checkpoint_list,
             sycl_prolog_checkpoint_list,
@@ -417,6 +592,19 @@ def main():
             dismatch_checkpoint_num,
             checkpoint_size,
         )
+    )
+
+    generate_data_flow_graph(
+        device_stream_dic_cuda,
+        device_stream_dic_sycl,
+        ordered_pro_id_cuda,
+        ordered_epi_id_cuda,
+        ordered_pro_id_sycl,
+        ordered_epi_id_sycl,
+        cuda_prolog_checkpoint_list,
+        cuda_epilog_checkpoint_list,
+        sycl_prolog_checkpoint_list,
+        sycl_epilog_checkpoint_list
     )
 
     with open(CODEPIN_REPORT_FILE, "w") as f:
