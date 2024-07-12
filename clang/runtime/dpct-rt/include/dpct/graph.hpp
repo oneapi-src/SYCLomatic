@@ -38,10 +38,10 @@ public:
     return instance;
   }
 
-  bool begin_recording(sycl::queue *queue_ptr) {
+  void begin_recording(sycl::queue *queue_ptr) {
     // Calling begin_recording on an already recording queue is a no-op in SYCL
     if (queue_graph_map.find(queue_ptr) != queue_graph_map.end()) {
-      return false;
+      return;
     }
     auto graph = new sycl::ext::oneapi::experimental::command_graph<
         sycl::ext::oneapi::experimental::graph_state::modifiable>(
@@ -49,20 +49,20 @@ public:
     auto result = queue_graph_map.insert({queue_ptr, graph});
     if (!result.second) {
       delete graph;
-      return false;
+      return;
     }
-    return graph->begin_recording(*queue_ptr);
+    graph->begin_recording(*queue_ptr);
   }
 
-  bool end_recording(sycl::queue *queue_ptr,
+  void end_recording(sycl::queue *queue_ptr,
                      dpct::experimental::command_graph_ptr *graph) {
     auto it = queue_graph_map.find(queue_ptr);
     if (it == queue_graph_map.end()) {
-      return false;
+      return;
     }
     *graph = it->second;
     queue_graph_map.erase(it);
-    return (*graph)->end_recording();
+    (*graph)->end_recording();
   }
 
 private:
@@ -73,9 +73,8 @@ private:
 /// Begins recording commands into a command graph for a specific SYCL queue.
 /// \param [in] queue_ptr A pointer to the SYCL queue on which the commands
 /// will be recorded.
-/// \returns `true` if the recording is successfully started.
-static inline bool begin_recording(sycl::queue *queue_ptr) {
-  return detail::graph_mgr::instance().begin_recording(queue_ptr);
+static inline void begin_recording(sycl::queue *queue_ptr) {
+  detail::graph_mgr::instance().begin_recording(queue_ptr);
 }
 
 /// Ends the recording of commands into a command graph for a specific SYCL
@@ -84,11 +83,9 @@ static inline bool begin_recording(sycl::queue *queue_ptr) {
 /// were recorded.
 /// \param [out] graph A pointer to a command_graph_ptr pointer where the
 /// command graph will be assigned.
-/// \returns `true` if the recording is successfully ended and the
-/// graph is assigned.
-static inline bool end_recording(sycl::queue *queue_ptr,
+static inline void end_recording(sycl::queue *queue_ptr,
                                  dpct::experimental::command_graph_ptr *graph) {
-  return detail::graph_mgr::instance().end_recording(queue_ptr, graph);
+  detail::graph_mgr::instance().end_recording(queue_ptr, graph);
 }
 
 /// Adds an empty node to the command graph with optional
