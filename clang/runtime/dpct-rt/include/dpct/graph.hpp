@@ -38,18 +38,10 @@ public:
     return instance;
   }
 
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-  bool begin_recording(sycl::queue *queue_ptr) {
-#else
   void begin_recording(sycl::queue *queue_ptr) {
-#endif
     // Calling begin_recording on an already recording queue is a no-op in SYCL
     if (queue_graph_map.find(queue_ptr) != queue_graph_map.end()) {
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-      return false;
-#else
       return;
-#endif
     }
     auto graph = new sycl::ext::oneapi::experimental::command_graph<
         sycl::ext::oneapi::experimental::graph_state::modifiable>(
@@ -57,42 +49,20 @@ public:
     auto result = queue_graph_map.insert({queue_ptr, graph});
     if (!result.second) {
       delete graph;
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-      return false;
-#else
       return;
-#endif
     }
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-    return graph->begin_recording(*queue_ptr);
-#else
     graph->begin_recording(*queue_ptr);
-    return;
-#endif
   }
 
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-  bool end_recording(sycl::queue *queue_ptr,
-#else
   void end_recording(sycl::queue *queue_ptr,
-#endif
                      dpct::experimental::command_graph_ptr *graph) {
     auto it = queue_graph_map.find(queue_ptr);
     if (it == queue_graph_map.end()) {
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-      return false;
-#else
       return;
-#endif
     }
     *graph = it->second;
     queue_graph_map.erase(it);
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-    return (*graph)->end_recording();
-#else
     (*graph)->end_recording();
-    return;
-#endif
   }
 
 private:
@@ -103,14 +73,8 @@ private:
 /// Begins recording commands into a command graph for a specific SYCL queue.
 /// \param [in] queue_ptr A pointer to the SYCL queue on which the commands
 /// will be recorded.
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-/// \returns `true` if the recording is successfully started.
-static inline bool begin_recording(sycl::queue *queue_ptr) {
-  return detail::graph_mgr::instance().begin_recording(queue_ptr);
-#else
 static inline void begin_recording(sycl::queue *queue_ptr) {
   detail::graph_mgr::instance().begin_recording(queue_ptr);
-#endif
 }
 
 /// Ends the recording of commands into a command graph for a specific SYCL
@@ -119,17 +83,9 @@ static inline void begin_recording(sycl::queue *queue_ptr) {
 /// were recorded.
 /// \param [out] graph A pointer to a command_graph_ptr pointer where the
 /// command graph will be assigned.
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240427)
-/// \returns `true` if the recording is successfully ended and the
-/// graph is assigned.
-static inline bool end_recording(sycl::queue *queue_ptr,
-                                 dpct::experimental::command_graph_ptr *graph) {
-  return detail::graph_mgr::instance().end_recording(queue_ptr, graph);
-#else
 static inline void end_recording(sycl::queue *queue_ptr,
                                  dpct::experimental::command_graph_ptr *graph) {
   detail::graph_mgr::instance().end_recording(queue_ptr, graph);
-#endif
 }
 
 /// Adds an empty node to the command graph with optional
