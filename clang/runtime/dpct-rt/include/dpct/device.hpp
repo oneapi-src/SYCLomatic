@@ -795,7 +795,7 @@ private:
   /// stack of devices resulting from CUDA context change;
   static inline thread_local std::stack<unsigned int> _dev_stack;
   /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
-  /// _dev_stack, which means the last set device should be used for the current
+  /// _dev_stack, which means the default device should be used for the current
   /// thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
   int _cpu_device = -1;
