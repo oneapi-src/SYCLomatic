@@ -43,7 +43,7 @@ int main(){
   // CHECK-NEXT: */
   cuDevicePrimaryCtxRelease(device);
 
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::select_device(device)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::push_device_for_curr_thread(device)));
   MY_SAFE_CALL(cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device));
 
   // CHECK: dpct::select_device(ctx);
