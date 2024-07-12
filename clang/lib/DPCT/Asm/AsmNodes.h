@@ -1,4 +1,4 @@
-//===---------------------------- InlineAsm.h -------------------*- C++ -*-===//
+//===---------------------------- AsmNodes.h --------------------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef CLANG_DPCT_INLINE_ASM_H
-#define CLANG_DPCT_INLINE_ASM_H
+#ifndef CLANG_DPCT_ASM_NODES_H
+#define CLANG_DPCT_ASM_NODES_H
 
 #include "AsmIdentifierTable.h"
 #include "llvm/ADT/APFloat.h"
@@ -182,6 +182,7 @@ protected:
       : InlineAsmDecl(DC), Name(Name) {}
 
 public:
+  ~InlineAsmNamedDecl();
   InlineAsmIdentifierInfo *getDeclName() const { return Name; }
 
   static bool classof(InlineAsmDecl *D) {
@@ -833,4 +834,4 @@ public:
 } // namespace dpct
 } // namespace clang
 
-#endif // CLANG_DPCT_INLINE_ASM_H
+#endif // CLANG_DPCT_ASM_NODES_H

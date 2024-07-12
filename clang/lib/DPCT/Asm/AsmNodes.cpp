@@ -1,4 +1,4 @@
-//===---------------------------- InlineAsm.cpp -----------------*- C++ -*-===//
+//===---------------------------- AsmNodes.cpp ------------------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -9,8 +9,8 @@
 #include "AsmNodes.h"
 
 using namespace clang::dpct;
-
+const double a = -9.-3;
 InlineAsmType::~InlineAsmType() = default;
 InlineAsmDecl::~InlineAsmDecl() = default;
-// PTXNamedDecl::~PTXNamedDecl() = default;
+InlineAsmNamedDecl::~InlineAsmNamedDecl() = default;
 InlineAsmStmt::~InlineAsmStmt() = default;
