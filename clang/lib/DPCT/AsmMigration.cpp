@@ -50,8 +50,10 @@ class SYCLGenBase {
   SmallString<4> NewLine;
   SmallVector<SmallString<10>, 4> VecExprTypeRecord;
   raw_ostream *Stream;
+  InlineAsmContext &Context;
 
 protected:
+  const InlineAsmInstruction *CurrInst = nullptr;
   const GCCAsmStmt *GAS;
 
   class BlockDelimiterGuard {
@@ -100,8 +102,8 @@ protected:
   }
 
 public:
-  SYCLGenBase(llvm::raw_ostream &OS, const GCCAsmStmt *G)
-      : Stream(&OS), GAS(G) {}
+  SYCLGenBase(llvm::raw_ostream &OS, InlineAsmContext &Ctx, const GCCAsmStmt *G)
+      : Stream(&OS), Context(Ctx), GAS(G) {}
 
   virtual ~SYCLGenBase() = default;
 
@@ -212,7 +214,7 @@ protected:
   bool emitConditionalOperator(const InlineAsmConditionalOperator *Op);
   bool emitVectorExpr(const InlineAsmVectorExpr *E);
   bool emitDiscardExpr(const InlineAsmDiscardExpr *E) { return SYCLGenError(); }
-  bool emitAddressExpr(const InlineAsmAddressExpr *E) { return SYCLGenError(); }
+  bool emitAddressExpr(const InlineAsmAddressExpr *E);
   bool emitCastExpr(const InlineAsmCastExpr *E);
   bool emitParenExpr(const InlineAsmParenExpr *E);
   bool emitDeclRefExpr(const InlineAsmDeclRefExpr *E);
@@ -537,10 +539,74 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
   return SYCLGenSuccess();
 }
 
+bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
+  // Address expression only support ld/st instructions.
+  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld))
+    return SYCLGenError();
+  std::string Type;
+  if (tryEmitType(Type, CurrInst->getType(0)))
+    return SYCLGenError();
+  auto CanSuppressCast = [&](InlineAsmDeclRefExpr *DRE) {
+    auto *VD = dyn_cast<InlineAsmVarDecl>(&Dst->getSymbol()->getDecl());
+    if (VD->getInlineAsmOp()) {
+      if (const auto *Ptr = dyn_cast<PointerType>(
+              VD->getInlineAsmOp()->getType().getTypePtr())) {
+        return Context.getTypeFromClangType(
+                   Ptr->getPointeeType().getTypePtr()) == CurrInst->getType(0);
+      }
+    }
+    return false;
+  };
+  switch (Dst->getMemoryOpKind()) {
+  case InlineAsmAddressExpr::Imm:
+    OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type,
+                          Dst->getImmAddr()->getValue().getZExtValue());
+    break;
+  case InlineAsmAddressExpr::Reg: {
+    std::string Reg;
+    if (tryEmitStmt(Reg, Dst->getSymbol()))
+      return SYCLGenSuccess();
+    if (CanSuppressCast(Dst->getSymbol()))
+      OS() << llvm::formatv("*{0}", Reg);
+    else
+      OS() << llvm::formatv("*(({0} *){1})", Type, Reg);
+    break;
+  }
+  case InlineAsmAddressExpr::RegImm: {
+    std::string Reg;
+    if (tryEmitStmt(Reg, Dst->getSymbol()))
+      return SYCLGenSuccess();
+    OS() << llvm::formatv("*(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
+                          Dst->getImmAddr()->getValue().getZExtValue());
+    break;
+  }
+  case InlineAsmAddressExpr::Var: {
+    std::string Reg;
+    if (tryEmitStmt(Reg, Dst->getSymbol()))
+      return SYCLGenSuccess();
+    if (CanSuppressCast(Dst->getSymbol()))
+      OS() << llvm::formatv("{0}", Reg);
+    else
+      OS() << llvm::formatv("*(({0} *)&{1})", Type, Reg);
+    break;
+  }
+  case InlineAsmAddressExpr::VarImm: {
+    std::string Reg;
+    if (tryEmitStmt(Reg, Dst->getSymbol()))
+      return SYCLGenSuccess();
+    OS() << llvm::formatv("*(({0} *)((uintptr_t)&{1} + {2}))", Type, Reg,
+                          Dst->getImmAddr()->getValue().getZExtValue());
+    break;
+  }
+  }
+  return SYCLGenSuccess();
+}
+
 /// This used to handle the specific instruction.
 class SYCLGen : public SYCLGenBase {
 public:
-  SYCLGen(llvm::raw_ostream &OS, const GCCAsmStmt *G) : SYCLGenBase(OS, G) {}
+  SYCLGen(llvm::raw_ostream &OS, InlineAsmContext &Ctx, const GCCAsmStmt *G)
+      : SYCLGenBase(OS, Ctx, G) {}
 
   bool handleStatement(const InlineAsmStmt *S) { return emitStmt(S); }
 
@@ -2294,6 +2360,8 @@ protected:
   bool handle_st(const InlineAsmInstruction *Inst) override {
     if (Inst->getNumInputOperands() != 1)
       return SYCLGenError();
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
     const auto *Src = Inst->getInputOperand(0);
     const auto *Dst =
         dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getOutputOperand());
@@ -2302,50 +2370,31 @@ protected:
     std::string Type;
     if (tryEmitType(Type, Inst->getType(0)))
       return SYCLGenError();
-    switch (Dst->getMemoryOpKind()) {
-    case InlineAsmAddressExpr::Imm:
-      OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type,
-                            Dst->getImmAddr()->getValue().getZExtValue());
-      break;
-    case InlineAsmAddressExpr::Reg: {
-      std::string Reg;
-      if (tryEmitStmt(Reg, Dst->getSymbol()))
-        return SYCLGenSuccess();
-      OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type, Reg);
-      break;
-    }
-    case InlineAsmAddressExpr::RegImm: {
-      std::string Reg;
-      if (tryEmitStmt(Reg, Dst->getSymbol()))
-        return SYCLGenSuccess();
-      OS() << llvm::formatv("*(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
-                            Dst->getImmAddr()->getValue().getZExtValue());
-      break;
-    }
-    case InlineAsmAddressExpr::Var: {
-      std::string Reg;
-      if (tryEmitStmt(Reg, Dst->getSymbol()))
-        return SYCLGenSuccess();
-      if (Inst->getType(0) == Dst->getSymbol()->getType())
-        OS() << llvm::formatv("{0}", Reg);
-      else
-        OS() << llvm::formatv("*(({0} *)(uintptr_t)&{1})", Type, Reg);
-      break;
-    }
-    case InlineAsmAddressExpr::VarImm: {
-      std::string Reg;
-      if (tryEmitStmt(Reg, Dst->getSymbol()))
-        return SYCLGenSuccess();
-      if (Inst->getType(0) == Dst->getSymbol()->getType())
-        OS() << llvm::formatv("*(({0} *)((uintptr_t)&{1} + {2}))", Type, Reg,
-                              Dst->getImmAddr()->getValue().getZExtValue());
-      else
-        OS() << llvm::formatv("(&{0})[{1}]", Reg,
-                              Dst->getImmAddr()->getValue().getZExtValue());
-      break;
-    }
-    }
+    if (emitStmt(Dst))
+      return SYCLGenError();
+    OS() << " = ";
+    if (emitStmt(Src))
+      return SYCLGenError();
+    endstmt();
+    return SYCLGenSuccess();
+  }
 
+  bool handle_ld(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 1)
+      return SYCLGenError();
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+    const auto *Src =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getInputOperand(0));
+    const auto *Dst = Inst->getOutputOperand();
+
+    if (!Src)
+      return false;
+    std::string Type;
+    if (tryEmitType(Type, Inst->getType(0)))
+      return SYCLGenError();
+    if (emitStmt(Dst))
+      return SYCLGenError();
     OS() << " = ";
     if (emitStmt(Src))
       return SYCLGenError();
@@ -2539,7 +2588,7 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   Parser.getLexer().setIdentifierHandler(&Handle);
   std::string ReplaceString;
   llvm::raw_string_ostream OS(ReplaceString);
-  SYCLGen CodeGen(OS, GAS);
+  SYCLGen CodeGen(OS, Context, GAS);
   StringRef Indent = getIndent(SM.getSpellingLoc(GAS->getBeginLoc()),
                                DpctGlobalInfo::getSourceManager());
 

@@ -156,10 +156,10 @@ InlineAsmContext::getTypeFromConstraint(StringRef Constraint) {
   return nullptr;
 }
 
-InlineAsmBuiltinType *InlineAsmContext::getTypeFromExpr(const clang::Expr *E) {
-  if (E->getType()->isBuiltinType()) {
-    auto *T = E->getType()->getAs<clang::BuiltinType>();
-    switch (T->getKind()) {
+InlineAsmBuiltinType *InlineAsmContext::getTypeFromClangType(const Type *T) {
+  if (T->isBuiltinType()) {
+    auto *BT = T->getAs<clang::BuiltinType>();
+    switch (BT->getKind()) {
     case BuiltinType::SChar:
       return getBuiltinType(InlineAsmBuiltinType::s8);
     case BuiltinType::UChar:
@@ -210,7 +210,7 @@ InlineAsmBuiltinType *InlineAsmContext::getTypeFromExpr(const clang::Expr *E) {
   // print raw typename without 'struct' prefix
   PrintingPolicy Policy(LangOptions{});
   Policy.adjustForCPlusPlus();
-  std::string TypeName = E->getType().getCanonicalType().getAsString(Policy);
+  std::string TypeName = T->getCanonicalTypeInternal().getAsString(Policy);
   return llvm::StringSwitch<InlineAsmBuiltinType *>(TypeName)
       .Case("__half", getBuiltinType(InlineAsmBuiltinType::f16))
       .Case("__half2", getBuiltinType(InlineAsmBuiltinType::f16x2))
@@ -232,7 +232,7 @@ InlineAsmParser::addInlineAsmOperands(const Expr *E, StringRef Operand,
                                       StringRef Constraint) {
   unsigned Index = Context.addInlineAsmOperand(Operand);
   InlineAsmIdentifierInfo *II = Context.get(Index);
-  InlineAsmType *Type = Context.getTypeFromExpr(E);
+  InlineAsmType *Type = Context.getTypeFromClangType(E->getType().getTypePtr());
   if (!Type)
     Type = Context.getTypeFromConstraint(Constraint);
   if (!Type)
@@ -240,6 +240,7 @@ InlineAsmParser::addInlineAsmOperands(const Expr *E, StringRef Operand,
 
   InlineAsmVarDecl *VD =
       ::new (Context) InlineAsmVarDecl(II, AsmStateSpace::S_reg, Type);
+  VD->setInlineAsmOp(E);
   getCurScope()->addDecl(VD);
   return VD;
 }

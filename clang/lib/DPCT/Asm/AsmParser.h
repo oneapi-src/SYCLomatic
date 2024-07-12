@@ -109,7 +109,7 @@ public:
   }
 
   InlineAsmBuiltinType *getTypeFromConstraint(StringRef Constraint);
-  InlineAsmBuiltinType *getTypeFromExpr(const Expr *E);
+  InlineAsmBuiltinType *getTypeFromClangType(const Type *E);
   InlineAsmBuiltinType *getBuiltinType(StringRef TypeName);
   InlineAsmBuiltinType *getBuiltinType(InlineAsmBuiltinType::TypeKind Kind);
   InlineAsmBuiltinType *getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind);

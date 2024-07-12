@@ -6,10 +6,11 @@
 
 // clang-format off
 #include <cuda_runtime.h>
-#include <cstdint>
 
 __global__ void st(int *a) {
-  // CHECK: *((uint32_t *)(uintptr_t)a) = 111;
+  // CHECK: *a = 111;
+  asm volatile ("st.global.s32 [%0], %1;" :: "l"(a), "r"(111));
+  // CHECK: *((uint32_t *)a) = 111;
   asm volatile ("st.global.u32 [%0], %1;" :: "l"(a), "r"(111));
   // CHECK: *((uint32_t *)((uintptr_t)a + 4)) = 222;
   asm volatile ("st.global.u32 [%0 + 4], %1;" :: "l"(a), "r"(222));

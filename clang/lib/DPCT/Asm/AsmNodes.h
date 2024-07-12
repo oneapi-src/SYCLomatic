@@ -16,7 +16,10 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/ErrorHandling.h"
 
-namespace clang::dpct {
+namespace clang {
+class Expr;
+class Type;
+namespace dpct {
 class InlineAsmType;
 class InlineAsmDecl;
 class InlineAsmExpr;
@@ -208,6 +211,9 @@ class InlineAsmVarDecl : public InlineAsmNamedDecl {
   /// Has parameterized names in this variable declaration.
   bool IsParameterizedNameDecl = false;
 
+  /// Is a inline asm statement operand.
+  const Expr *InlineAsmOp = nullptr;
+
 public:
   InlineAsmVarDecl(InlineAsmIdentifierInfo *Name, AsmStateSpace SS,
                    InlineAsmType *Type)
@@ -218,6 +224,8 @@ public:
     return StateSpace;
   }
 
+  void setInlineAsmOp(const Expr *Val) { InlineAsmOp = Val; }
+  const Expr *getInlineAsmOp() const { return InlineAsmOp; }
   InlineAsmType *getType() { return Type; }
   const InlineAsmType *getType() const { return Type; }
 
@@ -822,6 +830,7 @@ public:
     return S->getStmtClass() == ConditionalOperatorClass;
   }
 };
-} // namespace clang::dpct
+} // namespace dpct
+} // namespace clang
 
 #endif // CLANG_DPCT_INLINE_ASM_H
