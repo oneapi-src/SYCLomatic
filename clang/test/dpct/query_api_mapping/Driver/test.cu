@@ -257,8 +257,7 @@
 // CUPOINTERGETATTRIBUTES: CUDA API:
 // CUPOINTERGETATTRIBUTES-NEXT:   CUdeviceptr *ptr;
 // CUPOINTERGETATTRIBUTES-NEXT:   cuPointerGetAttributes(numAttributes /*unsigned int*/,
-// CUPOINTERGETATTRIBUTES-NEXT:                            attributes /*CUpointer_attribute **/);
-// CUPOINTERGETATTRIBUTES-NEXT:                            data /*void **/);
+// CUPOINTERGETATTRIBUTES-NEXT:                            attributes /*CUpointer_attribute **/, data /*void **/,
 // CUPOINTERGETATTRIBUTES-NEXT:                            ptr /*CUdeviceptr*/);
 // CUPOINTERGETATTRIBUTES-NEXT: Is migrated to:
 // CUPOINTERGETATTRIBUTES-NEXT:   dpct::device_ptr ptr;

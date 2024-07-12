@@ -6,4 +6,3 @@ void test(unsigned int numAttributes, CUpointer_attribute *attributes,
                         ptr /*CUdeviceptr*/);
   // End
 }
-

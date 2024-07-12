@@ -1693,9 +1693,8 @@ public:
 #endif
   }
 
-  static void get(unsigned int numAttributes,
-                  attribute_type *attributes, void **data,
-                  device_ptr ptr) {
+  static void get(unsigned int numAttributes, attribute_type *attributes,
+                  void **data, device_ptr ptr) {
     pointer_attributes sycl_attributes;
 
     sycl_attributes.init(ptr);
