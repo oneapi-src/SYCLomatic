@@ -661,9 +661,12 @@ public:
   /// be obtained through get_device_id(const sycl::device).
   void select_device(unsigned int id) {
     /// Replace the top of the stack with the given device id
-    if (!_dev_stack.empty())
-      pop_device();
-    push_device(id);
+    if (_dev_stack.empty()) {
+      push_device(id);
+    } else {
+      check_id(id);
+      _dev_stack.top() = id;
+    }
   }
 
   unsigned int device_count() { return _devs.size(); }
