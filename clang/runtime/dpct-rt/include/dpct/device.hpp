@@ -722,7 +722,8 @@ public:
         break;
       }
     }
-    _dev_stack = std::stack<unsigned int>();
+    /// Clear the device stack for all thread here. But we don't have access to
+    /// all threads current implementation.
 #ifdef DPCT_HELPER_VERBOSE
     list_devices();
 #endif
