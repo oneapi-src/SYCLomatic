@@ -384,6 +384,11 @@ CASE_FACTORY_ENTRY(
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_rank",
                           NDITEM, false, "get_local_linear_id")
 
+// FEATURE_REQUEST_FACTORY(
+//     HelperFeatureEnum::device_ext,
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::this_group",
+                        //   NDITEM, false, "ext_oneapi_get_root_group")
+                        CALL("ext_oneapi_get_root_group"))
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),

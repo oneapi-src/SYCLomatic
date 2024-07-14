@@ -8739,38 +8739,38 @@ void DeviceFunctionDeclRule::runRule(
     if (!Var->getInit())
       return;
 
-    if (auto CE =
-            dyn_cast<CallExpr>(Var->getInit()->IgnoreUnlessSpelledInSource())) {
-      if (CE->getType().getCanonicalType().getAsString() !=
-          "class cooperative_groups::__v1::grid_group")
-        return;
+    // if (auto CE =
+    //         dyn_cast<CallExpr>(Var->getInit()->IgnoreUnlessSpelledInSource())) {
+      // if (CE->getType().getCanonicalType().getAsString() !=
+      //     "class cooperative_groups::__v1::grid_group")
+      //   return;
 
-      if (!DpctGlobalInfo::useNdRangeBarrier()) {
-        auto Name = Var->getNameAsString();
-        report(Var->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false,
-               "this_grid()");
-        return;
-      }
+      // if (!DpctGlobalInfo::useNdRangeBarrier()) {
+      //   auto Name = Var->getNameAsString();
+      //   report(Var->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false,
+      //          "this_grid()");
+      //   return;
+      // }
 
-      FuncInfo->setSync();
-      auto Begin = Var->getBeginLoc();
-      auto End = Var->getEndLoc();
-      const auto &SM = *Result.SourceManager;
+      // FuncInfo->setSync();
+      // auto Begin = Var->getBeginLoc();
+      // auto End = Var->getEndLoc();
+      // const auto &SM = *Result.SourceManager;
 
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+      // End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+      //     End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
 
-      Token Tok;
-      Tok = Lexer::findNextToken(
-                End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())
-                .value();
-      End = Tok.getLocation();
+      // Token Tok;
+      // Tok = Lexer::findNextToken(
+      //           End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())
+      //           .value();
+      // End = Tok.getLocation();
 
-      auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+      // auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
 
-      // Remove statement "cg::grid_group grid = cg::this_grid();"
-      emplaceTransformation(new ReplaceText(Begin, Length, ""));
-    }
+      // // Remove statement "cg::grid_group grid = cg::this_grid();"
+      // emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    // }
   }
   if (getAssistNodeAsType<TypeLoc>(Result, "fp64")) {
     FuncInfo->setBF64();
@@ -11917,6 +11917,7 @@ void CooperativeGroupsFunctionRule::runRule(
   }
   if (!CE)
     return;
+  CE->dump();
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
@@ -11938,14 +11939,14 @@ void CooperativeGroupsFunctionRule::runRule(
   };
 
   ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
-
+  llvm::outs() << "CG call " << FuncName << "\n";
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
       FuncName == "shfl_down" || FuncName == "shfl_up" || FuncName == "shfl" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
       FuncName == "reduce" || FuncName == "thread_index" ||
       FuncName == "group_index" || FuncName == "num_threads" ||
       FuncName == "inclusive_scan" || FuncName == "exclusive_scan" ||
-      FuncName == "coalesced_threads") {
+      FuncName == "coalesced_threads"|| FuncName == "this_grid") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
