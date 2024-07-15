@@ -19,10 +19,11 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY(
         "cudnnGetCudartVersion",
-        CALL_FACTORY_ENTRY(
-            "cudnnGetCudartVersion",
-            CALL(MapNames::getDpctNamespace() + "get_major_version",
-                 LITERAL(MapNames::getDpctNamespace() + "get_current_device"))),
+        CALL_FACTORY_ENTRY("cudnnGetCudartVersion",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "get_major_version",
+                                LITERAL(MapNames::getDpctNamespace() +
+                                        "get_current_device()"))),
         Diagnostics::TYPE_MISMATCH))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,

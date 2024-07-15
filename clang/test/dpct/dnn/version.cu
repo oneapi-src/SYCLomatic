@@ -16,7 +16,7 @@ int main() {
     // CHECK:   /*
     // CHECK:   DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK:   */
-    // CHECK: version = dpct::get_major_version(dpct::get_current_device);
+    // CHECK: version = dpct::get_major_version(dpct::get_current_device());
     version = cudnnGetCudartVersion();
 
     return 0;
