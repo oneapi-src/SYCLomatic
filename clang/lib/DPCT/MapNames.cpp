@@ -378,6 +378,12 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
+      {"CUDA_ARRAY3D_DESCRIPTOR",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::image_descriptor"
+               : getDpctNamespace() + "image_matrix_desc")},
       {"CUDA_ARRAY_DESCRIPTOR",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
@@ -4338,6 +4344,7 @@ const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
 const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
     {"Width", "width"},
     {"Height", "height"},
+    {"Depth", "depth"},
     {"Format", "channel_type"},
     {"NumChannels", "num_channels"}};
 
@@ -4377,7 +4384,7 @@ const MapNames::MapTy MemoryDataTypeRule::GetSetReplMemberNames{
 };
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
-    "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
+    "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType", "Flags"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block",

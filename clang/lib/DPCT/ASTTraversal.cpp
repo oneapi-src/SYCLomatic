@@ -1740,7 +1740,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
-              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR", "cublasLtHandle_t",
+              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR",
+              "CUDA_ARRAY3D_DESCRIPTOR", "cublasLtHandle_t",
               "cublasLtMatmulDesc_t", "cublasLtOrder_t",
               "cublasLtPointerMode_t", "cublasLtMatrixLayout_t",
               "cublasLtMatrixLayoutAttribute_t",
@@ -11402,10 +11403,11 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
 }
 
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
-                               hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))))
-                    .bind("arrayMember"),
-                this);
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
+                     "CUDA_ARRAY_DESCRIPTOR", "CUDA_ARRAY3D_DESCRIPTOR"))))))
+          .bind("arrayMember"),
+      this);
   MF.addMatcher(
       memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
                      "cudaMemcpy3DParms", "CUDA_MEMCPY3D", "CUDA_MEMCPY2D"))))))
@@ -11424,6 +11426,15 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 
 void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
+    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(ME);
+    if (BO && BO->getOpcode() != BO_Assign) {
+      BO = nullptr;
+    }
+    if (isRemove(ME->getMemberDecl()->getName().str())) {
+      if (BO)
+        return emplaceTransformation(new ReplaceStmt(BO, ""));
+      return emplaceTransformation(new ReplaceStmt(ME, ""));
+    }
     const auto &Replace = MapNames::findReplacedName(
         ArrayDescMemberNames, ME->getMemberDecl()->getName().str());
     if (!Replace.empty())
@@ -12999,6 +13010,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaGetTextureObjectResourceDesc",
       "cudaGetTextureObjectTextureDesc",
       "cudaGetTextureObjectResourceViewDesc",
+      "cuArray3DCreate_v2",
       "cuArrayCreate_v2",
       "cuArrayDestroy",
       "cuTexObjectCreate",
