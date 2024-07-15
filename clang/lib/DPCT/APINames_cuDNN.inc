@@ -294,3 +294,8 @@ ENTRY(cudnnRNNForwardTrainingEx, cudnnRNNForwardTrainingEx, false, NO_FLAG, P4, 
 ENTRY(cudnnSetCTCLossDescriptor, cudnnSetCTCLossDescriptor, false, NO_FLAG, P4, "comment")
 ENTRY(cudnnSetCTCLossDescriptorEx, cudnnSetCTCLossDescriptorEx, false, NO_FLAG, P4, "comment")
 ENTRY(cudnnSetCTCLossDescriptor_v8, cudnnSetCTCLossDescriptor_v8, false, NO_FLAG, P4, "comment")
+ENTRY(cudnnGetCTCLossDescriptor_v9, cudnnGetCTCLossDescriptor_v9, false, NO_FLAG, P4, "comment")
+ENTRY(cudnnRNNGetClip_v9, cudnnRNNGetClip_v9, false, NO_FLAG, P4, "comment")
+ENTRY(cudnnRNNSetClip_v9, cudnnRNNSetClip_v9, false, NO_FLAG, P4, "comment")
+ENTRY(cudnnSetCTCLossDescriptor_v9, cudnnSetCTCLossDescriptor_v9, false, NO_FLAG, P4, "comment")
+ENTRY(cudnnGetLastErrorString, cudnnGetLastErrorString, false, NO_FLAG, P4, "comment")
