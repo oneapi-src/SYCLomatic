@@ -8862,9 +8862,8 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
           bool EmittedWarning = false;
           if (auto DRE =
                   dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
-            auto VarDeclInfo =
-                Global.findMemVarInfo(dyn_cast<VarDecl>(DRE->getDecl()));
-            if (VarDeclInfo && VarDeclInfo->isUseDeviceGlobal()) {
+            if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
+                DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
               report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
                      false, "copy constructor of device_global");
               EmittedWarning = true;
@@ -9017,17 +9016,15 @@ void ConstantMemVarMigrationRule::runRule(
           bool EmittedWarning = false;
           if (auto DRE =
                   dyn_cast<DeclRefExpr>(MemVar->getInit()->IgnoreImplicit())) {
-            auto VarDeclInfo = DpctGlobalInfo::getInstance().findMemVarInfo(
-                dyn_cast<VarDecl>(DRE->getDecl()));
-            if (VarDeclInfo && VarDeclInfo->isUseDeviceGlobal()) {
+            if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
+                DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
               report(MemVar->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
                      false, "copy constructor of device_global");
               EmittedWarning = true;
             }
           }
           if (!EmittedWarning) {
-            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
-                   false);
+            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
           }
           Info->setInitForDeviceGlobal(InitStr);
         }
@@ -9477,9 +9474,8 @@ void MemVarMigrationRule::runRule(
           bool EmittedWarning = false;
           if (auto DRE =
                   dyn_cast<DeclRefExpr>(MemVar->getInit()->IgnoreImplicit())) {
-            auto VarDeclInfo = DpctGlobalInfo::getInstance().findMemVarInfo(
-                dyn_cast<VarDecl>(DRE->getDecl()));
-            if (VarDeclInfo && VarDeclInfo->isUseDeviceGlobal()) {
+            if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
+                DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
               report(MemVar->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
                      false, "copy constructor of device_global");
               EmittedWarning = true;
