@@ -133,5 +133,26 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
   }
 }
 
+/// Creates a new command graph.
+/// \param [out] graph A pointer to a command_graph_ptr pointer where the
+/// command graph will be assigned.
+/// \param [in] context A SYCL context.
+/// \param [in] device A SYCL device.
+static void create_graph(dpct::experimental::command_graph_ptr *graph,
+                         sycl::context context, dpct::device_ext *device) {
+  *graph = new sycl::ext::oneapi::experimental::command_graph<
+      sycl::ext::oneapi::experimental::graph_state::modifiable>(context,
+                                                                *device);
+}
+
+/// Destroys the command graph.
+/// \param [in] graph A pointer to the command graph.
+static void destroy_graph(dpct::experimental::command_graph_ptr graph) {
+  std::vector<sycl::ext::oneapi::experimental::node> nodes = graph->get_nodes();
+  for (auto node : nodes) {
+    delete &node;
+  }
+  delete graph;
+}
 } // namespace experimental
 } // namespace dpct
