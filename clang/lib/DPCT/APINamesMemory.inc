@@ -417,123 +417,184 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cuMemcpyAtoH_v2",
-        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
-             makeCallArgCreatorWithCall(0),
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(2)),
-             makeCallArgCreatorWithCall(3)))))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAtoH_v2",
+            CALL(MapNames::getDpctNamespace() + "experimental::dpct_memcpy",
+                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
+                 makeCallArgCreatorWithCall(2), ARG("0"),
+                 makeCallArgCreatorWithCall(3))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAtoH_v2",
+            CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+                 makeCallArgCreatorWithCall(0),
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(2)),
+                 makeCallArgCreatorWithCall(3))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cuMemcpyHtoA_v2",
-        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(1)),
-             makeCallArgCreatorWithCall(2), makeCallArgCreatorWithCall(3)))))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyHtoA_v2",
+            CALL(MapNames::getDpctNamespace() + "experimental::dpct_memcpy",
+                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
+                 ARG("0"), makeCallArgCreatorWithCall(2),
+                 makeCallArgCreatorWithCall(3))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyHtoA_v2",
+            CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(1)),
+                 makeCallArgCreatorWithCall(2),
+                 makeCallArgCreatorWithCall(3))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cuMemcpyAtoHAsync_v2",
-        CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
-             makeCallArgCreatorWithCall(0),
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(2)),
-             makeCallArgCreatorWithCall(3),
-             ARG(MapNames::getDpctNamespace() + "automatic"),
-             DEREF(makeCallArgCreatorWithCall(4))))))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        CALL_FACTORY_ENTRY("cuMemcpyAtoHAsync_v2",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::async_dpct_memcpy",
+                                makeCallArgCreatorWithCall(0),
+                                makeCallArgCreatorWithCall(1),
+                                makeCallArgCreatorWithCall(2), ARG("0"),
+                                makeCallArgCreatorWithCall(3), STREAM(4))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAtoHAsync_v2",
+            CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+                 makeCallArgCreatorWithCall(0),
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(2)),
+                 makeCallArgCreatorWithCall(3),
+                 ARG(MapNames::getDpctNamespace() + "automatic"),
+                 DEREF(makeCallArgCreatorWithCall(4)))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cuMemcpyHtoAAsync_v2",
-        CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(1)),
-             makeCallArgCreatorWithCall(2), makeCallArgCreatorWithCall(3),
-             ARG(MapNames::getDpctNamespace() + "automatic"),
-             DEREF(makeCallArgCreatorWithCall(4))))))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        CALL_FACTORY_ENTRY("cuMemcpyHtoAAsync_v2",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::async_dpct_memcpy",
+                                makeCallArgCreatorWithCall(0),
+                                makeCallArgCreatorWithCall(1), ARG("0"),
+                                makeCallArgCreatorWithCall(2),
+                                makeCallArgCreatorWithCall(3), STREAM(4))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyHtoAAsync_v2",
+            CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(1)),
+                 makeCallArgCreatorWithCall(2), makeCallArgCreatorWithCall(3),
+                 ARG(MapNames::getDpctNamespace() + "automatic"),
+                 DEREF(makeCallArgCreatorWithCall(4)))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cuMemcpyAtoD_v2",
-        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
-             makeCallArgCreatorWithCall(0),
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(2)),
-             makeCallArgCreatorWithCall(3)))))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAtoD_v2",
+            CALL(MapNames::getDpctNamespace() + "experimental::dpct_memcpy",
+                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
+                 makeCallArgCreatorWithCall(2), ARG("0"),
+                 makeCallArgCreatorWithCall(3))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAtoD_v2",
+            CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+                 makeCallArgCreatorWithCall(0),
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(2)),
+                 makeCallArgCreatorWithCall(3))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cuMemcpyDtoA_v2",
-        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(1)),
-             makeCallArgCreatorWithCall(2), makeCallArgCreatorWithCall(3)))))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyDtoA_v2",
+            CALL(MapNames::getDpctNamespace() + "experimental::dpct_memcpy",
+                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
+                 ARG("0"), makeCallArgCreatorWithCall(2),
+                 makeCallArgCreatorWithCall(3))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyDtoA_v2",
+            CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(1)),
+                 makeCallArgCreatorWithCall(2),
+                 makeCallArgCreatorWithCall(3))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cuMemcpyAtoA_v2",
-        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(1)),
-             BO(BinaryOperatorKind::BO_Add,
-                makeCastExprCreator(
-                    makeCharPtrCreator(),
-                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(2), true,
-                                            "to_pitched_data"),
-                                false, "get_data_ptr"),
-                    true),
-                makeCallArgCreatorWithCall(3)),
-             makeCallArgCreatorWithCall(4)))))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAtoA_v2",
+            CALL(MapNames::getDpctNamespace() + "experimental::dpct_memcpy",
+                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
+                 ARG("0"), makeCallArgCreatorWithCall(2),
+                 makeCallArgCreatorWithCall(3), ARG("0"),
+                 makeCallArgCreatorWithCall(4))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAtoA_v2",
+            CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(1)),
+                 BO(BinaryOperatorKind::BO_Add,
+                    makeCastExprCreator(
+                        makeCharPtrCreator(),
+                        MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(2),
+                                                true, "to_pitched_data"),
+                                    false, "get_data_ptr"),
+                        true),
+                    makeCallArgCreatorWithCall(3)),
+                 makeCallArgCreatorWithCall(4))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -669,6 +730,20 @@ CONDITIONAL_FACTORY_ENTRY(
              ARG_WC(0)))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cudaDeviceDisablePeerAccess",
+        "SYCL currently does not support memory access across peer devices. "
+        "You can migrate the code with peer access extension by not specifying "
+        "-no-dpcpp-extensions=peer_access."))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UsePeerAccess(),
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cuCtxEnablePeerAccess",
+        CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
+        "ext_oneapi_enable_peer_access",
+        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
+                    "get_device", ARG_WC(0)))),
+    REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+        "cuCtxEnablePeerAccess",
         "SYCL currently does not support memory access across peer devices. "
         "You can migrate the code with peer access extension by not specifying "
         "-no-dpcpp-extensions=peer_access."))
