@@ -65,6 +65,21 @@ void driverMemoryManagement() {
   CUdeviceptr pD;
   // CHECK: dpct::queue_ptr st;
   CUstream st;
+  // CHECK: sycl::ext::oneapi::experimental::image_descriptor p3DDesc;
+  CUDA_ARRAY3D_DESCRIPTOR p3DDesc;
+  // CHECK: p3DDesc.width = s;
+  p3DDesc.Width = s;
+  // CHECK: p3DDesc.height = s;
+  p3DDesc.Height = s;
+  // CHECK: p3DDesc.depth = s;
+  p3DDesc.Depth = s;
+  // CHECK: p3DDesc.channel_type = f;
+  p3DDesc.Format = f;
+#ifndef BUILD_TEST // TODO: Need delete later.
+  // CHECK: p3DDesc.num_channels = u;
+  p3DDesc.NumChannels = u;
+#endif
+  p3DDesc.Flags = 1;
   // CHECK: sycl::ext::oneapi::experimental::image_descriptor pDesc;
   CUDA_ARRAY_DESCRIPTOR pDesc;
   // CHECK: pDesc.channel_type = f;
@@ -159,6 +174,8 @@ void driverMemoryManagement() {
   p3d.Height = s;
   // CHECK: p3d.size[2] = s;
   p3d.Depth = s;
+  // CHECK: *pArr = new dpct::experimental::image_mem_wrapper(&p3DDesc);
+  cuArray3DCreate(pArr, &p3DDesc);
   // CHECK: *pArr = new dpct::experimental::image_mem_wrapper(&pDesc);
   cuArrayCreate(pArr, &pDesc);
   // CHECK: delete (*pArr);
