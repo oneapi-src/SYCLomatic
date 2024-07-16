@@ -18,6 +18,7 @@
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
+#include <cstdint>
 #include <deque>
 #include <fstream>
 #include <optional>
@@ -5087,8 +5088,17 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
-  if (isa<InitListExpr>(Arg) || isa<CXXConstructExpr>(Arg)) {
+  if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
+  } else if (const auto* CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+    HasImplicitConversion = true;
+    if (CCE->getNumArgs()) {
+      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CCE->getArg(0))) {
+        if (ICE->getCastKind() == CK_DerivedToBase) {
+          IsRedeclareRequired = true;
+        }
+      }
+    }
   } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
     if (ICE->getCastKind() != CK_LValueToRValue) {
       HasImplicitConversion = true;
@@ -5097,7 +5107,7 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
   TryGetBuffer = Analysis.TryGetBuffer;
-  IsRedeclareRequired = Analysis.IsRedeclareRequired;
+  IsRedeclareRequired |= Analysis.IsRedeclareRequired;
   IsPointer = Analysis.IsPointer;
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     IsDoublePointer = Analysis.IsDoublePointer;
@@ -5385,6 +5395,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
       "(1)";
   if (ExecutionConfig.NdRange != "") {
+    std::cout << "=========================================" << std::endl;
+    std::cout << ExecutionConfig.NdRange << std::endl;
+    std::cout << "=========================================" << std::endl;
     Printer.line(ExecutionConfig.NdRange + ",");
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
@@ -5411,7 +5424,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
-    Printer << MapNames::getClNamespace() + "nd_range<3>(";
+    Printer.indent() << MapNames::getClNamespace() + "nd_range<3>(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
       Printer << ExecutionConfig.LocalSize;
     } else if (ExecutionConfig.LocalSize == CanIgnoreRangeStr3D) {
@@ -5694,7 +5707,8 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
   for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
     if (auto Obj = TexList[Idx]) {
       ArgsInfo.emplace_back(Obj, this);
-    } else {
+    }
+    //else {
       auto Arg = CE->getArg(Idx);
       bool Used = true;
       if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
@@ -5702,7 +5716,7 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
       const auto FD = CE->getDirectCallee();
       ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis, Arg,
                             Used, Idx, this);
-    }
+    //}
   }
 }
 std::string KernelCallExpr::getQueueStr() const {
@@ -5975,17 +5989,19 @@ void KernelCallExpr::addStreamDecl() {
   }
 }
 void KernelCallExpr::buildKernelArgsStmt() {
-  size_t ArgCounter = 0;
+  std::int64_t ArgCounter = 0;
   KernelArgs = "";
   for (auto &Arg : getArgsInfo()) {
     // if current arg is the first arg with default value, insert extra args
     // before current arg
     if (getFuncInfo()) {
-      if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+      if (ArgCounter == std::int64_t(getFuncInfo()->NonDefaultParamNum)) {
         KernelArgs += getExtraArguments();
       }
     }
-    if (ArgCounter != 0)
+    if (KernelArgs.size() == 1 ||
+        (KernelArgs.size() > 1 &&
+         KernelArgs.substr(KernelArgs.size() - 2, 2) != ", "))
       KernelArgs += ", ";
     if (Arg.IsDoublePointer &&
         DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
@@ -6043,8 +6059,12 @@ void KernelCallExpr::buildKernelArgsStmt() {
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture && !DpctGlobalInfo::useExtBindlessImages()) {
       ParameterStream OS;
-      Arg.Texture->getKernelArg(OS);
-      KernelArgs += OS.Str;
+      if (dynamic_cast<StructureTextureObjectInfo *>(Arg.Texture.get())) {
+        ArgCounter -= 1;
+      } else {
+        Arg.Texture->getKernelArg(OS);
+        KernelArgs += OS.Str;
+      }
     } else {
       KernelArgs += Arg.getArgString();
     }
@@ -6053,7 +6073,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
 
   // if all params have no default value, insert extra args in the end of params
   if (getFuncInfo()) {
-    if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
+    if (ArgCounter == std::int64_t(getFuncInfo()->NonDefaultParamNum)) {
       KernelArgs = KernelArgs + getExtraArguments();
     }
   }
@@ -6061,6 +6081,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
   if (KernelArgs.empty()) {
     KernelArgs += getExtraArguments();
   }
+
+  if (KernelArgs.size() > 1 &&
+      KernelArgs.substr(KernelArgs.size() - 2, 2) == ", ")
+    KernelArgs = KernelArgs.substr(0, KernelArgs.size() - 2);
 }
 KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, StreamList);
