@@ -288,7 +288,6 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     Subrules = PR.Subrules;
     Priority = PR.Priority;
     CmakeSyntax = PR.CmakeSyntax;
-    PySetupSyntax = PR.PySetupSyntax;
   }
   return *this;
 }

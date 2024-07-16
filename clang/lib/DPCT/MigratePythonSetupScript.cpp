@@ -55,7 +55,7 @@ static std::string readFile(const clang::tooling::UnifiedPath &Name) {
 }
 
 void collectPythonSetupScripts(const clang::tooling::UnifiedPath &InRoot,
-                         const clang::tooling::UnifiedPath &OutRoot) {
+                               const clang::tooling::UnifiedPath &OutRoot) {
   std::error_code EC;
 
   for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
@@ -104,7 +104,7 @@ void collectPythonSetupScriptsSpecified(
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot) {
   auto PythonSetupScriptLists = OptParser->getSourcePathList();
-  
+
   if (!PythonSetupScriptLists.empty()) {
     for (auto &FilePath : PythonSetupScriptLists) {
       if (fs::is_directory(FilePath)) {
@@ -159,7 +159,7 @@ static void unifyInputFileFormat() {
 
 static void
 applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
-                         const clang::tooling::UnifiedPath OutRoot) {
+                               const clang::tooling::UnifiedPath OutRoot) {
 
   setFileTypeProcessed(SourceFileType::SFT_PySetupScript);
 
@@ -188,9 +188,10 @@ applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
   }
 }
 
-bool loadBufferFromPythonSetupScriptFile(const clang::tooling::UnifiedPath InRoot,
-                              const clang::tooling::UnifiedPath OutRoot,
-                              clang::tooling::UnifiedPath InFileName) {
+bool loadBufferFromPythonSetupScriptFile(
+    const clang::tooling::UnifiedPath InRoot,
+    const clang::tooling::UnifiedPath OutRoot,
+    clang::tooling::UnifiedPath InFileName) {
   clang::tooling::UnifiedPath OutFileName(InFileName);
   if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
     return false;
@@ -208,7 +209,8 @@ static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
   }
 }
 
-bool pythonSetupScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
+bool pythonSetupScriptFileSpecified(
+    const std::vector<std::string> &SourceFiles) {
   bool IsPythonSetupScript = false;
   for (const auto &FilePath : SourceFiles) {
     if (!llvm::sys::path::has_extension(FilePath) ||
@@ -245,7 +247,7 @@ static void storeBufferToFile() {
 }
 
 void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
-                            const clang::tooling::UnifiedPath &OutRoot) {
+                                  const clang::tooling::UnifiedPath &OutRoot) {
   loadBufferFromFile(InRoot, OutRoot);
   unifyInputFileFormat();
   applyPythonSetupMigrationRules(InRoot, OutRoot);
@@ -253,10 +255,9 @@ void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerPythonSetupMigrationRule(MetaRuleObject &R) {
-  auto PR =
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
-                                      R.RuleId, R.Priority, "",
-                                      R.PySetupSyntax);
+  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
+                                            R.MatchMode, R.RuleId, R.Priority,
+                                            "", R.PySetupSyntax);
 
   auto Iter = PythonSetupBuildInRules.find(PR.PySetupSyntax);
   if (Iter != PythonSetupBuildInRules.end()) {

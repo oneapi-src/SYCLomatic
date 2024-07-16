@@ -16,15 +16,16 @@
 #include <map>
 
 void collectPythonSetupScripts(const clang::tooling::UnifiedPath &InRoot,
-                         const clang::tooling::UnifiedPath &OutRoot);
+                               const clang::tooling::UnifiedPath &OutRoot);
 void collectPythonSetupScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot);
 
 void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
-                            const clang::tooling::UnifiedPath &OutRoot);
-bool pythonSetupScriptFileSpecified(const std::vector<std::string> &SourceFiles);
+                                  const clang::tooling::UnifiedPath &OutRoot);
+bool pythonSetupScriptFileSpecified(
+    const std::vector<std::string> &SourceFiles);
 
 void registerPythonSetupMigrationRule(MetaRuleObject &R);
 bool pythonSetupScriptNotFound();

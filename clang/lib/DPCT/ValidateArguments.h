@@ -124,7 +124,8 @@ int validatePaths(const clang::tooling::UnifiedPath &InRoot,
 /// -2: fail for there is file or directory not existing in BuildScriptPaths
 /// -3: fail for there is directory not in InRoot directory in BuildScriptPaths
 /// -4: fail for there is file not in InRoot directory in BuildScriptPaths
-/// -5: fail for there is file that is is not a cmake or setup script file in BuildScriptPaths
+/// -5: fail for there is file that is is not a cmake or setup script file in
+/// BuildScriptPaths
 int validateBuildScriptPaths(const clang::tooling::UnifiedPath &InRoot,
                              const std::vector<std::string> &BuildScriptPaths);
 

@@ -763,14 +763,15 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if ((BuildScript == BuildScriptKind::BS_Cmake || 
+  if ((BuildScript == BuildScriptKind::BS_Cmake ||
        BuildScript == BuildScriptKind::BS_PySetup) &&
       !OptParser->getSourcePathList().empty()) {
     ShowStatus(MigrateBuildScriptIncorrectUse);
     dpctExit(MigrateBuildScriptIncorrectUse);
   }
-  if ((BuildScript == BuildScriptKind::BS_Cmake || 
-       BuildScript == BuildScriptKind::BS_PySetup) && MigrateBuildScriptOnly) {
+  if ((BuildScript == BuildScriptKind::BS_Cmake ||
+       BuildScript == BuildScriptKind::BS_PySetup) &&
+      MigrateBuildScriptOnly) {
     ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
     dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
   }
@@ -959,7 +960,8 @@ int runDPCT(int argc, const char **argv) {
     IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
     bool NeedCheckOutRootEmpty =
         !(BuildScript == BuildScriptKind::BS_Cmake ||
-          BuildScript == BuildScriptKind::BS_PySetup) && !MigrateBuildScriptOnly;
+          BuildScript == BuildScriptKind::BS_PySetup) &&
+        !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
         !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -1108,7 +1110,8 @@ int runDPCT(int argc, const char **argv) {
 
   if (MigrateBuildScriptOnly ||
       DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_PySetup) {
-    SmallString<128> PythonSetupRuleFilePath(DpctInstallPath.getCanonicalPath());
+    SmallString<128> PythonSetupRuleFilePath(
+        DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(PythonSetupRuleFilePath,
                             Twine("extensions/python_setup_rules/"
                                   "python_setup_script_migration_rule.yaml"));
