@@ -187,24 +187,26 @@ private:
         return oneapi::mkl::rng::device::generate(distr, _engine);
       }
     } else if constexpr (vec_size == 1) {
-#ifdef __INTEL_MKL__
-      return oneapi::mkl::rng::device::generate_single(distr, _engine);
-#else
       if constexpr (_is_engine_vec_size_one) {
         return oneapi::mkl::rng::device::generate(distr, _engine);
       }
+#ifdef __INTEL_MKL__
+      else {
+        return oneapi::mkl::rng::device::generate_single(distr, _engine);
+      }
 #endif
     } else if constexpr (vec_size == 2) {
-#ifdef __INTEL_MKL__
-      sycl::vec<typename distr_t::result_type, 2> res;
-      res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-      res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-      return res;
-#else
       if constexpr (_is_engine_vec_size_one) {
         sycl::vec<typename distr_t::result_type, 2> res;
         res.x() = oneapi::mkl::rng::device::generate(distr, _engine);
         res.y() = oneapi::mkl::rng::device::generate(distr, _engine);
+        return res;
+      }
+#ifdef __INTEL_MKL__
+      else {
+        sycl::vec<typename distr_t::result_type, 2> res;
+        res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
+        res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
         return res;
       }
 #endif
