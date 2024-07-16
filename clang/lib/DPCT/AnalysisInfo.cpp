@@ -5442,9 +5442,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
-    DpctGlobalInfo::printCtadClass(Printer.indent(),
-                                   MapNames::getClNamespace() + "nd_range", 3)
-        << "(";
+    Printer << MapNames::getClNamespace() + "nd_range<3>(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
       Printer << ExecutionConfig.LocalSize;
     } else if (ExecutionConfig.LocalSize == CanIgnoreRangeStr3D) {
