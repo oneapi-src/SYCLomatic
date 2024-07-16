@@ -255,12 +255,10 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuPointerGetAttributes | FileCheck %s -check-prefix=CUPOINTERGETATTRIBUTES
 // CUPOINTERGETATTRIBUTES: CUDA API:
-// CUPOINTERGETATTRIBUTES-NEXT:   CUdeviceptr *ptr;
 // CUPOINTERGETATTRIBUTES-NEXT:   cuPointerGetAttributes(numAttributes /*unsigned int*/,
-// CUPOINTERGETATTRIBUTES-NEXT:                            attributes /*CUpointer_attribute **/, data /*void **/,
+// CUPOINTERGETATTRIBUTES-NEXT:                            attributes /*CUpointer_attribute **/, data /*void ***/,
 // CUPOINTERGETATTRIBUTES-NEXT:                            ptr /*CUdeviceptr*/);
 // CUPOINTERGETATTRIBUTES-NEXT: Is migrated to:
-// CUPOINTERGETATTRIBUTES-NEXT:   dpct::device_ptr ptr;
 // CUPOINTERGETATTRIBUTES-NEXT:   dpct::pointer_attributes.get(numAttributes, attributes, data, ptr);
 
 /// Stream Management
