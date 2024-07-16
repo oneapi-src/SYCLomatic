@@ -3054,6 +3054,7 @@ public:
   /// computed and stored.
   unsigned getODRHash() const;
 
+<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
   /// Returns the DuplicatedExplicitlySpecifiedTemplateArgumentsRange. This must
   /// have been previously computed and stored.
@@ -3067,6 +3068,18 @@ public:
   }
 
 #endif
+=======
+  FunctionEffectsRef getFunctionEffects() const {
+    // Effects may differ between declarations, but they should be propagated
+    // from old to new on any redeclaration, so it suffices to look at
+    // getMostRecentDecl().
+    if (const auto *FPT =
+            getMostRecentDecl()->getType()->getAs<FunctionProtoType>())
+      return FPT->getFunctionEffects();
+    return {};
+  }
+
+>>>>>>> target/sycl
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
   static bool classofKind(Kind K) {
@@ -4694,6 +4707,13 @@ public:
   }
 
   SourceRange getSourceRange() const override LLVM_READONLY;
+
+  FunctionEffectsRef getFunctionEffects() const {
+    if (const TypeSourceInfo *TSI = getSignatureAsWritten())
+      if (const auto *FPT = TSI->getType()->getAs<FunctionProtoType>())
+        return FPT->getFunctionEffects();
+    return {};
+  }
 
   // Implement isa/cast/dyncast/etc.
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
