@@ -11,23 +11,8 @@
 #include <algorithm>
 
 using namespace llvm;
-
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const IfStmt *IS) {
-  // No special process, treat as one block
-  return true;
-}
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const IfStmt *IS) {
-  // No special process, treat as one block
-}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const SwitchStmt *SS) {
-  // No special process, treat as one block
-  return true;
-}
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const SwitchStmt *SS) {
-  // No special process, treat as one block
-}
-
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const ForStmt *FS) {
+#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+bool clang::dpct::IntraproceduralAnalyzer::Visit(const ForStmt *FS) {
   LoopRange.push_back(FS->getSourceRange());
   return true;
 }
@@ -611,9 +596,121 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyMap(
 #endif
 }
 
-clang::dpct::BarrierFenceSpaceAnalyzerResult
-clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
-                                                bool SkipCacheInAnalyzer) {
+AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other, bool IsOtherInLoop) {
+  if (IsOtherInLoop) {
+    Other.UsedBefore = true;
+    Other.UsedAfter = true;
+  }
+  Me.UsedBefore = Me.UsedBefore || Other.UsedBefore;
+  Me.UsedAfter = Me.UsedAfter || Other.UsedAfter;
+  Me.AM = AccessMode(Me.AM | Other.AM);
+  return Me;
+}
+
+bool clang::dpct::InterproceduralAnalyzer::analyze(
+    const std::shared_ptr<DeviceFunctionInfo> DFI,
+    std::string SyncCallDeclCombinedLoc) {
+  // Do analysis for all syncthreads call in this DFI's ancestors and
+  // this DFI's decendents.
+  std::stack<std::tuple<std::weak_ptr<DeviceFunctionInfo> /*node*/,
+                        std::string /*CurCallDeclCombinedLoc*/, int /*depth*/>>
+      NodeStack;
+  std::stack<std::pair<
+      std::string /*caller's decl's combined loc str*/,
+      std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
+      AffectedByParmsMapInfoStack;
+  std::set<std::weak_ptr<DeviceFunctionInfo>,
+           std::owner_less<std::weak_ptr<DeviceFunctionInfo>>>
+      Visited;
+  
+  // DFS to find all related DFIs
+  NodeStack.push(std::make_tuple(DFI, SyncCallDeclCombinedLoc, 0));
+  Visited.insert(DFI);
+  while (!NodeStack.empty()) {
+    auto CurNode = std::get<0>(NodeStack.top()).lock();
+    auto CurCallDeclCombinedLoc = std::get<1>(NodeStack.top());
+    auto CurDepth = std::get<2>(NodeStack.top());
+    NodeStack.pop();
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "-------------------------------------------" << std::endl;
+    std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncName << std::endl;
+    std::cout << "CurCallDeclCombinedLoc:" << CurCallDeclCombinedLoc << std::endl;
+    std::cout << "CurDepth:" << CurDepth << std::endl;
+#endif
+
+    int N = static_cast<int>(AffectedByParmsMapInfoStack.size()) - CurDepth;
+    assert(N >= 0 && "N should be greater than or equal to 0");
+    for (int i = 0; i < N; i++) {
+      AffectedByParmsMapInfoStack.pop();
+    }
+
+    auto Iter = DFI->IAR.Map.find(CurCallDeclCombinedLoc);
+    if (Iter != DFI->IAR.Map.end()) {
+      const auto &Arg2ParmsMap = std::get<5>(Iter->second);
+      bool IsInLoop = std::get<1>(Iter->second);
+      // Merge std::get<4>(Iter->second) and
+      // AffectedByParmsMapInfoStack.top().second.
+      // Then push into AffectedByParmsMapInfoStack.
+      std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
+          CurAffectedbyParmsMap = std::get<4>(Iter->second);
+      if (AffectedByParmsMapInfoStack.empty()) {
+        AffectedByParmsMapInfoStack.push(std::make_pair(
+            DFI->IAR.CurrentCtxFuncName, CurAffectedbyParmsMap));
+      } else {
+        const std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
+            &PrevAffectedbyParmsMap = AffectedByParmsMapInfoStack.top().second;
+        for (const auto &P : PrevAffectedbyParmsMap) {
+          auto Res = Arg2ParmsMap.find(P.first);
+          if (Res != Arg2ParmsMap.end()) {
+            for (const auto &ParmIdx : Res->second) {
+              CurAffectedbyParmsMap[ParmIdx] = mergeOther(
+                  CurAffectedbyParmsMap[ParmIdx], P.second, IsInLoop);
+              if (CurAffectedbyParmsMap[ParmIdx].AM & ReadWrite)
+                return false;
+              if (CurAffectedbyParmsMap[ParmIdx].AM == Write &&
+                  CurAffectedbyParmsMap[ParmIdx].UsedBefore &&
+                  CurAffectedbyParmsMap[ParmIdx].UsedAfter)
+                return false;
+            }
+          }
+        }
+        AffectedByParmsMapInfoStack.push(
+            std::make_pair(DFI->IAR.CurrentCtxFuncName, CurAffectedbyParmsMap));
+      }
+    }
+
+    for (const auto &I : CurNode->getParentDFIs()) {
+      if (Visited.find(I) != Visited.end()) {
+        // Not support analyzing circle in graph
+        return false;
+      }
+      NodeStack.push(std::make_tuple(I, DFI->IAR.CurrentCtxFuncName, CurDepth + 1));
+      Visited.insert(I);
+    }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "===============================================" << std::endl;
+#endif
+  }
+  if (!AffectedByParmsMapInfoStack.empty()) {
+    const auto &AffectedByParmsMap = AffectedByParmsMapInfoStack.top().second;
+    for (const auto &P : AffectedByParmsMap) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+      std::cout << "Parameter ID:" << P.first << std::endl;
+      std::cout << "  AM:" << P.second.AM << std::endl;
+      std::cout << "  UsedBefore:" << P.second.UsedBefore << std::endl;
+      std::cout << "  UsedAfter:" << P.second.UsedAfter << std::endl;
+#endif
+      if (P.second.AM & ReadWrite)
+        return false;
+      if ((P.second.AM & Write) && P.second.UsedBefore && P.second.UsedAfter)
+        return false;
+    }
+  }
+  return true;
+}
+
+clang::dpct::IntraproceduralAnalyzerResult
+clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD) {
   // Check prerequirements
   const FunctionDecl *FD = nullptr;
   if (!isMeetAnalyisPrerequirements(CE, FD))
@@ -776,8 +873,11 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
   while (!Parents.empty()) {
     if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
       break;
-    const auto UO = Parents[0].get<UnaryOperator>();
-    const auto ASE = Parents[0].get<ArraySubscriptExpr>();
+    const auto& E = Parents[0].get<Expr>();
+    if (E && DeviceFunctionCallArgs.count(E))
+      return true;
+    const auto& UO = Parents[0].get<UnaryOperator>();
+    const auto& ASE = Parents[0].get<ArraySubscriptExpr>();
     if (UO && (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
       return true;
     } else if (ASE && (ASE->getBase() == Current.get<Expr>())) {
