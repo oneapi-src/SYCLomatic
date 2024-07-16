@@ -378,6 +378,12 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::device_ext)},
       {"cudaMemcpyKind",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_direction")},
+      {"CUDA_ARRAY3D_DESCRIPTOR",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::image_descriptor"
+               : getDpctNamespace() + "image_matrix_desc")},
       {"CUDA_ARRAY_DESCRIPTOR",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
@@ -1831,6 +1837,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasGetStatusString", ""},
       {"cublasCgemm3m", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasZgemm3m", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasHgemm_64", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasSgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasDgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasCgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"},
@@ -2023,6 +2030,18 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
       {"cublasCtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
       {"cublasZtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
+      {"cublasCgemm3m_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasZgemm3m_64", "oneapi::mkl::blas::column_major::gemm"},
+      {"cublasSsyrkx_64", getDpctNamespace() + "blas::syrk"},
+      {"cublasDsyrkx_64", getDpctNamespace() + "blas::syrk"},
+      {"cublasCsyrkx_64", getDpctNamespace() + "blas::syrk"},
+      {"cublasZsyrkx_64", getDpctNamespace() + "blas::syrk"},
+      {"cublasCherkx_64", getDpctNamespace() + "blas::herk"},
+      {"cublasZherkx_64", getDpctNamespace() + "blas::herk"},
+      {"cublasStrmm_v2_64", getDpctNamespace() + "blas::trmm"},
+      {"cublasDtrmm_v2_64", getDpctNamespace() + "blas::trmm"},
+      {"cublasCtrmm_v2_64", getDpctNamespace() + "blas::trmm"},
+      {"cublasZtrmm_v2_64", getDpctNamespace() + "blas::trmm"},
       // cublasLt
       {"cublasLtCreate",
        "new " + getDpctNamespace() + "blas_gemm::experimental::descriptor"},
@@ -4275,6 +4294,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
+#include "APINames_cudnn_frontend.inc"
 #include "APINames_nvGRAPH.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
@@ -4338,6 +4358,7 @@ const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{
 const MapNames::MapTy MemoryDataTypeRule::ArrayDescMemberNames{
     {"Width", "width"},
     {"Height", "height"},
+    {"Depth", "depth"},
     {"Format", "channel_type"},
     {"NumChannels", "num_channels"}};
 
@@ -4377,7 +4398,7 @@ const MapNames::MapTy MemoryDataTypeRule::GetSetReplMemberNames{
 };
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
-    "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
+    "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType", "Flags"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block",
