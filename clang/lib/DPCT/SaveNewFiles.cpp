@@ -123,8 +123,16 @@ std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
                 const clang::tooling::UnifiedPath &InRoot,
                 const clang::tooling::UnifiedPath &OutRoot) {
+  std::string FilePathStr = FilePath.getCanonicalPath().str();
+  bool Result = rewriteDir(FilePathStr, InRoot, OutRoot);
+  FilePath = FilePathStr;
+  return Result;
+}
+bool rewriteDir(std::string &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot) {
 #if defined(_WIN64)
-  std::string Filename = sys::path::filename(FilePath.getPath()).str();
+  std::string Filename = sys::path::filename(FilePath).str();
 #endif
 
   if (!isChildPath(InRoot, FilePath) || DpctGlobalInfo::isExcluded(FilePath)) {
@@ -136,80 +144,76 @@ bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
     //  AnalysisScope : /path/to
     return false;
   }
-  auto PathDiff = std::mismatch(path::begin(FilePath.getCanonicalPath()),
-                                path::end(FilePath.getCanonicalPath()),
+  auto PathDiff = std::mismatch(path::begin(FilePath), path::end(FilePath),
                                 path::begin(InRoot.getCanonicalPath()));
   SmallString<512> NewFilePath = OutRoot.getCanonicalPath();
-  path::append(NewFilePath, PathDiff.first,
-               path::end(FilePath.getCanonicalPath()));
+  path::append(NewFilePath, PathDiff.first, path::end(FilePath));
 #if defined(_WIN64)
   sys::path::remove_filename(NewFilePath);
   sys::path::append(NewFilePath, Filename);
 #endif
 
-  FilePath = NewFilePath;
+  FilePath = NewFilePath.str();
   return true;
 }
-
-bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
+void rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
                         const clang::tooling::UnifiedPath &InRoot,
                         const clang::tooling::UnifiedPath &OutRoot) {
-#if defined(_WIN64)
-  std::string Filename = sys::path::filename(FilePath.getPath()).str();
-#endif
-
-  if (!isChildPath(InRoot, FilePath) || DpctGlobalInfo::isExcluded(FilePath)) {
-    // Skip rewriting file path if FilePath is not child of InRoot
-    // E.g,
-    //  FilePath : /path/to/inc/util.cuh
-    //    InRoot : /path/to/inroot
-    //   OutRoot : /path/to/outroot
-    //  AnalysisScope : /path/to
-    return false;
-  }
-  auto PathDiff = std::mismatch(path::begin(FilePath.getAbsolutePath()),
-                                path::end(FilePath.getAbsolutePath()),
-                                path::begin(InRoot.getAbsolutePath()));
-  SmallString<512> NewFilePath = OutRoot.getAbsolutePath();
-  path::append(NewFilePath, PathDiff.first,
-               path::end(FilePath.getAbsolutePath()));
-#if defined(_WIN64)
-  sys::path::remove_filename(NewFilePath);
-  sys::path::append(NewFilePath, Filename);
-#endif
-
-  FilePath = NewFilePath;
-  return true;
+  std::string FilePathStr = FilePath.getAbsolutePath().str();
+  rewriteDir(FilePathStr, InRoot, OutRoot);
+  FilePath = FilePathStr;
 }
 
-void createSymLink(const clang::tooling::UnifiedPath &FilePath,
-                   const clang::tooling::UnifiedPath &InRoot,
-                   const clang::tooling::UnifiedPath &OutRoot,
-                   bool RewriteFileName) {
+void rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
+                         const clang::tooling::UnifiedPath &InRoot,
+                         const clang::tooling::UnifiedPath &OutRoot) {
+  std::string FilePathStr = FilePath.getCanonicalPath().str();
+  rewriteDir(FilePathStr, InRoot, OutRoot);
+  FilePath = FilePathStr;
+}
+void rewriteSymLink(const clang::tooling::UnifiedPath &FilePath,
+                    const clang::tooling::UnifiedPath &InRoot,
+                    const clang::tooling::UnifiedPath &OutRoot,
+                    bool RewriteFileName) {
   if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
     auto SourcePath = FilePath;
-      tooling::UnifiedPath SymbolPath =
-          std::filesystem::read_symlink(
-              std::filesystem::path(FilePath.getAbsolutePath().str()))
-              .string();
-      if (RewriteFileName) {
-        rewriteFileName(SymbolPath);
-        rewriteFileName(SourcePath);
-      }
-      // Create a symbolic link and link the file to the target file.
-      rewriteAbsoluteDir(SourcePath, InRoot, OutRoot);
-      auto ParentPath = tooling::UnifiedPath(sys::path::parent_path(FilePath.getAbsolutePath()));
-      rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
-      if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
-        createDirectories(ParentPath.getAbsolutePath());
-      }
-      try {
+    tooling::UnifiedPath SymbolPath =
+        std::filesystem::read_symlink(
+            std::filesystem::path(FilePath.getAbsolutePath().str()))
+            .string();
+    if (RewriteFileName) {
+      rewriteFileName(SymbolPath);
+      rewriteFileName(SourcePath);
+    }
+    // Create a symbolic link and link the file to the target file.
+    rewriteAbsoluteDir(SourcePath, InRoot, OutRoot);
+
+    auto ParentPath = tooling::UnifiedPath(
+        sys::path::parent_path(FilePath.getAbsolutePath()));
+    rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
+    if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
+      createDirectories(ParentPath.getAbsolutePath());
+    }
+
+    if (!std::filesystem::exists(SourcePath.getAbsolutePath().str())) {
+      std::error_code ec;
+      if (std::filesystem::is_directory(SymbolPath.getPath().str())) {
+        std::filesystem::create_directory_symlink(
+            std::filesystem::path(SymbolPath.getPath().str()),
+            std::filesystem::path(SourcePath.getAbsolutePath().str()), ec);
+      } else {
         std::filesystem::create_symlink(
             std::filesystem::path(SymbolPath.getPath().str()),
-            std::filesystem::path(SourcePath.getAbsolutePath().str()));
-      } catch (const std::filesystem::filesystem_error &e) {
-        std::cerr << "Error creating symbolic link: " << e.what() << std::endl;
+            std::filesystem::path(SourcePath.getAbsolutePath().str()), ec);
       }
+      if (ec) {
+        std::cerr << "Error creating symlink: " << ec.message()
+                  << ". The target path is " << SymbolPath.getCanonicalPath().str()
+                  << ". And the link path is "
+                  << SourcePath.getAbsolutePath().str() << "\n";
+        dpctExit(MigrationSaveOutFail);
+      }
+    }
   }
 }
 void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
@@ -290,7 +294,7 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
          Iter != End; Iter.increment(EC)) {
       // Skip output directory if it is in the in-root directory.
       if (Iter->type() == fs::file_type::symlink_file) {
-        createSymLink(Iter->path(), InRoot, OutRoot,
+        rewriteSymLink(Iter->path(), InRoot, OutRoot,
                       IncludeFileMap[Iter->path()]);
       }
     }
@@ -345,7 +349,11 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
                            " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
-
+    if (Iter->type() == fs::file_type::symlink_file) {
+      rewriteSymLink(Iter->path(), InRoot, OutRoot,
+                     IncludeFileMap[Iter->path()]);
+      return;
+    }
     auto FilePath = Iter->path();
 
     // Skip output directory if it is in the in-root directory.

@@ -23,31 +23,21 @@ namespace tooling {
 class UnifiedPath {
 public:
   UnifiedPath() = default;
-  UnifiedPath(const std::string &Path, const std::string &CWD = ".")
-      : _Path(Path) {
-    makeAbsolute(CWD);
-    makeCanonical(CWD);
+  UnifiedPath(const std::string &Path, const std::string &CWD = ".") {
+    setPath(Path, CWD);
   }
-  UnifiedPath(const llvm::StringRef Path, const std::string &CWD = ".")
-      : _Path(Path.str()) {
-    makeAbsolute(CWD);
-    makeCanonical(CWD);
+  UnifiedPath(const llvm::StringRef Path, const std::string &CWD = ".") {
+    setPath(Path.str(), CWD);
   }
-  UnifiedPath(const llvm::Twine &Path, const std::string &CWD = ".")
-      : _Path(Path.str()) {
-    makeAbsolute(CWD);
-    makeCanonical(CWD);
+  UnifiedPath(const llvm::Twine &Path, const std::string &CWD = ".") {
+    setPath(Path.str(), CWD);
   }
   UnifiedPath(const llvm::SmallVectorImpl<char> &Path,
               const std::string &CWD = ".") {
-    _Path = std::string(Path.data(), Path.size());
-    makeAbsolute(CWD);
-    makeCanonical(CWD);
+    setPath(std::string(Path.data(), Path.size()), CWD);
   }
   UnifiedPath(const char *Path, const std::string &CWD = ".") {
-    _Path = std::string(Path);
-    makeAbsolute(CWD);
-    makeCanonical(CWD);
+    setPath(Path, CWD);
   }
   bool equalsTo(const std::string &RHS) {
     return this->equalsTo(UnifiedPath(RHS));
@@ -67,12 +57,12 @@ public:
   llvm::StringRef getCanonicalPath() const noexcept { return _CanonicalPath; }
   llvm::StringRef getPath() const noexcept { return _Path; }
   llvm::StringRef getAbsolutePath() const noexcept { return _AbsolutePath; }
-  void setPath(const std::string &NewPath) {
+  void setPath(const std::string &NewPath, const std::string &CWD = ".") {
     _Path = NewPath;
     _AbsolutePath.clear();
     _CanonicalPath.clear();
-    makeCanonical();
-    makeAbsolute();
+    makeCanonical(CWD);
+    makeAbsolute(CWD);
   }
 
 private:
