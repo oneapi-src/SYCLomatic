@@ -61,7 +61,7 @@ int main() {
 
   std::cout << "====== Host Attributes =======" << std::endl;
   std::cout << deviceID << std::endl;
-  std::cout << memType << std::endl;
+  std::cout << static_cast<int>(memType) << std::endl;
   std::cout << hostPtr << std::endl;
   std::cout << devPtr << std::endl;
   std::cout << isManaged << std::endl;
@@ -78,7 +78,7 @@ int main() {
   std::cout << "====== Malloc Host Attributes =======" << std::endl;
   std::cout << "malloc host " << malloc_host << std::endl;
   std::cout << deviceID << std::endl;
-  std::cout << memType << std::endl;
+  std::cout << static_cast<int>(memType) << std::endl;
   std::cout << hostPtr << std::endl;
   std::cout << devPtr << std::endl;
   std::cout << isManaged << std::endl;
