@@ -402,7 +402,7 @@ ASSIGNABLE_FACTORY(
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
         CALL_FACTORY_ENTRY(
-            "cuPointerGetAttributes", CALL(MapNames::getDpctNamespace() + "pointer_attributes.get",
+            "cuPointerGetAttributes", CALL(MapNames::getDpctNamespace() + "pointer_attributes::get",
             ARG(0), ARG(1), ARG(2), ARG(3)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(

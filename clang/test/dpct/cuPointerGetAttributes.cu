@@ -35,7 +35,8 @@ int main() {
     CU_POINTER_ATTRIBUTE_DEVICE_ORDINAL
   };
 
-  int memType;
+  // CHECK: sycl::usm::alloc memType;
+  CUmemorytype memType;
   void* hostPtr;
   unsigned int isManaged;
   int deviceID;
@@ -50,7 +51,7 @@ int main() {
     &deviceID
   };
 
-  // CHECK: dpct::pointer_attributes.get(numAttributes, attributes, attributeValues, (dpct::device_ptr) h_A);
+  // CHECK: dpct::pointer_attributes::get(numAttributes, attributes, attributeValues, (dpct::device_ptr) h_A);
   cuPointerGetAttributes(
     numAttributes,
     attributes,
@@ -67,7 +68,7 @@ int main() {
 
   void * malloc_host;
   cudaMallocHost((void **)&malloc_host, size);
-  // CHECK: dpct::pointer_attributes.get(numAttributes, attributes, attributeValues, (dpct::device_ptr) malloc_host);
+  // CHECK: dpct::pointer_attributes::get(numAttributes, attributes, attributeValues, (dpct::device_ptr) malloc_host);
   cuPointerGetAttributes(
     numAttributes,
     attributes,
@@ -82,7 +83,7 @@ int main() {
   std::cout << devPtr << std::endl;
   std::cout << isManaged << std::endl;
 
-  // CHECK: dpct::pointer_attributes.get(numAttributes, attributes, attributeValues, (dpct::device_ptr) d_A);
+  // CHECK: dpct::pointer_attributes::get(numAttributes, attributes, attributeValues, (dpct::device_ptr) d_A);
   cuPointerGetAttributes(
     numAttributes,
     attributes,

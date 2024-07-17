@@ -372,6 +372,10 @@ void MapNames::setExplicitNamespaceMap() {
                ? getClNamespace() + "ext::oneapi::experimental::queue_state"
                : "cudaStreamCaptureStatus")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
+      {"CUmemorytype",
+       std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
+      {"CUmemorytype_enum",
+       std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
       {"cudaExtent",
        std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},

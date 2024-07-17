@@ -259,7 +259,7 @@
 // CUPOINTERGETATTRIBUTES-NEXT:                            attributes /*CUpointer_attribute **/, data /*void ***/,
 // CUPOINTERGETATTRIBUTES-NEXT:                            ptr /*CUdeviceptr*/);
 // CUPOINTERGETATTRIBUTES-NEXT: Is migrated to:
-// CUPOINTERGETATTRIBUTES-NEXT:   dpct::pointer_attributes.get(numAttributes, attributes, data, ptr);
+// CUPOINTERGETATTRIBUTES-NEXT:   dpct::pointer_attributes::get(numAttributes, attributes, data, ptr);
 
 /// Stream Management
 
