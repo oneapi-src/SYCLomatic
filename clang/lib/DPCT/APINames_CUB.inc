@@ -129,7 +129,6 @@ ENTRY_MEMBER_FUNCTION(cub::BlockDiscontinuity, cub::BlockDiscontinuity, FlagHead
 ENTRY_MEMBER_FUNCTION(cub::BlockMergeSortStrategy, cub::BlockMergeSortStrategy, get_linear_tid, get_linear_tid, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockMergeSortStrategy, cub::BlockMergeSortStrategy, Sort, Sort, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockMergeSortStrategy, cub::BlockMergeSortStrategy, StableSort, StableSort, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::BlockMergeSortStrategy, cub::BlockMergeSortStrategy, StableSort, StableSort, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockRadixRank, cub::BlockRadixRank, RankKeys, RankKeys, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockRadixRankMatch, cub::BlockRadixRankMatch, RankKeys, RankKeys, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockRadixRankMatch, cub::BlockRadixRankMatch, CallBack, CallBack, false, NO_FLAG, P4, "Comment")
