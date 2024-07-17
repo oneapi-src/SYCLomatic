@@ -169,6 +169,17 @@ public:
   engine_t &get_engine() { return _engine; }
 
 private:
+  template <typename distr_t> auto generate_single(distr_t &distr) {
+    if constexpr (_is_engine_vec_size_one) {
+      return oneapi::mkl::rng::device::generate(distr, _engine);
+    }
+#ifdef __INTEL_MKL__
+    else {
+      return oneapi::mkl::rng::device::generate_single(distr, _engine);
+    }
+#endif
+  }
+
   template <int vec_size, typename distr_t, class... distr_params_t>
   auto generate_vec(distr_t &distr, distr_params_t... distr_params) {
     if constexpr (sizeof...(distr_params_t)) {
@@ -187,29 +198,12 @@ private:
         return oneapi::mkl::rng::device::generate(distr, _engine);
       }
     } else if constexpr (vec_size == 1) {
-      if constexpr (_is_engine_vec_size_one) {
-        return oneapi::mkl::rng::device::generate(distr, _engine);
-      }
-#ifdef __INTEL_MKL__
-      else {
-        return oneapi::mkl::rng::device::generate_single(distr, _engine);
-      }
-#endif
+      return generate_single(distr);
     } else if constexpr (vec_size == 2) {
-      if constexpr (_is_engine_vec_size_one) {
-        sycl::vec<typename distr_t::result_type, 2> res;
-        res.x() = oneapi::mkl::rng::device::generate(distr, _engine);
-        res.y() = oneapi::mkl::rng::device::generate(distr, _engine);
-        return res;
-      }
-#ifdef __INTEL_MKL__
-      else {
-        sycl::vec<typename distr_t::result_type, 2> res;
-        res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-        res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-        return res;
-      }
-#endif
+      sycl::vec<typename distr_t::result_type, 2> res;
+      res.x() = generate_single(distr);
+      res.y() = generate_single(distr);
+      return res;
     }
   }
 };
