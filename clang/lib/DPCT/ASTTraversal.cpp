@@ -4217,6 +4217,11 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCher2k_v2_64", "cublasZher2k_v2_64", "cublasSgeam_64",
         "cublasDgeam_64", "cublasCgeam_64", "cublasZgeam_64", "cublasSdgmm_64",
         "cublasDdgmm_64", "cublasCdgmm_64", "cublasZdgmm_64",
+        "cublasStrmm_v2_64", "cublasDtrmm_v2_64", "cublasCtrmm_v2_64",
+        "cublasZtrmm_v2_64", "cublasSsyrkx_64", "cublasDsyrkx_64",
+        "cublasCsyrkx_64", "cublasZsyrkx_64", "cublasCherkx_64",
+        "cublasZherkx_64", "cublasHgemm_64", "cublasCgemm3m_64",
+        "cublasZgemm3m_64",
         /*cublasLt*/
         "cublasLtCreate", "cublasLtDestroy", "cublasLtMatmulDescCreate",
         "cublasLtMatmulDescDestroy", "cublasLtMatmulDescSetAttribute",

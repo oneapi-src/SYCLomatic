@@ -83,6 +83,8 @@ ENTRY(thrust::inclusive_scan, thrust::inclusive_scan, true, NO_FLAG, P4, "Succes
 ENTRY(thrust::inclusive_scan_by_key, thrust::inclusive_scan_by_key, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::inner_product, thrust::inner_product, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::is_partitioned, thrust::is_partitioned, true, NO_FLAG, P4, "comment")
+ENTRY(thrust::shuffle, thrust::shuffle, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::shuffle_copy, thrust::shuffle_copy, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::is_sorted, thrust::is_sorted, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::is_sorted_until, thrust::is_sorted_until, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::log, thrust::log, true, NO_FLAG, P4, "Successful")

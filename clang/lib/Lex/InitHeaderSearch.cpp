@@ -521,10 +521,10 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
   // keep one /usr/include in last position to WA include_next issue
   // eg. cmath using "include_next math.h"
   for (auto &Entry : SearchList) {
-    if (Entry.Lookup.getName().equals("/usr/include")) {
-       SearchList.push_back(Entry);
+    if (Entry.Lookup.getName() == "/usr/include") {
+      SearchList.push_back(Entry);
       break;
-     }
+    }
   }
 #endif // SYCLomatic_CUSTOMIZATION
 
