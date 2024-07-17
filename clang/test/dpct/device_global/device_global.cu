@@ -77,9 +77,9 @@ __constant__ A arr_e[10];
 __device__ B arr_f[10];
 
 __device__ void test_var() {
-    int a  = 10 < var_ee;
-    int aa  = 10 < var_ee2;
-    int a2  = 10 < var_init;
+  int a = 10 < var_ee;
+  int aa = 10 < var_ee2;
+  int a2 = 10 < var_init;
 }
 // CHECK: int device_func() {
 // CHECK:   arr_a[0] = 1;

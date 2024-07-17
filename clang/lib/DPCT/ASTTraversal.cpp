@@ -9025,7 +9025,8 @@ void ConstantMemVarMigrationRule::runRule(
             }
           }
           if (!EmittedWarning) {
-            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
+                   false);
           }
           Info->setInitForDeviceGlobal(InitStr);
         }
