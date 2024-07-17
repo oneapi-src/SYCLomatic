@@ -674,22 +674,10 @@ void foo5() {
   int *dev_info_d;
   int *dev_info_c;
   int *dev_info_z;
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1028:{{[0-9]+}}: The The 11th argument dev_info_s was not migrated because the migrated helper function has not implemented the exception to error code mapping yet..
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, As, 3, Bs, 3, &info, 2);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1028:{{[0-9]+}}: The The 11th argument dev_info_d was not migrated because the migrated helper function has not implemented the exception to error code mapping yet..
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Ad, 3, Bd, 3, &info, 2);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1028:{{[0-9]+}}: The The 11th argument dev_info_c was not migrated because the migrated helper function has not implemented the exception to error code mapping yet..
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Ac, 3, Bc, 3, &info, 2);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1028:{{[0-9]+}}: The The 11th argument dev_info_z was not migrated because the migrated helper function has not implemented the exception to error code mapping yet..
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Az, 3, Bz, 3, &info, 2);
+  //CHECK:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, As, 3, Bs, 3, &info, dev_info_s, 2);
+  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Ad, 3, Bd, 3, &info, dev_info_d, 2);
+  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Ac, 3, Bc, 3, &info, dev_info_c, 2);
+  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Az, 3, Bz, 3, &info, dev_info_z, 2);
   cublasSgelsBatched(handle, CUBLAS_OP_N, 3, 3, 3, As, 3, Bs, 3, &info, dev_info_s, 2);
   cublasDgelsBatched(handle, CUBLAS_OP_N, 3, 3, 3, Ad, 3, Bd, 3, &info, dev_info_d, 2);
   cublasCgelsBatched(handle, CUBLAS_OP_N, 3, 3, 3, Ac, 3, Bc, 3, &info, dev_info_c, 2);
