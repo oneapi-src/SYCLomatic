@@ -11,7 +11,7 @@
 
 __global__ void fence() {
 
-  // CHECK: sycl::group_barrier(item.get_group());
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   asm("fence.acq_rel.gpu;");
   
 }
