@@ -1987,6 +1987,14 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool handle_fence(const InlineAsmInstruction *I) override {
+    
+    OS() << MapNames::getClNamespace() << "group_barrier("
+         << DpctGlobalInfo::getItem(GAS) << ".get_group())"; 
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   bool handle_ret(const InlineAsmInstruction *) override {
     OS() << "return";
     endstmt();
