@@ -1,6 +1,9 @@
 [
     {
         "ID": "serial123:prolog:0",
+        "Device Name": "GPU",
+        "Device ID": "0",
+        "Stream Address": "0xe4bb30",
         "Free Device Memory": "400",
         "Total Device Memory": "500",
         "Elapse Time(ms)": "0.0",
@@ -32,6 +35,9 @@
     },
     {
         "ID": "serial1243:epilog:0",
+        "Device Name": "GPU",
+        "Device ID": "0",
+        "Stream Address": "0xe4bb30",
         "Free Device Memory": "300",
         "Total Device Memory": "500",
         "Elapse Time(ms)": "0.1",
@@ -63,6 +69,9 @@
     },
     {
         "ID": "serial1234:prolog:1",
+        "Device Name": "GPU",
+        "Device ID": "0",
+        "Stream Address": "0xe4bb30",
         "Free Device Memory": "400",
         "Total Device Memory": "500",
         "Elapse Time(ms)": "0.0",

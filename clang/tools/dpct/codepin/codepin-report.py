@@ -14,7 +14,6 @@ import sys
 from collections.abc import Container
 import math
 from argparse import RawTextHelpFormatter
-import graphviz as gv
 import random
 UUID = "ID"
 CHECKPOINT = "CheckPoint"
@@ -30,6 +29,7 @@ INDEX = "Index"
 ADDRESS = "Address"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
+CODEPIN_GRAPH_FILE = os.path.join(os.getcwd())
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 EPSILON_FILE = ""
 
@@ -247,7 +247,6 @@ def compare_checkpoint_list(
     cuda_epi_size = len(ordered_epi_id_cuda)
     for index in range(cuda_epi_size):
         id = ordered_epi_id_cuda[index]
-        sycl_id = ordered_epi_id_sycl[index]
         cuda_epilog_checkpoint = cuda_epilog_checkpoint_list[id]
         checkpoint_size += 1
         if not sycl_epilog_checkpoint_list.get(id):
@@ -255,6 +254,7 @@ def compare_checkpoint_list(
             dismatch_checkpoint_num += 1
             continue
         try:
+            sycl_id = ordered_epi_id_sycl[index]
             compare_checkpoint(
                 "epi", index, cuda_epilog_checkpoint, sycl_epilog_checkpoint_list.get(sycl_id)
             )
@@ -267,7 +267,6 @@ def compare_checkpoint_list(
     cuda_pro_size = len(ordered_pro_id_cuda)
     for index in range(cuda_pro_size):
         id = ordered_pro_id_cuda[index]
-        sycl_id = ordered_pro_id_sycl[index]
         cuda_prolog_checkpoint = cuda_prolog_checkpoint_list[id]
         checkpoint_size += 1
         if not sycl_prolog_checkpoint_list.get(id):
@@ -275,6 +274,7 @@ def compare_checkpoint_list(
             dismatch_checkpoint_num += 1
             continue
         try:
+            sycl_id = ordered_pro_id_sycl[index]
             compare_checkpoint(
                 "pro", index, cuda_prolog_checkpoint, sycl_prolog_checkpoint_list.get(sycl_id)
             )
@@ -381,6 +381,10 @@ def generate_data_flow_graph(
     sycl_prolog_checkpoint_list,
     sycl_epilog_checkpoint_list
 ):
+    try:
+        import graphviz as gv
+    except ImportError:
+        print("Module graphviz is not installed on current environment.")
     dot = gv.Digraph('DataFlow Graph')
     dot.attr(layout='nop2')
     list_size = len(cuda_prolog_checkpoint_list)
@@ -468,12 +472,10 @@ def generate_data_flow_graph(
     for device_id in range(device_num):
         stream_num = len(stream_id_map[device_id])
         layer_width = max(stream_num * 1000, max_input_node_num[device_id] * 400)
-        dot.node("Device Name:" + device_name_map_cuda[device_id] + " / " + device_name_map_sycl[device_id] + "\nDevice Id: " + str(device_id), shape="box", pos=str(layer_right + layer_width / 2) + ",150!")
+        dot.node("Device Name:" + device_name_map_cuda[device_id] + " VS " + device_name_map_sycl[device_id] + "\nDevice Id: " + str(device_id), shape="box", pos=str(layer_right + layer_width / 2) + ",150!")
         layer_right += layer_width
         layer_top = -50
         stream_step = layer_width / stream_num
-        for index in range(stream_num):
-            dot.node("Stream Id: " + str(index), shape="box", pos=str(stream_step * index + stream_step / 2) + ",100!")
         layer_size = len(layers[device_id])
         for index in range(layer_size):
             input_node_num = len(layers[device_id][index]["in"])
@@ -486,7 +488,7 @@ def generate_data_flow_graph(
                 layer_top -= 100
 
             kernel_node = layers[device_id][index]["kernel"]
-            dot.node(kernel_node["index"], kernel_node["comment"], shape="box", pos=str(stream_step * kernel_node["stream"] + stream_step / 2) + "," + str(layer_top) + "!")
+            dot.node(kernel_node["index"], "Stream Id: " + str(kernel_node["stream"]) + "\n" + kernel_node["comment"], shape="box", pos=str(stream_step * kernel_node["stream"] + stream_step / 2) + "," + str(layer_top) + "!")
             layer_top -= 100
 
             output_node_num = len(layers[device_id][index]["out"])
@@ -503,7 +505,7 @@ def generate_data_flow_graph(
             if output_node_num:
                 for node in layers[device_id][index]["out"]:
                     dot.edge(kernel_node["index"], node["name"] + str(index) + "o")
-    dot.render(filename='DataFlow_Graph', format='pdf', directory='.')
+    dot.render(filename='DataFlow_Graph', format='pdf', directory=CODEPIN_GRAPH_FILE, cleanup=True)
 
 def main():
     global EPSILON_FILE
@@ -551,6 +553,13 @@ def main():
         "The tolerance values are passed to the Python math.isclose() function.\n"
         "If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol is 0, then rel_tol is used. If both tolerances are 0, the floating point data must be exactly the same when compared.",
     )
+    parser.add_argument(
+        "--generate-dataflow-graph",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Generate the dataflow graph for the execution and comparison result."
+    )
 
     args = parser.parse_args()
     EPSILON_FILE = args.floating_point_comparison_epsilon
@@ -593,19 +602,19 @@ def main():
             checkpoint_size,
         )
     )
-
-    generate_data_flow_graph(
-        device_stream_dic_cuda,
-        device_stream_dic_sycl,
-        ordered_pro_id_cuda,
-        ordered_epi_id_cuda,
-        ordered_pro_id_sycl,
-        ordered_epi_id_sycl,
-        cuda_prolog_checkpoint_list,
-        cuda_epilog_checkpoint_list,
-        sycl_prolog_checkpoint_list,
-        sycl_epilog_checkpoint_list
-    )
+    if args.generate_dataflow_graph:
+        generate_data_flow_graph(
+            device_stream_dic_cuda,
+            device_stream_dic_sycl,
+            ordered_pro_id_cuda,
+            ordered_epi_id_cuda,
+            ordered_pro_id_sycl,
+            ordered_epi_id_sycl,
+            cuda_prolog_checkpoint_list,
+            cuda_epilog_checkpoint_list,
+            sycl_prolog_checkpoint_list,
+            sycl_epilog_checkpoint_list
+        )
 
     with open(CODEPIN_REPORT_FILE, "w") as f:
         f.write("CodePin Summary\n")
@@ -635,13 +644,16 @@ def main():
         with open(CODEPIN_REPORT_FILE, "a") as f:
             f.write(ERROR_CSV_PATTERN)
             f.write(failed_log)
+    graph_file = ""
+    if args.generate_dataflow_graph:
+        graph_file = " and \'DataFlow_Graph.pdf\' file"
     if dismatch_checkpoint_num != 0:
         print(
-            f"Finished comparison of the two files and found differences. Please check 'CodePin_Report.csv' file located in your project directory.\n"
+            f"Finished comparison of the two files and found differences. Please check 'CodePin_Report.csv' file" + graph_file + " located in your project directory.\n"
         )
         sys.exit(-1)
     print(
-        f"Finished comparison of the two files and data is identical. Please check 'CodePin_Report.csv' file located in your project directory.\n"
+        f"Finished comparison of the two files and data is identical. Please check 'CodePin_Report.csv' file" + graph_file + " located in your project directory.\n"
     )
     sys.exit(0)
 
