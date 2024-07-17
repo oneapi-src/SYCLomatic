@@ -14,7 +14,7 @@ import sys
 from collections.abc import Container
 import math
 from argparse import RawTextHelpFormatter
-import random
+
 UUID = "ID"
 CHECKPOINT = "CheckPoint"
 DATA = "Data"
