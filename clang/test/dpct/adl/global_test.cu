@@ -31,6 +31,7 @@ __device__ void test_norm2(T test) {
 
 __global__ void global_test() {
   float3 f3;
+  // CHECK: norm2(f3);
   norm2(f3);
 }
 
@@ -45,7 +46,6 @@ __global__ void ns::func() {
 namespace test {
 void __global__ my_test() {
   float3 hello;
-
   // CHECK: ::norm2(hello);
   ::norm2(hello);
   // CHECK: ::norm2(hello);
@@ -64,5 +64,41 @@ __global__ void test_temp(T a) {
   // CHECK:  test_norm2<T>(a);
   test_norm2<T>(a);
 }
-
 } // namespace test
+
+void foo(float3);
+namespace t {
+void foo(int a);
+template <class T>
+void test(T a) {
+  // CHECK: foo(a);
+  foo(a);
+}
+
+void test1() {
+  int a;
+  float3 fa;
+  test<int>(a);
+  test<float3>(fa);
+}
+}  // namespace t
+
+namespace n {
+  __device__ void foo(int3 a);
+  void __global__ my_test() {
+    int3 a;
+    // CHECK: foo(a);
+    foo(a);
+  }
+
+}
+__device__ void n::foo(int3 a) {}
+
+__device__ void foo(float3 b) {
+
+}
+  void __global__ my_test() {
+    float3 b;
+     // CHECK: foo(b);
+    foo(b);
+  }

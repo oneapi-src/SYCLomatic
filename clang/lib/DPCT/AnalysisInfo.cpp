@@ -4278,6 +4278,11 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments(),
                              Callee->getSourceRange());
+      auto ParentFunc = DpctGlobalInfo::getParentFunction(Callee);
+      if (ParentFunc &&
+          isa<TranslationUnitDecl>(ParentFunc->getDeclContext())) {
+        return;
+      }
       if (isa<TranslationUnitDecl>(CallDecl->getDeclContext()) &&
           DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) &&
           !DRE->getQualifier() && !CallDecl->isOverloadedOperator()) {
