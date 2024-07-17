@@ -2087,7 +2087,7 @@ void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 
   if (IsTryToUseOneDimension) {
     // Insert member access expr at the end of DRE
-    addReplacement(getExprLength(), 0, ".get(2)");
+    addReplacement(getExprLength(), 0, ".z");
   }
 }
 
