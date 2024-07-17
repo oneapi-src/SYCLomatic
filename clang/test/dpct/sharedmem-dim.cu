@@ -43,7 +43,7 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 4> sha2_mem_acc_ct1(sycl::range<4>(10, 10, 10, 10), cgh);
+// CHECK-NEXT: sycl::local_accessor<int[10][10][10][10], 0> sha2_mem_acc_ct1(cgh);
 
   staticReverse<<<10,10>>>();
 
@@ -98,4 +98,36 @@ __global__ void kernel3() {
 // CHECK: }
 void foo3() {
   kernel3<<<1, 1>>>();
+}
+
+// CHECK: void foo4_device(int sv[2][3][4]) {
+// CHECK-NEXT:   sv[1][2][3] = 456;
+// CHECK-NEXT: }
+__device__ void foo4_device(int sv[2][3][4]) {
+  sv[1][2][3] = 456;
+}
+
+// CHECK: void foo4_kernel(int sv[2][3][4]) {
+// CHECK-NEXT:   //
+// CHECK-NEXT:   foo4_device(sv);
+// CHECK-NEXT: }
+__global__ void foo4_kernel() {
+  __shared__ int sv[2][3][4];//
+  foo4_device(sv);
+}
+
+// CHECK: void foo4() {
+// CHECK-NEXT:   dpct::get_in_order_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::local_accessor<int[2][3][4], 0> sv_acc_ct1(cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           foo4_kernel(reinterpret_cast<int (*)[3][4]>(sv_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get()));
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+void foo4() {
+  foo4_kernel<<<1, 1>>>();
 }

@@ -2877,6 +2877,8 @@ MemVarInfo::MemVarInfo(unsigned Offset,
       AccMode = Reference;
   } else if (getType()->getDimension() <= 1) {
     AccMode = Pointer;
+  } else if (isShared() && isLocal()) {
+    AccMode = PointerToArray;
   } else {
     AccMode = Accessor;
   }
@@ -2992,7 +2994,7 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
   if (isShared()) {
     OS << getSyclAccessorType(LI);
     OS << " " << getAccessorName() << "(";
-    if (getType()->getDimension())
+    if (getType()->getDimension() && AccMode != PointerToArray)
       OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
          << ", ";
     OS << "cgh)";
@@ -3055,6 +3057,14 @@ ParameterStream &MemVarInfo::getFuncDecl(ParameterStream &PS) {
     if (!getType()->isPointer())
       PS << " ";
     PS << "*";
+  } else if (AccMode == PointerToArray) {
+    PS << getType()->getBaseName() << " ";
+    PS << getArgName();
+    auto Range = getType()->getRange();
+    for (size_t i = 0; i < Range.size(); i++) {
+      PS << "[" << Range[i].getSize() << "]";
+    }
+    return PS;
   } else if (AccMode == Reference) {
     PS << getAccessorDataType(true, true);
     if (!getType()->isPointer())
@@ -3085,6 +3095,16 @@ ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
         PS << "template ";
       PS << "get_multi_ptr<" << MapNames::getClNamespace()
          << "access::decorated::no>().get()";
+    } else if (isShared() && AccMode == PointerToArray) {
+      std::string CastType = getType()->getBaseName();
+      auto Range = getType()->getRange();
+      CastType = CastType + " (*)";
+      for (size_t i = 1; i < Range.size(); i++) {
+        CastType = CastType + "[" + Range[i].getSize() + "]";
+      }
+      PS << "reinterpret_cast<" << CastType << ">(" << getAccessorName()
+         << (getType()->isTemplate() ? "template " : "") << ".get_multi_ptr<"
+         << MapNames::getClNamespace() << "access::decorated::no>().get())";
     } else {
       PS << getAccessorName();
     }
@@ -3265,8 +3285,17 @@ std::string MemVarInfo::getSyclAccessorType(LocInfo LI) {
                                getType()->SharedVarInfo.DefinitionFuncName);
     }
     OS << MapNames::getClNamespace() << "local_accessor<";
-    OS << getAccessorDataType() << ", ";
-    OS << getType()->getDimension() << ">";
+    if (AccMode == PointerToArray) {
+      OS << getType()->getBaseName();
+      auto Range = getType()->getRange();
+      for (size_t i = 0; i < Range.size(); i++) {
+        OS << "[" << Range[i].getSize() << "]";
+      }
+      OS << ", 0>";
+    } else {
+      OS << getAccessorDataType() << ", ";
+      OS << getType()->getDimension() << ">";
+    }
   } else {
     OS << MapNames::getClNamespace() << "accessor<";
     OS << getAccessorDataType() << ", ";
@@ -5411,6 +5440,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
+    Printer.indent();
     Printer << MapNames::getClNamespace() + "nd_range<3>(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
       Printer << ExecutionConfig.LocalSize;
