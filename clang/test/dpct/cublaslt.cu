@@ -193,7 +193,7 @@ void foo3() {
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::a_scale_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::b_scale_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::d_scale_pointer;
-  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::amax_d_pointer;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::absmax_d_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;

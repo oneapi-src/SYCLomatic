@@ -133,7 +133,7 @@ public:
     a_scale_pointer,
     b_scale_pointer,
     d_scale_pointer,
-    amax_d_pointer,
+    absmax_d_pointer,
     unsupport
   };
 
@@ -170,7 +170,7 @@ private:
       CASE(a_scale_pointer)
       CASE(b_scale_pointer)
       CASE(d_scale_pointer)
-      CASE(amax_d_pointer)
+      CASE(absmax_d_pointer)
     default:
       break;
     }
@@ -187,7 +187,7 @@ private:
   void *_a_scale_pointer = nullptr;
   void *_b_scale_pointer = nullptr;
   void *_d_scale_pointer = nullptr;
-  void *_amax_d_pointer = nullptr;
+  void *_absmax_d_pointer = nullptr;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
@@ -631,25 +631,25 @@ template <typename T> struct abs_max_op {
   }
 };
 
-template <typename T> struct amax_impl {
-  sycl::event operator()(void *amax_ptr, const void *new_d, size_t ld,
+template <typename T> struct absmax_impl {
+  sycl::event operator()(void *absmax_ptr, const void *new_d, size_t ld,
                          size_t rows, size_t cols, dpct::queue_ptr q_ptr,
                          std::vector<sycl::event> deps) {
     return q_ptr->submit([&](sycl::handler &cgh) {
 #ifdef DPCT_USM_LEVEL_NONE
-      auto amax_reduction = sycl::reduction(
-          get_buffer<T>(amax_ptr), cgh, T(0), abs_max_op<T>(),
+      auto absmax_reduction = sycl::reduction(
+          get_buffer<T>(absmax_ptr), cgh, T(0), abs_max_op<T>(),
           {sycl::property::reduction::initialize_to_identity()});
       access_wrapper<const T *> new_d_acc(new_d, cgh);
 #else
-      auto amax_reduction = sycl::reduction(
-          (T *)(amax_ptr), T(0), abs_max_op<T>(),
+      auto absmax_reduction = sycl::reduction(
+          (T *)(absmax_ptr), T(0), abs_max_op<T>(),
           {sycl::property::reduction::initialize_to_identity()});
 #endif
       cgh.depends_on(deps);
-      cgh.parallel_for<dpct_kernel_name<class amax_reduction, T>>(
-          sycl::range<2>(ld, cols), amax_reduction,
-          [=](sycl::id<2> idx, auto &amax) {
+      cgh.parallel_for<dpct_kernel_name<class absmax_reduction, T>>(
+          sycl::range<2>(ld, cols), absmax_reduction,
+          [=](sycl::id<2> idx, auto &absmax) {
 #ifdef DPCT_USM_LEVEL_NONE
             auto new_d_data = new_d_acc.get_raw_pointer();
 #else
@@ -659,7 +659,7 @@ template <typename T> struct amax_impl {
             size_t col_idx = idx.get(1);
             if (row_idx < rows) {
               size_t linear_idx = row_idx + ld * col_idx;
-              amax.combine(new_d_data[linear_idx]);
+              absmax.combine(new_d_data[linear_idx]);
             }
           });
     });
@@ -669,7 +669,7 @@ template <typename T> struct amax_impl {
 
 /// This function does the following operations:
 /// (1) D_temp = epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta * C)
-/// (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::amax_d_pointer is specified
+/// (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::absmax_d_pointer is specified
 /// (3) D = scale_d * D_temp
 ///   "op_a" is specified by the matmul_desc_t::attribute::trans_a
 ///   (default is nontrans)
@@ -1011,10 +1011,10 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   // end of calling oneDNN
 
-  sycl::event amax_d_event;
-  if (auto amax_ptr = compute_desc->_amax_d_pointer) {
-    amax_d_event = detail::type_dispatch<detail::amax_impl>(
-        d_desc->_type, amax_ptr, new_d, new_ldd, d_desc->_rows, d_desc->_cols,
+  sycl::event absmax_d_event;
+  if (auto absmax_ptr = compute_desc->_absmax_d_pointer) {
+    absmax_d_event = detail::type_dispatch<detail::absmax_impl>(
+        d_desc->_type, absmax_ptr, new_d, new_ldd, d_desc->_rows, d_desc->_cols,
         q_ptr, std::vector<sycl::event>{matmul_prim_event});
   }
 
@@ -1023,7 +1023,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     scale_d_event = detail::type_dispatch<detail::scale_d_impl>(
         d_desc->_type, d_scale_ptr, new_d, new_ldd, d_desc->_rows,
         d_desc->_cols, q_ptr, compute_desc->_scale_type,
-        std::vector<sycl::event>{matmul_prim_event, amax_d_event});
+        std::vector<sycl::event>{matmul_prim_event, absmax_d_event});
   }
 
   sycl::event transform_d_event;
@@ -1031,11 +1031,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     detail::type_dispatch<detail::matrix_transform_impl>(
         d_desc->_type, q_ptr, d_desc->_rows, d_desc->_cols, new_ldd,
         order_t::col, new_d, d_desc->_ld, d_desc->_order, d,
-        std::vector<sycl::event>{matmul_prim_event, amax_d_event});
+        std::vector<sycl::event>{matmul_prim_event, absmax_d_event});
   }
 
   sycl::event free_event = q_ptr->submit([&](sycl::handler &cgh) {
-    cgh.depends_on({transform_d_event, matmul_prim_event, amax_d_event});
+    cgh.depends_on({transform_d_event, matmul_prim_event, absmax_d_event});
     cgh.host_task([=] {
       delete src_mem;
       delete weights_mem;
