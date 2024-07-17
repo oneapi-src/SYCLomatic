@@ -1,12 +1,13 @@
-// UNSUPPORTED: v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v12.0, v12.1, v12.2, v12.3 , v12.4
-// UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
-// RUN: dpct --format-range=none -out-root %T/Out/cudaPointerAttributes %s --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck %s --match-full-lines --input-file %T/Out/cudaPointerAttributes/cudaPointerAttributes.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/Out/cudaPointerAttributes/cudaPointerAttributes.dp.cpp -o %T/Out/cudaPointerAttributes/cudaPointerAttributes.dp.o %}
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
+// RUN: dpct --format-range=none -out-root %T/Out/cuPointerGetAttributes %s --cuda-include-path="%cuda-path/include"
+// RUN: FileCheck %s --match-full-lines --input-file %T/Out/cuPointerGetAttributes/cuPointerGetAttributes.dp.cpp
+// RUN: %if build_lit %{icpx -c -fsycl %T/Out/cuPointerGetAttributes/cuPointerGetAttributes.dp.cpp -o %T/Out/cuPointerGetAttributes/cuPointerGetAttributes.dp.o %}
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <stdlib.h>
 #include <iostream>
+
 int main() {
   int N = 2048;
   size_t size = N * sizeof(float);
@@ -17,14 +18,15 @@ int main() {
   cudaMalloc((void **)&d_A, size);
 
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
 
   unsigned int numAttributes = 5;
 
   // CHECK: dpct::attribute_type attributes[] = {
-  // CHECK:   dpct::attribute_type::memory_type, dpct::attribute_type::device_pointer,
-  // CHECK:   dpct::attribute_type::host_pointer, dpct::attribute_type::is_managed,
-  // CHECK:   dpct::attribute_type::device_id};
+  // CHECK:   dpct::attribute_type::memory_type,
+  // CHECK:   dpct::attribute_type::device_pointer,
+  // CHECK:   dpct::attribute_type::host_pointer,
+  // CHECK:   dpct::attribute_type::is_managed,
+  // CHECK:   dpct::attribute_type::device_id
   CUpointer_attribute attributes[] = {
     CU_POINTER_ATTRIBUTE_MEMORY_TYPE,
     CU_POINTER_ATTRIBUTE_DEVICE_POINTER,
@@ -34,11 +36,11 @@ int main() {
   };
 
   int memType;
-  // CHECK: dpct::device_ptr devPtr;
-  CUdeviceptr devPtr;
   void* hostPtr;
   unsigned int isManaged;
   int deviceID;
+  // CHECK: dpct::device_ptr devPtr;
+  CUdeviceptr devPtr;
 
   void* attributeValues[] = {
     &memType,
@@ -48,12 +50,12 @@ int main() {
     &deviceID
   };
 
-  // CHECK: dpct::pointer_attributes.get( 
+  // CHECK: dpct::pointer_attributes.get(numAttributes, attributes, attributeValues, (dpct::device_ptr) h_A);
   cuPointerGetAttributes(
     numAttributes,
     attributes,
     attributeValues,
-    h_A
+    (CUdeviceptr) h_A
   );
 
   std::cout << "====== Host Attributes =======" << std::endl;
@@ -65,12 +67,12 @@ int main() {
 
   void * malloc_host;
   cudaMallocHost((void **)&malloc_host, size);
-  // CHECK: dpct::pointer_attributes.get( 
+  // CHECK: dpct::pointer_attributes.get(numAttributes, attributes, attributeValues, (dpct::device_ptr) malloc_host);
   cuPointerGetAttributes(
     numAttributes,
     attributes,
     attributeValues,
-    malloc_host
+    (CUdeviceptr) malloc_host
   );
   std::cout << "====== Malloc Host Attributes =======" << std::endl;
   std::cout << "malloc host " << malloc_host << std::endl;
@@ -80,12 +82,12 @@ int main() {
   std::cout << devPtr << std::endl;
   std::cout << isManaged << std::endl;
 
-  // CHECK: dpct::pointer_attributes.get( 
+  // CHECK: dpct::pointer_attributes.get(numAttributes, attributes, attributeValues, (dpct::device_ptr) d_A);
   cuPointerGetAttributes(
     numAttributes,
     attributes,
     attributeValues,
-    d_A
+    (CUdeviceptr) d_A
   );
   std::cout << "====== Device Attributes =======" << std::endl;
   std::cout << *static_cast<int *>(attributeValues[0]) << std::endl;
@@ -93,27 +95,14 @@ int main() {
   std::cout << attributeValues[2] << std::endl;
   std::cout << *static_cast<unsigned int *>(attributeValues[3]) << std::endl;
   std::cout << *static_cast<int *>(attributeValues[4]) << std::endl;
+
   // CHECK: if (memType == sycl::usm::alloc::host) {
-  // CHECK: } else if (memType == sycl::usm::alloc::device) {
-  // CHECK: } else if (isManaged) {
-  if (memType == cudaMemoryTypeHost) {
+  if (memType == CU_MEMORYTYPE_HOST) {
     return 0;
-  } else if (memType == cudaMemoryTypeDevice) {
+  // CHECK: } else if (memType == sycl::usm::alloc::device) {
+  } else if (memType == CU_MEMORYTYPE_DEVICE) {
     return 1;
   } else if (isManaged) {
     return 2;
-  }
-  // CHECK: if (memType == sycl::usm::alloc::unknown) {
-  // CHECK: } else if (memType == sycl::usm::alloc::host) {
-  // CHECK: } else if (memType == sycl::usm::alloc::device) {
-  // CHECK: } else if (memType == sycl::usm::alloc::shared) {
-  if (memType == 0) {
-    return 0;
-  } else if (memType == 1) {
-    return 1;
-  } else if (memType == 2) {
-    return 2;
-  } else if (memType == 3) {
-    return 3;
   }
 }

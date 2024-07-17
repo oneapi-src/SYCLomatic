@@ -1221,6 +1221,17 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "attribute_type::allowed_handle_types")},
 
+      // enum CUmemorytype Type
+      {"CU_MEMORYTYPE_HOST",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::host",
+                                      HelperFeatureEnum::device_ext)},
+      {"CU_MEMORYTYPE_DEVICE",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::device",
+                                      HelperFeatureEnum::device_ext)},
+      {"CU_MEMORYTYPE_UNIFIED",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::shared",
+                                      HelperFeatureEnum::device_ext)},
+      
       // enum CUlimit
       {"CU_LIMIT_PRINTF_FIFO_SIZE", std::make_shared<EnumNameRule>("INT_MAX")},
 
