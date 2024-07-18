@@ -11,7 +11,7 @@
 
 __global__ void fence() {
 
-  // CHECK: sycl::group_barrier(item_ct1.get_group());
+  // CHECK: sycl::atpmic_fence(sycl::memory_order::acq_rel, sycl::memory_scope::device);
   asm("fence.acq_rel.gpu;");
   
 }
