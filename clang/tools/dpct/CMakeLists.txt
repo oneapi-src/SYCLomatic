@@ -26,7 +26,7 @@ target_link_libraries(dpct-binary
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
     target_link_libraries(dpct-binary stdc++fs)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+else()
     target_link_libraries(dpct-binary c++fs)
 endif()
 message(VVVV="${CMAKE_CXX_COMPILER_ID}")
