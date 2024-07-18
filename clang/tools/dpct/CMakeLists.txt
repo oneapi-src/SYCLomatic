@@ -24,11 +24,11 @@ target_link_libraries(dpct-binary
   DPCT
   )
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-    target_link_libraries(dpct-binary stdc++fs)
-else()
-    target_link_libraries(dpct-binary c++fs)
-endif()
+// if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+//     target_link_libraries(dpct-binary stdc++fs)
+// else()
+//     target_link_libraries(dpct-binary c++fs)
+// endif()
 message(VVVV="${CMAKE_CXX_COMPILER_ID}")
 add_clang_symlink(c2s dpct-binary)
 if(UNIX)
