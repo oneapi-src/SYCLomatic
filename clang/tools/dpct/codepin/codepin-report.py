@@ -29,7 +29,8 @@ INDEX = "Index"
 ADDRESS = "Address"
 ERROR_MATCH_PATTERN = "Unable to find the corresponding serialization function"
 CODEPIN_REPORT_FILE = os.path.join(os.getcwd(), "CodePin_Report.csv")
-CODEPIN_GRAPH_FILE = os.path.join(os.getcwd())
+GRAPH_FILENAME = "CodePin_DataFlowGraph"
+CODEPIN_GRAPH_FILE_PATH = os.path.join(os.getcwd())
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 EPSILON_FILE = ""
 
@@ -368,7 +369,29 @@ def get_memory_used(cp_list):
             max_mem = used_mem
     return (cp_id, max_mem)
 
-
+# Generates a data flow graph using the graphviz library to visualize the kernel execution status
+# and comparison results between CUDA and SYCL dumped data.
+# 1. Identify Kernel Outputs
+#    The function iterates over the list of CUDA checkpoints to identify output variables for each kernel. 
+#    It compares the prolog and epilog checkpoints to determine if a variable has changed, indicating it is 
+#    an output.
+# 2. Analyze Checkpoints to Build Layers
+#    It iterates over the list of CUDA checkpoints again to build the layers of the graph. For each layer, 
+#    it has three sub-layers:
+#      - Input Variable Nodes Layer: The input nodes for each kernel and their attributes (name, type, address, 
+#        color) are stored.
+#      - Kernel Node Layer: Information about the kernel node, such as stream ID and source location, is collected.
+#      - Output Variable Nodes Layer: The identified output nodes for each kernel and their attributes are 
+#        also stored.
+# 3. Create Graph Nodes and Edges
+#    After building the layers, the function creates the graph nodes and edges. The nodes, including device info 
+#    nodes, input nodes, kernel nodes, and output nodes, are added to the graph. Edges are added between input 
+#    nodes and kernel nodes, and between kernel nodes and output nodes to represent the data flow. Each variable 
+#    node will be tagged with V + num, where num is the version of the variable. The initial version is 0, and 
+#    num will be incremented by one when it changes. The color of the node is red if the variable value is 
+#    mismatched between CUDA and SYCL execution results.
+# 4. Render Graph
+#    Finally, the function renders the graph to a PDF file and saves it in the current directory.
 def generate_data_flow_graph(
     device_stream_dic_cuda,
     device_stream_dic_sycl,
@@ -384,8 +407,9 @@ def generate_data_flow_graph(
     try:
         import graphviz as gv
     except ImportError:
-        print("Module graphviz is not installed on current environment.")
-    dot = gv.Digraph('DataFlow Graph')
+        print("Module graphviz is not installed on current environment. Please use package installer for Python like \'pip install graphviz\' to install it. ")
+        return
+    dot = gv.Digraph(GRAPH_FILENAME)
     dot.attr(layout='nop2')
     list_size = len(cuda_prolog_checkpoint_list)
     datapoint_map = {}
@@ -396,6 +420,7 @@ def generate_data_flow_graph(
     kernel_output_map = {}
     device_name_map_cuda = {}
     device_name_map_sycl = {}
+# 1. Identify Kernel Outputs
     for index in range(list_size):
         pid = ordered_pro_id_cuda[index]
         segs = pid.split(":")
@@ -407,6 +432,7 @@ def generate_data_flow_graph(
             if (pcheckpoint[arg]["Type"] == "Pointer") or (pcheckpoint[arg]["Type"] == "Array"):
                 if pcheckpoint[arg] != echeckpoint[arg]:
                     kernel_output_map[segs[0]][pcheckpoint[arg]["Index"]] = True
+# 2. Analyze Checkpoints to Build Layers
     for index in range(list_size):
         pid = ordered_pro_id_cuda[index]
         pid_sycl = ordered_pro_id_sycl[index]
@@ -466,7 +492,7 @@ def generate_data_flow_graph(
         if len(input_node) > max_input_node_num[device]:
           max_input_node_num[device] = len(input_node)
         layers[device].append({"in" : input_nodes, "out" : output_nodes, "kernel" : kernel_node})
-
+# 3. Create Graph Nodes and Edges
     layer_right = 0
     device_num = len(stream_id_map)
     for device_id in range(device_num):
@@ -505,7 +531,8 @@ def generate_data_flow_graph(
             if output_node_num:
                 for node in layers[device_id][index]["out"]:
                     dot.edge(kernel_node["index"], node["name"] + str(index) + "o")
-    dot.render(filename='DataFlow_Graph', format='pdf', directory=CODEPIN_GRAPH_FILE, cleanup=True)
+# 4. Render Graph
+    dot.render(filename=GRAPH_FILENAME, format='pdf', directory=CODEPIN_GRAPH_FILE_PATH, cleanup=True)
 
 def main():
     global EPSILON_FILE
@@ -553,12 +580,13 @@ def main():
         "The tolerance values are passed to the Python math.isclose() function.\n"
         "If rel_tol is 0, then abs_tol is used as the tolerance. Conversely, if abs_tol is 0, then rel_tol is used. If both tolerances are 0, the floating point data must be exactly the same when compared.",
     )
+
     parser.add_argument(
-        "--generate-dataflow-graph",
+        "--generate-data-flow-graph",
         required=False,
         default=False,
         action="store_true",
-        help="Generate the dataflow graph for the execution and comparison result."
+        help="Generate the data flow graph for the execution and comparison result."
     )
 
     args = parser.parse_args()
@@ -602,7 +630,8 @@ def main():
             checkpoint_size,
         )
     )
-    if args.generate_dataflow_graph:
+    # Need ordered checkpoint IDs to generate the data flow graph based on kernel execution order.
+    if args.generate_data_flow_graph:
         generate_data_flow_graph(
             device_stream_dic_cuda,
             device_stream_dic_sycl,
@@ -645,8 +674,8 @@ def main():
             f.write(ERROR_CSV_PATTERN)
             f.write(failed_log)
     graph_file = ""
-    if args.generate_dataflow_graph:
-        graph_file = " and \'DataFlow_Graph.pdf\' file"
+    if args.generate_data_flow_graph and os.path.isfile(os.path.join(CODEPIN_GRAPH_FILE_PATH, GRAPH_FILENAME + ".pdf")):
+        graph_file = f" and '" + GRAPH_FILENAME + ".pdf' file"
     if dismatch_checkpoint_num != 0:
         print(
             f"Finished comparison of the two files and found differences. Please check 'CodePin_Report.csv' file" + graph_file + " located in your project directory.\n"
