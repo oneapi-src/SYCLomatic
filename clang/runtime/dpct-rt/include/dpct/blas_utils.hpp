@@ -2293,7 +2293,8 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
     oneapi::mkl::lapack::gels_batch(exec_queue, &trans, &m_int64, &n_int64,
                                     &nrhs_int64, (Ty **)a, &lda_int64, (Ty **)b,
                                     &ldb_int64, 1, &group_sizes, scratchpad,
-                                    scratchpad_size).wait();
+                                    scratchpad_size)
+        .wait_and_throw();
   } catch (oneapi::mkl::lapack::batch_error const &be) {
     int i = 0;
     auto &ids = be.ids();
@@ -2306,15 +2307,17 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
         i++;
       }
     }
-    exec_queue.memcpy(dev_info, info_vec.data(), batch_size * sizeof(int))
-        .wait();
+    if (dev_info)
+      exec_queue.memcpy(dev_info, info_vec.data(), batch_size * sizeof(int))
+          .wait();
     sycl::free(scratchpad, exec_queue);
     *info = be.info();
     return sycl::event();
   }
 
   *info = 0;
-  exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
+  if (dev_info)
+    exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
   return exec_queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=] { sycl::free(scratchpad, exec_queue); });
   });
