@@ -18,7 +18,6 @@
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
-#include <cstdint>
 #include <deque>
 #include <fstream>
 #include <optional>
@@ -5395,9 +5394,6 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
       "(1)";
   if (ExecutionConfig.NdRange != "") {
-    std::cout << "=========================================" << std::endl;
-    std::cout << ExecutionConfig.NdRange << std::endl;
-    std::cout << "=========================================" << std::endl;
     Printer.line(ExecutionConfig.NdRange + ",");
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
@@ -5989,13 +5985,13 @@ void KernelCallExpr::addStreamDecl() {
   }
 }
 void KernelCallExpr::buildKernelArgsStmt() {
-  std::int64_t ArgCounter = 0;
+  size_t ArgCounter = 0;
   KernelArgs = "";
   for (auto &Arg : getArgsInfo()) {
     // if current arg is the first arg with default value, insert extra args
     // before current arg
     if (getFuncInfo()) {
-      if (ArgCounter == std::int64_t(getFuncInfo()->NonDefaultParamNum)) {
+      if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
         KernelArgs += getExtraArguments();
       }
     }
@@ -6058,13 +6054,11 @@ void KernelCallExpr::buildKernelArgsStmt() {
                       Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture && !DpctGlobalInfo::useExtBindlessImages()) {
+      if (dynamic_cast<StructureTextureObjectInfo *>(Arg.Texture.get()))
+        continue;
       ParameterStream OS;
-      if (dynamic_cast<StructureTextureObjectInfo *>(Arg.Texture.get())) {
-        ArgCounter -= 1;
-      } else {
-        Arg.Texture->getKernelArg(OS);
-        KernelArgs += OS.Str;
-      }
+      Arg.Texture->getKernelArg(OS);
+      KernelArgs += OS.Str;
     } else {
       KernelArgs += Arg.getArgString();
     }
@@ -6073,7 +6067,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
 
   // if all params have no default value, insert extra args in the end of params
   if (getFuncInfo()) {
-    if (ArgCounter == std::int64_t(getFuncInfo()->NonDefaultParamNum)) {
+    if (ArgCounter == getFuncInfo()->NonDefaultParamNum) {
       KernelArgs = KernelArgs + getExtraArguments();
     }
   }
