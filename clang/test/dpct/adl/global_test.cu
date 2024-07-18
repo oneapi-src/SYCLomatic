@@ -39,7 +39,7 @@ namespace ns {
 __global__ void func();
 };
 __global__ void ns::func() {
-   float3 f3;
+  float3 f3;
   // CHECK: ::norm2(f3);
   norm2(f3);
 }
@@ -81,24 +81,36 @@ void test1() {
   test<int>(a);
   test<float3>(fa);
 }
-}  // namespace t
+} // namespace t
 
 namespace n {
-  __device__ void foo(int3 a);
-  void __global__ my_test() {
-    int3 a;
-    // CHECK: foo(a);
-    foo(a);
-  }
-
+__device__ void foo(int3 a);
+void __global__ my_test() {
+  int3 a;
+  // CHECK: foo(a);
+  foo(a);
 }
+
+} // namespace n
 __device__ void n::foo(int3 a) {}
 
 __device__ void foo(float3 b) {
-
 }
-  void __global__ my_test() {
-    float3 b;
-     // CHECK: foo(b);
-    foo(b);
-  }
+void __global__ my_test() {
+  float3 b;
+  // CHECK: foo(b);
+  foo(b);
+}
+
+typedef dim3 mydim;
+
+__device__ void norm2(mydim test) {
+}
+
+namespace dim_test {
+void __global__ my_test() {
+  mydim hello;
+  // CHECK: ::norm2(hello);
+  norm2(hello);
+}
+} // namespace dim_test
