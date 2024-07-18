@@ -3468,8 +3468,7 @@ REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
 void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUBLAS_STATUS.*)|(CUDA_R_.*)|(CUDA_C_.*)|("
-                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)|("
-                                "CUBLASLT_EPILOGUE_.*)"))))
+                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)"))))
                     .bind("BLASStatusConstants"),
                 this);
   MF.addMatcher(
@@ -3479,7 +3478,7 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
                       "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
                       "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
                       "(CUBLASLT_MATMUL_DESC_.*)|(CUBLASLT_MATRIX_TRANSFORM_"
-                      "DESC_.*)"))))
+                      "DESC_.*)|(CUBLASLT_EPILOGUE_.*)"))))
           .bind("BLASNamedValueConstants"),
       this);
 }
@@ -8690,6 +8689,12 @@ void DeviceFunctionDeclRule::runRule(
     FuncInfo->setInlined();
   }
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
+    if (auto COCE = dyn_cast<CXXOperatorCallExpr>(CE)) {
+      if ((COCE->getOperator() != OverloadedOperatorKind::OO_None) &&
+          (COCE->getOperator() != OverloadedOperatorKind::OO_Call)) {
+        return;
+      }
+    }
     if (CE->getDirectCallee()) {
       if (CE->getDirectCallee()->isVirtualAsWritten())
         report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
@@ -14994,15 +14999,16 @@ void AssertRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 void AssertRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
-  // The std assert is a macro, it will expand to __assert_fail.
-  // But we should not touch the std assert.
-  auto SpellingLoc =
-      DpctGlobalInfo::getSourceManager().getSpellingLoc(CE->getBeginLoc());
-  if (DpctGlobalInfo::isInAnalysisScope(SpellingLoc)) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall")) {
+    // The std assert is a macro, it will expand to __assert_fail.
+    // But we should not touch the std assert.
+    auto SpellingLoc =
+        DpctGlobalInfo::getSourceManager().getSpellingLoc(CE->getBeginLoc());
+    if (DpctGlobalInfo::isInAnalysisScope(SpellingLoc)) {
+      ExprAnalysis EA(CE);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+    }
   }
 }
 REGISTER_RULE(AssertRule, PassKind::PK_Migration)

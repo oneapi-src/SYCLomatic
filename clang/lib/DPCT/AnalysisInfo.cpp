@@ -159,13 +159,17 @@ bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
       continue;
     auto TemplateParm = TemplateParmsList.getParam(i);
     if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
-      if (TTPD->hasDefaultArgument())
-        Arg.setAsType(
-            TTPD->getDefaultArgument().getTypeSourceInfo()->getTypeLoc());
+      if (TTPD->hasDefaultArgument()) {
+        if (auto TSI = TTPD->getDefaultArgument().getTypeSourceInfo()) {
+          Arg.setAsType(TSI->getTypeLoc());
+        }
+      }
     } else if (auto NTTPD = dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
-      if (NTTPD->hasDefaultArgument())
-        Arg.setAsType(
-            NTTPD->getDefaultArgument().getTypeSourceInfo()->getTypeLoc());
+      if (NTTPD->hasDefaultArgument()) {
+        if (auto TSI = NTTPD->getDefaultArgument().getTypeSourceInfo()) {
+          Arg.setAsType(TSI->getTypeLoc());
+        }
+      }
     }
   }
   return false;
