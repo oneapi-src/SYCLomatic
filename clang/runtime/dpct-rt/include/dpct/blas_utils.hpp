@@ -2275,6 +2275,10 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   using Ty = typename DataType<T>::T2;
   sycl::queue exec_queue = desc_ptr->get_queue();
   std::int64_t m_int64 = m;
@@ -2321,6 +2325,7 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
   return exec_queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=] { sycl::free(scratchpad, exec_queue); });
   });
+#endif
 #endif
 }
 } // namespace blas
