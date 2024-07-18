@@ -564,7 +564,9 @@ void MapNames::setExplicitNamespaceMap() {
            getDpctNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute")},
       {"cublasLtMatmulAlgo_t", std::make_shared<TypeNameRule>("int")},
-      {"cublasLtEpilogue_t", std::make_shared<TypeNameRule>("int")},
+      {"cublasLtEpilogue_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "blas_gemm::experimental::epilogue_t")},
       {"cublasLtMatmulPreference_t", std::make_shared<TypeNameRule>("int")},
       {"cublasLtMatmulHeuristicResult_t",
        std::make_shared<TypeNameRule>("int")},
@@ -1547,6 +1549,40 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLASLT_MATMUL_DESC_EPILOGUE",
        getDpctNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::epilogue"},
+      {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
+       getDpctNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
+      {"CUBLASLT_MATMUL_DESC_FAST_ACCUM",
+       getDpctNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
+      {"CUBLASLT_MATMUL_DESC_A_SCALE_POINTER",
+       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+                            ":a_scale_pointer"},
+      {"CUBLASLT_MATMUL_DESC_B_SCALE_POINTER",
+       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+                            ":b_scale_pointer"},
+      {"CUBLASLT_MATMUL_DESC_D_SCALE_POINTER",
+       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+                            ":d_scale_pointer"},
+      {"CUBLASLT_MATMUL_DESC_AMAX_D_POINTER",
+       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+                            ":absmax_d_pointer"},
+      {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS",
+       getDpctNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
+      {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_COLS",
+       getDpctNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
+      {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_OUT_COUNTERS_POINTER",
+       getDpctNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
+      {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_IN_COUNTERS_POINTER",
+       getDpctNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
+      {"CUBLASLT_EPILOGUE_DEFAULT",
+       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
+      {"CUBLASLT_EPILOGUE_RELU",
+       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        getDpctNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
