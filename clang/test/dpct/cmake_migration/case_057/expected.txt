@@ -1,0 +1,3 @@
+sycl_architectures_compatibility_validate(SYCL)
+sycl_architectures_compatibility_native(SYCL)
+sycl_architectures_compatibility_all(SYCL, 8.0)

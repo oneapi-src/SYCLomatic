@@ -2617,3 +2617,39 @@
       MatchMode: Full
       In: CUDA_NVCC_EXECUTABLE
       Out: SYCL_COMPILER_EXECUTABLE
+
+- Rule: rule_cmake_cuda_architectures_validate
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_validate
+  In: cmake_cuda_architectures_validate${empty}(${arg})
+  Out: sycl_architectures_compatibility_validate(${arg})
+  Subrules:
+    arg:
+      In: CUDA
+      Out: SYCL
+      MatchMode: Full
+
+- Rule: rule_cmake_cuda_architectures_native
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_native
+  In: cmake_cuda_architectures_native${empty}(${arg})
+  Out: sycl_architectures_compatibility_native(${arg})
+  Subrules:
+    arg:
+      In: CUDA
+      Out: SYCL
+      MatchMode: Full
+
+- Rule: rule_cmake_cuda_architectures_all
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_all
+  In: cmake_cuda_architectures_all${empty}(${arg})
+  Out: sycl_architectures_compatibility_all(${arg})
+  Subrules:
+    arg:
+      In: CUDA
+      Out: SYCL
+      MatchMode: Full
