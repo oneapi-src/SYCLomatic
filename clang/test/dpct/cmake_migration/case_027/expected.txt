@@ -12,3 +12,11 @@ add_custom_command(
     )
 set(NVCC_CMD ${CMAKE_SYCL_COMPILER} .c)
 string(REGEX REPLACE "^.* version ([0-9.]*).*$" "\\1" CUDA_CCVER ${CUDA_CCFULLVER})
+
+dpct_helper_compile_sycl_code(cuda_cubin_files jit.dp.cpp)
+set(_copy_files "")
+add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/premade_cu.cubin
+    COMMAND ${CMAKE_COMMAND} -E copy  ${cuda_cubin_files} ${CMAKE_CURRENT_BINARY_DIR}/premade_cu.cubin
+)
+add_custom_target(cubin ALL
+    DEPENDS ${_generated_files} ${cuda_cubin_files} ${_copy_files})

@@ -8054,17 +8054,16 @@ REGISTER_RULE(ProfilingEnableOnDemandRule, PassKind::PK_Analysis)
 
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
-    return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
-                      "cudaStreamCreateWithPriority", "cudaStreamDestroy",
-                      "cudaStreamSynchronize", "cudaStreamGetPriority",
-                      "cudaStreamGetFlags", "cudaDeviceGetStreamPriorityRange",
-                      "cudaStreamAttachMemAsync", "cudaStreamBeginCapture",
-                      "cudaStreamEndCapture", "cudaStreamIsCapturing",
-                      "cudaStreamQuery", "cudaStreamWaitEvent",
-                      "cudaStreamAddCallback", "cuStreamCreate",
-                      "cuStreamSynchronize", "cuStreamWaitEvent",
-                      "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-                      "cuStreamAddCallback");
+    return hasAnyName(
+        "cudaStreamCreate", "cudaStreamCreateWithFlags",
+        "cudaStreamCreateWithPriority", "cudaStreamDestroy",
+        "cudaStreamSynchronize", "cudaStreamGetPriority", "cudaStreamGetFlags",
+        "cudaDeviceGetStreamPriorityRange", "cudaStreamAttachMemAsync",
+        "cudaStreamBeginCapture", "cudaStreamEndCapture",
+        "cudaStreamIsCapturing", "cudaStreamQuery", "cudaStreamWaitEvent",
+        "cudaStreamAddCallback", "cuStreamCreate", "cuStreamSynchronize",
+        "cuStreamWaitEvent", "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
+        "cuStreamAddCallback", "cuStreamQuery");
   };
 
   MF.addMatcher(
@@ -8202,13 +8201,13 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamAttachMemAsync" ||
-             FuncName == "cudaStreamQuery" ||
+             FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery" ||
              FuncName == "cudaDeviceGetStreamPriorityRange") {
-
     // if extension feature sycl_ext_oneapi_queue_empty is used, member
     // functions "ext_oneapi_empty" in SYCL queue is used to map
-    // cudaStreamQuery.
-    if (FuncName == "cudaStreamQuery" && DpctGlobalInfo::useQueueEmpty()) {
+    // cudaStreamQuery or cuStreamQuery.
+    if ((FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery") &&
+        DpctGlobalInfo::useQueueEmpty()) {
       auto StreamArg = CE->getArg(0);
       bool IsDefaultStream = isDefaultStream(StreamArg);
       std::string StreamName;
