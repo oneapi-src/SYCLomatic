@@ -1989,8 +1989,9 @@ protected:
 
   bool handle_fence(const InlineAsmInstruction *I) override {
     
-    OS() << MapNames::getClNamespace() << "group_barrier("
-         << DpctGlobalInfo::getItem(GAS) << ".get_group())"; 
+   OS() << MapNames::getClNamespace() << "atomic_fence("
+         << MapNames::getClNamespace() << "memory_order::acq_rel,"
+         << MapNames::getClNamespace() << "memory_scope::device)";  
     endstmt();
     return SYCLGenSuccess();
   }
