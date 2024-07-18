@@ -1740,7 +1740,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
-              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR", "cublasLtHandle_t",
+              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR",
+              "CUDA_ARRAY3D_DESCRIPTOR", "cublasLtHandle_t",
               "cublasLtMatmulDesc_t", "cublasLtOrder_t",
               "cublasLtPointerMode_t", "cublasLtMatrixLayout_t",
               "cublasLtMatrixLayoutAttribute_t",
@@ -4216,6 +4217,11 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCher2k_v2_64", "cublasZher2k_v2_64", "cublasSgeam_64",
         "cublasDgeam_64", "cublasCgeam_64", "cublasZgeam_64", "cublasSdgmm_64",
         "cublasDdgmm_64", "cublasCdgmm_64", "cublasZdgmm_64",
+        "cublasStrmm_v2_64", "cublasDtrmm_v2_64", "cublasCtrmm_v2_64",
+        "cublasZtrmm_v2_64", "cublasSsyrkx_64", "cublasDsyrkx_64",
+        "cublasCsyrkx_64", "cublasZsyrkx_64", "cublasCherkx_64",
+        "cublasZherkx_64", "cublasHgemm_64", "cublasCgemm3m_64",
+        "cublasZgemm3m_64",
         /*cublasLt*/
         "cublasLtCreate", "cublasLtDestroy", "cublasLtMatmulDescCreate",
         "cublasLtMatmulDescDestroy", "cublasLtMatmulDescSetAttribute",
@@ -8048,17 +8054,16 @@ REGISTER_RULE(ProfilingEnableOnDemandRule, PassKind::PK_Analysis)
 
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
-    return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
-                      "cudaStreamCreateWithPriority", "cudaStreamDestroy",
-                      "cudaStreamSynchronize", "cudaStreamGetPriority",
-                      "cudaStreamGetFlags", "cudaDeviceGetStreamPriorityRange",
-                      "cudaStreamAttachMemAsync", "cudaStreamBeginCapture",
-                      "cudaStreamEndCapture", "cudaStreamIsCapturing",
-                      "cudaStreamQuery", "cudaStreamWaitEvent",
-                      "cudaStreamAddCallback", "cuStreamCreate",
-                      "cuStreamSynchronize", "cuStreamWaitEvent",
-                      "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-                      "cuStreamAddCallback");
+    return hasAnyName(
+        "cudaStreamCreate", "cudaStreamCreateWithFlags",
+        "cudaStreamCreateWithPriority", "cudaStreamDestroy",
+        "cudaStreamSynchronize", "cudaStreamGetPriority", "cudaStreamGetFlags",
+        "cudaDeviceGetStreamPriorityRange", "cudaStreamAttachMemAsync",
+        "cudaStreamBeginCapture", "cudaStreamEndCapture",
+        "cudaStreamIsCapturing", "cudaStreamQuery", "cudaStreamWaitEvent",
+        "cudaStreamAddCallback", "cuStreamCreate", "cuStreamSynchronize",
+        "cuStreamWaitEvent", "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
+        "cuStreamAddCallback", "cuStreamQuery");
   };
 
   MF.addMatcher(
@@ -8196,13 +8201,13 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamAttachMemAsync" ||
-             FuncName == "cudaStreamQuery" ||
+             FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery" ||
              FuncName == "cudaDeviceGetStreamPriorityRange") {
-
     // if extension feature sycl_ext_oneapi_queue_empty is used, member
     // functions "ext_oneapi_empty" in SYCL queue is used to map
-    // cudaStreamQuery.
-    if (FuncName == "cudaStreamQuery" && DpctGlobalInfo::useQueueEmpty()) {
+    // cudaStreamQuery or cuStreamQuery.
+    if ((FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery") &&
+        DpctGlobalInfo::useQueueEmpty()) {
       auto StreamArg = CE->getArg(0);
       bool IsDefaultStream = isDefaultStream(StreamArg);
       std::string StreamName;
@@ -11402,10 +11407,11 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
 }
 
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
-                               hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))))
-                    .bind("arrayMember"),
-                this);
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
+                     "CUDA_ARRAY_DESCRIPTOR", "CUDA_ARRAY3D_DESCRIPTOR"))))))
+          .bind("arrayMember"),
+      this);
   MF.addMatcher(
       memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
                      "cudaMemcpy3DParms", "CUDA_MEMCPY3D", "CUDA_MEMCPY2D"))))))
@@ -11424,6 +11430,15 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 
 void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
+    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(ME);
+    if (BO && BO->getOpcode() != BO_Assign) {
+      BO = nullptr;
+    }
+    if (isRemove(ME->getMemberDecl()->getName().str())) {
+      if (BO)
+        return emplaceTransformation(new ReplaceStmt(BO, ""));
+      return emplaceTransformation(new ReplaceStmt(ME, ""));
+    }
     const auto &Replace = MapNames::findReplacedName(
         ArrayDescMemberNames, ME->getMemberDecl()->getName().str());
     if (!Replace.empty())
@@ -13000,6 +13015,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaGetTextureObjectResourceDesc",
       "cudaGetTextureObjectTextureDesc",
       "cudaGetTextureObjectResourceViewDesc",
+      "cuArray3DCreate_v2",
       "cuArrayCreate_v2",
       "cuArrayDestroy",
       "cuTexObjectCreate",

@@ -94,7 +94,7 @@ void initWarningIDs() {
         reportInvalidWarningID(ID);
       return Value;
     };
-    int Begin = ParseNumber();
+    auto Begin = ParseNumber();
 
     if (*Cur == '\0') {
       WarningIDs.insert(Begin);

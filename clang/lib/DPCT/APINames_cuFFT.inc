@@ -83,3 +83,6 @@ ENTRY(cufftXtExecDescriptor, cufftXtExecDescriptor, false, NO_FLAG, P4, "comment
 ENTRY(cufftSetStream, cufftSetStream, true, NO_FLAG, P4, "Successful")
 ENTRY(cufftGetVersion, cufftGetVersion, true, NO_FLAG, P4, "Successful")
 ENTRY(cufftGetProperty, cufftGetProperty, true, NO_FLAG, P4, "Successful")
+ENTRY(cufftSetPlanPropertyInt64, cufftSetPlanPropertyInt64, false, NO_FLAG, P4, "comment")
+ENTRY(cufftGetPlanPropertyInt64, cufftGetPlanPropertyInt64, false, NO_FLAG, P4, "comment")
+ENTRY(cufftResetPlanProperty, cufftResetPlanProperty, false, NO_FLAG, P4, "comment")
