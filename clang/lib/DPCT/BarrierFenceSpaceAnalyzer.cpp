@@ -15,7 +15,7 @@
 #include <unordered_set>
 
 using namespace llvm;
-
+#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const ForStmt *FS) {
   LoopRange.push_back(FS->getSourceRange());
   return true;
@@ -628,6 +628,12 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     auto CurCallDeclCombinedLoc = std::get<1>(NodeStack.top());
     auto CurDepth = std::get<2>(NodeStack.top());
     NodeStack.pop();
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "-------------------------------------------" << std::endl;
+    std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncName << std::endl;
+    std::cout << "CurCallDeclCombinedLoc:" << CurCallDeclCombinedLoc << std::endl;
+    std::cout << "CurDepth:" << CurDepth << std::endl;
+#endif
 
     int N = static_cast<int>(AffectedByParmsMapInfoStack.size()) - CurDepth;
     assert(N >= 0 && "N should be greater than or equal to 0");
@@ -642,12 +648,12 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       // Merge std::get<4>(Iter->second) and
       // AffectedByParmsMapInfoStack.top().second.
       // Then push into AffectedByParmsMapInfoStack.
+      std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
+          CurAffectedbyParmsMap = std::get<4>(Iter->second);
       if (AffectedByParmsMapInfoStack.empty()) {
         AffectedByParmsMapInfoStack.push(std::make_pair(
-            DFI->IAR.CurrentCtxFuncName, std::get<4>(Iter->second)));
+            DFI->IAR.CurrentCtxFuncName, CurAffectedbyParmsMap));
       } else {
-        std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
-            CurAffectedbyParmsMap = std::get<4>(Iter->second);
         const std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
             &PrevAffectedbyParmsMap = AffectedByParmsMapInfoStack.top().second;
         for (const auto &P : PrevAffectedbyParmsMap) {
@@ -656,7 +662,7 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
             for (const auto &ParmIdx : Res->second) {
               CurAffectedbyParmsMap[ParmIdx] = mergeOther(
                   CurAffectedbyParmsMap[ParmIdx], P.second, IsInLoop);
-              if (CurAffectedbyParmsMap[ParmIdx].AM == ReadWrite)
+              if (CurAffectedbyParmsMap[ParmIdx].AM & ReadWrite)
                 return false;
               if (CurAffectedbyParmsMap[ParmIdx].AM == Write &&
                   CurAffectedbyParmsMap[ParmIdx].UsedBefore &&
@@ -678,8 +684,25 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       NodeStack.push(std::make_tuple(I, DFI->IAR.CurrentCtxFuncName, CurDepth + 1));
       Visited.insert(I);
     }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "===============================================" << std::endl;
+#endif
   }
-
+  if (!AffectedByParmsMapInfoStack.empty()) {
+    const auto &AffectedByParmsMap = AffectedByParmsMapInfoStack.top().second;
+    for (const auto &P : AffectedByParmsMap) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+      std::cout << "Parameter ID:" << P.first << std::endl;
+      std::cout << "  AM:" << P.second.AM << std::endl;
+      std::cout << "  UsedBefore:" << P.second.UsedBefore << std::endl;
+      std::cout << "  UsedAfter:" << P.second.UsedAfter << std::endl;
+#endif
+      if (P.second.AM & ReadWrite)
+        return false;
+      if ((P.second.AM & Write) && P.second.UsedBefore && P.second.UsedAfter)
+        return false;
+    }
+  }
   return true;
 }
 
@@ -761,6 +784,9 @@ bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(
   while (!Parents.empty()) {
     if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
       break;
+    const auto& E = Parents[0].get<Expr>();
+    if (E && DeviceFunctionCallArgs.count(E))
+      return true;
     const auto& UO = Parents[0].get<UnaryOperator>();
     const auto& ASE = Parents[0].get<ArraySubscriptExpr>();
     if (UO && (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
