@@ -106,7 +106,7 @@ void testTemplate() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1, reinterpret_cast<T (*)[128/*size * 4*/]>(s_acc_ct1template .get_multi_ptr<sycl::access::decorated::no>().get()), reinterpret_cast<T (*)[128/*size * 4*/][32/*size*/]>(s3_acc_ct1template .get_multi_ptr<sycl::access::decorated::no>().get()));
+  // CHECK-NEXT:         templateReverse<T>(d_d_acc_ct0.get_raw_pointer(), n, item_ct1, s_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<T><<<1, n>>>(d_d, n);
@@ -189,7 +189,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, reinterpret_cast<int (*)[128/*size * 4*/]>(s_acc_ct1template .get_multi_ptr<sycl::access::decorated::no>().get()), reinterpret_cast<int (*)[128/*size * 4*/][32/*size*/]>(s3_acc_ct1template .get_multi_ptr<sycl::access::decorated::no>().get()));
+  // CHECK-NEXT:         templateReverse<int>((int *)(&d_d_acc_ct0[0]), n, item_ct1, s_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<int><<<1, n>>>(d_d, n);

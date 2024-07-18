@@ -100,34 +100,53 @@ void foo3() {
   kernel3<<<1, 1>>>();
 }
 
-// CHECK: void foo4_device(int sv[2][3][4]) {
+// CHECK: template<class T>
+// CHECK-NEXT: void foo4_device(T sv[2][3][4]) {
 // CHECK-NEXT:   sv[1][2][3] = 456;
 // CHECK-NEXT: }
-__device__ void foo4_device(int sv[2][3][4]) {
+template<class T>
+__device__ void foo4_device(T sv[2][3][4]) {
   sv[1][2][3] = 456;
 }
 
-// CHECK: void foo4_kernel(int sv[2][3][4]) {
+// CHECK: template<class T>
+// CHECK-NEXT: void foo4_kernel(T *a, T sv[2][3][4]) {
 // CHECK-NEXT:   //
 // CHECK-NEXT:   foo4_device(sv);
 // CHECK-NEXT: }
-__global__ void foo4_kernel() {
-  __shared__ int sv[2][3][4];//
+template<class T>
+__global__ void foo4_kernel(T *a) {
+  __shared__ T sv[2][3][4];//
   foo4_device(sv);
 }
 
-// CHECK: void foo4() {
-// CHECK-NEXT:   dpct::get_in_order_queue().submit(
+// CHECK: template<class T>
+// CHECK-NEXT: void foo4(T *a) {
+// CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
+// CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+// CHECK-NEXT:   q_ct1.submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
-// CHECK-NEXT:       sycl::local_accessor<int[2][3][4], 0> sv_acc_ct1(cgh);
+// CHECK-NEXT:       sycl::local_accessor<T[2][3][4], 0> sv_acc_ct1(cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           foo4_kernel(reinterpret_cast<int (*)[3][4]>(sv_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get()));
+// CHECK-NEXT:           foo4_kernel(a, reinterpret_cast<T (*)[3][4]>(sv_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()));
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT:   q_ct1.submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::local_accessor<float[2][3][4], 0> sv_acc_ct1(cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           foo4_kernel<float>(a, sv_acc_ct1);
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
 // CHECK-NEXT: }
-void foo4() {
-  foo4_kernel<<<1, 1>>>();
+template<class T>
+void foo4(T *a) {
+  foo4_kernel<<<1, 1>>>(a);
+  foo4_kernel<float><<<1, 1>>>(a);
 }

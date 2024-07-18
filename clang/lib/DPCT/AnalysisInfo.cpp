@@ -3050,14 +3050,7 @@ std::string MemVarInfo::getRangeDecl(const std::string &MemSize) {
                      getType()->getRangeArgument(MemSize, false), ";");
 }
 ParameterStream &MemVarInfo::getFuncDecl(ParameterStream &PS) {
-  if (AccMode == Value) {
-    PS << getAccessorDataType(true, true) << " ";
-  } else if (AccMode == Pointer) {
-    PS << getAccessorDataType(true, true);
-    if (!getType()->isPointer())
-      PS << " ";
-    PS << "*";
-  } else if (AccMode == PointerToArray) {
+  if (AccMode == PointerToArray) {
     PS << getType()->getBaseName() << " ";
     PS << getArgName();
     auto Range = getType()->getRange();
@@ -3065,6 +3058,14 @@ ParameterStream &MemVarInfo::getFuncDecl(ParameterStream &PS) {
       PS << "[" << Range[i].getSize() << "]";
     }
     return PS;
+  }
+  if (AccMode == Value) {
+    PS << getAccessorDataType(true, true) << " ";
+  } else if (AccMode == Pointer) {
+    PS << getAccessorDataType(true, true);
+    if (!getType()->isPointer())
+      PS << " ";
+    PS << "*";
   } else if (AccMode == Reference) {
     PS << getAccessorDataType(true, true);
     if (!getType()->isPointer())
@@ -3095,16 +3096,20 @@ ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
         PS << "template ";
       PS << "get_multi_ptr<" << MapNames::getClNamespace()
          << "access::decorated::no>().get()";
-    } else if (isShared() && AccMode == PointerToArray) {
-      std::string CastType = getType()->getBaseName();
-      auto Range = getType()->getRange();
-      CastType = CastType + " (*)";
-      for (size_t i = 1; i < Range.size(); i++) {
-        CastType = CastType + "[" + Range[i].getSize() + "]";
+    } else if (AccMode == PointerToArray) {
+      if (getType()->isWritten()) {
+        PS << getAccessorName();
+      } else {
+        std::string CastType = getType()->getBaseName();
+        auto Range = getType()->getRange();
+        CastType = CastType + " (*)";
+        for (size_t i = 1; i < Range.size(); i++) {
+          CastType = CastType + "[" + Range[i].getSize() + "]";
+        }
+        PS << "reinterpret_cast<" << CastType << ">(" << getAccessorName()
+           << ".template get_multi_ptr<" << MapNames::getClNamespace()
+           << "access::decorated::no>().get())";
       }
-      PS << "reinterpret_cast<" << CastType << ">(" << getAccessorName()
-         << (getType()->isTemplate() ? "template " : "") << ".get_multi_ptr<"
-         << MapNames::getClNamespace() << "access::decorated::no>().get())";
     } else {
       PS << getAccessorName();
     }

@@ -1116,9 +1116,7 @@ template<class T1, class T2, int N> __global__ void foo31();
 //CHECK:     cgh.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:           foo29(reinterpret_cast<double(*)[8 /*BLOCK_PAIR / SIMD_SIZE*/]>(
-//CHECK-NEXT:               red_acc_acc_ct1.get_multi_ptr<sycl::access::decorated::no>()
-//CHECK-NEXT:                   .get()));
+//CHECK-NEXT:           foo29(red_acc_acc_ct1);
 //CHECK-NEXT:         });
 //CHECK-NEXT:   });
 //CHECK-NEXT:   }
