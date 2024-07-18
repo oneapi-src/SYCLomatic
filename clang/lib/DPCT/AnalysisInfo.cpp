@@ -4400,26 +4400,29 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto Args = C->arguments();
   auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
   auto ArgsNum = std::distance(Args.begin(), Args.end());
-  auto ArgItr = Args.begin();
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
   if (DpctGlobalInfo::useExtBindlessImages()) {
     // Need return after resize, ortherwise will cause array out of bound.
     return;
   }
-  while (ArgItr != Args.end()) {
+  for (auto ArgItr = Args.begin(); ArgItr != Args.end(); Idx++, ArgItr++) {
     const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
     if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
       if (Ctor->getConstructor()->isCopyOrMoveConstructor()) {
         Arg = Ctor->getArg(0);
       }
     }
+
+    if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+      if (ICE->getCastKind() == CK_DerivedToBase) {
+        continue;
+      }
+    }
     if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, DRE, IsKernel);
     else if (auto ASE = dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, ASE, IsKernel);
-    Idx++;
-    ArgItr++;
   }
 }
 void CallFunctionExpr::mergeTextureObjectInfo(
@@ -5703,8 +5706,7 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
   for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
     if (auto Obj = TexList[Idx]) {
       ArgsInfo.emplace_back(Obj, this);
-    }
-    //else {
+    } else {
       auto Arg = CE->getArg(Idx);
       bool Used = true;
       if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
@@ -5712,7 +5714,7 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
       const auto FD = CE->getDirectCallee();
       ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis, Arg,
                             Used, Idx, this);
-    //}
+    }
   }
 }
 std::string KernelCallExpr::getQueueStr() const {
@@ -5995,9 +5997,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         KernelArgs += getExtraArguments();
       }
     }
-    if (KernelArgs.size() == 1 ||
-        (KernelArgs.size() > 1 &&
-         KernelArgs.substr(KernelArgs.size() - 2, 2) != ", "))
+    if (ArgCounter != 0)
       KernelArgs += ", ";
     if (Arg.IsDoublePointer &&
         DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
@@ -6054,8 +6054,6 @@ void KernelCallExpr::buildKernelArgsStmt() {
                       Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture && !DpctGlobalInfo::useExtBindlessImages()) {
-      if (dynamic_cast<StructureTextureObjectInfo *>(Arg.Texture.get()))
-        continue;
       ParameterStream OS;
       Arg.Texture->getKernelArg(OS);
       KernelArgs += OS.Str;
@@ -6075,10 +6073,6 @@ void KernelCallExpr::buildKernelArgsStmt() {
   if (KernelArgs.empty()) {
     KernelArgs += getExtraArguments();
   }
-
-  if (KernelArgs.size() > 1 &&
-      KernelArgs.substr(KernelArgs.size() - 2, 2) == ", ")
-    KernelArgs = KernelArgs.substr(0, KernelArgs.size() - 2);
 }
 KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, StreamList);
