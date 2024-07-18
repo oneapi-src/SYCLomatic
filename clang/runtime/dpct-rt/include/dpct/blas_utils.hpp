@@ -2314,7 +2314,7 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
   }
 
   *info = 0;
-  dpct::detail::dpct_memset(dev_info, 0, batch_size * sizeof(int), exec_queue);
+  exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
   return exec_queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=] { sycl::free(scratchpad, exec_queue); });
   });
