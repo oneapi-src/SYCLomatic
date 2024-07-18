@@ -513,8 +513,8 @@ static sycl::event dpct_memcpy(sycl::queue &q, void *to_ptr, int to_dev_id,
                                const void *from_ptr, int from_dev_id,
                                size_t size) {
   if (to_dev_id == from_dev_id)
-    return dpct::detail::dpct_memcpy(q, to_ptr, from_ptr, size,
-                                     memcpy_direction::device_to_device);
+    return dpct_memcpy(q, to_ptr, from_ptr, size,
+                       memcpy_direction::device_to_device);
   // Now, different device have different context, and memcpy API cannot copy
   // data between different context. So we need use host buffer to copy the data
   // between devices.
@@ -535,12 +535,13 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
             memcpy_direction direction,
             const std::vector<sycl::event> &dep_events);
 
-static inline void copy_to_device_via_buffer(
+static inline void copy_to_device_via_host_buffer(
     sycl::queue &q, const sycl::range<3> &size, unsigned char *to_surface,
     const sycl::range<3> &to_range, const unsigned char *from_surface,
     const sycl::range<3> &from_range, std::vector<sycl::event> &event_list,
     memcpy_direction direction,
     const std::vector<sycl::event> &dep_events = {}) {
+  assert(direction == device_to_host || direction == host_to_host);
   size_t to_slice = to_range.get(1) * to_range.get(0);
   host_buffer buf(get_copy_range(size, to_slice, to_range.get(0)), q,
                   event_list);
@@ -614,8 +615,9 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
     }
     break;
   case host_to_device: {
-    copy_to_device_via_buffer(q, size, to_surface, to_range, from_surface,
-                              from_range, event_list, host_to_host, dep_events);
+    copy_to_device_via_host_buffer(q, size, to_surface, to_range, from_surface,
+                                   from_range, event_list, host_to_host,
+                                   dep_events);
     break;
   }
   case device_to_host: {
@@ -694,8 +696,8 @@ dpct_memcpy(sycl::queue &q, pitched_data to, sycl::id<3> to_id, int to_dev_id,
             pitched_data from, sycl::id<3> from_id, int from_dev_id,
             sycl::range<3> size) {
   if (to_dev_id == from_dev_id)
-    return dpct::detail::dpct_memcpy(q, to, to_id, from, from_id, size,
-                                     memcpy_direction::device_to_device);
+    return dpct_memcpy(q, to, to_id, from, from_id, size,
+                       memcpy_direction::device_to_device);
   std::vector<sycl::event> event_list;
   const auto to_range = sycl::range<3>(to.get_pitch(), to.get_y(), 1),
              from_range = sycl::range<3>(from.get_pitch(), from.get_y(), 1);
@@ -706,8 +708,8 @@ dpct_memcpy(sycl::queue &q, pitched_data to, sycl::id<3> to_id, int to_dev_id,
   const unsigned char *from_surface =
       (const unsigned char *)from.get_data_ptr() +
       get_offset(from_id, from_slice, from_range.get(0));
-  copy_to_device_via_buffer(q, size, to_surface, to_range, from_surface,
-                            from_range, event_list, device_to_host);
+  copy_to_device_via_host_buffer(q, size, to_surface, to_range, from_surface,
+                                 from_range, event_list, device_to_host);
   return event_list;
 }
 
@@ -756,7 +758,8 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
   if (param.from.image != nullptr) {
     from = to_pitched_data(param.from.image);
   }
-  if (param.to.dev_id != param.from.dev_id)
+  if (deduce_memcpy_direction(q, to.get_data_ptr(), from.get_data_ptr(),
+                              param.direction) == device_to_device)
     return dpct_memcpy(q, to, param.to.pos, param.to.dev_id, from,
                        param.from.pos, param.from.dev_id, param.size);
   return dpct_memcpy(q, to, param.to.pos, from, param.from.pos, param.size,
