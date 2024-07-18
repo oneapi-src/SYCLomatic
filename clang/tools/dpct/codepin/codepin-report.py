@@ -407,7 +407,7 @@ def generate_data_flow_graph(
     try:
         import graphviz as gv
     except ImportError:
-        print("Module graphviz is not installed on current environment. Please use package installer for Python like \'pip install graphviz\' to install it. ")
+        print("Module graphviz is not installed in the current environment, which is required to generate data flow graph. Please use package installer for Python like \'pip install graphviz\' to install it.")
         return
     dot = gv.Digraph(GRAPH_FILENAME)
     dot.attr(layout='nop2')
