@@ -109,7 +109,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_function",
                                       HelperFeatureEnum::device_ext)},
       {"CUpointer_attribute",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "attribute_type")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes::type")},
       {"cudaPointerAttributes",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
                                       HelperFeatureEnum::device_ext)},
@@ -1184,46 +1184,46 @@ void MapNames::setExplicitNamespaceMap() {
       // enum CUpointer_attribute
       {"CU_POINTER_ATTRIBUTE_CONTEXT",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::context")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_MEMORY_TYPE",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::memory_type")},
+                                      "pointer_attributes::type::memory_type")},
       {"CU_POINTER_ATTRIBUTE_DEVICE_POINTER",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::device_pointer")},
+                                      "pointer_attributes::type::device_pointer")},
       {"CU_POINTER_ATTRIBUTE_HOST_POINTER",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::host_pointer")},
+                                      "pointer_attributes::type::host_pointer")},
       {"CU_POINTER_ATTRIBUTE_P2P_TOKENS",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::p2p_tokens")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_SYNC_MEMOPS",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::sync_memps")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_BUFFER_ID",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::buffer_id")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_IS_MANAGED",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::is_managed")},
+                                      "pointer_attributes::type::is_managed")},
       {"CU_POINTER_ATTRIBUTE_DEVICE_ORDINAL",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::device_id")},
+                                      "pointer_attributes::type::device_id")},
       {"CU_POINTER_ATTRIBUTE_IS_LEGACY_CUDA_IPC_CAPABLE",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::is_legacy_ipc_capable")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_RANGE_START_ADDR",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::range_start_addr")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_RANGE_SIZE",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::range_size")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_MAPPED",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::mapped")},
+                                      "pointer_attributes::type::unsupported")},
       {"CU_POINTER_ATTRIBUTE_ALLOWED_HANDLE_TYPES",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "attribute_type::allowed_handle_types")},
+                                      "pointer_attributes::type::unsupported")},
 
       // enum CUmemorytype Type
       {"CU_MEMORYTYPE_HOST",

@@ -21,12 +21,12 @@ int main() {
 
   unsigned int numAttributes = 5;
 
-  // CHECK: dpct::attribute_type attributes[] = {
-  // CHECK:   dpct::attribute_type::memory_type,
-  // CHECK:   dpct::attribute_type::device_pointer,
-  // CHECK:   dpct::attribute_type::host_pointer,
-  // CHECK:   dpct::attribute_type::is_managed,
-  // CHECK:   dpct::attribute_type::device_id
+  // CHECK: dpct::pointer_attributes::type attributes[] = {
+  // CHECK:   dpct::pointer_attributes::type::memory_type,
+  // CHECK:   dpct::pointer_attributes::type::device_pointer,
+  // CHECK:   dpct::pointer_attributes::type::host_pointer,
+  // CHECK:   dpct::pointer_attributes::type::is_managed,
+  // CHECK:   dpct::pointer_attributes::type::device_id
   CUpointer_attribute attributes[] = {
     CU_POINTER_ATTRIBUTE_MEMORY_TYPE,
     CU_POINTER_ATTRIBUTE_DEVICE_POINTER,

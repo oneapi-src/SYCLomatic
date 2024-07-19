@@ -1653,25 +1653,17 @@ template <typename T>
 using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::shared>;
 } // namespace deprecated
 
-enum class attribute_type {
-  context,
-  memory_type,
-  device_pointer,
-  host_pointer,
-  p2p_tokens,
-  sync_memps,
-  buffer_id,
-  is_managed,
-  device_id,
-  is_legacy_ipc_capable,
-  range_start_addr,
-  range_size,
-  mapped,
-  allowed_handle_types
-};
-
 class pointer_attributes {
 public:
+  enum class type {
+    memory_type,
+    device_pointer,
+    host_pointer,
+    is_managed,
+    device_id,
+    unsupported
+  };
+
   void init(const void *ptr,
               sycl::queue &q = dpct::get_default_queue()) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1693,7 +1685,7 @@ public:
 #endif
   }
 
-  static void get(unsigned int numAttributes, attribute_type *attributes,
+  static void get(unsigned int numAttributes, type *attributes,
                   void **data, device_ptr ptr) {
     pointer_attributes sycl_attributes;
 
@@ -1701,23 +1693,23 @@ public:
 
     for (int i = 0; i < numAttributes; i++) {
       switch (attributes[i]) {
-      case attribute_type::memory_type:
+      case type::memory_type:
         *static_cast<int *>(data[i]) =
             static_cast<int>(sycl_attributes.get_memory_type());
         break;
-      case attribute_type::device_pointer:
+      case type::device_pointer:
         *(reinterpret_cast<void **>(data[i])) =
             const_cast<void *>(sycl_attributes.get_device_pointer());
         break;
-      case attribute_type::host_pointer:
+      case type::host_pointer:
         *(reinterpret_cast<void **>(data[i])) =
             const_cast<void *>(sycl_attributes.get_host_pointer());
         break;
-      case attribute_type::is_managed:
+      case type::is_managed:
         *static_cast<unsigned int *>(data[i]) =
             sycl_attributes.is_memory_shared();
         break;
-      case attribute_type::device_id:
+      case type::device_id:
         *static_cast<unsigned int *>(data[i]) = sycl_attributes.get_device_id();
         break;
       default:
