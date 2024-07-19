@@ -890,6 +890,18 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
   }
 }
 
+void MigrationRule::EmitDeviceGlobalInitMSG(const clang::VarDecl *Decl) {
+  if (auto DRE = dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
+    if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
+        DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
+      report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE, false,
+             "copy constructor of device_global");
+      return;
+    }
+  }
+  report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
+}
+
 void MigrationRule::print(llvm::raw_ostream &OS) {
   const auto &EmittedTransformations = getEmittedTransformations();
   if (EmittedTransformations.empty()) {
@@ -8860,19 +8872,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
       if (Decl->hasInit()) {
         auto InitStr = getInitForDeviceGlobal(Decl);
         if (!InitStr.empty()) {
-          bool EmittedWarning = false;
-          if (auto DRE =
-                  dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
-            if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
-                DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
-              report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
-                     false, "copy constructor of device_global");
-              EmittedWarning = true;
-            }
-          }
-          if (!EmittedWarning) {
-            report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-          }
+          EmitDeviceGlobalInitMSG(Decl);
           Info->setInitForDeviceGlobal(InitStr);
         }
       }
@@ -9014,20 +9014,7 @@ void ConstantMemVarMigrationRule::runRule(
       if (MemVar->hasInit()) {
         auto InitStr = getInitForDeviceGlobal(MemVar);
         if (!InitStr.empty()) {
-          bool EmittedWarning = false;
-          if (auto DRE =
-                  dyn_cast<DeclRefExpr>(MemVar->getInit()->IgnoreImplicit())) {
-            if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
-                DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
-              report(MemVar->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
-                     false, "copy constructor of device_global");
-              EmittedWarning = true;
-            }
-          }
-          if (!EmittedWarning) {
-            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
-                   false);
-          }
+          EmitDeviceGlobalInitMSG(MemVar);
           Info->setInitForDeviceGlobal(InitStr);
         }
       }
@@ -9473,20 +9460,7 @@ void MemVarMigrationRule::runRule(
       if (MemVar->hasInit()) {
         auto InitStr = getInitForDeviceGlobal(MemVar);
         if (!InitStr.empty()) {
-          bool EmittedWarning = false;
-          if (auto DRE =
-                  dyn_cast<DeclRefExpr>(MemVar->getInit()->IgnoreImplicit())) {
-            if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
-                DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
-              report(MemVar->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE,
-                     false, "copy constructor of device_global");
-              EmittedWarning = true;
-            }
-          }
-          if (!EmittedWarning) {
-            report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT,
-                   false);
-          }
+          EmitDeviceGlobalInitMSG(MemVar);
           Info->setInitForDeviceGlobal(InitStr);
         }
       }
