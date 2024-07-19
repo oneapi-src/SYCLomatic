@@ -6263,7 +6263,7 @@ bool compareTemplateName(std::string N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
   N2.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-           TemplateName::Qualified::Fully);
+           TemplateName::Qualified::AsWritten);
   OS.flush();
   return N1.compare(NameStr);
 }
@@ -6272,7 +6272,7 @@ bool compareTemplateName(TemplateName N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
   N1.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-           TemplateName::Qualified::Fully);
+           TemplateName::Qualified::AsWritten);
   OS.flush();
   return compareTemplateName(NameStr, N2);
 }
