@@ -55,6 +55,8 @@ ENTRY(cudaDeviceSetLimit, cudaDeviceSetLimit, true, API_CALL_REMOVED, P0, "DPCT1
 ENTRY(cudaDeviceSetMemPool, cudaDeviceSetMemPool, false, NO_FLAG, P7, "comment")
 ENTRY(cudaDeviceSetSharedMemConfig, cudaDeviceSetSharedMemConfig, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaDeviceSynchronize, cudaDeviceSynchronize, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaDeviceUnregisterAsyncNotification, cudaDeviceUnregisterAsyncNotification, false, NO_FLAG, P4, "comment")
+ENTRY(cudaDeviceRegisterAsyncNotification, cudaDeviceRegisterAsyncNotification, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGetDevice, cudaGetDevice, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaGetDeviceCount, cudaGetDeviceCount, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaGetDeviceFlags, cudaGetDeviceFlags, false, NO_FLAG, P4, "comment")
@@ -139,6 +141,7 @@ ENTRY(cudaFuncSetCacheConfig, cudaFuncSetCacheConfig, true, API_CALL_UNSUPPORTED
 ENTRY(cudaFuncSetSharedMemConfig, cudaFuncSetSharedMemConfig, true, NO_FLAG, P0, "DPCT1026")
 ENTRY(cudaGetParameterBuffer, cudaGetParameterBuffer, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGetParameterBufferV2, cudaGetParameterBufferV2, false, NO_FLAG, P4, "comment")
+ENTRY(cudaFuncGetParamInfo, cudaFuncGetParamInfo, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGridDependencySynchronize, cudaGridDependencySynchronize, false, NO_FLAG, P4, "comment")
 ENTRY(cudaLaunchCooperativeKernel, cudaLaunchCooperativeKernel, true, NO_FLAG, P4, "Partial: DPCT1007")
 ENTRY(cudaLaunchCooperativeKernelMultiDevice, cudaLaunchCooperativeKernelMultiDevice, false, NO_FLAG, P4, "comment")
@@ -482,6 +485,11 @@ ENTRY(cudaGraphRemoveDependencies, cudaGraphRemoveDependencies, false, NO_FLAG, 
 ENTRY(cudaGraphRemoveDependencies_v2, cudaGraphRemoveDependencies_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphRetainUserObject, cudaGraphRetainUserObject, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphSetConditional, cudaGraphSetConditional, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphKernelNodeSetGridDim, cudaGraphKernelNodeSetGridDim, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphKernelNodeUpdatesApply, cudaGraphKernelNodeUpdatesApply, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphKernelNodeSetEnabled, cudaGraphKernelNodeSetEnabled, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphConditionalHandleCreate, cudaGraphConditionalHandleCreate, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphKernelNodeSetParam, cudaGraphKernelNodeSetParam, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphUpload, cudaGraphUpload, false, NO_FLAG, P4, "comment")
 ENTRY(cudaUserObjectCreate, cudaUserObjectCreate, false, NO_FLAG, P4, "comment")
 ENTRY(cudaUserObjectRelease, cudaUserObjectRelease, false, NO_FLAG, P4, "comment")
@@ -489,6 +497,7 @@ ENTRY(cudaUserObjectRetain, cudaUserObjectRetain, false, NO_FLAG, P4, "comment")
 
 // Driver Entry Point Access functions of runtime API
 ENTRY(cudaGetDriverEntryPoint, cudaGetDriverEntryPoint, false, NO_FLAG, P7, "comment")
+ENTRY(cudaGetDriverEntryPointByVersion, cudaGetDriverEntryPointByVersion, false, NO_FLAG, P4, "comment")
 
 // C++ high level API functions of runtime API
 ENTRY(cudaOccupancyMaxPotentialBlockSize, cudaOccupancyMaxPotentialBlockSize, true, NO_FLAG, P0, "DPCT1111")
