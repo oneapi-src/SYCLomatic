@@ -11,11 +11,11 @@
 
 __constant__ float constData[123 * 4];
 
-// CHECK: template<typename T>
-// CHECK-NEXT: void test(){
+// CHECK: template <typename T>
+// CHECK-NEXT: void test() {
 // CHECK-NEXT:   int i = 0;
-// CHECK-NEXT:   T** ptr;
-// CHECK-NEXT:   T* array[10];
+// CHECK-NEXT:   T **ptr;
+// CHECK-NEXT:   T *array[10];
 // CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
 // CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
 // CHECK-NEXT:   array[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
@@ -198,7 +198,7 @@ void checkError(cudaError_t err) {
 
 void cuCheckError(CUresult err) {
 }
-// CHECK: #define PITCH(a,b,c,d) a = (float *)dpct::dpct_malloc(b, c, d);
+// CHECK: #define PITCH(a, b, c, d) a = (float *)dpct::dpct_malloc(b, c, d);
 #define PITCH(a, b, c, d) cudaMallocPitch(a, b, c, d);
 
 void testCommas() {
@@ -681,7 +681,7 @@ void uninstantiated_template_call(const T *d_data, size_t width, size_t height) 
   // CHECK: dpct::dpct_memcpy(DATAMACRO, d_data, datasize * sizeof(T), dpct::device_to_host);
   cudaMemcpy(DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
-  // CHECK: dpct::dpct_memcpy(32*32+DATAMACRO, d_data, datasize * sizeof(T), dpct::device_to_host);
+  // CHECK: dpct::dpct_memcpy(32 * 32 + DATAMACRO, d_data, datasize * sizeof(T), dpct::device_to_host);
   cudaMemcpy(32 * 32 + DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:  checkError(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host)));
@@ -710,7 +710,7 @@ void uninstantiated_template_call(const T *d_data, size_t width, size_t height) 
   // CHECK: dpct::dpct_memcpy(DATAMACRO, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
   cudaMemcpy2D(DATAMACRO, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
-  // CHECK: dpct::dpct_memcpy(32*32+DATAMACRO, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
+  // CHECK: dpct::dpct_memcpy(32 * 32 + DATAMACRO, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
   cudaMemcpy2D(32 * 32 + DATAMACRO, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
   // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host)));
@@ -866,16 +866,16 @@ void foobar() {
   errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 }
 
-// CHECK: void copy_dir_1 (dpct::memcpy_direction kind) {}
-// CHECK-NEXT: void copy_dir_2 (dpct::memcpy_direction kind) {}
-// CHECK-NEXT: void copy_dir_3 (dpct::memcpy_direction kind) {}
+// CHECK: void copy_dir_1(dpct::memcpy_direction kind) {}
+// CHECK-NEXT: void copy_dir_2(dpct::memcpy_direction kind) {}
+// CHECK-NEXT: void copy_dir_3(dpct::memcpy_direction kind) {}
 void copy_dir_1(cudaMemcpyKind kind) {}
 void copy_dir_2(enum cudaMemcpyKind kind) {}
 void copy_dir_3(enum cudaMemcpyKind kind) {}
 
-// CHECK: void copy_dir_1 (int kind) {}
-// CHECK-NEXT: void copy_dir_2 (int kind) {}
-// CHECK-NEXT: void copy_dir_3 (int kind) {}
+// CHECK: void copy_dir_1(int kind) {}
+// CHECK-NEXT: void copy_dir_2(int kind) {}
+// CHECK-NEXT: void copy_dir_3(int kind) {}
 void copy_dir_1(cudaComputeMode kind) {}
 void copy_dir_2(enum cudaComputeMode kind) {}
 void copy_dir_3(enum cudaComputeMode kind) {}
