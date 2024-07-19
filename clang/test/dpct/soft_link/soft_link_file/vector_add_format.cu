@@ -1,5 +1,5 @@
 // RUN: cd %S/link/test &&  rm test.hpp && ln -nfs  ../../target/test/test.hpp test.hpp
-// RUN: dpct  --in-root=%S --out-root=%T/out  %s --cuda-include-path="%cuda-path/include" --process-all -- -I %S/link -x cuda --cuda-host-only
+// RUN: dpct  --in-root=%S --out-root=%T/out  --cuda-include-path="%cuda-path/include" --process-all -- -I %S/link -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/vector_add_format.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/out/link/test/test.hpp --match-full-lines %S/link/test/test.hpp
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out/vector_add_format.dp.cpp -o %T/out/vector_add_format.dp.o -I %T/out/link %}

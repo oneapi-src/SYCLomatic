@@ -36,7 +36,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <filesystem>
 #include <fstream>
 #include <queue>
 
@@ -177,40 +176,26 @@ void rewriteSymLink(const clang::tooling::UnifiedPath &FilePath,
                     bool RewriteFileName) {
   if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
     auto SourcePath = FilePath;
-    tooling::UnifiedPath SymbolPath =
-        std::filesystem::read_symlink(
-            std::filesystem::path(FilePath.getAbsolutePath().str()))
-            .string();
+    std::string TargetPath = FilePath.getCanonicalPath().str();
+    std::string LinkPath = FilePath.getAbsolutePath().str();
     if (RewriteFileName) {
-      rewriteFileName(SymbolPath);
-      rewriteFileName(SourcePath);
+      rewriteFileName(TargetPath, TargetPath);
+      rewriteFileName(LinkPath, LinkPath);
     }
-    // Create a symbolic link and link the file to the target file.
-    rewriteAbsoluteDir(SourcePath, InRoot, OutRoot);
-
+    rewriteDir(TargetPath, InRoot, OutRoot);
+    rewriteDir(LinkPath, InRoot, OutRoot);
     auto ParentPath = tooling::UnifiedPath(
         sys::path::parent_path(FilePath.getAbsolutePath()));
     rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
     if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
       createDirectories(ParentPath.getAbsolutePath());
     }
-
-    if (!std::filesystem::exists(SourcePath.getAbsolutePath().str())) {
-      std::error_code ec;
-      if (std::filesystem::is_directory(SymbolPath.getPath().str())) {
-        std::filesystem::create_directory_symlink(
-            std::filesystem::path(SymbolPath.getPath().str()),
-            std::filesystem::path(SourcePath.getAbsolutePath().str()), ec);
-      } else {
-        std::filesystem::create_symlink(
-            std::filesystem::path(SymbolPath.getPath().str()),
-            std::filesystem::path(SourcePath.getAbsolutePath().str()), ec);
-      }
+    if (!sys::fs::exists(LinkPath)) {
+      std::error_code ec = sys::fs::create_link(TargetPath, LinkPath);
       if (ec) {
         std::cerr << "Error creating symlink: " << ec.message()
-                  << ". The target path is " << SymbolPath.getCanonicalPath().str()
-                  << ". And the link path is "
-                  << SourcePath.getAbsolutePath().str() << "\n";
+                  << ". The target path is " << TargetPath
+                  << ". And the link path is " << LinkPath << "\n";
         dpctExit(MigrationSaveOutFail);
       }
     }
@@ -348,11 +333,6 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       std::string ErrMsg = "[ERROR] Access : " + std::string(InRoot.str()) +
                            " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
-    }
-    if (Iter->type() == fs::file_type::symlink_file) {
-      rewriteSymLink(Iter->path(), InRoot, OutRoot,
-                     IncludeFileMap[Iter->path()]);
-      return;
     }
     auto FilePath = Iter->path();
 
