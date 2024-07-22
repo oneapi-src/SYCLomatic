@@ -5,7 +5,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/fence/fence.dp.cpp -o %T/fence/fence.dp.o %}
 
 // clang-format off
-// CHECK: #include <cmath>
 #include <cuda_runtime.h>
 #include <cstdint>
 
