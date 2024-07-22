@@ -1740,9 +1740,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
-              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR",
-              "CUDA_ARRAY3D_DESCRIPTOR", "cublasLtHandle_t",
-              "cublasLtMatmulDesc_t", "cublasLtOrder_t",
+              "cudaMemcpy3DPeerParms", "CUDA_MEMCPY3D_PEER", "CUDA_MEMCPY2D",
+              "CUDA_ARRAY_DESCRIPTOR", "CUDA_ARRAY3D_DESCRIPTOR",
+              "cublasLtHandle_t", "cublasLtMatmulDesc_t", "cublasLtOrder_t",
               "cublasLtPointerMode_t", "cublasLtMatrixLayout_t",
               "cublasLtMatrixLayoutAttribute_t",
               "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
@@ -10168,7 +10168,7 @@ void MemoryMigrationRule::memcpyMigration(
   if (!NameRef.compare("cudaMemcpy2D")) {
     handleDirection(C, 6);
     handleAsync(C, 7, Result);
-  } else if (!NameRef.compare("cudaMemcpy3D") ||
+  } else if (NameRef.rfind("cudaMemcpy3D", 0) == 0 ||
              NameRef.rfind("cuMemcpy3D", 0) == 0 ||
              NameRef.rfind("cuMemcpy2D", 0) == 0) {
     handleAsync(C, 1, Result);
@@ -11000,22 +11000,24 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMalloc3D", "cudaMallocPitch", "cudaMemset2D", "cudaMemset3D",
         "cudaMemset2DAsync", "cudaMemset3DAsync", "cudaMemcpy2D",
         "cudaMemcpy3D", "cudaMemcpy2DAsync", "cudaMemcpy3DAsync",
-        "cudaMemcpy2DArrayToArray", "cudaMemcpy2DToArray",
-        "cudaMemcpy2DToArrayAsync", "cudaMemcpy2DFromArray",
-        "cudaMemcpy2DFromArrayAsync", "cudaMemcpyArrayToArray",
-        "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
-        "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
-        "cudaFreeArray", "cudaArrayGetInfo", "cudaHostGetFlags",
-        "cudaMemAdvise", "cuMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc",
-        "cuMemFreeHost", "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
+        "cudaMemcpy3DPeer", "cudaMemcpy3DPeerAsync", "cudaMemcpy2DArrayToArray",
+        "cudaMemcpy2DToArray", "cudaMemcpy2DToArrayAsync",
+        "cudaMemcpy2DFromArray", "cudaMemcpy2DFromArrayAsync",
+        "cudaMemcpyArrayToArray", "cudaMemcpyToArray", "cudaMemcpyToArrayAsync",
+        "cudaMemcpyFromArray", "cudaMemcpyFromArrayAsync", "cudaMallocArray",
+        "cudaMalloc3DArray", "cudaFreeArray", "cudaArrayGetInfo",
+        "cudaHostGetFlags", "cudaMemAdvise", "cuMemAdvise",
+        "cudaGetChannelDesc", "cuMemHostAlloc", "cuMemFreeHost",
+        "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
-        "cuMemcpy3DAsync_v2", "cudaMemGetInfo", "cuMemAllocManaged",
-        "cuMemAllocHost_v2", "cuMemHostGetDevicePointer_v2",
-        "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2",
-        "cuMemPrefetchAsync", "cuMemFree_v2", "cuDeviceTotalMem_v2",
-        "cuMemHostGetFlags", "cuMemHostRegister_v2", "cuMemHostUnregister",
-        "cuMemcpy", "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
+        "cuMemcpy3DAsync_v2", "cuMemcpy3DPeer", "cuMemcpy3DPeerAsync",
+        "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
+        "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2",
+        "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
+        "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
+        "cuMemHostRegister_v2", "cuMemHostUnregister", "cuMemcpy",
+        "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
         "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
         "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2",
         "cuMemsetD16Async", "cuMemsetD2D16_v2", "cuMemsetD2D16Async",
@@ -11207,8 +11209,12 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemcpy2D_v2", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy2DAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3D", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpy3DPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpy3DPeerAsync", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy3D_v2", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy3DAsync_v2", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpy3DPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpy3DPeerAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy2DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpyPeer", &MemoryMigrationRule::memcpyMigration},
@@ -11418,8 +11424,10 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
           .bind("arrayMember"),
       this);
   MF.addMatcher(
-      memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
-                     "cudaMemcpy3DParms", "CUDA_MEMCPY3D", "CUDA_MEMCPY2D"))))))
+      memberExpr(
+          hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
+              "cudaMemcpy3DParms", "CUDA_MEMCPY3D", "cudaMemcpy3DPeerParms",
+              "CUDA_MEMCPY3D_PEER", "CUDA_MEMCPY2D"))))))
           .bind("parmsMember"),
       this);
   MF.addMatcher(memberExpr(hasObjectExpression(hasType(recordDecl(hasAnyName(
@@ -11523,6 +11531,11 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::useExtBindlessImages() &&
         Replace.find("image") != std::string::npos)
       Replace += "_bindless";
+    if (MemberName.contains("Device") && M->getType().getAsString() != "int") {
+      // The field srcDevice/dstDevice has different meaning in different struct
+      // type.
+      Replace.clear();
+    }
     if (!Replace.empty())
       return emplaceTransformation(new ReplaceToken(
           M->getMemberLoc(), M->getEndLoc(), std::string(Replace)));
