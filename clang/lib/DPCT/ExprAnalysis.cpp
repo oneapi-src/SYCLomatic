@@ -1111,7 +1111,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     auto PP = Context.getPrintingPolicy();
     PP.PrintCanonicalTypes = 1;
-    TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
+    PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
+                        TSTL.getTypePtr()->getTemplateName());
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());

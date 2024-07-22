@@ -3038,7 +3038,7 @@ bool Parser::ParseUnqualifiedId(CXXScopeSpec &SS, ParsedType ObjectType,
                                     /*AllowInjectedClassName=*/true);
       if (TNK == TNK_Non_template)
         return true;
-
+#ifndef SYCLomatic_CUSTOMIZATION
       // C++2c [tem.names]p6
       // A name prefixed by the keyword template shall be followed by a template
       // argument list or refer to a class template or an alias template.
@@ -3046,6 +3046,7 @@ bool Parser::ParseUnqualifiedId(CXXScopeSpec &SS, ParsedType ObjectType,
            TNK == TNK_Var_template) &&
           !Tok.is(tok::less))
         Diag(IdLoc, diag::missing_template_arg_list_after_template_kw);
+#endif // !SYCLomatic_CUSTOMIZATION
     }
     return false;
   }
