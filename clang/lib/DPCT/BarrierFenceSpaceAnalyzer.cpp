@@ -767,7 +767,7 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD) {
     const auto ArgCallerParmsMap = getArgCallerParmsMap(SyncCall.first);
     auto LocInfo = DpctGlobalInfo::getLocInfo(SyncCall.first->getBeginLoc());
     Map.insert(std::make_pair(
-        getCombinedStrFromLoc(SyncCall.first->getCalleeDecl()->getBeginLoc()),
+        getCombinedStrFromLoc(SyncCall.first->getBeginLoc()),
         std::make_tuple(SyncCall.second.IsRealSyncCall,
                         SyncCall.second.IsInLoop, LocInfo.first, LocInfo.second,
                         AffectedByParmsMap, ArgCallerParmsMap)));

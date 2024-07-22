@@ -48,7 +48,7 @@ struct IntraproceduralAnalyzerResult {
       : UnsupportedCase(UnsupportedCase) {}
   IntraproceduralAnalyzerResult(
       std::unordered_map<
-          std::string /*call's decl's combined loc string*/,
+          std::string /*call's combined loc string*/,
           std::tuple<
               bool /*is real sync call*/, bool /*is in loop*/,
               tooling::UnifiedPath, unsigned int,
@@ -63,7 +63,7 @@ struct IntraproceduralAnalyzerResult {
   bool isDefault() const noexcept { return IsDefault; }
   std::
       unordered_map<
-          std::string /*call's decl's combined loc string*/,
+          std::string /*call's combined loc string*/,
           std::tuple<
               bool /*is real sync call*/, bool /*is in loop*/,
               tooling::UnifiedPath, unsigned int,
