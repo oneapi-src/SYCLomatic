@@ -894,7 +894,7 @@ void MigrationRule::EmitDeviceGlobalInitMSG(const clang::VarDecl *Decl) {
   if (auto DRE = dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
     if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
         DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
-      report(Decl->getBeginLoc(), Diagnostics::CALLED_EXPLICIT_DELETE, false,
+      report(Decl->getBeginLoc(), Diagnostics::FUNC_EXPLICIT_DELETE, false,
              "copy constructor of device_global");
       return;
     }
