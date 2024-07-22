@@ -1988,9 +1988,11 @@ protected:
   }
 
   bool handle_fence(const InlineAsmInstruction *I) override { 
-   OS() << MapNames::getClNamespace() << "atomic_fence("
-        << MapNames::getClNamespace() << "memory_order::acq_rel,"
-        << MapNames::getClNamespace() << "memory_scope::device)";  
+    if (Inst->getNumInputOperands() != 0)
+      return SYCLGenError();
+    OS() << MapNames::getClNamespace() << "atomic_fence("
+         << MapNames::getClNamespace() << "memory_order::acq_rel,"
+         << MapNames::getClNamespace() << "memory_scope::device)";  
     endstmt();
     return SYCLGenSuccess();
   }
