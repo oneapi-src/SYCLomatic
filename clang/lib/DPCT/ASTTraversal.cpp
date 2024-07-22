@@ -10160,7 +10160,21 @@ void MemoryMigrationRule::mallocMigration(
       OS << " = new " << MapNames::getDpctNamespace()
          << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ")";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2));
+      static const std::unordered_map<std::string, std::string>
+          SupportedImageTypeMap{
+              {"cudaArrayDefault",
+               MapNames::getClNamespace() +
+                   "ext::oneapi::experimental::image_type::standard"},
+              {"cudaArrayLayered",
+               MapNames::getClNamespace() +
+                   "ext::oneapi::experimental::image_type::array"},
+          };
+      const auto &ImageTypePair =
+          SupportedImageTypeMap.find(ExprAnalysis::ref(C->getArg(3)));
+      if (ImageTypePair != SupportedImageTypeMap.end())
+        OS << ", " << ImageTypePair->second;
+      OS << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
     mallocArrayMigration(C, Name, 3, *Result.SourceManager);
