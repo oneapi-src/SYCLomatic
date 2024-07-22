@@ -175,7 +175,6 @@ void rewriteSymLink(const clang::tooling::UnifiedPath &FilePath,
                     const clang::tooling::UnifiedPath &OutRoot,
                     bool RewriteFileName) {
   if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
-    auto SourcePath = FilePath;
     std::string TargetPath = FilePath.getCanonicalPath().str();
     std::string LinkPath = FilePath.getAbsolutePath().str();
     if (RewriteFileName) {
@@ -277,10 +276,9 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC),
          End;
          Iter != End; Iter.increment(EC)) {
-      // Skip output directory if it is in the in-root directory.
       if (Iter->type() == fs::file_type::symlink_file) {
         rewriteSymLink(Iter->path(), InRoot, OutRoot,
-                      IncludeFileMap[Iter->path()]);
+                       IncludeFileMap[Iter->path()]);
       }
     }
   }
