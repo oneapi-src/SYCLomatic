@@ -15,6 +15,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/OperationKinds.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
@@ -5106,8 +5107,12 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
       }
     }
   } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
-    if (ICE->getCastKind() != CK_LValueToRValue) {
+    auto CK = ICE->getCastKind();
+    if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
+    }
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion) {
+      IsRedeclareRequired = true;
     }
   }
   Analysis.analyze(Arg);
