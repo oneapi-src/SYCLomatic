@@ -569,7 +569,7 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     if (CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("*{0}", Reg);
     else
-      OS() << llvm::formatv("*(({0} *){1})", Type, Reg);
+      OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type, Reg);
     break;
   }
   case InlineAsmAddressExpr::RegImm: {
