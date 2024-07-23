@@ -466,9 +466,9 @@ static inline sampling_info get_sampling_info(
 class bindless_image_wrapper_base {
 public:
   /// Destroy bindless image wrapper.
-  virtual ~bindless_image_wrapper_base() {
+  ~bindless_image_wrapper_base() {
     destroy_bindless_image(_img, get_default_queue());
-  };
+  }
 
   /// Attach linear data to bindless image.
   /// \param [in] data The linear data used to create bindless image.
