@@ -82,7 +82,29 @@ SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
   return SL.getLocWithOffset(Lexer::MeasureTokenLength(
       SL, SM, DpctGlobalInfo::getContext().getLangOpts()));
 }
+void EmitDeviceGlobalInitMSG(const clang::VarDecl *Decl,
+                             std::shared_ptr<MemVarInfo> Info,
+                             TransformSetTy *TransformSet) {
+  if (Decl->hasInit()) {
+    auto InitStr = getInitForDeviceGlobal(Decl);
+    if (!InitStr.empty()) {
+      if (auto DRE = dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
+        if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
+            DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
+          DiagnosticsUtils::report(
+              Decl->getBeginLoc(), Diagnostics::FUNC_EXPLICIT_DELETE,
+              TransformSet, false, "copy constructor of device_global");
+        }
+      } else {
+        DiagnosticsUtils::report(Decl->getBeginLoc(),
+                                 Diagnostics::DEVICE_GLOBAL_INIT, TransformSet,
+                                 false);
+      }
 
+      Info->setInitForDeviceGlobal(InitStr);
+    }
+  }
+}
 /// Return a TextModication that removes nth argument of the CallExpr,
 /// together with the preceding comma.
 TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
@@ -888,18 +910,6 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 
     loadYAMLIntoFileInfo(InFile.getCanonicalPath());
   }
-}
-
-void MigrationRule::EmitDeviceGlobalInitMSG(const clang::VarDecl *Decl) {
-  if (auto DRE = dyn_cast<DeclRefExpr>(Decl->getInit()->IgnoreImplicit())) {
-    if (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
-        DRE->getDecl()->hasAttr<CUDAConstantAttr>()) {
-      report(Decl->getBeginLoc(), Diagnostics::FUNC_EXPLICIT_DELETE, false,
-             "copy constructor of device_global");
-      return;
-    }
-  }
-  report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
 }
 
 void MigrationRule::print(llvm::raw_ostream &OS) {
@@ -8869,13 +8879,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     auto Info = Global.findMemVarInfo(Decl);
 
     if (Info && Info->isUseDeviceGlobal()) {
-      if (Decl->hasInit()) {
-        auto InitStr = getInitForDeviceGlobal(Decl);
-        if (!InitStr.empty()) {
-          EmitDeviceGlobalInitMSG(Decl);
-          Info->setInitForDeviceGlobal(InitStr);
-        }
-      }
+      EmitDeviceGlobalInitMSG(Decl, Info, TransformSet);
       if (!Info->getType()->isArray()) {
         emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get()"));
       }
@@ -9011,13 +9015,7 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      if (MemVar->hasInit()) {
-        auto InitStr = getInitForDeviceGlobal(MemVar);
-        if (!InitStr.empty()) {
-          EmitDeviceGlobalInitMSG(MemVar);
-          Info->setInitForDeviceGlobal(InitStr);
-        }
-      }
+      EmitDeviceGlobalInitMSG(MemVar, Info, TransformSet);
     }
 
     Info->setIgnoreFlag(true);
@@ -9457,13 +9455,7 @@ void MemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      if (MemVar->hasInit()) {
-        auto InitStr = getInitForDeviceGlobal(MemVar);
-        if (!InitStr.empty()) {
-          EmitDeviceGlobalInitMSG(MemVar);
-          Info->setInitForDeviceGlobal(InitStr);
-        }
-      }
+      EmitDeviceGlobalInitMSG(MemVar, Info, TransformSet);
     }
 
     if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {

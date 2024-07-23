@@ -36,9 +36,6 @@ struct B{
 // CHECK: */
 // CHECK: sycl::ext::oneapi::experimental::device_global<const int> var_ee{var_init};
 // CHECK: const int val = 3;
-// CHECK: /*
-// CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
-// CHECK: */
 // CHECK: sycl::ext::oneapi::experimental::device_global<const int> var_ee2{val};
 // CHECK: sycl::ext::oneapi::experimental::device_global<A> var_e;
 // CHECK: static sycl::ext::oneapi::experimental::device_global<const B> var_f;

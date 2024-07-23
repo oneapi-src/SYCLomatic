@@ -165,7 +165,6 @@ private:
 public:
   bool isMigrationRule() const override { return true; }
   static bool classof(const ASTTraversal *T) { return T->isMigrationRule(); }
-  void EmitDeviceGlobalInitMSG(const clang::VarDecl *Decl);
   StringRef getName() const { return Name; }
   const TransformSetTy &getEmittedTransformations() const {
     return Transformations;
