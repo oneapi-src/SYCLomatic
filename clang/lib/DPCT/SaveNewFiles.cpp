@@ -119,14 +119,7 @@ static bool formatFile(const clang::tooling::UnifiedPath &FileName,
 // TODO: it's global variable, refine in future
 std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 
-bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
-                const clang::tooling::UnifiedPath &InRoot,
-                const clang::tooling::UnifiedPath &OutRoot) {
-  std::string FilePathStr = FilePath.getCanonicalPath().str();
-  bool Result = rewriteDir(FilePathStr, InRoot, OutRoot);
-  FilePath = FilePathStr;
-  return Result;
-}
+
 bool rewriteDir(std::string &FilePath,
                 const clang::tooling::UnifiedPath &InRoot,
                 const clang::tooling::UnifiedPath &OutRoot) {
@@ -155,20 +148,29 @@ bool rewriteDir(std::string &FilePath,
   FilePath = NewFilePath.str();
   return true;
 }
-void rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
+bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot) {
+  std::string FilePathStr = FilePath.getCanonicalPath().str();
+  bool Result = rewriteDir(FilePathStr, InRoot, OutRoot);
+  FilePath = FilePathStr;
+  return Result;
+}
+bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
                         const clang::tooling::UnifiedPath &InRoot,
                         const clang::tooling::UnifiedPath &OutRoot) {
   std::string FilePathStr = FilePath.getAbsolutePath().str();
-  rewriteDir(FilePathStr, InRoot, OutRoot);
+  bool Result = rewriteDir(FilePathStr, InRoot, OutRoot);
   FilePath = FilePathStr;
+  return Result;
 }
-
-void rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
+bool rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
                          const clang::tooling::UnifiedPath &InRoot,
                          const clang::tooling::UnifiedPath &OutRoot) {
   std::string FilePathStr = FilePath.getCanonicalPath().str();
-  rewriteDir(FilePathStr, InRoot, OutRoot);
+  bool Result = rewriteDir(FilePathStr, InRoot, OutRoot);
   FilePath = FilePathStr;
+  return Result;
 }
 void rewriteSymLink(const clang::tooling::UnifiedPath &FilePath,
                     const clang::tooling::UnifiedPath &InRoot,
@@ -284,7 +286,7 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
 
     std::ifstream In(File);
     clang::tooling::UnifiedPath OutputFile = File;
-    if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
+    if (!rewriteCanonicalDir(OutputFile, InRoot, OutRoot)) {
       continue;
     }
 
@@ -350,7 +352,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
 
     if (Iter->type() == fs::file_type::regular_file) {
       clang::tooling::UnifiedPath OutputFile = FilePath;
-      if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
+      if (!rewriteCanonicalDir(OutputFile, InRoot, OutRoot)) {
         continue;
       }
       if (IncludeFileMap.find(FilePath) != IncludeFileMap.end()) {
@@ -374,7 +376,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     } else if (Iter->type() == fs::file_type::directory_file) {
       const auto Path = Iter->path();
       clang::tooling::UnifiedPath OutDirectory = Path;
-      if (!rewriteDir(OutDirectory, InRoot, OutRoot)) {
+      if (!rewriteCanonicalDir(OutDirectory, InRoot, OutRoot)) {
         continue;
       }
 
@@ -498,7 +500,7 @@ int writeReplacementsToFiles(
       rewriteFileName(OutPath);
     }
 
-    if (!rewriteDir(OutPath, InRoot, Folder)) {
+    if (!rewriteCanonicalDir(OutPath, InRoot, Folder)) {
       continue;
     }
 
@@ -1053,12 +1055,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       }
       FilePath = TempFilePath;
 
-      if (!rewriteDir(FilePath, InRoot, SYCLMigratedOutRoot)) {
+      if (!rewriteCanonicalDir(FilePath, InRoot, SYCLMigratedOutRoot)) {
         continue;
       }
 
       if (dpct::DpctGlobalInfo::isCodePinEnabled() &&
-          !rewriteDir(DebugFilePath, InRoot, CodePinCUDAFolder)) {
+          !rewriteCanonicalDir(DebugFilePath, InRoot, CodePinCUDAFolder)) {
         continue;
       }
 
@@ -1149,7 +1151,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
 void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path) {
   clang::tooling::UnifiedPath OriginPath = Path;
   rewriteFileName(Path);
-  if (!rewriteDir(Path, DpctGlobalInfo::getInRoot(),
+  if (!rewriteCanonicalDir(Path, DpctGlobalInfo::getInRoot(),
                   DpctGlobalInfo::getOutRoot())) {
     return;
   }
