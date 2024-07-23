@@ -19,6 +19,10 @@
 // RUN: echo "    {" >> compile_commands.json
 // RUN: echo "        \"command\": \"ld objs/foo.cu.o objs/bar.cpp.dp.o -o app\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%T/build\"" >> compile_commands.json
+// RUN: echo "    }," >> compile_commands.json
+// RUN: echo "    {" >> compile_commands.json
+// RUN: echo "        \"command\": \"ld -shared objs/foo.cu.o objs/bar.cpp.dp.o -o libapp.so\"," >> compile_commands.json
+// RUN: echo "        \"directory\": \"%T/build\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json
 // RUN: echo "]" >> compile_commands.json
 // RUN: cd %T
