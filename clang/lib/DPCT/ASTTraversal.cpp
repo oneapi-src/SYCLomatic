@@ -82,7 +82,7 @@ SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
   return SL.getLocWithOffset(Lexer::MeasureTokenLength(
       SL, SM, DpctGlobalInfo::getContext().getLangOpts()));
 }
-void EmitDeviceGlobalInitMSG(const clang::VarDecl *Decl,
+void SetInitForDeviceGlobal(const clang::VarDecl *Decl,
                              std::shared_ptr<MemVarInfo> Info,
                              TransformSetTy *TransformSet) {
   if (Decl->hasInit()) {
@@ -8879,7 +8879,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     auto Info = Global.findMemVarInfo(Decl);
 
     if (Info && Info->isUseDeviceGlobal()) {
-      EmitDeviceGlobalInitMSG(Decl, Info, TransformSet);
+      SetInitForDeviceGlobal(Decl, Info, TransformSet);
       if (!Info->getType()->isArray()) {
         emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get()"));
       }
@@ -9015,7 +9015,7 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      EmitDeviceGlobalInitMSG(MemVar, Info, TransformSet);
+      SetInitForDeviceGlobal(MemVar, Info, TransformSet);
     }
 
     Info->setIgnoreFlag(true);
@@ -9455,7 +9455,7 @@ void MemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      EmitDeviceGlobalInitMSG(MemVar, Info, TransformSet);
+      SetInitForDeviceGlobal(MemVar, Info, TransformSet);
     }
 
     if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {
