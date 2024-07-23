@@ -7,12 +7,12 @@
 // RUN: cd %T/build
 // RUN: echo "[" > compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"nvcc -c -std=c++20 -I %T -o %T/build/objs/foo.cu.o %T/source/foo.cu\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"nvcc -c -fPIC -std=c++20 -I %T -o %T/build/objs/foo.cu.o %T/source/foo.cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"/%T\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%T/source/foo.cu\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"g++ -c -std=c++11 -o %T/build/objs/bar.cpp.dp.o %T/source/bar.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"g++ -c -fPIC -std=c++11 -o %T/build/objs/bar.cpp.dp.o %T/source/bar.cpp\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"/%T\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"/%T/source/bar.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json

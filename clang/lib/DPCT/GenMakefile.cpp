@@ -285,6 +285,8 @@ static void getCompileInfo(
       } else if (Option == "-msse4.1" || Option == "-mavx512vl") {
         // Keep some options from original compile command.
         NewOptions += Option + " ";
+      } else if(Option == "-fPIC" ) {
+        NewOptions += Option + " ";
       }
     }
     if (!IsObjSpecified) {
