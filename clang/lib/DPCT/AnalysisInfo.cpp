@@ -4283,24 +4283,24 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
           isa<TranslationUnitDecl>(ParentFunc->getDeclContext())) {
         return;
       }
-      if (isa<TranslationUnitDecl>(CallDecl->getDeclContext()) &&
-          DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) &&
-          !DRE->getQualifier() && !CallDecl->isOverloadedOperator()) {
-        for (unsigned i = 0; i < NumArgs; i++) {
-          auto Type = CallDecl->getParamDecl(i)
-                          ->getOriginalType()
-                          .getCanonicalType()
-                          ->getUnqualifiedDesugaredType();
-          while (Type && Type->isAnyPointerType()) {
-            Type = Type->getPointeeType().getTypePtrOrNull();
-          }
+      if (!isa<TranslationUnitDecl>(CallDecl->getDeclContext()) ||
+          !DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) ||
+          DRE->getQualifier() || CallDecl->isOverloadedOperator())
+        return;
+      for (unsigned i = 0; i < NumArgs; i++) {
+        auto Type = CallDecl->getParamDecl(i)
+                        ->getOriginalType()
+                        .getCanonicalType()
+                        ->getUnqualifiedDesugaredType();
+        while (Type && Type->isAnyPointerType()) {
+          Type = Type->getPointeeType().getTypePtrOrNull();
+        }
 
-          if (Type->getAsRecordDecl() &&
-              DpctGlobalInfo::isInCudaPath(
-                  Type->getAsRecordDecl()->getLocation())) {
-            IsADLEnable = true;
-            break;
-          }
+        if (Type->getAsRecordDecl() &&
+            DpctGlobalInfo::isInCudaPath(
+                Type->getAsRecordDecl()->getLocation())) {
+          IsADLEnable = true;
+          break;
         }
       }
     }
