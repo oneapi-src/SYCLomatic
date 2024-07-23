@@ -54,10 +54,10 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 /// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
 ///
 /// \returns true if file path is rewritten, false otherwise.
-bool rewriteDir(std::string &FilePath,
+bool rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
                 const clang::tooling::UnifiedPath &InRoot,
                 const clang::tooling::UnifiedPath &OutRoot);
-bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
+bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
                 const clang::tooling::UnifiedPath &InRoot,
                 const clang::tooling::UnifiedPath &OutRoot);
 // Replace file name \p FileName with new migrated name. For c source files, the
