@@ -172,30 +172,7 @@ bool rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
   FilePath = FilePathStr;
   return Result;
 }
-void rewriteSymLink(const clang::tooling::UnifiedPath &FilePath,
-                    const clang::tooling::UnifiedPath &InRoot,
-                    const clang::tooling::UnifiedPath &OutRoot,
-                    bool RewriteFileName) {
-  if (llvm::sys::fs::exists(FilePath.getCanonicalPath())) {
-    std::string TargetPath = FilePath.getCanonicalPath().str();
-    std::string LinkPath = FilePath.getAbsolutePath().str();
-    if (RewriteFileName) {
-      rewriteFileName(TargetPath, TargetPath);
-      rewriteFileName(LinkPath, LinkPath);
-    }
-    rewriteDir(TargetPath, InRoot, OutRoot);
-    rewriteDir(LinkPath, InRoot, OutRoot);
-    if (!sys::fs::exists(LinkPath)) {
-      std::error_code ec = sys::fs::create_link(TargetPath, LinkPath);
-      if (ec) {
-        std::cerr << "Error creating symlink: " << ec.message()
-                  << ". The target path is " << TargetPath
-                  << ". And the link path is " << LinkPath << "\n";
-        dpctExit(MigrationSaveOutFail);
-      }
-    }
-  }
-}
+
 void rewriteFileName(clang::tooling::UnifiedPath &FileName) {
   rewriteFileName(FileName, FileName);
 }
@@ -272,9 +249,31 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
     for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC),
          End;
          Iter != End; Iter.increment(EC)) {
+      if ((bool)EC) {
+        std::string ErrMsg = "[ERROR] Access : " + std::string(InRoot.str()) +
+                             " fail: " + EC.message() + "\n";
+        PrintMsg(ErrMsg);
+        continue;
+      }
       if (Iter->type() == fs::file_type::symlink_file) {
-        rewriteSymLink(Iter->path(), InRoot, OutRoot,
-                       IncludeFileMap[Iter->path()]);
+        tooling::UnifiedPath FilePath = Iter->path();
+        std::string TargetPath = FilePath.getCanonicalPath().str();
+        std::string LinkPath = FilePath.getAbsolutePath().str();
+        if (IncludeFileMap[FilePath]) {
+          rewriteFileName(TargetPath, TargetPath);
+          rewriteFileName(LinkPath, LinkPath);
+        }
+        rewriteDir(TargetPath, InRoot, OutRoot);
+        rewriteDir(LinkPath, InRoot, OutRoot);
+        if (!sys::fs::exists(LinkPath)) {
+          std::error_code ec = sys::fs::create_link(TargetPath, LinkPath);
+          if (ec) {
+            std::cerr << "Error creating symlink: " << ec.message()
+                      << ". The target path is " << TargetPath
+                      << ". And the link path is " << LinkPath << "\n";
+            dpctExit(MigrationSaveOutFail);
+          }
+        }
       }
     }
   }
