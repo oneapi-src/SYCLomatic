@@ -183,12 +183,6 @@ void rewriteSymLink(const clang::tooling::UnifiedPath &FilePath,
     }
     rewriteDir(TargetPath, InRoot, OutRoot);
     rewriteDir(LinkPath, InRoot, OutRoot);
-    auto ParentPath = tooling::UnifiedPath(
-        sys::path::parent_path(FilePath.getAbsolutePath()));
-    rewriteAbsoluteDir(ParentPath, InRoot, OutRoot);
-    if (!llvm::sys::fs::exists(ParentPath.getAbsolutePath())) {
-      createDirectories(ParentPath.getAbsolutePath());
-    }
     if (!sys::fs::exists(LinkPath)) {
       std::error_code ec = sys::fs::create_link(TargetPath, LinkPath);
       if (ec) {
