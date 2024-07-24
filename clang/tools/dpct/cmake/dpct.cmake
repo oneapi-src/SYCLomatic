@@ -129,12 +129,3 @@ set(SYCL_HOST_FLAGS "")
 
 # 'SYCL_COMPILER_EXECUTABLE' is used to specify the path to the SYCL Compiler (icpx).
 set(SYCL_COMPILER_EXECUTABLE "${SYCL_INCLUDE_DIR}/../bin/icpx")
-
-function(sycl_architectures_compatibility_validate lang)
-endfunction()
-
-function(sycl_architectures_compatibility_native lang)
-endfunction()
-
-function(sycl_architectures_compatibility_all lang version)
-endfunction()
