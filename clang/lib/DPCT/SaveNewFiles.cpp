@@ -148,14 +148,7 @@ bool rewriteDir(std::string &FilePath,
   FilePath = NewFilePath.str();
   return true;
 }
-bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
-                const clang::tooling::UnifiedPath &InRoot,
-                const clang::tooling::UnifiedPath &OutRoot) {
-  std::string FilePathStr = FilePath.getCanonicalPath().str();
-  bool Result = rewriteDir(FilePathStr, InRoot, OutRoot);
-  FilePath = FilePathStr;
-  return Result;
-}
+
 bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
                         const clang::tooling::UnifiedPath &InRoot,
                         const clang::tooling::UnifiedPath &OutRoot) {
