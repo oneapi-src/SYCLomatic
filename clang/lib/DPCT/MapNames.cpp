@@ -394,6 +394,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"CUDA_MEMCPY3D",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
+      {"cudaMemcpy3DPeerParms",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
+      {"CUDA_MEMCPY3D_PEER",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"CUDA_MEMCPY2D",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "memcpy_parameter")},
       {"cudaComputeMode", std::make_shared<TypeNameRule>("int")},
@@ -4412,6 +4416,9 @@ const MapNames::MapTy MemoryDataTypeRule::DirectReplMemberNames{
     {"dstPos", "to.pos"},
     {"extent", "size"},
     {"kind", "direction"},
+    // cudaMemcpy3DPeerParms fields.
+    {"srcDevice", "from.dev_id"},
+    {"dstDevice", "to.dev_id"},
     // CUDA_MEMCPY2D fields.
     {"Height", "size[1]"},
     {"WidthInBytes", "size[0]"},
@@ -4422,7 +4429,11 @@ const MapNames::MapTy MemoryDataTypeRule::DirectReplMemberNames{
     // CUDA_MEMCPY3D fields.
     {"Depth", "size[2]"},
     {"dstZ", "to.pos[2]"},
-    {"srcZ", "from.pos[2]"}};
+    {"srcZ", "from.pos[2]"},
+    // CUDA_MEMCPY3D_PEER fields.
+    {"srcContext", "from.dev_id"},
+    {"dstContext", "to.dev_id"},
+};
 
 const MapNames::MapTy MemoryDataTypeRule::GetSetReplMemberNames{
     // CUDA_MEMCPY2D fields.

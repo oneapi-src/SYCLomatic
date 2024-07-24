@@ -15,6 +15,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/OperationKinds.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
@@ -2881,6 +2882,8 @@ MemVarInfo::MemVarInfo(unsigned Offset,
       AccMode = Reference;
   } else if (getType()->getDimension() <= 1) {
     AccMode = Pointer;
+  } else if (isShared() && isLocal()) {
+    AccMode = PointerToArray;
   } else {
     AccMode = Accessor;
   }
@@ -2996,7 +2999,7 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
   if (isShared()) {
     OS << getSyclAccessorType(LI);
     OS << " " << getAccessorName() << "(";
-    if (getType()->getDimension())
+    if (getType()->getDimension() && AccMode != PointerToArray)
       OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
          << ", ";
     OS << "cgh)";
@@ -3052,6 +3055,15 @@ std::string MemVarInfo::getRangeDecl(const std::string &MemSize) {
                      getType()->getRangeArgument(MemSize, false), ";");
 }
 ParameterStream &MemVarInfo::getFuncDecl(ParameterStream &PS) {
+  if (AccMode == PointerToArray) {
+    PS << getType()->getBaseName() << " ";
+    PS << getArgName();
+    auto Range = getType()->getRange();
+    for (size_t i = 0; i < Range.size(); i++) {
+      PS << "[" << Range[i].getSize() << "]";
+    }
+    return PS;
+  }
   if (AccMode == Value) {
     PS << getAccessorDataType(true, true) << " ";
   } else if (AccMode == Pointer) {
@@ -3089,6 +3101,20 @@ ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
         PS << "template ";
       PS << "get_multi_ptr<" << MapNames::getClNamespace()
          << "access::decorated::no>().get()";
+    } else if (AccMode == PointerToArray) {
+      if (getType()->isWritten()) {
+        PS << getAccessorName();
+      } else {
+        std::string CastType = getType()->getBaseName();
+        auto Range = getType()->getRange();
+        CastType = CastType + " (*)";
+        for (size_t i = 1; i < Range.size(); i++) {
+          CastType = CastType + "[" + Range[i].getSize() + "]";
+        }
+        PS << "reinterpret_cast<" << CastType << ">(" << getAccessorName()
+           << ".template get_multi_ptr<" << MapNames::getClNamespace()
+           << "access::decorated::no>().get())";
+      }
     } else {
       PS << getAccessorName();
     }
@@ -3269,8 +3295,17 @@ std::string MemVarInfo::getSyclAccessorType(LocInfo LI) {
                                getType()->SharedVarInfo.DefinitionFuncName);
     }
     OS << MapNames::getClNamespace() << "local_accessor<";
-    OS << getAccessorDataType() << ", ";
-    OS << getType()->getDimension() << ">";
+    if (AccMode == PointerToArray) {
+      OS << getType()->getBaseName();
+      auto Range = getType()->getRange();
+      for (size_t i = 0; i < Range.size(); i++) {
+        OS << "[" << Range[i].getSize() << "]";
+      }
+      OS << ", 0>";
+    } else {
+      OS << getAccessorDataType() << ", ";
+      OS << getType()->getDimension() << ">";
+    }
   } else {
     OS << MapNames::getClNamespace() << "accessor<";
     OS << getAccessorDataType() << ", ";
@@ -4404,26 +4439,29 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto Args = C->arguments();
   auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
   auto ArgsNum = std::distance(Args.begin(), Args.end());
-  auto ArgItr = Args.begin();
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
   if (DpctGlobalInfo::useExtBindlessImages()) {
     // Need return after resize, ortherwise will cause array out of bound.
     return;
   }
-  while (ArgItr != Args.end()) {
+  for (auto ArgItr = Args.begin(); ArgItr != Args.end(); Idx++, ArgItr++) {
     const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
     if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
       if (Ctor->getConstructor()->isCopyOrMoveConstructor()) {
         Arg = Ctor->getArg(0);
       }
     }
+
+    if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+      if (ICE->getCastKind() == CK_DerivedToBase) {
+        continue;
+      }
+    }
     if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, DRE, IsKernel);
     else if (auto ASE = dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, ASE, IsKernel);
-    Idx++;
-    ArgItr++;
   }
 }
 void CallFunctionExpr::mergeTextureObjectInfo(
@@ -5091,17 +5129,30 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
-  if (isa<InitListExpr>(Arg) || isa<CXXConstructExpr>(Arg)) {
+  if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
+  } else if (const auto* CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+    HasImplicitConversion = true;
+    if (CCE->getNumArgs()) {
+      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CCE->getArg(0))) {
+        if (ICE->getCastKind() == CK_DerivedToBase) {
+          IsRedeclareRequired = true;
+        }
+      }
+    }
   } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
-    if (ICE->getCastKind() != CK_LValueToRValue) {
+    auto CK = ICE->getCastKind();
+    if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
+    }
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion) {
+      IsRedeclareRequired = true;
     }
   }
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
   TryGetBuffer = Analysis.TryGetBuffer;
-  IsRedeclareRequired = Analysis.IsRedeclareRequired;
+  IsRedeclareRequired |= Analysis.IsRedeclareRequired;
   IsPointer = Analysis.IsPointer;
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     IsDoublePointer = Analysis.IsDoublePointer;
@@ -5415,6 +5466,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
+    Printer.indent();
     Printer << MapNames::getClNamespace() + "nd_range<3>(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
       Printer << ExecutionConfig.LocalSize;
@@ -6262,8 +6314,8 @@ void deduceTemplateArgumentFromTemplateArgs(
 bool compareTemplateName(std::string N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
-  N2.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-           TemplateName::Qualified::Fully);
+  PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
+                        N2);
   OS.flush();
   return N1.compare(NameStr);
 }
@@ -6271,8 +6323,8 @@ bool compareTemplateName(std::string N1, TemplateName N2) {
 bool compareTemplateName(TemplateName N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
-  N1.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-           TemplateName::Qualified::Fully);
+  PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
+                        N1);
   OS.flush();
   return compareTemplateName(NameStr, N2);
 }
