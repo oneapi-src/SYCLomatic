@@ -15,6 +15,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/OperationKinds.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
@@ -4438,26 +4439,29 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto Args = C->arguments();
   auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
   auto ArgsNum = std::distance(Args.begin(), Args.end());
-  auto ArgItr = Args.begin();
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
   if (DpctGlobalInfo::useExtBindlessImages()) {
     // Need return after resize, ortherwise will cause array out of bound.
     return;
   }
-  while (ArgItr != Args.end()) {
+  for (auto ArgItr = Args.begin(); ArgItr != Args.end(); Idx++, ArgItr++) {
     const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
     if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
       if (Ctor->getConstructor()->isCopyOrMoveConstructor()) {
         Arg = Ctor->getArg(0);
       }
     }
+
+    if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+      if (ICE->getCastKind() == CK_DerivedToBase) {
+        continue;
+      }
+    }
     if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, DRE, IsKernel);
     else if (auto ASE = dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, ASE, IsKernel);
-    Idx++;
-    ArgItr++;
   }
 }
 void CallFunctionExpr::mergeTextureObjectInfo(
@@ -5125,17 +5129,30 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
-  if (isa<InitListExpr>(Arg) || isa<CXXConstructExpr>(Arg)) {
+  if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
+  } else if (const auto* CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+    HasImplicitConversion = true;
+    if (CCE->getNumArgs()) {
+      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CCE->getArg(0))) {
+        if (ICE->getCastKind() == CK_DerivedToBase) {
+          IsRedeclareRequired = true;
+        }
+      }
+    }
   } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
-    if (ICE->getCastKind() != CK_LValueToRValue) {
+    auto CK = ICE->getCastKind();
+    if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
+    }
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion) {
+      IsRedeclareRequired = true;
     }
   }
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
   TryGetBuffer = Analysis.TryGetBuffer;
-  IsRedeclareRequired = Analysis.IsRedeclareRequired;
+  IsRedeclareRequired |= Analysis.IsRedeclareRequired;
   IsPointer = Analysis.IsPointer;
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     IsDoublePointer = Analysis.IsDoublePointer;
