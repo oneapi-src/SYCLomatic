@@ -29,6 +29,7 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
+#include "TypeLocRewriters.h"
 #include "WMMAAPIMigration.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
@@ -1858,7 +1859,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
 
       requestHelperFeatureForTypeNames(RealTypeNameStr);
       std::string Replacement =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+          TypeLocRewriterFactoryBase::findReplacedName(RealTypeNameStr);
       insertHeaderForTypeRule(RealTypeNameStr, ETBeginLoc);
 
       if (!Replacement.empty()) {
@@ -1905,7 +1906,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
 
   requestHelperFeatureForTypeNames(RealTypeNameStr);
   std::string Replacement =
-      MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+      TypeLocRewriterFactoryBase::findReplacedName(RealTypeNameStr);
   insertHeaderForTypeRule(RealTypeNameStr, BeginLoc);
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
@@ -2047,7 +2048,7 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
     std::string NameToMap = Name;
     bool Stripped = stripTypename(NameToMap);
     std::string Replacement =
-        MapNames::findReplacedName(MapNames::TypeNamesMap, NameToMap);
+        TypeLocRewriterFactoryBase::findReplacedName(NameToMap);
     insertHeaderForTypeRule(NameToMap, TL->getBeginLoc());
     requestHelperFeatureForTypeNames(NameToMap);
     if (Replacement.empty())
@@ -2379,7 +2380,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         const std::string TyName =
             dpct::DpctGlobalInfo::getTypeName(TSL.getType());
         std::string Replacement =
-            MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
+            TypeLocRewriterFactoryBase::findReplacedName(*TL);
         requestHelperFeatureForTypeNames(TyName);
         insertHeaderForTypeRule(TyName, TL->getBeginLoc());
 
@@ -2421,7 +2422,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     std::string Str =
-        MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
+        TypeLocRewriterFactoryBase::findReplacedName(*TL);
     insertHeaderForTypeRule(TypeStr, BeginLoc);
     requestHelperFeatureForTypeNames(TypeStr);
     if (Str.empty()) {
@@ -2482,9 +2483,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           const auto *RD = RecordTy->getAsRecordDecl();
           if (!RD)
             return;
-          if (RD->getName() == "CUstream_st" &&
-              DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()))
-            processCudaStreamType(DD);
+          // if (RD->getName() == "CUstream_st" &&
+          //     DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()))
+          //   processCudaStreamType(DD);
         }
       }
     }
@@ -2625,7 +2626,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
       std::string Str =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
+          TypeLocRewriterFactoryBase::findReplacedName(*TL);
       insertHeaderForTypeRule(TypeStr, BeginLoc);
       requestHelperFeatureForTypeNames(TypeStr);
       if (!Str.empty()) {
@@ -2746,7 +2747,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     if (const auto *VD = getAssistNodeAsType<NamedDecl>(Result, "vectorDecl")) {
       auto TypeStr = VD->getNameAsString();
       report(D->getBeginLoc(), Diagnostics::VEC_IN_TEMPLATE_ARG, false, TypeStr,
-             MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr));
+             TypeLocRewriterFactoryBase::findReplacedName(TypeStr));
     }
   }
 }
@@ -5683,10 +5684,13 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
       requestHelperFeatureForTypeNames(VarType);
       insertHeaderForTypeRule(VarType, VD->getBeginLoc());
-      auto Itr = MapNames::TypeNamesMap.find(VarType);
-      if (Itr == MapNames::TypeNamesMap.end())
+      auto Itr =
+          TypeLocRewriterFactoryBase::TypeLocRewriterMap->find({VarType});
+      if (Itr == TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()){
         return;
-      VarType = Itr->second->NewName;
+      }
+      VarType = TypeLocRewriterFactoryBase::findReplacedName(VarType);
+      
       PrefixBeforeScope = VarType + " " + VarName + ";" + getNL() + IndentStr +
                           PrefixBeforeScope;
       SourceLocation typeBegin =
@@ -5696,10 +5700,10 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           nameBegin, 0, *SM, Result.Context->getLangOpts());
       auto replLen =
           SM->getCharacterData(nameEnd) - SM->getCharacterData(typeBegin);
-      for (auto ItHeader = Itr->second->Includes.begin();
-           ItHeader != Itr->second->Includes.end(); ItHeader++) {
-        DpctGlobalInfo::getInstance().insertHeader(typeBegin, *ItHeader);
-      }
+      // for (auto ItHeader = Itr->second->Includes.begin();
+      //      ItHeader != Itr->second->Includes.end(); ItHeader++) {
+      //   DpctGlobalInfo::getInstance().insertHeader(typeBegin, *ItHeader);
+      // }
       emplaceTransformation(
           new ReplaceText(typeBegin, replLen, std::move(VarName)));
     } else {
@@ -13366,8 +13370,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "texType")) {
     if (isCapturedByLambda(TL))
       return;
-    const std::string &ReplType = MapNames::findReplacedName(
-        MapNames::TypeNamesMap,
+    const std::string &ReplType = TypeLocRewriterFactoryBase::findReplacedName(
         DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context));
 
     requestHelperFeatureForTypeNames(
@@ -13799,8 +13802,8 @@ void CXXNewExprRule::runRule(
         CNE->getAllocatedTypeSourceInfo()->getTypeLoc().getBeginLoc();
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
-      std::string Str = MapNames::findReplacedName(
-          MapNames::TypeNamesMap, Tok.getRawIdentifier().str());
+      std::string Str = TypeLocRewriterFactoryBase::findReplacedName(
+          Tok.getRawIdentifier().str());
       insertHeaderForTypeRule(Tok.getRawIdentifier().str(), BeginLoc);
       requestHelperFeatureForTypeNames(Tok.getRawIdentifier().str());
 
@@ -13816,7 +13819,7 @@ void CXXNewExprRule::runRule(
     //      stream = NEW_STREAM;
     auto TypeName = CNE->getAllocatedType().getAsString();
     auto ReplName = std::string(
-        MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
+        TypeLocRewriterFactoryBase::findReplacedName(TypeName));
     insertHeaderForTypeRule(TypeName, BeginLoc);
     requestHelperFeatureForTypeNames(TypeName);
 

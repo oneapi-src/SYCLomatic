@@ -395,6 +395,7 @@ public:
       return EmptyString;
     return Itr->second;
   }
+
   template<class T>
   static bool replaceName(
       const std::unordered_map<std::string, std::shared_ptr<T>> &Map,
@@ -405,6 +406,7 @@ public:
     Name = Result;
     return true;
   }
+
   static bool replaceName(const MapTy &Map, std::string &Name) {
     auto &Result = findReplacedName(Map, Name);
     if (Result.empty())
@@ -412,6 +414,7 @@ public:
     Name = Result;
     return true;
   }
+
   static bool isInSet(const SetTy &Set, std::string &Name) {
     return Set.find(Name) != Set.end();
   }

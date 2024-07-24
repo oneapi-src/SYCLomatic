@@ -8,6 +8,7 @@
 #include "Rules.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
+#include "TypeLocRewriters.h"
 #include "Error.h"
 #include "MapNames.h"
 #include "MigrateCmakeScript.h"
@@ -118,26 +119,50 @@ void registerHeaderRule(MetaRuleObject &R) {
 }
 
 void registerTypeRule(MetaRuleObject &R) {
-  auto It = MapNames::TypeNamesMap.find(R.In);
-  if (It != MapNames::TypeNamesMap.end()) {
-    if (It->second->Priority > R.Priority) {
-      It->second->NewName = R.Out;
-      It->second->Priority = R.Priority;
-      It->second->RequestFeature =
-          clang::dpct::HelperFeatureEnum::none;
-      It->second->Includes.insert(It->second->Includes.end(),
-                                  R.Includes.begin(), R.Includes.end());
-    }
-  } else {
+  TypeOutputBuilder TOB;
+  TOB.Kind = TypeOutputBuilder::Kind::Top;
+  TOB.RuleName = R.RuleId;
+  TOB.RuleFile = R.RuleFile;
+  TOB.parse(R.Out);
+
+  clang::dpct::TypeMatchingDesc TMD(R.In, TOB.TemplateArgCount);
+  std::cout<<"TOB "<<R.In<<" "<<TOB.TemplateArgCount<<std::endl;
+  auto Value = TOB.TemplateArgCount != -1
+          ? clang::dpct::makeUserDefinedTypeStrCreator(R, TOB)
+          : clang::dpct::makeStringCreator(
+                R.Out, clang::dpct::HelperFeatureEnum::none, R.Includes);
+
+  auto &Entry =
+      (*clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap)[TMD];
+  if (!Entry) {
+    Entry = clang::dpct::createTypeLocRewriterFactory(Value);
     reisterMigrationRule(R.RuleId, [=] {
       return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
     });
-    auto RulePtr = std::make_shared<TypeNameRule>(
-        R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
-    RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
-                             R.Includes.end());
-    MapNames::TypeNamesMap.emplace(R.In, RulePtr);
+  } else if (Entry->Priority > R.Priority) {
+    Entry = clang::dpct::createTypeLocRewriterFactory(Value);
   }
+
+  // auto It = MapNames::TypeNamesMap.find(R.In);
+  // if (It != MapNames::TypeNamesMap.end()) {
+  //   if (It->second->Priority > R.Priority) {
+  //     It->second->NewName = R.Out;
+  //     It->second->Priority = R.Priority;
+  //     It->second->RequestFeature =
+  //         clang::dpct::HelperFeatureEnum::none;
+  //     It->second->Includes.insert(It->second->Includes.end(),
+  //                                 R.Includes.begin(), R.Includes.end());
+  //   }
+  // } else {
+  //   reisterMigrationRule(R.RuleId, [=] {
+  //     return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
+  //   });
+  //   auto RulePtr = std::make_shared<TypeNameRule>(
+  //       R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
+  //   RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
+  //                            R.Includes.end());
+  //   MapNames::TypeNamesMap.emplace(R.In, RulePtr);
+  // }
 }
 
 void registerClassRule(MetaRuleObject &R) {
@@ -533,6 +558,27 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
   return ResultBuilder;
 }
 
+std::shared_ptr<OutputBuilder>
+TypeOutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
+  std::cout<<"consumeKeyword"<<std::endl;
+  auto ResultBuilder = std::make_shared<TypeOutputBuilder>();
+  if (OutStr.substr(Idx, 13) == "$template_arg") {
+    Idx += 13;
+    OutputBuilder::consumeLParen(OutStr, Idx, "$template_arg");
+    ResultBuilder->Kind = Kind::TemplateArg;
+    ResultBuilder->ArgIndex =
+        OutputBuilder::consumeArgIndex(OutStr, Idx, "$template_arg");
+    std::cout<<TemplateArgCount<<" "<<ResultBuilder->ArgIndex<<std::endl;
+    OutputBuilder::consumeRParen(OutStr, Idx, "$template_arg");
+    if (TemplateArgCount < 0 ||
+        (size_t)TemplateArgCount < ResultBuilder->ArgIndex) {
+      TemplateArgCount = ResultBuilder->ArgIndex;
+      std::cout << TemplateArgCount << std::endl;
+    }
+  }
+  return ResultBuilder;
+}
+
 class RefMatcherInterface
     : public clang::ast_matchers::internal::MatcherInterface<
           clang::DeclRefExpr> {
@@ -630,35 +676,41 @@ void clang::dpct::UserDefinedTypeRule::registerMatcher(
 void clang::dpct::UserDefinedTypeRule::runRule(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "typeLoc")) {
-    auto TypeStr =
-        DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
-    // if the TypeLoc is a TemplateSpecializationTypeLoc
-    // the TypeStr should be the substr before the "<"
-    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
-      TypeStr = TypeStr.substr(0, TypeStr.find("<"));
-    }
-    auto It = MapNames::TypeNamesMap.find(TypeStr);
-    if (It == MapNames::TypeNamesMap.end())
-      return;
+    dpct::ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
 
-    auto ReplStr = It->second->NewName;
+    // auto TypeStr =
+    //     DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
+    // // if the TypeLoc is a TemplateSpecializationTypeLoc
+    // // the TypeStr should be the substr before the "<"
+    // if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
+    //   TypeStr = TypeStr.substr(0, TypeStr.find("<"));
+    // }
+    // auto It = MapNames::TypeNamesMap.find(TypeStr);
+    // if (It == MapNames::TypeNamesMap.end())
+    //   return;
+    // auto ReplStr = It->second->NewName;
 
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
-    auto Len = Lexer::MeasureTokenLength(
-        Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
-    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
-      Range = getDefinitionRange(TSTL.getBeginLoc(), TSTL.getLAngleLoc());
-      Len = 0;
-    }
-    Len += SM.getDecomposedLoc(Range.getEnd()).second -
-           SM.getDecomposedLoc(Range.getBegin()).second;
-    emplaceTransformation(
-        new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
-    for (auto ItHeader = It->second->Includes.begin();
-         ItHeader != It->second->Includes.end(); ItHeader++) {
-      DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
-    }
+
+
+    // auto &SM = DpctGlobalInfo::getSourceManager();
+    // auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
+    // auto Len = Lexer::MeasureTokenLength(
+    //     Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
+    // if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
+    //   Range = getDefinitionRange(TSTL.getBeginLoc(), TSTL.getLAngleLoc());
+    //   Len = 0;
+    // }
+    // Len += SM.getDecomposedLoc(Range.getEnd()).second -
+    //        SM.getDecomposedLoc(Range.getBegin()).second;
+    // emplaceTransformation(
+    //     new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
+    // for (auto ItHeader = It->second->Includes.begin();
+    //      ItHeader != It->second->Includes.end(); ItHeader++) {
+    //   DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
+    // }
   }
 }
 

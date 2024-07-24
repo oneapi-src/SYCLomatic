@@ -1064,13 +1064,18 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   }
 
   auto RewriteType = [&](std::string &TypeStr, const TypeLoc &TLoc) {
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TypeStr);
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(
+        TypeMatchingDesc(TypeStr));
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
       auto Rewriter = Itr->second->create(TLoc);
       auto Result = Rewriter->rewrite();
-      if (Result.has_value())
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+      if (Result.has_value()){
+        auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
+        addReplacement(Range.getBegin(), Range.getEnd(), CSCE,
+                       Result.value());
+        // addReplacement(SM.getExpansionLoc(SR.getBegin()),
+        //                SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+      }
     }
   };
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
@@ -1089,7 +1094,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     RewriteType(TyName, TL);
-    break;
+    return;
   }
   case TypeLoc::SubstTemplateTypeParm:
     // Used for Instantiated class.
@@ -1159,7 +1164,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   case TypeLoc::Enum: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     RewriteType(TyName, TL);
-    break;
+    return;
   }
   case TypeLoc::FunctionProto: {
     auto FuncProtoType = TYPELOC_CAST(FunctionTypeLoc);
@@ -1173,22 +1178,14 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     return;
   }
 
-  auto Iter = MapNames::TypeNamesMap.find(TyName);
-  if (Iter != MapNames::TypeNamesMap.end()) {
+  auto Iter = MapNames::CuDNNTypeNamesMap.find(TyName);
+  if (Iter != MapNames::CuDNNTypeNamesMap.end()) {
     HelperFeatureSet.insert(Iter->second->RequestFeature);
     requestHelperFeatureForTypeNames(TyName);
-  } else {
-    Iter = MapNames::CuDNNTypeNamesMap.find(TyName);
-    if (Iter != MapNames::CuDNNTypeNamesMap.end()) {
-      HelperFeatureSet.insert(Iter->second->RequestFeature);
-      requestHelperFeatureForTypeNames(TyName);
-    }
   }
 
   auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
-  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
-    addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
-  } else if (MapNames::replaceName(MapNames::CuDNNTypeNamesMap, TyName)) {
+  if (MapNames::replaceName(MapNames::CuDNNTypeNamesMap, TyName)) {
     addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
   } else if (getFinalCastTypeNameStr(TyName) != TyName) {
     addReplacement(Range.getBegin(), Range.getEnd(), CSCE,
@@ -1208,7 +1205,7 @@ void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
     Name.resize(Name.length() - 2); // Remove the "::".
     if (MapNames::SupportedVectorTypes.count(Name)) {
       auto ReplacedStr =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, Name);
+          TypeLocRewriterFactoryBase::findReplacedName(Name);
       if (Name.back() != '1') {
         ReplacedStr += "::element_type";
       }

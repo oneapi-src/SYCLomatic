@@ -7,6 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriter.h"
+#include "Rules.h"
+#include <vector>
 
 namespace clang {
 namespace dpct {
@@ -109,14 +111,71 @@ public:
   }
 };
 
+class TypeMatchingDesc {
+private:
+  std::string Name;
+
+public:
+  TypeMatchingDesc(const std::string &Name, const int TAC = -1)
+      : Name(Name), TemplateArgCount(TAC) {}
+  bool operator==(const TypeMatchingDesc &RHS) const {
+    if (!Name.compare(RHS.Name) && RHS.TemplateArgCount == TemplateArgCount) {
+      return true;
+    }
+    return false;
+  }
+  const std::string &getName() const { return Name; }
+
+  struct hash {
+    std::size_t operator()(const TypeMatchingDesc &TM) const noexcept {
+      return std::hash<std::string>{}(TM.getName());
+    }
+  };
+  int TemplateArgCount = -1;
+};
+
 class TypeLocRewriterFactoryBase {
 public:
   virtual std::shared_ptr<TypeLocRewriter> create(const TypeLoc) const = 0;
   virtual ~TypeLocRewriterFactoryBase() {}
+  // Caller need to handle header insertion since no location is available
+  inline static std::string findReplacedName(const std::string &Name) {
+    static const std::string EmptyString;
+    auto Iter = TypeLocRewriterMap->find({Name});
+    // No need for real TypeLoc since the factory should be created with
+    // makeStringCreator. In makeStringCreator TL is not dereferenced.
+    auto Rewriter = Iter->second->create(TypeLoc());
+    auto Result = Rewriter->rewrite();
+    if (Result.has_value()) {
+      return Result.value();
+    }
+    return EmptyString;
+  }
+
+  inline static std::string findReplacedName(const TypeLoc &TL) {
+    static const std::string EmptyString;
+    TemplateSpecializationTypeLoc TSTL;
+    const std::string TyName =
+            dpct::DpctGlobalInfo::getTypeName(TL.getType());
+    TypeMatchingDesc TMD(TyName);
+    if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      TMD.TemplateArgCount = TSTL.getNumArgs();
+    }
+
+    std::cout<<"findReplacedName "<<TyName<<" "<<TMD.TemplateArgCount<<std::endl;
+    auto Iter = TypeLocRewriterMap->find(TMD);
+    auto Rewriter = Iter->second->create(TL);
+    auto Result = Rewriter->rewrite();
+    if (Result.has_value()) {
+      return Result.value();
+    }
+    return EmptyString;
+  }
 
   static std::unique_ptr<std::unordered_map<
-    std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>>
-    TypeLocRewriterMap;
+      TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>,
+      TypeMatchingDesc::hash>>
+      TypeLocRewriterMap;
   static void initTypeLocRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 };
@@ -153,8 +212,8 @@ public:
   TypeLocRewriterFactory(TAs... TemplateArgs)
       : Initializer(std::forward<TAs>(TemplateArgs)...) {}
   std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
-    if (!TL)
-      return std::shared_ptr<TypeLocRewriter>();
+    // if (!TL)
+    //   return std::shared_ptr<TypeLocRewriter>();
     return createRewriter(
         TL, std::index_sequence_for<TAs...>());
   }
@@ -194,6 +253,39 @@ public:
     return SubRewriterFactory->create(TL);
   }
 };
+
+// Print a templated type. Pass a STR("") as a template argument for types with
+// no template argument e.g. MyType<>
+template <class TypeNameT, class... TemplateArgsT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
+    std::function<TypeNameT(const TypeLoc)> TypeNameCreator,
+    std::function<TemplateArgsT(const TypeLoc)>... TAsCreator) {
+  return std::make_shared<
+      TypeLocRewriterFactory<TemplateTypeLocRewriter<TypeNameT, TemplateArgsT...>,
+                             std::function<TypeNameT(const TypeLoc)>,
+                             std::function<TemplateArgsT(const TypeLoc)>...>>(
+      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator),
+      std::forward<std::function<TemplateArgsT(const TypeLoc)>>(TAsCreator)...);
+}
+
+// Print a type with no template.
+template <class TypeNameT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
+    std::function<TypeNameT(const TypeLoc)> TypeNameCreator) {
+  return std::make_shared<
+      TypeLocRewriterFactory<TypeNameTypeLocRewriter<TypeNameT>,
+                             std::function<TypeNameT(const TypeLoc)>>>(
+      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator));
+}
+
+std::function<std::string(const TypeLoc)>
+makeUserDefinedTypeStrCreator(MetaRuleObject &R, TypeOutputBuilder &TOB);
+
+std::function<std::string(const TypeLoc)> makeStringCreator(
+    std::string TypeName,
+    clang::dpct::HelperFeatureEnum RequestFeature =
+        clang::dpct::HelperFeatureEnum::none,
+    const std::vector<std::string> &Headers = std::vector<std::string>());
 
 } // namespace dpct
 } // namespace clang
