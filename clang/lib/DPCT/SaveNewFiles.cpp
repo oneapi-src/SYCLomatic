@@ -250,7 +250,7 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
          End;
          Iter != End; Iter.increment(EC)) {
       if ((bool)EC) {
-        std::string ErrMsg = "[ERROR] Access : " + std::string(InRoot.str()) +
+        std::string ErrMsg = "[ERROR] Access : " + std::string(InRoot.getPath()) +
                              " fail: " + EC.message() + "\n";
         PrintMsg(ErrMsg);
         continue;
