@@ -4813,6 +4813,66 @@ bool isFromCUDA(const Decl *D) {
           isChildPath(DpctInstallPath, DeclLocFilePath));
 }
 
+
+void PrintFullTemplateName(raw_ostream &OS, const PrintingPolicy &Policy, TemplateName Name) {
+  auto Kind = Name.getKind();
+  TemplateDecl *Template = nullptr;
+  if (Kind == TemplateName::Template || Kind == TemplateName::UsingTemplate) {
+    // After `namespace ns { using std::vector }`, what is the fully-qualified
+    // name of the UsingTemplateName `vector` within ns?
+    //
+    // - ns::vector (the qualified name of the using-shadow decl)
+    // - std::vector (the qualified name of the underlying template decl)
+    //
+    // Similar to the UsingType behavior, using declarations are used to import
+    // names more often than to export them, thus using the original name is
+    // most useful in this case.
+    Template = Name.getAsTemplateDecl();
+  }
+
+  if (Template)
+    if (Policy.CleanUglifiedParameters &&
+        isa<TemplateTemplateParmDecl>(Template) && Template->getIdentifier())
+      OS << Template->getIdentifier()->deuglifiedName();
+    else if (
+             Name.getDependence() !=
+                 TemplateNameDependenceScope::DependentInstantiation)
+      Template->printQualifiedName(OS, Policy);
+    else
+      OS << *Template;
+  else if (QualifiedTemplateName *QTN = Name.getAsQualifiedTemplateName()) {
+    if (
+        Name.getDependence() !=
+            TemplateNameDependenceScope::DependentInstantiation) {
+      QTN->getUnderlyingTemplate().getAsTemplateDecl()->printQualifiedName(
+          OS, Policy);
+      return;
+    }
+    if (QTN->hasTemplateKeyword())
+      OS << "template ";
+    OS << *QTN->getUnderlyingTemplate().getAsTemplateDecl();
+  } else if (DependentTemplateName *DTN = Name.getAsDependentTemplateName()) {
+    OS << "template ";
+
+    if (DTN->isIdentifier())
+      OS << DTN->getIdentifier()->getName();
+    else
+      OS << "operator " << getOperatorSpelling(DTN->getOperator());
+  } else if (SubstTemplateTemplateParmStorage *subst
+               = Name.getAsSubstTemplateTemplateParm()) {
+    PrintFullTemplateName(OS, Policy, subst->getReplacement());
+  } else if (SubstTemplateTemplateParmPackStorage *SubstPack
+                                        = Name.getAsSubstTemplateTemplateParmPack())
+    OS << *SubstPack->getParameterPack();
+  else if (AssumedTemplateStorage *Assumed = Name.getAsAssumedTemplateName()) {
+    Assumed->getDeclName().print(OS, Policy);
+  } else {
+    assert(Name.getKind() == TemplateName::OverloadedTemplate);
+    OverloadedTemplateStorage *OTS = Name.getAsOverloadedTemplate();
+    (*OTS->begin())->printName(OS, Policy);
+  }
+}
+
 namespace clang {
 namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
