@@ -2610,9 +2610,10 @@ public:
     // Update ParentDFIs
     // Currently, only support CallExpr & FunctionDecl only
     if constexpr (std::is_same<CallT, CallExpr>::value) {
-      if (auto ChildDFI =
-              DeviceFunctionDecl::LinkRedecls(C->getDirectCallee())) {
-        ChildDFI->getParentDFIs().insert(weak_from_this());
+      if (const auto *FD = C->getDirectCallee()) {
+        if (auto ChildDFI = DeviceFunctionDecl::LinkRedecls(FD)) {
+          ChildDFI->getParentDFIs().insert(weak_from_this());
+        }
       }
     }
     return Call;

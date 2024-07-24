@@ -127,49 +127,7 @@ private:
   int PointerLevel = 0;
   bool IsConstPtr = false;
   bool IsClass = false;
-  bool canBeAnalyzed(const clang::Type *TypePtr) {
-    switch (TypePtr->getTypeClass()) {
-    case clang::Type::TypeClass::ConstantArray:
-      return canBeAnalyzed(dyn_cast<clang::ConstantArrayType>(TypePtr)
-                               ->getElementType()
-                               .getTypePtr());
-    case clang::Type::TypeClass::Pointer:
-      PointerLevel++;
-      if (PointerLevel >= 2 || IsClass)
-        return false;
-      IsConstPtr = TypePtr->getPointeeType().isConstQualified();
-      return canBeAnalyzed(TypePtr->getPointeeType().getTypePtr());
-    case clang::Type::TypeClass::Elaborated:
-      return canBeAnalyzed(
-          dyn_cast<clang::ElaboratedType>(TypePtr)->desugar().getTypePtr());
-    case clang::Type::TypeClass::Typedef:
-      return canBeAnalyzed(dyn_cast<clang::TypedefType>(TypePtr)
-                               ->getDecl()
-                               ->getUnderlyingType()
-                               .getTypePtr());
-    case clang::Type::TypeClass::Record:
-      IsClass = true;
-      if (PointerLevel &&
-          isUserDefinedDecl(dyn_cast<clang::RecordType>(TypePtr)->getDecl()))
-        return false;
-      for (const auto &Field :
-           dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
-        if (!canBeAnalyzed(Field->getType().getTypePtr())) {
-          return false;
-        }
-      }
-      return true;
-    case clang::Type::TypeClass::SubstTemplateTypeParm:
-      return canBeAnalyzed(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
-                               ->getReplacementType()
-                               .getTypePtr());
-    default:
-      if (TypePtr->isFundamentalType())
-        return true;
-      else
-        return false;
-    }
-  }
+  bool canBeAnalyzed(const clang::Type *TypePtr);
 };
 
 #define VISIT_NODE(CLASS)                                                      \

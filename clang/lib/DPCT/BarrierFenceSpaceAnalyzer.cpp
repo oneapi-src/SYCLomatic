@@ -15,7 +15,7 @@
 #include <unordered_set>
 
 using namespace llvm;
-#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+//#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const ForStmt *FS) {
   LoopRange.push_back(FS->getSourceRange());
   return true;
@@ -895,4 +895,66 @@ IntraproceduralAnalyzer::getArgCallerParmsMap(const CallExpr *CE) {
     ArgIdx++;
   }
   return RetMap;
+}
+
+bool clang::dpct::TypeAnalyzer::canBeAnalyzed(const clang::Type *TypePtr) {
+  switch (TypePtr->getTypeClass()) {
+  case clang::Type::TypeClass::ConstantArray:
+    return canBeAnalyzed(dyn_cast<clang::ConstantArrayType>(TypePtr)
+                             ->getElementType()
+                             .getTypePtr());
+  case clang::Type::TypeClass::Pointer:
+    PointerLevel++;
+    if (PointerLevel >= 2 || IsClass)
+      return false;
+    IsConstPtr = TypePtr->getPointeeType().isConstQualified();
+    return canBeAnalyzed(TypePtr->getPointeeType().getTypePtr());
+  case clang::Type::TypeClass::Elaborated:
+    return canBeAnalyzed(
+        dyn_cast<clang::ElaboratedType>(TypePtr)->desugar().getTypePtr());
+  case clang::Type::TypeClass::Typedef:
+    return canBeAnalyzed(dyn_cast<clang::TypedefType>(TypePtr)
+                             ->getDecl()
+                             ->getUnderlyingType()
+                             .getTypePtr());
+  case clang::Type::TypeClass::Record:
+    IsClass = true;
+    if (PointerLevel &&
+        isUserDefinedDecl(dyn_cast<clang::RecordType>(TypePtr)->getDecl()))
+      return false;
+    for (const auto &Field :
+         dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
+      if (!canBeAnalyzed(Field->getType().getTypePtr())) {
+        return false;
+      }
+    }
+    return true;
+  case clang::Type::TypeClass::SubstTemplateTypeParm:
+    return canBeAnalyzed(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
+                             ->getReplacementType()
+                             .getTypePtr());
+  case clang::Type::TypeClass::TemplateTypeParm: {
+    const clang::TemplateTypeParmType *TTPT =
+        dyn_cast<clang::TemplateTypeParmType>(TypePtr);
+    const TemplateTypeParmDecl *TTPD = TTPT->getDecl();
+    auto Idx = TTPD->getIndex();
+    const FunctionTemplateDecl *FTD =
+        clang::dpct::DpctGlobalInfo::findParent<FunctionTemplateDecl>(TTPD);
+    if (!FTD)
+      return false;
+    for (const auto &S : FTD->specializations()) {
+      const auto TA = S->getTemplateSpecializationArgs()->get(Idx);
+      if (TA.getKind() == clang::TemplateArgument::ArgKind::Type) {
+        if (!canBeAnalyzed(TA.getAsType().getTypePtr()))
+          return false;
+      }
+    }
+    return true;
+  }
+  default:
+    if (TypePtr->isFundamentalType())
+      return true;
+    else
+      return false;
+  }
 }
