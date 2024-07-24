@@ -183,6 +183,15 @@ ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cuArray3DCreate_v2", DEREF(0),
+                            NEW(DpctGlobalInfo::useExtBindlessImages()
+                                    ? MapNames::getDpctNamespace() +
+                                          "experimental::image_mem_wrapper"
+                                    : MapNames::getDpctNamespace() +
+                                          "image_matrix",
+                                ARG(1)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cuArrayCreate_v2", DEREF(0),
                             NEW(DpctGlobalInfo::useExtBindlessImages()
                                     ? MapNames::getDpctNamespace() +

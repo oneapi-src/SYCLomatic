@@ -1895,6 +1895,7 @@ private:
     Pointer,
     Accessor,
     Reference,
+    PointerToArray
   };
 
 private:
