@@ -12204,7 +12204,7 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getSyncthreadsMigrationCrossFunctionResultsMap();
     auto Iter = Map.find(Key);
     if (Iter != Map.end() && Iter->second) {
-      std::string Replacement = getItemName() + ".barrier(" +
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                                 MapNames::getClNamespace() +
                                 "access::fence_space::local_space)";
       emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
