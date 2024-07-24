@@ -40,18 +40,12 @@ endif()
 if( WIN32 )
   # libuuid required for FOLDERID_Profile usage in lib/Support/Windows/Path.inc.
   # advapi32 required for CryptAcquireContextW in lib/Support/Windows/Path.inc.
-<<<<<<< HEAD
-  set(system_libs ${system_libs} psapi shell32 ole32 uuid advapi32 ws2_32)
-
-  # SYCLomatic_CUSTOMIZATION
-  # Remove ws2_32 since we are excluding sockets in xmain -- CMPLRLLVM-55472
-  set(system_libs ${system_libs} psapi shell32 ole32 uuid advapi32)
-  # end SYCLomatic_CUSTOMIZATION
-
-=======
   # ntdll required for RtlGetLastNtStatus in lib/Support/ErrorHandling.cpp.
   set(system_libs ${system_libs} psapi shell32 ole32 uuid advapi32 ws2_32 ntdll)
->>>>>>> SYCLomatic/SYCLomatic
+  # SYCLomatic_CUSTOMIZATION
+  # Remove ws2_32 since we are excluding sockets in xmain -- CMPLRLLVM-55472
+  set(system_libs ${system_libs} psapi shell32 ole32 uuid advapi32 ntdll)
+  # end SYCLomatic_CUSTOMIZATION
 elseif( CMAKE_HOST_UNIX )
   if( HAVE_LIBRT )
     set(system_libs ${system_libs} rt)
