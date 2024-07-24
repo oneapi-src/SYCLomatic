@@ -1111,7 +1111,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     auto PP = Context.getPrintingPolicy();
     PP.PrintCanonicalTypes = 1;
-    TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
+    PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
+                        TSTL.getTypePtr()->getTemplateName());
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
@@ -2087,7 +2088,7 @@ void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 
   if (IsTryToUseOneDimension) {
     // Insert member access expr at the end of DRE
-    addReplacement(getExprLength(), 0, ".get(2)");
+    addReplacement(getExprLength(), 0, ".z");
   }
 }
 
