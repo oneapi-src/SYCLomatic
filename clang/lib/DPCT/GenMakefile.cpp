@@ -85,6 +85,7 @@ static void getCompileInfo(
       bool IsTargetName = false;
       bool IsArCommand = false;
       bool SkipArOptions = false;
+      bool IsShareLibary = false;
 
       std::string TargetName;
       std::string Tool;
@@ -113,7 +114,15 @@ static void getCompileInfo(
           TargetName = Obj;
           SkipArOptions = false;
           Tool = "ar -r"; // Record the tool that generates the target file.
+        } else if (Obj == "-shared" || Obj == "--shared") {
+          IsShareLibary = true;
         }
+      }
+
+      // if option "-shared" or "--shared" appears in the linker command, it
+      // means that a dynamic library is be generated.
+      if (IsShareLibary) {
+        Tool += " -shared";
       }
 
       if (llvm::StringRef(TargetName).ends_with(".o") &&
@@ -275,6 +284,8 @@ static void getCompileInfo(
         NewOptions += Option + " ";
       } else if (Option == "-msse4.1" || Option == "-mavx512vl") {
         // Keep some options from original compile command.
+        NewOptions += Option + " ";
+      } else if(Option == "-fPIC" ) {
         NewOptions += Option + " ";
       }
     }

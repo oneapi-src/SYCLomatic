@@ -41,7 +41,7 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 4> sha2_mem_acc_ct1(sycl::range<4>(10, 10, 10, 10), cgh);
+// CHECK-NEXT: sycl::local_accessor<int[10][10][10][10], 0> sha2_mem_acc_ct1(cgh);
 
   staticReverse<<<10,10>>>();
 
