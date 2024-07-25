@@ -4991,7 +4991,7 @@ DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum,
     Visited.insert(FD);
     if (isUserDefinedDecl(FD)) {
       IntraproceduralAnalyzer IA;
-      IAR = IA.analyze(FD);
+      IAR = IA.analyze(FD, this);
     }
   }
 }

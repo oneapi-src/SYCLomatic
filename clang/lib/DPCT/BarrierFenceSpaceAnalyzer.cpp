@@ -461,25 +461,6 @@ getIdxExprOfASE(const ArraySubscriptExpr *ASE) {
     return {nullptr, IsIdxInc, IncStr};
   return {IdxVD->getInit()->IgnoreImpCasts(), IsIdxInc, IncStr};
 }
-
-bool isMeetAnalyisPrerequirements(const FunctionDecl *FD) {
-  auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-  if (!DFI) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case J: !DFI" << std::endl;
-#endif
-    return false;
-  }
-
-  if (DFI->getVarMap().hasGlobalMemAcc()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case I: Found device/managed variable usage"
-              << std::endl;
-#endif
-    return false;
-  }
-  return true;
-}
 } // namespace
 
 void clang::dpct::IntraproceduralAnalyzer::constructDefUseMap() {
@@ -707,10 +688,23 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
 }
 
 clang::dpct::IntraproceduralAnalyzerResult
-clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD) {
+clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
+                                              DeviceFunctionInfo *DFI) {
   // Check prerequirements
-  if (!isMeetAnalyisPrerequirements(FD))
+  if (!DFI) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case J: !DFI" << std::endl;
+#endif
     return IntraproceduralAnalyzerResult(true);
+  }
+
+  if (DFI->getVarMap().hasGlobalMemAcc()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case I: Found device/managed variable usage"
+              << std::endl;
+#endif
+    return IntraproceduralAnalyzerResult(true);
+  }
 
   // Init values
   this->FD = FD;

@@ -160,7 +160,9 @@ public:
   VISIT_NODE(DeclRefExpr)
   VISIT_NODE(CXXConstructExpr)
 
-  IntraproceduralAnalyzerResult analyze(const FunctionDecl *FD);
+  IntraproceduralAnalyzerResult analyze(const FunctionDecl *FD,
+                                        DeviceFunctionInfo *DFI);
+
 private:
   void constructDefUseMap();
   void simplifyMap(
