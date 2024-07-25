@@ -381,11 +381,11 @@ create_bindless_image(image_data data, sampling_info info,
     auto ptr = data.get_data_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
     q.ext_oneapi_copy(get_buffer(ptr).get_host_access().get_pointer(),
-                      mem->get_handle(), mem->get_desc());
+                      mem->get_handle(), mem->get_desc())
+        .wait();
 #else
-    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
+    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc()).wait();
 #endif
-    q.wait_and_throw();
     detail::get_img_info_map(img) = {data, info};
     return img;
   }
@@ -397,9 +397,9 @@ create_bindless_image(image_data data, sampling_info info,
         mem->get_handle(), samp, mem->get_desc(), q);
     detail::get_img_mem_map(img) = mem;
     q.ext_oneapi_copy(
-        get_buffer(data.get_data_ptr()).get_host_access().get_pointer(),
-        mem->get_handle(), mem->get_desc());
-    q.wait_and_throw();
+         get_buffer(data.get_data_ptr()).get_host_access().get_pointer(),
+         mem->get_handle(), mem->get_desc())
+        .wait();
 #else
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
 #if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
@@ -409,7 +409,6 @@ create_bindless_image(image_data data, sampling_info info,
     );
     auto img = sycl::ext::oneapi::experimental::create_image(
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
-    detail::get_img_mem_map(img) = nullptr;
 #endif
     detail::get_img_info_map(img) = {data, info};
     return img;
@@ -418,7 +417,6 @@ create_bindless_image(image_data data, sampling_info info,
     const auto mem = static_cast<image_mem_wrapper *>(data.get_data_ptr());
     auto img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
-    detail::get_img_mem_map(img) = nullptr;
     detail::get_img_info_map(img) = {data, info};
     return img;
   }
@@ -465,6 +463,11 @@ static inline sampling_info get_sampling_info(
 /// class.
 class bindless_image_wrapper_base {
 public:
+  bindless_image_wrapper_base() {
+    // Make sure that singleton class dev_mgr will destruct later than this.
+    dev_mgr::instance();
+  }
+
   /// Destroy bindless image wrapper.
   ~bindless_image_wrapper_base() {
     destroy_bindless_image(_img, get_default_queue());
@@ -488,11 +491,11 @@ public:
     auto ptr = data;
 #ifdef DPCT_USM_LEVEL_NONE
     q.ext_oneapi_copy(get_buffer(data).get_host_access().get_pointer(),
-                      mem->get_handle(), mem->get_desc());
+                      mem->get_handle(), mem->get_desc())
+        .wait();
 #else
-    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc());
+    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc()).wait();
 #endif
-    q.wait_and_throw();
   }
 
   /// Attach linear data to bindless image.
@@ -504,6 +507,10 @@ public:
   }
 
   /// Attach device_ptr data to bindless image.
+  /// \param [in] desc The image_descriptor used to create bindless image.
+  /// \param [in] ptr The data pointer used to create bindless image.
+  /// \param [in] pitch The pitch of 2D data used to create bindless image.
+  /// \param [in] q The queue where the image creation be executed.
   void attach(const sycl::ext::oneapi::experimental::image_descriptor *desc,
               device_ptr ptr, size_t pitch,
               sycl::queue q = get_default_queue()) {
@@ -516,12 +523,11 @@ public:
                                                          samp, *desc, q);
     detail::get_img_mem_map(_img) = mem;
     q.ext_oneapi_copy(get_buffer(ptr).get_host_access().get_pointer(),
-                      mem->get_handle(), mem->get_desc());
-    q.wait_and_throw();
+                      mem->get_handle(), mem->get_desc())
+        .wait();
 #else
     _img = sycl::ext::oneapi::experimental::create_image(ptr, pitch, samp,
                                                          *desc, q);
-    detail::get_img_mem_map(_img) = nullptr;
 #endif
   }
 
@@ -535,27 +541,12 @@ public:
   void attach(void *data, size_t width, size_t height, size_t pitch,
               const image_channel &channel,
               sycl::queue q = get_default_queue()) {
-    detach(q);
-    auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
-        _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
-#ifdef DPCT_USM_LEVEL_NONE
-    auto mem = new image_mem_wrapper(channel, width, height);
-    _img = sycl::ext::oneapi::experimental::create_image(
-        mem->get_handle(), samp, mem->get_desc(), q);
-    detail::get_img_mem_map(_img) = mem;
-    q.ext_oneapi_copy(get_buffer(data).get_host_access().get_pointer(),
-                      mem->get_handle(), mem->get_desc());
-    q.wait_and_throw();
-#else
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
 #if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
         {width, height}, channel.get_channel_order(), channel.get_channel_type()
 #endif
     );
-    _img = sycl::ext::oneapi::experimental::create_image(data, pitch, samp,
-                                                         desc, q);
-    detail::get_img_mem_map(_img) = nullptr;
-#endif
+    attach(&desc, static_cast<device_ptr>(data), pitch, q);
   }
 
   /// Attach 2D data to bindless image.
@@ -579,7 +570,6 @@ public:
         _addressing_mode, _coordinate_normalization_mode, _filtering_mode);
     _img = sycl::ext::oneapi::experimental::create_image(
         mem->get_handle(), samp, mem->get_desc(), q);
-    detail::get_img_mem_map(_img) = nullptr;
   }
 
   /// Attach image memory to bindless image.
@@ -692,11 +682,7 @@ template <class T, int dimensions>
 class bindless_image_wrapper : public bindless_image_wrapper_base {
 public:
   /// Create bindless image wrapper according to template argument \p T.
-  bindless_image_wrapper() {
-    set_channel(image_channel::create<T>());
-    // Make sure that singleton class dev_mgr will destruct later than this.
-    dev_mgr::instance();
-  }
+  bindless_image_wrapper() { set_channel(image_channel::create<T>()); }
 };
 
 /// Asynchronously copies from the image memory to memory specified by a
