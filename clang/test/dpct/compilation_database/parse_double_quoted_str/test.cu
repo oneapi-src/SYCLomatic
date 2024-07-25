@@ -3,7 +3,7 @@
 // RUN: cat %s > %T/test.cu
 // RUN: dpct --format-range=none -in-root=%T  -out-root=%T/out -p ./ --format-range=none --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/out/test.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/out/test.dp.cpp -o %T/out/test.dp.o %}
+// RUN: %if build_lit %{icpx -DNAMD="\"3.0b3\"" -c -fsycl %T/out/test.dp.cpp -o %T/out/test.dp.o %}
 
 // CHECK:  #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
