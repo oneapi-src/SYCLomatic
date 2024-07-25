@@ -10,6 +10,18 @@
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGraphicsD3D11RegisterResource", DEREF(0),
+        NEW(MapNames::getDpctNamespace() +
+                "experimental::interop_mem_wrapper",
+            ARG(1), ARG(2)))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphicsD3D11RegisterResource",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphicsD3D11RegisterResource"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
     CONDITIONAL_FACTORY_ENTRY(
         checkIsCallExprOnly(),
         WARNING_FACTORY_ENTRY("cudaGraphicsResourceSetMapFlags",
@@ -26,20 +38,70 @@ CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY("cudaGraphicsMapResources",
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckNot(CheckArgIsDefaultCudaStream(2)),
+        CALL_FACTORY_ENTRY("cudaGraphicsMapResources",
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::map_resources",
-                            ARG(0), ARG(1), QUEUESTR)),
+                            ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("cudaGraphicsMapResources",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::map_resources",
+                            ARG(0), ARG(1)))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphicsMapResources", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphicsMapResources"),
                             ARG("--use-experimental-features=bindless_images"))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY("cudaGraphicsUnmapResources",
+    CALL_FACTORY_ENTRY("cudaGraphicsResourceGetMappedPointer",
+                        CALL(MapNames::getDpctNamespace() +
+                                    "experimental::get_mapped_pointer",
+                            ARG(0), ARG(1), ARG(2))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphicsResourceGetMappedPointer", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphicsResourceGetMappedPointer"),
+                            ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGraphicsResourceGetMappedMipmappedArray", DEREF(0),
+        NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
+            ARG(1)))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphicsResourceGetMappedMipmappedArray", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphicsResourceGetMappedMipmappedArray"),
+                            ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGetMipmappedArrayLevel", DEREF(0),
+        MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGetMipmappedArrayLevel", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGetMipmappedArrayLevel"),
+                            ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaGraphicsSubResourceGetMappedArray", DEREF(0),
+        MEMBER_CALL(ARG(1), true, "get_sub_resource_mapped_array", ARG(2), ARG(3)))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphicsSubResourceGetMappedArray", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphicsSubResourceGetMappedArray"),
+                            ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckNot(CheckArgIsDefaultCudaStream(2)),
+        CALL_FACTORY_ENTRY("cudaGraphicsUnmapResources",
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::unmap_resources",
-                            ARG(0), ARG(1), QUEUESTR)),
+                            ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("cudaGraphicsUnmapResources",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::unmap_resources",
+                            ARG(0), ARG(1)))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphicsUnmapResources", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphicsUnmapResources"),
                             ARG("--use-experimental-features=bindless_images"))))
@@ -47,25 +109,11 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     CALL_FACTORY_ENTRY("cudaGraphicsUnregisterResource",
-                       CALL(MapNames::getDpctNamespace() +
-                                "experimental::unregister_resource",
-                            ARG(0))),
+                       CALL(MapNames::getClNamespace() +
+                                "ext::oneapi::experimental::release_external_memory",
+                            MEMBER_CALL(ARG(0), true, "get_interop_mem_handle"), QUEUESTR)),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphicsUnregisterResource", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphicsUnregisterResource"),
                             ARG("--use-experimental-features=bindless_images"))))
-
-/*
-CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-        "cudaMallocMipmappedArray", DEREF(makeCallArgCreatorWithCall(0)),
-        NEW(MapNames::getDpctNamespace() + "experimental::image_mem_wrapper",
-            DEREF(1), ARG(2),
-            LITERAL(MapNames::getClNamespace() +
-                    "ext::oneapi::experimental::image_type::mipmap"),
-            ARG(3)))),
-    REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaMallocMipmappedArray",
-                                      MipmapNeedBindlessImage))
-*/
 
 // clang-format on

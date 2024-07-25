@@ -15087,61 +15087,30 @@ REGISTER_RULE(GraphRule, PassKind::PK_Migration)
 void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto graphicsInteropAPI = [&]() {
     return hasAnyName(
-        "cudaGraphicsResourceSetMapFlags", "cudaGraphicsUnregisterResource",
-        "cudaGraphicsMapResources", "cudaGraphicsUnmapResources");
+        "cudaGraphicsD3D11RegisterResource",
+        "cudaGraphicsResourceSetMapFlags", "cudaGraphicsMapResources",
+        "cudaGraphicsResourceGetMappedPointer",
+        "cudaGraphicsResourceGetMappedMipmappedArray",
+        "cudaGetMipmappedArrayLevel",
+        "cudaGraphicsSubResourceGetMappedArray",
+        "cudaGraphicsUnmapResources", "cudaGraphicsUnregisterResource");
   };
 
   MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(graphicsInteropAPI())), parentStmt()))
-          .bind("call"),
-      this);
-
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(graphicsInteropAPI())), unless(parentStmt())))
-          .bind("callUsed"),
-      this);
-  
-  MF.addMatcher(
-      typeLoc(
-          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "cudaGraphicsResource", "cudaGraphicsResource_t"))))))
-          .bind("resType"),
+      callExpr(callee(functionDecl(graphicsInteropAPI()))).bind("call"),
       this);
 }
 
 void GraphicsInteropRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
-  std::string APIName;
-  auto &SM = DpctGlobalInfo::getSourceManager();
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
   if (!CE) {
-    if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed")))
-      return;
-    IsAssigned = true;
-  }
-
-  if (auto DC = CE->getDirectCallee()) {
-    APIName = DC->getNameAsString();
-  } else {
     return;
   }
 
-  if (!CallExprRewriterFactoryBase::RewriterMap)
-    return;
-
-  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
-  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
-  }
-
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "resType")) {
-    if (isCapturedByLambda(TL))
-      return;
-  }
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
