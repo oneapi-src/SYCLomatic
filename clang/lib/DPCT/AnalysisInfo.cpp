@@ -5328,18 +5328,23 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*/" << getNL();
     Printer.indent();
   }
+  llvm::outs() << "PPPPP000 " << Printer.str() << "\n";
+
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
+  llvm::outs() << "PPPPP1111 " << Printer.str() << "\n";
+
   printStreamBase(Printer);
   if (SubmitStmts.empty()) {
+  llvm::outs() << "PPPPP2222 " << Printer.str() << "\n";
     printParallelFor(Printer, false);
   } else {
     (Printer << "submit(").newLine();
-    printSubmitLamda(Printer);
+    printSubmitLambda(Printer);
   }
 }
-void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
+void KernelCallExpr::printSubmitLambda(KernelPrinter &Printer) {
   auto Lamda = Printer.block();
   Printer.line("[&](" + MapNames::getClNamespace() + "handler &cgh) {");
   {
@@ -5354,6 +5359,12 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
 }
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   std::string TemplateArgsStr;
+  if (DpctGlobalInfo::useRootGroup()) {
+    Printer << "auto exp_props = "
+               "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
+               "experimental::use_root_sync};\n";
+    ExecutionConfig.Properties = "exp_props";
+  }
   if (DpctGlobalInfo::isSyclNamedLambda() && hasTemplateArgs()) {
     bool IsNeedWarning = false;
     TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
@@ -5386,6 +5397,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       "(1)";
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
@@ -5408,6 +5422,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
@@ -5423,6 +5440,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   }

@@ -147,6 +147,11 @@ std::function<bool(const TypeLoc)> isUseLogicalGroupsForType() {
     return DpctGlobalInfo::useLogicalGroup();
   };
 }
+std::function<bool(const TypeLoc)> isUseRootGoupForType() {
+  return [=](const TypeLoc) -> bool {
+    return DpctGlobalInfo::useRootGroup();
+  };
+}
 
 // Print a templated type. Pass a STR("") as a template argument for types with
 // no template argument e.g. MyType<>

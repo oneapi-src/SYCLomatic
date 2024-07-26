@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/sync_api %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --format-range=none -out-root %T/sync_api %s --cuda-include-path="%cuda-path/include" --use-experimental-features=root-group,logical-group -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api/sync_api.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/sync_api/sync_api.dp.cpp -o %T/sync_api/sync_api.dp.o %}
 
@@ -96,9 +96,9 @@ __global__ void k() {
   FOO(__syncthreads_count(p));
 }
 
-// CHECK: void kernel(const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:            sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
-// CHECK-NEXT:  dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
+// CHECK: void kernel(const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:  sycl::ext::oneapi::experimental::root_group grid = item_ct1.ext_oneapi_get_root_group();
+// CHECK-NEXT:  sycl::group_barrier(grid);
 // CHECK-NEXT:}
 __global__ void kernel() {
   cg::grid_group grid = cg::this_grid();

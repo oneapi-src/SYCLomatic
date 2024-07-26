@@ -1755,6 +1755,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
                   "cooperative_groups::__v1::coalesced_group",
+                  "cooperative_groups::__v1::grid_group",
                   "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
                   "cudaGraphExec_t", "cudaGraphNode_t"))))))
           .bind("cudaTypeDefEA"),
@@ -2320,22 +2321,22 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
 
-        std::string group_type = "";
+        std::string GroupType = "";
         if (DpctGlobalInfo::useLogicalGroup())
-          group_type = MapNames::getDpctNamespace() +
+          GroupType = MapNames::getDpctNamespace() +
                        "experimental::group_base" + "<{{NEEDREPLACEG" +
                        std::to_string(Index) + "}}>";
         if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
           if (ETL.getBeginLoc().isMacroID())
-            group_type = "auto";
+            GroupType = "auto";
           else
-            group_type = MapNames::getClNamespace() + "group" +
+            GroupType = MapNames::getClNamespace() + "group" +
                          "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
         }
-        if (!group_type.empty())
+        if (!GroupType.empty())
           emplaceTransformation(new ReplaceText(
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              std::move(group_type)));
+              std::move(GroupType)));
         return;
       }
     }
@@ -11954,7 +11955,6 @@ void CooperativeGroupsFunctionRule::runRule(
   };
 
   ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
-  llvm::outs() << "CG call " << FuncName << "\n";
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
       FuncName == "shfl_down" || FuncName == "shfl_up" || FuncName == "shfl" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
@@ -11975,9 +11975,12 @@ void CooperativeGroupsFunctionRule::runRule(
     // shfl_down     1/1   0/0   0/0
     // shfl_up       1/1   0/0   0/0
     // shfl_xor      1/1   0/0   0/0
-    // meta_group_rank 1/1   0/0   0/0
+    // meta_group_rank 1/1   0/0   0/
+  llvm::outs() << "CG call   " << FuncName << "\n";
+    
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
+    llvm::outs() << "PPPPP " << EA.getReplacement() << "\n";
     EA.applyAllSubExprRepl();
     RUW.NeedReport = false;
   } else if (FuncName == "this_thread_block") {

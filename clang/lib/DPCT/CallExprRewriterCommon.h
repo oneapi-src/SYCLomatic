@@ -1693,6 +1693,9 @@ public:
 inline auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useNdRangeBarrier();
 };
+inline auto UseRootGroup = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useRootGroup();
+};
 inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };

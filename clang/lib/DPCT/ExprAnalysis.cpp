@@ -632,6 +632,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   if (ME->getMemberDecl()->getIdentifier()) {
     FieldName = ME->getMemberDecl()->getName().str();
     auto MemberExprName = BaseType + "." + FieldName;
+    llvm::outs() << "MMMMM " << MemberExprName << "\n";
     auto ItFieldRule = MapNames::ClassFieldMap.find(MemberExprName);
     if (!MemberExprRewriterFactoryBase::MemberExprRewriterMap)
       return;
@@ -843,6 +844,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
+  llvm::outs() << " Ref String " << RefString << "\n";
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {

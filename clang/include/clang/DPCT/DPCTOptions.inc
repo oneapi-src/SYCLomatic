@@ -719,6 +719,10 @@ DPCT_ENUM_OPTION(
             "Experimental helper function used to logically group work-items.",
             false),
         DPCT_OPTION_ENUM_VALUE(
+            "root-group", int(ExperimentalFeatures::Exp_RootGroup),
+            "Experimental helper function used to root group work-items.",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
             "Experimental helper function used to help cross-group "
             "synchronization during migration.\n",
