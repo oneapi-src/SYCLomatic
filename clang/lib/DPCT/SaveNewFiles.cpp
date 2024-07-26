@@ -259,12 +259,13 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
         rewriteDir(TargetPath, InRoot, OutRoot);
         rewriteDir(LinkPath, InRoot, OutRoot);
         if (!sys::fs::exists(LinkPath)) {
-          std::error_code ec = sys::fs::create_link(TargetPath, LinkPath);
-          if (ec) {
-            std::cerr << "Error creating symlink: " << ec.message()
-                      << ". The target path is " << TargetPath
-                      << ". And the link path is " << LinkPath << "\n";
-            dpctExit(MigrationSaveOutFail);
+          std::error_code EC = sys::fs::create_link(TargetPath, LinkPath);
+          if (EC) {
+            std::string ErrMsg = "Error creating symlink: " + ec.message() +
+                                 ". The target path is " + TargetPath +
+                                 ". And the link path is " + LinkPath + "\n";
+            PrintMsg(ErrMsg);
+            continue;
           }
         }
       }
