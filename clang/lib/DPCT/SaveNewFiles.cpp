@@ -261,7 +261,7 @@ void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
         if (!sys::fs::exists(LinkPath)) {
           std::error_code EC = sys::fs::create_link(TargetPath, LinkPath);
           if (EC) {
-            std::string ErrMsg = "Error creating symlink: " + ec.message() +
+            std::string ErrMsg = "Error creating symlink: " + EC.message() +
                                  ". The target path is " + TargetPath +
                                  ". And the link path is " + LinkPath + "\n";
             PrintMsg(ErrMsg);
