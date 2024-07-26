@@ -1,0 +1,7 @@
+[
+    {
+        "command": "nvcc test.cu -DNAMD='3.0b3'",
+        "directory": "./",
+        "file": "./test.cu"
+    }
+]
