@@ -8,34 +8,12 @@
 #include <cuda_runtime.h>
 
 /*
-
-ld{.weak}{.ss}{.cop}{.level::cache_hint}{.level::prefetch_size}{.vec}.type  d, [a]{.unified}{, cache-policy};
-
-ld{.weak}{.ss}{.level::eviction_priority}{.level::cache_hint}{.level::prefetch_size}{.vec}.type  d, [a]{.unified}{, cache-policy};
-
-ld.volatile{.ss}{.level::prefetch_size}{.vec}.type  d, [a];
-
-ld.relaxed.scope{.ss}{.level::eviction_priority}{.level::cache_hint}{.level::prefetch_size}{.vec}.type  d, [a]{, cache-policy};
-
-ld.acquire.scope{.ss}{.level::eviction_priority}{.level::cache_hint}{.level::prefetch_size}{.vec}.type  d, [a]{, cache-policy};
-
-ld.mmio.relaxed.sys{.global}.type  d, [a];
-
-.ss =                       { .const, .global, .local, .param{::entry, ::func}, .shared{::cta, ::cluster} };
-.cop =                      { .ca, .cg, .cs, .lu, .cv };
-.level::eviction_priority = { .L1::evict_normal, .L1::evict_unchanged,
-                              .L1::evict_first, .L1::evict_last, .L1::no_allocate };
-.level::cache_hint =        { .L2::cache_hint };
-.level::prefetch_size =     { .L2::64B, .L2::128B, .L2::256B }
-.scope =                    { .cta, .cluster, .gpu, .sys };
-.vec =                      { .v2, .v4 };
-.type =                     { .b8, .b16, .b32, .b64, .b128,
+.ss =                       { .const, .global, .local, .param, .shared };
+.type =                     { .b8, .b16, .b32, .b64, .b128, 
                               .u8, .u16, .u32, .u64,
                               .s8, .s16, .s32, .s64,
                               .f32, .f64 };
-
-We only support the form likes "ld.ss.type" now.
-
+Current only support the form likes "ld.ss.type" now.
 */
 
 __global__ void ld(int *arr) {
