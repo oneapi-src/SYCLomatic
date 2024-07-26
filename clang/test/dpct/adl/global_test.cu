@@ -48,6 +48,11 @@ void __global__ my_test() {
   float3 hello;
   // CHECK: ::norm2(hello);
   ::norm2(hello);
+  // Some CUDA struct (like float3) is defined in the CUDA global namespace and
+  // the ADL will search the function in the global namespace. After migration,
+  // the float3 will be in the sycl namespace and the ADL will search the
+  // implementation under the SYCL namepsace which cause the failure. Solution
+  // is to use the global namespace to call the function.
   // CHECK: ::norm2(hello);
   norm2(hello);
   // CHECK: ::norm2(3, hello);
