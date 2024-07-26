@@ -5328,7 +5328,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*/" << getNL();
     Printer.indent();
   }
-  llvm::outs() << "PPPPP000 " << Printer.str() << "\n";
   if (DpctGlobalInfo::useRootGroup()) {
     Printer << "auto exp_props = "
                "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
@@ -5338,11 +5337,9 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
-  llvm::outs() << "PPPPP1111 " << Printer.str() << "\n";
 
   printStreamBase(Printer);
   if (SubmitStmts.empty()) {
-  llvm::outs() << "PPPPP2222 " << Printer.str() << "\n";
     printParallelFor(Printer, false);
   } else {
     (Printer << "submit(").newLine();
@@ -5364,12 +5361,6 @@ void KernelCallExpr::printSubmitLambda(KernelPrinter &Printer) {
 }
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   std::string TemplateArgsStr;
-  // if (DpctGlobalInfo::useRootGroup() && IsInSubmit) {
-  //   Printer << "auto exp_props = "
-  //              "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
-  //              "experimental::use_root_sync};\n";
-  //   ExecutionConfig.Properties = "exp_props";
-  // }
   if (DpctGlobalInfo::isSyclNamedLambda() && hasTemplateArgs()) {
     bool IsNeedWarning = false;
     TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);

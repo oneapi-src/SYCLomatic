@@ -8741,42 +8741,8 @@ void DeviceFunctionDeclRule::runRule(
   }
 
   if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {
-
     if (!Var->getInit())
       return;
-
-    // if (auto CE =
-    //         dyn_cast<CallExpr>(Var->getInit()->IgnoreUnlessSpelledInSource())) {
-      // if (CE->getType().getCanonicalType().getAsString() !=
-      //     "class cooperative_groups::__v1::grid_group")
-      //   return;
-
-      // if (!DpctGlobalInfo::useNdRangeBarrier()) {
-      //   auto Name = Var->getNameAsString();
-      //   report(Var->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false,
-      //          "this_grid()");
-      //   return;
-      // }
-
-      // FuncInfo->setSync();
-      // auto Begin = Var->getBeginLoc();
-      // auto End = Var->getEndLoc();
-      // const auto &SM = *Result.SourceManager;
-
-      // End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-      //     End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-
-      // Token Tok;
-      // Tok = Lexer::findNextToken(
-      //           End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())
-      //           .value();
-      // End = Tok.getLocation();
-
-      // auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-
-      // // Remove statement "cg::grid_group grid = cg::this_grid();"
-      // emplaceTransformation(new ReplaceText(Begin, Length, ""));
-    // }
   }
   if (getAssistNodeAsType<TypeLoc>(Result, "fp64")) {
     FuncInfo->setBF64();
@@ -11933,7 +11899,6 @@ void CooperativeGroupsFunctionRule::runRule(
   }
   if (!CE)
     return;
-  CE->dump();
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
@@ -11975,12 +11940,10 @@ void CooperativeGroupsFunctionRule::runRule(
     // shfl_down     1/1   0/0   0/0
     // shfl_up       1/1   0/0   0/0
     // shfl_xor      1/1   0/0   0/0
-    // meta_group_rank 1/1   0/0   0/
-  llvm::outs() << "CG call   " << FuncName << "\n";
+    // meta_group_rank 1/1   0/0   0/0
     
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
-    llvm::outs() << "PPPPP " << EA.getReplacement() << "\n";
     EA.applyAllSubExprRepl();
     RUW.NeedReport = false;
   } else if (FuncName == "this_thread_block") {
