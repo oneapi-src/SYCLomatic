@@ -104,21 +104,13 @@ __global__ void kernel() {
 int main() {
 // CHECK:  {
 // CHECK-NEXT:    dpct::global_memory<dpct::byte_t, 1> d_sync_ct1(4);
-// CHECK-NEXT:    d_sync_ct1.init(dpct::get_out_of_order_queue());
-// CHECK-NEXT:    dpct::dpct_memset(d_sync_ct1.get_ptr(), 0, sizeof(int));
-// CHECK-EMPTY:
-// CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
-// CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        auto sync_ct1 = dpct::get_access(d_sync_ct1.get_ptr(), cgh);
-// CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for(
-// CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
-// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            auto atm_sync_ct1 = sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space>(*(unsigned int *)&sync_ct1[0]);
-// CHECK-NEXT:            kernel(item_ct1, atm_sync_ct1);
-// CHECK-NEXT:          });
-// CHECK-NEXT:      }).wait();
-// CHECK-NEXT:  }
+// CHECK-NEXT:  auto exp_props = sycl::ext::oneapi::experimental::properties{
+// CHECK-NEXT:      sycl::ext::oneapi::experimental::use_root_sync};
+// CHECK-NEXT:  dpct::get_out_of_order_queue().parallel_for(
+// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2),
+// CHECK-NEXT:                        sycl::range<3>(1, 1, 2)),
+// CHECK-NEXT:      exp_props, [=](sycl::nd_item<3> item_ct1) { kernel(item_ct1); });
+// CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   kernel<<<2, 2>>>();
   cudaDeviceSynchronize();
   return 0;
