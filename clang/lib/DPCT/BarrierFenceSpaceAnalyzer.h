@@ -57,8 +57,8 @@ struct IntraproceduralAnalyzerResult {
                   unsigned int /*arg idx*/,
                   std::set<unsigned int> /*caller parameter(s) idx*/>>>
           Map,
-      std::string CurrentCtxFuncName)
-      : Map(Map), CurrentCtxFuncName(CurrentCtxFuncName),
+      std::string CurrentCtxFuncCombinedLoc)
+      : Map(Map), CurrentCtxFuncCombinedLoc(CurrentCtxFuncCombinedLoc),
         UnsupportedCase(false) {}
   bool isDefault() const noexcept { return IsDefault; }
   std::
@@ -73,7 +73,7 @@ struct IntraproceduralAnalyzerResult {
                   unsigned int /*arg idx*/,
                   std::set<unsigned int> /*caller parameter(s) idx*/>>>
           Map;
-  std::string CurrentCtxFuncName;
+  std::string CurrentCtxFuncCombinedLoc;
 
 private:
   bool IsDefault = false;
@@ -203,7 +203,7 @@ private:
 class InterproceduralAnalyzer {
 public:
   bool analyze(const std::shared_ptr<DeviceFunctionInfo> DFI,
-               std::string SyncCallDeclCombinedLoc);
+               std::string SyncCallCombinedLoc);
 
 private:
   std::tuple<bool /*CanUseLocalBarrier*/,

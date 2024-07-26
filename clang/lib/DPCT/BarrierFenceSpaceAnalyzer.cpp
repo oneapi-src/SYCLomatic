@@ -49,7 +49,8 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
   if (FuncName == "__syncthreads" || FuncName == "__barrier_sync" ||
       isUserDefinedDecl(FuncDecl)) {
     SyncCallInfo SCI;
-    SCI.IsRealSyncCall = FuncName == "__syncthreads";
+    SCI.IsRealSyncCall =
+        (FuncName == "__syncthreads" || FuncName == "__barrier_sync");
     SCI.Predecessors.insert(
         SourceRange(FD->getBody()->getBeginLoc(), CE->getBeginLoc()));
     SCI.Successors.insert(
@@ -585,13 +586,33 @@ AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other, bool IsOtherInLoop)
   return Me;
 }
 
+// Limitation: If func1 is called more than once in func2, we can't
+// distinguish the different call sites. So return empty string for now.
+std::string
+findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
+                       std::shared_ptr<DeviceFunctionInfo> CurNode,
+                       std::string SyncCallCombinedLoc) {
+  if (CurCallDeclCombinedLoc == "__syncthreads")
+    return SyncCallCombinedLoc;
+  std::vector<std::string> CallLocVec;
+  for (const auto &Pair : CurNode->getCallExprMap()) {
+    std::shared_ptr<CallFunctionExpr> Call = Pair.second;
+    if (CurCallDeclCombinedLoc == Call->getDeclCombinedLoc()) {
+      std::string CallLoc = Call->getFilePath().getCanonicalPath().str() + ":" +
+                            std::to_string(Call->getOffset());
+      CallLocVec.push_back(CallLoc);
+    }
+  }
+  return "";
+}
+
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> DFI,
-    std::string SyncCallDeclCombinedLoc) {
+    std::string SyncCallCombinedLoc) {
   // Do analysis for all syncthreads call in this DFI's ancestors and
   // this DFI's decendents.
   std::stack<std::tuple<std::weak_ptr<DeviceFunctionInfo> /*node*/,
-                        std::string /*CurCallDeclCombinedLoc*/, int /*depth*/>>
+                        std::string /*CurCallCombinedLoc*/, int /*depth*/>>
       NodeStack;
   std::stack<std::pair<
       std::string /*caller's decl's combined loc str*/,
@@ -600,20 +621,27 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
   std::set<std::weak_ptr<DeviceFunctionInfo>,
            std::owner_less<std::weak_ptr<DeviceFunctionInfo>>>
       Visited;
-  
+
   // DFS to find all related DFIs
-  NodeStack.push(std::make_tuple(DFI, SyncCallDeclCombinedLoc, 0));
+  NodeStack.push(std::make_tuple(DFI, "__syncthreads", 0));
   Visited.insert(DFI);
   while (!NodeStack.empty()) {
     auto CurNode = std::get<0>(NodeStack.top()).lock();
     auto CurCallDeclCombinedLoc = std::get<1>(NodeStack.top());
+    std::string CurCallCombinedLoc = findCurCallCombinedLoc(
+        CurCallDeclCombinedLoc, CurNode, SyncCallCombinedLoc);
+    if (CurCallCombinedLoc.empty())
+      return false;
+
     auto CurDepth = std::get<2>(NodeStack.top());
     NodeStack.pop();
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "-------------------------------------------" << std::endl;
-    std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncName << std::endl;
-    std::cout << "CurCallDeclCombinedLoc:" << CurCallDeclCombinedLoc << std::endl;
+    std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncCombinedLoc << std::endl;
+    std::cout << "CurCallCombinedLoc:" << CurCallCombinedLoc << std::endl;
     std::cout << "CurDepth:" << CurDepth << std::endl;
+    std::cout << "AffectedByParmsMapInfoStack.size() 1:"
+              << AffectedByParmsMapInfoStack.size() << std::endl;
 #endif
 
     int N = static_cast<int>(AffectedByParmsMapInfoStack.size()) - CurDepth;
@@ -622,7 +650,7 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       AffectedByParmsMapInfoStack.pop();
     }
 
-    auto Iter = DFI->IAR.Map.find(CurCallDeclCombinedLoc);
+    auto Iter = DFI->IAR.Map.find(CurCallCombinedLoc);
     if (Iter != DFI->IAR.Map.end()) {
       const auto &Arg2ParmsMap = std::get<5>(Iter->second);
       bool IsInLoop = std::get<1>(Iter->second);
@@ -633,7 +661,7 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
           CurAffectedbyParmsMap = std::get<4>(Iter->second);
       if (AffectedByParmsMapInfoStack.empty()) {
         AffectedByParmsMapInfoStack.push(std::make_pair(
-            DFI->IAR.CurrentCtxFuncName, CurAffectedbyParmsMap));
+            DFI->IAR.CurrentCtxFuncCombinedLoc, CurAffectedbyParmsMap));
       } else {
         const std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
             &PrevAffectedbyParmsMap = AffectedByParmsMapInfoStack.top().second;
@@ -652,17 +680,23 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
             }
           }
         }
-        AffectedByParmsMapInfoStack.push(
-            std::make_pair(DFI->IAR.CurrentCtxFuncName, CurAffectedbyParmsMap));
+        AffectedByParmsMapInfoStack.push(std::make_pair(
+            DFI->IAR.CurrentCtxFuncCombinedLoc, CurAffectedbyParmsMap));
       }
     }
+
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "AffectedByParmsMapInfoStack.size() 2:"
+              << AffectedByParmsMapInfoStack.size() << std::endl;
+#endif
 
     for (const auto &I : CurNode->getParentDFIs()) {
       if (Visited.find(I) != Visited.end()) {
         // Not support analyzing circle in graph
         return false;
       }
-      NodeStack.push(std::make_tuple(I, DFI->IAR.CurrentCtxFuncName, CurDepth + 1));
+      NodeStack.push(
+          std::make_tuple(I, DFI->IAR.CurrentCtxFuncCombinedLoc, CurDepth + 1));
       Visited.insert(I);
     }
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER

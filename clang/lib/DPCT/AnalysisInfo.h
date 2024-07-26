@@ -2345,7 +2345,14 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), Offset(Offset) {}
+      : FilePath(FilePathIn), Offset(Offset) {
+    const FunctionDecl *Decl = nullptr;
+    if constexpr (std::is_same_v<T, CallExpr>)
+      Decl = C->getDirectCallee();
+    if (Decl) {
+      DeclCombinedLoc = getCombinedStrFromLoc(Decl->getBeginLoc());
+    }
+  }
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
@@ -2393,12 +2400,13 @@ public:
   bool IsAllTemplateArgsSpecified = false;
 
   virtual ~CallFunctionExpr() = default;
+  unsigned getOffset() { return Offset; }
+  const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
+  std::string getDeclCombinedLoc() { return DeclCombinedLoc; }
 
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
-  unsigned getOffset() { return Offset; }
-  const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
   void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
@@ -2433,6 +2441,7 @@ private:
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;
+  std::string DeclCombinedLoc = "";
 };
 
 // device function declaration info includes location, name, and related
