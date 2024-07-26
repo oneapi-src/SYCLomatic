@@ -266,3 +266,8 @@ void foo4() {
   cudaStream_t stream;
   cublasLtMatrixTransform(lightHandle, transformDesc, alpha, A, Adesc, beta, B, Bdesc, C, Cdesc, stream);
 }
+
+void foo5() {
+  // CHECK: size_t ver = dpct::blas_gemm::experimental::version();
+  size_t ver = cublasLtGetVersion();
+}
