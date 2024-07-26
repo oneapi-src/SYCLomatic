@@ -8,31 +8,12 @@
 #include <cuda_runtime.h>
 
 /*
-
-st{.weak}{.ss}{.cop}{.level::cache_hint}{.vec}.type   [a], b{, cache-policy};
-st{.weak}{.ss}{.level::eviction_priority}{.level::cache_hint}{.vec}.type
-                                                      [a], b{, cache-policy};
-st.volatile{.ss}{.vec}.type                           [a], b;
-st.relaxed.scope{.ss}{.level::eviction_priority}{.level::cache_hint}{.vec}.type
-                                                      [a], b{, cache-policy};
-st.release.scope{.ss}{.level::eviction_priority}{.level::cache_hint}{.vec}.type
-                                                      [a], b{, cache-policy};
-st.mmio.relaxed.sys{.global}.type         [a], b;
-
-.ss =                       { .global, .local, .param{::func}, .shared{::cta, ::cluster} };
-.level::eviction_priority = { .L1::evict_normal, .L1::evict_unchanged,
-                              .L1::evict_first, .L1::evict_last, .L1::no_allocate };
-.level::cache_hint =        { .L2::cache_hint };
-.cop =                      { .wb, .cg, .cs, .wt };
-.sem =                      { .relaxed, .release };
-.scope =                    { .cta, .cluster, .gpu, .sys };
-.vec =                      { .v2, .v4 };
+.ss =                       { .global, .local, .param, .shared };
 .type =                     { .b8, .b16, .b32, .b64, .b128,
                               .u8, .u16, .u32, .u64,
                               .s8, .s16, .s32, .s64,
                               .f32, .f64 };
-
-We only support the form likes "st.ss.type" now.
+Current only support the form likes "st.ss.type" now.
 
 */
 
