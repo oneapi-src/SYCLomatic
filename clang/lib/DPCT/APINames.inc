@@ -1573,7 +1573,7 @@ ENTRY(cuDevicePrimaryCtxSetFlags, cuDevicePrimaryCtxSetFlags_v2, false, NO_FLAG,
 
 // Context Management
 ENTRY(cuCtxCreate, cuCtxCreate, true, NO_FLAG, P4, "comment")
-ENTRY(cuCtxCreate_v3, cuCtxCreate_v3, true, NO_FLAG, P4, "comment")
+ENTRY(cuCtxCreate_v3, cuCtxCreate_v3, false, NO_FLAG, P4, "comment")
 ENTRY(cuCtxCreate_v4, cuCtxCreate_v4, false, NO_FLAG, P4, "comment")
 ENTRY(cuCtxDestroy, cuCtxDestroy_v2, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cuCtxGetApiVersion, cuCtxGetApiVersion, true, NO_FLAG, P4, "comment")
