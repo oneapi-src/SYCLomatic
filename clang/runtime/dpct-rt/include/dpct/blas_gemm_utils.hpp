@@ -1170,7 +1170,7 @@ inline sycl::event matrix_transform(transform_desc_ptr transform_desc,
 }
 
 /// Returns the version of the oneDNN library.
-size_t version() {
+inline size_t version() {
   const dnnl_version_t *ver_p = oneapi::dnnl::version();
   return (ver_p->major) * 10000 + (ver_p->minor) * 100 + (ver_p->patch);
 }
