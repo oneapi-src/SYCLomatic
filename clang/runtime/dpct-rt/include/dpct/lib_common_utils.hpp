@@ -168,6 +168,35 @@ inline constexpr std::size_t library_data_size[] = {
     8,                                    // real_int8_32
     8                                     // real_uint8_4
 };
+
+template <class func_t, typename... args_t>
+std::invoke_result_t<func_t, args_t...>
+catch_batch_error(sycl::queue exec_queue, void *scratchpad, int *info,
+                  int *dev_info, int batch_size, func_t &&f, args_t &&...args) {
+  try {
+    return f(std::forward<args_t>(args)...);
+  } catch (oneapi::mkl::lapack::batch_error const &be) {
+    int i = 0;
+    auto &ids = be.ids();
+    std::vector<int> info_vec(batch_size);
+    for (auto const &e : be.exceptions()) {
+      try {
+        std::rethrow_exception(e);
+      } catch (oneapi::mkl::lapack::exception &e) {
+        info_vec[ids[i]] = e.info();
+        i++;
+      }
+    }
+    exec_queue.wait();
+    if (dev_info)
+      exec_queue.memcpy(dev_info, info_vec.data(), batch_size * sizeof(int))
+          .wait();
+    *info = be.info();
+    if constexpr (!std::is_void_v<std::invoke_result_t<func_t, args_t...>>) {
+      return {};
+    }
+  }
+}
 } // namespace detail
 
 #ifdef DPCT_USM_LEVEL_NONE

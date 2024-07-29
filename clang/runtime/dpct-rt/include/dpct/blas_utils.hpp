@@ -2272,12 +2272,13 @@ inline sycl::event
 gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
                    int n, int nrhs, T *const a[], int lda, T *const b[],
                    int ldb, int *info, int *dev_info, int batch_size) {
-#ifdef DPCT_USM_LEVEL_NONE
+#if defined(DPCT_USM_LEVEL_NONE) || !defined(__INTEL_MKL__)
+#if defined(DPCT_USM_LEVEL_NONE)
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
-#ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
+#endif
 #else
   using Ty = typename DataType<T>::T2;
   sycl::queue exec_queue = desc_ptr->get_queue();
@@ -2293,39 +2294,28 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
           &ldb_int64, 1, &group_sizes);
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
 
-  try {
-    oneapi::mkl::lapack::gels_batch(exec_queue, &trans, &m_int64, &n_int64,
-                                    &nrhs_int64, (Ty **)a, &lda_int64, (Ty **)b,
-                                    &ldb_int64, 1, &group_sizes, scratchpad,
-                                    scratchpad_size)
-        .wait_and_throw();
-  } catch (oneapi::mkl::lapack::batch_error const &be) {
-    int i = 0;
-    auto &ids = be.ids();
-    std::vector<int> info_vec(batch_size);
-    for (auto const &e : be.exceptions()) {
-      try {
-        std::rethrow_exception(e);
-      } catch (oneapi::mkl::lapack::exception &e) {
-        info_vec[ids[i]] = e.info();
-        i++;
-      }
-    }
-    if (dev_info)
-      exec_queue.memcpy(dev_info, info_vec.data(), batch_size * sizeof(int))
-          .wait();
-    sycl::free(scratchpad, exec_queue);
-    *info = be.info();
-    return sycl::event();
-  }
-
   *info = 0;
   if (dev_info)
     exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
+  sycl::event e = ::dpct::detail::catch_batch_error(
+      exec_queue, scratchpad, info, dev_info, batch_size,
+      static_cast<sycl::event (*)(
+          sycl::queue &, oneapi::mkl::transpose *, std::int64_t *,
+          std::int64_t *, std::int64_t *, Ty **, std::int64_t *, Ty **,
+          std::int64_t *, std::int64_t, std::int64_t *, Ty *, std::int64_t,
+          const std::vector<sycl::event> &)>(&oneapi::mkl::lapack::gels_batch),
+      exec_queue, &trans, &m_int64, &n_int64, &nrhs_int64, (Ty **)a, &lda_int64,
+      (Ty **)b, &ldb_int64, 1, &group_sizes, scratchpad, scratchpad_size,
+      std::vector<sycl::event>{});
+
   return exec_queue.submit([&](sycl::handler &cgh) {
-    cgh.host_task([=] { sycl::free(scratchpad, exec_queue); });
+    cgh.host_task([=, _e = e] {
+      ::dpct::detail::catch_batch_error(
+          exec_queue, scratchpad, info, dev_info, batch_size,
+          [](sycl::event _e) { _e.wait_and_throw(); }, _e);
+      sycl::free(scratchpad, exec_queue);
+    });
   });
-#endif
 #endif
 }
 } // namespace blas
