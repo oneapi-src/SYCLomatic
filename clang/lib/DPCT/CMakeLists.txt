@@ -191,7 +191,6 @@ add_clang_library(DPCT
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp
-  BarrierFenceSpace1DAnalyzer.cpp
   BLASAPIMigration.cpp
   FFTAPIMigration.cpp
   DNNAPIMigration.cpp

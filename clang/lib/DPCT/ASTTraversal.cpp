@@ -9,7 +9,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "AsmMigration.h"
-#include "BarrierFenceSpace1DAnalyzer.h"
+#include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
 #include "DNNAPIMigration.h"
