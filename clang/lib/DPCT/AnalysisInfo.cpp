@@ -4089,6 +4089,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
+  CallFuncExprOffset = DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).second;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
@@ -4182,7 +4183,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 }
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-
+  if (IsADLEnable)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, CallFuncExprOffset, 0,
+                                         "::", nullptr));
   if (ExtraArgLoc)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
@@ -4313,6 +4317,31 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments(),
                              Callee->getSourceRange());
+      auto ParentFunc = DpctGlobalInfo::getParentFunction(Callee);
+      if (ParentFunc &&
+          isa<TranslationUnitDecl>(ParentFunc->getDeclContext())) {
+        return;
+      }
+      if (!isa<TranslationUnitDecl>(CallDecl->getDeclContext()) ||
+          !DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) ||
+          DRE->getQualifier() || CallDecl->isOverloadedOperator())
+        return;
+      for (unsigned i = 0; i < NumArgs; i++) {
+        auto Type = CallDecl->getParamDecl(i)
+                        ->getOriginalType()
+                        .getCanonicalType()
+                        ->getUnqualifiedDesugaredType();
+        while (Type && Type->isAnyPointerType()) {
+          Type = Type->getPointeeType().getTypePtrOrNull();
+        }
+
+        if (Type->getAsRecordDecl() &&
+            DpctGlobalInfo::isInCudaPath(
+                Type->getAsRecordDecl()->getLocation())) {
+          IsADLEnable = true;
+          break;
+        }
+      }
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = "";
