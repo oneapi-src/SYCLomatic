@@ -2045,7 +2045,7 @@ protected:
     return SYCLGenSuccess();
   }
 
-  bool handle_fence(const InlineAsmInstruction *I) override { 
+  bool handle_fence(const InlineAsmInstruction *Inst) override { 
     if (Inst->getNumInputOperands() != 0)
       return SYCLGenError();
     OS() << MapNames::getClNamespace() << "atomic_fence("
