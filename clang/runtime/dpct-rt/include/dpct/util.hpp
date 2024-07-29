@@ -487,7 +487,7 @@ T shift_sub_group_left(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_left not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -531,7 +531,7 @@ T shift_sub_group_right(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_right not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -573,7 +573,7 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   (void)mask;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of permute_sub_group_by_xor not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }

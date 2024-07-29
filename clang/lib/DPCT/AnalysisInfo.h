@@ -2345,7 +2345,7 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), Offset(Offset) {
+      : FilePath(FilePathIn), Offset(Offset), CallFuncExprOffset(Offset) {
     const FunctionDecl *Decl = nullptr;
     if constexpr (std::is_same_v<T, CallExpr>)
       Decl = C->getDirectCallee();
@@ -2430,6 +2430,7 @@ private:
 
   const clang::tooling::UnifiedPath FilePath;
   unsigned Offset = 0;
+  unsigned CallFuncExprOffset = 0;
   unsigned ExtraArgLoc = 0;
   std::vector<std::shared_ptr<DeviceFunctionInfo>> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
@@ -2438,6 +2439,7 @@ private:
   std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
+  bool IsADLEnable = false;
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;

@@ -29,6 +29,50 @@ __global__ void kernel() {
   tex3DLod(tex3, 1.0f, 2.0f, 3.0f, 4.0f);
 }
 
+void driverTextureReferenceManagement() {
+  // CHECK: sycl::addressing_mode am;
+  CUaddress_mode am;
+  // CHECK: dpct::experimental::bindless_image_wrapper_base_p r;
+  CUtexref r;
+  int i = 1;
+  // CHECK: sycl::filtering_mode fm;
+  CUfilter_mode fm;
+  unsigned int u;
+  size_t s1 = 1, s2 = 1;
+  // CHECK: dpct::device_ptr d;
+  CUdeviceptr d;
+  // CHECK: sycl::ext::oneapi::experimental::image_descriptor D;
+  CUDA_ARRAY_DESCRIPTOR D;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr a;
+  CUarray a;
+  // CHECK: sycl::image_channel_type f;
+  CUarray_format f;
+  // CHECK: am = r->get_addressing_mode();
+  cuTexRefGetAddressMode(&am, r, i);
+  // CHECK: fm = r->get_filtering_mode();
+  cuTexRefGetFilterMode(&fm, r);
+  // CHECK: u = r->is_coordinate_normalized() << 1;
+  cuTexRefGetFlags(&u, r);
+  // CHECK: r->attach(d, s2);
+  cuTexRefSetAddress(&s1, r, d, s2);
+  // CHECK: r->attach(&D, d, s1);
+  cuTexRefSetAddress2D(r, &D, d, s1);
+  // CHECK: r->set(am);
+  cuTexRefSetAddressMode(r, i, am);
+  // CHECK: r->attach(a);
+  cuTexRefSetArray(r, a, u);
+  // CHECK: r->set(fm);
+  cuTexRefSetFilterMode(r, fm);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1074:{{.*}}: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: r->set_coordinate_normalization_mode(u & 0x02);
+  cuTexRefSetFlags(r, u);
+  // CHECK: r->set_channel_type(f);
+  // CHECK-NEXT: r->set_channel_num(i);
+  cuTexRefSetFormat(r, f, i);
+}
+
 int main() {
   int i;
   // CHECK: tex2.set(sycl::addressing_mode::repeat);

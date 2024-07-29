@@ -82,20 +82,32 @@ class CommandLineArgumentParser {
 
   bool parseDoubleQuotedStringInto(std::string &String) {
     if (!next()) return false;
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('"');
+#endif
     while (*Position != '"') {
       if (!skipEscapeCharacter()) return false;
       String.push_back(*Position);
       if (!next()) return false;
     }
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('"');
+#endif
     return next();
   }
 
   bool parseSingleQuotedStringInto(std::string &String) {
     if (!next()) return false;
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('\'');
+#endif
     while (*Position != '\'') {
       String.push_back(*Position);
       if (!next()) return false;
     }
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('\'');
+#endif
     return next();
   }
 
