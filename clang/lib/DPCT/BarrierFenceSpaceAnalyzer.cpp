@@ -16,6 +16,217 @@
 
 using namespace llvm;
 //#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+
+template <class TargetTy, class NodeTy>
+static inline const TargetTy *findAncestorInFunctionScope(
+    const NodeTy *N, const FunctionDecl *Scope,
+    const std::function<const void *(const DynTypedNode &,
+                                     const DynTypedNode &)> &Operation) {
+  auto &Context = clang::dpct::DpctGlobalInfo::getContext();
+  DynTypedNode Current = DynTypedNode::create(*N);
+  DynTypedNodeList Parents = Context.getParents(Current);
+  while (!Parents.empty()) {
+    if (Parents[0].get<FunctionDecl>() &&
+        Parents[0].get<FunctionDecl>() == Scope)
+      break;
+    if (const void *Node = Operation(Parents[0], Current)) {
+      return reinterpret_cast<const TargetTy *>(Node);
+    }
+    Current = Parents[0];
+    Parents = Context.getParents(Current);
+  }
+  return nullptr;
+}
+
+bool clang::dpct::TypeAnalyzer::canBeAnalyzed(const clang::Type *TypePtr) {
+  switch (TypePtr->getTypeClass()) {
+  case clang::Type::TypeClass::ConstantArray:
+    return canBeAnalyzed(dyn_cast<clang::ConstantArrayType>(TypePtr)
+                             ->getElementType()
+                             .getTypePtr());
+  case clang::Type::TypeClass::Pointer:
+    PointerLevel++;
+    if (PointerLevel >= 2 || IsClass)
+      return false;
+    IsConstPtr = TypePtr->getPointeeType().isConstQualified();
+    return canBeAnalyzed(TypePtr->getPointeeType().getTypePtr());
+  case clang::Type::TypeClass::Elaborated:
+    return canBeAnalyzed(
+        dyn_cast<clang::ElaboratedType>(TypePtr)->desugar().getTypePtr());
+  case clang::Type::TypeClass::Typedef:
+    return canBeAnalyzed(dyn_cast<clang::TypedefType>(TypePtr)
+                             ->getDecl()
+                             ->getUnderlyingType()
+                             .getTypePtr());
+  case clang::Type::TypeClass::Record:
+    IsClass = true;
+    if (PointerLevel &&
+        isUserDefinedDecl(dyn_cast<clang::RecordType>(TypePtr)->getDecl()))
+      return false;
+    for (const auto &Field :
+         dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
+      if (!canBeAnalyzed(Field->getType().getTypePtr())) {
+        return false;
+      }
+    }
+    return true;
+  case clang::Type::TypeClass::SubstTemplateTypeParm:
+    return canBeAnalyzed(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
+                             ->getReplacementType()
+                             .getTypePtr());
+  case clang::Type::TypeClass::TemplateTypeParm: {
+    const clang::TemplateTypeParmType *TTPT =
+        dyn_cast<clang::TemplateTypeParmType>(TypePtr);
+    const TemplateTypeParmDecl *TTPD = TTPT->getDecl();
+    auto Idx = TTPD->getIndex();
+    const FunctionTemplateDecl *FTD =
+        clang::dpct::DpctGlobalInfo::findParent<FunctionTemplateDecl>(TTPD);
+    if (!FTD)
+      return false;
+    for (const auto &S : FTD->specializations()) {
+      const auto TA = S->getTemplateSpecializationArgs()->get(Idx);
+      if (TA.getKind() == clang::TemplateArgument::ArgKind::Type) {
+        if (!canBeAnalyzed(TA.getAsType().getTypePtr()))
+          return false;
+      }
+    }
+    return true;
+  }
+  default:
+    if (TypePtr->isFundamentalType())
+      return true;
+    else
+      return false;
+  }
+}
+
+/// @brief Check if a DRE is assigned to another DRE.
+/// This function checks the ancestors of \p CurrentDRE iteratively.
+/// If it finds the parent node is AssignmentOp and \p CurrentDRE is
+/// in RHS and the LHS is pointer type, it will insert all DREs in LHS into
+/// return value.
+/// If it finds the parent node is VarDecl and the VarDecl is pointer type, it
+/// will insert the VaeDecl into return value.
+/// @param CurrentDRE The DRE to need to be checked.
+/// @return Assigned DREs or VDs
+std::pair<std::set<const clang::DeclRefExpr *>,
+          std::set<const clang::VarDecl *>>
+clang::dpct::detail::AnalyzerBase::isAssignedToAnotherDREOrVD(
+    const DeclRefExpr *CurrentDRE) {
+  std::set<const DeclRefExpr *> ResultDRESet;
+  std::set<const VarDecl *> ResultVDSet;
+  findAncestorInFunctionScope<Stmt>(
+      CurrentDRE, FD,
+      [&](const DynTypedNode &Parent,
+          const DynTypedNode &Current) -> const void * {
+        const auto &BO = Parent.get<BinaryOperator>();
+        const auto &VD = Parent.get<VarDecl>();
+        if (BO && BO->isAssignmentOp() &&
+            (BO->getRHS() == Current.get<Expr>()) &&
+            BO->getLHS()->getType()->isPointerType()) {
+          auto DREMatcher =
+              ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
+          auto MatchedResults = ast_matchers::match(
+              DREMatcher, *(BO->getRHS()), DpctGlobalInfo::getContext());
+          for (auto &Node : MatchedResults) {
+            if (const auto &DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
+              ResultDRESet.insert(DRE);
+          }
+        } else if (VD && VD->getType()->isPointerType()) {
+          if (!VD->getType()->getPointeeType().isConstQualified())
+            ResultVDSet.insert(VD);
+        }
+        return nullptr;
+      });
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  const auto &SM = DpctGlobalInfo::getSourceManager();
+  std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM)
+            << std::endl;
+  for (const auto Item : ResultDRESet) {
+    std::cout << "    AnotherDRE:" << Item->getBeginLoc().printToString(SM)
+              << std::endl;
+  }
+  for (const auto Item : ResultVDSet) {
+    std::cout << "    AnotherVD:" << Item->getBeginLoc().printToString(SM)
+              << std::endl;
+  }
+#endif
+  return std::make_pair(ResultDRESet, ResultVDSet);
+}
+
+void clang::dpct::detail::AnalyzerBase::constructDefUseMap() {
+  auto getSize =
+      [](const std::unordered_map<const ParmVarDecl *,
+                                  std::set<const DeclRefExpr *>> &DefUseMap)
+      -> std::size_t {
+    std::size_t Size = 0;
+    for (const auto &Pair : DefUseMap) {
+      Size = Size + Pair.second.size();
+    }
+    return Size;
+  };
+
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "DefUseMap init value:" << std::endl;
+  for (const auto &Pair : DefUseMap) {
+    const auto &SM = DpctGlobalInfo::getSourceManager();
+    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
+              << std::endl;
+    for (const auto &Item : Pair.second) {
+      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
+                << std::endl;
+    }
+  }
+#endif
+
+  // Collect all used positions
+  std::size_t MapSize = getSize(DefUseMap);
+  do {
+    MapSize = getSize(DefUseMap);
+    std::set<const DeclRefExpr *> NewDRESet;
+    for (auto &Pair : DefUseMap) {
+      const ParmVarDecl *CurDecl = Pair.first;
+      std::set<const DeclRefExpr *> CurDRESet = Pair.second;
+      std::set<const DeclRefExpr *> MatchedResult =
+          matchTargetDREInScope(CurDecl, FD->getBody());
+      CurDRESet.insert(MatchedResult.begin(), MatchedResult.end());
+      NewDRESet.clear();
+      for (const auto &DRE : CurDRESet) {
+        const auto &SetPair = isAssignedToAnotherDREOrVD(DRE);
+        for (const auto &AnotherDRE : SetPair.first) {
+          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
+              matchTargetDREInScope(
+                  dyn_cast_or_null<VarDecl>(AnotherDRE->getDecl()),
+                  FD->getBody());
+          NewDRESet.insert(AnotherDREMatchedResult.begin(),
+                           AnotherDREMatchedResult.end());
+        }
+        for (const auto &AnotherVD : SetPair.second) {
+          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
+              matchTargetDREInScope(AnotherVD, FD->getBody());
+          NewDRESet.insert(AnotherDREMatchedResult.begin(),
+                           AnotherDREMatchedResult.end());
+        }
+      }
+      if (!NewDRESet.empty())
+        Pair.second.insert(NewDRESet.begin(), NewDRESet.end());
+    }
+  } while (getSize(DefUseMap) != MapSize);
+
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "DefUseMap after collection:" << std::endl;
+  for (const auto &Pair : DefUseMap) {
+    const auto &SM = DpctGlobalInfo::getSourceManager();
+    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
+              << std::endl;
+    for (const auto &Item : Pair.second) {
+      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
+                << std::endl;
+    }
+  }
+#endif
+}
+
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const ForStmt *FS) {
   LoopRange.push_back(FS->getSourceRange());
   return true;
@@ -68,7 +279,7 @@ void clang::dpct::IntraproceduralAnalyzer::PostVisit(const CallExpr *) {}
 
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const DeclRefExpr *DRE) {
   // Collect all DREs and its Decl
-  const auto& PVD = dyn_cast<ParmVarDecl>(DRE->getDecl());
+  const auto &PVD = dyn_cast<ParmVarDecl>(DRE->getDecl());
   if (!PVD)
     return true;
 
@@ -161,81 +372,6 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CXXConstructExpr *CCE) {
 void clang::dpct::IntraproceduralAnalyzer::PostVisit(const CXXConstructExpr *) {
 }
 
-template <class TargetTy, class NodeTy>
-static inline const TargetTy *findAncestorInFunctionScope(
-    const NodeTy *N, const FunctionDecl *Scope,
-    const std::function<const void *(const DynTypedNode &,
-                                     const DynTypedNode &)> &Operation) {
-  auto &Context = clang::dpct::DpctGlobalInfo::getContext();
-  DynTypedNode Current = DynTypedNode::create(*N);
-  DynTypedNodeList Parents = Context.getParents(Current);
-  while (!Parents.empty()) {
-    if (Parents[0].get<FunctionDecl>() &&
-        Parents[0].get<FunctionDecl>() == Scope)
-      break;
-    if (const void *Node = Operation(Parents[0], Current)) {
-      return reinterpret_cast<const TargetTy *>(Node);
-    }
-    Current = Parents[0];
-    Parents = Context.getParents(Current);
-  }
-  return nullptr;
-}
-
-/// @brief Check if a DRE is assigned to another DRE.
-/// This function checks the ancestors of \p CurrentDRE iteratively.
-/// If it finds the parent node is AssignmentOp and \p CurrentDRE is
-/// in RHS and the LHS is pointer type, it will insert all DREs in LHS into
-/// return value.
-/// If it finds the parent node is VarDecl and the VarDecl is pointer type, it
-/// will insert the VaeDecl into return value.
-/// @param CurrentDRE The DRE to need to be checked.
-/// @return Assigned DREs or VDs
-std::pair<std::set<const clang::DeclRefExpr *>,
-          std::set<const clang::VarDecl *>>
-clang::dpct::IntraproceduralAnalyzer::isAssignedToAnotherDREOrVD(
-    const DeclRefExpr *CurrentDRE) {
-  std::set<const DeclRefExpr *> ResultDRESet;
-  std::set<const VarDecl *> ResultVDSet;
-  findAncestorInFunctionScope<Stmt>(
-      CurrentDRE, FD,
-      [&](const DynTypedNode &Parent,
-          const DynTypedNode &Current) -> const void * {
-        const auto &BO = Parent.get<BinaryOperator>();
-        const auto &VD = Parent.get<VarDecl>();
-        if (BO && BO->isAssignmentOp() &&
-            (BO->getRHS() == Current.get<Expr>()) &&
-            BO->getLHS()->getType()->isPointerType()) {
-          auto DREMatcher =
-              ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
-          auto MatchedResults = ast_matchers::match(
-              DREMatcher, *(BO->getRHS()), DpctGlobalInfo::getContext());
-          for (auto &Node : MatchedResults) {
-            if (const auto &DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
-              ResultDRESet.insert(DRE);
-          }
-        } else if (VD && VD->getType()->isPointerType()) {
-          if (!VD->getType()->getPointeeType().isConstQualified())
-            ResultVDSet.insert(VD);
-        }
-        return nullptr;
-      });
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  const auto &SM = DpctGlobalInfo::getSourceManager();
-  std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM)
-            << std::endl;
-  for (const auto Item : ResultDRESet) {
-    std::cout << "    AnotherDRE:" << Item->getBeginLoc().printToString(SM)
-              << std::endl;
-  }
-  for (const auto Item : ResultVDSet) {
-    std::cout << "    AnotherVD:" << Item->getBeginLoc().printToString(SM)
-              << std::endl;
-  }
-#endif
-  return std::make_pair(ResultDRESet, ResultVDSet);
-}
-
 clang::dpct::AccessMode
 clang::dpct::IntraproceduralAnalyzer::getAccessKindReadWrite(
     const DeclRefExpr *CurrentDRE) {
@@ -291,7 +427,7 @@ clang::dpct::IntraproceduralAnalyzer::getAccessKindReadWrite(
       return AccessMode::ReadWrite;
     }
     if (!FoundBO && BO && BO->isAssignmentOp() &&
-               (BO->getLHS() == Current.get<Expr>()) && FoundDeref) {
+        (BO->getLHS() == Current.get<Expr>()) && FoundDeref) {
       FoundBO = true;
     } else if (!FoundDeref && UOInBO &&
                (UOInBO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
@@ -464,79 +600,6 @@ getIdxExprOfASE(const ArraySubscriptExpr *ASE) {
 }
 } // namespace
 
-void clang::dpct::IntraproceduralAnalyzer::constructDefUseMap() {
-  auto getSize =
-      [](const std::unordered_map<const ParmVarDecl *,
-                                  std::set<const DeclRefExpr *>> &DefUseMap)
-      -> std::size_t {
-    std::size_t Size = 0;
-    for (const auto &Pair : DefUseMap) {
-      Size = Size + Pair.second.size();
-    }
-    return Size;
-  };
-
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "DefUseMap init value:" << std::endl;
-  for (const auto &Pair : DefUseMap) {
-    const auto &SM = DpctGlobalInfo::getSourceManager();
-    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
-              << std::endl;
-    for (const auto &Item : Pair.second) {
-      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
-                << std::endl;
-    }
-  }
-#endif
-
-  // Collect all used positions
-  std::size_t MapSize = getSize(DefUseMap);
-  do {
-    MapSize = getSize(DefUseMap);
-    std::set<const DeclRefExpr *> NewDRESet;
-    for (auto &Pair : DefUseMap) {
-      const ParmVarDecl *CurDecl = Pair.first;
-      std::set<const DeclRefExpr *> CurDRESet = Pair.second;
-      std::set<const DeclRefExpr *> MatchedResult =
-          matchTargetDREInScope(CurDecl, FD->getBody());
-      CurDRESet.insert(MatchedResult.begin(), MatchedResult.end());
-      NewDRESet.clear();
-      for (const auto &DRE : CurDRESet) {
-        const auto &SetPair = isAssignedToAnotherDREOrVD(DRE);
-        for (const auto &AnotherDRE : SetPair.first) {
-          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
-              matchTargetDREInScope(
-                  dyn_cast_or_null<VarDecl>(AnotherDRE->getDecl()),
-                  FD->getBody());
-          NewDRESet.insert(AnotherDREMatchedResult.begin(),
-                           AnotherDREMatchedResult.end());
-        }
-        for (const auto &AnotherVD : SetPair.second) {
-          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
-              matchTargetDREInScope(AnotherVD, FD->getBody());
-          NewDRESet.insert(AnotherDREMatchedResult.begin(),
-                           AnotherDREMatchedResult.end());
-        }
-      }
-      if (!NewDRESet.empty())
-        Pair.second.insert(NewDRESet.begin(), NewDRESet.end());
-    }
-  } while (getSize(DefUseMap) != MapSize);
-
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "DefUseMap after collection:" << std::endl;
-  for (const auto &Pair : DefUseMap) {
-    const auto &SM = DpctGlobalInfo::getSourceManager();
-    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
-              << std::endl;
-    for (const auto &Item : Pair.second) {
-      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
-                << std::endl;
-    }
-  }
-#endif
-}
-
 void clang::dpct::IntraproceduralAnalyzer::simplifyMap(
     std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap) {
   std::map<const ParmVarDecl *,
@@ -575,7 +638,8 @@ void clang::dpct::IntraproceduralAnalyzer::simplifyMap(
 #endif
 }
 
-AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other, bool IsOtherInLoop) {
+AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other,
+                        bool IsOtherInLoop) {
   if (IsOtherInLoop) {
     Other.UsedBefore = true;
     Other.UsedAfter = true;
@@ -588,10 +652,9 @@ AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other, bool IsOtherInLoop)
 
 // Limitation: If func1 is called more than once in func2, we can't
 // distinguish the different call sites. So return empty string for now.
-std::string
-findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
-                       std::shared_ptr<DeviceFunctionInfo> CurNode,
-                       std::string SyncCallCombinedLoc) {
+std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
+                                   std::shared_ptr<DeviceFunctionInfo> CurNode,
+                                   std::string SyncCallCombinedLoc) {
   if (CurCallDeclCombinedLoc == "__syncthreads")
     return SyncCallCombinedLoc;
   std::vector<std::string> CallLocVec;
@@ -637,7 +700,8 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     NodeStack.pop();
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "-------------------------------------------" << std::endl;
-    std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncCombinedLoc << std::endl;
+    std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncCombinedLoc
+              << std::endl;
     std::cout << "CurCallCombinedLoc:" << CurCallCombinedLoc << std::endl;
     std::cout << "CurDepth:" << CurDepth << std::endl;
     std::cout << "AffectedByParmsMapInfoStack.size() 1:"
@@ -729,7 +793,7 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case J: !DFI" << std::endl;
 #endif
-    return IntraproceduralAnalyzerResult(true);
+    return IntraproceduralAnalyzerResult();
   }
 
   if (DFI->getVarMap().hasGlobalMemAcc()) {
@@ -737,7 +801,7 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
     std::cout << "Return False case I: Found device/managed variable usage"
               << std::endl;
 #endif
-    return IntraproceduralAnalyzerResult(true);
+    return IntraproceduralAnalyzerResult();
   }
 
   // Init values
@@ -750,7 +814,7 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
 #endif
 
   if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
-    return IntraproceduralAnalyzerResult(true);
+    return IntraproceduralAnalyzerResult();
   }
 
   constructDefUseMap();
@@ -812,11 +876,11 @@ bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(
   while (!Parents.empty()) {
     if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
       break;
-    const auto& E = Parents[0].get<Expr>();
+    const auto &E = Parents[0].get<Expr>();
     if (E && DeviceFunctionCallArgs.count(E))
       return true;
-    const auto& UO = Parents[0].get<UnaryOperator>();
-    const auto& ASE = Parents[0].get<ArraySubscriptExpr>();
+    const auto &UO = Parents[0].get<UnaryOperator>();
+    const auto &ASE = Parents[0].get<ArraySubscriptExpr>();
     if (UO && (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
       return true;
     }
@@ -850,7 +914,7 @@ clang::dpct::InterproceduralAnalyzer::isSafeToUseLocalBarrier(
 
 auto convertPVD2Idx = [](const FunctionDecl *FD, const ParmVarDecl *PVD) {
   unsigned int Idx = 0;
-  for (const auto& D : FD->parameters()) {
+  for (const auto &D : FD->parameters()) {
     if (D == PVD)
       return Idx;
     Idx++;
@@ -923,68 +987,6 @@ IntraproceduralAnalyzer::getArgCallerParmsMap(const CallExpr *CE) {
     ArgIdx++;
   }
   return RetMap;
-}
-
-bool clang::dpct::TypeAnalyzer::canBeAnalyzed(const clang::Type *TypePtr) {
-  switch (TypePtr->getTypeClass()) {
-  case clang::Type::TypeClass::ConstantArray:
-    return canBeAnalyzed(dyn_cast<clang::ConstantArrayType>(TypePtr)
-                             ->getElementType()
-                             .getTypePtr());
-  case clang::Type::TypeClass::Pointer:
-    PointerLevel++;
-    if (PointerLevel >= 2 || IsClass)
-      return false;
-    IsConstPtr = TypePtr->getPointeeType().isConstQualified();
-    return canBeAnalyzed(TypePtr->getPointeeType().getTypePtr());
-  case clang::Type::TypeClass::Elaborated:
-    return canBeAnalyzed(
-        dyn_cast<clang::ElaboratedType>(TypePtr)->desugar().getTypePtr());
-  case clang::Type::TypeClass::Typedef:
-    return canBeAnalyzed(dyn_cast<clang::TypedefType>(TypePtr)
-                             ->getDecl()
-                             ->getUnderlyingType()
-                             .getTypePtr());
-  case clang::Type::TypeClass::Record:
-    IsClass = true;
-    if (PointerLevel &&
-        isUserDefinedDecl(dyn_cast<clang::RecordType>(TypePtr)->getDecl()))
-      return false;
-    for (const auto &Field :
-         dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
-      if (!canBeAnalyzed(Field->getType().getTypePtr())) {
-        return false;
-      }
-    }
-    return true;
-  case clang::Type::TypeClass::SubstTemplateTypeParm:
-    return canBeAnalyzed(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
-                             ->getReplacementType()
-                             .getTypePtr());
-  case clang::Type::TypeClass::TemplateTypeParm: {
-    const clang::TemplateTypeParmType *TTPT =
-        dyn_cast<clang::TemplateTypeParmType>(TypePtr);
-    const TemplateTypeParmDecl *TTPD = TTPT->getDecl();
-    auto Idx = TTPD->getIndex();
-    const FunctionTemplateDecl *FTD =
-        clang::dpct::DpctGlobalInfo::findParent<FunctionTemplateDecl>(TTPD);
-    if (!FTD)
-      return false;
-    for (const auto &S : FTD->specializations()) {
-      const auto TA = S->getTemplateSpecializationArgs()->get(Idx);
-      if (TA.getKind() == clang::TemplateArgument::ArgKind::Type) {
-        if (!canBeAnalyzed(TA.getAsType().getTypePtr()))
-          return false;
-      }
-    }
-    return true;
-  }
-  default:
-    if (TypePtr->isFundamentalType())
-      return true;
-    else
-      return false;
-  }
 }
 
 bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const CallExpr *CE) {
@@ -1088,60 +1090,6 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(
 void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(
     const CXXDependentScopeMemberExpr *) {}
 
-/// @brief Check if a DRE is assigned to another DRE.
-/// This function checks the ancestors of \p CurrentDRE iteratively.
-/// If it finds the parent node is AssignmentOp and \p CurrentDRE is
-/// in RHS and the LHS is pointer type, it will insert all DREs in LHS into
-/// return value.
-/// If it finds the parent node is VarDecl and the VarDecl is pointer type, it
-/// will insert the VaeDecl into return value.
-/// @param CurrentDRE The DRE to need to be checked.
-/// @return Assigned DREs or VDs
-std::pair<std::set<const clang::DeclRefExpr *>,
-          std::set<const clang::VarDecl *>>
-clang::dpct::BarrierFenceSpace1DAnalyzer::isAssignedToAnotherDREOrVD(
-    const DeclRefExpr *CurrentDRE) {
-  std::set<const DeclRefExpr *> ResultDRESet;
-  std::set<const VarDecl *> ResultVDSet;
-  findAncestorInFunctionScope<Stmt>(
-      CurrentDRE, FD,
-      [&](const DynTypedNode &Parent,
-          const DynTypedNode &Current) -> const void * {
-        const auto *BO = Parent.get<BinaryOperator>();
-        const auto *VD = Parent.get<VarDecl>();
-        if (BO && BO->isAssignmentOp() &&
-            (BO->getRHS() == Current.get<Expr>()) &&
-            BO->getLHS()->getType()->isPointerType()) {
-          auto DREMatcher =
-              ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
-          auto MatchedResults = ast_matchers::match(
-              DREMatcher, *(BO->getRHS()), DpctGlobalInfo::getContext());
-          for (auto &Node : MatchedResults) {
-            if (const auto *DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
-              ResultDRESet.insert(DRE);
-          }
-        } else if (VD && VD->getType()->isPointerType()) {
-          if (!VD->getType()->getPointeeType().isConstQualified())
-            ResultVDSet.insert(VD);
-        }
-        return nullptr;
-      });
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  const auto &SM = DpctGlobalInfo::getSourceManager();
-  std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM)
-            << std::endl;
-  for (const auto Item : ResultDRESet) {
-    std::cout << "    AnotherDRE:" << Item->getBeginLoc().printToString(SM)
-              << std::endl;
-  }
-  for (const auto Item : ResultVDSet) {
-    std::cout << "    AnotherVD:" << Item->getBeginLoc().printToString(SM)
-              << std::endl;
-  }
-#endif
-  return std::make_pair(ResultDRESet, ResultVDSet);
-}
-
 namespace {
 using namespace clang;
 using namespace dpct;
@@ -1191,53 +1139,6 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
   return true;
 }
 } // namespace
-
-void clang::dpct::BarrierFenceSpace1DAnalyzer::constructDefUseMap() {
-  auto getSize =
-      [](const std::unordered_map<const ParmVarDecl *,
-                                  std::set<const DeclRefExpr *>> &DefUseMap)
-      -> std::size_t {
-    std::size_t Size = 0;
-    for (const auto &Pair : DefUseMap) {
-      Size = Size + Pair.second.size();
-    }
-    return Size;
-  };
-
-  // Collect all used positions
-  std::size_t MapSize = getSize(DefUseMap);
-  do {
-    MapSize = getSize(DefUseMap);
-    std::set<const DeclRefExpr *> NewDRESet;
-    for (auto &Pair : DefUseMap) {
-      const ParmVarDecl *CurDecl = Pair.first;
-      std::set<const DeclRefExpr *> CurDRESet = Pair.second;
-      std::set<const DeclRefExpr *> MatchedResult =
-          matchTargetDREInScope(CurDecl, FD->getBody());
-      CurDRESet.insert(MatchedResult.begin(), MatchedResult.end());
-      NewDRESet.clear();
-      for (const auto &DRE : CurDRESet) {
-        const auto &SetPair = isAssignedToAnotherDREOrVD(DRE);
-        for (const auto *AnotherDRE : SetPair.first) {
-          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
-              matchTargetDREInScope(
-                  dyn_cast_or_null<VarDecl>(AnotherDRE->getDecl()),
-                  FD->getBody());
-          NewDRESet.insert(AnotherDREMatchedResult.begin(),
-                           AnotherDREMatchedResult.end());
-        }
-        for (const auto *AnotherVD : SetPair.second) {
-          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
-              matchTargetDREInScope(AnotherVD, FD->getBody());
-          NewDRESet.insert(AnotherDREMatchedResult.begin(),
-                           AnotherDREMatchedResult.end());
-        }
-      }
-      if (!NewDRESet.empty())
-        Pair.second.insert(NewDRESet.begin(), NewDRESet.end());
-    }
-  } while (getSize(DefUseMap) != MapSize);
-}
 
 void clang::dpct::BarrierFenceSpace1DAnalyzer::simplifyMap(
     std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap) {
