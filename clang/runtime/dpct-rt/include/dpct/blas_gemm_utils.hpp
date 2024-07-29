@@ -1168,12 +1168,6 @@ inline sycl::event matrix_transform(transform_desc_ptr transform_desc,
       a_desc->_order, a, c_desc->_ld, c_desc->_order, c,
       std::vector<sycl::event>{});
 }
-
-/// Returns the version of the oneDNN library.
-inline size_t version() {
-  const dnnl_version_t *ver_p = oneapi::dnnl::version();
-  return (ver_p->major) * 10000 + (ver_p->minor) * 100 + (ver_p->patch);
-}
 } // namespace experimental
 } // namespace blas_gemm
 } // namespace dpct
