@@ -4063,6 +4063,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
         "cublasGetAtomicsMode", "cublasSetAtomicsMode", "cublasGetVersion_v2",
         "cublasGetMathMode", "cublasSetMathMode", "cublasGetStatusString",
+        "cublasSetWorkspace_v2",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -5095,7 +5096,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetPointerMode_v2" ||
              FuncName == "cublasSetPointerMode_v2" ||
              FuncName == "cublasGetAtomicsMode" ||
-             FuncName == "cublasSetAtomicsMode") {
+             FuncName == "cublasSetAtomicsMode" ||
+             FuncName == "cublasSetWorkspace_v2") {
     std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
