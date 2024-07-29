@@ -268,6 +268,9 @@ void foo4() {
 }
 
 void foo5() {
-  // CHECK: size_t ver = dpct::blas_gemm::experimental::version();
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: size_t ver = dpct::blas_gemm::experimental::version();
   size_t ver = cublasLtGetVersion();
 }
