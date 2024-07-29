@@ -5168,6 +5168,18 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
           IsRedeclareRequired = true;
         }
       }
+#ifdef _WIN32
+      /*This code path is for ConstructorConversion on Windows since its AST
+          is different from the one on Linux.*/
+      else if (const auto *MTE =
+                   dyn_cast<MaterializeTemporaryExpr>(CCE->getArg(0))) {
+        if (const auto *ICE = dyn_cast<ImplicitCastExpr>(MTE->getSubExpr())) {
+          if (ICE->getCastKind() == CK_ConstructorConversion) {
+            IsRedeclareRequired = true;
+          }
+        }
+      }
+#endif
     }
   } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
     auto CK = ICE->getCastKind();
