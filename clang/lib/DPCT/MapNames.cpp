@@ -2134,6 +2134,7 @@ void MapNames::setExplicitNamespaceMap() {
            "blas_gemm::experimental::transform_desc_t::get_attribute"},
       {"cublasLtMatrixTransform",
        getDpctNamespace() + "blas_gemm::experimental::matrix_transform"},
+      {"cublasLtGetVersion", getDpctNamespace() + "dnnl::get_version"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
