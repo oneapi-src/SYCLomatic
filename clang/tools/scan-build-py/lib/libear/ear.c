@@ -1851,14 +1851,15 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
           is_option_plugin = 0;
           continue;
         } else {
-          // to test the existence of the file to be to archived
+          // To test the existence of the file to be to archived
           if (access(argv[idx], F_OK) == 0) {
             break;
           }
         }
       }
       if (idx < argc) {
-        int olen = strlen(argv[idx]);
+        // Assume the archive name is the last argument before the object file
+        int olen = strlen(argv[idx - 1]);
         memset(ofilename, '\0', PATH_MAX);
         if (olen >= PATH_MAX) {
           perror("bear: filename length too long.");
