@@ -404,16 +404,6 @@ void MapNames::setExplicitNamespaceMap(
            DpctGlobalInfo::useExtBindlessImages()
                ? getDpctNamespace() + "experimental::image_mem_wrapper_ptr"
                : "cudaMipmappedArray_t")},
-      {"cudaGraphicsResource",
-       std::make_shared<TypeNameRule>(
-           DpctGlobalInfo::useExtBindlessImages()
-               ? getDpctNamespace() + "experimental::interop_mem_wrapper"
-               : "cudaGraphicsResource")},
-      {"cudaGraphicsResource_t",
-       std::make_shared<TypeNameRule>(
-           DpctGlobalInfo::useExtBindlessImages()
-               ? getDpctNamespace() + "experimental::interop_mem_wrapper_ptr"
-               : "cudaGraphicsResource_t")},
       {"cudaTextureDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::device_ext)},
@@ -672,6 +662,7 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_ptr")},
       {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
+      {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1503,6 +1494,16 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaGraphicsMapFlagsNone", std::make_shared<EnumNameRule>("0")},
       {"cudaGraphicsMapFlagsReadOnly", std::make_shared<EnumNameRule>("0")},
       {"cudaGraphicsMapFlagsWriteDiscard", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsRegisterFlags
+      {"cudaGraphicsRegisterFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsReadOnly",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsWriteDiscard",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsSurfaceLoadStore",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsTextureGather",
+       std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
