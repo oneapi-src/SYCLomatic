@@ -1,14 +1,11 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
-// RUN: dpct --format-range=none -out-root %T/cudaGraphics_test_default_option %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/cudaGraphics_test_default_option/cudaGraphics_test_default_option.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics_test_default_option/cudaGraphics_test_default_option.dp.cpp -o %T/cudaGraphics_test_default_option/cudaGraphicsResource_test.dp.o %}
+// RUN: dpct --format-range=none -out-root %T/cudaGraphics_default_option %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/cudaGraphics_default_option/cudaGraphics_default_option.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics_default_option/cudaGraphics_default_option.dp.cpp -o %T/cudaGraphics_default_option/cudaGraphicsResource_test.dp.o %}
 
 #ifndef BUILD_TEST
 #include <cuda.h>
-#ifdef _WIN32
-#include <cuda_d3d11_interop.h>
-#endif
 
 int main() {
   // CHECK: /*
@@ -26,15 +23,6 @@ int main() {
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsRegisterFlagsNone is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cudaGraphicsRegisterFlags regFlags = cudaGraphicsRegisterFlagsNone;
-
-#ifdef _WIN32
-  ID3D11Resource* pD3DResource;
-
-  // CHECK-WINDOWS: /*
-  // CHECK-WINDOWS-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsD3D11RegisterResource is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-WINDOWS-NEXT: */
-  cudaGraphicsD3D11RegisterResource(&resource, pD3DResource, regFlags);
-#endif
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsMapFlags is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
@@ -63,13 +51,6 @@ int main() {
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsResourceGetMappedMipmappedArray is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cudaGraphicsResourceGetMappedMipmappedArray(mipmappedArray, resource);
-
-  void* devPtr;
-  size_t size;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsResourceGetMappedPointer is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
-  cudaGraphicsResourceGetMappedPointer(&devPtr, &size, resource);
 
   unsigned int arrayIndex, mipLevel;
   // CHECK: /*

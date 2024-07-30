@@ -1,8 +1,8 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
-// RUN: dpct --use-experimental-features=bindless_images --format-range=none -out-root %T/cudaGraphics_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/cudaGraphics_test/cudaGraphics_test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics_test/cudaGraphics_test.dp.cpp -o %T/cudaGraphics_test/cudaGraphics_test.dp.o %}
+// RUN: dpct --use-experimental-features=bindless_images --format-range=none -out-root %T/cudaGraphics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/cudaGraphics/cudaGraphics.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics/cudaGraphics.dp.cpp -o %T/cudaGraphics/cudaGraphics.dp.o %}
 
 #include <cuda.h>
 #ifdef _WIN32
@@ -85,11 +85,6 @@ int main() {
   // CHECK: *mipmappedArray_ptr = resource->get_mapped_mipmapped_array();
   cudaGraphicsResourceGetMappedMipmappedArray(mipmappedArray_ptr, resource);
 
-  void* devPtr;
-  size_t size;
-  // CHECK: dpct::experimental::get_mapped_pointer(&devPtr, &size, resource);
-  cudaGraphicsResourceGetMappedPointer(&devPtr, &size, resource);
-
   unsigned int arrayIndex, mipLevel;
   // CHECK: array = resource->get_sub_resource_mapped_array(arrayIndex, mipLevel);
   cudaGraphicsSubResourceGetMappedArray(&array, resource, arrayIndex, mipLevel);
@@ -100,10 +95,10 @@ int main() {
   // CHECK: dpct::experimental::unmap_resources(1, &resource);
   cudaGraphicsUnmapResources(1, &resource);
 
-  // CHECK: delete(resource);
+  // CHECK: delete resource;
   cudaGraphicsUnregisterResource(resource);
 
-  // CHECK: delete(resource1);
+  // CHECK: delete resource1;
   cudaGraphicsUnregisterResource(resource1);
 
   return 0;

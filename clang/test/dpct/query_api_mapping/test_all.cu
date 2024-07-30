@@ -1136,6 +1136,13 @@
 // CHECK-NEXT: cudaGetSymbolSize
 // CHECK-NEXT: cudaGetTextureObjectResourceDesc
 // CHECK-NEXT: cudaGetTextureObjectTextureDesc
+// CHECK-NEXT: cudaGraphicsD3D11RegisterResource
+// CHECK-NEXT: cudaGraphicsMapResources
+// CHECK-NEXT: cudaGraphicsResourceGetMappedMipmappedArray
+// CHECK-NEXT: cudaGraphicsResourceSetMapFlags
+// CHECK-NEXT: cudaGraphicsSubResourceGetMappedArray
+// CHECK-NEXT: cudaGraphicsUnmapResources
+// CHECK-NEXT: cudaGraphicsUnregisterResource
 // CHECK-NEXT: cudaHostAlloc
 // CHECK-NEXT: cudaHostGetDevicePointer
 // CHECK-NEXT: cudaHostGetFlags

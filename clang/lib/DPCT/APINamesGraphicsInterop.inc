@@ -54,16 +54,6 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY("cudaGraphicsResourceGetMappedPointer",
-                        CALL(MapNames::getDpctNamespace() +
-                                    "experimental::get_mapped_pointer",
-                            ARG(0), ARG(1), ARG(2))),
-    UNSUPPORT_FACTORY_ENTRY("cudaGraphicsResourceGetMappedPointer", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                            ARG("cudaGraphicsResourceGetMappedPointer"),
-                            ARG("--use-experimental-features=bindless_images"))))
-
-ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaGraphicsResourceGetMappedMipmappedArray", DEREF(0),
         MEMBER_CALL(ARG(1), true, "get_mapped_mipmapped_array"))),
@@ -98,8 +88,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    CALL_FACTORY_ENTRY("cudaGraphicsUnregisterResource",
-                       CALL("delete", ARG(0))),
+    DELETER_FACTORY_ENTRY("cudaGraphicsUnregisterResource", ARG(0)),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphicsUnregisterResource", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphicsUnregisterResource"),
                             ARG("--use-experimental-features=bindless_images"))))

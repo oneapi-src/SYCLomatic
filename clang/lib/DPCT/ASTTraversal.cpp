@@ -3308,15 +3308,15 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (EnumName == "cudaStreamCaptureStatusInvalidated") {
     report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     return;
-  } else if ((EnumName == "cudaGraphicsRegisterFlagsNone" ||
+  } else if (!DpctGlobalInfo::useExtBindlessImages() &&
+             (EnumName == "cudaGraphicsRegisterFlagsNone" ||
               EnumName == "cudaGraphicsRegisterFlagsReadOnly" ||
               EnumName == "cudaGraphicsRegisterFlagsWriteDiscard" ||
               EnumName == "cudaGraphicsRegisterFlagsSurfaceLoadStore" ||
               EnumName == "cudaGraphicsRegisterFlagsTextureGather" ||
               EnumName == "cudaGraphicsMapFlagsNone" ||
               EnumName == "cudaGraphicsMapFlagsReadOnly" ||
-              EnumName == "cudaGraphicsMapFlagsWriteDiscard") &&
-             !DpctGlobalInfo::useExtBindlessImages()) {
+              EnumName == "cudaGraphicsMapFlagsWriteDiscard")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=bindless_images");
     return;
@@ -15111,7 +15111,6 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName(
         "cudaGraphicsD3D11RegisterResource",
         "cudaGraphicsResourceSetMapFlags", "cudaGraphicsMapResources",
-        "cudaGraphicsResourceGetMappedPointer",
         "cudaGraphicsResourceGetMappedMipmappedArray",
         "cudaGraphicsSubResourceGetMappedArray",
         "cudaGraphicsUnmapResources", "cudaGraphicsUnregisterResource");
