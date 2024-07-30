@@ -21,10 +21,11 @@ class InlineAsmIdentifierInfo {
 
 public:
   enum IDFlags {
-    BuiltinID = 0x01,   // %laneid, %warpid, WARP_SZ, ...
+    SpecialReg = 0x01,  // Special registers %laneid, %warpid, WARP_SZ, ...
     Instruction = 0x02, // Instruction opcode, mov, setp, ...
     BuiltinType = 0x04, // Builtin type name, i32, u32, ...
-    InstAttr = 0x08,    // The attributes for instructions, .eq, ...
+    Modifier = 0x08,    // The modifiers .eq, ...
+    StateSpace = 0x10,  // State spaces .global, .shared, ...
   };
 
 private:
@@ -89,8 +90,8 @@ public:
 
   bool isInstruction() const { return getFlag(Instruction); }
   bool isBuiltinType() const { return getFlag(BuiltinType); }
-  bool isBuiltinID() const { return getFlag(BuiltinID); }
-  bool isInstructionAttribute() const { return getFlag(InstAttr); }
+  bool isSpecialReg() const { return getFlag(SpecialReg); }
+  bool isModifier() const { return getFlag(Modifier); }
 };
 
 class InlineAsmIdentifierInfoLookup {

@@ -266,3 +266,11 @@ void foo4() {
   cudaStream_t stream;
   cublasLtMatrixTransform(lightHandle, transformDesc, alpha, A, Adesc, beta, B, Bdesc, C, Cdesc, stream);
 }
+
+void foo5() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: size_t ver = dpct::dnnl::get_version();
+  size_t ver = cublasLtGetVersion();
+}

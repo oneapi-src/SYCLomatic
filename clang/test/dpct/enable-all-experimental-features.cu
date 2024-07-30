@@ -40,15 +40,15 @@ __global__ void kernelFunc() {
   // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
 
-  // CHECK:  testThreadGroup(dpct::experimental::group(threadBlockGroup, item_ct1));
+  // CHECK:   testThreadGroup(dpct::experimental::group(threadBlockGroup, item_ct1));
   testThreadGroup(threadBlockGroup);
   // CHECK:  dpct::experimental::logical_group tilePartition16 = dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16);
   cg::thread_block_tile<16> tilePartition16 = cg::tiled_partition<16>(threadBlockGroup);
-  // CHECK:  testThreadGroup(dpct::experimental::group(tilePartition16, item_ct1));
+  // CHECK:   testThreadGroup(dpct::experimental::group(tilePartition16, item_ct1));
   testThreadGroup(tilePartition16);
   // CHECK:  sycl::sub_group tilePartition32 = sycl::ext::oneapi::experimental::this_sub_group();
   cg::thread_block_tile<32> tilePartition32 = cg::tiled_partition<32>(threadBlockGroup);
-  // CHECK:  testThreadGroup(dpct::experimental::group(tilePartition32, item_ct1));
+  // CHECK:   testThreadGroup(dpct::experimental::group(tilePartition32, item_ct1));
   testThreadGroup(tilePartition32);
   // CHECK:  dpct::experimental::logical_group tilePartition16_1(dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16));
   // CHECK:  sycl::sub_group tilePartition32_2(sycl::ext::oneapi::experimental::this_sub_group());
@@ -110,9 +110,9 @@ __global__ void kernelFunc1() {
 
   test11(tilePartition16);
   testThreadGroup(tilePartition16);
-  // CHECK:  test44(dpct::experimental::group(tilePartition16, sycl::ext::oneapi::experimental::this_nd_item<3>()));
-  // CHECK:  test11(dpct::experimental::group(tilePartition32, sycl::ext::oneapi::experimental::this_nd_item<3>()));
-  // CHECK:  test11(dpct::experimental::group(threadBlockGroup, sycl::ext::oneapi::experimental::this_nd_item<3>()));
+  // CHECK:   test44(dpct::experimental::group(tilePartition16, sycl::ext::oneapi::experimental::this_nd_item<3>()));
+  // CHECK:   test11(dpct::experimental::group(tilePartition32, sycl::ext::oneapi::experimental::this_nd_item<3>()));
+  // CHECK:   test11(dpct::experimental::group(threadBlockGroup, sycl::ext::oneapi::experimental::this_nd_item<3>()));
   test44(tilePartition16);
   test11(tilePartition32);
   test11(threadBlockGroup);

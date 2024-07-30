@@ -184,7 +184,7 @@ static void getCompileInfo(
       if (IsSystemInclude) {
         IsSystemInclude = false;
         clang::tooling::UnifiedPath IncPath = Option;
-        rewriteDir(IncPath, InRoot, OutRoot);
+        rewriteCanonicalDir(IncPath, InRoot, OutRoot);
 
         NewOptions += "-isystem ";
         SmallString<512> OutDirectory(IncPath.getCanonicalPath());
@@ -308,11 +308,11 @@ static void getCompileInfo(
 
     auto OrigFileName = FileName;
 
-    // rewriteFileName() should be called before rewriteDir(), as FileName
+    // rewriteFileName() should be called before rewriteCanonicalDir(), as FileName
     // needs to be a existing file path passed to DpctFileInfo referred in
     // rewriteFileName() to avoid potential crash issue.
     rewriteFileName(FileName);
-    rewriteDir(FileName, InRoot, OutRoot);
+    rewriteCanonicalDir(FileName, InRoot, OutRoot);
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());
