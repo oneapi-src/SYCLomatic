@@ -5160,21 +5160,26 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
   if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
-  } else if (const auto* CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+  } else if (const auto *CCE = dyn_cast<CXXConstructExpr>(Arg)) {
     HasImplicitConversion = true;
-    if (CCE->getNumArgs()) {
-      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CCE->getArg(0))) {
-        if (ICE->getCastKind() == CK_DerivedToBase) {
-          IsRedeclareRequired = true;
-        }
-      }
+    if (CCE->getNumArgs() == 1) {
+      Arg = CCE->getArg(0);
     }
-  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+  }
+#ifdef _WIN32
+  // This code path is for ConstructorConversion on Windows since its AST is
+  // different from the one on Linux.
+  if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Arg)) {
+    Arg = MTE->getSubExpr();
+  }
+#endif
+  if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
     auto CK = ICE->getCastKind();
     if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
     }
-    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion) {
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion ||
+        CK == CK_DerivedToBase) {
       IsRedeclareRequired = true;
     }
   }
