@@ -1,26 +1,26 @@
 #include "../../lib/DPCT/SaveNewFiles.cpp"
 #include "gtest/gtest.h"
 
-TEST(rewriteDir, fileUnderInRoot) {
+TEST(rewriteCanonicalDir, fileUnderInRoot) {
 #if _WIN32
   clang::tooling::UnifiedPath AbsPath = StringRef{"p:/a/b/in/file.cpp"};
-  rewriteDir(AbsPath, "p:/a/b/in", "p:/a/c");
+  rewriteCanonicalDir(AbsPath, "p:/a/b/in", "p:/a/c");
   EXPECT_EQ(AbsPath, "p:/a/c/file.cpp");
 #else
   clang::tooling::UnifiedPath AbsPath = StringRef{"/a/b/in/file.cpp"};
-  rewriteDir(AbsPath, clang::tooling::UnifiedPath("/a/b/in"), clang::tooling::UnifiedPath("/a/c"));
+  rewriteCanonicalDir(AbsPath, clang::tooling::UnifiedPath("/a/b/in"), clang::tooling::UnifiedPath("/a/c"));
   EXPECT_EQ(AbsPath, "/a/c/file.cpp");
 #endif
 }
 
-TEST(rewriteDir, fileInDirUnderInRoot) {
+TEST(rewriteCanonicalDir, fileInDirUnderInRoot) {
 #if _WIN32
   clang::tooling::UnifiedPath AbsPath = StringRef{"p:/a/b/in/d/file.cpp"};
-  rewriteDir(AbsPath, "p:/a/b/in", "p:/a/c");
+  rewriteCanonicalDir(AbsPath, "p:/a/b/in", "p:/a/c");
   EXPECT_EQ(AbsPath, "p:/a/c/d/file.cpp");
 #else
   clang::tooling::UnifiedPath AbsPath = StringRef{"/a/b/in/d/file.cpp"};
-  rewriteDir(AbsPath, clang::tooling::UnifiedPath("/a/b/in"), clang::tooling::UnifiedPath("/a/c"));
+  rewriteCanonicalDir(AbsPath, clang::tooling::UnifiedPath("/a/b/in"), clang::tooling::UnifiedPath("/a/c"));
   EXPECT_EQ(AbsPath, "/a/c/d/file.cpp");
 #endif
 }

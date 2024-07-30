@@ -93,7 +93,41 @@
 // TEX3DLOD-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
 // TEX3DLOD-NEXT:   sycl::ext::oneapi::experimental::sample_mipmap<T>(t, sycl::float3(f1, f2, f3), f4);
 
+/// Time Function
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=clock | FileCheck %s -check-prefix=CLOCK
+// CLOCK: CUDA API:
+// CLOCK-NEXT:   clock();
+// CLOCK-NEXT: Is migrated to:
+// CLOCK-NEXT:   /*
+// CLOCK-NEXT:   DPCT1008:0: clock function is not defined in SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
+// CLOCK-NEXT:   */
+// CLOCK-NEXT:   clock();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=clock64 | FileCheck %s -check-prefix=CLOCK64
+// CLOCK64: CUDA API:
+// CLOCK64-NEXT:   clock64();
+// CLOCK64-NEXT: Is migrated to:
+// CLOCK64-NEXT:   /*
+// CLOCK64-NEXT:   DPCT1008:0: clock64 function is not defined in SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
+// CLOCK64-NEXT:   */
+// CLOCK64-NEXT:   clock64();
+
 /// Atomic Functions
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=atomicAdd_system | FileCheck %s -check-prefix=ATOMICADD_SYSTEM
+// ATOMICADD_SYSTEM: CUDA API:
+// ATOMICADD_SYSTEM-NEXT:   atomicAdd_system(pi /*int **/, i /*int*/);
+// ATOMICADD_SYSTEM-NEXT:   atomicAdd_system(pu /*unsigned **/, u /*unsigned*/);
+// ATOMICADD_SYSTEM-NEXT:   atomicAdd_system(pull /*unsigned long long **/, ull /*unsigned long long*/);
+// ATOMICADD_SYSTEM-NEXT:   atomicAdd_system(pf /*float **/, f /*float*/);
+// ATOMICADD_SYSTEM-NEXT:   atomicAdd_system(pd /*double **/, d /*double*/);
+// ATOMICADD_SYSTEM-NEXT: Is migrated to:
+// ATOMICADD_SYSTEM-NEXT:   dpct::atomic_fetch_add<sycl::access::address_space::generic_space, sycl::memory_order::relaxed, sycl::memory_scope::system>(pi, i);
+// ATOMICADD_SYSTEM-NEXT:   dpct::atomic_fetch_add<sycl::access::address_space::generic_space, sycl::memory_order::relaxed, sycl::memory_scope::system>(pu, u);
+// ATOMICADD_SYSTEM-NEXT:   dpct::atomic_fetch_add<sycl::access::address_space::generic_space, sycl::memory_order::relaxed, sycl::memory_scope::system>(pull, ull);
+// ATOMICADD_SYSTEM-NEXT:   dpct::atomic_fetch_add<sycl::access::address_space::generic_space, sycl::memory_order::relaxed, sycl::memory_scope::system>(pf, f);
+// ATOMICADD_SYSTEM-NEXT:   dpct::atomic_fetch_add<sycl::access::address_space::generic_space, sycl::memory_order::relaxed, sycl::memory_scope::system>(pd, d);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=atomicSub | FileCheck %s -check-prefix=ATOMICSUB
 // ATOMICSUB: CUDA API:

@@ -1646,3 +1646,8 @@ ASSIGNABLE_FACTORY(
                                 "blas_gemm::experimental::matrix_transform",
                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                             ARG(7), ARG(8), ARG(9), ARG(10))))
+WARNING_FACTORY_ENTRY("cublasLtGetVersion",
+                      CALL_FACTORY_ENTRY("cublasLtGetVersion",
+                                         CALL(MapNames::getDpctNamespace() +
+                                              "dnnl::get_version")),
+                      Diagnostics::TYPE_MISMATCH)

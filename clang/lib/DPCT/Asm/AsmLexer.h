@@ -24,6 +24,8 @@
 
 namespace clang::dpct {
 
+struct IdentifierHandler;
+
 /// InlineAsmLexer - This provides a simple interface that truns a text buffer
 /// into a stream of tokens. This provides no support for buffering, or
 /// buffering/seeking of tokens, only forward lexing is supported.
@@ -43,6 +45,9 @@ class InlineAsmLexer {
   /// the program, including program keywords.
   mutable InlineAsmIdentifierTable Identifiers;
 
+  /// An external handler, used to do custom operation on an identifier.
+  IdentifierHandler *ExternalIdHandler = nullptr;
+
 public:
   InlineAsmLexer(llvm::MemoryBufferRef Input);
   InlineAsmLexer(const InlineAsmLexer &) = delete;
@@ -50,6 +55,11 @@ public:
   ~InlineAsmLexer();
 
   bool lex(InlineAsmToken &Result);
+
+  void setIdentifierHandler(IdentifierHandler *Hnd) {
+    assert(Hnd && "IdentiferHandler cannot be null");
+    ExternalIdHandler = Hnd;
+  }
 
   InlineAsmIdentifierInfo *getIdentifierInfo(StringRef Name) const {
     return &Identifiers.get(Name);
@@ -91,6 +101,12 @@ private:
   bool lexIdentifierContinue(InlineAsmToken &Result, const char *CurPtr);
   bool lexNumericConstant(InlineAsmToken &Result, const char *CurPtr);
   bool lexTokenInternal(InlineAsmToken &Result);
+};
+
+struct IdentifierHandler {
+  virtual ~IdentifierHandler() = default;
+  virtual bool HandleIdentifier(SmallVectorImpl<char> &Buf,
+                                InlineAsmToken &Identifier) = 0;
 };
 
 } // namespace clang::dpct

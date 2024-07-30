@@ -13,4 +13,11 @@ void foo1(cublasStatus_t s) {
   //CHECK-NEXT:*/
   //CHECK-NEXT:printf("Error string: %s", "<Placeholder string>");
   printf("Error string: %s", cublasGetStatusString(s));
+  cublasHandle_t handle;
+  void *workspace;
+  size_t size;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cublasSetWorkspace was removed because this functionality is redundant in SYCL.
+  //CHECK-NEXT:*/
+  cublasSetWorkspace(handle, workspace, size);
 }

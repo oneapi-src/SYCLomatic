@@ -40,59 +40,16 @@ static inline bool isIdentifierContinue(unsigned char C) {
   return clang::isAsciiIdentifierContinue(C, /*AllowDollar*/ true);
 }
 
-/// Clean the special character in identifier.
-/// Rule: 1. replace '$' with '_d_'
-///       2. replace '%' with '_p_'
-///       3. add a '_' character to escape '_d_' and '_p_'
-/// %r -> _p_r
-/// %$r -> _p__d_r
-/// %r$ -> _p_r_d_
-/// %r% -> _p_r_p_
-/// %%r -> _p__p_r
-/// %r%_d_ -> _p_r_p__d_
-/// %r_d_% => _p_r__d__p_
-void InlineAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
-                                     StringRef Input) const {
-  Buf.clear();
-  auto Push = [&Buf](char C) {
-    Buf.push_back('_');
-    Buf.push_back(C);
-    Buf.push_back('_');
-  };
-
-  for (const char *Ptr = Input.begin(); Ptr != Input.end(); ++Ptr) {
-    char C = *Ptr;
-    StringRef SubStr(Ptr, Input.end() - Ptr);
-    switch (C) {
-    case '$':
-      Push('d');
-      break;
-    case '%':
-      Push('p');
-      break;
-    case '_':
-      if (SubStr.starts_with("_d_") || SubStr.starts_with("_p_"))
-        Buf.push_back('_');
-      [[fallthrough]];
-    default:
-      Buf.push_back(C);
-      break;
-    }
-  }
-}
-
 InlineAsmIdentifierInfo *
 InlineAsmLexer::lookupIdentifierInfo(InlineAsmToken &Identifier) const {
   assert(!Identifier.getRawIdentifier().empty() && "No raw identifier data!");
   InlineAsmIdentifierInfo *II;
   StringRef Raw = Identifier.getRawIdentifier();
-  if (!getIdentifiertable().contains(
-          Raw) && // Maybe a builtin identifier, e.g. %laneid
-      (Identifier.needsCleaning() || Raw.contains("_d_") ||
-       Raw.contains("_p_"))) {
-    SmallString<64> IdentifierBuffer;
-    cleanIdentifier(IdentifierBuffer, Identifier.getRawIdentifier());
-    II = getIdentifierInfo(IdentifierBuffer);
+  if (!getIdentifiertable().contains(Raw) && ExternalIdHandler) {
+    SmallString<64> Buf;
+    if (!ExternalIdHandler->HandleIdentifier(Buf, Identifier))
+      Buf = Raw;
+    II = getIdentifierInfo(Buf);
   } else {
     II = getIdentifierInfo(Identifier.getRawIdentifier());
   }

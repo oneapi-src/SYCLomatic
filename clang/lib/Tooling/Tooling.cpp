@@ -1120,9 +1120,8 @@ int ClangTool::run(ToolAction *Action) {
   // if input file(s) is not specified in command line, and the process-all
   // option is given in the comomand line, dpct tries to migrate or copy all
   // files from -in-root to the output directory.
-  if(SourcePaths.size() == 0 && DoGetRunRound() == 0) {
+  if (SourcePaths.size() == 0 && DoGetRunRound() == 0) {
     std::vector<std::string> FilesNotProcessed;
-
     // To traverse all the files in the directory specified by
     // -in-root, collecting *.cu files not processed by the first loop of
     // calling processFiles() into FilesNotProcessed, and copies the rest
