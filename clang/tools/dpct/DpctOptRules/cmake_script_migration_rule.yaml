@@ -930,9 +930,9 @@
   Subrules:
     value:
       MatchMode: Full
-      In: \${CUDA_INCLUDE_DIRS}
+      In: CUDA_INCLUDE_DIRS
       Out: |
-        \${SYCL_INCLUDE_DIR}
+        SYCL_INCLUDE_DIR
       RuleId: "replace_CUDA_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
 
 - Rule: rule_CUDA_NVCC_INCLUDE_DIRS
@@ -2399,20 +2399,6 @@
       Out: SYCL_INCLUDE_DIR
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_include_dir_with_sycl_include_dir"
-
-- Rule: rule_target_include_directories_cuda_include_dirs
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: target_include_directories_cuda_inc
-  MatchMode: Partial
-  In: target_include_directories${empty}(${value})
-  Out: target_include_directories(${value})
-  Subrules:
-    value:
-      In: CUDA_INCLUDE_DIRS
-      Out: SYCL_INCLUDE_DIR
-      MatchMode: Full
-      RuleId: "replace_cuda_include_dirs_with_sycl_include_dir"
 
 - Rule: rule_target_include_directories_cudnn_include_dir
   Kind: CMakeRule

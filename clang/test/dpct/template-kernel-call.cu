@@ -242,7 +242,7 @@ int main() {
 
 // CHECK:template<typename T>
 // CHECK-NEXT:void convert_kernel(T b, const sycl::nd_item<3> &item_ct1, int *aaa,
-// CHECK-NEXT:                    sycl::local_accessor<double, 2> bbb){
+// CHECK-NEXT:                    double bbb[8][0]){
 // CHECK:  T a = item_ct1.get_local_range(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:}
 template<typename T>
@@ -261,7 +261,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::local_accessor<int, 1> aaa_acc_ct1(sycl::range<1>(0), cgh);
-// CHECK-NEXT:      sycl::local_accessor<double, 2> bbb_acc_ct1(sycl::range<2>(8, 0), cgh);
+// CHECK-NEXT:      sycl::local_accessor<double[8][0], 0> bbb_acc_ct1(cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class convert_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),

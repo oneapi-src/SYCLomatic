@@ -627,7 +627,7 @@ int main(void){
   return 0;
 }
 
-template <bool is_ture> void foo() {
+template <bool is_true> void foo() {
   cudaStream_t stream;
   int index_count = 1;
 
