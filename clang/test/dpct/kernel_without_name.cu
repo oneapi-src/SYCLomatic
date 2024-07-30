@@ -429,3 +429,42 @@ void foobar(T a) {
 void run_foobar() {
   foobar<float>(1.0f);
 }
+
+class base {
+public:
+  base();
+};
+base::base() {}
+
+class derived : public base {
+public:
+  derived();
+  ~derived();
+};
+derived::derived() {}
+derived::~derived() {}
+
+struct A2 {
+  A2(int) {}
+  operator int() const { return 7; }
+};
+
+__global__ void kfunc(base arg, A2, int) {}
+
+void func() {
+  derived der;
+  A2 a2(1);
+  // CHECK: dpct::get_out_of_order_queue().submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     base der_ct0 = der;
+  // CHECK-NEXT:     A2 ct1 = 1;
+  // CHECK-NEXT:     int a2_ct2 = a2;
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         kfunc(der_ct0, ct1, a2_ct2);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  kfunc<<<128, 32>>>(der, 1, a2);
+}

@@ -14,3 +14,32 @@ template <> struct Math<int> {
     return __half2half2(Math<half>::zero());
   }
 };
+
+template <typename T>
+struct Math1 {
+    static inline __device__ T add(T a, T b) {
+      // CHECK: return a + b;
+        return a + b;
+    }
+};
+
+template <>
+struct Math1<half2> {
+    static inline __device__ half2 add(half2 a, half2 b) {
+  // CHECK: return a + b;
+        return __hadd2(a, b);
+    }
+};
+
+template<class T>
+__global__ void kernel() {
+ half2 a, b;
+// CHECK: a = Math1<sycl::half2>::add(a, b);
+ a = Math1<half2>::add(a, b);
+}
+
+int main() {
+  kernel<int><<<1, 1>>>();
+  return 0;
+}
+

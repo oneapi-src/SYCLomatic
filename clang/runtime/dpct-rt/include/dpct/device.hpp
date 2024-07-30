@@ -189,12 +189,6 @@ public:
     for (int i = 0; i < 3; ++i)
       _max_work_item_sizes_i[i] = max_work_item_sizes[i];
   }
-  [[deprecated]] void
-  set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
-    for (int i = 0; i < 3; ++i) {
-      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
-    }
-  }
   void set_host_unified_memory(bool host_unified_memory) {
     _host_unified_memory = host_unified_memory;
   }

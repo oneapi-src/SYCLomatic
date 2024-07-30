@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none --out-root %T/cublaslt %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cublaslt/cublaslt.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/cublaslt/cublaslt.dp.cpp -o %T/cublaslt/cublaslt.dp.o %}
@@ -188,6 +188,16 @@ void foo3() {
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::trans_b;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::trans_c;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::a_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::b_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::d_scale_pointer;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::absmax_d_pointer;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   cublasLtMatmulDescAttributes_t d;
   d = CUBLASLT_MATMUL_DESC_COMPUTE_TYPE;
   d = CUBLASLT_MATMUL_DESC_SCALE_TYPE;
@@ -196,40 +206,23 @@ void foo3() {
   d = CUBLASLT_MATMUL_DESC_TRANSB;
   d = CUBLASLT_MATMUL_DESC_TRANSC;
   d = CUBLASLT_MATMUL_DESC_EPILOGUE;
-  // CHECK: int e;
-  // CHECK-NEXT: e = 1;
-  // CHECK-NEXT: e = 2;
-  // CHECK-NEXT: e = 130;
-  // CHECK-NEXT: e = 4;
-  // CHECK-NEXT: e = 6;
-  // CHECK-NEXT: e = 134;
-  // CHECK-NEXT: e = 136;
-  // CHECK-NEXT: e = 152;
-  // CHECK-NEXT: e = 32;
-  // CHECK-NEXT: e = 160;
-  // CHECK-NEXT: e = 36;
-  // CHECK-NEXT: e = 164;
-  // CHECK-NEXT: e = 192;
-  // CHECK-NEXT: e = 208;
-  // CHECK-NEXT: e = 256;
-  // CHECK-NEXT: e = 512;
+  d = CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET;
+  d = CUBLASLT_MATMUL_DESC_FAST_ACCUM;
+  d = CUBLASLT_MATMUL_DESC_A_SCALE_POINTER;
+  d = CUBLASLT_MATMUL_DESC_B_SCALE_POINTER;
+  d = CUBLASLT_MATMUL_DESC_D_SCALE_POINTER;
+  d = CUBLASLT_MATMUL_DESC_AMAX_D_POINTER;
+  d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS;
+  d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_COLS;
+  d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_OUT_COUNTERS_POINTER;
+  d = CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_IN_COUNTERS_POINTER;
+
+  // CHECK: dpct::blas_gemm::experimental::epilogue_t e;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::nop;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::relu;
   cublasLtEpilogue_t e;
   e = CUBLASLT_EPILOGUE_DEFAULT;
   e = CUBLASLT_EPILOGUE_RELU;
-  e = CUBLASLT_EPILOGUE_RELU_AUX;
-  e = CUBLASLT_EPILOGUE_BIAS;
-  e = CUBLASLT_EPILOGUE_RELU_BIAS;
-  e = CUBLASLT_EPILOGUE_RELU_AUX_BIAS;
-  e = CUBLASLT_EPILOGUE_DRELU;
-  e = CUBLASLT_EPILOGUE_DRELU_BGRAD;
-  e = CUBLASLT_EPILOGUE_GELU;
-  e = CUBLASLT_EPILOGUE_GELU_AUX;
-  e = CUBLASLT_EPILOGUE_GELU_BIAS;
-  e = CUBLASLT_EPILOGUE_GELU_AUX_BIAS;
-  e = CUBLASLT_EPILOGUE_DGELU;
-  e = CUBLASLT_EPILOGUE_DGELU_BGRAD;
-  e = CUBLASLT_EPILOGUE_BGRADA;
-  e = CUBLASLT_EPILOGUE_BGRADB;
 }
 
 void foo4() {
@@ -272,4 +265,12 @@ void foo4() {
   cublasLtMatrixLayout_t Cdesc;
   cudaStream_t stream;
   cublasLtMatrixTransform(lightHandle, transformDesc, alpha, A, Adesc, beta, B, Bdesc, C, Cdesc, stream);
+}
+
+void foo5() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: size_t ver = dpct::dnnl::get_version();
+  size_t ver = cublasLtGetVersion();
 }
