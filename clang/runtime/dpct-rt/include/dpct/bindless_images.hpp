@@ -152,7 +152,7 @@ std::unordered_set<ID3D11Resource *> uniqueD3D11Res;
 class interop_mem_wrapper {
 public:
 #ifdef _WIN32
-  interop_mem_wrapper(ID3D11Resource* d3d11_res, int reg_flags)
+  interop_mem_wrapper(ID3D11Resource *d3d11_res, int reg_flags)
       : _d3d11_res(d3d11_res), _reg_flags(reg_flags) {
     
     if (uniqueD3D11Res.find(_d3d11_res) != uniqueD3D11Res.end()) {
@@ -321,7 +321,7 @@ public:
 
 #ifdef _WIN32
   // Helper function to query the properties of DX11 resource
-  void query_res_info(ID3D11Resource* resource) {
+  void query_res_info(ID3D11Resource *resource) {
     unsigned int res_width = 1;
     unsigned int res_height = 1;
     unsigned int res_depth = 1;
@@ -424,7 +424,7 @@ public:
   }
 
   // Helper function to create shared handle for DXD11 resource
-  HANDLE create_shared_handle(ID3D11Resource* resource) {
+  HANDLE create_shared_handle(ID3D11Resource *resource) {
     HANDLE win_nt_handle = nullptr;
 
     IDXGIResource1* pDXGIResource1;
@@ -470,7 +470,9 @@ public:
 #endif
 
 private:
+#ifdef _WIN32
   ID3D11Resource *_d3d11_res;
+#endif
   HANDLE _win_nt_handle = nullptr;
   int _reg_flags;
 

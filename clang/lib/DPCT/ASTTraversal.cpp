@@ -15113,7 +15113,6 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudaGraphicsResourceSetMapFlags", "cudaGraphicsMapResources",
         "cudaGraphicsResourceGetMappedPointer",
         "cudaGraphicsResourceGetMappedMipmappedArray",
-        "cudaGetMipmappedArrayLevel",
         "cudaGraphicsSubResourceGetMappedArray",
         "cudaGraphicsUnmapResources", "cudaGraphicsUnregisterResource");
   };

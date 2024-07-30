@@ -1,11 +1,13 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
-// RUN: dpct --use-experimental-features=resource --format-range=none -out-root %T/cudaGraphics_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: dpct --use-experimental-features=bindless_images --format-range=none -out-root %T/cudaGraphics_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaGraphics_test/cudaGraphics_test.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics_test/cudaGraphics_test.dp.cpp -o %T/cudaGraphics_test/cudaGraphics_test.dp.o %}
 
 #include <cuda.h>
+#ifdef _WIN32
 #include <cuda_d3d11_interop.h>
+#endif
 
 int main() {
   // CHECK: dpct::experimental::interop_mem_wrapper_ptr resource;
@@ -21,8 +23,8 @@ int main() {
   // CHECK: dpct::experimental::interop_mem_wrapper_ptr resource1, *resources1, **resources_ptr1;
   cudaGraphicsResource_t resource1, *resources1, **resources_ptr1;
 
-  cudaMipmappedArray_t* mipmappedArray;
-  cudaArray_t* array;
+  cudaMipmappedArray_t mipmappedArray, *mipmappedArray_ptr;
+  cudaArray_t array, *array_ptr;
 
   // CHECK: int regFlags = 0;
   // CHECK-NEXT: int regFlags1 = 0;
@@ -35,14 +37,15 @@ int main() {
   cudaGraphicsRegisterFlags regFlags3 = cudaGraphicsRegisterFlagsSurfaceLoadStore;
   cudaGraphicsRegisterFlags regFlags4 = cudaGraphicsRegisterFlagsTextureGather;
 
+#ifdef _WIN32
   ID3D11Resource *pD3DResource, *pD3DResource1;
 
-#ifndef DBUILD_TEST
-  // CHECK: resource = new dpct::experimental::interop_mem_wrapper(pD3DResource, 0);
+  // CHECK-WINDOWS: resource = new dpct::experimental::interop_mem_wrapper(pD3DResource, 0);
   cudaGraphicsD3D11RegisterResource(&resource, pD3DResource, cudaGraphicsRegisterFlagsNone);
 
-  // CHECK: resource1 = new dpct::experimental::interop_mem_wrapper(pD3DResource1, regFlags1);
+  // CHECK-WINDOWS: resource1 = new dpct::experimental::interop_mem_wrapper(pD3DResource1, regFlags1);
   cudaGraphicsD3D11RegisterResource(&resource1, pD3DResource1, regFlags1);
+#endif
 
   resources_arr[0] = resource;
   resources_arr[1] = resource1;
@@ -77,7 +80,10 @@ int main() {
   cudaGraphicsMapResources(1, &resource);
 
   // CHECK: mipmappedArray = resource->get_mapped_mipmapped_array();
-  cudaGraphicsResourceGetMappedMipmappedArray(mipmappedArray, resource);
+  cudaGraphicsResourceGetMappedMipmappedArray(&mipmappedArray, resource);
+
+  // CHECK: *mipmappedArray_ptr = resource->get_mapped_mipmapped_array();
+  cudaGraphicsResourceGetMappedMipmappedArray(mipmappedArray_ptr, resource);
 
   void* devPtr;
   size_t size;
@@ -86,17 +92,19 @@ int main() {
 
   unsigned int arrayIndex, mipLevel;
   // CHECK: array = resource->get_sub_resource_mapped_array(arrayIndex, mipLevel);
-  cudaGraphicsSubResourceGetMappedArray(array, resource, arrayIndex, mipLevel);
+  cudaGraphicsSubResourceGetMappedArray(&array, resource, arrayIndex, mipLevel);
+
+  // CHECK: *array_ptr = resource->get_sub_resource_mapped_array(arrayIndex, mipLevel);
+  cudaGraphicsSubResourceGetMappedArray(array_ptr, resource, arrayIndex, mipLevel);
 
   // CHECK: dpct::experimental::unmap_resources(1, &resource);
   cudaGraphicsUnmapResources(1, &resource);
 
-  // CHECK: delete (resource);
+  // CHECK: delete(resource);
   cudaGraphicsUnregisterResource(resource);
 
-  // CHECK: delete (resource1);
+  // CHECK: delete(resource1);
   cudaGraphicsUnregisterResource(resource1);
-#endif
 
   return 0;
 }

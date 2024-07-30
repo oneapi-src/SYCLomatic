@@ -74,15 +74,6 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-        "cudaGetMipmappedArrayLevel", DEREF(0),
-        MEMBER_CALL(ARG(1), true, "get_mip_level", ARG(2)))),
-    UNSUPPORT_FACTORY_ENTRY("cudaGetMipmappedArrayLevel", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                            ARG("cudaGetMipmappedArrayLevel"),
-                            ARG("--use-experimental-features=bindless_images"))))
-
-ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-    UseExtBindlessImages,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaGraphicsSubResourceGetMappedArray", DEREF(0),
         MEMBER_CALL(ARG(1), true, "get_sub_resource_mapped_array", ARG(2), ARG(3)))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphicsSubResourceGetMappedArray", Diagnostics::TRY_EXPERIMENTAL_FEATURE,

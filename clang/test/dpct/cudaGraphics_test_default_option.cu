@@ -6,7 +6,9 @@
 
 #ifndef BUILD_TEST
 #include <cuda.h>
+#ifdef _WIN32
 #include <cuda_d3d11_interop.h>
+#endif
 
 int main() {
   // CHECK: /*
@@ -25,11 +27,14 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphicsRegisterFlags regFlags = cudaGraphicsRegisterFlagsNone;
 
+#ifdef _WIN32
   ID3D11Resource* pD3DResource;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsD3D11RegisterResource is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
-  // CHECK-NEXT: */
+
+  // CHECK-WINDOWS: /*
+  // CHECK-WINDOWS-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsD3D11RegisterResource is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-WINDOWS-NEXT: */
   cudaGraphicsD3D11RegisterResource(&resource, pD3DResource, regFlags);
+#endif
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsMapFlags is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
