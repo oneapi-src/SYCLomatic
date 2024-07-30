@@ -8425,12 +8425,17 @@ void KernelCallRule::runRule(
     if (Flag)
       DpctGlobalInfo::insertKCIndentWidth(IndentLen);
 
+    //std::cout << "11111111111111" << std::endl;
+    //std::cout << KCall->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
+    //int iiiii = 0;
     for (const Expr *Arg : KCall->arguments()) {
+      //std::cout << "iiiii:" << iiiii << std::endl;
       if (!isDeviceCopyable(Arg->getType(), this)) {
         report(KCall->getBeginLoc(),
                Diagnostics::NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, true,
                DpctGlobalInfo::getOriginalTypeName(Arg->getType()));
       }
+      //iiiii++;
     }
 
     // Add kernel call to map,

@@ -5102,6 +5102,9 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
     if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
       if (!isUserDefinedDecl(ClassDecl))
         return;
+      //std::cout << "QT:" << DpctGlobalInfo::getTypeName(QT) << std::endl;
+      //std::cout << "ClassDecl:" << ClassDecl->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
+      //CanonicalType.isTriviallyCopyableType(Ctx);
       std::vector<std::string> Messages;
       // [0] for T&, [1] for volatile T&
       std::array<std::pair<bool, SourceLocation>, 2>
@@ -5139,14 +5142,20 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
               NT->getReplacement(DpctGlobalInfo::getContext()));
         }
       }
+      if (ClassDecl->hasNonTrivialMoveConstructor()) {
+        Messages.push_back("move constructor");
+      }
+      if (ClassDecl->hasNonTrivialMoveAssignment()) {
+        Messages.push_back("move assignment");
+      }
       for (const auto &M : ClassDecl->methods()) {
-        if (!M->isImplicit() && !M->isDeleted()) {
-          if (M->isCopyAssignmentOperator()) {
-            Messages.push_back("move constructor");
-          } else if (M->isMoveAssignmentOperator()) {
-            Messages.push_back("move assignment");
-          }
-        }
+        //if (!M->isImplicit() && !M->isDeleted()) {
+        //  if (M->isCopyAssignmentOperator()) {
+        //    Messages.push_back("move constructor");
+        //  } else if (M->isMoveAssignmentOperator()) {
+        //    Messages.push_back("move assignment");
+        //  }
+        //}
         if (M->isVirtual()) {
           Messages.push_back("virtual method \"" + M->getNameAsString() + "\"");
         }
