@@ -1841,7 +1841,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
 
       // The logic below to extract an archive name from an ar command, like:
       // 1. "/usr/bin/ar --plugin plugin.so -qc foo.a bar.o"
-      // 2. "usr/bin/ar qc foo.a bar.o "
+      // 2. "/usr/bin/ar qc foo.a bar.o "
       int is_option_plugin = 0;
       size_t idx = it + 1;
       for (; idx < argc; idx++) {
@@ -1851,24 +1851,19 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
           is_option_plugin = 0;
           continue;
         } else {
-          // To test the existence of the file to be to archived
-          if (access(argv[idx], F_OK) == 0) {
-            break;
-          }
+          idx += 1;
+          break; // To break the loop when idx points the archive name of ar
+                 // command.
         }
       }
-      if (idx < argc) {
-        // Assume the archive name is the last argument before the object file
-        int olen = strlen(argv[idx - 1]);
-        memset(ofilename, '\0', PATH_MAX);
-        if (olen >= PATH_MAX) {
-          perror("bear: filename length too long.");
-          pthread_mutex_unlock(&mutex);
-          exit(EXIT_FAILURE);
-        }
-        strncpy(ofilename, argv[idx], olen);
+      int olen = strlen(argv[idx]);
+      memset(ofilename, '\0', PATH_MAX);
+      if (olen >= PATH_MAX) {
+        perror("bear: filename length too long.");
+        pthread_mutex_unlock(&mutex);
+        exit(EXIT_FAILURE);
       }
-
+      strncpy(ofilename, argv[idx], olen);
       if (generate_file(ofilename, 1) != 0) {
         pthread_mutex_unlock(&mutex);
         exit(EXIT_FAILURE);
