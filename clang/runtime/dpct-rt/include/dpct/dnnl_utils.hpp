@@ -11,19 +11,19 @@
 
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
+
+#include "lib_common_utils.hpp"
+
+#include <oneapi/dnnl/dnnl.hpp>
+#include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <oneapi/dpl/numeric>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 #include <sycl/sycl.hpp>
-#include <oneapi/dnnl/dnnl.hpp>
-#include <oneapi/dnnl/dnnl_sycl.hpp>
+
 #include <unordered_map>
 #include <algorithm>
 #include <list>
-
-#include "memory.hpp"
-#include "device.hpp"
-#include "lib_common_utils.hpp"
 
 namespace dpct {
 namespace dnnl {
@@ -683,7 +683,8 @@ class dropout_desc {
     void *_state = nullptr;
     std::vector<std::uint8_t> _host_state;
     rng_engine_t _rng_engine;
-    dropout_desc_imp() : _rng_engine(dpct::get_default_queue(), 1) {}
+    dropout_desc_imp()
+        : _rng_engine(::dpct::detail::proxy::get_default_queue(), 1) {}
   };
   std::shared_ptr<dropout_desc_imp> _imp;
 
@@ -1067,9 +1068,14 @@ public:
   }
   /// Creating oneDNN engine.
   void create_engine() {
-    _q = &dpct::get_current_device().default_queue();
+#if USE_DPCT_HELPER
+    _q = &::dpct::detail::proxy::get_current_device().default_queue();
+#else
+    _q = ::dpct::detail::proxy::get_current_device().default_queue();
+#endif
     _eng = std::make_shared<::dnnl::engine>(::dnnl::sycl_interop::make_engine(
-        dpct::get_current_device(), dpct::get_current_device().get_context()));
+        ::dpct::detail::proxy::get_current_device(),
+        ::dpct::detail::proxy::get_current_device().get_context()));
     _s = std::make_shared<::dnnl::stream>(
         ::dnnl::sycl_interop::make_stream(*_eng, *_q));
     _engine_id = _engine_count++;

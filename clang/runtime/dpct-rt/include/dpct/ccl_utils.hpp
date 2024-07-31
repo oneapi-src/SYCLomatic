@@ -9,12 +9,12 @@
 #ifndef __DPCT_CCL_UTILS_HPP__
 #define __DPCT_CCL_UTILS_HPP__
 
-#include <sycl/sycl.hpp>
+#include "lib_common_utils.hpp"
 #include <oneapi/ccl.hpp>
+#include <sycl/sycl.hpp>
+
 #include <unordered_map>
 #include <memory>
-
-#include "device.hpp"
 
 namespace dpct {
 namespace ccl {
@@ -74,9 +74,10 @@ public:
   communicator_wrapper(
       int size, int rank, oneapi::ccl::kvs::address_type id,
       const oneapi::ccl::comm_attr &attr = oneapi::ccl::default_comm_attr)
-      : _device_comm(oneapi::ccl::create_device(
-            static_cast<sycl::device &>(dpct::get_current_device()))),
-        _context_comm(oneapi::ccl::create_context(dpct::get_default_context())),
+      : _device_comm(oneapi::ccl::create_device(static_cast<sycl::device &>(
+            ::dpct::detail::proxy::get_current_device()))),
+        _context_comm(oneapi::ccl::create_context(
+            ::dpct::detail::proxy::get_default_context())),
         _comm(oneapi::ccl::create_communicator(
             size, rank, _device_comm, _context_comm, dpct::ccl::create_kvs(id),
             attr)) {
