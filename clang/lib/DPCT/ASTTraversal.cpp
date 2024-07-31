@@ -9312,6 +9312,12 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
         if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Device ||
              R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
+          if (R.second->getConstantFlag() ==
+              dpct::ConstantFlagType::HostDeviceInOnePass) {
+            if (R.second->getNewHostVarName().empty()) {
+              continue;
+            }
+          }
           // using flag and the offset of __constant__ to link previous
           // execution of previous is device, current is host:
           previousDCurrentH(VD, *(R.second));
@@ -9359,9 +9365,12 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
       // Add the constant offset in the replacement
       // The constant offset will be used in previousHCurrentD to distinguish
       // unnecessary warnings.
-      if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
-                 VD->getNameAsString())) {
-        TransformSet->back()->setConstantOffset(TM->getConstantOffset());
+      if (TM->getConstantFlag() == dpct::ConstantFlagType::Host) {
+        dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
+        if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
+                   VD->getNameAsString())) {
+          TransformSet->back()->setConstantOffset(TM->getConstantOffset());
+        }
       }
     }
   }
