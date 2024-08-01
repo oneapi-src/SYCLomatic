@@ -2282,37 +2282,56 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
 #else
   using Ty = typename DataType<T>::T2;
   sycl::queue exec_queue = desc_ptr->get_queue();
-  std::int64_t m_int64 = m;
-  std::int64_t n_int64 = n;
-  std::int64_t nrhs_int64 = nrhs;
-  std::int64_t lda_int64 = lda;
-  std::int64_t ldb_int64 = ldb;
-  std::int64_t group_sizes = batch_size;
+  struct matrix_info_t {
+    oneapi::mkl::transpose trans_info;
+    std::int64_t m_info;
+    std::int64_t n_info;
+    std::int64_t nrhs_info;
+    std::int64_t lda_info;
+    std::int64_t ldb_info;
+    std::int64_t group_size_info;
+  };
+  matrix_info_t *matrix_info =
+      (matrix_info_t *)std::malloc(sizeof(matrix_info_t));
+  matrix_info->trans_info = trans;
+  matrix_info->m_info = m;
+  matrix_info->n_info = n;
+  matrix_info->nrhs_info = nrhs;
+  matrix_info->lda_info = lda;
+  matrix_info->ldb_info = ldb;
+  matrix_info->group_size_info = batch_size;
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::gels_batch_scratchpad_size<Ty>(
-          exec_queue, &trans, &m_int64, &n_int64, &nrhs_int64, &lda_int64,
-          &ldb_int64, 1, &group_sizes);
+          exec_queue, &(matrix_info->trans_info), &(matrix_info->m_info),
+          &(matrix_info->n_info), &(matrix_info->nrhs_info),
+          &(matrix_info->lda_info), &(matrix_info->ldb_info), 1,
+          &(matrix_info->group_size_info));
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
 
   *info = 0;
   if (dev_info)
     exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
   sycl::event e = ::dpct::detail::catch_batch_error(
-      exec_queue, scratchpad, info, dev_info, batch_size,
+      nullptr, "oneapi::mkl::lapack::gels_batch", exec_queue, scratchpad, info,
+      dev_info, batch_size,
       static_cast<sycl::event (*)(
           sycl::queue &, oneapi::mkl::transpose *, std::int64_t *,
           std::int64_t *, std::int64_t *, Ty **, std::int64_t *, Ty **,
           std::int64_t *, std::int64_t, std::int64_t *, Ty *, std::int64_t,
           const std::vector<sycl::event> &)>(&oneapi::mkl::lapack::gels_batch),
-      exec_queue, &trans, &m_int64, &n_int64, &nrhs_int64, (Ty **)a, &lda_int64,
-      (Ty **)b, &ldb_int64, 1, &group_sizes, scratchpad, scratchpad_size,
+      exec_queue, &(matrix_info->trans_info), &(matrix_info->m_info),
+      &(matrix_info->n_info), &(matrix_info->nrhs_info), (Ty **)a,
+      &(matrix_info->lda_info), (Ty **)b, &(matrix_info->ldb_info), 1,
+      &(matrix_info->group_size_info), scratchpad, scratchpad_size,
       std::vector<sycl::event>{});
 
   return exec_queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=, _e = e] {
       ::dpct::detail::catch_batch_error(
-          exec_queue, scratchpad, info, dev_info, batch_size,
+          nullptr, "oneapi::mkl::lapack::gels_batch", exec_queue, scratchpad,
+          info, dev_info, batch_size,
           [](sycl::event _e) { _e.wait_and_throw(); }, _e);
+      std::free(matrix_info);
       sycl::free(scratchpad, exec_queue);
     });
   });

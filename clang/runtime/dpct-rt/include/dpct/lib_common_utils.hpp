@@ -171,18 +171,32 @@ inline constexpr std::size_t library_data_size[] = {
 
 template <class func_t, typename... args_t>
 std::invoke_result_t<func_t, args_t...>
-catch_batch_error(sycl::queue exec_queue, void *scratchpad, int *info,
+catch_batch_error(int *has_execption, std::string api_names,
+                  sycl::queue exec_queue, void *scratchpad, int *info,
                   int *dev_info, int batch_size, func_t &&f, args_t &&...args) {
   try {
+    if (has_execption)
+      *has_execption = 0;
     return f(std::forward<args_t>(args)...);
   } catch (oneapi::mkl::lapack::batch_error const &be) {
+    if (has_execption)
+      *has_execption = 1;
+    std::cerr << "Unexpected exception caught during call to API(s): "
+              << api_names << std::endl
+              << "reason: " << be.what() << std::endl
+              << "number: " << be.info() << std::endl;
+    if (be.info() < 0 && info)
+      *info = be.info();
     int i = 0;
     auto &ids = be.ids();
-    std::vector<int> info_vec(batch_size);
+    std::vector<int> info_vec(batch_size, 0);
     for (auto const &e : be.exceptions()) {
       try {
         std::rethrow_exception(e);
       } catch (oneapi::mkl::lapack::exception &e) {
+        std::cerr << "Exception in problem: " << ids[i] << std::endl
+                  << "reason: " << e.what() << std::endl
+                  << "info: " << e.info() << std::endl;
         info_vec[ids[i]] = e.info();
         i++;
       }
@@ -191,7 +205,17 @@ catch_batch_error(sycl::queue exec_queue, void *scratchpad, int *info,
     if (dev_info)
       exec_queue.memcpy(dev_info, info_vec.data(), batch_size * sizeof(int))
           .wait();
-    *info = be.info();
+    if constexpr (!std::is_void_v<std::invoke_result_t<func_t, args_t...>>) {
+      return {};
+    }
+  } catch (sycl::exception const &e) {
+    if (has_execption)
+      *has_execption = 1;
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    exec_queue.wait();
+    if (dev_info)
+      exec_queue.memset(dev_info, 0, batch_size * sizeof(int)).wait();
     if constexpr (!std::is_void_v<std::invoke_result_t<func_t, args_t...>>) {
       return {};
     }
