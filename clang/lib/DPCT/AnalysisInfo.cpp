@@ -5726,19 +5726,14 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
         ArgsArray = "(" + ArgsArray + ")";
       }
       Kernel->resizeTextureObjectList(FD->getNumParams());
-      //std::cout << "22222222222222222" << std::endl;
-      //std::cout << CE->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
-      //int iiiii = 0;
       for (auto &Parm : FD->parameters()) {
         Kernel->ArgsInfo.emplace_back(Parm, ArgsArray, Kernel.get());
-        //std::cout << "iiiii:" << iiiii << std::endl;
         if (!isDeviceCopyable(Parm->getType(), nullptr)) {
           DiagnosticsUtils::report(
               LocInfo.first, LocInfo.second,
               Diagnostics::NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, true, true,
               DpctGlobalInfo::getOriginalTypeName(Parm->getType()));
         }
-        //iiiii++;
       }
     }
   } else {
