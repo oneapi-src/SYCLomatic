@@ -44,6 +44,24 @@ using queue_ptr = ::syclcompat::queue_ptr;
 template <class... Args> using kernel_name = syclcompat_kernel_name<Args...>;
 #endif
 
+inline sycl::queue &get_default_queue() {
+#if USE_DPCT_HELPER
+  return ::dpct::get_default_queue();
+#else
+  return *::syclcompat::detail::dev_mgr::instance()
+              .current_device()
+              .default_queue();
+#endif
+}
+
+inline sycl::context get_default_context() {
+#if USE_DPCT_HELPER
+  return ::dpct::get_default_context();
+#else
+  return ::syclcompat::get_default_context();
+#endif
+}
+
 inline sycl::event
 memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t size,
        memcpy_direction direction = memcpy_direction::automatic,
@@ -69,7 +87,7 @@ memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t to_pitch,
 #endif
 }
 
-inline void *malloc(size_t size, sycl::queue &q) {
+inline void *malloc(size_t size, sycl::queue q = get_default_queue()) {
 #if USE_DPCT_HELPER
   return ::dpct::dpct_malloc(size, q);
 #else
@@ -92,24 +110,6 @@ inline void free(void *to_ptr, sycl::queue q) {
   return ::dpct::detail::dpct_free(to_ptr, q);
 #else
   return ::syclcompat::free(to_ptr, q);
-#endif
-}
-
-inline sycl::queue &get_default_queue() {
-#if USE_DPCT_HELPER
-  return ::dpct::get_default_queue();
-#else
-  return *::syclcompat::detail::dev_mgr::instance()
-              .current_device()
-              .default_queue();
-#endif
-}
-
-inline sycl::context get_default_context() {
-#if USE_DPCT_HELPER
-  return ::dpct::get_default_context();
-#else
-  return ::syclcompat::get_default_context();
 #endif
 }
 
