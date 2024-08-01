@@ -2675,22 +2675,28 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
         // remove the volatile qualifier and trailing spaces
         Token Tok;
+        SourceLocation SpellingBeg = SM->getSpellingLoc(VD->getBeginLoc());
+        SourceLocation SpellingEnd = SM->getSpellingLoc(VD->getEndLoc());
+        Loc = SpellingBeg;
         Lexer::getRawToken(Loc, Tok, *SM,
                            DpctGlobalInfo::getContext().getLangOpts(), true);
         unsigned int EndLocOffset =
-            SM->getDecomposedExpansionLoc(VD->getEndLoc()).second;
-        while (SM->getDecomposedExpansionLoc(Tok.getEndLoc()).second <=
-               EndLocOffset) {
+            SM->getDecomposedExpansionLoc(SpellingEnd).second;
+        while (
+            SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
+                .second <= EndLocOffset) {
+          SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
+          SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
           if (Tok.is(tok::TokenKind::raw_identifier) &&
               Tok.getRawIdentifier().str() == "volatile") {
-            emplaceTransformation(new ReplaceText(
-                Tok.getLocation(),
-                getLenIncludingTrailingSpaces(
-                    SourceRange(Tok.getLocation(), Tok.getEndLoc()), *SM),
-                ""));
+            emplaceTransformation(
+                new ReplaceText(TokBegLoc,
+                                getLenIncludingTrailingSpaces(
+                                    SourceRange(TokBegLoc, TokEndLoc), *SM),
+                                ""));
             break;
           }
-          Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
+          Lexer::getRawToken(TokEndLoc, Tok, *SM,
                              DpctGlobalInfo::getContext().getLangOpts(), true);
         }
       }
@@ -4160,6 +4166,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
         "cublasGetAtomicsMode", "cublasSetAtomicsMode", "cublasGetVersion_v2",
         "cublasGetMathMode", "cublasSetMathMode", "cublasGetStatusString",
+        "cublasSetWorkspace_v2",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -4330,7 +4337,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasLtMatmulAlgoGetHeuristic", "cublasLtMatrixTransformDescCreate",
         "cublasLtMatrixTransformDescDestroy",
         "cublasLtMatrixTransformDescSetAttribute",
-        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform");
+        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform",
+        "cublasLtGetVersion");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -5192,7 +5200,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetPointerMode_v2" ||
              FuncName == "cublasSetPointerMode_v2" ||
              FuncName == "cublasGetAtomicsMode" ||
-             FuncName == "cublasSetAtomicsMode") {
+             FuncName == "cublasSetAtomicsMode" ||
+             FuncName == "cublasSetWorkspace_v2") {
     std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,

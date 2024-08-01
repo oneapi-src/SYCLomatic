@@ -4089,6 +4089,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
+  CallFuncExprOffset = DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).second;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
@@ -4182,7 +4183,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 }
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-
+  if (IsADLEnable)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, CallFuncExprOffset, 0,
+                                         "::", nullptr));
   if (ExtraArgLoc)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
@@ -4313,6 +4317,31 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments(),
                              Callee->getSourceRange());
+      auto ParentFunc = DpctGlobalInfo::getParentFunction(Callee);
+      if (ParentFunc &&
+          isa<TranslationUnitDecl>(ParentFunc->getDeclContext())) {
+        return;
+      }
+      if (!isa<TranslationUnitDecl>(CallDecl->getDeclContext()) ||
+          !DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) ||
+          DRE->getQualifier() || CallDecl->isOverloadedOperator())
+        return;
+      for (unsigned i = 0; i < NumArgs; i++) {
+        auto Type = CallDecl->getParamDecl(i)
+                        ->getOriginalType()
+                        .getCanonicalType()
+                        ->getUnqualifiedDesugaredType();
+        while (Type && Type->isAnyPointerType()) {
+          Type = Type->getPointeeType().getTypePtrOrNull();
+        }
+
+        if (Type->getAsRecordDecl() &&
+            DpctGlobalInfo::isInCudaPath(
+                Type->getAsRecordDecl()->getLocation())) {
+          IsADLEnable = true;
+          break;
+        }
+      }
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = "";
@@ -5131,21 +5160,26 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
   if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
-  } else if (const auto* CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+  } else if (const auto *CCE = dyn_cast<CXXConstructExpr>(Arg)) {
     HasImplicitConversion = true;
-    if (CCE->getNumArgs()) {
-      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CCE->getArg(0))) {
-        if (ICE->getCastKind() == CK_DerivedToBase) {
-          IsRedeclareRequired = true;
-        }
-      }
+    if (CCE->getNumArgs() == 1) {
+      Arg = CCE->getArg(0);
     }
-  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+  }
+#ifdef _WIN32
+  // This code path is for ConstructorConversion on Windows since its AST is
+  // different from the one on Linux.
+  if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Arg)) {
+    Arg = MTE->getSubExpr();
+  }
+#endif
+  if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
     auto CK = ICE->getCastKind();
     if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
     }
-    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion) {
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion ||
+        CK == CK_DerivedToBase) {
       IsRedeclareRequired = true;
     }
   }
