@@ -146,5 +146,12 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::int4 *pv4;
   volatile int4 *pv4;
+
+  #define WRAPPER(X) X
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: WRAPPER(sycl::int4 *pv5;)
+  WRAPPER(volatile int4 *pv5;)
 }
 

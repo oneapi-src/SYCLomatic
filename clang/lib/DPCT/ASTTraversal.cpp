@@ -2675,22 +2675,28 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
         // remove the volatile qualifier and trailing spaces
         Token Tok;
+        SourceLocation SpellingBeg = SM->getSpellingLoc(VD->getBeginLoc());
+        SourceLocation SpellingEnd = SM->getSpellingLoc(VD->getEndLoc());
+        Loc = SpellingBeg;
         Lexer::getRawToken(Loc, Tok, *SM,
                            DpctGlobalInfo::getContext().getLangOpts(), true);
         unsigned int EndLocOffset =
-            SM->getDecomposedExpansionLoc(VD->getEndLoc()).second;
-        while (SM->getDecomposedExpansionLoc(Tok.getEndLoc()).second <=
-               EndLocOffset) {
+            SM->getDecomposedExpansionLoc(SpellingEnd).second;
+        while (
+            SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
+                .second <= EndLocOffset) {
+          SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
+          SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
           if (Tok.is(tok::TokenKind::raw_identifier) &&
               Tok.getRawIdentifier().str() == "volatile") {
-            emplaceTransformation(new ReplaceText(
-                Tok.getLocation(),
-                getLenIncludingTrailingSpaces(
-                    SourceRange(Tok.getLocation(), Tok.getEndLoc()), *SM),
-                ""));
+            emplaceTransformation(
+                new ReplaceText(TokBegLoc,
+                                getLenIncludingTrailingSpaces(
+                                    SourceRange(TokBegLoc, TokEndLoc), *SM),
+                                ""));
             break;
           }
-          Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
+          Lexer::getRawToken(TokEndLoc, Tok, *SM,
                              DpctGlobalInfo::getContext().getLangOpts(), true);
         }
       }
