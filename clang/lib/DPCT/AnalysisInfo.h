@@ -2347,7 +2347,8 @@ public:
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
       : FilePath(FilePathIn), Offset(Offset), CallFuncExprOffset(Offset) {
     const FunctionDecl *Decl = nullptr;
-    if constexpr (std::is_same_v<T, CallExpr>)
+    if constexpr (!std::is_same_v<T, std::nullptr_t> &&
+                  !std::is_same_v<T, clang::CXXConstructExpr const *>)
       Decl = C->getDirectCallee();
     if (Decl) {
       DeclCombinedLoc = getCombinedStrFromLoc(Decl->getBeginLoc());

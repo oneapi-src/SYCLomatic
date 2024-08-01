@@ -15,7 +15,7 @@
 #include <unordered_set>
 
 using namespace llvm;
-//#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
 
 template <class TargetTy, class NodeTy>
 static inline const TargetTy *findAncestorInFunctionScope(
@@ -402,7 +402,8 @@ clang::dpct::IntraproceduralAnalyzer::getAccessKindReadWrite(
       BO = Parents[0].get<BinaryOperator>();
     IncDec = Parents[0].get<UnaryOperator>();
 
-    if (!FoundCE && CE && CE->getDirectCallee()) {
+    if (!FoundCE && CE && CE->getDirectCallee() &&
+        isFromCUDA(CE->getDirectCallee())) {
       FoundCE = true;
       int Idx = 0;
       for (const auto &Arg : CE->arguments()) {
@@ -655,6 +656,13 @@ AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other,
 std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
                                    std::shared_ptr<DeviceFunctionInfo> CurNode,
                                    std::string SyncCallCombinedLoc) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "findCurCallCombinedLoc:" << std::endl;
+  std::cout << "  CurCallDeclCombinedLoc:" << CurCallDeclCombinedLoc
+            << std::endl;
+  std::cout << "  CurNode:" << CurNode << std::endl;
+  std::cout << "  SyncCallCombinedLoc:" << SyncCallCombinedLoc << std::endl;
+#endif
   if (CurCallDeclCombinedLoc == "__syncthreads")
     return SyncCallCombinedLoc;
   std::vector<std::string> CallLocVec;
@@ -666,6 +674,8 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
       CallLocVec.push_back(CallLoc);
     }
   }
+  if (CallLocVec.size() == 1)
+    return CallLocVec[0];
   return "";
 }
 
@@ -693,20 +703,22 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     auto CurCallDeclCombinedLoc = std::get<1>(NodeStack.top());
     std::string CurCallCombinedLoc = findCurCallCombinedLoc(
         CurCallDeclCombinedLoc, CurNode, SyncCallCombinedLoc);
-    if (CurCallCombinedLoc.empty())
-      return false;
-
     auto CurDepth = std::get<2>(NodeStack.top());
-    NodeStack.pop();
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "-------------------------------------------" << std::endl;
     std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncCombinedLoc
               << std::endl;
     std::cout << "CurCallCombinedLoc:" << CurCallCombinedLoc << std::endl;
     std::cout << "CurDepth:" << CurDepth << std::endl;
-    std::cout << "AffectedByParmsMapInfoStack.size() 1:"
-              << AffectedByParmsMapInfoStack.size() << std::endl;
 #endif
+    if (CurCallCombinedLoc.empty()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+      std::cout << "Return False case F1: CurCallCombinedLoc.empty()"
+                << std::endl;
+#endif
+      return false;
+    }
+    NodeStack.pop();
 
     int N = static_cast<int>(AffectedByParmsMapInfoStack.size()) - CurDepth;
     assert(N >= 0 && "N should be greater than or equal to 0");
@@ -735,12 +747,23 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
             for (const auto &ParmIdx : Res->second) {
               CurAffectedbyParmsMap[ParmIdx] = mergeOther(
                   CurAffectedbyParmsMap[ParmIdx], P.second, IsInLoop);
-              if (CurAffectedbyParmsMap[ParmIdx].AM & ReadWrite)
+              if (CurAffectedbyParmsMap[ParmIdx].AM == ReadWrite) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+                std::cout << "Return False case F2: AM == ReadWrite"
+                          << std::endl;
+#endif
                 return false;
+              }
               if (CurAffectedbyParmsMap[ParmIdx].AM == Write &&
                   CurAffectedbyParmsMap[ParmIdx].UsedBefore &&
-                  CurAffectedbyParmsMap[ParmIdx].UsedAfter)
+                  CurAffectedbyParmsMap[ParmIdx].UsedAfter) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+                std::cout << "Return False case F3: AM == Write && UsedBefore "
+                             "&& UsedAfter"
+                          << std::endl;
+#endif
                 return false;
+              }
             }
           }
         }
@@ -749,14 +772,12 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       }
     }
 
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "AffectedByParmsMapInfoStack.size() 2:"
-              << AffectedByParmsMapInfoStack.size() << std::endl;
-#endif
-
     for (const auto &I : CurNode->getParentDFIs()) {
       if (Visited.find(I) != Visited.end()) {
         // Not support analyzing circle in graph
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "Return False case F4: Circle in graph" << std::endl;
+#endif
         return false;
       }
       NodeStack.push(
@@ -767,6 +788,10 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     std::cout << "===============================================" << std::endl;
 #endif
   }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "AffectedByParmsMapInfoStack.size():"
+            << AffectedByParmsMapInfoStack.size() << std::endl;
+#endif
   if (!AffectedByParmsMapInfoStack.empty()) {
     const auto &AffectedByParmsMap = AffectedByParmsMapInfoStack.top().second;
     for (const auto &P : AffectedByParmsMap) {
@@ -791,14 +816,14 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
   // Check prerequirements
   if (!DFI) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case J: !DFI" << std::endl;
+    std::cout << "Return False case G: !DFI" << std::endl;
 #endif
     return IntraproceduralAnalyzerResult();
   }
 
   if (DFI->getVarMap().hasGlobalMemAcc()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case I: Found device/managed variable usage"
+    std::cout << "Return False case H: Found device/managed variable usage"
               << std::endl;
 #endif
     return IntraproceduralAnalyzerResult();
@@ -1017,7 +1042,7 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const DeclRefExpr *DRE) {
   }
   if (Kind == TypeAnalyzer::ParamterTypeKind::Unsupported) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case A: "
+    std::cout << "Return False case I: "
               << PVD->getBeginLoc().printToString(
                      DpctGlobalInfo::getSourceManager())
               << ", Type:" << DpctGlobalInfo::getTypeName(PVD->getType())
@@ -1042,7 +1067,7 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const GotoStmt *GS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case B: "
+  std::cout << "Return False case J: "
             << GS->getBeginLoc().printToString(
                    DpctGlobalInfo::getSourceManager())
             << std::endl;
@@ -1055,7 +1080,7 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const LabelStmt *LS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case C: "
+  std::cout << "Return False case K: "
             << LS->getBeginLoc().printToString(
                    DpctGlobalInfo::getSourceManager())
             << std::endl;
@@ -1067,7 +1092,7 @@ void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(const LabelStmt *) {}
 bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case D: "
+    std::cout << "Return False case L: "
               << ME->getBeginLoc().printToString(
                      DpctGlobalInfo::getSourceManager())
               << std::endl;
@@ -1080,7 +1105,7 @@ void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(const MemberExpr *) {}
 bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(
     const CXXDependentScopeMemberExpr *CDSME) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case E: "
+  std::cout << "Return False case M: "
             << CDSME->getBeginLoc().printToString(
                    DpctGlobalInfo::getSourceManager())
             << std::endl;
@@ -1096,11 +1121,11 @@ using namespace dpct;
 
 bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
+  std::cout << "BarrierFenceSpace1DAnalyzer Analyzing ..." << std::endl;
 #endif
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F: CE->getBeginLoc().isMacroID() || "
+    std::cout << "Return False case N: CE->getBeginLoc().isMacroID() || "
                  "CE->getEndLoc().isMacroID()"
               << std::endl;
 #endif
@@ -1109,13 +1134,13 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
   FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
   if (!FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case G: !FD" << std::endl;
+    std::cout << "Return False case O: !FD" << std::endl;
 #endif
     return false;
   }
   if (!FD->hasAttr<CUDAGlobalAttr>()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case H: !FD->hasAttr<CUDAGlobalAttr>()"
+    std::cout << "Return False case P: !FD->hasAttr<CUDAGlobalAttr>()"
               << std::endl;
 #endif
     return false;
@@ -1124,14 +1149,14 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
   auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
   if (!DFI) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case J: !DFI" << std::endl;
+    std::cout << "Return False case Q: !DFI" << std::endl;
 #endif
     return false;
   }
 
   if (DFI->getVarMap().hasGlobalMemAcc()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case I: Found device/managed variable usage"
+    std::cout << "Return False case R: Found device/managed variable usage"
               << std::endl;
 #endif
     return false;
