@@ -405,6 +405,16 @@ static void func() {
   // CHECK-NEXT: MY_ERROR_CHECKER(0);
   MY_ERROR_CHECKER(cudaStreamQuery(s0));
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamQuery was removed because SYCL currently does not support query operations on queues.
+  // CHECK-NEXT: */
+  cuStreamQuery(s0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuStreamQuery was replaced with 0 because SYCL currently does not support query operations on queues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: MY_ERROR_CHECKER(0);
+  MY_ERROR_CHECKER(cuStreamQuery(s0));
+
   // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(e->wait()));
   MY_ERROR_CHECKER(cudaStreamWaitEvent(s0, e, 0));
 

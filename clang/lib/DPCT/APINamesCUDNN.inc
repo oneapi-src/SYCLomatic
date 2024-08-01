@@ -7,10 +7,24 @@
 //===-----------------------------------------------------------------===//
 
 // Base API
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY("cudnnGetVersion",
-                                           CALL(MapNames::getDpctNamespace() +
-                                                "dnnl::get_version")))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    WARNING_FACTORY_ENTRY("cudnnGetVersion",
+                          CALL_FACTORY_ENTRY("cudnnGetVersion",
+                                             CALL(MapNames::getDpctNamespace() +
+                                                  "dnnl::get_version")),
+                          Diagnostics::TYPE_MISMATCH))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    WARNING_FACTORY_ENTRY(
+        "cudnnGetCudartVersion",
+        CALL_FACTORY_ENTRY("cudnnGetCudartVersion",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "get_major_version",
+                                LITERAL(MapNames::getDpctNamespace() +
+                                        "get_current_device()"))),
+        Diagnostics::TYPE_MISMATCH))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
@@ -688,6 +702,22 @@ FEATURE_REQUEST_FACTORY(
            MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
            ARG("dnnl::algorithm::convolution_auto")),
         BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(6)), ARG("1"))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cudnnGetConvolutionBackwardDataAlgorithmMaxCount",
+                            DEREF(ARG_WC(1)), ARG("1"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudnnGetConvolutionBackwardFilterAlgorithmMaxCount", DEREF(ARG_WC(1)),
+        ARG("1"))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cudnnGetConvolutionForwardAlgorithmMaxCount",
+                            DEREF(ARG_WC(1)), ARG("1"))))
 
 // RNN Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateRNNDescriptor")

@@ -54,7 +54,7 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1101:{{[0-9]+}}: 'S+1+S' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::local_accessor<int, 2> fold6_acc_ct1(sycl::range<2>(3/*S*/, 7/*S+1+S*/), cgh);
+  // CHECK-NEXT: sycl::local_accessor<int[3/*S*/][7/*S+1+S*/], 0> fold6_acc_ct1(cgh);
   // CHECK-NEXT: sycl::local_accessor<int, 1> unfold1_acc_ct1(sycl::range<1>(1 + 1), cgh);
   // CHECK: /*
   // CHECK-NEXT: DPCT1083:{{.*}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
