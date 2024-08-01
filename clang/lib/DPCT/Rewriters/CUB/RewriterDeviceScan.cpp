@@ -13,7 +13,7 @@ using namespace clang::dpct;
 RewriterMap dpct::createDeviceScanRewriterMap() {
   return RewriterMap{
       // cub::DeviceScan::ExclusiveSum
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::ExclusiveSum"),
           HEADER_INSERT_FACTORY(
@@ -48,10 +48,10 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
                                    TEMPLATED_NAME("std::iterator_traits",
                                                   CALL("decltype", ARG(2))),
-                                   LITERAL("value_type")))))))))))
+                                   LITERAL("value_type"))))))))))))
 
       // cub::DeviceScan::InclusiveSum
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::InclusiveSum"),
           HEADER_INSERT_FACTORY(
@@ -78,10 +78,10 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                     QUEUESTR),
                                ARG(2),
                                BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
-                               ARG(3))))))))
+                               ARG(3)))))))))
 
       // cub::DeviceScan::ExclusiveScan
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::ExclusiveScan"),
           HEADER_INSERT_FACTORY(
@@ -108,10 +108,10 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                     QUEUESTR),
                                ARG(2),
                                BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(6)),
-                               ARG(3), ARG(5), ARG(4))))))))
+                               ARG(3), ARG(5), ARG(4)))))))))
 
       // cub::DeviceScan::InclusiveScan
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::InclusiveScan"),
           HEADER_INSERT_FACTORY(
@@ -138,9 +138,9 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                     QUEUESTR),
                                ARG(2),
                                BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
-                               ARG(3), ARG(4))))))))
+                               ARG(3), ARG(4)))))))))
       // cub::DeviceScan::InclusiveScanByKey
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::InclusiveScanByKey"),
           HEADER_INSERT_FACTORY(
@@ -181,10 +181,10 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                    BO(BinaryOperatorKind::BO_Add, ARG(2),
                                       ARG(6)),
                                    ARG(3), ARG(4), LITERAL("std::equal_to<>()"),
-                                   ARG(5)))))))))
+                                   ARG(5))))))))))
 
       // cub::DeviceScan::InclusiveSumByKey
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::InclusiveSumByKey"),
           HEADER_INSERT_FACTORY(
@@ -224,10 +224,10 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                    ARG(2),
                                    BO(BinaryOperatorKind::BO_Add, ARG(2),
                                       ARG(5)),
-                                   ARG(3), ARG(4)))))))))
+                                   ARG(3), ARG(4))))))))))
 
       // cub::DeviceScan::ExclusiveScanByKey
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::ExclusiveScanByKey"),
           HEADER_INSERT_FACTORY(
@@ -269,10 +269,10 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                    BO(BinaryOperatorKind::BO_Add, ARG(2),
                                       ARG(7)),
                                    ARG(3), ARG(4), ARG(6),
-                                   LITERAL("std::equal_to<>()"), ARG(5)))))))))
+                                   LITERAL("std::equal_to<>()"), ARG(5))))))))))
 
       // cub::DeviceScan::ExclusiveSumByKey
-      CONDITIONAL_FACTORY_ENTRY(
+      ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
           CheckCubRedundantFunctionCall(),
           REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::ExclusiveSumByKey"),
           HEADER_INSERT_FACTORY(
@@ -322,7 +322,7 @@ RewriterMap dpct::createDeviceScanRewriterMap() {
                                    ARG(2),
                                    BO(BinaryOperatorKind::BO_Add, ARG(2),
                                       ARG(5)),
-                                   ARG(3), ARG(4)))))))))
+                                   ARG(3), ARG(4))))))))))
 
   };
 }
