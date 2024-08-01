@@ -176,7 +176,7 @@ bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
                               const clang::tooling::UnifiedPath OutRoot,
                               clang::tooling::UnifiedPath InFileName) {
   clang::tooling::UnifiedPath OutFileName(InFileName);
-  if (!rewriteDir(OutFileName, InRoot, OutRoot)) {
+  if (!rewriteCanonicalDir(OutFileName, InRoot, OutRoot)) {
     return false;
   }
   createDirectories(path::parent_path(OutFileName.getCanonicalPath()));

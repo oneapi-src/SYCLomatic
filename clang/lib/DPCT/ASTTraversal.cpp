@@ -1740,8 +1740,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaLaunchAttributeValue", "cusparseSpSMDescr_t",
               "cusparseConstSpMatDescr_t", "cusparseSpSMAlg_t",
               "cusparseConstDnMatDescr_t", "cudaMemcpy3DParms", "CUDA_MEMCPY3D",
-              "CUDA_MEMCPY2D", "CUDA_ARRAY_DESCRIPTOR", "cublasLtHandle_t",
-              "cublasLtMatmulDesc_t", "cublasLtOrder_t",
+              "cudaMemcpy3DPeerParms", "CUDA_MEMCPY3D_PEER", "CUDA_MEMCPY2D",
+              "CUDA_ARRAY_DESCRIPTOR", "CUDA_ARRAY3D_DESCRIPTOR",
+              "cublasLtHandle_t", "cublasLtMatmulDesc_t", "cublasLtOrder_t",
               "cublasLtPointerMode_t", "cublasLtMatrixLayout_t",
               "cublasLtMatrixLayoutAttribute_t",
               "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
@@ -2674,22 +2675,28 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
         // remove the volatile qualifier and trailing spaces
         Token Tok;
+        SourceLocation SpellingBeg = SM->getSpellingLoc(VD->getBeginLoc());
+        SourceLocation SpellingEnd = SM->getSpellingLoc(VD->getEndLoc());
+        Loc = SpellingBeg;
         Lexer::getRawToken(Loc, Tok, *SM,
                            DpctGlobalInfo::getContext().getLangOpts(), true);
         unsigned int EndLocOffset =
-            SM->getDecomposedExpansionLoc(VD->getEndLoc()).second;
-        while (SM->getDecomposedExpansionLoc(Tok.getEndLoc()).second <=
-               EndLocOffset) {
+            SM->getDecomposedExpansionLoc(SpellingEnd).second;
+        while (
+            SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
+                .second <= EndLocOffset) {
+          SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
+          SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
           if (Tok.is(tok::TokenKind::raw_identifier) &&
               Tok.getRawIdentifier().str() == "volatile") {
-            emplaceTransformation(new ReplaceText(
-                Tok.getLocation(),
-                getLenIncludingTrailingSpaces(
-                    SourceRange(Tok.getLocation(), Tok.getEndLoc()), *SM),
-                ""));
+            emplaceTransformation(
+                new ReplaceText(TokBegLoc,
+                                getLenIncludingTrailingSpaces(
+                                    SourceRange(TokBegLoc, TokEndLoc), *SM),
+                                ""));
             break;
           }
-          Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
+          Lexer::getRawToken(TokEndLoc, Tok, *SM,
                              DpctGlobalInfo::getContext().getLangOpts(), true);
         }
       }
@@ -3467,8 +3474,7 @@ REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
 void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
                                 "(CUBLAS_STATUS.*)|(CUDA_R_.*)|(CUDA_C_.*)|("
-                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)|("
-                                "CUBLASLT_EPILOGUE_.*)"))))
+                                "CUBLAS_GEMM_.*)|(CUBLAS_POINTER_MODE.*)"))))
                     .bind("BLASStatusConstants"),
                 this);
   MF.addMatcher(
@@ -3478,7 +3484,7 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
                       "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
                       "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
                       "(CUBLASLT_MATMUL_DESC_.*)|(CUBLASLT_MATRIX_TRANSFORM_"
-                      "DESC_.*)"))))
+                      "DESC_.*)|(CUBLASLT_EPILOGUE_.*)"))))
           .bind("BLASNamedValueConstants"),
       this);
 }
@@ -4063,6 +4069,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
         "cublasGetAtomicsMode", "cublasSetAtomicsMode", "cublasGetVersion_v2",
         "cublasGetMathMode", "cublasSetMathMode", "cublasGetStatusString",
+        "cublasSetWorkspace_v2",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -4216,6 +4223,11 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCher2k_v2_64", "cublasZher2k_v2_64", "cublasSgeam_64",
         "cublasDgeam_64", "cublasCgeam_64", "cublasZgeam_64", "cublasSdgmm_64",
         "cublasDdgmm_64", "cublasCdgmm_64", "cublasZdgmm_64",
+        "cublasStrmm_v2_64", "cublasDtrmm_v2_64", "cublasCtrmm_v2_64",
+        "cublasZtrmm_v2_64", "cublasSsyrkx_64", "cublasDsyrkx_64",
+        "cublasCsyrkx_64", "cublasZsyrkx_64", "cublasCherkx_64",
+        "cublasZherkx_64", "cublasHgemm_64", "cublasCgemm3m_64",
+        "cublasZgemm3m_64",
         /*cublasLt*/
         "cublasLtCreate", "cublasLtDestroy", "cublasLtMatmulDescCreate",
         "cublasLtMatmulDescDestroy", "cublasLtMatmulDescSetAttribute",
@@ -4228,7 +4240,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasLtMatmulAlgoGetHeuristic", "cublasLtMatrixTransformDescCreate",
         "cublasLtMatrixTransformDescDestroy",
         "cublasLtMatrixTransformDescSetAttribute",
-        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform");
+        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform",
+        "cublasLtGetVersion");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -5090,7 +5103,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetPointerMode_v2" ||
              FuncName == "cublasSetPointerMode_v2" ||
              FuncName == "cublasGetAtomicsMode" ||
-             FuncName == "cublasSetAtomicsMode") {
+             FuncName == "cublasSetAtomicsMode" ||
+             FuncName == "cublasSetWorkspace_v2") {
     std::string Msg = "this functionality is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -8048,17 +8062,16 @@ REGISTER_RULE(ProfilingEnableOnDemandRule, PassKind::PK_Analysis)
 
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
-    return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
-                      "cudaStreamCreateWithPriority", "cudaStreamDestroy",
-                      "cudaStreamSynchronize", "cudaStreamGetPriority",
-                      "cudaStreamGetFlags", "cudaDeviceGetStreamPriorityRange",
-                      "cudaStreamAttachMemAsync", "cudaStreamBeginCapture",
-                      "cudaStreamEndCapture", "cudaStreamIsCapturing",
-                      "cudaStreamQuery", "cudaStreamWaitEvent",
-                      "cudaStreamAddCallback", "cuStreamCreate",
-                      "cuStreamSynchronize", "cuStreamWaitEvent",
-                      "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-                      "cuStreamAddCallback");
+    return hasAnyName(
+        "cudaStreamCreate", "cudaStreamCreateWithFlags",
+        "cudaStreamCreateWithPriority", "cudaStreamDestroy",
+        "cudaStreamSynchronize", "cudaStreamGetPriority", "cudaStreamGetFlags",
+        "cudaDeviceGetStreamPriorityRange", "cudaStreamAttachMemAsync",
+        "cudaStreamBeginCapture", "cudaStreamEndCapture",
+        "cudaStreamIsCapturing", "cudaStreamQuery", "cudaStreamWaitEvent",
+        "cudaStreamAddCallback", "cuStreamCreate", "cuStreamSynchronize",
+        "cuStreamWaitEvent", "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
+        "cuStreamAddCallback", "cuStreamQuery");
   };
 
   MF.addMatcher(
@@ -8196,13 +8209,13 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamAttachMemAsync" ||
-             FuncName == "cudaStreamQuery" ||
+             FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery" ||
              FuncName == "cudaDeviceGetStreamPriorityRange") {
-
     // if extension feature sycl_ext_oneapi_queue_empty is used, member
     // functions "ext_oneapi_empty" in SYCL queue is used to map
-    // cudaStreamQuery.
-    if (FuncName == "cudaStreamQuery" && DpctGlobalInfo::useQueueEmpty()) {
+    // cudaStreamQuery or cuStreamQuery.
+    if ((FuncName == "cudaStreamQuery" || FuncName == "cuStreamQuery") &&
+        DpctGlobalInfo::useQueueEmpty()) {
       auto StreamArg = CE->getArg(0);
       bool IsDefaultStream = isDefaultStream(StreamArg);
       std::string StreamName;
@@ -8685,6 +8698,12 @@ void DeviceFunctionDeclRule::runRule(
     FuncInfo->setInlined();
   }
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
+    if (auto COCE = dyn_cast<CXXOperatorCallExpr>(CE)) {
+      if ((COCE->getOperator() != OverloadedOperatorKind::OO_None) &&
+          (COCE->getOperator() != OverloadedOperatorKind::OO_Call)) {
+        return;
+      }
+    }
     if (CE->getDirectCallee()) {
       if (CE->getDirectCallee()->isVirtualAsWritten())
         report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
@@ -10158,7 +10177,7 @@ void MemoryMigrationRule::memcpyMigration(
   if (!NameRef.compare("cudaMemcpy2D")) {
     handleDirection(C, 6);
     handleAsync(C, 7, Result);
-  } else if (!NameRef.compare("cudaMemcpy3D") ||
+  } else if (NameRef.rfind("cudaMemcpy3D", 0) == 0 ||
              NameRef.rfind("cuMemcpy3D", 0) == 0 ||
              NameRef.rfind("cuMemcpy2D", 0) == 0) {
     handleAsync(C, 1, Result);
@@ -10990,22 +11009,24 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMalloc3D", "cudaMallocPitch", "cudaMemset2D", "cudaMemset3D",
         "cudaMemset2DAsync", "cudaMemset3DAsync", "cudaMemcpy2D",
         "cudaMemcpy3D", "cudaMemcpy2DAsync", "cudaMemcpy3DAsync",
-        "cudaMemcpy2DArrayToArray", "cudaMemcpy2DToArray",
-        "cudaMemcpy2DToArrayAsync", "cudaMemcpy2DFromArray",
-        "cudaMemcpy2DFromArrayAsync", "cudaMemcpyArrayToArray",
-        "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
-        "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
-        "cudaFreeArray", "cudaArrayGetInfo", "cudaHostGetFlags",
-        "cudaMemAdvise", "cuMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc",
-        "cuMemFreeHost", "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
+        "cudaMemcpy3DPeer", "cudaMemcpy3DPeerAsync", "cudaMemcpy2DArrayToArray",
+        "cudaMemcpy2DToArray", "cudaMemcpy2DToArrayAsync",
+        "cudaMemcpy2DFromArray", "cudaMemcpy2DFromArrayAsync",
+        "cudaMemcpyArrayToArray", "cudaMemcpyToArray", "cudaMemcpyToArrayAsync",
+        "cudaMemcpyFromArray", "cudaMemcpyFromArrayAsync", "cudaMallocArray",
+        "cudaMalloc3DArray", "cudaFreeArray", "cudaArrayGetInfo",
+        "cudaHostGetFlags", "cudaMemAdvise", "cuMemAdvise",
+        "cudaGetChannelDesc", "cuMemHostAlloc", "cuMemFreeHost",
+        "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
-        "cuMemcpy3DAsync_v2", "cudaMemGetInfo", "cuMemAllocManaged",
-        "cuMemAllocHost_v2", "cuMemHostGetDevicePointer_v2",
-        "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2",
-        "cuMemPrefetchAsync", "cuMemFree_v2", "cuDeviceTotalMem_v2",
-        "cuMemHostGetFlags", "cuMemHostRegister_v2", "cuMemHostUnregister",
-        "cuMemcpy", "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
+        "cuMemcpy3DAsync_v2", "cuMemcpy3DPeer", "cuMemcpy3DPeerAsync",
+        "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
+        "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2",
+        "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
+        "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
+        "cuMemHostRegister_v2", "cuMemHostUnregister", "cuMemcpy",
+        "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
         "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
         "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2",
         "cuMemsetD16Async", "cuMemsetD2D16_v2", "cuMemsetD2D16Async",
@@ -11197,8 +11218,12 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemcpy2D_v2", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy2DAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3D", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpy3DPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cudaMemcpy3DPeerAsync", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy3D_v2", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpy3DAsync_v2", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpy3DPeer", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpy3DPeerAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy2DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpy3DAsync", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpyPeer", &MemoryMigrationRule::memcpyMigration},
@@ -11402,13 +11427,16 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
 }
 
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(
-                               hasAnyName("CUDA_ARRAY_DESCRIPTOR"))))))
-                    .bind("arrayMember"),
-                this);
   MF.addMatcher(
       memberExpr(hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
-                     "cudaMemcpy3DParms", "CUDA_MEMCPY3D", "CUDA_MEMCPY2D"))))))
+                     "CUDA_ARRAY_DESCRIPTOR", "CUDA_ARRAY3D_DESCRIPTOR"))))))
+          .bind("arrayMember"),
+      this);
+  MF.addMatcher(
+      memberExpr(
+          hasObjectExpression(declRefExpr(hasType(namedDecl(hasAnyName(
+              "cudaMemcpy3DParms", "CUDA_MEMCPY3D", "cudaMemcpy3DPeerParms",
+              "CUDA_MEMCPY3D_PEER", "CUDA_MEMCPY2D"))))))
           .bind("parmsMember"),
       this);
   MF.addMatcher(memberExpr(hasObjectExpression(hasType(recordDecl(hasAnyName(
@@ -11424,6 +11452,15 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 
 void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
+    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(ME);
+    if (BO && BO->getOpcode() != BO_Assign) {
+      BO = nullptr;
+    }
+    if (isRemove(ME->getMemberDecl()->getName().str())) {
+      if (BO)
+        return emplaceTransformation(new ReplaceStmt(BO, ""));
+      return emplaceTransformation(new ReplaceStmt(ME, ""));
+    }
     const auto &Replace = MapNames::findReplacedName(
         ArrayDescMemberNames, ME->getMemberDecl()->getName().str());
     if (!Replace.empty())
@@ -11503,6 +11540,11 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::useExtBindlessImages() &&
         Replace.find("image") != std::string::npos)
       Replace += "_bindless";
+    if (MemberName.contains("Device") && M->getType().getAsString() != "int") {
+      // The field srcDevice/dstDevice has different meaning in different struct
+      // type.
+      Replace.clear();
+    }
     if (!Replace.empty())
       return emplaceTransformation(new ReplaceToken(
           M->getMemberLoc(), M->getEndLoc(), std::string(Replace)));
@@ -12999,6 +13041,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cudaGetTextureObjectResourceDesc",
       "cudaGetTextureObjectTextureDesc",
       "cudaGetTextureObjectResourceViewDesc",
+      "cuArray3DCreate_v2",
       "cuArrayCreate_v2",
       "cuArrayDestroy",
       "cuTexObjectCreate",
@@ -14969,15 +15012,16 @@ void AssertRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 void AssertRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
-  // The std assert is a macro, it will expand to __assert_fail.
-  // But we should not touch the std assert.
-  auto SpellingLoc =
-      DpctGlobalInfo::getSourceManager().getSpellingLoc(CE->getBeginLoc());
-  if (DpctGlobalInfo::isInAnalysisScope(SpellingLoc)) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall")) {
+    // The std assert is a macro, it will expand to __assert_fail.
+    // But we should not touch the std assert.
+    auto SpellingLoc =
+        DpctGlobalInfo::getSourceManager().getSpellingLoc(CE->getBeginLoc());
+    if (DpctGlobalInfo::isInAnalysisScope(SpellingLoc)) {
+      ExprAnalysis EA(CE);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+    }
   }
 }
 REGISTER_RULE(AssertRule, PassKind::PK_Migration)
