@@ -3710,8 +3710,7 @@ void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
   auto Range = getArgSourceRange(Arg);
   auto Begin = Range.getBegin();
   auto End = Range.getEnd();
-  if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
-      SM.isMacroArgExpansion(End)) {
+  if (Begin.isMacroID() && End.isMacroID()) {
     size_t Length;
     if (ParentRange.isValid()) {
       auto RR =
