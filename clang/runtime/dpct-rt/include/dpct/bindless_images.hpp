@@ -71,7 +71,7 @@ public:
       sycl::ext::oneapi::experimental::image_mem_handle img_mem_handle)
       : _desc(desc), _handle(img_mem_handle) {
     _channel.set_channel_type(_desc.channel_type);
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240527)
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240725)
     _channel.set_channel_num(_desc.num_channels);
 #endif
     auto q = get_default_queue();
@@ -86,21 +86,6 @@ public:
       std::free(_sub_wrappers);
     }
     free_image_mem(_handle, _desc.type, get_default_queue());
-  }
-  /// Initialize image mem wrappers for all the levels of mipmap image
-  /// @param q The Queue to be used to query the mip levels 
-  void init_mip_level_wrappers(sycl::queue q) {
-    auto num_levels = _desc.num_levels;
-    if (_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap) {
-      assert(num_levels > 1);
-      _sub_wrappers = (image_mem_wrapper *)std::malloc(
-          sizeof(image_mem_wrapper) * num_levels);
-      for (unsigned i = 0; i < num_levels; ++i)
-        new (_sub_wrappers + i) image_mem_wrapper(
-            _channel, _desc.get_mip_level_desc(i),
-            sycl::ext::oneapi::experimental::get_mip_level_mem_handle(
-                _handle, i, q.get_device(), q.get_context()));
-    }
   }
   /// Get the image channel of the bindless image memory.
   /// \returns The image channel of bindless image memory.
@@ -136,6 +121,22 @@ private:
       const sycl::ext::oneapi::experimental::image_mem_handle &handle)
       : _channel(channel), _desc(desc), _handle(handle) {}
 
+  /// Initialize image mem wrappers for all the levels of mipmap image
+  /// \param [in] q The Queue to be used to query the mip levels
+  void init_mip_level_wrappers(sycl::queue q) {
+    auto num_levels = _desc.num_levels;
+    if (_desc.type == sycl::ext::oneapi::experimental::image_type::mipmap) {
+      assert(num_levels > 1);
+      _sub_wrappers = (image_mem_wrapper *)std::malloc(
+          sizeof(image_mem_wrapper) * num_levels);
+      for (unsigned i = 0; i < num_levels; ++i)
+        new (_sub_wrappers + i) image_mem_wrapper(
+            _channel, _desc.get_mip_level_desc(i),
+            sycl::ext::oneapi::experimental::get_mip_level_mem_handle(
+                _handle, i, q.get_device(), q.get_context()));
+    }
+  }
+
   image_channel _channel;
   const sycl::ext::oneapi::experimental::image_descriptor _desc;
   sycl::ext::oneapi::experimental::image_mem_handle _handle;
@@ -154,7 +155,8 @@ public:
 
   interop_mem_wrapper_base(const interop_mem_wrapper_base &) = delete;
 
-  interop_mem_wrapper_base &operator=(const interop_mem_wrapper_base &) = delete;
+  interop_mem_wrapper_base &
+  operator=(const interop_mem_wrapper_base &) = delete;
 
   const sycl::ext::oneapi::experimental::interop_mem_handle
   get_interop_mem_handle() const noexcept {
@@ -166,23 +168,16 @@ public:
     return _res_img_mem_wrapper_ptr->get_handle();
   }
 
-  void *
-  get_res_buf_ptr() const noexcept {
-    return _res_buf_ptr;
-  }
+  void *get_res_buf_ptr() const noexcept { return _res_buf_ptr; }
 
   sycl::ext::oneapi::experimental::image_descriptor
   get_res_img_desc() const noexcept {
     return _res_img_desc;
   }
 
-  size_t get_res_size_bytes() {
-    return _res_size_bytes;
-  }
+  size_t get_res_size_bytes() { return _res_size_bytes; }
 
-  bool is_buffer_res() const {
-    return _res_is_buffer;
-  }
+  bool is_buffer_res() const { return _res_is_buffer; }
 
   /// Map the buf/texture resource memory and get its pointer/mem handle.
   /// \param [in] q The queue used to map the resource with.
@@ -190,7 +185,7 @@ public:
     if (_res_is_buffer) {
       if (_res_buf_ptr) {
         throw std::runtime_error("Resource is already mapped! "
-            "Resource cannot be mapped more than once.");
+                                 "Resource cannot be mapped more than once.");
       }
 
       // NOTE: 'map_external_linear_memory' API is not yet merged by Codeplay
@@ -199,33 +194,32 @@ public:
           sycl::ext::oneapi::experimental::map_external_linear_memory(
               get_interop_mem_handle(), _res_img_desc, q);
       */
-      throw
-        std::runtime_error(
-            "Mapping a buffer resoure is not yet supported!");
-    }
-    else {
+      throw std::runtime_error(
+          "Mapping a buffer resoure is not yet supported!");
+    } else {
       if (_res_img_mem_wrapper_ptr) {
         throw std::runtime_error("Resource is already mapped! "
-            "Resource cannot be mapped more than once.");
+                                 "Resource cannot be mapped more than once.");
       }
 
       auto img_mem_handle =
           sycl::ext::oneapi::experimental::map_external_image_memory(
               get_interop_mem_handle(), _res_img_desc, q);
-      
+
       _res_img_mem_wrapper_ptr =
           new image_mem_wrapper(get_res_img_desc(), img_mem_handle);
     }
   }
 
   /// Returns mapped memory as image_mem_wrapper*
-  image_mem_wrapper* get_mapped_mipmapped_array() {
-    if(_res_is_buffer) {
+  image_mem_wrapper *get_mapped_mipmapped_array() {
+    if (_res_is_buffer) {
       throw std::runtime_error(
           "Buffer resouce cannot be accessed as an array!");
     }
-    if(!_res_img_mem_wrapper_ptr) {
-      throw std::runtime_error("Resouce is not mapped! "
+    if (!_res_img_mem_wrapper_ptr) {
+      throw std::runtime_error(
+          "Resouce is not mapped! "
           "Resource should be mapped before accessing its memory.");
     }
 
@@ -235,33 +229,33 @@ public:
   /// Returns mapped subresource memory as image_mem_wrapper*
   /// \param [in] array_index The layer of the image array to be returned.
   /// \param [in] mip_level The level of the mipmap image to be returned.
-  image_mem_wrapper* get_sub_resource_mapped_array(
-        unsigned int array_index, unsigned int mip_level) {
+  image_mem_wrapper *get_sub_resource_mapped_array(unsigned int array_index,
+                                                   unsigned int mip_level) {
     if (_res_is_buffer) {
       throw std::runtime_error(
           "Buffer resouce cannot be accessed as an array!");
     }
     if (array_index != 0) {
-      throw std::runtime_error(
-          "Retrieving a particular layer from image array "
-          "is not yet supported!");
+      throw std::runtime_error("Retrieving a particular layer from image array "
+                               "is not yet supported!");
     }
     if (array_index >= _res_img_desc.array_size) {
       throw std::runtime_error(
           "Array index requested exceeds total array size in resource!");
     }
     if (mip_level >= _res_img_desc.num_levels) {
-        throw std::runtime_error(
+      throw std::runtime_error(
           "Mip level requested exceeds total num of levels in resource!");
     }
     if (!_res_img_mem_wrapper_ptr) {
-      throw std::runtime_error("Resouce is not mapped! "
+      throw std::runtime_error(
+          "Resouce is not mapped! "
           "Resource should be mapped before accessing its memory");
     }
 
-    return (mip_level == 0)?
-          _res_img_mem_wrapper_ptr: 
-          _res_img_mem_wrapper_ptr->get_mip_level(mip_level);
+    return (mip_level == 0)
+               ? _res_img_mem_wrapper_ptr
+               : _res_img_mem_wrapper_ptr->get_mip_level(mip_level);
   }
 
   /// Unmap the buf/texture resource memory and get its pointer/mem handle.
@@ -270,18 +264,17 @@ public:
     if (_res_is_buffer) {
       if (!_res_buf_ptr) {
         throw std::runtime_error("Resource is not mapped! "
-            "Resource should be mapped before unmapping.");
+                                 "Resource should be mapped before unmapping.");
       }
 
       _res_buf_ptr = nullptr;
 
       throw std::runtime_error(
           "Unmapping a buffer resoure is not yet supported!");
-    }
-    else {
+    } else {
       if (!_res_img_mem_wrapper_ptr) {
         throw std::runtime_error("Resource is not mapped! "
-            "Resource should be mapped before unmapping.");
+                                 "Resource should be mapped before unmapping.");
       }
 
       delete _res_img_mem_wrapper_ptr;
@@ -298,7 +291,7 @@ private:
   image_mem_wrapper *_res_img_mem_wrapper_ptr = nullptr;
 
   sycl::ext::oneapi::experimental::interop_mem_handle
-    *_res_interop_mem_handle_ptr = nullptr;
+      *_res_interop_mem_handle_ptr = nullptr;
 };
 
 #ifdef _WIN32
@@ -322,15 +315,15 @@ public:
     _res_win_nt_handle = create_shared_handle(_res_D3D11);
 
     // Prepare the external memory descriptor for SYCL interop.
-    sycl::ext::oneapi::experimental::resource_win32_handle 
-      ext_mem_win_handle{_res_win_nt_handle};
+    sycl::ext::oneapi::experimental::resource_win32_handle ext_mem_win_handle{
+        _res_win_nt_handle};
 
-    sycl::ext::oneapi::experimental::external_mem_descriptor
-      <sycl::ext::oneapi::experimental::resource_win32_handle> ext_mem_desc{
-        ext_mem_win_handle,
-        sycl::ext::oneapi::experimental::external_mem_handle_type::
-            win32_nt_dx12_resource,
-        _res_size_bytes};
+    sycl::ext::oneapi::experimental::external_mem_descriptor<
+        sycl::ext::oneapi::experimental::resource_win32_handle>
+        ext_mem_desc{ext_mem_win_handle,
+                     sycl::ext::oneapi::experimental::external_mem_handle_type::
+                         win32_nt_dx12_resource,
+                     _res_size_bytes};
 
     // Import the external memory into SYCL for use with SYCL APIs.
     new (_res_interop_mem_handle_ptr)
@@ -346,7 +339,8 @@ public:
   /// memory handle and the shared handle created for the DX11 resource.
   virtual ~interop_mem_wrapper() {
     if (!_res_interop_mem_handle_ptr) {
-      throw std::runtime_error("Resource is not registered! "
+      throw std::runtime_error(
+          "Resource is not registered! "
           "Resource should be registered before unregistration.");
     }
 
@@ -362,6 +356,8 @@ public:
   }
 
 private:
+  static std::set<ID3D11Resource *> _res_D3D11_set;
+
   ID3D11Resource *_res_D3D11 = nullptr;
   HANDLE _res_win_nt_handle = nullptr;
   unsigned _res_reg_flags = 0;
@@ -386,53 +382,53 @@ private:
     resource->GetType(&dimension);
 
     switch (dimension) {
-      case D3D11_RESOURCE_DIMENSION_BUFFER: {
-        _res_is_buffer = true;
-        
-        D3D11_BUFFER_DESC desc;
-        ((ID3D11Buffer*)resource)->GetDesc(&desc);
+    case D3D11_RESOURCE_DIMENSION_BUFFER: {
+      _res_is_buffer = true;
 
-        _res_size_bytes = desc.ByteWidth;
-        break;
-      }
-      case D3D11_RESOURCE_DIMENSION_TEXTURE1D: {
-        D3D11_TEXTURE1D_DESC desc;
-        ((ID3D11Texture1D*)resource)->GetDesc(&desc);
+      D3D11_BUFFER_DESC desc;
+      ((ID3D11Buffer *)resource)->GetDesc(&desc);
 
-        res_width = desc.Width;
-        res_arr_size = desc.ArraySize;
-        res_num_levels = (desc.MipLevels? desc.MipLevels: 1);
+      _res_size_bytes = desc.ByteWidth;
+      break;
+    }
+    case D3D11_RESOURCE_DIMENSION_TEXTURE1D: {
+      D3D11_TEXTURE1D_DESC desc;
+      ((ID3D11Texture1D *)resource)->GetDesc(&desc);
 
-        channel = get_img_ch_info(desc.Format);
-        break;
-      }
-      case D3D11_RESOURCE_DIMENSION_TEXTURE2D: {
-        D3D11_TEXTURE2D_DESC desc;
-        ((ID3D11Texture2D*)resource)->GetDesc(&desc);
+      res_width = desc.Width;
+      res_arr_size = desc.ArraySize;
+      res_num_levels = (desc.MipLevels ? desc.MipLevels : 1);
 
-        res_width = desc.Width;
-        res_height = desc.Height;
-        res_arr_size = desc.ArraySize;
-        res_num_levels = (desc.MipLevels? desc.MipLevels: 1);
+      channel = get_img_ch_info(desc.Format);
+      break;
+    }
+    case D3D11_RESOURCE_DIMENSION_TEXTURE2D: {
+      D3D11_TEXTURE2D_DESC desc;
+      ((ID3D11Texture2D *)resource)->GetDesc(&desc);
 
-        channel = get_img_ch_info(desc.Format);
-        break;
-      }
-      case D3D11_RESOURCE_DIMENSION_TEXTURE3D: {
-        D3D11_TEXTURE3D_DESC desc;
-        ((ID3D11Texture3D*)resource)->GetDesc(&desc);
+      res_width = desc.Width;
+      res_height = desc.Height;
+      res_arr_size = desc.ArraySize;
+      res_num_levels = (desc.MipLevels ? desc.MipLevels : 1);
 
-        res_width = desc.Width;
-        res_height = desc.Height;
-        res_depth = desc.Depth;
-        res_num_levels = (desc.MipLevels? desc.MipLevels: 1);
+      channel = get_img_ch_info(desc.Format);
+      break;
+    }
+    case D3D11_RESOURCE_DIMENSION_TEXTURE3D: {
+      D3D11_TEXTURE3D_DESC desc;
+      ((ID3D11Texture3D *)resource)->GetDesc(&desc);
 
-        channel = get_img_ch_info(desc.Format);
-        break;
-      }
-      default:
-        throw std::runtime_error("Unsupported DX11 resource type!");
-        break;
+      res_width = desc.Width;
+      res_height = desc.Height;
+      res_depth = desc.Depth;
+      res_num_levels = (desc.MipLevels ? desc.MipLevels : 1);
+
+      channel = get_img_ch_info(desc.Format);
+      break;
+    }
+    default:
+      throw std::runtime_error("Unsupported DX11 resource type!");
+      break;
     }
 
     if (!_res_is_buffer) {
@@ -442,24 +438,25 @@ private:
             "Only standard and mipmap images are supported!");
       }
 
-      _res_size_bytes =
-          res_width * res_height * res_depth * res_arr_size * res_num_levels *
-              channel.get_total_size();
+      _res_size_bytes = res_width * res_height * res_depth * res_arr_size *
+                        res_num_levels * channel.get_total_size();
 
-      sycl::ext::oneapi::experimental::image_type img_type = 
-          (res_num_levels > 1)?
-              sycl::ext::oneapi::experimental::image_type::mipmap:
-              sycl::ext::oneapi::experimental::image_type::standard;
+      sycl::ext::oneapi::experimental::image_type img_type =
+          (res_num_levels > 1)
+              ? sycl::ext::oneapi::experimental::image_type::mipmap
+              : sycl::ext::oneapi::experimental::image_type::standard;
 
       _res_img_desc = sycl::ext::oneapi::experimental::image_descriptor{
-                      sycl::range<3>{res_width, res_height, res_depth},
+          sycl::range<3>{res_width, res_height, res_depth},
 #if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
-                      channel.get_channel_order(),
+          channel.get_channel_order(),
 #else
-                      channel.get_channel_num(),
+          channel.get_channel_num(),
 #endif
-                      channel.get_channel_type(), img_type, res_num_levels,
-                      res_arr_size};
+          channel.get_channel_type(),
+          img_type,
+          res_num_levels,
+          res_arr_size};
     }
   }
 
@@ -467,18 +464,16 @@ private:
   HANDLE create_shared_handle(ID3D11Resource *resource) {
     HANDLE win_nt_handle = nullptr;
 
-    IDXGIResource1* pDXGIResource1;
-    resource->QueryInterface(__uuidof(IDXGIResource1), reinterpret_cast<void**>(&pDXGIResource1));
+    IDXGIResource1 *pDXGIResource1;
+    resource->QueryInterface(__uuidof(IDXGIResource1),
+                             reinterpret_cast<void **>(&pDXGIResource1));
 
     if (_res_is_buffer) {
       pDXGIResource1->GetSharedHandle(&win_nt_handle);
     } else {
       pDXGIResource1->CreateSharedHandle(
-          nullptr,
-          DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE,
-          ullptr,
-          &win_nt_handle
-      );
+          nullptr, DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE,
+          ullptr, &win_nt_handle);
     }
 
     pDXGIResource1->Release();
@@ -486,27 +481,27 @@ private:
     return win_nt_handle;
   }
 
-  /// Helper function to get the texture channel info of DX11 resource using DXGI
-  /// format
+  /// Helper function to get the texture channel info of DX11 resource using
+  /// DXGI format
   image_channel get_img_ch_info(DXGI_FORMAT format) {
     image_channel channel;
 
     switch (format) {
-      case DXGI_FORMAT_R16G16B16A16_FLOAT:
-        channel = image_channel::create<sycl::half4>;
-        break;
-      case DXGI_FORMAT_R8G8B8A8_UNORM:
-        channel = image_channel::create<sycl::uchar4>;
-        break;
-      case DXGI_FORMAT_R16G16_FLOAT:
-        channel = image_channel::create<sycl::half2>;
-        break;
-      case DXGI_FORMAT_R32_FLOAT:
-        channel = image_channel::create<sycl::float>;
-        break;
-      default:
-        throw std::runtime_error("Unsupported DX11 resource format!");
-        break;
+    case DXGI_FORMAT_R16G16B16A16_FLOAT:
+      channel = image_channel::create<sycl::half4>;
+      break;
+    case DXGI_FORMAT_R8G8B8A8_UNORM:
+      channel = image_channel::create<sycl::uchar4>;
+      break;
+    case DXGI_FORMAT_R16G16_FLOAT:
+      channel = image_channel::create<sycl::half2>;
+      break;
+    case DXGI_FORMAT_R32_FLOAT:
+      channel = image_channel::create<sycl::float>;
+      break;
+    default:
+      throw std::runtime_error("Unsupported DX11 resource format!");
+      break;
     }
 
     return channel;
@@ -737,10 +732,9 @@ dpct_memcpy(pitched_data src, const sycl::id<3> &src_id,
                            dest->get_handle(), dest_offset, dest->get_desc(),
                            copy_extend);
 }
-} // namespace detail
 
 template <typename T>
-bool check_duplicate_entries(int count, T **entries) {
+inline bool check_duplicate_entries(int count, T **entries) {
   std::set<T *> uniqueEntries;
 
   for (size_t i = 0; i < count; ++i) {
@@ -752,20 +746,21 @@ bool check_duplicate_entries(int count, T **entries) {
 
   return false;
 }
+} // namespace detail
 
 /// Map the resource memories to mem handles
 /// \param [in] count The count of resources to map.
 /// \param [in] handles The interop mem wrappers used to map the resources.
 /// \param [in] q The queue used to map the resource with.
 inline void map_resources(int count, interop_mem_wrapper **handles,
-    sycl::queue *q = get_default_queue()) {
-  if (check_duplicate_entries(count, handles)) {
+                          queue_ptr q_ptr = &get_default_queue()) {
+  if (detail::check_duplicate_entries(count, handles)) {
     throw std::runtime_error(
         "Duplicate handle entries found during resource mapping!");
   }
 
-  for (int i = 0; i < count; i++ ) {
-    handles[i]->map_resource(*q);
+  for (int i = 0; i < count; i++) {
+    handles[i]->map_resource(*q_ptr);
   }
 }
 
@@ -774,17 +769,18 @@ inline void map_resources(int count, interop_mem_wrapper **handles,
 /// \param [out] size The size of the resource memory.
 /// \param [in] handle The interop mem wrapper used to query the mapped pointer
 /// and resource size.
-inline void get_mapped_pointer(
-    void **ptr, size_t *size, interop_mem_wrapper *handle) {
+inline void get_mapped_pointer(void **ptr, size_t *size,
+                               interop_mem_wrapper *handle) {
   if (!handle->is_buffer_res()) {
     throw std::runtime_error(
         "Non buffer resouce cannot be accessed as a pointer!");
   }
-  
+
   *ptr = handle->get_res_buf_ptr();
   if (!*ptr) {
-      throw std::runtime_error("Resource is not mapped! "
-          "Resource should be mapped before accessing its memory");
+    throw std::runtime_error(
+        "Resource is not mapped! "
+        "Resource should be mapped before accessing its memory");
   }
 
   *size = handle->get_res_size_bytes();
@@ -795,12 +791,13 @@ inline void get_mapped_pointer(
 /// \param [in] handles The interop mem wrappers used to unmap the resources.
 /// \param [in] q The queue used to unmap the resource with.
 inline void unmap_resources(int count, interop_mem_wrapper **handles,
-    sycl::queue *q = get_default_queue()) {
-  if (check_duplicate_entries(count, handles) &&
-      "Duplicate handle entries found during resource unmapping!");
+                            queue_ptr q_ptr = &get_default_queue()) {
+  if (detail::check_duplicate_entries(count, handles) &&
+      "Duplicate handle entries found during resource unmapping!")
+    ;
 
-  for (int i = 0; i < count; i++ ) {
-    handles[i]->unmap_resource(*q);
+  for (int i = 0; i < count; i++) {
+    handles[i]->unmap_resource(*q_ptr);
   }
 }
 

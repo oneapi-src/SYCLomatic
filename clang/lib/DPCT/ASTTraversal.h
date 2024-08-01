@@ -1800,7 +1800,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-/// Graphics Interoperability migraiton rule
 class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
