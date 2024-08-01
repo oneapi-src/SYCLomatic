@@ -87,7 +87,7 @@ inline sycl::event fill(sycl::queue &q, void *dev_ptr, valueT value,
 #endif
 }
 
-inline void free(void *to_ptr, sycl::queue &q) {
+inline void free(void *to_ptr, sycl::queue q) {
 #if USE_DPCT_HELPER
   return ::dpct::detail::dpct_free(to_ptr, q);
 #else

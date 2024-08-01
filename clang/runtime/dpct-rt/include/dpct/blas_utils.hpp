@@ -22,8 +22,9 @@ namespace detail {
 template <typename target_t, typename source_t> class parameter_wrapper_base_t {
 public:
   parameter_wrapper_base_t(sycl::queue q, source_t *source, size_t ele_num)
-      : _source_attribute(get_pointer_attribute(q, source)), _q(q),
-        _source(source), _ele_num(ele_num),
+      : _source_attribute(
+            ::dpct::detail::proxy::get_pointer_attribute(q, source)),
+        _q(q), _source(source), _ele_num(ele_num),
         _target(construct_member_variable_target()) {}
 
   ~parameter_wrapper_base_t() {
@@ -2286,7 +2287,7 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
   auto alpha_val = dpct::get_value(alpha, q);
   if (b != c) {
     dpct::blas::matrix_mem_copy(
-        c, b, ldc, ldb, m, n,
+        c, b, ldc, ldb, m, n, sizeof(Ty),
         ::dpct::detail::proxy::memcpy_direction::device_to_device, q);
   }
   auto data_a = dpct::detail::get_memory<const Ty>(a);
