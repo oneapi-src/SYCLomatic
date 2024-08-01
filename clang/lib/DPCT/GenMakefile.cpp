@@ -85,6 +85,9 @@ static void getCompileInfo(
       bool IsTargetName = false;
       bool IsArCommand = false;
       bool SkipArOptions = false;
+      bool IsShareLibary = false;
+      bool isPushStateOption = false;
+      std::string PushStateOptionValue;
 
       std::string TargetName;
       std::string Tool;
@@ -113,6 +116,32 @@ static void getCompileInfo(
           TargetName = Obj;
           SkipArOptions = false;
           Tool = "ar -r"; // Record the tool that generates the target file.
+        } else if (Obj == "-shared" || Obj == "--shared") {
+          IsShareLibary = true;
+        } else if (Obj == "--push-state") {
+          isPushStateOption = true;
+        } else if (isPushStateOption && llvm::StringRef(Obj).ends_with(".a")) {
+          PushStateOptionValue += Obj + " ";
+        } else if (isPushStateOption && Obj == "--pop-state") {
+          isPushStateOption = false;
+        }
+      }
+
+      // If option "-shared" or "--shared" appears in the linker command, it
+      // means that a dynamic library is be generated.
+      if (IsShareLibary) {
+        auto Pos = Tool.find_first_of(' ');
+        if (Pos != std::string::npos) {
+          Tool = Tool.insert(Pos, " -shared");
+        }
+      }
+
+      // To keep library name from the option "--push-state --whole-archive
+      // foo.a --pop-state" in the linker command of auto-generated Makefile.
+      if (!PushStateOptionValue.empty()) {
+        auto Pos = Tool.find_first_of(' ');
+        if (Pos != std::string::npos) {
+          Tool = Tool.insert(Pos + 1, PushStateOptionValue);
         }
       }
 
@@ -175,7 +204,7 @@ static void getCompileInfo(
       if (IsSystemInclude) {
         IsSystemInclude = false;
         clang::tooling::UnifiedPath IncPath = Option;
-        rewriteDir(IncPath, InRoot, OutRoot);
+        rewriteCanonicalDir(IncPath, InRoot, OutRoot);
 
         NewOptions += "-isystem ";
         SmallString<512> OutDirectory(IncPath.getCanonicalPath());
@@ -276,6 +305,8 @@ static void getCompileInfo(
       } else if (Option == "-msse4.1" || Option == "-mavx512vl") {
         // Keep some options from original compile command.
         NewOptions += Option + " ";
+      } else if(Option == "-fPIC" ) {
+        NewOptions += Option + " ";
       }
     }
     if (!IsObjSpecified) {
@@ -297,11 +328,11 @@ static void getCompileInfo(
 
     auto OrigFileName = FileName;
 
-    // rewriteFileName() should be called before rewriteDir(), as FileName
+    // rewriteFileName() should be called before rewriteCanonicalDir(), as FileName
     // needs to be a existing file path passed to DpctFileInfo referred in
     // rewriteFileName() to avoid potential crash issue.
     rewriteFileName(FileName);
-    rewriteDir(FileName, InRoot, OutRoot);
+    rewriteCanonicalDir(FileName, InRoot, OutRoot);
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());

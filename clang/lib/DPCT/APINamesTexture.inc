@@ -183,6 +183,15 @@ ENTRY_UNSUPPORTED("cudaGetTextureObjectResourceViewDesc",
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cuArray3DCreate_v2", DEREF(0),
+                            NEW(DpctGlobalInfo::useExtBindlessImages()
+                                    ? MapNames::getDpctNamespace() +
+                                          "experimental::image_mem_wrapper"
+                                    : MapNames::getDpctNamespace() +
+                                          "image_matrix",
+                                ARG(1)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cuArrayCreate_v2", DEREF(0),
                             NEW(DpctGlobalInfo::useExtBindlessImages()
                                     ? MapNames::getDpctNamespace() +
@@ -194,9 +203,13 @@ ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("cuArrayDestroy", ARG(0)))
 ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATED)
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+    ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+        UseExtBindlessImages,
+        MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetArray", ARG(0), true, "attach",
+                                  ARG(1)),
+        MEMBER_CALL_FACTORY_ENTRY(
             "cuTexRefSetArray", ARG(0), true, "attach",
-            CALL(MapNames::getDpctNamespace() + "image_data", ARG(1)))))
+            CALL(MapNames::getDpctNamespace() + "image_data", ARG(1))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
