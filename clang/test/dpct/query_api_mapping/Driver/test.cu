@@ -137,7 +137,7 @@
 // CUCTXCREATE: CUDA API:
 // CUCTXCREATE-NEXT:   cuCtxCreate(pc /*CUcontext **/, u /*unsigned*/, d /*CUdevice*/);
 // CUCTXCREATE-NEXT: Is migrated to:
-// CUCTXCREATE-NEXT:   *pc = dpct::select_device(d);
+// CUCTXCREATE-NEXT:   *pc = dpct::push_device_for_curr_thread(d);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxDestroy | FileCheck %s -check-prefix=CUCTXDESTROY
 // CUCTXDESTROY: CUDA API:

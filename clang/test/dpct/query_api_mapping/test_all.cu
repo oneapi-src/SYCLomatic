@@ -607,9 +607,9 @@
 // CHECK-NEXT: cuCtxGetApiVersion
 // CHECK-NEXT: cuCtxGetCurrent
 // CHECK-NEXT: cuCtxGetDevice
+// CHECK-NEXT: cuCtxGetLimit
 // CHECK-NEXT: cuCtxPopCurrent
 // CHECK-NEXT: cuCtxPushCurrent
-// CHECK-NEXT: cuCtxGetLimit
 // CHECK-NEXT: cuCtxResetPersistingL2Cache
 // CHECK-NEXT: cuCtxSetCacheConfig
 // CHECK-NEXT: cuCtxSetCurrent
