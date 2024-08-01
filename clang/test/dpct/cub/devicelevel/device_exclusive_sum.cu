@@ -10,6 +10,14 @@
 #include <cub/cub.cuh>
 #include <stdio.h>
 
+#define cudaCheck(stmt) do {                         \
+  cudaError_t err = stmt;                            \
+  if (err != cudaSuccess) {                          \
+    char msg[256];                                   \
+    sprintf(msg, "%s in file %s, function %s, line %d\n", #stmt,__FILE__,__FUNCTION__,__LINE__); \
+  }                                                  \
+} while(0)
+
 // CHECK:DPCT1026:{{.*}}
 // CHECK:oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
 void test_1() {
@@ -33,7 +41,7 @@ void test_1() {
 }
 
 // CHECK: DPCT1027:{{.*}}
-// CHECK: 0, 0;
+// CHECK: DPCT_CHECK_ERROR(0), 0;
 // CHECK: oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
 void test_2() {
   int n = 10;
@@ -57,7 +65,7 @@ void test_2() {
 
 // CHECK: dpct::queue_ptr stream = (dpct::queue_ptr)(void *)(uintptr_t)5;
 // CHECK: DPCT1026:{{.*}}
-// CHECK: oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(*stream), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
+// CHECK: cudaCheck(DPCT_CHECK_ERROR(oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(*stream), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{})));
 void test_3() {
   int n = 10;
   int *device_in = nullptr;
@@ -72,7 +80,7 @@ void test_3() {
   cudaStream_t stream = (cudaStream_t)(void *)(uintptr_t)5;
   cub::DeviceScan::ExclusiveSum(device_tmp, n_device_tmp, device_in, device_out, n, stream);
   cudaMalloc((void **)&device_tmp, n_device_tmp);
-  cub::DeviceScan::ExclusiveSum((void *)device_tmp, n_device_tmp, device_in, device_out, n, stream);
+  cudaCheck(cub::DeviceScan::ExclusiveSum((void *)device_tmp, n_device_tmp, device_in, device_out, n, stream));
   cudaMemcpy((void *)host_out, (void *)device_out, sizeof(host_out), cudaMemcpyDeviceToHost);
   cudaFree(device_in);
   cudaFree(device_out);
