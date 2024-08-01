@@ -1366,9 +1366,6 @@ void foo38(T *t)
 
 template void foo38(int *);
 
-#endif
-
-
 #define FORCE_TYPE long long int
 
 //CHECK: #define CALL(X, Y)                                                             \
@@ -1386,3 +1383,4 @@ int foo39() {
   CALL(0, 1)
   return 0;
 }
+#endif
