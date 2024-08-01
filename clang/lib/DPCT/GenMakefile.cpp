@@ -86,6 +86,8 @@ static void getCompileInfo(
       bool IsArCommand = false;
       bool SkipArOptions = false;
       bool IsShareLibary = false;
+      bool isPushStateOption = false;
+      std::string PushStateOptionValue;
 
       std::string TargetName;
       std::string Tool;
@@ -116,13 +118,31 @@ static void getCompileInfo(
           Tool = "ar -r"; // Record the tool that generates the target file.
         } else if (Obj == "-shared" || Obj == "--shared") {
           IsShareLibary = true;
+        } else if (Obj == "--push-state") {
+          isPushStateOption = true;
+        } else if (isPushStateOption && llvm::StringRef(Obj).ends_with(".a")) {
+          PushStateOptionValue += Obj + " ";
+        } else if (isPushStateOption && Obj == "--pop-state") {
+          isPushStateOption = false;
         }
       }
 
-      // if option "-shared" or "--shared" appears in the linker command, it
+      // If option "-shared" or "--shared" appears in the linker command, it
       // means that a dynamic library is be generated.
       if (IsShareLibary) {
-        Tool += " -shared";
+        auto Pos = Tool.find_first_of(' ');
+        if (Pos != std::string::npos) {
+          Tool = Tool.insert(Pos, " -shared");
+        }
+      }
+
+      // To keep library name from the option "--push-state --whole-archive
+      // foo.a --pop-state" in the linker command of auto-generated Makefile.
+      if (!PushStateOptionValue.empty()) {
+        auto Pos = Tool.find_first_of(' ');
+        if (Pos != std::string::npos) {
+          Tool = Tool.insert(Pos + 1, PushStateOptionValue);
+        }
       }
 
       if (llvm::StringRef(TargetName).ends_with(".o") &&

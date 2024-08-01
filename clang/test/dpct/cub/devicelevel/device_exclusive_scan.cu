@@ -42,7 +42,7 @@ void test_1() {
 }
 
 // CHECK: DPCT1027:{{.*}}
-// CHECK: 0, 0;
+// CHECK: DPCT_CHECK_ERROR(0), 0;
 // CHECK: oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + N, device_out, 0, op);
 void test_2() {
  int *device_in = nullptr;
