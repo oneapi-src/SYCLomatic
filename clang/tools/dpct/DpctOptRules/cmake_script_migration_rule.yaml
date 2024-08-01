@@ -2606,6 +2606,30 @@
       In: --expt-relaxed-constexpr
       Out: ""
 
+- Rule: rule_expt_extended_lambda_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_extended_lambda_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --expt-extended-lambda
+      Out: ""
+
+- Rule: rule_expt_xfatbin_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_xfatbin_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In:  -Xfatbin=${value}
+      Out: ""
+
 - Rule: rule_CUDA_NVCC_EXECUTABLE
   Kind: CMakeRule
   Priority: Fallback
