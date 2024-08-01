@@ -32,8 +32,9 @@ class StringRef;
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                  clang::tooling::UnifiedPath InRoot,
-                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
-                 ReplTy &ReplSYCL);
+                 clang::tooling::UnifiedPath OutRoot,
+                 clang::tooling::UnifiedPath CUDAMigratedOutRoot,
+                 ReplTy &ReplCUDA, ReplTy &ReplSYCL);
 
 void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 
