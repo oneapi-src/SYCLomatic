@@ -9,8 +9,11 @@
 #ifndef __DPCT_BLAS_UTILS_HPP__
 #define __DPCT_BLAS_UTILS_HPP__
 
+#include "proxy.hpp"
+
 #include "lib_common_utils.hpp"
 #include <oneapi/mkl.hpp>
+#include <sycl/sycl.hpp>
 
 #include <utility>
 #include <vector>

@@ -12,6 +12,8 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 
+#include "proxy.hpp"
+
 #include "lib_common_utils.hpp"
 
 #include <oneapi/dnnl/dnnl.hpp>

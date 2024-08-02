@@ -13,12 +13,15 @@
 #ifndef __DPCT_BLAS_GEMM_UTILS_HPP__
 #define __DPCT_BLAS_GEMM_UTILS_HPP__
 
+#include "proxy.hpp"
+
 #include "dnnl_utils.hpp"
 #include "lib_common_utils.hpp"
 
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <oneapi/mkl.hpp>
+#include <sycl/sycl.hpp>
 
 namespace dpct {
 namespace blas_gemm {

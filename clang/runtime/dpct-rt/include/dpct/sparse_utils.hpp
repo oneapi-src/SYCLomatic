@@ -9,8 +9,12 @@
 #ifndef __DPCT_SPARSE_UTILS_HPP__
 #define __DPCT_SPARSE_UTILS_HPP__
 
+#include "proxy.hpp"
+
 #include "lib_common_utils.hpp"
+
 #include <oneapi/mkl.hpp>
+#include <sycl/sycl.hpp>
 
 namespace dpct {
 namespace sparse {

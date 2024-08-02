@@ -9,7 +9,8 @@
 #ifndef __DPCT_CCL_UTILS_HPP__
 #define __DPCT_CCL_UTILS_HPP__
 
-#include "lib_common_utils.hpp"
+#include "proxy.hpp"
+
 #include <oneapi/ccl.hpp>
 #include <sycl/sycl.hpp>
 
