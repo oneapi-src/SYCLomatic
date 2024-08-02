@@ -4,8 +4,9 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/vector_add_codepin_sycl/vector_add.dp.cpp -o %T/vector_add_codepin_sycl/vector_add.dp.o %}
 // RUN: cd %T/vector_add_codepin_cuda
 // RUN:  %if build_lit %{Make -f Makefile %}
-// RUN: cd ..
-
+// RUN: ls > default.log
+// RUN: FileCheck --input-file default.log --match-full-lines %T/vector_add_codepin_sycl/vector_add.dp.cpp -check-prefix=DEFAULT
+// DEFAULT: Makefile
 #include <cuda.h>
 #include <stdio.h>
 #define VECTOR_SIZE 256
