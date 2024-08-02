@@ -146,9 +146,6 @@ private:
 /// The base wrapper class of graphics interop memory handle.
 class interop_mem_wrapper_base {
 public:
-  /// Creates interop memory wrapper for a given resource.
-  interop_mem_wrapper_base() = default;
-
   /// Cleans up the interop wrapper by releasing the SYCL interop
   /// memory handle
   virtual ~interop_mem_wrapper_base() {}
@@ -282,16 +279,23 @@ public:
     }
   }
 
-private:
+protected:
+  /// Creates interop memory wrapper for a given resource.
+  interop_mem_wrapper_base(
+      sycl::ext::oneapi::experimental::interop_mem_handle interop_mem_handle)
+      : _res_interop_mem_handle_ptr(&interop_mem_handle);
+
   bool _res_is_buffer = false;
   size_t _res_size_bytes = 0;
 
-  void *_res_buf_ptr = nullptr;
   sycl::ext::oneapi::experimental::image_descriptor _res_img_desc;
-  image_mem_wrapper *_res_img_mem_wrapper_ptr = nullptr;
-
   sycl::ext::oneapi::experimental::interop_mem_handle
       *_res_interop_mem_handle_ptr = nullptr;
+
+private:
+  unsigned _res_reg_flags = 0;
+  void *_res_buf_ptr = nullptr;
+  image_mem_wrapper *_res_img_mem_wrapper_ptr = nullptr;
 };
 
 #ifdef _WIN32
@@ -360,9 +364,6 @@ private:
 
   ID3D11Resource *_res_D3D11 = nullptr;
   HANDLE _res_win_nt_handle = nullptr;
-  unsigned _res_reg_flags = 0;
-  sycl::ext::oneapi::experimental::interop_mem_handle
-      *_res_interop_mem_handle_ptr = nullptr;
 
   /// Helper function to query the properties of DX11 resource
   void query_res_info(ID3D11Resource *resource) {
@@ -507,13 +508,15 @@ private:
     return channel;
   }
 };
-#else
+#elif defined(__linux__) || defined(__unix__) || defined(__APPLE__)
 /// Stub interop_mem_wrapper implementation for non-Windows platforms
 class interop_mem_wrapper : public interop_mem_wrapper_base {
 public:
   interop_mem_wrapper() {};
   virtual ~interop_mem_wrapper() {};
 };
+#else
+static_assert(false, "Graphics interop is only supported on Windows or Linux.");
 #endif // _WIN32
 
 namespace detail {
