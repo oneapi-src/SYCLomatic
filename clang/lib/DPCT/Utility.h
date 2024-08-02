@@ -571,6 +571,7 @@ void getNameSpace(const NamespaceDecl *NSD,
                   std::vector<std::string> &Namespaces);
 std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
                                         const clang::ASTContext &Ctx);
+void PrintFullTemplateName(raw_ostream &OS, const PrintingPolicy &Policy, TemplateName Name);
 bool isFromCUDA(const Decl *D);
 namespace clang {
 namespace dpct {

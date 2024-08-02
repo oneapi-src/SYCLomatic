@@ -82,20 +82,32 @@ class CommandLineArgumentParser {
 
   bool parseDoubleQuotedStringInto(std::string &String) {
     if (!next()) return false;
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('"');
+#endif
     while (*Position != '"') {
       if (!skipEscapeCharacter()) return false;
       String.push_back(*Position);
       if (!next()) return false;
     }
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('"');
+#endif
     return next();
   }
 
   bool parseSingleQuotedStringInto(std::string &String) {
     if (!next()) return false;
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('\'');
+#endif
     while (*Position != '\'') {
       String.push_back(*Position);
       if (!next()) return false;
     }
+#ifdef SYCLomatic_CUSTOMIZATION
+    String.push_back('\'');
+#endif
     return next();
   }
 
@@ -276,7 +288,7 @@ static llvm::StringRef stripExecutableExtension(llvm::StringRef Name) {
   return Name;
 }
 
-// There are compiler-wrappers (ccache, distcc, gomacc) that take the "real"
+// There are compiler-wrappers (ccache, distcc) that take the "real"
 // compiler as an argument, e.g. distcc gcc -O3 foo.c.
 // These end up in compile_commands.json when people set CC="distcc gcc".
 // Clang's driver doesn't understand this, so we need to unwrap.
@@ -285,8 +297,7 @@ static bool unwrapCommand(std::vector<std::string> &Args) {
     return false;
   StringRef Wrapper =
       stripExecutableExtension(llvm::sys::path::filename(Args.front()));
-  if (Wrapper == "distcc" || Wrapper == "gomacc" || Wrapper == "ccache" ||
-      Wrapper == "sccache") {
+  if (Wrapper == "distcc" || Wrapper == "ccache" || Wrapper == "sccache") {
     // Most of these wrappers support being invoked 3 ways:
     // `distcc g++ file.c` This is the mode we're trying to match.
     //                     We need to drop `distcc`.
