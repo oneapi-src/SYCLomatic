@@ -21,3 +21,12 @@ find_package( MPI  )
 find_package(  MPI REQUIRED )
 FIND_PACKAGE( OpenMP)
 FIND_PACKAGE(  OpenMP REQUIRED)
+
+target_link_libraries(foo PRIVATE OpenMP::OpenMP_CXX)
+
+target_link_libraries(foo PRIVATE
+faiss_avx512
+Python::Module
+Python::NumPy
+  OpenMP::OpenMP_CXX
+)
