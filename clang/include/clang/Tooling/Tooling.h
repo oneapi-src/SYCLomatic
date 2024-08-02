@@ -52,6 +52,7 @@
 #include <vector>
 
 #ifdef SYCLomatic_CUSTOMIZATION
+#include "CompilationDatabase.h"
 #include <set>
 namespace clang {
 namespace tooling {
@@ -373,7 +374,8 @@ public:
   ~ClangTool();
 #ifdef SYCLomatic_CUSTOMIZATION
   int processFiles(llvm::StringRef File, bool &ProcessingFailed,
-                    bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
+                   bool &FileSkipped, int &StaticSymbol, ToolAction *Action,
+                   bool IsOrphanFile = false);
 #endif // SYCLomatic_CUSTOMIZATION
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {

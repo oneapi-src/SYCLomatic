@@ -224,8 +224,9 @@ static int processFilesWithCrashGuard(ClangTool *Tool, llvm::StringRef File,
   int Ret;
   if (ProcessFilesWithCrashGuardPtr(
           [&]() {
-            Ret = Tool->processFiles(File, ProcessingFailed, FileSkipped,
-                                     StaticSymbol, Action);
+            Ret =
+                Tool->processFiles(File, ProcessingFailed, FileSkipped,
+                                   StaticSymbol, Action, true /*IsOrphanFile*/);
           },
           "Error: dpct internal error. Current file \"" + File.str() +
               "\" skipped. Migration continues.\n"))
@@ -721,7 +722,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 // if return value < -1, report return value to upper caller,
 // other values are ignored.
 int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
-                     bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
+                     bool &FileSkipped, int &StaticSymbol, ToolAction *Action, bool IsOrphanFile) {
     //clear error# counter
     CurFileParseErrCnt=0;
     CurFileSigErrCnt=0;
@@ -734,7 +735,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
     // requirements to the order of invocation of its members.
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
-    if (CompileCommandsForFile.empty()) {
+    if (CompileCommandsForFile.empty() && !IsOrphanFile) {
       llvm::errs() << "Skipping " << File
                    << ". Compile command for this file not found in "
                       "compile_commands.json.\n";
