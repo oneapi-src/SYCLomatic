@@ -640,6 +640,17 @@ void clang::dpct::IntraproceduralAnalyzer::simplifyMap(
 
 AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other,
                         bool IsOtherInLoop) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "===========mergeOther begin=================" << std::endl;
+  std::cout << "Input:" << std::endl;
+  std::cout << "  Me.UsedBefore:" << Me.UsedBefore << std::endl;
+  std::cout << "  Me.UsedAfter:" << Me.UsedAfter << std::endl;
+  std::cout << "  Me.AM:" << Me.AM << std::endl;
+  std::cout << "  Other.UsedBefore:" << Other.UsedBefore << std::endl;
+  std::cout << "  Other.UsedAfter:" << Other.UsedAfter << std::endl;
+  std::cout << "  Other.AM:" << Other.AM << std::endl;
+  std::cout << "  IsOtherInLoop:" << IsOtherInLoop << std::endl;
+#endif
   if (IsOtherInLoop) {
     Other.UsedBefore = true;
     Other.UsedAfter = true;
@@ -647,6 +658,13 @@ AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other,
   Me.UsedBefore = Me.UsedBefore || Other.UsedBefore;
   Me.UsedAfter = Me.UsedAfter || Other.UsedAfter;
   Me.AM = AccessMode(Me.AM | Other.AM);
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Output:" << std::endl;
+  std::cout << "  Me.UsedBefore:" << Me.UsedBefore << std::endl;
+  std::cout << "  Me.UsedAfter:" << Me.UsedAfter << std::endl;
+  std::cout << "  Me.AM:" << Me.AM << std::endl;
+  std::cout << "===========mergeOther end===================" << std::endl;
+#endif
   return Me;
 }
 
@@ -690,6 +708,10 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       std::string /*caller's decl's combined loc str*/,
       std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
       AffectedByParmsMapInfoStack;
+  std::vector<std::pair<
+      std::string /*caller's decl's combined loc str*/,
+      std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
+      AffectedByParmsMapInfoVec;
   std::set<std::weak_ptr<DeviceFunctionInfo>,
            std::owner_less<std::weak_ptr<DeviceFunctionInfo>>>
       Visited;
@@ -721,6 +743,8 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
 
     int N = static_cast<int>(AffectedByParmsMapInfoStack.size()) - CurDepth;
     assert(N >= 0 && "N should be greater than or equal to 0");
+    if (!AffectedByParmsMapInfoStack.empty())
+      AffectedByParmsMapInfoVec.push_back(AffectedByParmsMapInfoStack.top());
     for (int i = 0; i < N; i++) {
       AffectedByParmsMapInfoStack.pop();
     }
@@ -729,6 +753,9 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     if (Iter != CurNode->IAR.Map.end()) {
       const auto &Arg2ParmsMap = std::get<5>(Iter->second);
       bool IsInLoop = std::get<1>(Iter->second);
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+      std::cout << "IsInLoop:" << IsInLoop << std::endl;
+#endif
       // Merge std::get<4>(Iter->second) and
       // AffectedByParmsMapInfoStack.top().second.
       // Then push into AffectedByParmsMapInfoStack.
@@ -785,12 +812,11 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     }
   }
 
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "AffectedByParmsMapInfoStack.size():"
-            << AffectedByParmsMapInfoStack.size() << std::endl;
-#endif
-  if (!AffectedByParmsMapInfoStack.empty()) {
-    const auto &AffectedByParmsMap = AffectedByParmsMapInfoStack.top().second;
+  if (!AffectedByParmsMapInfoStack.empty())
+    AffectedByParmsMapInfoVec.push_back(AffectedByParmsMapInfoStack.top());
+
+  for (const auto &Iter : AffectedByParmsMapInfoVec) {
+    const auto &AffectedByParmsMap = Iter.second;
     for (const auto &P : AffectedByParmsMap) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
       std::cout << "Parameter ID:" << P.first << std::endl;
