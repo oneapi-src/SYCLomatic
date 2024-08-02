@@ -89,10 +89,16 @@ bool isCanonical(StringRef Path) {
   return HasNoDots && path::is_absolute(Path);
 }
 
-const char *getNL(void) {
+const char *getNL(bool AddBackSlash) {
 #if defined(__linux__)
+  if (AddBackSlash) {
+    return "\\\n";
+  }
   return "\n";
 #elif defined(_WIN64)
+  if (AddBackSlash) {
+    return "\\\r\n";
+  }
   return "\r\n";
 #else
 #error Only support windows and Linux.
