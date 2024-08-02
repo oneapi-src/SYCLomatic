@@ -32,7 +32,7 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphicsMapFlags mapFlags = cudaGraphicsMapFlagsNone;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsResourceSetMapFlags is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGraphicsResourceSetMapFlags was removed because this functionality is deprecated in DX12 and hence is not supported in SYCL.
   // CHECK-NEXT: */
   cudaGraphicsResourceSetMapFlags(resource, mapFlags);
 
