@@ -176,7 +176,7 @@ private:
   size_type _min_capacity() const { return size_type(1); }
 
   void _set_capacity_and_alloc() {
-    _capacity = ::(std::max)(_size * 2, _min_capacity());
+    _capacity = (::std::max)(_size * 2, _min_capacity());
     _storage = alloc_traits::allocate(_alloc, _capacity);
   }
 
@@ -406,7 +406,7 @@ public:
       ::std::swap(_storage, v._storage);
     } else {
       // swap all elements up to the minimum size between the two vectors
-      size_type min_size = ::(std::min)(size(), v.size());
+      size_type min_size = (::std::min)(size(), v.size());
       auto zip = oneapi::dpl::make_zip_iterator(begin(), v.begin());
       ::std::for_each(
           oneapi::dpl::execution::make_device_policy(get_default_queue()), zip,
@@ -470,7 +470,7 @@ public:
   const_pointer data(void) const { return const_pointer(_storage); }
   void shrink_to_fit(void) {
     if (_size != capacity() && capacity() > _min_capacity()) {
-      size_type tmp_capacity = ::(std::max)(_size, _min_capacity());
+      size_type tmp_capacity = (::std::max)(_size, _min_capacity());
       auto tmp = alloc_traits::allocate(_alloc, tmp_capacity);
       if (_size > 0) {
         ::std::copy(
