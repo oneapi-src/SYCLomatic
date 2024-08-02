@@ -251,7 +251,7 @@ ENTRY(cudaMemPoolSetAttribute, cudaMemPoolSetAttribute, false, NO_FLAG, P4, "com
 ENTRY(cudaMemPoolTrimTo, cudaMemPoolTrimTo, false, NO_FLAG, P4, "comment")
 
 // unified addressing functions of runtime API
-ENTRY(cudaPointerGetAttributes, cudaPointerGetAttributes, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaPointerGetAttributes, cudaPointerGetAttributes, true, NO_FLAG, P0, "Partial: Only 5 attributes are supported")
 
 // peer device memory access functions of runtime API
 ENTRY(cudaDeviceCanAccessPeer, cudaDeviceCanAccessPeer, true, NO_FLAG, P0, "DPCT1031")
@@ -1763,7 +1763,7 @@ ENTRY(cuMemPrefetchAsync, cuMemPrefetchAsync, true, NO_FLAG, P4, "Partial: USM o
 ENTRY(cuMemPrefetchAsync_v2, cuMemPrefetchAsync_v2, false, NO_FLAG, P4, "Partial: USM only, DPCT1007")
 ENTRY(cuMemRangeGetAttribute, cuMemRangeGetAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemRangeGetAttributes, cuMemRangeGetAttributes, false, NO_FLAG, P4, "comment")
-ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, true, NO_FLAG, P4, "Successful")
 ENTRY(cuPointerGetAttributes, cuPointerGetAttributes, false, NO_FLAG, P4, "comment")
 ENTRY(cuPointerSetAttribute, cuPointerSetAttribute, false, NO_FLAG, P4, "comment")
 

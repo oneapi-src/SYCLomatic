@@ -1,8 +1,8 @@
-void test(unsigned int numAttributes, CUpointer_attribute *attributes,
+void test(unsigned int numAttr, CUpointer_attribute *attr,
           void **data, CUdeviceptr ptr) {
   // Start
-  cuPointerGetAttributes(numAttributes /*unsigned int*/,
-                        attributes /*CUpointer_attribute **/, data /*void ***/,
+  cuPointerGetAttributes(numAttr /*unsigned int*/,
+                        attr /*CUpointer_attribute **/, data /*void ***/,
                         ptr /*CUdeviceptr*/);
   // End
 }

@@ -35,6 +35,14 @@ int main() {
     CU_POINTER_ATTRIBUTE_DEVICE_ORDINAL
   };
 
+  // CHECK: dpct::pointer_attributes::type attributes_unsupported[] = {
+  // CHECK:   dpct::pointer_attributes::type::unsupported,
+  // CHECK:   dpct::pointer_attributes::type::unsupported
+  CUpointer_attribute attributes_unsupported[] = {
+    CU_POINTER_ATTRIBUTE_CONTEXT,
+    CU_POINTER_ATTRIBUTE_IS_LEGACY_CUDA_IPC_CAPABLE
+  };
+
   // CHECK: sycl::usm::alloc memType;
   CUmemorytype memType;
   void* hostPtr;
@@ -42,6 +50,8 @@ int main() {
   int deviceID;
   // CHECK: dpct::device_ptr devPtr;
   CUdeviceptr devPtr;
+  CUcontext cuCtx;
+  bool is_legacy_cuda_ipc_capable;
 
   void* attributeValues[] = {
     &memType,
@@ -49,6 +59,11 @@ int main() {
     &hostPtr,
     &isManaged,
     &deviceID
+  };
+
+  void* attributeValues_unsupported[] = {
+    &cuCtx,
+    &is_legacy_cuda_ipc_capable
   };
 
   // CHECK: dpct::pointer_attributes::get(numAttributes, attributes, attributeValues, (dpct::device_ptr) h_A);
@@ -106,4 +121,12 @@ int main() {
   } else if (isManaged) {
     return 2;
   }
+
+  // CHECK: dpct::pointer_attributes::get(2, attributes_unsupported, attributeValues_unsupported, (dpct::device_ptr) d_A);
+  cuPointerGetAttributes(
+    2,
+    attributes_unsupported,
+    attributeValues_unsupported,
+    (CUdeviceptr) d_A
+  );
 }
