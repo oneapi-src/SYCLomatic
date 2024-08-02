@@ -344,7 +344,7 @@ __global__ void k11(T) {}
 // CHECK-NEXT:   F(const F& other) {}
 // CHECK-NEXT: };
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct16" is not device copyable for copy constructor, copy assignment, move constructor, move assignment, virtual method "m", destructor, virtual base class "B1", non trivially copyable base class "B2" and non trivially copyable field "f" breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
+// CHECK-NEXT: DPCT1128:{{[0-9]+}}: The type "UserStruct16" is not device copyable for copy constructor, copy assignment, move constructor, move assignment, destructor, virtual method "m", virtual base class "B1", non trivially copyable base class "B2" and non trivially copyable field "f" breaking the device copyable requirement. It is used in the SYCL kernel, please rewrite the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: struct UserStruct16 : virtual public B1, public B2 {
 // CHECK-NEXT:   UserStruct16() {}
