@@ -2355,7 +2355,6 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     ResultEnd = SM.getExpansionLoc(ResultEnd);
     if (IncludeLastToken &&
         !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
-      // std::cout << ResultEnd.printToString(SM) << std::endl;
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       Token Tok2;
