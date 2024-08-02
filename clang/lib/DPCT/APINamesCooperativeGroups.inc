@@ -55,10 +55,10 @@ CONDITIONAL_FACTORY_ENTRY(
                     UseRootGroup,
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY("sync",
-                                           CALL(MapNames::getClNamespace() +
-                                                    "group_barrier",
-                                                ARG(0)))),
+                        CALL_FACTORY_ENTRY(
+                            "cooperative_groups::__v1::grid_group.sync",
+                            CALL(MapNames::getClNamespace() + "group_barrier",
+                                 ARG(0)))),
                     UNSUPPORT_FACTORY_ENTRY(
                         "cooperative_groups::__v1::grid_group.sync",
                         Diagnostics::TRY_EXPERIMENTAL_FEATURE,
