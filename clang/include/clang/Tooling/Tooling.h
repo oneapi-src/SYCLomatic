@@ -52,7 +52,6 @@
 #include <vector>
 
 #ifdef SYCLomatic_CUSTOMIZATION
-#include "CompilationDatabase.h"
 #include <set>
 namespace clang {
 namespace tooling {

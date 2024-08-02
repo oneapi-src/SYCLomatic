@@ -128,7 +128,6 @@ private:
                    const char *Overview);
 
   std::unique_ptr<CompilationDatabase> Compilations;
-  std::unique_ptr<CompilationDatabase> ExpandedCompilation;
 #ifdef SYCLomatic_CUSTOMIZATION
   std::string CompilationsDir = "";
   bool IsPSpecified = false;
