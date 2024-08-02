@@ -2639,3 +2639,17 @@
   In: cmake_cuda_architectures_all${empty}(${arg})
   Out: ""
 
+
+# oneAPI DPC++/C++ Compiler supports OpenMP* C++ pragmas that comply with OpenMP C++ API,
+# So the option "OpenMP::OpenMP_CXX" that is specific to openMP compiler (like mpicc) should be removed.
+- Rule: rule_openmp_cxx_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: openmp_cxx_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: OpenMP::OpenMP_CXX
+      Out: ""
