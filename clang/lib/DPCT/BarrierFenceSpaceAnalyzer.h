@@ -79,14 +79,10 @@ private:
 using Ranges = std::unordered_set<SourceRange>;
 struct SyncCallInfo {
   SyncCallInfo() {}
-  SyncCallInfo(Ranges Predecessors, Ranges Successors, bool IsRealSyncCall,
-               bool IsInLoop)
-      : Predecessors(Predecessors), Successors(Successors),
-        IsRealSyncCall(IsRealSyncCall), IsInLoop(IsInLoop){};
   Ranges Predecessors;
   Ranges Successors;
-  bool IsRealSyncCall;
-  bool IsInLoop;
+  bool IsRealSyncCall = false;
+  bool IsInLoop = false;
 };
 
 struct DREInfo {

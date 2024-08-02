@@ -2402,6 +2402,7 @@ public:
 
   virtual ~CallFunctionExpr() = default;
   unsigned getOffset() { return Offset; }
+  unsigned getCallFuncExprOffset() { return CallFuncExprOffset; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   std::string getDeclCombinedLoc() { return DeclCombinedLoc; }
 

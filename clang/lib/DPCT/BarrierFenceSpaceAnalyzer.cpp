@@ -15,7 +15,6 @@
 #include <unordered_set>
 
 using namespace llvm;
-#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
 
 template <class TargetTy, class NodeTy>
 static inline const TargetTy *findAncestorInFunctionScope(
@@ -670,7 +669,7 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
     std::shared_ptr<CallFunctionExpr> Call = Pair.second;
     if (CurCallDeclCombinedLoc == Call->getDeclCombinedLoc()) {
       std::string CallLoc = Call->getFilePath().getCanonicalPath().str() + ":" +
-                            std::to_string(Call->getOffset());
+                            std::to_string(Call->getCallFuncExprOffset());
       CallLocVec.push_back(CallLoc);
     }
   }
@@ -680,7 +679,7 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
 }
 
 bool clang::dpct::InterproceduralAnalyzer::analyze(
-    const std::shared_ptr<DeviceFunctionInfo> DFI,
+    const std::shared_ptr<DeviceFunctionInfo> InputDFI,
     std::string SyncCallCombinedLoc) {
   // Do analysis for all syncthreads call in this DFI's ancestors and
   // this DFI's decendents.
@@ -696,8 +695,8 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       Visited;
 
   // DFS to find all related DFIs
-  NodeStack.push(std::make_tuple(DFI, "__syncthreads", 0));
-  Visited.insert(DFI);
+  NodeStack.push(std::make_tuple(InputDFI, "__syncthreads", 0));
+  Visited.insert(InputDFI);
   while (!NodeStack.empty()) {
     auto CurNode = std::get<0>(NodeStack.top()).lock();
     auto CurCallDeclCombinedLoc = std::get<1>(NodeStack.top());
@@ -726,8 +725,8 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       AffectedByParmsMapInfoStack.pop();
     }
 
-    auto Iter = DFI->IAR.Map.find(CurCallCombinedLoc);
-    if (Iter != DFI->IAR.Map.end()) {
+    auto Iter = CurNode->IAR.Map.find(CurCallCombinedLoc);
+    if (Iter != CurNode->IAR.Map.end()) {
       const auto &Arg2ParmsMap = std::get<5>(Iter->second);
       bool IsInLoop = std::get<1>(Iter->second);
       // Merge std::get<4>(Iter->second) and
@@ -737,7 +736,7 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
           CurAffectedbyParmsMap = std::get<4>(Iter->second);
       if (AffectedByParmsMapInfoStack.empty()) {
         AffectedByParmsMapInfoStack.push(std::make_pair(
-            DFI->IAR.CurrentCtxFuncCombinedLoc, CurAffectedbyParmsMap));
+            CurNode->IAR.CurrentCtxFuncCombinedLoc, CurAffectedbyParmsMap));
       } else {
         const std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
             &PrevAffectedbyParmsMap = AffectedByParmsMapInfoStack.top().second;
@@ -768,7 +767,7 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
           }
         }
         AffectedByParmsMapInfoStack.push(std::make_pair(
-            DFI->IAR.CurrentCtxFuncCombinedLoc, CurAffectedbyParmsMap));
+            CurNode->IAR.CurrentCtxFuncCombinedLoc, CurAffectedbyParmsMap));
       }
     }
 
@@ -780,14 +779,12 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
 #endif
         return false;
       }
-      NodeStack.push(
-          std::make_tuple(I, DFI->IAR.CurrentCtxFuncCombinedLoc, CurDepth + 1));
+      NodeStack.push(std::make_tuple(I, CurNode->IAR.CurrentCtxFuncCombinedLoc,
+                                     CurDepth + 1));
       Visited.insert(I);
     }
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "===============================================" << std::endl;
-#endif
   }
+
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "AffectedByParmsMapInfoStack.size():"
             << AffectedByParmsMapInfoStack.size() << std::endl;

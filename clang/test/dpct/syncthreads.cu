@@ -469,3 +469,107 @@ __global__ void test21(float *ptr1, float *ptr2, int step1, int step2) {
 void foo3(float *ptr1, float *ptr2, int step1, int step2) {
   test21<<<1, 1>>>(ptr1, ptr2, step1, step2);
 }
+
+__device__ void test22_d(float *ptr1) {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: item_ct1.barrier();
+  __syncthreads();
+}
+
+__global__ void test22_k(float *ptr1) {
+  ptr1[123]= 456;
+  for (int i = 0; i < 10; i++) {
+    test22_d(ptr1);
+  }
+}
+
+__device__ void test23_d(float *ptr1) {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: item_ct1.barrier();
+  __syncthreads();
+}
+
+__global__ void test23_k(float *ptr1) {
+  for (int i = 0; i < 10; i++) {
+    ptr1[123]= 456;
+    test23_d(ptr1);
+  }
+}
+
+__device__ void test24_d(float *ptr1) {
+  ptr1[123]= 456;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: item_ct1.barrier();
+  __syncthreads();
+}
+
+__global__ void test24_k(float *ptr1) {
+  for (int i = 0; i < 10; i++) {
+    test24_d(ptr1);
+  }
+}
+
+__device__ void test25_d(float *ptr1) {
+  ptr1[123]= 456;
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
+  __syncthreads();
+}
+
+__global__ void test25_k(float *ptr1) {
+  for (int i = 0; i < 10; i++) {}
+  test25_d(ptr1);
+}
+
+__device__ void test26_d(float *ptr1) {
+  ptr1[123]= 456;
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
+  __syncthreads();
+}
+
+__global__ void test26_k1(float *ptr1) {
+  test26_d(ptr1);
+}
+
+__global__ void test26_k2(float *ptr1) {
+  test26_d(ptr1);
+}
+
+__device__ void test27_d(float *ptr1) {
+  ptr1[123]= 456;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: item_ct1.barrier();
+  __syncthreads();
+}
+
+__global__ void test27_k1(float *ptr1) {
+  test27_d(ptr1);
+}
+
+__global__ void test27_k2(float *ptr1) {
+  for (int i = 0; i < 10; i++) {
+    test27_d(ptr1);
+  }
+}
+
+__device__ void test28_d(float *ptr1) {
+  ptr1[123]= 456;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: item_ct1.barrier();
+  __syncthreads();
+}
+
+__global__ void test28_k(float *ptr1) {
+  test28_d(ptr1);
+  test28_d(ptr1);
+}
+
