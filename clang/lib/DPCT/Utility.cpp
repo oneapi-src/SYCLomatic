@@ -5109,7 +5109,6 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
       for (const auto &C : ClassDecl->ctors()) {
         if (!C->isImplicit() && !C->isDeleted()) {
           if (C->isCopyConstructor()) {
-            Messages.push_back("copy constructor");
             // The 1st parameter of the copy constructor need "const" qualifier.
             const auto *FirstParam = C->getParamDecl(0);
             const ReferenceType *RT =
@@ -5123,8 +5122,6 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
               CtorConstQualifierInsertLocations[HasVolatile].second =
                   FirstParam->getBeginLoc();
             }
-          } else if (C->isMoveConstructor()) {
-            Messages.push_back("copy assignment");
           }
         }
       }
@@ -5139,20 +5136,25 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
               NT->getReplacement(DpctGlobalInfo::getContext()));
         }
       }
+      if (ClassDecl->hasNonTrivialCopyConstructor()) {
+        Messages.push_back("copy constructor");
+      }
+      if (ClassDecl->hasNonTrivialCopyAssignment()) {
+        Messages.push_back("copy assignment");
+      }
+      if (ClassDecl->hasNonTrivialMoveConstructor()) {
+        Messages.push_back("move constructor");
+      }
+      if (ClassDecl->hasNonTrivialMoveAssignment()) {
+        Messages.push_back("move assignment");
+      }
+      if (ClassDecl->hasNonTrivialDestructor()) {
+        Messages.push_back("destructor");
+      }
       for (const auto &M : ClassDecl->methods()) {
-        if (!M->isImplicit() && !M->isDeleted()) {
-          if (M->isCopyAssignmentOperator()) {
-            Messages.push_back("move constructor");
-          } else if (M->isMoveAssignmentOperator()) {
-            Messages.push_back("move assignment");
-          }
-        }
         if (M->isVirtual()) {
           Messages.push_back("virtual method \"" + M->getNameAsString() + "\"");
         }
-      }
-      if (!ClassDecl->hasSimpleDestructor()) {
-        Messages.push_back("destructor");
       }
       for (const auto &B : ClassDecl->bases()) {
         if (B.isVirtual()) {
