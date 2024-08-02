@@ -3,7 +3,6 @@
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/vector_add_codepin_sycl/vector_add.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/vector_add_codepin_sycl/vector_add.dp.cpp -o %T/vector_add_codepin_sycl/vector_add.dp.o %}
 // RUN: cd %T/vector_add_codepin_cuda
-// RUN:  %if build_lit %{Make -f Makefile %}
 // RUN: ls > default.log
 // RUN: FileCheck --input-file default.log --match-full-lines %T/vector_add_codepin_sycl/vector_add.dp.cpp -check-prefix=DEFAULT
 // DEFAULT: Makefile
