@@ -232,9 +232,9 @@ static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
   }
   return Overwrites;
 }
-void copyMakeFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
-                           clang::tooling::UnifiedPath &OutRoot,
-                           bool IsForSYCL) {
+void copyFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
+                       clang::tooling::UnifiedPath &OutRoot,
+                       const std::string &ExpectedFileName) {
   std::error_code EC;
   for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC), End;
        Iter != End; Iter.increment(EC)) {
@@ -248,16 +248,16 @@ void copyMakeFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
       std::string FileName = llvm::sys::path::filename(Iter->path()).str();
       std::transform(FileName.begin(), FileName.end(), FileName.begin(),
                      ::toUpper);
-      if (FileName == "MAKEFILE") {
+      if (FileName == ExpectedFileName) {
         tooling::UnifiedPath FilePath = Iter->path();
-        std::string MakeFilePath = FilePath.getCanonicalPath().str();
+        std::string CanFilePath = FilePath.getCanonicalPath().str();
 
-        if (MakeFilePath.find("_codepin_") != std::string::npos) {
+        if (CanFilePath.find("_codepin_") != std::string::npos) {
           continue;
         }
-        rewriteDir(MakeFilePath, InRoot, OutRoot);
-        createDirectories(path::parent_path(MakeFilePath));
-        fs::copy_file(Iter->path(), MakeFilePath);
+        rewriteDir(CanFilePath, InRoot, OutRoot);
+        createDirectories(path::parent_path(CanFilePath));
+        fs::copy_file(Iter->path(), CanFilePath);
       }
     }
   }
@@ -1143,13 +1143,16 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     ScriptFineName = BuildScriptFile;
   if (GenBuildScript) {
     genBuildScript(Tool, InRoot, OutRoot, ScriptFineName);
-    if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
-      copyMakeFileToOutRoot(InRoot, CUDAMigratedOutRoot, false);
-    }
   }
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
+    if (GenBuildScript) {
+      copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "MAKEFILE");
+    }
+    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
+      copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "CMAKELISTS.TXT");
+    }
     std::string SchemaPathCUDA = CUDAMigratedOutRoot.getCanonicalPath().str() +
                                  "/codepin_autogen_util.hpp";
     std::string SchemaPathSYCL =

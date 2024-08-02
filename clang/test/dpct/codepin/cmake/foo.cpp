@@ -4,6 +4,9 @@
 // RUN: cd %T/foo_codepin_sycl
 // RUN: ls  > default.log
 // RUN: FileCheck --input-file default.log --match-full-lines %T/foo_codepin_sycl/foo.cpp -check-prefix=DEFAULT
+// RUN: cd %T/foo_codepin_cuda
+// RUN: ls > default2.log
+// RUN: FileCheck --input-file default2.log --match-full-lines %T/foo_codepin_sycl/foo.cpp -check-prefix=DEFAULT
 // DEFAULT: CMakeLists.txt
 
 #include <iostream>
