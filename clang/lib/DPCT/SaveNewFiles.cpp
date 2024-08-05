@@ -234,7 +234,7 @@ static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
 }
 void copyFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
                        clang::tooling::UnifiedPath &OutRoot,
-                       const std::string &ExpectedFileName) {
+                       const std::string &FilePattern) {
   std::error_code EC;
   for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC), End;
        Iter != End; Iter.increment(EC)) {
@@ -248,7 +248,7 @@ void copyFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
       std::string FileName = llvm::sys::path::filename(Iter->path()).str();
       std::transform(FileName.begin(), FileName.end(), FileName.begin(),
                      ::toUpper);
-      if (FileName == ExpectedFileName) {
+      if (FileName.find(FilePattern) != std::string::npos) {
         tooling::UnifiedPath FilePath = Iter->path();
         std::string CanFilePath = FilePath.getCanonicalPath().str();
 
@@ -1147,12 +1147,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
   if (dpct::DpctGlobalInfo::isCodePinEnabled()) {
-    if (GenBuildScript) {
-      copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "MAKEFILE");
-    }
-    if (dpct::DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
-      copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "CMAKELISTS.TXT");
-    }
+    copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "MAKEFILE");
+    copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, "CMAKELISTS.TXT");
+    copyFileToOutRoot(InRoot, CUDAMigratedOutRoot, ".CMAKE");
     std::string SchemaPathCUDA = CUDAMigratedOutRoot.getCanonicalPath().str() +
                                  "/codepin_autogen_util.hpp";
     std::string SchemaPathSYCL =
