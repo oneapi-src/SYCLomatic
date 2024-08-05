@@ -373,8 +373,7 @@ public:
   ~ClangTool();
 #ifdef SYCLomatic_CUSTOMIZATION
   int processFiles(llvm::StringRef File, bool &ProcessingFailed,
-                   bool &FileSkipped, int &StaticSymbol, ToolAction *Action,
-                   bool IsOrphanFile = false);
+                    bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
 #endif // SYCLomatic_CUSTOMIZATION
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
