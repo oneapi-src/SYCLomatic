@@ -2357,14 +2357,6 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
-      Token Tok2;
-      Lexer::getRawToken(ResultEnd, Tok2, SM, Context.getLangOpts());
-      // if the last token is ">>" or ">>>",
-      // since DPCT does not support nested template type migration,
-      // the last token should be treated as ">"
-      if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
-        LastTokenLength = 1;
-      }
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
     }
     return std::pair<SourceLocation, SourceLocation>(ResultBegin, ResultEnd);
