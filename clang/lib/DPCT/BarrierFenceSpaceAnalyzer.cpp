@@ -137,19 +137,6 @@ clang::dpct::detail::AnalyzerBase::isAssignedToAnotherDREOrVD(
         }
         return nullptr;
       });
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  const auto &SM = DpctGlobalInfo::getSourceManager();
-  std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM)
-            << std::endl;
-  for (const auto Item : ResultDRESet) {
-    std::cout << "    AnotherDRE:" << Item->getBeginLoc().printToString(SM)
-              << std::endl;
-  }
-  for (const auto Item : ResultVDSet) {
-    std::cout << "    AnotherVD:" << Item->getBeginLoc().printToString(SM)
-              << std::endl;
-  }
-#endif
   return std::make_pair(ResultDRESet, ResultVDSet);
 }
 
@@ -164,19 +151,6 @@ void clang::dpct::detail::AnalyzerBase::constructDefUseMap() {
     }
     return Size;
   };
-
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "DefUseMap init value:" << std::endl;
-  for (const auto &Pair : DefUseMap) {
-    const auto &SM = DpctGlobalInfo::getSourceManager();
-    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
-              << std::endl;
-    for (const auto &Item : Pair.second) {
-      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
-                << std::endl;
-    }
-  }
-#endif
 
   // Collect all used positions
   std::size_t MapSize = getSize(DefUseMap);
@@ -211,19 +185,6 @@ void clang::dpct::detail::AnalyzerBase::constructDefUseMap() {
         Pair.second.insert(NewDRESet.begin(), NewDRESet.end());
     }
   } while (getSize(DefUseMap) != MapSize);
-
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "DefUseMap after collection:" << std::endl;
-  for (const auto &Pair : DefUseMap) {
-    const auto &SM = DpctGlobalInfo::getSourceManager();
-    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
-              << std::endl;
-    for (const auto &Item : Pair.second) {
-      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
-                << std::endl;
-    }
-  }
-#endif
 }
 
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const ForStmt *FS) {
@@ -289,13 +250,6 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const DeclRefExpr *DRE) {
     return true;
   }
   if (Kind == TypeAnalyzer::ParamterTypeKind::Unsupported) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case A: "
-              << PVD->getBeginLoc().printToString(
-                     DpctGlobalInfo::getSourceManager())
-              << ", Type:" << DpctGlobalInfo::getTypeName(PVD->getType())
-              << std::endl;
-#endif
     return false;
   }
 
@@ -314,12 +268,6 @@ void clang::dpct::IntraproceduralAnalyzer::PostVisit(const DeclRefExpr *) {}
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const GotoStmt *GS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case B: "
-            << GS->getBeginLoc().printToString(
-                   DpctGlobalInfo::getSourceManager())
-            << std::endl;
-#endif
   return false;
 }
 void clang::dpct::IntraproceduralAnalyzer::PostVisit(const GotoStmt *) {}
@@ -327,24 +275,12 @@ void clang::dpct::IntraproceduralAnalyzer::PostVisit(const GotoStmt *) {}
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const LabelStmt *LS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case C: "
-            << LS->getBeginLoc().printToString(
-                   DpctGlobalInfo::getSourceManager())
-            << std::endl;
-#endif
   return false;
 }
 void clang::dpct::IntraproceduralAnalyzer::PostVisit(const LabelStmt *) {}
 
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case D: "
-              << ME->getBeginLoc().printToString(
-                     DpctGlobalInfo::getSourceManager())
-              << std::endl;
-#endif
     return false;
   }
   return true;
@@ -352,12 +288,6 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const MemberExpr *ME) {
 void clang::dpct::IntraproceduralAnalyzer::PostVisit(const MemberExpr *) {}
 bool clang::dpct::IntraproceduralAnalyzer::Visit(
     const CXXDependentScopeMemberExpr *CDSME) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case E: "
-            << CDSME->getBeginLoc().printToString(
-                   DpctGlobalInfo::getSourceManager())
-            << std::endl;
-#endif
   return false;
 }
 void clang::dpct::IntraproceduralAnalyzer::PostVisit(
@@ -622,35 +552,10 @@ void clang::dpct::IntraproceduralAnalyzer::simplifyMap(
           DREInfo(Item.first, Item.first->getBeginLoc(), Item.second));
     }
   }
-
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== DefDREInfoMap contnet: =====" << std::endl;
-  for (const auto &LocInfo : DefDREInfoMap) {
-    const auto &SM = DpctGlobalInfo::getSourceManager();
-    std::cout << "Decl:" << LocInfo.first->getBeginLoc().printToString(SM)
-              << std::endl;
-    for (const auto &Info : LocInfo.second) {
-      std::cout << "    DRE:" << Info.SL.printToString(SM)
-                << ", AccessMode:" << (int)(Info.AM) << std::endl;
-    }
-  }
-  std::cout << "===== DefDREInfoMap contnet end =====" << std::endl;
-#endif
 }
 
 AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other,
                         bool IsOtherInLoop) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===========mergeOther begin=================" << std::endl;
-  std::cout << "Input:" << std::endl;
-  std::cout << "  Me.UsedBefore:" << Me.UsedBefore << std::endl;
-  std::cout << "  Me.UsedAfter:" << Me.UsedAfter << std::endl;
-  std::cout << "  Me.AM:" << Me.AM << std::endl;
-  std::cout << "  Other.UsedBefore:" << Other.UsedBefore << std::endl;
-  std::cout << "  Other.UsedAfter:" << Other.UsedAfter << std::endl;
-  std::cout << "  Other.AM:" << Other.AM << std::endl;
-  std::cout << "  IsOtherInLoop:" << IsOtherInLoop << std::endl;
-#endif
   if (IsOtherInLoop) {
     Other.UsedBefore = true;
     Other.UsedAfter = true;
@@ -658,13 +563,6 @@ AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other,
   Me.UsedBefore = Me.UsedBefore || Other.UsedBefore;
   Me.UsedAfter = Me.UsedAfter || Other.UsedAfter;
   Me.AM = AccessMode(Me.AM | Other.AM);
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Output:" << std::endl;
-  std::cout << "  Me.UsedBefore:" << Me.UsedBefore << std::endl;
-  std::cout << "  Me.UsedAfter:" << Me.UsedAfter << std::endl;
-  std::cout << "  Me.AM:" << Me.AM << std::endl;
-  std::cout << "===========mergeOther end===================" << std::endl;
-#endif
   return Me;
 }
 
@@ -673,13 +571,6 @@ AffectedInfo mergeOther(AffectedInfo Me, AffectedInfo Other,
 std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
                                    std::shared_ptr<DeviceFunctionInfo> CurNode,
                                    std::string SyncCallCombinedLoc) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "findCurCallCombinedLoc:" << std::endl;
-  std::cout << "  CurCallDeclCombinedLoc:" << CurCallDeclCombinedLoc
-            << std::endl;
-  std::cout << "  CurNode:" << CurNode << std::endl;
-  std::cout << "  SyncCallCombinedLoc:" << SyncCallCombinedLoc << std::endl;
-#endif
   if (CurCallDeclCombinedLoc == "__syncthreads")
     return SyncCallCombinedLoc;
   std::vector<std::string> CallLocVec;
@@ -725,18 +616,7 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     std::string CurCallCombinedLoc = findCurCallCombinedLoc(
         CurCallDeclCombinedLoc, CurNode, SyncCallCombinedLoc);
     auto CurDepth = std::get<2>(NodeStack.top());
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "-------------------------------------------" << std::endl;
-    std::cout << "CurNode:" << CurNode->IAR.CurrentCtxFuncCombinedLoc
-              << std::endl;
-    std::cout << "CurCallCombinedLoc:" << CurCallCombinedLoc << std::endl;
-    std::cout << "CurDepth:" << CurDepth << std::endl;
-#endif
     if (CurCallCombinedLoc.empty()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-      std::cout << "Return False case F1: CurCallCombinedLoc.empty()"
-                << std::endl;
-#endif
       return false;
     }
     NodeStack.pop();
@@ -753,9 +633,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     if (Iter != CurNode->IAR.Map.end()) {
       const auto &Arg2ParmsMap = std::get<5>(Iter->second);
       bool IsInLoop = std::get<1>(Iter->second);
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-      std::cout << "IsInLoop:" << IsInLoop << std::endl;
-#endif
       // Merge std::get<4>(Iter->second) and
       // AffectedByParmsMapInfoStack.top().second.
       // Then push into AffectedByParmsMapInfoStack.
@@ -774,20 +651,11 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
               CurAffectedbyParmsMap[ParmIdx] = mergeOther(
                   CurAffectedbyParmsMap[ParmIdx], P.second, IsInLoop);
               if (CurAffectedbyParmsMap[ParmIdx].AM == ReadWrite) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-                std::cout << "Return False case F2: AM == ReadWrite"
-                          << std::endl;
-#endif
                 return false;
               }
               if (CurAffectedbyParmsMap[ParmIdx].AM == Write &&
                   CurAffectedbyParmsMap[ParmIdx].UsedBefore &&
                   CurAffectedbyParmsMap[ParmIdx].UsedAfter) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-                std::cout << "Return False case F3: AM == Write && UsedBefore "
-                             "&& UsedAfter"
-                          << std::endl;
-#endif
                 return false;
               }
             }
@@ -801,9 +669,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
     for (const auto &I : CurNode->getParentDFIs()) {
       if (Visited.find(I) != Visited.end()) {
         // Not support analyzing circle in graph
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "Return False case F4: Circle in graph" << std::endl;
-#endif
         return false;
       }
       NodeStack.push(std::make_tuple(I, CurNode->IAR.CurrentCtxFuncCombinedLoc,
@@ -818,12 +683,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
   for (const auto &Iter : AffectedByParmsMapInfoVec) {
     const auto &AffectedByParmsMap = Iter.second;
     for (const auto &P : AffectedByParmsMap) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-      std::cout << "Parameter ID:" << P.first << std::endl;
-      std::cout << "  AM:" << P.second.AM << std::endl;
-      std::cout << "  UsedBefore:" << P.second.UsedBefore << std::endl;
-      std::cout << "  UsedAfter:" << P.second.UsedAfter << std::endl;
-#endif
       if (P.second.AM & ReadWrite)
         return false;
       if ((P.second.AM & Write) && P.second.UsedBefore && P.second.UsedAfter)
@@ -838,17 +697,10 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
                                               DeviceFunctionInfo *DFI) {
   // Check prerequirements
   if (!DFI) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case G: !DFI" << std::endl;
-#endif
     return IntraproceduralAnalyzerResult();
   }
 
   if (DFI->getVarMap().hasGlobalMemAcc()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case H: Found device/managed variable usage"
-              << std::endl;
-#endif
     return IntraproceduralAnalyzerResult();
   }
 
@@ -857,10 +709,6 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
 
   FDLoc = getHashStrFromLoc(FD->getBeginLoc());
 
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Before traversing current __global__ function" << std::endl;
-#endif
-
   if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
     return IntraproceduralAnalyzerResult();
   }
@@ -868,26 +716,6 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
   constructDefUseMap();
   std::map<const ParmVarDecl *, std::set<DREInfo>> DefLocInfoMap;
   simplifyMap(DefLocInfoMap);
-
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== SyncCall info contnet: =====" << std::endl;
-  for (const auto &SyncCall : SyncCallsVec) {
-    const auto &SM = DpctGlobalInfo::getSourceManager();
-    std::cout << "SyncCall:" << SyncCall.first->getBeginLoc().printToString(SM)
-              << std::endl;
-    std::cout << "    Predecessors:" << std::endl;
-    for (const auto &Range : SyncCall.second.Predecessors) {
-      std::cout << "        [" << Range.getBegin().printToString(SM) << ", "
-                << Range.getEnd().printToString(SM) << "]" << std::endl;
-    }
-    std::cout << "    Successors:" << std::endl;
-    for (const auto &Range : SyncCall.second.Successors) {
-      std::cout << "        [" << Range.getBegin().printToString(SM) << ", "
-                << Range.getEnd().printToString(SM) << "]" << std::endl;
-    }
-  }
-  std::cout << "===== SyncCall info contnet end =====" << std::endl;
-#endif
 
   generateDRE2PVDMap(DefLocInfoMap);
 
@@ -1064,13 +892,6 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const DeclRefExpr *DRE) {
     return true;
   }
   if (Kind == TypeAnalyzer::ParamterTypeKind::Unsupported) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case I: "
-              << PVD->getBeginLoc().printToString(
-                     DpctGlobalInfo::getSourceManager())
-              << ", Type:" << DpctGlobalInfo::getTypeName(PVD->getType())
-              << std::endl;
-#endif
     return false;
   }
 
@@ -1089,12 +910,6 @@ void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(const DeclRefExpr *) {}
 bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const GotoStmt *GS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case J: "
-            << GS->getBeginLoc().printToString(
-                   DpctGlobalInfo::getSourceManager())
-            << std::endl;
-#endif
   return false;
 }
 void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(const GotoStmt *) {}
@@ -1102,24 +917,12 @@ void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(const GotoStmt *) {}
 bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const LabelStmt *LS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case K: "
-            << LS->getBeginLoc().printToString(
-                   DpctGlobalInfo::getSourceManager())
-            << std::endl;
-#endif
   return false;
 }
 void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(const LabelStmt *) {}
 
 bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case L: "
-              << ME->getBeginLoc().printToString(
-                     DpctGlobalInfo::getSourceManager())
-              << std::endl;
-#endif
     return false;
   }
   return true;
@@ -1127,12 +930,6 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(const MemberExpr *ME) {
 void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(const MemberExpr *) {}
 bool clang::dpct::BarrierFenceSpace1DAnalyzer::Visit(
     const CXXDependentScopeMemberExpr *CDSME) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case M: "
-            << CDSME->getBeginLoc().printToString(
-                   DpctGlobalInfo::getSourceManager())
-            << std::endl;
-#endif
   return false;
 }
 void clang::dpct::BarrierFenceSpace1DAnalyzer::PostVisit(
@@ -1143,45 +940,23 @@ using namespace clang;
 using namespace dpct;
 
 bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "BarrierFenceSpace1DAnalyzer Analyzing ..." << std::endl;
-#endif
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case N: CE->getBeginLoc().isMacroID() || "
-                 "CE->getEndLoc().isMacroID()"
-              << std::endl;
-#endif
     return false;
   }
   FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
   if (!FD) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case O: !FD" << std::endl;
-#endif
     return false;
   }
   if (!FD->hasAttr<CUDAGlobalAttr>()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case P: !FD->hasAttr<CUDAGlobalAttr>()"
-              << std::endl;
-#endif
     return false;
   }
   std::unordered_set<const DeviceFunctionInfo *> Visited{};
   auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
   if (!DFI) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case Q: !DFI" << std::endl;
-#endif
     return false;
   }
 
   if (DFI->getVarMap().hasGlobalMemAcc()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case R: Found device/managed variable usage"
-              << std::endl;
-#endif
     return false;
   }
   return true;
@@ -1321,18 +1096,12 @@ bool clang::dpct::BarrierFenceSpace1DAnalyzer::isAccessingMemory(
 std::string clang::dpct::BarrierFenceSpace1DAnalyzer::isAnalyzableWriteInLoop(
     const std::set<const DeclRefExpr *> &WriteInLoopDRESet) {
   if (WriteInLoopDRESet.size() > 1) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isAnalyzableWriteInLoop False case 1" << std::endl;
-#endif
     return "";
   }
 
   const DeclRefExpr *DRE = *WriteInLoopDRESet.begin();
   auto Iter = DREIncStepMap.find(DRE);
   if (Iter == DREIncStepMap.end()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isAnalyzableWriteInLoop False case 2" << std::endl;
-#endif
     return "";
   }
   return Iter->second;
@@ -1342,17 +1111,11 @@ std::tuple<bool /*CanUseLocalBarrier*/,
            bool /*CanUseLocalBarrierWithCondition*/, std::string /*Condition*/>
 clang::dpct::BarrierFenceSpace1DAnalyzer::isSafeToUseLocalBarrier(
     const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== isSafeToUseLocalBarrier =====" << std::endl;
-#endif
   std::set<std::string> ConditionSet;
   for (auto &DefDREInfo : DefDREInfoMap) {
     std::set<const DeclRefExpr *> RefedDRE;
     for (auto &DREInfo : DefDREInfo.second) {
       if (DREInfo.SL.isMacroID()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isSafeToUseLocalBarrier False case 1" << std::endl;
-#endif
         return {false, false, ""};
       }
       RefedDRE.insert(DREInfo.DRE);
@@ -1360,9 +1123,6 @@ clang::dpct::BarrierFenceSpace1DAnalyzer::isSafeToUseLocalBarrier(
     if (!RefedDRE.empty()) {
       auto StepStr = isAnalyzableWriteInLoop(RefedDRE);
       if (StepStr.empty()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
-#endif
         return {false, false, ""};
       }
       ConditionSet.insert(StepStr);
@@ -1370,9 +1130,6 @@ clang::dpct::BarrierFenceSpace1DAnalyzer::isSafeToUseLocalBarrier(
   }
 
   if (!ConditionSet.empty()) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "isSafeToUseLocalBarrier True with condition" << std::endl;
-#endif
     // local_range(2) loop0     loop1    loop2    ... loopn
     //      0         mem[0]    mem[s]   mem[2s]      mem[ns]
     //      1         mem[1+0]  mem[1+s] mem[1+2s]    mem[1+ns]
@@ -1404,8 +1161,5 @@ clang::dpct::BarrierFenceSpace1DAnalyzer::isSafeToUseLocalBarrier(
       return {false, true, "item_ct1.get_local_range(0) < " + RHS};
     return {false, true, "item_ct1.get_local_range(2) < " + RHS};
   }
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "isSafeToUseLocalBarrier True" << std::endl;
-#endif
   return {true, false, ""};
 }
