@@ -2675,22 +2675,28 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
         // remove the volatile qualifier and trailing spaces
         Token Tok;
+        SourceLocation SpellingBeg = SM->getSpellingLoc(VD->getBeginLoc());
+        SourceLocation SpellingEnd = SM->getSpellingLoc(VD->getEndLoc());
+        Loc = SpellingBeg;
         Lexer::getRawToken(Loc, Tok, *SM,
                            DpctGlobalInfo::getContext().getLangOpts(), true);
         unsigned int EndLocOffset =
-            SM->getDecomposedExpansionLoc(VD->getEndLoc()).second;
-        while (SM->getDecomposedExpansionLoc(Tok.getEndLoc()).second <=
-               EndLocOffset) {
+            SM->getDecomposedExpansionLoc(SpellingEnd).second;
+        while (
+            SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
+                .second <= EndLocOffset) {
+          SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
+          SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
           if (Tok.is(tok::TokenKind::raw_identifier) &&
               Tok.getRawIdentifier().str() == "volatile") {
-            emplaceTransformation(new ReplaceText(
-                Tok.getLocation(),
-                getLenIncludingTrailingSpaces(
-                    SourceRange(Tok.getLocation(), Tok.getEndLoc()), *SM),
-                ""));
+            emplaceTransformation(
+                new ReplaceText(TokBegLoc,
+                                getLenIncludingTrailingSpaces(
+                                    SourceRange(TokBegLoc, TokEndLoc), *SM),
+                                ""));
             break;
           }
-          Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
+          Lexer::getRawToken(TokEndLoc, Tok, *SM,
                              DpctGlobalInfo::getContext().getLangOpts(), true);
         }
       }
@@ -4234,7 +4240,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasLtMatmulAlgoGetHeuristic", "cublasLtMatrixTransformDescCreate",
         "cublasLtMatrixTransformDescDestroy",
         "cublasLtMatrixTransformDescSetAttribute",
-        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform");
+        "cublasLtMatrixTransformDescGetAttribute", "cublasLtMatrixTransform",
+        "cublasLtGetVersion");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -9311,6 +9318,12 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
         if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Device ||
              R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
+          if (R.second->getConstantFlag() ==
+              dpct::ConstantFlagType::HostDeviceInOnePass) {
+            if (R.second->getNewHostVarName().empty()) {
+              continue;
+            }
+          }
           // using flag and the offset of __constant__ to link previous
           // execution of previous is device, current is host:
           previousDCurrentH(VD, *(R.second));
@@ -9358,9 +9371,12 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
       // Add the constant offset in the replacement
       // The constant offset will be used in previousHCurrentD to distinguish
       // unnecessary warnings.
-      if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
-                 VD->getNameAsString())) {
-        TransformSet->back()->setConstantOffset(TM->getConstantOffset());
+      if (TM->getConstantFlag() == dpct::ConstantFlagType::Host) {
+        dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
+        if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
+                   VD->getNameAsString())) {
+          TransformSet->back()->setConstantOffset(TM->getConstantOffset());
+        }
       }
     }
   }
@@ -9385,12 +9401,14 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
   if (!DS)
     return;
   // this token is ';'
-  auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
+  auto InsertSL = getDefinitionRange(DS->getBeginLoc(), DS->getEndLoc())
+                      .getEnd()
+                      .getLocWithOffset(1);
   auto GenDeclStmt = [=, &SM](StringRef TypeName) -> std::string {
     bool IsReference = !Info->getType()->getDimension();
     std::string Ret;
     llvm::raw_string_ostream OS(Ret);
-    OS << getNL() << getIndent(InsertSL, SM);
+    OS << getNL(DS->getEndLoc().isMacroID()) << getIndent(InsertSL, SM);
     OS << TypeName << ' ';
     if (IsReference)
       OS << '&';
@@ -9412,19 +9430,18 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
     //   |                |
     // begin             end
     // ReplaceToken replacing [begin, end]
-    SourceLocation Begin =
-        SM.getExpansionLoc(Info->getDeclOfVarType()->getBraceRange().getEnd());
-    Begin = Begin.getLocWithOffset(1); // this token is }
-    SourceLocation End = SM.getExpansionLoc(MemVar->getEndLoc());
-    emplaceTransformation(new ReplaceToken(Begin, End, ""));
+    auto BR = Info->getDeclOfVarType()->getBraceRange();
+    auto DRange = getDefinitionRange(BR.getBegin(), BR.getEnd());
+    auto BeginWithOffset =
+        DRange.getEnd().getLocWithOffset(1); // this token is }
+    SourceLocation End =
+        getDefinitionRange(MemVar->getBeginLoc(), MemVar->getEndLoc()).getEnd();
+    emplaceTransformation(new ReplaceToken(BeginWithOffset, End, ""));
 
     std::string NewTypeName = Info->getLocalTypeName();
 
     // add a typename
-    emplaceTransformation(new InsertText(
-        SM.getExpansionLoc(
-            Info->getDeclOfVarType()->getBraceRange().getBegin()),
-        " " + NewTypeName));
+    emplaceTransformation(new InsertText(DRange.getBegin(), " " + NewTypeName));
 
     // add typecast for the __shared__ variable, since after migration the
     // __shared__ variable type will be uint8_t*
@@ -14325,7 +14342,8 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
         "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
-        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit");
+        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit",
+        "cuCtxPushCurrent_v2", "cuCtxPopCurrent_v2");
   };
 
   MF.addMatcher(

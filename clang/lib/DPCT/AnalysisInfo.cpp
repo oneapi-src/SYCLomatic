@@ -2837,7 +2837,15 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
 
   if (auto Func = Var->getParentFunctionOrMethod()) {
-    if (DeclOfVarType = Var->getType()->getAsCXXRecordDecl()) {
+    auto VT = Var->getType();
+    DeclOfVarType = VT->getAsCXXRecordDecl();
+    if (!DeclOfVarType) {
+      if (const clang::ArrayType *AT = VT->getAsArrayTypeUnsafe()) {
+        auto ElementType = AT->getElementType();
+        DeclOfVarType = ElementType->getAsCXXRecordDecl();
+      }
+    }
+    if (DeclOfVarType) {
       auto F = DeclOfVarType->getParentFunctionOrMethod();
       if (F && (F == Func)) {
         IsTypeDeclaredLocal = true;
@@ -2857,7 +2865,9 @@ MemVarInfo::MemVarInfo(unsigned Offset,
         if (DS1 && DS2 && DS1 == DS2) {
           IsAnonymousType = true;
           DeclStmtOfVarType = DS2;
-          const auto LocInfo = DpctGlobalInfo::getLocInfo(DS2->getBeginLoc());
+          const auto LocInfo = DpctGlobalInfo::getLocInfo(
+              getDefinitionRange(DS2->getBeginLoc(), DS2->getEndLoc())
+                  .getBegin());
           const auto LocStr = LocInfo.first.getCanonicalPath().str() + ":" +
                               std::to_string(LocInfo.second);
           auto Iter = AnonymousTypeDeclStmtMap.find(LocStr);
@@ -5160,21 +5170,26 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
   if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
-  } else if (const auto* CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+  } else if (const auto *CCE = dyn_cast<CXXConstructExpr>(Arg)) {
     HasImplicitConversion = true;
-    if (CCE->getNumArgs()) {
-      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CCE->getArg(0))) {
-        if (ICE->getCastKind() == CK_DerivedToBase) {
-          IsRedeclareRequired = true;
-        }
-      }
+    if (CCE->getNumArgs() == 1) {
+      Arg = CCE->getArg(0);
     }
-  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+  }
+#ifdef _WIN32
+  // This code path is for ConstructorConversion on Windows since its AST is
+  // different from the one on Linux.
+  if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Arg)) {
+    Arg = MTE->getSubExpr();
+  }
+#endif
+  if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
     auto CK = ICE->getCastKind();
     if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
     }
-    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion) {
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion ||
+        CK == CK_DerivedToBase) {
       IsRedeclareRequired = true;
     }
   }

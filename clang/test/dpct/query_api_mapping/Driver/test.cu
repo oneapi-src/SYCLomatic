@@ -1,9 +1,21 @@
+/// Error Handling
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuGetErrorString | FileCheck %s -check-prefix=CUGETERRORSTRING
+// CUGETERRORSTRING: CUDA API:
+// CUGETERRORSTRING-NEXT:   cuGetErrorString(r /*CUresult*/, ppc /*const char ***/);
+// CUGETERRORSTRING-NEXT: Is migrated to:
+// CUGETERRORSTRING-NEXT:   /*
+// CUGETERRORSTRING-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// CUGETERRORSTRING-NEXT:   */
+// CUGETERRORSTRING-NEXT:   *ppc = "<Placeholder string>";
+
 /// Initialization
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuInit | FileCheck %s -check-prefix=CUINIT
 // CUINIT: CUDA API:
 // CUINIT-NEXT:   cuInit(u /*unsigned int*/);
 // CUINIT-NEXT: The API is Removed.
+// CUINIT-EMPTY:
 
 /// Version Management
 
@@ -20,6 +32,63 @@
 // CUDEVICEGET-NEXT:   cuDeviceGet(pd /*CUdevice **/, i /*int*/);
 // CUDEVICEGET-NEXT: Is migrated to:
 // CUDEVICEGET-NEXT:   *pd = i;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceGetAttribute | FileCheck %s -check-prefix=CUDEVICEGETATTRIBUTE
+// CUDEVICEGETATTRIBUTE: CUDA API:
+// CUDEVICEGETATTRIBUTE:   /* 1 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 2 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 3 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 4 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 5 */ cuDeviceGetAttribute(pi /*int **/,
+// CUDEVICEGETATTRIBUTE:                                CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK,
+// CUDEVICEGETATTRIBUTE:                                d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 6 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 7 */ cuDeviceGetAttribute(pi /*int **/, CU_DEVICE_ATTRIBUTE_WARP_SIZE,
+// CUDEVICEGETATTRIBUTE:                                d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 8 */ cuDeviceGetAttribute(pi /*int **/,
+// CUDEVICEGETATTRIBUTE:                                CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK,
+// CUDEVICEGETATTRIBUTE:                                d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 9 */ cuDeviceGetAttribute(pi /*int **/, CU_DEVICE_ATTRIBUTE_CLOCK_RATE,
+// CUDEVICEGETATTRIBUTE:                                d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 10 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 11 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 12 */ cuDeviceGetAttribute(pi /*int **/, CU_DEVICE_ATTRIBUTE_INTEGRATED,
+// CUDEVICEGETATTRIBUTE:                                 d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 13 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 14 */ cuDeviceGetAttribute(pi /*int **/,
+// CUDEVICEGETATTRIBUTE:                                 CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR,
+// CUDEVICEGETATTRIBUTE:                                 d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 15 */ cuDeviceGetAttribute(pi /*int **/,
+// CUDEVICEGETATTRIBUTE:                                 CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR,
+// CUDEVICEGETATTRIBUTE:                                 d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE:   /* 16 */ cuDeviceGetAttribute(
+// CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED,
+// CUDEVICEGETATTRIBUTE:       d /*CUdevice*/);
+// CUDEVICEGETATTRIBUTE-NEXT: Is migrated to:
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 1 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_work_group_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 2 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_max_work_item_sizes().get(0);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 3 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_max_work_item_sizes().get(1);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 4 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_max_work_item_sizes().get(2);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 5 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_local_mem_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 6 */ *pi = dpct::dev_mgr::instance().get_device(d).get_global_mem_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 7 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_sub_group_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 8 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_register_size_per_work_group();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 9 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_clock_frequency();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 10 */ *pi = dpct::dev_mgr::instance().get_device(d).get_mem_base_addr_align_in_bytes();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 11 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_compute_units();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 12 */ *pi = dpct::dev_mgr::instance().get_device(d).get_integrated();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 13 */ *pi = dpct::dev_mgr::instance().get_device(d).has(sycl::aspect::usm_host_allocations);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 14 */ *pi = dpct::dev_mgr::instance().get_device(d).get_major_version();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 15 */ *pi = dpct::dev_mgr::instance().get_device(d).get_minor_version();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 16 */ *pi = dpct::dev_mgr::instance().get_device(d).is_native_atomic_supported();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceGetCount | FileCheck %s -check-prefix=CUDEVICEGETCOUNT
 // CUDEVICEGETCOUNT: CUDA API:
@@ -54,6 +123,7 @@
 // CUDEVICEPRIMARYCTXRELEASE: CUDA API:
 // CUDEVICEPRIMARYCTXRELEASE-NEXT:   cuDevicePrimaryCtxRelease(d /*CUdevice*/);
 // CUDEVICEPRIMARYCTXRELEASE-NEXT: The API is Removed.
+// CUDEVICEPRIMARYCTXRELEASE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDevicePrimaryCtxRetain | FileCheck %s -check-prefix=CUDEVICEPRIMARYCTXRETAIN
 // CUDEVICEPRIMARYCTXRETAIN: CUDA API:
@@ -63,10 +133,17 @@
 
 /// Context Management
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxCreate | FileCheck %s -check-prefix=CUCTXCREATE
+// CUCTXCREATE: CUDA API:
+// CUCTXCREATE-NEXT:   cuCtxCreate(pc /*CUcontext **/, u /*unsigned*/, d /*CUdevice*/);
+// CUCTXCREATE-NEXT: Is migrated to:
+// CUCTXCREATE-NEXT:   *pc = dpct::push_device_for_curr_thread(d);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxDestroy | FileCheck %s -check-prefix=CUCTXDESTROY
 // CUCTXDESTROY: CUDA API:
 // CUCTXDESTROY-NEXT:   cuCtxDestroy(c /*CUcontext*/);
 // CUCTXDESTROY-NEXT: The API is Removed.
+// CUCTXDESTROY-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxGetApiVersion | FileCheck %s -check-prefix=CUCTXGETAPIVERSION
 // CUCTXGETAPIVERSION: CUDA API:
@@ -86,16 +163,41 @@
 // CUCTXGETDEVICE-NEXT: Is migrated to:
 // CUCTXGETDEVICE-NEXT:   *pd = dpct::get_current_device_id();
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxPushCurrent | FileCheck %s -check-prefix=CUCTXPUSHCURRENT
+// CUCTXPUSHCURRENT: CUDA API:
+// CUCTXPUSHCURRENT-NEXT:   cuCtxPushCurrent(c /*CUcontext*/);
+// CUCTXPUSHCURRENT-NEXT: Is migrated to:
+// CUCTXPUSHCURRENT-NEXT:   dpct::push_device_for_curr_thread(c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxPopCurrent | FileCheck %s -check-prefix=CUCTXPOPCURRENT
+// CUCTXPOPCURRENT: CUDA API:
+// CUCTXPOPCURRENT-NEXT:   cuCtxPopCurrent(&c /*CUcontext **/);
+// CUCTXPOPCURRENT-NEXT: Is migrated to:
+// CUCTXPOPCURRENT-NEXT:   c = dpct::pop_device_for_curr_thread();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxGetLimit | FileCheck %s -check-prefix=CUCTXGETLIMIT
+// CUCTXGETLIMIT: CUDA API:
+// CUCTXGETLIMIT-NEXT:   cuCtxGetLimit(ps /*size_t **/, CU_LIMIT_PRINTF_FIFO_SIZE);
+// CUCTXGETLIMIT-NEXT: Is migrated to:
+// CUCTXGETLIMIT-NEXT:   *ps = INT_MAX;
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxSetCacheConfig | FileCheck %s -check-prefix=CUCTXSETCACHECONFIG
 // CUCTXSETCACHECONFIG: CUDA API:
 // CUCTXSETCACHECONFIG-NEXT:   cuCtxSetCacheConfig(f /*CUfunc_cache*/);
 // CUCTXSETCACHECONFIG-NEXT: The API is Removed.
+// CUCTXSETCACHECONFIG-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxSetCurrent | FileCheck %s -check-prefix=CUCTXSETCURRENT
 // CUCTXSETCURRENT: CUDA API:
 // CUCTXSETCURRENT-NEXT:   cuCtxSetCurrent(c /*CUcontext*/);
 // CUCTXSETCURRENT-NEXT: Is migrated to:
 // CUCTXSETCURRENT-NEXT:   dpct::select_device(c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxSetLimit | FileCheck %s -check-prefix=CUCTXSETLIMIT
+// CUCTXSETLIMIT: CUDA API:
+// CUCTXSETLIMIT-NEXT:   cuCtxSetLimit(l /*CUlimit*/, s /*size_t*/);
+// CUCTXSETLIMIT-NEXT: The API is Removed.
+// CUCTXSETLIMIT-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxSynchronize | FileCheck %s -check-prefix=CUCTXSYNCHRONIZE
 // CUCTXSYNCHRONIZE: CUDA API:
@@ -179,6 +281,7 @@
 // CUSTREAMATTACHMEMASYNC-NEXT:   cuStreamAttachMemAsync(cs /*CUstream*/, d /*CUdeviceptr*/, s /*size_t*/,
 // CUSTREAMATTACHMEMASYNC-NEXT:                          u /*unsigned int*/);
 // CUSTREAMATTACHMEMASYNC-NEXT: The API is Removed.
+// CUSTREAMATTACHMEMASYNC-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuStreamCreate | FileCheck %s -check-prefix=CUSTREAMCREATE
 // CUSTREAMCREATE: CUDA API:
@@ -191,6 +294,14 @@
 // CUSTREAMDESTROY-NEXT:   cuStreamDestroy(s /*CUstream*/);
 // CUSTREAMDESTROY-NEXT: Is migrated to:
 // CUSTREAMDESTROY-NEXT:   dpct::get_current_device().destroy_queue(s);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuStreamQuery | FileCheck %s -check-prefix=CUSTREAMQUERY
+// CUSTREAMQUERY: CUDA API:
+// CUSTREAMQUERY-NEXT:   CUstream s;
+// CUSTREAMQUERY-NEXT:   cuStreamQuery(s);
+// CUSTREAMQUERY-NEXT: Is migrated to:
+// CUSTREAMQUERY-NEXT:   dpct::queue_ptr s;
+// CUSTREAMQUERY-NEXT:   s->ext_oneapi_empty();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuStreamSynchronize | FileCheck %s -check-prefix=CUSTREAMSYNCHRONIZE
 // CUSTREAMSYNCHRONIZE: CUDA API:
@@ -265,6 +376,7 @@
 // CUFUNCSETCACHECONFIG: CUDA API:
 // CUFUNCSETCACHECONFIG-NEXT:   cuFuncSetCacheConfig(f /*CUfunction*/, fc /*CUfunc_cache*/);
 // CUFUNCSETCACHECONFIG-NEXT: The API is Removed.
+// CUFUNCSETCACHECONFIG-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuLaunchKernel | FileCheck %s -check-prefix=CULAUNCHKERNEL
 // CULAUNCHKERNEL: CUDA API:
@@ -274,6 +386,15 @@
 // CULAUNCHKERNEL-NEXT:                  pParam /*void ***/, pOpt /*void ***/);
 // CULAUNCHKERNEL-NEXT: Is migrated to:
 // CULAUNCHKERNEL-NEXT:   dpct::invoke_kernel_function(f, *s, sycl::range<3>(u3, u2, u1), sycl::range<3>(u6, u5, u4), u7, pParam, pOpt);
+
+/// Occupancy
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuOccupancyMaxActiveBlocksPerMultiprocessor | FileCheck %s -check-prefix=CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR
+// CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR: CUDA API:
+// CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   cuOccupancyMaxActiveBlocksPerMultiprocessor(pi /*int **/, f /*CUfunction*/,
+// CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:                                               i /*int*/, s /*size_t*/);
+// CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT: Is migrated to (with the option --use-experimental-features=occupancy-calculation):
+// CUOCCUPANCYMAXACTIVEBLOCKSPERMULTIPROCESSOR-NEXT:   dpct::experimental::calculate_max_active_wg_per_xecore(pi, i, s + dpct_placeholder /* total share local memory size */);
 
 /// Texture Reference Management [DEPRECATED]
 
@@ -391,3 +512,17 @@
 // CUTEXOBJECTGETTEXTUREDESC-NEXT: Is migrated to:
 // CUTEXOBJECTGETTEXTUREDESC-NEXT:   dpct::image_wrapper_base_p t;
 // CUTEXOBJECTGETTEXTUREDESC-NEXT:   *pt = t->get_sampling_info();
+
+/// Peer Context Memory Access
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxEnablePeerAccess | FileCheck %s -check-prefix=CUCTXENABLEPEERACCESS
+// CUCTXENABLEPEERACCESS: CUDA API:
+// CUCTXENABLEPEERACCESS-NEXT:   cuCtxEnablePeerAccess(c /*CUcontext*/, u /*unsigned*/);
+// CUCTXENABLEPEERACCESS-NEXT: Is migrated to:
+// CUCTXENABLEPEERACCESS-NEXT:   dpct::get_current_device().ext_oneapi_enable_peer_access(dpct::dev_mgr::instance().get_device(c));
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceCanAccessPeer | FileCheck %s -check-prefix=CUDEVICECANACCESSPEER
+// CUDEVICECANACCESSPEER: CUDA API:
+// CUDEVICECANACCESSPEER-NEXT:   cuDeviceCanAccessPeer(pi /*int **/, d1 /*CUdevice*/, d2 /*CUdevice*/);
+// CUDEVICECANACCESSPEER-NEXT: Is migrated to:
+// CUDEVICECANACCESSPEER-NEXT:   *pi = dpct::dev_mgr::instance().get_device(d1).ext_oneapi_can_access_peer(dpct::dev_mgr::instance().get_device(d2));
