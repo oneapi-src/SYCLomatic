@@ -3215,7 +3215,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
                   "cudaStreamCaptureStatus", "cudaDeviceAttr",
                   "libraryPropertyType_t", "cudaDataType_t",
-                  "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
+                  "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
@@ -3481,7 +3481,8 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUBLAS_OP.*)|(CUBLAS_SIDE.*)|(CUBLAS_FILL_"
                       "MODE.*)|(CUBLAS_DIAG.*)|(CUBLAS_.*_MATH)|CUBLAS_MATH_"
-                      "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
+                      "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLAS_COMPUTE_.*)"
+                      "|(CUBLASLT_ORDER_.*)"
                       "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
                       "(CUBLASLT_MATMUL_DESC_.*)|(CUBLASLT_MATRIX_TRANSFORM_"
                       "DESC_.*)|(CUBLASLT_EPILOGUE_.*)"))))
