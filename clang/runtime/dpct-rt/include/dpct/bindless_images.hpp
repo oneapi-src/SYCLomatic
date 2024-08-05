@@ -283,7 +283,7 @@ protected:
   /// Creates interop memory wrapper for a given resource.
   interop_mem_wrapper_base(
       sycl::ext::oneapi::experimental::interop_mem_handle interop_mem_handle)
-      : _res_interop_mem_handle_ptr(&interop_mem_handle);
+      : _res_interop_mem_handle_ptr(&interop_mem_handle) {}
 
   bool _res_is_buffer = false;
   size_t _res_size_bytes = 0;
