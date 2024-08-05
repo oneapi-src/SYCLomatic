@@ -2270,12 +2270,13 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
 /// \param [in] c_type Data type of the matrix C.
 /// \param [in] ldc Leading dimension of C.
 /// \param [in] scaling_type Data type of the scaling factors.
-[[deprecated("Please use dpct::blas::gemm(...) instead.")]] inline void
-gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
-     oneapi::mkl::transpose b_trans, int m, int n, int k, const void *alpha,
-     const void *a, library_data_t a_type, int lda, const void *b,
-     library_data_t b_type, int ldb, const void *beta, void *c,
-     library_data_t c_type, int ldc, library_data_t scaling_type) {
+__DPCT_DEPRECATED("Please use dpct::blas::gemm(...) instead.")
+inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
+                 oneapi::mkl::transpose b_trans, int m, int n, int k,
+                 const void *alpha, const void *a, library_data_t a_type,
+                 int lda, const void *b, library_data_t b_type, int ldb,
+                 const void *beta, void *c, library_data_t c_type, int ldc,
+                 library_data_t scaling_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::gemm(&desc, a_trans, b_trans, m, n, k, alpha, a, a_type, lda, b, b_type,
@@ -2302,13 +2303,14 @@ gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in] ldc Leading dimension of C.
 /// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
-[[deprecated("Please use dpct::blas::gemm_batch(...) instead.")]] inline void
-gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
-           oneapi::mkl::transpose b_trans, int m, int n, int k,
-           const void *alpha, const void *a[], library_data_t a_type, int lda,
-           const void *b[], library_data_t b_type, int ldb, const void *beta,
-           void *c[], library_data_t c_type, int ldc, int batch_size,
-           library_data_t scaling_type) {
+__DPCT_DEPRECATED("Please use dpct::blas::gemm_batch(...) instead.")
+inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
+                       oneapi::mkl::transpose b_trans, int m, int n, int k,
+                       const void *alpha, const void *a[],
+                       library_data_t a_type, int lda, const void *b[],
+                       library_data_t b_type, int ldb, const void *beta,
+                       void *c[], library_data_t c_type, int ldc,
+                       int batch_size, library_data_t scaling_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::gemm_batch(&desc, a_trans, b_trans, m, n, k, alpha, a, a_type, lda, b,
@@ -2338,14 +2340,15 @@ gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in] stride_c Stride between the different C matrices.
 /// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
-[[deprecated("Please use dpct::blas::gemm_batch(...) instead.")]] inline void
-gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
-           oneapi::mkl::transpose b_trans, int m, int n, int k,
-           const void *alpha, const void *a, library_data_t a_type, int lda,
-           long long int stride_a, const void *b, library_data_t b_type,
-           int ldb, long long int stride_b, const void *beta, void *c,
-           library_data_t c_type, int ldc, long long int stride_c,
-           int batch_size, library_data_t scaling_type) {
+__DPCT_DEPRECATED("Please use dpct::blas::gemm_batch(...) instead.")
+inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
+                       oneapi::mkl::transpose b_trans, int m, int n, int k,
+                       const void *alpha, const void *a, library_data_t a_type,
+                       int lda, long long int stride_a, const void *b,
+                       library_data_t b_type, int ldb, long long int stride_b,
+                       const void *beta, void *c, library_data_t c_type,
+                       int ldc, long long int stride_c, int batch_size,
+                       library_data_t scaling_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::gemm_batch(&desc, a_trans, b_trans, m, n, k, alpha, a, a_type, lda,
@@ -2369,10 +2372,11 @@ gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in, out] c Input/Output matrix C.
 /// \param [in] ldc Leading dimension of C.
 template <class T>
-[[deprecated("Please use dpct::blas::syrk(...) instead.")]] inline void
-syrk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
-     int n, int k, const T *alpha, const T *a, int lda, const T *b, int ldb,
-     const T *beta, T *c, int ldc) {
+__DPCT_DEPRECATED("Please use dpct::blas::syrk(...) instead.")
+inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
+                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, const T *beta, T *c,
+                 int ldc) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::syrk<T>(&desc, uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
@@ -2394,10 +2398,11 @@ syrk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
 /// \param [in, out] c Input/Output matrix C.
 /// \param [in] ldc Leading dimension of C.
 template <class T, class Tbeta>
-[[deprecated("Please use dpct::blas::herk(...) instead.")]] inline void
-herk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
-     int n, int k, const T *alpha, const T *a, int lda, const T *b, int ldb,
-     const Tbeta *beta, T *c, int ldc) {
+__DPCT_DEPRECATED("Please use dpct::blas::herk(...) instead.")
+inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
+                 oneapi::mkl::transpose trans, int n, int k, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, const Tbeta *beta,
+                 T *c, int ldc) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::herk(&desc, uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
@@ -2421,13 +2426,14 @@ herk(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::transpose trans,
 /// \param [in] ldb Leading dimension of the matrices B.
 /// \param [in] batch_size Specifies the number of trsm operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
-[[deprecated("Please use dpct::blas::trsm_batch(...) instead.")]] inline void
-trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
-           oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
-           oneapi::mkl::diag unit_diag, int m, int n, const void *alpha,
-           const void **a, library_data_t a_type, int lda, void **b,
-           library_data_t b_type, int ldb, int batch_size,
-           library_data_t scaling_type) {
+__DPCT_DEPRECATED("Please use dpct::blas::trsm_batch(...) instead.")
+inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
+                       oneapi::mkl::uplo upper_lower,
+                       oneapi::mkl::transpose trans,
+                       oneapi::mkl::diag unit_diag, int m, int n,
+                       const void *alpha, const void **a, library_data_t a_type,
+                       int lda, void **b, library_data_t b_type, int ldb,
+                       int batch_size, library_data_t scaling_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::trsm_batch(&desc, left_right, upper_lower, trans, unit_diag, m, n,
@@ -2452,11 +2458,11 @@ trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
 /// \param [out] c Output matrices C.
 /// \param [in] ldc Leading dimension of the matrices C.
 template <class T>
-[[deprecated("Please use dpct::blas::trmm(...) instead.")]] inline void
-trmm(sycl::queue &q, oneapi::mkl::side left_right,
-     oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
-     oneapi::mkl::diag unit_diag, int m, int n, const T *alpha, const T *a,
-     int lda, const T *b, int ldb, T *c, int ldc) {
+__DPCT_DEPRECATED("Please use dpct::blas::trmm(...) instead.")
+inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
+                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::trmm<T>(&desc, left_right, upper_lower, trans, unit_diag, m, n, alpha,

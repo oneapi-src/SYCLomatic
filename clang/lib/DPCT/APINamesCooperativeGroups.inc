@@ -387,17 +387,18 @@ CONDITIONAL_FACTORY_ENTRY(
         "cooperative_groups::__v1::grid_group.thread_rank", MemberExprBase(),
         false, "get_local_linear_id"),
     UNSUPPORT_FACTORY_ENTRY(
-        "thread_rank", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        "cooperative_groups::__v1::grid_group.thread_rank",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cooperative_groups::__v1::grid_group.thread_rank"),
         ARG("--use-experimental-features=root-group")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
-    MEMBER_CALL_FACTORY_ENTRY(
-        "cooperative_groups::__v1::grid_group.block_rank", MemberExprBase(),
-        false, "get_group_linear_id"),
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.block_rank",
+                              MemberExprBase(), false, "get_group_linear_id"),
     UNSUPPORT_FACTORY_ENTRY(
-        "block_rank", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        "cooperative_groups::__v1::grid_group.block_rank",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cooperative_groups::__v1::grid_group.block_rank"),
         ARG("--use-experimental-features=root-group")))
 
@@ -407,17 +408,19 @@ CONDITIONAL_FACTORY_ENTRY(
         "cooperative_groups::__v1::grid_group.num_threads", MemberExprBase(),
         false, "get_local_linear_range"),
     UNSUPPORT_FACTORY_ENTRY(
-        "num_threads", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        "cooperative_groups::__v1::grid_group.num_threads",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cooperative_groups::__v1::grid_group.num_threads"),
         ARG("--use-experimental-features=root-group")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
-    MEMBER_CALL_FACTORY_ENTRY(
-        "cooperative_groups::__v1::grid_group.num_blocks", MemberExprBase(),
-        false, "get_group_linear_range"),
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.num_blocks",
+                              MemberExprBase(), false,
+                              "get_group_linear_range"),
     UNSUPPORT_FACTORY_ENTRY(
-        "num_blocks", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        "cooperative_groups::__v1::grid_group.num_blocks",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cooperative_groups::__v1::grid_group.num_blocks"),
         ARG("--use-experimental-features=root-group")))
 
