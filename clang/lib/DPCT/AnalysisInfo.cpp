@@ -3720,20 +3720,19 @@ void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
   auto Range = getArgSourceRange(Arg);
   auto Begin = Range.getBegin();
   auto End = Range.getEnd();
-  if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
-      SM.isMacroArgExpansion(End)) {
+  if (Begin.isMacroID() || End.isMacroID()) {
     size_t Length;
     if (ParentRange.isValid()) {
       auto RR =
           getRangeInRange(Range, ParentRange.getBegin(), ParentRange.getEnd());
       Begin = RR.first;
       End = RR.second;
-      Length = SM.getCharacterData(End) - SM.getCharacterData(Begin);
+      Length = End.getRawEncoding() - Begin.getRawEncoding();
     } else {
       auto RR = getDefinitionRange(Range.getBegin(), Range.getEnd());
       Begin = RR.getBegin();
       End = RR.getEnd();
-      Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
+      Length = End.getRawEncoding() - Begin.getRawEncoding() +
                Lexer::MeasureTokenLength(
                    End, SM, DpctGlobalInfo::getContext().getLangOpts());
     }
