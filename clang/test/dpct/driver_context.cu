@@ -32,7 +32,7 @@ int main(){
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuInit(0));
 
-  // CHECK: ctx = dpct::select_device(device);
+  // CHECK: ctx = dpct::push_device_for_curr_thread(device);
   cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);
 
   // CHECK: ctx = dpct::select_device(device);
@@ -43,7 +43,7 @@ int main(){
   // CHECK-NEXT: */
   cuDevicePrimaryCtxRelease(device);
 
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::select_device(device)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::push_device_for_curr_thread(device)));
   MY_SAFE_CALL(cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device));
 
   // CHECK: dpct::select_device(ctx);
@@ -65,6 +65,19 @@ int main(){
 
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx2 = dpct::dev_mgr::instance().current_device_id()));
   MY_SAFE_CALL(cuCtxGetCurrent(&ctx2));
+
+  // CHECK: dpct::push_device_for_curr_thread(ctx);
+  cuCtxPushCurrent(ctx);
+
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::push_device_for_curr_thread(ctx)));
+  MY_SAFE_CALL(cuCtxPushCurrent(ctx));
+
+  CUcontext *ctx_ptr;
+  // CHECK: *ctx_ptr = dpct::pop_device_for_curr_thread();
+  cuCtxPopCurrent(ctx_ptr);
+
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::pop_device_for_curr_thread()));
+  MY_SAFE_CALL(cuCtxPopCurrent(&ctx));
 
   // CHECK: dpct::get_current_device().queues_wait_and_throw();
   cuCtxSynchronize();

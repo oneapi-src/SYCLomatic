@@ -1319,8 +1319,8 @@ cuCtxGetFlags,NO,
 cuCtxGetLimit,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuCtxGetSharedMemConfig,NO,
 cuCtxGetStreamPriorityRange,NO,
-cuCtxPopCurrent,NO,
-cuCtxPushCurrent,NO,
+cuCtxPopCurrent,YES,
+cuCtxPushCurrent,YES,
 cuCtxSetCacheConfig,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuCtxSetCurrent,YES,
 cuCtxSetFlags,NO,
