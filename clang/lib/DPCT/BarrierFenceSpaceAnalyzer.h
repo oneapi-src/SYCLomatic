@@ -43,23 +43,8 @@ struct AffectedInfo {
 };
 
 struct IntraproceduralAnalyzerResult {
-  IntraproceduralAnalyzerResult() : IsDefault(true) {}
-  IntraproceduralAnalyzerResult(
+  using MapT =
       std::unordered_map<
-          std::string /*call's combined loc string*/,
-          std::tuple<
-              bool /*is real sync call*/, bool /*is in loop*/,
-              tooling::UnifiedPath, unsigned int,
-              std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>,
-              std::unordered_map<
-                  unsigned int /*arg idx*/,
-                  std::set<unsigned int> /*caller parameter(s) idx*/>>>
-          Map,
-      std::string CurrentCtxFuncCombinedLoc)
-      : Map(Map), CurrentCtxFuncCombinedLoc(CurrentCtxFuncCombinedLoc) {}
-  bool isDefault() const noexcept { return IsDefault; }
-  std::
-      unordered_map<
           std::string /*call's combined loc string*/,
           std::tuple<
               bool /*is real sync call*/, bool /*is in loop*/,
@@ -68,12 +53,12 @@ struct IntraproceduralAnalyzerResult {
                   unordered_map<unsigned int /*parameter idx*/, AffectedInfo /*{bool UsedBefore, bool UsedAfter, AccessMode AM}*/>,
               std::unordered_map<
                   unsigned int /*arg idx*/,
-                  std::set<unsigned int> /*caller parameter(s) idx*/>>>
-          Map;
+                  std::set<unsigned int> /*caller parameter(s) idx*/>>>;
+  IntraproceduralAnalyzerResult() {}
+  IntraproceduralAnalyzerResult(MapT Map, std::string CurrentCtxFuncCombinedLoc)
+      : Map(Map), CurrentCtxFuncCombinedLoc(CurrentCtxFuncCombinedLoc) {}
+  MapT Map;
   std::string CurrentCtxFuncCombinedLoc;
-
-private:
-  bool IsDefault = false;
 };
 
 using Ranges = std::unordered_set<SourceRange>;
