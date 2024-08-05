@@ -53,8 +53,8 @@ __global__ void shared_address_atomic_fetch_add32(uint32_t addr, uint32_t n,
   uint32_t __n = (n);
   uint32_t __o = (o);
   // CHECK: {
-  // CHECK:   __o = dpct::atomic_fetch_add(((uint32_t *)(uintptr_t)__addr), __n);
-  // CHECK: }
+  // CHECK-NEXT:   __o = dpct::atomic_fetch_add(((uint32_t *)(uintptr_t)__addr), __n);
+  // CHECK-NEXT: }
   asm volatile("{atom.cta.shared.add.u32 %0, [%1], %2;}"
                : "=r"(__o)
                : "r"(__addr), "r"(__n)
