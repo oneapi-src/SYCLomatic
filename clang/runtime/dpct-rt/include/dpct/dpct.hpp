@@ -17,6 +17,10 @@
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 
+#ifndef __DPCT_DEPRECATED
+#define __DPCT_DEPRECATED(message) [[deprecated(message)]]
+#endif
+
 #include "atomic.hpp"
 #include "device.hpp"
 #include "image.hpp"
@@ -61,9 +65,5 @@ enum error_code { success = 0, default_error = 999 };
 
 #define DPCT_PI_F (3.14159274101257f)
 #define DPCT_PI (3.141592653589793115998)
-
-#ifndef __DPCT_DEPRECATED
-#define __DPCT_DEPRECATED(message) [[deprecated(message)]]
-#endif
 
 #endif // __DPCT_HPP__
