@@ -9,6 +9,17 @@
 // DEFAULT: TestCMAKE.cmake
 // DEFAULT: test.cmake
 
+
+// RUN: echo "begin" > %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/cmake_expected %T/foo_codepin_cuda/CMakeLists.txt >> %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/expected.cmake %T/foo_codepin_cuda/TestCMAKE.cmake >> %T/diff.txt
+// RUN: echo "end" >> %T/diff.txt
+// RUN: FileCheck --input-file %T/diff.txt --check-prefix=CHECK %s
+// CHECK: begin
+// CHECK-NEXT:end
+
+// RUN: cd %T/foo_codepin_cuda
+// RUN: cmake -B build -S .
 #include <cuda.h>
 
 int main() {
