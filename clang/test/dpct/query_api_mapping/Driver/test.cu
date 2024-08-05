@@ -137,7 +137,7 @@
 // CUCTXCREATE: CUDA API:
 // CUCTXCREATE-NEXT:   cuCtxCreate(pc /*CUcontext **/, u /*unsigned*/, d /*CUdevice*/);
 // CUCTXCREATE-NEXT: Is migrated to:
-// CUCTXCREATE-NEXT:   *pc = dpct::select_device(d);
+// CUCTXCREATE-NEXT:   *pc = dpct::push_device_for_curr_thread(d);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxDestroy | FileCheck %s -check-prefix=CUCTXDESTROY
 // CUCTXDESTROY: CUDA API:
@@ -162,6 +162,18 @@
 // CUCTXGETDEVICE-NEXT:   cuCtxGetDevice(pd /*CUdevice **/);
 // CUCTXGETDEVICE-NEXT: Is migrated to:
 // CUCTXGETDEVICE-NEXT:   *pd = dpct::get_current_device_id();
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxPushCurrent | FileCheck %s -check-prefix=CUCTXPUSHCURRENT
+// CUCTXPUSHCURRENT: CUDA API:
+// CUCTXPUSHCURRENT-NEXT:   cuCtxPushCurrent(c /*CUcontext*/);
+// CUCTXPUSHCURRENT-NEXT: Is migrated to:
+// CUCTXPUSHCURRENT-NEXT:   dpct::push_device_for_curr_thread(c);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxPopCurrent | FileCheck %s -check-prefix=CUCTXPOPCURRENT
+// CUCTXPOPCURRENT: CUDA API:
+// CUCTXPOPCURRENT-NEXT:   cuCtxPopCurrent(&c /*CUcontext **/);
+// CUCTXPOPCURRENT-NEXT: Is migrated to:
+// CUCTXPOPCURRENT-NEXT:   c = dpct::pop_device_for_curr_thread();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxGetLimit | FileCheck %s -check-prefix=CUCTXGETLIMIT
 // CUCTXGETLIMIT: CUDA API:
