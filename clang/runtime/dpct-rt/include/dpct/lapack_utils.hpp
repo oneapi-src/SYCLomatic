@@ -213,25 +213,27 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, queue);
   int has_execption = 0;
 
+  static const std::vector<sycl::event> empty_events{};
   if (info)
     queue.memset(info, 0, group_size * sizeof(int));
-  sycl::event e = ::dpct::detail::catch_batch_error(
+  sycl::event e = ::dpct::detail::catch_batch_error_from_func_ptr<sycl::event>(
       &has_execption, "oneapi::mkl::lapack::potrf_batch", queue, scratchpad,
       nullptr, info, matrix_info->group_size_info,
-      static_cast<sycl::event (*)(
-          sycl::queue &, oneapi::mkl::uplo *, std::int64_t *, Ty **,
-          std::int64_t *, std::int64_t, std::int64_t *, Ty *, std::int64_t,
-          const std::vector<sycl::event> &)>(&oneapi::mkl::lapack::potrf_batch),
-      queue, &(matrix_info->uplo_info), &(matrix_info->n_info), (Ty **)a,
-      &(matrix_info->lda_info), 1, &(matrix_info->group_size_info), scratchpad,
-      scratchpad_size, std::vector<sycl::event>{});
+      oneapi::mkl::lapack::potrf_batch, queue, &(matrix_info->uplo_info),
+      &(matrix_info->n_info), (Ty **)a, &(matrix_info->lda_info),
+      (std::int64_t)1, &(matrix_info->group_size_info), (Ty *)scratchpad,
+      (std::int64_t)scratchpad_size, empty_events);
 
   queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=, _e = e] {
-      ::dpct::detail::catch_batch_error(
+      ::dpct::detail::catch_batch_error_from_functor(
           nullptr, "oneapi::mkl::lapack::potrf_batch", queue, scratchpad,
           nullptr, info, matrix_info->group_size_info,
-          [](sycl::event _e) { _e.wait_and_throw(); }, _e);
+          [](sycl::event _e) {
+            _e.wait_and_throw();
+            return 0;
+          },
+          _e);
       std::free(matrix_info);
       sycl::free(scratchpad, queue);
     });
@@ -289,25 +291,27 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 
   if (info)
     queue.memset(info, 0, group_size * sizeof(int));
-  sycl::event e = ::dpct::detail::catch_batch_error(
+
+  static const std::vector<sycl::event> empty_events{};
+  sycl::event e = ::dpct::detail::catch_batch_error_from_func_ptr<sycl::event>(
       &has_execption, "oneapi::mkl::lapack::potrs_batch", queue, scratchpad,
       nullptr, info, matrix_info->group_size_info,
-      static_cast<sycl::event (*)(
-          sycl::queue &, oneapi::mkl::uplo *, std::int64_t *, std::int64_t *,
-          Ty **, std::int64_t *, Ty **, std::int64_t *, std::int64_t,
-          std::int64_t *, Ty *, std::int64_t,
-          const std::vector<sycl::event> &)>(&oneapi::mkl::lapack::potrs_batch),
-      queue, &(matrix_info->uplo_info), &(matrix_info->n_info),
-      &(matrix_info->nrhs_info), (Ty **)a, &(matrix_info->lda_info), (Ty **)b,
-      &(matrix_info->ldb_info), 1, &(matrix_info->group_size_info), scratchpad,
-      scratchpad_size, std::vector<sycl::event>{});
+      oneapi::mkl::lapack::potrs_batch, queue, &(matrix_info->uplo_info),
+      &(matrix_info->n_info), &(matrix_info->nrhs_info), (Ty **)a,
+      &(matrix_info->lda_info), (Ty **)b, &(matrix_info->ldb_info),
+      (std::int64_t)1, &(matrix_info->group_size_info), (Ty *)scratchpad,
+      (std::int64_t)scratchpad_size, empty_events);
 
   queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=, _e = e] {
-      ::dpct::detail::catch_batch_error(
+      ::dpct::detail::catch_batch_error_from_functor(
           nullptr, "oneapi::mkl::lapack::potrs_batch", queue, scratchpad,
           nullptr, info, matrix_info->group_size_info,
-          [](sycl::event _e) { _e.wait_and_throw(); }, _e);
+          [](sycl::event _e) {
+            _e.wait_and_throw();
+            return 0;
+          },
+          _e);
       std::free(matrix_info);
       sycl::free(scratchpad, queue);
     });
