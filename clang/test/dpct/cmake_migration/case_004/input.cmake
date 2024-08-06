@@ -23,3 +23,5 @@ target_link_libraries(nlm_cuda  ${OpenCV_LIBS} stdc++ stdc++fs)
 target_link_libraries(cublas-cudnn-test cublas cudnn)
 
 target_link_libraries(tsne  ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES} ${CUDA_cusparse_LIBRARY})
+
+target_link_libraries(mdgx cufft cusparse curand cudadevrt nccl nvrtc nvidia-ml)
