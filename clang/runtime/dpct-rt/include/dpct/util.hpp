@@ -536,6 +536,76 @@ T shift_sub_group_right(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY__
 }
 
+/// Masked version of shift_sub_group_left, which execute masked sub-group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
+/// \tparam LogicSubGroupSize Input logical sub_group size
+/// \tparam T Input value type
+/// \param [in] member_mask Input mask
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] delta Input delta
+/// \param [in] last_item Index of last thread in logical subgroup
+/// \returns The result
+template <size_t LogicSubGroupSize, typename T>
+T shift_sub_group_left(sycl::sub_group sg, T input, int delta, int last_item,
+                       unsigned member_mask) {
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+  T result;
+  constexpr int CVAL = ((32 - LogicSubGroupSize) << 8);
+  SHFL_SYNC(result, member_mask, x, delta, CVAL | last_item, down_i32)
+  return result;
+#else
+  (void)member_mask;
+  auto partition =
+      sycl::ext::oneapi::experimental::get_fixed_size_group<LogicSubGroupSize>(
+          sg);
+  int id = sg.get_local_linear_id();
+  T result = sycl::shift_group_left(partition, input, delta);
+  if ((id + delta) >= last_item)
+    result = input;
+  return result;
+#endif
+}
+
+/// Masked version of shift_sub_group_right, which execute masked sub-group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
+/// \tparam LogicSubGroupSize Input logical sub_group size
+/// \tparam T Input value type
+/// \param [in] member_mask Input mask
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] delta Input delta
+/// \param [in] first_item Index of first lane in logical subgroup
+/// \returns The result
+template <size_t LogicSubGroupSize, typename T>
+T shift_sub_group_right(sycl::sub_group sg, T input, int delta, int first_item,
+                        unsigned member_mask) {
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+  T result;
+  constexpr int CVAL = ((32 - LogicSugGroupSize) << 8);
+  SHFL_SYNC(result, member_mask, x, delta, CVAL | last_item, up_i32)
+  return result;
+#else
+  (void)member_mask;
+  auto partition =
+      sycl::ext::oneapi::experimental::get_fixed_size_group<LogicSubGroupSize>(
+          sg);
+  int id = sg.get_local_linear_id();
+  T result = sycl::shift_group_right(partition, input, delta);
+  if ((id - first_item) < delta)
+    result = input;
+  return result;
+#endif
+}
+
 /// Masked version of permute_sub_group_by_xor, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the

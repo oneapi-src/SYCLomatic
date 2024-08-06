@@ -64,12 +64,34 @@ __global__ void ShuffleIndexKernel3(int* data) {
   int threadid = threadIdx.x;
   int input = data[threadid];
   int output = 0;
-// CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleUp is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: output = cub::ShuffleUp<32>(input, 0, 0, 0xaaaaaaaa);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1108:{{.*}}: 'cub::ShuffleUp' was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: output = dpct::experimental::shift_sub_group_right<32>(item_ct1.get_sub_group(), input, 0, 0, 0xaaaaaaaa);
   output = cub::ShuffleUp<32>(input, 0, 0, 0xaaaaaaaa);
   data[threadid] = output;
+}
+
+__global__ void ShuffleDownKernel(int *data) {
+  int tid = cub::LaneId();
+  unsigned mask = 0x8;
+  int val = tid;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1108:{{.*}}: 'cub::ShuffleDown' was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK: data[tid] = dpct::experimental::shift_sub_group_left<8>(item_ct1.get_sub_group(), val, 3, 6, mask);
+  data[tid] = cub::ShuffleDown<8>(val, 3, 6, mask);
+}
+
+__global__ void ShuffleUpKernel(int *data) {
+  int tid = cub::LaneId();
+  unsigned mask = 0x8;
+  int val = tid;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1108:{{.*}}: 'cub::ShuffleUp' was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK: data[tid] = dpct::experimental::shift_sub_group_right<8>(item_ct1.get_sub_group(), val, 3, 6, mask);
+  data[tid] = cub::ShuffleUp<8>(val, 3, 6, mask);
 }
 
 int main() {

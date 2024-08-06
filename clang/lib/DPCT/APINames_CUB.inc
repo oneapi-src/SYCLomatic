@@ -64,8 +64,8 @@
 // clang-format off
 
 //Warp Level
-ENTRY(cub::ShuffleUp, cub::ShuffleUp, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::ShuffleDown, cub::ShuffleDown, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::ShuffleUp, cub::ShuffleUp, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::ShuffleDown, cub::ShuffleDown, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::ShuffleIndex, cub::ShuffleIndex, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::WarpScan, cub::WarpScan, InclusiveSum, InclusiveSum, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::WarpScan, cub::WarpScan, ExclusiveSum, ExclusiveSum, true, NO_FLAG, P4, "Successful")
