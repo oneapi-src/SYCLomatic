@@ -32,6 +32,10 @@
 #error "Only support Windows and Linux."
 #endif
 
+#ifndef __DPCT_DEPRECATED
+#define __DPCT_DEPRECATED(message) [[deprecated(message)]]
+#endif
+
 namespace dpct {
 
 enum memcpy_direction {
