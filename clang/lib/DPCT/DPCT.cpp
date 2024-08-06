@@ -993,6 +993,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setCodePinEnabled(EnableCodePin);
+  DpctGlobalInfo::setDefautQueueSynchronizationEnabled(
+      EnableDefautQueueSynchronization);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setMigrateBuildScriptOnlyEnabled(MigrateBuildScriptOnly);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
@@ -1055,6 +1057,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_DefaultQueueSynchronizationEnabled,
+                     DpctGlobalInfo::isCtadEnabled(),
+                     EnableDefautQueueSynchronization.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CodePinEnabled,
                      DpctGlobalInfo::isCodePinEnabled(),
                      EnableCodePin.getNumOccurrences());

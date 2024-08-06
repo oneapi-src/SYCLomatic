@@ -530,6 +530,17 @@ DPCT_FLAG_OPTION(
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBasicCat))
 
 DPCT_FLAG_OPTION(
+    EnableDefautQueueSynchronization,
+    clang::dpct::DpctOptionClass::OC_Attribute,
+    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
+                        clang::dpct::DpctActionKind::DAK_Analysis),
+    "enable-default-queue-synchronization",
+    llvm::cl::desc("Synchronize with all other queues before kernel function "
+                   "is submitted to the default queue.\n"
+                   "Default: off."),
+    llvm::cl::cat(DPCTCat))
+
+DPCT_FLAG_OPTION(
     EnableCodePin, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
     "enable-codepin",

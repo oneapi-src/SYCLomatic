@@ -873,6 +873,12 @@ public:
   static void setCtadEnabled(bool Enable) { EnableCtad = Enable; }
   static bool isCodePinEnabled() { return EnableCodePin; }
   static void setCodePinEnabled(bool Enable = false) { EnableCodePin = Enable; }
+  static bool isDefautQueueSynchronizationEnabled() {
+    return EnableDefautQueueSynchronization;
+  }
+  static void setDefautQueueSynchronizationEnabled(bool Enable = false) {
+    EnableDefautQueueSynchronization = Enable;
+  }
   static bool isGenBuildScript() { return GenBuildScript; }
   static void setGenBuildScriptEnabled(bool Enable = true) {
     GenBuildScript = Enable;
@@ -1505,6 +1511,7 @@ private:
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
   static bool EnableCodePin;
+  static bool EnableDefautQueueSynchronization;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
   static bool MigrateBuildScriptOnly;

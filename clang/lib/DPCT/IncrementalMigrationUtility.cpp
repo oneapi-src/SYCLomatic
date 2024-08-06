@@ -172,6 +172,10 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--enable-ctad");
     }
+    if (Key == clang::dpct::OPTION_DefaultQueueSynchronizationEnabled) {
+      if ("true" == Value)
+        Opts.emplace_back("--enable-default-queue-synchronization");
+    }
     if (Key == clang::dpct::OPTION_ExtensionDEFlag && Specified) {
       std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
       if (Value.empty() || Value.length() > MaxValueStr.length() ||
