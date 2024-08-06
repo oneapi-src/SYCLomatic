@@ -476,6 +476,41 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
   }
 }
 
+// loads a linear segment of workgroup items into a blocked arrangement.
+template <typename InputT, size_t ITEMS_PER_WORK_ITEM, typename InputIteratorT,
+          typename Item>
+__dpct_inline__ void load_direct_blocked(const Item &item, InputIteratorT block_itr,
+                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range loading across
+  // workgroup items To-do: Decide whether range loading is required for group
+  // loading
+  size_t linear_tid = item.get_local_linear_id();
+  uint32_t workgroup_offset = linear_tid * ITEMS_PER_WORK_ITEM;
+#pragma unroll
+  for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    items[idx] = block_itr[workgroup_offset + idx];
+  }
+}
+
+// loads a linear segment of workgroup items into a striped arrangement.
+template <typename InputT, size_t ITEMS_PER_WORK_ITEM, typename InputIteratorT,
+          typename Item>
+__dpct_inline__ void load_direct_striped(const Item &item, InputIteratorT block_itr,
+                                  InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range loading across
+  // workgroup items To-do: Decide whether range loading is required for group
+  // loading
+  size_t linear_tid = item.get_local_linear_id();
+  size_t group_work_items = item.get_local_range().size();
+#pragma unroll
+  for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    items[idx] = block_itr[linear_tid + (idx * group_work_items)];
+  }
+}
+
+
 // loads a linear segment of workgroup items into a subgroup striped
 // arrangement. Created as free function until exchange mechanism is
 // implemented.
