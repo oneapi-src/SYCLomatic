@@ -9,22 +9,17 @@
 #ifndef __DPCT_UTIL_HPP__
 #define __DPCT_UTIL_HPP__
 
-#include <cassert>
-#include <complex>
-#include <cstdint>
 #include <sycl/sycl.hpp>
+#include <complex>
 #include <type_traits>
-
-#ifndef __DPCT_DEPRECATED
-#define __DPCT_DEPRECATED(message) [[deprecated(message)]]
-#endif
+#include <cassert>
+#include <cstdint>
 
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 template <typename T>
-__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT
-    __attribute__((noduplicate)) T
-    __spirv_GroupNonUniformShuffle(__spv::Scope::Flag, T, unsigned) noexcept;
+__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
+T __spirv_GroupNonUniformShuffle(__spv::Scope::Flag, T, unsigned) noexcept;
 
 template <typename T>
 __SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
