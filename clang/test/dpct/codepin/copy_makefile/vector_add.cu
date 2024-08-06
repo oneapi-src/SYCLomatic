@@ -1,22 +1,27 @@
-
+// UNSUPPORTED: system-windows
 // RUN: dpct -out-root %T/vector_add %s --cuda-include-path="%cuda-path/include" --enable-codepin --gen-build-script -- -std=c++14  -x cuda --cuda-host-only
-// RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/vector_add_codepin_sycl/vector_add.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/vector_add_codepin_sycl/vector_add.dp.cpp -o %T/vector_add_codepin_sycl/vector_add.dp.o %}
+// RUN: %if build_lit %{/usr/bin/make -f %T/vector_add_codepin_sycl/Makefile.dpct %}
+// RUN: echo "begin" > %T/diff_sycl_makefile.txt
+// RUN: diff --strip-trailing-cr %S/expected_makefile %T/vector_add_codepin_sycl/Makefile.dpct >> %T/diff_sycl_makefile.txt
+// RUN: echo "end" >> %T/diff_sycl_makefile.txt
+// RUN: FileCheck --input-file %T/diff_sycl_makefile.txt --check-prefix=CHECK %s
+
 // RUN: cd %T/vector_add_codepin_cuda
 // RUN: ls > default.log
 // RUN: FileCheck --input-file default.log --match-full-lines %T/vector_add_codepin_sycl/vector_add.dp.cpp -check-prefix=DEFAULT
 // DEFAULT: Makefile
+
+// RUN: echo "begin" > %T/diff.txt
+// RUN: diff --strip-trailing-cr %S/expected.txt %T/vector_add_codepin_cuda/Makefile >> %T/diff.txt
+// RUN: echo "end" >> %T/diff.txt
+// RUN: FileCheck --input-file %T/diff.txt --check-prefix=CHECK %s
+// CHECK: begin
+// CHECK-NEXT:end
 #include <cuda.h>
 #include <stdio.h>
 #define VECTOR_SIZE 256
 
-//     CHECK:void VectorAddKernel(float* A, float* B, float* C,
-// CHECK-NEXT:                     const sycl::nd_item<3> &item_ct1)
-//CHECK-NEXT:{
-//CHECK-NEXT:    A[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2) + 1.0f;
-//CHECK-NEXT:    B[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2) + 1.0f;
-//CHECK-NEXT:    C[item_ct1.get_local_id(2)] = A[item_ct1.get_local_id(2)] + B[item_ct1.get_local_id(2)];
-//CHECK-NEXT:}
+
 __global__ void VectorAddKernel(float* A, float* B, float* C)
 {
     A[threadIdx.x] = threadIdx.x + 1.0f;
