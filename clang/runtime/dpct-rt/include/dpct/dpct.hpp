@@ -17,10 +17,6 @@
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 
-#ifndef __DPCT_DEPRECATED
-#define __DPCT_DEPRECATED(message) [[deprecated(message)]]
-#endif
-
 #include "atomic.hpp"
 #include "device.hpp"
 #include "image.hpp"

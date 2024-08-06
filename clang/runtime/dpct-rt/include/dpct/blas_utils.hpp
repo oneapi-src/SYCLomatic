@@ -9,8 +9,8 @@
 #ifndef __DPCT_BLAS_UTILS_HPP__
 #define __DPCT_BLAS_UTILS_HPP__
 
-#include "memory.hpp"
 #include "util.hpp"
+#include "memory.hpp"
 #include "lib_common_utils.hpp"
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
