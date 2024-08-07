@@ -734,13 +734,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
     // requirements to the order of invocation of its members.
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
-    if (CompileCommandsForFile.empty()) {
-      llvm::errs() << "Skipping " << File
-                   << ". Compile command for this file not found in "
-                      "compile_commands.json.\n";
-      FileSkipped = true;
-      return -1;
-    }
+
     for (CompileCommand &CompileCommand : CompileCommandsForFile) {
       // FIXME: chdir is thread hostile; on the other hand, creating the same
       // behavior as chdir is complex: chdir resolves the path once, thus
@@ -1107,8 +1101,8 @@ int ClangTool::run(ToolAction *Action) {
     if(isExcludePath(File.str())) {
       continue;
     }
-    int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
-                            Action);
+    int Ret = processFilesWithCrashGuard(this, File, ProcessingFailed,
+                                         FileSkipped, StaticSymbol, Action);
     if (Ret == -1)
       continue;
     else if (Ret < -1)

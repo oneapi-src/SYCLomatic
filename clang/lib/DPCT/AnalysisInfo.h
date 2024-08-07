@@ -1466,7 +1466,7 @@ private:
     return N->getBeginLoc();
   }
   static SourceLocation getLocation(const VarDecl *VD) {
-    return VD->getLocation();
+    return getDefinitionRange(VD->getLocation(), VD->getLocation()).getBegin();
   }
   static SourceLocation getLocation(const FunctionDecl *FD) {
     return FD->getBeginLoc();
