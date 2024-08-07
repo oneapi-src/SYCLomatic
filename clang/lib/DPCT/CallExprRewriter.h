@@ -594,13 +594,6 @@ void print(StreamT &Stream,
            const std::pair<std::string, const StringRef> &Pair) {
   Stream << Pair.first << Pair.second;
 }
-template <class StreamT>
-void print(StreamT &Stream,
-           const std::pair<const StringRef, const Expr *> &Pair) {
-  Stream << Pair.first;
-  ExprAnalysis EA;
-  print(Stream, EA, Pair.second);
-}
 template <class StreamT, class T>
 void print(StreamT &Stream, ExprAnalysis &EA, const T &Val) {
   print(Stream, Val);
