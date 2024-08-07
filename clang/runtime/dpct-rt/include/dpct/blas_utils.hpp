@@ -2324,7 +2324,8 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
   return exec_queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=]() mutable {
       ::dpct::detail::catch_batch_error(
-          nullptr, api_name, exec_queue, info, dev_info, batch_size,
+          nullptr, api_name, exec_queue, info, dev_info,
+          matrix_info->group_size_info,
           [](sycl::event _e) {
             _e.wait_and_throw();
             return 0;
