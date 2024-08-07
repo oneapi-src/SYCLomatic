@@ -171,13 +171,10 @@ inline constexpr std::size_t library_data_size[] = {
 
 template <class func_t, typename... args_t>
 std::invoke_result_t<func_t, args_t...>
-catch_batch_error_from_functor(int *has_execption, std::string api_names,
-                               sycl::queue exec_queue, void *scratchpad,
-                               int *info, int *dev_info, int batch_size,
-                               func_t &&f, args_t &&...args) {
+catch_batch_error_from_functor(int *has_execption, const std::string &api_names,
+                               sycl::queue exec_queue, int *info, int *dev_info,
+                               int batch_size, func_t &&f, args_t &&...args) {
   try {
-    if (has_execption)
-      *has_execption = 0;
     return f(std::forward<args_t>(args)...);
   } catch (oneapi::mkl::lapack::batch_error const &be) {
     std::cerr << "Unexpected exception caught during call to API(s): "
@@ -200,29 +197,28 @@ catch_batch_error_from_functor(int *has_execption, std::string api_names,
         i++;
       }
     }
-    exec_queue.wait();
     if (dev_info)
       exec_queue.memcpy(dev_info, info_vec.data(), batch_size * sizeof(int))
           .wait();
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    exec_queue.wait();
     if (dev_info)
       exec_queue.memset(dev_info, 0, batch_size * sizeof(int)).wait();
   }
   if (has_execption)
     *has_execption = 1;
+  return {};
 }
 
 template <typename ret_t, typename... args_t>
-ret_t catch_batch_error_from_func_ptr(int *has_execption, std::string api_names,
-                                      sycl::queue exec_queue, void *scratchpad,
-                                      int *info, int *dev_info, int batch_size,
+ret_t catch_batch_error_from_func_ptr(int *has_execption,
+                                      const std::string &api_names,
+                                      sycl::queue exec_queue, int *info,
+                                      int *dev_info, int batch_size,
                                       ret_t (*f)(args_t...), args_t &&...args) {
   return catch_batch_error_from_functor(has_execption, api_names, exec_queue,
-                                        scratchpad, info, dev_info, batch_size,
-                                        f, args...);
+                                        info, dev_info, batch_size, f, args...);
 }
 } // namespace detail
 

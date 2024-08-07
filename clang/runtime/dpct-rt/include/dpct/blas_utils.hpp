@@ -2312,25 +2312,24 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
   if (dev_info)
     exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
   static const std::vector<sycl::event> empty_events{};
+  static const std::string api_name = "oneapi::mkl::lapack::gels_batch";
   sycl::event e = ::dpct::detail::catch_batch_error_from_func_ptr<sycl::event>(
-      nullptr, "oneapi::mkl::lapack::gels_batch", exec_queue, scratchpad, info,
-      dev_info, batch_size, oneapi::mkl::lapack::gels_batch, exec_queue,
-      &(matrix_info->trans_info), &(matrix_info->m_info),
-      &(matrix_info->n_info), &(matrix_info->nrhs_info), (Ty **)a,
-      &(matrix_info->lda_info), (Ty **)b, &(matrix_info->ldb_info),
+      nullptr, api_name, exec_queue, info, dev_info, batch_size,
+      oneapi::mkl::lapack::gels_batch, exec_queue, &(matrix_info->trans_info),
+      &(matrix_info->m_info), &(matrix_info->n_info), &(matrix_info->nrhs_info),
+      (Ty **)a, &(matrix_info->lda_info), (Ty **)b, &(matrix_info->ldb_info),
       (std::int64_t)1, &(matrix_info->group_size_info), (Ty *)scratchpad,
       (std::int64_t)scratchpad_size, empty_events);
 
   return exec_queue.submit([&](sycl::handler &cgh) {
-    cgh.host_task([=, _e = e] {
+    cgh.host_task([=]() mutable {
       ::dpct::detail::catch_batch_error_from_functor(
-          nullptr, "oneapi::mkl::lapack::gels_batch", exec_queue, scratchpad,
-          info, dev_info, batch_size,
+          nullptr, api_name, exec_queue, info, dev_info, batch_size,
           [](sycl::event _e) {
             _e.wait_and_throw();
             return 0;
           },
-          _e);
+          e);
       std::free(matrix_info);
       sycl::free(scratchpad, exec_queue);
     });
