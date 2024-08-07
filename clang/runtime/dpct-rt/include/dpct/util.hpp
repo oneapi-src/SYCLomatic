@@ -556,7 +556,7 @@ T shift_sub_group_left(sycl::sub_group sg, T input, int delta, int last_item,
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
   T result;
   constexpr int CVAL = ((32 - LogicSubGroupSize) << 8);
-  SHFL_SYNC(result, member_mask, x, delta, CVAL | last_item, down_i32)
+  SHFL_SYNC(result, member_mask, input, delta, CVAL | last_item, down_i32)
   return result;
 #else
   (void)member_mask;
@@ -590,8 +590,8 @@ T shift_sub_group_right(sycl::sub_group sg, T input, int delta, int first_item,
                         unsigned member_mask) {
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
   T result;
-  constexpr int CVAL = ((32 - LogicSugGroupSize) << 8);
-  SHFL_SYNC(result, member_mask, x, delta, CVAL | last_item, up_i32)
+  constexpr int CVAL = ((32 - LogicSubGroupSize) << 8);
+  SHFL_SYNC(result, member_mask, input, delta, CVAL | last_item, up_i32)
   return result;
 #else
   (void)member_mask;
