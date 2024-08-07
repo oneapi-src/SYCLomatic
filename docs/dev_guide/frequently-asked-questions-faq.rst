@@ -331,6 +331,29 @@ Based on these language standards |tool_name| emits the parsing error.
 
 You may need to adjust the source code.
 
+How do I resolve migration fail with "fatal error: 'cmath' file not found"?
+*********************************************************************************
+
+The problem might stem from an absent include path for the new standard C++ library.
+Clang is designed to automatically detect the gcc version and use it to locate the appropriate version of the C++ header file.
+
+Please check the gcc package at ``/usr/lib/gcc/x86_64-linux-gnu`` and c++ header at ``/usr/include/c++``.
+For example: 
+.. code-block:: 
+   :linenos:
+   $ ls /usr/lib/gcc/x86_64-linux-gnu
+   11  12  9
+   $ ls /usr/include/c++
+   11 9
+
+To fix this issue, you can install the latest g++ package or libstdc++ package.
+For example: 
+.. code-block:: 
+   :linenos:
+   $ sudo apt install g++-12 
+   or
+   $ sudo apt install libstdc++-12-dev
+
 How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?
 ***********************************************************************************************************************************************************
 
