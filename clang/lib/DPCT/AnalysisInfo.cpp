@@ -2353,7 +2353,7 @@ format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::EnableCodePin = false;
-bool DpctGlobalInfo::EnableDefautQueueSynchronization = false;
+bool DpctGlobalInfo::EnableDefaultQueueSynchronization = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateBuildScriptOnly = false;
@@ -5432,7 +5432,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   }
   printStreamBase(Printer);
   if (SubmitStmts.empty() &&
-      !(DpctGlobalInfo::isDefautQueueSynchronizationEnabled() &&
+      !(DpctGlobalInfo::isDefaultQueueSynchronizationEnabled() &&
         isDefaultStream())) {
     printParallelFor(Printer, false);
   } else {
@@ -5446,7 +5446,7 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   {
     auto Body = Printer.block();
     SubmitStmts.print(Printer);
-    if (DpctGlobalInfo::isDefautQueueSynchronizationEnabled() &&
+    if (DpctGlobalInfo::isDefaultQueueSynchronizationEnabled() &&
         isDefaultStream()) {
       Printer.line(
           MapNames::getDpctNamespace() +
