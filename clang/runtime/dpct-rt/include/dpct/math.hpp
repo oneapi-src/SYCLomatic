@@ -304,8 +304,8 @@ bfe_safe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
   }
 #endif
   const uint32_t bit_width = CHAR_BIT * sizeof(T);
-  const uint32_t pos = std::min(bit_start, bit_width);
-  const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
+  const uint32_t pos = (std::min)(bit_start, bit_width);
+  const uint32_t len = (std::min)(pos + num_bits, bit_width) - pos;
   if constexpr (std::is_signed_v<T>) {
     const T mask = (T{1} << len) - 1;
 
@@ -313,7 +313,7 @@ bfe_safe(const T source, const uint32_t bit_start, const uint32_t num_bits) {
     // extracted field.
     //
     // sign_bit = len == 0 ? 0 : source[min(pos + len - 1, bit_width - 1)]
-    const uint32_t sign_bit_pos = std::min(pos + len - 1, bit_width - 1);
+    const uint32_t sign_bit_pos = (std::min)(pos + len - 1, bit_width - 1);
     const T sign_bit = len != 0 && ((source >> sign_bit_pos) & 1);
     const T sign_bit_padding = (-sign_bit & ~mask);
     return ((source >> pos) & mask) | sign_bit_padding;
@@ -375,8 +375,8 @@ bfi_safe(const T x, const T y, const uint32_t bit_start,
   }
 #endif
   constexpr unsigned bit_width = CHAR_BIT * sizeof(T);
-  const uint32_t pos = std::min(bit_start, bit_width);
-  const uint32_t len = std::min(pos + num_bits, bit_width) - pos;
+  const uint32_t pos = (std::min)(bit_start, bit_width);
+  const uint32_t len = (std::min)(pos + num_bits, bit_width) - pos;
   return dpct::bfi(x, y, pos, len);
 }
 

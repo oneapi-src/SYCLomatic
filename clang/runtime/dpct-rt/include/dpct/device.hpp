@@ -9,17 +9,18 @@
 #ifndef __DPCT_DEVICE_HPP__
 #define __DPCT_DEVICE_HPP__
 
-#include <sycl/sycl.hpp>
 #include <algorithm>
 #include <array>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <set>
 #include <sstream>
-#include <map>
-#include <vector>
+#include <stack>
+#include <sycl/sycl.hpp>
 #include <thread>
+#include <vector>
 #if defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -642,22 +643,26 @@ public:
     check_id(id);
     return *_devs[id];
   }
+
   unsigned int current_device_id() const {
-   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-   auto it=_thread2dev_map.find(get_tid());
-   if(it != _thread2dev_map.end())
-      return it->second;
-    return DEFAULT_DEVICE_ID;
+    if (_dev_stack.empty())
+      return DEFAULT_DEVICE_ID;
+    return _dev_stack.top();
   }
 
   /// Select device with a device ID.
   /// \param [in] id The id of the device which can
   /// be obtained through get_device_id(const sycl::device).
   void select_device(unsigned int id) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    check_id(id);
-    _thread2dev_map[get_tid()] = id;
+    /// Replace the top of the stack with the given device id
+    if (_dev_stack.empty()) {
+      push_device(id);
+    } else {
+      check_id(id);
+      _dev_stack.top() = id;
+    }
   }
+
   unsigned int device_count() { return _devs.size(); }
 
   unsigned int get_device_id(const sycl::device &dev) {
@@ -711,7 +716,8 @@ public:
         break;
       }
     }
-    _thread2dev_map.clear();
+    /// Clear the device stack for all thread here. But we don't have access to
+    /// all threads current implementation.
 #ifdef DPCT_HELPER_VERBOSE
     list_devices();
 #endif
@@ -724,6 +730,22 @@ public:
     sycl::device selected_device = sycl::device(selector);
     unsigned int selected_device_id = get_device_id(selected_device);
     select_device(selected_device_id);
+  }
+
+  /// Update the device stack for the current thread id
+  void push_device(unsigned int id) {
+    check_id(id);
+    _dev_stack.push(id);
+  }
+
+  /// Remove the device from top of the stack if it exist
+  unsigned int pop_device() {
+    if (_dev_stack.empty())
+      throw std::runtime_error("can't pop an empty dpct device stack");
+
+    auto id = _dev_stack.top();
+    _dev_stack.pop();
+    return id;
   }
 
   /// Returns the instance of device manager singleton.
@@ -762,17 +784,18 @@ private:
 #endif
   }
   void check_id(unsigned int id) const {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (id >= _devs.size()) {
       throw std::runtime_error("invalid device id");
     }
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
-  /// DEFAULT_DEVICE_ID is used, if current_device_id() can not find current
-  /// thread id in _thread2dev_map, which means default device should be used
-  /// for the current thread.
+  /// stack of devices resulting from CUDA context change;
+  static inline thread_local std::stack<unsigned int> _dev_stack;
+  /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
+  /// _dev_stack, which means the default device should be used for the current
+  /// thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
-  /// thread-id to device-id map.
-  std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
 };
 
@@ -922,6 +945,16 @@ inline void sync_barrier(sycl::event *event_ptr,
   *event_ptr = queue->single_task([=]() {});
 #endif
 }
+
+static inline unsigned int push_device_for_curr_thread(unsigned int id) {
+  dev_mgr::instance().push_device(id);
+  return id;
+}
+
+static inline unsigned int pop_device_for_curr_thread(void) {
+  return dev_mgr::instance().pop_device();
+}
+
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__
