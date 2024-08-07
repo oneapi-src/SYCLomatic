@@ -21,3 +21,30 @@ void foo1(cublasStatus_t s) {
   //CHECK-NEXT:*/
   cublasSetWorkspace(handle, workspace, size);
 }
+
+//CHECK:void foo2(dpct::compute_type &a) {
+//CHECK-NEXT:  a = dpct::compute_type::f16;
+//CHECK-NEXT:  a = dpct::compute_type::f16_standard;
+//CHECK-NEXT:  a = dpct::compute_type::f32;
+//CHECK-NEXT:  a = dpct::compute_type::f32_standard;
+//CHECK-NEXT:  a = dpct::compute_type::f32;
+//CHECK-NEXT:  a = dpct::compute_type::f32_fast_bf16;
+//CHECK-NEXT:  a = dpct::compute_type::f32_fast_tf32;
+//CHECK-NEXT:  a = dpct::compute_type::f64;
+//CHECK-NEXT:  a = dpct::compute_type::f64_standard;
+//CHECK-NEXT:  a = dpct::compute_type::i32;
+//CHECK-NEXT:  a = dpct::compute_type::i32_standard;
+//CHECK-NEXT:}
+void foo2(cublasComputeType_t &a) {
+  a = CUBLAS_COMPUTE_16F;
+  a = CUBLAS_COMPUTE_16F_PEDANTIC;
+  a = CUBLAS_COMPUTE_32F;
+  a = CUBLAS_COMPUTE_32F_PEDANTIC;
+  a = CUBLAS_COMPUTE_32F_FAST_16F;
+  a = CUBLAS_COMPUTE_32F_FAST_16BF;
+  a = CUBLAS_COMPUTE_32F_FAST_TF32;
+  a = CUBLAS_COMPUTE_64F;
+  a = CUBLAS_COMPUTE_64F_PEDANTIC;
+  a = CUBLAS_COMPUTE_32I;
+  a = CUBLAS_COMPUTE_32I_PEDANTIC;
+}
