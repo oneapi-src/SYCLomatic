@@ -796,8 +796,14 @@ private:
 
   class stack_wrapper : public std::stack<unsigned int> {
   public:
-    stack_wrapper() { _stack_addr.insert(this); }
-    ~stack_wrapper() { _stack_addr.erase(this); }
+    stack_wrapper() {
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+      _stack_addr.insert(this);
+    }
+    ~stack_wrapper() {
+      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+      _stack_addr.erase(this);
+    }
   };
 
   std::vector<std::shared_ptr<device_ext>> _devs;
@@ -808,7 +814,7 @@ private:
   /// thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
   int _cpu_device = -1;
-  // Add address when constructing _dev_stack, and remove it when destructing
+  // Add address when constructing _dev_stack, and remove it when destructing.
   // It can be used to check if _dev_stack is destructed to avoid getting
   // garbage data after _dev_stack is destroyed when destructing global static
   // variables.
