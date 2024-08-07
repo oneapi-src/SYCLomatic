@@ -541,7 +541,7 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVarDecl *D) {
 
 bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
   // Address expression only support ld/st instructions.
-  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld))
+  if (!CurrInst || !CurrInst->is(asmtok::op_st, asmtok::op_ld, asmtok::op_atom))
     return SYCLGenError();
   std::string Type;
   if (tryEmitType(Type, CurrInst->getType(0)))
@@ -557,9 +557,12 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     }
     return false;
   };
+
+  if (CurrInst->is(asmtok::op_st, asmtok::op_ld))
+    OS() << "*";
   switch (Dst->getMemoryOpKind()) {
   case InlineAsmAddressExpr::Imm:
-    OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type,
+    OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type,
                           Dst->getImmAddr()->getValue().getZExtValue());
     break;
   case InlineAsmAddressExpr::Reg: {
@@ -567,16 +570,16 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
     if (CanSuppressCast(Dst->getSymbol()))
-      OS() << llvm::formatv("*{0}", Reg);
+      OS() << llvm::formatv("{0}", Reg);
     else
-      OS() << llvm::formatv("*(({0} *)(uintptr_t){1})", Type, Reg);
+      OS() << llvm::formatv("(({0} *)(uintptr_t){1})", Type, Reg);
     break;
   }
   case InlineAsmAddressExpr::RegImm: {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    OS() << llvm::formatv("*(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
+    OS() << llvm::formatv("(({0} *)((uintptr_t){1} + {2}))", Type, Reg,
                           Dst->getImmAddr()->getValue().getZExtValue());
     break;
   }
@@ -587,14 +590,14 @@ bool SYCLGenBase::emitAddressExpr(const InlineAsmAddressExpr *Dst) {
     if (CanSuppressCast(Dst->getSymbol()))
       OS() << llvm::formatv("{0}", Reg);
     else
-      OS() << llvm::formatv("*(({0} *)&{1})", Type, Reg);
+      OS() << llvm::formatv("(({0} *)&{1})", Type, Reg);
     break;
   }
   case InlineAsmAddressExpr::VarImm: {
     std::string Reg;
     if (tryEmitStmt(Reg, Dst->getSymbol()))
       return SYCLGenSuccess();
-    OS() << llvm::formatv("*(({0} *)((uintptr_t)&{1} + {2}))", Type, Reg,
+    OS() << llvm::formatv("(({0} *)((uintptr_t)&{1} + {2}))", Type, Reg,
                           Dst->getImmAddr()->getValue().getZExtValue());
     break;
   }
@@ -2399,6 +2402,36 @@ protected:
     if (emitStmt(Src))
       return SYCLGenError();
     endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_atom(const InlineAsmInstruction *Inst) override {
+    // FIXME: CAS operation was not supported now.
+    if (Inst->getNumInputOperands() > 2)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = " << MapNames::getDpctNamespace() << "atomic_fetch_";
+    if (Inst->hasAttr(InstAttr::add))
+      OS() << "add";
+    else if (Inst->hasAttr(InstAttr::min))
+      OS() << "min";
+    else if (Inst->hasAttr(InstAttr::max))
+      OS() << "max";
+    else
+      return SYCLGenError();
+    OS() << '(';
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Save(CurrInst);
+    CurrInst = Inst;
+    for (auto [I, Op] : llvm::enumerate(Inst->input_operands())) {
+      if (emitStmt(Op))
+        return SYCLGenError();
+      if (I != Inst->getNumInputOperands() - 1)
+        OS() << ", ";
+    }
+    OS() << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Atomic);
     return SYCLGenSuccess();
   }
 };
