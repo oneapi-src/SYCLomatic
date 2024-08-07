@@ -217,7 +217,7 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   static const std::string api_name = "oneapi::mkl::lapack::potrf_batch";
   if (info)
     queue.memset(info, 0, group_size * sizeof(int));
-  sycl::event e = ::dpct::detail::catch_batch_error_from_func_ptr<sycl::event>(
+  sycl::event e = ::dpct::detail::catch_batch_error_f<sycl::event>(
       &has_execption, api_name, queue, nullptr, info,
       matrix_info->group_size_info, oneapi::mkl::lapack::potrf_batch, queue,
       &(matrix_info->uplo_info), &(matrix_info->n_info), (Ty **)a,
@@ -227,7 +227,7 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 
   queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=]() mutable {
-      ::dpct::detail::catch_batch_error_from_functor(
+      ::dpct::detail::catch_batch_error(
           nullptr, api_name, queue, nullptr, info, matrix_info->group_size_info,
           [](sycl::event _e) {
             _e.wait_and_throw();
@@ -294,7 +294,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 
   static const std::vector<sycl::event> empty_events{};
   static const std::string api_name = "oneapi::mkl::lapack::potrs_batch";
-  sycl::event e = ::dpct::detail::catch_batch_error_from_func_ptr<sycl::event>(
+  sycl::event e = ::dpct::detail::catch_batch_error_f<sycl::event>(
       &has_execption, api_name, queue, nullptr, info,
       matrix_info->group_size_info, oneapi::mkl::lapack::potrs_batch, queue,
       &(matrix_info->uplo_info), &(matrix_info->n_info),
@@ -305,7 +305,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 
   queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=]() mutable {
-      ::dpct::detail::catch_batch_error_from_functor(
+      ::dpct::detail::catch_batch_error(
           nullptr, api_name, queue, nullptr, info, matrix_info->group_size_info,
           [](sycl::event _e) {
             _e.wait_and_throw();

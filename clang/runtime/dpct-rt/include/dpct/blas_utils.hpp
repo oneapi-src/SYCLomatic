@@ -2313,7 +2313,7 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
     exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
   static const std::vector<sycl::event> empty_events{};
   static const std::string api_name = "oneapi::mkl::lapack::gels_batch";
-  sycl::event e = ::dpct::detail::catch_batch_error_from_func_ptr<sycl::event>(
+  sycl::event e = ::dpct::detail::catch_batch_error_f<sycl::event>(
       nullptr, api_name, exec_queue, info, dev_info, batch_size,
       oneapi::mkl::lapack::gels_batch, exec_queue, &(matrix_info->trans_info),
       &(matrix_info->m_info), &(matrix_info->n_info), &(matrix_info->nrhs_info),
@@ -2323,7 +2323,7 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
 
   return exec_queue.submit([&](sycl::handler &cgh) {
     cgh.host_task([=]() mutable {
-      ::dpct::detail::catch_batch_error_from_functor(
+      ::dpct::detail::catch_batch_error(
           nullptr, api_name, exec_queue, info, dev_info, batch_size,
           [](sycl::event _e) {
             _e.wait_and_throw();

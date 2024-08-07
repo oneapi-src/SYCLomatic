@@ -171,9 +171,9 @@ inline constexpr std::size_t library_data_size[] = {
 
 template <class func_t, typename... args_t>
 std::invoke_result_t<func_t, args_t...>
-catch_batch_error_from_functor(int *has_execption, const std::string &api_names,
-                               sycl::queue exec_queue, int *info, int *dev_info,
-                               int batch_size, func_t &&f, args_t &&...args) {
+catch_batch_error(int *has_execption, const std::string &api_names,
+                  sycl::queue exec_queue, int *info, int *dev_info,
+                  int batch_size, func_t &&f, args_t &&...args) {
   try {
     return f(std::forward<args_t>(args)...);
   } catch (oneapi::mkl::lapack::batch_error const &be) {
@@ -212,13 +212,12 @@ catch_batch_error_from_functor(int *has_execption, const std::string &api_names,
 }
 
 template <typename ret_t, typename... args_t>
-ret_t catch_batch_error_from_func_ptr(int *has_execption,
-                                      const std::string &api_names,
-                                      sycl::queue exec_queue, int *info,
-                                      int *dev_info, int batch_size,
-                                      ret_t (*f)(args_t...), args_t &&...args) {
-  return catch_batch_error_from_functor(has_execption, api_names, exec_queue,
-                                        info, dev_info, batch_size, f, args...);
+ret_t catch_batch_error_f(int *has_execption, const std::string &api_names,
+                          sycl::queue exec_queue, int *info, int *dev_info,
+                          int batch_size, ret_t (*f)(args_t...),
+                          args_t &&...args) {
+  return catch_batch_error(has_execption, api_names, exec_queue, info, dev_info,
+                           batch_size, f, args...);
 }
 } // namespace detail
 
