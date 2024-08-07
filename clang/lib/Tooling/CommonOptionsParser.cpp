@@ -379,6 +379,9 @@ llvm::Error CommonOptionsParser::init(
                                                       std::move(Compilations));
     }
   }
+
+  Compilations =
+      std::make_unique<ExpandedCompilationDatabase>(std::move(Compilations));
 #endif
   auto AdjustingCompilations =
       std::make_unique<ArgumentsAdjustingCompilations>(

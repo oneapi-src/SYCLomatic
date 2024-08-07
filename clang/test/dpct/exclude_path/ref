@@ -23,20 +23,20 @@
 // CHECK: not exist
 // CHECK: not exist
 // CHECK: exist
+// CHECK: not exist
 // CHECK: exist
 // CHECK: not exist
-// CHECK: not exist
-// CHECK: not exist
+// CHECK: exist
 
 //test4
 // CHECK: not exist
 // CHECK: exist
 // CHECK: not exist
 // CHECK: not exist
+// CHECK: not exist
 // CHECK: exist
 // CHECK: not exist
-// CHECK: not exist
-// CHECK: not exist
+// CHECK: exist
 
 //test5
 // CHECK: not exist
@@ -46,7 +46,7 @@
 // CHECK: not exist
 // CHECK: not exist
 // CHECK: not exist
-// CHECK: not exist
+// CHECK: exist
 
 //test6
 // CHECK: not exist

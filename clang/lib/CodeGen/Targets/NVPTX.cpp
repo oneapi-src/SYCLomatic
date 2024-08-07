@@ -291,49 +291,6 @@ void NVPTXTargetCodeGenInfo::setTargetAttributes(
           addNVVMMetadata(F, "grid_constant", GridConstantParamIdxs);
       }
     }
-    bool HasMaxWorkGroupSize = false;
-    bool HasMinWorkGroupPerCU = false;
-    if (const auto *MWGS = FD->getAttr<SYCLIntelMaxWorkGroupSizeAttr>()) {
-      HasMaxWorkGroupSize = true;
-      // We must index-flip between SYCL's notation, X,Y,Z (aka dim0,dim1,dim2)
-      // with the fastest-moving dimension rightmost, to CUDA's, where X is the
-      // fastest-moving dimension.
-      addNVVMMetadata(F, "maxntidx", MWGS->getZDimVal());
-      addNVVMMetadata(F, "maxntidy", MWGS->getYDimVal());
-      addNVVMMetadata(F, "maxntidz", MWGS->getXDimVal());
-    }
-
-    auto attrValue = [&](Expr *E) {
-      const auto *CE = cast<ConstantExpr>(E);
-      std::optional<llvm::APInt> Val = CE->getResultAsAPSInt();
-      return Val->getZExtValue();
-    };
-
-    if (const auto *MWGPCU =
-            FD->getAttr<SYCLIntelMinWorkGroupsPerComputeUnitAttr>()) {
-      if (!HasMaxWorkGroupSize && FD->hasAttr<OpenCLKernelAttr>()) {
-        M.getDiags().Report(D->getLocation(),
-                            diag::warn_launch_bounds_missing_attr)
-            << MWGPCU << 0;
-      } else {
-        // The value is guaranteed to be > 0, pass it to the metadata.
-        addNVVMMetadata(F, "minctasm", attrValue(MWGPCU->getValue()));
-        HasMinWorkGroupPerCU = true;
-      }
-    }
-
-    if (const auto *MWGPMP =
-            FD->getAttr<SYCLIntelMaxWorkGroupsPerMultiprocessorAttr>()) {
-      if ((!HasMaxWorkGroupSize || !HasMinWorkGroupPerCU) &&
-          FD->hasAttr<OpenCLKernelAttr>()) {
-        M.getDiags().Report(D->getLocation(),
-                            diag::warn_launch_bounds_missing_attr)
-            << MWGPMP << 1;
-      } else {
-        // The value is guaranteed to be > 0, pass it to the metadata.
-        addNVVMMetadata(F, "maxclusterrank", attrValue(MWGPMP->getValue()));
-      }
-    }
   }
 
   // Perform special handling in CUDA mode.
