@@ -331,28 +331,27 @@ Based on these language standards |tool_name| emits the parsing error.
 
 You may need to adjust the source code.
 
-How do I resolve migration fail with "fatal error: 'cmath' file not found"?
+How do I resolve migration failure with "fatal error: 'cmath' file not found" in Linux?
 *********************************************************************************
+ 
+The problem stems from an absent include path for the new standard C++ library. 
+The |tool_name| is designed to automatically detect the appropriate version of the C++ header file by checking the compiler package at ``/usr/lib/gcc/x86_64-linux-gnu``and C++ header at ``/usr/include/c++``.
+In the following example, it tries to use C++ header version 12 based on the knowledge of the compiler package, but it fails for C++ header version 12 not exist.
 
-The problem might stem from an absent include path for the new standard C++ library.
-Clang is designed to automatically detect the gcc version and use it to locate the appropriate version of the C++ header file.
-
-Please check the gcc package at ``/usr/lib/gcc/x86_64-linux-gnu`` and c++ header at ``/usr/include/c++``.
-For example: 
 .. code-block:: 
-   :linenos:
-   $ ls /usr/lib/gcc/x86_64-linux-gnu
-   11  12  9
-   $ ls /usr/include/c++
-   11 9
+  :linenos:
+  $ ls /usr/lib/gcc/x86_64-linux-gnu
+  11 12
+  $ ls /usr/include/c++
+  11
 
-To fix this issue, you can install the latest g++ package or libstdc++ package.
-For example: 
+To fix this issue, please install the version 12 g++ package or libstdc++ package.
+
 .. code-block:: 
-   :linenos:
-   $ sudo apt install g++-12 
-   or
-   $ sudo apt install libstdc++-12-dev
+  :linenos:
+  $ sudo apt install g++-12 
+  or
+  $ sudo apt install libstdc++-12-dev 
 
 How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?
 ***********************************************************************************************************************************************************
