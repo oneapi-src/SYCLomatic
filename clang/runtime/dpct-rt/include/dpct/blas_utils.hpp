@@ -1186,7 +1186,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
   std::int64_t stride_a = n * lda;
-  std::int64_t stride_tau = std::max(1, std::min(m, n));
+  std::int64_t stride_tau = (std::max)(1, (std::min)(m, n));
   std::int64_t scratchpad_size = oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
       exec_queue, m, n, lda, stride_a, stride_tau, batch_size);
 
@@ -1219,7 +1219,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
                                            n * lda * sizeof(T), automatic));
     events_tau.push_back(detail::dpct_memcpy(
         exec_queue, host_tau[i], tau_buffer_ptr + i * stride_tau,
-        std::max(1, std::min(m, n)) * sizeof(T), automatic));
+        (std::max)(1, (std::min)(m, n)) * sizeof(T), automatic));
   }
   std::vector<void *> ptr_a{host_a};
   std::vector<void *> ptr_tau{host_tau};
