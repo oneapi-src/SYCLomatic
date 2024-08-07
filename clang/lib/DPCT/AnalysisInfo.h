@@ -1107,7 +1107,7 @@ public:
   void buildReplacements();
   void processCudaArchMacro();
   void generateHostCode(tooling::Replacements &ProcessedReplList,
-                        HostDeviceFuncLocInfo Info, unsigned ID);
+                        HostDeviceFuncLocInfo &Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
