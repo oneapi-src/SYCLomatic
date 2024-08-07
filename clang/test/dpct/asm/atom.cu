@@ -13,7 +13,7 @@
 .type =               { .b32, .b64, .u32, .u64, .s32, .s64, .f32, .f64 };
 .scope =              { .cta, .cluster, .gpu, .sys };
 
-Current only support the form likes "st.scope.space.type" now.
+Current only support the form likes "atom.scope.space.type" now.
 
 */
 
