@@ -645,9 +645,9 @@ public:
   }
 
   unsigned int current_device_id() const {
-    if (get_dev_stack().empty())
+    if (_dev_stack.empty())
       return DEFAULT_DEVICE_ID;
-    return get_dev_stack().top();
+    return _dev_stack.top();
   }
 
   /// Select device with a device ID.
@@ -655,11 +655,11 @@ public:
   /// be obtained through get_device_id(const sycl::device).
   void select_device(unsigned int id) {
     /// Replace the top of the stack with the given device id
-    if (get_dev_stack().empty()) {
+    if (_dev_stack.empty()) {
       push_device(id);
     } else {
       check_id(id);
-      get_dev_stack().top() = id;
+      _dev_stack.top() = id;
     }
   }
 
@@ -735,16 +735,16 @@ public:
   /// Update the device stack for the current thread id
   void push_device(unsigned int id) {
     check_id(id);
-    get_dev_stack().push(id);
+    _dev_stack.push(id);
   }
 
   /// Remove the device from top of the stack if it exist
   unsigned int pop_device() {
-    if (get_dev_stack().empty())
+    if (_dev_stack.empty())
       throw std::runtime_error("can't pop an empty dpct device stack");
 
-    auto id = get_dev_stack().top();
-    get_dev_stack().pop();
+    auto id = _dev_stack.top();
+    _dev_stack.pop();
     return id;
   }
 
@@ -786,7 +786,7 @@ private:
   void check_id(unsigned int &id) const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (id >= _devs.size()) {
-      if (!_stack_addr.count(&get_dev_stack())) {
+      if (!_stack_addr.count(&_dev_stack)) {
         id = DEFAULT_DEVICE_ID;
         return;
       }
@@ -795,25 +795,20 @@ private:
   }
 
   class stack_wrapper : public std::stack<unsigned int> {
-    std::recursive_mutex &m_mutex_ref;
-
   public:
-    stack_wrapper(std::recursive_mutex &mutex) : m_mutex_ref(mutex) {
-      std::lock_guard<std::recursive_mutex> lock(m_mutex_ref);
+    stack_wrapper() {
+      std::lock_guard<std::recursive_mutex> lock(instance().m_mutex);
       _stack_addr.insert(this);
     }
     ~stack_wrapper() {
-      std::lock_guard<std::recursive_mutex> lock(m_mutex_ref);
+      std::lock_guard<std::recursive_mutex> lock(instance().m_mutex);
       _stack_addr.erase(this);
     }
   };
 
   std::vector<std::shared_ptr<device_ext>> _devs;
   /// stack of devices resulting from CUDA context change;
-  static stack_wrapper &get_dev_stack() {
-    static thread_local stack_wrapper _dev_stack(instance().m_mutex);
-    return _dev_stack;
-  }
+  inline static thread_local stack_wrapper _dev_stack;
   /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
   /// _dev_stack, which means the default device should be used for the current
   /// thread.
