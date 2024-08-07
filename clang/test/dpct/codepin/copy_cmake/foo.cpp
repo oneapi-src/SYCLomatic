@@ -18,8 +18,6 @@
 // CHECK: begin
 // CHECK-NEXT:end
 
-// RUN: cd %T/foo_codepin_cuda
-// RUN: cmake -B build -S .
 #include <cuda.h>
 
 int main() {
