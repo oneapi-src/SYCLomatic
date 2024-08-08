@@ -970,8 +970,8 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
       internal::make_wrapped_policy<internal::partition_call1>(policy);
   auto _copy_call1 =
       internal::make_wrapped_policy<internal::copy_call1>(policy);
-  auto _copy_call2 =
-      internal::make_wrapped_policy<internal::copy_call2>(policy);
+  auto _copy_call2 = internal::make_wrapped_policy<internal::copy_call2>(
+      std::forward<Policy>(policy));
 
   auto _n = std::distance(first, last);
   internal::__buffer<typename std::iterator_traits<Iter1>::value_type> _tmp(_n);
@@ -980,9 +980,9 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   auto _tmp_last = _tmp_first + _n;
   auto _tmp_last_rev = std::reverse_iterator(_tmp_last);
 
-  auto _end_pair = stable_partition_copy(std::move(_partition_call1), first,
-                                         last, mask, _tmp_first, _tmp_last_rev,
-                                         p);
+  auto _end_pair =
+      stable_partition_copy(std::move(_partition_call1), first, last, mask,
+                            _tmp_first, _tmp_last_rev, p);
   auto _first_n = std::distance(_tmp_first, std::get<0>(_end_pair));
   std::copy(std::move(_copy_call1), _tmp_first, std::get<0>(_end_pair), first);
   std::copy(std::move(_copy_call2), _tmp_last_rev, std::get<1>(_end_pair),
@@ -1028,11 +1028,10 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
           std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
                        std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  typedef typename std::decay<Policy>::type policy_type;
   auto _partition_call1 =
       internal::make_wrapped_policy<internal::partition_call1>(policy);
-  auto _copy_call1 =
-      internal::make_wrapped_policy<internal::copy_call1>(policy);
+  auto _copy_call1 = internal::make_wrapped_policy<internal::copy_call1>(
+      std::forward<Policy>(policy));
 
   auto _n = std::distance(first, last);
   internal::__buffer<typename std::iterator_traits<Iter1>::value_type> _tmp(_n);
@@ -1041,8 +1040,9 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   auto _tmp_last = _tmp_first + _n;
   auto _tmp_last_rev = std::reverse_iterator(_tmp_last);
 
-  auto _end_pair = stable_partition_copy(std::move(_partition_call1), first, last, mask, _tmp_first,
-                                         _tmp_last_rev, p);
+  auto _end_pair =
+      stable_partition_copy(std::move(_partition_call1), first, last, mask,
+                            _tmp_first, _tmp_last_rev, p);
   auto _first_n = std::distance(_tmp_first, std::get<0>(_end_pair));
   std::copy(std::move(_copy_call1), _tmp_first, _tmp_last, first);
 
