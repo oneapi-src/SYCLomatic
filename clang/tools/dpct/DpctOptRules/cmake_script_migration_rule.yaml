@@ -1253,11 +1253,11 @@
       In: nvrtc
       Out: ""
 
-- Rule: rule_nvidia_ml_without_cuda_prefix
+- Rule: rule_ml_without_cuda_prefix
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: nvidia_ml_without_cuda_prefix
+  CmakeSyntax: ml_without_cuda_prefix
   In: target_link_libraries${empty}(${target} ${libs})
   Out: target_link_libraries(${target} ${libs})
   Subrules:
