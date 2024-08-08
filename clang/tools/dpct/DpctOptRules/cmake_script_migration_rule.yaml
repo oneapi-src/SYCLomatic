@@ -1177,10 +1177,10 @@
   Priority: Fallback
   MatchMode: Partial
   CmakeSyntax: cufft_without_cuda_prefix
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    value:
+    libs:
       MatchMode: Full
       In: cufft
       Out: |
@@ -1191,10 +1191,10 @@
   Priority: Fallback
   MatchMode: Partial
   CmakeSyntax: cusparse_without_cuda_prefix
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    value:
+    libs:
       MatchMode: Full
       In: cusparse
       Out: |
@@ -1205,10 +1205,10 @@
   Priority: Fallback
   MatchMode: Partial
   CmakeSyntax: curand_without_cuda_prefix
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    value:
+    libs:
       MatchMode: Full
       In: curand
       Out: |
@@ -1219,10 +1219,10 @@
   Priority: Fallback
   MatchMode: Partial
   CmakeSyntax: cudadevrt_without_cuda_prefix
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    value:
+    libs:
       MatchMode: Full
       In: cudadevrt
       Out: ""
@@ -1232,10 +1232,10 @@
   Priority: Fallback
   MatchMode: Partial
   CmakeSyntax: nccl_without_cuda_prefix
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    value:
+    libs:
       MatchMode: Full
       In: nccl
       Out: -lccl
@@ -1245,10 +1245,10 @@
   Priority: Fallback
   MatchMode: Partial
   CmakeSyntax: nvrtc_without_cuda_prefix
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    value:
+    libs:
       MatchMode: Full
       In: nvrtc
       Out: ""
@@ -1258,10 +1258,10 @@
   Priority: Fallback
   MatchMode: Partial
   CmakeSyntax: nvidia_ml_without_cuda_prefix
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    value:
+    libs:
       MatchMode: Full
       In: nvidia-ml
       Out: ""
