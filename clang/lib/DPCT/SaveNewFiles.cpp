@@ -232,9 +232,12 @@ static bool checkOverwriteAndWarn(StringRef OutFilePath, StringRef InFilePath) {
   }
   return Overwrites;
 }
+
+// Search all the files through Pattern, and copy the files to the OutRoot
+// directory.
 void copyFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
                        clang::tooling::UnifiedPath &OutRoot,
-                       const std::string &FilePattern) {
+                       const std::string &Pattern) {
   std::error_code EC;
   for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC), End;
        Iter != End; Iter.increment(EC)) {
@@ -248,7 +251,7 @@ void copyFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
       std::string FileName = llvm::sys::path::filename(Iter->path()).str();
       std::transform(FileName.begin(), FileName.end(), FileName.begin(),
                      ::toUpper);
-      if (FileName.find(FilePattern) != std::string::npos) {
+      if (FileName.find(Pattern) != std::string::npos) {
         tooling::UnifiedPath FilePath = Iter->path();
         std::string CanFilePath = FilePath.getCanonicalPath().str();
 
@@ -257,6 +260,12 @@ void copyFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
         }
         rewriteDir(CanFilePath, InRoot, OutRoot);
         createDirectories(path::parent_path(CanFilePath));
+        if (llvm::sys::fs::exists(CanFilePath)) {
+          std::string ErrMsg = "[Warning] The " + CanFilePath +
+                               " is exists. Skip copy the file.\n";
+          PrintMsg(ErrMsg);
+          continue;
+        }
         fs::copy_file(Iter->path(), CanFilePath);
       }
     }
