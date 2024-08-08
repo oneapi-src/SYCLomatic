@@ -1314,36 +1314,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDA_R_8F_E5M2",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "library_data_t::real_f8_e5m2")},
-      // cublasComputeType_t
-      {"CUBLAS_COMPUTE_16F", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::f16")},
-      {"CUBLAS_COMPUTE_16F_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f16_standard")},
-      {"CUBLAS_COMPUTE_32F", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::f32")},
-      {"CUBLAS_COMPUTE_32F_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32_standard")},
-      {"CUBLAS_COMPUTE_32F_FAST_16F",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32")},
-      {"CUBLAS_COMPUTE_32F_FAST_16BF",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32_fast_bf16")},
-      {"CUBLAS_COMPUTE_32F_FAST_TF32",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32_fast_tf32")},
-      {"CUBLAS_COMPUTE_64F", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::f64")},
-      {"CUBLAS_COMPUTE_64F_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f64_standard")},
-      {"CUBLAS_COMPUTE_32I", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::i32")},
-      {"CUBLAS_COMPUTE_32I_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::i32_standard")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() +
                                       "memory_scope::system")},
@@ -1602,6 +1572,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSB",
        getDpctNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_b"},
+      // cublasComputeType_t
+      {"CUBLAS_COMPUTE_16F", getDpctNamespace() + "compute_type::f16"},
+      {"CUBLAS_COMPUTE_16F_PEDANTIC",
+       getDpctNamespace() + "compute_type::f16_standard"},
+      {"CUBLAS_COMPUTE_32F", getDpctNamespace() + "compute_type::f32"},
+      {"CUBLAS_COMPUTE_32F_PEDANTIC",
+       getDpctNamespace() + "compute_type::f32_standard"},
+      {"CUBLAS_COMPUTE_32F_FAST_16F", getDpctNamespace() + "compute_type::f32"},
+      {"CUBLAS_COMPUTE_32F_FAST_16BF",
+       getDpctNamespace() + "compute_type::f32_fast_bf16"},
+      {"CUBLAS_COMPUTE_32F_FAST_TF32",
+       getDpctNamespace() + "compute_type::f32_fast_tf32"},
+      {"CUBLAS_COMPUTE_64F", getDpctNamespace() + "compute_type::f64"},
+      {"CUBLAS_COMPUTE_64F_PEDANTIC",
+       getDpctNamespace() + "compute_type::f64_standard"},
+      {"CUBLAS_COMPUTE_32I", getDpctNamespace() + "compute_type::i32"},
+      {"CUBLAS_COMPUTE_32I_PEDANTIC",
+       getDpctNamespace() + "compute_type::i32_standard"},
   };
 
   ClassFieldMap = {};
@@ -1877,6 +1865,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
+      {"cublasSgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
+      {"cublasDgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
+      {"cublasCgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
+      {"cublasZgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
       {"cublasGetStatusString", ""},
       {"cublasCgemm3m", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasZgemm3m", "oneapi::mkl::blas::column_major::gemm"},
