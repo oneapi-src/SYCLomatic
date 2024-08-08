@@ -1,6 +1,5 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct -out-root %T/vector_add %s --cuda-include-path="%cuda-path/include" --enable-codepin --gen-build-script -- -std=c++14  -x cuda --cuda-host-only
-// RUN: %if build_lit %{/usr/bin/make -f %T/vector_add_codepin_sycl/Makefile.dpct %}
 // RUN: echo "begin" > %T/diff_sycl_makefile.txt
 // RUN: diff --strip-trailing-cr %S/expected_makefile %T/vector_add_codepin_sycl/Makefile.dpct >> %T/diff_sycl_makefile.txt
 // RUN: echo "end" >> %T/diff_sycl_makefile.txt
