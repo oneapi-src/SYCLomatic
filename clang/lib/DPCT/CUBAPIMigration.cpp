@@ -192,8 +192,8 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
                          "DeviceCountUncached", "DeviceCountCachedValue",
                          "PtxVersion", "PtxVersionUncached", "SmVersion",
-                         "SmVersionUncached", "RowMajorTid", "StoreDirectBlocked",
-                         "StoreDirectStriped"),
+                         "SmVersionUncached", "RowMajorTid",
+                         "StoreDirectBlocked", "StoreDirectStriped"),
               hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
@@ -1509,7 +1509,7 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
                                       MapNames::getClNamespace() + "sub_group",
                                       SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
-             TypeName.find("class cub::BlockReduce") == 0 ) {
+             TypeName.find("class cub::BlockReduce") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
     if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
                            DeviceFuncDecl->hasAttr<CUDAGlobalAttr>())) {
