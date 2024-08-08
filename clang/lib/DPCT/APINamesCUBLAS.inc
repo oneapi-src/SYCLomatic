@@ -632,6 +632,20 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
 
+#define GELS_BATCHED(NAME)                                                     \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME,                                                               \
+          CALL(MapNames::getDpctNamespace() + "blas::gels_batch_wrapper",      \
+               ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), \
+               ARG(8), ARG(9), ARG(10), ARG(11)))))
+GELS_BATCHED(cublasSgelsBatched)
+GELS_BATCHED(cublasDgelsBatched)
+GELS_BATCHED(cublasCgelsBatched)
+GELS_BATCHED(cublasZgelsBatched)
+#undef GELS_BATCHED
+
 WARNING_FACTORY_ENTRY(
     "cublasGetStatusString",
     TOSTRING_FACTORY_ENTRY("cublasGetStatusString",

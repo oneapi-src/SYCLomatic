@@ -206,61 +206,39 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   matrix_info->n_info = n;
   matrix_info->lda_info = lda;
   matrix_info->group_size_info = group_size;
-  std::int64_t scratchpad_size = 0;
-  sycl::event e;
-  Ty *scratchpad = nullptr;
-  try {
-    scratchpad_size = oneapi::mkl::lapack::potrf_batch_scratchpad_size<Ty>(
-        queue, &(matrix_info->uplo_info), &(matrix_info->n_info),
-        &(matrix_info->lda_info), 1, &(matrix_info->group_size_info));
-    scratchpad = sycl::malloc_device<Ty>(scratchpad_size, queue);
-    e = oneapi::mkl::lapack::potrf_batch(
-        queue, &(matrix_info->uplo_info), &(matrix_info->n_info), (Ty **)a,
-        &(matrix_info->lda_info), 1, &(matrix_info->group_size_info),
-        scratchpad, scratchpad_size);
-  } catch (oneapi::mkl::lapack::batch_error const &be) {
-    std::cerr << "Unexpected exception caught during call to LAPACK API: "
-                 "potrf_batch_scratchpad_size/potrf_batch"
-              << std::endl
-              << "reason: " << be.what() << std::endl
-              << "number: " << be.info() << std::endl;
-    int i = 0;
-    auto &ids = be.ids();
-    std::vector<int> info_vec(group_size);
-    for (auto const &e : be.exceptions()) {
-      try {
-        std::rethrow_exception(e);
-      } catch (oneapi::mkl::lapack::exception &e) {
-        std::cerr << "Exception " << ids[i] << std::endl
-                  << "reason: " << e.what() << std::endl
-                  << "info: " << e.info() << std::endl;
-        info_vec[i] = e.info();
-        i++;
-      }
-    }
-    queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
-    std::free(matrix_info);
-    if (scratchpad)
-      sycl::free(scratchpad, queue);
-    return 1;
-  } catch (sycl::exception const &e) {
-    std::cerr << "Caught synchronous SYCL exception:" << std::endl
-              << "reason: " << e.what() << std::endl;
-    queue.memset(info, 0, group_size * sizeof(int)).wait();
-    std::free(matrix_info);
-    if (scratchpad)
-      sycl::free(scratchpad, queue);
-    return 1;
-  }
+  std::int64_t scratchpad_size =
+      oneapi::mkl::lapack::potrf_batch_scratchpad_size<Ty>(
+          queue, &(matrix_info->uplo_info), &(matrix_info->n_info),
+          &(matrix_info->lda_info), 1, &(matrix_info->group_size_info));
+  Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, queue);
+  int has_execption = 0;
+
+  static const std::vector<sycl::event> empty_events{};
+  static const std::string api_name = "oneapi::mkl::lapack::potrf_batch";
+  if (info)
+    queue.memset(info, 0, group_size * sizeof(int));
+  sycl::event e = ::dpct::detail::catch_batch_error_f<sycl::event>(
+      &has_execption, api_name, queue, nullptr, info,
+      matrix_info->group_size_info, oneapi::mkl::lapack::potrf_batch, queue,
+      &(matrix_info->uplo_info), &(matrix_info->n_info), (Ty **)a,
+      &(matrix_info->lda_info), (std::int64_t)1,
+      &(matrix_info->group_size_info), (Ty *)scratchpad,
+      (std::int64_t)scratchpad_size, empty_events);
+
   queue.submit([&](sycl::handler &cgh) {
-    cgh.depends_on(e);
-    cgh.host_task([=] {
+    cgh.host_task([=]() mutable {
+      ::dpct::detail::catch_batch_error(
+          nullptr, api_name, queue, nullptr, info, matrix_info->group_size_info,
+          [](sycl::event _e) {
+            _e.wait_and_throw();
+            return 0;
+          },
+          e);
       std::free(matrix_info);
       sycl::free(scratchpad, queue);
     });
   });
-  queue.memset(info, 0, group_size * sizeof(int));
-  return 0;
+  return has_execption;
 #endif
 }
 /// Solves a batch of systems of linear equations with a Cholesky-factored
@@ -303,63 +281,42 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   matrix_info->lda_info = lda;
   matrix_info->ldb_info = ldb;
   matrix_info->group_size_info = group_size;
-  std::int64_t scratchpad_size = 0;
-  sycl::event e;
-  Ty *scratchpad = nullptr;
-  try {
-    scratchpad_size = oneapi::mkl::lapack::potrs_batch_scratchpad_size<Ty>(
-        queue, &(matrix_info->uplo_info), &(matrix_info->n_info),
-        &(matrix_info->nrhs_info), &(matrix_info->lda_info),
-        &(matrix_info->ldb_info), 1, &(matrix_info->group_size_info));
-    scratchpad = sycl::malloc_device<Ty>(scratchpad_size, queue);
-    e = oneapi::mkl::lapack::potrs_batch(
-        queue, &(matrix_info->uplo_info), &(matrix_info->n_info),
-        &(matrix_info->nrhs_info), (Ty **)a, &(matrix_info->lda_info), (Ty **)b,
-        &(matrix_info->ldb_info), 1, &(matrix_info->group_size_info),
-        scratchpad, scratchpad_size);
-  } catch (oneapi::mkl::lapack::batch_error const &be) {
-    std::cerr << "Unexpected exception caught during call to LAPACK API: "
-                 "potrs_batch_scratchpad_size/potrs_batch"
-              << std::endl
-              << "reason: " << be.what() << std::endl
-              << "number: " << be.info() << std::endl;
-    int i = 0;
-    auto &ids = be.ids();
-    std::vector<int> info_vec(group_size);
-    for (auto const &e : be.exceptions()) {
-      try {
-        std::rethrow_exception(e);
-      } catch (oneapi::mkl::lapack::exception &e) {
-        std::cerr << "Exception " << ids[i] << std::endl
-                  << "reason: " << e.what() << std::endl
-                  << "info: " << e.info() << std::endl;
-        info_vec[i] = e.info();
-        i++;
-      }
-    }
-    queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
-    std::free(matrix_info);
-    if (scratchpad)
-      sycl::free(scratchpad, queue);
-    return 1;
-  } catch (sycl::exception const &e) {
-    std::cerr << "Caught synchronous SYCL exception:" << std::endl
-              << "reason: " << e.what() << std::endl;
-    queue.memset(info, 0, group_size * sizeof(int)).wait();
-    std::free(matrix_info);
-    if (scratchpad)
-      sycl::free(scratchpad, queue);
-    return 1;
-  }
+  std::int64_t scratchpad_size =
+      oneapi::mkl::lapack::potrs_batch_scratchpad_size<Ty>(
+          queue, &(matrix_info->uplo_info), &(matrix_info->n_info),
+          &(matrix_info->nrhs_info), &(matrix_info->lda_info),
+          &(matrix_info->ldb_info), 1, &(matrix_info->group_size_info));
+  Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, queue);
+  int has_execption = 0;
+
+  if (info)
+    queue.memset(info, 0, group_size * sizeof(int));
+
+  static const std::vector<sycl::event> empty_events{};
+  static const std::string api_name = "oneapi::mkl::lapack::potrs_batch";
+  sycl::event e = ::dpct::detail::catch_batch_error_f<sycl::event>(
+      &has_execption, api_name, queue, nullptr, info,
+      matrix_info->group_size_info, oneapi::mkl::lapack::potrs_batch, queue,
+      &(matrix_info->uplo_info), &(matrix_info->n_info),
+      &(matrix_info->nrhs_info), (Ty **)a, &(matrix_info->lda_info), (Ty **)b,
+      &(matrix_info->ldb_info), (std::int64_t)1,
+      &(matrix_info->group_size_info), (Ty *)scratchpad,
+      (std::int64_t)scratchpad_size, empty_events);
+
   queue.submit([&](sycl::handler &cgh) {
-    cgh.depends_on(e);
-    cgh.host_task([=] {
+    cgh.host_task([=]() mutable {
+      ::dpct::detail::catch_batch_error(
+          nullptr, api_name, queue, nullptr, info, matrix_info->group_size_info,
+          [](sycl::event _e) {
+            _e.wait_and_throw();
+            return 0;
+          },
+          e);
       std::free(matrix_info);
       sycl::free(scratchpad, queue);
     });
   });
-  queue.memset(info, 0, group_size * sizeof(int));
-  return 0;
+  return has_execption;
 #endif
 }
 
