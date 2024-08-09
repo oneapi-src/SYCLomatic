@@ -21,6 +21,9 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
   auto Iter = CanonicalPathCache.find(_Path);
   if (Iter != CanonicalPathCache.end()) {
     _CanonicalPath = Iter->second;
+#if defined(_WIN32)
+    _CanonicalPathWithLowerCase = llvm::StringRef(_CanonicalPath).lower();
+#endif
     return;
   }
 
@@ -72,13 +75,17 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
     llvm::sys::fs::real_path(Path, RealPath, true);
     llvm::sys::path::append(RealPath, llvm::sys::path::Style::native, Suffix);
   }
+  _CanonicalPath = RealPath.str();
 #if defined(_WIN32)
-  _CanonicalPath = RealPath.str().lower();
-  if (_CanonicalPath.size() >= 3 && _CanonicalPath.substr(0, 3) == "unc") {
+  if (_CanonicalPath.size() >= 3 &&
+      llvm::StringRef(_CanonicalPath.substr(0, 3)).lower() == "unc") {
     _CanonicalPath = "\\" + _CanonicalPath.substr(3);
   }
-#else
-  _CanonicalPath = RealPath.str();
+  _CanonicalPathWithLowerCase = RealPath.str().lower();
+  if (_CanonicalPathWithLowerCase.size() >= 3 &&
+      _CanonicalPathWithLowerCase.substr(0, 3) == "unc") {
+    _CanonicalPathWithLowerCase = "\\" + _CanonicalPathWithLowerCase.substr(3);
+  }
 #endif
   CanonicalPathCache.insert(std::pair(_Path, _CanonicalPath));
 }
@@ -108,21 +115,40 @@ void UnifiedPath::makeAbsolute(const std::string &CWD) {
 std::unordered_map<std::string, std::string> UnifiedPath::CanonicalPathCache;
 bool operator==(const clang::tooling::UnifiedPath &LHS,
                 const clang::tooling::UnifiedPath &RHS) {
+#if defined(_WIN32)
+  return LHS.getCanonicalPathWithLowerCase() ==
+         RHS.getCanonicalPathWithLowerCase();
+#else
   return LHS.getCanonicalPath() == RHS.getCanonicalPath();
+#endif
 }
 bool operator!=(const clang::tooling::UnifiedPath &LHS,
                 const clang::tooling::UnifiedPath &RHS) {
+#if defined(_WIN32)
+  return LHS.getCanonicalPathWithLowerCase() !=
+         RHS.getCanonicalPathWithLowerCase();
+#else
   return LHS.getCanonicalPath() != RHS.getCanonicalPath();
+#endif
 }
 bool operator<(const clang::tooling::UnifiedPath &LHS,
                const clang::tooling::UnifiedPath &RHS) {
+#if defined(_WIN32)
+  return LHS.getCanonicalPathWithLowerCase() <
+         RHS.getCanonicalPathWithLowerCase();
+#else
   return LHS.getCanonicalPath() < RHS.getCanonicalPath();
+#endif
 }
 } // namespace tooling
 } // namespace clang
 namespace llvm {
 llvm::raw_ostream &operator<<(llvm::raw_ostream &OS,
                               const clang::tooling::UnifiedPath &RHS) {
+#if defined(_WIN32)
+  return OS << RHS.getCanonicalPathWithLowerCase();
+#else
   return OS << RHS.getCanonicalPath();
+#endif
 }
 } // namespace llvm
