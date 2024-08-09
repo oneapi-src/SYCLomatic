@@ -1,0 +1,19 @@
+set_source_files_properties(${ARG_GPU_CPP_SOURCE_FILES} PROPERTIES )
+
+set_source_files_properties(${ARG_GPU_CPP_SOURCE_FILES} PROPERTIES
+        
+        LANGUAGE CXX
+        HEADER_FILE_ONLY FALSE
+)
+
+set_source_files_properties(${ARG_GPU_CPP_SOURCE_FILES} PROPERTIES
+        LANGUAGE CXX
+        
+        HEADER_FILE_ONLY FALSE
+)
+
+set_source_files_properties(${ARG_GPU_CPP_SOURCE_FILES} PROPERTIES
+        LANGUAGE CXX
+        HEADER_FILE_ONLY FALSE
+        
+)
