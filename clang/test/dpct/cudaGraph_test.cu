@@ -5,7 +5,7 @@
 // RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraph_test/cudaGraph_test.dp.cpp -o %T/cudaGraph_test/cudaGraph_test.dp.o %}
 
 #include <cuda.h>
-
+`
 int main() {
   // CHECK: dpct::experimental::command_graph_ptr graph;
   // CHECK-NEXT: dpct::experimental::command_graph_ptr *graph2;

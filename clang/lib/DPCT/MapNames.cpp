@@ -369,6 +369,11 @@ void MapNames::setExplicitNamespaceMap() {
            DpctGlobalInfo::useExtGraph()
                ? getClNamespace() + "ext::oneapi::experimental::queue_state"
                : "cudaStreamCaptureStatus")},
+      {"cudaKernelNodeParams",
+       std::make_shared<TypeNameRule>(DpctGlobalInfo::useExtGraph()
+                                          ? getDpctNamespace() +
+                                                "experimental::node_params"
+                                          : "cudaKernelNodeParams")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
       {"cudaExtent",
