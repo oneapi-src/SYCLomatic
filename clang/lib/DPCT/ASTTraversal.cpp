@@ -2844,6 +2844,8 @@ namespace ast_matchers {
 AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
   if (!DpctGlobalInfo::isInAnalysisScope(Node.getBeginLoc()))
     return false;
+  if (Node.isTemplateInstantiation())
+    return false; // Template operator function need not add namespace.
 
   switch (Node.getOverloadedOperator()) {
   default: {
