@@ -133,5 +133,61 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
   }
 }
 
+/// Adding relevant helper functions for node retrieval and printing
+/// To-do: refine
+inline std::vector<sycl::ext::oneapi::experimental::node> get_nodes
+                     (const dpct::experimental::command_graph_ptr graph,
+                      const dpct::experimental::node_ptr *nodes,
+                      std::size_t numberOfNodes){
+    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
+    nodeVec = graph->get_nodes();
+    if (nodeVec.size() == numberOfNodes){
+        return nodeVec;
+    }
+    return {};
+ }
+
+inline std::vector<sycl::ext::oneapi::experimental::node> get_root_nodes
+                     (const dpct::experimental::command_graph_ptr graph,
+                      const dpct::experimental::node_ptr *rootNodes,
+                      std::size_t numberOfRootNodes){
+    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
+    nodeVec = graph->get_root_nodes();
+    if (nodeVec.size() == numberOfRootNodes){
+        return nodeVec;
+    }
+    return {};
+ }
+
+inline std::vector<sycl::ext::oneapi::experimental::node> get_successors
+                     (const dpct::experimental::command_graph_ptr graph,
+                      const dpct::experimental::node_ptr *successorNodes,
+                      std::size_t numberOfSuccessorNodes){
+    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
+    nodeVec = graph->get_successors();
+    if (nodeVec.size() == numberOfSuccessorNodes){
+        return nodeVec;
+    }
+    return {};
+ }
+
+inline std::vector<sycl::ext::oneapi::experimental::node> get_predecessors
+                     (const dpct::experimental::command_graph_ptr graph,
+                      const dpct::experimental::node_ptr *predecessorNodes,
+                      std::size_t numberOfPredecessorNodes){
+    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
+    nodeVec = graph->get_predecessors();
+    if (nodeVec.size() == numberOfPredecessorNodes){
+        return nodeVec;
+    }
+    return {};
+ }
+
+static inline void print_graph(const dpct::experimental::command_graph_ptr graph,
+                               std::string path,
+                               bool verbose){
+    graph->print_graph(path, verbose);
+ }
+
 } // namespace experimental
 } // namespace dpct
