@@ -537,7 +537,7 @@ enum class store_algorithm {
 };
 
 /// Stores a blocked arrangement of work items linear segment of items.
-template <typename InputT, size_t ITEMS_PER_WORK_ITEM, typename OutputIteratorT,
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
           typename Item>
 __dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -554,7 +554,7 @@ __dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
 }
 
 /// Stores a striped arrangement of work items linear segment of items.
-template <typename InputT, size_t ITEMS_PER_WORK_ITEM, typename OutputIteratorT,
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
           typename Item>
 __dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
                                    InputT (&items)[ITEMS_PER_WORK_ITEM]) {
@@ -575,7 +575,7 @@ __dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
 // Created as free function until exchange mechanism is
 // implemented.
 // To-do: inline this function with BLOCK_STORE_WARP_TRANSPOSE mechanism
-template <typename InputT, size_t ITEMS_PER_WORK_ITEM, typename OutputIteratorT,
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
           typename Item>
 __dpct_inline__ void
 store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
