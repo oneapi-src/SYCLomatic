@@ -1107,7 +1107,7 @@ public:
   void buildReplacements();
   void processCudaArchMacro();
   void generateHostCode(tooling::Replacements &ProcessedReplList,
-                        HostDeviceFuncLocInfo Info, unsigned ID);
+                        HostDeviceFuncLocInfo &Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
@@ -1461,7 +1461,7 @@ private:
     return N->getBeginLoc();
   }
   static SourceLocation getLocation(const VarDecl *VD) {
-    return VD->getLocation();
+    return getDefinitionRange(VD->getLocation(), VD->getLocation()).getBegin();
   }
   static SourceLocation getLocation(const FunctionDecl *FD) {
     return FD->getBeginLoc();
