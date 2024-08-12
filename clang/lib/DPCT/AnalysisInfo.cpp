@@ -1861,7 +1861,7 @@ void DpctGlobalInfo::processCudaArchMacro() {
 }
 
 void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
-                                      HostDeviceFuncLocInfo Info, unsigned ID) {
+                                      HostDeviceFuncLocInfo &Info, unsigned ID) {
   std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
 
   unsigned int Pos, Len;
