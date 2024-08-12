@@ -330,10 +330,12 @@ int main() {
   cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
-  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::standard);
   cudaMalloc3DArray(&pArr, &desc, e);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::array);
   cudaMalloc3DArray(&pArr, &desc, e, cudaArrayLayered);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::array);
+  cudaMalloc3DArray(&pArr, &desc, e, 1);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, w, h);
   cudaMallocArray(&pArr, &desc, w, h);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, 1, 0.1);
