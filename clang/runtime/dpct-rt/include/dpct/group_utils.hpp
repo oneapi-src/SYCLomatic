@@ -616,11 +616,9 @@ public:
                              InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
     if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_DIRECT) {
-      store_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr,
-                                         (&items)[ITEMS_PER_WORK_ITEM]);
+      store_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
     } else if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_STRIPED) {
-      store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr,
-                                         (&items)[ITEMS_PER_WORK_ITEM]);
+      store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
     }
   }
 
