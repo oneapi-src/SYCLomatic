@@ -12,12 +12,16 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 
+#include "ToolChains/Cuda.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/TargetParser/Host.h"
 
 #include <fstream>
 #include <string>
@@ -209,6 +213,27 @@ static void getCompileInfo(
         IsSystemInclude = false;
         clang::tooling::UnifiedPath IncPath = Option;
         rewriteCanonicalDir(IncPath, InRoot, OutRoot);
+
+        unsigned MissingArgIndex, MissingArgCount;
+        MissingArgIndex = MissingArgCount = 0;
+        auto &Opts = clang::driver::getDriverOptTable();
+        llvm::opt::InputArgList ParsedArgs =
+            Opts.ParseArgs(nullptr, MissingArgIndex, MissingArgCount);
+
+        // Create minimalist CudaInstallationDetector to call the member
+        // function validateCudaHeaderDirectory()
+        DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
+        clang::driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(),
+                                     E);
+        clang::driver::CudaInstallationDetector CudaIncludeDetector(
+            Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
+        bool Ret = CudaIncludeDetector.validateCudaHeaderDirectory(
+            IncPath.getCanonicalPath().str(), Driver);
+        if (Ret) {
+          // Skip CUDA SDK header path specified by option "-isystem" in the
+          // auto-generated Makefile.
+          continue;
+        }
 
         NewOptions += "-isystem ";
         SmallString<512> OutDirectory(IncPath.getCanonicalPath());
