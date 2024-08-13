@@ -17,7 +17,7 @@ int main() {
   cudaMemcpyAsync(a,b, 1, cudaMemcpyHostToDevice, s1);
 //CHECK:  q_ct1.submit(
 //CHECK:      [&](sycl::handler &cgh) {
-//CHECK:        dpct::get_current_device().synchronize_with_none_default_queue();
+//CHECK:        dpct::get_current_device().none_default_queues_wait();
 //CHECK:        cgh.parallel_for(
 //CHECK:          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK:          [=](sycl::nd_item<3> item_ct1) {

@@ -874,7 +874,8 @@ public:
   static bool isCodePinEnabled() { return EnableCodePin; }
   static void setCodePinEnabled(bool Enable = false) { EnableCodePin = Enable; }
   static bool isDefaultQueueSynchronizationEnabled() {
-    return EnableDefaultQueueSynchronization;
+    return EnableDefaultQueueSynchronization &&
+           (getUsmLevel() != UsmLevel::UL_None);
   }
   static void setDefaultQueueSynchronizationEnabled(bool Enable = false) {
     EnableDefaultQueueSynchronization = Enable;
@@ -2864,8 +2865,10 @@ private:
 
     KernelPrinter &print(KernelPrinter &Printer);
     bool empty() const noexcept;
+    void setImplicitSyncFlag(bool Value) { ImplicitSyncFlag = Value; };
 
   private:
+    bool ImplicitSyncFlag = false;
     KernelPrinter &printList(KernelPrinter &Printer, const StmtList &List,
                              StringRef Comments = "");
   };

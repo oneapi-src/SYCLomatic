@@ -5431,9 +5431,11 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*" << getEvent() << " = ";
   }
   printStreamBase(Printer);
-  if (SubmitStmts.empty() &&
-      !(DpctGlobalInfo::isDefaultQueueSynchronizationEnabled() &&
-        isDefaultStream())) {
+  if (DpctGlobalInfo::isDefaultQueueSynchronizationEnabled() &&
+      isDefaultStream()) {
+    SubmitStmts.setImplicitSyncFlag(true);
+  }
+  if (SubmitStmts.empty()) {
     printParallelFor(Printer, false);
   } else {
     (Printer << "submit(").newLine();
@@ -5446,13 +5448,6 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
   {
     auto Body = Printer.block();
     SubmitStmts.print(Printer);
-    if (DpctGlobalInfo::isDefaultQueueSynchronizationEnabled() &&
-        isDefaultStream()) {
-      Printer.line(
-          MapNames::getDpctNamespace() +
-          "get_current_device().synchronize_with_none_default_queue();");
-      Printer.line("");
-    }
     printParallelFor(Printer, true);
   }
   if (getVarMap().hasSync())
@@ -6183,10 +6178,14 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, NdRangeList,
             "ranges to define ND iteration space for the kernel");
   printList(Printer, CommandGroupList, "helper variables defined");
+  if (ImplicitSyncFlag) {
+    Printer.line(MapNames::getDpctNamespace() +
+                 "get_current_device().none_default_queues_wait();");
+  }
   return Printer;
 }
 bool KernelCallExpr::SubmitStmtsList::empty() const noexcept {
-  return CommandGroupList.empty() && NdRangeList.empty() &&
+  return !ImplicitSyncFlag && CommandGroupList.empty() && NdRangeList.empty() &&
          AccessorList.empty() && PtrList.empty() && MemoryList.empty() &&
          RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
          StreamList.empty() && SyncList.empty();

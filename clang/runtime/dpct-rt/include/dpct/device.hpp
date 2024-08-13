@@ -531,16 +531,13 @@ public:
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
   }
-  void synchronize_with_none_default_queue() {
+  void none_default_queues_wait() {
     std::unique_lock<mutex_type> lock(m_mutex);
     std::vector<std::shared_ptr<sycl::queue>> current_queues(_queues);
     lock.unlock();
-    size_t queue_size = current_queues.size();
-    if (queue_size <= 1) {
-      return;
-    }
-    for (unsigned int i = 1; i < queue_size; i++) {
-      current_queues[i]->wait_and_throw();
+    auto Iter = current_queues.begin();
+    while (Iter != current_queues.end()) {
+      Iter->wait_and_throw();
     }
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
