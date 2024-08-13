@@ -35,7 +35,7 @@ int main(){
   // CHECK: ctx = dpct::push_device_for_curr_thread(device);
   cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);
 
-
+  unsigned int flags = CU_CTX_MAP_HOST;
   CUexecAffinityParam* paramsArray;
   // CHECK: ctx = dpct::select_device(device);
   cuCtxCreate_v3(&ctx, paramsArray, 1, flags, device);
