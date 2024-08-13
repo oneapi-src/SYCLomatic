@@ -12,6 +12,10 @@
 namespace clang {
 namespace tooling {
 void UnifiedPath::makeCanonical(const std::string &CWD) {
+  // To remove quotation marks from _Path
+  if (_Path.size() >= 2 && _Path.front() == '"' && _Path.back() == '"') {
+    _Path = _Path.substr(1, _Path.size() - 2);
+  }
   if (_Path.empty()) {
     return;
   }

@@ -20,3 +20,5 @@ target_link_libraries(nlm_cuda ${OpenCV_LIBS} stdc++ stdc++fs)
 target_link_libraries(cublas-cudnn-test ${MKL_LIB} ${DNN_LIB})
 
 target_link_libraries(tsne ${MKL_LIB} ${MKL_LIB} ${MKL_LIB})
+
+target_link_libraries(mdgx ${MKL_LIB} ${MKL_LIB} ${MKL_LIB}  -lccl  )

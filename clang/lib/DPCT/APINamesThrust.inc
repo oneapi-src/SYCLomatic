@@ -462,7 +462,7 @@ CALL_FACTORY_ENTRY("thrust::make_permutation_iterator",
 // thrust::make_transform_iterator
 CALL_FACTORY_ENTRY("thrust::make_transform_iterator",
                    CALL("oneapi::dpl::make_transform_iterator", ARG(0),
-                        ARG(1)))
+                        THRUST_FUNCTOR(1)))
 
 // thrust::norm
 CALL_FACTORY_ENTRY("thrust::norm", CALL("std::norm", ARG(0)))
