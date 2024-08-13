@@ -28,9 +28,10 @@ template <> struct std::hash<clang::SourceRange> {
 namespace clang {
 namespace dpct {
 enum AccessMode : std::uint32_t {
+  NotSet = 0,
   Read = 1 << 0,
   Write = 1 << 1,
-  ReadWrite = 1 << 2,
+  ReadWrite = Read | Write,
 };
 
 struct AffectedInfo {
@@ -39,7 +40,7 @@ struct AffectedInfo {
       : UsedBefore(UsedBefore), UsedAfter(UsedAfter), AM(AM) {}
   bool UsedBefore = false;
   bool UsedAfter = false;
-  AccessMode AM = Read;
+  AccessMode AM = NotSet;
 };
 
 struct IntraproceduralAnalyzerResult {
@@ -53,7 +54,9 @@ struct IntraproceduralAnalyzerResult {
                   unordered_map<unsigned int /*parameter idx*/, AffectedInfo /*{bool UsedBefore, bool UsedAfter, AccessMode AM}*/>,
               std::unordered_map<
                   unsigned int /*arg idx*/,
-                  std::set<unsigned int> /*caller parameter(s) idx*/>>>;
+                  std::set<unsigned int> /*caller parameter(s) idx*/>,
+              std::unordered_map<std::string /*global var combined loc*/,
+                                 AffectedInfo>>>;
   IntraproceduralAnalyzerResult() {}
   IntraproceduralAnalyzerResult(MapT Map, std::string CurrentCtxFuncCombinedLoc)
       : Map(Map), CurrentCtxFuncCombinedLoc(CurrentCtxFuncCombinedLoc) {}
@@ -114,8 +117,7 @@ protected:
   isAssignedToAnotherDREOrVD(const DeclRefExpr *);
   void constructDefUseMap();
   const FunctionDecl *FD = nullptr;
-  std::unordered_map<const ParmVarDecl *, std::set<const DeclRefExpr *>>
-      DefUseMap;
+  std::unordered_map<const VarDecl *, std::set<const DeclRefExpr *>> DefUseMap;
 };
 } // namespace detail
 
@@ -152,24 +154,25 @@ public:
                                         DeviceFunctionInfo *DFI);
 
 private:
-  void
-  simplifyMap(std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
-  std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
-  affectedByWhichParameters(
-      const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
-      const SyncCallInfo &SCI);
+  void simplifyMap(std::map<const VarDecl *, std::set<DREInfo>> &DefDREInfoMap);
+  void affectedByWhichParameters(
+      const std::map<const VarDecl *, std::set<DREInfo>> &DefDREInfoMap,
+      const SyncCallInfo &SCI,
+      std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
+          &AffectingParameters,
+      std::unordered_map<std::string /*global var combined loc*/, AffectedInfo>
+          &AffectingGlobalVars);
   std::unordered_map<unsigned int /*arg idx*/,
                      std::set<unsigned int> /*caller parameter(s) idx*/>
   getArgCallerParmsMap(const CallExpr *CE);
   bool isAccessingMemory(const DeclRefExpr *);
   AccessMode getAccessKindReadWrite(const DeclRefExpr *);
-  void
-  generateDRE2PVDMap(const std::map<const ParmVarDecl *, std::set<DREInfo>> &);
+  void generateDRE2VDMap(const std::map<const VarDecl *, std::set<DREInfo>> &);
 
   std::string FDLoc;
   /// (FD location, result)
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
-  std::multimap<const DeclRefExpr *, const ParmVarDecl *> DRE2PVDMap;
+  std::multimap<const DeclRefExpr *, const VarDecl *> DRE2VDMap;
   // This map contains pairs meet below pattern:
   // loop {
   //   ...
@@ -188,18 +191,10 @@ public:
                std::string SyncCallCombinedLoc);
 
 private:
-  std::tuple<bool /*CanUseLocalBarrier*/,
-             bool /*CanUseLocalBarrierWithCondition*/,
-             std::string /*Condition*/>
-  isSafeToUseLocalBarrier(
-      const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap,
-      const SyncCallInfo &SCI);
-
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   const FunctionDecl *FD = nullptr;
   std::string GlobalFunctionName;
-  std::unordered_map<const ParmVarDecl *, std::set<const DeclRefExpr *>>
-      DefUseMap;
+  std::unordered_map<const VarDecl *, std::set<const DeclRefExpr *>> DefUseMap;
   std::string CELoc;
   std::string FDLoc;
   bool SkipCacheInAnalyzer = false;
@@ -267,7 +262,7 @@ private:
              bool /*CanUseLocalBarrierWithCondition*/,
              std::string /*Condition*/>
   isSafeToUseLocalBarrier(
-      const std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
+      const std::map<const VarDecl *, std::set<DREInfo>> &DefDREInfoMap);
   bool containsMacro(const SourceLocation &SL);
   bool hasOverlappingAccessAmongWorkItems(int KernelDim,
                                           const DeclRefExpr *DRE);
@@ -276,8 +271,7 @@ private:
   int KernelCallBlockDim = 3; // 3 or 1
   std::string GlobalFunctionName;
 
-  void
-  simplifyMap(std::map<const ParmVarDecl *, std::set<DREInfo>> &DefDREInfoMap);
+  void simplifyMap(std::map<const VarDecl *, std::set<DREInfo>> &DefDREInfoMap);
 
   std::string isAnalyzableWriteInLoop(
       const std::set<const DeclRefExpr *> &WriteInLoopDRESet);
