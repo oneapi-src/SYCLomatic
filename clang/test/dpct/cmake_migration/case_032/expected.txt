@@ -87,8 +87,7 @@ set(LIBS ${LIBS}
     
 )
 
-target_link_libraries(${target} 
-    ${MKL_LIB}
+target_link_libraries(${target} ${MKL_LIB}
     
     
     ${MKL_LIB}
