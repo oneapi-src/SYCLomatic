@@ -32,7 +32,7 @@ llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
       {D->getQualifiedNameAsString(false)});
   if (Iter !=
       clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
-    auto Rewriter = Iter->second->create(TypeLoc());
+    auto Rewriter = Iter->second->create(clang::RecordTypeLoc());
     auto Result = Rewriter->rewrite();
     if (Result.has_value()) {
       return Result.value();

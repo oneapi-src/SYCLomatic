@@ -89,6 +89,7 @@ public:
   struct Attributes {
     bool ReplaceCalleeNameOnly = false;
     bool HasExplicitTemplateArgs = false;
+    int NumOfTemplateArgs = -1;
   };
   struct APIRestrictCondition {
     int ArgCount = -1;
@@ -273,6 +274,7 @@ struct llvm::yaml::MappingTraits<MetaRuleObject::Attributes> {
   static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attributes &Doc) {
     Io.mapOptional("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
     Io.mapOptional("HasExplicitTemplateArgs", Doc.HasExplicitTemplateArgs);
+    Io.mapOptional("NumOfTemplateArgs", Doc.NumOfTemplateArgs);
   }
 };
 

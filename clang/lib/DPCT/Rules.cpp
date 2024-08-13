@@ -125,8 +125,7 @@ void registerTypeRule(MetaRuleObject &R) {
   TOB.RuleFile = R.RuleFile;
   TOB.parse(R.Out);
 
-  clang::dpct::TypeMatchingDesc TMD(R.In, TOB.TemplateArgCount);
-  std::cout<<"TOB "<<R.In<<" "<<TOB.TemplateArgCount<<std::endl;
+  clang::dpct::TypeMatchingDesc TMD(R.In, R.RuleAttributes.NumOfTemplateArgs);
   auto Value = TOB.TemplateArgCount != -1
           ? clang::dpct::makeUserDefinedTypeStrCreator(R, TOB)
           : clang::dpct::makeStringCreator(
@@ -560,7 +559,6 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
 
 std::shared_ptr<OutputBuilder>
 TypeOutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
-  std::cout<<"consumeKeyword"<<std::endl;
   auto ResultBuilder = std::make_shared<TypeOutputBuilder>();
   if (OutStr.substr(Idx, 13) == "$template_arg") {
     Idx += 13;
@@ -568,12 +566,10 @@ TypeOutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
     ResultBuilder->Kind = Kind::TemplateArg;
     ResultBuilder->ArgIndex =
         OutputBuilder::consumeArgIndex(OutStr, Idx, "$template_arg");
-    std::cout<<TemplateArgCount<<" "<<ResultBuilder->ArgIndex<<std::endl;
     OutputBuilder::consumeRParen(OutStr, Idx, "$template_arg");
     if (TemplateArgCount < 0 ||
         (size_t)TemplateArgCount < ResultBuilder->ArgIndex) {
       TemplateArgCount = ResultBuilder->ArgIndex;
-      std::cout << TemplateArgCount << std::endl;
     }
   }
   return ResultBuilder;

@@ -6,8 +6,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "Rules.h"
+#include "Utility.h"
+#include "clang/AST/ASTFwd.h"
+#include "clang/AST/DeclCXX.h"
+#include "clang/Basic/SourceLocation.h"
+#include "llvm/Support/Casting.h"
+#include <iostream>
+#include <utility>
 #include <vector>
 
 namespace clang {
@@ -18,9 +26,11 @@ protected:
   const TypeLoc TL;
 
 protected:
-  TypeLocRewriter(const TypeLoc TL) : TL(TL) {}
+  TypeLocRewriter(const TypeLoc TL, bool ReplTemplate = false)
+      : TL(TL), ReplaceTemplate(ReplTemplate) {}
 
 public:
+  bool ReplaceTemplate = false;
   virtual ~TypeLocRewriter() {}
   virtual std::optional<std::string> rewrite() = 0;
 };
@@ -118,8 +128,31 @@ private:
 public:
   TypeMatchingDesc(const std::string &Name, const int TAC = -1)
       : Name(Name), TemplateArgCount(TAC) {}
+  TypeMatchingDesc(TypeLoc TL) {
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    // ignore template args
+    if (auto ETL = TL.getAs<ElaboratedTypeLoc>()) {
+      // A::B::C::typename<int>
+      //          ^           ^ <-- getNamedTypeLoc
+      TL = ETL.getNamedTypeLoc();
+    }
+    if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      llvm::raw_string_ostream OS(Name);
+      auto PP = Context.getPrintingPolicy();
+      TSTL.getTypePtr()->getTemplateName().print(
+          OS, PP, TemplateName::Qualified::Fully);
+      if (auto DeclPtr =
+              TSTL.getTypePtr()->getTemplateName().getAsTemplateDecl()) {
+        TemplateArgCount = DeclPtr->getTemplateParameters()->size();
+      }
+    } else {
+      Name = dpct::DpctGlobalInfo::getTypeName(TL.getType(), Context);
+    }
+  }
   bool operator==(const TypeMatchingDesc &RHS) const {
-    if (!Name.compare(RHS.Name) && RHS.TemplateArgCount == TemplateArgCount) {
+    if (!Name.compare(RHS.Name) &&
+        (RHS.TemplateArgCount == TemplateArgCount ||
+         RHS.TemplateArgCount == -1 || TemplateArgCount == -1)) {
       return true;
     }
     return false;
@@ -131,6 +164,9 @@ public:
       return std::hash<std::string>{}(TM.getName());
     }
   };
+  // -1 means ignore template args in matching and replacing.
+  // 0, 1, 2, 3... means the explicit template arg count in matching and
+  // replacing.
   int TemplateArgCount = -1;
 };
 
@@ -142,32 +178,78 @@ public:
   inline static std::string findReplacedName(const std::string &Name) {
     static const std::string EmptyString;
     auto Iter = TypeLocRewriterMap->find({Name});
-    // No need for real TypeLoc since the factory should be created with
-    // makeStringCreator. In makeStringCreator TL is not dereferenced.
-    auto Rewriter = Iter->second->create(TypeLoc());
-    auto Result = Rewriter->rewrite();
-    if (Result.has_value()) {
-      return Result.value();
+    if (Iter != TypeLocRewriterMap->end()) {
+      // No need for real TypeLoc since the factory should be created with
+      // makeStringCreator. In makeStringCreator TL is not dereferenced.
+      auto Rewriter = Iter->second->create(TypeLoc());
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value()) {
+        return Result.value();
+      }
     }
     return EmptyString;
   }
 
-  inline static std::string findReplacedName(const TypeLoc &TL) {
+  inline static std::pair<std::string, clang::SourceRange>
+  findReplacement(TypeLoc TL) {
     static const std::string EmptyString;
-    TemplateSpecializationTypeLoc TSTL;
-    const std::string TyName =
-            dpct::DpctGlobalInfo::getTypeName(TL.getType());
-    TypeMatchingDesc TMD(TyName);
-    if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
-      TMD.TemplateArgCount = TSTL.getNumArgs();
+    TypeMatchingDesc TMD(TL);
+    std::cout<<"findReplacement TMD: "<<TMD.getName()<<" "<<TMD.TemplateArgCount<<std::endl;
+    auto ReplRangeBegin = TL.getBeginLoc();
+    auto ReplRangeEnd = TL.getEndLoc();
+
+    // Process the beginloc of an elaborated type
+    if (auto ETL = TL.getAs<ElaboratedTypeLoc>()) {
+      // A::B::C::typename
+      // ^ get the location of the qualifier
+      auto QualifierLoc = ETL.getQualifierLoc();
+      // A::B::C::typename<int>
+      //          ^           ^ <-- getNamedTypeLoc
+      TL = ETL.getNamedTypeLoc();
+      if (ETL.getTypePtr()->getKeyword() == ElaboratedTypeKeyword::Typename) {
+        ReplRangeBegin = QualifierLoc.getBeginLoc();
+      }
     }
 
-    std::cout<<"findReplacedName "<<TyName<<" "<<TMD.TemplateArgCount<<std::endl;
     auto Iter = TypeLocRewriterMap->find(TMD);
-    auto Rewriter = Iter->second->create(TL);
-    auto Result = Rewriter->rewrite();
-    if (Result.has_value()) {
-      return Result.value();
+    if (Iter != TypeLocRewriterMap->end()) {
+      auto Rewriter = Iter->second->create(TL);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value()) {
+        // Exclude template arg part in the replace range if the
+        // TemplateArgCount is -1
+        if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+          if (Iter->first.TemplateArgCount == -1) {
+            // A::B::C::typename<int>
+            //          ^
+            // getTemplateNameLoc should be here after ETL is processed.
+            // addReplacement will extend the end loc for 1 token.
+            auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+            ReplRangeEnd = TSTL.getTemplateNameLoc();
+            std::cout << "-1: " << ReplRangeBegin.printToString(SM) << " "
+                      << ReplRangeEnd.printToString(SM) << " " << Result.value()
+                      << std::endl;
+          }
+        }
+
+        return std::make_pair(Result.value(),
+                              clang::SourceRange(ReplRangeBegin, ReplRangeEnd));
+      }
+    }
+    return std::make_pair(EmptyString, clang::SourceRange());
+  }
+
+  inline static std::string findReplacedName(TypeLoc TL) {
+    static const std::string EmptyString;
+    TypeMatchingDesc TMD(TL);
+
+    auto Iter = TypeLocRewriterMap->find(TMD);
+    if (Iter != TypeLocRewriterMap->end()) {
+      auto Rewriter = Iter->second->create(TL);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value()) {
+        return Result.value();
+      }
     }
     return EmptyString;
   }

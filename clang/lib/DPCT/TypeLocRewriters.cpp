@@ -9,6 +9,7 @@
 #include "TypeLocRewriters.h"
 #include "ASTTraversal.h"
 #include "clang/AST/TypeLoc.h"
+#include "AnalysisInfo.h"
 #include "Rules.h"
 #include "MapNames.h"
 
@@ -27,7 +28,6 @@ makeStringCreator(std::string TypeName,
                   clang::dpct::HelperFeatureEnum RequestFeature,
                   const std::vector<std::string> &Headers) {
   return [=](const TypeLoc TL) -> std::string {
-    std::cout<<"makeStringCreator "<<TypeName<<std::endl;
     requestFeature(RequestFeature);
     return TypeName;
   };
@@ -65,6 +65,8 @@ makeAddPointerCreator(std::function<T(const TypeLoc)> f) {
 std::function<std::string(const TypeLoc)>
 makeTypeStrCreator() {
   return [=](const TypeLoc TL) {
+    if(!TL)
+      return std::string();
     auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
     PP.SuppressTagKeyword = true;
     PP.FullyQualifiedName = true;
@@ -75,7 +77,8 @@ makeTypeStrCreator() {
 std::function<std::string(const TypeLoc)>
 makeUserDefinedTypeStrCreator(MetaRuleObject &R, TypeOutputBuilder &TOB) {
   return [=](const TypeLoc TL) {
-    std::cout<<"makeUserDefinedTypeStrCreator"<<std::endl;
+    if (!TL)
+      return std::string();
     auto Range = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
 
 
@@ -98,9 +101,7 @@ makeUserDefinedTypeStrCreator(MetaRuleObject &R, TypeOutputBuilder &TOB) {
 
     std::string ResultStr;
     llvm::raw_string_ostream OS(ResultStr);
-    std::cout<< TOB.SubBuilders.size() << std::endl;
     for (auto &tob : TOB.SubBuilders) {
-      std::cout<< tob->Kind << std::endl;
       switch (tob->Kind) {
       case (OutputBuilder::Kind::String):
         OS << tob->Str;
@@ -257,21 +258,21 @@ createReportWarningTypeLocRewriterFactory(Diagnostics MsgId,
     (MsgId, std::forward<Args>(args)...);
 }
 
-std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
 createFeatureRequestFactory(
     HelperFeatureEnum Feature,
-    std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+    std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
         &&Input) {
-  return std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>(
+  return std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>(
       std::move(Input.first),
       std::make_shared<TypeLocRewriterFactoryWithFeatureRequest>(Feature,
-                                                          Input.second));
+                                                                 Input.second));
 }
 template <class T>
-std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
 createFeatureRequestFactory(
     HelperFeatureEnum Feature,
-    std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+    std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
         &&Input,
     T) {
   return createFeatureRequestFactory(Feature, std::move(Input));
@@ -298,7 +299,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
                                     TypeMatchingDesc::hash>({
 #define STR(Str) makeStringCreator(Str)
 #define TEMPLATE_ARG(Idx) makeTemplateArgCreator(Idx)
-#define TYPE_REWRITE_ENTRY(Name, Factory) {{Name}, Factory},
+#define TYPE_REWRITE_ENTRY(Name, Factory) {Name, Factory},
 #define TYPE_CONDITIONAL_FACTORY(Pred, First, Second)                          \
   createTypeLocConditionalFactory(Pred, First, Second)
 #define TYPE_FACTORY(...) createTypeLocRewriterFactory(__VA_ARGS__)
@@ -452,13 +453,13 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
        clang::dpct::createTypeLocRewriterFactory(makeStringCreator("std::shared_ptr<" + MapNames::getDpctNamespace() +
                              "sparse::optimize_info>",
                          HelperFeatureEnum::device_ext))},
-      {{"thrust::device_ptr"},
-       clang::dpct::createTypeLocRewriterFactory(makeStringCreator(MapNames::getDpctNamespace() + "device_pointer",
-                         HelperFeatureEnum::device_ext))},
+      // {{"thrust::device_ptr"},
+      //  clang::dpct::createTypeLocRewriterFactory(makeStringCreator(MapNames::getDpctNamespace() + "device_pointer",
+      //                    HelperFeatureEnum::device_ext))},
       {{"thrust::device_reference"},
        clang::dpct::createTypeLocRewriterFactory(makeStringCreator(MapNames::getDpctNamespace() + "device_reference",
                          HelperFeatureEnum::device_ext))},
-      {{"thrust::device_vector", 1},
+      {{"thrust::device_vector"},
        clang::dpct::createTypeLocRewriterFactory(makeStringCreator(MapNames::getDpctNamespace() + "device_vector",
                          HelperFeatureEnum::device_ext))},
       {{"thrust::device_malloc_allocator"},
