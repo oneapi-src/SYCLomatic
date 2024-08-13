@@ -537,7 +537,8 @@ public:
     lock.unlock();
     auto Iter = current_queues.begin();
     while (Iter != current_queues.end()) {
-      Iter->wait_and_throw();
+      (*Iter)->wait_and_throw();
+      Iter++;
     }
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
