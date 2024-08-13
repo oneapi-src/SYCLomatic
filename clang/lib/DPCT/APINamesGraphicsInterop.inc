@@ -12,7 +12,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaGraphicsD3D11RegisterResource", DEREF(0),
-        NEW(MapNames::getDpctNamespace() + "experimental::interop_mem_wrapper",
+        NEW(MapNames::getDpctNamespace() + "experimental::external_mem_wrapper",
             ARG(1), ARG(2)))),
     UNSUPPORT_FACTORY_ENTRY("cudaGraphicsD3D11RegisterResource", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphicsD3D11RegisterResource"),
@@ -48,6 +48,16 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY(
         "cudaGraphicsMapResources", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cudaGraphicsMapResources"),
+        ARG("--use-experimental-features=bindless_images"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cudaGraphicsResourceGetMappedPointer",
+        ARG(2), true, "get_mapped_pointer", ARG(0), ARG(1)),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cudaGraphicsResourceGetMappedPointer", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cudaGraphicsResourceGetMappedPointer"),
         ARG("--use-experimental-features=bindless_images"))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(

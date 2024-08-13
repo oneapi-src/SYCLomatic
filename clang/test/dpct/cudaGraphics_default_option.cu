@@ -13,8 +13,10 @@ int main() {
   // CHECK-NEXT: */
   cudaGraphicsResource_t resource, *resources;
 
+  void *devPtr;
   cudaMipmappedArray_t* mipmappedArray;
   cudaArray_t* array;
+  size_t size;
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsRegisterFlags is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
@@ -46,6 +48,11 @@ int main() {
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsMapResources is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
   // CHECK-NEXT: */
   cudaGraphicsMapResources(1, resources, stream);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsResourceGetMappedPointer is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cudaGraphicsResourceGetMappedPointer(&devPtr, &size, resource);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of cudaGraphicsResourceGetMappedMipmappedArray is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.

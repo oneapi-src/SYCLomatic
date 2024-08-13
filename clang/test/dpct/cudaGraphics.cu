@@ -10,17 +10,17 @@
 #endif
 
 int main() {
-  // CHECK: dpct::experimental::interop_mem_wrapper_ptr resource;
-  // CHECK-NEXT: dpct::experimental::interop_mem_wrapper_ptr *resources;
-  // CHECK-NEXT: dpct::experimental::interop_mem_wrapper_ptr **resources_ptr;
+  // CHECK: dpct::experimental::external_mem_wrapper_ptr resource;
+  // CHECK-NEXT: dpct::experimental::external_mem_wrapper_ptr *resources;
+  // CHECK-NEXT: dpct::experimental::external_mem_wrapper_ptr **resources_ptr;
   cudaGraphicsResource_t resource;
   cudaGraphicsResource_t *resources;
   cudaGraphicsResource_t **resources_ptr;
 
-  // CHECK: dpct::experimental::interop_mem_wrapper_ptr resources_arr[10];
+  // CHECK: dpct::experimental::external_mem_wrapper_ptr resources_arr[10];
   cudaGraphicsResource_t resources_arr[10];
 
-  // CHECK: dpct::experimental::interop_mem_wrapper_ptr resource1, *resources1, **resources_ptr1;
+  // CHECK: dpct::experimental::external_mem_wrapper_ptr resource1, *resources1, **resources_ptr1;
   cudaGraphicsResource_t resource1, *resources1, **resources_ptr1;
 
   cudaMipmappedArray_t mipmappedArray, *mipmappedArray_ptr;
@@ -40,10 +40,10 @@ int main() {
 #ifdef _WIN32
   ID3D11Resource *pD3DResource, *pD3DResource1;
 
-  // CHECK-WINDOWS: resource = new dpct::experimental::interop_mem_wrapper(pD3DResource, 0);
+  // CHECK-WINDOWS: resource = new dpct::experimental::external_mem_wrapper(pD3DResource, 0);
   cudaGraphicsD3D11RegisterResource(&resource, pD3DResource, cudaGraphicsRegisterFlagsNone);
 
-  // CHECK-WINDOWS: resource1 = new dpct::experimental::interop_mem_wrapper(pD3DResource1, regFlags1);
+  // CHECK-WINDOWS: resource1 = new dpct::experimental::external_mem_wrapper(pD3DResource1, regFlags1);
   cudaGraphicsD3D11RegisterResource(&resource1, pD3DResource1, regFlags1);
 #endif
 

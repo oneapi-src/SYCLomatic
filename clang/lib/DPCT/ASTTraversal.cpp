@@ -15111,6 +15111,7 @@ void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName(
         "cudaGraphicsD3D11RegisterResource",
         "cudaGraphicsResourceSetMapFlags", "cudaGraphicsMapResources",
+        "cudaGraphicsResourceGetMappedPointer",
         "cudaGraphicsResourceGetMappedMipmappedArray",
         "cudaGraphicsSubResourceGetMappedArray",
         "cudaGraphicsUnmapResources", "cudaGraphicsUnregisterResource");

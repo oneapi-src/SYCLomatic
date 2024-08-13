@@ -453,7 +453,7 @@ TYPE_REWRITE_ENTRY(
     TYPE_CONDITIONAL_FACTORY(
         checkEnableBindlessImagesForType(),
         TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                         "experimental::interop_mem_wrapper")),
+                         "experimental::external_mem_wrapper")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=bindless_images"))))
 
@@ -462,6 +462,6 @@ TYPE_REWRITE_ENTRY(
     TYPE_CONDITIONAL_FACTORY(
         checkEnableBindlessImagesForType(),
         TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                         "experimental::interop_mem_wrapper_ptr")),
+                         "experimental::external_mem_wrapper_ptr")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=bindless_images"))))

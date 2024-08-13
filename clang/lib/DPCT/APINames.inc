@@ -344,7 +344,7 @@ ENTRY(cudaGraphicsResourceGetMappedEglFrame, cudaGraphicsResourceGetMappedEglFra
 // graphics interoperability functions of runtime API
 ENTRY(cudaGraphicsMapResources, cudaGraphicsMapResources, true, NO_FLAG, P0, "Successful/DPCT1119")
 ENTRY(cudaGraphicsResourceGetMappedMipmappedArray, cudaGraphicsResourceGetMappedMipmappedArray, true, NO_FLAG, P4, "Successful/DPCT1119")
-ENTRY(cudaGraphicsResourceGetMappedPointer, cudaGraphicsResourceGetMappedPointer, false, NO_FLAG, P0, "comment")
+ENTRY(cudaGraphicsResourceGetMappedPointer, cudaGraphicsResourceGetMappedPointer, true, NO_FLAG, P0, "Successful/DPCT1119")
 ENTRY(cudaGraphicsResourceSetMapFlags, cudaGraphicsResourceSetMapFlags, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cudaGraphicsSubResourceGetMappedArray, cudaGraphicsSubResourceGetMappedArray, true, NO_FLAG, P0, "Successful/DPCT1119")
 ENTRY(cudaGraphicsUnmapResources, cudaGraphicsUnmapResources, true, NO_FLAG, P0, "Successful/DPCT1119")

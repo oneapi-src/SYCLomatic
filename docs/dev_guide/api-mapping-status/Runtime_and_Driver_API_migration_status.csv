@@ -257,7 +257,7 @@ cudaGraphicsEGLRegisterImage,NO,
 cudaGraphicsResourceGetMappedEglFrame,NO,
 cudaGraphicsMapResources,YES,:ref:`DPCT1119`
 cudaGraphicsResourceGetMappedMipmappedArray,YES,:ref:`DPCT1119`
-cudaGraphicsResourceGetMappedPointer,NO,
+cudaGraphicsResourceGetMappedPointer,YES,:ref:`DPCT1119`
 cudaGraphicsResourceSetMapFlags,YES,:ref:`DPCT1119`
 cudaGraphicsSubResourceGetMappedArray,YES,:ref:`DPCT1119`
 cudaGraphicsUnmapResources,YES,:ref:`DPCT1119`

@@ -1139,6 +1139,7 @@
 // CHECK-NEXT: cudaGraphicsD3D11RegisterResource
 // CHECK-NEXT: cudaGraphicsMapResources
 // CHECK-NEXT: cudaGraphicsResourceGetMappedMipmappedArray
+// CHECK-NEXT: cudaGraphicsResourceGetMappedPointer
 // CHECK-NEXT: cudaGraphicsResourceSetMapFlags
 // CHECK-NEXT: cudaGraphicsSubResourceGetMappedArray
 // CHECK-NEXT: cudaGraphicsUnmapResources

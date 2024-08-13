@@ -19,6 +19,14 @@
 // CUDA_GRAPHICS_MAP_RESOURCES-NEXT:    dpct::experimental::map_resources(c, r);
 // CUDA_GRAPHICS_MAP_RESOURCES-NEXT:    dpct::experimental::map_resources(c, r, s);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGraphicsResourceGetMappedPointer | FileCheck %s -check-prefix=CUDA_GRAPHICS_RESOURCE_GET_MAPPED_POINTER
+// CUDA_GRAPHICS_RESOURCE_GET_MAPPED_POINTER: CUDA API:
+// CUDA_GRAPHICS_RESOURCE_GET_MAPPED_POINTER-NEXT:    cudaGraphicsResourceGetMappedPointer(&ptr /*void ***/,
+// CUDA_GRAPHICS_RESOURCE_GET_MAPPED_POINTER-NEXT:                                         &s /*size_t **/);
+// CUDA_GRAPHICS_RESOURCE_GET_MAPPED_POINTER-NEXT:                                         r /*cudaGraphicsResource_t*/);
+// CUDA_GRAPHICS_RESOURCE_GET_MAPPED_POINTER-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
+// CUDA_GRAPHICS_RESOURCE_GET_MAPPED_POINTER-NEXT:    m = r->get_mapped_pointer(&ptr, &s);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGraphicsResourceGetMappedMipmappedArray | FileCheck %s -check-prefix=CUDA_GRAPHICS_RESOURCE_GET_MAPPED_MIPMAPPED_ARRAY
 // CUDA_GRAPHICS_RESOURCE_GET_MAPPED_MIPMAPPED_ARRAY: CUDA API:
 // CUDA_GRAPHICS_RESOURCE_GET_MAPPED_MIPMAPPED_ARRAY-NEXT:    cudaGraphicsResourceGetMappedMipmappedArray(&m /*cudaMipmappedArray_t **/,

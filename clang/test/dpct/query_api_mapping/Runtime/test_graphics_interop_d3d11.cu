@@ -8,4 +8,4 @@
 // CUDA_GRAPHICS_RESOURCE_D33D11_REGISTER_RESOURCE-NEXT:                                      pD3Dr /*ID3D11Resource **/,
 // CUDA_GRAPHICS_RESOURCE_D33D11_REGISTER_RESOURCE-NEXT:                                      f /*unsigned*/);
 // CUDA_GRAPHICS_RESOURCE_D33D11_REGISTER_RESOURCE-NEXT: Is migrated to (with the option --use-experimental-features=bindless_images):
-// CUDA_GRAPHICS_RESOURCE_D33D11_REGISTER_RESOURCE-NEXT:    r = new dpct::experimental::interop_mem_wrapper(pD3Dr, f);
+// CUDA_GRAPHICS_RESOURCE_D33D11_REGISTER_RESOURCE-NEXT:    r = new dpct::experimental::external_mem_wrapper(pD3Dr, f);
