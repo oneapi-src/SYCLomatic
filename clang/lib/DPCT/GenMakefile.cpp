@@ -119,10 +119,14 @@ static void getCompileInfo(
         } else if (Obj == "-shared" || Obj == "--shared") {
           IsShareLibary = true;
         } else if (Obj == "--push-state") {
+          // Add the options "-Wl" and "--whole-archive" to pass the static
+          // archive file referenced in a .so library to the linker.
+          PushStateOptionValue = "-Wl,--push-state,--whole-archive ";
           isPushStateOption = true;
         } else if (isPushStateOption && llvm::StringRef(Obj).ends_with(".a")) {
           PushStateOptionValue += Obj + " ";
         } else if (isPushStateOption && Obj == "--pop-state") {
+          PushStateOptionValue += "-Wl,--pop-state ";
           isPushStateOption = false;
         }
       }
