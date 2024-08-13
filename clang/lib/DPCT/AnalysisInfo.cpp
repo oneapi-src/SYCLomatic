@@ -3549,26 +3549,46 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
                                          StringRef LocalSize) const {
   std::string Accessor;
   llvm::raw_string_ostream OS(Accessor);
-  OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
-     << "_acc(";
-  DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
-  OS << '(' << LocalSize << ".size() * sizeof(" << Type->getSourceString()
-     << ")), cgh);";
+  switch (Kind) {
+  case BlockReduce:
+    OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
+       << "_acc(";
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
+    OS << '(' << LocalSize << ".size() * sizeof("
+       << ValueType->getSourceString() << ')';
+    break;
+  case BlockRadixSort:
+    OS << MapNames::getClNamespace() << "local_accessor<uint8_t, 1> " << Name
+       << "_acc(";
+    OS << TmpMemSizeCalFn << '(' << LocalSize << ".size()" << ')';
+    break;
+  }
+
+  OS << ", cgh);";
   AccessorList.emplace_back(Accessor);
 }
 void TempStorageVarInfo::applyTemplateArguments(
     const std::vector<TemplateArgumentInfo> &TAList) {
-  Type = Type->applyTemplateArguments(TAList);
+  ValueType = ValueType->applyTemplateArguments(TAList);
 }
 ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
-  return PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> "
-            << Name;
+  switch (Kind) {
+  case BlockReduce:
+    PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> ";
+    break;
+  case BlockRadixSort:
+    PS << "uint8_t *";
+    break;
+  }
+  return PS << Name;
 }
 ParameterStream &TempStorageVarInfo::getFuncArg(ParameterStream &PS) {
   return PS << Name;
 }
 ParameterStream &TempStorageVarInfo::getKernelArg(ParameterStream &PS) {
-  return PS << Name << "_acc";
+  if (Kind == BlockReduce)
+    return PS << Name << "_acc";
+  return PS << "&" << Name << "_acc[0]";
 }
 ///// class CudaLaunchTextureObjectInfo /////
 std::string
