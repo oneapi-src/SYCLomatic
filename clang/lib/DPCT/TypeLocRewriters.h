@@ -139,8 +139,7 @@ public:
     if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
       llvm::raw_string_ostream OS(Name);
       auto PP = Context.getPrintingPolicy();
-      TSTL.getTypePtr()->getTemplateName().print(
-          OS, PP, TemplateName::Qualified::Fully);
+      PrintFullTemplateName(OS, PP, TSTL.getTypePtr()->getTemplateName());
       if (auto DeclPtr =
               TSTL.getTypePtr()->getTemplateName().getAsTemplateDecl()) {
         TemplateArgCount = DeclPtr->getTemplateParameters()->size();

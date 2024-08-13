@@ -654,6 +654,8 @@ protected:
                           const Expr *CSCE = nullptr) {
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
+
+  void analyzeType(const NestedNameSpecifierLoc NNSL);
   void analyzeType(TypeLoc TL, const Expr *E = nullptr,
                    const DependentNameTypeLoc *DNTL = nullptr,
                    const NestedNameSpecifierLoc *NNSL = nullptr);

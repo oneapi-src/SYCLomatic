@@ -1044,20 +1044,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
                                const NestedNameSpecifierLoc *NNSL) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
-  // auto ETL = TL.getAs<ElaboratedTypeLoc>();
-  // if (ETL) {
-  //   auto QualifierLoc = ETL.getQualifierLoc();
-  //   TL = ETL.getNamedTypeLoc();
-  //   TyName = getNestedNameSpecifierString(QualifierLoc);
-  //   if (ETL.getTypePtr()->getKeyword() == ElaboratedTypeKeyword::Typename) {
-  //     if (QualifierLoc)
-  //       SR.setBegin(QualifierLoc.getBeginLoc());
-  //     else
-  //       SR = TL.getSourceRange();
-  //   }
-  // }
-
   auto RewriteType = [&](const TypeLoc &TLoc) {
+    std::cout<<"RewriteType "<<TLoc.getBeginLoc().printToString(SM)<<std::endl;
     auto ResultRepl = TypeLocRewriterFactoryBase::findReplacement(TLoc);
     if (!ResultRepl.first.empty()) {
       // [WA] The location of TSTL does not contain the qualifier
@@ -1071,37 +1059,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       addReplacement(ResultRepl.second.getBegin(), ResultRepl.second.getEnd(),
                      CSCE, ResultRepl.first);
     }
-    // auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(
-    //     TypeMatchingDesc(TLoc));
-    // if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
-    //   // auto Rewriter = Itr->second->create(TLoc);
-    //   // auto Result = Rewriter->rewrite();
-    //   auto Result = Itr->second->findReplacement(TLoc);
-    //   if (!Result.first.compare("")) {
-    //     auto ResultStr = Result.first;
-    //     if (SM.isWrittenInScratchSpace(SR.getEnd())) {
-    //       // Since Parser splits ">>" or ">>>" to ">" when parse template
-    //       // the SR.getEnd location might be a "scratch space" location.
-    //       // Therfore, need to apply SM.getExpansionLoc before call
-    //       // addReplacement.
-    //       addReplacement(SM.getExpansionLoc(SR.getBegin()),
-    //                      SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
-    //     } else {
-    //       // To handle case like:
-    //       // #define TM thrust::multiplies<int>()
-    //       // thrust::adjacent_difference(A.begin(), A.end(), R.begin(), TM);
-    //       // to:
-    //       // #define TM std::multiplies<int>()
-    //       // oneapi::dpl::adjacent_difference(..., TM);
-    //       auto DefRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
-    //       std::cout<<DefRange.getBegin().printToString(SM)<<std::endl;
-    //       std::cout<<DefRange.getEnd().printToString(SM)<<std::endl;
-    //       addReplacement(DefRange.getBegin(), DefRange.getEnd(), CSCE,
-    //                      ResultStr);
-    //     }
-    //     return;
-    //   }
-    // }
   };
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
@@ -1136,6 +1093,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       return;
     }
   case TypeLoc::TemplateSpecialization: {
+    std::cout<<"TSTL "<<TL.getBeginLoc().printToString(SM)<<std::endl;
     RewriteType(TL);
     // llvm::raw_string_ostream OS(TyName);
     // TyName.clear();
@@ -1143,43 +1101,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     // auto PP = Context.getPrintingPolicy();
     // PP.PrintCanonicalTypes = 1;
     // TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
-    // if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
-    //   return;
-    // auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
-    // if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
-    //   auto Rewriter = Itr->second->create(TSTL);
-    //   auto Result = Rewriter->rewrite();
-    //   if (Result.has_value()) {
-    //     auto ResultStr = Result.value();
-    //     if (SM.isWrittenInScratchSpace(SR.getEnd())) {
-    //       // Since Parser splits ">>" or ">>>" to ">" when parse template
-    //       // the SR.getEnd location might be a "scratch space" location.
-    //       // Therfore, need to apply SM.getExpansionLoc before call
-    //       // addReplacement.
-    //       addReplacement(SM.getExpansionLoc(SR.getBegin()),
-    //                      SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
-    //     } else {
-    //       // To handle case like:
-    //       // #define TM thrust::multiplies<int>()
-    //       // thrust::adjacent_difference(A.begin(), A.end(), R.begin(), TM);
-    //       // to:
-    //       // #define TM std::multiplies<int>()
-    //       // oneapi::dpl::adjacent_difference(..., TM);
-    //       auto DefRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
-    //       addReplacement(DefRange.getBegin(), DefRange.getEnd(), CSCE,
-    //                      ResultStr);
-    //     }
-    //     return;
-    //   }
-    // }
-    // if (OS.str() != "cub::WarpScan" && OS.str() != "cub::WarpReduce" &&
-    //     OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan") {
-    //   SR.setEnd(TSTL.getTemplateNameLoc());
-    // }
-    // auto PP = Context.getPrintingPolicy();
-    // PP.PrintCanonicalTypes = 1;
-    // PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-    //                     TSTL.getTypePtr()->getTemplateName());
     // if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
     //   return;
     // auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());

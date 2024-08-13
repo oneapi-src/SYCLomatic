@@ -453,9 +453,9 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
        clang::dpct::createTypeLocRewriterFactory(makeStringCreator("std::shared_ptr<" + MapNames::getDpctNamespace() +
                              "sparse::optimize_info>",
                          HelperFeatureEnum::device_ext))},
-      // {{"thrust::device_ptr"},
-      //  clang::dpct::createTypeLocRewriterFactory(makeStringCreator(MapNames::getDpctNamespace() + "device_pointer",
-      //                    HelperFeatureEnum::device_ext))},
+      {{"thrust::device_ptr"},
+       clang::dpct::createTypeLocRewriterFactory(makeStringCreator(MapNames::getDpctNamespace() + "device_pointer",
+                         HelperFeatureEnum::device_ext))},
       {{"thrust::device_reference"},
        clang::dpct::createTypeLocRewriterFactory(makeStringCreator(MapNames::getDpctNamespace() + "device_reference",
                          HelperFeatureEnum::device_ext))},

@@ -2291,7 +2291,17 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     ExprAnalysis EA;
-    EA.analyze(*TL);
+    auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
+    auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
+    std::cout<<"AST "<<TL->getBeginLoc().printToString(*SM)<<std::endl;
+    if (NNSL) {
+      std::cout<<"NNSL"<<std::endl;
+      EA.analyze(*TL, *NNSL);
+    } else if (DNTL) {
+      EA.analyze(*TL, *DNTL);
+    } else {
+      EA.analyze(*TL);
+    }
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
