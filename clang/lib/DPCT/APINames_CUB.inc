@@ -124,6 +124,7 @@ ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Rotate, Rotate, fals
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Up, Up, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockShuffle, cub::BlockShuffle, Down, Down, false, NO_FLAG, P4, "Comment")
 
+
 // Device Level
 ENTRY_MEMBER_FUNCTION(cub::DeviceAdjacentDifference, cub::DeviceAdjacentDifference, SubtractLeftCopy, SubtractLeftCopy, false, NO_FLAGE, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceAdjacentDifference, cub::DeviceAdjacentDifference, SubtractLeft, SubtractLeft, false, NO_FLAGE, P4, "Comment")
