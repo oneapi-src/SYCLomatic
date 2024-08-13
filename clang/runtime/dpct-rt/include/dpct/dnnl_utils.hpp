@@ -901,7 +901,7 @@ class engine_ext {
           });
         }
         size_t new_buffer_capacity =
-            std::max(request_buffer_size, info.capacity * 2);
+            (std::max)(request_buffer_size, info.capacity * 2);
         info.capacity = new_buffer_capacity;
         info.buffer = (uint8_t *)sycl::malloc_device(new_buffer_capacity, *_q);
         info.q = *_q;
