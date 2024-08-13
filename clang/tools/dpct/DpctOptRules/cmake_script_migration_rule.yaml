@@ -1172,6 +1172,100 @@
         \${MKL_LIB}
       RuleId: "replace_cufft_with_MKL"
 
+- Rule: rule_cufft_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufft_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cufft
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_cusparse_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cusparse_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cusparse
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_curand_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: curand_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: curand
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_cudadevrt_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudadevrt_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cudadevrt
+      Out: ""
+
+- Rule: rule_nccl_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nccl_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nccl
+      Out: -lccl
+
+- Rule: rule_nvrtc_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nvrtc
+      Out: ""
+
+- Rule: rule_ml_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: ml_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nvidia-ml
+      Out: ""
+
 - Rule: rule_cufftw
   Kind: CMakeRule
   Priority: Fallback
