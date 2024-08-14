@@ -114,5 +114,19 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                 LITERAL("10"))))
       // cub::RowMajorTid
       MEMBER_CALL_FACTORY_ENTRY("cub::RowMajorTid", NDITEM, /*IsArrow=*/false,
-                                "get_local_linear_id")};
+                                "get_local_linear_id")
+      // cub::LoadDirectBlocked
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::LoadDirectBlocked",
+              CALL(MapNames::getDpctNamespace() + "group::load_direct_blocked",
+                   NDITEM, ARG(1), ARG(2))))
+      // cub::LoadDirectStriped
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::LoadDirectStriped",
+              CALL(MapNames::getDpctNamespace() + "group::load_direct_striped",
+                   NDITEM, ARG(1), ARG(2))))};
 }

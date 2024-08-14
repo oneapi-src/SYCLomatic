@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: cd %S/link/hello && rm -rf target_soft_link && ln -nfs  ../../target target_soft_link && cd %S/link && rm -rf link && ln -nfs  hello link
 // RUN: dpct  --in-root=%S --out-root=%T/out  --cuda-include-path="%cuda-path/include" --process-all -- -I %S/link/link/target_soft_link -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/vector_add_format.dp.cpp --match-full-lines %s
