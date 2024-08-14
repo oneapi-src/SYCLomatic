@@ -1366,4 +1366,21 @@ void foo38(T *t)
 
 template void foo38(int *);
 
+#define FORCE_TYPE long long int
+
+//CHECK: #define CALL(X, Y)                                                             \
+//CHECK:   dpct::get_in_order_queue().parallel_for(                                     \
+//CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),     \
+//CHECK:       [=](sycl::nd_item<3> item_ct1) { kernel2<FORCE_TYPE, X, Y>(); });
+#define CALL(X, Y) kernel2<FORCE_TYPE, X, Y><<<1, 1>>>();
+
+template<typename T, int T1, int T2>
+__global__ void kernel2(){
+
+}
+
+int foo39() {
+  CALL(0, 1)
+  return 0;
+}
 #endif

@@ -206,7 +206,7 @@ inline bool isChildOrSamePath(clang::tooling::UnifiedPath Root,
 }
 
 /// Returns character sequence ("\n") on Linux, return ("\r\n") on Windows.
-const char *getNL(void);
+const char *getNL(bool AddBackSlash = false);
 
 /// Returns the character sequence ("\n" or "\r\n") used to represent new line
 /// in the source line containing Loc.

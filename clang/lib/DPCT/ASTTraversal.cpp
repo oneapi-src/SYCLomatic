@@ -3216,7 +3216,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
                   "cudaStreamCaptureStatus", "cudaDeviceAttr",
                   "libraryPropertyType_t", "cudaDataType_t",
-                  "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
+                  "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
@@ -3482,7 +3482,8 @@ void BLASEnumsRule::registerMatcher(MatchFinder &MF) {
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUBLAS_OP.*)|(CUBLAS_SIDE.*)|(CUBLAS_FILL_"
                       "MODE.*)|(CUBLAS_DIAG.*)|(CUBLAS_.*_MATH)|CUBLAS_MATH_"
-                      "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLASLT_ORDER_.*)"
+                      "DISALLOW_REDUCED_PRECISION_REDUCTION|(CUBLAS_COMPUTE_.*)"
+                      "|(CUBLASLT_ORDER_.*)"
                       "|(CUBLASLT_POINTER_MODE_.*)|(CUBLASLT_MATRIX_LAYOUT_.*)|"
                       "(CUBLASLT_MATMUL_DESC_.*)|(CUBLASLT_MATRIX_TRANSFORM_"
                       "DESC_.*)|(CUBLASLT_EPILOGUE_.*)"))))
@@ -4129,12 +4130,13 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCgetrsBatched", "cublasZgetrsBatched", "cublasSgetriBatched",
         "cublasDgetriBatched", "cublasCgetriBatched", "cublasZgetriBatched",
         "cublasSgeqrfBatched", "cublasDgeqrfBatched", "cublasCgeqrfBatched",
-        "cublasZgeqrfBatched", "cublasGemmEx", "cublasSgemmEx", "cublasCgemmEx",
-        "cublasNrm2Ex", "cublasDotEx", "cublasDotcEx", "cublasScalEx",
-        "cublasAxpyEx", "cublasRotEx", "cublasGemmBatchedEx",
-        "cublasGemmStridedBatchedEx", "cublasSdgmm", "cublasDdgmm",
-        "cublasCdgmm", "cublasZdgmm", "cublasSgeam", "cublasDgeam",
-        "cublasCgeam", "cublasZgeam",
+        "cublasZgeqrfBatched", "cublasSgelsBatched", "cublasDgelsBatched",
+        "cublasCgelsBatched", "cublasZgelsBatched", "cublasGemmEx",
+        "cublasSgemmEx", "cublasCgemmEx", "cublasNrm2Ex", "cublasDotEx",
+        "cublasDotcEx", "cublasScalEx", "cublasAxpyEx", "cublasRotEx",
+        "cublasGemmBatchedEx", "cublasGemmStridedBatchedEx", "cublasSdgmm",
+        "cublasDdgmm", "cublasCdgmm", "cublasZdgmm", "cublasSgeam",
+        "cublasDgeam", "cublasCgeam", "cublasZgeam",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         "cublasSetKernelStream", "cublasGetVersion",
@@ -9285,6 +9287,12 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
         if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Device ||
              R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
+          if (R.second->getConstantFlag() ==
+              dpct::ConstantFlagType::HostDeviceInOnePass) {
+            if (R.second->getNewHostVarName().empty()) {
+              continue;
+            }
+          }
           // using flag and the offset of __constant__ to link previous
           // execution of previous is device, current is host:
           previousDCurrentH(VD, *(R.second));
@@ -9332,9 +9340,12 @@ bool ConstantMemVarMigrationRule::currentIsHost(const VarDecl *VD,
       // Add the constant offset in the replacement
       // The constant offset will be used in previousHCurrentD to distinguish
       // unnecessary warnings.
-      if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
-                 VD->getNameAsString())) {
-        TransformSet->back()->setConstantOffset(TM->getConstantOffset());
+      if (TM->getConstantFlag() == dpct::ConstantFlagType::Host) {
+        dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
+        if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
+                   VD->getNameAsString())) {
+          TransformSet->back()->setConstantOffset(TM->getConstantOffset());
+        }
       }
     }
   }
@@ -9359,12 +9370,14 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
   if (!DS)
     return;
   // this token is ';'
-  auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
+  auto InsertSL = getDefinitionRange(DS->getBeginLoc(), DS->getEndLoc())
+                      .getEnd()
+                      .getLocWithOffset(1);
   auto GenDeclStmt = [=, &SM](StringRef TypeName) -> std::string {
     bool IsReference = !Info->getType()->getDimension();
     std::string Ret;
     llvm::raw_string_ostream OS(Ret);
-    OS << getNL() << getIndent(InsertSL, SM);
+    OS << getNL(DS->getEndLoc().isMacroID()) << getIndent(InsertSL, SM);
     OS << TypeName << ' ';
     if (IsReference)
       OS << '&';
@@ -9386,19 +9399,18 @@ void MemVarMigrationRule::processTypeDeclaredLocal(
     //   |                |
     // begin             end
     // ReplaceToken replacing [begin, end]
-    SourceLocation Begin =
-        SM.getExpansionLoc(Info->getDeclOfVarType()->getBraceRange().getEnd());
-    Begin = Begin.getLocWithOffset(1); // this token is }
-    SourceLocation End = SM.getExpansionLoc(MemVar->getEndLoc());
-    emplaceTransformation(new ReplaceToken(Begin, End, ""));
+    auto BR = Info->getDeclOfVarType()->getBraceRange();
+    auto DRange = getDefinitionRange(BR.getBegin(), BR.getEnd());
+    auto BeginWithOffset =
+        DRange.getEnd().getLocWithOffset(1); // this token is }
+    SourceLocation End =
+        getDefinitionRange(MemVar->getBeginLoc(), MemVar->getEndLoc()).getEnd();
+    emplaceTransformation(new ReplaceToken(BeginWithOffset, End, ""));
 
     std::string NewTypeName = Info->getLocalTypeName();
 
     // add a typename
-    emplaceTransformation(new InsertText(
-        SM.getExpansionLoc(
-            Info->getDeclOfVarType()->getBraceRange().getBegin()),
-        " " + NewTypeName));
+    emplaceTransformation(new InsertText(DRange.getBegin(), " " + NewTypeName));
 
     // add typecast for the __shared__ variable, since after migration the
     // __shared__ variable type will be uint8_t*
@@ -14299,7 +14311,8 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
         "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
-        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit");
+        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit",
+        "cuCtxPushCurrent_v2", "cuCtxPopCurrent_v2");
   };
 
   MF.addMatcher(

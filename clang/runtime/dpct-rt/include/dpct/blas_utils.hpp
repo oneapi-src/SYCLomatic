@@ -1186,7 +1186,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
   std::int64_t stride_a = n * lda;
-  std::int64_t stride_tau = std::max(1, std::min(m, n));
+  std::int64_t stride_tau = (std::max)(1, (std::min)(m, n));
   std::int64_t scratchpad_size = oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
       exec_queue, m, n, lda, stride_a, stride_tau, batch_size);
 
@@ -1219,7 +1219,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
                                            n * lda * sizeof(T), automatic));
     events_tau.push_back(detail::dpct_memcpy(
         exec_queue, host_tau[i], tau_buffer_ptr + i * stride_tau,
-        std::max(1, std::min(m, n)) * sizeof(T), automatic));
+        (std::max)(1, (std::min)(m, n)) * sizeof(T), automatic));
   }
   std::vector<void *> ptr_a{host_a};
   std::vector<void *> ptr_tau{host_tau};
@@ -2248,6 +2248,94 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
   oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
                                         unit_diag, m, n, alpha_val, data_a, lda,
                                         data_c, ldc DPCT_COMPUTE_MODE_ARG);
+}
+
+/// Finds the least squares solutions for a batch of overdetermined linear
+/// systems. Uses the QR factorization to solve a grouped batch of linear
+/// systems with full rank matrices.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] trans Operation applied to \p a.
+/// \param [in] m The number of rows of \p a.
+/// \param [in] n The number of columns of \p a.
+/// \param [in] nrhs The number of columns of \p b.
+/// \param [in, out] a Array of pointers to matrices.
+/// \param [in] lda The leading dimension of \p a.
+/// \param [in, out] b Array of pointers to matrices.
+/// \param [in] ldb The leading dimension of \p b.
+/// \param [out] info Set to 0 if no error.
+/// \param [out] dev_info Optional. If it is not NULL : dev_info[i]==0 means the
+/// i-th problem is successful; dev_info[i]!=0 means dev_info[i] is the first
+/// zero diagonal element of the i-th \p a .
+/// \param [in] batch_size The size of the batch.
+template <typename T>
+inline sycl::event
+gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
+                   int n, int nrhs, T *const a[], int lda, T *const b[],
+                   int ldb, int *info, int *dev_info, int batch_size) {
+#if defined(DPCT_USM_LEVEL_NONE) || !defined(__INTEL_MKL__)
+#if defined(DPCT_USM_LEVEL_NONE)
+  throw std::runtime_error("this API is unsupported when USM level is none");
+#else
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#endif
+#else
+  using Ty = typename DataType<T>::T2;
+  sycl::queue exec_queue = desc_ptr->get_queue();
+  struct matrix_info_t {
+    oneapi::mkl::transpose trans_info;
+    std::int64_t m_info;
+    std::int64_t n_info;
+    std::int64_t nrhs_info;
+    std::int64_t lda_info;
+    std::int64_t ldb_info;
+    std::int64_t group_size_info;
+  };
+  matrix_info_t *matrix_info =
+      (matrix_info_t *)std::malloc(sizeof(matrix_info_t));
+  matrix_info->trans_info = trans;
+  matrix_info->m_info = m;
+  matrix_info->n_info = n;
+  matrix_info->nrhs_info = nrhs;
+  matrix_info->lda_info = lda;
+  matrix_info->ldb_info = ldb;
+  matrix_info->group_size_info = batch_size;
+  std::int64_t scratchpad_size =
+      oneapi::mkl::lapack::gels_batch_scratchpad_size<Ty>(
+          exec_queue, &(matrix_info->trans_info), &(matrix_info->m_info),
+          &(matrix_info->n_info), &(matrix_info->nrhs_info),
+          &(matrix_info->lda_info), &(matrix_info->ldb_info), 1,
+          &(matrix_info->group_size_info));
+  Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
+
+  *info = 0;
+  if (dev_info)
+    exec_queue.memset(dev_info, 0, batch_size * sizeof(int));
+  static const std::vector<sycl::event> empty_events{};
+  static const std::string api_name = "oneapi::mkl::lapack::gels_batch";
+  sycl::event e = ::dpct::detail::catch_batch_error_f<sycl::event>(
+      nullptr, api_name, exec_queue, info, dev_info, batch_size,
+      oneapi::mkl::lapack::gels_batch, exec_queue, &(matrix_info->trans_info),
+      &(matrix_info->m_info), &(matrix_info->n_info), &(matrix_info->nrhs_info),
+      (Ty **)a, &(matrix_info->lda_info), (Ty **)b, &(matrix_info->ldb_info),
+      (std::int64_t)1, &(matrix_info->group_size_info), (Ty *)scratchpad,
+      (std::int64_t)scratchpad_size, empty_events);
+
+  return exec_queue.submit([&](sycl::handler &cgh) {
+    cgh.host_task([=]() mutable {
+      ::dpct::detail::catch_batch_error(
+          nullptr, api_name, exec_queue, info, dev_info,
+          matrix_info->group_size_info,
+          [](sycl::event _e) {
+            _e.wait_and_throw();
+            return 0;
+          },
+          e);
+      std::free(matrix_info);
+      sycl::free(scratchpad, exec_queue);
+    });
+  });
+#endif
 }
 } // namespace blas
 

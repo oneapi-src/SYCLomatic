@@ -1860,7 +1860,7 @@ void DpctGlobalInfo::processCudaArchMacro() {
 }
 
 void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
-                                      HostDeviceFuncLocInfo Info, unsigned ID) {
+                                      HostDeviceFuncLocInfo &Info, unsigned ID) {
   std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
 
   unsigned int Pos, Len;
@@ -2837,7 +2837,15 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
 
   if (auto Func = Var->getParentFunctionOrMethod()) {
-    if (DeclOfVarType = Var->getType()->getAsCXXRecordDecl()) {
+    auto VT = Var->getType();
+    DeclOfVarType = VT->getAsCXXRecordDecl();
+    if (!DeclOfVarType) {
+      if (const clang::ArrayType *AT = VT->getAsArrayTypeUnsafe()) {
+        auto ElementType = AT->getElementType();
+        DeclOfVarType = ElementType->getAsCXXRecordDecl();
+      }
+    }
+    if (DeclOfVarType) {
       auto F = DeclOfVarType->getParentFunctionOrMethod();
       if (F && (F == Func)) {
         IsTypeDeclaredLocal = true;
@@ -2857,7 +2865,9 @@ MemVarInfo::MemVarInfo(unsigned Offset,
         if (DS1 && DS2 && DS1 == DS2) {
           IsAnonymousType = true;
           DeclStmtOfVarType = DS2;
-          const auto LocInfo = DpctGlobalInfo::getLocInfo(DS2->getBeginLoc());
+          const auto LocInfo = DpctGlobalInfo::getLocInfo(
+              getDefinitionRange(DS2->getBeginLoc(), DS2->getEndLoc())
+                  .getBegin());
           const auto LocStr = LocInfo.first.getCanonicalPath().str() + ":" +
                               std::to_string(LocInfo.second);
           auto Iter = AnonymousTypeDeclStmtMap.find(LocStr);
@@ -3710,8 +3720,7 @@ void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
   auto Range = getArgSourceRange(Arg);
   auto Begin = Range.getBegin();
   auto End = Range.getEnd();
-  if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
-      SM.isMacroArgExpansion(End)) {
+  if (Begin.isMacroID() && End.isMacroID()) {
     size_t Length;
     if (ParentRange.isValid()) {
       auto RR =
