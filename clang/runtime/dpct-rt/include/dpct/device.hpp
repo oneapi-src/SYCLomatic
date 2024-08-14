@@ -560,15 +560,16 @@ public:
                    _queues.end());
     queue = nullptr;
   }
-  __DPCT_DEPRECATED("set_saved_queue for device_ext is deprecated, please use "
-                    "dpct::blas::descriptor::set_saved_queue instead")
-  void set_saved_queue(sycl::queue *q) {
+  [[deprecated("set_saved_queue for device_ext is deprecated, please use "
+               "dpct::blas::descriptor::set_saved_queue instead")]] void
+  set_saved_queue(sycl::queue *q) {
     std::lock_guard<mutex_type> lock(m_mutex);
     _saved_queue = q;
   }
-  __DPCT_DEPRECATED("get_saved_queue for device_ext is deprecated, please use "
-                    "dpct::blas::descriptor::get_saved_queue instead")
-  sycl::queue *get_saved_queue() const {
+  [[deprecated(
+      "get_saved_queue for device_ext is deprecated, please use "
+      "dpct::blas::descriptor::get_saved_queue instead")]] sycl::queue *
+  get_saved_queue() const {
     std::lock_guard<mutex_type> lock(m_mutex);
     return _saved_queue;
   }

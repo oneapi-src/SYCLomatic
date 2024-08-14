@@ -77,7 +77,7 @@ template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
-__DPCT_DEPRECATED("Please use dpct::blas::matrix_mem_copy() instead.") inline void
+[[deprecated("Please use dpct::blas::matrix_mem_copy() instead.")]] inline void
 matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld, int from_ld,
                 int rows, int cols, int elem_size,
                 memcpy_direction direction = automatic,
@@ -120,7 +120,7 @@ matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld, int from_ld,
 /// \param [in] async If this argument is true, the return of the function
 /// does NOT guarantee the copy is completed.
 template <typename T>
-__DPCT_DEPRECATED("Please use dpct::blas::matrix_mem_copy() instead.") inline void
+[[deprecated("Please use dpct::blas::matrix_mem_copy() instead.")]] inline void
 matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld, int rows,
                 int cols, memcpy_direction direction = automatic,
                 sycl::queue &queue = dpct::get_default_queue(),
@@ -658,7 +658,7 @@ namespace experimental {
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
-__DPCT_DEPRECATED("Please use sycl::group_barrier as replacement.")
+[[deprecated("Please use sycl::group_barrier as replacement.")]]
 inline void nd_range_barrier(
     const sycl::nd_item<dimensions> &item,
     sycl::atomic_ref<unsigned int,
@@ -703,7 +703,7 @@ inline void nd_range_barrier(
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
-__DPCT_DEPRECATED("Please use sycl::group_barrier as replacement.")
+[[deprecated("Please use sycl::group_barrier as replacement.")]]
 inline void nd_range_barrier(
     const sycl::nd_item<1> &item,
     sycl::atomic_ref<unsigned int,

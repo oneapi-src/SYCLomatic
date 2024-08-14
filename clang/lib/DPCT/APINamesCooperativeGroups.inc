@@ -415,6 +415,17 @@ CONDITIONAL_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.size", MemberExprBase(),
+        false, "get_local_linear_range"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.size",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::grid_group.size"),
+        ARG("--use-experimental-features=root-group")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
     MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.num_blocks",
                               MemberExprBase(), false,
                               "get_group_linear_range"),
