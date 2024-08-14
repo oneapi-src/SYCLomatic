@@ -591,8 +591,13 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
+#if defined(_WIN32)
+    std::string py_tool = "py";
+#else
+    std::string py_tool = "python3";
+#endif
     std::string SystemCallCommand =
-        "python3 " + std::string(ExecutableScriptPath.str());
+        py_tool + std::string(ExecutableScriptPath.str());
     for (int Index = 2; Index < argc; Index++) {
       SystemCallCommand.append(" ");
       SystemCallCommand.append(std::string(argv[Index]));
