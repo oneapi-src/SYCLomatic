@@ -11,6 +11,48 @@
 
 using namespace clang::dpct;
 
+template <class NameT, class... TemplateArgsT>
+class PrettyTemplatedNamePrinter {
+  NameT Name;
+  ArgsPrinter<false, TemplateArgsT...> TAs;
+
+public:
+  PrettyTemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
+      : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
+    std::string Tmp;
+    llvm::raw_string_ostream OS(Tmp);
+    TAs.print(OS);
+    if (Tmp.empty())
+      return;
+    Stream << '<' << Tmp << '>';
+  }
+};
+
+static inline std::function<PrettyTemplatedNamePrinter<
+    StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>
+makePrettyTemplatedCalleeCreator(std::string CalleeName,
+                                 std::vector<size_t> Indexes) {
+  return PrinterCreator<
+      PrettyTemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>,
+      std::string,
+      std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
+      CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+        std::vector<TemplateArgumentInfo> Ret;
+        auto List = getTemplateArgsList(C);
+        for (auto Idx : Indexes) {
+          if (Idx < List.size()) {
+            Ret.emplace_back(List[Idx]);
+          }
+        }
+        return Ret;
+      });
+}
+
+#define PRETTY_TEMPLATED_CALLEE(FuncName, ...)                                 \
+  makePrettyTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
+
 RewriterMap dpct::createUtilityFunctionsRewriterMap() {
   return RewriterMap{
       // cub::IADD3
@@ -120,13 +162,17 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
           HeaderType::HT_DPCT_GROUP_Utils,
           CALL_FACTORY_ENTRY(
               "cub::LoadDirectBlocked",
-              CALL(MapNames::getDpctNamespace() + "group::load_direct_blocked",
-                   NDITEM, ARG(1), ARG(2))))
+              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                               "group::load_direct_blocked",
+                                           0, 1, 2),
+                   ARG(0), ARG(1), ARG(2))))
       // cub::LoadDirectStriped
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CALL_FACTORY_ENTRY(
               "cub::LoadDirectStriped",
-              CALL(MapNames::getDpctNamespace() + "group::load_direct_striped",
-                   NDITEM, ARG(1), ARG(2))))};
+              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                               "group::load_direct_striped",
+                                           0, 1, 2, 3),
+                   ARG(0), ARG(1), ARG(2))))};
 }
