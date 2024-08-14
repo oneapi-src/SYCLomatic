@@ -376,6 +376,13 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CXXConstructExpr *CCE) {
 void clang::dpct::IntraproceduralAnalyzer::PostVisit(const CXXConstructExpr *) {
 }
 
+bool clang::dpct::IntraproceduralAnalyzer::Visit(const PseudoObjectExpr *POE) {
+  POENum++;
+  return true;
+}
+void clang::dpct::IntraproceduralAnalyzer::PostVisit(const PseudoObjectExpr *) {
+}
+
 clang::dpct::AccessMode
 clang::dpct::IntraproceduralAnalyzer::getAccessKindReadWrite(
     const DeclRefExpr *CurrentDRE) {
@@ -707,6 +714,10 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> InputDFI,
     std::string SyncCallCombinedLoc) {
+  if (InputDFI->getCallExprMap().size() - InputDFI->IAR.POENum > 1) {
+    //std::cout << "InputDFI->getCallExprMap().size():" << InputDFI->getCallExprMap().size() << std::endl;
+    return false;
+  }
   // Do analysis for all syncthreads call in this DFI's ancestors and
   // this DFI's decendents.
   std::stack<std::tuple<std::weak_ptr<DeviceFunctionInfo> /*node*/,
@@ -858,6 +869,11 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
 #endif
         return false;
       }
+      const auto &Iter = I.lock();
+      if (size_t CalleeNum = (Iter->getCallExprMap().size() - Iter->IAR.POENum) > 1) {
+        //std::cout << "CalleeNum:" << CalleeNum << std::endl;
+        return false;
+      }
       NodeStack.push(std::make_tuple(I, CurNode->IAR.CurrentCtxFuncCombinedLoc,
                                      CurDepth + 1));
       Visited.insert(I);
@@ -991,7 +1007,7 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
                                        ArgCallerParmsMap, AffectedGlobalVars)));
   }
   return IntraproceduralAnalyzerResult(
-      Map, getCombinedStrFromLoc(FD->getBeginLoc()));
+      Map, getCombinedStrFromLoc(FD->getBeginLoc()), POENum);
 }
 
 bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(
