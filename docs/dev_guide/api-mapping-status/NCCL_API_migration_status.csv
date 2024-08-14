@@ -9,6 +9,12 @@ ncclCommGetAsyncError,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 ncclCommCount,YES,
 ncclCommCuDevice,YES,
 ncclCommUserRank,YES,
+ncclCommSplit,YES,
+ncclCommFinalize,YES,
+ncclCommRegister,YES,
+ncclCommDeregister,YES,
+ncclMemAlloc,YES,
+ncclMemFree,YES,
 ncclAllReduce,YES,:ref:`DPCT1067`
 ncclBroadcast,YES,
 ncclReduce,YES,:ref:`DPCT1067`
@@ -16,6 +22,7 @@ ncclAllGather,NO,
 ncclReduceScatter,YES,:ref:`DPCT1067`
 ncclGroupStart,NO,
 ncclGroupEnd,NO,
+ncclGroupSimulateEnd,NO,
 ncclSend,YES,
 ncclRecv,YES,
 ncclGetLastError,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
