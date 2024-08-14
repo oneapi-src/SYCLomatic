@@ -656,3 +656,30 @@ void foo4() {
   // CHECK: oneapi::mkl::blas::column_major::gemv(((dpct::blas::descriptor_ptr)handle)->get_queue(), trans, m, n, dpct::get_value(alpha, ((dpct::blas::descriptor_ptr)handle)->get_queue()), a, lda, x, incx, dpct::get_value(beta, ((dpct::blas::descriptor_ptr)handle)->get_queue()), y, incy);
   cublasSgemv((cublasHandle_t)handle, trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
 }
+
+void foo5() {
+  float **As;
+  double **Ad;
+  float2 **Ac;
+  double2 **Az;
+  float **Bs;
+  double **Bd;
+  float2 **Bc;
+  double2 **Bz;
+
+  cublasHandle_t handle;
+
+  int info;
+  int *dev_info_s;
+  int *dev_info_d;
+  int *dev_info_c;
+  int *dev_info_z;
+  //CHECK:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, As, 3, Bs, 3, &info, dev_info_s, 2);
+  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Ad, 3, Bd, 3, &info, dev_info_d, 2);
+  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Ac, 3, Bc, 3, &info, dev_info_c, 2);
+  //CHECK-NEXT:dpct::blas::gels_batch_wrapper(handle, oneapi::mkl::transpose::nontrans, 3, 3, 3, Az, 3, Bz, 3, &info, dev_info_z, 2);
+  cublasSgelsBatched(handle, CUBLAS_OP_N, 3, 3, 3, As, 3, Bs, 3, &info, dev_info_s, 2);
+  cublasDgelsBatched(handle, CUBLAS_OP_N, 3, 3, 3, Ad, 3, Bd, 3, &info, dev_info_d, 2);
+  cublasCgelsBatched(handle, CUBLAS_OP_N, 3, 3, 3, Ac, 3, Bc, 3, &info, dev_info_c, 2);
+  cublasZgelsBatched(handle, CUBLAS_OP_N, 3, 3, 3, Az, 3, Bz, 3, &info, dev_info_z, 2);
+}
