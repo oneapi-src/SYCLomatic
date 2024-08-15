@@ -2611,22 +2611,27 @@ public:
 
   bool ConstructGraphVisited = false;
   unsigned int KernelCallBlockDim = 1;
+  unsigned int NonCudaCallNum = 0;
 
   std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C);
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
     // Update CallExprMap
-    std::cout << "AddCallee:" << std::endl;
-    C->dump();
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
     auto Call =
         insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, C);
     Call->buildCallExprInfo(C);
 
-    // Update ParentDFIs
+    // Update ParentDFIs and NonCudaCallNum
     // Currently, only support CallExpr & FunctionDecl only
     if constexpr (std::is_same<CallT, CallExpr>::value) {
+      static std::set<const CallExpr *> NonCudaCallCallExprMap;
       if (const auto *FD = C->getDirectCallee()) {
+        if (!isFromCUDA(FD) &&
+            FD->getNameInfo().getName().getAsString() != "__syncthreads") {
+          NonCudaCallCallExprMap.insert(C);
+          NonCudaCallNum = NonCudaCallCallExprMap.size();
+        }
         if (auto ChildDFI = DeviceFunctionDecl::LinkRedecls(FD)) {
           ChildDFI->getParentDFIs().insert(weak_from_this());
         }

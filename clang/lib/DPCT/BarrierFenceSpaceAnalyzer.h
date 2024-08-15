@@ -54,17 +54,12 @@ struct IntraproceduralAnalyzerResult {
                   unordered_map<unsigned int /*parameter idx*/, AffectedInfo /*{bool UsedBefore, bool UsedAfter, AccessMode AM}*/>,
               std::unordered_map<
                   unsigned int /*arg idx*/,
-                  std::set<unsigned int> /*caller parameter(s) idx*/>,
-              std::unordered_map<std::string /*global var combined loc*/,
-                                 AffectedInfo>>>;
+                  std::set<unsigned int> /*caller parameter(s) idx*/>>>;
   IntraproceduralAnalyzerResult() {}
-  IntraproceduralAnalyzerResult(MapT Map, std::string CurrentCtxFuncCombinedLoc,
-                                unsigned int CudaCallNum)
-      : Map(Map), CurrentCtxFuncCombinedLoc(CurrentCtxFuncCombinedLoc),
-        CudaCallNum(CudaCallNum) {}
+  IntraproceduralAnalyzerResult(MapT Map, std::string CurrentCtxFuncCombinedLoc)
+      : Map(Map), CurrentCtxFuncCombinedLoc(CurrentCtxFuncCombinedLoc) {}
   MapT Map;
   std::string CurrentCtxFuncCombinedLoc;
-  unsigned int CudaCallNum = 0;
 };
 
 using Ranges = std::unordered_set<SourceRange>;
@@ -162,9 +157,7 @@ private:
       const std::map<const VarDecl *, std::set<DREInfo>> &DefDREInfoMap,
       const SyncCallInfo &SCI,
       std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
-          &AffectingParameters,
-      std::unordered_map<std::string /*global var combined loc*/, AffectedInfo>
-          &AffectingGlobalVars);
+          &AffectingParameters);
   std::unordered_map<unsigned int /*arg idx*/,
                      std::set<unsigned int> /*caller parameter(s) idx*/>
   getArgCallerParmsMap(const CallExpr *CE);
@@ -186,7 +179,6 @@ private:
   // }
   std::deque<SourceRange> LoopRange;
   std::set<const Expr *> DeviceFunctionCallArgs;
-  unsigned int CudaCallNum = 0;
 };
 
 class InterproceduralAnalyzer {

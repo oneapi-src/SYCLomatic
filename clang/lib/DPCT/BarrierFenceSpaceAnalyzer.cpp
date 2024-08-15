@@ -251,10 +251,7 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
   const FunctionDecl *FuncDecl = CE->getDirectCallee();
   if (!FuncDecl)
     return true;
-  if (isFromCUDA(FuncDecl)) {
-    CE->dump();
-    CudaCallNum++;
-  }
+
   std::string FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
   for (const auto &Arg : CE->arguments())
@@ -262,8 +259,6 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
 
   if (FuncName == "__syncthreads" || FuncName == "__barrier_sync" ||
       isUserDefinedDecl(FuncDecl)) {
-    CE->dump();
-    CudaCallNum++;
     SyncCallInfo SCI;
     SCI.IsRealSyncCall =
         (FuncName == "__syncthreads" || FuncName == "__barrier_sync");
@@ -289,14 +284,15 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const DeclRefExpr *DRE) {
     return true;
   if (VD->isLocalVarDecl())
     return true;
+  if (!isa<ParmVarDecl>(VD))
+    return false;
   if (isFromCUDA(VD))
     return true;
 
   TypeAnalyzer TA;
   TypeAnalyzer::ParamterTypeKind Kind =
       TA.getInputParamterTypeKind(VD->getType());
-  if (Kind == TypeAnalyzer::ParamterTypeKind::CanSkipAnalysis &&
-      isa<ParmVarDecl>(VD)) {
+  if (Kind == TypeAnalyzer::ParamterTypeKind::CanSkipAnalysis) {
     return true;
   }
   if (Kind == TypeAnalyzer::ParamterTypeKind::Unsupported) {
@@ -375,10 +371,6 @@ void clang::dpct::IntraproceduralAnalyzer::PostVisit(
     const CXXDependentScopeMemberExpr *) {}
 
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const CXXConstructExpr *CCE) {
-  if (isFromCUDA(CCE->getConstructor())) {
-    CCE->dump();
-    CudaCallNum++;
-  }
   for (const auto &Arg : CCE->arguments())
     DeviceFunctionCallArgs.insert(Arg);
   return true;
@@ -717,13 +709,10 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> InputDFI,
     std::string SyncCallCombinedLoc) {
-  if (InputDFI->getCallExprMap().size() - InputDFI->IAR.CudaCallNum > 0) {
+  if (InputDFI->NonCudaCallNum > 0) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "InputDFI->getCallExprMap().size():"
-              << InputDFI->getCallExprMap().size() << std::endl;
-    std::cout << "InputDFI->IAR.CudaCallNum:" << InputDFI->IAR.CudaCallNum
-              << std::endl;
-    std::cout << "Return False case F0" << std::endl;
+    std::cout << "Return False case F0: InputDFI->NonCudaCallNum:"
+              << InputDFI->NonCudaCallNum << std::endl;
 #endif
     return false;
   }
@@ -741,13 +730,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       std::string /*caller's decl's combined loc str*/,
       std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>>>
       AffectedByParmsMapInfoVec;
-
-  std::stack<
-      std::unordered_map<std::string /*global var combined loc*/, AffectedInfo>>
-      AffectedByGlobalVarsMapInfoStack;
-  std::vector<
-      std::unordered_map<std::string /*global var combined loc*/, AffectedInfo>>
-      AffectedByGlobalVarsMapInfoVec;
 
   std::set<std::weak_ptr<DeviceFunctionInfo>,
            std::owner_less<std::weak_ptr<DeviceFunctionInfo>>>
@@ -784,16 +766,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       AffectedByParmsMapInfoVec.push_back(AffectedByParmsMapInfoStack.top());
     for (int i = 0; i < N1; i++) {
       AffectedByParmsMapInfoStack.pop();
-    }
-
-    int N2 =
-        static_cast<int>(AffectedByGlobalVarsMapInfoStack.size()) - CurDepth;
-    assert(N2 >= 0 && "N should be greater than or equal to 0");
-    if (!AffectedByGlobalVarsMapInfoStack.empty())
-      AffectedByGlobalVarsMapInfoVec.push_back(
-          AffectedByGlobalVarsMapInfoStack.top());
-    for (int i = 0; i < N2; i++) {
-      AffectedByGlobalVarsMapInfoStack.pop();
     }
 
     auto Iter = CurNode->IAR.Map.find(CurCallCombinedLoc);
@@ -843,37 +815,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
         AffectedByParmsMapInfoStack.push(std::make_pair(
             CurNode->IAR.CurrentCtxFuncCombinedLoc, CurAffectedbyParmsMap));
       }
-
-      std::unordered_map<std::string /*global var combined loc*/, AffectedInfo>
-          CurAffectedbyGlobalVarsMap = std::get<6>(Iter->second);
-      if (AffectedByGlobalVarsMapInfoStack.empty()) {
-        AffectedByGlobalVarsMapInfoStack.push(CurAffectedbyGlobalVarsMap);
-      } else {
-        const std::unordered_map<std::string /*global var combined loc*/,
-                                 AffectedInfo> &PrevAffectedbyGlobalVarsMap =
-            AffectedByGlobalVarsMapInfoStack.top();
-        for (const auto &P : PrevAffectedbyGlobalVarsMap) {
-          std::string PrevKey = P.first;
-          auto PrevValue = P.second;
-          CurAffectedbyGlobalVarsMap[PrevKey] = mergeOther(
-              CurAffectedbyGlobalVarsMap[PrevKey], PrevValue, IsInLoop);
-          if (CurAffectedbyGlobalVarsMap[PrevKey].AM == ReadWrite) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-            std::cout << "Return False case F9" << std::endl;
-#endif
-            return false;
-          }
-          if (CurAffectedbyGlobalVarsMap[PrevKey].AM == Write &&
-              CurAffectedbyGlobalVarsMap[PrevKey].UsedBefore &&
-              CurAffectedbyGlobalVarsMap[PrevKey].UsedAfter) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-            std::cout << "Return False case F10" << std::endl;
-#endif
-            return false;
-          }
-        }
-        AffectedByGlobalVarsMapInfoStack.push(CurAffectedbyGlobalVarsMap);
-      }
     }
 
     for (const auto &I : CurNode->getParentDFIs()) {
@@ -885,9 +826,10 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
         return false;
       }
       const auto &Iter = I.lock();
-      if (size_t CalleeNum = (Iter->getCallExprMap().size() - Iter->IAR.CudaCallNum) > 0) {
+      if (Iter->NonCudaCallNum > 0) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "Return False case F41: CalleeNum:" << CalleeNum << std::endl;
+        std::cout << "Return False case F41: Iter->NonCudaCallNum:"
+                  << Iter->NonCudaCallNum << std::endl;
 #endif
         return false;
       }
@@ -899,9 +841,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
 
   if (!AffectedByParmsMapInfoStack.empty())
     AffectedByParmsMapInfoVec.push_back(AffectedByParmsMapInfoStack.top());
-  if (!AffectedByGlobalVarsMapInfoStack.empty())
-    AffectedByGlobalVarsMapInfoVec.push_back(
-        AffectedByGlobalVarsMapInfoStack.top());
 
   for (const auto &Iter : AffectedByParmsMapInfoVec) {
     const auto &AffectedByParmsMap = Iter.second;
@@ -921,29 +860,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       if ((P.second.AM == Write) && P.second.UsedBefore && P.second.UsedAfter) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case F6" << std::endl;
-#endif
-        return false;
-      }
-    }
-  }
-
-  for (const auto &Iter : AffectedByGlobalVarsMapInfoVec) {
-    for (const auto &P : Iter) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-      std::cout << "Global Var:" << P.first << std::endl;
-      std::cout << "  AM:" << P.second.AM << std::endl;
-      std::cout << "  UsedBefore:" << P.second.UsedBefore << std::endl;
-      std::cout << "  UsedAfter:" << P.second.UsedAfter << std::endl;
-#endif
-      if (P.second.AM == ReadWrite) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F7" << std::endl;
-#endif
-        return false;
-      }
-      if ((P.second.AM == Write) && P.second.UsedBefore && P.second.UsedAfter) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F8" << std::endl;
 #endif
         return false;
       }
@@ -1019,28 +935,23 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
           std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>,
           std::unordered_map<
               unsigned int /*arg idx*/,
-              std::set<unsigned int> /*caller parameter(s) idx*/>,
-          std::unordered_map<std::string /*global var combined loc*/,
-                             AffectedInfo>>>
+              std::set<unsigned int> /*caller parameter(s) idx*/>>>
       Map;
   for (auto &SyncCall : SyncCallsVec) {
     std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
         AffectedByParmsMap;
-    std::unordered_map<std::string /*global var combined loc*/, AffectedInfo>
-        AffectedGlobalVars;
     affectedByWhichParameters(DefLocInfoMap, SyncCall.second,
-                              AffectedByParmsMap, AffectedGlobalVars);
+                              AffectedByParmsMap);
     const auto ArgCallerParmsMap = getArgCallerParmsMap(SyncCall.first);
     auto LocInfo = DpctGlobalInfo::getLocInfo(SyncCall.first->getBeginLoc());
-    Map.insert(
-        std::make_pair(getCombinedStrFromLoc(SyncCall.first->getBeginLoc()),
-                       std::make_tuple(SyncCall.second.IsRealSyncCall,
-                                       SyncCall.second.IsInLoop, LocInfo.first,
-                                       LocInfo.second, AffectedByParmsMap,
-                                       ArgCallerParmsMap, AffectedGlobalVars)));
+    Map.insert(std::make_pair(
+        getCombinedStrFromLoc(SyncCall.first->getBeginLoc()),
+        std::make_tuple(SyncCall.second.IsRealSyncCall,
+                        SyncCall.second.IsInLoop, LocInfo.first, LocInfo.second,
+                        AffectedByParmsMap, ArgCallerParmsMap)));
   }
   return IntraproceduralAnalyzerResult(
-      Map, getCombinedStrFromLoc(FD->getBeginLoc()), CudaCallNum);
+      Map, getCombinedStrFromLoc(FD->getBeginLoc()));
 }
 
 bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(
@@ -1097,9 +1008,7 @@ void IntraproceduralAnalyzer::affectedByWhichParameters(
     const std::map<const VarDecl *, std::set<DREInfo>> &DefDREInfoMap,
     const SyncCallInfo &SCI,
     std::unordered_map<unsigned int /*parameter idx*/, AffectedInfo>
-        &AffectingParameters,
-    std::unordered_map<std::string /*global var combined loc*/, AffectedInfo>
-        &AffectingGlobalVars) {
+        &AffectingParameters) {
   for (auto &DefDREInfo : DefDREInfoMap) {
     bool UsedBefore = false;
     bool UsedAfter = false;
@@ -1123,10 +1032,6 @@ void IntraproceduralAnalyzer::affectedByWhichParameters(
       if (const ParmVarDecl *PVD = dyn_cast<ParmVarDecl>(DefDREInfo.first)) {
         AffectingParameters.insert(std::make_pair(
             convertPVD2Idx(FD, PVD), AffectedInfo{UsedBefore, UsedAfter, AM}));
-      } else {
-        AffectingGlobalVars.insert(std::make_pair(
-            getCombinedStrFromLoc(DefDREInfo.first->getBeginLoc()),
-            AffectedInfo{UsedBefore, UsedAfter, AM}));
       }
     }
   }
