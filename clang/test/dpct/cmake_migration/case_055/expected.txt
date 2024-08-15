@@ -14,3 +14,7 @@ list(APPEND CMAKE_SYCL_FLAGS "-fno-strict-aliasing")
 list(APPEND CMAKE_SYCL_FLAGS "")
 list(APPEND CMAKE_SYCL_FLAGS "")
 list(APPEND CMAKE_SYCL_FLAGS "")
+
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  message(FATAL_ERROR "Error msg.")
+endif()
