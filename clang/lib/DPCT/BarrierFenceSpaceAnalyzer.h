@@ -59,12 +59,12 @@ struct IntraproceduralAnalyzerResult {
                                  AffectedInfo>>>;
   IntraproceduralAnalyzerResult() {}
   IntraproceduralAnalyzerResult(MapT Map, std::string CurrentCtxFuncCombinedLoc,
-                                unsigned int POENum)
+                                unsigned int CudaCallNum)
       : Map(Map), CurrentCtxFuncCombinedLoc(CurrentCtxFuncCombinedLoc),
-        POENum(POENum) {}
+        CudaCallNum(CudaCallNum) {}
   MapT Map;
   std::string CurrentCtxFuncCombinedLoc;
-  unsigned int POENum = 0;
+  unsigned int CudaCallNum = 0;
 };
 
 using Ranges = std::unordered_set<SourceRange>;
@@ -152,7 +152,6 @@ public:
   VISIT_NODE(CallExpr)
   VISIT_NODE(DeclRefExpr)
   VISIT_NODE(CXXConstructExpr)
-  VISIT_NODE(PseudoObjectExpr)
 #undef VISIT_NODE
   IntraproceduralAnalyzerResult analyze(const FunctionDecl *FD,
                                         DeviceFunctionInfo *DFI);
@@ -187,7 +186,7 @@ private:
   // }
   std::deque<SourceRange> LoopRange;
   std::set<const Expr *> DeviceFunctionCallArgs;
-  unsigned int POENum = 0;
+  unsigned int CudaCallNum = 0;
 };
 
 class InterproceduralAnalyzer {

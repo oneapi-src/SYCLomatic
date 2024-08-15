@@ -15,7 +15,7 @@
 #include <unordered_set>
 
 using namespace llvm;
-
+//#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
 template <class TargetTy, class NodeTy>
 static inline const TargetTy *findAncestorInFunctionScope(
     const NodeTy *N, const FunctionDecl *Scope,
@@ -251,6 +251,10 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
   const FunctionDecl *FuncDecl = CE->getDirectCallee();
   if (!FuncDecl)
     return true;
+  if (isFromCUDA(FuncDecl)) {
+    CE->dump();
+    CudaCallNum++;
+  }
   std::string FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
   for (const auto &Arg : CE->arguments())
@@ -258,6 +262,8 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const CallExpr *CE) {
 
   if (FuncName == "__syncthreads" || FuncName == "__barrier_sync" ||
       isUserDefinedDecl(FuncDecl)) {
+    CE->dump();
+    CudaCallNum++;
     SyncCallInfo SCI;
     SCI.IsRealSyncCall =
         (FuncName == "__syncthreads" || FuncName == "__barrier_sync");
@@ -369,18 +375,15 @@ void clang::dpct::IntraproceduralAnalyzer::PostVisit(
     const CXXDependentScopeMemberExpr *) {}
 
 bool clang::dpct::IntraproceduralAnalyzer::Visit(const CXXConstructExpr *CCE) {
+  if (isFromCUDA(CCE->getConstructor())) {
+    CCE->dump();
+    CudaCallNum++;
+  }
   for (const auto &Arg : CCE->arguments())
     DeviceFunctionCallArgs.insert(Arg);
   return true;
 }
 void clang::dpct::IntraproceduralAnalyzer::PostVisit(const CXXConstructExpr *) {
-}
-
-bool clang::dpct::IntraproceduralAnalyzer::Visit(const PseudoObjectExpr *POE) {
-  POENum++;
-  return true;
-}
-void clang::dpct::IntraproceduralAnalyzer::PostVisit(const PseudoObjectExpr *) {
 }
 
 clang::dpct::AccessMode
@@ -714,8 +717,14 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> InputDFI,
     std::string SyncCallCombinedLoc) {
-  if (InputDFI->getCallExprMap().size() - InputDFI->IAR.POENum > 1) {
-    //std::cout << "InputDFI->getCallExprMap().size():" << InputDFI->getCallExprMap().size() << std::endl;
+  if (InputDFI->getCallExprMap().size() - InputDFI->IAR.CudaCallNum > 0) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "InputDFI->getCallExprMap().size():"
+              << InputDFI->getCallExprMap().size() << std::endl;
+    std::cout << "InputDFI->IAR.CudaCallNum:" << InputDFI->IAR.CudaCallNum
+              << std::endl;
+    std::cout << "Return False case F0" << std::endl;
+#endif
     return false;
   }
   // Do analysis for all syncthreads call in this DFI's ancestors and
@@ -849,11 +858,17 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
           CurAffectedbyGlobalVarsMap[PrevKey] = mergeOther(
               CurAffectedbyGlobalVarsMap[PrevKey], PrevValue, IsInLoop);
           if (CurAffectedbyGlobalVarsMap[PrevKey].AM == ReadWrite) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+            std::cout << "Return False case F9" << std::endl;
+#endif
             return false;
           }
           if (CurAffectedbyGlobalVarsMap[PrevKey].AM == Write &&
               CurAffectedbyGlobalVarsMap[PrevKey].UsedBefore &&
               CurAffectedbyGlobalVarsMap[PrevKey].UsedAfter) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+            std::cout << "Return False case F10" << std::endl;
+#endif
             return false;
           }
         }
@@ -870,8 +885,10 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
         return false;
       }
       const auto &Iter = I.lock();
-      if (size_t CalleeNum = (Iter->getCallExprMap().size() - Iter->IAR.POENum) > 1) {
-        //std::cout << "CalleeNum:" << CalleeNum << std::endl;
+      if (size_t CalleeNum = (Iter->getCallExprMap().size() - Iter->IAR.CudaCallNum) > 0) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "Return False case F41: CalleeNum:" << CalleeNum << std::endl;
+#endif
         return false;
       }
       NodeStack.push(std::make_tuple(I, CurNode->IAR.CurrentCtxFuncCombinedLoc,
@@ -895,10 +912,18 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       std::cout << "  UsedBefore:" << P.second.UsedBefore << std::endl;
       std::cout << "  UsedAfter:" << P.second.UsedAfter << std::endl;
 #endif
-      if (P.second.AM == ReadWrite)
+      if (P.second.AM == ReadWrite) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case F5" << std::endl;
+#endif
         return false;
-      if ((P.second.AM == Write) && P.second.UsedBefore && P.second.UsedAfter)
+      }
+      if ((P.second.AM == Write) && P.second.UsedBefore && P.second.UsedAfter) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case F6" << std::endl;
+#endif
         return false;
+      }
     }
   }
 
@@ -910,10 +935,18 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       std::cout << "  UsedBefore:" << P.second.UsedBefore << std::endl;
       std::cout << "  UsedAfter:" << P.second.UsedAfter << std::endl;
 #endif
-      if (P.second.AM == ReadWrite)
+      if (P.second.AM == ReadWrite) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case F7" << std::endl;
+#endif
         return false;
-      if ((P.second.AM == Write) && P.second.UsedBefore && P.second.UsedAfter)
+      }
+      if ((P.second.AM == Write) && P.second.UsedBefore && P.second.UsedAfter) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case F8" << std::endl;
+#endif
         return false;
+      }
     }
   }
 
@@ -1007,7 +1040,7 @@ clang::dpct::IntraproceduralAnalyzer::analyze(const FunctionDecl *FD,
                                        ArgCallerParmsMap, AffectedGlobalVars)));
   }
   return IntraproceduralAnalyzerResult(
-      Map, getCombinedStrFromLoc(FD->getBeginLoc()), POENum);
+      Map, getCombinedStrFromLoc(FD->getBeginLoc()), CudaCallNum);
 }
 
 bool clang::dpct::IntraproceduralAnalyzer::isAccessingMemory(

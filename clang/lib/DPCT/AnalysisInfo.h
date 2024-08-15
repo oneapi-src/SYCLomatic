@@ -2616,6 +2616,8 @@ public:
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
     // Update CallExprMap
+    std::cout << "AddCallee:" << std::endl;
+    C->dump();
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
     auto Call =
         insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, C);
