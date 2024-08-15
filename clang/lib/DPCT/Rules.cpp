@@ -567,10 +567,6 @@ TypeOutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
     ResultBuilder->ArgIndex =
         OutputBuilder::consumeArgIndex(OutStr, Idx, "$template_arg");
     OutputBuilder::consumeRParen(OutStr, Idx, "$template_arg");
-    if (TemplateArgCount < 0 ||
-        (size_t)TemplateArgCount < ResultBuilder->ArgIndex) {
-      TemplateArgCount = ResultBuilder->ArgIndex;
-    }
   }
   return ResultBuilder;
 }

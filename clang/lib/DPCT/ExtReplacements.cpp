@@ -246,7 +246,6 @@ ExtReplacements::mergeReplsAtSameOffset() {
   std::shared_ptr<ExtReplacement> Insert, InsertLeft, InsertRight, Replace;
   unsigned Offset = ReplMap.begin()->first;
   for (auto &R : ReplMap) {
-    std::cout<<R.second->toString()<<std::endl;
     if (R.first != Offset) {
       Offset = R.first;
       ReplsList.emplace_back(mergeAtSameOffset(
