@@ -8,6 +8,7 @@
 
 #include "ThrustAPIMigration.h"
 #include "ASTTraversal.h"
+#include "AnalysisInfo.h"
 #include "ExprAnalysis.h"
 #include "TextModification.h"
 
@@ -53,6 +54,7 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void ThrustAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
+    std::cout<<"ThrustAPIRule: "<<CE->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager())<<std::endl;
     if (const UnresolvedLookupExpr *ULE =
             dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee()))
       thrustFuncMigration(Result, CE, ULE);

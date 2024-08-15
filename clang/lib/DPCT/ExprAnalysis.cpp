@@ -1045,7 +1045,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
   auto RewriteType = [&](const TypeLoc &TLoc) {
-    std::cout<<"RewriteType "<<TLoc.getBeginLoc().printToString(SM)<<std::endl;
     auto ResultRepl = TypeLocRewriterFactoryBase::findReplacement(TLoc);
     if (!ResultRepl.first.empty()) {
       // [WA] The location of TSTL does not contain the qualifier
@@ -1058,6 +1057,13 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       }
       addReplacement(ResultRepl.second.getBegin(), ResultRepl.second.getEnd(),
                      CSCE, ResultRepl.first);
+    }
+    // process template args
+    if (auto ETL = TL.getAs<ElaboratedTypeLoc>()) {
+      TL = ETL.getNamedTypeLoc();
+    }
+    if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      analyzeTemplateSpecializationType(TSTL);
     }
   };
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
@@ -1093,7 +1099,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       return;
     }
   case TypeLoc::TemplateSpecialization: {
-    std::cout<<"TSTL "<<TL.getBeginLoc().printToString(SM)<<std::endl;
     RewriteType(TL);
     // llvm::raw_string_ostream OS(TyName);
     // TyName.clear();
@@ -1134,8 +1139,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     //     OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan") {
     //   SR.setEnd(TSTL.getTemplateNameLoc());
     // }
-    auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
-    analyzeTemplateSpecializationType(TSTL);
+    // auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
+    // analyzeTemplateSpecializationType(TSTL);
     break;
   }
   case TypeLoc::DependentTemplateSpecialization:

@@ -2302,7 +2302,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       EA.analyze(*TL);
     }
-    emplaceTransformation(EA.getReplacement());
+    auto Repl = EA.getReplacement();
+    std::cout<<"AST End: "<<Repl->getReplacement(DpctGlobalInfo::getContext())->toString()<<std::endl;
+    emplaceTransformation(Repl);
     EA.applyAllSubExprRepl();
     return;
     // auto TypeStr =

@@ -189,11 +189,12 @@ public:
     return EmptyString;
   }
 
-  inline static std::pair<std::string, clang::SourceRange>
+  static std::pair<std::string, clang::SourceRange>
   findReplacement(TypeLoc TL) {
     static const std::string EmptyString;
     TypeMatchingDesc TMD(TL);
-    std::cout<<"findReplacement TMD: "<<TMD.getName()<<" "<<TMD.TemplateArgCount<<std::endl;
+    std::cout << "findReplacement TMD: " << TMD.getName() << " "
+              << TMD.TemplateArgCount << std::endl;
     auto ReplRangeBegin = TL.getBeginLoc();
     auto ReplRangeEnd = TL.getEndLoc();
 
@@ -218,6 +219,7 @@ public:
         // Exclude template arg part in the replace range if the
         // TemplateArgCount is -1
         if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+          std::cout << "findReplacement TSTL" << std::endl;
           if (Iter->first.TemplateArgCount == -1) {
             // A::B::C::typename<int>
             //          ^
