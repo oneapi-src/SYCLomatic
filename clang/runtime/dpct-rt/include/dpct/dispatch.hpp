@@ -9,6 +9,9 @@
 #ifndef __DPCT_PROXY_HPP__
 #define __DPCT_PROXY_HPP__
 
+// Only for testing
+#include <syclcompat.hpp>
+
 namespace dpct {
 namespace detail {
 namespace dispatch {
