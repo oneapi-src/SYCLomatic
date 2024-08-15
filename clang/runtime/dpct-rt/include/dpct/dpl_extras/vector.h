@@ -801,11 +801,7 @@ public:
     // This code returns a pointer to a data within sycl buffer accessor which
     // is leaving scope. This relies on undefined
     // behavior and may not provide a valid pointer to data inside that buffer.
-    return const_cast<device_vector *>(this)
-        ->detail::mem_mgr::instance()
-        .translate_ptr(_storage)
-        .buffer.get_host_access()
-        .get_pointer();
+    return const_cast<device_vector *>(this)->real_begin();
   }
   void swap(device_vector &v) {
     void *temp = v._storage;
