@@ -6,37 +6,36 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AnalysisInfo.h"
 #include "CallExprRewriterCUB.h"
 #include "CallExprRewriterCommon.h"
 
 using namespace clang::dpct;
 
-template <class NameT, class... TemplateArgsT>
-class PrettyTemplatedNamePrinter {
-  NameT Name;
-  ArgsPrinter<false, TemplateArgsT...> TAs;
+namespace {
+class PrettyTemplatedFunctionNamePrinter {
+  std::string Name;
+  std::vector<TemplateArgumentInfo> Args;
 
 public:
-  PrettyTemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
-      : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
+  PrettyTemplatedFunctionNamePrinter(StringRef Name,
+                                     std::vector<TemplateArgumentInfo> &&Args)
+      : Name(Name.str()), Args(std::move(Args)) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Name);
-    std::string Tmp;
-    llvm::raw_string_ostream OS(Tmp);
-    TAs.print(OS);
-    if (Tmp.empty())
-      return;
-    Stream << '<' << Tmp << '>';
+    if (!Args.empty()) {
+      Stream << '<';
+      ArgsPrinter<false, std::vector<TemplateArgumentInfo>>(Args).print(Stream);
+      Stream << '>';
+    }
   }
 };
 
-static inline std::function<PrettyTemplatedNamePrinter<
-    StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>
+std::function<PrettyTemplatedFunctionNamePrinter(const CallExpr *)>
 makePrettyTemplatedCalleeCreator(std::string CalleeName,
                                  std::vector<size_t> Indexes) {
   return PrinterCreator<
-      PrettyTemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>,
-      std::string,
+      PrettyTemplatedFunctionNamePrinter, std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
       CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
         std::vector<TemplateArgumentInfo> Ret;
@@ -49,6 +48,7 @@ makePrettyTemplatedCalleeCreator(std::string CalleeName,
         return Ret;
       });
 }
+} // namespace
 
 #define PRETTY_TEMPLATED_CALLEE(FuncName, ...)                                 \
   makePrettyTemplatedCalleeCreator(FuncName, {__VA_ARGS__})

@@ -492,12 +492,12 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
 /// \param block_itr The work-group's base input iterator for loading from.
 ///
 /// \param items Data to load
-template <typename InputT, int ElementsPerWorkItem, typename InputIteratorT>
-__dpct_inline__ void load_direct_blocked(int linear_tid,
+template <typename InputT, size_t ElementsPerWorkItem, typename InputIteratorT>
+__dpct_inline__ void load_direct_blocked(size_t linear_tid,
                                          InputIteratorT block_itr,
                                          InputT (&items)[ElementsPerWorkItem]) {
 #pragma unroll
-  for (int i = 0; i < ElementsPerWorkItem; i++) {
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
     items[i] = block_itr[(linear_tid * ElementsPerWorkItem) + i];
   }
 }
@@ -519,13 +519,13 @@ __dpct_inline__ void load_direct_blocked(int linear_tid,
 /// \param block_itr The work-group's base input iterator for loading from.
 ///
 /// \param items Data to load
-template <int WorkGroupSize, typename InputT, int ElementsPerWorkItem,
+template <size_t WorkGroupSize, typename InputT, int ElementsPerWorkItem,
           typename InputIteratorT>
-__dpct_inline__ void load_direct_striped(int linear_tid,
+__dpct_inline__ void load_direct_striped(size_t linear_tid,
                                          InputIteratorT block_itr,
                                          InputT (&items)[ElementsPerWorkItem]) {
 #pragma unroll
-  for (int i = 0; i < ElementsPerWorkItem; i++) {
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
     items[i] = block_itr[linear_tid + i * WorkGroupSize];
   }
 }
