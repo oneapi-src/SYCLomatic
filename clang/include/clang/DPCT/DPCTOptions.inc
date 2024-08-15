@@ -610,13 +610,17 @@ DPCT_ENUM_OPTION(
             "Generate code with sycl:: namespace, applied only for "
             "SYCL math functions.\n"
             "Cannot be used with cl or sycl values.",
-            false)),
+            false),
+        DPCT_OPTION_ENUM_VALUE("syclcompat",
+                               int(ExplicitNamespace::EN_SYCLCompat),
+                               "Generate code with syclcompat:: namespace.",
+                               false)),
     llvm::cl::desc("Defines the namespaces to use explicitly in generated "
                    "code. The <value> is a comma\n"
-                   "separated list. Default: dpct, sycl.\n"
+                   "separated list. Default: dpct/syclcompat, sycl.\n"
                    "Possible values are:"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
-    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
+    llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(
     clang::dpct::bits, DPCPPExtensionsDefaultEnabled, NoDPCPPExtensions,
@@ -938,6 +942,15 @@ DPCT_ENUM_OPTION(
     llvm::cl::desc("The preference of helper function usage in migration.\n"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
+
+DPCT_FLAG_OPTION(
+    UseCompat, clang::dpct::DpctOptionClass::OC_Attribute,
+    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
+                        clang::dpct::DpctActionKind::DAK_Migration),
+    "use-compat",
+    llvm::cl::desc("Call SYCLcompat function in migrated code "
+    "instead of calling dpct helper function. Default: off.\n"),
+    llvm::cl::cat(DPCTCodeGenCat), llvm::cl::cat(DPCTCat))
 
 DPCT_FLAG_OPTION(
     AnalysisMode, clang::dpct::DpctOptionClass::OC_Action,

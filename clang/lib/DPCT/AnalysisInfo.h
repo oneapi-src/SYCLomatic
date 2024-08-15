@@ -864,11 +864,6 @@ public:
   static std::unordered_map<std::string, bool> getExcludePath() {
     return ExcludePath;
   }
-  static std::set<ExplicitNamespace> getExplicitNamespaceSet() {
-    return ExplicitNamespaceSet;
-  }
-  static void
-  setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec);
   static bool isCtadEnabled() { return EnableCtad; }
   static void setCtadEnabled(bool Enable) { EnableCtad = Enable; }
   static bool isCodePinEnabled() { return EnableCodePin; }
@@ -1286,6 +1281,8 @@ public:
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
+  static void setUseCompat(bool Flag = true) { UseCompatFlag = Flag; }
+  static bool useCompat() { return UseCompatFlag; }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
@@ -1413,6 +1410,7 @@ public:
   static bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
   }
+  static void printUsingNamespace(llvm::raw_ostream &);
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 
@@ -1509,7 +1507,6 @@ private:
   static bool GenBuildScript;
   static bool MigrateBuildScriptOnly;
   static bool EnableComments;
-  static std::set<ExplicitNamespace> ExplicitNamespaceSet;
 
   // This variable is only set true when option "--report-type=stats" or option
   // " --report-type=all" is specified to get the migration status report, while
@@ -1595,6 +1592,7 @@ private:
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
   static bool AnalysisModeFlag;
+  static bool UseCompatFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
