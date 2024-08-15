@@ -783,16 +783,15 @@ private:
     list_devices();
 #endif
   }
-  void check_id(unsigned int &id) const {
+  void check_id(unsigned int id) const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (id >= _devs.size()) {
       throw std::runtime_error("invalid device id");
     }
   }
-
   std::vector<std::shared_ptr<device_ext>> _devs;
   /// stack of devices resulting from CUDA context change;
-  inline static thread_local std::stack<unsigned int> _dev_stack;
+  static inline thread_local std::stack<unsigned int> _dev_stack;
   /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
   /// _dev_stack, which means the default device should be used for the current
   /// thread.
