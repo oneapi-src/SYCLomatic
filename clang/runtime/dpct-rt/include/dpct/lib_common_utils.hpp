@@ -9,10 +9,9 @@
 #ifndef __DPCT_LIB_COMMON_UTILS_HPP__
 #define __DPCT_LIB_COMMON_UTILS_HPP__
 
-#include "proxy.hpp"
+#include "dispatch.hpp"
 
 #include <oneapi/mkl.hpp>
-#include <sycl/sycl.hpp>
 
 namespace dpct {
 namespace detail {
@@ -26,15 +25,15 @@ template <typename T> inline auto get_memory(const void *x) {
 }
 
 template <typename T>
-inline typename ::dpct::detail::proxy::DataType<T>::T2
+inline typename ::dpct::detail::dispatch::DataType<T>::T2
 get_value(const T *s, sycl::queue &q) {
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   Ty s_h;
-  if (::dpct::detail::proxy::get_pointer_attribute(q, s) ==
-      ::dpct::detail::proxy::pointer_access_attribute::device_only)
-    ::dpct::detail::proxy::memcpy(
+  if (::dpct::detail::dispatch::get_pointer_attribute(q, s) ==
+      ::dpct::detail::dispatch::pointer_access_attribute::device_only)
+    ::dpct::detail::dispatch::memcpy(
         q, (void *)&s_h, (void *)s, sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::device_to_host)
+        ::dpct::detail::dispatch::memcpy_direction::device_to_host)
         .wait();
   else
     s_h = *reinterpret_cast<const Ty *>(s);

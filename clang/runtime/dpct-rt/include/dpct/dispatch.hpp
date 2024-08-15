@@ -1,4 +1,4 @@
-//==---- proxy.hpp --------------------------------*- C++ -*----------------==//
+//==---- dispatch.hpp -----------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -9,17 +9,9 @@
 #ifndef __DPCT_PROXY_HPP__
 #define __DPCT_PROXY_HPP__
 
-#if USE_DPCT_HELPER
-#include "memory.hpp"
-#include "util.hpp"
-#else
-#include <syclcompat.hpp>
-#endif
-#include <sycl/sycl.hpp>
-
 namespace dpct {
 namespace detail {
-namespace proxy {
+namespace dispatch {
 #if USE_DPCT_HELPER
 template <typename T> using DataType = ::dpct::DataType<T>;
 using pointer_access_attribute = ::dpct::detail::pointer_access_attribute;
@@ -128,7 +120,7 @@ inline pointer_access_attribute get_pointer_attribute(sycl::queue q,
 #endif
 }
 
-} // namespace proxy
+} // namespace dispatch
 } // namespace detail
 } // namespace dpct
 

@@ -9,11 +9,10 @@
 #ifndef __DPCT_BLAS_UTILS_HPP__
 #define __DPCT_BLAS_UTILS_HPP__
 
-#include "proxy.hpp"
+#include "dispatch.hpp"
 
 #include "lib_common_utils.hpp"
 #include <oneapi/mkl.hpp>
-#include <sycl/sycl.hpp>
 
 #include <utility>
 #include <vector>
@@ -26,7 +25,7 @@ template <typename target_t, typename source_t> class parameter_wrapper_base_t {
 public:
   parameter_wrapper_base_t(sycl::queue q, source_t *source, size_t ele_num)
       : _source_attribute(
-            ::dpct::detail::proxy::get_pointer_attribute(q, source)),
+            ::dpct::detail::dispatch::get_pointer_attribute(q, source)),
         _q(q), _source(source), _ele_num(ele_num),
         _target(construct_member_variable_target()) {}
 
@@ -34,13 +33,13 @@ public:
     if (_need_free) {
       _q.submit([&](sycl::handler &cgh) {
         cgh.host_task(
-            [t = _target, q = _q] { ::dpct::detail::proxy::free(t, q); });
+            [t = _target, q = _q] { ::dpct::detail::dispatch::free(t, q); });
       });
     }
   }
 
 protected:
-  ::dpct::detail::proxy::pointer_access_attribute _source_attribute;
+  ::dpct::detail::dispatch::pointer_access_attribute _source_attribute;
   sycl::queue _q;
   source_t *_source = nullptr;
   size_t _ele_num;
@@ -51,14 +50,14 @@ private:
   target_t *construct_member_variable_target() {
     if constexpr (std::is_same_v<target_t, source_t>) {
       if (_source_attribute ==
-          ::dpct::detail::proxy::pointer_access_attribute::host_only)
-        return (target_t *)::dpct::detail::proxy::malloc(
+          ::dpct::detail::dispatch::pointer_access_attribute::host_only)
+        return (target_t *)::dpct::detail::dispatch::malloc(
             sizeof(target_t) * _ele_num, _q);
 #ifdef DPCT_USM_LEVEL_NONE
       auto alloc = dpct::detail::mem_mgr::instance().translate_ptr(_source);
       size_t offset = (byte_t *)_source - alloc.alloc_ptr;
       if (offset)
-        return (target_t *)::dpct::detail::proxy::malloc(
+        return (target_t *)::dpct::detail::dispatch::malloc(
             sizeof(target_t) * _ele_num, _q);
 #endif
       // If (data type is same && it is device pointer && (USM || buffer offset
@@ -66,7 +65,7 @@ private:
       _need_free = false;
       return _source;
     } else {
-      return (target_t *)::dpct::detail::proxy::malloc(
+      return (target_t *)::dpct::detail::dispatch::malloc(
           sizeof(target_t) * _ele_num, _q);
     }
   }
@@ -126,7 +125,7 @@ public:
                             .template get_access<sycl::access_mode::read>(cgh);
         auto to_acc = dpct::get_buffer<source_t>(_source)
                           .template get_access<sycl::access_mode::write>(cgh);
-        cgh.single_task<::dpct::detail::proxy::kernel_name<
+        cgh.single_task<::dpct::detail::dispatch::kernel_name<
             class parameter_wrapper_copyback, target_t, source_t>>(
             [=]() { to_acc[0] = static_cast<source_t>(from_acc[0]); });
       });
@@ -137,8 +136,8 @@ public:
     }
 #else
     if (_source_attribute ==
-        ::dpct::detail::proxy::pointer_access_attribute::device_only) {
-      _q.template single_task<::dpct::detail::proxy::kernel_name<
+        ::dpct::detail::dispatch::pointer_access_attribute::device_only) {
+      _q.template single_task<::dpct::detail::dispatch::kernel_name<
           class parameter_wrapper_copyback, target_t, source_t>>(
           [t = _target, s = _source]() { *s = static_cast<source_t>(*t); });
     } else {
@@ -191,9 +190,9 @@ public:
       : base_t(q, source, ele_num) {
     if constexpr (inout_prop != parameter_inout_prop::out) {
       if (_need_free) {
-        ::dpct::detail::proxy::memcpy(
+        ::dpct::detail::dispatch::memcpy(
             _q, _target, _source, sizeof(target_t) * _ele_num,
-            ::dpct::detail::proxy::memcpy_direction::automatic);
+            ::dpct::detail::dispatch::memcpy_direction::automatic);
       }
     }
   }
@@ -212,12 +211,12 @@ public:
   ~parameter_wrapper_t() {
     if constexpr (inout_prop != parameter_inout_prop::in) {
       if (_need_free) {
-        sycl::event e = ::dpct::detail::proxy::memcpy(
+        sycl::event e = ::dpct::detail::dispatch::memcpy(
             _q, _source, _target, sizeof(target_t) * _ele_num,
-            ::dpct::detail::proxy::memcpy_direction::automatic);
+            ::dpct::detail::dispatch::memcpy_direction::automatic);
         (void)e;
         if (_source_attribute ==
-            ::dpct::detail::proxy::pointer_access_attribute::host_only)
+            ::dpct::detail::dispatch::pointer_access_attribute::host_only)
           e.wait();
       }
     }
@@ -263,14 +262,14 @@ using wrapper_double_in =
 /// \param [in] queue The queue where the routine should be executed.
 /// \param [in] async If this argument is true, the return of the function
 /// does NOT guarantee the copy is completed.
-inline void
-matrix_mem_copy(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
-                std::int64_t from_ld, std::int64_t rows, std::int64_t cols,
-                std::int64_t elem_size,
-                ::dpct::detail::proxy::memcpy_direction direction =
-                    ::dpct::detail::proxy::memcpy_direction::automatic,
-                sycl::queue &queue = ::dpct::detail::proxy::get_default_queue(),
-                bool async = false) {
+inline void matrix_mem_copy(
+    void *to_ptr, const void *from_ptr, std::int64_t to_ld,
+    std::int64_t from_ld, std::int64_t rows, std::int64_t cols,
+    std::int64_t elem_size,
+    ::dpct::detail::dispatch::memcpy_direction direction =
+        ::dpct::detail::dispatch::memcpy_direction::automatic,
+    sycl::queue &queue = ::dpct::detail::dispatch::get_default_queue(),
+    bool async = false) {
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
   }
@@ -278,19 +277,19 @@ matrix_mem_copy(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
   if (to_ld == from_ld) {
     size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
     if (async)
-      ::dpct::detail::proxy::memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                                    copy_size, direction);
+      ::dpct::detail::dispatch::memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                                       copy_size, direction);
     else
-      ::dpct::detail::proxy::memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                                    copy_size, direction)
+      ::dpct::detail::dispatch::memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+                                       copy_size, direction)
           .wait();
   } else {
     if (async)
-      ::dpct::detail::proxy::memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
-                                    elem_size * from_ld, elem_size * rows, cols,
-                                    direction);
+      ::dpct::detail::dispatch::memcpy(queue, to_ptr, from_ptr,
+                                       elem_size * to_ld, elem_size * from_ld,
+                                       elem_size * rows, cols, direction);
     else
-      sycl::event::wait(::dpct::detail::proxy::memcpy(
+      sycl::event::wait(::dpct::detail::dispatch::memcpy(
           queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
           elem_size * rows, cols, direction));
   }
@@ -305,14 +304,14 @@ using ::dpct::compute_type;
 
 class descriptor {
 public:
-  void set_queue(::dpct::detail::proxy::queue_ptr q_ptr) noexcept {
+  void set_queue(::dpct::detail::dispatch::queue_ptr q_ptr) noexcept {
     _queue_ptr = q_ptr;
   }
   sycl::queue &get_queue() noexcept { return *_queue_ptr; }
   void set_math_mode(math_mode mm) noexcept { _mm = mm; }
   math_mode get_math_mode() const noexcept { return _mm; }
   static inline void
-  set_saved_queue(::dpct::detail::proxy::queue_ptr q_ptr) noexcept {
+  set_saved_queue(::dpct::detail::dispatch::queue_ptr q_ptr) noexcept {
     _saved_queue_ptr = q_ptr;
   }
   static inline sycl::queue &get_saved_queue() noexcept {
@@ -320,11 +319,11 @@ public:
   }
 
 private:
-  ::dpct::detail::proxy::queue_ptr _queue_ptr =
-      &::dpct::detail::proxy::get_default_queue();
+  ::dpct::detail::dispatch::queue_ptr _queue_ptr =
+      &::dpct::detail::dispatch::get_default_queue();
   math_mode _mm = math_mode::mm_default;
-  static inline ::dpct::detail::proxy::queue_ptr _saved_queue_ptr =
-      &::dpct::detail::proxy::get_default_queue();
+  static inline ::dpct::detail::dispatch::queue_ptr _saved_queue_ptr =
+      &::dpct::detail::dispatch::get_default_queue();
 };
 
 using descriptor_ptr = descriptor *;
@@ -387,7 +386,7 @@ public:
       }
     } else {
       std::vector<void *> ptrs{_temp_ptr};
-      ::dpct::detail::proxy::enqueue_free(ptrs, {_e});
+      ::dpct::detail::dispatch::enqueue_free(ptrs, {_e});
     }
   }
 };
@@ -655,8 +654,8 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
   // For Hermitian matrix, this function performs: C = alpha*OP(A)*(OP(B))^H + beta*C
   // The gemmt() function performs: C = alpha*OPA(A)*OPB(B) + beta*C
   // So the OPB need be updated before we call gemmt().
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
-  using Ts = typename ::dpct::detail::proxy::DataType<Tbeta>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
+  using Ts = typename ::dpct::detail::dispatch::DataType<Tbeta>::T2;
   Ty alpha_value = dpct::get_value(reinterpret_cast<const Ty *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   oneapi::mkl::transpose trans_A = trans, trans_B = trans;
@@ -772,24 +771,25 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
 #else
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   // Set the info array value to 0
-  ::dpct::detail::proxy::fill<unsigned char>(exec_queue, info, 0,
-                                             sizeof(int) * batch_size);
+  ::dpct::detail::dispatch::fill<unsigned char>(exec_queue, info, 0,
+                                                sizeof(int) * batch_size);
   std::int64_t stride_a = n * lda;
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::getrfnp_batch_scratchpad_size<Ty>(
           exec_queue, n, n, lda, stride_a, batch_size);
 
-  Ty *a_strided_mem = (Ty *)::dpct::detail::proxy::malloc(
+  Ty *a_strided_mem = (Ty *)::dpct::detail::dispatch::malloc(
       stride_a * batch_size * sizeof(Ty), exec_queue);
   T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
-  ::dpct::detail::proxy::memcpy(::dpct::detail::proxy::get_default_queue(),
-                                host_a, a, batch_size * sizeof(T *));
+  ::dpct::detail::dispatch::memcpy(
+      ::dpct::detail::dispatch::get_default_queue(), host_a, a,
+      batch_size * sizeof(T *));
   for (std::int64_t i = 0; i < batch_size; ++i)
-    ::dpct::detail::proxy::memcpy(::dpct::detail::proxy::get_default_queue(),
-                                  a_strided_mem + i * stride_a, host_a[i],
-                                  n * lda * sizeof(T));
+    ::dpct::detail::dispatch::memcpy(
+        ::dpct::detail::dispatch::get_default_queue(),
+        a_strided_mem + i * stride_a, host_a[i], n * lda * sizeof(T));
 
 #ifdef DPCT_USM_LEVEL_NONE
   {
@@ -801,10 +801,10 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   }
   std::vector<sycl::event> events;
   for (std::int64_t i = 0; i < batch_size; ++i)
-    events.push_back(::dpct::detail::proxy::memcpy(
+    events.push_back(::dpct::detail::dispatch::memcpy(
         exec_queue, host_a[i], a_strided_mem + i * stride_a,
         n * lda * sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::automatic));
+        ::dpct::detail::dispatch::memcpy_direction::automatic));
 #else
   Ty *scratchpad = sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
   sycl::event e = oneapi::mkl::lapack::getrfnp_batch(
@@ -812,13 +812,13 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
       scratchpad_size);
   std::vector<sycl::event> events;
   for (std::int64_t i = 0; i < batch_size; ++i)
-    events.push_back(::dpct::detail::proxy::memcpy(
+    events.push_back(::dpct::detail::dispatch::memcpy(
         exec_queue, host_a[i], a_strided_mem + i * stride_a,
-        n * lda * sizeof(T), ::dpct::detail::proxy::memcpy_direction::automatic,
-        {e}));
+        n * lda * sizeof(T),
+        ::dpct::detail::dispatch::memcpy_direction::automatic, {e}));
 
   std::vector<void *> ptrs{scratchpad, a_strided_mem};
-  ::dpct::detail::proxy::enqueue_free(ptrs, events, exec_queue);
+  ::dpct::detail::dispatch::enqueue_free(ptrs, events, exec_queue);
 #endif
 
   exec_queue.submit([&](sycl::handler &cgh) {
@@ -858,10 +858,10 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
     detail::getrfnp_batch_wrapper(exec_queue, n, a, lda, info, batch_size);
     return;
   }
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   // Set the info array value to 0
-  ::dpct::detail::proxy::fill<unsigned char>(exec_queue, info, 0,
-                                             sizeof(int) * batch_size);
+  ::dpct::detail::dispatch::fill<unsigned char>(exec_queue, info, 0,
+                                                sizeof(int) * batch_size);
 #ifdef DPCT_USM_LEVEL_NONE
   std::int64_t stride_a = n * lda;
   std::int64_t stride_ipiv = n;
@@ -871,7 +871,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
 
   T *a_buffer_ptr;
   a_buffer_ptr =
-      (T *)::dpct::detail::proxy::malloc(stride_a * batch_size * sizeof(T));
+      (T *)::dpct::detail::dispatch::malloc(stride_a * batch_size * sizeof(T));
 
   T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
   dpct_memcpy(host_a, a, batch_size * sizeof(T *));
@@ -891,7 +891,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
     exec_queue.submit([&](sycl::handler &cgh) {
       auto from_acc = ipiv_buf.get_access<sycl::access_mode::read>(cgh);
       auto to_acc = to_buffer.get_access<sycl::access_mode::write>(cgh);
-      cgh.parallel_for<::dpct::detail::proxy::kernel_name<
+      cgh.parallel_for<::dpct::detail::dispatch::kernel_name<
           class getrf_device_int64_to_int, T>>(
           sycl::range<2>(batch_size, n), [=](sycl::id<2> id) {
             to_acc[id.get(0) * n + id.get(1)] =
@@ -903,9 +903,9 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
   // Copy back to the original buffers
   std::vector<sycl::event> events;
   for (std::int64_t i = 0; i < batch_size; ++i)
-    events.push_back(::dpct::detail::proxy::memcpy(
+    events.push_back(::dpct::detail::dispatch::memcpy(
         exec_queue, host_a[i], a_buffer_ptr + i * stride_a, n * lda * sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::automatic));
+        ::dpct::detail::dispatch::memcpy_direction::automatic));
 
   std::vector<void *> ptrs{host_a};
   std::thread mem_free_thread(
@@ -941,15 +941,15 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
       ipiv_int64_ptr, 1, &group_sizes, scratchpad, scratchpad_size);
 
   sycl::event e = exec_queue.submit([&](sycl::handler &cgh) {
-    cgh.parallel_for<
-        ::dpct::detail::proxy::kernel_name<class getrf_device_int64_to_int, T>>(
+    cgh.parallel_for<::dpct::detail::dispatch::kernel_name<
+        class getrf_device_int64_to_int, T>>(
         sycl::range<1>(batch_size * n), [=](sycl::id<1> idx) {
           ipiv[idx] = static_cast<int>(ipiv_int64[idx]);
         });
   });
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64, ipiv_int64_ptr, a_shared};
-  ::dpct::detail::proxy::enqueue_free(ptrs, {e}, exec_queue);
+  ::dpct::detail::dispatch::enqueue_free(ptrs, {e}, exec_queue);
 #endif
 }
 
@@ -972,7 +972,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
                                 oneapi::mkl::transpose trans, int n, int nrhs,
                                 const T *a[], int lda, const int *ipiv, T *b[],
                                 int ldb, int *info, int batch_size) {
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   // Set the info value to 0
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
@@ -986,9 +986,9 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
 
   T *a_buffer_ptr, *b_buffer_ptr;
   a_buffer_ptr =
-      (T *)::dpct::detail::proxy::malloc(stride_a * batch_size * sizeof(T));
+      (T *)::dpct::detail::dispatch::malloc(stride_a * batch_size * sizeof(T));
   b_buffer_ptr =
-      (T *)::dpct::detail::proxy::malloc(stride_b * batch_size * sizeof(T));
+      (T *)::dpct::detail::dispatch::malloc(stride_b * batch_size * sizeof(T));
 
   T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
   T **host_b = (T **)std::malloc(batch_size * sizeof(T *));
@@ -1009,7 +1009,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
     exec_queue.submit([&](sycl::handler &cgh) {
       auto from_acc = from_buf.get_access<sycl::access_mode::read>(cgh);
       auto to_acc = ipiv_buf.get_access<sycl::access_mode::write>(cgh);
-      cgh.parallel_for<::dpct::detail::proxy::kernel_name<
+      cgh.parallel_for<::dpct::detail::dispatch::kernel_name<
           class getrs_device_int64_to_int, T>>(
           sycl::range<2>(batch_size, n), [=](sycl::id<2> id) {
             to_acc[id.get(0) * stride_ipiv + id.get(1)] =
@@ -1026,10 +1026,10 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
   // Copy back to the original buffers
   std::vector<sycl::event> events;
   for (std::int64_t i = 0; i < batch_size; ++i)
-    events.push_back(::dpct::detail::proxy::memcpy(
+    events.push_back(::dpct::detail::dispatch::memcpy(
         exec_queue, host_b[i], b_buffer_ptr + i * stride_b,
         nrhs * ldb * sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::automatic));
+        ::dpct::detail::dispatch::memcpy_direction::automatic));
   std::vector<void *> ptrs{host_a, host_b};
   std::thread mem_free_thread(
       [=](std::vector<void *> pointers_array,
@@ -1063,7 +1063,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
 
   exec_queue
       .submit([&](sycl::handler &cgh) {
-        cgh.parallel_for<::dpct::detail::proxy::kernel_name<
+        cgh.parallel_for<::dpct::detail::dispatch::kernel_name<
             class getrs_device_int64_to_int, T>>(
             sycl::range<1>(batch_size * n), [=](sycl::id<1> idx) {
               ipiv_int64[idx] = static_cast<std::int64_t>(ipiv[idx]);
@@ -1081,7 +1081,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64, a_shared,
                            b_shared};
-  ::dpct::detail::proxy::enqueue_free(ptrs, {e}, exec_queue);
+  ::dpct::detail::dispatch::enqueue_free(ptrs, {e}, exec_queue);
 #endif
 }
 
@@ -1099,10 +1099,10 @@ template <typename T>
 inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
                                 int lda, int *ipiv, T *b[], int ldb, int *info,
                                 int batch_size) {
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   // Set the info array value to 0
-  ::dpct::detail::proxy::fill<unsigned char>(exec_queue, info, 0,
-                                             sizeof(int) * batch_size);
+  ::dpct::detail::dispatch::fill<unsigned char>(exec_queue, info, 0,
+                                                sizeof(int) * batch_size);
 #ifdef DPCT_USM_LEVEL_NONE
   std::int64_t stride_b = n * ldb;
   std::int64_t stride_ipiv = n;
@@ -1112,7 +1112,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
 
   T *b_buffer_ptr;
   b_buffer_ptr =
-      (T *)::dpct::detail::proxy::malloc(stride_b * batch_size * sizeof(T));
+      (T *)::dpct::detail::dispatch::malloc(stride_b * batch_size * sizeof(T));
 
   T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
   T **host_b = (T **)std::malloc(batch_size * sizeof(T *));
@@ -1136,7 +1136,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
     exec_queue.submit([&](sycl::handler &cgh) {
       auto from_acc = from_buf.get_access<sycl::access_mode::read>(cgh);
       auto to_acc = ipiv_buf.get_access<sycl::access_mode::write>(cgh);
-      cgh.parallel_for<::dpct::detail::proxy::kernel_name<
+      cgh.parallel_for<::dpct::detail::dispatch::kernel_name<
           class getri_device_int64_to_int, T>>(
           sycl::range<2>(batch_size, n), [=](sycl::id<2> id) {
             to_acc[id.get(0) * stride_ipiv + id.get(1)] =
@@ -1152,9 +1152,9 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
   // Copy back to the original buffers
   std::vector<sycl::event> events;
   for (std::int64_t i = 0; i < batch_size; ++i)
-    events.push_back(::dpct::detail::proxy::memcpy(
+    events.push_back(::dpct::detail::dispatch::memcpy(
         exec_queue, host_b[i], b_buffer_ptr + i * stride_b, n * ldb * sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::automatic));
+        ::dpct::detail::dispatch::memcpy_direction::automatic));
   std::vector<void *> ptrs{host_a, host_b};
   std::thread mem_free_thread(
       [=](std::vector<void *> pointers_array,
@@ -1180,8 +1180,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
       sycl::malloc_shared<std::int64_t *>(batch_size, exec_queue);
 
   exec_queue.submit([&](sycl::handler &cgh) {
-    cgh.parallel_for<
-        ::dpct::detail::proxy::kernel_name<class getri_device_int64_to_int, T>>(
+    cgh.parallel_for<::dpct::detail::dispatch::kernel_name<
+        class getri_device_int64_to_int, T>>(
         sycl::range<1>(batch_size * n), [=](sycl::id<1> idx) {
           ipiv_int64[idx] = static_cast<std::int64_t>(ipiv[idx]);
         });
@@ -1198,7 +1198,8 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
     // parameter in oneapi::mkl::lapack::getri_batch call.
     blas::matrix_mem_copy(
         b_shared[i], a_shared[i], ldb, lda, n, n, sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::device_to_device, exec_queue);
+        ::dpct::detail::dispatch::memcpy_direction::device_to_device,
+        exec_queue);
   }
 
   sycl::event e = oneapi::mkl::lapack::getri_batch(
@@ -1207,7 +1208,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
 
   std::vector<void *> ptrs{scratchpad, ipiv_int64_ptr, ipiv_int64, a_shared,
                            b_shared};
-  ::dpct::detail::proxy::enqueue_free(ptrs, {e}, exec_queue);
+  ::dpct::detail::dispatch::enqueue_free(ptrs, {e}, exec_queue);
 #endif
 }
 
@@ -1224,27 +1225,21 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
 template <typename T>
 inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
                                 int lda, T *tau[], int *info, int batch_size) {
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   // Set the info value to 0
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
   std::int64_t stride_a = n * lda;
-<<<<<<< HEAD
-  std::int64_t stride_tau = std::max(1, std::min(m, n));
+  std::int64_t stride_tau = (std::max)(1, (std::min)(m, n));
   std::int64_t scratchpad_size =
       oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
           exec_queue, m, n, lda, stride_a, stride_tau, batch_size);
-=======
-  std::int64_t stride_tau = (std::max)(1, (std::min)(m, n));
-  std::int64_t scratchpad_size = oneapi::mkl::lapack::geqrf_batch_scratchpad_size<Ty>(
-      exec_queue, m, n, lda, stride_a, stride_tau, batch_size);
->>>>>>> origin/SYCLomatic
 
   T *a_buffer_ptr, *tau_buffer_ptr;
   a_buffer_ptr =
-      (T *)::dpct::detail::proxy::malloc(stride_a * batch_size * sizeof(T));
-  tau_buffer_ptr =
-      (T *)::dpct::detail::proxy::malloc(stride_tau * batch_size * sizeof(T));
+      (T *)::dpct::detail::dispatch::malloc(stride_a * batch_size * sizeof(T));
+  tau_buffer_ptr = (T *)::dpct::detail::dispatch::malloc(
+      stride_tau * batch_size * sizeof(T));
 
   T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
   T **host_tau = (T **)std::malloc(batch_size * sizeof(T *));
@@ -1266,13 +1261,13 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
   std::vector<sycl::event> events_a;
   std::vector<sycl::event> events_tau;
   for (std::int64_t i = 0; i < batch_size; ++i) {
-    events_a.push_back(::dpct::detail::proxy::memcpy(
+    events_a.push_back(::dpct::detail::dispatch::memcpy(
         exec_queue, host_a[i], a_buffer_ptr + i * stride_a, n * lda * sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::automatic));
-    events_tau.push_back(::dpct::detail::proxy::memcpy(
+        ::dpct::detail::dispatch::memcpy_direction::automatic));
+    events_tau.push_back(::dpct::detail::dispatch::memcpy(
         exec_queue, host_tau[i], tau_buffer_ptr + i * stride_tau,
         (std::max)(1, (std::min)(m, n)) * sizeof(T),
-        ::dpct::detail::proxy::memcpy_direction::automatic));
+        ::dpct::detail::dispatch::memcpy_direction::automatic));
   }
   std::vector<void *> ptr_a{host_a};
   std::vector<void *> ptr_tau{host_tau};
@@ -1314,7 +1309,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
       (Ty **)tau_shared, 1, &group_sizes, scratchpad, scratchpad_size);
 
   std::vector<void *> ptrs{scratchpad, a_shared, tau_shared};
-  ::dpct::detail::proxy::enqueue_free(ptrs, {e}, exec_queue);
+  ::dpct::detail::dispatch::enqueue_free(ptrs, {e}, exec_queue);
 #endif
 }
 
@@ -1584,7 +1579,7 @@ inline library_data_t compute_type_to_library_data_t(compute_type ct) {
 template <typename T>
 inline oneapi::mkl::blas::compute_mode
 deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   if (ct) {
     switch (ct.value()) {
     case compute_type::f16_standard:
@@ -2288,7 +2283,7 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                  oneapi::mkl::diag unit_diag, std::int64_t m, std::int64_t n,
                  const T *alpha, const T *a, std::int64_t lda, const T *b,
                  std::int64_t ldb, T *c, std::int64_t ldc) {
-  using Ty = typename ::dpct::detail::proxy::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
   auto cm = deduce_compute_mode<Ty>(std::nullopt, desc_ptr->get_math_mode());
@@ -2297,7 +2292,7 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
   if (b != c) {
     dpct::blas::matrix_mem_copy(
         c, b, ldc, ldb, m, n, sizeof(Ty),
-        ::dpct::detail::proxy::memcpy_direction::device_to_device, q);
+        ::dpct::detail::dispatch::memcpy_direction::device_to_device, q);
   }
   auto data_a = dpct::detail::get_memory<const Ty>(a);
   auto data_c = dpct::detail::get_memory<Ty>(c);

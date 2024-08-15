@@ -9,10 +9,9 @@
 #ifndef __DPCT_CCL_UTILS_HPP__
 #define __DPCT_CCL_UTILS_HPP__
 
-#include "proxy.hpp"
+#include "dispatch.hpp"
 
 #include <oneapi/ccl.hpp>
-#include <sycl/sycl.hpp>
 
 #include <unordered_map>
 #include <memory>
@@ -76,9 +75,9 @@ public:
       int size, int rank, oneapi::ccl::kvs::address_type id,
       const oneapi::ccl::comm_attr &attr = oneapi::ccl::default_comm_attr)
       : _device_comm(oneapi::ccl::create_device(static_cast<sycl::device &>(
-            ::dpct::detail::proxy::get_current_device()))),
+            ::dpct::detail::dispatch::get_current_device()))),
         _context_comm(oneapi::ccl::create_context(
-            ::dpct::detail::proxy::get_default_context())),
+            ::dpct::detail::dispatch::get_default_context())),
         _comm(oneapi::ccl::create_communicator(
             size, rank, _device_comm, _context_comm, dpct::ccl::create_kvs(id),
             attr)) {
