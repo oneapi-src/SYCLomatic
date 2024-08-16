@@ -2528,20 +2528,6 @@
       MatchMode: Full
       RuleId: "replace_cudnn_include_dir_with_sycl_include_dir"
 
-- Rule: rule_target_include_directories_cmake_cuda_toolkit_include_dir
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: target_include_directories_cmake_cuda_toolkit_inc
-  MatchMode: Partial
-  In: target_include_directories${empty}(${value})
-  Out: target_include_directories(${value})
-  Subrules:
-    value:
-      In: CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
-      Out: SYCL_INCLUDE_DIR
-      MatchMode: Full
-      RuleId: "replace_cmake_cuda_toolkit_include_dir_with_sycl_include_dir"
-
 - Rule: rule_target_include_directories_cuda_toolkit_math_include_dir
   Kind: CMakeRule
   Priority: Fallback
