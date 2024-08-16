@@ -162,10 +162,10 @@ void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
               on(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
                   hasAnyName("cub::ArgIndexInputIterator",
                              "cub::BlockRadixSort", "cub::BlockExchange"))))))),
-              callee(cxxMethodDecl(
-                  hasAnyName("normalize", "Sort", "SortDescending",
-                             "BlockedToStriped", "StripedToBlocked",
-                             "ScatterToBlocked", "ScatterToStriped")))))
+              callee(cxxMethodDecl(hasAnyName(
+                  "normalize", "Sort", "SortDescending", "BlockedToStriped",
+                  "StripedToBlocked", "ScatterToBlocked", "ScatterToStriped",
+                  "SortBlockedToStriped", "SortDescendingBlockedToStriped")))))
           .bind("memberCall"),
       this);
 
@@ -245,13 +245,16 @@ void CubMemberCallRule::runRule(
           getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
     EA.analyze(BlockMC);
     StringRef Name = BlockMC->getMethodDecl()->getName();
-    if (Name == "Sort" || Name == "SortDescending" ||
+    bool isBlockRadixSort = Name == "Sort" || Name == "SortDescending" ||
+                            Name == "SortBlockedToStriped" ||
+                            Name == "SortDescendingBlockedToStriped";
+    bool isBlockExchange =
         Name == "BlockedToStriped" || Name == "StripedToBlocked" ||
         Name == "StripedToBlocked" || Name == "ScatterToBlocked" ||
-        Name == "ScatterToStriped") {
-      std::string HelpFuncName = Name == "Sort" || Name == "SortDescending"
-                                     ? "radix_sort"
-                                     : "exchange";
+        Name == "ScatterToStriped";
+    if (isBlockRadixSort || isBlockExchange) {
+      std::string HelpFuncName =
+          isBlockRadixSort ? "group_radix_sort" : "exchange";
       auto [TempStorage, DataTypeLoc] =
           getTempstorageVarAndValueTypeLoc(BlockMC);
       auto *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TempStorage);

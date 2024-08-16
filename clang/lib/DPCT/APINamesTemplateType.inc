@@ -114,7 +114,7 @@ TYPE_REWRITE_ENTRY(
     "cub::BlockRadixSort",
     HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
                              TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                              "group::radix_sort"),
+                                              "group::group_radix_sort"),
                                           TEMPLATE_ARG(0), TEMPLATE_ARG(2))))
 TYPE_REWRITE_ENTRY(
     "cub::BlockExchange",

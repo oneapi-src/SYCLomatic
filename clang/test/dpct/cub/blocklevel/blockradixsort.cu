@@ -28,7 +28,7 @@ __device__ void StoreDirectBlocked(int linear_tid, OutputIteratorT block_itr,
 }
 
 __global__ void Sort(int *data) {
-  // CHECK: using BlockRadixSort = dpct::group::radix_sort<int, 4>;
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
   // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
@@ -39,20 +39,8 @@ __global__ void Sort(int *data) {
   StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
-__global__ void SortBit(int *data) {
-  // CHECK: using BlockRadixSort = dpct::group::radix_sort<int, 4>;
-  // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
-  using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
-  __shared__ typename BlockRadixSort::TempStorage temp_storage;
-  int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort(item_ct1, thread_keys, 4, 16);
-  BlockRadixSort(temp_storage).Sort(thread_keys, 4, 16);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
-}
-
 __global__ void SortDescending(int *data) {
-  // CHECK: using BlockRadixSort = dpct::group::radix_sort<int, 4>;
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
   // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
@@ -63,8 +51,44 @@ __global__ void SortDescending(int *data) {
   StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
+__global__ void SortBlockedToStriped(int *data) {
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
+  // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
+  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  int thread_keys[4];
+  LoadDirectBlocked(threadIdx.x, data, thread_keys);
+  // CHECK: BlockRadixSort(temp_storage).sort_blocked_to_striped(item_ct1, thread_keys);
+  BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys);
+  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+}
+
+__global__ void SortDescendingBlockedToStriped(int *data) {
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
+  // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
+  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  int thread_keys[4];
+  LoadDirectBlocked(threadIdx.x, data, thread_keys);
+  // CHECK: BlockRadixSort(temp_storage).sort_descending_blocked_to_striped(item_ct1, thread_keys);
+  BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys);
+  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+}
+
+__global__ void SortBit(int *data) {
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
+  // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
+  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  int thread_keys[4];
+  LoadDirectBlocked(threadIdx.x, data, thread_keys);
+  // CHECK: BlockRadixSort(temp_storage).sort(item_ct1, thread_keys, 4, 16);
+  BlockRadixSort(temp_storage).Sort(thread_keys, 4, 16);
+  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+}
+
 __global__ void SortDescendingBit(int *data) {
-  // CHECK: using BlockRadixSort = dpct::group::radix_sort<int, 4>;
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
   // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
@@ -73,6 +97,69 @@ __global__ void SortDescendingBit(int *data) {
   // CHECK: BlockRadixSort(temp_storage).sort_descending(item_ct1, thread_keys, 4, 16);
   BlockRadixSort(temp_storage).SortDescending(thread_keys, 4, 16);
   StoreDirectBlocked(threadIdx.x, data, thread_keys);
+}
+
+__global__ void SortBlockedToStripedBit(int *data) {
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
+  // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
+  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  int thread_keys[4];
+  LoadDirectBlocked(threadIdx.x, data, thread_keys);
+  // CHECK: BlockRadixSort(temp_storage).sort_blocked_to_striped(item_ct1, thread_keys, 4, 16);
+  BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, 4, 16);
+  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+}
+
+__global__ void SortDescendingBlockedToStripedBit(int *data) {
+  // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
+  // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
+  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  int thread_keys[4];
+  LoadDirectBlocked(threadIdx.x, data, thread_keys);
+  // CHECK: BlockRadixSort(temp_storage).sort_descending_blocked_to_striped(item_ct1, thread_keys, 4, 16);
+  BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, 4, 16);
+  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+}
+
+#ifndef BUILD_TEST
+__global__ void test_unsupported(int *data) {
+  int thread_keys[4];
+  int thread_values[4];
+  using BlockRadixSort = cub::BlockRadixSort<int, 128, 4, int>;
+  __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).Sort(thread_keys, thread_values) is not supported.
+  BlockRadixSort(temp_storage).Sort(thread_keys, thread_values);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).Sort(thread_keys, thread_values, 4) is not supported.
+  BlockRadixSort(temp_storage).Sort(thread_keys, thread_values, 4);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).Sort(thread_keys, thread_values, 4, 16) is not supported.
+  BlockRadixSort(temp_storage).Sort(thread_keys, thread_values, 4, 16);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortDescending(thread_keys, thread_values) is not supported.
+  BlockRadixSort(temp_storage).SortDescending(thread_keys, thread_values);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortDescending(thread_keys, thread_values, 4) is not supported.
+  BlockRadixSort(temp_storage).SortDescending(thread_keys, thread_values, 4);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortDescending(thread_keys, thread_values, 4, 16) is not supported.
+  BlockRadixSort(temp_storage).SortDescending(thread_keys, thread_values, 4, 16);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values) is not supported.
+  BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values, 4) is not supported.
+  BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values, 4);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values, 4, 16) is not supported.
+  BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values, 4, 16);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, thread_values) is not supported.
+  BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, thread_values);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, thread_values, 4) is not supported.
+  BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, thread_values, 4);
+  // CHECK: DPCT1007:{{.*}}: Migration of BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, thread_values, 4, 16) is not supported.
+  BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, thread_values, 4, 16);
+}
+#endif // BUILD_TEST
+
+template <typename T, int N>
+void print_array(T (&arr)[N]) {
+  for (int i = 0; i < N; ++i)
+    printf("%d%c", arr[i], (i == N - 1 ? '\n' : ','));
 }
 
 bool test_sort() {
@@ -87,7 +174,7 @@ bool test_sort() {
   cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
@@ -102,9 +189,126 @@ bool test_sort() {
   for (int i = 0; i < 512; ++i)
     if (data[i] != i) {
       printf("test_sort failed\n");
+      print_array(data);
       return false;
     }
   printf("test_sort pass\n");
+  return true;
+}
+
+bool test_sort_descending() {
+  int data[512] = {0}, *d_data = nullptr;
+  cudaMalloc(&d_data, sizeof(int) * 512);
+  for (int i = 0, x = 0, y = 511; i < 128; ++i) {
+    data[i * 4 + 0] = x++;
+    data[i * 4 + 1] = y--;
+    data[i * 4 + 2] = x++;
+    data[i * 4 + 3] = y--;
+  }
+  cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         SortDescending(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  SortDescending<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+  cudaMemcpy(data, d_data, sizeof(data), cudaMemcpyDeviceToHost);
+  cudaFree(d_data);
+  for (int i = 0; i < 512; ++i)
+    if (data[i] != 511 - i) {
+      printf("test_sort_descending failed\n");
+      print_array(data);
+      return false;
+    }
+  printf("test_sort_descending pass\n");
+  return true;
+}
+
+bool test_sort_blocked_to_striped() {
+  int data[512] = {0}, *d_data = nullptr;
+  cudaMalloc(&d_data, sizeof(int) * 512);
+  for (int i = 0, x = 0, y = 511; i < 128; ++i) {
+    data[i * 4 + 0] = x++;
+    data[i * 4 + 1] = y--;
+    data[i * 4 + 2] = x++;
+    data[i * 4 + 3] = y--;
+  }
+  cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         SortBlockedToStriped(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  SortBlockedToStriped<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+  cudaMemcpy(data, d_data, sizeof(data), cudaMemcpyDeviceToHost);
+  cudaFree(d_data);
+  int expected[512];
+  for (int i = 0; i < 128; ++i) {
+    expected[4 * i + 0] = i;
+    expected[4 * i + 1] = i + 1 * 128;
+    expected[4 * i + 2] = i + 2 * 128;
+    expected[4 * i + 3] = i + 3 * 128;
+  }
+  for (int i = 0; i < 512; ++i)
+    if (data[i] != expected[i]) {
+      printf("test_sort_blocked_to_striped failed\n");
+      print_array(data);
+      return false;
+    }
+  printf("test_sort_blocked_to_striped pass\n");
+  return true;
+}
+
+bool test_sort_descending_blocked_to_striped() {
+  int data[512] = {0}, *d_data = nullptr;
+  cudaMalloc(&d_data, sizeof(int) * 512);
+  for (int i = 0, x = 0, y = 511; i < 128; ++i) {
+    data[i * 4 + 0] = x++;
+    data[i * 4 + 1] = y--;
+    data[i * 4 + 2] = x++;
+    data[i * 4 + 3] = y--;
+  }
+  cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         SortDescendingBlockedToStriped(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  SortDescendingBlockedToStriped<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+  cudaMemcpy(data, d_data, sizeof(data), cudaMemcpyDeviceToHost);
+  cudaFree(d_data);
+  int expected[512];
+  for (int i = 0; i < 128; ++i) {
+    expected[4 * i + 0] = 511 - i;
+    expected[4 * i + 1] = 511 - i - 1 * 128;
+    expected[4 * i + 2] = 511 - i - 2 * 128;
+    expected[4 * i + 3] = 511 - i - 3 * 128;
+  }
+  for (int i = 0; i < 512; ++i)
+    if (data[i] != expected[i]) {
+      printf("test_sort_descending_blocked_to_striped failed\n");
+      print_array(data);
+      return false;
+    }
+  printf("test_sort_descending_blocked_to_striped pass\n");
   return true;
 }
 
@@ -156,7 +360,7 @@ bool test_sort_bit() {
   cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
@@ -171,42 +375,10 @@ bool test_sort_bit() {
   for (int i = 0; i < 512; ++i)
     if (data[i] != expected[i]) {
       printf("test_sort_bit failed\n");
+      print_array(data);
       return false;
     }
   printf("test_sort_bit pass\n");
-  return true;
-}
-
-bool test_sort_descending() {
-  int data[512] = {0}, *d_data = nullptr;
-  cudaMalloc(&d_data, sizeof(int) * 512);
-  for (int i = 0, x = 0, y = 511; i < 128; ++i) {
-    data[i * 4 + 0] = x++;
-    data[i * 4 + 1] = y--;
-    data[i * 4 + 2] = x++;
-    data[i * 4 + 3] = y--;
-  }
-  cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
-  // CHECK: q_ct1.submit(
-  // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for(
-  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
-  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortDescending(d_data, item_ct1, &temp_storage_acc[0]);
-  // CHECK-NEXT:       });
-  // CHECK-NEXT:   });
-  SortDescending<<<1, 128>>>(d_data);
-  cudaDeviceSynchronize();
-  cudaMemcpy(data, d_data, sizeof(data), cudaMemcpyDeviceToHost);
-  cudaFree(d_data);
-  for (int i = 0; i < 512; ++i)
-    if (data[i] != 511 - i) {
-      printf("test_sort_descending failed\n");
-      return false;
-    }
-  printf("test_sort_descending pass\n");
   return true;
 }
 
@@ -258,7 +430,7 @@ bool test_sort_descending_bit() {
   cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
@@ -273,10 +445,157 @@ bool test_sort_descending_bit() {
   for (int i = 0; i < 512; ++i)
     if (data[i] != expected[i]) {
       printf("test_sort_descending_bit failed\n");
+      print_array(data);
       return false;
     }
   printf("test_sort_descending_bit pass\n");
   return true;
 }
 
-int main() { return !(test_sort() && test_sort_bit() && test_sort_descending() && test_sort_descending_bit()); }
+bool test_sort_blocked_to_striped_bit() {
+  int data[512] = {0}, *d_data = nullptr;
+  cudaMalloc(&d_data, sizeof(int) * 512);
+  for (int i = 0, x = 0, y = 511; i < 128; ++i) {
+    data[i * 4 + 0] = x++;
+    data[i * 4 + 1] = y--;
+    data[i * 4 + 2] = x++;
+    data[i * 4 + 3] = y--;
+  }
+  cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         SortBlockedToStripedBit(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  SortBlockedToStripedBit<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+  cudaMemcpy(data, d_data, sizeof(data), cudaMemcpyDeviceToHost);
+  cudaFree(d_data);
+  int expected[512] = {
+      0, 128, 271, 399, 1, 129, 270, 398, 2, 130, 269, 397, 3, 131, 268,
+      396, 4, 132, 267, 395, 5, 133, 266, 394, 6, 134, 265, 393, 7, 135,
+      264, 392, 8, 136, 263, 391, 9, 137, 262, 390, 10, 138, 261, 389, 11,
+      139, 260, 388, 12, 140, 259, 387, 13, 141, 258, 386, 14, 142, 257, 385,
+      15, 143, 256, 384, 16, 144, 287, 415, 17, 145, 286, 414, 18, 146, 285,
+      413, 19, 147, 284, 412, 20, 148, 283, 411, 21, 149, 282, 410, 22, 150,
+      281, 409, 23, 151, 280, 408, 24, 152, 279, 407, 25, 153, 278, 406, 26,
+      154, 277, 405, 27, 155, 276, 404, 28, 156, 275, 403, 29, 157, 274, 402,
+      30, 158, 273, 401, 31, 159, 272, 400, 32, 160, 303, 431, 33, 161, 302,
+      430, 34, 162, 301, 429, 35, 163, 300, 428, 36, 164, 299, 427, 37, 165,
+      298, 426, 38, 166, 297, 425, 39, 167, 296, 424, 40, 168, 295, 423, 41,
+      169, 294, 422, 42, 170, 293, 421, 43, 171, 292, 420, 44, 172, 291, 419,
+      45, 173, 290, 418, 46, 174, 289, 417, 47, 175, 288, 416, 48, 176, 319,
+      447, 49, 177, 318, 446, 50, 178, 317, 445, 51, 179, 316, 444, 52, 180,
+      315, 443, 53, 181, 314, 442, 54, 182, 313, 441, 55, 183, 312, 440, 56,
+      184, 311, 439, 57, 185, 310, 438, 58, 186, 309, 437, 59, 187, 308, 436,
+      60, 188, 307, 435, 61, 189, 306, 434, 62, 190, 305, 433, 63, 191, 304,
+      432, 64, 192, 335, 463, 65, 193, 334, 462, 66, 194, 333, 461, 67, 195,
+      332, 460, 68, 196, 331, 459, 69, 197, 330, 458, 70, 198, 329, 457, 71,
+      199, 328, 456, 72, 200, 327, 455, 73, 201, 326, 454, 74, 202, 325, 453,
+      75, 203, 324, 452, 76, 204, 323, 451, 77, 205, 322, 450, 78, 206, 321,
+      449, 79, 207, 320, 448, 80, 208, 351, 479, 81, 209, 350, 478, 82, 210,
+      349, 477, 83, 211, 348, 476, 84, 212, 347, 475, 85, 213, 346, 474, 86,
+      214, 345, 473, 87, 215, 344, 472, 88, 216, 343, 471, 89, 217, 342, 470,
+      90, 218, 341, 469, 91, 219, 340, 468, 92, 220, 339, 467, 93, 221, 338,
+      466, 94, 222, 337, 465, 95, 223, 336, 464, 96, 224, 367, 495, 97, 225,
+      366, 494, 98, 226, 365, 493, 99, 227, 364, 492, 100, 228, 363, 491, 101,
+      229, 362, 490, 102, 230, 361, 489, 103, 231, 360, 488, 104, 232, 359, 487,
+      105, 233, 358, 486, 106, 234, 357, 485, 107, 235, 356, 484, 108, 236, 355,
+      483, 109, 237, 354, 482, 110, 238, 353, 481, 111, 239, 352, 480, 112, 240,
+      383, 511, 113, 241, 382, 510, 114, 242, 381, 509, 115, 243, 380, 508, 116,
+      244, 379, 507, 117, 245, 378, 506, 118, 246, 377, 505, 119, 247, 376, 504,
+      120, 248, 375, 503, 121, 249, 374, 502, 122, 250, 373, 501, 123, 251, 372,
+      500, 124, 252, 371, 499, 125, 253, 370, 498, 126, 254, 369, 497, 127, 255,
+      368, 496};
+  for (int i = 0; i < 512; ++i)
+    if (data[i] != expected[i]) {
+      printf("test_sort_blocked_to_striped_bit failed\n");
+      print_array(data);
+      return false;
+    }
+  printf("test_sort_blocked_to_striped_bit pass\n");
+  return true;
+}
+
+bool test_sort_descending_blocked_to_striped_bit() {
+  int data[512] = {0}, *d_data = nullptr;
+  cudaMalloc(&d_data, sizeof(int) * 512);
+  for (int i = 0, x = 0, y = 511; i < 128; ++i) {
+    data[i * 4 + 0] = x++;
+    data[i * 4 + 1] = y--;
+    data[i * 4 + 2] = x++;
+    data[i * 4 + 3] = y--;
+  }
+  cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
+  // CHECK: q_ct1.submit(
+  // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:     cgh.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:         SortDescendingBlockedToStripedBit(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:       });
+  // CHECK-NEXT:   });
+  SortDescendingBlockedToStripedBit<<<1, 128>>>(d_data);
+  cudaDeviceSynchronize();
+  cudaMemcpy(data, d_data, sizeof(data), cudaMemcpyDeviceToHost);
+  cudaFree(d_data);
+  int expected[512] = {
+      511, 383, 240, 112, 510, 382, 241, 113, 509, 381, 242, 114, 508, 380, 243,
+      115, 507, 379, 244, 116, 506, 378, 245, 117, 505, 377, 246, 118, 504, 376,
+      247, 119, 503, 375, 248, 120, 502, 374, 249, 121, 501, 373, 250, 122, 500,
+      372, 251, 123, 499, 371, 252, 124, 498, 370, 253, 125, 497, 369, 254, 126,
+      496, 368, 255, 127, 495, 367, 224, 96, 494, 366, 225, 97, 493, 365, 226,
+      98, 492, 364, 227, 99, 491, 363, 228, 100, 490, 362, 229, 101, 489, 361,
+      230, 102, 488, 360, 231, 103, 487, 359, 232, 104, 486, 358, 233, 105, 485,
+      357, 234, 106, 484, 356, 235, 107, 483, 355, 236, 108, 482, 354, 237, 109,
+      481, 353, 238, 110, 480, 352, 239, 111, 479, 351, 208, 80, 478, 350, 209,
+      81, 477, 349, 210, 82, 476, 348, 211, 83, 475, 347, 212, 84, 474, 346,
+      213, 85, 473, 345, 214, 86, 472, 344, 215, 87, 471, 343, 216, 88, 470,
+      342, 217, 89, 469, 341, 218, 90, 468, 340, 219, 91, 467, 339, 220, 92,
+      466, 338, 221, 93, 465, 337, 222, 94, 464, 336, 223, 95, 463, 335, 192,
+      64, 462, 334, 193, 65, 461, 333, 194, 66, 460, 332, 195, 67, 459, 331,
+      196, 68, 458, 330, 197, 69, 457, 329, 198, 70, 456, 328, 199, 71, 455,
+      327, 200, 72, 454, 326, 201, 73, 453, 325, 202, 74, 452, 324, 203, 75,
+      451, 323, 204, 76, 450, 322, 205, 77, 449, 321, 206, 78, 448, 320, 207,
+      79, 447, 319, 176, 48, 446, 318, 177, 49, 445, 317, 178, 50, 444, 316,
+      179, 51, 443, 315, 180, 52, 442, 314, 181, 53, 441, 313, 182, 54, 440,
+      312, 183, 55, 439, 311, 184, 56, 438, 310, 185, 57, 437, 309, 186, 58,
+      436, 308, 187, 59, 435, 307, 188, 60, 434, 306, 189, 61, 433, 305, 190,
+      62, 432, 304, 191, 63, 431, 303, 160, 32, 430, 302, 161, 33, 429, 301,
+      162, 34, 428, 300, 163, 35, 427, 299, 164, 36, 426, 298, 165, 37, 425,
+      297, 166, 38, 424, 296, 167, 39, 423, 295, 168, 40, 422, 294, 169, 41,
+      421, 293, 170, 42, 420, 292, 171, 43, 419, 291, 172, 44, 418, 290, 173,
+      45, 417, 289, 174, 46, 416, 288, 175, 47, 415, 287, 144, 16, 414, 286,
+      145, 17, 413, 285, 146, 18, 412, 284, 147, 19, 411, 283, 148, 20, 410,
+      282, 149, 21, 409, 281, 150, 22, 408, 280, 151, 23, 407, 279, 152, 24,
+      406, 278, 153, 25, 405, 277, 154, 26, 404, 276, 155, 27, 403, 275, 156,
+      28, 402, 274, 157, 29, 401, 273, 158, 30, 400, 272, 159, 31, 399, 271,
+      128, 0, 398, 270, 129, 1, 397, 269, 130, 2, 396, 268, 131, 3, 395,
+      267, 132, 4, 394, 266, 133, 5, 393, 265, 134, 6, 392, 264, 135, 7,
+      391, 263, 136, 8, 390, 262, 137, 9, 389, 261, 138, 10, 388, 260, 139,
+      11, 387, 259, 140, 12, 386, 258, 141, 13, 385, 257, 142, 14, 384, 256,
+      143, 15};
+  for (int i = 0; i < 512; ++i)
+    if (data[i] != expected[i]) {
+      printf("test_sort_descending_blocked_to_striped_bit failed\n");
+      print_array(data);
+      return false;
+    }
+  printf("test_sort_descending_blocked_to_striped_bit pass\n");
+  return true;
+}
+
+int main() {
+  return !(test_sort() && test_sort_descending() &&
+           test_sort_blocked_to_striped() &&
+           test_sort_descending_blocked_to_striped() && test_sort_bit() &&
+           test_sort_descending_bit() && test_sort_blocked_to_striped_bit() &&
+           test_sort_descending_blocked_to_striped_bit());
+}

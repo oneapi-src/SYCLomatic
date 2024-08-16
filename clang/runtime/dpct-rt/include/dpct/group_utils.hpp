@@ -394,9 +394,13 @@ private:
 /// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
 /// \tparam DECENDING boolean value indicating if data elements are sorted in
 /// decending order.
-template <typename T, int VALUES_PER_THREAD, bool DESCENDING = false>
-class radix_sort {
+template <typename T, int VALUES_PER_THREAD, int RADIX_BITS = 4>
+class group_radix_sort {
+  uint8_t *_local_memory;
+
 public:
+  group_radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
+
   static size_t get_local_memory_size(size_t group_threads) {
     size_t ranks_size =
         detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
@@ -405,9 +409,8 @@ public:
     return sycl::max(ranks_size, exchange_size);
   }
 
-  radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
-
-  template <typename Item>
+private:
+  template <typename Item, bool DESCENDING>
   __dpct_inline__ void
   helper_sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
               int end_bit = 8 * sizeof(T), bool is_striped = false) {
@@ -428,9 +431,9 @@ public:
           .template rank_keys<Item, VALUES_PER_THREAD>(item, unsigned_keys,
                                                        ranks, i, pass_bits);
 
-      item.barrier(sycl::access::fence_space::local_space);
+      sycl::group_barrier(item.get_group());
 
-      bool last_iter = i + RADIX_BITS > end_bit;
+      bool last_iter = i + RADIX_BITS >= end_bit;
       if (last_iter && is_striped) {
         exchange<T, VALUES_PER_THREAD>(_local_memory)
             .scatter_to_striped(item, keys, ranks);
@@ -440,7 +443,7 @@ public:
             .scatter_to_blocked(item, keys, ranks);
       }
 
-      item.barrier(sycl::access::fence_space::local_space);
+      sycl::group_barrier(item.get_group());
     }
 
 #pragma unroll
@@ -449,39 +452,88 @@ public:
     }
   }
 
-  template <typename Item>
-  __dpct_inline__ void
-  sort_blocked(const Item &item, T (&keys)[VALUES_PER_THREAD],
-               int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
-    helper_sort(item, keys, begin_bit, end_bit, false);
-  }
-
-  template <typename Item>
-  __dpct_inline__ void
-  sort_blocked_to_striped(const Item &item, T (&keys)[VALUES_PER_THREAD],
-                          int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
-    helper_sort(item, keys, begin_bit, end_bit, true);
-  }
-
+public:
   template <typename Item>
   __dpct_inline__ void sort(const Item &item, T (&keys)[VALUES_PER_THREAD],
                             int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
-    radix_sort<T, VALUES_PER_THREAD, false>(_local_memory)
-        .sort_blocked(item, keys, begin_bit, end_bit);
+    helper_sort<Item, /*DESCENDING=*/false>(item, keys, begin_bit, end_bit);
   }
 
   template <typename Item>
   __dpct_inline__ void
   sort_descending(const Item &item, T (&keys)[VALUES_PER_THREAD],
                   int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
-    radix_sort<T, VALUES_PER_THREAD, true>(_local_memory)
-        .sort_blocked(item, keys, begin_bit, end_bit);
+    helper_sort<Item, /*DESCENDING=*/true>(item, keys, begin_bit, end_bit);
   }
 
-private:
-  static constexpr int RADIX_BITS = 4;
+  template <typename Item>
+  __dpct_inline__ void
+  sort_blocked_to_striped(const Item &item, T (&keys)[VALUES_PER_THREAD],
+                          int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
+    helper_sort<Item, /*DESCENDING=*/false>(item, keys, begin_bit, end_bit,
+                                            /*is_striped=*/true);
+  }
 
-  uint8_t *_local_memory;
+  template <typename Item>
+  __dpct_inline__ void sort_descending_blocked_to_striped(
+      const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
+      int end_bit = 8 * sizeof(T)) {
+    helper_sort<Item, /*DESCENDING=*/true>(item, keys, begin_bit, end_bit,
+                                           /*is_striped=*/true);
+  }
+};
+
+/// Implements radix sort to sort integer data elements assigned to all threads
+/// in the group.
+///
+/// \tparam T type of the data elements exchanges
+/// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
+/// \tparam DECENDING boolean value indicating if data elements are sorted in
+/// decending order.
+template <typename T, int VALUES_PER_THREAD, bool DESCENDING = false>
+class [[deprecated(
+    "This class deprecated, please use group_radix_sort instead")]] radix_sort {
+  using SorterT = group_radix_sort<T, VALUES_PER_THREAD>;
+  SorterT _sorter;
+
+public:
+  static size_t get_local_memory_size(size_t group_threads) {
+    return SorterT::get_local_memory_size(group_threads);
+  }
+
+  radix_sort(uint8_t * local_memory) : _sorter(local_memory) {}
+
+  template <typename Item>
+  __dpct_inline__ void helper_sort(
+      const Item &item, T(&keys)[VALUES_PER_THREAD], int begin_bit = 0,
+      int end_bit = 8 * sizeof(T), bool is_striped = false) {
+    if constexpr (DESCENDING) {
+      if (is_striped)
+        _sorter.sort_descending_blocked_to_striped(item, keys, begin_bit,
+                                                   end_bit);
+      else
+        _sorter.sort_descending(item, keys, begin_bit, end_bit);
+    } else {
+      if (is_striped)
+        _sorter.sort_blocked_to_striped(item, keys, begin_bit, end_bit);
+      else
+        _sorter.sort(item, keys, begin_bit, end_bit);
+    }
+  }
+
+  template <typename Item>
+  __dpct_inline__ void sort_blocked(
+      const Item &item, T(&keys)[VALUES_PER_THREAD], int begin_bit = 0,
+      int end_bit = 8 * sizeof(T)) {
+    helper_sort(item, keys, begin_bit, end_bit, false);
+  }
+
+  template <typename Item>
+  __dpct_inline__ void sort_blocked_to_striped(
+      const Item &item, T(&keys)[VALUES_PER_THREAD], int begin_bit = 0,
+      int end_bit = 8 * sizeof(T)) {
+    helper_sort(item, keys, begin_bit, end_bit, true);
+  }
 };
 
 /// Load linear segment items into block format across threads

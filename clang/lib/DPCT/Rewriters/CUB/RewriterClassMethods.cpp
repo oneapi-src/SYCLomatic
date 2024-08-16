@@ -42,15 +42,18 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CASE_FACTORY_ENTRY(
-              CASE(makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
-                                              /*IncludeDefaultArg=*/false),
-                                CheckParamType(2, "int")),
-                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
-                                             MemberExprBase(), false, "sort",
-                                             NDITEM, ARG(0), ARG(1), ARG(2))),
+              CASE(
+                  makeCheckAnd(
+                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+                                                 /*IncludeDefaultArg=*/false),
+                                   CheckParamType(1, "int", /*isStrict=*/true)),
+                      CheckParamType(2, "int", /*isStrict=*/true)),
+                  MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
+                                            MemberExprBase(), false, "sort",
+                                            NDITEM, ARG(0), ARG(1), ARG(2))),
               CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
                                               /*IncludeDefaultArg=*/false),
-                                CheckParamType(1, "int")),
+                                CheckParamType(1, "int", /*isStrict=*/true)),
                    MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
                                              MemberExprBase(), false, "sort",
                                              NDITEM, ARG(0), ARG(1))),
@@ -66,16 +69,19 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CASE_FACTORY_ENTRY(
-              CASE(makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
-                                              /*IncludeDefaultArg=*/false),
-                                CheckParamType(2, "int")),
-                   MEMBER_CALL_FACTORY_ENTRY(
-                       "cub::BlockRadixSort.SortDescending", MemberExprBase(),
-                       false, "sort_descending", NDITEM, ARG(0), ARG(1),
-                       ARG(2))),
+              CASE(
+                  makeCheckAnd(
+                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+                                                 /*IncludeDefaultArg=*/false),
+                                   CheckParamType(1, "int", /*isStrict=*/true)),
+                      CheckParamType(2, "int", /*isStrict=*/true)),
+                  MEMBER_CALL_FACTORY_ENTRY(
+                      "cub::BlockRadixSort.SortDescending", MemberExprBase(),
+                      false, "sort_descending", NDITEM, ARG(0), ARG(1),
+                      ARG(2))),
               CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
                                               /*IncludeDefaultArg=*/false),
-                                CheckParamType(1, "int")),
+                                CheckParamType(1, "int", /*isStrict=*/true)),
                    MEMBER_CALL_FACTORY_ENTRY(
                        "cub::BlockRadixSort.SortDescending", MemberExprBase(),
                        false, "sort_descending", NDITEM, ARG(0), ARG(1))),
@@ -86,6 +92,68 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                        false, "sort_descending", NDITEM, ARG(0))),
               OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
                   "cub::BlockRadixSort.SortDescending",
+                  Diagnostics::API_NOT_MIGRATED, printCallExprPretty()))))
+      // cub::BlockRadixSort.SortBlockedToStriped
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CASE_FACTORY_ENTRY(
+              CASE(
+                  makeCheckAnd(
+                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+                                                 /*IncludeDefaultArg=*/false),
+                                   CheckParamType(1, "int", /*isStrict=*/true)),
+                      CheckParamType(2, "int", /*isStrict=*/true)),
+                  MEMBER_CALL_FACTORY_ENTRY(
+                      "cub::BlockRadixSort.SortBlockedToStriped",
+                      MemberExprBase(), false, "sort_blocked_to_striped",
+                      NDITEM, ARG(0), ARG(1), ARG(2))),
+              CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
+                                              /*IncludeDefaultArg=*/false),
+                                CheckParamType(1, "int", /*isStrict=*/true)),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockRadixSort.SortBlockedToStriped",
+                       MemberExprBase(), false, "sort_blocked_to_striped",
+                       NDITEM, ARG(0), ARG(1))),
+              CASE(CheckArgCount(1, std::equal_to<>(),
+                                 /*IncludeDefaultArg=*/false),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockRadixSort.SortBlockedToStriped",
+                       MemberExprBase(), false, "sort_blocked_to_striped",
+                       NDITEM, ARG(0))),
+              OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+                  "cub::BlockRadixSort.SortBlockedToStriped",
+                  Diagnostics::API_NOT_MIGRATED, printCallExprPretty()))))
+      // cub::BlockRadixSort.SortDescendingBlockedToStriped
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CASE_FACTORY_ENTRY(
+              CASE(
+                  makeCheckAnd(
+                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+                                                 /*IncludeDefaultArg=*/false),
+                                   CheckParamType(1, "int", /*isStrict=*/true)),
+                      CheckParamType(2, "int", /*isStrict=*/true)),
+                  MEMBER_CALL_FACTORY_ENTRY(
+                      "cub::BlockRadixSort.SortDescendingBlockedToStriped",
+                      MemberExprBase(), false,
+                      "sort_descending_blocked_to_striped", NDITEM, ARG(0),
+                      ARG(1), ARG(2))),
+              CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
+                                              /*IncludeDefaultArg=*/false),
+                                CheckParamType(1, "int", /*isStrict=*/true)),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockRadixSort.SortDescendingBlockedToStriped",
+                       MemberExprBase(), false,
+                       "sort_descending_blocked_to_striped", NDITEM, ARG(0),
+                       ARG(1))),
+              CASE(CheckArgCount(1, std::equal_to<>(),
+                                 /*IncludeDefaultArg=*/false),
+                   MEMBER_CALL_FACTORY_ENTRY(
+                       "cub::BlockRadixSort.SortDescendingBlockedToStriped",
+                       MemberExprBase(), false,
+                       "sort_descending_blocked_to_striped", NDITEM, ARG(0))),
+              OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+                  "cub::BlockRadixSort.SortDescendingBlockedToStriped",
                   Diagnostics::API_NOT_MIGRATED, printCallExprPretty()))))
       // cub::BlockExchange.BlockedToStriped
       HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
