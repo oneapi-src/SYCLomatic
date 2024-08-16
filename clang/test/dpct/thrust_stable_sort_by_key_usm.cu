@@ -74,7 +74,7 @@ int main(void) {
   thrust::stable_sort_by_key(thrust::host,   AH.begin(), AH.end(), BH.begin(), thrust::greater<int>());
   thrust::stable_sort_by_key(thrust::device, AD.begin(), AD.end(), BD.begin(), thrust::greater<int>());
   thrust::stable_sort_by_key(thrust::host,   h_ptr,      h_ptr+4,  BH.begin(), thrust::greater<int>());
-  thrust::stable_sort_by_key(thrust::device, d_ptr, d_ptr+4, BD.begin(), thrust::greater<int>());
+  thrust::stable_sort_by_key(thrust::device, d_ptr,      d_ptr+4,  BD.begin(), thrust::greater<int>());
 
   return 0;
 }
