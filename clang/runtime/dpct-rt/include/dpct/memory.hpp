@@ -990,7 +990,7 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
 #ifndef DPCT_USM_LEVEL_NONE
-  dpct::get_current_device().queues_wait_and_throw();
+  dpct::get_device(dpct::get_device_id(q.get_device())).queues_wait_and_throw();
 #endif
   detail::dpct_free(ptr, q);
 }
@@ -1513,7 +1513,7 @@ public:
 
   ~device_memory() {
     if (_device_ptr && !_reference)
-      dpct::dpct_free(_device_ptr);
+      dpct::dpct_free(_device_ptr, _q);
     if (_host_ptr)
       std::free(_host_ptr);
   }
@@ -1590,6 +1590,7 @@ private:
         _device_ptr(memory_ptr) {}
 
   void allocate_device(sycl::queue &q) {
+    _q = q;
 #ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
       _device_ptr = (value_t *)sycl::malloc_shared(
@@ -1613,6 +1614,7 @@ private:
   bool _reference;
   value_t *_host_ptr;
   value_t *_device_ptr;
+  sycl::queue _q;
 };
 template <class T, memory_region Memory>
 class device_memory<T, Memory, 0> : public device_memory<T, Memory, 1> {
