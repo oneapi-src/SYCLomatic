@@ -2604,6 +2604,7 @@ class DeviceFunctionInfo
   struct ParameterProps {
     bool IsReferenced = false;
   };
+  std::set<const CallExpr *> NonCudaCallCallExprMap;
 
 public:
   DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum,
@@ -2611,6 +2612,7 @@ public:
 
   bool ConstructGraphVisited = false;
   unsigned int KernelCallBlockDim = 1;
+  unsigned int NonCudaCallNum = 0;
 
   std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C);
   template <class CallT>
@@ -2621,10 +2623,25 @@ public:
         insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, C);
     Call->buildCallExprInfo(C);
 
-    // Update ParentDFIs
+    // Update ParentDFIs and NonCudaCallNum
     // Currently, only support CallExpr & FunctionDecl only
     if constexpr (std::is_same<CallT, CallExpr>::value) {
       if (const auto *FD = C->getDirectCallee()) {
+        if (!isFromCUDA(FD) &&
+            FD->getNameInfo().getName().getAsString() != "__syncthreads") {
+          bool PassByValue = true;
+          for (const auto &P : FD->parameters()) {
+            auto QT = P->getType();
+            if (QT->isReferenceType() || QT->isPointerType()) {
+              PassByValue = false;
+              break;
+            }
+          }
+          if (!PassByValue) {
+            NonCudaCallCallExprMap.insert(C);
+            NonCudaCallNum = NonCudaCallCallExprMap.size();
+          }
+        }
         if (auto ChildDFI = DeviceFunctionDecl::LinkRedecls(FD)) {
           ChildDFI->getParentDFIs().insert(weak_from_this());
         }

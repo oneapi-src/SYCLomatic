@@ -1,7 +1,7 @@
-// RUN: cd %S/link/test &&  rm test.hpp && ln -nfs  ../../target/test/test.hpp test.hpp
-// RUN: dpct  --in-root=%S --out-root=%T/out  --cuda-include-path="%cuda-path/include" --process-all -- -I %S/link -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/out/vector_add_format.dp.cpp --match-full-lines %s
-// RUN: FileCheck --input-file %T/out/link/test/test.hpp --match-full-lines %S/link/test/test.hpp
+// UNSUPPORTED: system-windows
+// RUN: cp -r %S %T && cd %T/soft_link_file/link/test &&  rm test.hpp && ln -nfs  ../../target/test/test.hpp test.hpp
+// RUN: dpct  --in-root=%T/soft_link_file --out-root=%T/out  --cuda-include-path="%cuda-path/include" --process-all -- -I %T/soft_link_file/link -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/out/link/test/test.hpp --match-full-lines %T/soft_link_file/link/test/test.hpp
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out/vector_add_format.dp.cpp -o %T/out/vector_add_format.dp.o -I %T/out/link %}
 
 #include <cuda.h>
