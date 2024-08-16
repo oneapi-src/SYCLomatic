@@ -573,6 +573,19 @@
       Out: ""
       RuleId: "remove_CUDA_nvToolsExt_LIBRARY"
 
+- Rule: rule_CUDA_cufft_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_cufft_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_cufft_LIBRARY}
+      Out: \${MKL_LIB}
+
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
   Priority: Fallback
