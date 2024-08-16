@@ -284,10 +284,10 @@ bool clang::dpct::IntraproceduralAnalyzer::Visit(const DeclRefExpr *DRE) {
     return true;
   if (VD->isLocalVarDecl())
     return true;
-  if (!isa<ParmVarDecl>(VD))
-    return false;
   if (isFromCUDA(VD))
     return true;
+  if (!isa<ParmVarDecl>(VD))
+    return false;
 
   TypeAnalyzer TA;
   TypeAnalyzer::ParamterTypeKind Kind =
@@ -709,10 +709,11 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> InputDFI,
     std::string SyncCallCombinedLoc) {
+  std::cout << "========InterproceduralAnalyzer::analyze=========" << std::endl;
   if (InputDFI->NonCudaCallNum > 0) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F0: InputDFI->NonCudaCallNum:"
-              << InputDFI->NonCudaCallNum << std::endl;
+    std::cout << "Return False case F0: InputDFI(" << InputDFI.get()
+              << ")->NonCudaCallNum:" << InputDFI->NonCudaCallNum << std::endl;
 #endif
     return false;
   }
@@ -826,10 +827,11 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
         return false;
       }
       const auto &Iter = I.lock();
-      if (Iter->NonCudaCallNum > 0) {
+      if (Iter->NonCudaCallNum > 1) {
+        // The only one non-cuda call should be current node itself
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "Return False case F41: Iter->NonCudaCallNum:"
-                  << Iter->NonCudaCallNum << std::endl;
+        std::cout << "Return False case F41: Iter(" << Iter.get()
+                  << ")->NonCudaCallNum:" << Iter->NonCudaCallNum << std::endl;
 #endif
         return false;
       }
