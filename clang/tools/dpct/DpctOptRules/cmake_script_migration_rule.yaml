@@ -573,7 +573,7 @@
       Out: ""
       RuleId: "remove_CUDA_nvToolsExt_LIBRARY"
 
-- Rule: rule_CUDA_cufft_LIBRARY_removed
+- Rule: rule_CUDA_cufft_LIBRARY
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
@@ -585,6 +585,13 @@
       MatchMode: Full
       In: \${CUDA_cufft_LIBRARY}
       Out: \${MKL_LIB}
+
+- Rule: rule_CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
+  In: \${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+  Out: \${SYCLToolkit_LIBRARY_DIR}
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
