@@ -15,7 +15,7 @@
 #include <unordered_set>
 
 using namespace llvm;
-//#define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+
 template <class TargetTy, class NodeTy>
 static inline const TargetTy *findAncestorInFunctionScope(
     const NodeTy *N, const FunctionDecl *Scope,
@@ -600,12 +600,7 @@ std::string findCurCallCombinedLoc(std::string CurCallDeclCombinedLoc,
 bool clang::dpct::InterproceduralAnalyzer::analyze(
     const std::shared_ptr<DeviceFunctionInfo> InputDFI,
     std::string SyncCallCombinedLoc) {
-  std::cout << "========InterproceduralAnalyzer::analyze=========" << std::endl;
   if (InputDFI->NonCudaCallNum > 0) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F0: InputDFI(" << InputDFI.get()
-              << ")->NonCudaCallNum:" << InputDFI->NonCudaCallNum << std::endl;
-#endif
     return false;
   }
   // Do analysis for all syncthreads call in this DFI's ancestors and
@@ -694,10 +689,6 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
       const auto &Iter = I.lock();
       if (Iter->NonCudaCallNum > 1) {
         // The only one non-cuda call should be current node itself
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "Return False case F41: Iter(" << Iter.get()
-                  << ")->NonCudaCallNum:" << Iter->NonCudaCallNum << std::endl;
-#endif
         return false;
       }
       NodeStack.push(std::make_tuple(I, CurNode->IAR.CurrentCtxFuncCombinedLoc,
@@ -712,22 +703,10 @@ bool clang::dpct::InterproceduralAnalyzer::analyze(
   for (const auto &Iter : AffectedByParmsMapInfoVec) {
     const auto &AffectedByParmsMap = Iter.second;
     for (const auto &P : AffectedByParmsMap) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-      std::cout << "Parameter ID:" << P.first << std::endl;
-      std::cout << "  AM:" << P.second.AM << std::endl;
-      std::cout << "  UsedBefore:" << P.second.UsedBefore << std::endl;
-      std::cout << "  UsedAfter:" << P.second.UsedAfter << std::endl;
-#endif
       if (P.second.AM == ReadWrite) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F5" << std::endl;
-#endif
         return false;
       }
       if ((P.second.AM == Write) && P.second.UsedBefore && P.second.UsedAfter) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case F6" << std::endl;
-#endif
         return false;
       }
     }
