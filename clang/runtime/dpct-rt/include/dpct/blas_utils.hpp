@@ -2331,7 +2331,7 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
                            "Project does not support this API.");
 #endif
 #else
-  using Ty = typename DataType<T>::T2;
+  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
   sycl::queue exec_queue = desc_ptr->get_queue();
   struct matrix_info_t {
     oneapi::mkl::transpose trans_info;
