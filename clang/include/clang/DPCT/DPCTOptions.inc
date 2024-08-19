@@ -725,7 +725,7 @@ DPCT_ENUM_OPTION(
                                false),
         DPCT_OPTION_ENUM_VALUE(
             "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-            "[Deprecated]Experimental helper function used to help cross-group "
+            "DEPRECATED : Experimental helper function used to help cross-group "
             "synchronization during migration.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
