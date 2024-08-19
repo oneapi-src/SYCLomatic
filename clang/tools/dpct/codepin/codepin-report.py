@@ -376,8 +376,9 @@ def get_memory_used(cp_list):
 #    It compares the prolog and epilog checkpoints to determine if a variable has changed, indicating it is 
 #    an output.
 # 2. Analyze Checkpoints to Build Layers
-#    It iterates over the list of CUDA checkpoints again to build the layers of the graph. For each layer, 
-#    it has three sub-layers:
+#    It iterates over the list of CUDA checkpoints again to build the layers of the graph. A layer refers to
+#    a specific grouping of nodes that represents a specific kernel execution process.
+#    For each layer, it has three sub-layers:
 #      - Input Variable Nodes Layer: The input nodes for each kernel and their attributes (name, type, address, 
 #        color) are stored.
 #      - Kernel Node Layer: Information about the kernel node, such as stream ID and source location, is collected.
@@ -391,7 +392,7 @@ def get_memory_used(cp_list):
 #    num will be incremented by one when it changes. The color of the node is red if the variable value is 
 #    mismatched between CUDA and SYCL execution results.
 # 4. Render Graph
-#    Finally, the function renders the graph to a PDF file and saves it in the current directory.
+#    Finally, the function renders the graph into a PDF file and saves it in the current directory.
 def generate_data_flow_graph(
     device_stream_dic_cuda,
     device_stream_dic_sycl,
