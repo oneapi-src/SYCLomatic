@@ -74,3 +74,19 @@ __host__ void foo4(){
   cublasIsamax(handle, n, x_S, incx, result);
 }
 
+__global__ void childKernel() {}
+__global__ void parentKernel() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1130:{{[0-9]+}}: SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: childKernel<<<1, 1>>>();
+  childKernel<<<1, 1>>>();
+}
+void foo5() {
+  // CHECK: dpct::get_out_of_order_queue().parallel_for(
+  // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:     parentKernel();
+  // CHECK-NEXT:   });
+  parentKernel<<<1, 1>>>();
+}

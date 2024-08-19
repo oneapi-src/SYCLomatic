@@ -10,10 +10,10 @@
 
 __global__ void lg2() {
   float f32;
-  // CHECK: f32 = sycl::log2<float>(1.0f);
+  // CHECK: f32 = sycl::log2(1.0f);
   asm("lg2.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = sycl::log2<float>(1.0f);
+  // CHECK: f32 = sycl::log2(1.0f);
   asm("lg2.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 }
 

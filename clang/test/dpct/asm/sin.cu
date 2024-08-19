@@ -11,10 +11,10 @@
 __global__ void sin() {
   float f32;
 
-  // CHECK: f32 = sycl::sin<float>(1.0f);
+  // CHECK: f32 = sycl::sin(1.0f);
   asm("sin.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = sycl::sin<float>(1.0f);
+  // CHECK: f32 = sycl::sin(1.0f);
   asm("sin.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 }
 

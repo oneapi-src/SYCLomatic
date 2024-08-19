@@ -12,13 +12,13 @@ __global__ void rsqrt() {
   float f32;
   double f64;
 
-  // CHECK: f32 = sycl::rsqrt<float>(1.0f);
+  // CHECK: f32 = sycl::rsqrt(1.0f);
   asm("rsqrt.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 
-  // CHECK: f32 = sycl::rsqrt<float>(1.0f);
+  // CHECK: f32 = sycl::rsqrt(1.0f);
   asm("rsqrt.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 
-  // CHECK: f64 = sycl::rsqrt<double>(1.0);
+  // CHECK: f64 = sycl::rsqrt(1.0);
   asm("rsqrt.approx.f64 %0, %1;" : "=d"(f64) : "d"(1.0));
 }
 // clang-format on
