@@ -1,4 +1,4 @@
-//==---- dispatch.hpp -----------------------------*- C++ -*----------------==//
+//==---- switcher.hpp -----------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_PROXY_HPP__
-#define __DPCT_PROXY_HPP__
+#ifndef __DPCT_SWITCHER_HPP__
+#define __DPCT_SWITCHER_HPP__
 
 // Only for testing
 #include <dpct/dpct.hpp>
@@ -16,7 +16,7 @@
 
 namespace dpct {
 namespace detail {
-namespace dispatch {
+namespace switcher {
 #if USE_DPCT_HELPER
 namespace chosen_ns = ::dpct;
 template <typename T> using DataType = ::dpct::DataType<T>;
@@ -106,8 +106,8 @@ inline sycl::event enqueue_free(const std::vector<void *> &pointers,
 #endif
 }
 
-} // namespace dispatch
+} // namespace switcher
 } // namespace detail
 } // namespace dpct
 
-#endif // __DPCT_PROXY_HPP__
+#endif // __DPCT_SWITCHER_HPP__

@@ -92,7 +92,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
-// RUN: diff %T/check_header_files/out/include/dpct/dispatch.hpp  %S/../../runtime/dpct-rt/include/dpct/dispatch.hpp >> %T/check_header_files/diff_res.txt
+// RUN: diff %T/check_header_files/out/include/dpct/switcher.hpp  %S/../../runtime/dpct-rt/include/dpct/switcher.hpp >> %T/check_header_files/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 

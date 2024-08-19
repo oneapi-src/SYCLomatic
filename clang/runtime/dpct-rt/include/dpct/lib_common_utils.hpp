@@ -9,7 +9,7 @@
 #ifndef __DPCT_LIB_COMMON_UTILS_HPP__
 #define __DPCT_LIB_COMMON_UTILS_HPP__
 
-#include "dispatch.hpp"
+#include "switcher.hpp"
 
 #include <oneapi/mkl.hpp>
 
@@ -25,15 +25,15 @@ template <typename T> inline auto get_memory(const void *x) {
 }
 
 template <typename T>
-inline typename ::dpct::detail::dispatch::DataType<T>::T2
+inline typename ::dpct::detail::switcher::DataType<T>::T2
 get_value(const T *s, sycl::queue &q) {
-  using Ty = typename ::dpct::detail::dispatch::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::switcher::DataType<T>::T2;
   Ty s_h;
-  if (::dpct::detail::dispatch::get_pointer_attribute(q, s) ==
-      ::dpct::detail::dispatch::pointer_access_attribute::device_only)
-    ::dpct::detail::dispatch::memcpy(
+  if (::dpct::detail::switcher::get_pointer_attribute(q, s) ==
+      ::dpct::detail::switcher::pointer_access_attribute::device_only)
+    ::dpct::detail::switcher::memcpy(
         q, (void *)&s_h, (void *)s, sizeof(T),
-        ::dpct::detail::dispatch::memcpy_direction::device_to_host)
+        ::dpct::detail::switcher::memcpy_direction::device_to_host)
         .wait();
   else
     s_h = *reinterpret_cast<const Ty *>(s);
