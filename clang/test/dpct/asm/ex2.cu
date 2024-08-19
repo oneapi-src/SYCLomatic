@@ -10,10 +10,10 @@
 
 __global__ void ex2() {
   float f32;
-  // CHECK: f32 = sycl::pow<float>(2, 3.4f);
+  // CHECK: f32 = sycl::pow(2, 3.4f);
   asm("ex2.approx.f32 %0, %1;" : "=f"(f32) : "f"(3.4f));
   
-  // CHECK: f32 = sycl::pow<float>(2, 3.4f);
+  // CHECK: f32 = sycl::pow(2, 3.4f);
   asm("ex2.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(3.4f));
 }
 
