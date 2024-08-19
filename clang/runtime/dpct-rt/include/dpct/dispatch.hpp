@@ -10,6 +10,7 @@
 #define __DPCT_PROXY_HPP__
 
 // Only for testing
+#include <dpct/dpct.hpp>
 #define USE_DPCT_HELPER 1
 //#include <syclcompat.hpp>
 
