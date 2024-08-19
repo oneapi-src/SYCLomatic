@@ -22,9 +22,9 @@ __device__ float4 fun() {
 #ifndef BUILD_TEST
 // CHECK: fma(a.x(), b.x(), c.x());
   __fmaf_rn(a.x, b.x, c.x);
-#endif
 // CHECK: return float4(fma(a.x(), b.x(), c.x()), fma(a.y(), b.y(), c.y()), fma(a.z(), b.z(), c.z()), fma(a.w(), b.w(), c.w()));
   return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
+#endif
 }
 
 
