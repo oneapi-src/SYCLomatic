@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -in-root %S -out-root %T/explicit_namespace_none %S/explicit_namespace_none.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=none --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/explicit_namespace_none/explicit_namespace_none.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/explicit_namespace_none/explicit_namespace_none.dp.cpp -o %T/explicit_namespace_none/explicit_namespace_none.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/explicit_namespace_none/explicit_namespace_none.dp.cpp -o %T/explicit_namespace_none/explicit_namespace_none.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -19,8 +19,10 @@
 #include <exception>
 __device__ float4 fun() {
   float4 a, b, c;
+#ifndef BUILD_TEST
 // CHECK: fma(a.x(), b.x(), c.x());
   __fmaf_rn(a.x, b.x, c.x);
+#endif
 // CHECK: return float4(fma(a.x(), b.x(), c.x()), fma(a.y(), b.y(), c.y()), fma(a.z(), b.z(), c.z()), fma(a.w(), b.w(), c.w()));
   return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
 }
