@@ -10,9 +10,9 @@
 #define __DPCT_SWITCHER_HPP__
 
 // Only for testing
-#include <dpct/dpct.hpp>
-#define USE_DPCT_HELPER 1
-//#include <syclcompat.hpp>
+//#include <dpct/dpct.hpp>
+//#define USE_DPCT_HELPER 1
+#include <syclcompat.hpp>
 
 namespace dpct {
 namespace detail {
