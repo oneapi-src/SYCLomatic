@@ -18,24 +18,22 @@ namespace dpct {
 namespace detail {
 namespace dispatch {
 #if USE_DPCT_HELPER
+namespace chosen_ns = ::dpct;
 template <typename T> using DataType = ::dpct::DataType<T>;
-using pointer_access_attribute = ::dpct::detail::pointer_access_attribute;
 using memcpy_direction = ::dpct::memcpy_direction;
-inline ::dpct::device_ext &get_current_device() {
-  return ::dpct::get_current_device();
-}
-using queue_ptr = ::dpct::queue_ptr;
 template <class... Args> using kernel_name = dpct_kernel_name<Args...>;
 #else
+namespace chosen_ns = ::syclcompat;
 template <typename T> using DataType = ::syclcompat::detail::DataType<T>;
-using pointer_access_attribute = ::syclcompat::detail::pointer_access_attribute;
 using memcpy_direction = ::syclcompat::experimental::memcpy_direction;
-inline ::syclcompat::device_ext &get_current_device() {
-  return ::syclcompat::get_current_device();
-}
-using queue_ptr = ::syclcompat::queue_ptr;
 template <class... Args> using kernel_name = syclcompat_kernel_name<Args...>;
 #endif
+
+using chosen_ns::get_current_device;
+using chosen_ns::get_default_context;
+using chosen_ns::queue_ptr;
+using chosen_ns::detail::get_pointer_attribute;
+using chosen_ns::detail::pointer_access_attribute;
 
 inline sycl::queue &get_default_queue() {
 #if USE_DPCT_HELPER
@@ -44,14 +42,6 @@ inline sycl::queue &get_default_queue() {
   return *::syclcompat::detail::dev_mgr::instance()
               .current_device()
               .default_queue();
-#endif
-}
-
-inline sycl::context get_default_context() {
-#if USE_DPCT_HELPER
-  return ::dpct::get_default_context();
-#else
-  return ::syclcompat::get_default_context();
 #endif
 }
 
@@ -113,15 +103,6 @@ inline sycl::event enqueue_free(const std::vector<void *> &pointers,
   return ::dpct::detail::async_dpct_free(pointers, events, q);
 #else
   return ::syclcompat::enqueue_free(pointers, events, q);
-#endif
-}
-
-inline pointer_access_attribute get_pointer_attribute(sycl::queue q,
-                                                      const void *ptr) {
-#if USE_DPCT_HELPER
-  return ::dpct::detail::get_pointer_attribute(q, ptr);
-#else
-  return ::syclcompat::detail::get_pointer_attribute(q, ptr);
 #endif
 }
 
