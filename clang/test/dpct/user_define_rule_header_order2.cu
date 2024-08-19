@@ -9,9 +9,7 @@
 // RUN: FileCheck --input-file %T/user_define_rule_header_order2_output/user_define_rule_header_order2.dp.cpp --match-full-lines user_define_rule_header_order2.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/user_define_rule_header_order2_output/user_define_rule_header_order2.dp.cpp -o %T/user_define_rule_header_order2_output/user_define_rule_header_order2.dp.o %}
 
-// CHECK: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <sycl/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dnnl_utils.hpp>
 // CHECK-NEXT: #include <iostream>
