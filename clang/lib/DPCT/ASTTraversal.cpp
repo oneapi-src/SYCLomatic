@@ -8407,6 +8407,12 @@ void KernelCallRule::runRule(
     auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
     if (!FD)
       return;
+    if (FD->hasAttr<CUDAGlobalAttr>()) {
+      report(KCall->getBeginLoc(), Diagnostics::NOT_SUPPORT_DYN_PARALLEL,
+             false);
+      return;
+    }
+
     const auto &SM = (*Result.Context).getSourceManager();
 
     if (SM.isMacroArgExpansion(KCall->getCallee()->getBeginLoc())) {
