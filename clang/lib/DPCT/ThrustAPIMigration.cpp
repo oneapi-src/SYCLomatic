@@ -19,26 +19,45 @@ using namespace clang::ast_matchers;
 void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
   auto functionName = [&]() { return hasAnyName("on"); };
-  // Both THRUST_200302___CUDA_ARCH_LIST___NS and __4 are newly imported inline
+  // THRUST_200302___CUDA_ARCH_LIST___NS is newly imported inline
   // namespace by thrust library in CUDA header file 12.4.
+  // THRUST_200400___CUDA_ARCH_LIST___NS is newly imported inline
+  // namespace by thrust library in CUDA header file 12.5.
+  // THRUST_200500___CUDA_ARCH_LIST___NS is newly imported inline
+  // namespace by thrust library in CUDA header file 12.6.
   MF.addMatcher(
       callExpr(
-          anyOf(callee(functionDecl(anyOf(
-                    hasDeclContext(namespaceDecl(
-                        hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))),
-                    hasDeclContext(namespaceDecl(hasName(
-                        "THRUST_200302___CUDA_ARCH_LIST___NS::detail"))),
-                    hasDeclContext(namespaceDecl(hasName(
-                        "THRUST_200302___CUDA_ARCH_LIST___NS::system"))),
-                    hasDeclContext(namespaceDecl(hasName("thrust"))),
-                    hasDeclContext(namespaceDecl(hasName("thrust::detail"))),
-                    hasDeclContext(namespaceDecl(hasName("thrust::system"))),
-                    hasDeclContext(namespaceDecl(hasName("__4"))),
-                    functionName()))),
-                callee(unresolvedLookupExpr(hasAnyDeclaration(
-                    namedDecl(hasDeclContext(namespaceDecl(anyOf(
-                        hasName("thrust"),
-                        hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))))))))))
+          anyOf(
+              callee(functionDecl(anyOf(
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200302___CUDA_ARCH_LIST___NS::detail"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200302___CUDA_ARCH_LIST___NS::system"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200400___CUDA_ARCH_LIST___NS"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200400___CUDA_ARCH_LIST___NS::detail"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200400___CUDA_ARCH_LIST___NS::system"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200500___CUDA_ARCH_LIST___NS"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200500___CUDA_ARCH_LIST___NS::detail"))),
+                  hasDeclContext(namespaceDecl(
+                      hasName("THRUST_200500___CUDA_ARCH_LIST___NS::system"))),
+                  hasDeclContext(namespaceDecl(hasName("thrust"))),
+                  hasDeclContext(namespaceDecl(hasName("thrust::detail"))),
+                  hasDeclContext(namespaceDecl(hasName("thrust::system"))),
+                  hasDeclContext(namespaceDecl(hasName("__4"))),
+                  functionName()))),
+              callee(unresolvedLookupExpr(hasAnyDeclaration(
+                  namedDecl(hasDeclContext(namespaceDecl(anyOf(
+                      hasName("thrust"),
+                      hasName("THRUST_200400___CUDA_ARCH_LIST___NS"),
+                      hasName("THRUST_200500___CUDA_ARCH_LIST___NS"),
+                      hasName("THRUST_200302___CUDA_ARCH_LIST___NS"))))))))))
           .bind("thrustFuncCall"),
       this);
   // THRUST_STATIC_ASSERT macro register
