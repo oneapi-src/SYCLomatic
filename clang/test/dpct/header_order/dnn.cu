@@ -1,7 +1,5 @@
 // RUN: echo
-// CHECK: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <sycl/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include "dnn.h"
 // CHECK-NEXT: #include <dpct/dnnl_utils.hpp>

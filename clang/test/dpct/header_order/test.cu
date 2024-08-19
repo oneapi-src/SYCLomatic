@@ -3,9 +3,7 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/header_order/test.dp.cpp -o %T/header_order/test.dp.o %}
 // RUN: FileCheck --input-file %T/header_order/dnn.dp.cpp --match-full-lines %S/dnn.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/header_order/dnn.dp.cpp -o %T/header_order/dnn.dp.o %}
-// CHECK: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <sycl/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <stdlib.h>
 // CHECK-NEXT: #include <iostream>

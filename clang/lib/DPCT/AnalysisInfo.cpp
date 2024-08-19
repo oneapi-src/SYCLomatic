@@ -859,10 +859,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
-  case HT_DPCT_DNNL_Utils:
-    insertHeader(HT_DPL_Execution);
-    insertHeader(HT_DPL_Algorithm);
-    break;
   case HT_SYCL:
     // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
     // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
