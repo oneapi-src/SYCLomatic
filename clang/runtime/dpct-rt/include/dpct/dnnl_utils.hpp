@@ -11,6 +11,8 @@
 
 #include <sycl/sycl.hpp>
 
+#include <dpct/dpct.hpp>
+
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <oneapi/mkl.hpp>
@@ -1028,8 +1030,8 @@ class engine_ext {
     q->submit([&](sycl::handler &cgh) {
       cgh.parallel_for<dpct_kernel_name<class zero_to_one, T>>(
           sycl::range<1>(num), [=](sycl::id<1> idx) {
-            T *src_ptr = static_cast<T *>(src + idx[0] * sizeof(T));
-            T *dst_ptr = static_cast<T *>(dst + idx[0] * sizeof(T));
+            T *src_ptr = static_cast<T *>(src) + idx[0];
+            T *dst_ptr = static_cast<T *>(dst) + idx[0];
             if (*src_ptr) {
               *dst_ptr = *src_ptr;
             } else {
