@@ -9,6 +9,7 @@
 #ifndef __DPCT_GROUP_UTILS_HPP__
 #define __DPCT_GROUP_UTILS_HPP__
 
+#include <iterator>
 #include <stdexcept>
 #include <sycl/sycl.hpp>
 
@@ -473,6 +474,59 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
 #pragma unroll
   for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
     items[idx] = block_itr[linear_tid + (idx * group_work_items)];
+  }
+}
+
+/// Load a linear segment of elements into a blocked arrangement across the
+/// work-group.
+///
+/// \tparam InputT The data type to load.
+///
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+///
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+///
+/// \param linear_tid A suitable linear identifier for the calling work-item.
+///
+/// \param block_itr The work-group's base input iterator for loading from.
+///
+/// \param items Data to load
+template <typename InputT, size_t ElementsPerWorkItem, typename InputIteratorT>
+__dpct_inline__ void load_direct_blocked(size_t linear_tid,
+                                         InputIteratorT block_itr,
+                                         InputT (&items)[ElementsPerWorkItem]) {
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
+    items[i] = block_itr[(linear_tid * ElementsPerWorkItem) + i];
+  }
+}
+
+/// Load a linear segment of elements into a striped arrangement across the
+/// work-group.
+///
+/// \tparam WorkGroupSize The work-group size.
+///
+/// \tparam InputT The data type to load.
+///
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+///
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+///
+/// \param linear_tid A suitable linear identifier for the calling work-item.
+///
+/// \param block_itr The work-group's base input iterator for loading from.
+///
+/// \param items Data to load
+template <size_t WorkGroupSize, typename InputT, int ElementsPerWorkItem,
+          typename InputIteratorT>
+__dpct_inline__ void load_direct_striped(size_t linear_tid,
+                                         InputIteratorT block_itr,
+                                         InputT (&items)[ElementsPerWorkItem]) {
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
+    items[i] = block_itr[linear_tid + i * WorkGroupSize];
   }
 }
 
