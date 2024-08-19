@@ -50,8 +50,7 @@ public:
   // Example: sycl::exp
   static std::string getClNamespace(bool KeepNamespace = false,
                                     bool IsMathFunc = false);
-  static std::string getExpNamespace(bool KeepNamespace = false,
-                                     bool IsMathFunc = false);
+  static std::string getExpNamespace(bool KeepNamespace = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
 
   struct SOLVERFuncReplInfo {

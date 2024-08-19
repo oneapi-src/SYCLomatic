@@ -195,18 +195,6 @@ CONDITIONAL_FACTORY_ENTRY(
         Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("coalesced_threads"),
         ARG("--use-experimental-features=non-uniform-groups")))
-CONDITIONAL_FACTORY_ENTRY(
-    UseNonUniformGroups,
-    CALL_FACTORY_ENTRY(
-        "coalesced_threads",
-        CALL(
-            MapNames::getClNamespace() +
-            "ext::oneapi::experimental::this_kernel::get_opportunistic_group")),
-    UNSUPPORT_FACTORY_ENTRY(
-        "coalesced_threads",
-        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-        ARG("coalesced_threads"),
-        ARG("--use-experimental-features=non-uniform-groups")))
 #endif
 
 #ifdef CLASS_METHOD_CALL

@@ -366,9 +366,8 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY(
     "cooperative_groups::__v1::grid_group",
     TYPE_CONDITIONAL_FACTORY(
-        isUseRootGoupForType(),
-        TYPE_FACTORY(STR(MapNames::getExpNamespace() +
-                         "root_group")),
+        isUseRootGroupForType(),
+        TYPE_FACTORY(STR(MapNames::getExpNamespace() + "root_group")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=root-group"))))
 

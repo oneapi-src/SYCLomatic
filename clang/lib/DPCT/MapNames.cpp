@@ -27,8 +27,8 @@ std::string MapNames::getClNamespace(bool KeepNamespace, bool IsMathFunc) {
 std::string MapNames::getDpctNamespace(bool KeepNamespace) {
   return DpctNamespace[KeepNamespace];
 }
-std::string MapNames::getExpNamespace(bool KeepNamespace, bool IsMathFunc) {
-  return getClNamespace(KeepNamespace, IsMathFunc) + "ext::oneapi::experimental::";
+std::string MapNames::getExpNamespace(bool KeepNamespace) {
+  return getClNamespace(KeepNamespace, false) + "ext::oneapi::experimental::";
 }
 
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>

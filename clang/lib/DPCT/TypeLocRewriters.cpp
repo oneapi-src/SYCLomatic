@@ -143,14 +143,11 @@ std::function<bool(const TypeLoc)> isUseNonUniformGroupsForType() {
 }
 
 std::function<bool(const TypeLoc)> isUseLogicalGroupsForType() {
-  return [=](const TypeLoc) -> bool {
-    return DpctGlobalInfo::useLogicalGroup();
-  };
+  return
+      [=](const TypeLoc) -> bool { return DpctGlobalInfo::useLogicalGroup(); };
 }
-std::function<bool(const TypeLoc)> isUseRootGoupForType() {
-  return [=](const TypeLoc) -> bool {
-    return DpctGlobalInfo::useRootGroup();
-  };
+std::function<bool(const TypeLoc)> isUseRootGroupForType() {
+  return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useRootGroup(); };
 }
 
 // Print a templated type. Pass a STR("") as a template argument for types with
