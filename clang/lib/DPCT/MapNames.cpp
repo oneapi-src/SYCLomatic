@@ -74,7 +74,7 @@ void checkExplicitNamespaceBits(unsigned ExplicitNamespaceBits) {
     if ((ExplicitNamespaceBits & BitsExclusive) == BitsExclusive)
       break;
 
-    if (DpctGlobalInfo::useCompat()) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
       if (ExplicitNamespaceBits & EnumBit(ExplicitNamespace::EN_DPCT))
         break;
     } else if (ExplicitNamespaceBits &
@@ -88,12 +88,12 @@ void checkExplicitNamespaceBits(unsigned ExplicitNamespaceBits) {
 }
 
 const std::string &getDpctNamespaceName() {
-  const static std::string Name = [](bool UseSYCLcompat) {
-    if (UseSYCLcompat)
+  const static std::string Name = [](bool Use) {
+    if (Use)
       return "syclcompat";
     else
       return "dpct";
-  }(DpctGlobalInfo::useCompat());
+  }(DpctGlobalInfo::useSYCLCompat());
   return Name;
 }
 

@@ -1281,8 +1281,8 @@ public:
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
-  static void setUseCompat(bool Flag = true) { UseCompatFlag = Flag; }
-  static bool useCompat() { return UseCompatFlag; }
+  static void setUseSYCLCompat(bool Flag = true) { UseSYCLCompatFlag = Flag; }
+  static bool useSYCLCompat() { return UseSYCLCompatFlag; }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
@@ -1592,7 +1592,7 @@ private:
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
   static bool AnalysisModeFlag;
-  static bool UseCompatFlag;
+  static bool UseSYCLCompatFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;

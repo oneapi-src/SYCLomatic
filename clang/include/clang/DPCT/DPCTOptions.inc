@@ -944,12 +944,14 @@ DPCT_ENUM_OPTION(
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
 
 DPCT_FLAG_OPTION(
-    UseCompat, clang::dpct::DpctOptionClass::OC_Attribute,
+    UseSYCLCompat, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
                         clang::dpct::DpctActionKind::DAK_Migration),
-    "use-compat",
-    llvm::cl::desc("Call SYCLcompat function in migrated code "
-    "instead of calling dpct helper function. Default: off.\n"),
+    "use-syclcompat",
+    llvm::cl::desc(
+        "Use SYCLcompat header-only library (syclcompat:: namespace) instead "
+        "of DPCT helper functions (dpct:: namespace) to assist the migration "
+        "of input source code.\n Default: off.\n"),
     llvm::cl::cat(DPCTCodeGenCat), llvm::cl::cat(DPCTCat))
 
 DPCT_FLAG_OPTION(

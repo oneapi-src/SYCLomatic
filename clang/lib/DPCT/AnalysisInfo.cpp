@@ -869,7 +869,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
-    if (DpctGlobalInfo::useCompat()) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
       concatHeader(OS, getHeaderSpelling(HT_COMPAT_SYCLcompat));
       HeaderInsertedBitMap[HT_COMPAT_SYCLcompat] = true;
     } else {
@@ -1221,7 +1221,7 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
 }
 const std::string &DpctGlobalInfo::getDeviceQueueName() {
   static const std::string DeviceQueue = [&]() {
-    if (DpctGlobalInfo::useCompat())
+    if (DpctGlobalInfo::useSYCLCompat())
       return "default_queue";
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       return "out_of_order_queue";
@@ -2404,7 +2404,7 @@ unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 bool DpctGlobalInfo::AnalysisModeFlag = false;
-bool DpctGlobalInfo::UseCompatFlag = false;
+bool DpctGlobalInfo::UseSYCLCompatFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
