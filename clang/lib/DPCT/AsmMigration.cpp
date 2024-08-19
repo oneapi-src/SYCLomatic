@@ -1491,12 +1491,7 @@ protected:
     if (tryEmitStmt(Op, Inst->getInputOperand(0)))
       return SYCLGenError();
 
-    std::string TypeString;
-    if (tryEmitType(TypeString, Inst->getType(0)))
-      return SYCLGenError();
-
-    std::string ReplaceString =
-        MapNames::getClNamespace() + MathFn.str() + "<" + TypeString + ">(";
+    std::string ReplaceString = MapNames::getClNamespace() + MathFn.str() + '(';
     if (Inst->getOpcode() == asmtok::op_ex2)
       ReplaceString += "2, ";
     ReplaceString += Op + ")";
@@ -1541,15 +1536,13 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    std::string Op[3], TypeString;
+    std::string Op[3];
     for (int i = 0; i < 3; ++i)
       if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
         return SYCLGenError();
-    if (tryEmitType(TypeString, Inst->getType(0)))
-      return SYCLGenError();
 
-    OS() << MapNames::getClNamespace() << "abs_diff<" << TypeString << ">("
-         << Op[0] << ", " << Op[1] << ") + " << Op[2];
+    OS() << MapNames::getClNamespace() << "abs_diff(" << Op[0] << ", " << Op[1]
+         << ") + " << Op[2];
     endstmt();
     return SYCLGenSuccess();
   }
