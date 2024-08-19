@@ -535,7 +535,7 @@ public:
     std::unique_lock<mutex_type> lock(m_mutex);
     std::vector<std::shared_ptr<sycl::queue>> current_queues(_queues);
     lock.unlock();
-    auto Iter = current_queues.begin();
+    auto Iter = current_queues.begin() + 1;
     while (Iter != current_queues.end()) {
       (*Iter)->wait_and_throw();
       Iter++;

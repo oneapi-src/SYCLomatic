@@ -6181,6 +6181,7 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   if (ImplicitSyncFlag) {
     Printer.line(MapNames::getDpctNamespace() +
                  "get_current_device().none_default_queues_wait();");
+    Printer.newLine();
   }
   return Printer;
 }
