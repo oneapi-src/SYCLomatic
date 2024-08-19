@@ -58,8 +58,8 @@ __global__ void staticReverse(int *d, int n) {
 
 // CHECK: template<typename TData>
 // CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:                      sycl::local_accessor<TData, 2> s,
-// CHECK-NEXT:                      sycl::local_accessor<TData, 3> s3) {
+// CHECK-NEXT:                      TData s[64/*size * 2*/][128/*size * 4*/],
+// CHECK-NEXT:                      TData s3[64/*size * 2*/][128/*size * 4*/][32/*size*/]) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;
@@ -90,7 +90,7 @@ void testTemplate() {
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 4' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   // CHECK-NEXT:     */
-  // CHECK-NEXT:     sycl::local_accessor<T, 2> s_acc_ct1(sycl::range<2>(64/*size * 2*/, 128/*size * 4*/), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<T[64/*size * 2*/][128/*size * 4*/], 0> s_acc_ct1(cgh);
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 2' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   // CHECK-NEXT:     */
@@ -100,7 +100,7 @@ void testTemplate() {
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   // CHECK-NEXT:     */
-  // CHECK-NEXT:     sycl::local_accessor<T, 3> s3_acc_ct1(sycl::range<3>(64/*size * 2*/, 128/*size * 4*/, 32/*size*/), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<T[64/*size * 2*/][128/*size * 4*/][32/*size*/], 0> s3_acc_ct1(cgh);
   // CHECK-NEXT:     dpct::access_wrapper<T *> d_d_acc_ct0(d_d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
@@ -173,7 +173,7 @@ int main(void) {
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 4' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   // CHECK-NEXT:     */
-  // CHECK-NEXT:     sycl::local_accessor<int, 2> s_acc_ct1(sycl::range<2>(64/*size * 2*/, 128/*size * 4*/), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<int[64/*size * 2*/][128/*size * 4*/], 0> s_acc_ct1(cgh);
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 2' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   // CHECK-NEXT:     */
@@ -183,7 +183,7 @@ int main(void) {
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   // CHECK-NEXT:     */
-  // CHECK-NEXT:     sycl::local_accessor<int, 3> s3_acc_ct1(sycl::range<3>(64/*size * 2*/, 128/*size * 4*/, 32/*size*/), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<int[64/*size * 2*/][128/*size * 4*/][32/*size*/], 0> s3_acc_ct1(cgh);
   // CHECK-NEXT:     auto d_d_acc_ct0 = dpct::get_access(d_d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(

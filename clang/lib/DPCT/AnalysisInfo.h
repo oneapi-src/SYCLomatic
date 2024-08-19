@@ -1107,7 +1107,7 @@ public:
   void buildReplacements();
   void processCudaArchMacro();
   void generateHostCode(tooling::Replacements &ProcessedReplList,
-                        HostDeviceFuncLocInfo Info, unsigned ID);
+                        HostDeviceFuncLocInfo &Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
@@ -1461,7 +1461,7 @@ private:
     return N->getBeginLoc();
   }
   static SourceLocation getLocation(const VarDecl *VD) {
-    return VD->getLocation();
+    return getDefinitionRange(VD->getLocation(), VD->getLocation()).getBegin();
   }
   static SourceLocation getLocation(const FunctionDecl *FD) {
     return FD->getBeginLoc();
@@ -1895,6 +1895,7 @@ private:
     Pointer,
     Accessor,
     Reference,
+    PointerToArray
   };
 
 private:
@@ -2337,7 +2338,7 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), Offset(Offset) {}
+      : FilePath(FilePathIn), Offset(Offset), CallFuncExprOffset(Offset) {}
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
@@ -2414,6 +2415,7 @@ private:
 
   const clang::tooling::UnifiedPath FilePath;
   unsigned Offset = 0;
+  unsigned CallFuncExprOffset = 0;
   unsigned ExtraArgLoc = 0;
   std::vector<std::shared_ptr<DeviceFunctionInfo>> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
@@ -2422,6 +2424,7 @@ private:
   std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
+  bool IsADLEnable = false;
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;

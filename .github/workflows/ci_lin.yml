@@ -1,0 +1,30 @@
+name: Linux Github Action CI
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - SYCLomatic
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  BUILD_CONCURRENCY: 2
+  MACOS_BUILD_CONCURRENCY: 3
+  TEST_TIMEOUT: 3600
+
+jobs:
+  clang-format:
+    runs-on: build
+    steps:
+    - name: 'PR commits + 1'
+      run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        persist-credentials: false
+        fetch-depth: ${{ env.PR_FETCH_DEPTH }}
+    - name: Run clang-format
+      uses: ./devops/actions/clang-format-SYCLomatic
+

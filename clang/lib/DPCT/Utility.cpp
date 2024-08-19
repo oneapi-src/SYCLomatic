@@ -89,10 +89,16 @@ bool isCanonical(StringRef Path) {
   return HasNoDots && path::is_absolute(Path);
 }
 
-const char *getNL(void) {
+const char *getNL(bool AddBackSlash) {
 #if defined(__linux__)
+  if (AddBackSlash) {
+    return "\\\n";
+  }
   return "\n";
 #elif defined(_WIN64)
+  if (AddBackSlash) {
+    return "\\\r\n";
+  }
   return "\r\n";
 #else
 #error Only support windows and Linux.
@@ -2353,7 +2359,8 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     }
     ResultBegin = SM.getExpansionLoc(ResultBegin);
     ResultEnd = SM.getExpansionLoc(ResultEnd);
-    if (IncludeLastToken) {
+    if (IncludeLastToken &&
+        !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
@@ -4811,6 +4818,66 @@ bool isFromCUDA(const Decl *D) {
           isChildPath(DpctInstallPath, DeclLocFilePath));
 }
 
+
+void PrintFullTemplateName(raw_ostream &OS, const PrintingPolicy &Policy, TemplateName Name) {
+  auto Kind = Name.getKind();
+  TemplateDecl *Template = nullptr;
+  if (Kind == TemplateName::Template || Kind == TemplateName::UsingTemplate) {
+    // After `namespace ns { using std::vector }`, what is the fully-qualified
+    // name of the UsingTemplateName `vector` within ns?
+    //
+    // - ns::vector (the qualified name of the using-shadow decl)
+    // - std::vector (the qualified name of the underlying template decl)
+    //
+    // Similar to the UsingType behavior, using declarations are used to import
+    // names more often than to export them, thus using the original name is
+    // most useful in this case.
+    Template = Name.getAsTemplateDecl();
+  }
+
+  if (Template)
+    if (Policy.CleanUglifiedParameters &&
+        isa<TemplateTemplateParmDecl>(Template) && Template->getIdentifier())
+      OS << Template->getIdentifier()->deuglifiedName();
+    else if (
+             Name.getDependence() !=
+                 TemplateNameDependenceScope::DependentInstantiation)
+      Template->printQualifiedName(OS, Policy);
+    else
+      OS << *Template;
+  else if (QualifiedTemplateName *QTN = Name.getAsQualifiedTemplateName()) {
+    if (
+        Name.getDependence() !=
+            TemplateNameDependenceScope::DependentInstantiation) {
+      QTN->getUnderlyingTemplate().getAsTemplateDecl()->printQualifiedName(
+          OS, Policy);
+      return;
+    }
+    if (QTN->hasTemplateKeyword())
+      OS << "template ";
+    OS << *QTN->getUnderlyingTemplate().getAsTemplateDecl();
+  } else if (DependentTemplateName *DTN = Name.getAsDependentTemplateName()) {
+    OS << "template ";
+
+    if (DTN->isIdentifier())
+      OS << DTN->getIdentifier()->getName();
+    else
+      OS << "operator " << getOperatorSpelling(DTN->getOperator());
+  } else if (SubstTemplateTemplateParmStorage *subst
+               = Name.getAsSubstTemplateTemplateParm()) {
+    PrintFullTemplateName(OS, Policy, subst->getReplacement());
+  } else if (SubstTemplateTemplateParmPackStorage *SubstPack
+                                        = Name.getAsSubstTemplateTemplateParmPack())
+    OS << *SubstPack->getParameterPack();
+  else if (AssumedTemplateStorage *Assumed = Name.getAsAssumedTemplateName()) {
+    Assumed->getDeclName().print(OS, Policy);
+  } else {
+    assert(Name.getKind() == TemplateName::OverloadedTemplate);
+    OverloadedTemplateStorage *OTS = Name.getAsOverloadedTemplate();
+    (*OTS->begin())->printName(OS, Policy);
+  }
+}
+
 namespace clang {
 namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
@@ -5049,7 +5116,6 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
       for (const auto &C : ClassDecl->ctors()) {
         if (!C->isImplicit() && !C->isDeleted()) {
           if (C->isCopyConstructor()) {
-            Messages.push_back("copy constructor");
             // The 1st parameter of the copy constructor need "const" qualifier.
             const auto *FirstParam = C->getParamDecl(0);
             const ReferenceType *RT =
@@ -5063,8 +5129,6 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
               CtorConstQualifierInsertLocations[HasVolatile].second =
                   FirstParam->getBeginLoc();
             }
-          } else if (C->isMoveConstructor()) {
-            Messages.push_back("copy assignment");
           }
         }
       }
@@ -5079,20 +5143,25 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
               NT->getReplacement(DpctGlobalInfo::getContext()));
         }
       }
+      if (ClassDecl->hasNonTrivialCopyConstructor()) {
+        Messages.push_back("copy constructor");
+      }
+      if (ClassDecl->hasNonTrivialCopyAssignment()) {
+        Messages.push_back("copy assignment");
+      }
+      if (ClassDecl->hasNonTrivialMoveConstructor()) {
+        Messages.push_back("move constructor");
+      }
+      if (ClassDecl->hasNonTrivialMoveAssignment()) {
+        Messages.push_back("move assignment");
+      }
+      if (ClassDecl->hasNonTrivialDestructor()) {
+        Messages.push_back("destructor");
+      }
       for (const auto &M : ClassDecl->methods()) {
-        if (!M->isImplicit() && !M->isDeleted()) {
-          if (M->isCopyAssignmentOperator()) {
-            Messages.push_back("move constructor");
-          } else if (M->isMoveAssignmentOperator()) {
-            Messages.push_back("move assignment");
-          }
-        }
         if (M->isVirtual()) {
           Messages.push_back("virtual method \"" + M->getNameAsString() + "\"");
         }
-      }
-      if (!ClassDecl->hasSimpleDestructor()) {
-        Messages.push_back("destructor");
       }
       for (const auto &B : ClassDecl->bases()) {
         if (B.isVirtual()) {

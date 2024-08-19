@@ -15,6 +15,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/OperationKinds.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
@@ -159,13 +160,17 @@ bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
       continue;
     auto TemplateParm = TemplateParmsList.getParam(i);
     if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
-      if (TTPD->hasDefaultArgument())
-        Arg.setAsType(
-            TTPD->getDefaultArgument().getTypeSourceInfo()->getTypeLoc());
+      if (TTPD->hasDefaultArgument()) {
+        if (auto TSI = TTPD->getDefaultArgument().getTypeSourceInfo()) {
+          Arg.setAsType(TSI->getTypeLoc());
+        }
+      }
     } else if (auto NTTPD = dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
-      if (NTTPD->hasDefaultArgument())
-        Arg.setAsType(
-            NTTPD->getDefaultArgument().getTypeSourceInfo()->getTypeLoc());
+      if (NTTPD->hasDefaultArgument()) {
+        if (auto TSI = NTTPD->getDefaultArgument().getTypeSourceInfo()) {
+          Arg.setAsType(TSI->getTypeLoc());
+        }
+      }
     }
   }
   return false;
@@ -1855,7 +1860,7 @@ void DpctGlobalInfo::processCudaArchMacro() {
 }
 
 void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
-                                      HostDeviceFuncLocInfo Info, unsigned ID) {
+                                      HostDeviceFuncLocInfo &Info, unsigned ID) {
   std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
 
   unsigned int Pos, Len;
@@ -2832,7 +2837,15 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
 
   if (auto Func = Var->getParentFunctionOrMethod()) {
-    if (DeclOfVarType = Var->getType()->getAsCXXRecordDecl()) {
+    auto VT = Var->getType();
+    DeclOfVarType = VT->getAsCXXRecordDecl();
+    if (!DeclOfVarType) {
+      if (const clang::ArrayType *AT = VT->getAsArrayTypeUnsafe()) {
+        auto ElementType = AT->getElementType();
+        DeclOfVarType = ElementType->getAsCXXRecordDecl();
+      }
+    }
+    if (DeclOfVarType) {
       auto F = DeclOfVarType->getParentFunctionOrMethod();
       if (F && (F == Func)) {
         IsTypeDeclaredLocal = true;
@@ -2852,7 +2865,9 @@ MemVarInfo::MemVarInfo(unsigned Offset,
         if (DS1 && DS2 && DS1 == DS2) {
           IsAnonymousType = true;
           DeclStmtOfVarType = DS2;
-          const auto LocInfo = DpctGlobalInfo::getLocInfo(DS2->getBeginLoc());
+          const auto LocInfo = DpctGlobalInfo::getLocInfo(
+              getDefinitionRange(DS2->getBeginLoc(), DS2->getEndLoc())
+                  .getBegin());
           const auto LocStr = LocInfo.first.getCanonicalPath().str() + ":" +
                               std::to_string(LocInfo.second);
           auto Iter = AnonymousTypeDeclStmtMap.find(LocStr);
@@ -2877,6 +2892,8 @@ MemVarInfo::MemVarInfo(unsigned Offset,
       AccMode = Reference;
   } else if (getType()->getDimension() <= 1) {
     AccMode = Pointer;
+  } else if (isShared() && isLocal()) {
+    AccMode = PointerToArray;
   } else {
     AccMode = Accessor;
   }
@@ -2992,7 +3009,7 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
   if (isShared()) {
     OS << getSyclAccessorType(LI);
     OS << " " << getAccessorName() << "(";
-    if (getType()->getDimension())
+    if (getType()->getDimension() && AccMode != PointerToArray)
       OS << getRangeClass() << getType()->getRangeArgument(ExternMemSize, false)
          << ", ";
     OS << "cgh)";
@@ -3048,6 +3065,15 @@ std::string MemVarInfo::getRangeDecl(const std::string &MemSize) {
                      getType()->getRangeArgument(MemSize, false), ";");
 }
 ParameterStream &MemVarInfo::getFuncDecl(ParameterStream &PS) {
+  if (AccMode == PointerToArray) {
+    PS << getType()->getBaseName() << " ";
+    PS << getArgName();
+    auto Range = getType()->getRange();
+    for (size_t i = 0; i < Range.size(); i++) {
+      PS << "[" << Range[i].getSize() << "]";
+    }
+    return PS;
+  }
   if (AccMode == Value) {
     PS << getAccessorDataType(true, true) << " ";
   } else if (AccMode == Pointer) {
@@ -3085,6 +3111,20 @@ ParameterStream &MemVarInfo::getKernelArg(ParameterStream &PS) {
         PS << "template ";
       PS << "get_multi_ptr<" << MapNames::getClNamespace()
          << "access::decorated::no>().get()";
+    } else if (AccMode == PointerToArray) {
+      if (getType()->isWritten()) {
+        PS << getAccessorName();
+      } else {
+        std::string CastType = getType()->getBaseName();
+        auto Range = getType()->getRange();
+        CastType = CastType + " (*)";
+        for (size_t i = 1; i < Range.size(); i++) {
+          CastType = CastType + "[" + Range[i].getSize() + "]";
+        }
+        PS << "reinterpret_cast<" << CastType << ">(" << getAccessorName()
+           << ".template get_multi_ptr<" << MapNames::getClNamespace()
+           << "access::decorated::no>().get())";
+      }
     } else {
       PS << getAccessorName();
     }
@@ -3265,8 +3305,17 @@ std::string MemVarInfo::getSyclAccessorType(LocInfo LI) {
                                getType()->SharedVarInfo.DefinitionFuncName);
     }
     OS << MapNames::getClNamespace() << "local_accessor<";
-    OS << getAccessorDataType() << ", ";
-    OS << getType()->getDimension() << ">";
+    if (AccMode == PointerToArray) {
+      OS << getType()->getBaseName();
+      auto Range = getType()->getRange();
+      for (size_t i = 0; i < Range.size(); i++) {
+        OS << "[" << Range[i].getSize() << "]";
+      }
+      OS << ", 0>";
+    } else {
+      OS << getAccessorDataType() << ", ";
+      OS << getType()->getDimension() << ">";
+    }
   } else {
     OS << MapNames::getClNamespace() << "accessor<";
     OS << getAccessorDataType() << ", ";
@@ -3671,8 +3720,7 @@ void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
   auto Range = getArgSourceRange(Arg);
   auto Begin = Range.getBegin();
   auto End = Range.getEnd();
-  if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
-      SM.isMacroArgExpansion(End)) {
+  if (Begin.isMacroID() && End.isMacroID()) {
     size_t Length;
     if (ParentRange.isValid()) {
       auto RR =
@@ -4050,6 +4098,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
+  CallFuncExprOffset = DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).second;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
@@ -4143,7 +4192,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 }
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-
+  if (IsADLEnable)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, CallFuncExprOffset, 0,
+                                         "::", nullptr));
   if (ExtraArgLoc)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
@@ -4274,6 +4326,31 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments(),
                              Callee->getSourceRange());
+      auto ParentFunc = DpctGlobalInfo::getParentFunction(Callee);
+      if (ParentFunc &&
+          isa<TranslationUnitDecl>(ParentFunc->getDeclContext())) {
+        return;
+      }
+      if (!isa<TranslationUnitDecl>(CallDecl->getDeclContext()) ||
+          !DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) ||
+          DRE->getQualifier() || CallDecl->isOverloadedOperator())
+        return;
+      for (unsigned i = 0; i < NumArgs; i++) {
+        auto Type = CallDecl->getParamDecl(i)
+                        ->getOriginalType()
+                        .getCanonicalType()
+                        ->getUnqualifiedDesugaredType();
+        while (Type && Type->isAnyPointerType()) {
+          Type = Type->getPointeeType().getTypePtrOrNull();
+        }
+
+        if (Type->getAsRecordDecl() &&
+            DpctGlobalInfo::isInCudaPath(
+                Type->getAsRecordDecl()->getLocation())) {
+          IsADLEnable = true;
+          break;
+        }
+      }
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = "";
@@ -4400,26 +4477,29 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto Args = C->arguments();
   auto IsKernel = C->getStmtClass() == Stmt::CUDAKernelCallExprClass;
   auto ArgsNum = std::distance(Args.begin(), Args.end());
-  auto ArgItr = Args.begin();
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
   if (DpctGlobalInfo::useExtBindlessImages()) {
     // Need return after resize, ortherwise will cause array out of bound.
     return;
   }
-  while (ArgItr != Args.end()) {
+  for (auto ArgItr = Args.begin(); ArgItr != Args.end(); Idx++, ArgItr++) {
     const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
     if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
       if (Ctor->getConstructor()->isCopyOrMoveConstructor()) {
         Arg = Ctor->getArg(0);
       }
     }
+
+    if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+      if (ICE->getCastKind() == CK_DerivedToBase) {
+        continue;
+      }
+    }
     if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, DRE, IsKernel);
     else if (auto ASE = dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
       addTextureObjectArg(Idx, ASE, IsKernel);
-    Idx++;
-    ArgItr++;
   }
 }
 void CallFunctionExpr::mergeTextureObjectInfo(
@@ -5087,17 +5167,35 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
-  if (isa<InitListExpr>(Arg) || isa<CXXConstructExpr>(Arg)) {
+  if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
-  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
-    if (ICE->getCastKind() != CK_LValueToRValue) {
+  } else if (const auto *CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+    HasImplicitConversion = true;
+    if (CCE->getNumArgs() == 1) {
+      Arg = CCE->getArg(0);
+    }
+  }
+#ifdef _WIN32
+  // This code path is for ConstructorConversion on Windows since its AST is
+  // different from the one on Linux.
+  if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Arg)) {
+    Arg = MTE->getSubExpr();
+  }
+#endif
+  if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+    auto CK = ICE->getCastKind();
+    if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
+    }
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion ||
+        CK == CK_DerivedToBase) {
+      IsRedeclareRequired = true;
     }
   }
   Analysis.analyze(Arg);
   ArgString = Analysis.getReplacedString();
   TryGetBuffer = Analysis.TryGetBuffer;
-  IsRedeclareRequired = Analysis.IsRedeclareRequired;
+  IsRedeclareRequired |= Analysis.IsRedeclareRequired;
   IsPointer = Analysis.IsPointer;
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     IsDoublePointer = Analysis.IsDoublePointer;
@@ -5411,6 +5509,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
+    Printer.indent();
     Printer << MapNames::getClNamespace() + "nd_range<3>(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
       Printer << ExecutionConfig.LocalSize;
@@ -6258,8 +6357,8 @@ void deduceTemplateArgumentFromTemplateArgs(
 bool compareTemplateName(std::string N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
-  N2.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-           TemplateName::Qualified::Fully);
+  PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
+                        N2);
   OS.flush();
   return N1.compare(NameStr);
 }
@@ -6267,8 +6366,8 @@ bool compareTemplateName(std::string N1, TemplateName N2) {
 bool compareTemplateName(TemplateName N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
-  N1.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-           TemplateName::Qualified::Fully);
+  PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
+                        N1);
   OS.flush();
   return compareTemplateName(NameStr, N2);
 }

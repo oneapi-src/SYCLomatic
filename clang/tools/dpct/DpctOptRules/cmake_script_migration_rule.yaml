@@ -930,9 +930,9 @@
   Subrules:
     value:
       MatchMode: Full
-      In: \${CUDA_INCLUDE_DIRS}
+      In: CUDA_INCLUDE_DIRS
       Out: |
-        \${SYCL_INCLUDE_DIR}
+        SYCL_INCLUDE_DIR
       RuleId: "replace_CUDA_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
 
 - Rule: rule_CUDA_NVCC_INCLUDE_DIRS
@@ -1171,6 +1171,100 @@
       Out: |
         \${MKL_LIB}
       RuleId: "replace_cufft_with_MKL"
+
+- Rule: rule_cufft_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufft_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cufft
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_cusparse_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cusparse_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cusparse
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_curand_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: curand_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: curand
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_cudadevrt_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudadevrt_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cudadevrt
+      Out: ""
+
+- Rule: rule_nccl_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nccl_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nccl
+      Out: -lccl
+
+- Rule: rule_nvrtc_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nvrtc
+      Out: ""
+
+- Rule: rule_ml_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: ml_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nvidia-ml
+      Out: ""
 
 - Rule: rule_cufftw
   Kind: CMakeRule
@@ -2400,20 +2494,6 @@
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_include_dir_with_sycl_include_dir"
 
-- Rule: rule_target_include_directories_cuda_include_dirs
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: target_include_directories_cuda_inc
-  MatchMode: Partial
-  In: target_include_directories${empty}(${value})
-  Out: target_include_directories(${value})
-  Subrules:
-    value:
-      In: CUDA_INCLUDE_DIRS
-      Out: SYCL_INCLUDE_DIR
-      MatchMode: Full
-      RuleId: "replace_cuda_include_dirs_with_sycl_include_dir"
-
 - Rule: rule_target_include_directories_cudnn_include_dir
   Kind: CMakeRule
   Priority: Fallback
@@ -2620,6 +2700,30 @@
       In: --expt-relaxed-constexpr
       Out: ""
 
+- Rule: rule_expt_extended_lambda_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_extended_lambda_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --expt-extended-lambda
+      Out: ""
+
+- Rule: rule_expt_xfatbin_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_xfatbin_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In:  -Xfatbin=${value}
+      Out: ""
+
 - Rule: rule_CUDA_NVCC_EXECUTABLE
   Kind: CMakeRule
   Priority: Fallback
@@ -2631,3 +2735,63 @@
       MatchMode: Full
       In: CUDA_NVCC_EXECUTABLE
       Out: SYCL_COMPILER_EXECUTABLE
+
+- Rule: rule_cmake_cuda_architectures_validate
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_validate
+  In: cmake_cuda_architectures_validate${empty}(${arg})
+  Out: ""
+
+- Rule: rule_cmake_cuda_architectures_native
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_native
+  In: cmake_cuda_architectures_native${empty}(${arg})
+  Out: ""
+
+- Rule: rule_cmake_cuda_architectures_all
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_all
+  In: cmake_cuda_architectures_all${empty}(${arg})
+  Out: ""
+
+
+# oneAPI DPC++/C++ Compiler supports OpenMP* C++ pragmas that comply with OpenMP C++ API,
+# So the option "OpenMP::OpenMP_CXX" that is specific to openMP compiler (like mpicc) should be removed.
+- Rule: rule_openmp_cxx_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: openmp_cxx_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: OpenMP::OpenMP_CXX
+      Out: ""
+
+- Rule: rule_cmake_cuda_compiler_id
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_compiler_id
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER_ID
+      Out: CMAKE_CXX_COMPILER_ID
+
+- Rule: rule_cmake_cuda_compiler_id_value
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_compiler_id_value
+  In: if${empty}(${value})
+  Out: if${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: NVIDIA
+      Out: IntelLLVM

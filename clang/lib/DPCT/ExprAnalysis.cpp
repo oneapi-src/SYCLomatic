@@ -26,6 +26,7 @@
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
 #include "clang/AST/TypeLoc.h"
+#include "llvm/Support/raw_ostream.h"
 
 extern clang::tooling::UnifiedPath DpctInstallPath;
 namespace clang {
@@ -442,7 +443,7 @@ void ExprAnalysis::dispatch(const Stmt *Expression) {
   }
 }
 
-bool isMathFunction(std::string Name) {
+bool isMathFunctionExceptRewriter(std::string Name) {
   static std::set<std::string> MathFunctions = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
@@ -453,6 +454,31 @@ bool isMathFunction(std::string Name) {
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
 #define ENTRY_REWRITE(APINAME)
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
+  };
+  return MathFunctions.count(Name);
+}
+
+bool isMathFunction(std::string Name) {
+  static std::set<std::string> MathFunctions = {
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
+#define ENTRY_OPERATOR(APINAME, OPKIND) APINAME,
+#define ENTRY_TYPECAST(APINAME) APINAME,
+#define ENTRY_UNSUPPORTED(APINAME) APINAME,
+#define ENTRY_REWRITE(APINAME) APINAME,
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -480,9 +506,10 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             clang::NestedNameSpecifier::SpecifierKind::Namespace ||
         Qualifier->getKind() ==
             clang::NestedNameSpecifier::SpecifierKind::NamespaceAlias;
-    bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
-                         isCGAPI(DRE->getNameInfo().getAsString());
-                         // for thrust::log10 and thrust::sinh ...
+    bool IsSpecicalAPI =
+        isMathFunctionExceptRewriter(DRE->getNameInfo().getAsString()) ||
+        isCGAPI(DRE->getNameInfo().getAsString());
+    // for thrust::log10 and thrust::sinh ...
     if (Qualifier->getKind() == NestedNameSpecifier::TypeSpec)
       analyzeType(DRE->getQualifierLoc().getTypeLoc());
     // log10 is a math function
@@ -512,6 +539,12 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         CTSName = getNestedNameSpecifierString(Qualifier) +
                   DRE->getNameInfo().getAsString();
       }
+    }
+  } else if (const auto *FD = dyn_cast_or_null<FunctionDecl>(DRE->getDecl())) {
+    if (!isMathFunction(DRE->getNameInfo().getAsString()) &&
+        !isCGAPI(DRE->getNameInfo().getAsString())) {
+      llvm::raw_string_ostream OS(CTSName);
+      FD->printQualifiedName(OS);
     }
   }
 
@@ -1111,7 +1144,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     auto PP = Context.getPrintingPolicy();
     PP.PrintCanonicalTypes = 1;
-    TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
+    PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
+                        TSTL.getTypePtr()->getTemplateName());
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());

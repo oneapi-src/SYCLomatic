@@ -32,8 +32,9 @@ class StringRef;
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                  clang::tooling::UnifiedPath InRoot,
-                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
-                 ReplTy &ReplSYCL);
+                 clang::tooling::UnifiedPath OutRoot,
+                 clang::tooling::UnifiedPath CUDAMigratedOutRoot,
+                 ReplTy &ReplCUDA, ReplTy &ReplSYCL);
 
 void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 
@@ -54,10 +55,12 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 /// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
 ///
 /// \returns true if file path is rewritten, false otherwise.
-bool rewriteDir(clang::tooling::UnifiedPath &FilePath,
+bool rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
                 const clang::tooling::UnifiedPath &InRoot,
                 const clang::tooling::UnifiedPath &OutRoot);
-
+bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot);
 // Replace file name \p FileName with new migrated name. For c source files, the
 // file extension needs to wait until all replacements are generated to
 // get the correct result.
