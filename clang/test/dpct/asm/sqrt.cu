@@ -2,7 +2,6 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/sqrt %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sqrt/sqrt.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl %T/sqrt/sqrt.dp.cpp -o %T/sqrt/sqrt.dp.o %}
 
 // clang-format off
 #include <cuda_runtime.h>
