@@ -3555,7 +3555,7 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
        << "_acc(";
     DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
     OS << '(' << LocalSize << ".size() * sizeof("
-       << ValueType->getSourceString() << ')';
+       << ValueType->getSourceString() << ')' << ')';
     break;
   case BlockRadixSort:
     OS << MapNames::getClNamespace() << "local_accessor<uint8_t, 1> " << Name
