@@ -1669,7 +1669,8 @@ void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
                       "cuOccupancyMaxActiveBlocksPerMultiprocessor",
-                      "cudaOccupancyMaxPotentialBlockSize");
+                      "cudaOccupancyMaxPotentialBlockSize",
+                      "cuGetExportTable");
   };
 
   MF.addMatcher(
@@ -1677,10 +1678,19 @@ void MiscAPIRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 void MiscAPIRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
-  ExprAnalysis EA(CE);
-  emplaceTransformation(EA.getReplacement());
-  EA.applyAllSubExprRepl();
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall")) {
+    auto FuncName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+    if (FuncName == "cuGetExportTable") {
+      auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+      report(CE->getBeginLoc(), Diagnostics::API_REMOVED, false, MapNames::ITFName.at(FuncName), Msg->second);
+      emplaceTransformation(new ReplaceStmt(CE), "");
+    } else {
+      ExprAnalysis EA(CE);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+    }
+  }
 }
 REGISTER_RULE(MiscAPIRule, PassKind::PK_Migration)
 
