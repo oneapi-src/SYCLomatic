@@ -34,7 +34,6 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   tex3DLod<T>(tex, j, k, m, l);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_mipmap<int>(tex, sycl::float3(j, k, m), l);
   tex3DLod(&i, tex, j, k, m, l);
-#ifndef BUILD_TEST // TODO: Need delete later.
   // CHECK: sycl::ext::oneapi::experimental::sample_image_array<sycl::short2>(tex, float(j), i);
   tex1DLayered<short2>(tex, j, i);
   // CHECK: k = sycl::ext::oneapi::experimental::sample_image_array<float>(tex, float(j), i);
@@ -43,7 +42,6 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   tex2DLayered<T>(tex, j, k, i);
   // CHECK: l = sycl::ext::oneapi::experimental::sample_image_array<float>(tex, sycl::float2(j, k), i);
   tex2DLayered(&l, tex, j, k, i);
-#endif
 #ifndef BUILD_TEST
   T t;
   // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));

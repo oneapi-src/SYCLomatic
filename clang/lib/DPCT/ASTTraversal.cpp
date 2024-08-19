@@ -10154,7 +10154,6 @@ void MemoryMigrationRule::mallocMigration(
     }
   } else if (Name == "cudaMalloc3DArray") {
     Expr::EvalResult ER;
-    ExprAnalysis::ref(C->getArg(3));
     std::string ImageType = "image_type::standard";
     if (!C->getArg(3)->isValueDependent() &&
         C->getArg(3)->EvaluateAsInt(ER, *Result.Context)) {

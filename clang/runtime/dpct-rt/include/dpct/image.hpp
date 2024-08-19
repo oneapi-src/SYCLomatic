@@ -22,9 +22,9 @@ enum class image_channel_data_type {
   fp,
 };
 
-enum class image_type : unsigned int {
-  standard = 0,
-  array = 2,
+enum class image_type {
+  standard,
+  array,
 };
 
 class image_channel;
