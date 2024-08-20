@@ -1,6 +1,9 @@
 [
   {
     "ID": "example.cu:27:3:prolog",
+    "Device Name": "GPU",
+    "Device ID": "0",
+    "Stream Address": "0xe4bb30",
     "Free Device Memory": "16374431744",
     "Total Device Memory": "16882663424",
     "Elapse Time(ms)": "0",
@@ -251,6 +254,9 @@
   },
   {
     "ID": "example.cu:27:3:epilog",
+    "Device Name": "GPU",
+    "Device ID": "0",
+    "Stream Address": "0xe4bb30",
     "Free Device Memory": "16374431744",
     "Total Device Memory": "16882663424",
     "Elapse Time(ms)": "0.21312",
