@@ -71,7 +71,7 @@ void CudaInstallationDetector::ParseThrustVersionFile(
   if (Res == "") {
     return;
   }
-  Res = Res.substr(23); // 23 is the value of string "#define THRUST_VERSION ".
+  Res = Res.substr(23); // 23 is the length of string "#define THRUST_VERSION ".
   ThrustVersion = std::stoi(Res);
 }
 

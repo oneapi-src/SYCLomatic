@@ -49,12 +49,8 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName("thrust", "thrust::detail", "thrust::system", "__4");
   };
 
-  printf("ThrustAPIRule::registerMatcher [%d]\n", ThrustVersion);
-
   int ThrustMajorVersion = ThrustVersion / 100000;
   int ThrustMinorVersion = ThrustVersion / 100 % 1000;
-  printf("ThrustAPIRule::registerMatcher [%d] [%d]\n", ThrustMajorVersion,
-         ThrustMinorVersion);
 
   if (ThrustMajorVersion == 2 && ThrustMinorVersion == 3) {
     // For CUDA-12.4
