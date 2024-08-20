@@ -48,6 +48,32 @@ std::string RealSDKPath = "";
 std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
+int ThrustVersion=0;
+
+void CudaInstallationDetector::ParseThrustVersionFile(
+    const std::string &FilePath) {
+  std::ifstream CudaFile(FilePath, std::ios::in);
+  if (!CudaFile.is_open()) {
+    return;
+  }
+
+  std::string Line;
+  std::string Res;
+  while (std::getline(CudaFile, Line)) {
+    std::regex RE("^#define THRUST_VERSION [0-9]{6}", std::regex::extended);
+    std::smatch M;
+    std::regex_search(Line, M, RE);
+    if (!M.empty()) {
+      Res = M[0];
+      break;
+    }
+  }
+  if (Res == "") {
+    return;
+  }
+  Res = Res.substr(23); // 23 is the length of string "#define THRUST_VERSION ".
+  ThrustVersion = std::stoi(Res);
+}
 
 bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath) {
   Version = CudaVersion::UNKNOWN;
@@ -241,6 +267,7 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
   if (!(FS.exists(FilePath + "/cuda_runtime.h") &&
         FS.exists(FilePath + "/cuda.h")))
     return false;
+  ParseThrustVersionFile(FilePath + "/thrust/version.h");
   IsIncludePathValid = true;
   IncludePath = FilePath;
   bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h");

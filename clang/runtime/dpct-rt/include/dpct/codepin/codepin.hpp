@@ -46,13 +46,25 @@ public:
   }
 
   template <class... Args>
-  void print_CP(const std::string &cp_id, size_t free_byte,
-                size_t total_byte, float elapse_time,
+  void print_CP(const std::string &cp_id, std::string device_name,
+                size_t free_byte, size_t total_byte, float elapse_time,
                 queue_t queue, Args... args) {
     ptr_unique.clear();
     auto obj = arr.object();
     obj.key("ID");
     obj.value(cp_id);
+    obj.key("Device Name");
+    obj.value(device_name);
+    obj.key("Device ID");
+#ifdef __NVCC__
+    int device_id;
+    cudaGetDevice(&device_id);
+    obj.value(device_id);
+#else
+    obj.value((int)dpct::get_current_device_id());
+#endif
+    obj.key("Stream Address");
+    obj.value((void *)queue);
     obj.key("Free Device Memory");
     obj.value(free_byte);
     obj.key("Total Device Memory");
@@ -62,25 +74,36 @@ public:
     obj.key("CheckPoint");
     auto cp_obj =
         obj.value<detail::json_stringstream::json_obj>();
-    print_args(cp_obj, queue, args...);
+    print_args(cp_obj, queue, 0, args...);
   }
 
-  void print_args(json_stringstream::json_obj &obj,
-                  queue_t queue) {}
+  void print_args(json_stringstream::json_obj &obj, queue_t queue,
+                  int index = 0) {}
 
   template <class First, class... RestArgs>
-  void print_args(json_stringstream::json_obj &obj,
-                  queue_t queue, std::string_view arg_name,
-                  First &arg, RestArgs... args) {
+  void print_args(json_stringstream::json_obj &obj, queue_t queue, int index,
+                  std::string_view arg_name, First &arg, RestArgs... args) {
     obj.key(arg_name);
     {
       auto type_obj =
           obj.value<detail::json_stringstream::json_obj>();
       detail::data_ser<First>::print_type_name(type_obj);
+      type_obj.key("Address");
+      print_address(type_obj, arg);
+      type_obj.key("Index");
+      type_obj.value(index);
       type_obj.key("Data");
       detail::data_ser<First>::dump(json_ss, arg, queue);
     }
-    print_args(obj, queue, args...);
+    print_args(obj, queue, index + 1, args...);
+  }
+  template <class ArgT>
+  void print_address(json_stringstream::json_obj &obj, ArgT arg) {
+    if constexpr (std::is_pointer<ArgT>::value) {
+      obj.value((void *)arg);
+    } else {
+      obj.value((void *)&arg);
+    }
   }
 
 private:
@@ -186,10 +209,11 @@ public:
 };
 
 template <class... Args>
-void gen_log_API_CP(const std::string &cp_id, size_t free_byte,
-                    size_t total_byte, float elapse_time,
+void gen_log_API_CP(const std::string &cp_id, std::string device_name,
+                    size_t free_byte, size_t total_byte, float elapse_time,
                     queue_t queue, Args... args) {
-  log.print_CP(cp_id, free_byte, total_byte, elapse_time, queue, args...);
+  log.print_CP(cp_id, device_name, free_byte, total_byte, elapse_time, queue,
+               args...);
 }
 } // namespace detail
 
@@ -217,6 +241,11 @@ void gen_prolog_API_CP(const std::string &cp_id,
       cp_id + ":" + std::to_string(api_index[cp_id]);
   size_t free_byte, total_byte;
 #ifdef __NVCC__
+  int device;
+  cudaGetDevice(&device);  
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, device);
+  std::string device_name(deviceProp.name);
   cudaMemGetInfo(&free_byte, &total_byte);
   cudaEvent_t event;
   cudaEventCreate(&event);
@@ -224,14 +253,15 @@ void gen_prolog_API_CP(const std::string &cp_id,
   event_map[event_id] = event;
 #else
   dpct::get_current_device().get_memory_info(free_byte, total_byte);
+  std::string device_name = dpct::get_current_device().get_info<sycl::info::device::name>();
 #ifdef DPCT_PROFILING_ENABLED
   sycl::event event = queue->ext_oneapi_submit_barrier();
   event_map[event_id] = event;
 #endif //DPCT_PROFILING_ENABLED
 #endif
 
-  detail::gen_log_API_CP(prolog_tag, free_byte,
-                                             total_byte, 0.0f, queue, args...);
+  detail::gen_log_API_CP(prolog_tag, device_name, free_byte, total_byte, 0.0f,
+                         queue, args...);
 }
 
 /// Generate API check point epilog.
@@ -248,6 +278,11 @@ void gen_epilog_API_CP(const std::string &cp_id,
   size_t free_byte, total_byte;
   float kernel_elapsed_time = 0.0f;
 #ifdef __NVCC__
+  int device;
+  cudaGetDevice(&device);  
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, device);
+  std::string device_name(deviceProp.name);
   cudaMemGetInfo(&free_byte, &total_byte);
   cudaEvent_t event;
   cudaEventCreate(&event);
@@ -268,10 +303,11 @@ void gen_epilog_API_CP(const std::string &cp_id,
            .get_profiling_info<sycl::info::event_profiling::command_start>()) /
       1000000.0f;
 #endif //DPCT_PROFILING_ENABLED
+  std::string device_name = dpct::get_current_device().get_info<sycl::info::device::name>();
   dpct::get_current_device().get_memory_info(free_byte, total_byte);
 #endif
-  detail::gen_log_API_CP(
-      epilog_tag, free_byte, total_byte, kernel_elapsed_time, queue, args...);
+  detail::gen_log_API_CP(epilog_tag, device_name, free_byte, total_byte,
+                         kernel_elapsed_time, queue, args...);
 }
 
 inline std::map<void *, uint32_t> &get_ptr_size_map() {
