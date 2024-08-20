@@ -55,20 +55,12 @@ public:
     return getCanonicalPath() == RHS.getCanonicalPath();
   }
   llvm::StringRef getCanonicalPath() const noexcept { return _CanonicalPath; }
-#if defined(_WIN32)
-  llvm::StringRef getCanonicalPathWithLowerCase() const noexcept {
-    return _CanonicalPathWithLowerCase;
-  }
-#endif
   llvm::StringRef getPath() const noexcept { return _Path; }
   llvm::StringRef getAbsolutePath() const noexcept { return _AbsolutePath; }
   void setPath(const std::string &NewPath, const std::string &CWD = ".") {
     _Path = NewPath;
     _AbsolutePath.clear();
     _CanonicalPath.clear();
-#if defined(_WIN32)
-    _CanonicalPathWithLowerCase.clear();
-#endif
     makeCanonical(CWD);
     makeAbsolute(CWD);
   }
@@ -78,9 +70,6 @@ private:
   void makeAbsolute(const std::string &CWD = ".");
   std::string _Path;
   std::string _CanonicalPath;
-#if defined(_WIN32)
-  std::string _CanonicalPathWithLowerCase;
-#endif
   std::string _AbsolutePath;
   static std::unordered_map<std::string, std::string> CanonicalPathCache;
 };
@@ -94,11 +83,7 @@ bool operator<(const clang::tooling::UnifiedPath &LHS,
 } // namespace clang
 template <> struct std::hash<clang::tooling::UnifiedPath> {
   std::size_t operator()(const clang::tooling::UnifiedPath &DP) const noexcept {
-#if defined(_WIN32)
-    return std::hash<std::string>{}(DP.getCanonicalPathWithLowerCase().str());
-#else
     return std::hash<std::string>{}(DP.getCanonicalPath().str());
-#endif
   }
 };
 namespace llvm {

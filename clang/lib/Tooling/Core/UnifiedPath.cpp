@@ -25,9 +25,6 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
   auto Iter = CanonicalPathCache.find(_Path);
   if (Iter != CanonicalPathCache.end()) {
     _CanonicalPath = Iter->second;
-#if defined(_WIN32)
-    _CanonicalPathWithLowerCase = llvm::StringRef(_CanonicalPath).lower();
-#endif
     return;
   }
 
@@ -56,7 +53,7 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
 
   llvm::SmallString<512> RealPath;
   // We need make sure the input `Path` for llvm::sys::fs::real_path is
-  // exsiting, or else the behavior of real_path() is unexpected. 
+  // exsiting, or else the behavior of real_path() is unexpected.
   if (llvm::sys::fs::exists(Path)) {
     llvm::sys::fs::real_path(Path, RealPath, true);
   } else {
@@ -70,9 +67,11 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
         assert(0 && "no real directory found");
         return;
       }
-      llvm::sys::path::reverse_iterator RI = llvm::sys::path::rbegin(llvm::StringRef(Path));
+      llvm::sys::path::reverse_iterator RI =
+          llvm::sys::path::rbegin(llvm::StringRef(Path));
       llvm::SmallString<512> SuffixTemp(*RI);
-      llvm::sys::path::append(SuffixTemp, llvm::sys::path::Style::native, Suffix);
+      llvm::sys::path::append(SuffixTemp, llvm::sys::path::Style::native,
+                              Suffix);
       Suffix = SuffixTemp;
       Path = llvm::SmallString<512>(llvm::sys::path::parent_path(Path).str());
     }
@@ -85,10 +84,14 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
       llvm::StringRef(_CanonicalPath.substr(0, 3)).lower() == "unc") {
     _CanonicalPath = "\\" + _CanonicalPath.substr(3);
   }
-  _CanonicalPathWithLowerCase = RealPath.str().lower();
-  if (_CanonicalPathWithLowerCase.size() >= 3 &&
-      _CanonicalPathWithLowerCase.substr(0, 3) == "unc") {
-    _CanonicalPathWithLowerCase = "\\" + _CanonicalPathWithLowerCase.substr(3);
+  std::string CanonicalPathWithLowerCase =
+      llvm::StringRef(_CanonicalPath).lower();
+  auto FindRes = CanonicalPathCache.find(CanonicalPathWithLowerCase);
+  if (FindRes != CanonicalPathCache.end()) {
+    _CanonicalPath = FindRes->second;
+  } else {
+    CanonicalPathCache.insert(
+        std::pair(CanonicalPathWithLowerCase, _CanonicalPath));
   }
 #endif
   CanonicalPathCache.insert(std::pair(_Path, _CanonicalPath));
@@ -119,40 +122,21 @@ void UnifiedPath::makeAbsolute(const std::string &CWD) {
 std::unordered_map<std::string, std::string> UnifiedPath::CanonicalPathCache;
 bool operator==(const clang::tooling::UnifiedPath &LHS,
                 const clang::tooling::UnifiedPath &RHS) {
-#if defined(_WIN32)
-  return LHS.getCanonicalPathWithLowerCase() ==
-         RHS.getCanonicalPathWithLowerCase();
-#else
   return LHS.getCanonicalPath() == RHS.getCanonicalPath();
-#endif
 }
 bool operator!=(const clang::tooling::UnifiedPath &LHS,
                 const clang::tooling::UnifiedPath &RHS) {
-#if defined(_WIN32)
-  return LHS.getCanonicalPathWithLowerCase() !=
-         RHS.getCanonicalPathWithLowerCase();
-#else
   return LHS.getCanonicalPath() != RHS.getCanonicalPath();
-#endif
 }
 bool operator<(const clang::tooling::UnifiedPath &LHS,
                const clang::tooling::UnifiedPath &RHS) {
-#if defined(_WIN32)
-  return LHS.getCanonicalPathWithLowerCase() <
-         RHS.getCanonicalPathWithLowerCase();
-#else
   return LHS.getCanonicalPath() < RHS.getCanonicalPath();
-#endif
 }
 } // namespace tooling
 } // namespace clang
 namespace llvm {
 llvm::raw_ostream &operator<<(llvm::raw_ostream &OS,
                               const clang::tooling::UnifiedPath &RHS) {
-#if defined(_WIN32)
-  return OS << RHS.getCanonicalPathWithLowerCase();
-#else
   return OS << RHS.getCanonicalPath();
-#endif
 }
 } // namespace llvm
