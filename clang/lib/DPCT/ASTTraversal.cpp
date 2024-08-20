@@ -8361,11 +8361,14 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       }
     }
   }
+  std::string KernelName =
+      KCall->getCalleeDecl()->getAsFunction()->getNameAsString();
 
   auto InstrumentKernel = [&](std::string StreamStr, HeaderType HT,
                               dpct::ReplacementType CodePinType) {
     std::string CodePinKernelArgsString = "(\"";
-    CodePinKernelArgsString += llvm::sys::path::convert_to_slash(
+    CodePinKernelArgsString += KernelName + ":" +
+                               llvm::sys::path::convert_to_slash(
                                    KCallSpellingRange.first.printToString(SM)) +
                                "\", ";
     CodePinKernelArgsString += StreamStr;
