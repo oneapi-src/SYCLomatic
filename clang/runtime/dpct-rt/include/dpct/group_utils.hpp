@@ -281,11 +281,10 @@ public:
             typename offsetFunctorTypeRV>
   [[deprecated("Please use blocked_to_striped, "
                "striped_to_blocked, scatter_to_blocked, scatter_to_striped "
-               "instead")]]
-  __dpct_inline__ void helper_exchange(Item item,
-                                       T (&keys)[ElementsPerWorkItem],
-                                       offsetFunctorTypeFW &offset_functor_fw,
-                                       offsetFunctorTypeRV &offset_functor_rv) {
+               "instead")]] __dpct_inline__ void
+  helper_exchange(Item item, T (&keys)[ElementsPerWorkItem],
+                  offsetFunctorTypeFW &offset_functor_fw,
+                  offsetFunctorTypeRV &offset_functor_rv) {
     helper_exchange(item, keys, keys, offset_functor_fw, offset_functor_rv);
   }
 
@@ -628,13 +627,12 @@ public:
     return SorterT::get_local_memory_size(group_threads);
   }
 
-  radix_sort(uint8_t *local_memory) : _sorter(local_memory) {}
+  radix_sort(uint8_t * local_memory) : _sorter(local_memory) {}
 
   template <typename Item>
-  __dpct_inline__ void
-  helper_sort(const Item &item, T (&keys)[ElementsPerWorkItem],
-              int begin_bit = 0, int end_bit = 8 * sizeof(T),
-              bool is_striped = false) {
+  __dpct_inline__ void helper_sort(
+      const Item &item, T(&keys)[ElementsPerWorkItem], int begin_bit = 0,
+      int end_bit = 8 * sizeof(T), bool is_striped = false) {
     if constexpr (DESCENDING) {
       if (is_striped)
         _sorter.sort_descending_blocked_to_striped(item, keys, begin_bit,
@@ -650,16 +648,16 @@ public:
   }
 
   template <typename Item>
-  __dpct_inline__ void
-  sort_blocked(const Item &item, T (&keys)[ElementsPerWorkItem],
-               int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
+  __dpct_inline__ void sort_blocked(
+      const Item &item, T(&keys)[ElementsPerWorkItem], int begin_bit = 0,
+      int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, false);
   }
 
   template <typename Item>
-  __dpct_inline__ void
-  sort_blocked_to_striped(const Item &item, T (&keys)[ElementsPerWorkItem],
-                          int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
+  __dpct_inline__ void sort_blocked_to_striped(
+      const Item &item, T(&keys)[ElementsPerWorkItem], int begin_bit = 0,
+      int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, true);
   }
 };
