@@ -498,6 +498,62 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
   }
 }
 
+std::vector<std::string> SplitStr(const std::string &Str, char Delimiter) {
+  std::vector<std::string> Result;
+  std::istringstream Stream(Str);
+  std::string Token;
+  while (std::getline(Stream, Token, Delimiter)) {
+    Result.push_back(Token);
+  }
+  return Result;
+}
+
+bool IsTookitInstalledOnTargetOS(std::map<std::string, bool> &AvaliableTool) {
+  const char *EnvPath = std::getenv("PATH");
+  bool Ret = false;
+  if (EnvPath == nullptr) {
+    return Ret;
+  }
+  std::string EnvPathStr(EnvPath);
+  std::vector<std::string> PathDir = SplitStr(EnvPathStr,
+#if defined(_WIN32)
+                                              ';'
+#else
+                                              ':'
+#endif
+  );
+  for (const auto &Dir : PathDir) {
+    for (auto &Tool : AvaliableTool) {
+      std::string ToolPath = appendPath(Dir, Tool.first);
+      if (llvm::sys::fs::exists(ToolPath)) {
+        Tool.second = true;
+        return true;
+      }
+    }
+  }
+  return Ret;
+}
+
+std::string GetInstalledPython() {
+  std::map<std::string, bool> Tool = {
+#if defined(_WIN32)
+    {"py.exe", false},
+    {"python3.exe", false},
+    {"python.exe", false},
+#endif
+    {"python3", false}
+  };
+
+  if (IsTookitInstalledOnTargetOS(Tool)) {
+    for (const auto &T : Tool) {
+      if (T.second) {
+        return T.first;
+      }
+    }
+  }
+  return "";
+}
+
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -592,13 +648,13 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-#if defined(_WIN32)
-    std::string py_tool = "py";
-#else
-    std::string py_tool = "python3";
-#endif
+    std::string Python = GetInstalledPython();
+    if (Python.empty()) {
+      ShowStatus(CallIndependentToolError, "python");
+      dpctExit(CallIndependentToolError);
+    }
     std::string SystemCallCommand =
-        py_tool + std::string(ExecutableScriptPath.str());
+        Python + std::string(ExecutableScriptPath.str());
     for (int Index = 2; Index < argc; Index++) {
       SystemCallCommand.append(" ");
       SystemCallCommand.append(std::string(argv[Index]));
