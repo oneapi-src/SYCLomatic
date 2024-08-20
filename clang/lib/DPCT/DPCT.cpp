@@ -654,7 +654,7 @@ int runDPCT(int argc, const char **argv) {
       dpctExit(CallIndependentToolError);
     }
     std::string SystemCallCommand =
-        Python + std::string(ExecutableScriptPath.str());
+        Python + " " + std::string(ExecutableScriptPath.str());
     for (int Index = 2; Index < argc; Index++) {
       SystemCallCommand.append(" ");
       SystemCallCommand.append(std::string(argv[Index]));
