@@ -4,7 +4,7 @@
 
 void foo(const void **table, CUuuid *tableId) {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuGetExportTable was removed because the functionality is unknown for the undocumented API.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuGetExportTable was removed because the functionality of the retrieved table is undocumented.
   // CHECK-NEXT: */
   cuGetExportTable(table, tableId);
 }
