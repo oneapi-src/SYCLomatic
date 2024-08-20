@@ -11,6 +11,7 @@
 #include "Statics.h"
 #include "Utility.h"
 
+#include "clang/DPCT/DpctOptions.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
@@ -22,41 +23,46 @@ using namespace llvm;
 using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
+bool isOutRootAccess(SmallString<256> &OutRoot) {
+  if (!fs::can_write(OutRoot)) {
+    llvm::errs() << "Could not access out-root directory.\n";
+    return false;
+  }
+  return true;
+}
+bool isOutRootEmpty(SmallString<256> &OutRoot) {
+  std::error_code EC;
+  fs::directory_iterator Iter(OutRoot, EC);
+  fs::directory_iterator End;
+  if (Iter != End) {
+    llvm::errs() << "dpct_output directory is not empty. Please use option"
+                    " \"--out-root\" to set output directory.\n";
+    return false;
+  }
+  return true;
+}
 
 // Set OutRoot to the current working directory.
-static bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar) {
+bool getDefaultOutRoot(clang::tooling::UnifiedPath &DefaultOutRoot,
+                       bool NeedCheckOutRootEmpty) {
   SmallString<256> OutRoot;
   if (fs::current_path(OutRoot) != std::error_code()) {
     llvm::errs() << "Could not get current path.\n";
     return false;
   }
   OutRoot.append("/dpct_output");
-  if (fs::is_directory(OutRoot)) {
-    std::error_code EC;
-    fs::directory_iterator Iter(OutRoot, EC);
-    if ((bool)EC) {
-      llvm::errs() << "Could not access output directory.\n";
-      return false;
-    }
-    fs::directory_iterator End;
-    if (Iter != End) {
-      llvm::errs() << "dpct_output directory is not empty. Please use option"
-                      " \"--out-root\" to set output directory.\n";
-      return false;
-    } else {
-      clang::dpct::PrintMsg(
-          "The directory \"dpct_output\" is used as \"out-root\"\n");
+  DefaultOutRoot.setPath(OutRoot.str().str());
+  if (fs::is_directory(OutRoot) && isOutRootAccess(OutRoot)) {
+    if (NeedCheckOutRootEmpty) {
+      if (!isOutRootEmpty(OutRoot)) {
+        return false;
+      }
     }
   } else {
-    std::error_code EC = fs::create_directory(OutRoot, false);
-    if ((bool)EC) {
-      llvm::errs() << "Could not create dpct_output directory.\n";
-      return false;
-    }
-    clang::dpct::PrintMsg(
-        "The directory \"dpct_output\" is used as \"out-root\"\n");
+    clang::dpct::createDirectories(OutRoot, false);
   }
-  OutRootPar.setPath(OutRoot.str().str());
+  clang::dpct::PrintMsg(
+      "The directory \"dpct_output\" is used as \"out-root\"\n");
   return true;
 }
 
@@ -96,14 +102,6 @@ bool makeInRootCanonicalOrSetDefaults(
     llvm::errs() << "Error: '" << InRoot.getCanonicalPath()
                  << "' is not a directory.\n";
     return false;
-  }
-  return true;
-}
-
-bool makeOutRootCanonicalOrSetDefaults(clang::tooling::UnifiedPath &OutRoot) {
-  if (OutRoot.getPath().empty()) {
-    if (!getDefaultOutRoot(OutRoot))
-      return false;
   }
   return true;
 }
@@ -199,7 +197,7 @@ int checkSDKPathOrIncludePath(clang::tooling::UnifiedPath &Path) {
 }
 
 bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
-                     std::string &RFile, bool &ROnly, bool &GenReport,
+                     std::string &RFile, bool ROnly, bool &GenReport,
                      std::string &DVerbose) {
   bool Success = true;
   if (ROnly || !RFile.empty() || !DVerbose.empty() ||

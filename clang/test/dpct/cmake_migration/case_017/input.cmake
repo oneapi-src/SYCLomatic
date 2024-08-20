@@ -24,3 +24,9 @@ set (CMAKE_CXX_COMPILER icpx)
 
 # No change to non-cmake variable
 set (Cmake_CXX_Standard clang++)
+
+# Test extrat spaces inserted
+set ( CMAKE_CXX_COMPILER clang++)
+set  (   CMAKE_CXX_COMPILER clang++)
+set  (     CMAKE_CXX_COMPILER clang++)
+set   (    CMAKE_CXX_COMPILER clang++)

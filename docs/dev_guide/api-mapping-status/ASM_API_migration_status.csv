@@ -1,16 +1,16 @@
 Function,Migration Support,Diagnostic Message
 abs,YES,
 activemask,NO,
-add,YES,Partial
+add,YES, Partial
 addc,NO,
 alloca,NO,
 and,YES,
 applypriority,NO,
 atom,NO,
-bar,NO,
+bar,YES, Partial
 barrier,NO,
-bfe,NO,
-bfi,NO,
+bfe,YES,
+bfi,YES,
 bfind,NO,
 bmsk,NO,
 bra,NO,
@@ -20,21 +20,21 @@ brx,NO,
 call,NO,
 clz,YES,
 cnot,YES,
-copysign,NO,
-cos,NO,
+copysign,YES,
+cos,YES,
 cp,NO,
 createpolicy,NO,
-cvt,NO,
+cvt,YES, Partial
 cvta,NO,
 discard,NO,
-div,YES,Partial
+div,YES, Partial
 dp2a,YES,
 dp4a,YES,
 elect,NO,
-ex2,NO,
+ex2,YES,
 exit,NO,
 fence,NO,
-fma,NO,
+fma,YES, Partial
 fns,NO,
 getctarank,NO,
 griddepcontrol,NO,
@@ -43,10 +43,10 @@ istypep,NO,
 ld,NO,
 ldmatrix,NO,
 ldu,NO,
-lg2,NO,
+lg2,YES,
 lop3,YES,
-mad,YES,Partial
-mad24,YES,Partial
+mad,YES, Partial
+mad24,YES, Partial
 madc,NO,
 mapa,NO,
 match,NO,
@@ -57,8 +57,8 @@ min,YES,
 mma,NO,
 mov,YES,
 movmatrix,NO,
-mul,YES,Partial
-mul24,YES,Partial
+mul,YES, Partial
+mul24,YES, Partial
 multimem,NO,
 nanosleep,NO,
 neg,YES,
@@ -69,14 +69,14 @@ popc,YES,
 prefetch,NO,
 prefetchu,NO,
 prmt,NO,
-rcp,NO,
+rcp,YES,
 red,NO,
 redux,NO,
 rem,YES,
-ret,NO,
-rsqrt,NO,
-sad,NO,
-selp,NO,
+ret,YES,
+rsqrt,YES,
+sad,YES,
+selp,YES,
 set,NO,
 setmaxnreg,NO,
 setp,YES,
@@ -84,50 +84,50 @@ shf,NO,
 shfl,NO,
 shl,YES,
 shr,YES,
-sin,NO,
-slct,NO,
-sqrt,NO,
+sin,YES,
+slct,YES, Partial
+sqrt,YES,
 st,NO,
 stackrestore,NO,
 stacksave,NO,
 stmatrix,NO,
-sub,YES,Partial
+sub,YES, Partial
 subc,NO,
 suld,NO,
 suq,NO,
 sured,NO,
 sust,NO,
 szext,NO,
-tanh,NO,
-testp,NO,
+tanh,YES,
+testp,YES,
 tex,NO,
 tld4,NO,
 trap,NO,
 txq,NO,
-vabsdiff,YES,Partial
-vabsdiff2,YES,Partial
-vabsdiff4,NO,
-vadd,YES,Partial
-vadd2,YES,Partial
-vadd4,NO,
-vavrg2,NO,
-vavrg4,NO,
+vabsdiff,YES, Partial
+vabsdiff2,YES, Partial
+vabsdiff4,YES, Partial
+vadd,YES, Partial
+vadd2,YES, Partial
+vadd4,YES, Partial
+vavrg2,YES, Partial
+vavrg4,YES, Partial
 vmad,NO,
-vmax,YES,Partial
-vmax2,YES,Partial
-vmax4,NO,
-vmin,YES,Partial
-vmin2,YES,Partial
-vmin4,NO,
+vmax,YES, Partial
+vmax2,YES, Partial
+vmax4,YES, Partial
+vmin,YES, Partial
+vmin2,YES, Partial
+vmin4,YES, Partial
 vote,NO,
-vset,NO,
-vset2,NO,
-vset4,NO,
-vshl,NO,
-vshr,NO,
-vsub,YES,Partial
-vsub2,YES,Partial
-vsub4,NO,
+vset,YES, Partial
+vset2,YES, Partial
+vset4,YES, Partial
+vshl,YES, Partial
+vshr,YES, Partial
+vsub,YES, Partial
+vsub2,YES, Partial
+vsub4,YES, Partial
 wgmma,NO,
 wmma,NO,
-xor,YES,Partial
+xor,YES, Partial

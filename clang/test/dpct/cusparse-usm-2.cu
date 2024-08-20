@@ -11,9 +11,9 @@ const double* csrValA;
 const int* csrRowPtrA;
 const int* csrColIndA;
 const double* x;
-double beta;
+double beta_value;
 double* y;
-//CHECK: dpct::queue_ptr handle;
+//CHECK: dpct::sparse::descriptor_ptr handle;
 //CHECK-NEXT: oneapi::mkl::transpose transA = oneapi::mkl::transpose::nontrans;
 //CHECK-NEXT: std::shared_ptr<dpct::sparse::matrix_info> descrA;
 cusparseHandle_t handle;
@@ -62,7 +62,7 @@ int foo(int aaaaa){
   base0 = cusparseGetMatIndexBase(descrA);
   type0 = cusparseGetMatType(descrA);
 
-  //CHECK: handle = &dpct::get_in_order_queue();
+  //CHECK: handle = new dpct::sparse::descriptor();
   //CHECK-NEXT: descrA = std::make_shared<dpct::sparse::matrix_info>();
   //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::matrix_info::matrix_type)aaaaa);
   //CHECK-NEXT: descrA->set_index_base(oneapi::mkl::index_base::zero);
@@ -79,7 +79,7 @@ int foo(int aaaaa){
   //CHECK: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT: */
-  //CHECK-NEXT: handle = nullptr;
+  //CHECK-NEXT: delete (handle);
   cusparseDestroyMatDescr(descrA);
   cusparseDestroy(handle);
 

@@ -9,24 +9,21 @@
 #ifndef DPCT_SAVE_NEW_FILES_H
 #define DPCT_SAVE_NEW_FILES_H
 
-#include "ValidateArguments.h"
-#include "llvm/ADT/SmallString.h"
-#include "llvm/Support/Error.h"
-#include "llvm/Support/raw_os_ostream.h"
-#include <map>
 #include "clang/Tooling/Refactoring.h"
+
+#include <map>
 
 using ReplTy = std::map<std::string, clang::tooling::Replacements>;
 
 #define DiagRef                                                                \
   "See Diagnostics Reference to resolve warnings and complete the "            \
   "migration:\n"                                                               \
-  "https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/"     \
-  "developer-guide-reference/current/diagnostics-reference.html\n"
+  "https://oneapi-src.github.io/SYCLomatic/dev_guide/reference/"               \
+  "diagnostics-reference.html\n"
 
 namespace llvm {
 class StringRef;
-}
+} // namespace llvm
 
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
@@ -35,8 +32,9 @@ class StringRef;
 /// Prerequisite: InRoot and OutRoot are both absolute paths
 int saveNewFiles(clang::tooling::RefactoringTool &Tool,
                  clang::tooling::UnifiedPath InRoot,
-                 clang::tooling::UnifiedPath OutRoot, ReplTy &ReplCUDA,
-                 ReplTy &ReplSYCL);
+                 clang::tooling::UnifiedPath OutRoot,
+                 clang::tooling::UnifiedPath CUDAMigratedOutRoot,
+                 ReplTy &ReplCUDA, ReplTy &ReplSYCL);
 
 void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path);
 
@@ -57,9 +55,12 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 /// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
 ///
 /// \returns true if file path is rewritten, false otherwise.
-bool rewriteDir(clang::tooling::UnifiedPath &FilePath, const clang::tooling::UnifiedPath& InRoot,
-                const clang::tooling::UnifiedPath& OutRoot);
-
+bool rewriteCanonicalDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot);
+bool rewriteAbsoluteDir(clang::tooling::UnifiedPath &FilePath,
+                const clang::tooling::UnifiedPath &InRoot,
+                const clang::tooling::UnifiedPath &OutRoot);
 // Replace file name \p FileName with new migrated name. For c source files, the
 // file extension needs to wait until all replacements are generated to
 // get the correct result.
@@ -71,8 +72,11 @@ void rewriteFileName(clang::tooling::UnifiedPath &FileName);
 // extension needs to wait until all replacements are generated to get the
 // correct result.
 void rewriteFileName(clang::tooling::UnifiedPath &FileName,
-                     const clang::tooling::UnifiedPath& FullPathName);
+                     const clang::tooling::UnifiedPath &FullPathName);
 
 // Replace file name \p FileName with new migrated name.
 void rewriteFileName(std::string &FileName, const std::string &FullPathName);
+
+// A mapping from output file path to it's corresponding input file.
+extern std::map<std::string, std::string> OutFilePath2InFilePath;
 #endif // DPCT_SAVE_NEW_FILES_H

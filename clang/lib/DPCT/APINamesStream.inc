@@ -23,9 +23,42 @@ CONDITIONAL_FACTORY_ENTRY(
         Diagnostics::FUNC_CALL_REMOVED_0,
         std::string("cuStreamAttachMemAsync"), getRemovedAPIWarningMessage("cuStreamAttachMemAsync")))
 
-ASSIGNABLE_FACTORY(
-    HEADER_INSERT_FACTORY(HeaderType::HT_Future,
-    CALL_FACTORY_ENTRY(
-        "cuStreamAddCallback",
-        CALL("std::async", LAMBDA(true, MEMBER_CALL(ARG(0), true, "wait"),
-             CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))
+ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
+    HeaderType::HT_Future,
+    CALL_FACTORY_ENTRY("cuStreamAddCallback",
+                       CALL("std::async",
+                            LAMBDA(true, false,
+                                   MEMBER_CALL(ARG(0), true, "wait"),
+                                   CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaStreamBeginCapture",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::begin_recording",
+                            ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("cudaStreamBeginCapture",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaStreamBeginCapture"),
+                            ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaStreamEndCapture",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::end_recording",
+                            ARG(0), ARG(1))),
+    UNSUPPORT_FACTORY_ENTRY("cudaStreamEndCapture",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaStreamEndCapture"),
+                            ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudaStreamIsCapturing", DEREF(1),
+        MEMBER_CALL(ARG(0), true, "ext_oneapi_get_state"))),
+    UNSUPPORT_FACTORY_ENTRY("cudaStreamIsCapturing",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaStreamIsCapturing"),
+                            ARG("--use-experimental-features=graph"))))

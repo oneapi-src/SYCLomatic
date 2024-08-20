@@ -40,11 +40,13 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnConvolutionFwdAlgo_t", "cudnnConvolutionBwdDataAlgo_t",
               "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t",
               "cudnnRNNMode_t", "cudnnRNNBiasMode_t", "cudnnDirectionMode_t",
-              "cudnnRNNDescriptor_t", "cudnnForwardMode_t", "cudnnRNNDataDescriptor_t",
-              "cudnnRNNDataLayout_t", "cudnnDropoutDescriptor_t",
-              "cudnnMathType_t", "cudnnConvolutionFwdAlgoPerf_t",
-              "cudnnConvolutionBwdFilterAlgoPerf_t", "cudnnConvolutionBwdDataAlgoPerf_t"
-              ))))))
+              "cudnnRNNDescriptor_t", "cudnnForwardMode_t",
+              "cudnnRNNDataDescriptor_t", "cudnnRNNDataLayout_t",
+              "cudnnDropoutDescriptor_t", "cudnnMathType_t",
+              "cudnnConvolutionFwdAlgoPerf_t",
+              "cudnnConvolutionBwdFilterAlgoPerf_t",
+              "cudnnConvolutionBwdDataAlgoPerf_t", "cudnnConvolutionMode_t",
+              "cudnnNanPropagation_t"))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
@@ -102,15 +104,26 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto *E =
                  getNodeAsType<DeclRefExpr>(Result, "CuDNNEnumConstant")) {
     std::string EnumName = E->getNameInfo().getName().getAsString();
-
-    if (EnumName.find("CUDNN_STATUS_") != std::string::npos) {
+    auto ReplaceWithInitVal = [&]() {
       if (auto EC = dyn_cast<EnumConstantDecl>(E->getDecl())) {
         std::string Repl = toString(EC->getInitVal(), 10);
         emplaceTransformation(new ReplaceStmt(E, Repl));
         return;
       }
-    } else if(EnumName == "CUDNN_BATCHNORM_SPATIAL_PERSISTENT") {
+    };
+    if (EnumName.find("CUDNN_STATUS_") != std::string::npos) {
+      ReplaceWithInitVal();
+      return;
+    } else if (EnumName == "CUDNN_BATCHNORM_SPATIAL_PERSISTENT") {
       report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
+    } else if (EnumName == "CUDNN_CONVOLUTION" ||
+               EnumName == "CUDNN_CROSS_CORRELATION") {
+      ReplaceWithInitVal();
+      return;
+    } else if (EnumName == "CUDNN_NOT_PROPAGATE_NAN" ||
+               EnumName == "CUDNN_PROPAGATE_NAN") {
+      ReplaceWithInitVal();
+      return;
     }
 
     auto Search = CuDNNEnumNamesMap.find(EnumName);
@@ -184,24 +197,33 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnSetConvolutionNdDescriptor", "cudnnConvolutionForward",
         "cudnnConvolutionBackwardData", "cudnnConvolutionBiasActivationForward",
         "cudnnConvolutionBackwardBias", "cudnnConvolutionBackwardFilter",
-        "cudnnGetConvolutionForwardWorkspaceSize", "cudnnGetConvolutionBackwardDataWorkspaceSize",
+        "cudnnGetConvolutionForwardWorkspaceSize",
+        "cudnnGetConvolutionBackwardDataWorkspaceSize",
         "cudnnGetConvolutionBackwardFilterWorkspaceSize",
         "cudnnGetNormalizationBackwardWorkspaceSize",
-        "cudnnCreateRNNDescriptor", "cudnnCreateRNNDataDescriptor", "cudnnDestroyRNNDescriptor",
-        "cudnnDestroyRNNDataDescriptor", "cudnnSetRNNDataDescriptor", "cudnnGetRNNDataDescriptor",
-        "cudnnSetRNNDescriptor_v8", "cudnnGetRNNDescriptor_v8", "cudnnGetRNNWeightSpaceSize",
-        "cudnnGetRNNTempSpaceSizes", "cudnnRNNForward", "cudnnRNNBackwardData_v8",
+        "cudnnCreateRNNDescriptor", "cudnnCreateRNNDataDescriptor",
+        "cudnnDestroyRNNDescriptor", "cudnnDestroyRNNDataDescriptor",
+        "cudnnSetRNNDataDescriptor", "cudnnGetRNNDataDescriptor",
+        "cudnnSetRNNDescriptor_v8", "cudnnGetRNNDescriptor_v8",
+        "cudnnGetRNNWeightSpaceSize", "cudnnGetRNNTempSpaceSizes",
+        "cudnnRNNForward", "cudnnRNNBackwardData_v8",
         "cudnnRNNBackwardWeights_v8", "cudnnDropoutGetStatesSize",
         "cudnnCreateDropoutDescriptor", "cudnnSetDropoutDescriptor",
         "cudnnGetDropoutDescriptor", "cudnnDropoutGetReserveSpaceSize",
-        "cudnnRestoreDropoutDescriptor", "cudnnDropoutForward", "cudnnDropoutBackward",
-        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion",
-        "cudnnGetConvolutionBackwardFilterAlgorithm",
+        "cudnnRestoreDropoutDescriptor", "cudnnDropoutForward",
+        "cudnnDropoutBackward", "cudnnDestroyDropoutDescriptor",
+        "cudnnGetVersion", "cudnnGetConvolutionBackwardFilterAlgorithm",
         "cudnnGetConvolutionBackwardDataAlgorithm",
         "cudnnGetConvolutionForwardAlgorithm", "cudnnSetConvolutionMathType",
-        "cudnnFindConvolutionForwardAlgorithm", "cudnnFindConvolutionBackwardDataAlgorithm",
-        "cudnnFindConvolutionBackwardFilterAlgorithm", "cudnnGetConvolutionBackwardFilterAlgorithm_v7",
-        "cudnnGetConvolutionBackwardDataAlgorithm_v7", "cudnnGetConvolutionForwardAlgorithm_v7");
+        "cudnnFindConvolutionForwardAlgorithm",
+        "cudnnFindConvolutionBackwardDataAlgorithm",
+        "cudnnFindConvolutionBackwardFilterAlgorithm",
+        "cudnnGetConvolutionBackwardFilterAlgorithm_v7",
+        "cudnnGetConvolutionBackwardDataAlgorithm_v7",
+        "cudnnGetConvolutionForwardAlgorithm_v7", "cudnnGetCudartVersion",
+        "cudnnGetConvolutionBackwardDataAlgorithmMaxCount",
+        "cudnnGetConvolutionBackwardFilterAlgorithmMaxCount",
+        "cudnnGetConvolutionForwardAlgorithmMaxCount");
   };
 
   MF.addMatcher(

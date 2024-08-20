@@ -17,11 +17,15 @@ set(dpct_rt_files
   include/dpct/sparse_utils.hpp
   include/dpct/fft_utils.hpp
   include/dpct/lapack_utils.hpp
+  include/dpct/group_utils.hpp
+  include/dpct/blas_gemm_utils.hpp
+  include/dpct/graph.hpp
 )
 
 set(dpct_rt_dpstd_files
   include/dpct/dpl_extras/functional.h
   include/dpct/dpl_extras/memory.h
+  include/dpct/dpl_extras/iterator_adaptor.h
   include/dpct/dpl_extras/iterators.h
   include/dpct/dpl_extras/algorithm.h
   include/dpct/dpl_extras/numeric.h
@@ -31,8 +35,7 @@ set(dpct_rt_dpstd_files
 
 set(dpct_rt_codepin_files
   include/dpct/codepin/codepin.hpp
-  include/dpct/codepin/detail/json.hpp
-  include/dpct/codepin/detail/schema.hpp
+  include/dpct/codepin/serialization/basic.hpp
 )
 
 set(output_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/include/dpct)

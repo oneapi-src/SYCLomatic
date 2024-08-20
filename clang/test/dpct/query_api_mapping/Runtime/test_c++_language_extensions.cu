@@ -6,7 +6,7 @@
 // MAKE_CHAR1: CUDA API:
 // MAKE_CHAR1-NEXT:   make_char1(c /*char*/);
 // MAKE_CHAR1-NEXT: Is migrated to:
-// MAKE_CHAR1-NEXT:   char(c);
+// MAKE_CHAR1-NEXT:   int8_t(c);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_char2 | FileCheck %s -check-prefix=MAKE_CHAR2
 // MAKE_CHAR2: CUDA API:
@@ -55,7 +55,7 @@
 // MAKE_SHORT1: CUDA API:
 // MAKE_SHORT1-NEXT:   make_short1(s /*short*/);
 // MAKE_SHORT1-NEXT: Is migrated to:
-// MAKE_SHORT1-NEXT:   short(s);
+// MAKE_SHORT1-NEXT:   int16_t(s);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_short2 | FileCheck %s -check-prefix=MAKE_SHORT2
 // MAKE_SHORT2: CUDA API:
@@ -105,7 +105,7 @@
 // MAKE_INT1: CUDA API:
 // MAKE_INT1-NEXT:   make_int1(i /*int*/);
 // MAKE_INT1-NEXT: Is migrated to:
-// MAKE_INT1-NEXT:   int(i);
+// MAKE_INT1-NEXT:   int32_t(i);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_int2 | FileCheck %s -check-prefix=MAKE_INT2
 // MAKE_INT2: CUDA API:
@@ -154,7 +154,7 @@
 // MAKE_LONG1: CUDA API:
 // MAKE_LONG1-NEXT:   make_long1(l /*long*/);
 // MAKE_LONG1-NEXT: Is migrated to:
-// MAKE_LONG1-NEXT:   long(l);
+// MAKE_LONG1-NEXT:   int64_t(l);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=make_long2 | FileCheck %s -check-prefix=MAKE_LONG2
 // MAKE_LONG2: CUDA API:

@@ -55,10 +55,14 @@ const char *const CommonOptionsParser::HelpMessage =
 
 
 #ifdef SYCLomatic_CUSTOMIZATION
+
+#include "clang/DPCT/DpctOptions.h"
+
 extern int SDKVersionMajor;
 extern int SDKVersionMinor;
 namespace clang {
 namespace tooling {
+bool DefineCUDAVerMajorMinor = false;
 #ifdef _WIN32
 UnifiedPath VcxprojFilePath;
 #endif
@@ -120,24 +124,10 @@ llvm::Error CommonOptionsParser::init(
   bool IsCudaFile = false;
   int OriArgc = argc;
   SpecifyLanguageInOption = false;
-#define DPCT_OPTIONS_IN_CLANG_TOOLING
-#define DPCT_OPT_TYPE(...) __VA_ARGS__
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
-OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#define DPCT_OPTIONS_IN_CLANG_TOOLING 1
+#define DPCT_OPTIONS_VAR 1
 #include "clang/DPCT/DPCTOptions.inc"
-#undef DPCT_NON_ENUM_OPTION
-#undef DPCT_OPT_TYPE
-#undef DPCT_OPTIONS_IN_CLANG_TOOLING
 
-  static llvm::cl::list<std::string> SourcePaths(
-      llvm::cl::Positional, llvm::cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
-      llvm::cl::cat(Category), llvm::cl::sub(*llvm::cl::AllSubCommands));
-
-  static cl::list<std::string> ArgsBefore(
-     "extra-arg-before",
-     cl::desc("Additional argument to prepend to the compiler command line.\n"
-              "Refer to extra-arg option.\n"),
-     cl::cat(Category), cl::sub(*cl::AllSubCommands), llvm::cl::Hidden);
 #else
   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),
@@ -181,8 +171,8 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #ifdef SYCLomatic_CUSTOMIZATION
   bool IsMigrateCmakeScriptOnlySpecified = false;
   for (auto i = 0; i < argc; i++) {
-    int Res1 = strcmp(argv[i], "--migrate-cmake-script-only");
-    int Res2 = strcmp(argv[i], "-migrate-cmake-script-only");
+    int Res1 = strcmp(argv[i], "--migrate-build-script-only");
+    int Res2 = strcmp(argv[i], "-migrate-build-script-only");
     if (Res1 == 0 || Res2 == 0) {
       IsMigrateCmakeScriptOnlySpecified = true;
       break;
@@ -272,7 +262,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 
     if (!Compilations) {
 #ifdef SYCLomatic_CUSTOMIZATION
-      if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
+      if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()) {
         std::string buf;
         llvm::raw_string_ostream OS(buf);
         OS << "Error while trying to load a compilation database:\n";
@@ -291,7 +281,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
               /*map to MigrationErrorCannotParseDatabase in DPCT*/);
         } else {
           bool IsProcessAllSet = false;
-          for (auto &OM : cl::getRegisteredOptions(*cl::TopLevelSubCommand)) {
+          for (auto &OM : cl::getRegisteredOptions(cl::SubCommand::getTopLevel())) {
             cl::Option *O = OM.second;
             if (O->ArgStr == "process-all") {
               IsProcessAllSet = O->getNumOccurrences();
@@ -389,6 +379,9 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
                                                       std::move(Compilations));
     }
   }
+
+  Compilations =
+      std::make_unique<ExpandedCompilationDatabase>(std::move(Compilations));
 #endif
   auto AdjustingCompilations =
       std::make_unique<ArgumentsAdjustingCompilations>(
@@ -442,27 +435,13 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
     Adjuster = combineAdjusters(
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
-
-    std::string CUDAVerMajorDefine = std::string("-D") +
-                                     "__CUDACC_VER_MAJOR__" + "=" +
-                                     std::to_string(SDKVersionMajor);
+    DefineCUDAVerMajorMinor = true;
     Adjuster = combineAdjusters(
         std::move(Adjuster),
-        getInsertArgumentAdjuster(CUDAVerMajorDefine.c_str(),
-                                  ArgumentInsertPosition::BEGIN));
-
-    std::string CUDAVerMinorDefine = std::string("-D") +
-                                     "__CUDACC_VER_MINOR__" + "=" +
-                                     std::to_string(SDKVersionMinor);
+        getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
     Adjuster = combineAdjusters(
         std::move(Adjuster),
-        getInsertArgumentAdjuster(CUDAVerMinorDefine.c_str(),
-                                  ArgumentInsertPosition::BEGIN));
-
-    std::string NVCCDefine = std::string("-D") + "__NVCC__";
-    Adjuster = combineAdjusters(
-        std::move(Adjuster),
-        getInsertArgumentAdjuster(NVCCDefine.c_str(),
+        getInsertArgumentAdjuster("-fgpu-exclude-wrong-side-overloads",
                                   ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION

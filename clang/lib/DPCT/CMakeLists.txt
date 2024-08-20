@@ -8,6 +8,7 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/bindless_images.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/device.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/image.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/graph.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/math.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/memory.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/util.hpp
@@ -22,9 +23,12 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/sparse_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/fft_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/lapack_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/group_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/blas_gemm_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/algorithm.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/functional.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/iterators.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/iterator_adaptor.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/memory.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/numeric.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/vector.h
@@ -46,6 +50,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpct.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/graph.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/math.hpp.inc
@@ -57,6 +62,8 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/group_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_gemm_utils.hpp.inc
 )
 
 add_custom_command(
@@ -66,7 +73,7 @@ add_custom_command(
   )
 
 add_custom_command(
-  DEPENDS ${RUNTIME_HEADERS} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/processFiles.py
+  DEPENDS ${RUNTIME_HEADERS} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/processFiles.py  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/cmake/dpct.cmake
   OUTPUT  ${PROCESS_FILES_OUTPUT}
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
   )
@@ -115,6 +122,27 @@ add_clang_library(DPCT
   Rewriters/CUB/RewriterDeviceSegmentedSort.cpp
   Rewriters/CUB/RewriterDeviceSelect.cpp
   Rewriters/CUB/RewriterUtilityFunctions.cpp
+  Rewriters/CUB/RewriterDevicePartition.cpp
+  Rewriters/CUB/RewriterDeviceSpmv.cpp
+  Rewriters/Math/CallExprRewriterMath.cpp
+  Rewriters/Math/RewriterSTDFunctions.cpp
+  Rewriters/Math/RewriterHalfArithmeticFunctions.cpp
+  Rewriters/Math/RewriterHalf2ArithmeticFunctions.cpp
+  Rewriters/Math/RewriterHalfComparisonFunctions.cpp
+  Rewriters/Math/RewriterHalf2ComparisonFunctions.cpp
+  Rewriters/Math/RewriterHalfPrecisionConversionAndDataMovement.cpp
+  Rewriters/Math/RewriterHalfMathFunctions.cpp
+  Rewriters/Math/RewriterHalf2MathFunctions.cpp
+  Rewriters/Math/RewriterBfloat16PrecisionConversionAndDataMovement.cpp
+  Rewriters/Math/RewriterSinglePrecisionMathematicalFunctions.cpp
+  Rewriters/Math/RewriterDoublePrecisionMathematicalFunctions.cpp
+  Rewriters/Math/RewriterIntegerMathematicalFunctions.cpp
+  Rewriters/Math/RewriterSinglePrecisionIntrinsics.cpp
+  Rewriters/Math/RewriterDoublePrecisionIntrinsics.cpp
+  Rewriters/Math/RewriterIntegerIntrinsics.cpp
+  Rewriters/Math/RewriterSIMDIntrinsics.cpp
+  Rewriters/Math/RewriterCXXAPIRoutines.cpp
+  Rewriters/Math/RewriterOverload.cpp
   CallExprRewriter.cpp
   CallExprRewriterAtomic.cpp
   CallExprRewriterCUFFT.cpp
@@ -124,6 +152,7 @@ add_clang_library(DPCT
   CallExprRewriterCUSPARSE.cpp
   CallExprRewriterComplex.cpp
   CallExprRewriterDriver.cpp
+  CallExprRewriterGraph.cpp
   CallExprRewriterMemory.cpp
   CallExprRewriterMisc.cpp
   CallExprRewriterNccl.cpp
@@ -135,7 +164,6 @@ add_clang_library(DPCT
   CallExprRewriterErrorHandling.cpp
   CallExprRewriterLIBCU.cpp
   CallExprRewriterEvent.cpp
-  CallExprRewriterMath.cpp
   CallExprRewriterCG.cpp
   CallExprRewriterWmma.cpp
   CrashRecovery.cpp
@@ -147,6 +175,7 @@ add_clang_library(DPCT
   MapNames.cpp
   SaveNewFiles.cpp
   DPCT.cpp
+  DpctOptions.cpp
   TextModification.cpp
   Utility.cpp
   ValidateArguments.cpp
@@ -170,6 +199,7 @@ add_clang_library(DPCT
   AutoComplete.cpp
   AsmMigration.cpp
   APIMapping/QueryAPIMapping.cpp
+  Asm/AsmNodes.cpp
   Asm/AsmLexer.cpp
   Asm/AsmParser.cpp
   Asm/AsmIdentifierTable.cpp
@@ -185,8 +215,7 @@ add_clang_library(DPCT
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
   SpBLASAPIMigration.cpp
-  Schema.cpp
-  TypeSchemaForSYCL.cpp
+  GenCodePinHeader.cpp
 
   DEPENDS
   ClangDriverOptions

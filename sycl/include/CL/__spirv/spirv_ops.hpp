@@ -14,6 +14,7 @@
 
 #include <stddef.h> // for size_t
 #include <stdint.h> // for uint32_t
+#include <type_traits>
 
 // Convergent attribute
 #ifdef __SYCL_DEVICE_ONLY__
@@ -51,9 +52,11 @@ template <typename T, typename Tp, std::size_t R, std::size_t C,
           __spv::Scope::Flag S = __spv::Scope::Flag::Subgroup>
 extern __DPCPP_SYCL_EXTERNAL
     __spv::__spirv_JointMatrixINTEL<Tp, R, C, L, S, U> *
-    __spirv_CompositeConstructCheckedINTEL(const T Value, size_t Height,
-                                           size_t Stride, size_t Width,
-                                           size_t CoordX, size_t CoordY);
+    __spirv_CooperativeMatrixConstructCheckedINTEL(int32_t CoordX,
+                                                   int32_t CoordY,
+                                                   uint32_t Height,
+                                                   uint32_t Width,
+                                                   const T Value);
 
 template <typename T, typename Tp, std::size_t R, std::size_t C,
           __spv::MatrixUse U,
@@ -61,35 +64,34 @@ template <typename T, typename Tp, std::size_t R, std::size_t C,
           __spv::Scope::Flag S = __spv::Scope::Flag::Subgroup>
 extern __DPCPP_SYCL_EXTERNAL
     __spv::__spirv_JointMatrixINTEL<Tp, R, C, L, S, U> *
-    __spirv_JointMatrixLoadCheckedINTEL(T *Ptr, std::size_t Stride,
-                                        size_t Height, size_t Width,
-                                        size_t CoordX, size_t CoordY,
-                                        __spv::MatrixLayout Layout = L,
-                                        __spv::Scope::Flag Sc = S,
-                                        int MemOperand = 0);
+    __spirv_CooperativeMatrixLoadCheckedINTEL(
+        T *Ptr, int32_t CoordX, int32_t CoordY, __spv::MatrixLayout Layout = L,
+        uint32_t Height = 0, uint32_t Width = 0, std::size_t Stride = 0,
+        int MemOperand = 0);
 
 template <typename T, typename Tp, std::size_t R, std::size_t C,
           __spv::MatrixUse U,
           __spv::MatrixLayout L = __spv::MatrixLayout::RowMajor,
           __spv::Scope::Flag S = __spv::Scope::Flag::Subgroup>
-extern __DPCPP_SYCL_EXTERNAL void __spirv_JointMatrixStoreCheckedINTEL(
-    T *Ptr, __spv::__spirv_JointMatrixINTEL<Tp, R, C, L, S, U> *Object,
-    std::size_t Stride, size_t Height, size_t Width, size_t CoordX,
-    size_t CoordY, __spv::MatrixLayout Layout = L, __spv::Scope::Flag Sc = S,
-    int MemOperand = 0);
+extern __DPCPP_SYCL_EXTERNAL void __spirv_CooperativeMatrixStoreCheckedINTEL(
+    T *Ptr, int32_t CoordX, int32_t CoordY,
+    __spv::__spirv_JointMatrixINTEL<Tp, R, C, L, S, U> *Object,
+    __spv::MatrixLayout Layout = L, uint32_t Height = 0, uint32_t Width = 0,
+    std::size_t Stride = 0, int MemOperand = 0);
 
-template <typename T1, typename T2, std::size_t M, std::size_t K, std::size_t N,
-          __spv::MatrixUse UA, __spv::MatrixUse UB, __spv::MatrixUse UC,
+template <typename TA, typename TB, typename TC, std::size_t M, std::size_t K,
+          std::size_t N, __spv::MatrixUse UA, __spv::MatrixUse UB,
+          __spv::MatrixUse UC,
           __spv::MatrixLayout LA = __spv::MatrixLayout::RowMajor,
           __spv::MatrixLayout LB = __spv::MatrixLayout::RowMajor,
           __spv::MatrixLayout LC = __spv::MatrixLayout::RowMajor,
           __spv::Scope::Flag S = __spv::Scope::Flag::Subgroup>
 extern __DPCPP_SYCL_EXTERNAL
-    __spv::__spirv_JointMatrixINTEL<T2, M, N, LC, S, UC> *
+    __spv::__spirv_JointMatrixINTEL<TC, M, N, LC, S, UC> *
     __spirv_JointMatrixMadINTEL(
-        __spv::__spirv_JointMatrixINTEL<T1, M, K, LA, S, UA> *A,
-        __spv::__spirv_JointMatrixINTEL<T1, K, N, LB, S, UB> *B,
-        __spv::__spirv_JointMatrixINTEL<T2, M, N, LC, S, UC> *C,
+        __spv::__spirv_JointMatrixINTEL<TA, M, K, LA, S, UA> *A,
+        __spv::__spirv_JointMatrixINTEL<TB, K, N, LB, S, UB> *B,
+        __spv::__spirv_JointMatrixINTEL<TC, M, N, LC, S, UC> *C,
         __spv::Scope::Flag Sc = __spv::Scope::Flag::Subgroup);
 
 template <typename T1, typename T2, typename T3, std::size_t M, std::size_t K,
@@ -173,10 +175,10 @@ extern __DPCPP_SYCL_EXTERNAL __spv::__spirv_JointMatrixINTEL<T, R, C, L, S, U> *
 __spirv_VectorInsertDynamic(__spv::__spirv_JointMatrixINTEL<T, R, C, L, S, U> *,
                             Ts val, size_t i);
 
-template <typename T, std::size_t NumRows, std::size_t NumCols>
-extern __DPCPP_SYCL_EXTERNAL void __spirv_JointMatrixPrefetchINTEL(
-    T *Ptr, std::size_t coordX, std::size_t coordY, unsigned int CacheLevel,
-    __spv::MatrixLayout Layout, std::size_t Stride);
+template <typename T>
+extern __DPCPP_SYCL_EXTERNAL void __spirv_CooperativeMatrixPrefetchINTEL(
+    T *Ptr, uint32_t NumRows, uint32_t NumCols, unsigned int CacheLevel,
+    __spv::MatrixLayout Layout, size_t Stride);
 
 #ifndef __SPIRV_BUILTIN_DECLARATIONS__
 #error                                                                         \
@@ -198,6 +200,27 @@ extern __DPCPP_SYCL_EXTERNAL void __spirv_ImageWrite(ImageT, CoordT, ValT);
 template <class RetT, typename ImageT, typename TempArgT>
 extern __DPCPP_SYCL_EXTERNAL RetT __spirv_ImageRead(ImageT, TempArgT);
 
+template <class RetT, typename ImageT, typename TempArgT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_ImageFetch(ImageT, TempArgT);
+
+template <class RetT, typename ImageT, typename TempArgT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_SampledImageFetch(ImageT, TempArgT);
+
+template <class RetT, typename ImageT, typename TempArgT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_ImageArrayFetch(ImageT, TempArgT,
+                                                          int);
+
+template <class RetT, typename ImageT, typename TempArgT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_SampledImageArrayFetch(ImageT,
+                                                                 TempArgT, int);
+
+template <class RetT, typename ImageT, typename TempArgT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_ImageArrayRead(ImageT, TempArgT, int);
+
+template <typename ImageT, typename CoordT, typename ValT>
+extern __DPCPP_SYCL_EXTERNAL void __spirv_ImageArrayWrite(ImageT, CoordT, int,
+                                                          ValT);
+
 template <typename ImageT, typename SampledType>
 extern __DPCPP_SYCL_EXTERNAL SampledType __spirv_SampledImage(ImageT,
                                                               __ocl_sampler_t);
@@ -209,6 +232,20 @@ __spirv_ImageSampleExplicitLod(SampledType, TempArgT, int, float);
 template <typename SampledType, typename TempRetT, typename TempArgT>
 extern __DPCPP_SYCL_EXTERNAL TempRetT
 __spirv_ImageSampleExplicitLod(SampledType, TempArgT, int, TempArgT, TempArgT);
+
+template <typename SampledType, typename TempRetT, typename TempArgT>
+extern __DPCPP_SYCL_EXTERNAL TempRetT __spirv_ImageSampleCubemap(SampledType,
+                                                                 TempArgT);
+
+template <typename RetT, class HandleT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_ConvertHandleToImageINTEL(HandleT);
+
+template <typename RetT, class HandleT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_ConvertHandleToSamplerINTEL(HandleT);
+
+template <typename RetT, class HandleT>
+extern __DPCPP_SYCL_EXTERNAL
+    RetT __spirv_ConvertHandleToSampledImageINTEL(HandleT);
 
 #define __SYCL_OpGroupAsyncCopyGlobalToLocal __spirv_GroupAsyncCopy
 #define __SYCL_OpGroupAsyncCopyLocalToGlobal __spirv_GroupAsyncCopy
@@ -465,6 +502,94 @@ __SYCL_GenericCastToPtrExplicit_ToPrivate(const volatile void *Ptr) noexcept {
   return (const volatile __attribute__((opencl_private)) dataT *)
       __spirv_GenericCastToPtrExplicit_ToPrivate(Ptr,
                                                  __spv::StorageClass::Function);
+}
+
+template <typename dataT>
+extern __attribute__((opencl_global)) dataT *
+__SYCL_GenericCastToPtr_ToGlobal(void *Ptr) noexcept {
+  return (__attribute__((opencl_global)) dataT *)
+      __spirv_GenericCastToPtr_ToGlobal(Ptr,
+                                        __spv::StorageClass::CrossWorkgroup);
+}
+
+template <typename dataT>
+extern const __attribute__((opencl_global)) dataT *
+__SYCL_GenericCastToPtr_ToGlobal(const void *Ptr) noexcept {
+  return (const __attribute__((opencl_global)) dataT *)
+      __spirv_GenericCastToPtr_ToGlobal(Ptr,
+                                        __spv::StorageClass::CrossWorkgroup);
+}
+
+template <typename dataT>
+extern volatile __attribute__((opencl_global)) dataT *
+__SYCL_GenericCastToPtr_ToGlobal(volatile void *Ptr) noexcept {
+  return (volatile __attribute__((opencl_global)) dataT *)
+      __spirv_GenericCastToPtr_ToGlobal(Ptr,
+                                        __spv::StorageClass::CrossWorkgroup);
+}
+
+template <typename dataT>
+extern const volatile __attribute__((opencl_global)) dataT *
+__SYCL_GenericCastToPtr_ToGlobal(const volatile void *Ptr) noexcept {
+  return (const volatile __attribute__((opencl_global)) dataT *)
+      __spirv_GenericCastToPtr_ToGlobal(Ptr,
+                                        __spv::StorageClass::CrossWorkgroup);
+}
+
+template <typename dataT>
+extern __attribute__((opencl_local)) dataT *
+__SYCL_GenericCastToPtr_ToLocal(void *Ptr) noexcept {
+  return (__attribute__((opencl_local)) dataT *)
+      __spirv_GenericCastToPtr_ToLocal(Ptr, __spv::StorageClass::Workgroup);
+}
+
+template <typename dataT>
+extern const __attribute__((opencl_local)) dataT *
+__SYCL_GenericCastToPtr_ToLocal(const void *Ptr) noexcept {
+  return (const __attribute__((opencl_local)) dataT *)
+      __spirv_GenericCastToPtr_ToLocal(Ptr, __spv::StorageClass::Workgroup);
+}
+
+template <typename dataT>
+extern volatile __attribute__((opencl_local)) dataT *
+__SYCL_GenericCastToPtr_ToLocal(volatile void *Ptr) noexcept {
+  return (volatile __attribute__((opencl_local)) dataT *)
+      __spirv_GenericCastToPtr_ToLocal(Ptr, __spv::StorageClass::Workgroup);
+}
+
+template <typename dataT>
+extern const volatile __attribute__((opencl_local)) dataT *
+__SYCL_GenericCastToPtr_ToLocal(const volatile void *Ptr) noexcept {
+  return (const volatile __attribute__((opencl_local)) dataT *)
+      __spirv_GenericCastToPtr_ToLocal(Ptr, __spv::StorageClass::Workgroup);
+}
+
+template <typename dataT>
+extern __attribute__((opencl_private)) dataT *
+__SYCL_GenericCastToPtr_ToPrivate(void *Ptr) noexcept {
+  return (__attribute__((opencl_private)) dataT *)
+      __spirv_GenericCastToPtr_ToPrivate(Ptr, __spv::StorageClass::Function);
+}
+
+template <typename dataT>
+extern const __attribute__((opencl_private)) dataT *
+__SYCL_GenericCastToPtr_ToPrivate(const void *Ptr) noexcept {
+  return (const __attribute__((opencl_private)) dataT *)
+      __spirv_GenericCastToPtr_ToPrivate(Ptr, __spv::StorageClass::Function);
+}
+
+template <typename dataT>
+extern volatile __attribute__((opencl_private)) dataT *
+__SYCL_GenericCastToPtr_ToPrivate(volatile void *Ptr) noexcept {
+  return (volatile __attribute__((opencl_private)) dataT *)
+      __spirv_GenericCastToPtr_ToPrivate(Ptr, __spv::StorageClass::Function);
+}
+
+template <typename dataT>
+extern const volatile __attribute__((opencl_private)) dataT *
+__SYCL_GenericCastToPtr_ToPrivate(const volatile void *Ptr) noexcept {
+  return (const volatile __attribute__((opencl_private)) dataT *)
+      __spirv_GenericCastToPtr_ToPrivate(Ptr, __spv::StorageClass::Function);
 }
 
 template <typename dataT>
@@ -901,10 +1026,16 @@ extern __DPCPP_SYCL_EXTERNAL void
 __spirv_ocl_prefetch(const __attribute__((opencl_global)) char *Ptr,
                      size_t NumBytes) noexcept;
 
-extern __DPCPP_SYCL_EXTERNAL uint16_t
-__spirv_ConvertFToBF16INTEL(float) noexcept;
 extern __DPCPP_SYCL_EXTERNAL float
     __spirv_ConvertBF16ToFINTEL(uint16_t) noexcept;
+extern __DPCPP_SYCL_EXTERNAL uint16_t
+__spirv_ConvertFToBF16INTEL(float) noexcept;
+template <int N>
+extern __DPCPP_SYCL_EXTERNAL __ocl_vec_t<float, N>
+    __spirv_ConvertBF16ToFINTEL(__ocl_vec_t<uint16_t, N>) noexcept;
+template <int N>
+extern __DPCPP_SYCL_EXTERNAL __ocl_vec_t<uint16_t, N>
+    __spirv_ConvertFToBF16INTEL(__ocl_vec_t<float, N>) noexcept;
 
 __SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL
     __SYCL_EXPORT __ocl_vec_t<uint32_t, 4>
@@ -988,6 +1119,14 @@ __spirv_GroupNonUniformBitwiseAnd(__spv::Scope::Flag, unsigned int, ValueT);
 
 template <typename ValueT>
 __SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT ValueT
+__spirv_GroupNonUniformLogicalOr(__spv::Scope::Flag, unsigned int, ValueT);
+
+template <typename ValueT>
+__SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT ValueT
+__spirv_GroupNonUniformLogicalAnd(__spv::Scope::Flag, unsigned int, ValueT);
+
+template <typename ValueT>
+__SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT ValueT
 __spirv_GroupNonUniformSMin(__spv::Scope::Flag, unsigned int, ValueT,
                             unsigned int);
 
@@ -1051,6 +1190,16 @@ __SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT ValueT
 __spirv_GroupNonUniformBitwiseAnd(__spv::Scope::Flag, unsigned int, ValueT,
                                   unsigned int);
 
+template <typename ValueT>
+__SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT ValueT
+__spirv_GroupNonUniformLogicalOr(__spv::Scope::Flag, unsigned int, ValueT,
+                                 unsigned int);
+
+template <typename ValueT>
+__SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT ValueT
+__spirv_GroupNonUniformLogicalAnd(__spv::Scope::Flag, unsigned int, ValueT,
+                                  unsigned int);
+
 extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT void
 __clc_BarrierInitialize(int64_t *state, int32_t expected_count) noexcept;
 
@@ -1084,7 +1233,11 @@ __clc_BarrierTestWait(int64_t *state, int64_t arrival) noexcept;
 __SYCL_CONVERGENT__ extern __DPCPP_SYCL_EXTERNAL __SYCL_EXPORT void
 __clc_BarrierArriveAndWait(int64_t *state) noexcept;
 
-#ifdef __SYCL_USE_NON_VARIADIC_SPIRV_OCL_PRINTF__
+#ifdef __SYCL_USE_VARIADIC_SPIRV_OCL_PRINTF__
+extern __DPCPP_SYCL_EXTERNAL int
+__spirv_ocl_printf(const __attribute__((opencl_constant)) char *Format, ...);
+extern __DPCPP_SYCL_EXTERNAL int __spirv_ocl_printf(const char *Format, ...);
+#else
 template <typename... Args>
 extern __DPCPP_SYCL_EXTERNAL int
 __spirv_ocl_printf(const __attribute__((opencl_constant)) char *Format,
@@ -1092,10 +1245,6 @@ __spirv_ocl_printf(const __attribute__((opencl_constant)) char *Format,
 template <typename... Args>
 extern __DPCPP_SYCL_EXTERNAL int __spirv_ocl_printf(const char *Format,
                                                     Args... args);
-#else
-extern __DPCPP_SYCL_EXTERNAL int
-__spirv_ocl_printf(const __attribute__((opencl_constant)) char *Format, ...);
-extern __DPCPP_SYCL_EXTERNAL int __spirv_ocl_printf(const char *Format, ...);
 #endif
 
 // Native builtin extension
@@ -1162,11 +1311,31 @@ __CLC_BF16_SCAL_VEC(uint32_t)
 
 extern __DPCPP_SYCL_EXTERNAL int32_t __spirv_BuiltInGlobalHWThreadIDINTEL();
 extern __DPCPP_SYCL_EXTERNAL int32_t __spirv_BuiltInSubDeviceIDINTEL();
+extern __DPCPP_SYCL_EXTERNAL uint64_t __spirv_ReadClockKHR(int);
 
 template <typename from, typename to>
 extern __DPCPP_SYCL_EXTERNAL
     std::enable_if_t<std::is_integral_v<to> && std::is_unsigned_v<to>, to>
     __spirv_ConvertPtrToU(from val) noexcept;
+
+template <typename RetT, typename... ArgsT>
+extern __DPCPP_SYCL_EXTERNAL __spv::__spirv_TaskSequenceINTEL *
+__spirv_TaskSequenceCreateINTEL(RetT (*f)(ArgsT...), int Pipelined = -1,
+                                int ClusterMode = -1,
+                                unsigned int ResponseCapacity = 0,
+                                unsigned int InvocationCapacity = 0) noexcept;
+
+template <typename... ArgsT>
+extern __DPCPP_SYCL_EXTERNAL void
+__spirv_TaskSequenceAsyncINTEL(__spv::__spirv_TaskSequenceINTEL *TaskSequence,
+                               ArgsT... Args) noexcept;
+
+template <typename RetT>
+extern __DPCPP_SYCL_EXTERNAL RetT __spirv_TaskSequenceGetINTEL(
+    __spv::__spirv_TaskSequenceINTEL *TaskSequence) noexcept;
+
+extern __DPCPP_SYCL_EXTERNAL void __spirv_TaskSequenceReleaseINTEL(
+    __spv::__spirv_TaskSequenceINTEL *TaskSequence) noexcept;
 
 #else  // if !__SYCL_DEVICE_ONLY__
 

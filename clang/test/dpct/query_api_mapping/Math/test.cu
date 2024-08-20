@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Double Precision Intrinsics
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__dadd_rd | FileCheck %s -check-prefix=__DADD_RD
@@ -278,7 +276,7 @@
 // __UMULHI: CUDA API:
 // __UMULHI-NEXT:   __umulhi(u1 /*unsigned int*/, u2 /*unsigned int*/);
 // __UMULHI-NEXT: Is migrated to:
-// __UMULHI-NEXT:   sycl::mul_hi(u1, u2);
+// __UMULHI-NEXT:   sycl::mul_hi<unsigned>(u1, u2);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__urhadd | FileCheck %s -check-prefix=__URHADD
 // __URHADD: CUDA API:

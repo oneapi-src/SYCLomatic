@@ -32,13 +32,13 @@
 
 // UNSUPPORTED: hip
 
-// RUN: %clangxx -fsycl -fsycl-targets=%{sycl_triple} %s -o %t.out
+// RUN: %{build} %if any-device-is-cuda %{ -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_70 %} -o %t.out
 // RUN: %{run} %t.out
 
 #include <iostream>
 #include <numeric>
 
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
 
 #include <syclcompat/atomic.hpp>
 

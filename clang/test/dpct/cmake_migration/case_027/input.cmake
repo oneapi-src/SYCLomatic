@@ -1,0 +1,22 @@
+set(NVCC_CMD ${CMAKE_CUDA_COMPILER} .c)
+if (NOT CMAKE_CUDA_HOST_COMPILER STREQUAL "")
+    set(NVCC_CMD ${NVCC_CMD} -ccbin ${CMAKE_CUDA_HOST_COMPILER})
+endif()
+set(CMAKE_CUDA_ARCHITECTURES "")
+set(CMAKE_CUDA_FLAGS "")
+
+add_custom_command(
+    COMMAND ${CMAKE_COMMAND} -E echo \"\#endif // define ${HEADER_FILE_DEFINE}\" >> ${OUTPUT_HEADER_FILE}
+    DEPENDS ${spv_file} xxd
+    COMMENT "Converting to hpp: ${FILE_NAME} ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/xxd"
+    )
+set(NVCC_CMD ${CMAKE_CUDA_COMPILER} .c)
+string(REGEX REPLACE "^.* version ([0-9.]*).*$" "\\1" CUDA_CCVER ${CUDA_CCFULLVER})
+
+cuda_compile_cubin(cuda_cubin_files jit.cu OPTIONS -arch=${GPU_ARCH})
+set(_copy_files "")
+add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/premade_cu.cubin
+    COMMAND ${CMAKE_COMMAND} -E copy  ${cuda_cubin_files} ${CMAKE_CURRENT_BINARY_DIR}/premade_cu.cubin
+)
+add_custom_target(cubin ALL
+    DEPENDS ${_generated_files} ${cuda_cubin_files} ${_copy_files})

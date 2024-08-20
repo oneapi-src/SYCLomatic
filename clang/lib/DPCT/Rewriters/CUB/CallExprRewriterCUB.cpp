@@ -22,6 +22,8 @@ void CallExprRewriterFactoryBase::initRewriterMapCUB() {
   RewriterMap->merge(createDeviceMergeSortRewriterMap());
   RewriterMap->merge(createDeviceHistgramRewriterMap());
   RewriterMap->merge(createUtilityFunctionsRewriterMap());
+  RewriterMap->merge(createDevicePartitionRewriterMap());
+  RewriterMap->merge(createDeviceSpmvRewriterMap());
 }
 
 void CallExprRewriterFactoryBase::initMethodRewriterMapCUB() {

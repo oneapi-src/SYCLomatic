@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Double Precision Mathematical Functions
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=acos | FileCheck %s -check-prefix=ACOS
@@ -192,7 +190,7 @@
 // FREXP: CUDA API:
 // FREXP-NEXT:   frexp(d /*double*/, pi /*int **/);
 // FREXP-NEXT: Is migrated to:
-// FREXP-NEXT:   sycl::frexp(d, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(pi));
+// FREXP-NEXT:   sycl::frexp(d, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pi));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hypot | FileCheck %s -check-prefix=HYPOT
 // HYPOT: CUDA API:
@@ -217,6 +215,12 @@
 // J1-NEXT:   j1(d /*double*/);
 // J1-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
 // J1-NEXT:   sycl::ext::intel::math::j1(d);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=jn | FileCheck %s -check-prefix=JN
+// JN: CUDA API:
+// JN-NEXT:   jn(i /*int*/, d /*double*/);
+// JN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// JN-NEXT:   sycl::ext::intel::math::jn(i, d);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ldexp | FileCheck %s -check-prefix=LDEXP
 // LDEXP: CUDA API:
@@ -288,7 +292,7 @@
 // MODF: CUDA API:
 // MODF-NEXT:   modf(d /*double*/, pd /*double **/);
 // MODF-NEXT: Is migrated to:
-// MODF-NEXT:   sycl::modf(d, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pd));
+// MODF-NEXT:   sycl::modf(d, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pd));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=nan | FileCheck %s -check-prefix=NAN
 // NAN: CUDA API:
@@ -360,7 +364,7 @@
 // REMQUO: CUDA API:
 // REMQUO-NEXT:   remquo(d1 /*double*/, d2 /*double*/, pi /*int **/);
 // REMQUO-NEXT: Is migrated to:
-// REMQUO-NEXT:   sycl::remquo(d1, d2, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(pi));
+// REMQUO-NEXT:   sycl::remquo(d1, d2, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pi));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=rhypot | FileCheck %s -check-prefix=RHYPOT
 // RHYPOT: CUDA API:
@@ -426,13 +430,13 @@
 // SINCOS: CUDA API:
 // SINCOS-NEXT:   sincos(d /*double*/, pd1 /*double **/, pd2 /*double **/);
 // SINCOS-NEXT: Is migrated to:
-// SINCOS-NEXT:   *pd1 = sycl::sincos(d, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pd2));
+// SINCOS-NEXT:   *pd1 = sycl::sincos(d, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pd2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sincospi | FileCheck %s -check-prefix=SINCOSPI
 // SINCOSPI: CUDA API:
 // SINCOSPI-NEXT:   sincospi(d /*double*/, pd1 /*double **/, pd2 /*double **/);
 // SINCOSPI-NEXT: Is migrated to:
-// SINCOSPI-NEXT:   *pd1 = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pd2));
+// SINCOSPI-NEXT:   *pd1 = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pd2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=sinh | FileCheck %s -check-prefix=SINH
 // SINH: CUDA API:
@@ -487,3 +491,9 @@
 // Y1-NEXT:   y1(d /*double*/);
 // Y1-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
 // Y1-NEXT:   sycl::ext::intel::math::y1(d);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=yn | FileCheck %s -check-prefix=YN
+// YN: CUDA API:
+// YN-NEXT:   yn(i /*int*/, d /*double*/);
+// YN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// YN-NEXT:   sycl::ext::intel::math::yn(i, d);

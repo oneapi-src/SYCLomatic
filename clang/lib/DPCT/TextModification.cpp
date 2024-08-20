@@ -391,7 +391,7 @@ InsertText::getReplacement(const ASTContext &Context) const {
   R->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
   R->setInsertPosition(InsertPos);
   R->setSYCLHeaderNeeded(IsSYCLHeaderNeeded);
-  R->IsForCUDADebug = IsForCUDADebug;
+  R->IsForCodePin = IsForCodePin;
   return R;
 }
 
@@ -523,135 +523,6 @@ ReplaceInclude::getReplacement(const ASTContext &Context) const {
                                           this);
 }
 
-void ReplaceDim3Ctor::setRange() {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  if (isDecl) {
-    SourceRange SR = Ctor->getParenOrBraceRange();
-    if (SR.isInvalid()) {
-      // convert to spelling location if the dim3 constructor is in a macro
-      // otherwise, Lexer::getLocForEndOfToken returns invalid source location
-      auto CtorLoc = Ctor->getLocation().isMacroID()
-                         ? SM.getSpellingLoc(Ctor->getLocation())
-                         : Ctor->getLocation();
-      // dim3 a;
-      // MACRO(... dim3 a; ...)
-      auto CtorEndLoc = Lexer::getLocForEndOfToken(
-          CtorLoc, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
-      CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
-    } else {
-      SourceRange SR1 =
-          SourceRange(SR.getBegin().getLocWithOffset(1), SR.getEnd());
-      CSR = CharSourceRange(SR1, false);
-    }
-  } else {
-    // adjust the statement to replace if top-level constructor includes the
-    // variable being defined
-    const Stmt *S = getReplaceStmt(Ctor);
-    if (!S) {
-      return;
-    }
-    if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
-      auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
-      auto Begin = Range.getBegin();
-      auto End = Range.getEnd();
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-      CSR = CharSourceRange::getTokenRange(Begin, End);
-    } else {
-      // Use getStmtExpansionSourceRange(S) to support cases like
-      // dim3 a = MACRO;
-      auto Range = getStmtExpansionSourceRange(S);
-      auto Begin = Range.getBegin();
-      auto End = Range.getEnd();
-      CSR = CharSourceRange::getTokenRange(
-          Begin,
-          End.getLocWithOffset(Lexer::MeasureTokenLength(
-              End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())));
-    }
-  }
-}
-
-ReplaceInclude *ReplaceDim3Ctor::getEmpty() {
-  return new ReplaceInclude(CSR, "");
-}
-
-// Strips possible Materialize and Cast operators from CXXConstructor
-const CXXConstructExpr *ReplaceDim3Ctor::getConstructExpr(const Expr *E) {
-  if (auto C = dyn_cast_or_null<CXXConstructExpr>(E)) {
-    return C;
-  } else if (isa<MaterializeTemporaryExpr>(E)) {
-    return getConstructExpr(
-        dyn_cast<MaterializeTemporaryExpr>(E)->getSubExpr());
-  } else if (isa<CastExpr>(E)) {
-    return getConstructExpr(dyn_cast<CastExpr>(E)->getSubExpr());
-  } else {
-    return nullptr;
-  }
-}
-
-// Returns the full replacement string for the CXXConstructorExpr
-std::string
-ReplaceDim3Ctor::getSyclRangeCtor(const CXXConstructExpr *Ctor) const {
-  ExprAnalysis Analysis(Ctor);
-  return Analysis.getReplacedString();
-}
-
-const Stmt *ReplaceDim3Ctor::getReplaceStmt(const Stmt *S) const {
-  if (auto Ctor = dyn_cast_or_null<CXXConstructExpr>(S)) {
-    if (Ctor->getNumArgs() == 1) {
-      return getConstructExpr(Ctor->getArg(0));
-    }
-  }
-  return S;
-}
-
-std::string ReplaceDim3Ctor::getReplaceString() const {
-  if (isDecl) {
-    // Get the new parameter list for the replaced constructor, without the
-    // parens
-    std::string ReplacedString;
-    llvm::raw_string_ostream OS(ReplacedString);
-    ArgumentAnalysis AA;
-    std::string ArgStr = "";
-    for (auto Arg : Ctor->arguments()) {
-      AA.analyze(Arg);
-      ArgStr = ", " + AA.getReplacedString() + ArgStr;
-    }
-    ArgStr.replace(0, 2, "");
-    OS << ArgStr;
-    OS.flush();
-    if (Ctor->getParenOrBraceRange().isInvalid()) {
-      // dim3 = a;
-      ReplacedString = "(" + ReplacedString + ")";
-    }
-    return ReplacedString;
-  } else {
-    std::string S;
-    if (FinalCtor) {
-      S = getSyclRangeCtor(FinalCtor);
-    } else {
-      S = getSyclRangeCtor(Ctor);
-    }
-    return S;
-  }
-}
-
-std::shared_ptr<ExtReplacement>
-ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
-  if (this->isIgnoreTM())
-    return nullptr;
-  // Use getDefinitionRange in general cases,
-  // For cases like dim3 a = MACRO;
-  // CSR is already set to the expansion range.
-  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  ReplacementString = getReplaceString();
-  auto Range = getDefinitionRange(CSR.getBegin(), CSR.getEnd());
-  auto Length = SM.getDecomposedLoc(Range.getEnd()).second -
-                SM.getDecomposedLoc(Range.getBegin()).second;
-  return std::make_shared<ExtReplacement>(SM, Range.getBegin(), Length,
-                                          getReplaceString(), this);
-}
-
 std::shared_ptr<ExtReplacement>
 InsertComment::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
@@ -780,7 +651,7 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
   Repl->setConstantFlag(this->getConstantFlag());
   Repl->setConstantOffset(this->getConstantOffset());
   Repl->setBlockLevelFormatFlag(this->getBlockLevelFormatFlag());
-  Repl->IsForCUDADebug = IsForCUDADebug;
+  Repl->IsForCodePin = IsForCodePin;
   return Repl;
 }
 
@@ -928,14 +799,6 @@ void ReplaceInclude::print(llvm::raw_ostream &OS, ASTContext &Context,
   printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, Range.getBegin(), Context, PrintDetail);
   printReplacement(OS, T);
-}
-
-void ReplaceDim3Ctor::print(llvm::raw_ostream &OS, ASTContext &Context,
-                            const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
-  printLocation(OS, CSR.getBegin(), Context, PrintDetail);
-  Ctor->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
-  printReplacement(OS, ReplacementString);
 }
 
 void InsertComment::print(llvm::raw_ostream &OS, ASTContext &Context,

@@ -109,12 +109,12 @@ int main() {
   // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> cdp_acc_ct0(reinterpret_cast<std::complex<double> *>(cdp), cgh);
   // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> thrust_raw_pointer_cast_dc_ptr_acc_ct2(dpct::get_raw_pointer(dc_ptr), cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:        std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
+  // CHECK-NEXT:       std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(cdp_acc_ct0.get_raw_pointer(), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_acc_ct2.get_raw_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:           kernel(cdp_acc_ct0.get_raw_pointer(), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_acc_ct2.get_raw_pointer(), s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp), thrust::raw_pointer_cast(dc_ptr));
@@ -127,7 +127,7 @@ int main() {
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
 // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:           template_kernel<int>(nullptr, s_acc_ct1.get_pointer());
+// CHECK-NEXT:           template_kernel<int>(nullptr, s_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 // CHECK-NEXT:         });
 // CHECK-NEXT:     });
   template_kernel<int><<<1, 256>>>(d_i);

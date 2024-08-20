@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Half Precision Conversion and Data Movement
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__float22half2_rn | FileCheck %s -check-prefix=__FLOAT22HALF2_RN

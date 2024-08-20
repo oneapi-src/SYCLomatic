@@ -39,7 +39,7 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 // CHECK:              cgh.parallel_for(
 // CHECK-NEXT:           nr,
 // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:             foo(k, y, item_ct1, dpct_local_acc_ct1.get_pointer(), const_data_ptr_ct1);
+// CHECK-NEXT:             foo(k, y, item_ct1, dpct_local_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), const_data_ptr_ct1);
 // CHECK-NEXT:           });
 // CHECK-NEXT:       });
 // CHECK-NEXT:   }
@@ -84,7 +84,7 @@ extern "C" __global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)) {
 //CHECK:                 cgh.parallel_for(
 //CHECK-NEXT:              sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 //CHECK-NEXT:              [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                foo(a, b, item_ct1, dpct_local_acc_ct1.get_pointer(), const_data_ptr_ct1);
+//CHECK-NEXT:                foo(a, b, item_ct1, dpct_local_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), const_data_ptr_ct1);
 //CHECK-NEXT:              });
 //CHECK-NEXT:          });
 //CHECK-NEXT:     }

@@ -23,13 +23,6 @@ namespace dpct {
 
 class MigrationRule;
 
-#ifdef NDEBUG
-#undef DPCT_DEBUG_BUILD
-#else
-#undef DPCT_DEBUG_BUILD
-#define DPCT_DEBUG_BUILD 1
-#endif
-
 class StaticsInfo {
 public:
   static void
@@ -62,7 +55,7 @@ enum VerboseLevel {
 
 enum class EffortLevel : unsigned { EL_High = 0, EL_Medium, EL_Low, EL_NUM };
 
-void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
+void PrintMsg(const std::string &Msg, bool IsPrintOnNormal);
 
 void dumpAnalysisModeStatics(llvm::raw_ostream& OS);
 

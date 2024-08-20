@@ -98,11 +98,12 @@ void ForLoopUnrollRule::runRule(
 void DeviceConstantVarOptimizeAnalysisRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto DeclMatcher =
-      varDecl(hasAttr(attr::CUDAConstant),
+      varDecl(anyOf(hasAttr(attr::CUDAConstant), hasAttr(attr::CUDADevice)),
               unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
                                 "warpSize")));
   MF.addMatcher(DeclMatcher.bind("ConstantVar"), this);
-  if (DpctGlobalInfo::isOptimizeMigration()) {
+  if (DpctGlobalInfo::isOptimizeMigration() ||
+      DpctGlobalInfo::useExpDeviceGlobal()) {
     auto RuntimeSymnolAPIName = [&]() {
       return hasAnyName("cudaGetSymbolAddress", "cudaGetSymbolSize",
                         "cudaMemcpyToSymbol", "cudaMemcpyFromSymbol");
@@ -123,7 +124,8 @@ void DeviceConstantVarOptimizeAnalysisRule::runRule(
     MemVarInfo::buildMemVarInfo(MemVar);
     return;
   }
-  if (!DpctGlobalInfo::isOptimizeMigration()) {
+  if (!DpctGlobalInfo::isOptimizeMigration() &&
+      !DpctGlobalInfo::useExpDeviceGlobal()) {
     return;
   }
   if (auto CE = getNodeAsType<CallExpr>(Result, "RuntimeSymnolAPICall")) {
@@ -141,13 +143,11 @@ void DeviceConstantVarOptimizeAnalysisRule::runRule(
         if (!MatchedDRE)
           continue;
         if (auto VD = dyn_cast_or_null<VarDecl>(MatchedDRE->getDecl())) {
-          if (VD->hasAttr<CUDAConstantAttr>()) {
-            auto &Set = DpctGlobalInfo::getVarUsedByRuntimeSymbolAPISet();
-            auto LocInfo = DpctGlobalInfo::getLocInfo(VD->getBeginLoc());
-            std::string Key = LocInfo.first.getCanonicalPath().str() +
-                              std::to_string(LocInfo.second) +
-                              VD->getNameAsString();
-            Set.insert(Key);
+          if (VD->hasAttr<CUDAConstantAttr>() ||
+              VD->hasAttr<CUDADeviceAttr>()) {
+            if (auto Info = MemVarInfo::buildMemVarInfo(VD)) {
+              Info->setUsedBySymbolAPIFlag(true);
+            }
           }
         }
       }

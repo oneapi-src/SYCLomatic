@@ -24,20 +24,18 @@ using namespace jit_compiler::translation;
 using namespace llvm;
 
 ///
-/// Get an attribute value consisting of NumValues scalar constant integers
-/// from the MDNode.
-static void getAttributeValues(std::vector<std::string> &Values, MDNode *MD) {
-  for (const auto &MDOp : MD->operands()) {
-    auto *ConstantMD = cast<ConstantAsMetadata>(MDOp);
-    auto *ConstInt = cast<ConstantInt>(ConstantMD->getValue());
-    Values.push_back(std::to_string(ConstInt->getZExtValue()));
-  }
+/// Get an `Indices` object from the MDNode's three constant integer operands.
+static Indices getAttributeValues(MDNode *MD) {
+  assert(MD->getNumOperands() == Indices::size());
+  Indices Res;
+  std::transform(MD->op_begin(), MD->op_end(), Res.begin(),
+                 [](const auto &MDOp) {
+                   auto *ConstantMD = cast<ConstantAsMetadata>(MDOp);
+                   auto *ConstInt = cast<ConstantInt>(ConstantMD->getValue());
+                   return ConstInt->getZExtValue();
+                 });
+  return Res;
 }
-
-// NOLINTNEXTLINE(readability-identifier-naming)
-static const char *REQD_WORK_GROUP_SIZE_ATTR = "reqd_work_group_size";
-// NOLINTNEXTLINE(readability-identifier-naming)
-static const char *WORK_GROUP_SIZE_HINT_ATTR = "work_group_size_hint";
 
 ///
 /// Restore kernel attributes for the kernel in Info from the metadata
@@ -46,18 +44,22 @@ static const char *WORK_GROUP_SIZE_HINT_ATTR = "work_group_size_hint";
 ///   - reqd_work_group_size
 ///   - work_group_size_hint
 static void restoreKernelAttributes(Module *Mod, SYCLKernelInfo &Info) {
-  auto *KernelFunction = Mod->getFunction(Info.Name);
+  auto *KernelFunction = Mod->getFunction(Info.Name.c_str());
   assert(KernelFunction && "Kernel function not present in module");
-  if (auto *MD = KernelFunction->getMetadata(REQD_WORK_GROUP_SIZE_ATTR)) {
-    SYCLKernelAttribute ReqdAttr{REQD_WORK_GROUP_SIZE_ATTR};
-    getAttributeValues(ReqdAttr.Values, MD);
-    Info.Attributes.push_back(ReqdAttr);
+  SmallVector<SYCLKernelAttribute, 2> Attrs;
+  using AttrKind = SYCLKernelAttribute::AttrKind;
+  if (auto *MD = KernelFunction->getMetadata(
+          SYCLKernelAttribute::ReqdWorkGroupSizeName)) {
+    Attrs.emplace_back(AttrKind::ReqdWorkGroupSize, getAttributeValues(MD));
   }
-  if (auto *MD = KernelFunction->getMetadata(WORK_GROUP_SIZE_HINT_ATTR)) {
-    SYCLKernelAttribute HintAttr{WORK_GROUP_SIZE_HINT_ATTR};
-    getAttributeValues(HintAttr.Values, MD);
-    Info.Attributes.push_back(HintAttr);
+  if (auto *MD = KernelFunction->getMetadata(
+          SYCLKernelAttribute::WorkGroupSizeHintName)) {
+    Attrs.emplace_back(AttrKind::WorkGroupSizeHint, getAttributeValues(MD));
   }
+  if (Attrs.empty())
+    return;
+  Info.Attributes = SYCLAttributeList{Attrs.size()};
+  llvm::copy(Attrs, Info.Attributes.begin());
 }
 
 llvm::Expected<std::unique_ptr<llvm::Module>>
@@ -154,7 +156,7 @@ KernelTranslator::loadLLVMKernel(llvm::LLVMContext &LLVMCtx,
   llvm::StringRef RawData(reinterpret_cast<const char *>(BinInfo.BinaryStart),
                           BinInfo.BinarySize);
   return llvm::parseBitcodeFile(
-      MemoryBuffer::getMemBuffer(RawData, Kernel.Name,
+      MemoryBuffer::getMemBuffer(RawData, Kernel.Name.c_str(),
                                  /* RequiresNullTermnator*/ false)
           ->getMemBufferRef(),
       LLVMCtx);
@@ -166,10 +168,11 @@ KernelTranslator::loadSPIRVKernel(llvm::LLVMContext &LLVMCtx,
   return SPIRVLLVMTranslator::loadSPIRVKernel(LLVMCtx, Kernel);
 }
 
-llvm::Error KernelTranslator::translateKernel(SYCLKernelInfo &Kernel,
-                                              llvm::Module &Mod,
-                                              JITContext &JITCtx,
-                                              BinaryFormat Format) {
+llvm::Error
+KernelTranslator::translateKernel(SYCLKernelInfo &Kernel, llvm::Module &Mod,
+                                  JITContext &JITCtx, BinaryFormat Format,
+                                  const std::string &TargetCPU,
+                                  const std::string &TargetFeatures) {
 
   KernelBinary *KernelBin = nullptr;
   switch (Format) {
@@ -184,7 +187,7 @@ llvm::Error KernelTranslator::translateKernel(SYCLKernelInfo &Kernel,
   }
   case BinaryFormat::PTX: {
     llvm::Expected<KernelBinary *> BinaryOrError =
-        translateToPTX(Kernel, Mod, JITCtx);
+        translateToPTX(Kernel, Mod, JITCtx, TargetCPU, TargetFeatures);
     if (auto Error = BinaryOrError.takeError()) {
       return Error;
     }
@@ -193,7 +196,7 @@ llvm::Error KernelTranslator::translateKernel(SYCLKernelInfo &Kernel,
   }
   case BinaryFormat::AMDGCN: {
     llvm::Expected<KernelBinary *> BinaryOrError =
-        translateToAMDGCN(Kernel, Mod, JITCtx);
+        translateToAMDGCN(Kernel, Mod, JITCtx, TargetCPU, TargetFeatures);
     if (auto Error = BinaryOrError.takeError())
       return Error;
     KernelBin = *BinaryOrError;
@@ -224,9 +227,10 @@ KernelTranslator::translateToSPIRV(llvm::Module &Mod, JITContext &JITCtx) {
   return SPIRVLLVMTranslator::translateLLVMtoSPIRV(Mod, JITCtx);
 }
 
-llvm::Expected<KernelBinary *>
-KernelTranslator::translateToPTX(SYCLKernelInfo &KernelInfo, llvm::Module &Mod,
-                                 JITContext &JITCtx) {
+llvm::Expected<KernelBinary *> KernelTranslator::translateToPTX(
+    SYCLKernelInfo &KernelInfo, llvm::Module &Mod, JITContext &JITCtx,
+    [[maybe_unused]] const std::string &TargetCPU,
+    [[maybe_unused]] const std::string &TargetFeatures) {
 #ifndef FUSION_JIT_SUPPORT_PTX
   (void)KernelInfo;
   (void)Mod;
@@ -255,23 +259,32 @@ KernelTranslator::translateToPTX(SYCLKernelInfo &KernelInfo, llvm::Module &Mod,
         ErrorMessage.c_str());
   }
 
-  llvm::StringRef TargetCPU{"sm_50"};
-  llvm::StringRef TargetFeatures{"+sm_50,+ptx76"};
-  if (auto *KernelFunc = Mod.getFunction(KernelInfo.Name)) {
-    if (KernelFunc->hasFnAttribute(TARGET_CPU_ATTRIBUTE)) {
-      TargetCPU =
-          KernelFunc->getFnAttribute(TARGET_CPU_ATTRIBUTE).getValueAsString();
+  // Give priority to user specified values (through environment variables:
+  // SYCL_JIT_AMDGCN_PTX_TARGET_CPU and SYCL_JIT_AMDGCN_PTX_TARGET_FEATURES).
+  llvm::StringRef CPU{TargetCPU};
+  llvm::StringRef Features{TargetFeatures};
+
+  auto *KernelFunc = Mod.getFunction(KernelInfo.Name.c_str());
+  // If they were not set, use default and consult the module for alternatives
+  // (if present).
+  if (CPU.empty()) {
+    CPU = "sm_50";
+    if (KernelFunc && KernelFunc->hasFnAttribute(TARGET_CPU_ATTRIBUTE)) {
+      CPU = KernelFunc->getFnAttribute(TARGET_CPU_ATTRIBUTE).getValueAsString();
     }
-    if (KernelFunc->hasFnAttribute(TARGET_FEATURE_ATTRIBUTE)) {
-      TargetFeatures = KernelFunc->getFnAttribute(TARGET_FEATURE_ATTRIBUTE)
-                           .getValueAsString();
+  }
+  if (Features.empty()) {
+    Features = "+sm_50,+ptx76";
+    if (KernelFunc && KernelFunc->hasFnAttribute(TARGET_FEATURE_ATTRIBUTE)) {
+      Features = KernelFunc->getFnAttribute(TARGET_FEATURE_ATTRIBUTE)
+                     .getValueAsString();
     }
   }
 
   // FIXME: Check whether we can provide more accurate target information here
   auto *TargetMachine = Target->createTargetMachine(
-      TargetTriple, TargetCPU, TargetFeatures, {}, llvm::Reloc::PIC_,
-      std::nullopt, llvm::CodeGenOptLevel::Default);
+      TargetTriple, CPU, Features, {}, llvm::Reloc::PIC_, std::nullopt,
+      llvm::CodeGenOptLevel::Default);
 
   llvm::legacy::PassManager PM;
 
@@ -296,9 +309,10 @@ KernelTranslator::translateToPTX(SYCLKernelInfo &KernelInfo, llvm::Module &Mod,
 #endif // FUSION_JIT_SUPPORT_PTX
 }
 
-llvm::Expected<KernelBinary *>
-KernelTranslator::translateToAMDGCN(SYCLKernelInfo &KernelInfo,
-                                    llvm::Module &Mod, JITContext &JITCtx) {
+llvm::Expected<KernelBinary *> KernelTranslator::translateToAMDGCN(
+    SYCLKernelInfo &KernelInfo, llvm::Module &Mod, JITContext &JITCtx,
+    [[maybe_unused]] const std::string &TargetCPU,
+    [[maybe_unused]] const std::string &TargetFeatures) {
 #ifndef FUSION_JIT_SUPPORT_AMDGCN
   (void)KernelInfo;
   (void)Mod;
@@ -327,25 +341,29 @@ KernelTranslator::translateToAMDGCN(SYCLKernelInfo &KernelInfo,
         "Failed to load and translate AMDGCN LLVM IR module with error %s",
         ErrorMessage.c_str());
 
-  // Set to the lowest tested target according to the GetStartedGuide, section
-  // "Build DPC++ toolchain with support for HIP AMD"
-  llvm::StringRef TargetCPU{"gfx906"};
-  llvm::StringRef TargetFeatures{""};
-  if (auto *KernelFunc = Mod.getFunction(KernelInfo.Name)) {
-    if (KernelFunc->hasFnAttribute(TARGET_CPU_ATTRIBUTE)) {
-      TargetCPU =
-          KernelFunc->getFnAttribute(TARGET_CPU_ATTRIBUTE).getValueAsString();
+  llvm::StringRef CPU{TargetCPU};
+  llvm::StringRef Features{TargetFeatures};
+
+  auto *KernelFunc = Mod.getFunction(KernelInfo.Name.c_str());
+  if (CPU.empty()) {
+    // Set to the lowest tested target according to the GetStartedGuide, section
+    // "Build DPC++ toolchain with support for HIP AMD"
+    CPU = "gfx906";
+    if (KernelFunc && KernelFunc->hasFnAttribute(TARGET_CPU_ATTRIBUTE)) {
+      CPU = KernelFunc->getFnAttribute(TARGET_CPU_ATTRIBUTE).getValueAsString();
     }
-    if (KernelFunc->hasFnAttribute(TARGET_FEATURE_ATTRIBUTE)) {
-      TargetFeatures = KernelFunc->getFnAttribute(TARGET_FEATURE_ATTRIBUTE)
-                           .getValueAsString();
+  }
+  if (Features.empty()) {
+    if (KernelFunc && KernelFunc->hasFnAttribute(TARGET_FEATURE_ATTRIBUTE)) {
+      Features = KernelFunc->getFnAttribute(TARGET_FEATURE_ATTRIBUTE)
+                     .getValueAsString();
     }
   }
 
   // FIXME: Check whether we can provide more accurate target information here
   auto *TargetMachine = Target->createTargetMachine(
-      TargetTriple, TargetCPU, TargetFeatures, {}, llvm::Reloc::PIC_,
-      std::nullopt, llvm::CodeGenOptLevel::Default);
+      TargetTriple, CPU, Features, {}, llvm::Reloc::PIC_, std::nullopt,
+      llvm::CodeGenOptLevel::Default);
 
   std::string AMDObj;
   {

@@ -21,13 +21,11 @@ namespace dpct {
 const std::string OPTION_AsyncHandler = "AsyncHandler";
 const std::string OPTION_NDRangeDim = "NDRangeDim";
 const std::string OPTION_CommentsEnabled = "CommentsEnabled";
-const std::string OPTION_CustomHelperFileName = "CustomHelperFileName";
 const std::string OPTION_CtadEnabled = "CtadEnabled";
 const std::string OPTION_CodePinEnabled = "CodePinEnabled";
 const std::string OPTION_ExtensionDEFlag = "ExtensionDEFlag";
 const std::string OPTION_ExtensionDDFlag = "ExtensionDDFlag";
 const std::string OPTION_NoDRYPattern = "NoDRYPattern";
-const std::string OPTION_NoUseGenericSpace = "NoUseGenericSpace";
 const std::string OPTION_CompilationsDir = "CompilationsDir";
 #ifdef _WIN32
 const std::string OPTION_VcxprojFile = "VcxprojFile";
@@ -38,6 +36,7 @@ const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_HelperFuncPreferenceFlag = "HelperFuncPreferenceFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
+const std::string OPTION_BuildScript = "BuildScript";
 const std::string OPTION_OptimizeMigration = "OptimizeMigration";
 const std::string OPTION_EnablepProfiling = "EnablepProfiling";
 const std::string OPTION_RuleFile = "RuleFile";

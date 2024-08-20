@@ -10,6 +10,7 @@
 #define SYCL_FUSION_JIT_COMPILER_FUSION_FUSIONPIPELINE_H
 
 #include "Kernel.h"
+#include "ModuleInfo.h"
 #include "llvm/IR/Module.h"
 
 namespace jit_compiler {
@@ -26,6 +27,13 @@ public:
   static std::unique_ptr<SYCLModuleInfo>
   runFusionPasses(llvm::Module &Mod, SYCLModuleInfo &InputInfo,
                   BarrierFlags BarriersFlags);
+
+  ///
+  /// Run the necessary passes in a custom pass pipeline to perform
+  /// materialization of kernel specialization constants.
+  static bool
+  runMaterializerPasses(llvm::Module &Mod,
+                        llvm::ArrayRef<unsigned char> SpecConstData);
 };
 } // namespace fusion
 } // namespace jit_compiler

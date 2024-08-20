@@ -31,6 +31,22 @@ T __spirv_GroupNonUniformShuffleUp(__spv::Scope::Flag, T, unsigned) noexcept;
 #endif
 
 namespace dpct {
+/// dim3 is used to store 3 component dimensions.
+class dim3 {
+public:
+  unsigned x, y, z;
+
+  constexpr dim3(unsigned x = 1, unsigned y = 1, unsigned z = 1)
+      : x(x), y(y), z(z) {}
+
+  dim3(const sycl::id<3> &r) : dim3(r[2], r[1], r[0]) {}
+
+  operator sycl::range<3>() const { return sycl::range<3>(z, y, x); }
+};
+
+inline dim3 operator*(const dim3 &a, const dim3 &b) {
+  return dim3{a.x * b.x, a.y * b.y, a.z * b.z};
+}
 
 namespace detail {
 
@@ -61,11 +77,12 @@ template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
-inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
-                            int from_ld, int rows, int cols, int elem_size,
-                            memcpy_direction direction = automatic,
-                            sycl::queue &queue = dpct::get_default_queue(),
-                            bool async = false) {
+[[deprecated("Please use dpct::blas::matrix_mem_copy() instead.")]] inline void
+matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld, int from_ld,
+                int rows, int cols, int elem_size,
+                memcpy_direction direction = automatic,
+                sycl::queue &queue = dpct::get_default_queue(),
+                bool async = false) {
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
   }
@@ -73,11 +90,12 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
   if (to_ld == from_ld) {
     size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
     if (async)
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                          copy_size, direction);
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction);
     else
-      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
-                          copy_size, direction).wait();
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
+                          direction)
+          .wait();
   } else {
     if (async)
       detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
@@ -102,11 +120,11 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
 /// \param [in] async If this argument is true, the return of the function
 /// does NOT guarantee the copy is completed.
 template <typename T>
-inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
-                            int from_ld, int rows, int cols,
-                            memcpy_direction direction = automatic,
-                            sycl::queue &queue = dpct::get_default_queue(),
-                            bool async = false) {
+[[deprecated("Please use dpct::blas::matrix_mem_copy() instead.")]] inline void
+matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld, int from_ld, int rows,
+                int cols, memcpy_direction direction = automatic,
+                sycl::queue &queue = dpct::get_default_queue(),
+                bool async = false) {
   using Ty = typename DataType<T>::T2;
   matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
                   sizeof(Ty), direction, queue, async);
@@ -300,7 +318,8 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 template <typename T>
 unsigned int match_any_over_sub_group(sycl::sub_group g, unsigned member_mask,
                                       T value) {
-  static_assert(std::is_arithmetic_v<T>, "Value type must be arithmetic type.");                    
+  static_assert(std::is_trivially_copyable_v<T>,
+                "Value type must be trivially copyable type.");
   if (!member_mask) {
     return 0;
   }
@@ -339,7 +358,8 @@ unsigned int match_any_over_sub_group(sycl::sub_group g, unsigned member_mask,
 template <typename T>
 unsigned int match_all_over_sub_group(sycl::sub_group g, unsigned member_mask,
                                       T value, int *pred) {
-  static_assert(std::is_arithmetic_v<T>, "Value type must be arithmetic type."); 
+  static_assert(std::is_trivially_copyable_v<T>,
+                "Value type must be trivially copyable type.");
   if (!member_mask) {
     return 0;
   }
@@ -467,7 +487,7 @@ T shift_sub_group_left(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_left not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -511,7 +531,7 @@ T shift_sub_group_right(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_right not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -553,7 +573,7 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   (void)mask;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of permute_sub_group_by_xor not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -615,6 +635,20 @@ inline int get_sycl_language_version() {
 #endif
 }
 
+// Returns the SYCL event status for the SYCL command.
+/// \param [in] event_ptr A pointer points to the SYCL event
+/// \returns The execution result for the SYCL command
+inline int sycl_event_query(sycl::event *event_ptr) {
+  if (event_ptr->get_info<sycl::info::event::command_execution_status>() ==
+      sycl::info::event_command_status::complete) {
+    // The SYCL command has finished running on the SYCL device.
+    return 0;
+  } else {
+    // The SYCL command has not finished running on the SYCL device.
+    return 1;
+  }
+}
+
 namespace experimental {
 /// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.
@@ -624,10 +658,14 @@ namespace experimental {
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
-inline void
-nd_range_barrier(const sycl::nd_item<dimensions> &item,
-                 sycl::atomic_ref<
-                     unsigned int, sycl::memory_order::seq_cst,
+inline void nd_range_barrier(
+    const sycl::nd_item<dimensions> &item,
+    sycl::atomic_ref<unsigned int,
+#ifdef __AMDGPU__
+                     sycl::memory_order::acq_rel,
+#else
+                     sycl::memory_order::seq_cst,
+#endif
                      sycl::memory_scope::device,
                      sycl::access::address_space::global_space> &counter) {
 
@@ -664,10 +702,14 @@ nd_range_barrier(const sycl::nd_item<dimensions> &item,
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
-inline void
-nd_range_barrier(const sycl::nd_item<1> &item,
-                 sycl::atomic_ref<
-                     unsigned int, sycl::memory_order::seq_cst,
+inline void nd_range_barrier(
+    const sycl::nd_item<1> &item,
+    sycl::atomic_ref<unsigned int,
+#ifdef __AMDGPU__
+                     sycl::memory_order::acq_rel,
+#else
+                     sycl::memory_order::seq_cst,
+#endif
                      sycl::memory_scope::device,
                      sycl::access::address_space::global_space> &counter) {
   unsigned int num_groups = item.get_group_range(0);
@@ -824,8 +866,8 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
   int num_wg_threads = std::floor((float)num_threads_ss / num_threads);
 
   // Calculate num_wg
-  *num_wg = std::min(num_wg_slm, num_wg_threads);
-  *num_wg = std::min(*num_wg, max_num_wg);
+  *num_wg = (std::min)(num_wg_slm, num_wg_threads);
+  *num_wg = (std::min)(*num_wg, max_num_wg);
   return ret;
 }
 

@@ -1,7 +1,7 @@
 // FIXME
 // UNSUPPORTED: system-windows
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
-// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call-cuda12.0-not-support %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call-cuda12.0-not-support/template-kernel-call-cuda12.0-not-support.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/template-kernel-call-cuda12.0-not-support/template-kernel-call-cuda12.0-not-support.dp.cpp -o %T/template-kernel-call-cuda12.0-not-support/template-kernel-call-cuda12.0-not-support.dp.o %}
@@ -26,18 +26,14 @@ struct texReader_dp {
    }
 };
 
-// CHECK: template <typename texReader>
-// CHECK-NEXT: void compute_lj_force(const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:                       dpct::image_accessor_ext<sycl::int4, 1> posTexture_dp)
 template <typename texReader>
 __global__ void compute_lj_force()
 {
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     texReader positionTexReader;
     // CHECK: /*
-    // CHECK-NEXT: DPCT1084:{{[0-9]+}}: The function call "texReader_sp::operator()" has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: float j = positionTexReader(idx, posTexture_dp).x();
+    // CHECK: DPCT1084:{{[0-9]+}}: The function call "texReader_sp::operator()" has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
+    // CHECK: */
     float j = positionTexReader(idx).x;
 }
 

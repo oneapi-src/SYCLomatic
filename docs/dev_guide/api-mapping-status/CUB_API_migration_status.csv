@@ -64,8 +64,8 @@ cub::DeviceHistogram::HistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::MultiHistogramEven,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::HistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceHistogram::MultiHistogramRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DevicePartition::Flagged,NO,
-cub::DevicePartition::If,NO,
+cub::DevicePartition::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DevicePartition::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceMergeSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceMergeSort::SortPairsCopy,NO,
 cub::DeviceMergeSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -97,7 +97,7 @@ cub::DeviceSelect::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::Unique,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSelect::UniqueByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceSpmv::CsrMV,NO,
+cub::DeviceSpmv::CsrMV,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -126,15 +126,15 @@ cub::LoadDirectStriped,NO,
 cub::StoreDirectStriped,NO,
 cub::LoadDirectWarpStriped,NO,
 cub::StoreDirectWarpStriped,NO,
-cub::SHR_ADD,NO,
-cub::SHL_ADD,NO,
-cub::BFE,NO,
-cub::BFI,NO,
+cub::SHR_ADD,YES,
+cub::SHL_ADD,YES,
+cub::BFE,YES,
+cub::BFI,YES,
 cub::IADD3,YES,
 cub::PRMT,NO,
 cub::ThreadExit,NO,
 cub::ThreadTrap,NO,
-cub::RowMajorTid,NO,
+cub::RowMajorTid,YES,
 cub::LaneId,YES,
 cub::WarpId,YES,
 cub::LaneMaskLt,NO,
@@ -149,13 +149,13 @@ cub::ChainedPolicy::Invoke,NO,
 cub::Debug,NO,
 cub::MaxSmOccupancy,NO,
 cub::PtxVersion,YES,
-cub::SmVersion,NO,
+cub::SmVersion,YES,
 cub::CurrentDevice,YES,
 cub::DeviceCount,YES,
 cub::DeviceCountUncached,YES,
 cub::DeviceCountCachedValue,YES,
 cub::PtxVersionUncached,YES,
-cub::SmVersionUncached,NO,
+cub::SmVersionUncached,YES,
 cub::SyncStream,YES,
 cub::ArgIndexInputIterator::normalize,YES,
 cub::TexObjInputIterator::BindTexture,NO,

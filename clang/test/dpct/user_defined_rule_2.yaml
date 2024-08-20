@@ -5,3 +5,9 @@
   In: VECTOR
   Out: std::vector<int>
   Includes: ["<vector>"]
+- Rule: rule_macro_nvcc
+  Kind: Macro
+  Priority: Takeover
+  In: __NVCC__
+  Out: __UNDEFINED_MACRO__
+  Includes: []

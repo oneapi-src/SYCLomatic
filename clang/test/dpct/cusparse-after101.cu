@@ -25,7 +25,7 @@ void foo1() {
   void *ws;
 
   // CHECK: ws_size = 0;
-  // CHECK-NEXT: dpct::sparse::csr2csc(*handle, 3, 4, 7, a_val, a_row_ptr, a_col_ind, b_val, b_col_ptr, b_row_ind, dpct::library_data_t::real_float, dpct::sparse::conversion_scope::index_and_value, oneapi::mkl::index_base::zero);
+  // CHECK-NEXT: dpct::sparse::csr2csc(handle->get_queue(), 3, 4, 7, a_val, a_row_ptr, a_col_ind, b_val, b_col_ptr, b_row_ind, dpct::library_data_t::real_float, dpct::sparse::conversion_scope::index_and_value, oneapi::mkl::index_base::zero);
   cusparseCsr2cscEx2_bufferSize(handle, 3, 4, 7, a_val, a_row_ptr, a_col_ind, b_val, b_col_ptr, b_row_ind, CUDA_R_32F, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1, &ws_size);
   cusparseCsr2cscEx2(handle, 3, 4, 7, a_val, a_row_ptr, a_col_ind, b_val, b_col_ptr, b_row_ind, CUDA_R_32F, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1, ws);
 }

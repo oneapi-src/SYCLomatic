@@ -86,6 +86,7 @@ IGNORED_FLAGS = {
     "--cudart": 1,
     "--libdevice-directory": 1,
     "-ldir": 1,
+    "-Xfatbin": 1,
     "--use-local-env": 0,
     "--profile": 0,
     "-pg": 0,
@@ -294,7 +295,8 @@ def parse_args(args, directory='.'):
                 new_flag += arg_next
             elif arg == '--gpu-architecture' or arg == '-arch':
                 arg_next = next(args)
-                if arg_next == "all": # Skip option "-arch all" and "--gpu-architecture all"
+                # Skip option "-arch all|native|all-major" and "--gpu-architecture all|native|all-major"
+                if arg_next == "all" or arg_next == "native" or arg_next == "all-major":
                     continue
                 arg_next = gpu_virtual_arch_to_arch(arg_next)
                 # clang cuda parser does not support CUDA gpu architecture: sm_13
@@ -446,7 +448,8 @@ def parse_args(args, directory='.'):
             #split by '=' and strip whitespace
             result = [x.strip() for x in arg.split('=')]
 
-            if result[1] == 'all': # Skip option "-arch=all" and "--gpu-architecture=all"
+            # Skip option "-arch all|native|all-major" and "--gpu-architecture all|native|all-major"
+            if result[1] == "all" or result[1] == "native" or result[1] == "all-major":
                 continue
 
             new_opt = MAP_FLAGS[result[0]] + gpu_virtual_arch_to_arch(result[1])
@@ -486,6 +489,8 @@ def parse_args(args, directory='.'):
         elif re.match(r'^--cudart=', arg):
             pass
         elif re.match(r'^-cudart=', arg):
+            pass
+        elif re.match(r'^-Xfatbin=', arg):
             pass
         elif re.match(r'^--libdevice-directory=', arg):
             pass

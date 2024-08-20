@@ -43,5 +43,13 @@ int main() {
     cudnnGetConvolutionBackwardFilterAlgorithm_v7(handle, dataTensor, outTensor, covdes, filterTensor, 1, &returned_count, &bwd_filter_perf);
     cudnnGetConvolutionBackwardDataAlgorithm_v7(handle, filterTensor, outTensor, covdes, dataTensor, 1, &returned_count, &bwd_data_perf);
 
+    int max_count = 0;
+    // CHECK: max_count = 1;
+    // CHECK: max_count = 1;
+    // CHECK: max_count = 1;
+    cudnnGetConvolutionBackwardDataAlgorithmMaxCount(handle, &max_count);
+    cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(handle, &max_count);
+    cudnnGetConvolutionForwardAlgorithmMaxCount(handle, &max_count);
+
     return 0;
 }

@@ -96,11 +96,11 @@ int main(){
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, stream_array[0]);
 
     // CHECK: q_ct1.memcpy(h_A, d_A, size2);
-    // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
-    // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
-    // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
-    // CHECK-NEXT: q_ct1.memcpy(h_A, d_A, size2);
-    // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
+    // CHECK: q_ct1.memcpy(h_A, d_A, size2);
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
+    // CHECK: q_ct1.memcpy(h_A, d_A, size2);
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, d_A, size2)));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault);
     MY_ERROR_CHECKER(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamDefault));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread);

@@ -33,8 +33,8 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 //CHECK-NEXT:  sycl::device dev_ct1;
 //CHECK-NEXT:  sycl::queue q_ct1(dev_ct1,
 //CHECK-NEXT:                    sycl::property_list{sycl::property::queue::in_order()});
-//CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
-//CHECK-NEXT:  sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
+//CHECK-NEXT:  dpct::dim3 griddim = 2;
+//CHECK-NEXT:  dpct::dim3 threaddim = 32;
 //CHECK-NEXT:  int *karg1, *karg2;
 //CHECK-NEXT:  karg1 = sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  karg2 = sycl::malloc_device<int>(32, q_ct1);

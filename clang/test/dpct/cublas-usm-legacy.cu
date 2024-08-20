@@ -66,22 +66,22 @@ int main() {
 
   // CHECK: int res;
   // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*dpct::get_current_device().get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   int res = cublasIsamax(n, x_S, incx);
   // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*dpct::get_current_device().get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   res = cublasIdamax(n, x_D, incx);
   // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   res = cublasIcamax(n, x_C, incx);
   // CHECK: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: res = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   res = cublasIzamax(n, x_Z, incx);
@@ -89,7 +89,7 @@ int main() {
   // Because the return value of origin API is the result value, not the status, so keep using lambda here.
   // CHECK: if([&](){
   // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: int64_t res_temp_val_ct{{[0-9]+}} = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   // CHECK-NEXT: return res_temp_val_ct{{[0-9]+}};
@@ -98,7 +98,7 @@ int main() {
 
   // CHECK: if(0!=[&](){
   // CHECK-NEXT: int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: int64_t res_temp_val_ct{{[0-9]+}} = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   // CHECK-NEXT: return res_temp_val_ct{{[0-9]+}};
@@ -107,125 +107,125 @@ int main() {
 
   // CHECK: for([&](){
   // CHECK-NEXT: std::complex<float>* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<std::complex<float>>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: std::complex<float> res_temp_val_ct{{[0-9]+}} = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   // CHECK-NEXT: return sycl::float2(res_temp_val_ct{{[0-9]+}}.real(), res_temp_val_ct{{[0-9]+}}.imag());
   // CHECK-NEXT: }();;){}
   for(cublasCdotc(n, x_C, incx, y_C, incy);;){}
 
-  //CHECK:oneapi::mkl::blas::column_major::rotm(*dpct::get_current_device().get_saved_queue(), n, result_S, n, result_S, n, const_cast<float*>(x_S)).wait();
+  //CHECK:oneapi::mkl::blas::column_major::rotm(dpct::blas::descriptor::get_saved_queue(), n, result_S, n, result_S, n, const_cast<float*>(x_S)).wait();
   cublasSrotm(n, result_S, n, result_S, n, x_S);
-  //CHECK:oneapi::mkl::blas::column_major::rotm(*dpct::get_current_device().get_saved_queue(), n, result_D, n, result_D, n, const_cast<double*>(x_D)).wait();
+  //CHECK:oneapi::mkl::blas::column_major::rotm(dpct::blas::descriptor::get_saved_queue(), n, result_D, n, result_D, n, const_cast<double*>(x_D)).wait();
   cublasDrotm(n, result_D, n, result_D, n, x_D);
 
-  // CHECK: oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, *x_S, std::complex<float>((*y_C).x(),(*y_C).y())).wait();
+  // CHECK: oneapi::mkl::blas::column_major::rot(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, *x_S, std::complex<float>((*y_C).x(),(*y_C).y())).wait();
   cublasCrot(n, (float2 *)x_C, incx, (float2 *)y_C, incy, *x_S, *y_C);
-  // CHECK: oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, *x_D, std::complex<double>((*y_Z).x(),(*y_Z).y())).wait();
+  // CHECK: oneapi::mkl::blas::column_major::rot(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, *x_D, std::complex<double>((*y_Z).x(),(*y_Z).y())).wait();
   cublasZrot(n, (double2 *)x_Z, incx, (double2 *)y_Z, incy, *x_D, *y_Z);
 
-  // CHECK:oneapi::mkl::blas::column_major::copy(*dpct::get_current_device().get_saved_queue(), n, x_S, incx, result_S, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::copy(dpct::blas::descriptor::get_saved_queue(), n, x_S, incx, result_S, incy).wait();
   cublasScopy(n, x_S, incx, result_S, incy);
-  // CHECK:oneapi::mkl::blas::column_major::copy(*dpct::get_current_device().get_saved_queue(), n, x_D, incx, result_D, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::copy(dpct::blas::descriptor::get_saved_queue(), n, x_D, incx, result_D, incy).wait();
   cublasDcopy(n, x_D, incx, result_D, incy);
-  // CHECK:oneapi::mkl::blas::column_major::copy(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)result_C, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::copy(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)result_C, incy).wait();
   cublasCcopy(n, x_C, incx, result_C, incy);
-  // CHECK:oneapi::mkl::blas::column_major::copy(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, (std::complex<double>*)result_Z, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::copy(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, (std::complex<double>*)result_Z, incy).wait();
   cublasZcopy(n, x_Z, incx, result_Z, incy);
 
-  // CHECK:oneapi::mkl::blas::column_major::axpy(*dpct::get_current_device().get_saved_queue(), n, alpha_S, x_S, incx, result_S, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::axpy(dpct::blas::descriptor::get_saved_queue(), n, alpha_S, x_S, incx, result_S, incy).wait();
   cublasSaxpy(n, alpha_S, x_S, incx, result_S, incy);
-  // CHECK:oneapi::mkl::blas::column_major::axpy(*dpct::get_current_device().get_saved_queue(), n, alpha_D, x_D, incx, result_D, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::axpy(dpct::blas::descriptor::get_saved_queue(), n, alpha_D, x_D, incx, result_D, incy).wait();
   cublasDaxpy(n, alpha_D, x_D, incx, result_D, incy);
-  // CHECK:oneapi::mkl::blas::column_major::axpy(*dpct::get_current_device().get_saved_queue(), n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, incx, (std::complex<float>*)result_C, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::axpy(dpct::blas::descriptor::get_saved_queue(), n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, incx, (std::complex<float>*)result_C, incy).wait();
   cublasCaxpy(n, alpha_C, x_C, incx, result_C, incy);
-  // CHECK:oneapi::mkl::blas::column_major::axpy(*dpct::get_current_device().get_saved_queue(), n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, incx, (std::complex<double>*)result_Z, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::axpy(dpct::blas::descriptor::get_saved_queue(), n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, incx, (std::complex<double>*)result_Z, incy).wait();
   cublasZaxpy(n, alpha_Z, x_Z, incx, result_Z, incy);
 
-  // CHECK:oneapi::mkl::blas::column_major::scal(*dpct::get_current_device().get_saved_queue(), n, alpha_S, result_S, incx).wait();
+  // CHECK:oneapi::mkl::blas::column_major::scal(dpct::blas::descriptor::get_saved_queue(), n, alpha_S, result_S, incx).wait();
   cublasSscal(n, alpha_S, result_S, incx);
-  // CHECK:oneapi::mkl::blas::column_major::scal(*dpct::get_current_device().get_saved_queue(), n, alpha_D, result_D, incx).wait();
+  // CHECK:oneapi::mkl::blas::column_major::scal(dpct::blas::descriptor::get_saved_queue(), n, alpha_D, result_D, incx).wait();
   cublasDscal(n, alpha_D, result_D, incx);
-  // CHECK:oneapi::mkl::blas::column_major::scal(*dpct::get_current_device().get_saved_queue(), n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)result_C, incx).wait();
+  // CHECK:oneapi::mkl::blas::column_major::scal(dpct::blas::descriptor::get_saved_queue(), n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)result_C, incx).wait();
   cublasCscal(n, alpha_C, result_C, incx);
-  // CHECK:oneapi::mkl::blas::column_major::scal(*dpct::get_current_device().get_saved_queue(), n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)result_Z, incx).wait();
+  // CHECK:oneapi::mkl::blas::column_major::scal(dpct::blas::descriptor::get_saved_queue(), n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)result_Z, incx).wait();
   cublasZscal(n, alpha_Z, result_Z, incx);
 
   // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(*dpct::get_current_device().get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(dpct::blas::descriptor::get_saved_queue(), n, x_S, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_S = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   *result_S = cublasSnrm2(n, x_S, incx);
   // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(*dpct::get_current_device().get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(dpct::blas::descriptor::get_saved_queue(), n, x_D, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_D = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   *result_D = cublasDnrm2(n, x_D, incx);
   // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_S = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   *result_S = cublasScnrm2(n, x_C, incx);
   // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_D = *res_temp_ptr_ct{{[0-9]+}};
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   *result_D = cublasDznrm2(n, x_Z, incx);
 
   // CHECK: std::complex<float>* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<std::complex<float>>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotc(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_C = sycl::float2(res_temp_ptr_ct{{[0-9]+}}->real(), res_temp_ptr_ct{{[0-9]+}}->imag());
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   *result_C = cublasCdotc(n, x_C, incx, y_C, incy);
 
   // CHECK: std::complex<double>* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<std::complex<double>>(1, q_ct1);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, res_temp_ptr_ct{{[0-9]+}}).wait();
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::dotu(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, res_temp_ptr_ct{{[0-9]+}}).wait();
   // CHECK-NEXT: *result_Z = sycl::double2(res_temp_ptr_ct{{[0-9]+}}->real(), res_temp_ptr_ct{{[0-9]+}}->imag());
   // CHECK-NEXT: sycl::free(res_temp_ptr_ct{{[0-9]+}}, q_ct1);
   *result_Z = cublasZdotu(n, x_Z, incx, y_Z, incy);
 
   //level 2
 
-  // CHECK:oneapi::mkl::blas::column_major::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::gemv(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy).wait();
   cublasSgemv('N', m, n, alpha_S, x_S, lda, y_S, incx, beta_S, result_S, incy);
-  // CHECK:oneapi::mkl::blas::column_major::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::gemv(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy).wait();
   cublasDgemv('N', m, n, alpha_D, x_D, lda, y_D, incx, beta_D, result_D, incy);
-  // CHECK:oneapi::mkl::blas::column_major::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, lda, (std::complex<float>*)y_C, incx, std::complex<float>(beta_C.x(),beta_C.y()), (std::complex<float>*)result_C, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::gemv(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, lda, (std::complex<float>*)y_C, incx, std::complex<float>(beta_C.x(),beta_C.y()), (std::complex<float>*)result_C, incy).wait();
   cublasCgemv('N', m, n, alpha_C, x_C, lda, y_C, incx, beta_C, result_C, incy);
-  // CHECK:oneapi::mkl::blas::column_major::gemv(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, lda, (std::complex<double>*)y_Z, incx, std::complex<double>(beta_Z.x(),beta_Z.y()), (std::complex<double>*)result_Z, incy).wait();
+  // CHECK:oneapi::mkl::blas::column_major::gemv(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, lda, (std::complex<double>*)y_Z, incx, std::complex<double>(beta_Z.x(),beta_Z.y()), (std::complex<double>*)result_Z, incy).wait();
   cublasZgemv('N', m, n, alpha_Z, x_Z, lda, y_Z, incx, beta_Z, result_Z, incy);
 
-  // CHECK:oneapi::mkl::blas::column_major::ger(*dpct::get_current_device().get_saved_queue(), m, n, alpha_S, x_S, incx, y_S, incy, result_S, lda).wait();
+  // CHECK:oneapi::mkl::blas::column_major::ger(dpct::blas::descriptor::get_saved_queue(), m, n, alpha_S, x_S, incx, y_S, incy, result_S, lda).wait();
   cublasSger(m, n, alpha_S, x_S, incx, y_S, incy, result_S, lda);
-  // CHECK:oneapi::mkl::blas::column_major::ger(*dpct::get_current_device().get_saved_queue(), m, n, alpha_D, x_D, incx, y_D, incy, result_D, lda).wait();
+  // CHECK:oneapi::mkl::blas::column_major::ger(dpct::blas::descriptor::get_saved_queue(), m, n, alpha_D, x_D, incx, y_D, incy, result_D, lda).wait();
   cublasDger(m, n, alpha_D, x_D, incx, y_D, incy, result_D, lda);
-  // CHECK:oneapi::mkl::blas::column_major::geru(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda).wait();
+  // CHECK:oneapi::mkl::blas::column_major::geru(dpct::blas::descriptor::get_saved_queue(), m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda).wait();
   cublasCgeru(m, n, alpha_C, x_C, incx, y_C, incy, result_C, lda);
-  // CHECK:oneapi::mkl::blas::column_major::gerc(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda).wait();
+  // CHECK:oneapi::mkl::blas::column_major::gerc(dpct::blas::descriptor::get_saved_queue(), m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, (std::complex<float>*)result_C, lda).wait();
   cublasCgerc(m, n, alpha_C, x_C, incx, y_C, incy, result_C, lda);
-  // CHECK:oneapi::mkl::blas::column_major::geru(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda).wait();
+  // CHECK:oneapi::mkl::blas::column_major::geru(dpct::blas::descriptor::get_saved_queue(), m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda).wait();
   cublasZgeru(m, n, alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
-  // CHECK:oneapi::mkl::blas::column_major::gerc(*dpct::get_current_device().get_saved_queue(), m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda).wait();
+  // CHECK:oneapi::mkl::blas::column_major::gerc(dpct::blas::descriptor::get_saved_queue(), m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)result_Z, lda).wait();
   cublasZgerc(m, n, alpha_Z, x_Z, incx, y_Z, incy, result_Z, lda);
 
   //level 3
 
-  //CHECK:oneapi::mkl::blas::column_major::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, alpha_S, A_S, n, B_S, n, beta_S, C_S, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::gemm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, alpha_S, A_S, n, B_S, n, beta_S, C_S, n).wait();
   cublasSgemm('N', 'N', n, n, n, alpha_S, A_S, n, B_S, n, beta_S, C_S, n);
-  //CHECK:oneapi::mkl::blas::column_major::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::gemm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n).wait();
   cublasDgemm('N', 'N', n, n, n, alpha_D, A_D, n, B_D, n, beta_D, C_D, n);
-  //CHECK:oneapi::mkl::blas::column_major::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)A_C, n, (std::complex<float>*)B_C, n, std::complex<float>(beta_C.x(),beta_C.y()), (std::complex<float>*)C_C, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::gemm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)A_C, n, (std::complex<float>*)B_C, n, std::complex<float>(beta_C.x(),beta_C.y()), (std::complex<float>*)C_C, n).wait();
   cublasCgemm('N', 'N', n, n, n, alpha_C, A_C, n, B_C, n, beta_C, C_C, n);
-  //CHECK:oneapi::mkl::blas::column_major::gemm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)A_Z, n, (std::complex<double>*)B_Z, n, std::complex<double>(beta_Z.x(),beta_Z.y()), (std::complex<double>*)C_Z, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::gemm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, n, n, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)A_Z, n, (std::complex<double>*)B_Z, n, std::complex<double>(beta_Z.x(),beta_Z.y()), (std::complex<double>*)C_Z, n).wait();
   cublasZgemm('N', 'N', n, n, n, alpha_Z, A_Z, n, B_Z, n, beta_Z, C_Z, n);
 
-  //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, alpha_S, A_S, n, C_S, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::trmm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, alpha_S, A_S, n, C_S, n).wait();
   cublasStrmm('L', 'L', 'N', 'N', n, n, alpha_S, A_S, n, C_S, n);
-  //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, alpha_D, A_D, n, C_D, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::trmm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, alpha_D, A_D, n, C_D, n).wait();
   cublasDtrmm('L', 'L', 'N', 'N', n, n, alpha_D, A_D, n, C_D, n);
-  //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)A_S, n,  (std::complex<float>*)C_C, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::trmm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)A_S, n,  (std::complex<float>*)C_C, n).wait();
   cublasCtrmm('L', 'L', 'N', 'N', n, n, alpha_C, (float2*)A_S, n, C_C, n);
-  //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)A_Z, n,  (std::complex<double>*)C_Z, n).wait();
+  //CHECK:oneapi::mkl::blas::column_major::trmm(dpct::blas::descriptor::get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)A_Z, n,  (std::complex<double>*)C_Z, n).wait();
   cublasZtrmm('L', 'L', 'N', 'N', n, n, alpha_Z, A_Z, n, C_Z, n);
 }
 
@@ -233,7 +233,7 @@ int main() {
 //CHECK:int foo(){
 //CHECK-NEXT:  return [&](){
 //CHECK-NEXT:  int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
-//CHECK-NEXT:  oneapi::mkl::blas::column_major::iamax(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
+//CHECK-NEXT:  oneapi::mkl::blas::column_major::iamax(dpct::blas::descriptor::get_saved_queue(), n, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}}).wait();
 //CHECK-NEXT:  int64_t res_temp_val_ct{{[0-9]+}} = *res_temp_ptr_ct{{[0-9]+}};
 //CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 //CHECK-NEXT:  return res_temp_val_ct{{[0-9]+}};

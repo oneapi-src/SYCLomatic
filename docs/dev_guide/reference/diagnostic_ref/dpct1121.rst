@@ -1,0 +1,74 @@
+.. _DPCT1121:
+
+DPCT1121
+========
+
+Message
+-------
+
+.. _msg-1121-start:
+
+Make sure that the *<argument>* which is used in the SYCL group function/algorithm is initialized.
+
+.. _msg-1121-end:
+
+Detailed Help
+-------------
+
+For SYCL group function/algorithm in SYCL\* spec 4.17.2 and 4.17.3, the input scalar value must be
+initialized by all work-items in the group. This is necessary for compatibility with standard C++
+rules and to ensure that compilers do not optimize too aggressively.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ void d(int var) {
+     if (threadIdx.x == 0)
+       var = 123;
+     var = __shfl_sync(0xffffffff, var, 0);
+   }
+   
+   __global__ void kernel() {
+     int var;
+     d(var);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void d(int var, const sycl::nd_item<3> &item_ct1) {
+     if (item_ct1.get_local_id(2) == 0)
+       var = 123;
+     /*
+     DPCT1121:0: Make sure that the "var" which is used in the SYCL group
+     function/algorithm is initialized.
+     */
+     var = dpct::select_from_sub_group(item_ct1.get_sub_group(), var, 0);
+   }
+   void kernel(const sycl::nd_item<3> &item_ct1) {
+     int var;
+     d(var, item_ct1);
+   }
+
+which needs to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void d(int var, const sycl::nd_item<3> &item_ct1) {
+     if (item_ct1.get_local_id(2) == 0)
+       var = 123;
+     var = dpct::select_from_sub_group(item_ct1.get_sub_group(), var, 0);
+   }
+   void kernel(const sycl::nd_item<3> &item_ct1) {
+     int var = 0;
+     d(var, item_ct1);
+   }
+

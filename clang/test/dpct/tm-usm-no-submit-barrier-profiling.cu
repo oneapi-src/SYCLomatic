@@ -107,7 +107,6 @@ void foo_usm() {
 __global__ void readTexels(int n, float *d_out, int width){}
 __global__ void readTexelsFoo1(int n, float *d_out){}
 __global__ void readTexelsFoo2(int n, float *d_out, int width, int height){}
-texture<float4, 2, cudaReadModeElementType> texA;
 
 void foo()
 {

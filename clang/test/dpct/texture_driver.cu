@@ -1,5 +1,6 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_driver %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_driver %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture_driver/texture_driver.dp.cpp --match-full-lines %s
+// RUN: %if build_lit %{icpx -c -fsycl %T/texture_driver/texture_driver.dp.cpp -o %T//texture_driver/texture_driver.dp.o %}
 
 #include "cuda.h"
 #include <stdio.h>
@@ -18,37 +19,55 @@ template <typename T>
 void funcT(T t) {}
 
 int main() {
+  // CHECK: dpct::image_matrix_desc p3DDesc;
+  // CHECK-NEXT: p3DDesc.width = 1;
+  // CHECK-NEXT: p3DDesc.height = 2;
+  // CHECK-NEXT: p3DDesc.depth = 3;
+  // CHECK-NEXT: p3DDesc.channel_type = sycl::image_channel_type::signed_int8;
+  // CHECK-NEXT: p3DDesc.num_channels = 4;
+  CUDA_ARRAY3D_DESCRIPTOR p3DDesc;
+  p3DDesc.Width = 1;
+  p3DDesc.Height = 2;
+  p3DDesc.Depth = 3;
+  p3DDesc.Format = CU_AD_FORMAT_SIGNED_INT8;
+  p3DDesc.Flags = 5;
+  p3DDesc.NumChannels = 4;
 
-  // CHECK: size_t halfDesc_x_ct1, halfDesc_y_ct1;
-  // CHECK-NEXT: unsigned halfDesc_channel_num_ct1;
-  // CHECK-NEXT: sycl::image_channel_type halfDesc_channel_type_ct1;
-  // CHECK-NEXT: halfDesc_y_ct1 = 32;
-  // CHECK-NEXT: halfDesc_x_ct1 = 64;
-  // CHECK-NEXT: halfDesc_channel_type_ct1 = sycl::image_channel_type::fp16;
-  // CHECK-NEXT: halfDesc_channel_num_ct1 = 1;
+  // CHECK: dpct::image_matrix_desc halfDesc;
+  // CHECK-NEXT: halfDesc.height = 32;
+  // CHECK-NEXT: halfDesc.width = 64;
+  // CHECK-NEXT: halfDesc.channel_type = sycl::image_channel_type::fp16;
+  // CHECK-NEXT: halfDesc.num_channels = 1;
   CUDA_ARRAY_DESCRIPTOR halfDesc;
   halfDesc.Height = 32;
   halfDesc.Width = 64;
   halfDesc.Format = CU_AD_FORMAT_HALF;
   halfDesc.NumChannels = 1;
 
-  // CHECK: size_t float4Desc_x_ct1, float4Desc_y_ct1;
-  // CHECK-NEXT: unsigned float4Desc_channel_num_ct1;
-  // CHECK-NEXT: sycl::image_channel_type float4Desc_channel_type_ct1;
-  // CHECK-NEXT: float4Desc_x_ct1 = 64;
-  // CHECK-NEXT: float4Desc_channel_type_ct1 = sycl::image_channel_type::fp32;
-  // CHECK-NEXT: float4Desc_channel_num_ct1 = 4;
-  // CHECK-NEXT: float4Desc_y_ct1 = 32;
+  // CHECK: dpct::image_matrix_desc float4Desc;
+  // CHECK-NEXT: float4Desc.width = 64;
+  // CHECK-NEXT: float4Desc.channel_type = sycl::image_channel_type::fp32;
+  // CHECK-NEXT: float4Desc.num_channels = 4;
+  // CHECK-NEXT: float4Desc.height = 32;
   CUDA_ARRAY_DESCRIPTOR float4Desc;
   float4Desc.Width = 64;
   float4Desc.Format = CU_AD_FORMAT_FLOAT;
   float4Desc.NumChannels = 4;
   float4Desc.Height = 32;
 
+  // CHECK: dpct::image_matrix **a3d_ptr = new dpct::image_matrix_p;
+  // CHECK-NEXT: *a3d_ptr = new dpct::image_matrix(&p3DDesc);
+  // CHECK-NEXT: delete (*a3d_ptr);
+  // CHECK-NEXT: delete a3d_ptr;
+  CUarray_st **a3d_ptr = new CUarray;
+  cuArray3DCreate(a3d_ptr, &p3DDesc);
+  cuArrayDestroy(*a3d_ptr);
+  delete a3d_ptr;
+
   // CHECK: dpct::image_matrix **a_ptr = new dpct::image_matrix_p;
   // CHECK-NEXT: dpct::image_matrix_p a42;
-  // CHECK-NEXT: *a_ptr = new dpct::image_matrix(halfDesc_channel_type_ct1, halfDesc_channel_num_ct1, halfDesc_x_ct1, halfDesc_y_ct1);
-  // CHECK-NEXT: a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1);
+  // CHECK-NEXT: *a_ptr = new dpct::image_matrix(&halfDesc);
+  // CHECK-NEXT: a42 = new dpct::image_matrix(&float4Desc);
   // CHECK-NEXT: delete (*a_ptr);
   // CHECK-NEXT: delete a42;
   // CHECK-NEXT: delete a_ptr;
@@ -64,25 +83,25 @@ int main() {
   {
     int errorCode;
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1));
+    // CHECK: errorCode = DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc));
     errorCode = cuArrayCreate(&a42, &float4Desc);
     // CHECK: errorCode = DPCT_CHECK_ERROR(delete a42);
     errorCode = cuArrayDestroy(a42);
 
 
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
+    // CHECK: cudaCheck(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc)));
     cudaCheck(cuArrayCreate(&a42, &float4Desc));
     // CHECK: cudaCheck(DPCT_CHECK_ERROR(delete a42));
     cudaCheck(cuArrayDestroy(a42));
 
 
-    // CHECK: func(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
+    // CHECK: func(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc)));
     func(cuArrayCreate(&a42, &float4Desc));
     // CHECK: func(DPCT_CHECK_ERROR(delete a42));
     func(cuArrayDestroy(a42));
 
 
-    // CHECK: funcT(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
+    // CHECK: funcT(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(&float4Desc)));
     funcT(cuArrayCreate(&a42, &float4Desc));
     // CHECK: funcT(DPCT_CHECK_ERROR(delete a42));
     funcT(cuArrayDestroy(a42));
@@ -92,26 +111,14 @@ int main() {
 void create_array_fail() {
   CUarray a;
   unsigned i;
-  // CHECK: CUDA_ARRAY_DESCRIPTOR d[20], *p;
+  // CHECK: dpct::image_matrix_desc d[20], *p;
   CUDA_ARRAY_DESCRIPTOR d[20], *p;
   p = &d[5];
 
-  // CHECK: /*
-  // CHECK-NEXT:  DPCT1073:{{[0-9]+}}: The field values of parameter 'd' could not be deduced, so the call was not migrated. You need to update this code manually.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cuArrayCreate(&a, d);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1073:{{[0-9]+}}: The field values of parameter 'p' could not be deduced, so the call was not migrated. You need to update this code manually.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cuArrayCreate(&a, p);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1073:{{[0-9]+}}: The field values of parameter 'p + i' could not be deduced, so the call was not migrated. You need to update this code manually.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cuArrayCreate(&a, p + i);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT:  DPCT1073:{{[0-9]+}}: The field values of parameter '&d[i]' could not be deduced, so the call was not migrated. You need to update this code manually.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cuArrayCreate(&a, &d[i]);
+  // CHECK: a = new dpct::image_matrix(d);
+  // CHECK-NEXT: a = new dpct::image_matrix(p);
+  // CHECK-NEXT: a = new dpct::image_matrix(p + i);
+  // CHECK-NEXT: a = new dpct::image_matrix(&d[i]);
   cuArrayCreate(&a, d);
   cuArrayCreate(&a, p);
   cuArrayCreate(&a, p + i);

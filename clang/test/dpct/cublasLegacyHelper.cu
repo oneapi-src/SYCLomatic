@@ -43,7 +43,6 @@ cublasStatus foo(int m, int n) {
 }
 
 int main() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK: foo(0, 1, 3, 7, 8, 11, 13, 14, 15, 16);
   foo(CUBLAS_STATUS_SUCCESS, CUBLAS_STATUS_NOT_INITIALIZED, CUBLAS_STATUS_ALLOC_FAILED, CUBLAS_STATUS_INVALID_VALUE, CUBLAS_STATUS_ARCH_MISMATCH, CUBLAS_STATUS_MAPPING_ERROR, CUBLAS_STATUS_EXECUTION_FAILED, CUBLAS_STATUS_INTERNAL_ERROR, CUBLAS_STATUS_NOT_SUPPORTED, CUBLAS_STATUS_LICENSE_ERROR);
   // CHECK: bar(0, 1, 3, 7, 8, 11, 13, 14, 15, 16);
@@ -73,7 +72,7 @@ int main() {
 
   // CHECK: int a = sizeof(int);
   // CHECK-NEXT: a = sizeof(int);
-  // CHECK-NEXT: a = sizeof(dpct::queue_ptr);
+  // CHECK-NEXT: a = sizeof(dpct::blas::descriptor_ptr);
   // CHECK-NEXT: a = sizeof(sycl::float2);
   // CHECK-NEXT: a = sizeof(sycl::double2);
   int a = sizeof(cublasStatus);
@@ -83,9 +82,9 @@ int main() {
   a = sizeof(cuDoubleComplex);
 
   // CHECK: dpct::queue_ptr stream1;
-  // CHECK-NEXT: stream1 = dev_ct1.create_queue();
-  // CHECK-NEXT: dev_ct1.set_saved_queue(stream1);
-  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dev_ct1.set_saved_queue(stream1)));
+  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: dpct::blas::descriptor::set_saved_queue(stream1);
+  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dpct::blas::descriptor::set_saved_queue(stream1)));
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetKernelStream(stream1);

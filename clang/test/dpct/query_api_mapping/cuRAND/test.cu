@@ -1,5 +1,5 @@
 // UNSUPPORTED: cuda-8.0
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+// UNSUPPORTED: v8.0
 
 /// Host API
 
@@ -13,7 +13,7 @@
 // CURANDCREATEGENERATORHOST: CUDA API:
 // CURANDCREATEGENERATORHOST-NEXT:   curandCreateGeneratorHost(pg /*curandGenerator_t **/, r /*curandRngType_t*/);
 // CURANDCREATEGENERATORHOST-NEXT: Is migrated to:
-// CURANDCREATEGENERATORHOST-NEXT:   *(pg) = dpct::rng::create_host_rng(r);
+// CURANDCREATEGENERATORHOST-NEXT:   *(pg) = dpct::rng::create_host_rng(r, dpct::cpu_device().default_queue());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandDestroyGenerator | FileCheck %s -check-prefix=CURANDDESTROYGENERATOR
 // CURANDDESTROYGENERATOR: CUDA API:
@@ -109,6 +109,14 @@
 // CURANDSETGENERATOROFFSET-NEXT: Is migrated to:
 // CURANDSETGENERATOROFFSET-NEXT:   dpct::rng::host_rng_ptr g;
 // CURANDSETGENERATOROFFSET-NEXT:   g->skip_ahead(ull);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetGeneratorOrdering | FileCheck %s -check-prefix=CURANDSETGENERATORORDERING
+// CURANDSETGENERATORORDERING: CUDA API:
+// CURANDSETGENERATORORDERING-NEXT:   curandGenerator_t g;
+// CURANDSETGENERATORORDERING-NEXT:   curandSetGeneratorOrdering(g /*curandGenerator_t*/, o /*curandOrdering_t*/);
+// CURANDSETGENERATORORDERING-NEXT: Is migrated to:
+// CURANDSETGENERATORORDERING-NEXT:   dpct::rng::host_rng_ptr g;
+// CURANDSETGENERATORORDERING-NEXT:   g->set_mode(o);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curandSetPseudoRandomGeneratorSeed | FileCheck %s -check-prefix=CURANDSETPSEUDORANDOMGENERATORSEED
 // CURANDSETPSEUDORANDOMGENERATORSEED: CUDA API:

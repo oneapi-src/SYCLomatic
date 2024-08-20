@@ -1,12 +1,19 @@
-// RUN: %{build} -o %t.out
-// RUN: env SYCL_RT_WARNING_LEVEL=1 %{run} %t.out 2>&1 | FileCheck %s
+// RUN: %{build} %{embed-ir} -o %t.out
+// RUN: env SYCL_UR_TRACE=2 env SYCL_RT_WARNING_LEVEL=1 \
+// RUN: SYCL_PARALLEL_FOR_RANGE_ROUNDING_PARAMS=16:32:64 %{run} %t.out 2>&1 \
+// RUN: | FileCheck %s --implicit-check-not "ERROR: JIT compilation for kernel fusion failed with message:"
 
 // Test complete fusion of kernels with different ND-ranges.
 
 // Kernels with different ND-ranges should be fused.
-// CHECK-NOT: Cannot fuse kernels with different offsets or local sizes
+// CHECK-COUNT-26: urEnqueueKernelLaunch
+// CHECK-NOT: urEnqueueKernelLaunch
 
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
+
+#include <sycl/builtins.hpp>
+#include <sycl/ext/codeplay/experimental/fusion_wrapper.hpp>
+#include <sycl/properties/all_properties.hpp>
 
 #include <algorithm>
 
@@ -247,19 +254,11 @@ int main() {
   const auto R5 = {5ul};
   test({RangeDesc{{10}, R5}, RangeDesc{{20}, R5}, RangeDesc{{30}, R5}});
 
-  // Two 1-D kernels with different global sizes and a 2-D kernel with more
-  // work-items and specified (equal) local size.
-  test({RangeDesc{{10}, R2}, RangeDesc{{20}, R2}, RangeDesc{{10, 10}, {2, 1}}});
+  // Test global sizes that trigger the rounded range kernel insertion.
+  // Note that we lower the RR threshold when running this test.
+  test({RangeDesc{67}, RangeDesc{87}, RangeDesc{64}});
 
-  // Three 2-D kernels with different global sizes.
-  test({RangeDesc{{10, 15}, {2, 5}}, RangeDesc{{20, 10}, {2, 5}},
-        RangeDesc{{10, 5}, {2, 5}}});
-
-  // Three 3-D kernels with different global sizes.
-  test({RangeDesc{{10, 4, 2}, {5, 2, 1}}, RangeDesc{{20, 2, 4}, {5, 2, 1}},
-        RangeDesc{{10, 2, 4}, {5, 2, 1}}});
-
-  // 1-D, 2-D and 3-D kernels with different global sizes.
-  test({RangeDesc{{10}, R5}, RangeDesc{{10, 1}, {5, 1}},
-        RangeDesc{{10, 1, 1}, {5, 1, 1}}});
+  // Test multi-dimensional range-rounded kernels. Only the first dimension will
+  // be rounded up.
+  test({RangeDesc{30, 67}, RangeDesc{76, 55}, RangeDesc{64, 64}});
 }

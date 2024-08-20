@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:size_t share_multi_proc_mem_size = deviceProp.get_local_mem_size();
   size_t share_multi_proc_mem_size = deviceProp.sharedMemPerMultiprocessor;
 
-  // CHECK: sycl::range<3> grid(1, 1, deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_max_sub_group_size()));
+  // CHECK: dpct::dim3 grid(deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_max_sub_group_size()));
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));
 
 // CHECK:/*
@@ -160,6 +160,35 @@ int main(int argc, char **argv) {
   if(deviceProp.deviceOverlap){
   //dosomething.
   }
+
+  // CHECK: int Max1d = deviceProp.get_image1d_max();
+  int Max1d = deviceProp.maxTexture1D;
+  // CHECK: deviceProp.set_image1d_max ( Max1d);
+  deviceProp.maxTexture1D = Max1d;
+  // CHECK: int *Max2d = deviceProp.get_image2d_max();
+  int *Max2d = deviceProp.maxTexture2D;
+  // CHECK: int Max2d0 = deviceProp.get_image2d_max()[0];
+  int Max2d0 = deviceProp.maxTexture2D[0];
+  // CHECK: deviceProp.get_image2d_max()[0] = Max2d0;
+  deviceProp.maxTexture2D[0] = Max2d0;
+  // CHECK: int Max2d1 = deviceProp.get_image2d_max()[1];
+  int Max2d1 = deviceProp.maxTexture2D[1];
+  // CHECK: deviceProp.get_image2d_max()[1] = Max2d1;
+  deviceProp.maxTexture2D[1] = Max2d1;
+  // CHECK: int *Max3d = deviceProp.get_image3d_max();
+  int *Max3d = deviceProp.maxTexture3D;
+  // CHECK: int Max3d0 = deviceProp.get_image3d_max()[0];
+  int Max3d0 = deviceProp.maxTexture3D[0];
+  // CHECK: deviceProp.get_image3d_max()[0] = Max3d0;
+  deviceProp.maxTexture3D[0] = Max3d0;
+  // CHECK: int Max3d1 = deviceProp.get_image3d_max()[1];
+  int Max3d1 = deviceProp.maxTexture3D[1];
+  // CHECK: deviceProp.get_image3d_max()[1] = Max3d1;
+  deviceProp.maxTexture3D[1] = Max3d1;
+  // CHECK: int Max3d2 = deviceProp.get_image3d_max()[2];
+  int Max3d2 = deviceProp.maxTexture3D[2];
+  // CHECK: deviceProp.get_image3d_max()[2] = Max3d2;
+  deviceProp.maxTexture3D[2] = Max3d2;
   return 0;
 }
 
@@ -222,9 +251,9 @@ void test3() {
   //CHECK-NEXT:size_t a3 = deviceProp.get_global_mem_size();
   size_t a3 = deviceProp.totalConstMem;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1090:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with regsPerBlock. It was not migrated. You need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with regsPerBlock. It was migrated to get_max_register_size_per_work_group. You may need to adjust the value of get_max_register_size_per_work_group for the specific device.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a4 = deviceProp.regsPerBlock;
+  //CHECK:int a4 = deviceProp.get_max_register_size_per_work_group();
   int a4 = deviceProp.regsPerBlock;
   //CHECK:/*
   //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to adjust the value of dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>() for the specific device.

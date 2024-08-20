@@ -1,5 +1,5 @@
 // REQUIRES: fusion
-// RUN: %{build} -fsycl-embed-ir -O2 -o %t.out
+// RUN: %{build} %{embed-ir} -O2 -o %t.out
 // RUN: %{run} %t.out
 
 // Test private internalization with "LocalSize" == 3 on buffers that trigger
@@ -12,7 +12,10 @@
 // - `tmp2` is an `i8` buffer. The corresponding `i8`-typed GEPs must be
 //   remapped during internalization.
 
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
+#include <sycl/ext/codeplay/experimental/fusion_wrapper.hpp>
+#include <sycl/properties/all_properties.hpp>
+#include <sycl/types.hpp>
 
 using namespace sycl;
 

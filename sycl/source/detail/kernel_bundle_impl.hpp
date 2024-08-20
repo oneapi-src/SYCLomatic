@@ -10,21 +10,23 @@
 
 #include <detail/device_image_impl.hpp>
 #include <detail/kernel_compiler/kernel_compiler_opencl.hpp>
+#include <detail/kernel_compiler/kernel_compiler_sycl.hpp>
 #include <detail/kernel_impl.hpp>
 #include <detail/program_manager/program_manager.hpp>
 #include <sycl/backend_types.hpp>
 #include <sycl/context.hpp>
 #include <sycl/detail/common.hpp>
-#include <sycl/detail/common_info.hpp>
-#include <sycl/detail/pi.h>
 #include <sycl/device.hpp>
 #include <sycl/kernel_bundle.hpp>
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
+
+#include "split_string.hpp"
 
 namespace sycl {
 inline namespace _V1 {
@@ -149,9 +151,9 @@ public:
         break;
       case bundle_state::input:
       case bundle_state::ext_oneapi_source:
-        throw sycl::runtime_error("Internal error. The target state should not "
-                                  "be input or ext_oneapi_source",
-                                  PI_ERROR_INVALID_OPERATION);
+        throw exception(make_error_code(errc::runtime),
+                        "Internal error. The target state should not be input "
+                        "or ext_oneapi_source");
         break;
       }
     }
@@ -327,76 +329,157 @@ public:
     }
   }
 
+  using include_pairs_t =
+      std::vector<std::pair<std::string /* name */, std::string /* content */>>;
   // oneapi_ext_kernel_compiler
   // construct from source string
   kernel_bundle_impl(const context &Context, syclex::source_language Lang,
-                     const std::string &Src)
+                     const std::string &Src, include_pairs_t IncludePairsVec)
       : MContext(Context), MDevices(Context.get_devices()),
-        MState(bundle_state::ext_oneapi_source), Language(Lang), Source(Src) {}
+        MState(bundle_state::ext_oneapi_source), Language(Lang), Source(Src),
+        IncludePairs(IncludePairsVec) {}
+
+  // oneapi_ext_kernel_compiler
+  // construct from source bytes
+  kernel_bundle_impl(const context &Context, syclex::source_language Lang,
+                     const std::vector<std::byte> &Bytes)
+      : MContext(Context), MDevices(Context.get_devices()),
+        MState(bundle_state::ext_oneapi_source), Language(Lang), Source(Bytes) {
+  }
 
   // oneapi_ext_kernel_compiler
   // interop constructor
   kernel_bundle_impl(context Ctx, std::vector<device> Devs,
                      device_image_plain &DevImage,
-                     std::vector<std::string> KNames)
+                     std::vector<std::string> KNames,
+                     syclex::source_language Lang)
       : kernel_bundle_impl(Ctx, Devs, DevImage) {
     MState = bundle_state::executable;
     KernelNames = KNames;
+    Language = Lang;
+  }
+
+  std::string trimXsFlags(std::string &str) {
+    // Trim first and last quote if they exist, but no others.
+    char EncounteredQuote = '\0';
+    auto Start = std::find_if(str.begin(), str.end(), [&](char c) {
+      if (!EncounteredQuote && (c == '\'' || c == '"')) {
+        EncounteredQuote = c;
+        return false;
+      }
+      return !std::isspace(c);
+    });
+    auto End = std::find_if(str.rbegin(), str.rend(), [&](char c) {
+                 if (c == EncounteredQuote) {
+                   EncounteredQuote = '\0';
+                   return false;
+                 }
+                 return !std::isspace(c);
+               }).base();
+    if (Start != std::end(str) && End != std::begin(str) && Start < End) {
+      return std::string(Start, End);
+    }
+
+    return "";
+  }
+
+  std::string extractXsFlags(const std::vector<std::string> &BuildOptions) {
+    std::stringstream SS;
+    for (std::string Option : BuildOptions) {
+      auto Where = Option.find("-Xs");
+      if (Where != std::string::npos) {
+        Where += 3;
+        std::string Flags = Option.substr(Where);
+        SS << trimXsFlags(Flags) << " ";
+      }
+    }
+    return SS.str();
   }
 
   std::shared_ptr<kernel_bundle_impl>
   build_from_source(const std::vector<device> Devices,
                     const std::vector<std::string> &BuildOptions,
-                    std::string *LogPtr) {
+                    std::string *LogPtr,
+                    const std::vector<std::string> &RegisteredKernelNames) {
     assert(MState == bundle_state::ext_oneapi_source &&
            "bundle_state::ext_oneapi_source required");
-    assert(Language == syclex::source_language::opencl &&
-           "TODO: add other Languages. Must be OpenCL");
-    if (Language != syclex::source_language::opencl)
-      throw sycl::exception(
-          make_error_code(errc::invalid),
-          "OpenCL C is the only supported language at this time");
 
-    // if successful, the log is empty. if failed, throws an error with the
-    // compilation log.
-    auto spirv =
-        syclex::detail::OpenCLC_to_SPIRV(this->Source, BuildOptions, LogPtr);
-
-    // see also program_manager.cpp::createSpirvProgram()
     using ContextImplPtr = std::shared_ptr<sycl::detail::context_impl>;
-    sycl::detail::pi::PiProgram PiProgram = nullptr;
     ContextImplPtr ContextImpl = getSyclObjImpl(MContext);
     const PluginPtr &Plugin = ContextImpl->getPlugin();
-    Plugin->call<PiApiKind::piProgramCreate>(
-        ContextImpl->getHandleRef(), spirv.data(), spirv.size(), &PiProgram);
-    // program created by piProgramCreate is implicitly retained.
 
-    std::vector<pi::PiDevice> DeviceVec;
+    std::vector<ur_device_handle_t> DeviceVec;
     DeviceVec.reserve(Devices.size());
     for (const auto &SyclDev : Devices) {
-      pi::PiDevice Dev = getSyclObjImpl(SyclDev)->getHandleRef();
+      ur_device_handle_t Dev = getSyclObjImpl(SyclDev)->getHandleRef();
       DeviceVec.push_back(Dev);
     }
-    Plugin->call<errc::build, PiApiKind::piProgramBuild>(
-        PiProgram, DeviceVec.size(), DeviceVec.data(), nullptr, nullptr,
-        nullptr);
+
+    const auto spirv = [&]() -> std::vector<uint8_t> {
+      if (Language == syclex::source_language::opencl) {
+        // if successful, the log is empty. if failed, throws an error with the
+        // compilation log.
+        const auto &SourceStr = std::get<std::string>(this->Source);
+        std::vector<uint32_t> IPVersionVec(Devices.size());
+        std::transform(DeviceVec.begin(), DeviceVec.end(), IPVersionVec.begin(),
+                       [&](ur_device_handle_t d) {
+                         uint32_t ipVersion = 0;
+                         Plugin->call(urDeviceGetInfo, d,
+                                      UR_DEVICE_INFO_IP_VERSION,
+                                      sizeof(uint32_t), &ipVersion, nullptr);
+                         return ipVersion;
+                       });
+        return syclex::detail::OpenCLC_to_SPIRV(SourceStr, IPVersionVec,
+                                                BuildOptions, LogPtr);
+      }
+      if (Language == syclex::source_language::spirv) {
+        const auto &SourceBytes =
+            std::get<std::vector<std::byte>>(this->Source);
+        std::vector<uint8_t> Result(SourceBytes.size());
+        std::transform(SourceBytes.cbegin(), SourceBytes.cend(), Result.begin(),
+                       [](std::byte B) { return static_cast<uint8_t>(B); });
+        return Result;
+      }
+      if (Language == syclex::source_language::sycl) {
+        const auto &SourceStr = std::get<std::string>(this->Source);
+        return syclex::detail::SYCL_to_SPIRV(SourceStr, IncludePairs,
+                                             BuildOptions, LogPtr,
+                                             RegisteredKernelNames);
+      }
+      throw sycl::exception(
+          make_error_code(errc::invalid),
+          "OpenCL C and SPIR-V are the only supported languages at this time");
+    }();
+
+    ur_program_handle_t UrProgram = nullptr;
+    Plugin->call(urProgramCreateWithIL, ContextImpl->getHandleRef(),
+                 spirv.data(), spirv.size(), nullptr, &UrProgram);
+    // program created by urProgramCreateWithIL is implicitly retained.
+
+    std::string XsFlags = extractXsFlags(BuildOptions);
+    auto Res =
+        Plugin->call_nocheck(urProgramBuildExp, UrProgram, DeviceVec.size(),
+                             DeviceVec.data(), XsFlags.c_str());
+    if (Res == UR_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+      Res = Plugin->call_nocheck(urProgramBuild, ContextImpl->getHandleRef(),
+                                 UrProgram, XsFlags.c_str());
+    }
+    Plugin->checkUrResult<errc::build>(Res);
 
     // Get the number of kernels in the program.
     size_t NumKernels;
-    Plugin->call<PiApiKind::piProgramGetInfo>(
-        PiProgram, PI_PROGRAM_INFO_NUM_KERNELS, sizeof(size_t), &NumKernels,
-        nullptr);
+    Plugin->call(urProgramGetInfo, UrProgram, UR_PROGRAM_INFO_NUM_KERNELS,
+                 sizeof(size_t), &NumKernels, nullptr);
 
     // Get the kernel names.
     size_t KernelNamesSize;
-    Plugin->call<PiApiKind::piProgramGetInfo>(
-        PiProgram, PI_PROGRAM_INFO_KERNEL_NAMES, 0, nullptr, &KernelNamesSize);
+    Plugin->call(urProgramGetInfo, UrProgram, UR_PROGRAM_INFO_KERNEL_NAMES, 0,
+                 nullptr, &KernelNamesSize);
 
     // semi-colon delimited list of kernel names.
     std::string KernelNamesStr(KernelNamesSize, ' ');
-    Plugin->call<PiApiKind::piProgramGetInfo>(
-        PiProgram, PI_PROGRAM_INFO_KERNEL_NAMES, KernelNamesStr.size(),
-        &KernelNamesStr[0], nullptr);
+    Plugin->call(urProgramGetInfo, UrProgram, UR_PROGRAM_INFO_KERNEL_NAMES,
+                 KernelNamesStr.size(), &KernelNamesStr[0], nullptr);
     std::vector<std::string> KernelNames =
         detail::split_string(KernelNamesStr, ';');
 
@@ -404,14 +487,25 @@ public:
     auto KernelIDs = std::make_shared<std::vector<kernel_id>>();
     auto DevImgImpl = std::make_shared<device_image_impl>(
         nullptr, MContext, MDevices, bundle_state::executable, KernelIDs,
-        PiProgram);
+        UrProgram);
     device_image_plain DevImg{DevImgImpl};
     return std::make_shared<kernel_bundle_impl>(MContext, MDevices, DevImg,
-                                                KernelNames);
+                                                KernelNames, Language);
+  }
+
+  std::string adjust_kernel_name(const std::string &Name,
+                                 syclex::source_language Lang) {
+    // Once name demangling support is in, we won't need this.
+    if (Lang != syclex::source_language::sycl)
+      return Name;
+
+    bool isMangled = Name.find("__sycl_kernel_") != std::string::npos;
+    return isMangled ? Name : "__sycl_kernel_" + Name;
   }
 
   bool ext_oneapi_has_kernel(const std::string &Name) {
-    auto it = std::find(KernelNames.begin(), KernelNames.end(), Name);
+    auto it = std::find(KernelNames.begin(), KernelNames.end(),
+                        adjust_kernel_name(Name, Language));
     return it != KernelNames.end();
   }
 
@@ -424,22 +518,24 @@ public:
                             "kernel_bundles successfully built from "
                             "kernel_bundle<bundle_state:ext_oneapi_source>.");
 
+    std::string AdjustedName = adjust_kernel_name(Name, Language);
     if (!ext_oneapi_has_kernel(Name))
       throw sycl::exception(make_error_code(errc::invalid),
-                            "kernel '" + Name + "' not found in kernel_bundle");
+                            "kernel '" + AdjustedName +
+                                "' not found in kernel_bundle");
 
     assert(MDeviceImages.size() > 0);
     const std::shared_ptr<detail::device_image_impl> &DeviceImageImpl =
         detail::getSyclObjImpl(MDeviceImages[0]);
-    sycl::detail::pi::PiProgram PiProgram = DeviceImageImpl->get_program_ref();
+    ur_program_handle_t UrProgram = DeviceImageImpl->get_ur_program_ref();
     ContextImplPtr ContextImpl = getSyclObjImpl(MContext);
     const PluginPtr &Plugin = ContextImpl->getPlugin();
-    sycl::detail::pi::PiKernel PiKernel = nullptr;
-    Plugin->call<PiApiKind::piKernelCreate>(PiProgram, Name.c_str(), &PiKernel);
-    // Kernel created by piKernelCreate is implicitly retained.
+    ur_kernel_handle_t UrKernel = nullptr;
+    Plugin->call(urKernelCreate, UrProgram, AdjustedName.c_str(), &UrKernel);
+    // Kernel created by urKernelCreate is implicitly retained.
 
     std::shared_ptr<kernel_impl> KernelImpl = std::make_shared<kernel_impl>(
-        PiKernel, detail::getSyclObjImpl(MContext), Self);
+        UrKernel, detail::getSyclObjImpl(MContext), Self);
 
     return detail::createSyclObjFromImpl<kernel>(KernelImpl);
   }
@@ -532,11 +628,11 @@ public:
     auto [Kernel, CacheMutex, ArgMask] =
         detail::ProgramManager::getInstance().getOrCreateKernel(
             MContext, KernelID.get_name(), /*PropList=*/{},
-            SelectedImage->get_program_ref());
+            SelectedImage->get_ur_program_ref());
 
-    std::shared_ptr<kernel_impl> KernelImpl =
-        std::make_shared<kernel_impl>(Kernel, detail::getSyclObjImpl(MContext),
-                                      SelectedImage, Self, ArgMask, CacheMutex);
+    std::shared_ptr<kernel_impl> KernelImpl = std::make_shared<kernel_impl>(
+        Kernel, detail::getSyclObjImpl(MContext), SelectedImage, Self, ArgMask,
+        SelectedImage->get_ur_program_ref(), CacheMutex);
 
     return detail::createSyclObjFromImpl<kernel>(KernelImpl);
   }
@@ -680,11 +776,14 @@ private:
   SpecConstMapT MSpecConstValues;
   bool MIsInterop = false;
   bundle_state MState;
-  // ext_oneapi_kernel_compiler : Source, Languauge, KernelNames
-  const syclex::source_language Language = syclex::source_language::opencl;
-  const std::string Source;
+
+  // ext_oneapi_kernel_compiler : Source, Languauge, KernelNames, IncludePairs
+  // Language is for both state::source and state::executable.
+  syclex::source_language Language = syclex::source_language::opencl;
+  const std::variant<std::string, std::vector<std::byte>> Source;
   // only kernel_bundles created from source have KernelNames member.
   std::vector<std::string> KernelNames;
+  include_pairs_t IncludePairs;
 };
 
 } // namespace detail

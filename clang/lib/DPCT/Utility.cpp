@@ -17,6 +17,7 @@
 #include "Statics.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
@@ -24,10 +25,14 @@
 #include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Errc.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
+#include <cstddef>
 #include <fstream>
+#include <optional>
+#include <string>
 
 using namespace llvm;
 using namespace clang;
@@ -84,10 +89,16 @@ bool isCanonical(StringRef Path) {
   return HasNoDots && path::is_absolute(Path);
 }
 
-const char *getNL(void) {
+const char *getNL(bool AddBackSlash) {
 #if defined(__linux__)
+  if (AddBackSlash) {
+    return "\\\n";
+  }
   return "\n";
 #elif defined(_WIN64)
+  if (AddBackSlash) {
+    return "\\\r\n";
+  }
   return "\r\n";
 #else
 #error Only support windows and Linux.
@@ -670,12 +681,12 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
          ParentStmtClass == Stmt::StmtClass::ForStmtClass;
 }
 
-// Find the nearest non-Expr non-Decl ancestor node of Expr E
-// Assumes: E != nullptr
-const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
+// Find the nearest non-Expr non-Decl ancestor node of Node N
+const DynTypedNode
+findNearestNonExprNonDeclAncestorNode(const DynTypedNode &N) {
   auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto ParentNodes = Context.getParents(*E);
-  DynTypedNode LastNode = DynTypedNode::create(*E), ParentNode;
+  auto ParentNodes = Context.getParents(N);
+  DynTypedNode LastNode = N, ParentNode;
   while (!ParentNodes.empty()) {
     ParentNode = ParentNodes[0];
     bool IsSingleStmt = ParentNode.get<CompoundStmt>() ||
@@ -688,12 +699,6 @@ const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
     ParentNodes = Context.getParents(LastNode);
   }
   return LastNode;
-}
-
-// Find the nearest non-Expr non-Decl ancestor statement of Expr E
-// Assumes: E != nullptr
-const clang::Stmt *findNearestNonExprNonDeclAncestorStmt(const clang::Expr *E) {
-  return findNearestNonExprNonDeclAncestorNode(E).get<Stmt>();
 }
 
 SourceRange getScopeInsertRange(const MemberExpr *ME) {
@@ -716,7 +721,8 @@ SourceRange getScopeInsertRange(const Expr *E,
     StmtBegin = FuncNameBegin;
     StmtEnd = FuncCallEnd;
   } else {
-    AncestorStmt = findNearestNonExprNonDeclAncestorNode(E);
+    AncestorStmt =
+        findNearestNonExprNonDeclAncestorNode(DynTypedNode::create(*E));
     StmtBegin = AncestorStmt.getSourceRange().getBegin();
     StmtEnd = AncestorStmt.getSourceRange().getEnd();
     if (StmtBegin.isMacroID())
@@ -1758,6 +1764,16 @@ bool isContainMacro(const Expr *E) {
   return false;
 }
 
+std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
+                                        const clang::ASTContext &Ctx) {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  clang::PrintingPolicy Policy(Ctx.getLangOpts());
+  Arg.print(Policy, OS, true);
+  OS.flush();
+  return Str;
+}
+
 /// Get the dereference name of the expression \p E.
 std::string getDrefName(const Expr *E) {
   std::ostringstream OS;
@@ -1966,6 +1982,12 @@ std::string getHashStrFromLoc(SourceLocation Loc) {
   return Ret;
 }
 
+std::string getStrFromLoc(SourceLocation Loc) {
+  auto R = dpct::DpctGlobalInfo::getLocInfo(Loc);
+  std::string Ret = dpct::buildString(R.first, "*", R.second);
+  return Ret;
+}
+
 bool IsTypeChangedToPointer(const DeclRefExpr *DRE) {
   auto D = DRE->getDecl();
   auto T = D->getType();
@@ -2064,6 +2086,42 @@ bool needExtraParens(const Expr *E) {
   case Stmt::CXXOperatorCallExprClass:
     return static_cast<const CXXOperatorCallExpr *>(E)->getOperator() !=
            clang::OO_Subscript;  
+  default:
+    return true;
+  }
+}
+
+bool needExtraParensInMemberExpr(const Expr *E) {
+  E = E->IgnoreUnlessSpelledInSource();
+  switch (E->getStmtClass()) {
+  case Stmt::CallExprClass: {
+    const CallExpr *CE = static_cast<const CallExpr *>(E);
+    if (const FunctionDecl *FD = CE->getDirectCallee()) {
+      std::string Name = FD->getNameAsString();
+      if (!dpct::DpctGlobalInfo::useIntelDeviceMath() &&
+          (Name == "__h2div" || Name == "__hadd2" || Name == "__hadd2_rn" ||
+           Name == "__hfma2" || Name == "__hmul2" || Name == "__hmul2_rn" ||
+           Name == "__hsub2" || Name == "__hsub2_rn" || Name == "h2div" ||
+           Name == "__hadd_rn" || Name == "__hdiv" || Name == "__hfma" ||
+           Name == "__hmul" || Name == "__hmul_rn" || Name == "__hsub" ||
+           Name == "__hsub_rn" || Name == "hdiv")) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case Stmt::ArraySubscriptExprClass:
+  case Stmt::ParenExprClass:
+  case Stmt::DeclRefExprClass:
+  case Stmt::CXXConstructExprClass:
+    return false;
+  case Stmt::UnaryOperatorClass: {
+    const UnaryOperator *UO = static_cast<const UnaryOperator *>(E);
+    if (UO->getOpcode() == UnaryOperator::Opcode::UO_PostInc ||
+        UO->getOpcode() == UnaryOperator::Opcode::UO_PostDec)
+      return false;
+    return true;
+  }
   default:
     return true;
   }
@@ -2301,7 +2359,8 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     }
     ResultBegin = SM.getExpansionLoc(ResultBegin);
     ResultEnd = SM.getExpansionLoc(ResultEnd);
-    if (IncludeLastToken) {
+    if (IncludeLastToken &&
+        !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
@@ -2467,6 +2526,17 @@ const DeclaratorDecl *getHandleVar(const Expr *Arg) {
       return dyn_cast<DeclaratorDecl>(Member->getMemberDecl());
   }
   return nullptr;
+}
+
+std::string getRecordTypeStr(const CXXRecordDecl *RD) {
+  if (RD->isClass()) {
+    return "class";
+  } else if (RD->isStruct()) {
+    return "struct";
+  } else if (RD->isUnion()) {
+    return "union";
+  }
+  return "";
 }
 
 clang::RecordDecl *getRecordDecl(clang::QualType QT) {
@@ -3195,6 +3265,14 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
     }
   } else if (TypePtr->getTypeClass() == clang::Type::Pointer) {
     ND = getNamedDecl(TypePtr->castAs<clang::PointerType>()->getPointeeType().getTypePtr());
+  } else if (auto ET = dyn_cast<clang::ElaboratedType>(TypePtr)) {
+    ND = getNamedDecl(ET->getNamedType().getTypePtr());
+  } else if (auto TST = dyn_cast<clang::TemplateSpecializationType>(TypePtr)) {
+    ND = TST->getTemplateName().getAsTemplateDecl();
+  } else if (auto LVRT = dyn_cast<clang::LValueReferenceType>(TypePtr)) {
+    ND = getNamedDecl(LVRT->getPointeeType().getTypePtr());
+  } else if (auto RVRT = dyn_cast<clang::RValueReferenceType>(TypePtr)) {
+    ND = getNamedDecl(RVRT->getPointeeType().getTypePtr());
   }
   return ND;
 }
@@ -3992,45 +4070,75 @@ bool checkIfContainSizeofTypeRecursively(
   return false;
 }
 
-bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
-  QualType CanType = TInfo->getType().getCanonicalType();
-  auto *CanTyPtr = CanType.split().Ty;
-
-  // template <int THREADS_PER_BLOCK>
-  //  __global__ void Kernel() {
-  //  1.  typedef cub::BlockScan<int, THREADS_PER_BLOCK> BlockScan;
-  //  2.  __shared__ typename BlockScan::TempStorage temp1;
-  //  }
-
-  // Handle 1
-  auto isCubRecordType = [&](const clang::Type *T) -> bool {
-    if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
-      auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
-      auto *Ctx = TemplateDecl->getDeclContext();
-      auto *CubNS = dyn_cast<NamespaceDecl>(Ctx);
-      while (CubNS) {
-        if (CubNS->isInlineNamespace()) {
-          CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
-          continue;
-        }
-        break;
-      }
-      return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
-    }
+// Whether the type is a cub collective record type
+// cub::BlockReduce
+// cub::BlockScan
+// ...
+static bool isCubCollectiveRecordType(const clang::Type *T) {
+  if (!T)
     return false;
-  };
+  const NamespaceDecl *CubNS = nullptr;
+  if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
+    auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
+    auto *Ctx = TemplateDecl->getDeclContext();
+    CubNS = dyn_cast<NamespaceDecl>(Ctx);
+  } else if (auto *CD = dyn_cast<RecordType>(T))
+    CubNS = dyn_cast<NamespaceDecl>(CD->getDecl()->getDeclContext());
+  if (!CubNS)
+    return false;
 
-  // Handle 2
-  if (const auto *DNT = dyn_cast<DependentNameType>(CanTyPtr)) {
-    auto *QNNS = DNT->getQualifier();
-    // *::TempStorage must be a type.
-    if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
-      auto *QNNSType = QNNS->getAsType();
-      return isCubRecordType(QNNSType);
+  while (CubNS) {
+    if (CubNS->isInlineNamespace()) {
+      CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
+      continue;
     }
+    break;
+  }
+  return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
+}
+
+static bool isCubTempStorageType(const clang::Type *T) {
+  if (!T)
+    return false;
+
+  const clang::Type *DeclContextType = nullptr;
+  // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
+  if (auto *RT = dyn_cast<RecordType>(T)) {
+    if (RT->getDecl()->getName() != "TempStorage")
+      return false;
+    auto *DC = RT->getDecl()->getDeclContext();
+    if (DC && DC->isRecord()) {
+      auto *RD = dyn_cast<RecordDecl>(DC);
+      DeclContextType = RD->getTypeForDecl();
+    } else
+      return false;
   }
 
-  return isCubRecordType(CanTyPtr);
+  // cub::{BlockReduce, BlockScan, WarpScan, ...}::TempStorage;
+  // But TempStorage is a dependent type.
+  if (auto *DNT = dyn_cast<DependentNameType>(T)) {
+    if (DNT->getIdentifier()->getName() != "TempStorage")
+      return false;
+    auto *QNNS = DNT->getQualifier();
+    if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
+      DeclContextType = QNNS->getAsType();
+    } else
+      return false;
+  }
+
+  return DeclContextType && isCubCollectiveRecordType(DeclContextType);
+}
+
+bool isCubTempStorageType(QualType T) {
+  if (T.isNull())
+    return false;
+  return isCubTempStorageType(T.getCanonicalType().getTypePtrOrNull());
+}
+
+bool isCubCollectiveRecordType(QualType T) {
+  if (T.isNull())
+    return false;
+  return isCubCollectiveRecordType(T.getCanonicalType().getTypePtrOrNull());
 }
 
 bool isCubVar(const VarDecl *VD) {
@@ -4042,11 +4150,12 @@ bool isCubVar(const VarDecl *VD) {
        CanonicalTypeStr.find("class cub::") == 0)) {
     return true;
   }
+
+  if (isCubTempStorageType(VD->getType()))
+    return true;
+
   // 2.process template cases
   if (CanonicalTypeStr.find("::TempStorage") != std::string::npos) {
-    if (maybeDependentCubType(VD->getTypeSourceInfo()))
-      return true;
-
     std::string TypeParameterName;
     auto findTypeParameterName = [&](DependentNameTypeLoc DNT) {
       std::string Name;
@@ -4149,6 +4258,35 @@ bool isCubVar(const VarDecl *VD) {
       return Result;
     }
     return false;
+  }
+
+  // 3. Handle situations like the following. Several CUB TempStorage object are
+  // in a union.
+  //
+  // template< int NUM_THREADS_PER_BLOCK>
+  // __global__ void some_kernel() {
+  //   typedef cub::BlockScan<int, NUM_THREADS_PER_BLOCK> BlockScan;
+  //   typedef cub::BlockReduce<int,     NUM_THREADS_PER_BLOCK> BlockReduce1;
+  //   typedef cub::BlockReduce<double4, NUM_THREADS_PER_BLOCK> BlockReduce4;
+  //   union TempStorage {
+  //     typename BlockScan   ::TempStorage for_scan;
+  //     typename BlockReduce1::TempStorage for_reduce1;
+  //     typename BlockReduce4::TempStorage for_reduce4;
+  //   };
+  //   __shared__ TempStorage smem_storage;
+  // }
+  if (VD->getType()->isUnionType()) {
+    const TagDecl *RD =
+        VD->getType()->getAsUnionType()->getDecl()->getCanonicalDecl();
+
+    // If all the field in this union are cub type, we think this union also is
+    // a cub type.
+    for (const auto *D : RD->decls())
+      if (const auto *FD = dyn_cast<FieldDecl>(D))
+        if (!isCubTempStorageType(
+                FD->getType().getCanonicalType().getTypePtrOrNull()))
+          return false;
+    return true;
   }
   return false;
 }
@@ -4266,6 +4404,8 @@ bool isUserDefinedDecl(const clang::Decl *D) {
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
+    return false;
+  if (!dpct::DpctGlobalInfo::isInAnalysisScope(InFile))
     return false;
   return true;
 }
@@ -4622,35 +4762,6 @@ bool isCapturedByLambda(const clang::TypeLoc *TL) {
   return false;
 }
 
-std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
-  bool HasAttr = false;
-  bool NeedReport = false;
-  const Expr *Arg = C->getArg(ArgIdx);
-  if (!Arg) {
-    return "";
-  }
-  getShareAttrRecursive(Arg, HasAttr, NeedReport);
-  if (HasAttr && !NeedReport)
-    return "local_space";
-  LocalVarAddrSpaceEnum LocalVarCheckResult =
-      LocalVarAddrSpaceEnum::AS_CannotDeduce;
-  checkIsPrivateVar(Arg, LocalVarCheckResult);
-  if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
-    return "private_space";
-  } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
-    return "global_space";
-  } else {
-    clang::dpct::ExprAnalysis EA(Arg);
-    auto LocInfo =
-        dpct::DpctGlobalInfo::getInstance().getLocInfo(C->getBeginLoc());
-    clang::dpct::DiagnosticsUtils::report(
-        LocInfo.first, LocInfo.second,
-        clang::dpct::Diagnostics::UNDEDUCED_ADDRESS_SPACE, true, false,
-        EA.getReplacedString());
-    return "global_space";
-  }
-}
-
 std::string getNameSpace(const NamespaceDecl *NSD) {
   if (!NSD)
     return "";
@@ -4661,6 +4772,24 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
   else if (NameSpace.empty() && !NSD->isInlineNamespace())
     return NSD->getName().str();
   return NameSpace;
+}
+
+std::string getInitForDeviceGlobal(const VarDecl *VD) {
+  auto Init = VD->getInit()->IgnoreImplicitAsWritten();
+  if (auto IL = dyn_cast<InitListExpr>(Init)) {
+    return dpct::ExprAnalysis::ref(IL);
+  } else if (dyn_cast<CXXConstructExpr>(Init)) {
+    return "";
+  }
+  return "{" + dpct::ExprAnalysis::ref(Init) + "}";
+}
+
+void getNameSpace(const NamespaceDecl *NSD,
+                  std::vector<std::string> &Namespaces) {
+  if (!NSD)
+    return;
+  Namespaces.push_back(NSD->getName().str());
+  getNameSpace(dyn_cast<NamespaceDecl>(NSD->getDeclContext()), Namespaces);
 }
 
 bool isFromCUDA(const Decl *D) {
@@ -4687,6 +4816,66 @@ bool isFromCUDA(const Decl *D) {
 
   return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
           isChildPath(DpctInstallPath, DeclLocFilePath));
+}
+
+
+void PrintFullTemplateName(raw_ostream &OS, const PrintingPolicy &Policy, TemplateName Name) {
+  auto Kind = Name.getKind();
+  TemplateDecl *Template = nullptr;
+  if (Kind == TemplateName::Template || Kind == TemplateName::UsingTemplate) {
+    // After `namespace ns { using std::vector }`, what is the fully-qualified
+    // name of the UsingTemplateName `vector` within ns?
+    //
+    // - ns::vector (the qualified name of the using-shadow decl)
+    // - std::vector (the qualified name of the underlying template decl)
+    //
+    // Similar to the UsingType behavior, using declarations are used to import
+    // names more often than to export them, thus using the original name is
+    // most useful in this case.
+    Template = Name.getAsTemplateDecl();
+  }
+
+  if (Template)
+    if (Policy.CleanUglifiedParameters &&
+        isa<TemplateTemplateParmDecl>(Template) && Template->getIdentifier())
+      OS << Template->getIdentifier()->deuglifiedName();
+    else if (
+             Name.getDependence() !=
+                 TemplateNameDependenceScope::DependentInstantiation)
+      Template->printQualifiedName(OS, Policy);
+    else
+      OS << *Template;
+  else if (QualifiedTemplateName *QTN = Name.getAsQualifiedTemplateName()) {
+    if (
+        Name.getDependence() !=
+            TemplateNameDependenceScope::DependentInstantiation) {
+      QTN->getUnderlyingTemplate().getAsTemplateDecl()->printQualifiedName(
+          OS, Policy);
+      return;
+    }
+    if (QTN->hasTemplateKeyword())
+      OS << "template ";
+    OS << *QTN->getUnderlyingTemplate().getAsTemplateDecl();
+  } else if (DependentTemplateName *DTN = Name.getAsDependentTemplateName()) {
+    OS << "template ";
+
+    if (DTN->isIdentifier())
+      OS << DTN->getIdentifier()->getName();
+    else
+      OS << "operator " << getOperatorSpelling(DTN->getOperator());
+  } else if (SubstTemplateTemplateParmStorage *subst
+               = Name.getAsSubstTemplateTemplateParm()) {
+    PrintFullTemplateName(OS, Policy, subst->getReplacement());
+  } else if (SubstTemplateTemplateParmPackStorage *SubstPack
+                                        = Name.getAsSubstTemplateTemplateParmPack())
+    OS << *SubstPack->getParameterPack();
+  else if (AssumedTemplateStorage *Assumed = Name.getAsAssumedTemplateName()) {
+    Assumed->getDeclName().print(OS, Policy);
+  } else {
+    assert(Name.getKind() == TemplateName::OverloadedTemplate);
+    OverloadedTemplateStorage *OTS = Name.getAsOverloadedTemplate();
+    (*OTS->begin())->printName(OS, Policy);
+  }
 }
 
 namespace clang {
@@ -4735,6 +4924,436 @@ std::string appendPath(const std::string &P1, const std::string &P2) {
   SmallString<512> TempPath(P1);
   llvm::sys::path::append(TempPath, P2);
   return TempPath.str().str();
+}
+
+void createDirectories(const clang::tooling::UnifiedPath &FilePath,
+                       bool IgnoreExisting) {
+  if (std::error_code EC = llvm::sys::fs::create_directories(
+          FilePath.getCanonicalPath(), false)) {
+    if (EC == llvm::errc::file_exists) {
+      if (IgnoreExisting &&
+          llvm::sys::fs::is_directory(FilePath.getCanonicalPath())) {
+        auto perm = sys::fs::getPermissions(FilePath.getCanonicalPath());
+        if (perm && (perm.get() & sys::fs::perms::owner_write)) {
+          return;
+        }
+      }
+      ShowStatus(MigrationSaveOutFail);
+      dpctExit(MigrationSaveOutFail);
+    } else {
+      std::string ErrMsg =
+          "[ERROR] Create Directory : " + FilePath.getPath().str() +
+          " fail: " + EC.message() + "\n";
+      clang::dpct::PrintMsg(ErrMsg);
+      dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
+    }
+  }
+}
+
+void writeDataToFile(const std::string &FileName, const std::string &Data) {
+  RawFDOStream File(FileName);
+  File << Data;
+}
+
+void appendDataToFile(const std::string &FileName, const std::string &Data) {
+  RawFDOStream File(FileName, llvm::sys::fs::OpenFlags::OF_Append);
+  File << Data;
+}
+
+RawFDOStream::RawFDOStream(StringRef FileName)
+    : llvm::raw_fd_ostream(FileName, EC), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+RawFDOStream::RawFDOStream(StringRef FileName, llvm::sys::fs::OpenFlags OF)
+    : llvm::raw_fd_ostream(FileName, EC, OF), FileName(FileName) {
+  if ((bool)EC) {
+    std::string ErrMsg = "[ERROR] Open: " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+
+RawFDOStream::~RawFDOStream() {
+  this->close();
+  if ((bool)this->error()) {
+    std::string ErrMsg = "[ERROR] Close " + FileName.str() + " Fail!\n";
+    dpct::PrintMsg(ErrMsg);
+    dpctExit(MigrationErrorCannotWrite);
+  }
+}
+
+std::set<const clang::DeclRefExpr *>
+matchTargetDREInScope(const VarDecl *TargetDecl, const Stmt *Range) {
+  std::set<const DeclRefExpr *> Set;
+  if (!TargetDecl || !Range) {
+    return Set;
+  }
+  auto DREMatcher = ast_matchers::findAll(
+      ast_matchers::declRefExpr(ast_matchers::isDeclSameAs(TargetDecl))
+          .bind("DRE"));
+  auto MatchedResults =
+      ast_matchers::match(DREMatcher, *Range, DpctGlobalInfo::getContext());
+  for (auto &Node : MatchedResults) {
+    if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
+      Set.insert(DRE);
+  }
+  return Set;
+}
+int isArgumentInitialized(
+    const clang::Expr *Arg,
+    std::vector<const clang::VarDecl *> &DeclsRequireInit) {
+  auto isInitBeforeArg = [](const Stmt *Context, const clang::DeclRefExpr *DRE,
+                            const clang::Expr *Arg) -> bool {
+    const auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(DRE);
+    if (ICE && ICE->getCastKind() == CastKind::CK_LValueToRValue)
+      return false;
+    const Stmt *DREContext = findNearestNonExprNonDeclAncestorStmt(DRE);
+    if (!DREContext || DREContext != Context)
+      return false;
+    const Stmt *ArgContext = findNearestNonExprNonDeclAncestorStmt(Arg);
+    if (!ArgContext || ArgContext != Context)
+      return false;
+    const auto &SM = DpctGlobalInfo::getSourceManager();
+    return SM.getExpansionLoc(DRE->getEndLoc()).getRawEncoding() <
+           SM.getExpansionLoc(Arg->getBeginLoc()).getRawEncoding();
+  };
+
+  // TODO: Currently we only emit warning/analyze for DRE argument.
+  if (!isa<DeclRefExpr>(Arg->IgnoreCasts()))
+    return 1;
+
+  // 1. Find the DRE(s) used in the Arg.
+  // 2. Find the Decl(s) of the DRE(s).
+  // 3. Check each Decl:
+  //   3.1 if Decl is VarDecl:
+  //     3.2.1 If not local defined, return -1.
+  //     3.2.2 If local defined, check:
+  //       (1) has inited? or (2) find other ref locations to see if inited?
+  //       If has init in the same context as usage, return 1;
+  //       Else if T is fundimental, return 0;
+  //       Else return -1.
+  //   3.2 Else return -1.
+  std::set<const clang::DeclRefExpr *> DRESet;
+  bool HasCallExpr = false;
+  findDREs(Arg, DRESet, HasCallExpr);
+  std::set<const clang::VarDecl *> DeclSet;
+  for (const auto &DRE : DRESet) {
+    const auto ValueD = DRE->getDecl();
+    if (!ValueD)
+      return -1;
+    const VarDecl *VarD = dyn_cast<VarDecl>(ValueD);
+    if (!VarD)
+      return -1;
+    DeclSet.insert(VarD);
+  }
+
+  for (const auto &VD : DeclSet) {
+    if (!VD->isLocalVarDecl())
+      return -1;
+    if (VD->hasInit())
+      continue;
+    const Stmt *CS = findNearestNonExprNonDeclAncestorStmt(VD);
+    if (!CS)
+      return -1;
+    std::set<const clang::DeclRefExpr *> DRERefSet =
+        matchTargetDREInScope(VD, CS);
+    bool HasInitBeforeArg = false;
+    for (const auto DRERef : DRERefSet) {
+      if (HasInitBeforeArg = isInitBeforeArg(CS, DRERef, Arg))
+        break;
+    }
+    if (HasInitBeforeArg)
+      continue;
+    else if (VD->getType()->isFundamentalType())
+      DeclsRequireInit.push_back(VD);
+    else
+      return -1;
+  }
+
+  return DeclsRequireInit.empty();
+}
+const DeclRefExpr *getAddressedRef(const Expr *E) {
+  E = E->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
+    if (DRE->getDecl()->getKind() == Decl::Function) {
+      return DRE;
+    }
+  } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
+    return getAddressedRef(Paren->getSubExpr());
+  } else if (auto Cast = dyn_cast<CastExpr>(E)) {
+    return getAddressedRef(Cast->getSubExprAsWritten());
+  } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
+    if (UO->getOpcode() == UO_AddrOf) {
+      return getAddressedRef(UO->getSubExpr());
+    }
+  }
+  return nullptr;
+}
+
+// This function emits warning to tell user which part of that type violate the
+// trivally-copyable requirements.
+// TODO: Emit warning for non-instantiated template.
+void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
+  const auto &Ctx = DpctGlobalInfo::getContext();
+  if (QT.isTriviallyCopyableType(Ctx))
+    return;
+  QualType CanonicalType = QT.getCanonicalType();
+  if (CanonicalType->isArrayType()) {
+    return checkTrivallyCopyable(Ctx.getBaseElementType(CanonicalType), Rule);
+  }
+  if (const auto *RT = CanonicalType->getAs<RecordType>()) {
+    if (const auto *ClassDecl = dyn_cast<CXXRecordDecl>(RT->getDecl())) {
+      if (!isUserDefinedDecl(ClassDecl))
+        return;
+      std::vector<std::string> Messages;
+      // [0] for T&, [1] for volatile T&
+      std::array<std::pair<bool, SourceLocation>, 2>
+          CtorConstQualifierInsertLocations;
+      for (const auto &C : ClassDecl->ctors()) {
+        if (!C->isImplicit() && !C->isDeleted()) {
+          if (C->isCopyConstructor()) {
+            // The 1st parameter of the copy constructor need "const" qualifier.
+            const auto *FirstParam = C->getParamDecl(0);
+            const ReferenceType *RT =
+                dyn_cast<ReferenceType>(FirstParam->getType().getTypePtr());
+            if (RT) {
+              Qualifiers Q = RT->getPointeeType().getQualifiers();
+              unsigned int CVQualifiers = Q.getCVRQualifiers();
+              bool HasVolatile = CVQualifiers & Qualifiers::Volatile;
+              CtorConstQualifierInsertLocations[HasVolatile].first |=
+                  CVQualifiers & Qualifiers::Const;
+              CtorConstQualifierInsertLocations[HasVolatile].second =
+                  FirstParam->getBeginLoc();
+            }
+          }
+        }
+      }
+      for (const auto &P : CtorConstQualifierInsertLocations) {
+        if (P.first || P.second.isInvalid())
+          continue;
+        auto *NT = new InsertText(P.second, "const ");
+        if (Rule) {
+          Rule->emplaceTransformation(NT);
+        } else {
+          DpctGlobalInfo::getInstance().addReplacement(
+              NT->getReplacement(DpctGlobalInfo::getContext()));
+        }
+      }
+      if (ClassDecl->hasNonTrivialCopyConstructor()) {
+        Messages.push_back("copy constructor");
+      }
+      if (ClassDecl->hasNonTrivialCopyAssignment()) {
+        Messages.push_back("copy assignment");
+      }
+      if (ClassDecl->hasNonTrivialMoveConstructor()) {
+        Messages.push_back("move constructor");
+      }
+      if (ClassDecl->hasNonTrivialMoveAssignment()) {
+        Messages.push_back("move assignment");
+      }
+      if (ClassDecl->hasNonTrivialDestructor()) {
+        Messages.push_back("destructor");
+      }
+      for (const auto &M : ClassDecl->methods()) {
+        if (M->isVirtual()) {
+          Messages.push_back("virtual method \"" + M->getNameAsString() + "\"");
+        }
+      }
+      for (const auto &B : ClassDecl->bases()) {
+        if (B.isVirtual()) {
+          Messages.push_back("virtual base class \"" +
+                             DpctGlobalInfo::getOriginalTypeName(B.getType()) +
+                             "\"");
+        }
+        if (!B.getType().isTriviallyCopyableType(Ctx)) {
+          Messages.push_back("non trivially copyable base class \"" +
+                             DpctGlobalInfo::getOriginalTypeName(B.getType()) +
+                             "\"");
+          checkTrivallyCopyable(B.getType(), Rule);
+        }
+      }
+      // Check each field
+      for (const auto *F : ClassDecl->fields()) {
+        QualType FQT = F->getType();
+        if (!FQT.isTriviallyCopyableType(Ctx)) {
+          checkTrivallyCopyable(FQT, Rule);
+          Messages.push_back("non trivially copyable field \"" +
+                             F->getNameAsString() + "\"");
+        }
+      }
+      std::string MsgStr;
+      if (Messages.empty()) {
+        assert(0 && "Messages is empty.");
+      } else if (Messages.size() == 1) {
+        MsgStr = Messages[0];
+      } else if (Messages.size() == 2) {
+        MsgStr = Messages[0] + " and " + Messages[1];
+      } else {
+        for (auto I = Messages.begin(); I < Messages.end() - 2; I++) {
+          MsgStr += (*I + ", ");
+        }
+        MsgStr += (Messages[Messages.size() - 2] + " and " +
+                   Messages[Messages.size() - 1]);
+      }
+      MsgStr += " breaking the device copyable requirement";
+
+      if (Rule) {
+        Rule->report(ClassDecl->getBeginLoc(), Diagnostics::NOT_DEVICE_COPYABLE,
+                     true, DpctGlobalInfo::getOriginalTypeName(QT), MsgStr);
+      } else {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(ClassDecl->getBeginLoc());
+        DiagnosticsUtils::report(
+            LocInfo.first, LocInfo.second, Diagnostics::NOT_DEVICE_COPYABLE,
+            true, true, DpctGlobalInfo::getOriginalTypeName(QT), MsgStr);
+      }
+    }
+  }
+}
+
+// This function inserts code like:
+// template <>
+// struct sycl::is_device_copyable<UserDefinedType> : std::true_type {};
+void insertIsDeviceCopyableSpecialization(QualType Type,
+                                          clang::dpct::MigrationRule *Rule,
+                                          const Decl *D) {
+  const auto &Ctx = DpctGlobalInfo::getContext();
+  const auto &SM = DpctGlobalInfo::getSourceManager();
+
+  // Emit warning DPCT1128
+  checkTrivallyCopyable(Type, Rule);
+
+  // Find insert location
+  auto getInsertLocation = [&Ctx, &SM](SourceLocation InsertLoc,
+                                       tok::TokenKind TK) {
+    Token Tok;
+    std::optional<Token> OptTok = std::nullopt;
+    Lexer::getRawToken(InsertLoc, Tok, SM, Ctx.getLangOpts());
+    if (Tok.is(TK)) {
+      InsertLoc = Tok.getEndLoc();
+    } else {
+      while (OptTok = Lexer::findNextToken(InsertLoc, SM, Ctx.getLangOpts())) {
+        InsertLoc = OptTok.value().getEndLoc();
+        if (OptTok.value().is(TK)) {
+          break;
+        }
+      }
+      assert(OptTok && "OptTok is empty.");
+    }
+    InsertLoc = InsertLoc.getLocWithOffset(
+        Lexer::MeasureTokenLength(InsertLoc, SM, Ctx.getLangOpts()));
+    return InsertLoc;
+  };
+
+  std::string NamespaceStr;
+  SourceLocation InsertLoc;
+
+  const DeclContext *DC = D->getDeclContext();
+  SourceLocation StartSearchLoc = D->getEndLoc();
+  tok::TokenKind FindTok = tok::TokenKind::semi;
+  while (DC) {
+    if (const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(DC)) {
+      NamespaceStr = ND->getNameAsString() + "::" + NamespaceStr;
+      StartSearchLoc = ND->getEndLoc();
+      DC = ND->getDeclContext();
+      FindTok = tok::TokenKind::r_brace;
+    } else if (isa<TranslationUnitDecl>(DC)) {
+      break;
+    } else {
+      return;
+    }
+  }
+  if (StartSearchLoc.isMacroID())
+    return;
+  InsertLoc = getInsertLocation(StartSearchLoc, FindTok);
+
+  // Prepare replacemet
+  std::string Repl = getNL();
+  if (const auto *CTSD = dyn_cast<ClassTemplateSpecializationDecl>(D)) {
+    D = CTSD->getSpecializedTemplate();
+  }
+  if (const auto *CTD = dyn_cast<ClassTemplateDecl>(D)) {
+    llvm::raw_string_ostream OS(Repl);
+    CTD->getTemplateParameters()->print(OS, Ctx);
+    OS << getNL();
+    OS << "struct sycl::is_device_copyable<";
+    std::string TArgs;
+    for (const auto *ND : CTD->getTemplateParameters()->asArray()) {
+      TArgs += ND->getNameAsString();
+      TArgs += ", ";
+    }
+    if (!TArgs.empty()) {
+      TArgs = TArgs.substr(0, TArgs.size() - 2);
+    }
+    OS << NamespaceStr << CTD->getNameAsString() << "<" << TArgs << ">";
+    OS << "> : std::true_type {};";
+  } else if (const auto *RD = dyn_cast<RecordDecl>(D)) {
+    Repl += "template <>";
+    Repl += getNL();
+    Repl += "struct sycl::is_device_copyable<";
+    Repl += NamespaceStr;
+    Repl += RD->getNameAsString();
+    Repl += "> : std::true_type {};";
+  }
+
+  // Insert replacement
+  if (Rule) {
+    Rule->emplaceTransformation(new ReplaceText(InsertLoc, 0, std::move(Repl)));
+  } else {
+    auto FileNameAndOffset = DpctGlobalInfo::getLocInfo(InsertLoc);
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FileNameAndOffset.first,
+                                         FileNameAndOffset.second, 0, Repl,
+                                         nullptr));
+  }
+}
+
+// Check if the given type is device copyable.
+// We use the requirements of is_trivally_copyable to determine if the type is
+// device copyable.
+// For non-trivally-copyable type:
+// 1. Try to insert specialization sycl::is_device_copyable for it.
+// 2. Try to tell which part of that type violate the trivally-copyable
+// requirements.
+bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule) {
+  if (Type->isPointerType())
+    return true;
+  const Decl *D = nullptr;
+  QualType QT = Type;
+  while (true) {
+    auto Class = QT->getTypeClass();
+    if (Class == Type::TypeClass::Elaborated) {
+      QT = QT.getTypePtr()->castAs<ElaboratedType>()->desugar();
+    } else if (Class == Type::TypeClass::TemplateSpecialization) {
+      D = QT.getTypePtr()
+              ->getAs<TemplateSpecializationType>()
+              ->getTemplateName()
+              .getAsTemplateDecl();
+      break;
+    } else if (Class == Type::TypeClass::Record) {
+      D = QT.getTypePtr()->getAs<RecordType>()->getDecl();
+      break;
+    } else if (Class == Type::TypeClass::SubstTemplateTypeParm) {
+      QT = QT.getTypePtr()
+               ->castAs<SubstTemplateTypeParmType>()
+               ->getReplacementType();
+    } else {
+      return true;
+    }
+  }
+
+  if (!D)
+    return true;
+  if (!isUserDefinedDecl(D))
+    return true;
+  if (Type.isTriviallyCopyableType(DpctGlobalInfo::getContext()))
+    return true;
+
+  insertIsDeviceCopyableSpecialization(Type, Rule, D);
+  return false;
 }
 } // namespace dpct
 } // namespace clang

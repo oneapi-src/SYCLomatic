@@ -9,8 +9,42 @@
 
 void foo1(cublasStatus_t s) {
   //CHECK:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error string: %s", "cublasGetStatusString is not supported"/*cublasGetStatusString(s)*/);
+  //CHECK-NEXT:printf("Error string: %s", "<Placeholder string>");
   printf("Error string: %s", cublasGetStatusString(s));
+  cublasHandle_t handle;
+  void *workspace;
+  size_t size;
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cublasSetWorkspace was removed because this functionality is redundant in SYCL.
+  //CHECK-NEXT:*/
+  cublasSetWorkspace(handle, workspace, size);
+}
+
+//CHECK:void foo2(dpct::compute_type &a) {
+//CHECK-NEXT:  a = dpct::compute_type::f16;
+//CHECK-NEXT:  a = dpct::compute_type::f16_standard;
+//CHECK-NEXT:  a = dpct::compute_type::f32;
+//CHECK-NEXT:  a = dpct::compute_type::f32_standard;
+//CHECK-NEXT:  a = dpct::compute_type::f32;
+//CHECK-NEXT:  a = dpct::compute_type::f32_fast_bf16;
+//CHECK-NEXT:  a = dpct::compute_type::f32_fast_tf32;
+//CHECK-NEXT:  a = dpct::compute_type::f64;
+//CHECK-NEXT:  a = dpct::compute_type::f64_standard;
+//CHECK-NEXT:  a = dpct::compute_type::i32;
+//CHECK-NEXT:  a = dpct::compute_type::i32_standard;
+//CHECK-NEXT:}
+void foo2(cublasComputeType_t &a) {
+  a = CUBLAS_COMPUTE_16F;
+  a = CUBLAS_COMPUTE_16F_PEDANTIC;
+  a = CUBLAS_COMPUTE_32F;
+  a = CUBLAS_COMPUTE_32F_PEDANTIC;
+  a = CUBLAS_COMPUTE_32F_FAST_16F;
+  a = CUBLAS_COMPUTE_32F_FAST_16BF;
+  a = CUBLAS_COMPUTE_32F_FAST_TF32;
+  a = CUBLAS_COMPUTE_64F;
+  a = CUBLAS_COMPUTE_64F_PEDANTIC;
+  a = CUBLAS_COMPUTE_32I;
+  a = CUBLAS_COMPUTE_32I_PEDANTIC;
 }

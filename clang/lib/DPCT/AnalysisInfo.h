@@ -21,6 +21,7 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
+#include <memory>
 #include <optional>
 #include <unordered_set>
 #include <vector>
@@ -43,6 +44,7 @@ void setGetReplacedNamePtr(llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
+using LocInfo = std::pair<tooling::UnifiedPath, unsigned int>;
 template <class F, class... Ts>
 std::string buildStringFromPrinter(F Func, Ts &&...Args) {
   std::string Ret;
@@ -176,6 +178,31 @@ struct CudaArchPPInfo {
   DirectiveInfo EndInfo;
   std::unordered_map<unsigned, DirectiveInfo> ElInfo;
   bool isInHDFunc = false;
+};
+
+struct MemberOrBaseInfoForCodePin {
+  bool UserDefinedTypeFlag = false;
+  int PointerDepth = 0;
+  bool IsBaseMember = false;
+  std::vector<int> Dims;
+  std::string TypeNameInCuda;
+  std::string TypeNameInSycl;
+  std::string MemberName;
+};
+
+struct VarInfoForCodePin {
+  bool TemplateFlag = false;
+  bool TopTypeFlag = false;
+  bool IsValid = false;
+  std::string HashKey;
+  std::string VarRecordType;
+  std::string VarName;
+  std::string VarNameWithoutScopeAndTemplateArgs;
+  std::string TemplateInstArgs;
+  std::vector<std::string> Namespaces;
+  std::vector<std::string> TemplateArgs;
+  std::vector<MemberOrBaseInfoForCodePin> Bases;
+  std::vector<MemberOrBaseInfoForCodePin> Members;
 };
 
 struct MemcpyOrderAnalysisInfo {
@@ -387,12 +414,12 @@ public:
   template <typename ReplacementT>
   void insertHeader(ReplacementT &&Repl, unsigned Offset,
                     InsertPosition InsertPos = IP_Left,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration) {
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
-    R->IsForCUDADebug = IsForCUDADebug;
+    R->IsForCodePin = IsForCodePin;
     IncludeDirectiveInsertions.push_back(R);
   }
 
@@ -407,9 +434,9 @@ public:
   }
 
   void insertHeader(HeaderType Type, unsigned Offset,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
   void insertHeader(HeaderType Type,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -491,6 +518,11 @@ public:
   }
   void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
   std::string getRTVersionValue() { return RTVersionValue; }
+  void setMajorVersionValue(std::string Value) { MajorVersionValue = Value; }
+  std::string getMajorVersionValue() { return MajorVersionValue; }
+  void setMinorVersionValue(std::string Value) { MinorVersionValue = Value; }
+  std::string getMinorVersionValue() { return MinorVersionValue; }
+
   void setCCLVerValue(std::string Value) { CCLVerValue = Value; }
   std::string getCCLVerValue() { return CCLVerValue; }
   bool hasCUDASyntax() { return HeaderInsertedBitMap[HeaderType::HT_SYCL]; }
@@ -547,6 +579,7 @@ private:
 
   unsigned FirstIncludeOffset = 0;
   unsigned LastIncludeOffset = 0;
+  const unsigned FileBeginOffset = 0;
   bool HasInclusionDirective = false;
   std::vector<std::string> InsertedHeaders;
   std::vector<std::string> InsertedHeadersCUDA;
@@ -557,6 +590,8 @@ private:
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
   std::vector<RnnBackwardFuncInfo> RBFuncInfo;
   std::string RTVersionValue = "";
+  std::string MajorVersionValue = "";
+  std::string MinorVersionValue = "";
   std::string CCLVerValue = "";
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
@@ -688,7 +723,6 @@ public:
   }
   // TODO: implement one of this for each source language.
   static const clang::tooling::UnifiedPath &getCudaPath() { return CudaPath; }
-  static const std::string getVarSchema(const clang::DeclRefExpr *);
   static const std::string getCudaVersion() {
     return clang::CudaVersionToString(SDKVersion);
   }
@@ -755,6 +789,8 @@ public:
   static unsigned int getKCIndentWidth();
   static UsmLevel getUsmLevel() { return UsmLvl; }
   static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  static BuildScriptKind getBuildScript() { return BuildScriptVal; }
+  static void setBuildScript(BuildScriptKind BSVal) { BuildScriptVal = BSVal; }
   static clang::CudaVersion getSDKVersion() { return SDKVersion; }
   static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   static bool isIncMigration() { return IsIncMigration; }
@@ -770,17 +806,40 @@ public:
   static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
     return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
   }
-  static void setExtensionDEFlag(unsigned Flag) { ExtensionDEFlag = Flag; }
+  static void setExtensionDEFlag(unsigned Flag) {
+    // The bits in Flag was reversed, so we need to check whether the ExtDE_All
+    // bit of Flag is 0. That means disable all default enabled extensions,
+    // otherwise disable the extensions represented by the 0 bit
+    if (Flag &
+        (1 << static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_All)))
+      ExtensionDEFlag = Flag;
+    else
+      ExtensionDEFlag = 0;
+  }
   static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
   static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
     return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
   }
-  static void setExtensionDDFlag(unsigned Flag) { ExtensionDDFlag = Flag; }
+  static void setExtensionDDFlag(unsigned Flag) {
+    // If the ExtDD_All bit is 1, enable all default disabled extensions.
+    if (Flag &
+        (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_All)))
+      ExtensionDDFlag = static_cast<unsigned>(-1);
+    else
+      ExtensionDDFlag = Flag;
+  }
   static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
   }
-  static void setExperimentalFlag(unsigned Flag) { ExperimentalFlag = Flag; }
+  static void setExperimentalFlag(unsigned Flag) {
+    // If the ExtDD_All bit is 1, enable all default disabled experimental
+    // features.
+    if (Flag & (1 << static_cast<unsigned>(ExperimentalFeatures::Exp_All)))
+      ExperimentalFlag = static_cast<unsigned>(-1);
+    else
+      ExperimentalFlag = Flag;
+  }
   static unsigned getExperimentalFlag() { return ExperimentalFlag; }
   static bool getHelperFuncPreference(HelperFuncPreference HFP) {
     return HelperFuncPreferenceFlag & (1 << static_cast<unsigned>(HFP));
@@ -818,15 +877,11 @@ public:
   static void setGenBuildScriptEnabled(bool Enable = true) {
     GenBuildScript = Enable;
   }
-  static bool IsMigrateCmakeScriptEnabled() { return MigrateCmakeScript; }
-  static void setMigrateCmakeScriptEnabled(bool Enable = true) {
-    MigrateCmakeScript = Enable;
+  static bool IsMigrateBuildScriptOnlyEnabled() {
+    return MigrateBuildScriptOnly;
   }
-  static bool IsMigrateCmakeScriptOnlyEnabled() {
-    return MigrateCmakeScriptOnly;
-  }
-  static void setMigrateCmakeScriptOnlyEnabled(bool Enable = true) {
-    MigrateCmakeScriptOnly = Enable;
+  static void setMigrateBuildScriptOnlyEnabled(bool Enable = true) {
+    MigrateBuildScriptOnly = Enable;
   }
   static bool isCommentsEnabled() { return EnableComments; }
   static void setCommentsEnabled(bool Enable = true) {
@@ -860,6 +915,7 @@ public:
   static clang::format::FormatStyle getCodeFormatStyle() {
     return CodeFormatStyle;
   }
+  static bool IsVarUsedByRuntimeSymbolAPI(std::shared_ptr<MemVarInfo> Info);
 
 private:
   template <class T, class T1, class... Ts>
@@ -1009,11 +1065,13 @@ public:
   /// bool...) regardless its order in origin code.
   /// \param [in] QT The input qualified type which need migration.
   /// \param [in] Context The AST context.
+  /// \param [in] SuppressScope Suppresses printing of scope specifiers.
   /// \return The replaced type name string with qualifiers.
+  static std::string getReplacedTypeName(QualType QT, const ASTContext &Context,
+                                         bool SuppressScope = false);
   static std::string getReplacedTypeName(QualType QT,
-                                         const ASTContext &Context);
-  static std::string getReplacedTypeName(QualType QT) {
-    return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
+                                         bool SuppressScope = false) {
+    return getReplacedTypeName(QT, DpctGlobalInfo::getContext(), SuppressScope);
   }
   /// This function will return the original type name with qualifiers.
   /// The order of original qualifiers will follow the behavior of
@@ -1048,10 +1106,8 @@ public:
   void buildKernelInfo();
   void buildReplacements();
   void processCudaArchMacro();
-  void generateHostCode(
-      std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
-          &ProcessedReplList,
-      HostDeviceFuncLocInfo Info, unsigned ID);
+  void generateHostCode(tooling::Replacements &ProcessedReplList,
+                        HostDeviceFuncLocInfo &Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
@@ -1062,7 +1118,8 @@ public:
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSetsCUDA /*out*/,
                            ReplTy &ReplSetsSYCL /*out*/);
-  std::shared_ptr<KernelCallExpr> buildLaunchKernelInfo(const CallExpr *);
+  std::shared_ptr<KernelCallExpr>
+  buildLaunchKernelInfo(const CallExpr *, bool IsAssigned = false);
   void insertCudaMalloc(const CallExpr *CE);
   void insertCublasAlloc(const CallExpr *CE);
   std::shared_ptr<CudaMallocInfo> findCudaMalloc(const Expr *CE);
@@ -1107,7 +1164,7 @@ public:
   void setAlgorithmHeaderInserted(SourceLocation Loc, bool B);
   void setTimeHeaderInserted(SourceLocation Loc, bool B);
   void insertHeader(SourceLocation Loc, HeaderType Type,
-                    ReplacementType IsForCUDADebug = RT_ForSYCLMigration);
+                    ReplacementType IsForCodePin = RT_ForSYCLMigration);
   void insertHeader(SourceLocation Loc, std::string HeaderName);
   static std::unordered_map<
       std::string,
@@ -1217,12 +1274,24 @@ public:
   static bool useExtBindlessImages() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BindlessImages>();
   }
+  static bool useExtGraph() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Graph>();
+  }
+  static bool useExpNonUniformGroups() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_NonUniformGroups>();
+  }
+  static bool useExpDeviceGlobal() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DeviceGlobal>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
+  }
+  static bool useQueueEmpty() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_QueueEmpty);
   }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(
@@ -1235,6 +1304,9 @@ public:
   static bool usePeerAccess() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_PeerAccess);
   }
+  static bool useAssert() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_Assert);
+  }
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
@@ -1244,6 +1316,10 @@ public:
   std::shared_ptr<DpctFileInfo>
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
+  }
+  std::shared_ptr<DpctFileInfo>
+  findFile(const clang::tooling::UnifiedPath &FilePath) {
+    return findObject(FileMap, FilePath);
   }
   std::shared_ptr<DpctFileInfo> getMainFile() const { return MainFile; }
   void setMainFile(std::shared_ptr<DpctFileInfo> Main) { MainFile = Main; }
@@ -1324,9 +1400,13 @@ public:
   getConstantReplProcessedFlagMap() {
     return ConstantReplProcessedFlagMap;
   }
-  static std::set<std::string> &getVarUsedByRuntimeSymbolAPISet() {
-    return VarUsedByRuntimeSymbolAPISet;
+  static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
+  static auto &getCodePinTypeInfoVec() { return CodePinTypeInfoMap; }
+  static auto &getCodePinTemplateTypeInfoVec() {
+    return CodePinTemplateTypeInfoMap;
   }
+  static auto &getCodePinTypeDepsVec() { return CodePinTypeDepsVec; }
+  static auto &getCodePinDumpFuncDepsVec() { return CodePinDumpFuncDepsVec; }
   static void setNeedParenAPI(const std::string &Name) {
     NeedParenAPISet.insert(Name);
   }
@@ -1335,9 +1415,6 @@ public:
   }
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
-
-  static std::string SchemaFileContentCUDA;
-  static std::string SchemaFileContentSYCL;
 
 private:
   DpctGlobalInfo();
@@ -1384,7 +1461,7 @@ private:
     return N->getBeginLoc();
   }
   static SourceLocation getLocation(const VarDecl *VD) {
-    return VD->getLocation();
+    return getDefinitionRange(VD->getLocation(), VD->getLocation()).getBegin();
   }
   static SourceLocation getLocation(const FunctionDecl *FD) {
     return FD->getBeginLoc();
@@ -1417,6 +1494,7 @@ private:
   static clang::tooling::UnifiedPath CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
+  static BuildScriptKind BuildScriptVal;
   static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
@@ -1429,8 +1507,7 @@ private:
   static bool EnableCodePin;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
-  static bool MigrateCmakeScript;
-  static bool MigrateCmakeScriptOnly;
+  static bool MigrateBuildScriptOnly;
   static bool EnableComments;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
 
@@ -1481,7 +1558,6 @@ private:
   static int CurrentMaxIndex;
   static int CurrentIndexInRule;
   static std::set<clang::tooling::UnifiedPath> IncludingFileSet;
-  static int VarSchemaIndex;
   static std::set<std::string> FileSetInCompilationDB;
   static std::set<std::string> GlobalVarNameSet;
   static clang::format::FormatStyle CodeFormatStyle;
@@ -1540,7 +1616,15 @@ private:
   /// "true" means this repl has been processed.
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
-  static std::set<std::string> VarUsedByRuntimeSymbolAPISet;
+  static IncludeMapSetTy IncludeMapSet;
+  static std::vector<std::pair<std::string, VarInfoForCodePin>>
+      CodePinTypeInfoMap;
+  static std::vector<std::pair<std::string, VarInfoForCodePin>>
+      CodePinTemplateTypeInfoMap;
+  static std::vector<std::pair<std::string, std::vector<std::string>>>
+      CodePinTypeDepsVec;
+  static std::vector<std::pair<std::string, std::vector<std::string>>>
+      CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
 };
 
@@ -1583,12 +1667,20 @@ public:
 // get from type.
 class CtTypeInfo {
 public:
+  struct {
+    std::string TypeName;
+    std::string DefinitionFuncName;
+  } SharedVarInfo;
   // If NeedSizeFold is true, array size will be folded, but original expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
+  CtTypeInfo();
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false);
   const std::string &getBaseName() { return BaseName; }
+  const std::string &getBaseNameWithoutQualifiers() {
+    return BaseNameWithoutQualifiers;
+  }
   size_t getDimension() { return Range.size(); }
   std::vector<SizeInfo> &getRange() { return Range; }
   // when there is no arguments, parameter MustArguments determine whether
@@ -1660,20 +1752,19 @@ private:
   void removeQualifier() { BaseName = BaseNameWithoutQualifiers; }
 
 private:
+  unsigned PointerLevel : 16;
+  unsigned IsReference : 1;
+  unsigned IsTemplate : 1;
+  unsigned TemplateDependentMacro : 1;
+  unsigned IsArray : 1;
+  unsigned ContainSizeofType : 1;
+  unsigned IsConstantQualified : 1;
   std::string BaseName;
   std::string BaseNameWithoutQualifiers;
   std::vector<SizeInfo> Range;
-  unsigned PointerLevel;
-  bool IsReference;
-  bool IsTemplate;
-  bool TemplateDependentMacro = false;
-  bool IsArray = false;
-
-  std::shared_ptr<TemplateDependentStringInfo> TDSI;
-  std::set<HelperFeatureEnum> HelperFeatureSet;
-  bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
-  bool IsConstantQualified = false;
+  std::set<HelperFeatureEnum> HelperFeatureSet;
+  std::shared_ptr<TemplateDependentStringInfo> TDSI;
 };
 
 // variable info includes name, type and location.
@@ -1725,6 +1816,9 @@ public:
   bool isExtern() { return Scope == Extern; }
   bool isLocal() { return Scope == Local; }
   bool isShared() { return Attr == Shared; }
+  bool isConstant() { return Attr == Constant; }
+  bool isDevice() { return Attr == Device; }
+  bool isManaged() { return Attr == Managed; }
   bool isTypeDeclaredLocal() { return IsTypeDeclaredLocal; }
   bool isAnonymousType() { return IsAnonymousType; }
   const CXXRecordDecl *getDeclOfVarType() { return DeclOfVarType; }
@@ -1751,7 +1845,7 @@ public:
   std::string getExternGlobalVarDecl();
   void appendAccessorOrPointerDecl(const std::string &ExternMemSize,
                                    bool ExternEmitWarning, StmtList &AccList,
-                                   StmtList &PtrList);
+                                   StmtList &PtrList, LocInfo LI);
   std::string getRangeClass();
   std::string getRangeDecl(const std::string &MemSize);
   ParameterStream &getFuncDecl(ParameterStream &PS);
@@ -1759,8 +1853,13 @@ public:
   ParameterStream &getKernelArg(ParameterStream &PS);
   std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
                                   bool NeedCheckExtraConstQualifier = false);
+  void setUsedBySymbolAPIFlag(bool Flag) { UsedBySymbolAPIFlag = Flag; }
+  bool getUsedBySymbolAPIFlag() { return UsedBySymbolAPIFlag; }
   void setUseHelperFuncFlag(bool Flag) { UseHelperFuncFlag = Flag; }
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
+  void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
+  bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
+  void setInitForDeviceGlobal(std::string Init) { InitList = Init; }
 
 private:
   bool isTreatPointerAsArray() {
@@ -1776,7 +1875,7 @@ private:
   std::string getInitArguments(const std::string &MemSize,
                                bool MustArguments = false);
   const std::string &getMemoryAttr();
-  std::string getSyclAccessorType();
+  std::string getSyclAccessorType(LocInfo LI = LocInfo());
   std::string getDpctAccessorType();
   std::string getNameWithSuffix(StringRef Suffix) {
     return buildString(getArgName(), "_", Suffix, getCTFixedSuffix());
@@ -1796,6 +1895,7 @@ private:
     Pointer,
     Accessor,
     Reference,
+    PointerToArray
   };
 
 private:
@@ -1824,8 +1924,10 @@ private:
   const DeclStmt *DeclStmtOfVarType = nullptr;
   std::string LocalTypeName = "";
 
-  static std::unordered_map<const DeclStmt *, int> AnonymousTypeDeclStmtMap;
+  static std::unordered_map<std::string, int> AnonymousTypeDeclStmtMap;
+  bool UsedBySymbolAPIFlag = false;
   bool UseHelperFuncFlag = true;
+  bool UseDeviceGlobalFlag = false;
 };
 
 class TextureTypeInfo {
@@ -2041,6 +2143,24 @@ private:
   bool IsWritten = true;
 };
 
+class TempStorageVarInfo {
+  unsigned Offset;
+  std::string Name;
+  std::shared_ptr<TemplateDependentStringInfo> Type;
+
+public:
+  TempStorageVarInfo(unsigned Off, StringRef Name,
+                     std::shared_ptr<TemplateDependentStringInfo> T)
+      : Offset(Off), Name(Name.str()), Type(T) {}
+  const std::string &getName() const { return Name; }
+  unsigned getOffset() const { return Offset; }
+  void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;
+  void applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
+  ParameterStream &getFuncDecl(ParameterStream &PS);
+  ParameterStream &getFuncArg(ParameterStream &PS);
+  ParameterStream &getKernelArg(ParameterStream &PS);
+};
+
 // memory variable map includes memory variable used in __global__/__device__
 // function and call expression.
 class MemVarMap {
@@ -2064,6 +2184,7 @@ public:
   void setBF64(bool Has = true) { HasBF64 = Has; }
   void setBF16(bool Has = true) { HasBF16 = Has; }
   void setGlobalMemAcc(bool Has = true) { HasGlobalMemAcc = Has; }
+  void addCUBTempStorage(std::shared_ptr<TempStorageVarInfo> Tmp);
   void addTexture(std::shared_ptr<TextureInfo> Tex);
   void addVar(std::shared_ptr<MemVarInfo> Var);
   void merge(const MemVarMap &OtherMap);
@@ -2081,6 +2202,7 @@ private:
   template <CallOrDecl COD>
   std::string
   getArgumentsOrParameters(int PreParams, int PostParams,
+                           LocInfo LI = LocInfo(),
                            FormatInfo FormatInformation = FormatInfo()) const;
 
 public:
@@ -2092,12 +2214,13 @@ public:
   // true, and the third argument is the string of indent, which will occur
   // before each ExtraParam.
   std::string
-  getExtraDeclParam(bool HasPreParam, bool HasPostParam,
+  getExtraDeclParam(bool HasPreParam, bool HasPostParam, LocInfo LI,
                     FormatInfo FormatInformation = FormatInfo()) const;
   std::string getKernelArguments(bool HasPreParam, bool HasPostParam,
                                  const clang::tooling::UnifiedPath &Path) const;
   const MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) const;
   const GlobalMap<TextureInfo> &getTextureMap() const;
+  const GlobalMap<TempStorageVarInfo> &getTempStorageMap() const;
   void removeDuplicateVar();
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope);
@@ -2109,8 +2232,17 @@ public:
   unsigned int getHeadNodeDim() const;
 
 private:
-  static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
-                    const std::vector<TemplateArgumentInfo> &TemplateArgs);
+  template <class VarT>
+  static void merge(GlobalMap<VarT> &Master, const GlobalMap<VarT> &Branch,
+                    const std::vector<TemplateArgumentInfo> &TemplateArgs) {
+    if (TemplateArgs.empty())
+      return dpct::merge(Master, Branch);
+    for (auto &VarInfoPair : Branch)
+      Master
+          .insert(std::make_pair(VarInfoPair.first,
+                                 std::make_shared<VarT>(*VarInfoPair.second)))
+          .first->second->applyTemplateArguments(TemplateArgs);
+  }
   int calculateExtraArgsSize(const MemVarInfoMap &Map) const;
 
   template <CallOrDecl COD>
@@ -2130,8 +2262,11 @@ private:
 
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
-                                              const GlobalMap<T> &VarMap);
-
+                                              const GlobalMap<T> &VarMap,
+                                              LocInfo LI = LocInfo());
+  template <CallOrDecl COD>
+  static void getArgumentsOrParametersFromoTextureInfoMap(
+      ParameterStream &PS, const GlobalMap<TextureInfo> &VarMap);
   template <class T, CallOrDecl COD> struct GetArgOrParam;
   template <class T> struct GetArgOrParam<T, DeclParameter> {
     ParameterStream &operator()(ParameterStream &PS, std::shared_ptr<T> V) {
@@ -2149,13 +2284,14 @@ private:
     }
   };
   void getArgumentsOrParametersForDecl(ParameterStream &PS, int PreParams,
-                                       int PostParams) const;
+                                       int PostParams, LocInfo LI) const;
 
   bool HasItem, HasStream, HasSync, HasBF64, HasBF16, HasGlobalMemAcc;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
   GlobalMap<TextureInfo> TextureMap;
+  GlobalMap<TempStorageVarInfo> TempStorageMap;
 };
 
 template <>
@@ -2202,7 +2338,7 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), BeginLoc(Offset) {}
+      : FilePath(FilePathIn), Offset(Offset), CallFuncExprOffset(Offset) {}
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
@@ -2246,7 +2382,7 @@ public:
   virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
                       bool isKernelCall = false);
-  std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
+  std::shared_ptr<DeviceFunctionInfo> getFuncInfo();
   bool IsAllTemplateArgsSpecified = false;
 
   virtual ~CallFunctionExpr() = default;
@@ -2254,10 +2390,10 @@ public:
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
-  unsigned getBegin() { return BeginLoc; }
+  unsigned getOffset() { return Offset; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
   void buildInfo();
-  void buildCalleeInfo(const Expr *Callee);
+  void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
 
 private:
@@ -2275,18 +2411,20 @@ private:
   void buildTextureObjectArgsInfo(const CallExpr *CE);
 
   template <class CallT> void buildTextureObjectArgsInfo(const CallT *C);
-  void mergeTextureObjectInfo();
+  void mergeTextureObjectInfo(std::shared_ptr<DeviceFunctionInfo> Info);
 
   const clang::tooling::UnifiedPath FilePath;
-  unsigned BeginLoc = 0;
+  unsigned Offset = 0;
+  unsigned CallFuncExprOffset = 0;
   unsigned ExtraArgLoc = 0;
-  std::shared_ptr<DeviceFunctionInfo> FuncInfo;
+  std::vector<std::shared_ptr<DeviceFunctionInfo>> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
 
   // <ParameterIndex, ParameterName>
   std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
+  bool IsADLEnable = false;
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;
@@ -2304,7 +2442,8 @@ public:
                      const FunctionTypeLoc &FTL, const ParsedAttributes &Attrs,
                      const FunctionDecl *Specialization);
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkUnresolved(const UnresolvedLookupExpr *ULE);
+  LinkUnresolved(const UnresolvedLookupExpr *ULE,
+                 std::optional<unsigned int> NumArgs);
   static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD);
   static std::shared_ptr<DeviceFunctionInfo>
@@ -2361,9 +2500,10 @@ protected:
   template <class AttrsT>
   void buildReplaceLocInfo(const FunctionTypeLoc &FTL, const AttrsT &Attrs);
 
-  virtual std::string getExtraParameters();
+  virtual std::string getExtraParameters(LocInfo LI);
 
   unsigned Offset;
+  unsigned OffsetForAttr;
   const clang::tooling::UnifiedPath FilePath;
   unsigned ParamsNum;
   unsigned ReplaceOffset;
@@ -2401,7 +2541,7 @@ public:
 private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,
                                 const FunctionDecl *Specialization);
-  std::string getExtraParameters() override;
+  std::string getExtraParameters(LocInfo LI) override;
 };
 
 class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
@@ -2492,11 +2632,12 @@ public:
   bool isKernelInvoked() { return IsKernelInvoked; }
   void setKernelInvoked() { IsKernelInvoked = true; }
   std::string getExtraParameters(const clang::tooling::UnifiedPath &Path,
+                                 LocInfo LI,
                                  FormatInfo FormatInformation = FormatInfo());
   std::string
   getExtraParameters(const clang::tooling::UnifiedPath &Path,
                      const std::vector<TemplateArgumentInfo> &TAList,
-                     FormatInfo FormatInformation = FormatInfo());
+                     LocInfo LI, FormatInfo FormatInformation = FormatInfo());
   void setDefinitionFilePath(const clang::tooling::UnifiedPath &Path) {
     DefinitionFilePath = Path;
   }
@@ -2510,6 +2651,10 @@ public:
   bool IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
   void setForceInlineDevFunc() { ForceInlineDevFunc = true; }
   bool IsForceInlineDevFunc() { return ForceInlineDevFunc; }
+  void setOverloadedOperatorKind(OverloadedOperatorKind Kind) {
+    OO_Kind = Kind;
+  }
+  OverloadedOperatorKind getOverloadedOperatorKind() { return OO_Kind; }
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -2555,12 +2700,14 @@ private:
   bool IsKernelInvoked = false;
   bool CallGroupFunctionInControlFlow = false;
   bool HasCheckedCallGroupFunctionInControlFlow = false;
+  OverloadedOperatorKind OO_Kind = OverloadedOperatorKind::OO_None;
 };
 
 class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
   bool NeedLambda = false;
+  bool NeedDefaultRetValue = false;
 
 private:
   struct ArgInfo {
@@ -2590,6 +2737,7 @@ private:
     int Index;
     int ArgSize = 0;
     bool IsDeviceRandomGeneratorType = false;
+    bool HasImplicitConversion = false;
     bool IsDoublePointer = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
@@ -2627,7 +2775,7 @@ public:
 
   static std::shared_ptr<KernelCallExpr> buildFromCudaLaunchKernel(
       const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
-      const CallExpr *);
+      const CallExpr *, bool IsAssigned = false);
   static std::shared_ptr<KernelCallExpr>
   buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *,
                   std::shared_ptr<DeviceFunctionInfo>);
@@ -2651,6 +2799,8 @@ private:
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
   void setNeedAddLambda(const CUDAKernelCallExpr *KernelCall);
+  void setNeedAddLambda();
+  void setNeedDefaultRet();
   void buildNeedBracesInfo(const CallExpr *KernelCall);
   void buildLocationInfo(const CallExpr *KernelCall);
   template <class ArgsRange>

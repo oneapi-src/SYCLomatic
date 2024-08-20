@@ -12,14 +12,18 @@
   MatchMode: Partial
   Priority: Fallback
   CmakeSyntax: project
-  In: project(${arg0} ${argN})
+  In: project${empty}(${arg0})
+  Out: |
+   project(${arg0})
+   set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
+
+- Rule: rule_project_remove_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: project_remove_cuda
+  In: project${empty}(${arg0} ${argN})
   Out: |
    project(${arg0} ${argN})
-   set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -fsycl")
-   find_program(dpct_bin_path NAMES dpct PATHS)
-   get_filename_component(bin_path_of_dpct \${dpct_bin_path} DIRECTORY)
-   set(dpct_cmake_file_path "\${bin_path_of_dpct}/../cmake/dpct.cmake")
-   include(\${dpct_cmake_file_path})
   Subrules:
     argN:
       In: CUDA
@@ -27,120 +31,99 @@
       MatchMode: Full
       RuleId: "remove_cuda"
 
-- Rule: rule_find_package-cuda_no_args
+- Rule: rule_find_package_cuda_no_args
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-cuda_no_args
-  In: find_package(CUDA)
+  CmakeSyntax: find_package_cuda_no_args
+  In: find_package${empty}(${empty}CUDA)
   Out: find_package(IntelSYCL REQUIRED)
 
-- Rule: rule_find_package-cuda
+- Rule: rule_find_package_cuda_with_options
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-cuda
-  In: find_package(CUDA ${opts})
+  CmakeSyntax: find_package_cuda_with_options
+  In: find_package${empty}(${empty}CUDA ${opts})
   Out: find_package(IntelSYCL REQUIRED)
 
-- Rule: rule_find_package-cudatoolkit_no_args
+- Rule: rule_find_package_cudatoolkit_no_args
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-cudatoolkit_no_args
-  In: find_package(CUDAToolkit)
+  CmakeSyntax: find_package_cudatoolkit_no_args
+  In: find_package${empty}(${empty}CUDAToolkit)
   Out: |
     find_package(IntelSYCL)
     find_package(MKL)
 
-- Rule: rule_find_package-cudatoolkit
+- Rule: rule_find_package_cudatoolkit_with_options
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-cudatoolkit
-  In: find_package(CUDAToolkit ${value})
+  CmakeSyntax: find_package_cudatoolkit
+  In: find_package${empty}(${empty}CUDAToolkit ${opts})
   Out: |
     find_package(IntelSYCL REQUIRED)
     find_package(MKL REQUIRED)
 
-- Rule: rule_find_package-cub_no_args
+- Rule: rule_find_package_cub_no_args
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-cub_no_args
-  In: find_package(CUB)
+  CmakeSyntax: find_package_cub_no_args
+  In: find_package${empty}(${empty}CUB)
   Out: find_package(oneDPL)
 
-- Rule: rule_find_package-cub
+- Rule: rule_find_package_cub_with_options
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-cub
-  In: find_package(CUB ${args})
+  CmakeSyntax: find_package_cub_with_options
+  In: find_package${empty}(${empty}CUB ${opts})
   Out: find_package(oneDPL REQUIRED)
 
-- Rule: rule_find_package-mpi_no_args
+- Rule: rule_find_package_mpi
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-mpi_no_args
-  In: find_package(MPI)
-  Out: "#find_package(MPI)"
+  CmakeSyntax: find_package_mpi
+  In: find_package${empty}(${empty}MPI${opts})
+  Out: "#find_package${empty}(${empty}MPI${opts})"
 
-- Rule: rule_find_package-mpi
+- Rule: rule_find_package_omp
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-mpi
-  In: find_package(MPI ${args})
-  Out: "#find_package(MPI ${args})"
+  CmakeSyntax: find_package_omp
+  In: find_package${empty}(${empty}OpenMP${opts})
+  Out: "#find_package${empty}(${empty}OpenMP${opts})"
 
-- Rule: rule_find_package-omp_no_args
+- Rule: rule_find_package_nvjpeg_no_options
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-omp_no_args
-  In: find_package(OpenMP)
-  Out: "#find_package(OpenMP)"
+  CmakeSyntax: find_package_nvjpeg_no_options
+  In: find_package${empty}(${empty}NVJPEG)
+  Out: "#find_package${empty}(${empty}NVJPEG)"
 
-- Rule: rule_find_package-omp
+- Rule: rule_find_package_nvjpeg
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: find_package-omp
-  In: find_package(OpenMP ${args})
-  Out: "#find_package(OpenMP ${args})"
-
-- Rule: rule_find_package-nvjpeg_no_args
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: find_package-nvjpeg_no_args
-  In: find_package(NVJPEG)
-  Out: "#find_package(NVJPEG)"
-
-- Rule: rule_find_package-nvjpeg
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: find_package-nvjpeg
-  In: find_package(NVJPEG ${args})
+  CmakeSyntax: find_package_nvjpeg
+  In: find_package${empty}(${empty}NVJPEG ${args})
   Out: "#find_package(NVJPEG ${args})"
 
 - Rule: rule_cmake_cxx_standard
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cmake_cxx_standard
-  In: set (CMAKE_CXX_STANDARD ${version})
-  Out: set (CMAKE_CXX_STANDARD 17)
+  In: set${empty}(${empty}CMAKE_CXX_STANDARD ${cplusplus_version})
+  Out: set(CMAKE_CXX_STANDARD ${rewrite_cplusplus_version})
 
 - Rule: rule_cmake_cxx_compiler
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cmake_cxx_compiler
-  In: set (CMAKE_CXX_COMPILER ${version})
-  Out: set (CMAKE_CXX_COMPILER icpx)
-
-- Rule: rule_set_property_cxx_standard
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set_property_cxx_standard
-  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${version})
-  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD 17)
+  In: set${empty}(${empty}CMAKE_CXX_COMPILER ${version})
+  Out: set(CMAKE_CXX_COMPILER icpx)
 
 - Rule: rule_set_property_cuda_seprarable_only
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cuda_seprarable_only
-  In: set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state})
+  In: set_target_properties${empty}(${target_property} CUDA_SEPARABLE_COMPILATION ${state})
   Out: |
     #[[
     set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state})]]
@@ -149,21 +132,21 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cuda_seprarable
-  In: set_target_properties(${target_property} CUDA_SEPARABLE_COMPILATION ${state} ${other_properties})
+  In: set_target_properties${empty}(${target_property} CUDA_SEPARABLE_COMPILATION ${state} ${other_properties})
   Out: set_target_properties(${target_property} ${other_properties})
 
 - Rule: rule_set_property_cuda_architechtures
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cuda_architechtures
-  In: set_target_properties(${targets} PROPERTIES CUDA_ARCHITECHTURES ${state} ${other_properties})
+  In: set_target_properties${empty}(${targets} PROPERTIES CUDA_ARCHITECHTURES ${state} ${other_properties})
   Out: set_target_properties(${targets} PROPERTIES ${other_properties})
 
 - Rule: rule_set_property_cuda_architechtures_only
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_property_cuda_architechtures_only
-  In: set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})
+  In: set_target_properties${empty}(${target_property} CUDA_ARCHITECHTURES ${state})
   Out: |
     #[[
     set_target_properties(${target_property} CUDA_ARCHITECHTURES ${state})]]
@@ -172,19 +155,14 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_compile_ptx
-  In: cuda_compile_ptx(${device} ${value})
+  In: cuda_compile_ptx${empty}(${device} ${value})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
-  Subrules:
-    value:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
-- Rule: rule_user_defined_function_cpp
+- Rule: rule_user_defined_function_cpp_file
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: cuda_files_in_user_defined_function_cpp
+  CmakeSyntax: user_defined_function_cpp_file
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -193,11 +171,11 @@
       In: ${arg}.cpp
       Out: ${arg}.${rewrite_extention_name}
 
-- Rule: rule_user_defined_function_cu
+- Rule: rule_user_defined_function_cu_file
   Kind: CMakeRule
   Priority: Fallback
   MatchMode: Partial
-  CmakeSyntax: cuda_files_in_user_defined_function_cu
+  CmakeSyntax: user_defined_function_cu_file
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:
@@ -206,6 +184,394 @@
       In: ${arg}.cu
       Out: ${arg}.${rewrite_extention_name}
 
+# ${CUDA_LIBRARIES} is cmake reserved variable for the CUDA runtime library.
+# In SYCL side, SYCL runtime is default auto-loaded when option "-fsycl" is specified, so we remove it in SYCL side.
+- Rule: rule_CUDA_LIBRARIES_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_LIBRARIES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_LIBRARIES}
+      Out: ""
+      RuleId: "remove_CUDA_LIBRARIES"
+
+# ${CUDA_cudart_static_LIBRARY} is cmake reserved variable for static version of the CUDA runtime library.
+# SYCL runtime is auto-loaded when "-fsycl" flag is specified, so this variable is removed in the migrated CMake.
+- Rule: rule_CUDA_cudart_static_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_cudart_static_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_cudart_static_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_cudart_static_LIBRARY"
+
+# ${CUDA_cudadevrt_LIBRARY} is cmake reserved variable for CUDA device runtime library.
+# SYCL runtime is auto-loaded when "-fsycl" flag is specified, so this variable is removed in the migrated CMake.
+- Rule: rule_CUDA_cudadevrt_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_cudadevrt_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_cudadevrt_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_cudadevrt_LIBRARY"
+
+- Rule: rule_CUDA_CUFFT_LIBRARIES
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_CUFFT_LIBRARIES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_CUFFT_LIBRARIES}
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_CUDA_CUFFT_LIBRARIES_with_MKL"
+
+- Rule: rule_CUDA_CUBLAS_LIBRARIES
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_CUBLAS_LIBRARIES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_CUBLAS_LIBRARIES}
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_CUDA_CUBLAS_LIBRARIES_with_MKL"
+
+- Rule: rule_CUDA_curand_LIBRARY
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_curand_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_curand_LIBRARY}
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_CUDA_curand_LIBRARY_with_MKL"
+
+- Rule: rule_CUDA_cusolver_LIBRARY
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_cusolver_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_cusolver_LIBRARY}
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_CUDA_cusolver_LIBRARY_with_MKL"
+
+- Rule: rule_CUDA_cusparse_LIBRARY
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_cusparse_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_cusparse_LIBRARY}
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_CUDA_cusparse_LIBRARY_with_MKL"
+
+- Rule: rule_CUDA_cupti_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_cupti_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_cupti_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_cupti_LIBRARY"
+
+- Rule: rule_CUDA_CUT_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_CUT_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_CUT_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_CUT_LIBRARY"
+
+- Rule: rule_CUDA_npp_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_npp_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_npp_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_npp_LIBRARY"
+
+- Rule: rule_CUDA_nppc_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppc_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppc_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppc_LIBRARY"
+
+- Rule: rule_CUDA_nppi_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppi_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppi_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppi_LIBRARY"
+
+- Rule: rule_CUDA_nppial_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppial_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppial_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppial_LIBRARY"
+
+- Rule: rule_CUDA_nppicc_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppicc_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppicc_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppicc_LIBRARY"
+
+- Rule: rule_CUDA_nppicom_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppicom_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppicom_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppicom_LIBRARY"
+
+- Rule: rule_CUDA_nppidei_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppidei_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppidei_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppidei_LIBRARY"
+
+- Rule: rule_CUDA_nppif_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppif_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppif_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppif_LIBRARY"
+
+- Rule: rule_CUDA_nppig_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppig_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppig_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppig_LIBRARY"
+
+- Rule: rule_CUDA_nppim_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppim_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppim_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppim_LIBRARY"
+
+- Rule: rule_CUDA_nppist_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppist_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppist_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppist_LIBRARY"
+
+- Rule: rule_CUDA_nppisu_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppisu_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppisu_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppisu_LIBRARY"
+
+- Rule: rule_CUDA_nppitc_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nppitc_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nppitc_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nppitc_LIBRARY"
+
+- Rule: rule_CUDA_npps_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_npps_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_npps_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_npps_LIBRARY"
+
+- Rule: rule_CUDA_nvcuvenc_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nvcuvenc_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nvcuvenc_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nvcuvenc_LIBRARY"
+
+- Rule: rule_CUDA_nvcuvid_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nvcuvid_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nvcuvid_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nvcuvid_LIBRARY"
+
+- Rule: rule_CUDA_nvToolsExt_LIBRARY_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_nvToolsExt_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_nvToolsExt_LIBRARY}
+      Out: ""
+      RuleId: "remove_CUDA_nvToolsExt_LIBRARY"
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
@@ -214,11 +580,6 @@
   CmakeSyntax: rule_cuda_compile_01
   In: cuda_compile(${libname} ${srcs} STATIC OPTIONS ${opts})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
@@ -227,12 +588,6 @@
   CmakeSyntax: rule_cuda_compile_02
   In: cuda_compile(${libname} ${srcs} SHARED OPTIONS ${opts})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-
 
 - Rule: rule_cuda_compile_with_lib_type
   Kind: CMakeRule
@@ -241,11 +596,6 @@
   CmakeSyntax: rule_cuda_compile_03
   In: cuda_compile(${libname} ${srcs} STATIC)
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_cuda_compile_with_lib_type
   Kind: CMakeRule
@@ -254,12 +604,6 @@
   CmakeSyntax: rule_cuda_compile_04
   In: cuda_compile(${libname} ${srcs} SHARED)
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-
 
 - Rule: rule_cuda_compile_with_no_opts
   Kind: CMakeRule
@@ -268,34 +612,17 @@
   CmakeSyntax: rule_cuda_compile_05
   In: cuda_compile(${libname} ${srcs})
   Out: dpct_helper_sycl_compile(${libname} ${srcs})
-  Subrules:
-    srcs:
-      MatchMode: Full
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-
-- Rule: rule_add_compile_options
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_compile_options
-  In: add_compile_options(${arg})
-  Out: add_compile_options(${arg})
-  Subrules:
-    arg:
-      In: -std=${cxx_standard}
-      Out: -std=c++17
-      RuleId: "add_compile_options_cxx_standard"
 
 - Rule: rule_target_compile_options
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: target_compile_options
-  In: target_compile_options(${arg})
+  In: target_compile_options${empty}(${arg})
   Out: target_compile_options(${arg})
   Subrules:
     arg:
-      In: $<$<COMPILE_LANGUAGE:CUDA>:${flags}>
-      Out: ""
+      In: $<$<COMPILE_LANGUAGE:CUDA${rest}>:${flags}>
+      Out: $<$<COMPILE_LANGUAGE:CXX>:${flags}>
       RuleId: "target_compile_options_cuda_arg"
 
 - Rule: rule_CUDA_HAS_FP16
@@ -312,22 +639,20 @@
       Out: SYCL_HAS_FP16
 
 # Current Yaml based rule hard-code to map "cxx_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
 - Rule: rule_cxx_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cxx_target_compile_features
   MatchMode: Partial
-  In: target_compile_features(${value})
+  In: target_compile_features${empty}(${value})
   Out: target_compile_features(${value})
   Subrules:
     value:
-      In: cxx_std_${ver}
-      Out: cxx_std_17
-      RuleId: "adjust cxx_ver"
+      In: cxx_std_${cplusplus_version}
+      Out: cxx_std_${rewrite_cplusplus_version}
+      RuleId: "adjust_cxx_ver"
 
 # Current Yaml based rule hard-code to map "cuda_std_xx" to "cxx_std_17"
-# A more flexible mapping logic should be implemented in implicit rules
 - Rule: rule_cuda_target_compile_features
   Kind: CMakeRule
   Priority: Fallback
@@ -337,14 +662,14 @@
   Out: target_compile_features(${value})
   Subrules:
     value:
-      In: cuda_std_${ver}
-      Out: cxx_std_17
-      RuleId: "adjust cuda_ver"
+      In: cuda_std_${cplusplus_version}
+      Out: cxx_std_${rewrite_cplusplus_version}
+      RuleId: "adjust_cuda_ver"
 
-- Rule: rule_header_file
+- Rule: rule_file_include_cuh_header_file
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: cuh_file
+  CmakeSyntax: file_include_cuh_header_file
   MatchMode: Partial
   In: file(${value})
   Out: file(${value})
@@ -353,34 +678,7 @@
       In: ${arg}.cuh
       Out: ${arg}.dp.hpp
       MatchMode: Full
-      RuleId: "adjust CUDA header file extension"
-
-- Rule: rule_src_file
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cu_file
-  MatchMode: Partial
-  In: file(${value})
-  Out: file(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Full
-      RuleId: "adjust CUDA src file extension"
-
-- Rule: rule_set_property
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: set_property
-  In: set_property(${value})
-  Out: set_property(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_set_property_cu_extension_with_dp_cpp"
+      RuleId: "adjust_CUDA_header_file_extension"
 
 - Rule: rule_cuda_add_executable
   Kind: CMakeRule
@@ -388,27 +686,8 @@
   CmakeSyntax: cuda_add_executable
   In: cuda_add_executable(${value})
   Out: add_executable(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_cuda_add_executable_cu_extension_with_dp_cpp"
 
-- Rule: rule_add_executable
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: add_executable
-  In: add_executable(${value} OPTIONS {options})
-  Out: add_executable(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_add_executable_cu_extension_with_dp_cpp"
-
-- Rule: rule_add_executable_remove_opts
+- Rule: rule_add_executable_opts
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: add_executable_opts
@@ -422,10 +701,6 @@
   MatchMode: Partial
   In: cuda_compile_cubin(${device} ${value})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
 - Rule: rule_cuda_compile_cubin
   Kind: CMakeRule
@@ -434,145 +709,82 @@
   MatchMode: Partial
   In: cuda_compile_cubin(${device} ${value} OPTIONS ${opts})
   Out: dpct_helper_compile_sycl_code(${device} ${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
 
-# CUDA_LIBRARIES is cmake cuda reverved list variable, should be removed in SYCL
-- Rule: rule_target_link_libraries_CUDA_LIBRARIES
+- Rule: rule_target_link_libraries_cuda
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: CUDA_LIBRARIES_target_link_libraries
-  In: target_link_libraries(${CULibraries})
-  Out: target_link_libraries(${CULibraries})
+  CmakeSyntax: cuda_target_link_libraries
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    CULibraries:
-      In: |
-        \${CUDA_LIBRARIES}
+    libs:
+      In: cuda
       Out: ""
       MatchMode: Full
-      RuleId: "remove_cuda_reserved_variable_CUDA_LIBRARIES"
 
-- Rule: rule_target_link_libraries_-lcublas
+- Rule: rule_target_link_libraries_cublas
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: -lcublas_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  CmakeSyntax: cublas_target_link_libraries
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    CUDALibraries:
+    libs:
+      In: cublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+      RuleId: "replace_cublas_with_MKL_target"
+
+- Rule: rule_target_link_libraries_libcublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: libcublas_target_link_libraries
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
       In: -lcublas
-      Out: -qmkl
+      Out: |
+        \${MKL_LIB}
       MatchMode: Full
-      RuleId: "replace_-lcublas_with_qmkl"
-
-- Rule: rule_target_link_libraries_CUDA_cublas
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: CUDA_cublas_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cublas"
-      Out: -qmkl
-      MatchMode: Full
-      RuleId: "replace_CUDA_cublas_with_qmkl"
-
-# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
-- Rule: rule_target_link_libraries_cuda_driver
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_driver_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cuda_driver"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_CUDA_driver"
-
-# libsycl.so is linked by default as alternative to cuda_driver library, so removing here
-- Rule: rule_target_link_libraries_cuda_rt
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cudart_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::cudart"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_CUDA_cudart"
+      RuleId: "replace_libcublas_with_qmkl"
 
 - Rule: rule_target_link_libraries_cudnn
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cudnn_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: "cudnn"
       Out: |
         \${DNN_LIB}
       MatchMode: Full
       RuleId: "replace_cudnn_with_libdnn"
 
-# SYCL does not have mapping for nvrtc currently, so removing here
-- Rule: rule_target_link_libraries_nvrtc
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: nvrtc_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::nvrtc"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_nvrtc"
-
-# SYCL does not have mapping for nvToolsExt currently, so removing here
-- Rule: rule_target_link_libraries_nvToolsExt
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: nvToolsExt_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
-  Subrules:
-    CUDALibraries:
-      In: "CUDA::nvToolsExt"
-      Out: ""
-      MatchMode: Full
-      RuleId: "remove_nvToolsExt"
-
-# SYCL does not have mapping for libnvinfer currently, so removing here
 - Rule: rule_target_link_libraries_libnvinfer
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvinfer_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: libnvinfer.so
       Out: ""
       MatchMode: Full
       RuleId: "remove_libnvinfer"
 
-# SYCL does not have mapping for libnvonnxparser currently, so removing here
 - Rule: rule_target_link_libraries_libnvonnxparser
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libnvonnxparser_target_link_libraries
-  In: target_link_libraries(${CUDALibraries})
-  Out: target_link_libraries(${CUDALibraries})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    CUDALibraries:
+    libs:
       In: libnvonnxparser.so
       Out: ""
       MatchMode: Full
@@ -583,10 +795,104 @@
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: libstdc++_target_link_libraries
-  In: target_link_libraries(${StaticLibraries})
-  Out: target_link_libraries(${StaticLibraries})
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
   Subrules:
-    StaticLibraries:
+    libs:
+      In: -static-libstdc++
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_-static-libstdc++"
+
+- Rule: rule_link_libraries_cuda
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cuda
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: cuda
+      Out: ""
+      MatchMode: Full
+
+- Rule: rule_link_libraries_cublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cublas
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: cublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+      RuleId: "replace_cublas_with_MKL_target"
+
+- Rule: rule_link_libraries_libcublas
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libcublas
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: -lcublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+      RuleId: "replace_libcublas_with_qmkl"
+
+- Rule: rule_link_libraries_cudnn
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_cudnn
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: "cudnn"
+      Out: |
+        \${DNN_LIB}
+      MatchMode: Full
+      RuleId: "replace_cudnn_with_libdnn"
+
+- Rule: rule_link_libraries_libnvinfer
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libnvinfer
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: libnvinfer.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvinfer"
+
+- Rule: rule_link_libraries_libnvonnxparser
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libnvonnxparser
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
+      In: libnvonnxparser.so
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_libnvonnxparser"
+
+# icpx: error: '-static-libstdc++' is not supported with '-fsycl', so removing here
+- Rule: rule_link_libraries_libstdc++
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: link_libraries_libstdc++
+  In: link_libraries(${libs})
+  Out: link_libraries(${libs})
+  Subrules:
+    libs:
       In: -static-libstdc++
       Out: ""
       MatchMode: Full
@@ -598,14 +904,8 @@
   CmakeSyntax: cuda_compile_fatbin
   In: cuda_compile_fatbin(${value})
   Out: dpct_helper_compile_sycl_code(${value})
-  Subrules:
-    value:
-      In: ${arg}.cu
-      Out: ${arg}.dp.cpp
-      MatchMode: Partial
-      RuleId: "replace_source_extension_with_dp_cpp"
 
-- Rule: rule_cuda_compile_fatbin_remove_opts
+- Rule: rule_cuda_compile_fatbin_opts
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_compile_fatbin_opts
@@ -620,9 +920,1878 @@
   In: cuda_include_directories(${value})
   Out: include_directories(${value})
 
+- Rule: rule_CUDA_INCLUDE_DIRS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_INCLUDE_DIRS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_INCLUDE_DIRS
+      Out: |
+        SYCL_INCLUDE_DIR
+      RuleId: "replace_CUDA_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
+
+- Rule: rule_CUDA_NVCC_INCLUDE_DIRS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_NVCC_INCLUDE_DIRS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_NVCC_INCLUDE_DIRS}
+      Out: |
+        \${SYCL_INCLUDE_DIR}
+      RuleId: "replace_CUDA_NVCC_INCLUDE_DIRS_with_SYCL_INCLUDE_DIR"
+
 - Rule: rule_cuda_add_cufft_to_target
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: cuda_add_cufft_to_target
   In: cuda_add_cufft_to_target(${target})
   Out: dpct_helper_add_mkl_to_target(${target})
+
+- Rule: rule_cuda_add_cublas_to_target
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cuda_add_cublas_to_target
+  In: cuda_add_cublas_to_target(${target})
+  Out: dpct_helper_add_mkl_to_target(${target})
+
+- Rule: rule_cuda_add_library
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Full
+  CmakeSyntax: cuda_add_library
+  In: cuda_add_library(${arg})
+  Out: add_library(${arg})
+
+- Rule: rule_set_cuda_64_bit_device_code_on
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_64_bit_device_code_on
+  In: set(CUDA_64_BIT_DEVICE_CODE ON)
+  Out: |
+    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m64")
+
+- Rule: rule_set_cuda_64_bit_device_code_off
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cuda_64_bit_device_code_off
+  In: set(CUDA_64_BIT_DEVICE_CODE OFF)
+  Out: |
+    set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -m32")
+
+- Rule: rule_if_cuda_64_bit_device_code
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: if_cuda_64_bit_device_code
+  In: if(${conditions}CUDA_64_BIT_DEVICE_CODE${other_conditions})
+  Out: if(${conditions}(\${CMAKE_CXX_FLAGS} MATCHES "-m64")${other_conditions})
+
+- Rule: rule_CMAKE_CUDA_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_COMPILER
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER
+      Out: CMAKE_SYCL_COMPILER
+
+- Rule: rule_CMAKE_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_HOST_COMPILER
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
+
+- Rule: rule_CMAKE_CUDA_ARCHITECTURES
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_ARCHITECTURES
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_ARCHITECTURES
+      Out: CMAKE_SYCL_ARCHITECTURES
+
+- Rule: rule_CMAKE_CUDA_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_FLAGS
+      Out: CMAKE_SYCL_FLAGS
+
+- Rule: rule_CUDA_NVCC_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_NVCC_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_NVCC_FLAGS
+      Out: CMAKE_SYCL_FLAGS
+
+- Rule: rule_cudart_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudart_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cudart_static
+      Out: ""
+
+# libsycl.so is linked by default as alternative to cuda runtime library, so removing here
+- Rule: rule_cudart_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudart
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cudart
+      Out: ""
+
+# libsycl.so is linked by default as alternative to cuda river library, so removing here
+- Rule: rule_cuda_driver_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_driver
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cuda_driver
+      Out: ""
+
+- Rule: rule_cublas
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublas
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      In: CUDA::cublas
+      Out: |
+        \${MKL_LIB}
+      MatchMode: Full
+
+- Rule: rule_cublas_static
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublas_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublas_static
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_cublasLt
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublasLt
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublasLt
+      Out: |
+        \${DNN_LIB}
+
+- Rule: rule_cublasLt_static
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cublasLt_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cublasLt_static
+      Out: |
+        \${DNN_LIB}
+
+- Rule: rule_cufft
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufft
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cufft
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cufft_with_MKL"
+
+- Rule: rule_cufft_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufft_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cufft
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_cusparse_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cusparse_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cusparse
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_curand_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: curand_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: curand
+      Out: |
+        \${MKL_LIB}
+
+- Rule: rule_cudadevrt_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudadevrt_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: cudadevrt
+      Out: ""
+
+- Rule: rule_nccl_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nccl_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nccl
+      Out: -lccl
+
+- Rule: rule_nvrtc_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nvrtc
+      Out: ""
+
+- Rule: rule_ml_without_cuda_prefix
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: ml_without_cuda_prefix
+  In: target_link_libraries${empty}(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      MatchMode: Full
+      In: nvidia-ml
+      Out: ""
+
+- Rule: rule_cufftw
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufftw
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cufftw
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cufftw_with_MKL"
+
+- Rule: rule_cufft_static
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufft_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cufft_static
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cufft_static_with_MKL"
+
+- Rule: rule_cufft_static_nocallback
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufft_static_nocallback
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cufft_static_nocallback
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cufft_static_nocallback_with_MKL"
+
+- Rule: rule_cufftw_static
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cufftw_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cufftw_static
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cufftw_static_with_MKL"
+
+- Rule: rule_curand
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: curand
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::curand
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_curand_with_MKL"
+
+- Rule: rule_curand_static
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: curand_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::curand_static
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_curand_static_with_MKL"
+
+- Rule: rule_cusolver
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cusolver
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cusolver
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cusolver_with_MKL"
+
+- Rule: rule_cusolver_static
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cusolver_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cusolver_static
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cusolver_static_with_MKL"
+
+- Rule: rule_cusparse
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cusparse
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cusparse
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cusparse_with_MKL"
+
+- Rule: rule_cusparse_static
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cusparse_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cusparse_static
+      Out: |
+        \${MKL_LIB}
+      RuleId: "replace_cusparse_static_with_MKL"
+
+- Rule: rule_cudla_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudla
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cudla
+      Out: ""
+      RuleId: "remove_cudla"
+
+- Rule: rule_cuFile_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuFile
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cuFile
+      Out: ""
+      RuleId: "remove_cuFile"
+
+- Rule: rule_cuFile_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuFile_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cuFile_static
+      Out: ""
+      RuleId: "remove_cuFile_static"
+
+- Rule: rule_cuFile_rdma_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuFile_rdma
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cuFile_rdma
+      Out: ""
+      RuleId: "remove_cuFile_rdma"
+
+- Rule: rule_cuFile_rdma_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuFile_rdma_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cuFile_rdma_static
+      Out: ""
+      RuleId: "remove_cuFile_rdma_static"
+
+- Rule: rule_cupti_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cupti
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cupti
+      Out: ""
+      RuleId: "remove_cupti"
+
+- Rule: rule_cupti_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cupti_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::cupti_static
+      Out: ""
+      RuleId: "remove_cupti_static"
+
+- Rule: rule_nvperf_host_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvperf_host
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvperf_host
+      Out: ""
+      RuleId: "remove_nvperf_host"
+
+- Rule: rule_nvperf_host_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvperf_host_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvperf_host_static
+      Out: ""
+      RuleId: "remove_nvperf_host_static"
+
+- Rule: rule_nvperf_target_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvperf_target
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvperf_target
+      Out: ""
+      RuleId: "remove_nvperf_target"
+
+- Rule: rule_pcsamplingutil_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: pcsamplingutil
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::pcsamplingutil
+      Out: ""
+      RuleId: "remove_pcsamplingutil"
+
+- Rule: rule_nppc_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppc
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppc
+      Out: ""
+      RuleId: "remove_nppc"
+
+- Rule: rule_nppc_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppc_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppc_static
+      Out: ""
+      RuleId: "remove_nppc_static"
+
+- Rule: rule_nppial_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppial
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppial
+      Out: ""
+      RuleId: "remove_nppial"
+
+- Rule: rule_nppial_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppial_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppial_static
+      Out: ""
+      RuleId: "remove_nppial_static"
+
+- Rule: rule_nppicc_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppicc
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppicc
+      Out: ""
+      RuleId: "remove_nppicc"
+
+- Rule: rule_nppicc_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppicc_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppicc_static
+      Out: ""
+      RuleId: "remove_nppicc_static"
+
+- Rule: rule_nppicom_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppicom
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppicom
+      Out: ""
+      RuleId: "remove_nppicom"
+
+- Rule: rule_nppicom_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppicom_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppicom_static
+      Out: ""
+      RuleId: "remove_nppicom_static"
+
+- Rule: rule_nppidei_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppidei
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppidei
+      Out: ""
+      RuleId: "remove_nppidei"
+
+- Rule: rule_nppidei_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppidei_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppidei_static
+      Out: ""
+      RuleId: "remove_nppidei_static"
+
+- Rule: rule_nppif_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppif
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppif
+      Out: ""
+      RuleId: "remove_nppif"
+
+- Rule: rule_nppif_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppif_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppif_static
+      Out: ""
+      RuleId: "remove_nppif_static"
+
+- Rule: rule_nppig_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppig
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppig
+      Out: ""
+      RuleId: "remove_nppig"
+
+- Rule: rule_nppig_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppig_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppig_static
+      Out: ""
+      RuleId: "remove_nppig_static"
+
+- Rule: rule_nppim_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppim
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppim
+      Out: ""
+      RuleId: "remove_nppim"
+
+- Rule: rule_nppim_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppim_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppim_static
+      Out: ""
+      RuleId: "remove_nppim_static"
+
+- Rule: rule_nppist_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppist
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppist
+      Out: ""
+      RuleId: "remove_nppist"
+
+- Rule: rule_nppist_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppist_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppist_static
+      Out: ""
+      RuleId: "remove_nppist_static"
+
+- Rule: rule_nppisu_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppisu
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppisu
+      Out: ""
+      RuleId: "remove_nppisu"
+
+- Rule: rule_nppisu_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppisu_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppisu_static
+      Out: ""
+      RuleId: "remove_nppisu_static"
+
+- Rule: rule_nppitc_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppitc
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppitc
+      Out: ""
+      RuleId: "remove_nppitc"
+
+- Rule: rule_nppitc_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nppitc_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nppitc_static
+      Out: ""
+      RuleId: "remove_nppitc_static"
+
+- Rule: rule_npps_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: npps
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::npps
+      Out: ""
+      RuleId: "remove_npps"
+
+- Rule: rule_npps_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: npps_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::npps_static
+      Out: ""
+      RuleId: "remove_npps_static"
+
+- Rule: rule_nvblas_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvblas
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvblas
+      Out: ""
+      RuleId: "remove_nvblas"
+
+- Rule: rule_nvgraph_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvgraph
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvgraph
+      Out: ""
+      RuleId: "remove_nvgraph"
+
+- Rule: rule_nvgraph_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvgraph_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvgraph_static
+      Out: ""
+      RuleId: "remove_nvgraph_static"
+
+- Rule: rule_nvjpeg_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvjpeg
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvjpeg
+      Out: ""
+      RuleId: "remove_nvjpeg"
+
+- Rule: rule_nvjpeg_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvjpeg_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvjpeg_static
+      Out: ""
+      RuleId: "remove_nvjpeg_static"
+
+- Rule: rule_nvptxcompiler_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvptxcompiler_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvptxcompiler_static
+      Out: ""
+      RuleId: "remove_nvptxcompiler_static"
+
+- Rule: rule_nvrtc_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvrtc
+      Out: ""
+      RuleId: "remove_nvrtc"
+
+- Rule: rule_nvrtc_builtins_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc_builtins
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvrtc_builtins
+      Out: ""
+      RuleId: "remove_nvrtc_builtins"
+
+- Rule: rule_nvrtc_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvrtc_static
+      Out: ""
+      RuleId: "remove_nvrtc_static"
+
+- Rule: rule_nvrtc_builtins_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvrtc_builtins_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvrtc_builtins_static
+      Out: ""
+      RuleId: "remove_nvrtc_builtins_static"
+
+- Rule: rule_nvJitLink_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvJitLink
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvJitLink
+      Out: ""
+      RuleId: "remove_nvJitLink"
+
+- Rule: rule_nvJitLink_static_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvJitLink_static
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvJitLink_static
+      Out: ""
+      RuleId: "remove_nvJitLink_static"
+
+- Rule: rule_nvml_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvml
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvml
+      Out: ""
+      RuleId: "remove_nvml"
+
+- Rule: rule_nvToolsExt
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvToolsExt
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvToolsExt
+      Out: ""
+      RuleId: "remove_nvToolsExt"
+
+- Rule: rule_nvtx3_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: nvtx3
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::nvtx3
+      Out: ""
+      RuleId: "remove_nvtx3"
+
+- Rule: rule_OpenCL_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: OpenCL
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA::OpenCL
+      Out: ""
+      RuleId: "remove_OpenCL"
+
+- Rule: rule_set_property_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cuda_standard
+  In: set_property(${target} PROPERTY CUDA_STANDARD ${cplusplus_version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD ${rewrite_cplusplus_version})
+
+- Rule: rule_set_property_cxx_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_property_cxx_standard
+  In: set_property(${target} PROPERTY CXX_STANDARD ${cplusplus_version})
+  Out: set_property(${target} PROPERTY CXX_STANDARD ${rewrite_cplusplus_version})
+
+- Rule: rule_set_cxx_target_properties
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cxx_target_properties
+  In: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${cplusplus_version})
+  Out: set_target_properties(${targets} PROPERTIES CXX_STANDARD ${rewrite_cplusplus_version})
+
+- Rule: rule_set_target_properties_cuda_standard
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard
+  In: set_target_properties(${targets} PROPERTIES ${properties})
+  Out: set_target_properties(${targets} PROPERTIES ${properties})
+  Subrules:
+    properties:
+      In: CUDA_STANDARD ${cplusplus_version} ${other_properties}
+      Out: CXX_STANDARD ${rewrite_cplusplus_version} ${other_properties}
+
+- Rule: rule_set_target_properties_cuda_standard-only
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_target_properties_cuda_standard-only
+  In: set_target_properties(${targets} PROPERTIES${properties}CUDA_STANDARD ${cplusplus_version})
+  Out: set_target_properties(${targets} PROPERTIES${properties}CXX_STANDARD ${rewrite_cplusplus_version})
+
+- Rule: rule_set_cmake_cuda_required
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_cmake_cuda_required
+  In: set${empty}(${empty}CMAKE_CUDA_STANDARD_REQUIRED ${value})
+  Out: set(CMAKE_CXX_STANDARD_REQUIRED ${value})
+
+- Rule: rule_CUDA_VERSION
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION
+      Out: COMPATIBILITY_VERSION
+      RuleId: "replace_CUDA_VERSION_with_COMPATIBILITY_VERSION"
+
+- Rule: rule_CUDA_VERSION_MAJOR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_MAJOR
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_MAJOR
+      Out: COMPATIBILITY_VERSION_MAJOR
+      RuleId: "replace_CUDA_VERSION_MAJOR_with_COMPATIBILITY_VERSION_MAJOR"
+
+- Rule: rule_CUDA_VERSION_MINOR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_MINOR
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_MINOR
+      Out: COMPATIBILITY_VERSION_MINOR
+      RuleId: "replace_CUDA_VERSION_MAJOR_with_COMPATIBILITY_VERSION_MINOR"
+
+- Rule: rule_CUDA_VERSION_STRING
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_VERSION_STRING
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_VERSION_STRING
+      Out: COMPATIBILITY_VERSION_STRING
+      RuleId: "replace_CUDA_VERSION_STRING_with_COMPATIBILITY_VERSION_STRING"
+
+- Rule: rule_user_defined_variable
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_variable
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      In:  -std=c++${cplusplus_version}
+      Out: -std=c++${rewrite_cplusplus_version}
+
+# to handle the case like "list(APPEND PMEMD_NVCC_FLAGS --std c++11)"
+- Rule: rule_user_defined_variable_format_2
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_variable_format_2
+  In: ${func_name}(${arg0} --std ${value})
+  Out: ${func_name}(${arg0} --std ${value})
+  Subrules:
+    value:
+      In:  c++${cplusplus_version}
+      Out: c++${rewrite_cplusplus_version}
+
+- Rule: rule_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    sources:
+      In: ${src}.cu
+      Out: ${src}.dp.cpp
+      MatchMode: Full
+
+- Rule: rule_enable_language
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: enable_language
+  In: enable_language${empty}(${empty}CUDA${empty})
+  Out: enable_language(CXX)
+
+- Rule: rule_add_arch_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: add_arch_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --add-arch=${arch}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_add_arch"
+
+- Rule: rule_device_c_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: device_c_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --device-c
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_device_c"
+
+- Rule: rule_disable_target_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: disable_target_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --disable-target=${target}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_disable_target"
+
+- Rule: rule_gen_codes_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: gen_codes_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --gen-codes=${arch}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_gen_codes"
+
+- Rule: rule_no_ptxas_options_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: no_ptxas_options_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --no-ptxas-options
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_no_ptxas_options"
+
+- Rule: rule_emit_ptx_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: emit_ptx_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --emit-ptx=${file}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_emit_ptx"
+
+- Rule: rule_nvvmir_library_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: nvvmir_library_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --nvvmir-library=${library}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_nvvmir_library"
+
+- Rule: rule_library_path_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: library_path_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --library-path=${path}
+      Out: ""
+      MatchMode: Partial
+      RuleId: "remove_library_path"
+
+- Rule: rule_add_library_empty_add_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: library_empty_add_link_options
+  In: add_link_options(${options})
+  Out: add_link_options(${options})
+  Subrules:
+    options:
+      In: --library=
+      Out: ""
+      MatchMode: Full
+      RuleId: "remove_empty_library_arg"
+
+- Rule: rule_target_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_options
+  In: target_link_options(${arg})
+  Out: target_link_options(${arg})
+  Subrules:
+    arg:
+      In: $<$<CUDA_COMPILER_ID:${any}>:${flags}>
+      Out: ""
+      RuleId: "remove_target_link_options_cuda_arg"
+
+- Rule: rule_target_link_directories
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_link_directories
+  MatchMode: Partial
+  In: target_link_directories(${value})
+  Out: target_link_directories(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_LIBRARY_DIR
+      Out: SYCLToolkit_LIBRARY_DIR
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
+
+- Rule: rule_set_source_files_properties
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_source_files_properties_lang
+  In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}LANGUAGE CUDA${other_props})
+  Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}LANGUAGE CXX${other_props})
+
+- Rule: rule_CUDA_HOST_COMPILER
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_compiler
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_COMPILER
+      Out: SYCL_HOST_COMPILER
+
+- Rule: rule_CUDA_HOST_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_host_flags
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_HOST_FLAGS
+      Out: SYCL_HOST_FLAGS
+
+- Rule: rule_CUDAToolkit_FOUND
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDAToolkit_FOUND
+  MatchMode: Partial
+  In: if${empty}(${value})
+  Out: if${empty}(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_FOUND
+      Out: IntelSYCL_FOUND
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
+
+- Rule: rule_CUDA_FOUND
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_FOUND
+  MatchMode: Partial
+  In: if${empty}(${value})
+  Out: if${empty}(${value})
+  Subrules:
+    value:
+      In: CUDA_FOUND
+      Out: IntelSYCL_FOUND
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_found_with_intel_sycl_found"
+
+- Rule: rule_target_include_directories_cuda_toolkit_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cuda_toolkit_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_INCLUDE_DIRS
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_directories_cudnn_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cudnn_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CUDNN_INCLUDE_DIR
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cudnn_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_directories_cmake_cuda_toolkit_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cmake_cuda_toolkit_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cmake_cuda_toolkit_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_directories_cuda_toolkit_math_include_dir
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_directories_cuda_toolkit_math_inc
+  MatchMode: Partial
+  In: target_include_directories${empty}(${value})
+  Out: target_include_directories(${value})
+  Subrules:
+    value:
+      In: CUDAToolkit_MATH_INCLUDE_DIR
+      Out: SYCL_INCLUDE_DIR
+      MatchMode: Full
+      RuleId: "replace_cuda_toolkit_math_include_dir_with_sycl_include_dir"
+
+- Rule: rule_target_include_dir_compile_lang
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_include_dir_compile_lang
+  In: target_include_directories${empty}(${arg})
+  Out: target_include_directories(${arg})
+  Subrules:
+    arg:
+      In: "$<COMPILE_LANGUAGE:CUDA>"
+      Out: "$<COMPILE_LANGUAGE:CXX>"
+      RuleId: "target_include_dir_compile_lang"
+
+- Rule: rule_target_sources
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: target_sources
+  In: target_sources${empty}(${options})
+  Out: target_sources(${options})
+  Subrules:
+    sources:
+      In: ${src}.cu
+      Out: ${src}.${rewrite_extention_name}
+      MatchMode: Full
+
+- Rule: rule_CUDA_TOOLKIT_ROOT_DIR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_toolkit_root_dir
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_TOOLKIT_ROOT_DIR
+      Out: SYCL_TOOLKIT_ROOT_DIR
+
+- Rule: rule_CUDA_TOOLKIT_INCLUDE
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cuda_toolkit_include
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_TOOLKIT_INCLUDE
+      Out: SYCL_TOOLKIT_INCLUDE
+
+- Rule: rule_CUDAToolkit_LIBRARY_DIR
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: cudatoolkit_library_dir
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDAToolkit_LIBRARY_DIR
+      Out: SYCLToolkit_LIBRARY_DIR
+
+- Rule: rule_lib_cuda_removed
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: lib_cuda
+  In: list${empty}(${value})
+  Out: list${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: cuda
+      Out: ""
+      RuleId: "remove_lib_cuda"
+
+- Rule: rule_use_fast_math_one_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_one_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -use_fast_math
+      Out: -ffast-math
+
+- Rule: rule_use_fast_math_two_dash
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: use_fast_math_two_dash
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --use_fast_math
+      Out: -ffast-math
+
+- Rule: rule_CMAKE_CUDA_COMPILER_VERSION
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CMAKE_CUDA_COMPILER_VERSION
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER_VERSION
+      Out: COMPATIBILITY_VERSION
+
+- Rule: rule_xcompiler_option_filter
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: xcompiler_option_filter
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -Xcompiler=${arg}
+      Out: ${arg}
+
+- Rule: rule_xcudafe_filter
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: xcudafe_filter
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: -Xcudafe=${arg}
+      Out: ""
+
+- Rule: rule_extended_lambda_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: extended_lambda_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --extended-lambda
+      Out: ""
+
+- Rule: rule_expt_relaxed_constexpr_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_relaxed_constexpr_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --expt-relaxed-constexpr
+      Out: ""
+
+- Rule: rule_expt_extended_lambda_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_extended_lambda_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: --expt-extended-lambda
+      Out: ""
+
+- Rule: rule_expt_xfatbin_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: expt_xfatbin_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In:  -Xfatbin=${value}
+      Out: ""
+
+- Rule: rule_CUDA_NVCC_EXECUTABLE
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_NVCC_EXECUTABLE
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_NVCC_EXECUTABLE
+      Out: SYCL_COMPILER_EXECUTABLE
+
+- Rule: rule_cmake_cuda_architectures_validate
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_validate
+  In: cmake_cuda_architectures_validate${empty}(${arg})
+  Out: ""
+
+- Rule: rule_cmake_cuda_architectures_native
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_native
+  In: cmake_cuda_architectures_native${empty}(${arg})
+  Out: ""
+
+- Rule: rule_cmake_cuda_architectures_all
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_architectures_all
+  In: cmake_cuda_architectures_all${empty}(${arg})
+  Out: ""
+
+
+# oneAPI DPC++/C++ Compiler supports OpenMP* C++ pragmas that comply with OpenMP C++ API,
+# So the option "OpenMP::OpenMP_CXX" that is specific to openMP compiler (like mpicc) should be removed.
+- Rule: rule_openmp_cxx_remove
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: openmp_cxx_remove
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: OpenMP::OpenMP_CXX
+      Out: ""
+
+- Rule: rule_cmake_cuda_compiler_id
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_compiler_id
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CMAKE_CUDA_COMPILER_ID
+      Out: CMAKE_CXX_COMPILER_ID
+
+- Rule: rule_cmake_cuda_compiler_id_value
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: cmake_cuda_compiler_id_value
+  In: if${empty}(${value})
+  Out: if${empty}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: NVIDIA
+      Out: IntelLLVM

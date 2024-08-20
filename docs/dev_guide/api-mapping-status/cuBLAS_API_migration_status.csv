@@ -17,73 +17,73 @@ cublasSetMatrixAsync,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
 cublasGetMatrixAsync,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
 cublasSetAtomicsMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cublasGetAtomicsMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cublasSetMathMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cublasGetMathMode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cublasSetMathMode,YES,
+cublasGetMathMode,YES,
 cublasLoggerConfigure,NO,
 cublasGetLoggerCallback,NO,
 cublasSetLoggerCallback,NO,
-cublasIsamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasIdamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasIcamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasIzamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasIsamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasIdamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasIcamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasIzamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasScasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDzasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSaxpy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDaxpy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCaxpy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZaxpy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasScopy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDcopy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCcopy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZcopy,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSdot,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDdot,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCdotu,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCdotc,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZdotu,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZdotc,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSnrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDnrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasScnrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDznrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSrot,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDrot,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasIsamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIdamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIcamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIzamax,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIsamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIdamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIcamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIzamin,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasScasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDzasum,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSaxpy,YES,:ref:`DPCT1020`
+cublasDaxpy,YES,:ref:`DPCT1020`
+cublasCaxpy,YES,:ref:`DPCT1020`
+cublasZaxpy,YES,:ref:`DPCT1020`
+cublasScopy,YES,:ref:`DPCT1020`
+cublasDcopy,YES,:ref:`DPCT1020`
+cublasCcopy,YES,:ref:`DPCT1020`
+cublasZcopy,YES,:ref:`DPCT1020`
+cublasSdot,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDdot,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasCdotu,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasCdotc,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasZdotu,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasZdotc,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSnrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDnrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasScnrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDznrm2,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSrot,YES,:ref:`DPCT1020`
+cublasDrot,YES,:ref:`DPCT1020`
 cublasCrot,YES,:ref:`DPCT1020`
-cublasCsrot,YES,:ref:`DPCT1034` / :ref:`DPCT1041`
+cublasCsrot,YES,:ref:`DPCT1020`
 cublasZrot,YES,:ref:`DPCT1020`
-cublasZdrot,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSrotm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDrotm,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSrotmg,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDrotmg,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSscal,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDscal,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCscal,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCsscal,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZscal,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZdscal,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSswap,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDswap,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCswap,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZswap,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSgbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDgbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCgbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZgbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasSgemv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDgemv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCgemv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZgemv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasZdrot,YES,:ref:`DPCT1020`
+cublasSrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasCrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasZrotg,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSrotm,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDrotm,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSrotmg,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDrotmg,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSscal,YES,:ref:`DPCT1020`
+cublasDscal,YES,:ref:`DPCT1020`
+cublasCscal,YES,:ref:`DPCT1020`
+cublasCsscal,YES,:ref:`DPCT1020`
+cublasZscal,YES,:ref:`DPCT1020`
+cublasZdscal,YES,:ref:`DPCT1020`
+cublasSswap,YES,:ref:`DPCT1020`
+cublasDswap,YES,:ref:`DPCT1020`
+cublasCswap,YES,:ref:`DPCT1020`
+cublasZswap,YES,:ref:`DPCT1020`
+cublasSgbmv,YES,:ref:`DPCT1020`
+cublasDgbmv,YES,:ref:`DPCT1020`
+cublasCgbmv,YES,:ref:`DPCT1020`
+cublasZgbmv,YES,:ref:`DPCT1020`
+cublasSgemv,YES,:ref:`DPCT1020`
+cublasDgemv,YES,:ref:`DPCT1020`
+cublasCgemv,YES,:ref:`DPCT1020`
+cublasZgemv,YES,:ref:`DPCT1020`
 cublasSger,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasDger,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasCgeru,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
@@ -110,30 +110,30 @@ cublasSsyr2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasDsyr2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasCsyr2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasZsyr2,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasStbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDtbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCtbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZtbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasStbmv,YES,:ref:`DPCT1020`
+cublasDtbmv,YES,:ref:`DPCT1020`
+cublasCtbmv,YES,:ref:`DPCT1020`
+cublasZtbmv,YES,:ref:`DPCT1020`
 cublasStbsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasDtbsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasCtbsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasZtbsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasStpmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDtpmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCtpmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZtpmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasStpsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDtpsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCtpsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZtpsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasStrmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDtrmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCtrmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZtrmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasStrsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasDtrsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasCtrsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
-cublasZtrsv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
+cublasStpmv,YES,:ref:`DPCT1020`
+cublasDtpmv,YES,:ref:`DPCT1020`
+cublasCtpmv,YES,:ref:`DPCT1020`
+cublasZtpmv,YES,:ref:`DPCT1020`
+cublasStpsv,YES,:ref:`DPCT1020`
+cublasDtpsv,YES,:ref:`DPCT1020`
+cublasCtpsv,YES,:ref:`DPCT1020`
+cublasZtpsv,YES,:ref:`DPCT1020`
+cublasStrmv,YES,:ref:`DPCT1020`
+cublasDtrmv,YES,:ref:`DPCT1020`
+cublasCtrmv,YES,:ref:`DPCT1020`
+cublasZtrmv,YES,:ref:`DPCT1020`
+cublasStrsv,YES,:ref:`DPCT1020`
+cublasDtrsv,YES,:ref:`DPCT1020`
+cublasCtrsv,YES,:ref:`DPCT1020`
+cublasZtrsv,YES,:ref:`DPCT1020`
 cublasChemv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasZhemv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
 cublasChbmv,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041`
@@ -255,31 +255,31 @@ cublasNrm2Ex,YES,:ref:`DPCT1020`
 cublasAxpyEx,YES,:ref:`DPCT1020`
 cublasDotEx,YES,:ref:`DPCT1020`
 cublasScalEx,YES,:ref:`DPCT1020`
-cublasLtCreate,NO,
-cublasLtDestroy,NO,
+cublasLtCreate,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cublasLtDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cublasLtGetVersion,NO,
 cublasLtGetCudartVersion,NO,
 cublasLtGetProperty,NO,
-cublasLtMatmul,NO,
-cublasLtMatrixLayoutCreate,NO,
-cublasLtMatrixLayoutGetAttribute,NO,
-cublasLtMatrixLayoutSetAttribute,NO,
-cublasLtMatrixLayoutDestroy,NO,
-cublasLtMatrixTransform,NO,
-cublasLtMatmulDescCreate,NO,
-cublasLtMatmulDescDestroy,NO,
-cublasLtMatmulDescSetAttribute,NO,
-cublasLtMatmulDescGetAttribute,NO,
-cublasLtMatrixTransformDescCreate,NO,
-cublasLtMatrixTransformDescDestroy,NO,
-cublasLtMatrixTransformDescSetAttribute,NO,
-cublasLtMatrixTransformDescGetAttribute,NO,
-cublasLtMatmulPreferenceCreate,NO,
-cublasLtMatmulPreferenceDestroy,NO,
-cublasLtMatmulPreferenceSetAttribute,NO,
-cublasLtMatmulPreferenceGetAttribute,NO,
+cublasLtMatmul,YES,
+cublasLtMatrixLayoutCreate,YES,
+cublasLtMatrixLayoutGetAttribute,YES,
+cublasLtMatrixLayoutSetAttribute,YES,
+cublasLtMatrixLayoutDestroy,YES,
+cublasLtMatrixTransform,YES,
+cublasLtMatmulDescCreate,YES,
+cublasLtMatmulDescDestroy,YES,
+cublasLtMatmulDescSetAttribute,YES,
+cublasLtMatmulDescGetAttribute,YES,
+cublasLtMatrixTransformDescCreate,YES,
+cublasLtMatrixTransformDescDestroy,YES,
+cublasLtMatrixTransformDescSetAttribute,YES,
+cublasLtMatrixTransformDescGetAttribute,YES,
+cublasLtMatmulPreferenceCreate,YES,
+cublasLtMatmulPreferenceDestroy,YES,
+cublasLtMatmulPreferenceSetAttribute,YES,
+cublasLtMatmulPreferenceGetAttribute,YES,
 cublasLtMatmulAlgoCheck,NO,
-cublasLtMatmulAlgoGetHeuristic,NO,
+cublasLtMatmulAlgoGetHeuristic,YES,
 cublasLtMatmulAlgoGetIds,NO,
 cublasLtMatmulAlgoInit,NO,
 cublasLtMatmulAlgoCapGetAttribute,NO,
@@ -543,88 +543,82 @@ cublasLtMatmulDescInit,NO,
 cublasLtMatmulPreferenceInit,NO,
 cublasLtMatrixLayoutInit,NO,
 cublasLtMatrixTransformDescInit,NO,
-cublasSnrm2_64,NO,
-cublasDnrm2_64,NO,
-cublasScnrm2_64,NO,
-cublasDznrm2_64,NO,
-cublasSdot_64,NO,
-cublasDdot_64,NO,
-cublasCdotu_64,NO,
-cublasCdotc_64,NO,
-cublasZdotu_64,NO,
-cublasZdotc_64,NO,
-cublasSscal_64,NO,
-cublasDscal_64,NO,
-cublasCscal_64,NO,
-cublasCsscal_64,NO,
-cublasZscal_64,NO,
-cublasZdscal_64,NO,
-cublasSaxpy_64,NO,
-cublasDaxpy_64,NO,
-cublasCaxpy_64,NO,
-cublasZaxpy_64,NO,
-cublasScopy_64,NO,
-cublasDcopy_64,NO,
-cublasCcopy_64,NO,
-cublasZcopy_64,NO,
-cublasSswap_64,NO,
-cublasDswap_64,NO,
-cublasCswap_64,NO,
-cublasZswap_64,NO,
-cublasIsamax_64,NO,
-cublasIdamax_64,NO,
-cublasIcamax_64,NO,
-cublasIzamax_64,NO,
-cublasIsamin_64,NO,
-cublasIdamin_64,NO,
-cublasIcamin_64,NO,
-cublasIzamin_64,NO,
-cublasSasum_64,NO,
-cublasDasum_64,NO,
-cublasScasum_64,NO,
-cublasDzasum_64,NO,
-cublasSrot_64,NO,
-cublasDrot_64,NO,
-cublasCrot_64,NO,
-cublasCsrot_64,NO,
-cublasZrot_64,NO,
-cublasZdrot_64,NO,
-cublasSrotg_64,NO,
-cublasDrotg_64,NO,
-cublasCrotg_64,NO,
-cublasZrotg_64,NO,
-cublasSrotm_64,NO,
-cublasDrotm_64,NO,
-cublasSrotmg_64,NO,
-cublasDrotmg_64,NO,
-cublasSgemv_64,NO,
-cublasDgemv_64,NO,
-cublasCgemv_64,NO,
-cublasZgemv_64,NO,
-cublasSgbmv_64,NO,
-cublasDgbmv_64,NO,
-cublasCgbmv_64,NO,
-cublasZgbmv_64,NO,
-cublasStrmv_64,NO,
-cublasDtrmv_64,NO,
-cublasCtrmv_64,NO,
-cublasZtrmv_64,NO,
-cublasStbmv_64,NO,
-cublasDtbmv_64,NO,
-cublasCtbmv_64,NO,
-cublasZtbmv_64,NO,
-cublasStpmv_64,NO,
-cublasDtpmv_64,NO,
-cublasCtpmv_64,NO,
-cublasZtpmv_64,NO,
-cublasStrsv_64,NO,
-cublasDtrsv_64,NO,
-cublasCtrsv_64,NO,
-cublasZtrsv_64,NO,
-cublasStpsv_64,NO,
-cublasDtpsv_64,NO,
-cublasCtpsv_64,NO,
-cublasZtpsv_64,NO,
+cublasSnrm2_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDnrm2_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasScnrm2_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDznrm2_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSdot_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDdot_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasCdotu_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasCdotc_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasZdotu_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasZdotc_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSscal_64,YES,:ref:`DPCT1020`
+cublasDscal_64,YES,:ref:`DPCT1020`
+cublasCscal_64,YES,:ref:`DPCT1020`
+cublasCsscal_64,YES,:ref:`DPCT1020`
+cublasZscal_64,YES,:ref:`DPCT1020`
+cublasZdscal_64,YES,:ref:`DPCT1020`
+cublasSaxpy_64,YES,:ref:`DPCT1020`
+cublasDaxpy_64,YES,:ref:`DPCT1020`
+cublasCaxpy_64,YES,:ref:`DPCT1020`
+cublasZaxpy_64,YES,:ref:`DPCT1020`
+cublasScopy_64,YES,:ref:`DPCT1020`
+cublasDcopy_64,YES,:ref:`DPCT1020`
+cublasCcopy_64,YES,:ref:`DPCT1020`
+cublasZcopy_64,YES,:ref:`DPCT1020`
+cublasSswap_64,YES,:ref:`DPCT1020`
+cublasDswap_64,YES,:ref:`DPCT1020`
+cublasCswap_64,YES,:ref:`DPCT1020`
+cublasZswap_64,YES,:ref:`DPCT1020`
+cublasIsamax_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIdamax_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIcamax_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIzamax_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIsamin_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIdamin_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIcamin_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasIzamin_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSasum_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDasum_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasScasum_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDzasum_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSrot_64,YES,:ref:`DPCT1020`
+cublasDrot_64,YES,:ref:`DPCT1020`
+cublasCrot_64,YES,:ref:`DPCT1020`
+cublasCsrot_64,YES,:ref:`DPCT1020`
+cublasZrot_64,YES,:ref:`DPCT1020`
+cublasZdrot_64,YES,:ref:`DPCT1020`
+cublasSrotm_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasDrotm_64,YES,:ref:`DPCT1020` / :ref:`DPCT1034`
+cublasSgemv_64,YES,:ref:`DPCT1020`
+cublasDgemv_64,YES,:ref:`DPCT1020`
+cublasCgemv_64,YES,:ref:`DPCT1020`
+cublasZgemv_64,YES,:ref:`DPCT1020`
+cublasSgbmv_64,YES,:ref:`DPCT1020`
+cublasDgbmv_64,YES,:ref:`DPCT1020`
+cublasCgbmv_64,YES,:ref:`DPCT1020`
+cublasZgbmv_64,YES,:ref:`DPCT1020`
+cublasStrmv_64,YES,:ref:`DPCT1020`
+cublasDtrmv_64,YES,:ref:`DPCT1020`
+cublasCtrmv_64,YES,:ref:`DPCT1020`
+cublasZtrmv_64,YES,:ref:`DPCT1020`
+cublasStbmv_64,YES,:ref:`DPCT1020`
+cublasDtbmv_64,YES,:ref:`DPCT1020`
+cublasCtbmv_64,YES,:ref:`DPCT1020`
+cublasZtbmv_64,YES,:ref:`DPCT1020`
+cublasStpmv_64,YES,:ref:`DPCT1020`
+cublasDtpmv_64,YES,:ref:`DPCT1020`
+cublasCtpmv_64,YES,:ref:`DPCT1020`
+cublasZtpmv_64,YES,:ref:`DPCT1020`
+cublasStrsv_64,YES,:ref:`DPCT1020`
+cublasDtrsv_64,YES,:ref:`DPCT1020`
+cublasCtrsv_64,YES,:ref:`DPCT1020`
+cublasZtrsv_64,YES,:ref:`DPCT1020`
+cublasStpsv_64,YES,:ref:`DPCT1020`
+cublasDtpsv_64,YES,:ref:`DPCT1020`
+cublasCtpsv_64,YES,:ref:`DPCT1020`
+cublasZtpsv_64,YES,:ref:`DPCT1020`
 cublasStbsv_64,NO,
 cublasDtbsv_64,NO,
 cublasCtbsv_64,NO,
@@ -707,3 +701,83 @@ cublasSdgmm_64,YES,:ref:`DPCT1020`
 cublasDdgmm_64,YES,:ref:`DPCT1020`
 cublasCdgmm_64,YES,:ref:`DPCT1020`
 cublasZdgmm_64,YES,:ref:`DPCT1020`
+cublasSetVector_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasGetVector_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasSetMatrix_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasGetMatrix_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasSetVectorAsync_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasGetVectorAsync_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasSetMatrixAsync_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasGetMatrixAsync_64,YES,:ref:`DPCT1018` / :ref:`DPCT1020`
+cublasNrm2Ex_64,NO,
+cublasDotEx_64,NO,
+cublasDotcEx_64,NO,
+cublasScalEx_64,NO,
+cublasAxpyEx_64,NO,
+cublasCopyEx_64,NO,
+cublasSwapEx_64,NO,
+cublasIamaxEx_64,NO,
+cublasIaminEx_64,NO,
+cublasAsumEx_64,NO,
+cublasRotEx_64,NO,
+cublasRotmEx_64,NO,
+cublasSgemvBatched_64,NO,
+cublasDgemvBatched_64,NO,
+cublasCgemvBatched_64,NO,
+cublasZgemvBatched_64,NO,
+cublasHSHgemvBatched_64,NO,
+cublasHSSgemvBatched_64,NO,
+cublasTSTgemvBatched_64,NO,
+cublasTSSgemvBatched_64,NO,
+cublasSgemvStridedBatched_64,NO,
+cublasDgemvStridedBatched_64,NO,
+cublasCgemvStridedBatched_64,NO,
+cublasZgemvStridedBatched_64,NO,
+cublasHSHgemvStridedBatched_64,NO,
+cublasHSSgemvStridedBatched_64,NO,
+cublasTSTgemvStridedBatched_64,NO,
+cublasTSSgemvStridedBatched_64,NO,
+cublasCgemm3m_64,NO,
+cublasCgemm3mEx_64,NO,
+cublasZgemm3m_64,NO,
+cublasHgemm_64,NO,
+cublasSgemmEx_64,NO,
+cublasGemmEx_64,NO,
+cublasCgemmEx_64,NO,
+cublasCsyrkEx_64,NO,
+cublasCsyrk3mEx_64,NO,
+cublasCherkEx_64,NO,
+cublasCherk3mEx_64,NO,
+cublasSsyrkx_64,NO,
+cublasDsyrkx_64,NO,
+cublasCsyrkx_64,NO,
+cublasZsyrkx_64,NO,
+cublasCherkx_64,NO,
+cublasZherkx_64,NO,
+cublasHgemmBatched_64,NO,
+cublasSgemmBatched_64,NO,
+cublasDgemmBatched_64,NO,
+cublasCgemmBatched_64,NO,
+cublasCgemm3mBatched_64,NO,
+cublasZgemmBatched_64,NO,
+cublasHgemmStridedBatched_64,NO,
+cublasSgemmStridedBatched_64,NO,
+cublasDgemmStridedBatched_64,NO,
+cublasCgemmStridedBatched_64,NO,
+cublasCgemm3mStridedBatched_64,NO,
+cublasZgemmStridedBatched_64,NO,
+cublasGemmBatchedEx_64,NO,
+cublasGemmStridedBatchedEx_64,NO,
+cublasSgemmGroupedBatched,NO,
+cublasSgemmGroupedBatched_64,NO,
+cublasDgemmGroupedBatched,NO,
+cublasDgemmGroupedBatched_64,NO,
+cublasGemmGroupedBatchedEx,NO,
+cublasGemmGroupedBatchedEx_64,NO,
+cublasStrsmBatched_64,NO,
+cublasDtrsmBatched_64,NO,
+cublasCtrsmBatched_64,NO,
+cublasZtrsmBatched_64,NO,
+cublasLtHeuristicsCacheGetCapacity,NO,
+cublasLtHeuristicsCacheSetCapacity,NO,
+cublasLtDisableCpuInstructionsSetMask,NO,

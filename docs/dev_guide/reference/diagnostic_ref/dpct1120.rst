@@ -1,0 +1,131 @@
+.. _DPCT1120:
+
+DPCT1120
+========
+
+Message
+-------
+
+.. _msg-1120-start:
+
+*<variable name>* is in device memory and passed into device functions as an extra argument.
+As *<variable name>* is a template variable here, then the declaration of an extra parameter
+in device functions, the variable referenced in command group, and device functions may be
+incorrect as a result. You may need to adjust the code.
+
+.. _msg-1120-end:
+
+Detailed Help
+-------------
+
+*<variable name>* is in device memory and passed into device functions as an extra argument.
+As *<variable name>* is a template variable here, then the declaration of an extra parameter
+in device functions, the variable referenced in command group, and device functions should
+be template variable also, the migration result may be incorrect. You may need to adjust the code.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Foo {
+     int x;
+     __host__ __device__ Foo() {}
+     __host__ __device__ ~Foo() {}
+   };
+   
+   template <typename T> __constant__ T cmem;
+   
+   __global__ void kernel() {
+     ...
+     int x = cmem<Foo>.x;
+     ...
+   }
+   
+   void foo() {
+     ...
+     kernel<<<1, 1>>>();
+     ...
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Foo {
+     int x;
+     Foo() {}
+     ~Foo() {}
+   };
+   
+   /*
+   DPCT1120:0: cmem is in device memory and passed into device functions as an
+   extra arguments. As cmem is a template variable here, then the declaration of
+   an extra parameter in device functions, the variable referenced in command
+   group, and device functions may be incorrect as a result. You may need to
+   adjust the code.
+   */
+   template <typename T> static dpct::constant_memory<T, 0> cmem;
+   
+   void kernel(T cmem) {
+     ...
+     int x = cmem<Foo>.x;
+     ...
+   }
+   
+   void foo() {
+     ...
+     cmem.init();
+   
+     dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
+       auto cmem_ptr_ct1 = cmem.get_ptr();
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel(*cmem_ptr_ct1);
+           });
+     });
+     ...
+   }
+
+which needs to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Foo {
+     int x;
+     Foo() {}
+     ~Foo() {}
+   };
+   
+   template <typename T> static dpct::constant_memory<T, 0> cmem;
+   
+   template <class T>
+   void kernel(T cmem) {
+     ...
+     int x = cmem.x;
+     ...
+   }
+   
+   void foo() {
+     ...
+     cmem<Foo>.init();
+   
+     dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
+       auto cmem_ptr_ct1 = cmem<Foo>.get_ptr();
+   
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel(*cmem_ptr_ct1);
+           });
+     });
+     ...
+   }
+

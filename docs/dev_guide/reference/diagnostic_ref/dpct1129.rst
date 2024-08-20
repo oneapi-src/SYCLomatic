@@ -1,0 +1,25 @@
+.. _DPCT1129:
+
+DPCT1129
+========
+
+Message
+-------
+
+.. _msg-1129-start:
+
+The type "*<type name>*" is used in the SYCL kernel, but it is not device copyable.
+The sycl::is_device_copyable specialization has been added for this type. Please
+review the code.
+
+.. _msg-1129-end:
+
+Detailed Help
+-------------
+
+See :ref:`DPCT1128`.
+
+Suggestions to Fix
+------------------
+
+See :ref:`DPCT1128`.

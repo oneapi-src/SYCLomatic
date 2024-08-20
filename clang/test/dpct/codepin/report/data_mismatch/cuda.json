@@ -1,0 +1,64 @@
+[
+    {
+        "ID": "serial123:prolog:0",
+        "Free Device Memory": "100",
+        "Total Device Memory": "500",
+        "Elapse Time(ms)": "0",
+        "CheckPoint": {
+            "var_1": {
+                "Type": "std::vector",
+                "Data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            "var_2": {
+                "Type": "MyClassA",
+                "Data": {
+                    "member_1": {
+                        "Type": "int",
+                        "Data": 3
+                    },
+                    "member_2": {
+                        "Type": "MyClassB",
+                        "Data": "bb123"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "ID": "serial1243:epilog:0",
+        "Free Device Memory": "200",
+        "Total Device Memory": "500",
+        "Elapse Time(ms)": "0.1",
+        "CheckPoint": {
+            "var_1": {
+                "Type": "std::vector",
+                "Data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            "var_2": {
+                "Type": "MyClassA",
+                "Data": {
+                    "member_1": {
+                        "Type": "int",
+                        "Data": 3
+                    },
+                    "member_2": {
+                        "Type": "MyClassB",
+                        "Data": "bb"
+                    }
+                }
+            }
+        }
+    }
+]

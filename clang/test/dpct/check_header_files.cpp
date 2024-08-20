@@ -82,6 +82,16 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %T/check_header_files/out/include/dpct/group_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/group_utils.hpp >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %T/check_header_files/out/include/dpct/blas_gemm_utils.hpp  %S/../../runtime/dpct-rt/include/dpct/blas_gemm_utils.hpp >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %T/check_header_files/out/include/dpct/dpl_extras/algorithm.h  %S/../../runtime/dpct-rt/include/dpct/dpl_extras/algorithm.h >> %T/check_header_files/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
@@ -93,6 +103,11 @@
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %T/check_header_files/out/include/dpct/dpl_extras/iterators.h  %S/../../runtime/dpct-rt/include/dpct/dpl_extras/iterators.h >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %T/check_header_files/out/include/dpct/dpl_extras/iterator_adaptor.h  %S/../../runtime/dpct-rt/include/dpct/dpl_extras/iterator_adaptor.h >> %T/check_header_files/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
@@ -113,6 +128,11 @@
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %T/check_header_files/out/include/dpct/dpl_extras/dpcpp_extensions.h  %S/../../runtime/dpct-rt/include/dpct/dpl_extras/dpcpp_extensions.h >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %T/check_header_files/out/include/dpct/dpl_extras/iterator_adaptor.h  %S/../../runtime/dpct-rt/include/dpct/dpl_extras/iterator_adaptor.h >> %T/check_header_files/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 

@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/group_local_memory %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -use-experimental-features=local-memory-kernel-scope-allocation -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/group_local_memory %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -use-experimental-features=local-memory-kernel-scope-allocation -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/group_local_memory/group_local_memory.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/group_local_memory/group_local_memory.dp.cpp -o %T/group_local_memory/group_local_memory.dp.o %}
 
@@ -145,3 +145,26 @@ int main(void) {
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
 }
 
+extern __shared__ int smem[];
+
+// CHECK: void foo(int *pd, int len, const sycl::nd_item<3> &item_ct1, int *smem) { smem[item_ct1.get_local_id(2)] = 0; }
+__global__ void foo(int *pd, int len) { smem[threadIdx.x] = 0; }
+
+// CHECK: void bar(int *pd, int len) {
+// CHECK-NEXT:   int shareSz = 1024;
+// CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>(shareSz), cgh);
+// CHECK-NEXT:       dpct::access_wrapper<int *> pd_acc_ct0(pd, cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 32) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           foo(pd_acc_ct0.get_raw_pointer(), len, item_ct1, smem_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+void bar(int *pd, int len) {
+  int shareSz = 1024;
+  foo<<<32, 8, shareSz>>>(pd, len);
+}

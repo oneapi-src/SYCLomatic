@@ -15,6 +15,7 @@
 #include "TextModification.h"
 
 #include "clang/Basic/DiagnosticIDs.h"
+#include "clang/DPCT/DpctOptions.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "llvm/Support/FormatVariadic.h"
@@ -24,10 +25,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-extern llvm::cl::opt<std::string> SuppressWarnings;
-extern llvm::cl::opt<std::string> OutputFile;
-extern llvm::cl::opt<OutputVerbosityLevel> OutputVerbosity;
-extern bool SuppressWarningsAllFlag;
+extern clang::dpct::DpctOption<clang::dpct::list, std::string> SuppressWarnings;
+extern clang::dpct::DpctOption<clang::dpct::opt, std::string> OutputFile;
+extern clang::dpct::DpctOption<clang::dpct::opt, OutputVerbosityLevel> OutputVerbosity;
+extern clang::dpct::DpctOption<clang::dpct::opt, bool> SuppressWarningsAll;
 
 namespace clang {
 namespace dpct {
@@ -84,6 +85,12 @@ enum class Warnings {
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
 enum class MakefileMsgs {
 #include "DiagnosticsBuildScript.inc"
+#undef DEF_COMMENT
+};
+
+#define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
+enum class CMakeScriptMigrationMsgs {
+#include "DiagnosticsCMakeScriptMigration.inc"
 #undef DEF_COMMENT
 };
 
@@ -314,7 +321,7 @@ inline bool report(SourceLocation SL, IDTy MsgID,
     recordAnalysisModeEffort(SL, Diag->second.EL);
     return true;
   }
-  if (!SuppressWarningsAllFlag) {
+  if (!SuppressWarningsAll) {
     // Only report warnings that are not suppressed
     if (WarningIDs.find((int)MsgID) == WarningIDs.end()) {
       reportWarning(SL, Diag->second, SM.getDiagnostics(), Vals...);
@@ -404,7 +411,7 @@ bool report(const clang::tooling::UnifiedPath &FileAbsPath, unsigned int Offset,
     recordAnalysisModeEffort(FileAbsPath, Offset, Diag->second.EL);
     return true;
   }
-  if (!SuppressWarningsAllFlag) {
+  if (!SuppressWarningsAll) {
     // Only report warnings that are not suppressed
     if (WarningIDs.find((int)MsgID) == WarningIDs.end()) {
       reportWarning(SL, Diag->second, SM.getDiagnostics(), Vals...);

@@ -377,7 +377,8 @@ public:
       // If the spelling location is inside the parent range, add string
       // replacement. The String replacement will be added to ExtReplacement
       // other where.
-      auto LocInfo = getOffsetAndLength(SR.getBegin(), SR.getEnd(), ParentExpr);
+      auto LocInfo = getOffsetAndLength(ResultRange.getBegin(),
+                                        ResultRange.getEnd(), ParentExpr);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }
   }
@@ -827,8 +828,10 @@ private:
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
+  inline void analyzeExpr(const BinaryOperator *);
   inline void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
+  inline void analyzeExpr(const DependentScopeDeclRefExpr *Arg);
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);
   inline void analyzeExpr(const LambdaExpr *LE);
 

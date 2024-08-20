@@ -16,6 +16,7 @@ set(LLVM_LINK_COMPONENTS
   CodeGen
   LTO
   FrontendOffloading
+  SYCLLowerIR
   )
 
 set(LLVM_TARGET_DEFINITIONS LinkerWrapperOpts.td)
@@ -28,7 +29,6 @@ endif()
 
 add_clang_tool(clang-linker-wrapper
   ClangLinkerWrapper.cpp
-  OffloadWrapper.cpp
 
   DEPENDS
   ${tablegen_deps}

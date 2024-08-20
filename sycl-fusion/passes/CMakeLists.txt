@@ -3,6 +3,7 @@ add_llvm_library(SYCLKernelFusion MODULE
   SYCLFusionPasses.cpp
   kernel-fusion/Builtins.cpp
   kernel-fusion/SYCLKernelFusion.cpp
+  kernel-fusion/SYCLSpecConstMaterializer.cpp
   kernel-info/SYCLKernelInfo.cpp
   internalization/Internalization.cpp
   syclcp/SYCLCP.cpp
@@ -14,6 +15,15 @@ add_llvm_library(SYCLKernelFusion MODULE
   intrinsics_gen
 )
 
+target_compile_options(SYCLKernelFusion PRIVATE ${SYCL_FUSION_WARNING_FLAGS})
+
+# Mark LLVM headers as system headers to ignore warnigns in them. This
+# classification remains intact even if the same path is added as a normal
+# include path in GCC and Clang.
+target_include_directories(SYCLKernelFusion
+  SYSTEM PRIVATE
+  ${LLVM_MAIN_INCLUDE_DIR}
+)
 target_include_directories(SYCLKernelFusion
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25,6 +35,8 @@ target_link_libraries(SYCLKernelFusion
   PRIVATE
   sycl-fusion-common
 )
+
+add_dependencies(SYCLKernelFusion sycl-headers)
 
 if("NVPTX" IN_LIST LLVM_TARGETS_TO_BUILD)
   target_compile_definitions(SYCLKernelFusion PRIVATE FUSION_JIT_SUPPORT_PTX)
@@ -39,6 +51,7 @@ add_llvm_library(SYCLKernelFusionPasses
   SYCLFusionPasses.cpp
   kernel-fusion/Builtins.cpp
   kernel-fusion/SYCLKernelFusion.cpp
+  kernel-fusion/SYCLSpecConstMaterializer.cpp
   kernel-info/SYCLKernelInfo.cpp
   internalization/Internalization.cpp
   syclcp/SYCLCP.cpp
@@ -55,8 +68,18 @@ add_llvm_library(SYCLKernelFusionPasses
   TransformUtils
   Passes
   TargetParser
+  SYCLLowerIR
 )
 
+target_compile_options(SYCLKernelFusionPasses PRIVATE ${SYCL_FUSION_WARNING_FLAGS})
+
+# Mark LLVM headers as system headers to ignore warnigns in them. This
+# classification remains intact even if the same path is added as a normal
+# include path in GCC and Clang.
+target_include_directories(SYCLKernelFusionPasses
+  SYSTEM PRIVATE
+  ${LLVM_MAIN_INCLUDE_DIR}
+)
 target_include_directories(SYCLKernelFusionPasses
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -68,6 +91,8 @@ target_link_libraries(SYCLKernelFusionPasses
   PRIVATE
   sycl-fusion-common
 )
+
+add_dependencies(SYCLKernelFusionPasses sycl-headers)
 
 if("NVPTX" IN_LIST LLVM_TARGETS_TO_BUILD)
   target_compile_definitions(SYCLKernelFusionPasses PRIVATE FUSION_JIT_SUPPORT_PTX)

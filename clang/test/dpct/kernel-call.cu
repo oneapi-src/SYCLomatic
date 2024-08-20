@@ -1,4 +1,4 @@
-// RUN: dpct --optimize-migration --format-range=none --usm-level=none --out-root %T/kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14
+// RUN: dpct --optimize-migration --format-range=none --usm-level=none --out-root %T/kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-call/kernel-call.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/kernel-call/kernel-call.dp.cpp -o %T/kernel-call/kernel-call.dp.o %}
@@ -105,9 +105,9 @@ struct TestThis {
     // CHECK-NEXT:  */
     // CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
     // CHECK-NEXT:     [&](sycl::handler &cgh) {
-    // CHECK-NEXT:       int args_arg1_ct0 = args.arg1;
-    // CHECK-NEXT:       int args_arg2_ct1 = args.arg2;
-    // CHECK-NEXT:       int arg3_ct2 = arg3;
+    // CHECK-NEXT:       auto args_arg1_ct0 = args.arg1;
+    // CHECK-NEXT:       auto args_arg2_ct1 = args.arg2;
+    // CHECK-NEXT:       auto arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -156,7 +156,7 @@ int main() {
   // CHECK-NEXT:  */
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       int args_p_arg3_ct1 = args_p->arg3;
+  // CHECK-NEXT:       auto args_p_arg3_ct1 = args_p->arg3;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
@@ -195,10 +195,10 @@ int main() {
   // CHECK-NEXT:  */
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       int arr_karg3int_ct2 = arr[karg3int];
+  // CHECK-NEXT:       auto arr_karg3int_ct2 = arr[karg3int];
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim[2]) * sycl::range<3>(1, 1, griddim[1] + 2), sycl::range<3>(1, 1, griddim[1] + 2)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, griddim.x) * sycl::range<3>(1, 1, griddim.y + 2), sycl::range<3>(1, 1, griddim.y + 2)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, item_ct1, arr_karg3int_ct2);
   // CHECK-NEXT:         });
@@ -268,9 +268,9 @@ public:
   // CHECK:  int run_foo() {
   // CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:      [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         int a_ct0 = a;
-  // CHECK-NEXT:         int aa_b_ct1 = aa.b;
-  // CHECK-NEXT:         int aa_c_d_ct2 = aa.c.d;
+  // CHECK-NEXT:         auto a_ct0 = a;
+  // CHECK-NEXT:         auto aa_b_ct1 = aa.b;
+  // CHECK-NEXT:         auto aa_c_d_ct2 = aa.c.d;
   // CHECK-EMPTY:
   // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -293,7 +293,7 @@ int *g_a;
 __global__ void foo_kernel3(int *d) {
   d[0];
 }
-//CHECK:void run_foo(sycl::range<3> c, sycl::range<3> d) {
+//CHECK:void run_foo(dpct::dim3 c, dpct::dim3 d) {
 //CHECK-NEXT:  if (1)
 //CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:      [&](sycl::handler &cgh) {
@@ -310,7 +310,7 @@ void run_foo(dim3 c, dim3 d) {
   if (1)
     foo_kernel3<<<c, 1>>>(&g_a[0]);
 }
-//CHECK:void run_foo2(sycl::range<3> c, sycl::range<3> d) {
+//CHECK:void run_foo2(dpct::dim3 c, dpct::dim3 d) {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 //CHECK-NEXT:  if (1)
@@ -345,7 +345,7 @@ void run_foo2(dim3 c, dim3 d) {
   else
     foo_kernel3<<<c, 1>>>(g_a);
 }
-//CHECK:void run_foo3(sycl::range<3> c, sycl::range<3> d) {
+//CHECK:void run_foo3(dpct::dim3 c, dpct::dim3 d) {
 //CHECK-NEXT:  for (;;)
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
@@ -365,7 +365,7 @@ void run_foo3(dim3 c, dim3 d) {
   for (;;)
     foo_kernel3<<<c, d>>>(g_a);
 }
-//CHECK:void run_foo4(sycl::range<3> c, sycl::range<3> d) {
+//CHECK:void run_foo4(dpct::dim3 c, dpct::dim3 d) {
 //CHECK-NEXT: while (1)
 //CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:     [&](sycl::handler &cgh) {
@@ -399,7 +399,7 @@ void run_foo4(dim3 c, dim3 d) {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          my_kernel(result_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          my_kernel(result_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result[10]);
@@ -425,7 +425,7 @@ int run_foo5 () {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          my_kernel(result2_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          my_kernel(result2_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result2[10]);
@@ -446,7 +446,7 @@ int run_foo6 () {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          my_kernel(result3_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_pointer());
+//CHECK-NEXT:          my_kernel(result3_acc_ct0.get_raw_pointer(), item_ct1, resultInGroup_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:  printf("%f ", result3[0]);
@@ -470,7 +470,7 @@ int run_foo7 () {
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      dpct::access_wrapper<float *> out_acc_ct1(out.get_ptr(), cgh);
 //CHECK-EMPTY:
-//CHECK-NEXT:      float in_ct0 = in[0];
+//CHECK-NEXT:      auto in_ct0 = in[0];
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
@@ -581,7 +581,7 @@ int run_foo9() {
 //CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class cuda_pme_forces_dev_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:         cuda_pme_forces_dev(afn_s_acc_ct1.get_pointer());
+//CHECK-NEXT:         cuda_pme_forces_dev(afn_s_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:       });
 //CHECK-NEXT:   });
 //CHECK-NEXT:}
@@ -648,7 +648,7 @@ void test_ctor() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ctor_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel_ctor(item_ct1, s1_acc_ct1.get_pointer(), s2_acc_ct1, s3_acc_ct1);
+  // CHECK-NEXT:         kernel_ctor(item_ct1, s1_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), s2_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
 
@@ -682,7 +682,7 @@ void test_ctor() {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k11_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          k11<TT>(a, temp_ct1_acc_ct1.get_pointer(), temp2_ct1_acc_ct1.get_pointer());
+//CHECK-NEXT:          k11<TT>(a, temp_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
@@ -731,7 +731,7 @@ void foo11() {
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k12_{{[0-9a-z]+}}, TT>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          k12<TT>(a, temp_ct1_acc_ct1.get_pointer(), temp2_ct1_acc_ct1.get_pointer());
+//CHECK-NEXT:          k12<TT>(a, temp_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(), temp2_ct1_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get());
 //CHECK-NEXT:        });
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
@@ -772,8 +772,8 @@ int run_foo12() {
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    dpct::access_wrapper<int *> bb_acc_ct1(bb, cgh);
   //CHECK-EMPTY:
-  //CHECK-NEXT:    int aa_ct0 = aa;
-  //CHECK-NEXT:    int gg_ct6 = gg;
+  //CHECK-NEXT:    auto aa_ct0 = aa;
+  //CHECK-NEXT:    auto gg_ct6 = gg;
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel4_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -893,7 +893,7 @@ void run_foo17() {
   foo_class count(3);
   //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    int count_run_foo_ct2 = count.run_foo();
+  //CHECK-NEXT:    auto count_run_foo_ct2 = count.run_foo();
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class testKernel_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

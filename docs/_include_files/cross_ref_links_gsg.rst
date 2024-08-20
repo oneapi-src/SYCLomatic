@@ -11,9 +11,7 @@ For more details on what a specific message means, refer to the
 
 .. _refer-migrate-proj:
 
-For more complex sample instructions, refer to the 
-:ref:`mig_proj` section
-of the |tool_name| Developer Guide and Reference.
+For detailed information about migration workflow, refer to :ref:`mig_workflow`.
 
 .. _refer-migrate-proj-end:
 
@@ -25,6 +23,6 @@ For a complete list of command-line options, refer to the :ref:`cmd_opt_ref`.
 
 .. _refer-dpct1003:
 
-Look up the :ref:`dpct1003` warning in the Diagnostic Reference.
+Look up the :ref:`DPCT1003` warning in the Diagnostic Reference.
 
 .. _refer-dpct1003-end:

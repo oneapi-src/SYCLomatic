@@ -1,0 +1,10 @@
+// CHECK: CodePin Summary
+// CHECK: Totally APIs count, 2
+// CHECK: Consistently APIs count, 0
+// CHECK: Most Time-consuming Kernel(CUDA), example.cu:27:3:epilog, time:0.21312
+// CHECK: Most Time-consuming Kernel(SYCL), example.cu:27:3:epilog, time:1.61086
+// CHECK: Peak Device Memory Used(CUDA), 508231680
+// CHECK: Peak Device Memory Used(SYCL), 31023112192
+// CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
+// CHECK: example.cu:27:3:epilog,example.cu:27:3:epilog,Data value,The location of failed ID Errors occurred during comparison: d_a->"Data"->[3]->"Data"->[0]->"x"->"Data"->[0] and [ERROR: DATA VALUE MISMATCH] the CUDA value 1 differs from the SYCL value 0.; d_result->"Data"->[3]->"Data"->[0]->"x"->"Data"->[0] and [ERROR: DATA VALUE MISMATCH] the CUDA value 2 differs from the SYCL value 1.
+// CHECK: example.cu:27:3:prolog,example.cu:27:3:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data example.cu:27:3:prolog are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API example.cu.

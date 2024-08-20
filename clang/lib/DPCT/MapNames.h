@@ -33,8 +33,9 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
       "long4", "ulong4", "float1", "float2", "float3", "float4", "longlong1",  \
       "ulonglong1", "longlong2", "ulonglong2", "longlong3", "ulonglong3",      \
       "longlong4", "ulonglong4", "double1", "double2", "double3", "double4",   \
-      "__half", "__half2", "__nv_bfloat162", "__half_raw"
-#define VECTORTYPE2MARRAYNAMES "__nv_bfloat162"
+      "__half", "__half2", "half", "half2", "__nv_bfloat16", "nv_bfloat16",    \
+      "__nv_bfloat162", "nv_bfloat162", "__half_raw"
+#define VECTORTYPE2MARRAYNAMES "__nv_bfloat162", "nv_bfloat162"
 
 /// Record mapping between names
 class MapNames {
@@ -323,11 +324,10 @@ public:
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       CuDNNTypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
-  static const MapTy MacrosMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
+  static MapTy BLASEnumsMap;
   static MapTy SPBLASEnumsMap;
-  static const MapTy BLASEnumsMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       BLASFuncComplexReplInfoMap;
@@ -339,9 +339,6 @@ public:
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
 
-  static const std::set<std::string> MustSyncBLASFunc;
-  static const std::map<std::string, std::pair<std::string, int>>
-      MaySyncBLASFunc;
   // This map is only used for non-usm.
   static const std::map<std::string, std::map<int, std::string>>
       MaySyncBLASFuncWithMultiArgs;
@@ -356,6 +353,7 @@ public:
 
   static MapTy ITFName;
   static MapTy RandomEngineTypeMap;
+  static MapTy RandomOrderingTypeMap;
   static const std::map<std::string, std::string> RandomGenerateFuncMap;
 
   static MapTy DeviceRandomGeneratorTypeMap;
@@ -365,14 +363,9 @@ public:
 
   static MapTy BLASAPIWithRewriter;
   static std::unordered_set<std::string> SOLVERAPIWithRewriter;
-  static std::unordered_set<std::string> SPARSEAPIWithRewriter;
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
 
-  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
-      PropToGetFeatureMap;
-  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
-      PropToSetFeatureMap;
   static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
       SamplingInfoToSetFeatureMap;
   static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>

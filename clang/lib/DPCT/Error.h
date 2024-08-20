@@ -17,7 +17,8 @@ enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
-  InterceptBuildSuccess = 3,
+  CallIndependentToolSucceeded = 3,
+  MigrationCmakeScriptCompleted = 4,
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
@@ -58,12 +59,13 @@ enum ProcessStatus {
   MigrationErrorAPIMappingWrongCUDAHeader = -44,
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
-  InterceptBuildError = -47,
+  CallIndependentToolError = -47,
   MigrationErrorCMakeScriptPathInvalid = -48,
   MigrateCmakeScriptOnlyNotSpecifed = -49,
-  MigarteCmakeScriptIncorrectUse = -50,
-  MigarteCmakeScriptAndMigarteCmakeScriptOnlyBothUse = -51,
+  MigarteBuildScriptIncorrectUse = -50,
+  MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse = -51,
   MigrationErrorNoExplicitInRootAndCMakeScript = -52,
+  MigrationErrorCannotWrite = -53,
 };
 
 namespace clang {

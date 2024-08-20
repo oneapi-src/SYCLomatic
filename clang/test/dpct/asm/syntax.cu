@@ -17,6 +17,12 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
       unsigned int WARP_SZ;
       // CHECK: laneid = item_ct1.get_sub_group().get_local_linear_id();
       asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
+      
+      // CHECK: laneid = item_ct1.get_sub_group().get_local_linear_id();
+      asm("mov.u32 %0, %laneid;" : "=r"(laneid));
+
+      // CHECK: warpid = item_ct1.get_sub_group().get_group_linear_id();
+      asm("mov.u32 %0, %%warpid;" : "=r"(warpid));
 
       // CHECK: warpid = item_ct1.get_sub_group().get_group_linear_id();
       asm("mov.u32 %0, %%warpid;" : "=r"(warpid));

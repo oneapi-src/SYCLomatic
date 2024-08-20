@@ -1,7 +1,7 @@
 // RUN: rm -rf %T && mkdir -p %T
 // RUN: cd %T
 // RUN: cp %S/input.cmake ./input.cmake
-// RUN: dpct -in-root ./ -out-root out  ./input.cmake --rule-file=%S/../../../../tools/dpct/DpctOptRules/cmake_script_migration_rule.yaml --migrate-cmake-script-only --cuda-include-path="%cuda-path/include"
+// RUN: dpct -in-root ./ -out-root out  ./input.cmake  --migrate-build-script-only --cuda-include-path="%cuda-path/include"
 // RUN: echo "begin" > %T/diff.txt
 // RUN: diff --strip-trailing-cr %S/expected.txt %T/out/input.cmake >> %T/diff.txt
 // RUN: echo "end" >> %T/diff.txt

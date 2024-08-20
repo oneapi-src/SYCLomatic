@@ -32,8 +32,8 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
      //CHECK:int main() {
 //CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
-//CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
-//CHECK-NEXT:  sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
+//CHECK-NEXT:  dpct::dim3 griddim = 2;
+//CHECK-NEXT:  dpct::dim3 threaddim = 32;
 //CHECK-NEXT:  int *karg1, *karg2;
 //CHECK-NEXT:  karg1 = sycl::malloc_device<int>(32, q_ct1);
 //CHECK-NEXT:  karg2 = sycl::malloc_device<int>(32, q_ct1);
@@ -102,8 +102,7 @@ typedef struct
 //CHECK-NEXT:                                 const float denom_lj_inv,
 //CHECK-NEXT:                                 const int loop_trip,
 //CHECK-NEXT:                                 const sycl::nd_item<3> &item_ct1, float *sp_lj,
-//CHECK-NEXT:                                 float *sp_coul, int *ljd,
-//CHECK-NEXT:                                 sycl::local_accessor<double, 2> la) {
+//CHECK-NEXT:                                 float *sp_coul, int *ljd, double la[8][1]) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
                                  const float * __restrict__ q,
@@ -152,7 +151,7 @@ __device__ void sincos_1(double x, double* sptr, double* cptr) {
      //CHECK:  return [&]() {
 //CHECK-NEXT:                *sptr = sycl::sincos(
 //CHECK-NEXT:                    x, sycl::address_space_cast<
-//CHECK-NEXT:                           sycl::access::address_space::global_space,
+//CHECK-NEXT:                           sycl::access::address_space::generic_space,
 //CHECK-NEXT:                           sycl::access::decorated::yes>(cptr));
 //CHECK-NEXT:  }();
   return ::sincos(x, sptr, cptr);
@@ -162,7 +161,7 @@ __device__ void sincospi_1(double x, double* sptr, double* cptr) {
   //     CHECK:  return [&]() {
   //CHECK-NEXT:                *sptr = sycl::sincos(
   //CHECK-NEXT:                    x * DPCT_PI, sycl::address_space_cast<
-  //CHECK-NEXT:                                     sycl::access::address_space::global_space,
+  //CHECK-NEXT:                                     sycl::access::address_space::generic_space,
   //CHECK-NEXT:                                     sycl::access::decorated::yes>(cptr));
   //CHECK-NEXT:  }();
   return ::sincospi(x, sptr, cptr);

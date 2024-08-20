@@ -1,7 +1,6 @@
 // RUN: dpct -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event/driver-stream-and-event.dp.cpp %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/driver-stream-and-event/driver-stream-and-event.dp.cpp -o %T/driver-stream-and-event/driver-stream-and-event.dp.o %}
-
 #include "cuda.h"
 #include <vector>
 // CHECK: #include <future>
@@ -23,9 +22,18 @@ void foo(){
   cuFuncSetCacheConfig(f, CU_FUNC_CACHE_PREFER_NONE);
 
   //CHECK: s = dpct::get_current_device().create_queue();
-  //CHECK-NEXT: s->wait();
   cuStreamCreate(&s, CU_STREAM_DEFAULT);
+
+  // CHECK: int streamStatus = DPCT_CHECK_ERROR((s->ext_oneapi_empty())); 
+  // CHECK-NEXT: if (streamStatus == 0);
+  CUresult streamStatus = cuStreamQuery(s);
+  if (streamStatus == CUDA_SUCCESS);
+
+  //CHECK: s->wait();
   cuStreamSynchronize(s);
+
+  // CHECK: if (DPCT_CHECK_ERROR((s->ext_oneapi_empty())) == 0);
+  if (cuStreamQuery(s) == CUDA_SUCCESS);
 
   //CHECK: s->ext_oneapi_submit_barrier({*e});
   cuEventCreate(&e, CU_EVENT_DEFAULT);
@@ -92,10 +100,10 @@ void test_stream() {
   unsigned int flag;
   size_t length;
   CUdeviceptr  cuPtr;
-  // CHECK: std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); });
+  // CHECK: std::async([&]() { hStream->wait(); callback<char>(hStream, 0, data); });
   cuStreamAddCallback(hStream, callback<char>, data, flag);
 
-  // CHECK: int result = DPCT_CHECK_ERROR(std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); }));
+  // CHECK: int result = DPCT_CHECK_ERROR(std::async([&]() { hStream->wait(); callback<char>(hStream, 0, data); }));
   CUresult result = cuStreamAddCallback(hStream, callback<char>, data, flag);
 
   //CHECK: /*
@@ -122,4 +130,10 @@ void test_stream() {
 
   // CHECK: dpct::get_current_device().destroy_queue(hStream);
   cuStreamDestroy(hStream);
+}
+
+void test_cuEventRecord_crash(CUevent hEvent, CUstream hStream)
+{
+  // CHECK: int result = DPCT_CHECK_ERROR(*(dpct::event_ptr)hEvent = ((dpct::queue_ptr)hStream)->ext_oneapi_submit_barrier());
+  CUresult result = cuEventRecord((CUevent)hEvent, (CUstream)hStream);
 }

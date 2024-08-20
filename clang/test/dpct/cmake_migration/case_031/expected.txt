@@ -1,0 +1,8 @@
+include_directories(${SYCL_INCLUDE_DIR})
+include_directories(${somePath} ../)
+include_directories("${SYCL_INCLUDE_DIR}")
+include_directories(" ${SYCL_INCLUDE_DIR}")
+include_directories(" ${SYCL_INCLUDE_DIR}" )
+string(APPEND var ";${SYCL_INCLUDE_DIR}")
+cmake_path(GET SYCL_INCLUDE_DIR PARENT_PATH CUDA_INCLUDE_DIR)
+message(STATUS "Include Directory: ${CUDA_INCLUDE_DIR}")

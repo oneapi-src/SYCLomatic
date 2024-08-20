@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// SIMD Intrinsics
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__vabs2 | FileCheck %s -check-prefix=VABS2

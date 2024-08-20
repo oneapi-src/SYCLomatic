@@ -62,7 +62,7 @@ void test() {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_extern_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             kernel_extern(item_ct1, a_acc_ct1.get_pointer());
+  // CHECK-NEXT:             kernel_extern(item_ct1, a_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   kernel_extern<<<1,1>>>();

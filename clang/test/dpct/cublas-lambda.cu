@@ -15,26 +15,20 @@
 cublasStatus_t status;
 cublasHandle_t handle;
 int N = 275;
-__half *d_A_H = 0;
-__half *d_B_H = 0;
-__half *d_C_H = 0;
-__half alpha_H = 1.0f;
-__half beta_H = 0.0f;
+float *d_A_H = 0;
+float *d_B_H = 0;
+float *d_C_H = 0;
+float alpha_H = 1.0f;
+float beta_H = 0.0f;
 
 int main() {
-  cublasStatus_t status;
-  cublasHandle_t handle;
-  // CHECK: handle = &dpct::get_out_of_order_queue();
-  cublasCreate(&handle);
-
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:       d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -48,30 +42,28 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: else if ([&]() {
-  // CHECK-NEXT:            auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT:            auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT:            auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT:            oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:                *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:                oneapi::mkl::transpose::nontrans, N, N, N, alpha_H,
+  // CHECK-NEXT:            auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:            auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:            auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:            oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:                handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
   // CHECK-NEXT:                d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT:            return 0;
   // CHECK-NEXT:          }()) {
   // CHECK-NEXT: }
-  if (cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)) {
+  if (cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)) {
   }
-  else if (cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)) {
+  else if (cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)) {
   }
 
 
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:       d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -80,18 +72,17 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: if (int stat = 0) {
   // CHECK-NEXT: }
-  if(int stat = cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)){
+  if(int stat = cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)){
   }
 
 
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:       d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -100,7 +91,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: for (0;;) {
   // CHECK-NEXT: }
-  for(cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);;){
+  for(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);;){
   }
 
   // CHECK: /*
@@ -108,17 +99,16 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: for (; [&]() {
-  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}},
-  // CHECK-NEXT:     N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: return 0;
-  // CHECK-NEXT: }();) {
+  // CHECK-NEXT:        auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:        auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:        auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:        oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:            handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:            d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:        return 0;
+  // CHECK-NEXT:      }();) {
   // CHECK-NEXT: }
-  for(;cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);){
+  for(;cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);){
   }
 
   // CHECK: /*
@@ -126,17 +116,16 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: while ([&]() {
-  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:     d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: return 0;
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   return 0;
   // CHECK-NEXT: }() != 0) {
   // CHECK-NEXT: }
-  while(cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)!=0){
+  while(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)!=0){
   }
 
 
@@ -147,27 +136,25 @@ int main() {
   // CHECK-NEXT: lambda. You may need to rewrite this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: } while ([&]() {
-  // CHECK-NEXT: auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT: auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT: auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:     d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: return 0;
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   return 0;
   // CHECK-NEXT: }());
   do{
-  }while(cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N));
+  }while(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N));
 
 
   // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
-  // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-  // CHECK-NEXT:       d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
@@ -176,7 +163,7 @@ int main() {
   // CHECK-NEXT: */
   // CHECK-NEXT: switch (int stat = 0) {
   // CHECK-NEXT: }
-  switch (int stat = cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)){
+  switch (int stat = cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)){
   }
 
 
@@ -184,13 +171,12 @@ int main() {
 }
 
 // CHECK:int foo() try {
-// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-// CHECK-NEXT:  oneapi::mkl::blas::column_major::gemm(
-// CHECK-NEXT:      *handle, oneapi::mkl::transpose::nontrans,
-// CHECK-NEXT:      oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-// CHECK-NEXT:      d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+// CHECK-NEXT:  oneapi::mkl::blas::column_major::symv(
+// CHECK-NEXT:      handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H, d_A_H_buf_ct{{[0-9]+}},
+// CHECK-NEXT:      N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
 // CHECK-NEXT:  codes. 0 is used instead of an error code in a return statement. You may need
@@ -199,18 +185,17 @@ int main() {
 // CHECK-NEXT:  return 0;
 // CHECK-NEXT:}
 int foo() {
-  return cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
+  return cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 }
 
 // CHECK:void foo2() {
-// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_A_H);
-// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_B_H);
-// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<sycl::half>(d_C_H);
-// CHECK-NEXT:  oneapi::mkl::blas::column_major::gemm(
-// CHECK-NEXT:      *handle, oneapi::mkl::transpose::nontrans,
-// CHECK-NEXT:      oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N,
-// CHECK-NEXT:      d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
+// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
+// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
+// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
+// CHECK-NEXT:  oneapi::mkl::blas::column_major::symv(
+// CHECK-NEXT:      handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H, d_A_H_buf_ct{{[0-9]+}},
+// CHECK-NEXT:      N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
 // CHECK-NEXT:}
 void foo2() {
-  cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
+  cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 }

@@ -181,4 +181,27 @@ void foo9(){
   //CHECK: foo8<float, int>(0);
   foo8<int, float>(0);
 }
+
+
+void filterfoo(){}
+void filterfoo(int i){}
+void filterfoo2(int i){}
+
+void filtergoo(){}
+void filtergoo(int i){}
+
+void foo10(){
+  //CHECK: filterfoo();
+  filterfoo();
+  //CHECK: filtergoo(3);
+  filterfoo(3);
+  //CHECK: filtergoo2(3);
+  filterfoo2(3);
+}
+
+// CHECK: #if defined(__UNDEFINED_MACRO__)
+// CHECK-NEXT: #endif
+#if defined(__NVCC__)
+#endif
+
 #endif

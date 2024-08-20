@@ -62,7 +62,7 @@ SUBGROUPSIZE_FACTORY(UINT_MAX,
                      CALL_FACTORY_ENTRY("__match_any_sync",
                                         CALL(MapNames::getDpctNamespace() +
                                                  "match_any_over_sub_group",
-                                             SUBGROUP, ARG_WC(0), ARG_WC(1))))
+                                             SUBGROUP, ARG_WC(0), ARG(1))))
 
 // __match_all_sync
 SUBGROUPSIZE_FACTORY(UINT_MAX,
@@ -70,7 +70,7 @@ SUBGROUPSIZE_FACTORY(UINT_MAX,
                      CALL_FACTORY_ENTRY("__match_all_sync",
                                         CALL(MapNames::getDpctNamespace() +
                                                  "match_all_over_sub_group",
-                                             SUBGROUP, ARG_WC(0), ARG_WC(1),
+                                             SUBGROUP, ARG_WC(0), ARG(1),
                                              ARG_WC(2))))
 
 // __reduce_add_sync
@@ -151,37 +151,41 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::shift_sub_group_right",
+            UINT_MAX,
+            MapNames::getDpctNamespace() +
+                "experimental::shift_sub_group_right",
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_up_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::shift_sub_group_right",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_up_sync"),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_up_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::shift_sub_group_right",
+                                    makeCallArgCreatorWithCall(0), SUBGROUP,
+                                    makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2))))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_up_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::shift_sub_group_right",
+            UINT_MAX,
+            MapNames::getDpctNamespace() +
+                "experimental::shift_sub_group_right",
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_up_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::shift_sub_group_right",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2),
-                                            makeCallArgCreatorWithCall(3)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_up_sync"),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_up_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::shift_sub_group_right",
+                                    makeCallArgCreatorWithCall(0), SUBGROUP,
+                                    makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2),
+                                    makeCallArgCreatorWithCall(3))))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_up_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithUnsignedValue(0, 0xFFFFFFFF),
@@ -192,24 +196,26 @@ CONDITIONAL_FACTORY_ENTRY(
                 MapNames::getDpctNamespace() + "shift_sub_group_right",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_up_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "shift_sub_group_right",
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2))))),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_up_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "shift_sub_group_right",
+                                    SUBGROUP, makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2)))))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX,
                 MapNames::getDpctNamespace() + "shift_sub_group_right",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_up_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "shift_sub_group_right",
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2),
-                                            makeCallArgCreatorWithCall(3)))))),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_up_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "shift_sub_group_right",
+                                    SUBGROUP, makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2),
+                                    makeCallArgCreatorWithCall(3))))))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -219,12 +225,13 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_up_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_up_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "shift_sub_group_right",
-                                 SUBGROUP, makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2)))),
+                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                            1, CALL_FACTORY_ENTRY(
+                                   "__shfl_up_sync",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_right",
+                                        SUBGROUP, makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2))))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "shift_sub_group_right." +
@@ -240,13 +247,14 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_up_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_up_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "shift_sub_group_right",
-                                 SUBGROUP, makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2),
-                                 makeCallArgCreatorWithCall(3)))),
+                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                            1, CALL_FACTORY_ENTRY(
+                                   "__shfl_up_sync",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_right",
+                                        SUBGROUP, makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2),
+                                        makeCallArgCreatorWithCall(3))))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "shift_sub_group_right." +
@@ -263,21 +271,25 @@ CONDITIONAL_FACTORY_ENTRY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("__shfl_up",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_right",
-                                    SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1))))),
+            ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                0,
+                CALL_FACTORY_ENTRY("__shfl_up",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_right",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1)))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("__shfl_up",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_right",
-                                    SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1),
-                                    makeCallArgCreatorWithCall(2))))))
+            ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                0,
+                CALL_FACTORY_ENTRY("__shfl_up",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_right",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2)))))))
 
 // __shfl_down_sync
 CONDITIONAL_FACTORY_ENTRY(
@@ -285,37 +297,39 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::shift_sub_group_left",
+            UINT_MAX,
+            MapNames::getDpctNamespace() + "experimental::shift_sub_group_left",
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_down_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::shift_sub_group_left",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_down_sync"),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_down_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::shift_sub_group_left",
+                                    makeCallArgCreatorWithCall(0), SUBGROUP,
+                                    makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2))))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_down_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::shift_sub_group_left",
+            UINT_MAX,
+            MapNames::getDpctNamespace() + "experimental::shift_sub_group_left",
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_down_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::shift_sub_group_left",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2),
-                                            makeCallArgCreatorWithCall(3)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_down_sync"),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_down_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::shift_sub_group_left",
+                                    makeCallArgCreatorWithCall(0), SUBGROUP,
+                                    makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2),
+                                    makeCallArgCreatorWithCall(3))))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_down_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithUnsignedValue(0, 0xFFFFFFFF),
@@ -325,23 +339,25 @@ CONDITIONAL_FACTORY_ENTRY(
                 UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_down_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "shift_sub_group_left",
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2))))),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_down_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "shift_sub_group_left",
+                                    SUBGROUP, makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2)))))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_down_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "shift_sub_group_left",
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2),
-                                            makeCallArgCreatorWithCall(3)))))),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_down_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "shift_sub_group_left",
+                                    SUBGROUP, makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2),
+                                    makeCallArgCreatorWithCall(3))))))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -350,12 +366,13 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_down_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_down_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "shift_sub_group_left",
-                                 SUBGROUP, makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2)))),
+                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                            1, CALL_FACTORY_ENTRY(
+                                   "__shfl_down_sync",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_left",
+                                        SUBGROUP, makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2))))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() + "shift_sub_group_left." +
                         " You can specify "
@@ -369,13 +386,14 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_down_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_down_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "shift_sub_group_left",
-                                 SUBGROUP, makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2),
-                                 makeCallArgCreatorWithCall(3)))),
+                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                            1, CALL_FACTORY_ENTRY(
+                                   "__shfl_down_sync",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_left",
+                                        SUBGROUP, makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2),
+                                        makeCallArgCreatorWithCall(3))))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() + "shift_sub_group_left." +
                         " You can specify "
@@ -391,21 +409,25 @@ CONDITIONAL_FACTORY_ENTRY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("__shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1))))),
+            ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                0,
+                CALL_FACTORY_ENTRY("__shfl_down",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_left",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1)))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("__shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1),
-                                    makeCallArgCreatorWithCall(2))))))
+            ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                0,
+                CALL_FACTORY_ENTRY("__shfl_down",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "shift_sub_group_left",
+                                        SUBGROUP, makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2)))))))
 
 //__shfl_sync
 CONDITIONAL_FACTORY_ENTRY(
@@ -413,37 +435,41 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::select_from_sub_group",
+            UINT_MAX,
+            MapNames::getDpctNamespace() +
+                "experimental::select_from_sub_group",
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::select_from_sub_group",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_sync"),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::select_from_sub_group",
+                                    makeCallArgCreatorWithCall(0), SUBGROUP,
+                                    makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2))))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::select_from_sub_group",
+            UINT_MAX,
+            MapNames::getDpctNamespace() +
+                "experimental::select_from_sub_group",
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::select_from_sub_group",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2),
-                                            makeCallArgCreatorWithCall(3)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_sync"),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::select_from_sub_group",
+                                    makeCallArgCreatorWithCall(0), SUBGROUP,
+                                    makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2),
+                                    makeCallArgCreatorWithCall(3))))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithUnsignedValue(0, 0xFFFFFFFF),
@@ -454,24 +480,26 @@ CONDITIONAL_FACTORY_ENTRY(
                 MapNames::getDpctNamespace() + "select_from_sub_group",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "select_from_sub_group",
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2))))),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "select_from_sub_group",
+                                    SUBGROUP, makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2)))))),
             SUBGROUPSIZE_FACTORY(
                 UINT_MAX,
                 MapNames::getDpctNamespace() + "select_from_sub_group",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "select_from_sub_group",
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2),
-                                            makeCallArgCreatorWithCall(3)))))),
+                    ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                        1, CALL_FACTORY_ENTRY(
+                               "__shfl_sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "select_from_sub_group",
+                                    SUBGROUP, makeCallArgCreatorWithCall(1),
+                                    makeCallArgCreatorWithCall(2),
+                                    makeCallArgCreatorWithCall(3))))))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgIsConstantIntWithValue(3, 32),
             SUBGROUPSIZE_FACTORY(
@@ -481,12 +509,13 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "select_from_sub_group",
-                                 SUBGROUP, makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2)))),
+                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                            1, CALL_FACTORY_ENTRY(
+                                   "__shfl_sync",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "select_from_sub_group",
+                                        SUBGROUP, makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2))))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "select_from_sub_group." +
@@ -502,13 +531,14 @@ CONDITIONAL_FACTORY_ENTRY(
                     "__shfl_sync",
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY(
-                            "__shfl_sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "select_from_sub_group",
-                                 SUBGROUP, makeCallArgCreatorWithCall(1),
-                                 makeCallArgCreatorWithCall(2),
-                                 makeCallArgCreatorWithCall(3)))),
+                        ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                            1, CALL_FACTORY_ENTRY(
+                                   "__shfl_sync",
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "select_from_sub_group",
+                                        SUBGROUP, makeCallArgCreatorWithCall(1),
+                                        makeCallArgCreatorWithCall(2),
+                                        makeCallArgCreatorWithCall(3))))),
                     Diagnostics::MASK_UNSUPPORTED,
                     ARG(MapNames::getDpctNamespace() +
                         "select_from_sub_group." +
@@ -525,21 +555,23 @@ CONDITIONAL_FACTORY_ENTRY(
         UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("__shfl",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "select_from_sub_group",
-                                    SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1))))),
+            ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                0, CALL_FACTORY_ENTRY(
+                       "__shfl", CALL(MapNames::getDpctNamespace() +
+                                          "select_from_sub_group",
+                                      SUBGROUP, makeCallArgCreatorWithCall(0),
+                                      makeCallArgCreatorWithCall(1)))))),
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
-            CALL_FACTORY_ENTRY("__shfl",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "select_from_sub_group",
-                                    SUBGROUP, makeCallArgCreatorWithCall(0),
-                                    makeCallArgCreatorWithCall(1),
-                                    makeCallArgCreatorWithCall(2))))))
+            ANALYZE_UNINIT_DEV_VAR_FACTORY(
+                0, CALL_FACTORY_ENTRY(
+                       "__shfl", CALL(MapNames::getDpctNamespace() +
+                                          "select_from_sub_group",
+                                      SUBGROUP, makeCallArgCreatorWithCall(0),
+                                      makeCallArgCreatorWithCall(1),
+                                      makeCallArgCreatorWithCall(2)))))))
 
 // __shfl_xor_sync
 CONDITIONAL_FACTORY_ENTRY(
@@ -547,37 +579,39 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::permute_sub_group_by_xor",
+            UINT_MAX,
+            MapNames::getDpctNamespace() +
+                "experimental::permute_sub_group_by_xor",
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_xor_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::permute_sub_group_by_xor",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_xor_sync"),
+                    CALL_FACTORY_ENTRY(
+                        "__shfl_xor_sync",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "experimental::permute_sub_group_by_xor",
+                             makeCallArgCreatorWithCall(0), SUBGROUP,
+                             makeCallArgCreatorWithCall(1),
+                             makeCallArgCreatorWithCall(2)))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_xor_sync"),
                 ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
-            UINT_MAX, MapNames::getDpctNamespace() + "experimental::permute_sub_group_by_xor",
+            UINT_MAX,
+            MapNames::getDpctNamespace() +
+                "experimental::permute_sub_group_by_xor",
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
                     HelperFeatureEnum::device_ext,
-                    CALL_FACTORY_ENTRY("__shfl_xor_sync",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "experimental::permute_sub_group_by_xor",
-                                            makeCallArgCreatorWithCall(0),
-                                            SUBGROUP,
-                                            makeCallArgCreatorWithCall(1),
-                                            makeCallArgCreatorWithCall(2),
-                                            makeCallArgCreatorWithCall(3)))),
-                Diagnostics::EXPERIMENTAL_FEATURE,
-                ARG("__shfl_xor_sync"),
+                    CALL_FACTORY_ENTRY(
+                        "__shfl_xor_sync",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "experimental::permute_sub_group_by_xor",
+                             makeCallArgCreatorWithCall(0), SUBGROUP,
+                             makeCallArgCreatorWithCall(1),
+                             makeCallArgCreatorWithCall(2),
+                             makeCallArgCreatorWithCall(3)))),
+                Diagnostics::EXPERIMENTAL_FEATURE, ARG("__shfl_xor_sync"),
                 ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithUnsignedValue(0, 0xFFFFFFFF),

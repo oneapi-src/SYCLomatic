@@ -1,0 +1,8 @@
+include_directories(${CUDA_INCLUDE_DIRS})
+include_directories(${somePath} ../)
+include_directories("${CUDA_INCLUDE_DIRS}")
+include_directories(" ${CUDA_INCLUDE_DIRS}")
+include_directories(" ${CUDA_INCLUDE_DIRS}" )
+string(APPEND var ";${CUDA_INCLUDE_DIRS}")
+cmake_path(GET CUDA_INCLUDE_DIRS PARENT_PATH CUDA_INCLUDE_DIR)
+message(STATUS "Include Directory: ${CUDA_INCLUDE_DIR}")

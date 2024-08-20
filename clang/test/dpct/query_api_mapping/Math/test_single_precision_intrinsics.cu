@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Single Precision Intrinsics
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__cosf | FileCheck %s -check-prefix=__COSF
@@ -234,7 +232,7 @@
 // __SINCOSF: CUDA API:
 // __SINCOSF-NEXT:   __sincosf(f /*float*/, pf1 /*float **/, pf2 /*float **/);
 // __SINCOSF-NEXT: Is migrated to:
-// __SINCOSF-NEXT:   *pf1 = sycl::sincos(f, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes>(pf2));
+// __SINCOSF-NEXT:   *pf1 = sycl::sincos(f, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(pf2));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__sinf | FileCheck %s -check-prefix=__SINF
 // __SINF: CUDA API:

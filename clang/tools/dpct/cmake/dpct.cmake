@@ -93,8 +93,10 @@ endmacro()
 
 if(WIN32)
     set(DNN_LIB "dnnl.lib")
+    set(MKL_LIB "-Qmkl")
 else()
     set(DNN_LIB "dnnl")
+    set(MKL_LIB "-qmkl")
 endif()
 
 # Link MKL library to target
@@ -109,3 +111,21 @@ macro(DPCT_HELPER_ADD_MKL_TO_TARGET target)
     message(FATAL_ERROR "Unsupported platform")
   endif()
 endmacro()
+
+set(CMAKE_SYCL_COMPILER "icpx")
+set(CMAKE_SYCL_ARCHITECTURES "")
+set(CMAKE_SYCL_FLAGS "")
+set(COMPATIBILITY_VERSION 99.9)
+set(COMPATIBILITY_VERSION_MAJOR 99)
+set(COMPATIBILITY_VERSION_MINOR 9)
+set(COMPATIBILITY_VERSION_STRING "${COMPATIBILITY_VERSION}")
+set(SYCL_TOOLKIT_ROOT_DIR "${ONEAPI_ROOT}")
+set(SYCL_TOOLKIT_INCLUDE "${SYCL_INCLUDE_DIR}")
+# The SYCL runtime library is auto-loaded when option `-fsycl` is specified. So we can
+# safely set the CUDAToolkit_LIBRARY_DIR to ""
+set(SYCLToolkit_LIBRARY_DIR "${SYCL_INCLUDE_DIR}/../lib")
+set(SYCL_HOST_COMPILER "icpx")
+set(SYCL_HOST_FLAGS "")
+
+# 'SYCL_COMPILER_EXECUTABLE' is used to specify the path to the SYCL Compiler (icpx).
+set(SYCL_COMPILER_EXECUTABLE "${SYCL_INCLUDE_DIR}/../bin/icpx")

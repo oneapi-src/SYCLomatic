@@ -27,6 +27,11 @@ NEW_INLINE __global__ void kernel2() {
 
 INLINE_KERNEL3
 
+// CHECK: template <typename T> __dpct_inline__ void kernel4(){};
+template <typename T> __forceinline__ __global__ void kernel4(){};
+// CHECK: template <> __dpct_inline__ void kernel4<int>(){};
+template <> __forceinline__ __global__ void kernel4<int>(){};
+
 class TestClass {
   TestClass();
   // CHECK: __dpct_inline__ void foo(){

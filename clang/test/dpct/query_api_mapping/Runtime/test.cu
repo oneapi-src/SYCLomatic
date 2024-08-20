@@ -1,6 +1,60 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 /// Device Management
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetAttribute | FileCheck %s -check-prefix=CUDADEVICEGETATTRIBUTE
+// CUDADEVICEGETATTRIBUTE: CUDA API:
+// CUDADEVICEGETATTRIBUTE-NEXT:   // Only support migration of some cudaDeviceAttr type.
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 1 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrMaxThreadsPerBlock
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 2 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrClockRate
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 3 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrTextureAlignment
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 4 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrMultiProcessorCount
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 5 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrIntegrated
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 6 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrComputeMode
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 7 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrComputeCapabilityMajor
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 8 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrComputeCapabilityMinor
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 9 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  cudaDevAttrHostNativeAtomicSupported
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                  i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 10 */ cudaDeviceGetAttribute(pi /*int **/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                   cudaDevAttrConcurrentManagedAccess
+// CUDADEVICEGETATTRIBUTE-NEXT:                                   /*cudaDeviceAttr*/,
+// CUDADEVICEGETATTRIBUTE-NEXT:                                   i /*int*/);
+// CUDADEVICEGETATTRIBUTE-NEXT: Is migrated to:
+// CUDADEVICEGETATTRIBUTE-NEXT:   // Only support migration of some cudaDeviceAttr type.
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 1 */ *pi = dpct::dev_mgr::instance().get_device(i).get_max_work_group_size();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 2 */ *pi = dpct::dev_mgr::instance().get_device(i).get_max_clock_frequency();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 3 */ *pi = dpct::dev_mgr::instance().get_device(i).get_mem_base_addr_align_in_bytes();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 4 */ *pi = dpct::dev_mgr::instance().get_device(i).get_max_compute_units();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 5 */ *pi = dpct::dev_mgr::instance().get_device(i).get_integrated();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 6 */ *pi = 1;
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 7 */ *pi = dpct::dev_mgr::instance().get_device(i).get_major_version();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 8 */ *pi = dpct::dev_mgr::instance().get_device(i).get_minor_version();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 9 */ *pi = dpct::dev_mgr::instance().get_device(i).is_native_atomic_supported();
+// CUDADEVICEGETATTRIBUTE-NEXT:   /* 10 */ *pi = dpct::dev_mgr::instance().get_device(i).get_info<sycl::info::device::usm_shared_allocations>();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetCacheConfig | FileCheck %s -check-prefix=CUDADEVICEGETCACHECONFIG
 // CUDADEVICEGETCACHECONFIG: CUDA API:
@@ -16,6 +70,11 @@
 // CUDADEVICEGETLIMIT-NEXT:   DPCT1029:0: SYCL currently does not support getting device resource limits. The output parameter(s) are set to 0.
 // CUDADEVICEGETLIMIT-NEXT:   */
 // CUDADEVICEGETLIMIT-NEXT:   *ps = 0;
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceGetStreamPriorityRange | FileCheck %s -check-prefix=CUDADEVICEGETSTREAMPRIORITYRANGE
+// CUDADEVICEGETSTREAMPRIORITYRANGE: CUDA API:
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT:   cudaDeviceGetStreamPriorityRange(pi1 /*int **/, pi2 /*int **/);
+// CUDADEVICEGETSTREAMPRIORITYRANGE-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaDeviceReset | FileCheck %s -check-prefix=CUDADEVICERESET
 // CUDADEVICERESET: CUDA API:
@@ -101,6 +160,24 @@
 
 /// Error Handling
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetErrorName | FileCheck %s -check-prefix=CUDAGETERRORNAME
+// CUDAGETERRORNAME: CUDA API:
+// CUDAGETERRORNAME-NEXT:   cudaGetErrorName(e /*cudaError_t*/);
+// CUDAGETERRORNAME-NEXT: Is migrated to:
+// CUDAGETERRORNAME-NEXT:   /*
+// CUDAGETERRORNAME-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// CUDAGETERRORNAME-NEXT:   */
+// CUDAGETERRORNAME-NEXT:   "<Placeholder string>";
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetErrorString | FileCheck %s -check-prefix=CUDAGETERRORSTRING
+// CUDAGETERRORSTRING: CUDA API:
+// CUDAGETERRORSTRING-NEXT:   cudaGetErrorString(e /*cudaError_t*/);
+// CUDAGETERRORSTRING-NEXT: Is migrated to:
+// CUDAGETERRORSTRING-NEXT:   /*
+// CUDAGETERRORSTRING-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// CUDAGETERRORSTRING-NEXT:   */
+// CUDAGETERRORSTRING-NEXT:   "<Placeholder string>";
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetLastError | FileCheck %s -check-prefix=CUDAGETLASTERROR
 // CUDAGETLASTERROR: CUDA API:
 // CUDAGETLASTERROR-NEXT:   cudaGetLastError();
@@ -160,19 +237,25 @@
 // CUDASTREAMGETFLAGS: CUDA API:
 // CUDASTREAMGETFLAGS-NEXT:   cudaStreamGetFlags(s /*cudaStream_t*/, f /*unsigned int **/);
 // CUDASTREAMGETFLAGS-NEXT: Is migrated to:
+// CUDASTREAMGETFLAGS-NEXT:   /*
+// CUDASTREAMGETFLAGS-NEXT:   DPCT1014:0: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
+// CUDASTREAMGETFLAGS-NEXT:   */
 // CUDASTREAMGETFLAGS-NEXT:   *(f) = 0;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamGetPriority | FileCheck %s -check-prefix=CUDASTREAMGETPRIORITY
 // CUDASTREAMGETPRIORITY: CUDA API:
 // CUDASTREAMGETPRIORITY-NEXT:   cudaStreamGetPriority(s /*cudaStream_t*/, pi /*int **/);
 // CUDASTREAMGETPRIORITY-NEXT: Is migrated to:
+// CUDASTREAMGETPRIORITY-NEXT:   /*
+// CUDASTREAMGETPRIORITY-NEXT:   DPCT1014:0: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
+// CUDASTREAMGETPRIORITY-NEXT:   */
 // CUDASTREAMGETPRIORITY-NEXT:   *(pi) = 0;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamQuery | FileCheck %s -check-prefix=CUDASTREAMQUERY
 // CUDASTREAMQUERY: CUDA API:
 // CUDASTREAMQUERY-NEXT:   cudaStreamQuery(s /*cudaStream_t*/);
-// CUDASTREAMQUERY-NEXT: The API is Removed.
-// CUDASTREAMQUERY-EMPTY:
+// CUDASTREAMQUERY-NEXT: Is migrated to:
+// CUDASTREAMQUERY-NEXT:   s->ext_oneapi_empty();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamSynchronize | FileCheck %s -check-prefix=CUDASTREAMSYNCHRONIZE
 // CUDASTREAMSYNCHRONIZE: CUDA API:
@@ -215,7 +298,7 @@
 // CUDAEVENTELAPSEDTIME: CUDA API:
 // CUDAEVENTELAPSEDTIME-NEXT:   cudaEventElapsedTime(pf /*float **/, e1 /*cudaEvent_t*/, e2 /*cudaEvent_t*/);
 // CUDAEVENTELAPSEDTIME-NEXT: Is migrated to:
-// CUDAEVENTELAPSEDTIME-NEXT:   *(pf) = std::chrono::duration<float, std::milli>(e2_ct1 - e1_ct1).count();
+// CUDAEVENTELAPSEDTIME-NEXT:   *(pf) = (e2->get_profiling_info<sycl::info::event_profiling::command_end>() - e1->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventQuery | FileCheck %s -check-prefix=CUDAEVENTQUERY
 // CUDAEVENTQUERY: CUDA API:
@@ -223,7 +306,7 @@
 // CUDAEVENTQUERY-NEXT:   cudaEventQuery(e /*cudaEvent_t*/);
 // CUDAEVENTQUERY-NEXT: Is migrated to:
 // CUDAEVENTQUERY-NEXT:   dpct::event_ptr e;
-// CUDAEVENTQUERY-NEXT:   (int)e->get_info<sycl::info::event::command_execution_status>();
+// CUDAEVENTQUERY-NEXT:   dpct::sycl_event_query(e /*cudaEvent_t*/)
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventRecord | FileCheck %s -check-prefix=CUDAEVENTRECORD
 // CUDAEVENTRECORD: CUDA API:
@@ -231,7 +314,7 @@
 // CUDAEVENTRECORD-NEXT:   cudaEventRecord(e /*cudaEvent_t*/, s /*cudaStream_t*/);
 // CUDAEVENTRECORD-NEXT: Is migrated to:
 // CUDAEVENTRECORD-NEXT:   dpct::queue_ptr s;
-// CUDAEVENTRECORD-NEXT:   *e = s->ext_oneapi_submit_barrier();
+// CUDAEVENTRECORD-NEXT:   dpct::sync_barrier(e /*cudaEvent_t*/, s /*cudaStream_t*/);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventSynchronize | FileCheck %s -check-prefix=CUDAEVENTSYNCHRONIZE
 // CUDAEVENTSYNCHRONIZE: CUDA API:
@@ -262,6 +345,17 @@
 // CUDAFUNCSETSHAREDMEMCONFIG-NEXT:   cudaFuncSetSharedMemConfig(pFunc /*const void **/, s /*cudaSharedMemConfig*/);
 // CUDAFUNCSETSHAREDMEMCONFIG-NEXT: The API is Removed.
 // CUDAFUNCSETSHAREDMEMCONFIG-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaLaunchKernel | FileCheck %s -check-prefix=CUDALAUNCHKERNEL
+// CUDALAUNCHKERNEL: CUDA API:
+// CUDALAUNCHKERNEL-NEXT:   cudaLaunchKernel(f /*cudaError_t*/, gridDim /*dim3*/, blockDim /*dim3*/,
+// CUDALAUNCHKERNEL-NEXT:                    args /*void ***/, sharedMem /*size_t*/, s /*cudaStream_t*/);
+// CUDALAUNCHKERNEL-NEXT: Is migrated to:
+// CUDALAUNCHKERNEL-NEXT:   s->parallel_for(
+// CUDALAUNCHKERNEL-NEXT:     sycl::nd_range<3>(gridDim * blockDim, blockDim),
+// CUDALAUNCHKERNEL-NEXT:     [=](sycl::nd_item<3> item_ct1) {
+// CUDALAUNCHKERNEL-NEXT:       f();
+// CUDALAUNCHKERNEL-NEXT:     });
 
 /// Occupancy
 

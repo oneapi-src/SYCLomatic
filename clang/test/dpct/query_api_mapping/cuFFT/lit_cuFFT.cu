@@ -1,5 +1,3 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftExecZ2Z | FileCheck %s -check-prefix=cufftExecZ2Z
 // cufftExecZ2Z: CUDA API:
 // cufftExecZ2Z-NEXT:   cufftHandle plan;
@@ -105,3 +103,181 @@
 // cufftCreate-NEXT: Is migrated to:
 // cufftCreate-NEXT:   *plan = dpct::fft::fft_engine::create();
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftEstimate1d | FileCheck %s -check-prefix=cufftEstimate1d
+// cufftEstimate1d: CUDA API:
+// cufftEstimate1d-NEXT:   cufftEstimate1d(nx /*int*/, type /*cufftType*/, num_of_trans /*int*/,
+// cufftEstimate1d-NEXT:                   worksize /*size_t **/);
+// cufftEstimate1d-NEXT: Is migrated to:
+// cufftEstimate1d-NEXT:   dpct::fft::fft_engine::estimate_size(nx, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftEstimate2d | FileCheck %s -check-prefix=cufftEstimate2d
+// cufftEstimate2d: CUDA API:
+// cufftEstimate2d-NEXT:   cufftEstimate2d(nx /*int*/, ny /*int*/, type /*cufftType*/,
+// cufftEstimate2d-NEXT:                   worksize /*size_t **/);
+// cufftEstimate2d-NEXT: Is migrated to:
+// cufftEstimate2d-NEXT:   dpct::fft::fft_engine::estimate_size(nx, ny, type, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftEstimate3d | FileCheck %s -check-prefix=cufftEstimate3d
+// cufftEstimate3d: CUDA API:
+// cufftEstimate3d-NEXT:   cufftEstimate3d(nx /*int*/, ny /*int*/, nz /*int*/, type /*cufftType*/,
+// cufftEstimate3d-NEXT:                   worksize /*size_t **/);
+// cufftEstimate3d-NEXT: Is migrated to:
+// cufftEstimate3d-NEXT:   dpct::fft::fft_engine::estimate_size(nx, ny, nz, type, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftEstimateMany | FileCheck %s -check-prefix=cufftEstimateMany
+// cufftEstimateMany: CUDA API:
+// cufftEstimateMany-NEXT:   cufftEstimateMany(dim /*int*/, n /*int **/, inembed /*int **/,
+// cufftEstimateMany-NEXT:                     istride /*int*/, idist /*int*/, onembed /*int **/,
+// cufftEstimateMany-NEXT:                     ostride /*int*/, odist /*int*/, type /*cufftType*/,
+// cufftEstimateMany-NEXT:                     num_of_trans /*int*/, worksize /*size_t **/);
+// cufftEstimateMany-NEXT: Is migrated to:
+// cufftEstimateMany-NEXT:   dpct::fft::fft_engine::estimate_size(dim, n, inembed, istride, idist, onembed, ostride, odist, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetProperty | FileCheck %s -check-prefix=cufftGetProperty
+// cufftGetProperty: CUDA API:
+// cufftGetProperty-NEXT:   cufftGetProperty(type /*libraryPropertyType*/, value /*int **/);
+// cufftGetProperty-NEXT: Is migrated to:
+// cufftGetProperty-NEXT:   dpct::mkl_get_version(type, value);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetSize | FileCheck %s -check-prefix=cufftGetSize
+// cufftGetSize: CUDA API:
+// cufftGetSize-NEXT:   cufftGetSize(plan /*cufftHandle*/, worksize /*size_t **/);
+// cufftGetSize-NEXT: Is migrated to:
+// cufftGetSize-NEXT:   plan->get_workspace_size(worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetSize1d | FileCheck %s -check-prefix=cufftGetSize1d
+// cufftGetSize1d: CUDA API:
+// cufftGetSize1d-NEXT:   cufftGetSize1d(plan /*cufftHandle*/, nx /*int*/, type /*cufftType*/,
+// cufftGetSize1d-NEXT:                  num_of_trans /*int*/, worksize /*size_t **/);
+// cufftGetSize1d-NEXT: Is migrated to:
+// cufftGetSize1d-NEXT:   dpct::fft::fft_engine::estimate_size(nx, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetSize2d | FileCheck %s -check-prefix=cufftGetSize2d
+// cufftGetSize2d: CUDA API:
+// cufftGetSize2d-NEXT:   cufftGetSize2d(plan /*cufftHandle*/, nx /*int*/, ny /*int*/,
+// cufftGetSize2d-NEXT:                  type /*cufftType*/, worksize /*size_t **/);
+// cufftGetSize2d-NEXT: Is migrated to:
+// cufftGetSize2d-NEXT:   dpct::fft::fft_engine::estimate_size(nx, ny, type, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetSize3d | FileCheck %s -check-prefix=cufftGetSize3d
+// cufftGetSize3d: CUDA API:
+// cufftGetSize3d-NEXT:   cufftGetSize3d(plan /*cufftHandle*/, nx /*int*/, ny /*int*/, nz /*int*/,
+// cufftGetSize3d-NEXT:                  type /*cufftType*/, worksize /*size_t **/);
+// cufftGetSize3d-NEXT: Is migrated to:
+// cufftGetSize3d-NEXT:   dpct::fft::fft_engine::estimate_size(nx, ny, nz, type, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetSizeMany | FileCheck %s -check-prefix=cufftGetSizeMany
+// cufftGetSizeMany: CUDA API:
+// cufftGetSizeMany-NEXT:   cufftGetSizeMany(plan /*cufftHandle*/, dim /*int*/, n /*int **/,
+// cufftGetSizeMany-NEXT:                    inembed /*int **/, istride /*int*/, idist /*int*/,
+// cufftGetSizeMany-NEXT:                    onembed /*int **/, ostride /*int*/, odist /*int*/,
+// cufftGetSizeMany-NEXT:                    type /*cufftType*/, num_of_trans /*int*/,
+// cufftGetSizeMany-NEXT:                    worksize /*size_t **/);
+// cufftGetSizeMany-NEXT: Is migrated to:
+// cufftGetSizeMany-NEXT:   dpct::fft::fft_engine::estimate_size(dim, n, inembed, istride, idist, onembed, ostride, odist, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetSizeMany64 | FileCheck %s -check-prefix=cufftGetSizeMany64
+// cufftGetSizeMany64: CUDA API:
+// cufftGetSizeMany64-NEXT:   cufftGetSizeMany64(plan /*cufftHandle*/, dim /*int*/, n /*long long int **/,
+// cufftGetSizeMany64-NEXT:                      inembed /*long long int **/, istride /*long long int*/,
+// cufftGetSizeMany64-NEXT:                      idist /*long long int*/, onembed /*long long int **/,
+// cufftGetSizeMany64-NEXT:                      ostride /*long long int*/, odist /*long long int*/,
+// cufftGetSizeMany64-NEXT:                      type /*cufftType*/, num_of_trans /*long long int*/,
+// cufftGetSizeMany64-NEXT:                      worksize /*size_t **/);
+// cufftGetSizeMany64-NEXT: Is migrated to:
+// cufftGetSizeMany64-NEXT:   dpct::fft::fft_engine::estimate_size(dim, n, inembed, istride, idist, onembed, ostride, odist, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftGetVersion | FileCheck %s -check-prefix=cufftGetVersion
+// cufftGetVersion: CUDA API:
+// cufftGetVersion-NEXT:   cufftGetVersion(version /*int **/);
+// cufftGetVersion-NEXT: Is migrated to:
+// cufftGetVersion-NEXT:   dpct::mkl_get_version(dpct::version_field::major, version);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftMakePlan1d | FileCheck %s -check-prefix=cufftMakePlan1d
+// cufftMakePlan1d: CUDA API:
+// cufftMakePlan1d-NEXT:   cufftMakePlan1d(plan /*cufftHandle*/, nx /*int*/, type /*cufftType*/,
+// cufftMakePlan1d-NEXT:                   num_of_trans /*int*/, worksize /*size_t **/);
+// cufftMakePlan1d-NEXT: Is migrated to:
+// cufftMakePlan1d-NEXT:   plan->commit(&dpct::get_in_order_queue(), nx, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftMakePlan2d | FileCheck %s -check-prefix=cufftMakePlan2d
+// cufftMakePlan2d: CUDA API:
+// cufftMakePlan2d-NEXT:   cufftMakePlan2d(plan /*cufftHandle*/, nx /*int*/, ny /*int*/,
+// cufftMakePlan2d-NEXT:                   type /*cufftType*/, worksize /*size_t **/);
+// cufftMakePlan2d-NEXT: Is migrated to:
+// cufftMakePlan2d-NEXT:   plan->commit(&dpct::get_in_order_queue(), nx, ny, type, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftMakePlan3d | FileCheck %s -check-prefix=cufftMakePlan3d
+// cufftMakePlan3d: CUDA API:
+// cufftMakePlan3d-NEXT:   cufftMakePlan3d(plan /*cufftHandle*/, nx /*int*/, ny /*int*/, nz /*int*/,
+// cufftMakePlan3d-NEXT:                   type /*cufftType*/, worksize /*size_t **/);
+// cufftMakePlan3d-NEXT: Is migrated to:
+// cufftMakePlan3d-NEXT:   plan->commit(&dpct::get_in_order_queue(), nx, ny, nz, type, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftMakePlanMany | FileCheck %s -check-prefix=cufftMakePlanMany
+// cufftMakePlanMany: CUDA API:
+// cufftMakePlanMany-NEXT:   cufftMakePlanMany(plan /*cufftHandle*/, dim /*int*/, n /*int **/,
+// cufftMakePlanMany-NEXT:                     inembed /*int **/, istride /*int*/, idist /*int*/,
+// cufftMakePlanMany-NEXT:                     onembed /*int **/, ostride /*int*/, odist /*int*/,
+// cufftMakePlanMany-NEXT:                     type /*cufftType*/, num_of_trans /*int*/,
+// cufftMakePlanMany-NEXT:                     worksize /*size_t **/);
+// cufftMakePlanMany-NEXT: Is migrated to:
+// cufftMakePlanMany-NEXT:   plan->commit(&dpct::get_in_order_queue(), dim, n, inembed, istride, idist, onembed, ostride, odist, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftMakePlanMany64 | FileCheck %s -check-prefix=cufftMakePlanMany64
+// cufftMakePlanMany64: CUDA API:
+// cufftMakePlanMany64-NEXT:   cufftMakePlanMany64(plan /*cufftHandle*/, dim /*int*/, n /*long long int **/,
+// cufftMakePlanMany64-NEXT:                       inembed /*long long int **/, istride /*long long int*/,
+// cufftMakePlanMany64-NEXT:                       idist /*long long int*/, onembed /*long long int **/,
+// cufftMakePlanMany64-NEXT:                       ostride /*long long int*/, odist /*long long int*/,
+// cufftMakePlanMany64-NEXT:                       type /*cufftType*/, num_of_trans /*long long int*/,
+// cufftMakePlanMany64-NEXT:                       worksize /*size_t **/);
+// cufftMakePlanMany64-NEXT: Is migrated to:
+// cufftMakePlanMany64-NEXT:   plan->commit(&dpct::get_in_order_queue(), dim, n, inembed, istride, idist, onembed, ostride, odist, type, num_of_trans, worksize);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftPlanMany | FileCheck %s -check-prefix=cufftPlanMany
+// cufftPlanMany: CUDA API:
+// cufftPlanMany-NEXT:   cufftHandle plan;
+// cufftPlanMany-NEXT:   cufftPlanMany(&plan /*cufftHandle **/, dim /*int*/, n /*int **/,
+// cufftPlanMany-NEXT:                 inembed /*int **/, istride /*int*/, idist /*int*/,
+// cufftPlanMany-NEXT:                 onembed /*int **/, ostride /*int*/, odist /*int*/,
+// cufftPlanMany-NEXT:                 type /*cufftType*/, num_of_trans /*int*/);
+// cufftPlanMany-NEXT: Is migrated to:
+// cufftPlanMany-NEXT:   dpct::fft::fft_engine_ptr plan;
+// cufftPlanMany-NEXT:   plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), dim, n, inembed, istride, idist, onembed, ostride, odist, type, num_of_trans);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftSetAutoAllocation | FileCheck %s -check-prefix=cufftSetAutoAllocation
+// cufftSetAutoAllocation: CUDA API:
+// cufftSetAutoAllocation-NEXT:   cufftSetAutoAllocation(plan /*cufftHandle*/, autoallocate /*int*/);
+// cufftSetAutoAllocation-NEXT: Is migrated to:
+// cufftSetAutoAllocation-NEXT:   plan->use_internal_workspace(autoallocate);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftSetStream | FileCheck %s -check-prefix=cufftSetStream
+// cufftSetStream: CUDA API:
+// cufftSetStream-NEXT:   cufftSetStream(plan /*cufftHandle*/, s /*cudaStream_t*/);
+// cufftSetStream-NEXT: Is migrated to:
+// cufftSetStream-NEXT:   plan->set_queue(s);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftSetWorkArea | FileCheck %s -check-prefix=cufftSetWorkArea
+// cufftSetWorkArea: CUDA API:
+// cufftSetWorkArea-NEXT:   cufftSetWorkArea(plan /*cufftHandle*/, workspace /*void **/);
+// cufftSetWorkArea-NEXT: Is migrated to:
+// cufftSetWorkArea-NEXT:   plan->set_workspace(workspace);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftXtExec | FileCheck %s -check-prefix=cufftXtExec
+// cufftXtExec: CUDA API:
+// cufftXtExec-NEXT:   cufftXtExec(plan /*cufftHandle*/, in /*void **/, out /*void **/, dir /*int*/);
+// cufftXtExec-NEXT: Is migrated to:
+// cufftXtExec-NEXT:   plan->compute<void, void>(in, out, dir == 1 ? dpct::fft::fft_direction::backward : dpct::fft::fft_direction::forward);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftXtMakePlanMany | FileCheck %s -check-prefix=cufftXtMakePlanMany
+// cufftXtMakePlanMany: CUDA API:
+// cufftXtMakePlanMany-NEXT:   cufftXtMakePlanMany(plan /*cufftHandle*/, dim /*int*/, n /*long long int **/,
+// cufftXtMakePlanMany-NEXT:                       inembed /*long long int **/, istride /*long long int*/,
+// cufftXtMakePlanMany-NEXT:                       idist /*long long int*/, itype /*cudaDataType*/,
+// cufftXtMakePlanMany-NEXT:                       onembed /*long long int **/, ostride /*long long int*/,
+// cufftXtMakePlanMany-NEXT:                       odist /*long long int*/, otype /*cudaDataType*/,
+// cufftXtMakePlanMany-NEXT:                       num_of_trans /*long long int*/, worksize /*size_t **/,
+// cufftXtMakePlanMany-NEXT:                       exectype /*cudaDataType*/);
+// cufftXtMakePlanMany-NEXT: Is migrated to:
+// cufftXtMakePlanMany-NEXT:   plan->commit(&dpct::get_in_order_queue(), dim, n, inembed, istride, idist, itype, onembed, ostride, odist, otype, num_of_trans, worksize);

@@ -1,0 +1,67 @@
+//===--------------- migration_cmd_examples.inc-----------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+const char *const DPCTExamplesMsg = R"(EXAMPLES:
+
+  Prepare for Migration
+  =====================
+
+    Generate a compilation database of the project files used to guide migration)"
+#ifndef _WIN32
+R"(
+      $ dpct --intercept-build make)"
+#endif
+R"(
+      $ dpct --intercept-build --parse-build-log <logfile>
+
+    Estimate the migration efforts to complete a migration
+      $ dpct --analysis-mode source.cu --analysis-mode-output-file
+
+  Migrate your code
+  =================
+
+    Migrate a single source file
+      $ dpct source.cu
+      $ dpct --keep-original-code source.cu                           # Keep original code
+      $ dpct --cuda-include-path=/path/to/cuda/include source.cu      # Specify the path to CUDA headers
+      $ dpct --extra-arg="-std=c++11" source.cu                       # With extra options
+      $ dpct --extra-arg="-I /path/to/extra/include" source.cu        # With additional app args
+      $ dpct -p=/path/to/compilation-database source.cu               # With compilation database
+      $ dpct --gen-build-script source.cu                             # Migrate src code and generate Makefile script
+
+    Migrate an entire project
+      $ dpct -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project     # With compilation database
+      $ dpct --process-all --in-root=/path/to/project --out-root=/path/to/migrated-project                        # Without compilation database)"
+#ifdef _WIN32
+R"(
+      $ dpct -vcxprojfile=/path/to/vcproject/file --in-root=/path/to/project --out-root=/path/to/migrated-project # With VS project file)"
+#endif
+R"(
+      $ dpct -in-root=/path/to/project --in-root-exclude=/path/to/project/dir1                                    # Exclude migration of a dir or file
+    
+    Migrate/generate build scripts for migrated SYCL code
+      $ dpct --migrate-build-script=CMake -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project        # Migrate src code and CMake scripts
+      $ dpct --migrate-build-script-only -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project         # Migrate build script only
+      $ dpct --gen-build-script -p=/path/to/compilation-database --in-root=/path/to/project --out-root=/path/to/migrated-project                  # Migrate src code and generate Makefile script
+
+  Utils to assist migration
+  =========================
+
+    Query functionally compatible SYCL API for a CUDA API
+      $ dpct --query-api-mapping=cudaMalloc
+
+    Generate instrumented CUDA and SYCL code for debugging
+      $ dpct --enable-codepin source.cu
+
+    Generate helper function files in the out-root directory
+      $ dpct --gen-helper-function
+
+    Display the folder of helper function files
+      $ dpct --helper-function-dir
+
+)";

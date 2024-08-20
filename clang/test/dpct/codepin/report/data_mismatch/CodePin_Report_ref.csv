@@ -1,0 +1,9 @@
+// CHECK: CodePin Summary
+// CHECK: Totally APIs count, 2
+// CHECK: Consistently APIs count, 1
+// CHECK: Most Time-consuming Kernel(CUDA), serial1243:epilog:0, time:0.1
+// CHECK: Most Time-consuming Kernel(SYCL), serial1243:epilog:0, time:0.1
+// CHECK: Peak Device Memory Used(CUDA), 400
+// CHECK: Peak Device Memory Used(SYCL), 200
+// CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
+// CHECK: serial123:prolog:0,serial123:prolog:0,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data serial123:prolog:0 are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API serial123.

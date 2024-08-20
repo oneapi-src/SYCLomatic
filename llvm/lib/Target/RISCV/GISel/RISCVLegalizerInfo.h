@@ -14,6 +14,7 @@
 #define LLVM_LIB_TARGET_RISCV_RISCVMACHINELEGALIZER_H
 
 #include "llvm/CodeGen/GlobalISel/LegalizerInfo.h"
+#include "llvm/CodeGen/Register.h"
 
 namespace llvm {
 
@@ -21,7 +22,6 @@ class GISelChangeObserver;
 class MachineIRBuilder;
 class RISCVSubtarget;
 
-/// This class provides the information for the target register banks.
 class RISCVLegalizerInfo : public LegalizerInfo {
   const RISCVSubtarget &STI;
   const unsigned XLen;
@@ -37,10 +37,14 @@ public:
                          MachineInstr &MI) const override;
 
 private:
+  bool shouldBeInConstantPool(APInt APImm, bool ShouldOptForSize) const;
   bool legalizeShlAshrLshr(MachineInstr &MI, MachineIRBuilder &MIRBuilder,
                            GISelChangeObserver &Observer) const;
 
   bool legalizeVAStart(MachineInstr &MI, MachineIRBuilder &MIRBuilder) const;
+  bool legalizeVScale(MachineInstr &MI, MachineIRBuilder &MIB) const;
+  bool legalizeExt(MachineInstr &MI, MachineIRBuilder &MIRBuilder) const;
+  bool legalizeSplatVector(MachineInstr &MI, MachineIRBuilder &MIB) const;
 };
 } // end namespace llvm
 #endif

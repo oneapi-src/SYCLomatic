@@ -3,13 +3,13 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/decltype_of_vector_type_field/decltype_of_vector_type_field.dp.cpp -o %T/decltype_of_vector_type_field/decltype_of_vector_type_field.dp.o %}
 
 void f() {
-  // CHECK: using dim3_x_type = size_t;
+  // CHECK: using dim3_x_type = decltype(dpct::dim3::x);
   using dim3_x_type = decltype(dim3::x);
-  // CHECK: using dim3_y_type = size_t;
+  // CHECK: using dim3_y_type = decltype(dpct::dim3::y);
   using dim3_y_type = decltype(dim3::y);
-  // CHECK: using dim3_z_type = size_t;
+  // CHECK: using dim3_z_type = decltype(dpct::dim3::z);
   using dim3_z_type = decltype(dim3::z);
-  // CHECK: using int1_x_type = int;
+  // CHECK: using int1_x_type = int32_t;
   using int1_x_type = decltype(int1::x);
   // CHECK: using uint3_x_type = sycl::uint3::element_type;
   using uint3_x_type = decltype(uint3::x);
@@ -17,7 +17,7 @@ void f() {
   using uint3_y_type = decltype(uint3::y);
   // CHECK: using uint3_z_type = sycl::uint3::element_type;
   using uint3_z_type = decltype(uint3::z);
-  // CHECK: using char1_x_type = char;
+  // CHECK: using char1_x_type = int8_t;
   using char1_x_type = decltype(char1::x);
   // CHECK: using char4_x_type = sycl::char4::element_type;
   using char4_x_type = decltype(char4::x);

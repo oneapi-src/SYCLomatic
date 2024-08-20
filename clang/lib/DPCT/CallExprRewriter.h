@@ -56,6 +56,7 @@ private:
   static void initRewriterMapCUSPARSE();
   static void initRewriterMapComplex();
   static void initRewriterMapDriver();
+  static void initRewriterMapGraph();
   static void initRewriterMapMemory();
   static void initRewriterMapMisc();
   static void initRewriterMapNccl();
@@ -256,6 +257,47 @@ public:
     if (First)
       return First->create(C);
     return R;
+  }
+};
+
+class AnalyzeUninitializedDeviceVarRewriterFactory
+    : public CallExprRewriterFactory<
+          UnsupportFunctionRewriter<
+              std::function<const Expr *(const CallExpr *C)>>,
+          Diagnostics, std::function<const Expr *(const CallExpr *C)>> {
+  using BaseT = CallExprRewriterFactory<
+      UnsupportFunctionRewriter<std::function<const Expr *(const CallExpr *C)>>,
+      Diagnostics, std::function<const Expr *(const CallExpr *C)>>;
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+  int Idx = 0;
+
+public:
+  AnalyzeUninitializedDeviceVarRewriterFactory(
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory, int Idx)
+      : BaseT(
+            "", Diagnostics::UNINITIALIZED_DEVICE_VAR,
+            [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); }),
+        Inner(InnerFactory), Idx(Idx) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    std::vector<const clang::VarDecl *> DeclsRequireInit;
+    int Res = isArgumentInitialized(C->getArg(Idx), DeclsRequireInit);
+    if (Res == 0) {
+      for (const auto D : DeclsRequireInit) {
+        SourceLocation InsertLoc =
+            D->getEndLoc().getLocWithOffset(Lexer::MeasureTokenLength(
+                D->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                DpctGlobalInfo::getContext().getLangOpts()));
+        std::string Repl = " = 0";
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(DpctGlobalInfo::getSourceManager(),
+                                             InsertLoc, 0, Repl, nullptr));
+      }
+    } else if (Res == -1) {
+      // Create rewriter for emitting warning
+      BaseT::create(C);
+    }
+    // Create rewriter for migrating API
+    return Inner->create(C);
   }
 };
 
@@ -648,6 +690,10 @@ template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
     Stream << ".";
 }
 
+template <class StreamT> void printDisambiguator(StreamT &Stream) {
+  Stream << "template ";
+}
+
 template <class StreamT>
 void printCapture(StreamT &Stream, bool IsCaptureRef) {
   if (IsCaptureRef)
@@ -881,24 +927,45 @@ public:
 
 template <class StreamT>
 void printBase(StreamT &Stream, std::pair<const CallExpr *, const Expr *> P,
-               bool IsArrow) {
-  printWithParens(Stream, P);
+               bool IsArrow, bool NeedDisambiguator) {
+  {
+    std::unique_ptr<ParensPrinter<StreamT>> Paren;
+    if (needExtraParensInMemberExpr(P.second))
+      Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+    print(Stream, P);
+  }
   printMemberOp(Stream, IsArrow);
+  if (NeedDisambiguator)
+    printDisambiguator(Stream);
 }
 
 template <class StreamT>
-void printBase(StreamT &Stream, const Expr *E, bool IsArrow) {
-  printWithParens(Stream, E);
+void printBase(StreamT &Stream, const Expr *E, bool IsArrow,
+               bool NeedDisambiguator) {
+  {
+    std::unique_ptr<ParensPrinter<StreamT>> Paren;
+    if (needExtraParensInMemberExpr(E))
+      Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
+    print(Stream, E);
+  }
   printMemberOp(Stream, IsArrow);
+  if (NeedDisambiguator)
+    printDisambiguator(Stream);
 }
 template <class StreamT>
-void printBase(StreamT &Stream, const DerefExpr &D, bool) {
+void printBase(StreamT &Stream, const DerefExpr &D, bool,
+               bool NeedDisambiguator) {
   D.printMemberBase(Stream);
+  if (NeedDisambiguator)
+    printDisambiguator(Stream);
 }
 template <class StreamT, class T>
-void printBase(StreamT &Stream, const T &Val, bool IsArrow) {
+void printBase(StreamT &Stream, const T &Val, bool IsArrow,
+               bool NeedDisambiguator) {
   print(Stream, Val);
   printMemberOp(Stream, IsArrow);
+  if (NeedDisambiguator)
+    printDisambiguator(Stream);
 }
 
 template <class CalleeT, class... CallArgsT> class CallExprPrinter {
@@ -957,17 +1024,24 @@ public:
   }
 };
 
-template <class BaseT, class MemberT> class MemberExprPrinter {
+template <class BaseT, class MemberT, bool HasExplicitTemplateArg>
+class MemberExprPrinter {
   BaseT Base;
   bool IsArrow;
   MemberT MemberName;
+  bool IsBaseDependentType = false;
 
 public:
   MemberExprPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName)
-      : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
+      : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {
+    if constexpr (std::is_same_v<BaseT, const Expr *>) {
+      IsBaseDependentType = Base->getType()->isDependentType();
+    }
+  }
 
   template <class StreamT> void print(StreamT &Stream) const {
-    printBase(Stream, Base, IsArrow);
+    printBase(Stream, Base, IsArrow,
+              HasExplicitTemplateArg && IsBaseDependentType);
     dpct::print(Stream, MemberName);
   }
 };
@@ -986,15 +1060,20 @@ public:
   }
 };
 
-template <class BaseT, class MemberT, class... CallArgsT>
+template <class BaseT, class MemberT, bool HasExplicitTemplateArg,
+          class... CallArgsT>
 class MemberCallPrinter
-    : public CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...> {
+    : public CallExprPrinter<
+          MemberExprPrinter<BaseT, MemberT, HasExplicitTemplateArg>,
+          CallArgsT...> {
 public:
   MemberCallPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName,
                     CallArgsT &&...Args)
-      : CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...>(
-            MemberExprPrinter<BaseT, MemberT>(std::move(Base), IsArrow,
-                                              std::move(MemberName)),
+      : CallExprPrinter<
+            MemberExprPrinter<BaseT, MemberT, HasExplicitTemplateArg>,
+            CallArgsT...>(
+            MemberExprPrinter<BaseT, MemberT, HasExplicitTemplateArg>(
+                std::move(Base), IsArrow, std::move(MemberName)),
             std::forward<CallArgsT>(Args)...) {}
 };
 
@@ -1048,6 +1127,17 @@ public:
     dpct::print(Stream, LVal);
     Stream << " " << OpStr << " ";
     dpct::print(Stream, RVal);
+  }
+};
+
+template <class ET> class ParenExprPrinter {
+  ET E;
+
+public:
+  ParenExprPrinter(ET &&E) : E(std::forward<ET>(E)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    PairedPrinter PP(Stream, "(", ")");
+    dpct::print(Stream, E);
   }
 };
 
@@ -1109,14 +1199,32 @@ public:
 };
 
 template <class... ArgsT>
-class NewExprPrinter : CallExprPrinter<StringRef, ArgsT...> {
+class NewDeleteExprPrinter : CallExprPrinter<std::string, ArgsT...> {
+  using Base = CallExprPrinter<std::string, ArgsT...>;
+  bool IsNew;
+
+public:
+  NewDeleteExprPrinter(std::string TypeName, bool IsNew, ArgsT &&...Args)
+      : Base(TypeName, std::forward<ArgsT>(Args)...), IsNew(IsNew) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    if (IsNew)
+      Stream << "new ";
+    else
+      Stream << "delete ";
+    Base::print(Stream);
+  }
+};
+
+template <class... ArgsT>
+class DeclPrinter : CallExprPrinter<StringRef, ArgsT...> {
+  std::string Type;
   using Base = CallExprPrinter<StringRef, ArgsT...>;
 
 public:
-  NewExprPrinter(StringRef TypeName, ArgsT &&...Args)
-      : Base(TypeName, std::forward<ArgsT>(Args)...) {}
+  DeclPrinter(StringRef Type, StringRef Var, ArgsT &&...Args)
+      : Base(Var, std::forward<ArgsT>(Args)...), Type(Type.str()) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    Stream << "new ";
+    Stream << Type << " ";
     Base::print(Stream);
   }
 };
@@ -1157,6 +1265,11 @@ public:
   MultiStmtsPrinter(FirstPrinter &&First, RestPrinter &&...Rest)
       : Base(std::move(Rest)...), First(std::move(First)) {}
 
+  MultiStmtsPrinter(std::string Indent, std::string NL, bool IsInMacroDef,
+                    FirstPrinter &&First, RestPrinter &&...Rest)
+      : Base(Indent, NL, IsInMacroDef, std::move(Rest)...),
+        First(std::move(First)) {}
+
   template <class StreamT> void print(StreamT &Stream) const {
     Base::printStmt(Stream, First);
     Base::print(Stream);
@@ -1165,51 +1278,64 @@ public:
 
 template <class LastPrinter> class MultiStmtsPrinter<LastPrinter> {
   LastPrinter Last;
-  StringRef Indent;
-  StringRef NL;
-  bool isInMacroDef;
+  std::string Indent;
+  std::string NL;
+  bool IsInMacroDef;
 
 protected:
   template <class StreamT, class PrinterT>
   void printStmt(StreamT &Stream, const PrinterT &Printer) const {
     dpct::print(Stream, Printer);
-    if (isInMacroDef) {
-      Stream << "; \\" << NL << Indent;
+    if (IsInMacroDef) {
+      Stream << ";\\" << NL << Indent;
     } else {
-      Stream << "; " << NL << Indent;
+      Stream << ";" << NL << Indent;
     }
   }
 
 public:
   MultiStmtsPrinter(SourceRange Range, SourceManager &SM, LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(getIndent(Range.getBegin(), SM)),
+      : Last(std::move(Last)), Indent(getIndent(Range.getBegin(), SM).str()),
         NL(getNL(Range.getBegin(), SM)),
-        isInMacroDef(isInMacroDefinition(Range.getBegin(), Range.getBegin()) &&
+        IsInMacroDef(isInMacroDefinition(Range.getBegin(), Range.getBegin()) &&
                      isInMacroDefinition(Range.getEnd(), Range.getEnd())) {}
 
   MultiStmtsPrinter(LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(" "), NL(""), isInMacroDef(false) {}
+      : Last(std::move(Last)), Indent("  "), NL(getNL()), IsInMacroDef(false) {}
+
+  MultiStmtsPrinter(std::string Indent, std::string NL, bool IsInMacroDef,
+                    LastPrinter &&Last)
+      : Last(std::move(Last)), Indent(Indent), NL(NL),
+        IsInMacroDef(IsInMacroDef) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Last);
   }
 };
 
-template <class... StmtPrinter>
-class LambdaPrinter {
+template <class... StmtPrinter> class LambdaPrinter {
+  std::string Indent = "  ";
+  std::string NL = getNL();
   bool IsCaptureRef;
+  bool IsExecuteInplace;
+  bool IsInMacroDef;
   MultiStmtsPrinter<StmtPrinter...> MultiStmts;
 
 public:
-  LambdaPrinter(bool IsCaptureRef, StmtPrinter &&...Printer)
-      : IsCaptureRef(IsCaptureRef), MultiStmts(std::move(Printer)...) {}
+  LambdaPrinter(std::string Indent, std::string NL, bool IsCaptureRef,
+                bool IsExecuteInplace, bool IsInMacroDef,
+                StmtPrinter &&...Printer)
+      : Indent(Indent), NL(NL), IsCaptureRef(IsCaptureRef),
+        IsExecuteInplace(IsExecuteInplace), IsInMacroDef(IsInMacroDef),
+        MultiStmts(Indent, NL, IsInMacroDef, std::move(Printer)...) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     printCapture(Stream, IsCaptureRef);
-    Stream << "()";
-    CurlyBracketsPrinter<StreamT> CurlyBracket(Stream);
+    Stream << "() {" << (IsInMacroDef ? "\\" : "") << NL << Indent;
     MultiStmts.print(Stream);
-    Stream << ";";
+    Stream << ";" << (IsInMacroDef ? "\\" : "") << NL << Indent << "}";
+    if (IsExecuteInplace)
+      Stream << "()";
   }
 };
 
@@ -1310,32 +1436,35 @@ public:
 
 template <class BaseT, class MemberT>
 class MemberExprRewriter
-    : public PrinterRewriter<MemberExprPrinter<BaseT, MemberT>> {
+    : public PrinterRewriter<MemberExprPrinter<BaseT, MemberT, false>> {
 public:
   MemberExprRewriter(
       const CallExpr *C, StringRef Source,
       const std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
       const std::function<MemberT(const CallExpr *)> &MemberCreator)
-      : PrinterRewriter<MemberExprPrinter<BaseT, MemberT>>(
+      : PrinterRewriter<MemberExprPrinter<BaseT, MemberT, false>>(
             C, Source, BaseCreator(C), IsArrow, MemberCreator(C)) {}
 };
 
-template <class BaseT, class... ArgsT>
+template <class BaseT, bool HasExplicitTemplateArg, class... ArgsT>
 class MemberCallExprRewriter
-    : public PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>> {
+    : public PrinterRewriter<MemberCallPrinter<
+          BaseT, StringRef, HasExplicitTemplateArg, ArgsT...>> {
 public:
   MemberCallExprRewriter(
       const CallExpr *C, StringRef Source,
       const std::function<BaseT(const CallExpr *)> &BaseCreator, bool IsArrow,
       StringRef Member,
       const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
-      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
+      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef,
+                                          HasExplicitTemplateArg, ArgsT...>>(
             C, Source, BaseCreator(C), IsArrow, Member, ArgsCreator(C)...) {}
   MemberCallExprRewriter(
       const CallExpr *C, StringRef Source, const BaseT &BaseCreator,
       bool IsArrow, StringRef Member,
       const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
-      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef, ArgsT...>>(
+      : PrinterRewriter<MemberCallPrinter<BaseT, StringRef,
+                                          HasExplicitTemplateArg, ArgsT...>>(
             C, Source, BaseCreator, IsArrow, Member, ArgsCreator(C)...) {}
 };
 
@@ -1366,6 +1495,16 @@ public:
                    const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
+};
+
+template <class ValueT>
+class NewDeleteRewriter : public PrinterRewriter<NewDeleteExprPrinter<ValueT>> {
+public:
+  NewDeleteRewriter(const CallExpr *C, StringRef Source, std::string TypeName,
+                    bool IsNew,
+                    const std::function<ValueT(const CallExpr *)> &Creator)
+      : PrinterRewriter<NewDeleteExprPrinter<ValueT>>(C, Source, TypeName,
+                                                      IsNew, Creator(C)) {}
 };
 
 template <UnaryOperatorKind UO, class ArgValueT>
@@ -1542,19 +1681,25 @@ public:
   }
 };
 
+struct NullRewriter : public CallExprRewriter {
+  NullRewriter(const CallExpr *C, StringRef Name) : CallExprRewriter(C, Name) {}
+
+  std::optional<std::string> rewrite() override { return std::nullopt; }
+};
+
+struct NullRewriterFactory : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriter>
+  create(const CallExpr *Call) const override {
+    return std::make_shared<NullRewriter>(Call, "");
+  }
+};
+
 class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   // Information for building the result string from the original function call
   OutputBuilder OB;
   std::string OutStr;
   std::vector<std::string> &Includes;
   MetaRuleObject::Attributes RuleAttributes;
-
-  struct NullRewriter : public CallExprRewriter {
-    NullRewriter(const CallExpr *C, StringRef Name)
-        : CallExprRewriter(C, Name) {}
-
-    std::optional<std::string> rewrite() override { return std::nullopt; }
-  };
 
 public:
   static bool hasExplicitTemplateArgs(const CallExpr *C) {
@@ -1571,8 +1716,7 @@ public:
 
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
-      : OutStr(R.Out), Includes(R.Includes),
-        RuleAttributes(R.RuleAttributes) {
+      : OutStr(R.Out), Includes(R.Includes), RuleAttributes(R.RuleAttributes) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;

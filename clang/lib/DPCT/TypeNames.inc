@@ -41,15 +41,11 @@ ENTRY_TYPE(CUgraphNode, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUgraphicsResource, false, NO_FLAG, P4, "comment")
 
 // CUDA Runtime Library
-ENTRY_TYPE(cudaMemcpy3DParms*, false, NO_FLAG, P4, "comment")
-ENTRY_TYPE(CUDA_ARRAY_DESCRIPTOR*, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(cudaKernelNodeParams, false, NO_FLAG, P4, "comment")
 
 // cuDNN Library
-ENTRY_TYPE(cudnnNanPropagation_t, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(cudnnReduceTensorIndices_t, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(cudnnIndicesType_t, false, NO_FLAG, P4, "comment")
-ENTRY_TYPE(cudnnConvolutionMode_t, false, NO_FLAG, P4, "comment")
 
 // NVML (NVIDIA Management Library)
 ENTRY_TYPE(nvmlReturn_t, false, NO_FLAG, P4, "comment")
@@ -139,7 +135,7 @@ ENTRY_TYPE(cooperative_groups::__v1::cluster_group, false, NO_FLAG, P4, "comment
 ENTRY_TYPE(cooperative_groups::__v1::gird_group, true, NO_FLAG, P4, "Successful")
 ENTRY_TYPE(cooperative_groups::__v1::multi_grid_group, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(cooperative_groups::__v1::thread_block_tile, true, NO_FLAG, P4, "Successful")
-ENTRY_TYPE(cooperative_groups::__v1::coalesced_group, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(cooperative_groups::__v1::coalesced_group, true, NO_FLAG, P4, "Successful/DPCT1119")
 
 //CUmem
 ENTRY_TYPE(CUmemGenericAllocationHandle, false, NO_FLAG, P4, "comment")

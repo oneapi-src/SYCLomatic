@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-8.0, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
-// UNSUPPORTED: v8.0, v12.0, v12.1, v12.2, v12.3
+// UNSUPPORTED: cuda-8.0, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3 , cuda-12.4
+// UNSUPPORTED: v8.0, v12.0, v12.1, v12.2, v12.3, v12.4
 // RUN: cat %s > %T/macro_test-cuda12.0-not-support.cu
 // RUN: cd %T
 // RUN: rm -rf %T/macro_test-cuda12.0-not-support_output

@@ -11,7 +11,7 @@ cudaDeviceGetNvSciSyncAttributes,NO,
 cudaDeviceGetP2PAttribute,NO,
 cudaDeviceGetPCIBusId,NO,
 cudaDeviceGetSharedMemConfig,NO,
-cudaDeviceGetStreamPriorityRange,YES,:ref:`DPCT1014`
+cudaDeviceGetStreamPriorityRange,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaDeviceGetTexture1DLinearMaxWidth,NO,
 cudaDeviceReset,YES,
 cudaDeviceSetCacheConfig,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -46,23 +46,26 @@ cudaPeekAtLastError,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaCtxResetPersistingL2Cache,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaStreamAddCallback,YES,
 cudaStreamAttachMemAsync,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cudaStreamBeginCapture,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cudaStreamBeginCapture,YES,:ref:`DPCT1119`
+cudaStreamBeginCaptureToGraph,NO,
 cudaStreamCopyAttributes,NO,
 cudaStreamCreate,YES,
 cudaStreamCreateWithFlags,YES,:ref:`DPCT1025`
 cudaStreamCreateWithPriority,YES,:ref:`DPCT1025`
 cudaStreamDestroy,YES,
-cudaStreamEndCapture,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cudaStreamEndCapture,YES,:ref:`DPCT1119`
 cudaStreamGetAttribute,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaStreamGetCaptureInfo,NO,
+cudaStreamGetCaptureInfo_v3,NO,
 cudaStreamGetFlags,YES,:ref:`DPCT1014`
 cudaStreamGetId,NO,
 cudaStreamGetPriority,YES,:ref:`DPCT1014`
-cudaStreamIsCapturing,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cudaStreamIsCapturing,YES,:ref:`DPCT1119`
 cudaStreamQuery,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaStreamSetAttribute,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaStreamSynchronize,YES,
 cudaStreamUpdateCaptureDependencies,NO,
+cudaStreamUpdateCaptureDependencies_v2,NO,
 cudaStreamWaitEvent,YES,
 cudaThreadExchangeStreamCaptureMode,NO,
 cudaEventCreate,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -82,16 +85,18 @@ cudaImportExternalSemaphore,NO,
 cudaSignalExternalSemaphoresAsync,NO,
 cudaWaitExternalSemaphoresAsync,NO,
 cudaFuncGetAttributes,YES,
+cudaFuncGetName,NO,
 cudaFuncSetAttribute,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaFuncSetCacheConfig,YES,:ref:`DPCT1026`
 cudaFuncSetSharedMemConfig,YES,:ref:`DPCT1026`
 cudaGetParameterBuffer,NO,
 cudaGetParameterBufferV2,NO,
 cudaGridDependencySynchronize,NO,
-cudaLaunchCooperativeKernel,YES,
+cudaLaunchCooperativeKernel,YES, Partial
 cudaLaunchCooperativeKernelMultiDevice,NO,
+cudaLaunchDevice,NO,
 cudaLaunchHostFunc,NO,
-cudaLaunchKernel,YES,
+cudaLaunchKernel,YES, Partial
 cudaLaunchKernelExC,NO,
 cudaSetDoubleForDevice,NO,
 cudaSetDoubleForHost,NO,
@@ -111,12 +116,12 @@ cudaArrayGetSparseProperties,NO,
 cudaFree,YES,
 cudaFreeArray,YES,
 cudaFreeHost,YES,
-cudaFreeMipmappedArray,NO,
-cudaGetMipmappedArrayLevel,NO,
+cudaFreeMipmappedArray,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cudaGetMipmappedArrayLevel,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaGetSymbolAddress,YES,
 cudaGetSymbolSize,YES,
 cudaHostAlloc,YES,
-cudaHostGetDevicePointer,YES,
+cudaHostGetDevicePointer,YES, Partial
 cudaHostGetFlags,YES,
 cudaHostRegister,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaHostUnregister,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -126,12 +131,12 @@ cudaMalloc3DArray,YES,
 cudaMallocArray,YES,
 cudaMallocHost,YES,
 cudaMallocManaged,YES,
-cudaMallocMipmappedArray,NO,
+cudaMallocMipmappedArray,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaMallocPitch,YES,
-cudaMemAdvise,YES,:ref:`DPCT1063`
+cudaMemAdvise,YES,:ref:`DPCT1063` Partial
 cudaMemAdvise_v2,NO,
 cudaMemGetInfo,YES,:ref:`DPCT1072` / :ref:`DPCT1106`
-cudaMemPrefetchAsync,YES,
+cudaMemPrefetchAsync,YES, Partial
 cudaMemRangeGetAttribute,NO,
 cudaMemRangeGetAttributes,NO,
 cudaMemcpy,YES,
@@ -149,8 +154,8 @@ cudaMemcpy3DPeerAsync,NO,
 cudaMemcpyAsync,YES,
 cudaMemcpyFromSymbol,YES,
 cudaMemcpyFromSymbolAsync,YES,
-cudaMemcpyPeer,NO,
-cudaMemcpyPeerAsync,NO,
+cudaMemcpyPeer,YES,
+cudaMemcpyPeerAsync,YES,
 cudaMemcpyToSymbol,YES,
 cudaMemcpyToSymbolAsync,YES,
 cudaMemset,YES,
@@ -260,7 +265,7 @@ cudaGraphicsUnregisterResource,NO,
 cudaBindTexture,YES,
 cudaBindTexture2D,YES,
 cudaBindTextureToArray,YES,
-cudaBindTextureToMipmappedArray,NO,
+cudaBindTextureToMipmappedArray,YES,
 cudaGetTextureAlignmentOffset,NO,
 cudaGetTextureReference,NO,
 cudaUnbindTexture,YES,
@@ -282,13 +287,17 @@ cudaDestroySurfaceObject,NO,
 cudaGetSurfaceObjectResourceDesc,NO,
 cudaDriverGetVersion,YES,:ref:`DPCT1043`
 cudaRuntimeGetVersion,YES,:ref:`DPCT1043`
+cudaGraph_t,YES,:ref:`DPCT1119`
+cudaGraphExec_t,YES,:ref:`DPCT1119`
+cudaGraphNode_t,YES,:ref:`DPCT1119`
 cudaDeviceGetGraphMemAttribute,NO,
 cudaDeviceGraphMemTrim,NO,
 cudaDeviceSetGraphMemAttribute,NO,
 cudaGetCurrentGraphExec,NO,
 cudaGraphAddChildGraphNode,NO,
-cudaGraphAddDependencies,NO,
-cudaGraphAddEmptyNode,NO,
+cudaGraphAddDependencies,YES,:ref:`DPCT1119`
+cudaGraphAddDependencies_v2,NO,
+cudaGraphAddEmptyNode,YES,:ref:`DPCT1119`
 cudaGraphAddEventRecordNode,NO,
 cudaGraphAddEventWaitNode,NO,
 cudaGraphAddExternalSemaphoresSignalNode,NO,
@@ -303,6 +312,7 @@ cudaGraphAddMemcpyNodeFromSymbol,NO,
 cudaGraphAddMemcpyNodeToSymbol,NO,
 cudaGraphAddMemsetNode,NO,
 cudaGraphAddNode,NO,
+cudaGraphAddNode_v2,NO,
 cudaGraphChildGraphNodeGetGraph,NO,
 cudaGraphClone,NO,
 cudaGraphCreate,NO,
@@ -314,7 +324,7 @@ cudaGraphEventRecordNodeSetEvent,NO,
 cudaGraphEventWaitNodeGetEvent,NO,
 cudaGraphEventWaitNodeSetEvent,NO,
 cudaGraphExecChildGraphNodeSetParams,NO,
-cudaGraphExecDestroy,NO,
+cudaGraphExecDestroy,YES,:ref:`DPCT1119`
 cudaGraphExecEventRecordNodeSetEvent,NO,
 cudaGraphExecEventWaitNodeSetEvent,NO,
 cudaGraphExecExternalSemaphoresSignalNodeSetParams,NO,
@@ -328,17 +338,18 @@ cudaGraphExecMemcpyNodeSetParamsFromSymbol,NO,
 cudaGraphExecMemcpyNodeSetParamsToSymbol,NO,
 cudaGraphExecMemsetNodeSetParams,NO,
 cudaGraphExecNodeSetParams,NO,
-cudaGraphExecUpdate,NO,
+cudaGraphExecUpdate,YES,:ref:`DPCT1119`
 cudaGraphExternalSemaphoresSignalNodeGetParams,NO,
 cudaGraphExternalSemaphoresSignalNodeSetParams,NO,
 cudaGraphExternalSemaphoresWaitNodeGetParams,NO,
 cudaGraphExternalSemaphoresWaitNodeSetParams,NO,
 cudaGraphGetEdges,NO,
+cudaGraphGetEdges_v2,NO,
 cudaGraphGetNodes,NO,
 cudaGraphGetRootNodes,NO,
 cudaGraphHostNodeGetParams,NO,
 cudaGraphHostNodeSetParams,NO,
-cudaGraphInstantiate,NO,
+cudaGraphInstantiate,YES,:ref:`DPCT1119`
 cudaGraphInstantiateWithFlags,NO,
 cudaGraphInstantiateWithParams,NO,
 cudaGraphKernelNodeCopyAttributes,NO,
@@ -346,7 +357,7 @@ cudaGraphKernelNodeGetAttribute,NO,
 cudaGraphKernelNodeGetParams,NO,
 cudaGraphKernelNodeSetAttribute,NO,
 cudaGraphKernelNodeSetParams,NO,
-cudaGraphLaunch,NO,
+cudaGraphLaunch,YES,:ref:`DPCT1119`
 cudaGraphMemAllocNodeGetParams,NO,
 cudaGraphMemFreeNodeGetParams,NO,
 cudaGraphMemcpyNodeGetParams,NO,
@@ -358,14 +369,18 @@ cudaGraphMemsetNodeGetParams,NO,
 cudaGraphMemsetNodeSetParams,NO,
 cudaGraphNodeFindInClone,NO,
 cudaGraphNodeGetDependencies,NO,
+cudaGraphNodeGetDependencies_v2,NO,
 cudaGraphNodeGetDependentNodes,NO,
+cudaGraphNodeGetDependentNodes_v2,NO,
 cudaGraphNodeGetEnabled,NO,
 cudaGraphNodeGetType,NO,
 cudaGraphNodeSetEnabled,NO,
 cudaGraphNodeSetParams,NO,
 cudaGraphReleaseUserObject,NO,
 cudaGraphRemoveDependencies,NO,
+cudaGraphRemoveDependencies_v2,NO,
 cudaGraphRetainUserObject,NO,
+cudaGraphSetConditional,NO,
 cudaGraphUpload,NO,
 cudaUserObjectCreate,NO,
 cudaUserObjectRelease,NO,
@@ -378,8 +393,8 @@ cudaOccupancyMaxPotentialBlockSizeWithFlags,NO,
 cudaGetFuncBySymbol,NO,
 cudaGetKernel,NO,
 cudaProfilerInitialize,NO,
-cudaProfilerStart,NO,
-cudaProfilerStop,NO,
+cudaProfilerStart,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cudaProfilerStop,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 atomicAdd,YES,:ref:`DPCT1039`
 atomicSub,YES,:ref:`DPCT1039`
 atomicExch,YES,:ref:`DPCT1039`
@@ -721,7 +736,7 @@ isinf,YES,
 isnan,YES,
 j0f,YES,
 j1f,YES,
-jnf,NO,
+jnf,YES,
 ldexpf,YES,
 lgammaf,YES,
 llrintf,YES,
@@ -770,7 +785,7 @@ tgammaf,YES,
 truncf,YES,
 y0f,YES,
 y1f,YES,
-ynf,NO,
+ynf,YES,
 acos,YES,
 acosh,YES,
 asin,YES,
@@ -807,7 +822,7 @@ hypot,YES,
 ilogb,YES,
 j0,YES,
 j1,YES,
-jn,NO,
+jn,YES,
 ldexp,YES,
 lgamma,YES,
 llrint,YES,
@@ -853,7 +868,7 @@ tgamma,YES,
 trunc,YES,
 y0,YES,
 y1,YES,
-yn,NO,
+yn,YES,
 abs,YES,
 labs,YES,
 llabs,YES,
@@ -1218,19 +1233,20 @@ make_ushort4,YES,
 __threadfence_block,YES,:ref:`DPCT1078`
 __threadfence,YES,:ref:`DPCT1078`
 __threadfence_system,YES,:ref:`DPCT1078`
+__barrier_sync,YES,:ref:`DPCT1078`
 __syncthreads,YES,:ref:`DPCT1078`
 __syncthreads_count,YES,:ref:`DPCT1078`
 __syncthreads_and,YES,:ref:`DPCT1078`
 __syncthreads_or,YES,:ref:`DPCT1078`
 tex1Dfetch,YES,
 tex1D,YES,
-tex1DLod,NO,
+tex1DLod,YES,:ref:`DPCT1119`
 tex1DGrad,NO,
 tex2D,YES,
-tex2DLod,NO,
+tex2DLod,YES,:ref:`DPCT1119`
 tex2DGrad,NO,
 tex3D,YES,
-tex3DLod,NO,
+tex3DLod,YES,:ref:`DPCT1119`
 tex3DGrad,NO,
 tex1DLayered,YES,
 tex1DLayeredLod,NO,
@@ -1259,6 +1275,7 @@ surfCubemapLayeredread,NO,
 surfCubemapLayeredwrite,NO,
 clock,YES,:ref:`DPCT1008`
 clock64,YES,:ref:`DPCT1008`
+__nanosleep,YES,:ref:`DPCT1008`
 atomicAdd_system,YES,
 atomicSub_system,YES,
 atomicExch_system,YES,
@@ -1292,7 +1309,7 @@ __reduce_xor_sync,YES,
 __activemask,YES,:ref:`DPCT1086`
 __match_any_sync,YES,
 __match_all_sync,YES,
-cuCtxCreate,NO,
+cuCtxCreate,YES,
 cuCtxDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuCtxGetApiVersion,YES,
 cuCtxGetCacheConfig,NO,
@@ -1302,8 +1319,8 @@ cuCtxGetFlags,NO,
 cuCtxGetLimit,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuCtxGetSharedMemConfig,NO,
 cuCtxGetStreamPriorityRange,NO,
-cuCtxPopCurrent,NO,
-cuCtxPushCurrent,NO,
+cuCtxPopCurrent,YES,
+cuCtxPushCurrent,YES,
 cuCtxSetCacheConfig,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuCtxSetCurrent,YES,
 cuCtxSetFlags,NO,
@@ -1369,7 +1386,7 @@ cuEGLStreamProducerReturnFrame,NO,
 cuGraphicsEGLRegisterImage,NO,
 cuGraphicsResourceGetMappedEglFrame,NO,
 cuGetErrorName,NO,
-cuGetErrorString,NO,
+cuGetErrorString,YES,
 cuEventCreate,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuEventDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuEventElapsedTime,YES,:ref:`DPCT1012`
@@ -1416,7 +1433,7 @@ cuGraphicsUnregisterResource,NO,
 cuInit,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cuArray3DCreate,NO,
 cuArray3DGetDescriptor,NO,
-cuArrayCreate,YES,:ref:`DPCT1073`
+cuArrayCreate,YES,
 cuArrayDestroy,YES,
 cuArrayGetDescriptor,NO,
 cuDeviceGetByPCIBusId,NO,
@@ -1461,8 +1478,8 @@ cuMemcpyHtoA,YES,
 cuMemcpyHtoAAsync,YES,
 cuMemcpyHtoD,YES,
 cuMemcpyHtoDAsync,YES,
-cuMemcpyPeer,NO,
-cuMemcpyPeerAsync,NO,
+cuMemcpyPeer,YES,
+cuMemcpyPeerAsync,YES,
 cuMemsetD16,YES,
 cuMemsetD16Async,YES,
 cuMemsetD2D16,YES,
@@ -1497,8 +1514,8 @@ cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags,NO,
 cuOccupancyMaxPotentialBlockSize,NO,
 cuOccupancyMaxPotentialBlockSizeWithFlags,NO,
 cuCtxDisablePeerAccess,NO,
-cuCtxEnablePeerAccess,NO,
-cuDeviceCanAccessPeer,NO,
+cuCtxEnablePeerAccess,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cuDeviceCanAccessPeer,YES,:ref:`DPCT1031`
 cuDeviceGetP2PAttribute,NO,
 cuDevicePrimaryCtxGetState,NO,
 cuDevicePrimaryCtxRelease,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
@@ -1555,8 +1572,8 @@ cuTexRefSetMipmapLevelClamp,NO,
 cuTexRefSetMipmappedArray,NO,
 cuTexRefCreate,NO,
 cuTexRefDestroy,NO,
-cuMemAdvise,YES,:ref:`DPCT1063`
-cuMemPrefetchAsync,YES,
+cuMemAdvise,YES,:ref:`DPCT1063` Partial
+cuMemPrefetchAsync,YES, Partial
 cuMemRangeGetAttribute,NO,
 cuMemRangeGetAttributes,NO,
 cuPointerGetAttribute,NO,
@@ -1570,10 +1587,10 @@ cuDriverGetVersion,YES,:ref:`DPCT1043`
 cuEventCreateFromEGLSync,NO,
 cuStreamWaitValue64,NO,
 cuStreamWriteValue64,NO,
-cuFuncSetAttribute,NO,
+cuFuncSetAttribute,YES,:ref:`DPCT1026`
 cuLaunchCooperativeKernel,NO,
 cuLaunchCooperativeKernelMultiDevice,NO,
-cooperative_groups::coalesced_threads,NO,
+cooperative_groups::coalesced_threads,YES,:ref:`DPCT1119`
 cooperative_groups::thread_rank,YES,
 cooperative_groups::this_thread,NO,
 cooperative_groups::this_grid,YES,
@@ -1669,12 +1686,12 @@ cooperative_groups::thread_block_tile::ballot,NO,
 cooperative_groups::thread_block_tile::match_any,NO,
 cooperative_groups::thread_block_tile::match_all,NO,
 cooperative_groups::thread_block_tile::size,YES,
-cooperative_groups::coalesced_group::sync,YES,
+cooperative_groups::coalesced_group::sync,YES,:ref:`DPCT1119`
 cooperative_groups::coalesced_group::num_threads,NO,
-cooperative_groups::coalesced_group::thread_rank,NO,
+cooperative_groups::coalesced_group::thread_rank,YES,:ref:`DPCT1119`
 cooperative_groups::coalesced_group::meta_group_size,NO,
 cooperative_groups::coalesced_group::meta_group_rank,NO,
-cooperative_groups::coalesced_group::shfl,NO,
+cooperative_groups::coalesced_group::shfl,YES,:ref:`DPCT1119`
 cooperative_groups::coalesced_group::shfl_up,NO,
 cooperative_groups::coalesced_group::shfl_down,NO,
 cooperative_groups::coalesced_group::any,NO,
@@ -1682,7 +1699,7 @@ cooperative_groups::coalesced_group::all,NO,
 cooperative_groups::coalesced_group::ballot,NO,
 cooperative_groups::coalesced_group::match_any,NO,
 cooperative_groups::coalesced_group::match_all,NO,
-cooperative_groups::coalesced_group::size,NO,
+cooperative_groups::coalesced_group::size,YES,:ref:`DPCT1119`
 nvrtcGetErrorString,NO,
 nvrtcVersion,NO,
 nvrtcCreateProgram,NO,
@@ -1711,7 +1728,7 @@ cuDestroyExternalMemory,NO,
 cuDestroyExternalSemaphore,NO,
 cuDeviceGetLuid,NO,
 cuDeviceGetNvSciSyncAttributes,NO,
-cuDeviceGetUuid,NO,
+cuDeviceGetUuid,YES,:ref:`DPCT1090`
 cuExternalMemoryGetMappedBuffer,NO,
 cuExternalMemoryGetMappedMipmappedArray,NO,
 cuGraphAddChildGraphNode,NO,
@@ -1901,8 +1918,8 @@ cuCsubf,YES,
 make_cuComplex,YES,
 make_cuDoubleComplex,YES,
 make_cuFloatComplex,YES,
-__assert_fail,NO,
-__assertfail,NO,
+__assert_fail,YES,
+__assertfail,YES,
 cuMulticastAddDevice,NO,
 cuMulticastBindAddr,NO,
 cuMulticastBindMem,NO,

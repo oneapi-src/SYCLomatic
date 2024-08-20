@@ -1,0 +1,39 @@
+.. _DPCT2001:
+
+DPCT2001
+========
+
+Message
+-------
+
+.. _msg-2001-start:
+
+You can link with more libraries by adding them here.
+
+.. _msg-2001-end:
+
+Detailed Help
+-------------
+
+When the build script `Makefile.dpct` is generated, the warning message is inserted
+into the build script `Makefile.dpct`, as shown in the following example:
+
+.. code-block:: bash
+   :linenos:
+
+   #content of Makefile.dpct
+   ...
+   warning: #DPCT2001:228: You can link with more libraries by adding them here.
+   LIB :=  
+   ...
+
+Suggestions to Fix
+------------------
+
+For example, if an application needs to link the OpenCV libraries in link time,
+fix the `LIB` variable as follows:
+
+.. code-block:: bash
+   :linenos:
+
+   LIB :=  -lopencv_core -lopencv_imgcodecs

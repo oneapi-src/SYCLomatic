@@ -77,6 +77,44 @@ private:
   size_t _pitch, _x, _y;
 };
 
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+namespace experimental {
+class image_mem_wrapper;
+namespace detail {
+static sycl::event dpct_memcpy(const image_mem_wrapper *src,
+                               const sycl::id<3> &src_id, pitched_data &dest,
+                               const sycl::id<3> &dest_id,
+                               const sycl::range<3> &copy_extend,
+                               sycl::queue q);
+static sycl::event
+dpct_memcpy(const pitched_data src, const sycl::id<3> &src_id,
+            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q);
+} // namespace detail
+} // namespace experimental
+#endif
+class image_matrix;
+namespace detail {
+static pitched_data to_pitched_data(image_matrix *image);
+}
+
+/// Memory copy parameters for 2D/3D memory data.
+struct memcpy_parameter {
+  struct data_wrapper {
+    pitched_data pitched{};
+    sycl::id<3> pos{};
+    int dev_id{0};
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+    experimental::image_mem_wrapper *image_bindless{nullptr};
+#endif
+    image_matrix *image{nullptr};
+  };
+  data_wrapper from{};
+  data_wrapper to{};
+  sycl::range<3> size{};
+  memcpy_direction direction{memcpy_direction::automatic};
+};
+
 namespace detail {
 class mem_mgr {
   mem_mgr() {
@@ -449,36 +487,96 @@ static inline size_t get_offset(sycl::id<3> id, size_t slice,
   return slice * id.get(2) + pitch * id.get(1) + id.get(0);
 }
 
+// RAII for host pointer
+class host_buffer {
+  void *_buf;
+  size_t _size;
+  sycl::queue &_q;
+  const std::vector<sycl::event> &_deps; // free operation depends
+
+public:
+  host_buffer(size_t size, sycl::queue &q, const std::vector<sycl::event> &deps)
+      : _buf(std::malloc(size)), _size(size), _q(q), _deps(deps) {}
+  void *get_ptr() const { return _buf; }
+  size_t get_size() const { return _size; }
+  ~host_buffer() {
+    if (_buf) {
+      _q.submit([&](sycl::handler &cgh) {
+        cgh.depends_on(_deps);
+        cgh.host_task([buf = _buf] { std::free(buf); });
+      });
+    }
+  }
+};
+
+static sycl::event dpct_memcpy(sycl::queue &q, void *to_ptr, int to_dev_id,
+                               const void *from_ptr, int from_dev_id,
+                               size_t size) {
+  if (to_dev_id == from_dev_id)
+    return dpct_memcpy(q, to_ptr, from_ptr, size,
+                       memcpy_direction::device_to_device);
+  // Now, different device have different context, and memcpy API cannot copy
+  // data between different context. So we need use host buffer to copy the data
+  // between devices.
+  std::vector<sycl::event> event_list;
+  host_buffer buf(size, q, event_list);
+  auto copy_events = dpct_memcpy(q, buf.get_ptr(), from_ptr, size,
+                                 memcpy_direction::device_to_host);
+  event_list.push_back(dpct::detail::dpct_memcpy(
+      q, to_ptr, buf.get_ptr(), size, memcpy_direction::host_to_device,
+      {copy_events}));
+  return event_list[0];
+}
+
+static inline std::vector<sycl::event>
+dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
+            sycl::range<3> to_range, sycl::range<3> from_range,
+            sycl::id<3> to_id, sycl::id<3> from_id, sycl::range<3> size,
+            memcpy_direction direction,
+            const std::vector<sycl::event> &dep_events);
+
+static inline void copy_to_device_via_host_buffer(
+    sycl::queue &q, const sycl::range<3> &size, unsigned char *to_surface,
+    const sycl::range<3> &to_range, const unsigned char *from_surface,
+    const sycl::range<3> &from_range, std::vector<sycl::event> &event_list,
+    memcpy_direction direction,
+    const std::vector<sycl::event> &dep_events = {}) {
+  assert(direction == device_to_host || direction == host_to_host);
+  size_t to_slice = to_range.get(1) * to_range.get(0);
+  host_buffer buf(get_copy_range(size, to_slice, to_range.get(0)), q,
+                  event_list);
+  std::vector<sycl::event> host_events;
+  size_t size_slice = size.get(1) * size.get(0);
+  if (to_slice == size_slice) {
+    // Copy host data to a temp host buffer with the shape of target.
+    host_events =
+        dpct_memcpy(q, buf.get_ptr(), from_surface, to_range, from_range,
+                    sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, direction,
+                    dep_events);
+  } else {
+    // Copy host data to a temp host buffer with the shape of target.
+    host_events =
+        dpct_memcpy(q, buf.get_ptr(), from_surface, to_range, from_range,
+                    sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, direction,
+                    // If has padding data, not sure whether it is useless. So
+                    // fill temp buffer with it.
+                    std::vector<sycl::event>{dpct_memcpy(
+                        q, buf.get_ptr(), to_surface, buf.get_size(),
+                        device_to_host, dep_events)});
+  }
+  // Copy from temp host buffer to device with only one submit.
+  event_list.push_back(dpct_memcpy(q, to_surface, buf.get_ptr(), buf.get_size(),
+                                   host_to_device, host_events));
+}
+
 /// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
 /// and \p from_range to another specified by \p to_ptr and \p to_range.
 static inline std::vector<sycl::event>
 dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
             sycl::range<3> to_range, sycl::range<3> from_range,
-            sycl::id<3> to_id, sycl::id<3> from_id,
-            sycl::range<3> size, memcpy_direction direction,
+            sycl::id<3> to_id, sycl::id<3> from_id, sycl::range<3> size,
+            memcpy_direction direction,
             const std::vector<sycl::event> &dep_events = {}) {
-  // RAII for host pointer
-  class host_buffer {
-    void *_buf;
-    size_t _size;
-    sycl::queue &_q;
-    const std::vector<sycl::event> &_deps; // free operation depends
-
-  public:
-    host_buffer(size_t size, sycl::queue &q,
-                const std::vector<sycl::event> &deps)
-        : _buf(std::malloc(size)), _size(size), _q(q), _deps(deps) {}
-    void *get_ptr() const { return _buf; }
-    size_t get_size() const { return _size; }
-    ~host_buffer() {
-      if (_buf) {
-        _q.submit([&](sycl::handler &cgh) {
-          cgh.depends_on(_deps);
-          cgh.host_task([buf = _buf] { std::free(buf); });
-        });
-      }
-    }
-  };
   std::vector<sycl::event> event_list;
 
   size_t to_slice = to_range.get(1) * to_range.get(0),
@@ -517,30 +615,9 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
     }
     break;
   case host_to_device: {
-    host_buffer buf(get_copy_range(size, to_slice, to_range.get(0)), q,
-                    event_list);
-    std::vector<sycl::event> host_events;
-    if (to_slice == size_slice) {
-      // Copy host data to a temp host buffer with the shape of target.
-      host_events =
-          dpct_memcpy(q, buf.get_ptr(), from_surface, to_range, from_range,
-                      sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size,
-                      host_to_host, dep_events);
-    } else {
-      // Copy host data to a temp host buffer with the shape of target.
-      host_events = dpct_memcpy(
-          q, buf.get_ptr(), from_surface, to_range, from_range,
-          sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
-          // If has padding data, not sure whether it is useless. So fill temp
-          // buffer with it.
-          std::vector<sycl::event>{
-              dpct_memcpy(q, buf.get_ptr(), to_surface, buf.get_size(),
-                          device_to_host, dep_events)});
-    }
-    // Copy from temp host buffer to device with only one submit.
-    event_list.push_back(dpct_memcpy(q, to_surface, buf.get_ptr(),
-                                     buf.get_size(), host_to_device,
-                                     host_events));
+    copy_to_device_via_host_buffer(q, size, to_surface, to_range, from_surface,
+                                   from_range, event_list, host_to_host,
+                                   dep_events);
     break;
   }
   case device_to_host: {
@@ -613,6 +690,29 @@ dpct_memcpy(sycl::queue &q, pitched_data to, sycl::id<3> to_id,
                      size, direction);
 }
 
+/// memcpy 2D/3D matrix between different devices.
+static inline std::vector<sycl::event>
+dpct_memcpy(sycl::queue &q, pitched_data to, sycl::id<3> to_id, int to_dev_id,
+            pitched_data from, sycl::id<3> from_id, int from_dev_id,
+            sycl::range<3> size) {
+  if (to_dev_id == from_dev_id)
+    return dpct_memcpy(q, to, to_id, from, from_id, size,
+                       memcpy_direction::device_to_device);
+  std::vector<sycl::event> event_list;
+  const auto to_range = sycl::range<3>(to.get_pitch(), to.get_y(), 1),
+             from_range = sycl::range<3>(from.get_pitch(), from.get_y(), 1);
+  const size_t to_slice = to_range.get(1) * to_range.get(0),
+               from_slice = from_range.get(1) * from_range.get(0);
+  unsigned char *to_surface = (unsigned char *)to.get_data_ptr() +
+                              get_offset(to_id, to_slice, to_range.get(0));
+  const unsigned char *from_surface =
+      (const unsigned char *)from.get_data_ptr() +
+      get_offset(from_id, from_slice, from_range.get(0));
+  copy_to_device_via_host_buffer(q, size, to_surface, to_range, from_surface,
+                                 from_range, event_list, device_to_host);
+  return event_list;
+}
+
 /// memcpy 2D matrix with pitch.
 static inline std::vector<sycl::event>
 dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
@@ -622,6 +722,48 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
                      sycl::range<3>(from_pitch, y, 1),
                      sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0),
                      sycl::range<3>(x, y, 1), direction);
+}
+
+static inline std::vector<sycl::event>
+dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
+  auto to = param.to.pitched;
+  auto from = param.from.pitched;
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+  if (param.to.image_bindless != nullptr &&
+      param.from.image_bindless != nullptr) {
+    // TODO: Need change logic when sycl support image_mem to image_mem copy.
+    std::vector<sycl::event> event_list;
+    host_buffer buf(param.size.size(), q, event_list);
+    to.set_data_ptr(buf.get_ptr());
+    experimental::detail::dpct_memcpy(param.from.image_bindless, param.from.pos,
+                                      to, sycl::id<3>(0, 0, 0), param.size, q);
+    from.set_data_ptr(buf.get_ptr());
+    event_list.push_back(experimental::detail::dpct_memcpy(
+        from, sycl::id<3>(0, 0, 0), param.to.image_bindless, param.to.pos,
+        param.size, q));
+    return event_list;
+  } else if (param.to.image_bindless != nullptr) {
+    return {experimental::detail::dpct_memcpy(from, param.from.pos,
+                                              param.to.image_bindless,
+                                              param.to.pos, param.size, q)};
+  } else if (param.from.image_bindless != nullptr) {
+    return {experimental::detail::dpct_memcpy(param.from.image_bindless,
+                                              param.from.pos, to, param.to.pos,
+                                              param.size, q)};
+  }
+#endif
+  if (param.to.image != nullptr) {
+    to = to_pitched_data(param.to.image);
+  }
+  if (param.from.image != nullptr) {
+    from = to_pitched_data(param.from.image);
+  }
+  if (deduce_memcpy_direction(q, to.get_data_ptr(), from.get_data_ptr(),
+                              param.direction) == device_to_device)
+    return dpct_memcpy(q, to, param.to.pos, param.to.dev_id, from,
+                       param.from.pos, param.from.dev_id, param.size);
+  return dpct_memcpy(q, to, param.to.pos, from, param.from.pos, param.size,
+                     param.direction);
 }
 
 namespace deprecated {
@@ -659,6 +801,7 @@ public:
   };
 
   usm_allocator() : _impl(dpct::get_default_queue()) {}
+  usm_allocator(sycl::queue &q) : _impl(q) {}
   ~usm_allocator() {}
   usm_allocator(const usm_allocator &other) : _impl(other._impl) {}
   usm_allocator(usm_allocator &&other) : _impl(std::move(other._impl)) {}
@@ -833,7 +976,7 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
 #ifndef DPCT_USM_LEVEL_NONE
-  dpct::get_current_device().queues_wait_and_throw();
+  dpct::get_device(dpct::get_device_id(q.get_device())).queues_wait_and_throw();
 #endif
   detail::dpct_free(ptr, q);
 }
@@ -876,6 +1019,24 @@ static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
   detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction).wait();
 }
 
+/// Synchronously copies \p size bytes from the address specified by \p from_ptr
+/// on device specified by \p from_dev_id to the address specified by \p to_ptr
+/// on device specified by \p to_dev_id. The function will return after the copy
+/// is completed.
+///
+/// \param to_ptr Pointer to destination memory address.
+/// \param to_dev_id Destination device ID.
+/// \param from_ptr Pointer to source memory address.
+/// \param from_dev_id Source device ID.
+/// \param size Number of bytes to be copied.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static void dpct_memcpy(void *to_ptr, int to_dev_id, const void *from_ptr,
+                        int from_dev_id, size_t size,
+                        sycl::queue &q = get_default_queue()) {
+  detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size).wait();
+}
+
 /// Asynchronously copies \p size bytes from the address specified by \p
 /// from_ptr to the address specified by \p to_ptr. The value of \p direction is
 /// used to set the copy direction, it can be \a host_to_host, \a
@@ -892,6 +1053,24 @@ static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               memcpy_direction direction = automatic,
                               sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction);
+}
+
+/// Asynchronously copies \p size bytes from the address specified by \p
+/// from_ptr on device specified by \p from_dev_id to the address specified by
+/// \p to_ptr on device specified by \p to_dev_id. The return of the function
+/// does NOT guarantee the copy is completed.
+///
+/// \param to_ptr Pointer to destination memory address.
+/// \param to_dev_id Destination device ID.
+/// \param from_ptr Pointer to source memory address.
+/// \param from_dev_id Source device ID.
+/// \param size Number of bytes to be copied.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static void async_dpct_memcpy(void *to_ptr, int to_dev_id, const void *from_ptr,
+                              int from_dev_id, size_t size,
+                              sycl::queue &q = get_default_queue()) {
+  detail::dpct_memcpy(q, to_ptr, to_dev_id, from_ptr, from_dev_id, size);
 }
 
 /// Synchronously copies 2D matrix specified by \p x and \p y from the address
@@ -993,6 +1172,29 @@ async_dpct_memcpy(pitched_data to, sycl::id<3> to_pos, pitched_data from,
                   sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
+
+/// Synchronously copies 2D/3D memory data specified by \p param . The function
+/// will return after the copy is completed.
+///
+/// \param param Memory copy parameters.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static inline void dpct_memcpy(const memcpy_parameter &param,
+                               sycl::queue &q = dpct::get_default_queue()) {
+  sycl::event::wait(detail::dpct_memcpy(q, param));
+}
+
+/// Asynchronously copies 2D/3D memory data specified by \p param . The return
+/// of the function does NOT guarantee the copy is completed.
+///
+/// \param param Memory copy parameters.
+/// \param q Queue to execute the copy task.
+/// \returns no return value.
+static inline void async_dpct_memcpy(const memcpy_parameter &param,
+                                     sycl::queue &q = get_default_queue()) {
+  detail::dpct_memcpy(q, param);
+}
+
 /**
  * @brief Sets 1 byte data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q synchronously.
@@ -1204,7 +1406,9 @@ public:
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const sycl::range<3> &in_range)
-      : accessor(acc.get_pointer(), in_range) {}
+      : accessor(
+            acc.template get_multi_ptr<sycl::access::decorated::no>().get(),
+            in_range) {}
   accessor<T, Memory, 2> operator[](size_t index) const {
     sycl::range<2> sub(_range.get(1), _range.get(2));
     return accessor<T, Memory, 2>(_data + index * sub.size(), sub);
@@ -1228,7 +1432,9 @@ public:
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const sycl::range<2> &in_range)
-      : accessor(acc.get_pointer(), in_range) {}
+      : accessor(
+            acc.template get_multi_ptr<sycl::access::decorated::no>().get(),
+            in_range) {}
 
   pointer_t operator[](size_t index) const {
     return _data + _range.get(1) * index;
@@ -1301,7 +1507,7 @@ public:
 
   ~device_memory() {
     if (_device_ptr && !_reference)
-      dpct::dpct_free(_device_ptr);
+      dpct::dpct_free(_device_ptr, _q);
     if (_host_ptr)
       std::free(_host_ptr);
   }
@@ -1378,6 +1584,7 @@ private:
         _device_ptr(memory_ptr) {}
 
   void allocate_device(sycl::queue &q) {
+    _q = q;
 #ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
       _device_ptr = (value_t *)sycl::malloc_shared(
@@ -1401,6 +1608,7 @@ private:
   bool _reference;
   value_t *_host_ptr;
   value_t *_device_ptr;
+  sycl::queue _q;
 };
 template <class T, memory_region Memory>
 class device_memory<T, Memory, 0> : public device_memory<T, Memory, 1> {

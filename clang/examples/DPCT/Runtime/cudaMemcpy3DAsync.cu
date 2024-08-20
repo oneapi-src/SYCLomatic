@@ -1,6 +1,7 @@
-void test(const cudaMemcpy3DParms *pm) {
+void test() {
   // Start
+  const cudaMemcpy3DParms *pm;
   cudaStream_t s;
-  cudaMemcpy3DAsync(pm /*const cudaMemcpy3DParms **/, s);
+  cudaMemcpy3DAsync(pm, s);
   // End
 }

@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "dpct/codepin/codepin.hpp"
-#include "generated_schema.hpp"
+#include "codepin_autogen_util.hpp"
 #define VECTOR_SIZE 256
 
 void VectorAddKernel(float* A, float* B, float* C,
@@ -30,19 +30,19 @@ int main() try {
     d_A = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
     d_B = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
     d_C = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
-    dpct::experimental::gen_prolog_API_CP("vectorAdd:vecotr.cu:[29]:", &q_ct1, TYPE_SHCEMA_005, (long *)&d_A,TYPE_SHCEMA_006, (long *)&d_B,  TYPE_SHCEMA_007, (long *)&d_C);
+    dpctexp::codepin::gen_prolog_API_CP("vectorAdd:vecotr.cu:[29]:", &q_ct1, "d_A", d_A, "d_B", d_B, "d_C", d_C);
     q_ct1.parallel_for(
         sycl::nd_range<3>(sycl::range<3>(1, 1, VECTOR_SIZE), sycl::range<3>(1, 1, VECTOR_SIZE)),
         [=](sycl::nd_item<3> item_ct1) {
             VectorAddKernel(d_A, d_B, d_C, item_ct1);
         });
-    dpct::experimental::gen_epilog_API_CP("vectorAdd:vecotr.cu:[29]]:", &q_ct1, TYPE_SHCEMA_005, (long *)&d_A,TYPE_SHCEMA_006, (long *)&d_B,  TYPE_SHCEMA_007, (long *)&d_C);
+    dpctexp::codepin::gen_epilog_API_CP("vectorAdd:vecotr.cu:[29]]:", &q_ct1, "d_A", d_A, "d_B", d_B, "d_C", d_C);
 
     float Result[VECTOR_SIZE] = {};
 
-    // dpct::experimental::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long *)&h_C, (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
+    // dpctexp::codepin::gen_prolog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long *)&h_C, (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
     status = DPCT_CHECK_ERROR(q_ct1.memcpy(Result, d_C, VECTOR_SIZE * sizeof(float)).wait());
-    // dpct::experimental::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long *)&h_C, (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
+    // dpctexp::codepin::gen_epilog_API_CP("cudaMemcpy:vecotr.cu:[237]:", 0, TYPE_SHCEMA_004, (long *)&h_C, (size_t)size, TYPE_SHCEMA_007, (long *)&d_C, (size_t)size);
 
     sycl::free(d_A, q_ct1);
     sycl::free(d_B, q_ct1);

@@ -12,6 +12,7 @@
 #include "helper/ErrorHandling.h"
 #include "kernel-fusion/SYCLKernelFusion.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/PassManagerImpl.h"
 
 using namespace llvm;
 
@@ -22,8 +23,8 @@ static Metadata *getConstantIntMD(llvm::LLVMContext &LLVMContext, T Val) {
 }
 
 static Metadata *getConstantMD(llvm::LLVMContext &LLVMCtx,
-                               llvm::StringRef Data) {
-  return MDString::get(LLVMCtx, Data);
+                               const jit_compiler::DynArray<char> &Data) {
+  return MDString::get(LLVMCtx, StringRef{Data.begin(), Data.size()});
 }
 
 static Metadata *getMDParam(LLVMContext &LLVMCtx,
@@ -64,6 +65,7 @@ Expected<std::unique_ptr<Module>> helper::FusionHelper::addFusedKernel(
     // correct name and signature only during the fusion pass.
     auto *F = Function::Create(FT, GlobalValue::LinkageTypes::ExternalLinkage,
                                "fused_kernel", *NewMod);
+    F->IsNewDbgInfoFormat = UseNewDbgInfoFormat;
 
     // Attach metadata to the function stub.
     // The metadata specifies the name of the fused kernel (as the
@@ -92,7 +94,7 @@ Expected<std::unique_ptr<Module>> helper::FusionHelper::addFusedKernel(
     {
       const auto MDFromND = [&LLVMCtx](const auto &ND) {
         auto MDFromIndices = [&LLVMCtx](const auto &Ind) -> Metadata * {
-          std::array<Metadata *, jit_compiler::Indices{}.size()> MD{nullptr};
+          std::array<Metadata *, jit_compiler::Indices::size()> MD{nullptr};
           std::transform(
               Ind.begin(), Ind.end(), MD.begin(),
               [&LLVMCtx](auto I) { return getConstantIntMD(LLVMCtx, I); });
@@ -108,10 +110,11 @@ Expected<std::unique_ptr<Module>> helper::FusionHelper::addFusedKernel(
 
       // Attach ND-range of the fused kernel
       assert(!F->hasMetadata(SYCLKernelFusion::NDRangeMDKey));
-      F->setMetadata(SYCLKernelFusion::NDRangeMDKey, MDFromND(FF.FusedNDRange));
+      F->setMetadata(SYCLKernelFusion::NDRangeMDKey,
+                     MDFromND(FF.FusedNDRange.getNDR()));
 
       // Attach ND-ranges of each kernel to be fused
-      const auto SrcNDRanges = FF.NDRanges;
+      const auto SrcNDRanges = FF.FusedNDRange.getNDRanges();
       SmallVector<Metadata *> Nodes;
       std::transform(SrcNDRanges.begin(), SrcNDRanges.end(),
                      std::back_inserter(Nodes), MDFromND);
@@ -167,14 +170,13 @@ Expected<std::unique_ptr<Module>> helper::FusionHelper::addFusedKernel(
 
           const auto S = [&]() -> StringRef {
             switch (Info.Intern) {
-            default:
-            case jit_compiler::Internalization::None:
-              llvm_unreachable(
-                  "Only a valid internalization kind should be used");
             case jit_compiler::Internalization::Local:
               return LocalInternalizationStr;
             case jit_compiler::Internalization::Private:
               return PrivateInternalizationStr;
+            default:
+              llvm_unreachable(
+                  "Only a valid internalization kind should be used");
             }
           }();
           EmplaceBackIntern(Info, S);

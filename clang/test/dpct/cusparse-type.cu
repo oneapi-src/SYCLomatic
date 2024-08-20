@@ -78,7 +78,7 @@ int main(){
   cusparseMatDescr_t descrL=VAL(1);
   cusparseMatDescr_t descrU=NULL;
 
-  //CHECK: dpct::queue_ptr a8;
+  //CHECK: dpct::sparse::descriptor_ptr a8;
   cusparseHandle_t a8;
 }
 
@@ -89,7 +89,7 @@ int main(){
 //CHECK-NEXT:     oneapi::mkl::transpose a5,
 //CHECK-NEXT:     int a6,
 //CHECK-NEXT:     std::shared_ptr<dpct::sparse::matrix_info> a7,
-//CHECK-NEXT:     dpct::queue_ptr a8);
+//CHECK-NEXT:     dpct::sparse::descriptor_ptr a8);
 void foo(cusparseFillMode_t a1,
          cusparseDiagType_t a2,
          cusparseIndexBase_t a3,
@@ -106,7 +106,7 @@ void foo(cusparseFillMode_t a1,
 //CHECK-NEXT:oneapi::mkl::transpose foo5();
 //CHECK-NEXT:int foo6();
 //CHECK-NEXT:std::shared_ptr<dpct::sparse::matrix_info> foo7();
-//CHECK-NEXT:dpct::queue_ptr foo8();
+//CHECK-NEXT:dpct::sparse::descriptor_ptr foo8();
 cusparseFillMode_t foo1();
 cusparseDiagType_t foo2();
 cusparseIndexBase_t foo3();
@@ -124,7 +124,7 @@ cusparseHandle_t foo8();
 //CHECK-NEXT:          oneapi::mkl::transpose a5,
 //CHECK-NEXT:          int a6,
 //CHECK-NEXT:          std::shared_ptr<dpct::sparse::matrix_info> a7,
-//CHECK-NEXT:          dpct::queue_ptr a8){}
+//CHECK-NEXT:          dpct::sparse::descriptor_ptr a8){}
 template<typename T>
 void bar1(cusparseFillMode_t a1,
          cusparseDiagType_t a2,
@@ -143,7 +143,7 @@ void bar1(cusparseFillMode_t a1,
 //CHECK-NEXT:          oneapi::mkl::transpose a5,
 //CHECK-NEXT:          int a6,
 //CHECK-NEXT:          std::shared_ptr<dpct::sparse::matrix_info> a7,
-//CHECK-NEXT:          dpct::queue_ptr a8){}
+//CHECK-NEXT:          dpct::sparse::descriptor_ptr a8){}
 template<typename T>
 void bar2(cusparseFillMode_t a1,
          cusparseDiagType_t a2,
@@ -163,7 +163,7 @@ void bar2(cusparseFillMode_t a1,
 //CHECK-NEXT:             oneapi::mkl::transpose a5,
 //CHECK-NEXT:             int a6,
 //CHECK-NEXT:             std::shared_ptr<dpct::sparse::matrix_info> a7,
-//CHECK-NEXT:             dpct::queue_ptr a8){}
+//CHECK-NEXT:             dpct::sparse::descriptor_ptr a8){}
 template<>
 void bar2<double>(cusparseFillMode_t a1,
                   cusparseDiagType_t a2,
@@ -182,7 +182,7 @@ void bar2<double>(cusparseFillMode_t a1,
 //CHECK-NEXT:                   oneapi::mkl::transpose a5,
 //CHECK-NEXT:                   int a6,
 //CHECK-NEXT:                   std::shared_ptr<dpct::sparse::matrix_info> a7,
-//CHECK-NEXT:                   dpct::queue_ptr a8);
+//CHECK-NEXT:                   dpct::sparse::descriptor_ptr a8);
 template void bar2<int>(cusparseFillMode_t a1,
                   cusparseDiagType_t a2,
                   cusparseIndexBase_t a3,

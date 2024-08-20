@@ -64,6 +64,21 @@ void registerAPIRule(MetaRuleObject &R) {
     return std::make_unique<clang::dpct::UserDefinedAPIRule>(
         R.In, R.RuleAttributes.HasExplicitTemplateArgs);
   });
+
+  if (R.RuleAPIRestrictCondition.ArgCount < -1) {
+    llvm::outs() << "warning: In Rule " << R.RuleId
+                 << ", the APIRestrictCondition::ArgCount is set to a negative "
+                 << "value, and thus the ArgCount restriction is ignored.";
+  }
+
+  auto FilterChecker = [=](const CallExpr *C) {
+    if (R.RuleAPIRestrictCondition.ArgCount < 0)
+      return true;
+    if ((size_t)R.RuleAPIRestrictCondition.ArgCount == C->getNumArgs())
+      return true;
+    return false;
+  };
+
   // create and register rewriter
   // RewriterMap contains entries like {"FunctionName", RewriterFactory}
   // The priority of all the default rules are RulePriority::Fallback and
@@ -77,12 +92,17 @@ void registerAPIRule(MetaRuleObject &R) {
   auto Factory = createUserDefinedRewriterFactory(R.In, R);
   auto &Entry = (*CallExprRewriterFactoryBase::RewriterMap)[R.In];
   if (!Entry) {
-    Entry = Factory;
+    Entry = std::make_shared<ConditionalRewriterFactory>(FilterChecker, Factory,
+                                                         Entry);
   } else if (R.RuleAttributes.HasExplicitTemplateArgs) {
     Entry = std::make_shared<ConditionalRewriterFactory>(
-        UserDefinedRewriterFactory::hasExplicitTemplateArgs, Factory, Entry);
+        UserDefinedRewriterFactory::hasExplicitTemplateArgs,
+        std::make_shared<ConditionalRewriterFactory>(
+            FilterChecker, Factory, std::make_shared<NullRewriterFactory>()),
+        Entry);
   } else if (Entry->Priority > R.Priority) {
-    Entry = Factory;
+    Entry = std::make_shared<ConditionalRewriterFactory>(FilterChecker, Factory,
+                                                         Entry);
   }
 }
 

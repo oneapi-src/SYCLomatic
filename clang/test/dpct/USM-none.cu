@@ -288,15 +288,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamPerThread));
 
-  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
-  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
-  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1)));
+  // CHECK: dpct::async_dpct_memcpy(parms);
+  // CHECK: dpct::async_dpct_memcpy(parms);
+  // CHECK: dpct::async_dpct_memcpy(parms);
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms));
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms));
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms)));
   cudaMemcpy3DAsync(&parms, cudaStreamDefault);
   cudaMemcpy3DAsync(&parms, cudaStreamLegacy);
   cudaMemcpy3DAsync(&parms, cudaStreamPerThread);

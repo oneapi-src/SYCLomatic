@@ -324,23 +324,6 @@ makeCombinedArg(std::function<T1(const CallExpr *)> Part1,
   };
 }
 
-inline std::function<std::vector<RenameWithSuffix>(const CallExpr *)>
-makeStructDismantler(unsigned Idx, const std::vector<std::string> &Suffixes) {
-  return [=](const CallExpr *C) -> std::vector<RenameWithSuffix> {
-    std::vector<RenameWithSuffix> Ret;
-    if (auto DRE = dyn_cast_or_null<DeclRefExpr>(
-            getDereferencedExpr(C->getArg(Idx)))) {
-      Ret.reserve(Suffixes.size());
-      auto Origin = DRE->getDecl()->getName();
-      std::transform(Suffixes.begin(), Suffixes.end(), std::back_inserter(Ret),
-                     [&](StringRef Suffix) -> RenameWithSuffix {
-                       return RenameWithSuffix(Origin, Suffix);
-                     });
-    }
-    return Ret;
-  };
-}
-
 inline std::function<std::string(const CallExpr *)>
 makeExtendStr(unsigned Idx, const std::string Suffix) {
   return [=](const CallExpr *C) -> std::string {
@@ -387,44 +370,54 @@ inline std::function<std::string(const CallExpr *)> makeDeviceStr() {
   };
 }
 
-template <class BaseT, class... CallArgsT>
-using MemberCallPrinterCreator =
-    PrinterCreator<MemberCallPrinter<BaseT, StringRef, CallArgsT...>,
-                   std::function<BaseT(const CallExpr *)>, bool, std::string,
-                   std::function<CallArgsT(const CallExpr *)>...>;
+template <class BaseT, bool HasExplicitTemplateArg, class... CallArgsT>
+using MemberCallPrinterCreator = PrinterCreator<
+    MemberCallPrinter<BaseT, StringRef, HasExplicitTemplateArg, CallArgsT...>,
+    std::function<BaseT(const CallExpr *)>, bool, std::string,
+    std::function<CallArgsT(const CallExpr *)>...>;
 
-template <class BaseT, class... CallArgsT>
-inline std::function<
-    MemberCallPrinter<BaseT, StringRef, CallArgsT...>(const CallExpr *)>
+template <bool HasExplicitTemplateArg, class BaseT, class... CallArgsT>
+inline std::function<MemberCallPrinter<BaseT, StringRef, HasExplicitTemplateArg,
+                                       CallArgsT...>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow, std::string Member,
                       std::function<CallArgsT(const CallExpr *)>... Args) {
-  return MemberCallPrinterCreator<BaseT, CallArgsT...>(BaseFunc, IsArrow,
-                                                       Member, Args...);
+  return MemberCallPrinterCreator<BaseT, HasExplicitTemplateArg, CallArgsT...>(
+      BaseFunc, IsArrow, Member, Args...);
 }
 
-template <class BaseT, class MemberT>
+template <bool HasExplicitTemplateArg, class BaseT, class MemberT>
 inline std::function<
-    MemberCallPrinter<BaseT, MemberT>(const CallExpr *)>
+    MemberCallPrinter<BaseT, MemberT, HasExplicitTemplateArg>(const CallExpr *)>
 makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                       bool IsArrow,
                       std::function<MemberT(const CallExpr *)> Member) {
-
-  return PrinterCreator<MemberCallPrinter<BaseT, MemberT>,
-    std::function<BaseT(const CallExpr *)>, bool,
-    std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow,
-                                              Member);
+  return PrinterCreator<
+      MemberCallPrinter<BaseT, MemberT, HasExplicitTemplateArg>,
+      std::function<BaseT(const CallExpr *)>, bool,
+      std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow, Member);
 }
 
-
 template <class... StmtT>
-inline std::function<
-    LambdaPrinter<StmtT...>(const CallExpr *)>
-makeLambdaCreator(bool IsCaptureRef,
-                      std::function<StmtT(const CallExpr *)>... Stmts) {
-  return PrinterCreator<LambdaPrinter<StmtT...>, bool,
+inline std::function<LambdaPrinter<StmtT...>(const CallExpr *)>
+makeLambdaCreator(bool IsCaptureRef, bool IsExecuteInplace,
+                  std::function<StmtT(const CallExpr *)>... Stmts) {
+  return PrinterCreator<LambdaPrinter<StmtT...>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
                         std::function<StmtT(const CallExpr *)>...>(
-                        IsCaptureRef, Stmts...);
+      [](const CallExpr *) { return std::string(" "); },
+      [](const CallExpr *) { return std::string(""); },
+      [=](const CallExpr *) { return IsCaptureRef; },
+      [=](const CallExpr *) { return IsExecuteInplace; },
+      [](const CallExpr *C) {
+        return isInMacroDefinition(C->getBeginLoc(), C->getBeginLoc()) &&
+               isInMacroDefinition(C->getEndLoc(), C->getEndLoc());
+      },
+      Stmts...);
 }
 
 inline std::vector<TemplateArgumentInfo>
@@ -517,6 +510,13 @@ makeTemplatedCalleeWithArgsCreator(
       });
 }
 
+template <UnaryOperatorKind Op, class ET>
+inline std::function<UnaryOperatorPrinter<Op, ET>(const CallExpr *)>
+makeUnaryOperatorCreator(std::function<ET(const CallExpr *)> E) {
+  return PrinterCreator<UnaryOperatorPrinter<Op, ET>,
+                        std::function<ET(const CallExpr *)>>(std::move(E));
+}
+
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 inline std::function<BinaryOperatorPrinter<Op, LValueT, RValueT>(const CallExpr *)>
 makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
@@ -525,6 +525,13 @@ makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
                         std::function<LValueT(const CallExpr *)>,
                         std::function<RValueT(const CallExpr *)>>(std::move(L),
                                                                   std::move(R));
+}
+
+template <class ET>
+inline std::function<ParenExprPrinter<ET>(const CallExpr *)>
+makeParenExprCreator(std::function<ET(const CallExpr *)> E) {
+  return PrinterCreator<ParenExprPrinter<ET>,
+                        std::function<ET(const CallExpr *)>>(std::move(E));
 }
 
 template <class CalleeT, class... CallArgsT>
@@ -607,8 +614,7 @@ makeArgWithAddressSpaceCast(int ArgIdx) {
     ExprAnalysis EA(E);
     std::string Result =
         MapNames::getClNamespace() + "address_space_cast<" +
-        MapNames::getClNamespace() +
-        "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
+        MapNames::getClNamespace() + "access::address_space::generic_space, " +
         MapNames::getClNamespace() + "access::decorated::yes>(" +
         EA.getReplacedString() + ")";
     return Result;
@@ -616,10 +622,10 @@ makeArgWithAddressSpaceCast(int ArgIdx) {
 }
 
 template <class BaseT, class MemberT>
-inline std::function<MemberExprPrinter<BaseT, MemberT>(const CallExpr *)>
+inline std::function<MemberExprPrinter<BaseT, MemberT, false>(const CallExpr *)>
 makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
                       std::function<MemberT(const CallExpr *)> Member) {
-  return PrinterCreator<MemberExprPrinter<BaseT, MemberT>,
+  return PrinterCreator<MemberExprPrinter<BaseT, MemberT, false>,
                         std::function<BaseT(const CallExpr *)>, bool,
                         std::function<MemberT(const CallExpr *)>>(Base, IsArrow,
                                                                   Member);
@@ -690,11 +696,23 @@ makeDoublePointerConstCastExprCreator(
 }
 
 template <class... ArgsT>
-inline std::function<NewExprPrinter<ArgsT...>(const CallExpr *)>
-makeNewExprCreator(std::string TypeName,
-                   std::function<ArgsT(const CallExpr *)>... Args) {
-  return PrinterCreator<NewExprPrinter<ArgsT...>, std::string,
-                        std::function<ArgsT(const CallExpr *)>...>(TypeName,
+inline std::function<NewDeleteExprPrinter<ArgsT...>(const CallExpr *)>
+makeNewDeleteExprCreator(bool IsNew, std::string TypeName,
+                         std::function<ArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<NewDeleteExprPrinter<ArgsT...>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<ArgsT(const CallExpr *)>...>(
+      [=](const CallExpr *) { return TypeName; },
+      [=](const CallExpr *) { return IsNew; }, Args...);
+}
+
+template <class... ArgsT>
+inline std::function<DeclPrinter<ArgsT...>(const CallExpr *)>
+makeDeclCreator(std::string Type, std::string Var,
+                std::function<ArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<DeclPrinter<ArgsT...>, std::string, std::string,
+                        std::function<ArgsT(const CallExpr *)>...>(Type, Var,
                                                                    Args...);
 }
 
@@ -832,42 +850,6 @@ inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
         break;
       }
       TemplateArgStr = TAI.getString();
-    }
-    return TemplateArgStr;
-  };
-}
-
-inline std::function<std::string(const CallExpr *C)>
-getArgTemplate(size_t Idx, size_t SubIdx) {
-  return [=](const CallExpr *C) -> std::string {
-    if (Idx >= C->getNumArgs())
-      return "";
-    auto Type = C->getArg(Idx)->getType();
-    std::string TemplateArgStr = "";
-    while (const auto *ET = dyn_cast<ElaboratedType>(Type)) {
-      Type = ET->getNamedType();
-      if (const auto *TST = dyn_cast<TemplateSpecializationType>(Type)) {
-        auto TAL = TST->template_arguments();
-        if (SubIdx >= TAL.size())
-          return TemplateArgStr;
-        const auto &TA = TAL[Idx];
-        TemplateArgumentInfo TAI;
-        switch (TA.getKind()) {
-        case TemplateArgument::Integral:
-          TAI.setAsNonType(TA.getAsIntegral());
-          break;
-        case TemplateArgument::Expression:
-          TAI.setAsNonType(TA.getAsExpr());
-          break;
-        case TemplateArgument::Type:
-          TAI.setAsType(TA.getAsType());
-          break;
-        default:
-          break;
-        }
-        TemplateArgStr = TAI.getString();
-        break;
-      }
     }
     return TemplateArgStr;
   };
@@ -1049,6 +1031,17 @@ createFactoryWithSubGroupSizeRequest(
                                                    std::move(Inner));
 }
 
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAnalyzeUninitializedDeviceVarRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        Factory,
+    int Idx) {
+  return std::make_pair(
+      std::move(Factory.first),
+      std::make_shared<AnalyzeUninitializedDeviceVarRewriterFactory>(
+          Factory.second, Idx));
+}
+
 template <class... StmtPrinters>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMultiStmtsRewriterFactory(
@@ -1072,6 +1065,35 @@ createMultiStmtsRewriterFactory(
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
                                                              Creators...));
+}
+
+template <class... StmtPrinters>
+inline std::shared_ptr<CallExprRewriterFactoryBase> createLambdaRewriterFactory(
+    const std::string &SourceName,
+    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+  return std::make_shared<CallExprRewriterFactory<
+      PrinterRewriter<LambdaPrinter<StmtPrinters...>>,
+      std::function<std::string(const CallExpr *)>,
+      std::function<std::string(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
+      std::function<bool(const CallExpr *)>,
+      std::function<StmtPrinters(const CallExpr *)>...>>(
+      SourceName,
+      [](const CallExpr *C) {
+        const auto &SM = DpctGlobalInfo::getSourceManager();
+        std::string Indent =
+            getIndent(SM.getExpansionLoc(C->getBeginLoc()), SM).str();
+        return Indent;
+      },
+      [](const CallExpr *) { return std::string(getNL()); },
+      [](const CallExpr *) { return true; },
+      [](const CallExpr *) { return true; },
+      [](const CallExpr *C) {
+        return isInMacroDefinition(C->getBeginLoc(), C->getBeginLoc()) &&
+               isInMacroDefinition(C->getEndLoc(), C->getEndLoc());
+      },
+      Creators...);
 }
 
 /// Create UnaryOpRewriterFactory with given arguments.
@@ -1108,9 +1130,21 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createBinaryOpRewriterFactor
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
 }
 
+template <class Value>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createNewDeleteRewriterFactory(
+    bool IsNew, const std::string &SourceName, const std::string &TypeName,
+    std::function<Value(const CallExpr *)> &&ValueCreator) {
+  return std::make_shared<
+      CallExprRewriterFactory<NewDeleteRewriter<Value>, std::string, bool,
+                              std::function<Value(const CallExpr *)>>>(
+      SourceName, TypeName, IsNew,
+      std::forward<std::function<Value(const CallExpr *)>>(ValueCreator));
+}
 
 template <class BaseT, class MemberT>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createMemberExprRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createMemberExprRewriterFactory(
     const std::string &SourceName,
     std::function<BaseT(const CallExpr *)> &&BaseCreator, bool IsArrow,
     std::function<MemberT(const CallExpr *)> &&MemberCreator) {
@@ -1183,7 +1217,7 @@ createTemplatedCallExprRewriterFactory(
 /// \p BaseCreator use to get base expr from original call expr.
 /// \p IsArrow the member operator is arrow or dot as default.
 /// \p ArgsCreator use to get call args from original call expr.
-template <class BaseT, class... ArgsT>
+template <bool HasExplicitTemplateArg, class BaseT, class... ArgsT>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMemberCallExprRewriterFactory(
     const std::string &SourceName,
@@ -1191,7 +1225,7 @@ createMemberCallExprRewriterFactory(
     std::string MemberName,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, ArgsT...>,
+      MemberCallExprRewriter<BaseT, HasExplicitTemplateArg, ArgsT...>,
       std::function<BaseT(const CallExpr *)>, bool, std::string,
       std::function<ArgsT(const CallExpr *)>...>>(
       SourceName,
@@ -1200,15 +1234,16 @@ createMemberCallExprRewriterFactory(
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
-template <class BaseT, class... ArgsT>
-inline std::shared_ptr<CallExprRewriterFactoryBase>
+template <bool HasExplicitTemplateArg, class BaseT, class... ArgsT>
+inline std::shared_ptr<std::enable_if_t<
+    !std::is_invocable_v<BaseT, const CallExpr *>, CallExprRewriterFactoryBase>>
 createMemberCallExprRewriterFactory(
     const std::string &SourceName, BaseT BaseCreator, bool IsArrow,
     std::string MemberName,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<CallExprRewriterFactory<
-      MemberCallExprRewriter<BaseT, ArgsT...>, BaseT, bool, std::string,
-      std::function<ArgsT(const CallExpr *)>...>>(
+      MemberCallExprRewriter<BaseT, HasExplicitTemplateArg, ArgsT...>, BaseT,
+      bool, std::string, std::function<ArgsT(const CallExpr *)>...>>(
       SourceName, BaseCreator, IsArrow, MemberName,
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
@@ -1473,111 +1508,22 @@ createBindTextureRewriterFactory(const std::string &Source) {
 
   return std::make_shared<ConditionalRewriterFactory>(
       makePointerChecker(StartIdx + 0),
-      createMemberCallExprRewriterFactory(
+      createMemberCallExprRewriterFactory<false>(
           Source, makeDerefExprCreator(StartIdx + 0), true, "attach",
           makeCallArgCreator(StartIdx + 1),
           makeCallArgCreator(StartIdx + Idx + 1)...,
           makeDerefExprCreator(StartIdx + 2)),
       std::make_shared<ConditionalRewriterFactory>(
           TypeChecker,
-          createMemberCallExprRewriterFactory(
+          createMemberCallExprRewriterFactory<false>(
               Source, makeCallArgCreatorWithCall(StartIdx + 0), false, "attach",
               makeCallArgCreatorWithCall(StartIdx + 1),
               makeCallArgCreatorWithCall(StartIdx + Idx + 1)...,
               makeCallArgCreatorWithCall(StartIdx + 2)),
-          createMemberCallExprRewriterFactory(
+          createMemberCallExprRewriterFactory<false>(
               Source, makeCallArgCreatorWithCall(StartIdx + 0), false, "attach",
               makeCallArgCreatorWithCall(StartIdx + 1),
               makeCallArgCreatorWithCall(StartIdx + Idx)...)));
-}
-
-template <size_t... Idx>
-class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
-  std::string Source;
-  int TexType;
-
-  template <class BaseT>
-  std::shared_ptr<CallExprRewriter>
-  createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
-    const static std::string MemberName = "read";
-    using ReaderPrinter = decltype(makeMemberCallCreator(
-        std::declval<std::function<BaseT(const CallExpr *)>>(), false,
-        MemberName, makeCallArgCreatorWithCall(Idx)...)(C));
-    if (RetAssign) {
-      return std::make_shared<PrinterRewriter<
-          BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
-          C, Source, DerefExpr(C->getArg(0), C),
-          ReaderPrinter(std::move(Base), false, MemberName,
-                        std::make_pair(C, C->getArg(Idx + 1))...));
-    }
-    return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, Base, false, MemberName,
-        std::make_pair(C, C->getArg(Idx))...);
-  }
-
-public:
-  TextureReadRewriterFactory(std::string Name, int Tex)
-      : Source(std::move(Name)), TexType(Tex) {}
-  std::shared_ptr<CallExprRewriter>
-  create(const CallExpr *Call) const override {
-    const Expr *SourceExpr = Call->getArg(0);
-    unsigned SourceIdx = 0;
-    QualType TargetType = Call->getType();
-    StringRef SourceName;
-    bool RetAssign = false;
-    if (SourceExpr->getType()->isPointerType()) {
-      TargetType = SourceExpr->getType()->getPointeeType();
-      SourceExpr = Call->getArg(1);
-      SourceIdx = 1;
-      RetAssign = true;
-      if (auto UO = dyn_cast<UnaryOperator>(SourceExpr)) {
-        if (UO->getOpcode() == UnaryOperator::Opcode::UO_AddrOf) {
-          SourceExpr = UO->getSubExpr();
-        }
-      }
-    }
-    SourceExpr = SourceExpr->IgnoreImpCasts();
-    if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
-      auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
-      if (FuncInfo) {
-        auto CallInfo = FuncInfo->addCallee(Call);
-        if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
-          auto MemberInfo =
-              CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
-          if (MemberInfo) {
-            FuncInfo->addTexture(MemberInfo);
-            MemberInfo->setType(
-                DpctGlobalInfo::getUnqualifiedTypeName(TargetType), TexType);
-            SourceName = MemberInfo->getName();
-            return createRewriter(Call, RetAssign, SourceName);
-          }
-        } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
-          auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
-          if (TexInfo) {
-            TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
-                             TexType);
-          }
-        }
-      }
-    }
-
-    return createRewriter(Call, RetAssign,
-                          std::make_pair(Call, Call->getArg(RetAssign & 0x01)));
-  }
-};
-
-/// Create rewriter factory for texture reader APIs.
-/// Predicate: check the first arg if is pointer and set texture info with
-/// corresponding data. Migrate the call expr to an assign expr if Pred result
-/// is true; e.g.: tex1D(&u, tex, 1.0f) -> u = tex.read(1.0f) Migrate the call
-/// expr to an assign expr if Pred result is false; e.g.: tex1D(tex, 1.0f) ->
-/// tex.read(1.0f) The template arguments is the member call arguments' index in
-/// original call expr.
-template <size_t... Idx>
-inline std::shared_ptr<CallExprRewriterFactoryBase>
-createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
-  return std::make_shared<TextureReadRewriterFactory<Idx...>>(Source,
-                                                              TextureType);
 }
 
 template <class... MsgArgs>
@@ -1598,17 +1544,6 @@ createDerefExprRewriterFactory(
       SourceName,
       std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
 }
-
-class CheckWarning1073 {
-  unsigned Idx;
-
-public:
-  CheckWarning1073(unsigned I) : Idx(I) {}
-  bool operator()(const CallExpr *C) {
-    auto DerefE = getDereferencedExpr(C->getArg(Idx));
-    return DerefE && isa<DeclRefExpr>(DerefE);
-  }
-};
 
 // sycl has 2 overloading of malloc_device
 // 1. sycl::malloc_device(Addr, Size)
@@ -1760,6 +1695,18 @@ inline auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
 };
 inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
+};
+
+inline auto UseExtBindlessImages = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtBindlessImages();
+};
+
+inline auto UseExtGraph = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExtGraph();
+};
+
+inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExpNonUniformGroups();
 };
 
 class CheckDerefedTypeBeforeCast {
@@ -2057,6 +2004,11 @@ public:
 };
 } // namespace math
 } // namespace dpct
+
+const std::string MipmapNeedBindlessImage =
+    "SYCL currently does not support mipmap image type. You "
+    "can migrate the code with bindless images by specifying "
+    "--use-experimental-features=bindless_images.";
 } // namespace clang
 
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
@@ -2069,11 +2021,12 @@ public:
 #define HEADER_INSERT_FACTORY(HEADER, x) createInsertHeaderFactory(HEADER, x 0),
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
+#define ANALYZE_UNINIT_DEV_VAR_FACTORY(Idx, Factory)                           \
+  createAnalyzeUninitializedDeviceVarRewriterFactory(Factory Idx),
 #define STREAM(x) makeDerefStreamExprCreator(x)
 #define ADDROF(x) makeAddrOfExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define DEREF_CAST_IF_NEED(T, S) makeDerefCastIfNeedExprCreator(T, S)
-#define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)
 #define TEMPLATE_ARG(x) makeCallArgCreatorFromTemplateArg(x)
@@ -2083,8 +2036,12 @@ public:
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define QUEUESTR makeQueueStr()
 #define QUEUEPTRSTR makeQueuePtrStr()
+#define UO(Op, E) makeUnaryOperatorCreator<Op>(E)
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
-#define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
+#define PAREN(E) makeParenExprCreator(E)
+#define MEMBER_CALL(...) makeMemberCallCreator<false>(__VA_ARGS__)
+#define MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG(...)                                 \
+  makeMemberCallCreator<true>(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)
 #define STATIC_MEMBER_EXPR(...) makeStaticMemberExprCreator(__VA_ARGS__)
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
@@ -2099,7 +2056,9 @@ public:
   makeDoublePointerConstCastExprCreator(BASE_VALUE_TYPE, EXPR,                 \
                                         DOES_BASE_VALUE_NEED_CONST,            \
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
-#define NEW(...) makeNewExprCreator(__VA_ARGS__)
+#define NEW(...) makeNewDeleteExprCreator(true, __VA_ARGS__)
+#define DELETE(...) makeNewDeleteExprCreator(false, __VA_ARGS__)
+#define DECL(TYPE, VAR, ...) makeDeclCreator(TYPE, VAR, __VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
 #define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \
@@ -2122,41 +2081,58 @@ public:
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
 #define IFELSE_FACTORY_ENTRY(FuncName, Pred, IfBlock, ElseBlock)               \
-  {FuncName, createIfElseRewriterFactory(FuncName, Pred IfBlock ElseBlock 0)},
+  std::make_pair(FuncName, createIfElseRewriterFactory(                        \
+                               FuncName, Pred IfBlock ElseBlock 0)),
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
-  {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createTemplatedCallExprRewriterFactory(             \
+                               FuncName, __VA_ARGS__)),
+#define DELETE_FACTORY_ENTRY(FuncName, E)                                      \
+  std::make_pair(FuncName,                                                     \
+                 createNewDeleteRewriterFactory(false, FuncName, "", E)),
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
-  {FuncName, createBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(      \
-                 FuncName, L, R)},
+  std::make_pair(FuncName,                                                     \
+                 createBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>( \
+                     FuncName, L, R)),
 #define BINARY_OP_FACTORY_ENTRY(FuncName, OP, L, R)                            \
-  {FuncName, createBinaryOpRewriterFactory<OP>(FuncName, L, R)},
-#define UNARY_OP_FACTORY_ENTRY(FuncName, OP, Arg)                            \
-  {FuncName, createUnaryOpRewriterFactory<OP>(FuncName, Arg)},
+  std::make_pair(FuncName, createBinaryOpRewriterFactory<OP>(FuncName, L, R)),
+#define UNARY_OP_FACTORY_ENTRY(FuncName, OP, Arg)                              \
+  std::make_pair(FuncName, createUnaryOpRewriterFactory<OP>(FuncName, Arg)),
 #define MEM_EXPR_ENTRY(FuncName, B, IsArrow, M)                                \
-  {FuncName, createMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
+  std::make_pair(FuncName,                                                     \
+                 createMemberExprRewriterFactory(FuncName, B, IsArrow, M)),
 #define CALL_FACTORY_ENTRY(FuncName, C)                                        \
-  {FuncName, createCallExprRewriterFactory(FuncName, C)},
+  std::make_pair(FuncName, createCallExprRewriterFactory(FuncName, C)),
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
-  {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createMemberCallExprRewriterFactory<false>(         \
+                               FuncName, __VA_ARGS__)),
+#define MEMBER_CALL_HAS_EXPLICIT_TEMP_ARG_FACTORY_ENTRY(FuncName, ...)         \
+  std::make_pair(FuncName, createMemberCallExprRewriterFactory<true>(          \
+                               FuncName, __VA_ARGS__)),
 #define ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(FuncName, ...)                       \
-  {FuncName, createArraySubscriptExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createArraySubscriptExprRewriterFactory(            \
+                               FuncName, __VA_ARGS__)),
 #define DELETER_FACTORY_ENTRY(FuncName, Arg)                                   \
-  {FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)},
+  std::make_pair(FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)),
 #define UNSUPPORT_FACTORY_ENTRY(FuncName, MsgID, ...)                          \
-  {FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)},
+  std::make_pair(                                                              \
+      FuncName, createUnsupportRewriterFactory(FuncName, MsgID, __VA_ARGS__)),
 #define MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                               \
-  {FuncName, createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName,                                                     \
+                 createMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)),
+#define LAMBDA_FACTORY_ENTRY(FuncName, ...)                                    \
+  std::make_pair(FuncName, createLambdaRewriterFactory(FuncName, __VA_ARGS__)),
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
-  {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName, createReportWarningRewriterFactory(                 \
+                               Factory FuncName, __VA_ARGS__)),
 #define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \
-  {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
+  std::make_pair(FuncName,                                                     \
+                 createToStringExprRewriterFactory(FuncName, __VA_ARGS__)),
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                     \
-  {FuncName, createRemoveAPIRewriterFactory(FuncName)},
+  std::make_pair(FuncName, createRemoveAPIRewriterFactory(FuncName)),
 #define REMOVE_API_FACTORY_ENTRY_WITH_MSG(FuncName, Msg)                       \
-  {FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)},
-#define CASE_FACTORY_ENTRY(...) \
-  createCaseRewriterFactory(__VA_ARGS__),
+  std::make_pair(FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)),
+#define CASE_FACTORY_ENTRY(...) createCaseRewriterFactory(__VA_ARGS__),
 #define DEREF_FACTORY_ENTRY(FuncName, E)                                       \
-  {FuncName, createDerefExprRewriterFactory(FuncName, E)},
+  std::make_pair(FuncName, createDerefExprRewriterFactory(FuncName, E)),
 
 #endif // DPCT_CALL_EXPR_REWRITER_COMMON_H

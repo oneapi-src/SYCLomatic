@@ -40,7 +40,7 @@ private:
       Module &M, IntrinsicInst *IntrInst,
       SmallVectorImpl<IntrinsicInst *> &RemovableAnnotations);
 
-  void parseAlignmentAndApply(Module &M, IntrinsicInst *IntrInst);
+  bool parseAlignmentAndApply(Module &M, IntrinsicInst *IntrInst);
 
   // Map for keeping track of global variables generated for annotation strings.
   // This allows reuse for annotations with the same generated annotation
@@ -57,7 +57,7 @@ namespace detail {
 ///
 /// @returns \c false if the value of \c Value equals to "false", \c true
 /// otherwise.
-inline bool toBool(StringRef Value) { return !Value.equals("false"); }
+inline bool toBool(StringRef Value) { return Value != "false"; }
 
 } // namespace detail
 

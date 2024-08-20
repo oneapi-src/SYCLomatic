@@ -1,0 +1,13 @@
+- Rule: rule_target_link_libraries_cudnn
+  Kind: CMakeRule
+  Priority: Takeover
+  CmakeSyntax: cudnn_target_link_libraries
+  In: target_link_libraries(${target} ${libs})
+  Out: target_link_libraries(${target} ${libs})
+  Subrules:
+    libs:
+      In: CUDNN::cudnn
+      Out: |
+        \${DNN_LIB}
+      MatchMode: Full
+      RuleId: "replace_cudnn_with_libdnn"

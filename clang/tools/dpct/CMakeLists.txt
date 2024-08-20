@@ -41,7 +41,28 @@ if(UNIX)
   endif()
 endif()
 
+if(UNIX)
+  set(dpct_vars_script vars.sh_SYCLomatic)
+  set(dpct_setvars_script "setvars.sh")
+else()
+  set(dpct_vars_script vars.bat_SYCLomatic)
+  set(dpct_setvars_script "setvars.bat")
+endif()
+
+install(
+  FILES ${dpct_vars_script}
+  COMPONENT dpct-setvars
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  DESTINATION ./
+  RENAME ${dpct_setvars_script})
+
+if (NOT CMAKE_CONFIGURATION_TYPES)
+    add_llvm_install_targets(install-dpct-setvars
+                             COMPONENT dpct-setvars)
+endif()
+
 add_subdirectory(DpctOptRules)
+add_subdirectory(RuleTemplates)
 
 set(dpct_cmake_helper_file
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/cmake/dpct.cmake
@@ -57,3 +78,5 @@ if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-cmake-file
                            COMPONENT dpct-cmake-file)
 endif()
+
+add_clang_subdirectory(codepin)

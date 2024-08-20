@@ -1,0 +1,25 @@
+.. _DPCT1126:
+
+DPCT1126
+========
+
+Message
+-------
+
+.. _msg-1126-start:
+
+The type "*<type name>*" defined in function "*<function name>*" is used as the parameter type
+in all functions in the call path from the sycl::handler::parallel_for() to the function "*<function name>*".
+You may need to adjust the definition location of the type.
+
+.. _msg-1126-end:
+
+Detailed Help
+-------------
+
+See :ref:`DPCT1125`.
+
+Suggestions to Fix
+------------------
+
+See :ref:`DPCT1125`.

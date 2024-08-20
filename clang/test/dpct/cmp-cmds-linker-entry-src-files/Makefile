@@ -19,7 +19,7 @@ program = main
 #===============================================================================
 
 # Standard Flags
-CFLAGS := $(EXTRA_CFLAGS) -std=c++14 -Xcompiler -Wall -arch=$(ARCH)
+CFLAGS := $(EXTRA_CFLAGS) -std=c++14 -Xfatbin=-compress-all -Xfatbin -compress-all -Xcompiler -Wall -arch=$(ARCH)
 
 # Linker Flags
 LDFLAGS = 
@@ -38,8 +38,8 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): one.o two.o three.c four.c 
-	$(CC) $(CFLAGS) one.o two.o three.c four.c -o $@ $(LDFLAGS)
+$(program): one.o two.o three.cpp four.c 
+	$(CC) $(CFLAGS) one.o two.o three.cpp four.c -o $@ $(LDFLAGS)
 
 %.o: %.cu 
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -3,12 +3,9 @@ cmake_minimum_required(VERSION 3.24)
 #CMake_minimum_required(VERSION 3.10)
 project(foo-bar LANGUAGES CXX )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-find_program(dpct_bin_path NAMES dpct PATHS)
-get_filename_component(bin_path_of_dpct ${dpct_bin_path} DIRECTORY)
-set(dpct_cmake_file_path "${bin_path_of_dpct}/../cmake/dpct.cmake")
-include(${dpct_cmake_file_path})
+include(dpct.cmake)
 
-set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(IntelSYCL REQUIRED)
@@ -20,21 +17,42 @@ set(SOURCES
 )
 include_directories(
     ${CMAKE_SOURCE_DIR}/foo/bar
-    ${CUDA_INCLUDE_DIRS}
+    ${SYCL_INCLUDE_DIR}
 )
 add_executable(foo-bar ${SOURCES})
 project(foo )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-find_program(dpct_bin_path NAMES dpct PATHS)
-get_filename_component(bin_path_of_dpct ${dpct_bin_path} DIRECTORY)
-set(dpct_cmake_file_path "${bin_path_of_dpct}/../cmake/dpct.cmake")
-include(${dpct_cmake_file_path})
+include(dpct.cmake)
 
 project(foo2  CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
-find_program(dpct_bin_path NAMES dpct PATHS)
-get_filename_component(bin_path_of_dpct ${dpct_bin_path} DIRECTORY)
-set(dpct_cmake_file_path "${bin_path_of_dpct}/../cmake/dpct.cmake")
-include(${dpct_cmake_file_path})
+include(dpct.cmake)
 
 set(SOURCES a.dp.cpp b.cuh)
+
+project(foo2  CXX)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
+include(dpct.cmake)
+
+project( foo2  CXX)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
+include(dpct.cmake)
+
+if(FOO_OPENMP)
+    if(NOT OPENMP_FOUND)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            message(FATAL_ERROR "The compiler you are using does not support OpenMP parallelism, "
+                "You can disable OpenMP in Gromacs with -DFOO_OPENMP=OFF, but instead "
+                "we recommend installing the unsupported library distributed by the R "
+                "project from https://mac.r-project.org/openmp/ - or switch to gcc.")
+        else()
+            message(FATAL_ERROR "The compiler you are using does not support OpenMP parallelism. "
+                "This might hurt your performance a lot, in particular with GPUs. "
+                "Try using a more recent version, or a different compiler. "
+                "If you don't want to use OpenMP, disable it explicitly with -DFOO_OPENMP=OFF")
+        endif()
+    endif()
+endif()
+
+if(SYCL_COMPILER_EXECUTABLE)
+endif()

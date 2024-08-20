@@ -30,4 +30,5 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 
 void registerCmakeMigrationRule(MetaRuleObject &R);
+bool cmakeScriptNotFound();
 #endif

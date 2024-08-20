@@ -10,58 +10,41 @@
 #ifndef TOK
 #define TOK(X)
 #endif
+
 #ifndef PUNCTUATOR
 #define PUNCTUATOR(X,Y) TOK(X)
 #endif
+
 #ifndef KEYWORD
 #define KEYWORD(X, Y) TOK(kw_ ## X)
 #endif
+
 #ifndef INSTRUCTION
 #define INSTRUCTION(X) TOK(op_ ## X)
 #endif
+
 #ifndef BUILTIN_TYPE
 #define BUILTIN_TYPE(X, Y) KEYWORD(X, Y)
 #endif
-#ifndef SUBWORD_TYPE
-#define SUBWORD_TYPE(X, Y) BUILTIN_TYPE(X, Y)
-#endif
-#ifndef PACKED_TYPE
-#define PACKED_TYPE(X, Y) BUILTIN_TYPE(X, Y)
-#endif
-#ifndef PACKED_INTEGER
-#define PACKED_INTEGER(X, Y) PACKED_TYPE(X, Y)
-#endif
-#ifndef PACKED_FLOAT
-#define PACKED_FLOAT(X, Y) PACKED_TYPE(X, Y)
-#endif
-#ifndef ALT_FLOAT_TYPE
-#define ALT_FLOAT_TYPE(X, Y) BUILTIN_TYPE(X, Y)
-#endif
-#ifndef VECTOR
-#define VECTOR(X, Y) KEYWORD(X, Y)
-#endif
+
 #ifndef STATE_SPACE
 #define STATE_SPACE(X, Y) KEYWORD(X, Y)
 #endif
-#ifndef ROUND_MOD
-#define ROUND_MOD(X, Y) KEYWORD(X, Y)
-#endif
-#ifndef SAT_MOD
-#define SAT_MOD(X, Y) KEYWORD(X, Y)
-#endif
-#ifndef MUL_MOD
-#define MUL_MOD(X, Y) KEYWORD(X, Y)
-#endif
-#ifndef CMP_OP
-#define CMP_OP(X, Y) KEYWORD(X, Y)
+
+#ifndef MODIFIER
+#define MODIFIER(X, Y) KEYWORD(X, Y)
 #endif
 
-#ifndef BIN_OP
-#define BIN_OP(X, Y) KEYWORD(X, Y)
+#ifndef SPECIAL_REG
+#define SPECIAL_REG(X, Y, Z) TOK(bi_ ## X)
 #endif
 
-#ifndef BUILTIN_ID
-#define BUILTIN_ID(X, Y, Z) TOK(bi_ ## X)
+#ifndef TARGET
+#define TARGET(X)
+#endif
+
+#ifndef LINKAGE
+#define LINKAGE(X, Y) KEYWORD(X, Y)
 #endif
 
 TOK(unknown)             // Not a token.
@@ -117,6 +100,7 @@ PUNCTUATOR(at,                  "@")
 PUNCTUATOR(coloncolon,          "::")
 PUNCTUATOR(underscore,          "_")
 
+// Instruction opcodes
 INSTRUCTION(abs)
 INSTRUCTION(activemask)
 INSTRUCTION(add)
@@ -250,42 +234,45 @@ INSTRUCTION(wgmma)
 INSTRUCTION(wmma)
 INSTRUCTION(xor)
 
-BUILTIN_ID(laneid, "%laneid", s64)
-BUILTIN_ID(warpid, "%warpid", s64)
-BUILTIN_ID(WARP_SZ, "WARP_SZ", s64)
+// Built-in special registers
+SPECIAL_REG(laneid, "%laneid", s64)
+SPECIAL_REG(warpid, "%warpid", s64)
+SPECIAL_REG(WARP_SZ, "WARP_SZ", s64)
 
-BUILTIN_TYPE(b8,      ".b8")
-BUILTIN_TYPE(b16,     ".b16")
-BUILTIN_TYPE(b32,     ".b32")
-BUILTIN_TYPE(b64,     ".b64")
-BUILTIN_TYPE(u8,      ".u8")
-BUILTIN_TYPE(u16,     ".u16")
-BUILTIN_TYPE(u32,     ".u32")
-BUILTIN_TYPE(u64,     ".u64")
-BUILTIN_TYPE(s8,      ".s8")
-BUILTIN_TYPE(s16,     ".s16")
-BUILTIN_TYPE(s32,     ".s32")
-BUILTIN_TYPE(s64,     ".s64")
-BUILTIN_TYPE(f16,     ".f16")
-BUILTIN_TYPE(f32,     ".f32")
-BUILTIN_TYPE(f64,     ".f64")
-BUILTIN_TYPE(byte,    ".byte")
-BUILTIN_TYPE(4byte,   ".4byte")
-BUILTIN_TYPE(pred,    ".pred")
-ALT_FLOAT_TYPE(bf16,  ".bf16")
-ALT_FLOAT_TYPE(e4m3,  ".e4m3")
-ALT_FLOAT_TYPE(e5m2,  ".e5m2")
-ALT_FLOAT_TYPE(tf32,  ".tf32")
-PACKED_FLOAT(f16x2,   ".f16x2")
-PACKED_FLOAT(bf16x2,  ".bf16x2")
-PACKED_FLOAT(e4m3x2,  ".e4m3x2")
-PACKED_FLOAT(e5m2x2,  ".e5m2x2")
-PACKED_INTEGER(s16x2, ".s16x2")
-PACKED_INTEGER(u16x2, ".u16x2")
+// Built-in type names
+BUILTIN_TYPE(b8,          ".b8")
+BUILTIN_TYPE(b16,         ".b16")
+BUILTIN_TYPE(b32,         ".b32")
+BUILTIN_TYPE(b64,         ".b64")
+BUILTIN_TYPE(u8,          ".u8")
+BUILTIN_TYPE(u16,         ".u16")
+BUILTIN_TYPE(u32,         ".u32")
+BUILTIN_TYPE(u64,         ".u64")
+BUILTIN_TYPE(s8,          ".s8")
+BUILTIN_TYPE(s16,         ".s16")
+BUILTIN_TYPE(s32,         ".s32")
+BUILTIN_TYPE(s64,         ".s64")
+BUILTIN_TYPE(f16,         ".f16")
+BUILTIN_TYPE(f32,         ".f32")
+BUILTIN_TYPE(f64,         ".f64")
+BUILTIN_TYPE(byte,        ".byte")
+BUILTIN_TYPE(four_byte,   ".4byte")
+BUILTIN_TYPE(pred,        ".pred")
+BUILTIN_TYPE(bf16,        ".bf16")
+BUILTIN_TYPE(e4m3,        ".e4m3")
+BUILTIN_TYPE(e5m2,        ".e5m2")
+BUILTIN_TYPE(tf32,        ".tf32")
+BUILTIN_TYPE(f16x2,       ".f16x2")
+BUILTIN_TYPE(bf16x2,      ".bf16x2")
+BUILTIN_TYPE(e4m3x2,      ".e4m3x2")
+BUILTIN_TYPE(e5m2x2,      ".e5m2x2")
+BUILTIN_TYPE(s16x2,       ".s16x2")
+BUILTIN_TYPE(u16x2,       ".u16x2")
 
-VECTOR(v2, ".v2")
-VECTOR(v4, ".v4")
-VECTOR(v8, ".v8")
+// Vector modifiers
+MODIFIER(v2, ".v2")
+MODIFIER(v4, ".v4")
+MODIFIER(v8, ".v8")
 
 STATE_SPACE(reg,    ".reg")
 STATE_SPACE(sreg,   ".sreg")
@@ -301,69 +288,122 @@ KEYWORD(managed, ".managed")
 KEYWORD(unified, ".unified")
 KEYWORD(attribute, ".attribute")
 KEYWORD(func, ".func")
+KEYWORD(entry, ".entry")
+KEYWORD(version, ".version")
+KEYWORD(address_size, ".address_size")
+KEYWORD(target, ".target")
+KEYWORD(FORCE_INLINE, ".FORCE_INLINE")
 
-ROUND_MOD(rn, ".rn")
-ROUND_MOD(rna, ".rna")
-ROUND_MOD(rz, ".rz")
-ROUND_MOD(rm, ".rm")
-ROUND_MOD(rp, ".rp")
-ROUND_MOD(rni, ".rni")
-ROUND_MOD(rzi, ".rzi")
-ROUND_MOD(rmi, ".rmi")
-ROUND_MOD(rpi, ".rpi")
-ROUND_MOD(ftz, ".ftz")
-ROUND_MOD(approx, ".approx")
+LINKAGE(extern, ".extern")
+LINKAGE(visible, ".visible")
+LINKAGE(weak, ".weak")
+LINKAGE(common, ".common")
 
-SAT_MOD(sat, ".sat")
-SAT_MOD(satfinite, ".satfinite")
-SAT_MOD(relu, ".relu")
-SAT_MOD(clamp, ".clamp")
-SAT_MOD(warp, ".wrap")
+// sm_9x target architectures
+TARGET(sm_90a)
+TARGET(sm_90)
+// sm_8x target architectures
+TARGET(sm_80)
+TARGET(sm_86)
+TARGET(sm_87)
+TARGET(sm_89)
+// sm_7x target architectures
+TARGET(sm_70)
+TARGET(sm_72)
+TARGET(sm_75)
+// sm_6x target architectures
+TARGET(sm_60)
+TARGET(sm_61)
+TARGET(sm_62)
+// sm_5x target architectures
+TARGET(sm_50)
+TARGET(sm_52)
+TARGET(sm_53)
+// sm_3x target architectures
+TARGET(sm_30)
+TARGET(sm_32)
+TARGET(sm_35)
+TARGET(sm_37)
+// sm_2x target architectures
+TARGET(sm_20)
+// sm_1x target architectures
+TARGET(sm_10)
+TARGET(sm_11)
+TARGET(sm_12)
+TARGET(sm_13)
+// texturing mode
+TARGET(texmode_unified)
+TARGET(texmode_independent)
+// platform option
+TARGET(debug)
+TARGET(map_f64_to_f32)
 
-MUL_MOD(wide, ".wide")
+MODIFIER(eq, ".eq")
+MODIFIER(ne, ".ne")
+MODIFIER(lt, ".lt")
+MODIFIER(le, ".le")
+MODIFIER(gt, ".gt")
+MODIFIER(ge, ".ge")
+MODIFIER(lo, ".lo")
+MODIFIER(ls, ".ls")
+MODIFIER(hi, ".hi")
+MODIFIER(hs, ".hs")
+MODIFIER(equ, ".equ")
+MODIFIER(neu, ".neu")
+MODIFIER(ltu, ".ltu")
+MODIFIER(leu, ".leu")
+MODIFIER(gtu, ".gtu")
+MODIFIER(geu, ".geu")
+MODIFIER(num, ".num")
+MODIFIER(nan, ".nan")
+MODIFIER(finite, ".finite")
+MODIFIER(infinite, ".infinite")
+MODIFIER(number, ".number")
+MODIFIER(notanumber, ".notanumber")
+MODIFIER(normal, ".normal")
+MODIFIER(subnormal , ".subnormal")
+MODIFIER(add, ".add")
+MODIFIER(min, ".min")
+MODIFIER(max, ".max")
+MODIFIER(op_or, ".or")
+MODIFIER(op_xor, ".xor")
+MODIFIER(cas, ".cas")
+MODIFIER(exch, ".exch")
+MODIFIER(inc, ".inc")
+MODIFIER(dec, ".dec")
+MODIFIER(relaxed, ".relaxed")
+MODIFIER(acquire, ".acquire")
+MODIFIER(release, ".release")
+MODIFIER(acq_rel, ".acq_rel")
+MODIFIER(cta, ".cta")
+MODIFIER(cluster, ".cluster")
+MODIFIER(gpu, ".gpu")
+MODIFIER(sys, ".sys")
+MODIFIER(rn, ".rn")
+MODIFIER(rna, ".rna")
+MODIFIER(rz, ".rz")
+MODIFIER(rm, ".rm")
+MODIFIER(rp, ".rp")
+MODIFIER(rni, ".rni")
+MODIFIER(rzi, ".rzi")
+MODIFIER(rmi, ".rmi")
+MODIFIER(rpi, ".rpi")
+MODIFIER(ftz, ".ftz")
+MODIFIER(approx, ".approx")
+MODIFIER(sat, ".sat")
+MODIFIER(satfinite, ".satfinite")
+MODIFIER(relu, ".relu")
+MODIFIER(clamp, ".clamp")
+MODIFIER(wrap, ".wrap")
+MODIFIER(wide, ".wide")
+MODIFIER(sync, ".sync")
+MODIFIER(warp, ".warp")
 
-CMP_OP(eq, ".eq")
-CMP_OP(ne, ".ne")
-CMP_OP(lt, ".lt")
-CMP_OP(le, ".le")
-CMP_OP(gt, ".gt")
-CMP_OP(ge, ".ge")
-CMP_OP(lo, ".lo")
-CMP_OP(ls, ".ls")
-CMP_OP(hi, ".hi")
-CMP_OP(hs, ".hs")
-CMP_OP(equ, ".equ")
-CMP_OP(neu, ".neu")
-CMP_OP(ltu, ".ltu")
-CMP_OP(leu, ".leu")
-CMP_OP(gtu, ".gtu")
-CMP_OP(geu, ".geu")
-CMP_OP(num, ".num")
-CMP_OP(nan, ".nan")
-CMP_OP(finite, ".finite")
-CMP_OP(infinite, ".infinite")
-CMP_OP(number, ".number")
-CMP_OP(notanumber, ".notanumber")
-CMP_OP(normal, ".normal")
-CMP_OP(subnormal , ".subnormal")
-
-BIN_OP(add, ".add")
-BIN_OP(min, ".min")
-BIN_OP(max, ".max")
-
-#undef BUILTIN_ID
-#undef BIN_OP
-#undef CMP_OP
-#undef MUL_MOD
-#undef SAT_MOD
-#undef ROUND_MOD
+#undef LINKAGE
+#undef TARGET
+#undef SPECIAL_REG
+#undef MODIFIER
 #undef STATE_SPACE
-#undef VECTOR
-#undef ALT_FLOAT_TYPE
-#undef PACKED_FLOAT
-#undef PACKED_INTEGER
-#undef PACKED_TYPE
-#undef SUBWORD_TYPE
 #undef BUILTIN_TYPE
 #undef INSTRUCTION
 #undef KEYWORD

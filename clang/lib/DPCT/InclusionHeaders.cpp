@@ -115,8 +115,8 @@ const DpctInclusionInfo *findInStartwithMode(StringRef Filename) {
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FilenameRange, OptionalFileEntryRef File,
-    StringRef SearchPath, StringRef RelativePath, const Module *Imported,
-    SrcMgr::CharacteristicKind FileType) {
+    StringRef SearchPath, StringRef RelativePath, const Module *SuggestedModule,
+    bool ModuleImported, SrcMgr::CharacteristicKind FileType) {
 
   // If the header file included cannot be found, just return.
   if (!File) {
@@ -138,18 +138,13 @@ void IncludesCallbacks::InclusionDirective(
   if (Global.isExcluded(IncludedFile))
     return;
 
-  auto GenReplacement =
-      [&, ReplaceRange =
-              CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                              /*IsTokenRange=*/false)](
-          std::string ReplacedStr, bool RemoveTrailingSpaces = false) {
-        return new ReplaceInclude(ReplaceRange, std::move(ReplacedStr),
-                                  RemoveTrailingSpaces);
-      };
+  auto ReplaceRange =
+      CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                      /*IsTokenRange=*/false);
   auto EmplaceReplacement = [&](std::string ReplacedStr,
                                 bool RemoveTrailingSpaces = false) {
-    TransformSet.emplace_back(
-        GenReplacement(std::move(ReplacedStr), RemoveTrailingSpaces));
+    TransformSet.emplace_back(new ReplaceInclude(
+        ReplaceRange, std::move(ReplacedStr), RemoveTrailingSpaces));
   };
   auto RemoveInslusion = [&]() {
     EmplaceReplacement("", true);
@@ -180,6 +175,14 @@ void IncludesCallbacks::InclusionDirective(
     }
 
     if (NewFileName != FileName) {
+      // Although file names are different, sometimes we still need using the
+      // old name. For example, the original code is "../folder//file.h". The
+      // path is not a canonical path so the new code will be
+      // "../folder/file.h". But it isn't a CUDA syntax change, so we prefer to
+      // keep old code.
+      if (clang::tooling::UnifiedPath(NewFileName) ==
+          clang::tooling::UnifiedPath(FileName))
+        return;
       std::string ReplacedStr;
       if (IsAngled) {
         ReplacedStr = buildString("#include <", NewFileName, ">");
@@ -193,8 +196,9 @@ void IncludesCallbacks::InclusionDirective(
         // For other CppSource file type, it may change name or not, which
         // determined by whether it has CUDA syntax, so just record the
         // replacement in the IncludeMapSet.
-        IncludeMapSet[IncludedFile].emplace_back(
-            GenReplacement(std::move(ReplacedStr)));
+        auto Repl = ReplaceInclude(ReplaceRange, std::move(ReplacedStr), false)
+                        .getReplacement(DpctGlobalInfo::getContext());
+        DpctGlobalInfo::getIncludeMapSet().push_back({IncludedFile, Repl});
       }
     }
     return;
@@ -232,8 +236,8 @@ void IncludesCallbacks::InclusionDirective(
       break;
     case DpctInclusionInfo::IF_MarkInserted:
       setHeadersAsInserted(FileInfo, Info.Headers);
+      break;
     case DpctInclusionInfo::IF_DoNothing:
-    default:
       break;
     }
     return;
@@ -274,8 +278,6 @@ void DpctInclusionHeadersMap::registInclusionHeaderEntry(
   case MatchMode::Mode_Startwith:
     Info = &InclusionStartWithMap.emplace_back(Filename).Info;
     break;
-  default:
-    return;
   }
   Info->RuleGroup = Group;
   Info->ProcessFlag = Flag;

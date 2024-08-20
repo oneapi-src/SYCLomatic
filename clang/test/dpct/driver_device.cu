@@ -17,9 +17,11 @@ void test() {
   // CHECK-NEXT: */
   cuInit(0);
   CUdevice device;
+  CUdevice peerDevice;
+
   cuDeviceGet(&device, 0);
 
-  int result0, result1, result2, result3, result4, result5;
+  int result0, result1, result2, result3, result4, result5, result6;
   // CHECK: /*
   // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY. It was migrated to get_global_mem_size. You may need to adjust the value of get_global_mem_size for the specific device.
   // CHECK-NEXT: */
@@ -33,9 +35,9 @@ void test() {
   cuDeviceGetAttribute(&result2,CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
   std::cout << " result2 " << result2 << std::endl;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align. You may need to adjust the value of get_mem_base_addr_align for the specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align_in_bytes. You may need to adjust the value of get_mem_base_addr_align_in_bytes for the specific device.
   // CHECK-NEXT: */
-  // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align();
+  // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align_in_bytes();
   cuDeviceGetAttribute(&result3,CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
   std::cout << " result3 " << result3 << std::endl;
   // CHECK: /*
@@ -44,9 +46,14 @@ void test() {
   // CHECK: result4 = dpct::dev_mgr::instance().get_device(device).get_max_register_size_per_work_group();
   cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
   std::cout << " result4 " << result4 << std::endl;
+
   // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).has(sycl::aspect::usm_host_allocations);
   cuDeviceGetAttribute(&result5,CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, device);
   std::cout << " result5 " << result5 << std::endl;
+
+  // CHECK: result6 = dpct::dev_mgr::instance().get_device(device).ext_oneapi_can_access_peer(dpct::dev_mgr::instance().get_device(peerDevice));
+  cuDeviceCanAccessPeer(&result6, device, peerDevice);
+  std::cout << " result6 " << result6 << std::endl;
 }
 
 int main(){

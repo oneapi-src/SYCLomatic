@@ -8,7 +8,7 @@
 
 #define NUM 23
 
-// CHECK: void func(sycl::range<3> a, sycl::range<3> b, sycl::range<3> c, sycl::range<3> d) {
+// CHECK: void func(dpct::dim3 a, dpct::dim3 b, dpct::dim3 c, dpct::dim3 d) {
 void func(dim3 a, dim3 b, dim3 c, dim3 d) {
 }
 
@@ -20,7 +20,7 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // range default constructor does the right thing.
-  // CHECK: sycl::range deflt(1, 1, 1);
+  // CHECK: dpct::dim3 deflt;
   dim3 deflt;
 
   // CHECK:  sycl::range deflt_1{0, 0, 0};
@@ -28,12 +28,12 @@ int main() {
   cudaExtent deflt_1;
   cudaPos deflt_2;
 
-  // CHECK: sycl::range round1_1(1, 1, NUM);
+  // CHECK: dpct::dim3 round1_1(NUM);
   dim3 round1_1(NUM);
 
   cudaExtent exten = make_cudaExtent(1,1,1);;
 
-  // CHECK: sycl::range castini = sycl::range(1, 1, 4);
+  // CHECK: dpct::dim3 castini = (dpct::dim3)4;
   dim3 castini = (dim3)4;
 
   // CHECK:   sycl::range castini_1 = exten;
@@ -41,14 +41,14 @@ int main() {
   cudaExtent castini_1 = exten;
   cudaPos castini_2 = deflt_2;
 
-  // CHECK: sycl::range copyctor1 = sycl::range(sycl::range(1, 1, 33));
+  // CHECK: dpct::dim3 copyctor1 = dpct::dim3((dpct::dim3)33);
   dim3 copyctor1 = dim3((dim3)33);
 
 
-  // CHECK: sycl::range copyctor2 = sycl::range(copyctor1);
+  // CHECK: dpct::dim3 copyctor2 = dpct::dim3(copyctor1);
   dim3 copyctor2 = dim3(copyctor1);
 
-  // CHECK: sycl::range copyctor3(copyctor1);
+  // CHECK: dpct::dim3 copyctor3(copyctor1);
   dim3 copyctor3(copyctor1);
 
   // CHECK: sycl::range copyctor31(exten);
@@ -56,17 +56,17 @@ int main() {
   cudaExtent copyctor31(exten);
   cudaPos copyctor32(deflt_2);
 
-  // CHECK: func(sycl::range(1, 1, 1), sycl::range(1, 1, 1), sycl::range(1, 1, 2), sycl::range(1, 2, 3));
+  // CHECK: func((dpct::dim3)1, dpct::dim3(1), dpct::dim3(2, 1), dpct::dim3(3, 2, 1));
   func((dim3)1, dim3(1), dim3(2, 1), dim3(3, 2, 1));
-  // CHECK: func(deflt, sycl::range(deflt), sycl::range(deflt), sycl::range(1, 1, 2 + 3 * 3));
+  // CHECK: func(deflt, dpct::dim3(deflt), (dpct::dim3)deflt, 2 + 3 * 3);
   func(deflt, dim3(deflt), (dim3)deflt, 2 + 3 * 3);
 
   // CHECK: sycl::range<3> *p_extent = nullptr;
   cudaExtent *p_extent = nullptr;
 
-  // CHECK: sycl::range<3> *p = &deflt;
+  // CHECK: dpct::dim3 *p = &deflt;
   dim3 *p = &deflt;
-  // CHECK: sycl::range<3> **pp = &p;
+  // CHECK: dpct::dim3 **pp = &p;
   dim3 **pp = &p;
 
   // CHECK: sycl::range<3> *p_1 = &deflt_1;
@@ -77,24 +77,24 @@ int main() {
   struct  container
   {
     unsigned int x, y, z;
-    // CHECK: sycl::range<3> w;
+    // CHECK: dpct::dim3 w;
     dim3 w;
-    // CHECK: sycl::range<3> *pw;
+    // CHECK: dpct::dim3 *pw;
     dim3 *pw;
-    // CHECK: sycl::range<3> **ppw;
+    // CHECK: dpct::dim3 **ppw;
     dim3 **ppw;
   };
 
-  // CHECK: sycl::range gpu_blocks(1, 1, 1 / (castini[2] * 200));
+  // CHECK: dpct::dim3 gpu_blocks(1 / (castini.x * 200));
   dim3 gpu_blocks(1 / (castini.x * 200));
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::local_accessor<int, 1> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, 1), sycl::range(1, 1, 1)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range(1, 1, 1), sycl::range(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(1, k_acc_ct1.get_pointer());
+  // CHECK-NEXT:           kernel(1, k_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<1, 1>>>(1);
@@ -103,12 +103,24 @@ int main() {
   // CHECK-NEXT:       sycl::local_accessor<int, 1> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, NUM) * sycl::range(1, 1, NUM), sycl::range(1, 1, NUM)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range(1, 1, NUM) * sycl::range(1, 1, NUM), sycl::range(1, 1, NUM)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(1, k_acc_ct1.get_pointer());
+  // CHECK-NEXT:           kernel(1, k_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<NUM, NUM>>>(1);
+
+  // CHECK:   q_ct1.submit(
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       sycl::local_accessor<int, 1> k_acc_ct1(sycl::range(32), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         sycl::nd_range<3>(deflt * deflt, deflt),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           kernel(1, k_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  kernel<<<deflt, deflt>>>(1);
 }
 
 

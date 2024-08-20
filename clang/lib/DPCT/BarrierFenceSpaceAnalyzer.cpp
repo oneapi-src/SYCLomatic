@@ -58,7 +58,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
   for (const auto &Arg : CE->arguments())
     DeviceFunctionCallArgs.insert(Arg);
 
-  if (FuncName == "__syncthreads") {
+  if (FuncName == "__syncthreads" || FuncName == "__barrier_sync") {
     SyncCallInfo SCI;
     SCI.Predecessors.push_back(
         SourceRange(FD->getBody()->getBeginLoc(), CE->getBeginLoc()));
@@ -168,25 +168,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     const CXXConstructExpr *) {}
-
-std::set<const clang::DeclRefExpr *>
-clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(const VarDecl *TargetDecl,
-                                                    const Stmt *Range) {
-  std::set<const DeclRefExpr *> Set;
-  if (!TargetDecl || !Range) {
-    return Set;
-  }
-  auto DREMatcher = ast_matchers::findAll(
-      ast_matchers::declRefExpr(ast_matchers::isDeclSameAs(TargetDecl))
-          .bind("DRE"));
-  auto MatchedResults =
-      ast_matchers::match(DREMatcher, *Range, DpctGlobalInfo::getContext());
-  for (auto &Node : MatchedResults) {
-    if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
-      Set.insert(DRE);
-  }
-  return Set;
-}
 
 /// @brief Check if a DRE is assigned to another DRE.
 /// This function checks the ancestors of \p CurrentDRE iteratively.
@@ -549,20 +530,22 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::constructDefUseMap() {
       const ParmVarDecl *CurDecl = Pair.first;
       std::set<const DeclRefExpr *> CurDRESet = Pair.second;
       std::set<const DeclRefExpr *> MatchedResult =
-          matchAllDRE(CurDecl, FD->getBody());
+          matchTargetDREInScope(CurDecl, FD->getBody());
       CurDRESet.insert(MatchedResult.begin(), MatchedResult.end());
       NewDRESet.clear();
       for (const auto &DRE : CurDRESet) {
         const auto &SetPair = isAssignedToAnotherDREOrVD(DRE);
         for (const auto AnotherDRE : SetPair.first) {
-          std::set<const DeclRefExpr *> AnotherDREMatchedResult = matchAllDRE(
-              dyn_cast_or_null<VarDecl>(AnotherDRE->getDecl()), FD->getBody());
+          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
+              matchTargetDREInScope(
+                  dyn_cast_or_null<VarDecl>(AnotherDRE->getDecl()),
+                  FD->getBody());
           NewDRESet.insert(AnotherDREMatchedResult.begin(),
                            AnotherDREMatchedResult.end());
         }
         for (const auto AnotherVD : SetPair.second) {
           std::set<const DeclRefExpr *> AnotherDREMatchedResult =
-              matchAllDRE(AnotherVD, FD->getBody());
+              matchTargetDREInScope(AnotherVD, FD->getBody());
           NewDRESet.insert(AnotherDREMatchedResult.begin(),
                            AnotherDREMatchedResult.end());
         }

@@ -16,32 +16,27 @@ namespace clang {
 namespace dpct {
 
 static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
-  // To avoid make llvm library depends on this file, hard code 2 options here.
-  {"help", {}},
-  {"version", {}},
-#define DPCT_OPTIONS_IN_LLVM_SUPPORT
-#define DPCT_OPTIONS_IN_CLANG_TOOLING
-#define DPCT_OPTIONS_IN_CLANG_DPCT
+    // To avoid make llvm library depends on this file, hard code 2 options
+    // here.
+    {"help",
+     {"basic", "advanced", "code-gen", "report-gen", "build-script",
+      "query-api", "warnings", "help-info", "intercept-build", "examples"}},
+    {"version", {}},
 
-#define DPCT_OPT_TYPE(...) 0
-#define DPCT_OPT_ENUM(NAME, ...) NAME
+#define DPCT_OPTION_ENUM_VALUE(NAME, ...) NAME
 #define DPCT_OPTION_VALUES(...)                                                \
   { __VA_ARGS__ }
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)              \
+#define DPCT_OPTION(TEMPLATE, TYPE, NAME, OPTION_CLASS, OPTION_ACTIONS,        \
+                    OPTION_NAME, ...)                                          \
   {OPTION_NAME, {}},
-#define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, OPTION_VALUES, ...)   \
+#define DPCT_ENUM_OPTION(TEMPLATE, TYPE, NAME, OPTION_CLASS, OPTION_ACTIONS,   \
+                         OPTION_NAME, OPTION_VALUES, ...)                      \
   {OPTION_NAME, OPTION_VALUES},
+#define DPCT_SOURCEPATH_OPTION(...)
+#define DPCT_HIDDEN_OPTION(...)
+#define DPCT_ALIASE(ALIASE_FOR, OPTION_NAME, ...) {OPTION_NAME, {}},
 
 #include "clang/DPCT/DPCTOptions.inc"
-
-#undef DPCT_ENUM_OPTION
-#undef DPCT_NON_ENUM_OPTION
-#undef DPCT_OPT_ENUM
-#undef DPCT_OPT_TYPE
-
-#undef DPCT_OPTIONS_IN_CLANG_DPCT
-#undef DPCT_OPTIONS_IN_CLANG_TOOLING
-#undef DPCT_OPTIONS_IN_LLVM_SUPPORT
 };
 
 void AutoCompletePrinter::process() {

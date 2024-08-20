@@ -1,0 +1,2 @@
+add_library(foo STATIC ${sources} ${headers})
+add_library(bar src1.dp.cpp src2.dp.cpp)

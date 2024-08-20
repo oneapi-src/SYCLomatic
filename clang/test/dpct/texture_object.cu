@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_object %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_object %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture_object/texture_object.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
@@ -21,7 +21,7 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
-// CHECK: DPCT1050:{{[0-9]+}}: The template argument of  the image_accessor_ext could not be deduced. You need to update this code.
+// CHECK: DPCT1050:{{[0-9]+}}: The template argument of the image_accessor_ext could not be deduced. You need to update this code.
 // CHECK: void gather_force(const dpct::image_accessor_ext<dpct_placeholder/*Fix the type manually*/, 1> gridTexObj){}
 __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 
@@ -152,7 +152,7 @@ int main() {
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: texDesc21.set(sycl::filtering_mode::linear);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::readMode is not supported.
+  // CHECK-NEXT: DPCT1062:{{[0-9]+}}: SYCL Image doesn't support normalized read mode.
   // CHECK-NEXT: */
   // CHECK-NEXT: tex21 = dpct::create_image_wrapper(res21, texDesc21);
   uint2 *d_data21;
@@ -358,3 +358,78 @@ void texlist(TexList list, TexList list1) {
   texlist_kernel<<<1, 1>>>(list, list1);
 }
 
+// CHECK: /*
+// CHECK-NEXT: DPCT1050:{{[0-9]+}}: The template argument of the image_accessor_ext could not be deduced. You need to update this code.
+// CHECK-NEXT: */
+__global__ void mipmap_kernel(cudaTextureObject_t tex) {
+  int i;
+  float j, k, l, m;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex1DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex1DLod<short2>(tex, j, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex1DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex1DLod(&i, tex, j, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex2DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex2DLod<short2>(tex, j, k, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex2DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex2DLod(&i, tex, j, k, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex3DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex3DLod<short2>(tex, j, k, m, l);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1119:{{[0-9]+}}: Migration of tex3DLod is not supported, please try to remigrate with option: --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  tex3DLod(&i, tex, j, k, m, l);
+}
+
+void mipmap() {
+  unsigned int flag, l;
+  cudaExtent e;
+  cudaChannelFormatDesc desc;
+  cudaArray_t pArr;
+  cudaMipmappedArray_t pMipMapArr;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFreeMipmappedArray was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cudaFreeMipmappedArray(pMipMapArr);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaMallocMipmappedArray was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGetMipmappedArrayLevel was removed because SYCL currently does not support mipmap image type. You can migrate the code with bindless images by specifying --use-experimental-features=bindless_images.
+  // CHECK-NEXT: */
+  cudaGetMipmappedArrayLevel(&pArr, pMipMapArr, 0);
+
+  cudaResourceDesc resDesc;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of union (unnamed union at {{.*}})::mipmap is not supported.
+  // CHECK-NEXT: */
+  resDesc.res.mipmap.mipmap = pMipMapArr;
+
+  cudaTextureDesc texDesc;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::maxAnisotropy is not supported.
+  // CHECK-NEXT: */
+  texDesc.maxAnisotropy = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::mipmapFilterMode is not supported.
+  // CHECK-NEXT: */
+  texDesc.mipmapFilterMode = cudaFilterModePoint;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::minMipmapLevelClamp is not supported.
+  // CHECK-NEXT: */
+  texDesc.minMipmapLevelClamp = 1;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaTextureDesc::maxMipmapLevelClamp is not supported.
+  // CHECK-NEXT: */
+  texDesc.maxMipmapLevelClamp = 1;
+}

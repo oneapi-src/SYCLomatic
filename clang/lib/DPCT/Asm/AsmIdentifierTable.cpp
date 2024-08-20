@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "AsmIdentifierTable.h"
-#include "llvm/Support/raw_ostream.h"
 
 using namespace clang::dpct;
 
@@ -20,21 +19,15 @@ InlineAsmIdentifierTable::InlineAsmIdentifierTable(
 
 void InlineAsmIdentifierTable::AddKeywords() {
 #define KEYWORD(X, Y) get(Y, asmtok::kw_##X);
-#define BUILTIN_ID(X, Y, Z)                                                    \
-  get(Y, asmtok::bi_##X).setFlag(InlineAsmIdentifierInfo::BuiltinID);
+#define SPECIAL_REG(X, Y, Z)                                                   \
+  get(Y, asmtok::bi_##X).setFlag(InlineAsmIdentifierInfo::SpecialReg);
 #define BUILTIN_TYPE(X, Y)                                                     \
   get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::BuiltinType);
 #define INSTRUCTION(X)                                                         \
   get(#X, asmtok::op_##X).setFlag(InlineAsmIdentifierInfo::Instruction);
-#define ROUND_MOD(X, Y)                                                        \
-  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
-#define SAT_MOD(X, Y)                                                          \
-  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
-#define MUL_MOD(X, Y)                                                          \
-  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
-#define CMP_OP(X, Y)                                                           \
-  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
-#define BIN_OP(X, Y)                                                           \
-  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
+#define MODIFIER(X, Y)                                                         \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::Modifier);
+#define STATE_SPACE(X, Y)                                                      \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::StateSpace);
 #include "AsmTokenKinds.def"
 }

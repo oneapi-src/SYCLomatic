@@ -462,7 +462,7 @@ CALL_FACTORY_ENTRY("thrust::make_permutation_iterator",
 // thrust::make_transform_iterator
 CALL_FACTORY_ENTRY("thrust::make_transform_iterator",
                    CALL("oneapi::dpl::make_transform_iterator", ARG(0),
-                        ARG(1)))
+                        THRUST_FUNCTOR(1)))
 
 // thrust::norm
 CALL_FACTORY_ENTRY("thrust::norm", CALL("std::norm", ARG(0)))
@@ -855,12 +855,28 @@ CALL_FACTORY_ENTRY("thrust::system_category", CALL("std::system_category"))
 // thrust::system::system_category
 CALL_FACTORY_ENTRY("thrust::system::system_category", CALL("std::system_category"))
 
+// thrust::advance
+CALL_FACTORY_ENTRY("thrust::advance", CALL("std::advance", ARG(0), ARG(1)))
+
+// thrust::make_transform_output_iterator
+CALL_FACTORY_ENTRY("thrust::make_transform_output_iterator",
+                   CALL(MapNames::getDpctNamespace() + "make_transform_output_iterator",
+                   ARG(0), ARG(1)))
+
 // thrust::equal_range
 thrustFactory("thrust::equal_range",
               {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
                {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
                {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
                {4,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext}}),
+
+// thrust::unique_count
+thrustFactory("thrust::unique_count",
+              {{3,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {2,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext}}),
+
 // thrust::sequence
 thrustFactory("thrust::sequence",
               {{3,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext},

@@ -1,0 +1,2 @@
+# DPCT3000:1: Migration of syntax "cuda_select_nvcc_arch_flags" is not supported. You may need to adjust the code.
+cuda_select_nvcc_arch_flags(CUSTOM_FLAGS 3.0 FOO_ARCH)

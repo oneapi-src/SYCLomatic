@@ -1,6 +1,6 @@
 // REQUIRES: level_zero, level_zero_dev_kit, cm-compiler
 
-// RUN: %{build} -DRUN_KERNELS %level_zero_options -o %t.out
+// RUN: %{build} -Wno-error=deprecated-declarations -DRUN_KERNELS %level_zero_options -o %t.out
 // RUN: %{run} %t.out
 
 // This test checks ext::intel feature class online_compiler for Level-Zero.
@@ -8,7 +8,7 @@
 // re-used by other backends is kept in online_compiler_common.hpp file.
 
 #include <sycl/ext/intel/experimental/online_compiler.hpp>
-#include <sycl/sycl.hpp>
+#include <sycl/detail/core.hpp>
 
 #include <vector>
 
@@ -41,16 +41,14 @@ sycl::kernel getSYCLKernelWithIL(sycl::queue &Queue,
   ze_module_handle_t ZeModule;
   ze_result_t ZeResult = zeModuleCreate(ZeContext, ZeDevice, &ZeModuleDesc,
                                         &ZeModule, &ZeBuildLog);
-  if (ZeResult != ZE_RESULT_SUCCESS)
-    throw sycl::runtime_error();
+  assert(ZeResult == ZE_RESULT_SUCCESS);
 
   ze_kernel_handle_t ZeKernel = nullptr;
 
   ze_kernel_desc_t ZeKernelDesc{ZE_STRUCTURE_TYPE_KERNEL_DESC, nullptr, 0,
                                 "my_kernel"};
   ZeResult = zeKernelCreate(ZeModule, &ZeKernelDesc, &ZeKernel);
-  if (ZeResult != ZE_RESULT_SUCCESS)
-    throw sycl::runtime_error();
+  assert(ZeResult == ZE_RESULT_SUCCESS);
   sycl::kernel_bundle<sycl::bundle_state::executable> SyclKB =
       sycl::make_kernel_bundle<sycl::backend::ext_oneapi_level_zero,
                                sycl::bundle_state::executable>(

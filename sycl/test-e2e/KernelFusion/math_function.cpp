@@ -1,9 +1,17 @@
-// RUN: %{build} -fsycl-embed-ir -o %t.out
-// RUN: %{run} %t.out
+// RUN: %{build} %{embed-ir} -o %t.out
+// RUN: env SYCL_UR_TRACE=2 %{run} %t.out | FileCheck %s
 
 // Test fusion of a kernel using a math function.
 
-#include <sycl/sycl.hpp>
+// The two kernels are fused, so only a single, fused kernel is launched.
+// CHECK-COUNT-1: urEnqueueKernelLaunch
+// CHECK-NOT: urEnqueueKernelLaunch
+
+#include <sycl/detail/core.hpp>
+
+#include <sycl/builtins.hpp>
+#include <sycl/ext/codeplay/experimental/fusion_wrapper.hpp>
+#include <sycl/properties/all_properties.hpp>
 
 using namespace sycl;
 

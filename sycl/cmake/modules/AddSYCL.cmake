@@ -34,6 +34,8 @@ function(add_sycl_library LIB_NAME TYPE)
   add_common_options(${LIB_NAME})
 endfunction()
 
+# current ur adapter dependency managing is a bit hacky, we should try to copy
+# this as closely as possible instead
 function(add_sycl_plugin PLUGIN_NAME)
   cmake_parse_arguments("ARG"
     ""
@@ -52,6 +54,14 @@ function(add_sycl_plugin PLUGIN_NAME)
       ${ARG_LIBRARIES}
       OpenCL-Headers
   )
+
+  # All SYCL plugins use UR sources.
+  # Disable errors from warnings and apply other workarounds while building the UR.
+  if(WIN32)
+    target_compile_options("pi_${PLUGIN_NAME}" PRIVATE /WX- /UUNICODE /DUSE_Z7=ON)
+  else()
+    target_compile_options("pi_${PLUGIN_NAME}" PRIVATE -Wno-error)
+  endif()
 
   # Install feature test header
   if (NOT "${ARG_HEADER}" STREQUAL "")
