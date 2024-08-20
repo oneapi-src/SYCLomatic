@@ -7,5 +7,6 @@
 typedef uint64_t CUdeviceptr;
 
 void foo(CUdeviceptr ptr) {
+  // CHECK: ptr = DPCT_CHECK_ERROR(DPCT_CHECK_ERROR(ptr = (dpct::device_ptr)sycl::malloc_device(1024, dpct::get_in_order_queue())));
   ptr = cuMemAlloc(&ptr, 1024);
 }
