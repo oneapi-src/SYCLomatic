@@ -2182,13 +2182,15 @@ class joint_matrix {
 public:
   joint_matrix() : matrix() {}
   joint_matrix(joint_matrix &other) {
-    syclex::matrix::joint_matrix_copy(syclex::this_sub_group(), other.get(),
-                                      matrix);
+    syclex::matrix::joint_matrix_copy(
+        sycl::ext::oneapi::this_work_item::get_sub_group(), other.get(),
+        matrix);
   }
   joint_matrix &operator=(joint_matrix &other) {
     if (this != &other) {
-      syclex::matrix::joint_matrix_copy(syclex::this_sub_group(), other.get(),
-                                        matrix);
+      syclex::matrix::joint_matrix_copy(
+          sycl::ext::oneapi::this_work_item::get_sub_group(), other.get(),
+          matrix);
     }
     return *this;
   }
