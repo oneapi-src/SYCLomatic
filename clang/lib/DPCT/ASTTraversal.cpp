@@ -2844,6 +2844,8 @@ namespace ast_matchers {
 AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
   if (!DpctGlobalInfo::isInAnalysisScope(Node.getBeginLoc()))
     return false;
+  if (Node.isTemplateInstantiation())
+    return false; // Template operator function need not add namespace.
 
   switch (Node.getOverloadedOperator()) {
   default: {
@@ -8407,6 +8409,12 @@ void KernelCallRule::runRule(
     auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
     if (!FD)
       return;
+    if (FD->hasAttr<CUDAGlobalAttr>()) {
+      report(KCall->getBeginLoc(), Diagnostics::NOT_SUPPORT_DYN_PARALLEL,
+             false);
+      return;
+    }
+
     const auto &SM = (*Result.Context).getSourceManager();
 
     if (SM.isMacroArgExpansion(KCall->getCallee()->getBeginLoc())) {
