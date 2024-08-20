@@ -9,7 +9,6 @@
 #include "AsmNodes.h"
 
 using namespace clang::dpct;
-const double a = -9.-3;
 InlineAsmType::~InlineAsmType() = default;
 InlineAsmDecl::~InlineAsmDecl() = default;
 InlineAsmNamedDecl::~InlineAsmNamedDecl() = default;
