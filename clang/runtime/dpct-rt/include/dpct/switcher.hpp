@@ -9,10 +9,8 @@
 #ifndef __DPCT_SWITCHER_HPP__
 #define __DPCT_SWITCHER_HPP__
 
-// Only for testing
+// Only for testing, it need be removed after update dnnl's helper function test
 #include <dpct/dpct.hpp>
-#define USE_DPCT_HELPER 1
-//#include <syclcompat.hpp>
 
 namespace dpct {
 namespace detail {

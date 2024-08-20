@@ -785,11 +785,13 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   T **host_a = (T **)std::malloc(batch_size * sizeof(T *));
   ::dpct::detail::switcher::memcpy(
       ::dpct::detail::switcher::get_default_queue(), host_a, a,
-      batch_size * sizeof(T *));
+      batch_size * sizeof(T *))
+      .wait();
   for (std::int64_t i = 0; i < batch_size; ++i)
     ::dpct::detail::switcher::memcpy(
         ::dpct::detail::switcher::get_default_queue(),
-        a_strided_mem + i * stride_a, host_a[i], n * lda * sizeof(T));
+        a_strided_mem + i * stride_a, host_a[i], n * lda * sizeof(T))
+        .wait();
 
 #ifdef DPCT_USM_LEVEL_NONE
   {

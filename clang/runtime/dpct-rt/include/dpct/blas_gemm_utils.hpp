@@ -630,7 +630,8 @@ template <typename T> struct get_beta_value_impl {
     T beta_host;
     ::dpct::detail::switcher::memcpy(
         *q_ptr, &beta_host, beta, sizeof(T),
-        ::dpct::detail::switcher::memcpy_direction::automatic);
+        ::dpct::detail::switcher::memcpy_direction::automatic)
+        .wait();
     T zero = T(0);
     T one = T(1);
     if (beta_host == zero)

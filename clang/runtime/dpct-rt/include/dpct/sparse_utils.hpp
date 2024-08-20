@@ -1261,14 +1261,16 @@ inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
       ::dpct::detail::switcher::memcpy(
           ::dpct::detail::switcher::get_default_queue(), c->get_row_ptr(),
           c->get_shadow_row_ptr(),
-          sizeof(std::int32_t) * (c->get_row_num() + 1));
+          sizeof(std::int32_t) * (c->get_row_num() + 1))
+          .wait();
       break;
     }
     case library_data_t::real_int64: {
       ::dpct::detail::switcher::memcpy(
           ::dpct::detail::switcher::get_default_queue(), c->get_row_ptr(),
           c->get_shadow_row_ptr(),
-          sizeof(std::int64_t) * (c->get_row_num() + 1));
+          sizeof(std::int64_t) * (c->get_row_num() + 1))
+          .wait();
       break;
     }
     default:
