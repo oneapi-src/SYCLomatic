@@ -191,6 +191,8 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
     Version = CudaVersion::CUDA_124;
   } else if (Major == 12 && Minor == 5) {
     Version = CudaVersion::CUDA_125;
+  } else if (Major == 12 && Minor == 6) {
+    Version = CudaVersion::CUDA_126;
   }
 
 
@@ -256,6 +258,8 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_124;
   if (raw_version < 12060)
     return CudaVersion::CUDA_125;
+  if (raw_version < 12070)
+    return CudaVersion::CUDA_126;
   return CudaVersion::NEW;
 }
 
@@ -338,7 +342,8 @@ CudaInstallationDetector::CudaInstallationDetector(
 
   // In decreasing order so we prefer newer versions to older versions.
 #ifdef SYCLomatic_CUSTOMIZATION
-  std::initializer_list<const char *> Versions = {"12.5",
+  std::initializer_list<const char *> Versions = {"12.6",
+                                                  "12.5",
                                                   "12.4",
                                                   "12.3",
                                                   "12.2",
