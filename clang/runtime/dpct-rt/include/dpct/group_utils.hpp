@@ -223,19 +223,19 @@ __dpct_inline__ uint32_t shr_add(uint32_t x, uint32_t shift, uint32_t addend) {
 
 } // namespace detail
 
-/// Implements scatter to blocked exchange pattern used in radix sort algorithm.
+/// Rearranging data partitioned across a work-group.
 ///
-/// \tparam T type of the data elements exchanges
-/// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
-/// Implements blocked to striped exchange pattern
-template <typename T, int VALUES_PER_THREAD> class exchange {
+/// \tparam T The type of the data elements.
+/// \tparam ElementsPerWorkItem The number of data elements assigned to a
+/// work-item.
+template <typename T, size_t ElementsPerWorkItem> class exchange {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
     size_t padding_values =
         (INSERT_PADDING)
-            ? ((group_threads * VALUES_PER_THREAD) >> LOG_LOCAL_MEMORY_BANKS)
+            ? ((group_threads * ElementsPerWorkItem) >> LOG_LOCAL_MEMORY_BANKS)
             : 0;
-    return (group_threads * VALUES_PER_THREAD + padding_values) * sizeof(T);
+    return (group_threads * ElementsPerWorkItem + padding_values) * sizeof(T);
   }
 
   exchange(uint8_t *local_memory) : _local_memory(local_memory) {}
@@ -252,7 +252,7 @@ public:
 
   struct blocked_offset {
     template <typename Item> size_t operator()(Item item, size_t i) {
-      size_t offset = item.get_local_linear_id() * VALUES_PER_THREAD + i;
+      size_t offset = item.get_local_linear_id() * ElementsPerWorkItem + i;
       return adjust_by_padding(offset);
     }
   };
@@ -268,7 +268,7 @@ public:
 
   template <typename Iterator> struct scatter_offset {
     Iterator begin;
-    scatter_offset(const int (&ranks)[VALUES_PER_THREAD]) {
+    scatter_offset(const int (&ranks)[ElementsPerWorkItem]) {
       begin = std::begin(ranks);
     }
     template <typename Item> size_t operator()(Item item, size_t i) const {
@@ -279,77 +279,139 @@ public:
 
   template <typename Item, typename offsetFunctorTypeFW,
             typename offsetFunctorTypeRV>
-  [[deprecated("This is a internal function, use blocked_to_striped, "
+  [[deprecated("Please use blocked_to_striped, "
                "striped_to_blocked, scatter_to_blocked, scatter_to_striped "
-               "instead")]] __dpct_inline__ void
-  helper_exchange(Item item, T (&keys)[VALUES_PER_THREAD],
-                  offsetFunctorTypeFW &offset_functor_fw,
-                  offsetFunctorTypeRV &offset_functor_rv) {
-
+               "instead")]]
+  __dpct_inline__ void helper_exchange(Item item,
+                                       T (&keys)[ElementsPerWorkItem],
+                                       offsetFunctorTypeFW &offset_functor_fw,
+                                       offsetFunctorTypeRV &offset_functor_rv) {
     helper_exchange(item, keys, keys, offset_functor_fw, offset_functor_rv);
   }
 
-  /// Rearrange elements from blocked order to striped order
+  /// Inplace rearrange elements from blocked order to striped order.
+  ///
+  /// Suppose ElementsPerWorkItem is 4 and the blocked input across the
+  /// work-group is:
+  ///   {[0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511]}.
+  /// The corresponding output of each work-item will be:
+  ///   {[0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511]}.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
   template <typename Item>
   __dpct_inline__ void blocked_to_striped(Item item,
-                                          T (&keys)[VALUES_PER_THREAD]) {
-
+                                          T (&input)[ElementsPerWorkItem]) {
     striped_offset get_striped_offset;
     blocked_offset get_blocked_offset;
-    helper_exchange(item, keys, keys, get_blocked_offset, get_striped_offset);
+    helper_exchange(item, input, input, get_blocked_offset, get_striped_offset);
   }
 
-  /// Rearrange elements from striped order to blocked order
+  /// Inplace rearrange elements from striped order to blocked order.
+  ///
+  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
+  /// work-group is:
+  ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
   template <typename Item>
   __dpct_inline__ void striped_to_blocked(Item item,
-                                          T (&keys)[VALUES_PER_THREAD]) {
-
+                                          T (&input)[ElementsPerWorkItem]) {
     blocked_offset get_blocked_offset;
     striped_offset get_striped_offset;
-    helper_exchange(item, keys, keys, get_striped_offset, get_blocked_offset);
+    helper_exchange(item, input, input, get_striped_offset, get_blocked_offset);
   }
 
-  /// Rearrange elements from blocked order to striped order
+  /// Rearrange elements from blocked order to striped order.
+  ///
+  /// Suppose ElementsPerWorkItem is 4 and the blocked input across the
+  /// work-group is:
+  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param output The corresponding output data of each work-item.
   template <typename Item>
   __dpct_inline__ void blocked_to_striped(Item item,
-                                          T (&input)[VALUES_PER_THREAD],
-                                          T (&output)[VALUES_PER_THREAD]) {
-
+                                          T (&input)[ElementsPerWorkItem],
+                                          T (&output)[ElementsPerWorkItem]) {
     striped_offset get_striped_offset;
     blocked_offset get_blocked_offset;
     helper_exchange(item, input, output, get_blocked_offset,
                     get_striped_offset);
   }
 
-  /// Rearrange elements from striped order to blocked order
+  /// Rearrange elements from striped order to blocked order.
+  ///
+  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
+  /// work-group is:
+  ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param output The corresponding output data of each work-item.
   template <typename Item>
   __dpct_inline__ void striped_to_blocked(Item item,
-                                          T (&input)[VALUES_PER_THREAD],
-                                          T (&output)[VALUES_PER_THREAD]) {
-
+                                          T (&input)[ElementsPerWorkItem],
+                                          T (&output)[ElementsPerWorkItem]) {
     blocked_offset get_blocked_offset;
     striped_offset get_striped_offset;
     helper_exchange(item, input, output, get_striped_offset,
                     get_blocked_offset);
   }
 
-  /// Rearrange elements from rank order to blocked order
+  /// Inplace exchanges data items annotated by rank into blocked arrangement.
+  ///
+  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
+  /// work-group is:
+  ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  /// The rank across the work-group is:
+  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param keys The input data of each work-item.
+  /// \param ranks The corresponding rank annotation of each work-item.
   template <typename Item>
   __dpct_inline__ void scatter_to_blocked(Item item,
-                                          T (&keys)[VALUES_PER_THREAD],
-                                          int (&ranks)[VALUES_PER_THREAD]) {
-
+                                          T (&keys)[ElementsPerWorkItem],
+                                          int (&ranks)[ElementsPerWorkItem]) {
     scatter_offset<const int *> get_scatter_offset(ranks);
     blocked_offset get_blocked_offset;
     helper_exchange(item, keys, keys, get_scatter_offset, get_blocked_offset);
   }
 
-  /// Rearrange elements from scatter order to striped order
+  /// Inplace exchanges data items annotated by rank into striped arrangement.
+  ///
+  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
+  /// work-group is:
+  ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  /// The rank across the work-group is:
+  ///   { [16, 20, 24, 28], [32, 36, 40, 44], ..., [499, 503, 507, 511] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param keys The input data of each work-item.
+  /// \param ranks The corresponding rank annotation of each work-item.
   template <typename Item>
   __dpct_inline__ void scatter_to_striped(Item item,
-                                          T (&keys)[VALUES_PER_THREAD],
-                                          int (&ranks)[VALUES_PER_THREAD]) {
-
+                                          T (&keys)[ElementsPerWorkItem],
+                                          int (&ranks)[ElementsPerWorkItem]) {
     scatter_offset<const int *> get_scatter_offset(ranks);
     striped_offset get_striped_offset;
     helper_exchange(item, keys, keys, get_scatter_offset, get_striped_offset);
@@ -358,43 +420,41 @@ public:
 private:
   template <typename Item, typename offsetFunctorTypeFW,
             typename offsetFunctorTypeRV>
-  __dpct_inline__ void helper_exchange(Item item, T (&input)[VALUES_PER_THREAD],
-                                       T (&output)[VALUES_PER_THREAD],
+  __dpct_inline__ void helper_exchange(Item item,
+                                       T (&input)[ElementsPerWorkItem],
+                                       T (&output)[ElementsPerWorkItem],
                                        offsetFunctorTypeFW &offset_functor_fw,
                                        offsetFunctorTypeRV &offset_functor_rv) {
-
     T *buffer = reinterpret_cast<T *>(_local_memory);
-
 #pragma unroll
-    for (size_t i = 0; i < VALUES_PER_THREAD; i++) {
+    for (size_t i = 0; i < ElementsPerWorkItem; i++) {
       size_t offset = offset_functor_fw(item, i);
       buffer[offset] = input[i];
     }
-
-    item.barrier(sycl::access::fence_space::local_space);
-
+    sycl::group_barrier(item.get_group());
 #pragma unroll
-    for (size_t i = 0; i < VALUES_PER_THREAD; i++) {
+    for (size_t i = 0; i < ElementsPerWorkItem; i++) {
       size_t offset = offset_functor_rv(item, i);
       output[i] = buffer[offset];
     }
   }
+
   static constexpr int LOG_LOCAL_MEMORY_BANKS = 4;
   static constexpr bool INSERT_PADDING =
-      (VALUES_PER_THREAD > 4) &&
-      (detail::power_of_two<VALUES_PER_THREAD>::VALUE);
+      (ElementsPerWorkItem > 4) &&
+      (detail::power_of_two<ElementsPerWorkItem>::VALUE);
 
   uint8_t *_local_memory;
 };
 
-/// Implements radix sort to sort integer data elements assigned to all threads
-/// in the group.
+/// The work-group wide radix sort to sort integer data elements
+/// assigned to all work-items in the work-group.
 ///
-/// \tparam T type of the data elements exchanges
-/// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
-/// \tparam DECENDING boolean value indicating if data elements are sorted in
-/// decending order.
-template <typename T, int VALUES_PER_THREAD, int RADIX_BITS = 4>
+/// \tparam T The type of the data elements.
+/// \tparam ElementsPerWorkItem The number of data elements assigned to
+/// a work-item.
+/// \tparam RADIX_BITS The number of radix bits per digit place.
+template <typename T, int ElementsPerWorkItem, int RADIX_BITS = 4>
 class group_radix_sort {
   uint8_t *_local_memory;
 
@@ -405,41 +465,42 @@ public:
     size_t ranks_size =
         detail::radix_rank<RADIX_BITS>::get_local_memory_size(group_threads);
     size_t exchange_size =
-        exchange<T, VALUES_PER_THREAD>::get_local_memory_size(group_threads);
+        exchange<T, ElementsPerWorkItem>::get_local_memory_size(group_threads);
     return sycl::max(ranks_size, exchange_size);
   }
 
 private:
   template <typename Item, bool DESCENDING>
   __dpct_inline__ void
-  helper_sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-              int end_bit = 8 * sizeof(T), bool is_striped = false) {
+  helper_sort(const Item &item, T (&keys)[ElementsPerWorkItem],
+              int begin_bit = 0, int end_bit = 8 * sizeof(T),
+              bool is_striped = false) {
 
-    uint32_t(&unsigned_keys)[VALUES_PER_THREAD] =
-        reinterpret_cast<uint32_t(&)[VALUES_PER_THREAD]>(keys);
+    uint32_t(&unsigned_keys)[ElementsPerWorkItem] =
+        reinterpret_cast<uint32_t(&)[ElementsPerWorkItem]>(keys);
 
 #pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; ++i) {
+    for (int i = 0; i < ElementsPerWorkItem; ++i) {
       unsigned_keys[i] = detail::traits<T>::twiddle_in(unsigned_keys[i]);
     }
 
     for (int i = begin_bit; i < end_bit; i += RADIX_BITS) {
       int pass_bits = sycl::min(RADIX_BITS, end_bit - begin_bit);
 
-      int ranks[VALUES_PER_THREAD];
+      int ranks[ElementsPerWorkItem];
       detail::radix_rank<RADIX_BITS, DESCENDING>(_local_memory)
-          .template rank_keys<Item, VALUES_PER_THREAD>(item, unsigned_keys,
-                                                       ranks, i, pass_bits);
+          .template rank_keys<Item, ElementsPerWorkItem>(item, unsigned_keys,
+                                                         ranks, i, pass_bits);
 
       sycl::group_barrier(item.get_group());
 
       bool last_iter = i + RADIX_BITS >= end_bit;
       if (last_iter && is_striped) {
-        exchange<T, VALUES_PER_THREAD>(_local_memory)
+        exchange<T, ElementsPerWorkItem>(_local_memory)
             .scatter_to_striped(item, keys, ranks);
 
       } else {
-        exchange<T, VALUES_PER_THREAD>(_local_memory)
+        exchange<T, ElementsPerWorkItem>(_local_memory)
             .scatter_to_blocked(item, keys, ranks);
       }
 
@@ -447,53 +508,119 @@ private:
     }
 
 #pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; ++i) {
+    for (int i = 0; i < ElementsPerWorkItem; ++i) {
       unsigned_keys[i] = detail::traits<T>::twiddle_out(unsigned_keys[i]);
     }
   }
 
 public:
+  /// Performs an ascending work-group wide radix sort over a blocked
+  /// arrangement of keys.
+  ///
+  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
+  /// across the work-group is:
+  ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param keys The input data of each work-item.
+  /// \param begin_bit The beginning (least-significant) bit index needed for
+  /// key comparison.
+  /// \param end_bit The past-the-end (most-significant) bit
+  /// index needed for key comparison.
   template <typename Item>
-  __dpct_inline__ void sort(const Item &item, T (&keys)[VALUES_PER_THREAD],
+  __dpct_inline__ void sort(const Item &item, T (&keys)[ElementsPerWorkItem],
                             int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort<Item, /*DESCENDING=*/false>(item, keys, begin_bit, end_bit);
   }
 
+  /// Performs an descending work-group wide radix sort over a blocked
+  /// arrangement of keys.
+  ///
+  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
+  /// across the work-group is:
+  ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [511,510,509,508], [11,10,9,8], [7,6,5,4], ..., [3,2,1,0] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param keys The input data of each work-item.
+  /// \param begin_bit The beginning (least-significant) bit index needed for
+  /// key comparison.
+  /// \param end_bit The past-the-end (most-significant) bit
+  /// index needed for key comparison.
   template <typename Item>
   __dpct_inline__ void
-  sort_descending(const Item &item, T (&keys)[VALUES_PER_THREAD],
+  sort_descending(const Item &item, T (&keys)[ElementsPerWorkItem],
                   int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort<Item, /*DESCENDING=*/true>(item, keys, begin_bit, end_bit);
   }
 
+  /// Performs an ascending radix sort across a blocked arrangement of keys,
+  /// leaving them in a striped arrangement.
+  ///
+  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
+  /// across the work-group is:
+  ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0,128,256,384], [1,129,257,385], [2,130,258,386], ...,
+  ///   [127,255,383,511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param keys The input data of each work-item.
+  /// \param begin_bit The beginning (least-significant) bit index needed for
+  /// key comparison.
+  /// \param end_bit The past-the-end (most-significant) bit
+  /// index needed for key comparison.
   template <typename Item>
   __dpct_inline__ void
-  sort_blocked_to_striped(const Item &item, T (&keys)[VALUES_PER_THREAD],
+  sort_blocked_to_striped(const Item &item, T (&keys)[ElementsPerWorkItem],
                           int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort<Item, /*DESCENDING=*/false>(item, keys, begin_bit, end_bit,
                                             /*is_striped=*/true);
   }
 
+  /// Performs an descending radix sort across a blocked arrangement of keys,
+  /// leaving them in a striped arrangement.
+  ///
+  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
+  /// across the work-group is:
+  ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
+  /// The corresponding output of each work-item will be:
+  ///   { [0,128,256,384], [1,129,257,385], [2,130,258,386], ...,
+  ///   [127,255,383,511] }.
+  ///
+  /// \tparam Item The work-item identifier type.
+  /// \param item The work-item identifier.
+  /// \param keys The input data of each work-item.
+  /// \param begin_bit The beginning (least-significant) bit index needed for
+  /// key comparison.
+  /// \param end_bit The past-the-end (most-significant) bit
+  /// index needed for key comparison.
   template <typename Item>
   __dpct_inline__ void sort_descending_blocked_to_striped(
-      const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
+      const Item &item, T (&keys)[ElementsPerWorkItem], int begin_bit = 0,
       int end_bit = 8 * sizeof(T)) {
     helper_sort<Item, /*DESCENDING=*/true>(item, keys, begin_bit, end_bit,
                                            /*is_striped=*/true);
   }
 };
 
-/// Implements radix sort to sort integer data elements assigned to all threads
-/// in the group.
+/// The work-group wide radix sort to sort integer data elements assigned to
+/// all work-items in the work-group.
 ///
-/// \tparam T type of the data elements exchanges
-/// \tparam VALUES_PER_THREAD number of data elements assigned to a thread
-/// \tparam DECENDING boolean value indicating if data elements are sorted in
+/// \tparam T The type of the data elements.
+/// \tparam ElementsPerWorkItem The number of data elements assigned to
+/// a work-item.
+/// \tparam DECENDING The value indicating if data elements are sorted in
 /// decending order.
-template <typename T, int VALUES_PER_THREAD, bool DESCENDING = false>
-class [[deprecated(
-    "This class deprecated, please use group_radix_sort instead")]] radix_sort {
-  using SorterT = group_radix_sort<T, VALUES_PER_THREAD>;
+template <typename T, int ElementsPerWorkItem, bool DESCENDING = false>
+class [[deprecated("Please use group_radix_sort instead")]] radix_sort {
+  using SorterT = group_radix_sort<T, ElementsPerWorkItem>;
   SorterT _sorter;
 
 public:
@@ -501,12 +628,13 @@ public:
     return SorterT::get_local_memory_size(group_threads);
   }
 
-  radix_sort(uint8_t * local_memory) : _sorter(local_memory) {}
+  radix_sort(uint8_t *local_memory) : _sorter(local_memory) {}
 
   template <typename Item>
-  __dpct_inline__ void helper_sort(
-      const Item &item, T(&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-      int end_bit = 8 * sizeof(T), bool is_striped = false) {
+  __dpct_inline__ void
+  helper_sort(const Item &item, T (&keys)[ElementsPerWorkItem],
+              int begin_bit = 0, int end_bit = 8 * sizeof(T),
+              bool is_striped = false) {
     if constexpr (DESCENDING) {
       if (is_striped)
         _sorter.sort_descending_blocked_to_striped(item, keys, begin_bit,
@@ -522,16 +650,16 @@ public:
   }
 
   template <typename Item>
-  __dpct_inline__ void sort_blocked(
-      const Item &item, T(&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-      int end_bit = 8 * sizeof(T)) {
+  __dpct_inline__ void
+  sort_blocked(const Item &item, T (&keys)[ElementsPerWorkItem],
+               int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, false);
   }
 
   template <typename Item>
-  __dpct_inline__ void sort_blocked_to_striped(
-      const Item &item, T(&keys)[VALUES_PER_THREAD], int begin_bit = 0,
-      int end_bit = 8 * sizeof(T)) {
+  __dpct_inline__ void
+  sort_blocked_to_striped(const Item &item, T (&keys)[ElementsPerWorkItem],
+                          int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
     helper_sort(item, keys, begin_bit, end_bit, true);
   }
 };
@@ -539,11 +667,8 @@ public:
 /// Load linear segment items into block format across threads
 /// Helper for Block Load
 enum load_algorithm {
-
   BLOCK_LOAD_DIRECT,
   BLOCK_LOAD_STRIPED,
-  // To-do: BLOCK_LOAD_WARP_TRANSPOSE
-
 };
 
 // loads a linear segment of workgroup items into a blocked arrangement.
