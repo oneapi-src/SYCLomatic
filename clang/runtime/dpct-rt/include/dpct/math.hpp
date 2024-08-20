@@ -481,7 +481,8 @@ template <typename T> inline T relu(T a) {
   else
     return a < zero ? zero : a;
 }
-template <class T, int N> inline sycl::vec<T, N> relu(const sycl::vec<T, N> a) {
+template <typename T, int N>
+inline sycl::vec<T, N> relu(const sycl::vec<T, N> a) {
   sycl::vec<T, N> ret;
   for (int i = 0; i < N; ++i)
     ret[i] = relu(a[i]);
@@ -667,7 +668,7 @@ struct average {
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op The operation to do with the two values
-/// \param [in] need_relu Whether the result need relu saturation.
+/// \param [in] need_relu Whether the result need relu saturation
 /// \returns The vectorized binary operation value of the two values
 template <typename VecT, class BinaryOperation>
 inline unsigned vectorized_binary(unsigned a, unsigned b,
@@ -684,8 +685,18 @@ inline unsigned vectorized_binary(unsigned a, unsigned b,
   return v0;
 }
 
-/// TODO:.
-template <typename T, class BinaryOperation>
+/// Compute vectorized binary operation value with pred for two values, with
+/// each value treated as a 2 \p T type elements vector type.
+///
+/// \tparam [in] T The type of elements type of the vector
+/// \tparam [in] BinaryOperation The binary operation class
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] binary_op The operation with pred to do with the two values
+/// \param [in] pred_hi The pred pointer that pass into high halfword operation
+/// \param [in] pred_lo The pred pointer that pass into low halfword operation
+/// \returns The vectorized binary operation value of the two values
+template <typename T, typename BinaryOperation>
 inline unsigned vectorized_with_pred(unsigned a, unsigned b,
                                      const BinaryOperation binary_op,
                                      bool *pred_hi, bool *pred_lo) {
@@ -780,8 +791,20 @@ inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
   return sum;
 }
 
-/// TODO:.
-template <typename VecT, class BinaryOperation1, class BinaryOperation2>
+/// Compute two vectorized binary operation value with pred for three values,
+/// with each value treated as a 2 \p T type elements vector type.
+///
+/// \tparam [in] VecT The type of the vector
+/// \tparam [in] BinaryOperation1 The first binary operation class
+/// \tparam [in] BinaryOperation2 The second binary operation class
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] binary_op1 The first operation to do with the first two values
+/// \param [in] binary_op2 The second operation to do with the third values
+/// \param [in] need_relu Whether the result need relu saturation
+/// \returns The two vectorized binary operation value of the three values
+template <typename VecT, typename BinaryOperation1, typename BinaryOperation2>
 inline unsigned vectorized_ternary(unsigned a, unsigned b, unsigned c,
                                    const BinaryOperation1 binary_op1,
                                    const BinaryOperation2 binary_op2,
