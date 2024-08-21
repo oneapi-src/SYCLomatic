@@ -2306,5 +2306,4 @@ ENTRY(make_cuFloatComplex, make_cuFloatComplex, true, NO_FLAG, P4, "comment")
 ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
 ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
 
-// undocumented API
-ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Successful")
+ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Partial")
