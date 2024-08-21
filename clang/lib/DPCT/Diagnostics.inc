@@ -288,6 +288,8 @@ DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The typ
 DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
 DEF_WARNING(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
 DEF_COMMENT(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
+DEF_WARNING(UNPROCESSED_KERNEL_ATTRIBUTE, 1131, HIGH_LEVEL, "The kernel attribute was not recognized. You may need to adjust the code.")
+DEF_COMMENT(UNPROCESSED_KERNEL_ATTRIBUTE, 1131, HIGH_LEVEL, "The kernel attribute was not recognized. You may need to adjust the code.")
 // clang-format on
 
 #undef DEF_COMMENT

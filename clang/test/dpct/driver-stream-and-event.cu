@@ -78,6 +78,15 @@ void foo(){
   //CHECK: rr = dpct::get_kernel_function_info(f).max_work_group_size;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
 
+  //CHECK: rr = dpct::get_kernel_function_info(f).shared_size_bytes;
+  cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, f);
+
+  //CHECK: rr = dpct::get_kernel_function_info(f).local_size_bytes;
+  cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, f);
+
+  //CHECK: rr = dpct::get_kernel_function_info(f).const_size_bytes;
+  cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, f);
+
   cuEventDestroy(start);
 
   cuEventDestroy(end);
