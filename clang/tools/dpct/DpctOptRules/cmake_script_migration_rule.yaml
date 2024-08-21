@@ -2426,10 +2426,10 @@
       RuleId: "remove_target_link_options_cuda_arg"
 
 #'-static-libstdc++' is not supported together with '-fsycl' when using icpx compiler.
-- Rule: rule_libstdc++_target_link_options
+- Rule: rule_static_libstdc++_target_link_options
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: libstdc++_target_link_options
+  CmakeSyntax: static_libstdc++_target_link_options
   In: target_link_options${empty}(${target} ${libs})
   Out: target_link_options(${target} ${libs})
   Subrules:
