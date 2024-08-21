@@ -1758,14 +1758,17 @@ createUserDefinedMethodRewriterFactory(
 class CheckParamType {
   unsigned Idx;
   std::string TypeName;
+  bool isStrict;
 
 public:
-  CheckParamType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  CheckParamType(unsigned I, std::string Name, bool isStrict = false)
+      : Idx(I), TypeName(Name), isStrict(isStrict) {}
   bool operator()(const CallExpr *C) {
     std::string ParamType = getParamTypeStr(C, Idx);
     if (ParamType.empty())
       return true;
-    return ParamType.find(TypeName) != std::string::npos;
+    return isStrict ? ParamType == TypeName
+                    : ParamType.find(TypeName) != std::string::npos;
   }
 };
 
