@@ -89,6 +89,7 @@ public:
   struct Attributes {
     bool ReplaceCalleeNameOnly = false;
     bool HasExplicitTemplateArgs = false;
+    int NumOfTemplateArgs = -1;
   };
   struct APIRestrictCondition {
     int ArgCount = -1;
@@ -273,6 +274,7 @@ struct llvm::yaml::MappingTraits<MetaRuleObject::Attributes> {
   static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attributes &Doc) {
     Io.mapOptional("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
     Io.mapOptional("HasExplicitTemplateArgs", Doc.HasExplicitTemplateArgs);
+    Io.mapOptional("NumOfTemplateArgs", Doc.NumOfTemplateArgs);
   }
 };
 
@@ -339,15 +341,23 @@ public:
   std::string Str;
   std::vector<std::shared_ptr<OutputBuilder>> SubBuilders;
   void parse(std::string &);
+  int TemplateArgCount = -1;
 
-private:
+protected:
   // /OutStr is the string specified in rule's "Out" session
-  std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
+  virtual std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
                                                 size_t &Idx);
   int consumeArgIndex(std::string &OutStr, size_t &Idx, std::string &&Keyword);
   void ignoreWhitespaces(std::string &OutStr, size_t &Idx);
   void consumeRParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
   void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
+};
+
+class TypeOutputBuilder : public OutputBuilder{
+private:
+  // /OutStr is the string specified in rule's "Out" session
+  std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
+                                                size_t &Idx) override;
 };
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles);

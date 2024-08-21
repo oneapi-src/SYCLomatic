@@ -8,6 +8,7 @@
 
 #include "ThrustAPIMigration.h"
 #include "ASTTraversal.h"
+#include "AnalysisInfo.h"
 #include "ExprAnalysis.h"
 #include "TextModification.h"
 

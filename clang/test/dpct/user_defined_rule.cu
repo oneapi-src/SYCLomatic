@@ -173,8 +173,8 @@ void foo7() {
 
 template<class T1, class T2>
 void foo8(int a) {
-  T1 a;
-  T2 b;
+  T1 a1;
+  T2 b1;
 }
 
 void foo9(){

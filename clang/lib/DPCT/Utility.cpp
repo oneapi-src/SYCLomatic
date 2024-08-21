@@ -4411,13 +4411,13 @@ bool isUserDefinedDecl(const clang::Decl *D) {
 }
 
 void insertHeaderForTypeRule(std::string Name, clang::SourceLocation Loc) {
-  auto It = MapNames::TypeNamesMap.find(Name);
-  if (It == MapNames::TypeNamesMap.end())
-    return;
-  for (auto ItHeader = It->second->Includes.begin();
-       ItHeader != It->second->Includes.end(); ItHeader++) {
-    dpct::DpctGlobalInfo::getInstance().insertHeader(Loc, *ItHeader);
-  }
+  // auto It = MapNames::TypeNamesMap.find(Name);
+  // if (It == MapNames::TypeNamesMap.end())
+  //   return;
+  // for (auto ItHeader = It->second->Includes.begin();
+  //      ItHeader != It->second->Includes.end(); ItHeader++) {
+  //   dpct::DpctGlobalInfo::getInstance().insertHeader(Loc, *ItHeader);
+  // }
 }
 
 std::string getBaseTypeStr(const CallExpr *CE) {
@@ -4910,11 +4910,6 @@ void requestHelperFeatureForEnumNames(const std::string Name) {
   }
 }
 void requestHelperFeatureForTypeNames(const std::string Name) {
-  auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);
-  if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {
-    requestFeature(HelperFeatureIter->second->RequestFeature);
-    return;
-  }
   auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);
   if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);

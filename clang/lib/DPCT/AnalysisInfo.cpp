@@ -12,6 +12,7 @@
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
+#include "TypeLocRewriters.h"
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
@@ -27,15 +28,15 @@
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
-  auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
-  if (Iter != MapNames::TypeNamesMap.end()) {
-    auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
-    for (auto ItHeader = Iter->second->Includes.begin();
-         ItHeader != Iter->second->Includes.end(); ItHeader++) {
-      clang::dpct::DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(),
-                                                              *ItHeader);
+  auto Iter = clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(
+      {D->getQualifiedNameAsString(false)});
+  if (Iter !=
+      clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+    auto Rewriter = Iter->second->create(clang::RecordTypeLoc());
+    auto Result = Rewriter->rewrite();
+    if (Result.has_value()) {
+      return Result.value();
     }
-    return Iter->second->NewName;
   }
   return llvm::StringRef();
 }
@@ -3367,7 +3368,16 @@ void TextureTypeInfo::setDataTypeAndTexType(std::string &&Type, int TexType) {
   IsArray = TexType & 0xF0;
   Dimension = TexType & 0x0F;
   // The DataType won't use dpct helper feature
-  MapNames::replaceName(MapNames::TypeNamesMap, DataType);
+  auto Iter = clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(
+      {DataType});
+  if (Iter !=
+      clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+    auto Rewriter = Iter->second->create(TypeLoc());
+    auto Result = Rewriter->rewrite();
+    if (Result.has_value()) {
+      DataType = Result.value();
+    }
+  }
 }
 void TextureTypeInfo::prepareForImage() {
   if (IsArray)
