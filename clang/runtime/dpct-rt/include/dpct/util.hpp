@@ -658,7 +658,8 @@ namespace experimental {
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
-[[deprecated("Please use sycl::group_barrier(type of root_group) "
+[[deprecated("Please use "
+             "sycl::group_barrier(ext::oneapi::experimental::root_group G) "
              "instead.")]] inline void
 nd_range_barrier(
     const sycl::nd_item<dimensions> &item,
@@ -705,7 +706,8 @@ nd_range_barrier(
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
 [[deprecated(
-    "Please use sycl::group_barrier(type of root_group) instead.")]] inline void
+    "Please use sycl::group_barrier(ext::oneapi::experimental::root_group G) "
+    "instead.")]] inline void
 nd_range_barrier(
     const sycl::nd_item<1> &item,
     sycl::atomic_ref<unsigned int,

@@ -8767,6 +8767,34 @@ void DeviceFunctionDeclRule::runRule(
   if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {
     if (!Var->getInit())
       return;
+    if (auto CE =
+            dyn_cast<CallExpr>(Var->getInit()->IgnoreUnlessSpelledInSource())) {
+      if (CE->getType().getCanonicalType().getAsString() !=
+          "class cooperative_groups::__v1::grid_group")
+        return;
+      if (!DpctGlobalInfo::useNdRangeBarrier()) {
+        return;
+      }
+
+      FuncInfo->setSync();
+      auto Begin = Var->getBeginLoc();
+      auto End = Var->getEndLoc();
+      const auto &SM = *Result.SourceManager;
+
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+
+      Token Tok;
+      Tok = Lexer::findNextToken(
+                End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())
+                .value();
+      End = Tok.getLocation();
+
+      auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+
+      // Remove statement "cg::grid_group grid = cg::this_grid();"
+      emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
   }
   if (getAssistNodeAsType<TypeLoc>(Result, "fp64")) {
     FuncInfo->setBF64();

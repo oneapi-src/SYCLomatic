@@ -120,8 +120,7 @@ __global__ void kernelFunc1() {
 
 // sycl::group_barrier(root_group)
 
-// CHECK: void kernel() {
-// CHECK-NEXT:  sycl::ext::oneapi::experimental::root_group grid = sycl::ext::oneapi::experimental::this_nd_item<3>().ext_oneapi_get_root_group();
+// CHECK: void kernel(sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
 // CHECK-NEXT:  sycl::group_barrier(grid);
 // CHECK-NEXT: }
 __global__ void kernel() {

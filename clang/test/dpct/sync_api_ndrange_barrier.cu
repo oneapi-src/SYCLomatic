@@ -19,7 +19,7 @@ using namespace cooperative_groups;
 // CHECK-NEXT:  cg::grid_group grid = cg::this_grid();
 // CHECK-NEXT:  stream_ct1 << "kernel run!\n";
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1119:{{[0-9]+}}: Migration of cooperative_groups::__v1::grid_group.sync is not supported, please try to remigrate with option: --use-experimental-features=root-group.
+// CHECK-NEXT:  DPCT1087:{{[0-9]+}}: SYCL currently does not support cross group synchronization. You can specify "--use-experimental-features=root-group" to use the root-group to migrate grid.sync().
 // CHECK-NEXT:  */
 // CHECK-NEXT:  grid.sync();
 // CHECK-NEXT:}

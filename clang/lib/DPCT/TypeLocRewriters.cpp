@@ -149,6 +149,11 @@ std::function<bool(const TypeLoc)> isUseLogicalGroupsForType() {
 std::function<bool(const TypeLoc)> isUseRootGroupForType() {
   return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useRootGroup(); };
 }
+std::function<bool(const TypeLoc)> isUseNdRangeBarrier() {
+  return [=](const TypeLoc) -> bool {
+    return DpctGlobalInfo::useNdRangeBarrier();
+  };
+}
 
 // Print a templated type. Pass a STR("") as a template argument for types with
 // no template argument e.g. MyType<>

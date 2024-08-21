@@ -59,10 +59,20 @@ CONDITIONAL_FACTORY_ENTRY(
                                            CALL(MapNames::getClNamespace() +
                                                     "group_barrier",
                                                 ARG(0)))),
-                    UNSUPPORT_FACTORY_ENTRY(
-                        "sync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                        ARG("cooperative_groups::__v1::grid_group.sync"),
-                        ARG("--use-experimental-features=root-group"))),
+                    CONDITIONAL_FACTORY_ENTRY(
+                        UseNDRangeBarrier,
+                        FEATURE_REQUEST_FACTORY(
+                            HelperFeatureEnum::device_ext,
+                            CALL_FACTORY_ENTRY(
+                                "sync",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "experimental::nd_range_barrier",
+                                     NDITEM,
+                                     ARG(DpctGlobalInfo::getSyncName())))),
+                        UNSUPPORT_FACTORY_ENTRY(
+                            "sync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cooperative_groups::__v1::grid_group.sync"),
+                            ARG("--use-experimental-features=root-group")))),
                 UNSUPPORT_FACTORY_ENTRY("sync", Diagnostics::API_NOT_MIGRATED,
                                         ARG("sync"))))))
 
@@ -208,6 +218,11 @@ CONDITIONAL_FACTORY_ENTRY(
 
   cg::thread_block_tile<32>::sync()
   => item_ct1.get_sub_group().sync()
+
+  cg::sync(cg::grid_group)
+  => if UseNDRangeBarrier then
+     dpct::experimental::nd_range_barrier(item_ct1, sync_ct1)
+     otherwise unsupported
 */
 WARNING_FACTORY_ENTRY(
     "cooperative_groups::__v1::thread_block.sync",
@@ -353,22 +368,34 @@ CASE_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
-    MEMBER_CALL_FACTORY_ENTRY("this_grid",
-                              NDITEM, false, "ext_oneapi_get_root_group"),
-    UNSUPPORT_FACTORY_ENTRY(
-        "this_grid", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-        ARG("cooperative_groups::__v1::grid_group::this_grid"),
-        ARG("--use-experimental-features=root-group")))
+    MEMBER_CALL_FACTORY_ENTRY("this_grid", NDITEM, false,
+                              "ext_oneapi_get_root_group"),
+    CONDITIONAL_FACTORY_ENTRY(
+        UseNDRangeBarrier, CALL_FACTORY_ENTRY("this_grid", CALL("")),
+        UNSUPPORT_FACTORY_ENTRY(
+            "this_grid", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cooperative_groups::__v1::grid_group::this_grid"),
+            ARG("--use-experimental-features=root-group"))))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
     CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync",
                        CALL(MapNames::getClNamespace() + "group_barrier",
                             MemberExprBase())),
-    UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync",
-                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                            ARG("cooperative_groups::__v1::grid_group.sync"),
-                            ARG("--use-experimental-features=root-group")))
+    CONDITIONAL_FACTORY_ENTRY(
+        UseNDRangeBarrier,
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::nd_range_barrier",
+                                    NDITEM,
+                                    ARG(DpctGlobalInfo::getSyncName())))),
+        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync",
+                                Diagnostics::ND_RANGE_BARRIER,
+                                makeCombinedArg(MemberExprBase(),
+                                                ARG(".sync()")))))
+
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
     MEMBER_CALL_FACTORY_ENTRY(
