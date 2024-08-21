@@ -336,7 +336,7 @@ How do I resolve migration failure with "fatal error: 'cmath' file not found" in
  
 The problem stems from an absent include path for the new standard C++ library. 
 The |tool_name| is designed to automatically detect the appropriate version of the C++ header file by checking the compiler package at ``/usr/lib/gcc/x86_64-linux-gnu``and C++ header at ``/usr/include/c++``.
-In the following example, it tries to use C++ header version 12 based on the knowledge of the compiler package, but it fails for C++ header version 12 not exist.
+In the following example, it tries to use C++ header version 12 based on the knowledge of the compiler package, but it fails because C++ header version 12 does not exist."
 
 .. code-block:: 
   :linenos:
@@ -353,7 +353,7 @@ To fix this issue, please install the version 12 g++ package or libstdc++ packag
   or
   $ sudo apt install libstdc++-12-dev 
 
-And your installation may differ, install the appropriate version of the g++-XX package or libstdc++-XX-dev package based on the missing from the results of  "ls /usr/lib/gcc/x86_64-linux-gnu" and "ls /usr/include/c++".
+And your installation may differ, install the missing version of ``g++-XX`` or ``libstdc++-XX-dev`` based on what you see missing from the results of  "ls /usr/lib/gcc/x86_64-linux-gnu" and "ls /usr/include/c++".
 
 How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?
 ***********************************************************************************************************************************************************
