@@ -508,11 +508,11 @@ std::vector<std::string> SplitStr(const std::string &Str, char Delimiter) {
   return Result;
 }
 
-bool IsTookitInstalledOnTargetOS(std::map<std::string, bool> &AvaliableTool) {
+std::string
+GetInstalledToolKit(std::unordered_set<std::string> &AvaliableTool) {
   const char *EnvPath = std::getenv("PATH");
-  bool Ret = false;
   if (EnvPath == nullptr) {
-    return Ret;
+    return "";
   }
   std::string EnvPathStr(EnvPath);
   std::vector<std::string> PathDir = SplitStr(EnvPathStr,
@@ -524,34 +524,26 @@ bool IsTookitInstalledOnTargetOS(std::map<std::string, bool> &AvaliableTool) {
   );
   for (const auto &Dir : PathDir) {
     for (auto &Tool : AvaliableTool) {
-      std::string ToolPath = appendPath(Dir, Tool.first);
+      std::string ToolPath = appendPath(Dir, Tool);
       if (llvm::sys::fs::exists(ToolPath)) {
-        Tool.second = true;
-        return true;
-      }
-    }
-  }
-  return Ret;
-}
-
-std::string GetInstalledPython() {
-  std::map<std::string, bool> Tool = {
-#if defined(_WIN32)
-    {"py.exe", false},
-    {"python3.exe", false},
-    {"python.exe", false},
-#endif
-    {"python3", false}
-  };
-
-  if (IsTookitInstalledOnTargetOS(Tool)) {
-    for (const auto &T : Tool) {
-      if (T.second) {
-        return T.first;
+        return Tool;
       }
     }
   }
   return "";
+}
+
+std::string GetInstalledPython() {
+  std::unordered_set<std::string> Tool = {
+#if defined(_WIN32)
+    "py.exe",
+    "python3.exe",
+    "python.exe",
+#endif
+    "python3"
+  };
+
+  return GetInstalledToolKit(Tool);
 }
 
 int runDPCT(int argc, const char **argv) {
