@@ -433,15 +433,15 @@ public:
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
-  /// \param keys The input data of each work-item.
+  /// \param input The input data of each work-item.
   /// \param ranks The corresponding rank annotation of each work-item.
   template <typename Item>
   __dpct_inline__ void scatter_to_striped(Item item,
-                                          T (&keys)[ElementsPerWorkItem],
+                                          T (&input)[ElementsPerWorkItem],
                                           int (&ranks)[ElementsPerWorkItem]) {
     scatter_offset<const int *> get_scatter_offset(ranks);
     striped_offset get_striped_offset;
-    helper_exchange(item, keys, keys, get_scatter_offset, get_striped_offset);
+    helper_exchange(item, input, input, get_scatter_offset, get_striped_offset);
   }
 
 private:
