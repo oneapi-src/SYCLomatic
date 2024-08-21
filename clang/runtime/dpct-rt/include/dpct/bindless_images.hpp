@@ -169,8 +169,14 @@ public:
                                  "Resource cannot be mapped more than once.");
       }
 
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240527)
+      _res_buf_ptr =
+          sycl::ext::oneapi::experimental::map_external_linear_memory(
+              get_external_mem(), 0, _res_size_bytes, q);
+#else
       throw std::runtime_error(
           "Mapping a buffer resoure is not yet supported!");
+#endif
     } else {
       if (_res_img_mem_wrapper_ptr) {
         throw std::runtime_error("Resource is already mapped! "
@@ -282,7 +288,7 @@ protected:
   external_mem_wrapper_base(
       sycl::ext::oneapi::experimental::external_mem external_mem,
       unsigned reg_flags)
-      : _res_external_mem(external_mem) _res_reg_flags(reg_flags) {}
+      : _res_external_mem(external_mem), _res_reg_flags(reg_flags) {}
 
   unsigned _res_reg_flags = 0;
   bool _res_is_buffer = false;
@@ -520,13 +526,12 @@ private:
 #else
 /// Stub external_mem_wrapper implementation for non-Windows platforms
 class external_mem_wrapper : public external_mem_wrapper_base {
+  static_assert(false,
+                  "Graphics interop is only supported on Windows for DX11.");
 public:
   external_mem_wrapper(unsigned reg_flags)
       : external_mem_wrapper_base(
-            sycl::ext::oneapi::experimental::external_mem(), reg_flags) {
-    static_assert(false,
-                  "Graphics interop is only supported on Windows for DX11.");
-  };
+            sycl::ext::oneapi::experimental::external_mem(), reg_flags) {};
   virtual ~external_mem_wrapper() {};
 };
 #endif // _WIN32
