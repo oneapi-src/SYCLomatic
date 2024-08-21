@@ -290,10 +290,14 @@ public:
 
   /// Inplace rearrange elements from blocked order to striped order.
   ///
-  /// Suppose ElementsPerWorkItem is 4 and the blocked input across the
-  /// work-group is:
-  ///   {[0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511]}.
-  /// The corresponding output of each work-item will be:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// blocked \p input across the work-group is:
+  ///
+  ///   {[0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511]}.
+  ///
+  /// The striped order output is:
+  ///
   ///   {[0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511]}.
   ///
   /// \tparam Item The work-item identifier type.
@@ -309,11 +313,15 @@ public:
 
   /// Inplace rearrange elements from striped order to blocked order.
   ///
-  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
-  /// work-group is:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// striped \p input across the work-group is:
+  ///
   ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
-  /// The corresponding output of each work-item will be:
-  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// The blocked order output is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
@@ -328,10 +336,14 @@ public:
 
   /// Rearrange elements from blocked order to striped order.
   ///
-  /// Suppose ElementsPerWorkItem is 4 and the blocked input across the
-  /// work-group is:
-  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
-  /// The corresponding output of each work-item will be:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// blocked \p input across the work-group is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// The striped order output is:
+  ///
   ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
   ///
   /// \tparam Item The work-item identifier type.
@@ -350,11 +362,15 @@ public:
 
   /// Rearrange elements from striped order to blocked order.
   ///
-  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
-  /// work-group is:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// striped \p input across the work-group is:
+  ///
   ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
-  /// The corresponding output of each work-item will be:
-  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// The blocked order output is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
@@ -372,35 +388,47 @@ public:
 
   /// Inplace exchanges data items annotated by rank into blocked arrangement.
   ///
-  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
-  /// work-group is:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// striped \p input across the work-group is:
+  ///
   ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  ///
   /// The rank across the work-group is:
-  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
-  /// The corresponding output of each work-item will be:
-  ///   { [0, 1, 2, 3], [4, 4, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
+  /// The blocked order output is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
-  /// \param keys The input data of each work-item.
+  /// \param input The input data of each work-item.
   /// \param ranks The corresponding rank annotation of each work-item.
   template <typename Item>
   __dpct_inline__ void scatter_to_blocked(Item item,
-                                          T (&keys)[ElementsPerWorkItem],
+                                          T (&input)[ElementsPerWorkItem],
                                           int (&ranks)[ElementsPerWorkItem]) {
     scatter_offset<const int *> get_scatter_offset(ranks);
     blocked_offset get_blocked_offset;
-    helper_exchange(item, keys, keys, get_scatter_offset, get_blocked_offset);
+    helper_exchange(item, input, input, get_scatter_offset, get_blocked_offset);
   }
 
   /// Inplace exchanges data items annotated by rank into striped arrangement.
   ///
-  /// Suppose ElementsPerWorkItem is 4 and the striped input across the
-  /// work-group is:
-  ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// blocked \p input across the work-group is:
+  ///
+  ///   { [0, 1, 2, 3], [4, 5, 6, 7], ..., [508, 509, 510, 511] }.
+  ///
   /// The rank across the work-group is:
+  ///
   ///   { [16, 20, 24, 28], [32, 36, 40, 44], ..., [499, 503, 507, 511] }.
-  /// The corresponding output of each work-item will be:
+  ///
+  /// The striped order output of each work-item will be:
+  ///
   ///   { [0, 128, 256, 384], [1, 129, 257, 385], ..., [127, 255, 383, 511] }.
   ///
   /// \tparam Item The work-item identifier type.
@@ -514,97 +542,113 @@ private:
 
 public:
   /// Performs an ascending work-group wide radix sort over a blocked
-  /// arrangement of keys.
+  /// arrangement of input elements.
   ///
-  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
-  /// across the work-group is:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// \p input across the work-group is:
+  ///
   ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
-  /// The corresponding output of each work-item will be:
+  ///
+  /// The ascending order output is:
+  ///
   ///   { [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }.
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
-  /// \param keys The input data of each work-item.
+  /// \param input The input data of each work-item.
   /// \param begin_bit The beginning (least-significant) bit index needed for
   /// key comparison.
   /// \param end_bit The past-the-end (most-significant) bit
   /// index needed for key comparison.
   template <typename Item>
-  __dpct_inline__ void sort(const Item &item, T (&keys)[ElementsPerWorkItem],
+  __dpct_inline__ void sort(const Item &item, T (&input)[ElementsPerWorkItem],
                             int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
-    helper_sort<Item, /*DESCENDING=*/false>(item, keys, begin_bit, end_bit);
+    helper_sort<Item, /*DESCENDING=*/false>(item, input, begin_bit, end_bit);
   }
 
   /// Performs an descending work-group wide radix sort over a blocked
-  /// arrangement of keys.
+  /// arrangement of input elements.
   ///
-  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
-  /// across the work-group is:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// \p input across the work-group is:
+  ///
   ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
-  /// The corresponding output of each work-item will be:
+  ///
+  /// The descending order output is:
+  ///
   ///   { [511,510,509,508], [11,10,9,8], [7,6,5,4], ..., [3,2,1,0] }.
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
-  /// \param keys The input data of each work-item.
+  /// \param input The input data of each work-item.
   /// \param begin_bit The beginning (least-significant) bit index needed for
   /// key comparison.
   /// \param end_bit The past-the-end (most-significant) bit
   /// index needed for key comparison.
   template <typename Item>
   __dpct_inline__ void
-  sort_descending(const Item &item, T (&keys)[ElementsPerWorkItem],
+  sort_descending(const Item &item, T (&input)[ElementsPerWorkItem],
                   int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
-    helper_sort<Item, /*DESCENDING=*/true>(item, keys, begin_bit, end_bit);
+    helper_sort<Item, /*DESCENDING=*/true>(item, input, begin_bit, end_bit);
   }
 
-  /// Performs an ascending radix sort across a blocked arrangement of keys,
-  /// leaving them in a striped arrangement.
+  /// Performs an ascending radix sort across a blocked arrangement of input
+  /// elements, leaving them in a striped arrangement.
   ///
-  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
-  /// across the work-group is:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// \p input across the work-group is:
+  ///
   ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
+  ///
   /// The corresponding output of each work-item will be:
+  ///
   ///   { [0,128,256,384], [1,129,257,385], [2,130,258,386], ...,
   ///   [127,255,383,511] }.
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
-  /// \param keys The input data of each work-item.
+  /// \param input The input data of each work-item.
   /// \param begin_bit The beginning (least-significant) bit index needed for
   /// key comparison.
   /// \param end_bit The past-the-end (most-significant) bit
   /// index needed for key comparison.
   template <typename Item>
   __dpct_inline__ void
-  sort_blocked_to_striped(const Item &item, T (&keys)[ElementsPerWorkItem],
+  sort_blocked_to_striped(const Item &item, T (&input)[ElementsPerWorkItem],
                           int begin_bit = 0, int end_bit = 8 * sizeof(T)) {
-    helper_sort<Item, /*DESCENDING=*/false>(item, keys, begin_bit, end_bit,
+    helper_sort<Item, /*DESCENDING=*/false>(item, input, begin_bit, end_bit,
                                             /*is_striped=*/true);
   }
 
-  /// Performs an descending radix sort across a blocked arrangement of keys,
-  /// leaving them in a striped arrangement.
+  /// Performs an descending radix sort across a blocked arrangement of input
+  /// elements, leaving them in a striped arrangement.
   ///
-  /// Suppose ElementsPerWorkItem is 4, work group size is 128 and the input
-  /// across the work-group is:
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// \p input across the work-group is:
+  ///
   ///   { [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }.
-  /// The corresponding output of each work-item will be:
+  ///
+  /// The descending striped order outputis:
+  ///
   ///   { [0,128,256,384], [1,129,257,385], [2,130,258,386], ...,
   ///   [127,255,383,511] }.
   ///
   /// \tparam Item The work-item identifier type.
   /// \param item The work-item identifier.
-  /// \param keys The input data of each work-item.
+  /// \param input The input data of each work-item.
   /// \param begin_bit The beginning (least-significant) bit index needed for
   /// key comparison.
   /// \param end_bit The past-the-end (most-significant) bit
   /// index needed for key comparison.
   template <typename Item>
   __dpct_inline__ void sort_descending_blocked_to_striped(
-      const Item &item, T (&keys)[ElementsPerWorkItem], int begin_bit = 0,
+      const Item &item, T (&input)[ElementsPerWorkItem], int begin_bit = 0,
       int end_bit = 8 * sizeof(T)) {
-    helper_sort<Item, /*DESCENDING=*/true>(item, keys, begin_bit, end_bit,
+    helper_sort<Item, /*DESCENDING=*/true>(item, input, begin_bit, end_bit,
                                            /*is_striped=*/true);
   }
 };
