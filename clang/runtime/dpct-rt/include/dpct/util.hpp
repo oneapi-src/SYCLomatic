@@ -559,13 +559,16 @@ T shift_sub_group_left(sycl::sub_group sg, T input, int delta, int last_item,
   SHFL_SYNC(result, member_mask, input, delta, cVal | last_item, down_i32)
   return result;
 #else
-  (void)member_mask;
+  if ((1U << sg.get_local_linear_id()) & member_mask) {
+    auto inner = sycl::ext::oneapi::experimental::get_tangle_group(sg);
+    sycl::group_barrier(inner);
+  }
   auto partition =
       sycl::ext::oneapi::experimental::get_fixed_size_group<LogicSubGroupSize>(
           sg);
-  int id = sg.get_local_linear_id();
+  int id = partition.get_local_linear_id();
   T result = sycl::shift_group_left(partition, input, delta);
-  if ((id + delta) >= last_item)
+  if ((id + delta) > last_item)
     result = input;
   return result;
 #endif
@@ -594,7 +597,10 @@ T shift_sub_group_right(sycl::sub_group sg, T input, int delta, int first_item,
   SHFL_SYNC(result, member_mask, input, delta, cVal | first_item, up_i32)
   return result;
 #else
-  (void)member_mask;
+  if ((1U << sg.get_local_linear_id()) & member_mask) {
+    auto inner = sycl::ext::oneapi::experimental::get_tangle_group(sg);
+    sycl::group_barrier(inner);
+  }
   auto partition =
       sycl::ext::oneapi::experimental::get_fixed_size_group<LogicSubGroupSize>(
           sg);
