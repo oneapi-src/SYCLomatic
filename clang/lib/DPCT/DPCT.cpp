@@ -554,8 +554,9 @@ int runDPCT(int argc, const char **argv) {
   }
   DpctOptionBase::check();
   if (UseSYCLCompat && USMLevel.getValue() == UsmLevel::UL_None) {
-    llvm::errs() << "SYCLcompat header-only library (syclcompat:: namespace) "
-                    "doesn't support usm level none.\n";
+    llvm::errs()
+        << "Currently SYCLcompat header-only library (syclcompat:: namespace) "
+           "doesn't support buffer and accessor data management..\n";
     ShowStatus(MigrationErrorConflictOptions);
     dpctExit(MigrationErrorConflictOptions);
   }

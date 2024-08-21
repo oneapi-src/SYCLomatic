@@ -1572,8 +1572,10 @@ void DpctGlobalInfo::buildReplacements() {
     DevDecl << MapNames::getDpctNamespace()
             << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
             << "get_current_device();";
-    QDecl << "&q_ct1 = dev_ct1." << DpctGlobalInfo::getDeviceQueueName()
-          << "();";
+    QDecl << "&q_ct1 = ";
+    if (DpctGlobalInfo::useSYCLCompat())
+      QDecl << '*';
+    QDecl << "dev_ct1." << DpctGlobalInfo::getDeviceQueueName() << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.

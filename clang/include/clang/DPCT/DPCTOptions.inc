@@ -949,9 +949,8 @@ DPCT_FLAG_OPTION(
                         clang::dpct::DpctActionKind::DAK_Migration),
     "use-syclcompat",
     llvm::cl::desc(
-        "Use SYCLcompat header-only library (syclcompat:: namespace) instead "
-        "of DPCT helper functions (dpct:: namespace) to assist the migration "
-        "of input source code.\n Default: off.\n"),
+        "Use SYCLcompat header-only library (syclcompat:: namespace) to assist "
+        "the migration of input source code.\nDefault: off.\n"),
     llvm::cl::cat(DPCTCodeGenCat), llvm::cl::cat(DPCTCat))
 
 DPCT_FLAG_OPTION(

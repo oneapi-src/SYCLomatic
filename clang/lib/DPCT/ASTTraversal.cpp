@@ -5937,10 +5937,12 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
         SuffixInsertStr += "std::vector<void *> " + WSVectorNameStr + "{" +
                            ScratchpadNameStr + "};" + getNL() + IndentStr;
-        SuffixInsertStr += MapNames::getDpctNamespace() + "async_dpct_free(" +
-                           WSVectorNameStr + ", {" + EventNameStr + "}, *" +
-                           ExprAnalysis::ref(CE->getArg(0)) + ");" + getNL() +
-                           IndentStr;
+        SuffixInsertStr +=
+            MapNames::getDpctNamespace() +
+            (DpctGlobalInfo::useSYCLCompat() ? "enqueue_free"
+                                             : "async_dpct_free(") +
+            WSVectorNameStr + ", {" + EventNameStr + "}, *" +
+            ExprAnalysis::ref(CE->getArg(0)) + ");" + getNL() + IndentStr;
         requestFeature(HelperFeatureEnum::device_ext);
       } else {
         PrefixInsertStr += IndentStr + MapNames::getClNamespace() + "buffer<" +
@@ -10623,7 +10625,11 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
                << Indent << MapNames::getClNamespace() << "free";
         } else {
           requestFeature(HelperFeatureEnum::device_ext);
-          Repl << MapNames::getDpctNamespace() << "dpct_free";
+          Repl << MapNames::getDpctNamespace();
+          if (DpctGlobalInfo::useSYCLCompat())
+            Repl << "wait_and_free";
+          else
+            Repl << "dpct_free";
         }
       }
       Repl << "(" << ArgStr
@@ -10631,8 +10637,10 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       requestFeature(HelperFeatureEnum::device_ext);
-      emplaceTransformation(
-          new ReplaceCalleeName(C, MapNames::getDpctNamespace() + "dpct_free"));
+      emplaceTransformation(new ReplaceCalleeName(
+          C, MapNames::getDpctNamespace() + (DpctGlobalInfo::useSYCLCompat()
+                                                 ? "wait_and_free"
+                                                 : "dpct_free")));
     }
   } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
@@ -10793,8 +10801,9 @@ void MemoryMigrationRule::prefetchMigration(
                ? +"cpu_device()"
                : "dev_mgr::instance().get_device(" + StmtStrArg2 + ")");
       requestFeature(HelperFeatureEnum::device_ext);
-      Replacement = Prefix + "." + DpctGlobalInfo::getDeviceQueueName() +
-                    "().prefetch(" + StmtStrArg0 + "," + StmtStrArg1 + ")";
+      Replacement = Prefix + "." + DpctGlobalInfo::getDeviceQueueName() + "()" +
+                    (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") +
+                    "prefetch(" + StmtStrArg0 + "," + StmtStrArg1 + ")";
     } else {
       if (SM->getCharacterData(C->getArg(3)->getBeginLoc()) -
               SM->getCharacterData(C->getArg(3)->getEndLoc()) ==
@@ -10994,14 +11003,16 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
     OS << MapNames::getDpctNamespace() + "cpu_device()." +
-              DpctGlobalInfo::getDeviceQueueName() + "().mem_advise("
+              DpctGlobalInfo::getDeviceQueueName() + "()";
+    OS << (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") << "mem_advise("
        << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::device_ext);
     return;
   }
   OS << MapNames::getDpctNamespace() + "get_device(" << Arg3Str
-     << ")." + DpctGlobalInfo::getDeviceQueueName() + "().mem_advise("
+     << ")." + DpctGlobalInfo::getDeviceQueueName() + "()";
+  OS << (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") << "mem_advise("
      << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
   emplaceTransformation(new ReplaceStmt(C, OS.str()));
   requestFeature(HelperFeatureEnum::device_ext);
