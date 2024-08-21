@@ -9,22 +9,18 @@
 #ifndef __DPCT_DNNL_UTILS_HPP__
 #define __DPCT_DNNL_UTILS_HPP__
 
-#include <oneapi/dpl/algorithm>
-#include <oneapi/dpl/execution>
-
 #include "switcher.hpp"
 
 #include "lib_common_utils.hpp"
 
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
-#include <oneapi/dpl/numeric>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 
-#include <unordered_map>
 #include <algorithm>
 #include <list>
+#include <unordered_map>
 
 namespace dpct {
 namespace dnnl {
@@ -1025,20 +1021,21 @@ class engine_ext {
     return q->fill<T>(static_cast<T *>(src), *static_cast<const T *>(value),
                       size_with_byte / sizeof(T));
   }
-  template <typename T> struct no_zero_op {
-    T operator()(T e) {
-      if (!e) {
-        return 1;
-      }
-      return e;
-    }
-  };
   template <typename T>
   void transform_no_zero_with_type(sycl::queue *q, void *src, void *dst,
                                    size_t num) {
-    std::transform(oneapi::dpl::execution::make_device_policy(*q),
-                   static_cast<T *>(src), static_cast<T *>(src) + num,
-                   static_cast<T *>(dst), no_zero_op<T>());
+    q->submit([&](sycl::handler &cgh) {
+      cgh.parallel_for<dpct_kernel_name<class zero_to_one, T>>(
+          sycl::range<1>(num), [=](sycl::id<1> idx) {
+            T *src_ptr = static_cast<T *>(src) + idx[0];
+            T *dst_ptr = static_cast<T *>(dst) + idx[0];
+            if (*src_ptr) {
+              *dst_ptr = *src_ptr;
+            } else {
+              *dst_ptr = 1;
+            }
+          });
+    });
   }
   void transform_no_zero(const memory_desc_ext &desc, void *src, void *dst);
   ::dnnl::memory::desc get_group_weight_desc(int group_count,

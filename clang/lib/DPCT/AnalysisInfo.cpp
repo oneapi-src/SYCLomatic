@@ -856,7 +856,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   // is added later
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
-  case HT_DPCT_DNNL_Utils:
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);

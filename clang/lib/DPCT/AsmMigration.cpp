@@ -2416,7 +2416,7 @@ protected:
     OS() << '(';
     llvm::SaveAndRestore<const InlineAsmInstruction *> Save(CurrInst);
     CurrInst = Inst;
-    for (auto [I, Op] : llvm::enumerate(Inst->input_operands())) {
+    for (const auto &[I, Op] : llvm::enumerate(Inst->input_operands())) {
       if (emitStmt(Op))
         return SYCLGenError();
       if (I != Inst->getNumInputOperands() - 1)
