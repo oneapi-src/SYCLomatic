@@ -983,12 +983,12 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   auto _end_pair =
       stable_partition_copy(std::move(_partition_call1), first, last, mask,
                             _tmp_first, _tmp_last_rev, p);
-  auto _first_n = std::distance(_tmp_first, std::get<0>(_end_pair));
-  std::copy(std::move(_copy_call1), _tmp_first, std::get<0>(_end_pair), first);
+  auto _first_part_end = std::copy(std::move(_copy_call1), _tmp_first,
+                                   std::get<0>(_end_pair), first);
   std::copy(std::move(_copy_call2), _tmp_last_rev, std::get<1>(_end_pair),
-            first + _first_n);
+            _first_part_end);
 
-  return first + _first_n;
+  return _first_part_end;
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
