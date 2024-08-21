@@ -1,4 +1,4 @@
-//==---- switcher.hpp -----------------------------*- C++ -*----------------==//
+//==---- compat_service.hpp -----------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -6,32 +6,28 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_SWITCHER_HPP__
-#define __DPCT_SWITCHER_HPP__
-
-// Only for testing, it need be removed after update dnnl's helper function test
-#include <dpct/dpct.hpp>
+#ifndef __DPCT_COMPAT_SERVICE_HPP__
+#define __DPCT_COMPAT_SERVICE_HPP__
 
 namespace dpct {
-namespace detail {
-namespace switcher {
+namespace cs {
 #if USE_DPCT_HELPER
-namespace chosen_ns = ::dpct;
+namespace ns = ::dpct;
 template <typename T> using DataType = ::dpct::DataType<T>;
 using memcpy_direction = ::dpct::memcpy_direction;
 template <class... Args> using kernel_name = dpct_kernel_name<Args...>;
 #else
-namespace chosen_ns = ::syclcompat;
+namespace ns = ::syclcompat;
 template <typename T> using DataType = ::syclcompat::detail::DataType<T>;
 using memcpy_direction = ::syclcompat::experimental::memcpy_direction;
 template <class... Args> using kernel_name = syclcompat_kernel_name<Args...>;
 #endif
 
-using chosen_ns::get_current_device;
-using chosen_ns::get_default_context;
-using chosen_ns::queue_ptr;
-using chosen_ns::detail::get_pointer_attribute;
-using chosen_ns::detail::pointer_access_attribute;
+using ns::get_current_device;
+using ns::get_default_context;
+using ns::queue_ptr;
+using ns::detail::get_pointer_attribute;
+using ns::detail::pointer_access_attribute;
 
 inline sycl::queue &get_default_queue() {
 #if USE_DPCT_HELPER
@@ -104,8 +100,7 @@ inline sycl::event enqueue_free(const std::vector<void *> &pointers,
 #endif
 }
 
-} // namespace switcher
-} // namespace detail
+} // namespace cs
 } // namespace dpct
 
-#endif // __DPCT_SWITCHER_HPP__
+#endif // __DPCT_COMPAT_SERVICE_HPP__

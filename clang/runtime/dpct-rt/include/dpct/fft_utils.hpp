@@ -9,7 +9,7 @@
 #ifndef __DPCT_FFT_UTILS_HPP__
 #define __DPCT_FFT_UTILS_HPP__
 
-#include "switcher.hpp"
+#include "compat_service.hpp"
 
 #include "lib_common_utils.hpp"
 #include <oneapi/mkl.hpp>
@@ -426,10 +426,10 @@ public:
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
-    engine->commit(&::dpct::detail::switcher::get_default_queue(), dim, n,
-                   inembed, istride, idist, fft_type_to_data_type(type).first,
-                   onembed, ostride, odist, fft_type_to_data_type(type).second,
-                   batch, estimated_scratchpad_size, direction_and_placement);
+    engine->commit(&::dpct::cs::get_default_queue(), dim, n, inembed, istride,
+                   idist, fft_type_to_data_type(type).first, onembed, ostride,
+                   odist, fft_type_to_data_type(type).second, batch,
+                   estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
   }
   /// Estimates the workspace size for calculating n-D FFT.
@@ -460,10 +460,10 @@ public:
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
-    engine->commit(&::dpct::detail::switcher::get_default_queue(), dim, n,
-                   inembed, istride, idist, fft_type_to_data_type(type).first,
-                   onembed, ostride, odist, fft_type_to_data_type(type).second,
-                   batch, estimated_scratchpad_size, direction_and_placement);
+    engine->commit(&::dpct::cs::get_default_queue(), dim, n, inembed, istride,
+                   idist, fft_type_to_data_type(type).first, onembed, ostride,
+                   odist, fft_type_to_data_type(type).second, batch,
+                   estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
   }
   /// Estimates the workspace size for calculating 1-D FFT.
@@ -484,8 +484,8 @@ public:
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
-    engine->commit(&::dpct::detail::switcher::get_default_queue(), n1, type,
-                   batch, estimated_scratchpad_size, direction_and_placement);
+    engine->commit(&::dpct::cs::get_default_queue(), n1, type, batch,
+                   estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
   }
   /// Estimates the workspace size for calculating 2-D FFT.
@@ -506,7 +506,7 @@ public:
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
-    engine->commit(&::dpct::detail::switcher::get_default_queue(), n2, n1, type,
+    engine->commit(&::dpct::cs::get_default_queue(), n2, n1, type,
                    estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
   }
@@ -529,8 +529,8 @@ public:
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
-    engine->commit(&::dpct::detail::switcher::get_default_queue(), n3, n2, n1,
-                   type, estimated_scratchpad_size, direction_and_placement);
+    engine->commit(&::dpct::cs::get_default_queue(), n3, n2, n1, type,
+                   estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
   }
 #endif

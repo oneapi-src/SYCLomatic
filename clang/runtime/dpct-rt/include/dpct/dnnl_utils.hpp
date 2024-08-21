@@ -9,7 +9,7 @@
 #ifndef __DPCT_DNNL_UTILS_HPP__
 #define __DPCT_DNNL_UTILS_HPP__
 
-#include "switcher.hpp"
+#include "compat_service.hpp"
 
 #include "lib_common_utils.hpp"
 
@@ -680,8 +680,7 @@ class dropout_desc {
     void *_state = nullptr;
     std::vector<std::uint8_t> _host_state;
     rng_engine_t _rng_engine;
-    dropout_desc_imp()
-        : _rng_engine(::dpct::detail::switcher::get_default_queue(), 1) {}
+    dropout_desc_imp() : _rng_engine(::dpct::cs::get_default_queue(), 1) {}
   };
   std::shared_ptr<dropout_desc_imp> _imp;
 
@@ -1067,13 +1066,13 @@ public:
   /// Creating oneDNN engine.
   void create_engine() {
 #if USE_DPCT_HELPER
-    _q = &::dpct::detail::switcher::get_current_device().default_queue();
+    _q = &::dpct::cs::get_current_device().default_queue();
 #else
-    _q = ::dpct::detail::switcher::get_current_device().default_queue();
+    _q = ::dpct::cs::get_current_device().default_queue();
 #endif
     _eng = std::make_shared<::dnnl::engine>(::dnnl::sycl_interop::make_engine(
-        ::dpct::detail::switcher::get_current_device(),
-        ::dpct::detail::switcher::get_current_device().get_context()));
+        ::dpct::cs::get_current_device(),
+        ::dpct::cs::get_current_device().get_context()));
     _s = std::make_shared<::dnnl::stream>(
         ::dnnl::sycl_interop::make_stream(*_eng, *_q));
     _engine_id = _engine_count++;
