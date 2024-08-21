@@ -40,4 +40,4 @@ ENTRY(cuMemHostUnregister,             "SYCL currently does not support register
 ENTRY(cudaProfilerStart,               "SYCL currently does not support this function. Remove the profiler API will not impact the outcome.")
 ENTRY(cudaProfilerStop,                "SYCL currently does not support this function. Remove the profiler API will not impact the outcome.")
 ENTRY(cuFuncSetAttribute,              "SYCL currently does not support setting kernel function attributes")
-ENTRY(cuGetExportTable,                "the functionality of the retrieved table is undocumented.")
+ENTRY(cuGetExportTable,                "the data of the retrieved table is insufficent to populate the function pointer with the necessary API.")
