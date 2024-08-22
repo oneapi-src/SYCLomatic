@@ -4400,6 +4400,14 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
 }
 
 bool isUserDefinedDecl(const clang::Decl *D) {
+  if (D->isImplicit() && dpct::DpctGlobalInfo::findParent<LinkageSpecDecl>(D)) {
+    // Skip case like:
+    // LinkageSpecDecl </.../test.cu:21:5> col:5 implicit C
+    // `-FunctionDecl <col:5> col:5 implicit used __syncthreads 'void ()' extern
+    //   |-BuiltinAttr <<invalid sloc>> Implicit 3810
+    //   `-CUDADeviceAttr <col:5> Implicit
+    return false;
+  }
   clang::tooling::UnifiedPath InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());

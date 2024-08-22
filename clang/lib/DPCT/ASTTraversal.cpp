@@ -12197,14 +12197,12 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
 
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   static std::map<std::string, bool> LocationResultMapForTemplate;
-  auto emplaceReplacement = [&](BarrierFenceSpaceAnalyzerResult Res,
+  auto emplaceReplacement = [&](BarrierFenceSpace1DAnalyzerResult Res,
                                 const CallExpr *CE) {
     std::string Replacement;
     if (Res.CanUseLocalBarrier) {
-      if (Res.MayDependOn1DKernel) {
-        report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER,
-               true, Res.GlobalFunctionName);
-      }
+      report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER, true,
+             Res.GlobalFunctionName);
       Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                     MapNames::getClNamespace() +
                     "access::fence_space::local_space)";
@@ -12233,18 +12231,29 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads" || FuncName == "__barrier_sync") {
-    BarrierFenceSpaceAnalyzer A;
+    std::string Key = getCombinedStrFromLoc(CE->getBeginLoc());
+    const auto &Map =
+        DpctGlobalInfo::getSyncthreadsMigrationCrossFunctionResultsMap();
+    auto Iter = Map.find(Key);
+    if (Iter != Map.end() && Iter->second) {
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
+                                MapNames::getClNamespace() +
+                                "access::fence_space::local_space)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+      return;
+    }
+    BarrierFenceSpace1DAnalyzer A;
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {
       if (FTD->specializations().empty()) {
-        emplaceReplacement(A.analyze(CE), CE);
+        emplaceReplacement(A.analyzeFor1DKernel(CE), CE);
       }
     } else {
       if (FD->getTemplateSpecializationKind() ==
           TemplateSpecializationKind::TSK_Undeclared) {
-        emplaceReplacement(A.analyze(CE), CE);
+        emplaceReplacement(A.analyzeFor1DKernel(CE), CE);
       } else {
-        auto CurRes = A.analyze(CE, true);
+        auto CurRes = A.analyzeFor1DKernel(CE);
         std::string LocHash = getHashStrFromLoc(CE->getBeginLoc());
         auto Iter = LocationResultMapForTemplate.find(LocHash);
         if (Iter != LocationResultMapForTemplate.end()) {

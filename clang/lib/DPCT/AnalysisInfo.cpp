@@ -731,6 +731,7 @@ void DpctFileInfo::setKernelDim() {
     auto Info = DeviceFunc.second->getFuncInfo();
     if (Info->isKernel() && !Info->isKernelInvoked()) {
       Info->getVarMap().Dim = 3;
+      Info->KernelCallBlockDim = 3;
     }
   }
 }
@@ -2462,6 +2463,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>>
 std::vector<std::pair<std::string, std::vector<std::string>>>
     DpctGlobalInfo::CodePinDumpFuncDepsVec;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
+std::unordered_map<std::string, bool>
+    DpctGlobalInfo::SyncthreadsMigrationCrossFunctionResultsMap;
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {
@@ -4546,7 +4549,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   }
   if (!FuncInfo) {
     FuncInfo = std::make_shared<DeviceFunctionInfo>(
-        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD), FD);
   }
   if (!FilePath.getCanonicalPath().empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
@@ -4707,7 +4710,7 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
           FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
-          getFunctionName(FD));
+          getFunctionName(FD), FD);
       FuncInfo = Info;
     }
     return;
@@ -5032,12 +5035,22 @@ void DeviceFunctionDeclInModule::emplaceReplacement() {
 ///// class DeviceFunctionInfo /////
 DeviceFunctionInfo::DeviceFunctionInfo(size_t ParamsNum,
                                        size_t NonDefaultParamNum,
-                                       std::string FunctionName)
+                                       std::string FunctionName,
+                                       const clang::FunctionDecl *FD)
     : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
       IsBuilt(false),
       TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
       FunctionName(FunctionName), IsLambda(false) {
   ParametersProps.resize(ParamsNum);
+  // collect IntraproceduralAnalyzerResult from FD
+  static std::unordered_set<const FunctionDecl*> Visited;
+  if (!Visited.count(FD)) {
+    Visited.insert(FD);
+    if (isUserDefinedDecl(FD)) {
+      IntraproceduralAnalyzer IA;
+      IAR = IA.analyze(FD, this);
+    }
+  }
 }
 std::shared_ptr<CallFunctionExpr>
 DeviceFunctionInfo::findCallee(const CallExpr *C) {
@@ -5082,6 +5095,23 @@ void DeviceFunctionInfo::buildInfo() {
                       Call.second->getTextureObjectList());
   }
   VarMap.removeDuplicateVar();
+
+  // Inter-procedural analysis for __syncthreads migration
+  for (const auto &SyncCall : IAR.Map) {
+    if (!std::get<0>(SyncCall.second))
+      continue;
+    InterproceduralAnalyzer IA;
+    bool Res = IA.analyze(shared_from_this(), SyncCall.first);
+    auto &Map =
+        DpctGlobalInfo::getSyncthreadsMigrationCrossFunctionResultsMap();
+    auto Iter = Map.find(SyncCall.first);
+    if (Iter == Map.end()) {
+      Map.insert(std::make_pair(SyncCall.first, Res));
+    } else {
+      if (Iter->second && !Res)
+        Iter->second = false;
+    }
+  }
 }
 std::string
 DeviceFunctionInfo::getExtraParameters(const clang::tooling::UnifiedPath &Path,
@@ -5110,6 +5140,7 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
     return;
   VarMap.merge(Other->getVarMap());
   dpct::merge(CallExprMap, Other->CallExprMap);
+  dpct::merge(ParentDFIs, Other->ParentDFIs);
   if (BaseObjectTexture)
     BaseObjectTexture->merge(Other->BaseObjectTexture);
   else
