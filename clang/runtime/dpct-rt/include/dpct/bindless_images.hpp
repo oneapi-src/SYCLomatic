@@ -169,7 +169,7 @@ public:
                                  "Resource cannot be mapped more than once.");
       }
 
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240527)
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240803)
       _res_buf_ptr =
           sycl::ext::oneapi::experimental::map_external_linear_memory(
               get_external_mem(), 0, _res_size_bytes, q);
@@ -522,17 +522,6 @@ private:
 
     return channel;
   }
-};
-#else
-/// Stub external_mem_wrapper implementation for non-Windows platforms
-class external_mem_wrapper : public external_mem_wrapper_base {
-  static_assert(false,
-                  "Graphics interop is only supported on Windows for DX11.");
-public:
-  external_mem_wrapper(unsigned reg_flags)
-      : external_mem_wrapper_base(
-            sycl::ext::oneapi::experimental::external_mem(), reg_flags) {};
-  virtual ~external_mem_wrapper() {};
 };
 #endif // _WIN32
 

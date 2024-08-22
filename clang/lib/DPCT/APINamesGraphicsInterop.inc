@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 // clang-format off
-
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -104,5 +103,4 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
         "cudaGraphicsUnregisterResource", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("cudaGraphicsUnregisterResource"),
         ARG("--use-experimental-features=bindless_images"))))
-
 // clang-format on
