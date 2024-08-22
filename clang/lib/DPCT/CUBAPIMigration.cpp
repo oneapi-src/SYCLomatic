@@ -298,7 +298,9 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          "DeviceCountUncached", "DeviceCountCachedValue",
                          "PtxVersion", "PtxVersionUncached", "SmVersion",
                          "SmVersionUncached", "RowMajorTid",
+                         "StoreDirectBlocked", "StoreDirectStriped"),
                          "LoadDirectBlocked", "LoadDirectStriped"),
+
               hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);

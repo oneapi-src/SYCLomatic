@@ -9,6 +9,7 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriterCUB.h"
 #include "CallExprRewriterCommon.h"
+#include "InclusionHeaders.h"
 
 using namespace clang::dpct;
 
@@ -154,6 +155,20 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                 CALL(MapNames::getDpctNamespace() + "get_minor_version",
                      makeDeviceStr()),
                 LITERAL("10"))))
+      // cub::StoreDirectBlocked
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::StoreDirectBlocked",
+              CALL(MapNames::getDpctNamespace() + "group::store_blocked", NDITEM,
+                   ARG(1), ARG(2))))
+      // cub::StoreDirectStriped
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::StoreDirectStriped",
+              CALL(MapNames::getDpctNamespace() + "group::store_striped", NDITEM,
+                   ARG(1), ARG(2))))
       // cub::RowMajorTid
       MEMBER_CALL_FACTORY_ENTRY("cub::RowMajorTid", NDITEM, /*IsArrow=*/false,
                                 "get_local_linear_id")
