@@ -573,6 +573,26 @@
       Out: ""
       RuleId: "remove_CUDA_nvToolsExt_LIBRARY"
 
+- Rule: rule_CUDA_cufft_LIBRARY
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: CUDA_cufft_LIBRARY
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: \${CUDA_cufft_LIBRARY}
+      Out: \${MKL_LIB}
+
+- Rule: rule_CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
+  In: \${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+  Out: \${SYCLToolkit_LIBRARY_DIR}
+
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
   Priority: Fallback
@@ -2405,6 +2425,19 @@
       Out: ""
       RuleId: "remove_target_link_options_cuda_arg"
 
+#'-static-libstdc++' is not supported together with '-fsycl' when using icpx compiler.
+- Rule: rule_static_libstdc++_target_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: static_libstdc++_target_link_options
+  In: target_link_options${empty}(${target} ${libs})
+  Out: target_link_options(${target} ${libs})
+  Subrules:
+    libs:
+      In: -static-libstdc++
+      Out: ""
+      MatchMode: Full
+
 - Rule: rule_target_link_directories
   Kind: CMakeRule
   Priority: Fallback
@@ -2507,20 +2540,6 @@
       Out: SYCL_INCLUDE_DIR
       MatchMode: Full
       RuleId: "replace_cudnn_include_dir_with_sycl_include_dir"
-
-- Rule: rule_target_include_directories_cmake_cuda_toolkit_include_dir
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: target_include_directories_cmake_cuda_toolkit_inc
-  MatchMode: Partial
-  In: target_include_directories${empty}(${value})
-  Out: target_include_directories(${value})
-  Subrules:
-    value:
-      In: CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES
-      Out: SYCL_INCLUDE_DIR
-      MatchMode: Full
-      RuleId: "replace_cmake_cuda_toolkit_include_dir_with_sycl_include_dir"
 
 - Rule: rule_target_include_directories_cuda_toolkit_math_include_dir
   Kind: CMakeRule
