@@ -2437,6 +2437,7 @@
       In: -static-libstdc++
       Out: ""
       MatchMode: Full
+      Warning: "'-static-libstdc++' is not supported together with '-fsycl' when using icpx compiler"
 
 - Rule: rule_target_link_directories
   Kind: CMakeRule

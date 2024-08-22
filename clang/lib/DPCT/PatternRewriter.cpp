@@ -12,6 +12,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Path.h"
 #include <PatternRewriter.h>
+#include "Diagnostics.h"
 
 #include <optional>
 #include <ostream>
@@ -43,6 +44,7 @@ struct MatchResult {
   int Start;
   int End;
   std::unordered_map<std::string, std::string> Bindings;
+  bool FullMatchFound = false;
 };
 
 static SourceFileType SrcFileType = SourceFileType::SFT_CAndCXXSource;
@@ -496,6 +498,11 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
+      if (PatternIndex == PatternSize - 1 &&
+          !isIdentifiedChar(Input[Index + 1])) {
+        Result.FullMatchFound = true;
+      }
+
       Index++;
       PatternIndex++;
       continue;
@@ -719,8 +726,11 @@ void setFileTypeProcessed(enum SourceFileType FileType) {
   SrcFileType = FileType;
 }
 
+
+extern void addWarningMsg(const std::string &WarningMsg, const std::string FileName) ;
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
-                                 const std::string &Input) {
+                                 const std::string &Input, std::string FileName, std::string Diff) {
   std::stringstream OutputStream;
 
   if (PP.In.size() == 0) {
@@ -750,13 +760,47 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       for (const auto &[Name, Value] : Match.Bindings) {
         const auto &SubruleIterator = PP.Subrules.find(Name);
         if (SubruleIterator != PP.Subrules.end()) {
+          auto Pos = Input.find(Value);
+          if(Pos != std::string::npos) {
+            Diff = Input.substr(0, Pos);
+          }
           Match.Bindings[Name] =
-              applyPatternRewriter(SubruleIterator->second, Value);
+              applyPatternRewriter(SubruleIterator->second, Value, FileName, Diff);
         }
       }
 
+      std::string OutStr = PP.Out;
+      if (Result->FullMatchFound && !PP.Warning.empty()) {
+        std::string Buffer;
+        if (!Diff.empty())
+          Buffer = Diff + Input;
+
+        size_t LineNumber = 1;
+        size_t Count = 0;
+        const auto Lines = split(Buffer, '\n');
+        for (auto Line : Lines) {
+          if (Match.End + Diff.size() > Count &&
+              Match.End + Diff.size() <= Count + Line.size()) {
+            break;
+          }
+
+          Count += Line.size() + 1;
+          LineNumber++;
+        }
+
+        std::string WarningMsg =
+            FileName + ":" + std::to_string(LineNumber) + ":warning:";
+        WarningMsg += clang::dpct::DiagnosticsUtils::getMsgText(
+            clang::dpct::CMakeScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
+            PP.Warning);
+        WarningMsg += "\n";
+
+        addWarningMsg(WarningMsg, FileName);
+        OutStr = "\n# " + PP.Warning + "\n" + OutStr;
+      }
+
       const int Indentation = detectIndentation(Input, Index);
-      instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
+      instantiateTemplate(OutStr, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       while (Input[Index] == '\n') {
         OutputStream << Input[Index];

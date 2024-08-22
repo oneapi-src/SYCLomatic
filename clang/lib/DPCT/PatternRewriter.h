@@ -15,7 +15,7 @@
 #include "Rules.h"
 
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
-                                 const std::string &Input);
+                                 const std::string &Input, std::string FileName, std::string Diff = "");
 
 bool fixLineEndings(const std::string &Input, std::string &Output);
 
