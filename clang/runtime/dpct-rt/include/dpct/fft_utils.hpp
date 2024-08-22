@@ -10,9 +10,7 @@
 #define __DPCT_FFT_UTILS_HPP__
 
 #include "compat_service.hpp"
-
 #include "lib_common_utils.hpp"
-#include <oneapi/mkl.hpp>
 
 #include <optional>
 #include <utility>

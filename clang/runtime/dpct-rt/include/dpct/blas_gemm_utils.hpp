@@ -14,13 +14,7 @@
 #define __DPCT_BLAS_GEMM_UTILS_HPP__
 
 #include "compat_service.hpp"
-
 #include "dnnl_utils.hpp"
-#include "lib_common_utils.hpp"
-
-#include <oneapi/dnnl/dnnl.hpp>
-#include <oneapi/dnnl/dnnl_sycl.hpp>
-#include <oneapi/mkl.hpp>
 
 namespace dpct {
 namespace blas_gemm {

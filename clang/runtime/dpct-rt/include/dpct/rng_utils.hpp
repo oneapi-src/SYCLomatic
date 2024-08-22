@@ -10,10 +10,8 @@
 #define __DPCT_RNG_UTILS_HPP__
 
 #include "compat_service.hpp"
-
 #include "lib_common_utils.hpp"
 
-#include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 
 namespace dpct {

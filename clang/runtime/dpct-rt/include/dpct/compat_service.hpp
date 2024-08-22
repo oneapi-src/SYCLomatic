@@ -5,6 +5,11 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
+// This file contains some compatibility service APIs which are used by all
+// library utility helper functions. The compatibility service APIs are based on
+// either dpct implementation or syclcompat implementation, which is controlled
+// by the macro USE_DPCT_HELPER.
+//===----------------------------------------------------------------------===//
 
 #ifndef __DPCT_COMPAT_SERVICE_HPP__
 #define __DPCT_COMPAT_SERVICE_HPP__
