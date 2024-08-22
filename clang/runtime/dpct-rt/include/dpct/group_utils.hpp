@@ -798,7 +798,7 @@ __dpct_inline__ void load_direct_striped(const ItemT &item,
 /// onto each work-item.
 /// \tparam OutputIteratorT  The random-access iterator type for output.
 /// \iterator.
-/// \param linear_id A suitable linear identifier for the calling work-item.
+/// \param item The calling work-item.
 /// \param output_iter The work-group's base output iterator for writing.
 /// \param data Data to store.
 template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
@@ -822,7 +822,7 @@ __dpct_inline__ void store_direct_blocked(const ItemT &item,
 /// onto each work-item.
 /// \tparam OutputIteratorT  The random-access iterator type for output.
 /// \iterator.
-/// \param linear_id A suitable linear identifier for the calling work-item.
+/// \param item The calling work-item.
 /// \param output_iter The work-group's base output iterator for writing.
 /// \param items Data to store.
 template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
