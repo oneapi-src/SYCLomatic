@@ -24,8 +24,8 @@ namespace detail {
 template <typename target_t, typename source_t> class parameter_wrapper_base_t {
 public:
   parameter_wrapper_base_t(sycl::queue q, source_t *source, size_t ele_num)
-      : _source_attribute(::dpct::cs::get_pointer_attribute(q, source)), _q(q),
-        _source(source), _ele_num(ele_num),
+      : _source_attribute(::dpct::cs::detail::get_pointer_attribute(q, source)),
+        _q(q), _source(source), _ele_num(ele_num),
         _target(construct_member_variable_target()) {}
 
   ~parameter_wrapper_base_t() {
@@ -37,7 +37,7 @@ public:
   }
 
 protected:
-  ::dpct::cs::pointer_access_attribute _source_attribute;
+  ::dpct::cs::detail::pointer_access_attribute _source_attribute;
   sycl::queue _q;
   source_t *_source = nullptr;
   size_t _ele_num;
@@ -47,7 +47,8 @@ protected:
 private:
   target_t *construct_member_variable_target() {
     if constexpr (std::is_same_v<target_t, source_t>) {
-      if (_source_attribute == ::dpct::cs::pointer_access_attribute::host_only)
+      if (_source_attribute ==
+          ::dpct::cs::detail::pointer_access_attribute::host_only)
         return (target_t *)::dpct::cs::malloc(sizeof(target_t) * _ele_num, _q);
 #ifdef DPCT_USM_LEVEL_NONE
       auto alloc = dpct::detail::mem_mgr::instance().translate_ptr(_source);
@@ -113,7 +114,7 @@ public:
   ~parameter_wrapper_t() {
 #ifdef DPCT_USM_LEVEL_NONE
     if (_source_attribute ==
-        dpct::detail::pointer_access_attribute::device_only) {
+        ::dpct::cs::detail::pointer_access_attribute::device_only) {
       _q.submit([&](sycl::handler &cgh) {
         auto from_acc = dpct::get_buffer<target_t>(_target)
                             .template get_access<sycl::access_mode::read>(cgh);
@@ -130,7 +131,7 @@ public:
     }
 #else
     if (_source_attribute ==
-        ::dpct::cs::pointer_access_attribute::device_only) {
+        ::dpct::cs::detail::pointer_access_attribute::device_only) {
       _q.template single_task<::dpct::cs::kernel_name<
           class parameter_wrapper_copyback, target_t, source_t>>(
           [t = _target, s = _source]() { *s = static_cast<source_t>(*t); });
@@ -209,7 +210,7 @@ public:
             ::dpct::cs::memcpy_direction::automatic);
         (void)e;
         if (_source_attribute ==
-            ::dpct::cs::pointer_access_attribute::host_only)
+            ::dpct::cs::detail::pointer_access_attribute::host_only)
           e.wait();
       }
     }

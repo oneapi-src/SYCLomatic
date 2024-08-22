@@ -26,8 +26,11 @@ template <class... Args> using kernel_name = syclcompat_kernel_name<Args...>;
 using ns::get_current_device;
 using ns::get_default_context;
 using ns::queue_ptr;
+
+namespace detail {
 using ns::detail::get_pointer_attribute;
 using ns::detail::pointer_access_attribute;
+} // namespace detail
 
 inline sycl::queue &get_default_queue() {
 #if USE_DPCT_HELPER

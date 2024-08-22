@@ -29,8 +29,8 @@ inline typename ::dpct::cs::DataType<T>::T2 get_value(const T *s,
                                                       sycl::queue &q) {
   using Ty = typename ::dpct::cs::DataType<T>::T2;
   Ty s_h;
-  if (::dpct::cs::get_pointer_attribute(q, s) ==
-      ::dpct::cs::pointer_access_attribute::device_only)
+  if (::dpct::cs::detail::get_pointer_attribute(q, s) ==
+      ::dpct::cs::detail::pointer_access_attribute::device_only)
     ::dpct::cs::memcpy(q, (void *)&s_h, (void *)s, sizeof(T),
                        ::dpct::cs::memcpy_direction::device_to_host)
         .wait();
