@@ -7,7 +7,7 @@
 // __SYNCWARP: CUDA API:
 // __SYNCWARP-NEXT:   __syncwarp(u /*unsigned*/);
 // __SYNCWARP-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
-// __SYNCWARP-NEXT:   sycl::group_barrier(sycl::ext::oneapi::experimental::this_sub_group());
+// __SYNCWARP-NEXT:   sycl::group_barrier(sycl::ext::oneapi::this_work_item::get_sub_group());
 
 /// Atomic Functions
 
