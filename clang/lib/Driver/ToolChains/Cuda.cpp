@@ -30,7 +30,6 @@
 #include <system_error>
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <fstream>
-#include <regex>
 #include "clang/DPCT/DPCT.h"
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -60,18 +59,16 @@ void CudaInstallationDetector::ParseThrustVersionFile(
   std::string Line;
   std::string Res;
   while (std::getline(CudaFile, Line)) {
-    std::regex RE("^#define THRUST_VERSION [0-9]{6}", std::regex::extended);
-    std::smatch M;
-    std::regex_search(Line, M, RE);
-    if (!M.empty()) {
-      Res = M[0];
+    size_t Pos = Line.find("#define THRUST_VERSION ");
+    if (Pos != std::string::npos) {
+      Res = Line.substr(
+          23); // 23 is the length of string "#define THRUST_VERSION ".
       break;
     }
   }
   if (Res == "") {
     return;
   }
-  Res = Res.substr(23); // 23 is the length of string "#define THRUST_VERSION ".
   ThrustVersion = std::stoi(Res);
 }
 
@@ -84,18 +81,16 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   std::string Line;
   std::string Res;
   while (std::getline(CudaFile, Line)) {
-    std::regex RE("^#define CUDA_VERSION [0-9]{4,5}", std::regex::extended);
-    std::smatch M;
-    std::regex_search(Line, M, RE);
-    if (!M.empty()) {
-      Res = M[0];
+    size_t Pos = Line.find("#define CUDA_VERSION ");
+    if (Pos != std::string::npos) {
+      Res = Line.substr(
+          21); // 21 is the length of string "#define CUDA_VERSION ".
       break;
     }
   }
   if (Res == "") {
     return false;
   }
-  Res = Res.substr(21);
   int DefineVersion = std::stoi(Res);
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
