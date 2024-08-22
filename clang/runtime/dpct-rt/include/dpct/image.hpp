@@ -142,6 +142,7 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 struct image_matrix_desc {
   size_t width = 0;
   size_t height = 0;
+  size_t depth = 0;
   sycl::image_channel_type channel_type =
       sycl::image_channel_type::signed_int32;
   unsigned num_channels = 0;
@@ -173,9 +174,9 @@ public:
   image_channel_data_type get_channel_data_type() { return _type; }
   void set_channel_data_type(image_channel_data_type type) { _type = type; }
 
-  unsigned get_total_size() { return _total_size; }
+  unsigned get_total_size() const { return _total_size; }
 
-  unsigned get_channel_num() { return _channel_num; }
+  unsigned get_channel_num() const { return _channel_num; }
   void set_channel_num(unsigned channel_num) {
     _channel_num = channel_num;
     _total_size = _channel_size * _channel_num;

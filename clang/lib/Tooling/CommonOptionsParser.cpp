@@ -281,7 +281,7 @@ llvm::Error CommonOptionsParser::init(
               /*map to MigrationErrorCannotParseDatabase in DPCT*/);
         } else {
           bool IsProcessAllSet = false;
-          for (auto &OM : cl::getRegisteredOptions(*cl::TopLevelSubCommand)) {
+          for (auto &OM : cl::getRegisteredOptions(cl::SubCommand::getTopLevel())) {
             cl::Option *O = OM.second;
             if (O->ArgStr == "process-all") {
               IsProcessAllSet = O->getNumOccurrences();
@@ -379,6 +379,9 @@ llvm::Error CommonOptionsParser::init(
                                                       std::move(Compilations));
     }
   }
+
+  Compilations =
+      std::make_unique<ExpandedCompilationDatabase>(std::move(Compilations));
 #endif
   auto AdjustingCompilations =
       std::make_unique<ArgumentsAdjustingCompilations>(

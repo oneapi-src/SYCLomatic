@@ -43,7 +43,7 @@ int main() {
 // CHECK-EMPTY:  
 // CHECK-NEXT:            // accessors to device memory
 // CHECK-NEXT:            sycl::local_accessor<int, 1> cl_acc_ct1(sycl::range<1>(36), cgh);
-// CHECK-NEXT:            sycl::local_accessor<int, 2> bl_acc_ct1(sycl::range<2>(12, 12), cgh);
+// CHECK-NEXT:            sycl::local_accessor<int[12][12], 0> bl_acc_ct1(cgh);
 // CHECK-NEXT:            auto b_acc_ct1 = b.get_access(cgh);
 // CHECK-EMPTY:  
 // CHECK-NEXT:            // accessors to image objects

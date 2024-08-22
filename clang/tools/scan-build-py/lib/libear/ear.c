@@ -1838,15 +1838,32 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                 tail[len - 1] == 'r')) {
       is_nvcc_or_ld = 1;
       char ofilename[PATH_MAX];
-      int olen = strlen(argv[2]);
-      memset(ofilename, '\0', PATH_MAX);
 
+      // The logic below to extract an archive name from an ar command, like:
+      // 1. "/usr/bin/ar --plugin plugin.so -qc foo.a bar.o"
+      // 2. "/usr/bin/ar qc foo.a bar.o "
+      int is_option_plugin = 0;
+      size_t idx = it + 1;
+      for (; idx < argc; idx++) {
+        if (strcmp(argv[idx], "--plugin") == 0) {
+          is_option_plugin = 1;
+        } else if (is_option_plugin) {
+          is_option_plugin = 0;
+          continue;
+        } else {
+          idx += 1;
+          break; // To break the loop when idx points the archive name of ar
+                 // command.
+        }
+      }
+      int olen = strlen(argv[idx]);
+      memset(ofilename, '\0', PATH_MAX);
       if (olen >= PATH_MAX) {
         perror("bear: filename length too long.");
         pthread_mutex_unlock(&mutex);
         exit(EXIT_FAILURE);
       }
-      strncpy(ofilename, argv[2], olen);
+      strncpy(ofilename, argv[idx], olen);
       if (generate_file(ofilename, 1) != 0) {
         pthread_mutex_unlock(&mutex);
         exit(EXIT_FAILURE);

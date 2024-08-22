@@ -7,10 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "AsmParser.h"
-#include "Asm/AsmIdentifierTable.h"
-#include "Asm/AsmLexer.h"
-#include "Asm/AsmToken.h"
-#include "Asm/AsmTokenKinds.h"
+#include "AsmIdentifierTable.h"
+#include "AsmLexer.h"
+#include "AsmToken.h"
+#include "AsmTokenKinds.h"
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/CharInfo.h"
@@ -26,22 +26,6 @@
 
 using namespace llvm;
 using namespace clang::dpct;
-
-bool InlineAsmBuiltinType::isSignedInt() const {
-  return getKind() == TK_s8 || getKind() == TK_s16 || getKind() == TK_s32 ||
-         getKind() == TK_s64;
-}
-bool InlineAsmBuiltinType::isUnsignedInt() const {
-  return getKind() == TK_u8 || getKind() == TK_u16 || getKind() == TK_u32 ||
-         getKind() == TK_u64;
-}
-bool InlineAsmBuiltinType::isFloating() const {
-  return getKind() == TK_f16 || getKind() == TK_f32 || getKind() == TK_f64;
-}
-bool InlineAsmBuiltinType::isBitSize() const {
-  return getKind() == TK_b8 || getKind() == TK_b16 || getKind() == TK_b32 ||
-         getKind() == TK_b64;
-}
 
 // clang-format off
 asm_precedence::Level getBinOpPrec(asmtok::TokenKind Kind) {
@@ -70,7 +54,7 @@ asm_precedence::Level getBinOpPrec(asmtok::TokenKind Kind) {
 }
 // clang-format on
 
-InlineAsmVariableDecl *
+InlineAsmVarDecl *
 InlineAsmScope::lookupDecl(InlineAsmIdentifierInfo *II) const {
   if (!II)
     return nullptr;
@@ -85,7 +69,7 @@ InlineAsmScope::lookupDecl(InlineAsmIdentifierInfo *II) const {
   return nullptr;
 }
 
-InlineAsmVariableDecl *
+InlineAsmVarDecl *
 InlineAsmScope::lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II,
                                             unsigned &Idx) const {
   if (!II)
@@ -102,16 +86,16 @@ InlineAsmScope::lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II,
   if (!RealII)
     return nullptr;
 
-  InlineAsmVariableDecl *D = lookupDecl(RealII);
+  InlineAsmVarDecl *D = lookupDecl(RealII);
   if (D && D->isParameterizedNameDecl() && Idx < D->getNumParameterizedNames())
     return D;
   return nullptr;
 }
 
 void InlineAsmParser::addBuiltinIdentifier() {
-#define BUILTIN_ID(X, Y, Z)                                                    \
-  getCurScope()->addDecl(::new (Context) InlineAsmVariableDecl(                \
-      getLexer().getIdentifierInfo(Y),                                         \
+#define SPECIAL_REG(X, Y, Z)                                                   \
+  getCurScope()->addDecl(::new (Context) InlineAsmVarDecl(                     \
+      getLexer().getIdentifierInfo(Y), AsmStateSpace::S_sreg,                  \
       Context.getBuiltinTypeFromTokenKind(asmtok::kw_##Z)));
 #include "AsmTokenKinds.def"
 }
@@ -132,7 +116,7 @@ InlineAsmContext::getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind) {
   switch (Kind) {
 #define BUILTIN_TYPE(X, Y)                                                     \
   case asmtok::kw_##X:                                                         \
-    return getBuiltinType(InlineAsmBuiltinType::TK_##X);
+    return getBuiltinType(InlineAsmBuiltinType::X);
 #include "AsmTokenKinds.def"
   default:
     break;
@@ -157,67 +141,67 @@ InlineAsmContext::getTypeFromConstraint(StringRef Constraint) {
   }
   switch (Constraint[0]) {
   case 'h':
-    return getBuiltinType(InlineAsmBuiltinType::TK_u16);
+    return getBuiltinType(InlineAsmBuiltinType::u16);
   case 'r':
-    return getBuiltinType(InlineAsmBuiltinType::TK_u32);
+    return getBuiltinType(InlineAsmBuiltinType::u32);
   case 'l':
-    return getBuiltinType(InlineAsmBuiltinType::TK_u64);
+    return getBuiltinType(InlineAsmBuiltinType::u64);
   case 'f':
-    return getBuiltinType(InlineAsmBuiltinType::TK_f32);
+    return getBuiltinType(InlineAsmBuiltinType::f32);
   case 'd':
-    return getBuiltinType(InlineAsmBuiltinType::TK_f64);
+    return getBuiltinType(InlineAsmBuiltinType::f64);
   default:
     break;
   }
   return nullptr;
 }
 
-InlineAsmBuiltinType *InlineAsmContext::getTypeFromExpr(const clang::Expr *E) {
-  if (E->getType()->isBuiltinType()) {
-    auto *T = E->getType()->getAs<clang::BuiltinType>();
-    switch (T->getKind()) {
+InlineAsmBuiltinType *InlineAsmContext::getTypeFromClangType(const Type *T) {
+  if (T->isBuiltinType()) {
+    auto *BT = T->getAs<clang::BuiltinType>();
+    switch (BT->getKind()) {
     case BuiltinType::SChar:
-      return getBuiltinType(InlineAsmBuiltinType::TK_s8);
+      return getBuiltinType(InlineAsmBuiltinType::s8);
     case BuiltinType::UChar:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u8);
+      return getBuiltinType(InlineAsmBuiltinType::u8);
     case BuiltinType::Char_S:
-      return getBuiltinType(InlineAsmBuiltinType::TK_s8);
+      return getBuiltinType(InlineAsmBuiltinType::s8);
     case BuiltinType::Char_U:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u8);
+      return getBuiltinType(InlineAsmBuiltinType::u8);
     case BuiltinType::Char8:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u8);
+      return getBuiltinType(InlineAsmBuiltinType::u8);
     case BuiltinType::Char16:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u16);
+      return getBuiltinType(InlineAsmBuiltinType::u16);
     case BuiltinType::Char32:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u32);
+      return getBuiltinType(InlineAsmBuiltinType::u32);
     case BuiltinType::WChar_S:
-      return getBuiltinType(InlineAsmBuiltinType::TK_s32);
+      return getBuiltinType(InlineAsmBuiltinType::s32);
     case BuiltinType::WChar_U:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u32);
+      return getBuiltinType(InlineAsmBuiltinType::u32);
     case BuiltinType::Short:
-      return getBuiltinType(InlineAsmBuiltinType::TK_s16);
+      return getBuiltinType(InlineAsmBuiltinType::s16);
     case BuiltinType::UShort:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u16);
+      return getBuiltinType(InlineAsmBuiltinType::u16);
     case BuiltinType::UInt:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u32);
+      return getBuiltinType(InlineAsmBuiltinType::u32);
     case BuiltinType::ULong:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u64);
+      return getBuiltinType(InlineAsmBuiltinType::u64);
     case BuiltinType::ULongLong:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u64);
+      return getBuiltinType(InlineAsmBuiltinType::u64);
     case BuiltinType::Int:
-      return getBuiltinType(InlineAsmBuiltinType::TK_s32);
+      return getBuiltinType(InlineAsmBuiltinType::s32);
     case BuiltinType::Long:
-      return getBuiltinType(InlineAsmBuiltinType::TK_s64);
+      return getBuiltinType(InlineAsmBuiltinType::s64);
     case BuiltinType::LongLong:
-      return getBuiltinType(InlineAsmBuiltinType::TK_s64);
+      return getBuiltinType(InlineAsmBuiltinType::s64);
     case BuiltinType::Float:
-      return getBuiltinType(InlineAsmBuiltinType::TK_f32);
+      return getBuiltinType(InlineAsmBuiltinType::f32);
     case BuiltinType::Double:
-      return getBuiltinType(InlineAsmBuiltinType::TK_f64);
+      return getBuiltinType(InlineAsmBuiltinType::f64);
     case BuiltinType::NullPtr:
-      return getBuiltinType(InlineAsmBuiltinType::TK_u64);
+      return getBuiltinType(InlineAsmBuiltinType::u64);
     case BuiltinType::Float16:
-      return getBuiltinType(InlineAsmBuiltinType::TK_f16);
+      return getBuiltinType(InlineAsmBuiltinType::f16);
     default:
       break;
     }
@@ -226,36 +210,33 @@ InlineAsmBuiltinType *InlineAsmContext::getTypeFromExpr(const clang::Expr *E) {
   // print raw typename without 'struct' prefix
   PrintingPolicy Policy(LangOptions{});
   Policy.adjustForCPlusPlus();
-  std::string TypeName = E->getType().getCanonicalType().getAsString(Policy);
+  std::string TypeName = T->getCanonicalTypeInternal().getAsString(Policy);
   return llvm::StringSwitch<InlineAsmBuiltinType *>(TypeName)
-      .Case("__half", getBuiltinType(InlineAsmBuiltinType::TK_f16))
-      .Case("__half2", getBuiltinType(InlineAsmBuiltinType::TK_f16x2))
-      .Case("__half_raw", getBuiltinType(InlineAsmBuiltinType::TK_f16))
-      .Case("__half_raw2", getBuiltinType(InlineAsmBuiltinType::TK_f16x2))
-      .Case("__nv_bfloat16", getBuiltinType(InlineAsmBuiltinType::TK_bf16))
-      .Case("__nv_bfloat162", getBuiltinType(InlineAsmBuiltinType::TK_bf16x2))
-      .Case("__nv_bfloat16_raw", getBuiltinType(InlineAsmBuiltinType::TK_bf16))
-      .Case("__nv_bfloat162_raw",
-            getBuiltinType(InlineAsmBuiltinType::TK_bf16x2))
+      .Case("__half", getBuiltinType(InlineAsmBuiltinType::f16))
+      .Case("__half2", getBuiltinType(InlineAsmBuiltinType::f16x2))
+      .Case("__half_raw", getBuiltinType(InlineAsmBuiltinType::f16))
+      .Case("__half_raw2", getBuiltinType(InlineAsmBuiltinType::f16x2))
+      .Case("__nv_bfloat16", getBuiltinType(InlineAsmBuiltinType::bf16))
+      .Case("__nv_bfloat162", getBuiltinType(InlineAsmBuiltinType::bf16x2))
+      .Case("__nv_bfloat16_raw", getBuiltinType(InlineAsmBuiltinType::bf16))
+      .Case("__nv_bfloat162_raw", getBuiltinType(InlineAsmBuiltinType::bf16x2))
       .Default(nullptr);
 }
-
-InlineAsmType::~InlineAsmType() = default;
-InlineAsmDecl::~InlineAsmDecl() = default;
-InlineAsmStmt::~InlineAsmStmt() = default;
 
 InlineAsmDeclResult
 InlineAsmParser::addInlineAsmOperands(const Expr *E, StringRef Operand,
                                       StringRef Constraint) {
   unsigned Index = Context.addInlineAsmOperand(Operand);
   InlineAsmIdentifierInfo *II = Context.get(Index);
-  InlineAsmType *Type = Context.getTypeFromExpr(E);
+  InlineAsmType *Type = Context.getTypeFromClangType(E->getType().getTypePtr());
   if (!Type)
     Type = Context.getTypeFromConstraint(Constraint);
   if (!Type)
     return AsmDeclError();
 
-  InlineAsmVariableDecl *VD = ::new (Context) InlineAsmVariableDecl(II, Type);
+  InlineAsmVarDecl *VD =
+      ::new (Context) InlineAsmVarDecl(II, AsmStateSpace::S_reg, Type);
+  VD->setInlineAsmOp(E);
   getCurScope()->addDecl(VD);
   return VD;
 }
@@ -322,27 +303,23 @@ InlineAsmStmtResult InlineAsmParser::ParseConditionalInstruction() {
 
 static inline InstAttr ConvertToInstAttr(asmtok::TokenKind Kind) {
   switch (Kind) {
-#define ROUND_MOD(X, Y)                                                        \
+#define MODIFIER(X, Y)                                                         \
   case asmtok::kw_##X:                                                         \
     return InstAttr::X;
-#define SAT_MOD(X, Y)                                                          \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define MUL_MOD(X, Y)                                                          \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define CMP_OP(X, Y)                                                           \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define BIN_OP(X, Y)                                                           \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#define SYNC_OP(X, Y)                                                          \
-  case asmtok::kw_##X:                                                         \
-    return InstAttr::X;
-#include "Asm/AsmTokenKinds.def"
+#include "AsmTokenKinds.def"
   default:
     llvm_unreachable("Kind is not an instruction attribute");
+  }
+}
+
+static inline AsmStateSpace ConvertToStateSpace(asmtok::TokenKind Kind) {
+  switch (Kind) {
+#define STATE_SPACE(X, Y)                                                      \
+  case asmtok::kw_##X:                                                         \
+    return AsmStateSpace::S_##X;
+#include "AsmTokenKinds.def"
+  default:
+    llvm_unreachable("Kind is not a state space");
   }
 }
 
@@ -356,14 +333,22 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   SmallVector<InstAttr, 4> Attrs;
   SmallVector<InlineAsmType *, 4> Types;
   SmallVector<InlineAsmExpr *, 4> Ops;
+  std::optional<AsmStateSpace> StateSpace;
 
   while (Tok.startOfDot()) {
     switch (Tok.getIdentifier()->getFlags()) {
     case InlineAsmIdentifierInfo::BuiltinType:
       Types.push_back(Context.getBuiltinTypeFromTokenKind(Tok.getKind()));
       break;
-    case InlineAsmIdentifierInfo::InstAttr:
-      Attrs.push_back(ConvertToInstAttr(Tok.getIdentifier()->getTokenID()));
+    case InlineAsmIdentifierInfo::Modifier:
+      Attrs.push_back(ConvertToInstAttr(Tok.getKind()));
+      break;
+    case InlineAsmIdentifierInfo::StateSpace:
+      // Duplicated state space in an single instruction statement.
+      if (StateSpace.has_value())
+        return AsmStmtError();
+      else
+        StateSpace = ConvertToStateSpace(Tok.getKind());
       break;
     default:
       return AsmStmtError();
@@ -393,8 +378,8 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
     Out = nullptr;
   }
 
-  return ::new (Context)
-      InlineAsmInstruction(Opcode, Attrs, Types, Out.get(), Pred.get(), Ops);
+  return ::new (Context) InlineAsmInstruction(Opcode, StateSpace, Attrs, Types,
+                                              Out.get(), Pred.get(), Ops);
 }
 
 InlineAsmExprResult InlineAsmParser::ParseExpression() {
@@ -526,7 +511,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
     ConsumeToken();
     break;
   case asmtok::identifier:
-#define BUILTIN_ID(X, Y, Z) case asmtok::bi_##X:
+#define SPECIAL_REG(X, Y, Z) case asmtok::bi_##X:
 #include "AsmTokenKinds.def"
     Res = ActOnIdExpr(Tok.getIdentifier());
     ConsumeToken();
@@ -605,7 +590,7 @@ InlineAsmTypeResult InlineAsmParser::ParseDeclarationSpecifier(
   switch (Tok.getKind()) {
 #define BUILTIN_TYPE(X, Y)                                                     \
   case asmtok::kw_##X:                                                         \
-    DeclSpec.BaseType = Context.getBuiltinType(InlineAsmBuiltinType::TK_##X);  \
+    DeclSpec.BaseType = Context.getBuiltinType(InlineAsmBuiltinType::X);       \
     ConsumeToken();                                                            \
     break;
 #include "AsmTokenKinds.def"
@@ -619,11 +604,11 @@ InlineAsmTypeResult InlineAsmParser::ParseDeclarationSpecifier(
     break;
   case asmtok::kw_v2:
     DeclSpec.Type = ::new (Context)
-        InlineAsmVectorType(InlineAsmVectorType::TK_v2, DeclSpec.BaseType);
+        InlineAsmVectorType(InlineAsmVectorType::v2, DeclSpec.BaseType);
     break;
   case asmtok::kw_v4:
     DeclSpec.Type = ::new (Context)
-        InlineAsmVectorType(InlineAsmVectorType::TK_v4, DeclSpec.BaseType);
+        InlineAsmVectorType(InlineAsmVectorType::v4, DeclSpec.BaseType);
     break;
   default:
     assert(0 && "unexpected vector type");
@@ -637,12 +622,12 @@ InlineAsmDeclResult InlineAsmParser::ParseDeclarator(
     return AsmDeclError();
   auto *Name = Tok.getIdentifier();
   ConsumeToken();
-
-  auto VarRes = ActOnVariableDecl(Name, DeclSpec.Type);
+  auto VarRes = ActOnVariableDecl(
+      Name, ConvertToStateSpace(DeclSpec.StateSpace), DeclSpec.Type);
   if (VarRes.isInvalid())
     return AsmDeclError();
 
-  InlineAsmVariableDecl *Decl = VarRes.getAs<InlineAsmVariableDecl>();
+  InlineAsmVarDecl *Decl = VarRes.getAs<InlineAsmVarDecl>();
 
   if (DeclSpec.Alignment) {
     Decl->setAlign(DeclSpec.Alignment->getValue().getZExtValue());
@@ -686,7 +671,40 @@ InlineAsmExprResult InlineAsmParser::ActOnDiscardExpr() {
 }
 
 InlineAsmExprResult InlineAsmParser::ActOnAddressExpr(InlineAsmExpr *SubExpr) {
-  return ::new (Context) InlineAsmAddressExpr(Context.getF64Type(), SubExpr);
+  InlineAsmAddressExpr::MemOpKind Kind;
+  InlineAsmDeclRefExpr *SymbolRef = nullptr;
+  InlineAsmIntegerLiteral *ImmAddr = nullptr;
+  auto IsReg = [](const InlineAsmDeclRefExpr *DRE) {
+    auto *VD = dyn_cast_or_null<InlineAsmVarDecl>(&DRE->getDecl());
+    return VD && VD->getStorageClass() == AsmStateSpace::S_reg;
+  };
+  switch (SubExpr->getStmtClass()) {
+  case InlineAsmStmt::IntegerLiteralClass:
+    Kind = InlineAsmAddressExpr::Imm;
+    ImmAddr = dyn_cast<InlineAsmIntegerLiteral>(SubExpr);
+    break;
+  case InlineAsmStmt::DeclRefExprClass:
+    SymbolRef = dyn_cast<InlineAsmDeclRefExpr>(SubExpr);
+    Kind = IsReg(SymbolRef) ? InlineAsmAddressExpr::Reg
+                            : InlineAsmAddressExpr::Var;
+    break;
+  case InlineAsmStmt::BinaryOperatorClass: {
+    auto *BinOp = dyn_cast<InlineAsmBinaryOperator>(SubExpr);
+    if (auto *LHS = dyn_cast<InlineAsmDeclRefExpr>(BinOp->getLHS()))
+      SymbolRef = LHS;
+    if (auto *RHS = dyn_cast<InlineAsmIntegerLiteral>(BinOp->getRHS()))
+      ImmAddr = RHS;
+    if (!SymbolRef || !ImmAddr)
+      return AsmExprError();
+    Kind = IsReg(SymbolRef) ? InlineAsmAddressExpr::RegImm
+                            : InlineAsmAddressExpr::VarImm;
+    break;
+  }
+  default:
+    return AsmExprError();
+  }
+  return ::new (Context)
+      InlineAsmAddressExpr(Context.getS64Type(), Kind, SymbolRef, ImmAddr);
 }
 
 InlineAsmExprResult InlineAsmParser::ActOnIdExpr(InlineAsmIdentifierInfo *II) {
@@ -715,13 +733,13 @@ InlineAsmParser::ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Vec) {
   InlineAsmVectorType::VecKind Kind;
   switch (Vec.size()) {
   case 2:
-    Kind = InlineAsmVectorType::TK_v2;
+    Kind = InlineAsmVectorType::v2;
     break;
   case 4:
-    Kind = InlineAsmVectorType::TK_v4;
+    Kind = InlineAsmVectorType::v4;
     break;
   case 8:
-    Kind = InlineAsmVectorType::TK_v8;
+    Kind = InlineAsmVectorType::v8;
     break;
   default:
     return AsmExprError();
@@ -731,9 +749,9 @@ InlineAsmParser::ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Vec) {
   // The type of each element must have the same non-predicate builtin type.
   for (auto *E : Vec) {
     if (isa<InlineAsmDiscardExpr>(E))
-        continue;
+      continue;
     if (auto *T = dyn_cast<InlineAsmBuiltinType>(E->getType())) {
-      if (T->getKind() == InlineAsmBuiltinType::TK_pred)
+      if (T->getKind() == InlineAsmBuiltinType::pred)
         return AsmExprError();
       if (ElementType && ElementType->getKind() != T->getKind())
         return AsmExprError();
@@ -1386,8 +1404,10 @@ InlineAsmExprResult InlineAsmParser::ActOnAlignment(InlineAsmExpr *Alignment) {
 
 InlineAsmDeclResult
 InlineAsmParser::ActOnVariableDecl(InlineAsmIdentifierInfo *Name,
+                                   AsmStateSpace StateSpace,
                                    InlineAsmType *Type) {
-  InlineAsmVariableDecl *D = ::new (Context) InlineAsmVariableDecl(Name, Type);
+  InlineAsmVarDecl *D =
+      ::new (Context) InlineAsmVarDecl(Name, StateSpace, Type);
   getCurScope()->addDecl(D);
   return D;
 }

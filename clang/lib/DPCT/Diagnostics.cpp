@@ -49,8 +49,9 @@ std::unordered_map<int, DiagnosticsMessage> CommentIDTable;
 #include "Diagnostics.inc"
 
 std::unordered_set<int> APIQueryNeedReportWarningIDSet = {
-    // More IDs may need to be added, like: 1007, 1008, 1028, 1030, 1031, 1037,
+    // More IDs may need to be added, like: 1007, 1028, 1030, 1031, 1037,
     // 1051, 1053, 1067, 1069, 1076, 1082, 1090, 1107.
+    1008, // API_NOT_MIGRATED_SYCL_UNDEF
     1009, // TRNA_WARNING_ERROR_HANDLING_API_COMMENTED
     1014, // STREAM_FLAG_PRIORITY_NOT_SUPPORTED
     1023, // MASK_UNSUPPORTED
@@ -94,7 +95,7 @@ void initWarningIDs() {
         reportInvalidWarningID(ID);
       return Value;
     };
-    int Begin = ParseNumber();
+    auto Begin = ParseNumber();
 
     if (*Cur == '\0') {
       WarningIDs.insert(Begin);

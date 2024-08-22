@@ -1,11 +1,11 @@
 // RUN: dpct -in-root %S -out-root %T/activation %S/activation.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/activation/activation.dp.cpp --match-full-lines %s
 
-// CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>
-// CHECK: #include <dpct/dpct.hpp>
-// CHECK: #include <iostream>
-// CHECK: #include <vector>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <dpct/dnnl_utils.hpp>
+// CHECK-NEXT: #include <iostream>
+// CHECK-NEXT: #include <vector>
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>
