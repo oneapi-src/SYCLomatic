@@ -6,10 +6,52 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "AnalysisInfo.h"
 #include "CallExprRewriterCUB.h"
 #include "CallExprRewriterCommon.h"
 
 using namespace clang::dpct;
+
+namespace {
+class PrettyTemplatedFunctionNamePrinter {
+  std::string Name;
+  std::vector<TemplateArgumentInfo> Args;
+
+public:
+  PrettyTemplatedFunctionNamePrinter(StringRef Name,
+                                     std::vector<TemplateArgumentInfo> &&Args)
+      : Name(Name.str()), Args(std::move(Args)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
+    if (!Args.empty()) {
+      Stream << '<';
+      ArgsPrinter<false, std::vector<TemplateArgumentInfo>>(Args).print(Stream);
+      Stream << '>';
+    }
+  }
+};
+
+std::function<PrettyTemplatedFunctionNamePrinter(const CallExpr *)>
+makePrettyTemplatedCalleeCreator(std::string CalleeName,
+                                 std::vector<size_t> Indexes) {
+  return PrinterCreator<
+      PrettyTemplatedFunctionNamePrinter, std::string,
+      std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
+      CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+        std::vector<TemplateArgumentInfo> Ret;
+        auto List = getTemplateArgsList(C);
+        for (auto Idx : Indexes) {
+          if (Idx < List.size()) {
+            Ret.emplace_back(List[Idx]);
+          }
+        }
+        return Ret;
+      });
+}
+} // namespace
+
+#define PRETTY_TEMPLATED_CALLEE(FuncName, ...)                                 \
+  makePrettyTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
 
 RewriterMap dpct::createUtilityFunctionsRewriterMap() {
   return RewriterMap{
@@ -114,5 +156,23 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                 LITERAL("10"))))
       // cub::RowMajorTid
       MEMBER_CALL_FACTORY_ENTRY("cub::RowMajorTid", NDITEM, /*IsArrow=*/false,
-                                "get_local_linear_id")};
+                                "get_local_linear_id")
+      // cub::LoadDirectBlocked
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::LoadDirectBlocked",
+              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                               "group::load_direct_blocked",
+                                           0, 1, 2),
+                   ARG(0), ARG(1), ARG(2))))
+      // cub::LoadDirectStriped
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::LoadDirectStriped",
+              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                               "group::load_direct_striped",
+                                           0, 1, 2, 3),
+                   ARG(0), ARG(1), ARG(2))))};
 }

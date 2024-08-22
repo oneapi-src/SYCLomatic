@@ -1107,7 +1107,7 @@ public:
   void buildReplacements();
   void processCudaArchMacro();
   void generateHostCode(tooling::Replacements &ProcessedReplList,
-                        HostDeviceFuncLocInfo Info, unsigned ID);
+                        HostDeviceFuncLocInfo &Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
@@ -2144,14 +2144,25 @@ private:
 };
 
 class TempStorageVarInfo {
+public:
+  enum APIKind {
+    BlockReduce,
+    BlockRadixSort,
+  };
+
+private:
   unsigned Offset;
+  APIKind Kind;
   std::string Name;
-  std::shared_ptr<TemplateDependentStringInfo> Type;
+  std::string TmpMemSizeCalFn;
+  std::shared_ptr<TemplateDependentStringInfo> ValueType;
 
 public:
-  TempStorageVarInfo(unsigned Off, StringRef Name,
-                     std::shared_ptr<TemplateDependentStringInfo> T)
-      : Offset(Off), Name(Name.str()), Type(T) {}
+  TempStorageVarInfo(unsigned Off, APIKind Kind, StringRef Name,
+                     std::string TmpMemSizeCalFn,
+                     std::shared_ptr<TemplateDependentStringInfo> ValT)
+      : Offset(Off), Kind(Kind), Name(Name.str()),
+        TmpMemSizeCalFn(TmpMemSizeCalFn), ValueType(ValT) {}
   const std::string &getName() const { return Name; }
   unsigned getOffset() const { return Offset; }
   void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;

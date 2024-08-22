@@ -2,11 +2,11 @@
 // RUN: FileCheck --input-file %T/memory/memory.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/memory/memory.dp.cpp -o %T/memory/memory.dp.o %}
 
-// CHECK: #include <dpct/dnnl_utils.hpp>
 // CHECK: #include <sycl/sycl.hpp>
-// CHECK: #include <dpct/dpct.hpp>
-// CHECK: #include <iostream>
-// CHECK: #include <vector>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <dpct/dnnl_utils.hpp>
+// CHECK-NEXT: #include <iostream>
+// CHECK-NEXT: #include <vector>
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>

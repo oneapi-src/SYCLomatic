@@ -783,42 +783,20 @@ private:
     list_devices();
 #endif
   }
-  void check_id(unsigned int &id) const {
+  void check_id(unsigned int id) const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (id >= _devs.size()) {
-      if (!_stack_addr.count(&_dev_stack)) {
-        id = DEFAULT_DEVICE_ID;
-        return;
-      }
       throw std::runtime_error("invalid device id");
     }
   }
-
-  class stack_wrapper : public std::stack<unsigned int> {
-  public:
-    stack_wrapper() {
-      std::lock_guard<std::recursive_mutex> lock(instance().m_mutex);
-      _stack_addr.insert(this);
-    }
-    ~stack_wrapper() {
-      std::lock_guard<std::recursive_mutex> lock(instance().m_mutex);
-      _stack_addr.erase(this);
-    }
-  };
-
   std::vector<std::shared_ptr<device_ext>> _devs;
   /// stack of devices resulting from CUDA context change;
-  inline static thread_local stack_wrapper _dev_stack;
+  static inline thread_local std::stack<unsigned int> _dev_stack;
   /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
   /// _dev_stack, which means the default device should be used for the current
   /// thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
   int _cpu_device = -1;
-  // Add address when constructing _dev_stack, and remove it when destructing.
-  // It can be used to check if _dev_stack is destructed to avoid getting
-  // garbage data after _dev_stack is destroyed when destructing global static
-  // variables.
-  inline static std::set<stack_wrapper *> _stack_addr;
 };
 
 /// Util function to get the default queue of current selected device depends on
