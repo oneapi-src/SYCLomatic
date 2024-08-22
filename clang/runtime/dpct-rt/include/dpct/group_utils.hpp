@@ -907,13 +907,14 @@ __dpct_inline__ void
 store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
                        InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
-  // This implementation does not take in account range loading across
-  // workgroup items To-do: Decide whether range loading is required for group
+  // This implementation does not take in account range storing across
+  // workgroup items To-do: Decide whether range storing is required for group
   // loading
   // This implementation loads linear segments into warp striped arrangement.
-  uint32_t subgroup_offset = item.get_sub_group().get_local_linear_id();
-  uint32_t subgroup_size = item.get_sub_group().get_local_linear_range();
-  uint32_t subgroup_idx = item.get_sub_group().get_group_linear_id();
+  auto sub_group = item.get_subgroup();
+  uint32_t subgroup_offset = sub_group.get_local_linear_id();
+  uint32_t subgroup_size = sub_group.get_local_linear_range();
+  uint32_t subgroup_idx = sub_group.get_group_linear_id();
   uint32_t initial_offset =
       (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset;
   OutputIteratorT workitem_itr = block_itr + initial_offset;
@@ -948,6 +949,9 @@ public:
   }
 
 private:
+  // local_memory is a placeholder ,currently unused, as no operations use
+  // extra memory but placed here to make migrations easier. 
+  // For future exchange operations might be necessary
   uint8_t *_local_memory;
 };
 
