@@ -30,7 +30,7 @@ __global__ void VectorAddKernel(float* A, float* B, float* C)
 
 int main()
 {
-  //      CHECK:    dpct::device_ext &dev_ct1 = syclcompat::get_current_device();
+  //      CHECK:    syclcompat::device_ext &dev_ct1 = syclcompat::get_current_device();
   // CHECK-NEXT:    sycl::queue &q_ct1 = *dev_ct1.default_queue();
   float *d_A, *d_B, *d_C;
 
