@@ -29,11 +29,8 @@ public:
                     unsigned int num_levels = 1)
       : _channel(channel),
         _desc(sycl::ext::oneapi::experimental::image_descriptor(
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
-            range, _channel.get_channel_order(), _channel.get_channel_type(),
-            type, num_levels
-#endif
-            )) {
+            range, _channel.get_channel_num(), _channel.get_channel_type(),
+            type, num_levels)) {
     auto q = get_default_queue();
     _handle = alloc_image_mem(_desc, q);
     if (type == sycl::ext::oneapi::experimental::image_type::mipmap) {
@@ -61,9 +58,7 @@ public:
       const sycl::ext::oneapi::experimental::image_descriptor *desc)
       : _desc(*desc) {
     _channel.set_channel_type(desc->channel_type);
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240725)
     _channel.set_channel_num(desc->num_channels);
-#endif
     auto q = get_default_queue();
     _handle = alloc_image_mem(_desc, q);
   }
@@ -145,26 +140,7 @@ inline image_mem_wrapper *&get_img_mem_map(
 
 static inline size_t
 get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
-  size_t channel_num = 4, channel_size;
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
-  switch (decs.channel_order) {
-  case sycl::image_channel_order::r:
-    channel_num = 1;
-    break;
-  case sycl::image_channel_order::rg:
-    channel_num = 2;
-    break;
-  case sycl::image_channel_order::rgb:
-    channel_num = 3;
-    break;
-  case sycl::image_channel_order::rgba:
-    channel_num = 4;
-    break;
-  default:
-    throw std::runtime_error("Unsupported channel_order in get_ele_size!");
-    break;
-  }
-#endif
+  size_t channel_size;
   switch (decs.channel_type) {
   case sycl::image_channel_type::signed_int8:
   case sycl::image_channel_type::unsigned_int8:
@@ -184,7 +160,7 @@ get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
     throw std::runtime_error("Unsupported channel_type in get_ele_size!");
     break;
   }
-  return channel_num * channel_size;
+  return decs.num_channels * channel_size;
 }
 
 static inline sycl::event
@@ -402,11 +378,8 @@ create_bindless_image(image_data data, sampling_info info,
         .wait();
 #else
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
-        {data.get_x(), data.get_y()}, data.get_channel().get_channel_order(),
-        data.get_channel_type()
-#endif
-    );
+        {data.get_x(), data.get_y()}, data.get_channel().get_channel_num(),
+        data.get_channel_type());
     auto img = sycl::ext::oneapi::experimental::create_image(
         data.get_data_ptr(), data.get_pitch(), samp, desc, q);
 #endif
@@ -542,10 +515,7 @@ public:
               const image_channel &channel,
               sycl::queue q = get_default_queue()) {
     auto desc = sycl::ext::oneapi::experimental::image_descriptor(
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20240527)
-        {width, height}, channel.get_channel_order(), channel.get_channel_type()
-#endif
-    );
+        {width, height}, channel.get_channel_num(), channel.get_channel_type());
     attach(&desc, static_cast<device_ptr>(data), pitch, q);
   }
 
