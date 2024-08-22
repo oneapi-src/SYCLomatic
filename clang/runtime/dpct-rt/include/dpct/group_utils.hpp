@@ -897,7 +897,7 @@ __dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
   }
 }
 
-/// Stores a warp-striped arrangement of work items linear segment of items.
+/// Stores a subgroup-striped arrangement of work items linear segment of items.
 // Created as free function until exchange mechanism is
 // implemented.
 // To-do: inline this function with BLOCK_STORE_WARP_TRANSPOSE mechanism
