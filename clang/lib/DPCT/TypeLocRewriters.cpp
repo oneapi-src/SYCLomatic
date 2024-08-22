@@ -33,19 +33,6 @@ makeStringCreator(std::string TypeName,
   };
 }
 
-// std::function<TemplateArgumentInfo(const TypeLoc)>
-// makeTemplateArgCreator(unsigned Idx) {
-//   return [=](const TypeLoc TL) -> TemplateArgumentInfo {
-//     if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
-//       if (TSTL.getNumArgs() > Idx) {
-//         auto TAL = TSTL.getArgLoc(Idx);
-//         return TemplateArgumentInfo(TAL, TL.getSourceRange());
-//       }
-//     }
-//     return TemplateArgumentInfo("");
-//   };
-// }
-
 template <typename T>
 std::function<std::string(const TypeLoc)>
 makeAddPointerCreator(std::function<T(const TypeLoc)> f) {
