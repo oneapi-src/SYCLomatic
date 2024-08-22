@@ -14,6 +14,7 @@
 #include "MigrationRuleManager.h"
 #include "NCCLAPIMigration.h"
 #include "Utility.h"
+#include "TypeLocRewriters.h"
 #include "llvm/Support/YAMLTraits.h"
 
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
@@ -118,6 +119,28 @@ void registerHeaderRule(MetaRuleObject &R) {
 }
 
 void registerTypeRule(MetaRuleObject &R) {
+  TypeOutputBuilder TOB;
+  TOB.Kind = TypeOutputBuilder::Kind::Top;
+  TOB.RuleName = R.RuleId;
+  TOB.RuleFile = R.RuleFile;
+  TOB.parse(R.Out);
+
+  if (R.RuleAttributes.NumOfTemplateArgs != -1) {
+    dpct::TypeMatchingDesc TMD =
+        dpct::TypeMatchingDesc(R.In, R.RuleAttributes.NumOfTemplateArgs);
+    auto Value = clang::dpct::makeUserDefinedTypeStrCreator(R, TOB);
+    auto &Entry =
+        (*clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap)[TMD];
+    if (!Entry) {
+      Entry = clang::dpct::createTypeLocRewriterFactory(Value);
+      reisterMigrationRule(R.RuleId, [=] {
+        return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
+      });
+    } else if (Entry->Priority > R.Priority) {
+      Entry = clang::dpct::createTypeLocRewriterFactory(Value);
+    }
+  }
+
   auto It = MapNames::TypeNamesMap.find(R.In);
   if (It != MapNames::TypeNamesMap.end()) {
     if (It->second->Priority > R.Priority) {
@@ -533,6 +556,20 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
   return ResultBuilder;
 }
 
+std::shared_ptr<OutputBuilder>
+TypeOutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
+  auto ResultBuilder = std::make_shared<TypeOutputBuilder>();
+  if (OutStr.substr(Idx, 13) == "$template_arg") {
+    Idx += 13;
+    OutputBuilder::consumeLParen(OutStr, Idx, "$template_arg");
+    ResultBuilder->Kind = Kind::TemplateArg;
+    ResultBuilder->ArgIndex =
+        OutputBuilder::consumeArgIndex(OutStr, Idx, "$template_arg");
+    OutputBuilder::consumeRParen(OutStr, Idx, "$template_arg");
+  }
+  return ResultBuilder;
+}
+
 class RefMatcherInterface
     : public clang::ast_matchers::internal::MatcherInterface<
           clang::DeclRefExpr> {
@@ -630,35 +667,10 @@ void clang::dpct::UserDefinedTypeRule::registerMatcher(
 void clang::dpct::UserDefinedTypeRule::runRule(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "typeLoc")) {
-    auto TypeStr =
-        DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
-    // if the TypeLoc is a TemplateSpecializationTypeLoc
-    // the TypeStr should be the substr before the "<"
-    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
-      TypeStr = TypeStr.substr(0, TypeStr.find("<"));
-    }
-    auto It = MapNames::TypeNamesMap.find(TypeStr);
-    if (It == MapNames::TypeNamesMap.end())
-      return;
-
-    auto ReplStr = It->second->NewName;
-
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
-    auto Len = Lexer::MeasureTokenLength(
-        Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
-    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
-      Range = getDefinitionRange(TSTL.getBeginLoc(), TSTL.getLAngleLoc());
-      Len = 0;
-    }
-    Len += SM.getDecomposedLoc(Range.getEnd()).second -
-           SM.getDecomposedLoc(Range.getBegin()).second;
-    emplaceTransformation(
-        new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
-    for (auto ItHeader = It->second->Includes.begin();
-         ItHeader != It->second->Includes.end(); ItHeader++) {
-      DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
-    }
+    dpct::ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 
