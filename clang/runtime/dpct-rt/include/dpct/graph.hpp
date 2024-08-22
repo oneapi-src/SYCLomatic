@@ -133,56 +133,70 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
   }
 }
 
-/// Adding relevant helper functions for node retrieval and printing
-/// To-do: refine
-inline std::vector<sycl::ext::oneapi::experimental::node> get_nodes
-                     (const dpct::experimental::command_graph_ptr graph,
-                      const dpct::experimental::node_ptr *nodes,
-                      std::size_t numberOfNodes){
-    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
-    nodeVec = graph->get_nodes();
-    if (nodeVec.size() == numberOfNodes){
+///  Auxiliary function to query graph nodes.
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] get_func Lambda function for overloading
+/// \param [in] expectednumberOfNodes The number of nodes
+/// to be added
+inline std::vector<sycl::ext::oneapi::experimental::node> get_nodes_impl(
+    const dpct::experimental::command_graph_ptr graph,
+    std::function<std::vector<sycl::ext::oneapi::experimental::node>()> get_func,
+    std::size_t expectedNumberOfNodes) {
+    
+    std::vector<sycl::ext::oneapi::experimental::node> nodeVec = get_func();
+    
+    if (nodeVec.size() == expectedNumberOfNodes) {
         return nodeVec;
     }
+    
     return {};
- }
+}
 
-inline std::vector<sycl::ext::oneapi::experimental::node> get_root_nodes
-                     (const dpct::experimental::command_graph_ptr graph,
-                      const dpct::experimental::node_ptr *rootNodes,
-                      std::size_t numberOfRootNodes){
-    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
-    nodeVec = graph->get_root_nodes();
-    if (nodeVec.size() == numberOfRootNodes){
-        return nodeVec;
-    }
-    return {};
- }
+/// \Queries the nodes present in graph 
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] numberOfNodes number of Nodes in graph.
+inline std::vector<sycl::ext::oneapi::experimental::node> get_nodes(
+    const dpct::experimental::command_graph_ptr graph,
+    std::size_t numberOfNodes) {
+    
+    return get_nodes_impl(graph, [&]() { return graph->get_nodes(); }, numberOfNodes);
+}
 
-inline std::vector<sycl::ext::oneapi::experimental::node> get_successors
-                     (const dpct::experimental::command_graph_ptr graph,
-                      const dpct::experimental::node_ptr *successorNodes,
-                      std::size_t numberOfSuccessorNodes){
-    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
-    nodeVec = graph->get_successors();
-    if (nodeVec.size() == numberOfSuccessorNodes){
-        return nodeVec;
-    }
-    return {};
- }
+/// \Queries the root nodes present in graph 
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] numberOfRootNodes number of root nodes in graph.
+inline std::vector<sycl::ext::oneapi::experimental::node> get_root_nodes(
+    const dpct::experimental::command_graph_ptr graph,
+    std::size_t numberOfRootNodes) {
 
-inline std::vector<sycl::ext::oneapi::experimental::node> get_predecessors
-                     (const dpct::experimental::command_graph_ptr graph,
-                      const dpct::experimental::node_ptr *predecessorNodes,
-                      std::size_t numberOfPredecessorNodes){
-    std::vector<sycl::ext::oneapi::experimental::node> nodeVec;
-    nodeVec = graph->get_predecessors();
-    if (nodeVec.size() == numberOfPredecessorNodes){
-        return nodeVec;
-    }
-    return {};
- }
+    return get_nodes_impl(graph, [&](){ return graph->get_root_nodes(); }, numberOfRootNodes);
+}
 
+/// \Queries the successors present in graph node 
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] numberOfSuccessorNodes number of successor nodes in graph.
+inline std::vector<sycl::ext::oneapi::experimental::node> get_successors(
+    const dpct::experimental::command_graph_ptr graph,
+    std::size_t numberOfSuccessorNodes) {
+
+    return get_nodes_impl(graph, [&](){ return graph->get_successors(); }, numberOfSuccessorNodes);
+}
+
+/// \Queries the predecessors present in graph node
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] numberOfPredecessorNodes number of predecessor nodes in graph.
+inline std::vector<sycl::ext::oneapi::experimental::node> get_predecessors(
+    const dpct::experimental::command_graph_ptr graph,
+    std::size_t numberOfPredecessorNodes) {
+
+    return get_nodes_impl(graph, [&](){ return graph->get_predecessors(); }, numberOfPredecessorNodes);
+}
+
+/// \Prints the graph 
+/// \param [in] graph A pointer to the command graph.
+/// \param [in] path FilePath Path to the output file.
+/// \param [in] verbose If true, print additional information about the nodes such
+/// as kernel args or memory access where applicable.
 static inline void print_graph(const dpct::experimental::command_graph_ptr graph,
                                std::string path,
                                bool verbose){
