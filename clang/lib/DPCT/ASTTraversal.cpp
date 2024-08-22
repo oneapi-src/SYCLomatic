@@ -7974,11 +7974,14 @@ if (CodePinInstrumentation.find(KCallSpellingRange.first) !=
       }
     }
   }
+  std::string KernelName =
+      KCall->getCalleeDecl()->getAsFunction()->getNameAsString();
 
   auto InstrumentKernel = [&](std::string StreamStr, HeaderType HT,
                               dpct::ReplacementType CodePinType) {
     std::string CodePinKernelArgsString = "(\"";
-    CodePinKernelArgsString += llvm::sys::path::convert_to_slash(
+    CodePinKernelArgsString += KernelName + ":" +
+                               llvm::sys::path::convert_to_slash(
                                    KCallSpellingRange.first.printToString(SM)) +
                                "\", ";
     CodePinKernelArgsString += StreamStr;
@@ -13962,8 +13965,9 @@ REGISTER_RULE(DriverDeviceAPIRule, PassKind::PK_Migration)
 void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto contextAPI = [&]() {
     return hasAnyName(
-        "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
-        "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
+        "cuInit", "cuCtxCreate_v2", "cuCtxCreate_v3", "cuCtxCreate_v4",
+        "cuCtxSetCurrent", "cuCtxGetCurrent", "cuCtxSynchronize",
+        "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
         "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
         "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit",
         "cuCtxPushCurrent_v2", "cuCtxPopCurrent_v2");
