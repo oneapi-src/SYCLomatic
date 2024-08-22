@@ -8,6 +8,7 @@
 
 #ifndef DPCT_MIGRATE_CMAKE_SCRIPT_H
 #define DPCT_MIGRATE_CMAKE_SCRIPT_H
+#include "MigrateBuildScript.h"
 #include "Rules.h"
 
 #include "clang/Tooling/CommonOptionsParser.h"

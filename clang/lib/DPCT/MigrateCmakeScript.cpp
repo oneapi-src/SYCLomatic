@@ -57,14 +57,6 @@ static std::map<std::string /*file path*/,
 
 void cmakeSyntaxProcessed(std::string &Input);
 
-static std::string readFile(const clang::tooling::UnifiedPath &Name) {
-  std::ifstream Stream(Name.getCanonicalPath().str(),
-                       std::ios::in | std::ios::binary);
-  std::string Contents((std::istreambuf_iterator<char>(Stream)),
-                       (std::istreambuf_iterator<char>()));
-  return Contents;
-}
-
 clang::tooling::UnifiedPath
 getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot) {
@@ -251,25 +243,6 @@ static size_t gotoEndOfCmakeCommandStmt(const std::string Input, size_t Index) {
   for (; Index < Size && Input[Index] != ')'; Index++) {
   }
   return Index;
-}
-
-static std::vector<std::string> split(const std::string &Input,
-                                      const std::string &Delimiter) {
-  std::vector<std::string> Vec;
-  if (!Input.empty()) {
-
-    size_t Index = 0;
-    size_t Pos = Input.find(Delimiter, Index);
-    while (Index < Input.size() && Pos != std::string::npos) {
-      Vec.push_back(Input.substr(Index, Pos - Index));
-
-      Index = Pos + Delimiter.size();
-      Pos = Input.find(Delimiter, Index);
-    }
-    // Append the remaining part
-    Vec.push_back(Input.substr(Index));
-  }
-  return Vec;
 }
 
 std::string getVarName(const std::string &Variable) {
@@ -710,6 +683,7 @@ static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
 
 bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
 
+/*
 static void storeBufferToFile() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &FileName = Entry.first;
@@ -731,6 +705,7 @@ static void storeBufferToFile() {
     Stream.flush();
   }
 }
+*/
 
 // cmake systaxes need to be processed by implicit migration rules, as they are
 // difficult to be described with yaml based rule syntax.
@@ -752,7 +727,7 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
   reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
   applyCmakeMigrationRules(InRoot, OutRoot);
-  storeBufferToFile();
+  storeBufferToFile(CmakeScriptFileBufferMap, ScriptFileCRLFMap);
 }
 
 void registerCmakeMigrationRule(MetaRuleObject &R) {
