@@ -56,6 +56,7 @@ MapNames::MapTy MapNames::BLASAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 MapNames::MapTy MapNames::BLASEnumsMap;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
+MapNames::MapTy MapNames::CUBEnumsMap;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -1445,6 +1446,16 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUSPARSE_ACTION_NUMERIC",
        getDpctNamespace() + "sparse::conversion_scope::index_and_value"},
   };
+
+  // CUB enums mapping
+  // clang-format off
+  CUBEnumsMap = {
+    {"BLOCK_STORE_DIRECT", getDpctNamespace() + "group::group_store_algorithm::blocked"},
+    {"BLOCK_STORE_STRIPED", getDpctNamespace() + "group::group_store_algorithm::striped"},
+    {"BLOCK_LOAD_DIRECT", getDpctNamespace() + "group::group_load_algorithm::blocked"},
+    {"BLOCK_LOAD_STRIPED", getDpctNamespace() + "group::group_load_algorithm::striped"}
+  };
+  // clang-format on
 
   // BLAS enums mapping
   BLASEnumsMap = {
