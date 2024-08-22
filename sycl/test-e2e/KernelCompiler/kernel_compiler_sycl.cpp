@@ -38,7 +38,7 @@ extern "C" SYCL_EXTERNAL SYCL_EXT_ONEAPI_FUNCTION_PROPERTY((sycl::ext::oneapi::e
 void ff_cp(int *ptr) {
 
   // intentionally using deprecated routine, as opposed to this_work_item::get_nd_item<1>()
-  sycl::nd_item<1> Item = sycl::ext::oneapi::this_work_item::get_nd_item<1>();
+  sycl::nd_item<1> Item = sycl::ext::oneapi::experimental::this_nd_item<1>();
 
   sycl::id<1> GId = Item.get_global_id();
   ptr[GId.get(0)] = AddEm(GId.get(0), 37);
