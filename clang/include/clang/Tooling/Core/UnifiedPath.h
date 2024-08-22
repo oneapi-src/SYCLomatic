@@ -23,26 +23,21 @@ namespace tooling {
 class UnifiedPath {
 public:
   UnifiedPath() = default;
-  UnifiedPath(const std::string &Path, const std::string &CWD = ".")
-      : _Path(Path) {
-    makeCanonical(CWD);
+  UnifiedPath(const std::string &Path, const std::string &CWD = ".") {
+    setPath(Path, CWD);
   }
-  UnifiedPath(const llvm::StringRef Path, const std::string &CWD = ".")
-      : _Path(Path.str()) {
-    makeCanonical(CWD);
+  UnifiedPath(const llvm::StringRef Path, const std::string &CWD = ".") {
+    setPath(Path.str(), CWD);
   }
-  UnifiedPath(const llvm::Twine &Path, const std::string &CWD = ".")
-      : _Path(Path.str()) {
-    makeCanonical(CWD);
+  UnifiedPath(const llvm::Twine &Path, const std::string &CWD = ".") {
+    setPath(Path.str(), CWD);
   }
   UnifiedPath(const llvm::SmallVectorImpl<char> &Path,
               const std::string &CWD = ".") {
-    _Path = std::string(Path.data(), Path.size());
-    makeCanonical(CWD);
+    setPath(std::string(Path.data(), Path.size()), CWD);
   }
   UnifiedPath(const char *Path, const std::string &CWD = ".") {
-    _Path = std::string(Path);
-    makeCanonical(CWD);
+    setPath(Path, CWD);
   }
   bool equalsTo(const std::string &RHS) {
     return this->equalsTo(UnifiedPath(RHS));
@@ -61,16 +56,21 @@ public:
   }
   llvm::StringRef getCanonicalPath() const noexcept { return _CanonicalPath; }
   llvm::StringRef getPath() const noexcept { return _Path; }
-  void setPath(const std::string &NewPath) {
+  llvm::StringRef getAbsolutePath() const noexcept { return _AbsolutePath; }
+  void setPath(const std::string &NewPath, const std::string &CWD = ".") {
     _Path = NewPath;
+    _AbsolutePath.clear();
     _CanonicalPath.clear();
-    makeCanonical();
+    makeCanonical(CWD);
+    makeAbsolute(CWD);
   }
 
 private:
   void makeCanonical(const std::string &CWD = ".");
+  void makeAbsolute(const std::string &CWD = ".");
   std::string _Path;
   std::string _CanonicalPath;
+  std::string _AbsolutePath;
   static std::unordered_map<std::string, std::string> CanonicalPathCache;
 };
 bool operator==(const clang::tooling::UnifiedPath &LHS,

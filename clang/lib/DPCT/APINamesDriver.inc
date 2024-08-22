@@ -98,7 +98,39 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::device_ext,
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
             "cuCtxCreate_v2", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(2))))))
+            CALL(MapNames::getDpctNamespace() + "push_device_for_curr_thread", ARG(2))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUseNoQueueDevice(),
+    WARNING_FACTORY_ENTRY(
+        "cuCtxCreate_v3",
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v3", DEREF(0),
+                                                ARG(4))),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v3"),
+        std::string("it is redundant if it is migrated with option "
+                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                    "and queue.")),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+            "cuCtxCreate_v3", DEREF(0),
+            CALL(MapNames::getDpctNamespace() + "select_device", ARG(4))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUseNoQueueDevice(),
+    WARNING_FACTORY_ENTRY(
+        "cuCtxCreate_v4",
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v4", DEREF(0),
+                                                ARG(3))),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v4"),
+        std::string("it is redundant if it is migrated with option "
+                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                    "and queue.")),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+            "cuCtxCreate_v4", DEREF(0),
+            CALL(MapNames::getDpctNamespace() + "select_device", ARG(3))))))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsUseNoQueueDevice(),
@@ -175,6 +207,38 @@ FEATURE_REQUEST_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetApiVersion", DEREF(1),
                                             CALL(MapNames::getDpctNamespace() +
                                                  "get_sycl_language_version"))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    clang::dpct::checkIsUseNoQueueDevice(),
+    WARNING_FACTORY_ENTRY(
+        "cuCtxPushCurrent_v2",
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPushCurrent_v2", DEREF(0),
+                                                LITERAL("0"))),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPushCurrent_v2"),
+        std::string("it is redundant if it is migrated with option "
+                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                    "and queue.")),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                              "cuCtxPushCurrent_v2", CALL(
+                                MapNames::getDpctNamespace() + "push_device_for_curr_thread",
+                                ARG(0))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    clang::dpct::checkIsUseNoQueueDevice(),
+    WARNING_FACTORY_ENTRY(
+        "cuCtxPopCurrent_v2",
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPopCurrent_v2", DEREF(0),
+                                                LITERAL("0"))),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPopCurrent_v2"),
+        std::string("it is redundant if it is migrated with option "
+                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                    "and queue.")),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cuCtxPopCurrent_v2", DEREF(0),
+                                CALL(MapNames::getDpctNamespace() +
+                                     "pop_device_for_curr_thread")))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsGetWorkGroupDim(1),

@@ -734,13 +734,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
     // requirements to the order of invocation of its members.
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
-    if (CompileCommandsForFile.empty()) {
-      llvm::errs() << "Skipping " << File
-                   << ". Compile command for this file not found in "
-                      "compile_commands.json.\n";
-      FileSkipped = true;
-      return -1;
-    }
+
     for (CompileCommand &CompileCommand : CompileCommandsForFile) {
       // FIXME: chdir is thread hostile; on the other hand, creating the same
       // behavior as chdir is complex: chdir resolves the path once, thus
@@ -1107,8 +1101,8 @@ int ClangTool::run(ToolAction *Action) {
     if(isExcludePath(File.str())) {
       continue;
     }
-    int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
-                            Action);
+    int Ret = processFilesWithCrashGuard(this, File, ProcessingFailed,
+                                         FileSkipped, StaticSymbol, Action);
     if (Ret == -1)
       continue;
     else if (Ret < -1)
@@ -1120,9 +1114,8 @@ int ClangTool::run(ToolAction *Action) {
   // if input file(s) is not specified in command line, and the process-all
   // option is given in the comomand line, dpct tries to migrate or copy all
   // files from -in-root to the output directory.
-  if(SourcePaths.size() == 0 && DoGetRunRound() == 0) {
+  if (SourcePaths.size() == 0 && DoGetRunRound() == 0) {
     std::vector<std::string> FilesNotProcessed;
-
     // To traverse all the files in the directory specified by
     // -in-root, collecting *.cu files not processed by the first loop of
     // calling processFiles() into FilesNotProcessed, and copies the rest

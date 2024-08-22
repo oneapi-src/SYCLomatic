@@ -12,12 +12,16 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 
+#include "ToolChains/Cuda.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/TargetParser/Host.h"
 
 #include <fstream>
 #include <string>
@@ -85,6 +89,9 @@ static void getCompileInfo(
       bool IsTargetName = false;
       bool IsArCommand = false;
       bool SkipArOptions = false;
+      bool IsShareLibary = false;
+      bool isPushStateOption = false;
+      std::string PushStateOptionValue;
 
       std::string TargetName;
       std::string Tool;
@@ -113,6 +120,36 @@ static void getCompileInfo(
           TargetName = Obj;
           SkipArOptions = false;
           Tool = "ar -r"; // Record the tool that generates the target file.
+        } else if (Obj == "-shared" || Obj == "--shared") {
+          IsShareLibary = true;
+        } else if (Obj == "--push-state") {
+          // Add the options "-Wl" and "--whole-archive" to pass the static
+          // archive file referenced in a .so library to the linker.
+          PushStateOptionValue = "-Wl,--push-state,--whole-archive ";
+          isPushStateOption = true;
+        } else if (isPushStateOption && llvm::StringRef(Obj).ends_with(".a")) {
+          PushStateOptionValue += Obj + " ";
+        } else if (isPushStateOption && Obj == "--pop-state") {
+          PushStateOptionValue += "-Wl,--pop-state ";
+          isPushStateOption = false;
+        }
+      }
+
+      // If option "-shared" or "--shared" appears in the linker command, it
+      // means that a dynamic library is be generated.
+      if (IsShareLibary) {
+        auto Pos = Tool.find_first_of(' ');
+        if (Pos != std::string::npos) {
+          Tool = Tool.insert(Pos, " -shared");
+        }
+      }
+
+      // To keep library name from the option "--push-state --whole-archive
+      // foo.a --pop-state" in the linker command of auto-generated Makefile.
+      if (!PushStateOptionValue.empty()) {
+        auto Pos = Tool.find_first_of(' ');
+        if (Pos != std::string::npos) {
+          Tool = Tool.insert(Pos + 1, PushStateOptionValue);
         }
       }
 
@@ -175,7 +212,28 @@ static void getCompileInfo(
       if (IsSystemInclude) {
         IsSystemInclude = false;
         clang::tooling::UnifiedPath IncPath = Option;
-        rewriteDir(IncPath, InRoot, OutRoot);
+        rewriteCanonicalDir(IncPath, InRoot, OutRoot);
+
+        unsigned MissingArgIndex, MissingArgCount;
+        MissingArgIndex = MissingArgCount = 0;
+        auto &Opts = clang::driver::getDriverOptTable();
+        llvm::opt::InputArgList ParsedArgs =
+            Opts.ParseArgs(nullptr, MissingArgIndex, MissingArgCount);
+
+        // Create minimalist CudaInstallationDetector to call the member
+        // function validateCudaHeaderDirectory()
+        DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
+        clang::driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(),
+                                     E);
+        clang::driver::CudaInstallationDetector CudaIncludeDetector(
+            Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
+        bool Ret = CudaIncludeDetector.validateCudaHeaderDirectory(
+            IncPath.getCanonicalPath().str(), Driver);
+        if (Ret) {
+          // Skip CUDA SDK header path specified by option "-isystem" in the
+          // auto-generated Makefile.
+          continue;
+        }
 
         NewOptions += "-isystem ";
         SmallString<512> OutDirectory(IncPath.getCanonicalPath());
@@ -276,6 +334,8 @@ static void getCompileInfo(
       } else if (Option == "-msse4.1" || Option == "-mavx512vl") {
         // Keep some options from original compile command.
         NewOptions += Option + " ";
+      } else if(Option == "-fPIC" ) {
+        NewOptions += Option + " ";
       }
     }
     if (!IsObjSpecified) {
@@ -297,11 +357,11 @@ static void getCompileInfo(
 
     auto OrigFileName = FileName;
 
-    // rewriteFileName() should be called before rewriteDir(), as FileName
+    // rewriteFileName() should be called before rewriteCanonicalDir(), as FileName
     // needs to be a existing file path passed to DpctFileInfo referred in
     // rewriteFileName() to avoid potential crash issue.
     rewriteFileName(FileName);
-    rewriteDir(FileName, InRoot, OutRoot);
+    rewriteCanonicalDir(FileName, InRoot, OutRoot);
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());

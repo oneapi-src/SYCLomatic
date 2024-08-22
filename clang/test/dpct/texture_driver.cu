@@ -19,6 +19,19 @@ template <typename T>
 void funcT(T t) {}
 
 int main() {
+  // CHECK: dpct::image_matrix_desc p3DDesc;
+  // CHECK-NEXT: p3DDesc.width = 1;
+  // CHECK-NEXT: p3DDesc.height = 2;
+  // CHECK-NEXT: p3DDesc.depth = 3;
+  // CHECK-NEXT: p3DDesc.channel_type = sycl::image_channel_type::signed_int8;
+  // CHECK-NEXT: p3DDesc.num_channels = 4;
+  CUDA_ARRAY3D_DESCRIPTOR p3DDesc;
+  p3DDesc.Width = 1;
+  p3DDesc.Height = 2;
+  p3DDesc.Depth = 3;
+  p3DDesc.Format = CU_AD_FORMAT_SIGNED_INT8;
+  p3DDesc.Flags = 5;
+  p3DDesc.NumChannels = 4;
 
   // CHECK: dpct::image_matrix_desc halfDesc;
   // CHECK-NEXT: halfDesc.height = 32;
@@ -41,6 +54,15 @@ int main() {
   float4Desc.Format = CU_AD_FORMAT_FLOAT;
   float4Desc.NumChannels = 4;
   float4Desc.Height = 32;
+
+  // CHECK: dpct::image_matrix **a3d_ptr = new dpct::image_matrix_p;
+  // CHECK-NEXT: *a3d_ptr = new dpct::image_matrix(&p3DDesc);
+  // CHECK-NEXT: delete (*a3d_ptr);
+  // CHECK-NEXT: delete a3d_ptr;
+  CUarray_st **a3d_ptr = new CUarray;
+  cuArray3DCreate(a3d_ptr, &p3DDesc);
+  cuArrayDestroy(*a3d_ptr);
+  delete a3d_ptr;
 
   // CHECK: dpct::image_matrix **a_ptr = new dpct::image_matrix_p;
   // CHECK-NEXT: dpct::image_matrix_p a42;

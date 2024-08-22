@@ -455,10 +455,10 @@ void OptionCategory::registerCategory() {
 // initialization because it is referenced from cl::opt constructors, which run
 // dynamically in an arbitrary order.
 LLVM_REQUIRE_CONSTANT_INITIALIZATION
-ManagedStatic<SubCommand> llvm::cl::TopLevelSubCommand;
+static ManagedStatic<SubCommand> TopLevelSubCommand;
 
 // A special subcommand that can be used to put an option into all subcommands.
-ManagedStatic<SubCommand> llvm::cl::AllSubCommands;
+static ManagedStatic<SubCommand> AllSubCommands;
 
 SubCommand &SubCommand::getTopLevel() { return *TopLevelSubCommand; }
 
@@ -2410,40 +2410,26 @@ protected:
     switch (reqCatEnumVal) {
     case HelpCategory::HC_All:
       return cl::getDPCTCategory();
-      break;
     case HelpCategory::HC_Basic:
       return cl::getDPCTBasicCategory();
-      break;
     case HelpCategory::HC_Advanced:
       return cl::getDPCTAdvancedCategory();
-      break;
     case HelpCategory::HC_CodeGen:
       return cl::getDPCTCodeGenCategory();
-      break;
     case HelpCategory::HC_ReportGen:
       return cl::getDPCTReportGenCategory();
-      break;
     case HelpCategory::HC_BuildScript:
       return cl::getDPCTBuildScriptCategory();
-      break;
     case HelpCategory::HC_QueryAPI:
       return cl::getDPCTQueryAPICategory();
-      break;
     case HelpCategory::HC_Warnings:
       return cl::getDPCTWarningsCategory();
-      break;
     case HelpCategory::HC_HelpInfo:
       return cl::getDPCTHelpInfoCategory();
-      break;
     case HelpCategory::HC_InterceptBuild:
       return cl::getDPCTInterceptBuildCategory();
-      break;
     case HelpCategory::HC_Examples:
       return cl::getDPCTExamplesCategory();
-      break;
-    default:
-      return cl::getDPCTCategory();
-      break;
     }
   }
 #endif // SYCLomatic_CUSTOMIZATION

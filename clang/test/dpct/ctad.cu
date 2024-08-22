@@ -92,7 +92,7 @@ int main() {
   // CHECK-NEXT:       sycl::local_accessor<int, 1> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, 1), sycl::range(1, 1, 1)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range(1, 1, 1), sycl::range(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel(1, k_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
@@ -103,12 +103,24 @@ int main() {
   // CHECK-NEXT:       sycl::local_accessor<int, 1> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
-  // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, NUM) * sycl::range(1, 1, NUM), sycl::range(1, 1, NUM)),
+  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range(1, 1, NUM) * sycl::range(1, 1, NUM), sycl::range(1, 1, NUM)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel(1, k_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel<<<NUM, NUM>>>(1);
+
+  // CHECK:   q_ct1.submit(
+  // CHECK-NEXT:     [&](sycl::handler &cgh) {
+  // CHECK-NEXT:       sycl::local_accessor<int, 1> k_acc_ct1(sycl::range(32), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         sycl::nd_range<3>(deflt * deflt, deflt),
+  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:           kernel(1, k_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:         });
+  // CHECK-NEXT:     });
+  kernel<<<deflt, deflt>>>(1);
 }
 
 

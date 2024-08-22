@@ -11,56 +11,56 @@
 // CHECK: void sqrt() {
 // CHECK-NEXT:   float f32;
 // CHECK-NEXT:   double f64;
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f32 = sycl::sqrt<float>(1.0f);
+// CHECK-NEXT:   f32 = sycl::sqrt(1.0f);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f64 = sycl::sqrt<double>(1.0);
+// CHECK-NEXT:   f64 = sycl::sqrt(1.0);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f64 = sycl::sqrt<double>(1.0);
+// CHECK-NEXT:   f64 = sycl::sqrt(1.0);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f64 = sycl::sqrt<double>(1.0);
+// CHECK-NEXT:   f64 = sycl::sqrt(1.0);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1013:{{.*}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   f64 = sycl::sqrt<double>(1.0);
+// CHECK-NEXT:   f64 = sycl::sqrt(1.0);
 // CHECK-NEXT: }
 __global__ void sqrt() {
   float f32;

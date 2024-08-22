@@ -36,7 +36,7 @@
 
 #define DPCT_OPTION(TEMPLATE, TYPE, NAME, OPTION_CLASS, OPTION_ACTIONS, ...)   \
   static TEMPLATE<TYPE, llvm::cl::parser<TYPE>> NAME(                          \
-      __VA_ARGS__, llvm::cl::sub(*llvm::cl::AllSubCommands),                   \
+      __VA_ARGS__, llvm::cl::sub(llvm::cl::SubCommand::getAll()),              \
       llvm::cl::cat(Category));
 #define DPCT_OPTION_ACTIONS(...) 0
 

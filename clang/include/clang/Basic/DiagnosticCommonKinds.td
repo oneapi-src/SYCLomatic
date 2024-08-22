@@ -283,6 +283,9 @@ def err_fixed_point_not_enabled : Error<"migrate with "
 def err_unimplemented_conversion_with_fixed_point_type : Error<
   "conversion between fixed point and %0 is not yet supported">;
 
+def err_requires_positive_value : Error<
+  "%select{invalid value '%0'; must be positive|value '%0' is too large}1">;
+
 // SEH
 def err_seh_expected_handler : Error<
   "expected '__except' or '__finally' block">;

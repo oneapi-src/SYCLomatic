@@ -206,7 +206,7 @@ inline bool isChildOrSamePath(clang::tooling::UnifiedPath Root,
 }
 
 /// Returns character sequence ("\n") on Linux, return ("\r\n") on Windows.
-const char *getNL(void);
+const char *getNL(bool AddBackSlash = false);
 
 /// Returns the character sequence ("\n" or "\r\n") used to represent new line
 /// in the source line containing Loc.
@@ -571,6 +571,7 @@ void getNameSpace(const NamespaceDecl *NSD,
                   std::vector<std::string> &Namespaces);
 std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
                                         const clang::ASTContext &Ctx);
+void PrintFullTemplateName(raw_ostream &OS, const PrintingPolicy &Policy, TemplateName Name);
 bool isFromCUDA(const Decl *D);
 namespace clang {
 namespace dpct {

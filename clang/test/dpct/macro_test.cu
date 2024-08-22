@@ -371,17 +371,17 @@ void bar() {
 #define AAA int *a
 #define BBB int *BB
 
-// CHECK: #define CCC AAA, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la, int *b=0
+// CHECK: #define CCC AAA, float *sp_lj, float *sp_coul, int *ljd, double la[8][1], int *b=0
 // CHECK-NEXT: #define CC AAA, BBB
 #define CCC AAA, int *b=0
 #define CC AAA, BBB
 
 // CHECK: #define CCCC(x) void fooc(x)
-// CHECK-NEXT: #define CCCCC(x) void foocc(x, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK-NEXT: #define CCCCC(x) void foocc(x, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 #define CCCC(x) __device__ void fooc(x)
 #define CCCCC(x) __device__ void foocc(x)
 
-// CHECK: #define XX(x) void foox(x, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define XX(x) void foox(x, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 // CHECK-NEXT: #define FF XX(CC)
 #define XX(x) __device__ void foox(x)
 #define FF XX(CC)
@@ -420,7 +420,7 @@ CCCC(CCC)
   __shared__ double la[8][1];
 }
 
-// CHECK: #define FFF void foo(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define FFF void foo(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 #define FFF __device__ void foo(AAA, BBB)
 
 // CHECK: FFF
@@ -435,7 +435,7 @@ FFF
 
 }
 
-// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 #define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB)
 
 // CHECK: FFFFF(pos, q)
@@ -452,7 +452,7 @@ FFFFF(pos, q)
   const int tid = threadIdx.x;
 }
 
-// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 #define FFFFFF(aaa,bbb) __device__ void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb)
 
 // CHECK: FFFFFF(pos, q)
@@ -469,8 +469,7 @@ FFFFFF(pos, q)
   const int tid = threadIdx.x;
 }
 
-// CHECK: void foo6(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd,
-// CHECK-NEXT:   sycl::local_accessor<double, 2> la)
+// CHECK: void foo6(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, double la[8][1])
 // CHECK-NEXT: {
 // CHECK-NEXT: }
 __device__ void foo6(AAA, BBB)
@@ -1086,7 +1085,7 @@ void foo28(){
 #define local_allocate_store_charge()                                       \
     __shared__ double red_acc[8][BLOCK_PAIR / SIMD_SIZE];
 
-//CHECK: void foo29(sycl::local_accessor<double, 2> red_acc) {
+//CHECK: void foo29(double red_acc[8][8/*BLOCK_PAIR / SIMD_SIZE*/]) {
 //CHECK-NEXT: }
 __global__ void foo29() {
   local_allocate_store_charge();
@@ -1111,8 +1110,8 @@ template<class T1, class T2, int N> __global__ void foo31();
 //CHECK-NEXT:     value. Modify the code to use the original expression, provided in
 //CHECK-NEXT:     comments, if it is correct.
 //CHECK-NEXT:     */
-//CHECK-NEXT:     sycl::local_accessor<double, 2> red_acc_acc_ct1(
-//CHECK-NEXT:         sycl::range<2>(8, 8 /*BLOCK_PAIR / SIMD_SIZE*/), cgh);
+//CHECK-NEXT:     sycl::local_accessor<double[8][8 /*BLOCK_PAIR / SIMD_SIZE*/], 0>
+//CHECK-NEXT:         red_acc_acc_ct1(cgh);
 
 //CHECK:     cgh.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -1367,4 +1366,21 @@ void foo38(T *t)
 
 template void foo38(int *);
 
+#define FORCE_TYPE long long int
+
+//CHECK: #define CALL(X, Y)                                                             \
+//CHECK:   dpct::get_in_order_queue().parallel_for(                                     \
+//CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),     \
+//CHECK:       [=](sycl::nd_item<3> item_ct1) { kernel2<FORCE_TYPE, X, Y>(); });
+#define CALL(X, Y) kernel2<FORCE_TYPE, X, Y><<<1, 1>>>();
+
+template<typename T, int T1, int T2>
+__global__ void kernel2(){
+
+}
+
+int foo39() {
+  CALL(0, 1)
+  return 0;
+}
 #endif

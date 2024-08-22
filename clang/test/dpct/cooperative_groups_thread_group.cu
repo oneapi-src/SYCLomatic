@@ -50,13 +50,17 @@ __global__ void kernelFunc() {
   cg::thread_block_tile<16> tilePartition16_1(cg::tiled_partition<16>(threadBlockGroup));
   cg::thread_block_tile<32> tilePartition32_2(cg::tiled_partition<32>(threadBlockGroup));
 
+  // CHECK: test11(dpct::experimental::group(tilePartition16, sycl::ext::oneapi::experimental::this_nd_item<3>()));
+  // CHECK: testThreadGroup(dpct::experimental::group(tilePartition16, item_ct1));
+  // CHECK: test44(dpct::experimental::group(tilePartition16, sycl::ext::oneapi::experimental::this_nd_item<3>()));
+  // CHECK: test11(dpct::experimental::group(tilePartition32, sycl::ext::oneapi::experimental::this_nd_item<3>()));
+  // CHECK: test11(dpct::experimental::group(threadBlockGroup, sycl::ext::oneapi::experimental::this_nd_item<3>()));
   test11(tilePartition16);
   testThreadGroup(tilePartition16);
   test44(tilePartition16);
   test11(tilePartition32);
   test11(threadBlockGroup);
 }
-
 
 int main() {
   kernelFunc<<<1,1>>>();

@@ -12,6 +12,10 @@
 namespace clang {
 namespace tooling {
 void UnifiedPath::makeCanonical(const std::string &CWD) {
+  // To remove quotation marks from _Path
+  if (_Path.size() >= 2 && _Path.front() == '"' && _Path.back() == '"') {
+    _Path = _Path.substr(1, _Path.size() - 2);
+  }
   if (_Path.empty()) {
     return;
   }
@@ -81,6 +85,29 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
   _CanonicalPath = RealPath.str();
 #endif
   CanonicalPathCache.insert(std::pair(_Path, _CanonicalPath));
+}
+
+void UnifiedPath::makeAbsolute(const std::string &CWD) {
+  if (_Path.empty()) {
+    return;
+  }
+  llvm::SmallString<512> Path(_Path);
+  llvm::sys::fs::expand_tilde(Path, Path);
+  if (!llvm::sys::path::is_absolute(Path)) {
+    llvm::SmallString<512> TempPath;
+    if (CWD == ".") {
+      llvm::sys::fs::current_path(TempPath);
+    } else {
+      UnifiedPath UnifiedCWD(CWD);
+      TempPath = UnifiedCWD.getCanonicalPath();
+    }
+    llvm::sys::path::append(TempPath, llvm::sys::path::Style::native, Path);
+    Path = TempPath;
+  }
+
+  llvm::sys::path::remove_dots(Path, /* remove_dot_dot= */ true);
+  llvm::sys::path::native(Path);
+  _AbsolutePath = Path.str();
 }
 std::unordered_map<std::string, std::string> UnifiedPath::CanonicalPathCache;
 bool operator==(const clang::tooling::UnifiedPath &LHS,

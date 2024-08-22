@@ -48,6 +48,32 @@ std::string RealSDKPath = "";
 std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
+int ThrustVersion=0;
+
+void CudaInstallationDetector::ParseThrustVersionFile(
+    const std::string &FilePath) {
+  std::ifstream CudaFile(FilePath, std::ios::in);
+  if (!CudaFile.is_open()) {
+    return;
+  }
+
+  std::string Line;
+  std::string Res;
+  while (std::getline(CudaFile, Line)) {
+    std::regex RE("^#define THRUST_VERSION [0-9]{6}", std::regex::extended);
+    std::smatch M;
+    std::regex_search(Line, M, RE);
+    if (!M.empty()) {
+      Res = M[0];
+      break;
+    }
+  }
+  if (Res == "") {
+    return;
+  }
+  Res = Res.substr(23); // 23 is the length of string "#define THRUST_VERSION ".
+  ThrustVersion = std::stoi(Res);
+}
 
 bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath) {
   Version = CudaVersion::UNKNOWN;
@@ -183,6 +209,8 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_123;
   if (raw_version < 12050)
     return CudaVersion::CUDA_124;
+  if (raw_version < 12060)
+    return CudaVersion::CUDA_125;
   return CudaVersion::NEW;
 }
 
@@ -239,6 +267,7 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
   if (!(FS.exists(FilePath + "/cuda_runtime.h") &&
         FS.exists(FilePath + "/cuda.h")))
     return false;
+  ParseThrustVersionFile(FilePath + "/thrust/version.h");
   IsIncludePathValid = true;
   IncludePath = FilePath;
   bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h");
@@ -976,6 +1005,7 @@ void NVPTX::getNVPTXTargetFeatures(const Driver &D, const llvm::Triple &Triple,
   case CudaVersion::CUDA_##CUDA_VER:                                           \
     PtxFeature = "+ptx" #PTX_VER;                                              \
     break;
+    CASE_CUDA_VERSION(125, 85);
     CASE_CUDA_VERSION(124, 84);
     CASE_CUDA_VERSION(123, 83);
     CASE_CUDA_VERSION(122, 82);
@@ -1117,7 +1147,7 @@ NVPTXToolChain::getSystemGPUArchs(const ArgList &Args) const {
   else
     Program = GetProgramPath("nvptx-arch");
 
-  auto StdoutOrErr = executeToolChainProgram(Program);
+  auto StdoutOrErr = executeToolChainProgram(Program, /*SecondsToWait=*/10);
   if (!StdoutOrErr)
     return StdoutOrErr.takeError();
 
