@@ -565,6 +565,7 @@ int runDPCT(int argc, const char **argv) {
 
   InRootPath = InRoot;
   OutRootPath = OutRoot;
+  std::string OutRootPathCUDACodepin = "";
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
   std::transform(
@@ -913,6 +914,11 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
+    if (EnableCodePin) {
+      OutRootPathCUDACodepin =  OutRootPath.getPath().str()  + "_codepin_cuda";
+      OutRootPath = OutRootPath.getPath().str() + "_codepin_sycl";
+    }
+
     dpct::DpctGlobalInfo::setOutRoot(OutRootPath);
   }
 
@@ -1289,9 +1295,8 @@ int runDPCT(int argc, const char **argv) {
       return MigrationSucceeded;
     }
   }
-
   // if run was successful
-  int Status = saveNewFiles(Tool, InRootPath, OutRootPath, ReplCUDA, ReplSYCL);
+  int Status = saveNewFiles(Tool, InRootPath, OutRootPath, OutRootPathCUDACodepin, ReplCUDA, ReplSYCL);
 
   if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     loadMainSrcFileInfo(OutRootPath);

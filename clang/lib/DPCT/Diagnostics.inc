@@ -286,8 +286,10 @@ DEF_WARNING(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"%0\" is not dev
 DEF_COMMENT(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"{0}\" is not device copyable for {1}. It is used in the SYCL kernel, please rewrite the code.")
 DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"%0\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
 DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
-DEF_WARNING(UNSUPPORT_SYCLCOMPAT, 1130, MEDIUM_LEVEL, "Migration of \"%0\" is not supported by SYCLcompat currently, please try to remigrate without option: '--use-syclcompat'.")
-DEF_COMMENT(UNSUPPORT_SYCLCOMPAT, 1130, MEDIUM_LEVEL, "Migration of \"{0}\" is not supported by SYCLcompat currently, please try to remigrate without option: '--use-syclcompat'.")
+DEF_WARNING(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
+DEF_COMMENT(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
+DEF_WARNING(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "Migration of \"%0\" is not supported by SYCLcompat currently, please try to remigrate without option: '--use-syclcompat'.")
+DEF_COMMENT(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "Migration of \"{0}\" is not supported by SYCLcompat currently, please try to remigrate without option: '--use-syclcompat'.")
 // clang-format on
 
 #undef DEF_COMMENT
