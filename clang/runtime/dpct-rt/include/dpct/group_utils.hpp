@@ -559,7 +559,7 @@ public:
     size_t group_work_items = item.get_local_range().size();
     temp_storage[linear_tid] = input[ITEMS_PER_WORK_ITEM - 1];
 
-    item.barrier(sycl::access::fence_space::local_space);
+    sycl::group_barrier(item.get_group());
 
 #pragma unroll
     for (size_t idx = ITEMS_PER_WORK_ITEM - 1; idx > 0; --idx) {
@@ -584,8 +584,8 @@ public:
     size_t group_work_items = item.get_local_range().size();
     temp_storage[linear_tid] = input[0];
 
-    item.barrier(sycl::access::fence_space::local_space);
-
+    sycl::group_barrier(item.get_group());
+    
 #pragma unroll
     for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; ++idx) {
       prev[idx] = input[idx + 1];
