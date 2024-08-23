@@ -645,14 +645,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
     auto &Buffer = Entry.second;
     clang::tooling::UnifiedPath FileName = Entry.first.getPath();
 
-    // auto Iter = FileWarningsMap.find(FileName.getPath().str());
-    // if (Iter != FileWarningsMap.end()) {
-    //   std::vector WarningsVec = Iter->second;
-    //   for (auto &Warning : WarningsVec) {
-    //     llvm::outs() << Warning;
-    //   }
-    // }
-
     // Apply user define migration rules
     for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
       const auto &PR = CmakeSyntaxEntry.second;
@@ -693,8 +685,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
       }
     }
 
-
-    // clang::tooling::UnifiedPath FileName = Entry.first.getPath();
     auto Iter = FileWarningsMap.find(FileName.getPath().str());
     if (Iter != FileWarningsMap.end()) {
       std::vector WarningsVec = Iter->second;
@@ -702,8 +692,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
         llvm::outs() << Warning;
       }
     }
-
-
   }
 }
 

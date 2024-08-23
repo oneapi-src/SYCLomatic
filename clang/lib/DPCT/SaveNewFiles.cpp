@@ -475,7 +475,7 @@ void applyPatternRewriter(const std::string &InputString,
   bool IsCRLF = fixLineEndings(InputString, LineEndingString);
 
   for (const auto &PR : MapNames::PatternRewriters) {
-    LineEndingString = applyPatternRewriter(PR, LineEndingString, "");
+    LineEndingString = applyPatternRewriter(PR, LineEndingString);
   }
   // Restore line ending for the formator
   if (IsCRLF) {

@@ -11,7 +11,7 @@ target_link_options( quda PUBLIC )
 target_link_options(quda PUBLIC  )
 
 target_link_options(nvcv_util_compat PUBLIC
-    # '-static-libstdc++' is not supported together with '-fsycl' when using icpx compiler
+    # DPCT3002:1: '-static-libstdc++' is not supported together with '-fsycl' when using icpx compiler. You may need to manually fix it.
     -static-libgcc
     -Wl,--wrap=__libc_start_main
     -Wl,-u__cxa_thread_atexit_impl
