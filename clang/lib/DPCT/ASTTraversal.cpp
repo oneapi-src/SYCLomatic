@@ -12303,12 +12303,13 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {
     ExprAnalysis EA;
     EA.analyze(C);
-    const auto *AttrKind = C->getArg(1);
-    Expr::EvalResult EvalRes;
-    if (AttrKind && AttrKind->EvaluateAsInt(EvalRes, *Result.Context)) {
-      int64_t Value = EvalRes.Val.getInt().getExtValue();
-      if (Value != 0);
-        // report(C->getBeginLoc(), Diagnostics::UNPROCESSED_KERNEL_ATTRIBUTE, false);
+    const auto *AttrArg = C->getArg(1);
+    if (auto DRE = dyn_cast<DeclRefExpr>(AttrArg)) {
+      if (auto AttrEnumConst = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+        std::string EnumName = AttrEnumConst->getName().str();
+        if (EnumName != "CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK")
+          report(C->getBeginLoc(), Diagnostics::UNSUPPORTED_KERNEL_ATTRIBUTE, false);
+      }
     }
     emplaceTransformation(EA.getReplacement());
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "member")) {

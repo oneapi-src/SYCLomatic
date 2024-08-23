@@ -4289,10 +4289,10 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
 
 const MapNames::MapTy MapNames::FunctionAttrMap{
     {"CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK", "max_work_group_size"},
-    {"CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES", "local_size_bytes"},
-    {"CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES", "const_size_bytes"},
-    {"CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES", "shared_size_bytes"},
-    {"CU_FUNC_ATTRIBUTE_NUM_REGS", "num_regs"},
+    {"CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES", "local_size_bytes /* local memory per work-item in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES", "const_size_bytes /* user-defined constant kernel memory in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES", "shared_size_bytes /* statically allocated shared memory per work-group in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_NUM_REGS", "num_regs /* number of register for each thread */"},
     // ...
 };
 
