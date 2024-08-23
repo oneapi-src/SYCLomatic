@@ -353,7 +353,7 @@ To fix this issue, please install the version 12 g++ package or libstdc++ packag
   or
   $ sudo apt install libstdc++-12-dev 
 
-Your installation may differ. Install the missing version of ``g++-XX`` or ``libstdc++-XX-dev`` based on what you see missing from the results of "ls /usr/lib/gcc/x86_64-linux-gnu" and "ls /usr/include/c++".
+If your installation differs, install the missing version of ``g++-XX`` or ``libstdc++-XX-dev`` based on what you see missing from the results of "ls /usr/lib/gcc/x86_64-linux-gnu" and "ls /usr/include/c++".
 
 How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?
 ***********************************************************************************************************************************************************
