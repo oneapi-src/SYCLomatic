@@ -856,7 +856,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   // is added later
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
-  case HT_DPCT_DNNL_Utils:
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
@@ -869,17 +868,14 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
-    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
-    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-      OS << "using namespace dpct;" << getNL();
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      concatHeader(OS, getHeaderSpelling(HT_COMPAT_SYCLcompat));
+      HeaderInsertedBitMap[HT_COMPAT_SYCLcompat] = true;
+    } else {
+      concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+      HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
     }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL)) {
-      OS << "using namespace sycl;" << getNL();
-    }
+    DpctGlobalInfo::printUsingNamespace(OS);
     if (DpctGlobalInfo::useNoQueueDevice()) {
       static bool Flag = true;
       auto SourceFileType = GetSourceFileType(getFilePath());
@@ -1224,10 +1220,11 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
 }
 const std::string &DpctGlobalInfo::getDeviceQueueName() {
   static const std::string DeviceQueue = [&]() {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return "default_queue";
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       return "out_of_order_queue";
-    else
-      return "in_order_queue";
+    return "in_order_queue";
   }();
   return DeviceQueue;
 }
@@ -1308,34 +1305,6 @@ void DpctGlobalInfo::setExcludePath(std::vector<std::string> ExcludePathVec) {
       clang::dpct::PrintMsg("Note: Path " + PathBuf.getCanonicalPath().str() +
                             " is invalid and will be ignored by option "
                             "--in-root-exclude.\n");
-    }
-  }
-}
-void DpctGlobalInfo::setExplicitNamespace(
-    std::vector<ExplicitNamespace> NamespacesVec) {
-  size_t NamespaceVecSize = NamespacesVec.size();
-  if (!NamespaceVecSize || NamespaceVecSize > 2) {
-    ShowStatus(MigrationErrorInvalidExplicitNamespace);
-    dpctExit(MigrationErrorInvalidExplicitNamespace);
-  }
-  for (auto &Namespace : NamespacesVec) {
-    // 1. Ensure option none is alone
-    bool Check1 =
-        (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-    // 2. Ensure option sycl, sycl-math only enabled one
-    bool Check2 =
-        ((Namespace == ExplicitNamespace::EN_SYCL ||
-          Namespace == ExplicitNamespace::EN_SYCL_Math) &&
-         (ExplicitNamespaceSet.size() == 1 &&
-          ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
-    // 3. Check whether option dpct duplicated
-    bool Check3 = (Namespace == ExplicitNamespace::EN_DPCT &&
-                   ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
-    if (Check1 || Check2 || Check3) {
-      ShowStatus(MigrationErrorInvalidExplicitNamespace);
-      dpctExit(MigrationErrorInvalidExplicitNamespace);
-    } else {
-      ExplicitNamespaceSet.insert(Namespace);
     }
   }
 }
@@ -1602,8 +1571,10 @@ void DpctGlobalInfo::buildReplacements() {
     DevDecl << MapNames::getDpctNamespace()
             << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
             << "get_current_device();";
-    QDecl << "&q_ct1 = dev_ct1." << DpctGlobalInfo::getDeviceQueueName()
-          << "();";
+    QDecl << "&q_ct1 = ";
+    if (DpctGlobalInfo::useSYCLCompat())
+      QDecl << '*';
+    QDecl << "dev_ct1." << DpctGlobalInfo::getDeviceQueueName() << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.
@@ -1860,7 +1831,7 @@ void DpctGlobalInfo::processCudaArchMacro() {
 }
 
 void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
-                                      HostDeviceFuncLocInfo Info, unsigned ID) {
+                                      HostDeviceFuncLocInfo &Info, unsigned ID) {
   std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
 
   unsigned int Pos, Len;
@@ -2357,7 +2328,6 @@ bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateBuildScriptOnly = false;
 bool DpctGlobalInfo::EnableComments = false;
-std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
@@ -2435,6 +2405,7 @@ unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 bool DpctGlobalInfo::AnalysisModeFlag = false;
+bool DpctGlobalInfo::UseSYCLCompatFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
@@ -2837,7 +2808,15 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
 
   if (auto Func = Var->getParentFunctionOrMethod()) {
-    if (DeclOfVarType = Var->getType()->getAsCXXRecordDecl()) {
+    auto VT = Var->getType();
+    DeclOfVarType = VT->getAsCXXRecordDecl();
+    if (!DeclOfVarType) {
+      if (const clang::ArrayType *AT = VT->getAsArrayTypeUnsafe()) {
+        auto ElementType = AT->getElementType();
+        DeclOfVarType = ElementType->getAsCXXRecordDecl();
+      }
+    }
+    if (DeclOfVarType) {
       auto F = DeclOfVarType->getParentFunctionOrMethod();
       if (F && (F == Func)) {
         IsTypeDeclaredLocal = true;
@@ -2857,7 +2836,9 @@ MemVarInfo::MemVarInfo(unsigned Offset,
         if (DS1 && DS2 && DS1 == DS2) {
           IsAnonymousType = true;
           DeclStmtOfVarType = DS2;
-          const auto LocInfo = DpctGlobalInfo::getLocInfo(DS2->getBeginLoc());
+          const auto LocInfo = DpctGlobalInfo::getLocInfo(
+              getDefinitionRange(DS2->getBeginLoc(), DS2->getEndLoc())
+                  .getBegin());
           const auto LocStr = LocInfo.first.getCanonicalPath().str() + ":" +
                               std::to_string(LocInfo.second);
           auto Iter = AnonymousTypeDeclStmtMap.find(LocStr);
@@ -3539,26 +3520,46 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
                                          StringRef LocalSize) const {
   std::string Accessor;
   llvm::raw_string_ostream OS(Accessor);
-  OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
-     << "_acc(";
-  DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
-  OS << '(' << LocalSize << ".size() * sizeof(" << Type->getSourceString()
-     << ")), cgh);";
+  switch (Kind) {
+  case BlockReduce:
+    OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
+       << "_acc(";
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
+    OS << '(' << LocalSize << ".size() * sizeof("
+       << ValueType->getSourceString() << ')' << ')';
+    break;
+  case BlockRadixSort:
+    OS << MapNames::getClNamespace() << "local_accessor<uint8_t, 1> " << Name
+       << "_acc(";
+    OS << TmpMemSizeCalFn << '(' << LocalSize << ".size()" << ')';
+    break;
+  }
+
+  OS << ", cgh);";
   AccessorList.emplace_back(Accessor);
 }
 void TempStorageVarInfo::applyTemplateArguments(
     const std::vector<TemplateArgumentInfo> &TAList) {
-  Type = Type->applyTemplateArguments(TAList);
+  ValueType = ValueType->applyTemplateArguments(TAList);
 }
 ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
-  return PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> "
-            << Name;
+  switch (Kind) {
+  case BlockReduce:
+    PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> ";
+    break;
+  case BlockRadixSort:
+    PS << "uint8_t *";
+    break;
+  }
+  return PS << Name;
 }
 ParameterStream &TempStorageVarInfo::getFuncArg(ParameterStream &PS) {
   return PS << Name;
 }
 ParameterStream &TempStorageVarInfo::getKernelArg(ParameterStream &PS) {
-  return PS << Name << "_acc";
+  if (Kind == BlockReduce)
+    return PS << Name << "_acc";
+  return PS << "&" << Name << "_acc[0]";
 }
 ///// class CudaLaunchTextureObjectInfo /////
 std::string
@@ -3710,8 +3711,7 @@ void TemplateArgumentInfo::setArgFromExprAnalysis(const T &Arg,
   auto Range = getArgSourceRange(Arg);
   auto Begin = Range.getBegin();
   auto End = Range.getEnd();
-  if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
-      SM.isMacroArgExpansion(End)) {
+  if (Begin.isMacroID() && End.isMacroID()) {
     size_t Length;
     if (ParentRange.isValid()) {
       auto RR =
@@ -4089,6 +4089,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
+  CallFuncExprOffset = DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).second;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
   buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
@@ -4182,7 +4183,10 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
 }
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
-
+  if (IsADLEnable)
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(FilePath, CallFuncExprOffset, 0,
+                                         "::", nullptr));
   if (ExtraArgLoc)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
@@ -4313,6 +4317,31 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee,
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
       buildTemplateArguments(DRE->template_arguments(),
                              Callee->getSourceRange());
+      auto ParentFunc = DpctGlobalInfo::getParentFunction(Callee);
+      if (ParentFunc &&
+          isa<TranslationUnitDecl>(ParentFunc->getDeclContext())) {
+        return;
+      }
+      if (!isa<TranslationUnitDecl>(CallDecl->getDeclContext()) ||
+          !DpctGlobalInfo::isInAnalysisScope(CallDecl->getBeginLoc()) ||
+          DRE->getQualifier() || CallDecl->isOverloadedOperator())
+        return;
+      for (unsigned i = 0; i < NumArgs; i++) {
+        auto Type = CallDecl->getParamDecl(i)
+                        ->getOriginalType()
+                        .getCanonicalType()
+                        ->getUnqualifiedDesugaredType();
+        while (Type && Type->isAnyPointerType()) {
+          Type = Type->getPointeeType().getTypePtrOrNull();
+        }
+
+        if (Type->getAsRecordDecl() &&
+            DpctGlobalInfo::isInCudaPath(
+                Type->getAsRecordDecl()->getLocation())) {
+          IsADLEnable = true;
+          break;
+        }
+      }
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = "";
@@ -5131,21 +5160,26 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
   if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
-  } else if (const auto* CCE = dyn_cast<CXXConstructExpr>(Arg)) {
+  } else if (const auto *CCE = dyn_cast<CXXConstructExpr>(Arg)) {
     HasImplicitConversion = true;
-    if (CCE->getNumArgs()) {
-      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(CCE->getArg(0))) {
-        if (ICE->getCastKind() == CK_DerivedToBase) {
-          IsRedeclareRequired = true;
-        }
-      }
+    if (CCE->getNumArgs() == 1) {
+      Arg = CCE->getArg(0);
     }
-  } else if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
+  }
+#ifdef _WIN32
+  // This code path is for ConstructorConversion on Windows since its AST is
+  // different from the one on Linux.
+  if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Arg)) {
+    Arg = MTE->getSubExpr();
+  }
+#endif
+  if (const auto *ICE = dyn_cast<ImplicitCastExpr>(Arg)) {
     auto CK = ICE->getCastKind();
     if (CK != CK_LValueToRValue) {
       HasImplicitConversion = true;
     }
-    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion) {
+    if (CK == CK_ConstructorConversion || CK == CK_UserDefinedConversion ||
+        CK == CK_DerivedToBase) {
       IsRedeclareRequired = true;
     }
   }
@@ -5383,18 +5417,25 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*/" << getNL();
     Printer.indent();
   }
+  if (DpctGlobalInfo::useRootGroup()) {
+    Printer << "auto exp_props = "
+               "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
+               "experimental::use_root_sync};\n";
+    ExecutionConfig.Properties = "exp_props";
+  }
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
+
   printStreamBase(Printer);
   if (SubmitStmts.empty()) {
     printParallelFor(Printer, false);
   } else {
     (Printer << "submit(").newLine();
-    printSubmitLamda(Printer);
+    printSubmitLambda(Printer);
   }
 }
-void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
+void KernelCallExpr::printSubmitLambda(KernelPrinter &Printer) {
   auto Lamda = Printer.block();
   Printer.line("[&](" + MapNames::getClNamespace() + "handler &cgh) {");
   {
@@ -5441,6 +5482,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       "(1)";
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
@@ -5463,6 +5507,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
@@ -5479,6 +5526,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   }

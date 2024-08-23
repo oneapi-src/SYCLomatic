@@ -176,7 +176,7 @@ private:
   size_type _min_capacity() const { return size_type(1); }
 
   void _set_capacity_and_alloc() {
-    _capacity = ::std::max(_size * 2, _min_capacity());
+    _capacity = (::std::max)(_size * 2, _min_capacity());
     _storage = alloc_traits::allocate(_alloc, _capacity);
   }
 
@@ -406,7 +406,7 @@ public:
       ::std::swap(_storage, v._storage);
     } else {
       // swap all elements up to the minimum size between the two vectors
-      size_type min_size = ::std::min(size(), v.size());
+      size_type min_size = (::std::min)(size(), v.size());
       auto zip = oneapi::dpl::make_zip_iterator(begin(), v.begin());
       ::std::for_each(
           oneapi::dpl::execution::make_device_policy(get_default_queue()), zip,
@@ -470,7 +470,7 @@ public:
   const_pointer data(void) const { return const_pointer(_storage); }
   void shrink_to_fit(void) {
     if (_size != capacity() && capacity() > _min_capacity()) {
-      size_type tmp_capacity = ::std::max(_size, _min_capacity());
+      size_type tmp_capacity = (::std::max)(_size, _min_capacity());
       auto tmp = alloc_traits::allocate(_alloc, tmp_capacity);
       if (_size > 0) {
         ::std::copy(
@@ -657,7 +657,7 @@ public:
   ~device_vector() = default;
   explicit device_vector(size_type n) : device_vector(n, T()) {}
   explicit device_vector(size_type n, const T &value)
-      : _storage(alloc_store(std::max(n, _min_capacity()) * sizeof(T))),
+      : _storage(alloc_store((std::max)(n, _min_capacity()) * sizeof(T))),
         _size(n) {
     auto buf = get_buffer();
     std::fill(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(buf),
@@ -801,11 +801,7 @@ public:
     // This code returns a pointer to a data within sycl buffer accessor which
     // is leaving scope. This relies on undefined
     // behavior and may not provide a valid pointer to data inside that buffer.
-    return const_cast<device_vector *>(this)
-        ->detail::mem_mgr::instance()
-        .translate_ptr(_storage)
-        .buffer.get_host_access()
-        .get_pointer();
+    return const_cast<device_vector *>(this)->real_begin();
   }
   void swap(device_vector &v) {
     void *temp = v._storage;

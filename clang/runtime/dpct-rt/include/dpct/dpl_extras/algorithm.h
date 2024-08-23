@@ -1148,9 +1148,9 @@ sort_pairs_impl(Policy &&policy, Iter1 keys_in, Iter2 keys_out, Iter3 values_in,
                 int begin_bit, int end_bit) {
   using key_t_value_t = typename ::std::iterator_traits<Iter1>::value_type;
 
-  int clipped_begin_bit = ::std::max(begin_bit, 0);
+  int clipped_begin_bit = (::std::max)(begin_bit, 0);
   int clipped_end_bit =
-      ::std::min((::std::uint64_t)end_bit, sizeof(key_t_value_t) * 8);
+      (::std::min)((::std::uint64_t)end_bit, sizeof(key_t_value_t) * 8);
   int num_bytes = (clipped_end_bit - clipped_begin_bit - 1) / 8 + 1;
 
   auto transform_and_sort_pairs_f = [&](auto x) {
@@ -1214,7 +1214,7 @@ inline void segmented_sort_pairs_by_parallel_sorts(
   for (::std::uint64_t i = 0; i < nsegments; i++) {
     ::std::uint64_t segment_begin = host_accessible_offset_starts[i];
     ::std::uint64_t segment_end =
-        ::std::min(n, (::std::int64_t)host_accessible_offset_ends[i]);
+        (::std::min)(n, (::std::int64_t)host_accessible_offset_ends[i]);
     if (segment_begin < segment_end) {
       ::dpct::sort_pairs(
           policy, keys_in + segment_begin, keys_out + segment_begin,
@@ -1243,7 +1243,7 @@ inline void segmented_sort_keys_by_parallel_sorts(
   for (::std::uint64_t i = 0; i < nsegments; i++) {
     ::std::uint64_t segment_begin = host_accessible_offset_starts[i];
     ::std::uint64_t segment_end =
-        ::std::min(n, (::std::int64_t)host_accessible_offset_ends[i]);
+        (::std::min)(n, (::std::int64_t)host_accessible_offset_ends[i]);
     if (segment_begin < segment_end) {
       ::dpct::sort_keys(policy, keys_in + segment_begin,
                         keys_out + segment_begin, segment_end - segment_begin,
@@ -1265,7 +1265,7 @@ inline void segmented_sort_pairs_by_parallel_for_of_sorts(
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
       ::std::uint64_t segment_begin = begin_offsets[i];
       ::std::uint64_t segment_end =
-          ::std::min(n, (::std::int64_t)end_offsets[i]);
+          (::std::min)(n, (::std::int64_t)end_offsets[i]);
       if (segment_begin == segment_end) {
         return;
       }
@@ -1290,7 +1290,7 @@ inline void segmented_sort_keys_by_parallel_for_of_sorts(
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
       ::std::uint64_t segment_begin = begin_offsets[i];
       ::std::uint64_t segment_end =
-          ::std::min(n, (::std::int64_t)end_offsets[i]);
+          (::std::min)(n, (::std::int64_t)end_offsets[i]);
       if (segment_begin == segment_end) {
         return;
       }
@@ -1679,9 +1679,9 @@ inline void __histogram_general_private_global_atomics(
       policy.queue()
           .get_device()
           .template get_info<sycl::info::device::global_mem_size>();
-  const ::std::size_t max_segments =
-      ::std::min(__global_mem_size / (num_bins * sizeof(BinType)),
-                 __ceiling_div(N, work_group_size * __min_iters_per_work_item));
+  const ::std::size_t max_segments = (::std::min)(
+      __global_mem_size / (num_bins * sizeof(BinType)),
+      __ceiling_div(N, work_group_size * __min_iters_per_work_item));
   const ::std::size_t iters_per_work_item =
       __ceiling_div(N, max_segments * work_group_size);
   ::std::size_t segments =
@@ -1772,7 +1772,7 @@ __histogram_general_select_best(Policy &&policy, Iter1 first, Iter1 last,
             .get_device()
             .template get_info<sycl::info::device::max_work_group_size>();
     ::std::size_t work_group_size =
-        ::std::min(max_work_group_size, ::std::size_t(1024));
+        (::std::min)(max_work_group_size, ::std::size_t(1024));
 
     if (num_bins < __max_registers) {
 
@@ -2080,9 +2080,9 @@ sort_keys(Policy &&policy, Iter1 keys_in, Iter2 keys_out, ::std::int64_t n,
           bool descending, int begin_bit, int end_bit) {
   using key_t_value_t = typename ::std::iterator_traits<Iter1>::value_type;
 
-  int clipped_begin_bit = ::std::max(begin_bit, 0);
+  int clipped_begin_bit = (::std::max)(begin_bit, 0);
   int clipped_end_bit =
-      ::std::min((::std::uint64_t)end_bit, sizeof(key_t_value_t) * 8);
+      (::std::min)((::std::uint64_t)end_bit, sizeof(key_t_value_t) * 8);
   int num_bytes = (clipped_end_bit - clipped_begin_bit - 1) / 8 + 1;
 
   auto transform_and_sort_f = [&](auto x) {

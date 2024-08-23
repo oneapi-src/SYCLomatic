@@ -487,7 +487,7 @@ T shift_sub_group_left(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_left not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -531,7 +531,7 @@ T shift_sub_group_right(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_right not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -573,7 +573,7 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   (void)mask;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  throw sycl::exception(sycl::errc::runtime, "Masked version of permute_sub_group_by_xor not "
                         "supported on host device.");
 #endif // __SYCL_DEVICE_ONLY__
 }
@@ -658,7 +658,11 @@ namespace experimental {
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
-inline void nd_range_barrier(
+[[deprecated(
+    "Please use "
+    "sycl::group_barrier(sycl::ext::oneapi::experimental::root_group G) "
+    "instead.")]] inline void
+nd_range_barrier(
     const sycl::nd_item<dimensions> &item,
     sycl::atomic_ref<unsigned int,
 #ifdef __AMDGPU__
@@ -702,7 +706,11 @@ inline void nd_range_barrier(
 /// Note: Please make sure that all the work items of all work groups within
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
-inline void nd_range_barrier(
+[[deprecated(
+    "Please use "
+    "sycl::group_barrier(sycl::ext::oneapi::experimental::root_group G) "
+    "instead.")]] inline void
+nd_range_barrier(
     const sycl::nd_item<1> &item,
     sycl::atomic_ref<unsigned int,
 #ifdef __AMDGPU__
@@ -866,8 +874,8 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
   int num_wg_threads = std::floor((float)num_threads_ss / num_threads);
 
   // Calculate num_wg
-  *num_wg = std::min(num_wg_slm, num_wg_threads);
-  *num_wg = std::min(*num_wg, max_num_wg);
+  *num_wg = (std::min)(num_wg_slm, num_wg_threads);
+  *num_wg = (std::min)(*num_wg, max_num_wg);
   return ret;
 }
 

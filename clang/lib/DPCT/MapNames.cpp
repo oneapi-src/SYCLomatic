@@ -17,15 +17,18 @@ using namespace clang;
 using namespace clang::dpct;
 // Not use sycl:: namespace explicitly
 // KeepNamespace = false/true --> ""/"sycl::"
-std::vector<std::string> MapNames::ClNamespace = {"", "", "sycl::", "sycl::"};
+std::vector<std::string> MapNames::ClNamespace;
 // Not use dpct:: namespace explicitly
 // KeepNamespace = false/true --> ""/"dpct::"
-std::vector<std::string> MapNames::DpctNamespace = {"", "dpct::"};
+std::vector<std::string> MapNames::DpctNamespace(2);
 std::string MapNames::getClNamespace(bool KeepNamespace, bool IsMathFunc) {
   return ClNamespace[(KeepNamespace << 1) + IsMathFunc];
 }
 std::string MapNames::getDpctNamespace(bool KeepNamespace) {
   return DpctNamespace[KeepNamespace];
+}
+std::string MapNames::getExpNamespace(bool KeepNamespace) {
+  return getClNamespace(KeepNamespace, false) + "ext::oneapi::experimental::";
 }
 
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
@@ -57,20 +60,91 @@ std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 MapNames::MapTy MapNames::BLASEnumsMap;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
 
-void MapNames::setExplicitNamespaceMap() {
+namespace {
+auto EnumBit = [](auto EnumValue) {
+  return 1 << static_cast<unsigned>(EnumValue);
+};
+void checkExplicitNamespaceBits(unsigned ExplicitNamespaceBits) {
+  static constexpr unsigned BitNone = EnumBit(ExplicitNamespace::EN_None);
+  static constexpr unsigned BitsExclusive =
+      EnumBit(ExplicitNamespace::EN_SYCL) |
+      EnumBit(ExplicitNamespace::EN_SYCL_Math);
 
-  auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-  if (NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
-    // Use dpct:: namespace explicitly
-    DpctNamespace[0] = "dpct::";
+  while (1) {
+    if ((ExplicitNamespaceBits & BitNone) && (ExplicitNamespaceBits ^ BitNone))
+      break;
+
+    if ((ExplicitNamespaceBits & BitsExclusive) == BitsExclusive)
+      break;
+
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      if (ExplicitNamespaceBits & EnumBit(ExplicitNamespace::EN_DPCT))
+        break;
+    } else if (ExplicitNamespaceBits &
+               EnumBit(ExplicitNamespace::EN_SYCLCompat)) {
+      break;
+    }
+    return;
   }
-  if (NamespaceSet.count(ExplicitNamespace::EN_SYCL)) {
-    // Use sycl:: namespace explicitly
-    ClNamespace = {"sycl::", "sycl::", "sycl::", "sycl::"};
-  } else if (NamespaceSet.count(ExplicitNamespace::EN_SYCL_Math)) {
+  ShowStatus(MigrationErrorInvalidExplicitNamespace);
+  dpctExit(MigrationErrorInvalidExplicitNamespace);
+}
+
+const std::string &getDpctNamespaceName() {
+  const static std::string Name = [](bool Use) {
+    if (Use)
+      return "syclcompat";
+    else
+      return "dpct";
+  }(DpctGlobalInfo::useSYCLCompat());
+  return Name;
+}
+
+bool ExplicitHelperNamespace = true;
+bool ExplicitSYCLNamespace = true;
+
+} // namespace
+
+void DpctGlobalInfo::printUsingNamespace(llvm::raw_ostream &OS) {
+  auto printUsing = [](llvm::raw_ostream &OS, const std::string &Name) {
+    OS << "using namespace " << Name << ";" << getNL();
+  };
+  if (!ExplicitHelperNamespace)
+    printUsing(OS, getDpctNamespaceName());
+  if (!ExplicitSYCLNamespace)
+    printUsing(OS, "sycl");
+}
+
+void MapNames::setExplicitNamespaceMap(
+    const std::set<ExplicitNamespace> &ExplicitNamespaces) {
+
+  unsigned ExplicitNamespaceBits = 0;
+  for (auto Val : ExplicitNamespaces)
+    ExplicitNamespaceBits |= EnumBit(Val);
+
+  checkExplicitNamespaceBits(ExplicitNamespaceBits);
+  ExplicitHelperNamespace =
+      ExplicitNamespaceBits & (EnumBit(ExplicitNamespace::EN_SYCLCompat) |
+                               EnumBit(ExplicitNamespace::EN_DPCT));
+  ExplicitSYCLNamespace =
+      ExplicitNamespaceBits & EnumBit(ExplicitNamespace::EN_SYCL);
+
+  if (ExplicitHelperNamespace) {
+    // always use dpct::/syclcompat:: explicitly
+    DpctNamespace[0] = DpctNamespace[1] = getDpctNamespaceName() + "::";
+  } else {
+    DpctNamespace[1] = getDpctNamespaceName() + "::";
+  }
+
+  ClNamespace.reserve(4);
+  if (ExplicitNamespaceBits & EnumBit(ExplicitNamespace::EN_SYCL_Math)) {
     // Use sycl:: namespce for SYCL math functions
-    ClNamespace = {"", "sycl::", "sycl::", "sycl::"};
+    ClNamespace.push_back("");
+  } else if (!ExplicitSYCLNamespace) {
+    // Use sycl:: namespace explicitly
+    ClNamespace.assign(2, "");
   }
+  ClNamespace.resize(4, "sycl::");
 
   MathTypeCastingMap = {
       {"__half_as_short",
@@ -471,7 +545,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data_type",
                                       HelperFeatureEnum::device_ext)},
       {"CUtexref", std::make_shared<TypeNameRule>(
-                       getDpctNamespace() + "image_wrapper_base_p",
+                       DpctGlobalInfo::useExtBindlessImages()
+                           ? getDpctNamespace() +
+                                 "experimental::bindless_image_wrapper_base_p"
+                           : getDpctNamespace() + "image_wrapper_base_p",
                        HelperFeatureEnum::device_ext)},
       {"cudaDeviceAttr", std::make_shared<TypeNameRule>("int")},
       {"__nv_bfloat16", std::make_shared<TypeNameRule>(
@@ -1316,36 +1393,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDA_R_8F_E5M2",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "library_data_t::real_f8_e5m2")},
-      // cublasComputeType_t
-      {"CUBLAS_COMPUTE_16F", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::f16")},
-      {"CUBLAS_COMPUTE_16F_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f16_standard")},
-      {"CUBLAS_COMPUTE_32F", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::f32")},
-      {"CUBLAS_COMPUTE_32F_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32_standard")},
-      {"CUBLAS_COMPUTE_32F_FAST_16F",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32")},
-      {"CUBLAS_COMPUTE_32F_FAST_16BF",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32_fast_bf16")},
-      {"CUBLAS_COMPUTE_32F_FAST_TF32",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f32_fast_tf32")},
-      {"CUBLAS_COMPUTE_64F", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::f64")},
-      {"CUBLAS_COMPUTE_64F_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::f64_standard")},
-      {"CUBLAS_COMPUTE_32I", std::make_shared<EnumNameRule>(
-                                 getDpctNamespace() + "compute_type::i32")},
-      {"CUBLAS_COMPUTE_32I_PEDANTIC",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "compute_type::i32_standard")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() +
                                       "memory_scope::system")},
@@ -1604,6 +1651,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSB",
        getDpctNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_b"},
+      // cublasComputeType_t
+      {"CUBLAS_COMPUTE_16F", getDpctNamespace() + "compute_type::f16"},
+      {"CUBLAS_COMPUTE_16F_PEDANTIC",
+       getDpctNamespace() + "compute_type::f16_standard"},
+      {"CUBLAS_COMPUTE_32F", getDpctNamespace() + "compute_type::f32"},
+      {"CUBLAS_COMPUTE_32F_PEDANTIC",
+       getDpctNamespace() + "compute_type::f32_standard"},
+      {"CUBLAS_COMPUTE_32F_FAST_16F", getDpctNamespace() + "compute_type::f32"},
+      {"CUBLAS_COMPUTE_32F_FAST_16BF",
+       getDpctNamespace() + "compute_type::f32_fast_bf16"},
+      {"CUBLAS_COMPUTE_32F_FAST_TF32",
+       getDpctNamespace() + "compute_type::f32_fast_tf32"},
+      {"CUBLAS_COMPUTE_64F", getDpctNamespace() + "compute_type::f64"},
+      {"CUBLAS_COMPUTE_64F_PEDANTIC",
+       getDpctNamespace() + "compute_type::f64_standard"},
+      {"CUBLAS_COMPUTE_32I", getDpctNamespace() + "compute_type::i32"},
+      {"CUBLAS_COMPUTE_32I_PEDANTIC",
+       getDpctNamespace() + "compute_type::i32_standard"},
   };
 
   ClassFieldMap = {};
@@ -1879,6 +1944,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
+      {"cublasSgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
+      {"cublasDgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
+      {"cublasCgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
+      {"cublasZgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
       {"cublasGetStatusString", ""},
       {"cublasCgemm3m", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasZgemm3m", "oneapi::mkl::blas::column_major::gemm"},
@@ -2136,6 +2205,7 @@ void MapNames::setExplicitNamespaceMap() {
            "blas_gemm::experimental::transform_desc_t::get_attribute"},
       {"cublasLtMatrixTransform",
        getDpctNamespace() + "blas_gemm::experimental::matrix_transform"},
+      {"cublasLtGetVersion", getDpctNamespace() + "dnnl::get_version"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
@@ -4454,6 +4524,7 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block",
+    "this_grid",
     "sync",
     "tiled_partition",
     "thread_rank",
@@ -4470,7 +4541,9 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "group_index",
     "inclusive_scan",
     "exclusive_scan",
-    "coalesced_threads"};
+    "coalesced_threads",
+    "num_blocks",
+    "block_rank"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::SamplingInfoToSetFeatureMap = {

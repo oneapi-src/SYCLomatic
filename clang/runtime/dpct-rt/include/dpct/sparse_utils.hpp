@@ -890,7 +890,7 @@ private:
       std::unique_ptr<void, std::function<void(void *)>>(
           nullptr, _shadow_row_ptr_deleter);
 
-  static constexpr size_t _max_data_variable_size = std::max(
+  static constexpr size_t _max_data_variable_size = (std::max)(
       {sizeof(sycl::buffer<std::int32_t>), sizeof(sycl::buffer<std::int64_t>),
        sizeof(sycl::buffer<float>), sizeof(sycl::buffer<double>),
        sizeof(sycl::buffer<std::complex<float>>),
