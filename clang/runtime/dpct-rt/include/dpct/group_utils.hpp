@@ -708,14 +708,16 @@ public:
 
 /// Load linear segment items into block format across threads
 /// Helper for Block Load
-enum load_algorithm {
-  BLOCK_LOAD_DIRECT,
-  BLOCK_LOAD_STRIPED,
+enum [[deprecated(
+    "Please use dpct::group::group_load_algorithm instead")]] load_algorithm{
+    BLOCK_LOAD_DIRECT,
+    BLOCK_LOAD_STRIPED,
 };
 
 // loads a linear segment of workgroup items into a blocked arrangement.
 template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
           typename Item>
+[[deprecated("Please use load_direct_blocked instead")]]
 __dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -733,6 +735,7 @@ __dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
 // loads a linear segment of workgroup items into a striped arrangement.
 template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
           typename Item>
+[[deprecated("Please use load_direct_striped instead")]]
 __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -754,6 +757,8 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
 /// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
 /// onto each work-item.
 /// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The execution instance’s point in the iteration space, usually
+/// sycl::id, sycl::item, sycl::nd_item, etc...
 /// \param item The calling work-item.
 /// \param input_iter The work-group's base input iterator for loading from.
 /// \param data Data to load.
@@ -771,18 +776,20 @@ __dpct_inline__ void load_direct_blocked(const ItemT &item,
 /// Load a linear segment of elements into a striped arrangement across the
 /// work-group.
 ///
-/// \tparam InputT The data type to load.
+/// \tparam T The data type to load.
 /// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
 /// onto each work-item.
 /// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The execution instance’s point in the iteration space, usually
+/// sycl::id, sycl::item, sycl::nd_item, etc...
 /// \param item The calling work-item.
 /// \param input_iter The work-group's base input iterator for loading from.
 /// \param data Data to load.
-template <typename InputT, int ElementsPerWorkItem, typename InputIteratorT,
+template <typename T, int ElementsPerWorkItem, typename InputIteratorT,
           typename ItemT>
 __dpct_inline__ void load_direct_striped(const ItemT &item,
                                          InputIteratorT input_iter,
-                                         InputT (&data)[ElementsPerWorkItem]) {
+                                         T (&data)[ElementsPerWorkItem]) {
   size_t work_group_size = item.get_group().get_local_linear_range();
   size_t work_item_id = item.get_local_linear_id();
 #pragma unroll
@@ -798,6 +805,8 @@ __dpct_inline__ void load_direct_striped(const ItemT &item,
 /// onto each work-item.
 /// \tparam OutputIteratorT  The random-access iterator type for output.
 /// \iterator.
+/// \tparam ItemT The execution instance’s point in the iteration space, usually
+/// is sycl::id, sycl::item, sycl::nd_item, etc...
 /// \param item The calling work-item.
 /// \param output_iter The work-group's base output iterator for writing.
 /// \param data Data to store.
@@ -822,6 +831,8 @@ __dpct_inline__ void store_direct_blocked(const ItemT &item,
 /// onto each work-item.
 /// \tparam OutputIteratorT  The random-access iterator type for output.
 /// \iterator.
+/// \tparam ItemT The execution instance’s point in the iteration space, usually
+/// is sycl::id, sycl::item, sycl::nd_item, etc...
 /// \param item The calling work-item.
 /// \param output_iter The work-group's base output iterator for writing.
 /// \param items Data to store.
@@ -872,7 +883,8 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
 // Item : typename parameter resembling sycl::nd_item<3> .
 template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
           typename InputIteratorT, typename Item>
-class workgroup_load {
+class [[deprecated(
+    "Please use dpct::group::group_load instead")]] workgroup_load {
 public:
   static size_t get_local_memory_size(size_t group_work_items) { return 0; }
   workgroup_load(uint8_t *local_memory) : _local_memory(local_memory) {}
@@ -934,7 +946,8 @@ public:
   ///
   ///   {[0,128,256,384], [1,129,257,385], ..., [127,255,383,511]}.
   ///
-  /// \tparam ItemT The work-item identifier type.
+  /// \tparam ItemT The execution instance’s point in the iteration space, usually
+  /// is sycl::id, sycl::item, sycl::nd_item, etc...
   /// \tparam InputIteratorT The random-access iterator type for input
   /// \iterator.
   /// \param item The work-item identifier.
@@ -996,7 +1009,8 @@ public:
   ///
   ///   0, 128, 256, 384, 1, 129, 257, 385, ..., 127, 255, 383, 511.
   ///
-  /// \tparam ItemT The work-item identifier type.
+  /// \tparam ItemT The execution instance’s point in the iteration space, usually
+  /// is sycl::id, sycl::item, sycl::nd_item, etc...
   /// \tparam OutputIteratorT The random-access iterator type for \p output
   /// iterator.
   /// \param item The work-item identifier.
