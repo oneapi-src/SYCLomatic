@@ -25,3 +25,12 @@ find_package(oneDPL REQUIRED)
 #find_package  (  MPI REQUIRED )
 #find_package ( OpenMP)
 #find_package  (  OpenMP REQUIRED)
+
+target_link_libraries(foo PRIVATE )
+
+target_link_libraries(foo PRIVATE
+faiss_avx512
+Python::Module
+Python::NumPy
+  
+)

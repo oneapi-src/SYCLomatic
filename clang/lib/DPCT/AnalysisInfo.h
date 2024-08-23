@@ -864,11 +864,6 @@ public:
   static std::unordered_map<std::string, bool> getExcludePath() {
     return ExcludePath;
   }
-  static std::set<ExplicitNamespace> getExplicitNamespaceSet() {
-    return ExplicitNamespaceSet;
-  }
-  static void
-  setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec);
   static bool isCtadEnabled() { return EnableCtad; }
   static void setCtadEnabled(bool Enable) { EnableCtad = Enable; }
   static bool isCodePinEnabled() { return EnableCodePin; }
@@ -1107,7 +1102,7 @@ public:
   void buildReplacements();
   void processCudaArchMacro();
   void generateHostCode(tooling::Replacements &ProcessedReplList,
-                        HostDeviceFuncLocInfo Info, unsigned ID);
+                        HostDeviceFuncLocInfo &Info, unsigned ID);
   void postProcess();
   void cacheFileRepl(clang::tooling::UnifiedPath FilePath,
                      std::pair<std::shared_ptr<ExtReplacements>,
@@ -1241,6 +1236,9 @@ public:
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
+  static bool useRootGroup() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_RootGroup>();
+  }
   static bool useFreeQueries() {
     return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
   }
@@ -1286,6 +1284,8 @@ public:
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
+  static void setUseSYCLCompat(bool Flag = true) { UseSYCLCompatFlag = Flag; }
+  static bool useSYCLCompat() { return UseSYCLCompatFlag; }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
@@ -1413,6 +1413,7 @@ public:
   static bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
   }
+  static void printUsingNamespace(llvm::raw_ostream &);
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 
@@ -1461,7 +1462,7 @@ private:
     return N->getBeginLoc();
   }
   static SourceLocation getLocation(const VarDecl *VD) {
-    return VD->getLocation();
+    return getDefinitionRange(VD->getLocation(), VD->getLocation()).getBegin();
   }
   static SourceLocation getLocation(const FunctionDecl *FD) {
     return FD->getBeginLoc();
@@ -1509,7 +1510,6 @@ private:
   static bool GenBuildScript;
   static bool MigrateBuildScriptOnly;
   static bool EnableComments;
-  static std::set<ExplicitNamespace> ExplicitNamespaceSet;
 
   // This variable is only set true when option "--report-type=stats" or option
   // " --report-type=all" is specified to get the migration status report, while
@@ -1595,6 +1595,7 @@ private:
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
   static bool AnalysisModeFlag;
+  static bool UseSYCLCompatFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
@@ -1895,6 +1896,7 @@ private:
     Pointer,
     Accessor,
     Reference,
+    PointerToArray
   };
 
 private:
@@ -2143,14 +2145,25 @@ private:
 };
 
 class TempStorageVarInfo {
+public:
+  enum APIKind {
+    BlockReduce,
+    BlockRadixSort,
+  };
+
+private:
   unsigned Offset;
+  APIKind Kind;
   std::string Name;
-  std::shared_ptr<TemplateDependentStringInfo> Type;
+  std::string TmpMemSizeCalFn;
+  std::shared_ptr<TemplateDependentStringInfo> ValueType;
 
 public:
-  TempStorageVarInfo(unsigned Off, StringRef Name,
-                     std::shared_ptr<TemplateDependentStringInfo> T)
-      : Offset(Off), Name(Name.str()), Type(T) {}
+  TempStorageVarInfo(unsigned Off, APIKind Kind, StringRef Name,
+                     std::string TmpMemSizeCalFn,
+                     std::shared_ptr<TemplateDependentStringInfo> ValT)
+      : Offset(Off), Kind(Kind), Name(Name.str()),
+        TmpMemSizeCalFn(TmpMemSizeCalFn), ValueType(ValT) {}
   const std::string &getName() const { return Name; }
   unsigned getOffset() const { return Offset; }
   void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;
@@ -2337,7 +2350,7 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), Offset(Offset) {}
+      : FilePath(FilePathIn), Offset(Offset), CallFuncExprOffset(Offset) {}
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
@@ -2414,6 +2427,7 @@ private:
 
   const clang::tooling::UnifiedPath FilePath;
   unsigned Offset = 0;
+  unsigned CallFuncExprOffset = 0;
   unsigned ExtraArgLoc = 0;
   std::vector<std::shared_ptr<DeviceFunctionInfo>> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
@@ -2422,6 +2436,7 @@ private:
   std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
+  bool IsADLEnable = false;
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;
@@ -2742,7 +2757,7 @@ private:
 
   void print(KernelPrinter &Printer);
   void printSubmit(KernelPrinter &Printer);
-  void printSubmitLamda(KernelPrinter &Printer);
+  void printSubmitLambda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
   template <typename IDTy, typename... Ts>
@@ -2829,6 +2844,7 @@ private:
     std::string GroupSizeFor1D = "";
     std::string LocalSizeFor1D = "";
     std::string &NdRange = Config[4];
+    std::string Properties = "";
     std::string &SubGroupSize = Config[5];
     bool IsDefaultStream = false;
     bool IsQueuePtr = true;

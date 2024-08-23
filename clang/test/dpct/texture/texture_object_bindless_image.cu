@@ -65,16 +65,27 @@ void driverMemoryManagement() {
   CUdeviceptr pD;
   // CHECK: dpct::queue_ptr st;
   CUstream st;
+  // CHECK: sycl::ext::oneapi::experimental::image_descriptor p3DDesc;
+  CUDA_ARRAY3D_DESCRIPTOR p3DDesc;
+  // CHECK: p3DDesc.width = s;
+  p3DDesc.Width = s;
+  // CHECK: p3DDesc.height = s;
+  p3DDesc.Height = s;
+  // CHECK: p3DDesc.depth = s;
+  p3DDesc.Depth = s;
+  // CHECK: p3DDesc.channel_type = f;
+  p3DDesc.Format = f;
+  // CHECK: p3DDesc.num_channels = u;
+  p3DDesc.NumChannels = u;
+  p3DDesc.Flags = 1;
   // CHECK: sycl::ext::oneapi::experimental::image_descriptor pDesc;
   CUDA_ARRAY_DESCRIPTOR pDesc;
   // CHECK: pDesc.channel_type = f;
   pDesc.Format = f;
   // CHECK: pDesc.height = s;
   pDesc.Height = s;
-#ifndef BUILD_TEST // TODO: Need delete later.
   // CHECK: pDesc.num_channels = u;
   pDesc.NumChannels = u;
-#endif
   // CHECK: pDesc.width = s;
   pDesc.Width = s;
   // CHECK: dpct::memcpy_parameter p2d;
@@ -159,6 +170,8 @@ void driverMemoryManagement() {
   p3d.Height = s;
   // CHECK: p3d.size[2] = s;
   p3d.Depth = s;
+  // CHECK: *pArr = new dpct::experimental::image_mem_wrapper(&p3DDesc);
+  cuArray3DCreate(pArr, &p3DDesc);
   // CHECK: *pArr = new dpct::experimental::image_mem_wrapper(&pDesc);
   cuArrayCreate(pArr, &pDesc);
   // CHECK: delete (*pArr);
@@ -209,6 +222,73 @@ void driverMemoryManagement() {
 }
 
 void driver() {
+  // CHECK: dpct::queue_ptr s;
+  CUstream s;
+  void *v;
+  // CHECK: dpct::device_ptr dp;
+  CUdeviceptr dp;
+  // CHECK: dpct::experimental::image_mem_wrapper_ptr a;
+  CUarray a;
+  // CHECK: int c;
+  CUcontext c;
+  // CHECK: dpct::memcpy_parameter p3dp;
+  CUDA_MEMCPY3D_PEER p3dp;
+  // CHECK: p3dp.from.pos[0] = 1;
+  p3dp.srcXInBytes = 1;
+  // CHECK: p3dp.from.pos[1] = 2;
+  p3dp.srcY = 2;
+  // CHECK: p3dp.from.pos[2] = 3;
+  p3dp.srcZ = 3;
+  p3dp.srcLOD = 4;
+  p3dp.srcMemoryType = CU_MEMORYTYPE_HOST;
+  // CHECK: p3dp.from.pitched.set_data_ptr(v);
+  p3dp.srcHost = v;
+  // CHECK: p3dp.from.pitched.set_data_ptr(dp);
+  p3dp.srcDevice = dp;
+  // CHECK: p3dp.from.image_bindless = a;
+  p3dp.srcArray = a;
+  // CHECK: p3dp.from.dev_id = c;
+  p3dp.srcContext = c;
+  // CHECK: p3dp.from.pitched.set_pitch(5);
+  p3dp.srcPitch = 5;
+  // CHECK: p3dp.from.pitched.set_y(6);
+  p3dp.srcHeight = 6;
+
+  // CHECK: p3dp.to.pos[0] = 1;
+  p3dp.dstXInBytes = 1;
+  // CHECK: p3dp.to.pos[1] = 2;
+  p3dp.dstY = 2;
+  // CHECK: p3dp.to.pos[2] = 3;
+  p3dp.dstZ = 3;
+  p3dp.dstLOD = 4;
+  p3dp.dstMemoryType = CU_MEMORYTYPE_HOST;
+  // CHECK: p3dp.to.pitched.set_data_ptr(v);
+  p3dp.dstHost = v;
+  // CHECK: p3dp.to.pitched.set_data_ptr(dp);
+  p3dp.dstDevice = dp;
+  // CHECK: p3dp.to.image_bindless = a;
+  p3dp.dstArray = a;
+  // CHECK: p3dp.to.dev_id = c;
+  p3dp.dstContext = c;
+  // CHECK: p3dp.to.pitched.set_pitch(5);
+  p3dp.dstPitch = 5;
+  // CHECK: p3dp.to.pitched.set_y(6);
+  p3dp.dstHeight = 6;
+
+  // CHECK: p3dp.size[0] = 3;
+  p3dp.WidthInBytes = 3;
+  // CHECK: p3dp.size[1] = 2;
+  p3dp.Height = 2;
+  // CHECK: p3dp.size[2] = 1;
+  p3dp.Depth = 1;
+  // CHECK: dpct::dpct_memcpy(p3dp);
+  cuMemcpy3DPeer(&p3dp);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cuMemcpy3DPeerAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::async_dpct_memcpy(p3dp, *s);
+  cuMemcpy3DPeerAsync(&p3dp, s);
+
   // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle o;
   CUtexObject o;
   // CHECK: dpct::image_data R;
@@ -391,6 +471,52 @@ int main() {
   cudaMemcpy3D(&p3d);
   // CHECK: dpct::async_dpct_memcpy(p3d);
   cudaMemcpy3DAsync(&p3d);
+  // CHECK: dpct::async_dpct_memcpy(p3d, *s);
+  cudaMemcpy3DAsync(&p3d, s);
+
+  // CHECK: dpct::memcpy_parameter p3dp;
+  cudaMemcpy3DPeerParms p3dp;
+  int d;
+  // CHECK: p3dp.from.image_bindless = pArr;
+  p3dp.srcArray = pArr;
+  // CHECK: pArr_src = p3dp.from.image_bindless;
+  pArr_src = p3dp.srcArray;
+  // CHECK: p3dp.from.pos = pos;
+  p3dp.srcPos = pos;
+  // CHECK: pos = p3dp.from.pos;
+  pos = p3dp.srcPos;
+  // CHECK: p3dp.from.pitched = pp;
+  p3dp.srcPtr = pp;
+  // CHECK: pp = p3dp.from.pitched;
+  pp = p3dp.srcPtr;
+  // CHECK: p3dp.from.dev_id = d;
+  p3dp.srcDevice = d;
+  // CHECK: d = p3dp.from.dev_id;
+  d = p3dp.srcDevice;
+  // CHECK: p3dp.to.image_bindless = pArr;
+  p3dp.dstArray = pArr;
+  // CHECK: pArr = p3dp.to.image_bindless;
+  pArr = p3dp.dstArray;
+  // CHECK: p3dp.to.pos = pos;
+  p3dp.dstPos = pos;
+  // CHECK: pos = p3dp.to.pos;
+  pos = p3dp.dstPos;
+  // CHECK: p3dp.to.pitched = pp;
+  p3dp.dstPtr = pp;
+  // CHECK: pp = p3dp.to.pitched;
+  pp = p3dp.dstPtr;
+  // CHECK: p3dp.to.dev_id = d;
+  p3dp.dstDevice = d;
+  // CHECK: d = p3dp.to.dev_id;
+  d = p3dp.dstDevice;
+  // CHECK: p3dp.size = e;
+  p3dp.extent = e;
+  // CHECK: e = p3dp.size;
+  e = p3dp.extent;
+  // CHECK: dpct::dpct_memcpy(p3dp);
+  cudaMemcpy3DPeer(&p3dp);
+  // CHECK: dpct::async_dpct_memcpy(p3dp);
+  cudaMemcpy3DPeerAsync(&p3dp);
 
   // CHECK: dpct::image_data resDesc0, resDesc1, resDesc2, resDesc3, resDesc4;
   cudaResourceDesc resDesc0, resDesc1, resDesc2, resDesc3, resDesc4;

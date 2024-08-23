@@ -9,9 +9,9 @@
 #include "SchedulerTest.hpp"
 #include "SchedulerTestUtils.hpp"
 
-#include <helpers/PiMock.hpp>
 #include <helpers/ScopedEnvVar.hpp>
 #include <helpers/TestKernel.hpp>
+#include <helpers/UrMock.hpp>
 
 #include <vector>
 
@@ -22,7 +22,7 @@ template <typename T, int Dim>
 detail::Command *CreateTaskCommand(MockScheduler &MS,
                                    detail::QueueImplPtr DevQueue,
                                    buffer<T, Dim> &buf) {
-  MockHandlerCustomFinalize MockCGH(DevQueue, false,
+  MockHandlerCustomFinalize MockCGH(DevQueue,
                                     /*CallerNeedsEvent=*/true);
 
   auto acc = buf.get_access(static_cast<sycl::handler &>(MockCGH));
@@ -74,8 +74,8 @@ bool dependsOnViaEvent(detail::Command *Dependent, detail::Command *Dependee) {
 }
 
 TEST_F(SchedulerTest, CancelKernelFusion) {
-  unittest::PiMock Mock;
-  platform Plt = Mock.getPlatform();
+  unittest::UrMock<> Mock;
+  platform Plt = sycl::platform();
   if (!CheckTestExecRequirements(Plt))
     return;
 

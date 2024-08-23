@@ -21,7 +21,7 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
-// CHECK: DPCT1050:{{[0-9]+}}: The template argument of  the image_accessor_ext could not be deduced. You need to update this code.
+// CHECK: DPCT1050:{{[0-9]+}}: The template argument of the image_accessor_ext could not be deduced. You need to update this code.
 // CHECK: void gather_force(const dpct::image_accessor_ext<dpct_placeholder/*Fix the type manually*/, 1> gridTexObj){}
 __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 

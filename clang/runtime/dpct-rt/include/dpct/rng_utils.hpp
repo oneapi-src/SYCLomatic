@@ -10,23 +10,23 @@
 #define __DPCT_RNG_UTILS_HPP__
 
 #include <sycl/sycl.hpp>
+
 #include <oneapi/mkl.hpp>
-#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 #include <oneapi/mkl/rng/device.hpp>
-#endif
+
 #include "device.hpp"
 #include "lib_common_utils.hpp"
 
 namespace dpct {
 namespace rng {
-#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 namespace device {
 /// The random number generator on device.
 /// \tparam engine_t The device random number generator engine. It can only be
 /// oneapi::mkl::rng::device::mrg32k3a<1> or
 /// oneapi::mkl::rng::device::mrg32k3a<4> or
 /// oneapi::mkl::rng::device::philox4x32x10<1> or
-/// oneapi::mkl::rng::device::philox4x32x10<4>.
+/// oneapi::mkl::rng::device::philox4x32x10<4> or "
+/// oneapi::mkl::rng::device::mcg59<1>.
 template <typename engine_t> class rng_generator {
   static_assert(
       std::disjunction_v<
@@ -116,6 +116,12 @@ public:
             std::is_same<distr_t, oneapi::mkl::rng::device::uniform<float>>,
             std::is_same<distr_t, oneapi::mkl::rng::device::uniform<double>>>,
         "distribution is not supported.");
+#ifndef __INTEL_MKL__
+    static_assert(
+        vec_size == 4 || _is_engine_vec_size_one,
+        "When using the oneMKL Interfaces Project, this function only support "
+        "vec_size == 4 or _is_engine_vec_size_one is true.");
+#endif
 
     if constexpr (std::is_same_v<
                       distr_t, oneapi::mkl::rng::device::bits<std::uint32_t>>) {
@@ -163,6 +169,17 @@ public:
   engine_t &get_engine() { return _engine; }
 
 private:
+  template <typename distr_t> auto generate_single(distr_t &distr) {
+    if constexpr (_is_engine_vec_size_one) {
+      return oneapi::mkl::rng::device::generate(distr, _engine);
+    }
+#ifdef __INTEL_MKL__
+    else {
+      return oneapi::mkl::rng::device::generate_single(distr, _engine);
+    }
+#endif
+  }
+
   template <int vec_size, typename distr_t, class... distr_params_t>
   auto generate_vec(distr_t &distr, distr_params_t... distr_params) {
     if constexpr (sizeof...(distr_params_t)) {
@@ -181,29 +198,16 @@ private:
         return oneapi::mkl::rng::device::generate(distr, _engine);
       }
     } else if constexpr (vec_size == 1) {
-      if constexpr (_is_engine_vec_size_one) {
-        return oneapi::mkl::rng::device::generate(distr, _engine);
-      } else {
-        return oneapi::mkl::rng::device::generate_single(distr, _engine);
-      }
+      return generate_single(distr);
     } else if constexpr (vec_size == 2) {
-      if constexpr (_is_engine_vec_size_one) {
-        sycl::vec<typename distr_t::result_type, 2> res;
-        res.x() = oneapi::mkl::rng::device::generate(distr, _engine);
-        res.y() = oneapi::mkl::rng::device::generate(distr, _engine);
-        return res;
-      } else {
-        sycl::vec<typename distr_t::result_type, 2> res;
-        res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-        res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-        return res;
-      }
+      sycl::vec<typename distr_t::result_type, 2> res;
+      res.x() = generate_single(distr);
+      res.y() = generate_single(distr);
+      return res;
     }
   }
 };
-
 } // namespace device
-#endif
 
 enum class random_mode {
   best,

@@ -31,7 +31,7 @@ ASSIGNABLE_FACTORY(HEADER_INSERT_FACTORY(
                                    MEMBER_CALL(ARG(0), true, "wait"),
                                    CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))
 
-CONDITIONAL_FACTORY_ENTRY(
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
     CALL_FACTORY_ENTRY("cudaStreamBeginCapture",
                        CALL(MapNames::getDpctNamespace() +
@@ -40,9 +40,9 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cudaStreamBeginCapture",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaStreamBeginCapture"),
-                            ARG("--use-experimental-features=graph")))
+                            ARG("--use-experimental-features=graph"))))
 
-CONDITIONAL_FACTORY_ENTRY(
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
     CALL_FACTORY_ENTRY("cudaStreamEndCapture",
                        CALL(MapNames::getDpctNamespace() +
@@ -51,9 +51,9 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cudaStreamEndCapture",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaStreamEndCapture"),
-                            ARG("--use-experimental-features=graph")))
+                            ARG("--use-experimental-features=graph"))))
 
-CONDITIONAL_FACTORY_ENTRY(
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     UseExtGraph,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaStreamIsCapturing", DEREF(1),
@@ -61,4 +61,4 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cudaStreamIsCapturing",
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaStreamIsCapturing"),
-                            ARG("--use-experimental-features=graph")))
+                            ARG("--use-experimental-features=graph"))))

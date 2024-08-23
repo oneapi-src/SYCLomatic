@@ -11,10 +11,10 @@
 __global__ void cos() {
   float f32;
 
-  // CHECK: f32 = sycl::cos<float>(1.0f);
+  // CHECK: f32 = sycl::cos(1.0f);
   asm("cos.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
   
-  // CHECK: f32 = sycl::cos<float>(1.0f);
+  // CHECK: f32 = sycl::cos(1.0f);
   asm("cos.approx.ftz.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
 }
 
