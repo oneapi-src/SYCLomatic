@@ -75,10 +75,8 @@ void driverMemoryManagement() {
   p3DDesc.Depth = s;
   // CHECK: p3DDesc.channel_type = f;
   p3DDesc.Format = f;
-#ifndef BUILD_TEST // TODO: Need delete later.
   // CHECK: p3DDesc.num_channels = u;
   p3DDesc.NumChannels = u;
-#endif
   p3DDesc.Flags = 1;
   // CHECK: sycl::ext::oneapi::experimental::image_descriptor pDesc;
   CUDA_ARRAY_DESCRIPTOR pDesc;
@@ -86,10 +84,8 @@ void driverMemoryManagement() {
   pDesc.Format = f;
   // CHECK: pDesc.height = s;
   pDesc.Height = s;
-#ifndef BUILD_TEST // TODO: Need delete later.
   // CHECK: pDesc.num_channels = u;
   pDesc.NumChannels = u;
-#endif
   // CHECK: pDesc.width = s;
   pDesc.Width = s;
   // CHECK: dpct::memcpy_parameter p2d;
