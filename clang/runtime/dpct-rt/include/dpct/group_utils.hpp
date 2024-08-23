@@ -708,10 +708,9 @@ public:
 
 /// Load linear segment items into block format across threads
 /// Helper for Block Load
-enum [[deprecated(
-    "Please use dpct::group::group_load_algorithm instead")]] load_algorithm{
-    BLOCK_LOAD_DIRECT,
-    BLOCK_LOAD_STRIPED,
+enum load_algorithm {
+  BLOCK_LOAD_DIRECT,
+  BLOCK_LOAD_STRIPED,
 };
 
 // loads a linear segment of workgroup items into a blocked arrangement.
@@ -757,8 +756,7 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
 /// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
 /// onto each work-item.
 /// \tparam InputIteratorT  The random-access iterator type for input \iterator.
-/// \tparam ItemT The execution instance’s point in the iteration space, usually
-/// sycl::id, sycl::item, sycl::nd_item, etc...
+/// \tparam ItemT The sycl::nd_item index space class.
 /// \param item The calling work-item.
 /// \param input_iter The work-group's base input iterator for loading from.
 /// \param data Data to load.
@@ -780,8 +778,7 @@ __dpct_inline__ void load_direct_blocked(const ItemT &item,
 /// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
 /// onto each work-item.
 /// \tparam InputIteratorT  The random-access iterator type for input \iterator.
-/// \tparam ItemT The execution instance’s point in the iteration space, usually
-/// sycl::id, sycl::item, sycl::nd_item, etc...
+/// \tparam ItemT The sycl::nd_item index space class.
 /// \param item The calling work-item.
 /// \param input_iter The work-group's base input iterator for loading from.
 /// \param data Data to load.
@@ -805,8 +802,7 @@ __dpct_inline__ void load_direct_striped(const ItemT &item,
 /// onto each work-item.
 /// \tparam OutputIteratorT  The random-access iterator type for output.
 /// \iterator.
-/// \tparam ItemT The execution instance’s point in the iteration space, usually
-/// is sycl::id, sycl::item, sycl::nd_item, etc...
+/// \tparam ItemT The sycl::nd_item index space class.
 /// \param item The calling work-item.
 /// \param output_iter The work-group's base output iterator for writing.
 /// \param data Data to store.
@@ -831,8 +827,7 @@ __dpct_inline__ void store_direct_blocked(const ItemT &item,
 /// onto each work-item.
 /// \tparam OutputIteratorT  The random-access iterator type for output.
 /// \iterator.
-/// \tparam ItemT The execution instance’s point in the iteration space, usually
-/// is sycl::id, sycl::item, sycl::nd_item, etc...
+/// \tparam ItemT The sycl::nd_item index space class.
 /// \param item The calling work-item.
 /// \param output_iter The work-group's base output iterator for writing.
 /// \param items Data to store.
@@ -946,8 +941,7 @@ public:
   ///
   ///   {[0,128,256,384], [1,129,257,385], ..., [127,255,383,511]}.
   ///
-  /// \tparam ItemT The execution instance’s point in the iteration space, usually
-  /// is sycl::id, sycl::item, sycl::nd_item, etc...
+  /// \tparam ItemT The sycl::nd_item index space class.
   /// \tparam InputIteratorT The random-access iterator type for input
   /// \iterator.
   /// \param item The work-item identifier.
@@ -1009,8 +1003,7 @@ public:
   ///
   ///   0, 128, 256, 384, 1, 129, 257, 385, ..., 127, 255, 383, 511.
   ///
-  /// \tparam ItemT The execution instance’s point in the iteration space, usually
-  /// is sycl::id, sycl::item, sycl::nd_item, etc...
+  /// \tparam ItemT The sycl::nd_item index space class.
   /// \tparam OutputIteratorT The random-access iterator type for \p output
   /// iterator.
   /// \param item The work-item identifier.
