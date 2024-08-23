@@ -78,12 +78,21 @@ void foo(){
   //CHECK: rr = dpct::get_kernel_function_info(f).max_work_group_size;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
 
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1131:4: SYCL 2020 don't support accessing the given kernel attribute. You may need to adjust the code.
+  //CHECK-NEXT: */
   //CHECK: rr = dpct::get_kernel_function_info(f).shared_size_bytes;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, f);
 
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1131:4: SYCL 2020 don't support accessing the given kernel attribute. You may need to adjust the code.
+  //CHECK-NEXT: */
   //CHECK: rr = dpct::get_kernel_function_info(f).local_size_bytes;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, f);
 
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1131:4: SYCL 2020 don't support accessing the given kernel attribute. You may need to adjust the code.
+  //CHECK-NEXT: */
   //CHECK: rr = dpct::get_kernel_function_info(f).const_size_bytes;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, f);
 
