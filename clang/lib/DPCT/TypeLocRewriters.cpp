@@ -143,8 +143,15 @@ std::function<bool(const TypeLoc)> isUseNonUniformGroupsForType() {
 }
 
 std::function<bool(const TypeLoc)> isUseLogicalGroupsForType() {
+  return
+      [=](const TypeLoc) -> bool { return DpctGlobalInfo::useLogicalGroup(); };
+}
+std::function<bool(const TypeLoc)> isUseRootGroupForType() {
+  return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useRootGroup(); };
+}
+std::function<bool(const TypeLoc)> isUseNdRangeBarrier() {
   return [=](const TypeLoc) -> bool {
-    return DpctGlobalInfo::useLogicalGroup();
+    return DpctGlobalInfo::useNdRangeBarrier();
   };
 }
 
