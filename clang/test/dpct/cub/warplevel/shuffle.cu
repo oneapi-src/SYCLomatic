@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct -in-root %S -out-root %T/warplevel/shuffle %S/shuffle.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --use-experimental-features=non-uniform-groups -in-root %S -out-root %T/warplevel/shuffle %S/shuffle.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warplevel/shuffle/shuffle.dp.cpp --match-full-lines %s
 
 #include <iostream>
@@ -64,10 +64,7 @@ __global__ void ShuffleIndexKernel3(int* data) {
   int threadid = threadIdx.x;
   int input = data[threadid];
   int output = 0;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1108:{{.*}}: 'cub::ShuffleUp' was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: output = dpct::experimental::shift_sub_group_right<32>(item_ct1.get_sub_group(), input, 0, 0, 0xaaaaaaaa);
+  // CHECK: output = dpct::experimental::shift_sub_group_right<32>(item_ct1.get_sub_group(), input, 0, 0, 0xaaaaaaaa);
   output = cub::ShuffleUp<32>(input, 0, 0, 0xaaaaaaaa);
   data[threadid] = output;
 }
@@ -76,9 +73,6 @@ __global__ void ShuffleDownKernel(int *data) {
   int tid = cub::LaneId();
   unsigned mask = 0x8;
   int val = tid;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1108:{{.*}}: 'cub::ShuffleDown' was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
-  // CHECK-NEXT: */
   // CHECK: data[tid] = dpct::experimental::shift_sub_group_left<8>(item_ct1.get_sub_group(), val, 3, 6, mask);
   data[tid] = cub::ShuffleDown<8>(val, 3, 6, mask);
 }
@@ -87,9 +81,6 @@ __global__ void ShuffleUpKernel(int *data) {
   int tid = cub::LaneId();
   unsigned mask = 0x8;
   int val = tid;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1108:{{.*}}: 'cub::ShuffleUp' was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
-  // CHECK-NEXT: */
   // CHECK: data[tid] = dpct::experimental::shift_sub_group_right<8>(item_ct1.get_sub_group(), val, 3, 6, mask);
   data[tid] = cub::ShuffleUp<8>(val, 3, 6, mask);
 }
