@@ -1,0 +1,2 @@
+// CHECK: {{.*}}input.cmake:15:warning:DPCT3002:{{[0-9]+}}: '-static-libstdc++' is not supported together with '-fsycl' when using icpx compiler. You may need to manually fix it.
+dpct exited with code: 4 (Migration of CMake script completed.)
