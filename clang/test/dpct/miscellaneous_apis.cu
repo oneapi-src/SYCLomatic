@@ -4,7 +4,7 @@
 
 void foo(const void **table, CUuuid *tableId) {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuGetExportTable was removed because the data of the retrieved table is insufficient to populate the function pointer with the necessary API. Check and implement the functionality corresponding to the API.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuGetExportTable was removed because SYCL does not provide a standard API to export internal runtime or driver API. Check and implement the functionality corresponding to the function of the first parameter `const void **table` populated by the API.
   // CHECK-NEXT: */
   cuGetExportTable(table, tableId);
 }
