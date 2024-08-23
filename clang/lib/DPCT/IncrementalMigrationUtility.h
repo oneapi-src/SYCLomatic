@@ -41,6 +41,7 @@ const std::string OPTION_OptimizeMigration = "OptimizeMigration";
 const std::string OPTION_EnablepProfiling = "EnablepProfiling";
 const std::string OPTION_RuleFile = "RuleFile";
 const std::string OPTION_AnalysisScopePath = "AnalysisScopePath";
+const std::string OPTION_UseSYCLCompat = "UseSYCLCompat";
 
 bool isOnlyContainDigit(const std::string &Str);
 bool convertToIntVersion(std::string VersionStr, unsigned int &Result);

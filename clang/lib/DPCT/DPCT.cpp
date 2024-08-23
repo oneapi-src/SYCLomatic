@@ -553,6 +553,13 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationOptionParsingError);
   }
   DpctOptionBase::check();
+  if (UseSYCLCompat && USMLevel.getValue() == UsmLevel::UL_None) {
+    llvm::errs()
+        << "Currently SYCLcompat header-only library (syclcompat:: namespace) "
+           "doesn't support buffer and accessor data management..\n";
+    ShowStatus(MigrationErrorConflictOptions);
+    dpctExit(MigrationErrorConflictOptions);
+  }
 
   DpctInstallPath = getInstallPath(argv[0]);
 
@@ -1011,6 +1018,7 @@ int runDPCT(int argc, const char **argv) {
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
+  DpctGlobalInfo::setUseSYCLCompat(UseSYCLCompat);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRootPath;
 
@@ -1018,14 +1026,16 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::setExcludePath(ExcludePathList);
   }
 
-  std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
-      ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
-  if (UseExplicitNamespace.getNumOccurrences())
-    DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-  else
-    DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-
-  MapNames::setExplicitNamespaceMap();
+  std::set<ExplicitNamespace> ExplicitNamespaces;
+  if (UseExplicitNamespace.getNumOccurrences()) {
+    ExplicitNamespaces.insert(UseExplicitNamespace.begin(),
+                              UseExplicitNamespace.end());
+  } else {
+    ExplicitNamespaces.insert({UseSYCLCompat ? ExplicitNamespace::EN_SYCLCompat
+                                             : ExplicitNamespace::EN_DPCT,
+                               ExplicitNamespace::EN_SYCL});
+  }
+  MapNames::setExplicitNamespaceMap(ExplicitNamespaces);
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
@@ -1096,7 +1106,7 @@ int runDPCT(int argc, const char **argv) {
                      DpctGlobalInfo::getHelperFuncPreferenceFlag(),
                      Preferences.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
-                     DpctGlobalInfo::getExplicitNamespaceSet(),
+                     ExplicitNamespaces,
                      UseExplicitNamespace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
@@ -1115,6 +1125,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_UseSYCLCompat, UseSYCLCompat.getValue(),
+                     UseSYCLCompat.getNumOccurrences());
     if (!MigrateBuildScriptOnly &&
         clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
@@ -1122,21 +1134,6 @@ int runDPCT(int argc, const char **argv) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);
         return MigrationErrorDifferentOptSet;
       }
-    }
-  }
-
-  if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
-      ReportType.getValue() == ReportTypeEnum::RTE_Stats) {
-    // When option "--report-type=stats" or option " --report-type=all" is
-    // specified to get the migration status report, dpct namespace should be
-    // enabled temporarily to get LOC migrated to helper functions in function
-    // getLOCStaticFromCodeRepls() if it is not enabled.
-    auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-    if (!NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
-      std::vector<ExplicitNamespace> ENVec;
-      ENVec.push_back(ExplicitNamespace::EN_DPCT);
-      DpctGlobalInfo::setExplicitNamespace(ENVec);
-      DpctGlobalInfo::setDPCTNamespaceTempEnabled();
     }
   }
 

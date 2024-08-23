@@ -17,10 +17,10 @@ using namespace clang;
 using namespace clang::dpct;
 // Not use sycl:: namespace explicitly
 // KeepNamespace = false/true --> ""/"sycl::"
-std::vector<std::string> MapNames::ClNamespace = {"", "", "sycl::", "sycl::"};
+std::vector<std::string> MapNames::ClNamespace;
 // Not use dpct:: namespace explicitly
 // KeepNamespace = false/true --> ""/"dpct::"
-std::vector<std::string> MapNames::DpctNamespace = {"", "dpct::"};
+std::vector<std::string> MapNames::DpctNamespace(2);
 std::string MapNames::getClNamespace(bool KeepNamespace, bool IsMathFunc) {
   return ClNamespace[(KeepNamespace << 1) + IsMathFunc];
 }
@@ -57,20 +57,91 @@ std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 MapNames::MapTy MapNames::BLASEnumsMap;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
 
-void MapNames::setExplicitNamespaceMap() {
+namespace {
+auto EnumBit = [](auto EnumValue) {
+  return 1 << static_cast<unsigned>(EnumValue);
+};
+void checkExplicitNamespaceBits(unsigned ExplicitNamespaceBits) {
+  static constexpr unsigned BitNone = EnumBit(ExplicitNamespace::EN_None);
+  static constexpr unsigned BitsExclusive =
+      EnumBit(ExplicitNamespace::EN_SYCL) |
+      EnumBit(ExplicitNamespace::EN_SYCL_Math);
 
-  auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-  if (NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
-    // Use dpct:: namespace explicitly
-    DpctNamespace[0] = "dpct::";
+  while (1) {
+    if ((ExplicitNamespaceBits & BitNone) && (ExplicitNamespaceBits ^ BitNone))
+      break;
+
+    if ((ExplicitNamespaceBits & BitsExclusive) == BitsExclusive)
+      break;
+
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      if (ExplicitNamespaceBits & EnumBit(ExplicitNamespace::EN_DPCT))
+        break;
+    } else if (ExplicitNamespaceBits &
+               EnumBit(ExplicitNamespace::EN_SYCLCompat)) {
+      break;
+    }
+    return;
   }
-  if (NamespaceSet.count(ExplicitNamespace::EN_SYCL)) {
-    // Use sycl:: namespace explicitly
-    ClNamespace = {"sycl::", "sycl::", "sycl::", "sycl::"};
-  } else if (NamespaceSet.count(ExplicitNamespace::EN_SYCL_Math)) {
+  ShowStatus(MigrationErrorInvalidExplicitNamespace);
+  dpctExit(MigrationErrorInvalidExplicitNamespace);
+}
+
+const std::string &getDpctNamespaceName() {
+  const static std::string Name = [](bool Use) {
+    if (Use)
+      return "syclcompat";
+    else
+      return "dpct";
+  }(DpctGlobalInfo::useSYCLCompat());
+  return Name;
+}
+
+bool ExplicitHelperNamespace = true;
+bool ExplicitSYCLNamespace = true;
+
+} // namespace
+
+void DpctGlobalInfo::printUsingNamespace(llvm::raw_ostream &OS) {
+  auto printUsing = [](llvm::raw_ostream &OS, const std::string &Name) {
+    OS << "using namespace " << Name << ";" << getNL();
+  };
+  if (!ExplicitHelperNamespace)
+    printUsing(OS, getDpctNamespaceName());
+  if (!ExplicitSYCLNamespace)
+    printUsing(OS, "sycl");
+}
+
+void MapNames::setExplicitNamespaceMap(
+    const std::set<ExplicitNamespace> &ExplicitNamespaces) {
+
+  unsigned ExplicitNamespaceBits = 0;
+  for (auto Val : ExplicitNamespaces)
+    ExplicitNamespaceBits |= EnumBit(Val);
+
+  checkExplicitNamespaceBits(ExplicitNamespaceBits);
+  ExplicitHelperNamespace =
+      ExplicitNamespaceBits & (EnumBit(ExplicitNamespace::EN_SYCLCompat) |
+                               EnumBit(ExplicitNamespace::EN_DPCT));
+  ExplicitSYCLNamespace =
+      ExplicitNamespaceBits & EnumBit(ExplicitNamespace::EN_SYCL);
+
+  if (ExplicitHelperNamespace) {
+    // always use dpct::/syclcompat:: explicitly
+    DpctNamespace[0] = DpctNamespace[1] = getDpctNamespaceName() + "::";
+  } else {
+    DpctNamespace[1] = getDpctNamespaceName() + "::";
+  }
+
+  ClNamespace.reserve(4);
+  if (ExplicitNamespaceBits & EnumBit(ExplicitNamespace::EN_SYCL_Math)) {
     // Use sycl:: namespce for SYCL math functions
-    ClNamespace = {"", "sycl::", "sycl::", "sycl::"};
+    ClNamespace.push_back("");
+  } else if (!ExplicitSYCLNamespace) {
+    // Use sycl:: namespace explicitly
+    ClNamespace.assign(2, "");
   }
+  ClNamespace.resize(4, "sycl::");
 
   MathTypeCastingMap = {
       {"__half_as_short",

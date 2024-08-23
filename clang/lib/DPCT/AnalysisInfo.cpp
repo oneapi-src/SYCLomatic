@@ -868,17 +868,14 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
-    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
-    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-      OS << "using namespace dpct;" << getNL();
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      concatHeader(OS, getHeaderSpelling(HT_COMPAT_SYCLcompat));
+      HeaderInsertedBitMap[HT_COMPAT_SYCLcompat] = true;
+    } else {
+      concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+      HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
     }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL)) {
-      OS << "using namespace sycl;" << getNL();
-    }
+    DpctGlobalInfo::printUsingNamespace(OS);
     if (DpctGlobalInfo::useNoQueueDevice()) {
       static bool Flag = true;
       auto SourceFileType = GetSourceFileType(getFilePath());
@@ -1223,10 +1220,11 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
 }
 const std::string &DpctGlobalInfo::getDeviceQueueName() {
   static const std::string DeviceQueue = [&]() {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return "default_queue";
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       return "out_of_order_queue";
-    else
-      return "in_order_queue";
+    return "in_order_queue";
   }();
   return DeviceQueue;
 }
@@ -1307,34 +1305,6 @@ void DpctGlobalInfo::setExcludePath(std::vector<std::string> ExcludePathVec) {
       clang::dpct::PrintMsg("Note: Path " + PathBuf.getCanonicalPath().str() +
                             " is invalid and will be ignored by option "
                             "--in-root-exclude.\n");
-    }
-  }
-}
-void DpctGlobalInfo::setExplicitNamespace(
-    std::vector<ExplicitNamespace> NamespacesVec) {
-  size_t NamespaceVecSize = NamespacesVec.size();
-  if (!NamespaceVecSize || NamespaceVecSize > 2) {
-    ShowStatus(MigrationErrorInvalidExplicitNamespace);
-    dpctExit(MigrationErrorInvalidExplicitNamespace);
-  }
-  for (auto &Namespace : NamespacesVec) {
-    // 1. Ensure option none is alone
-    bool Check1 =
-        (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-    // 2. Ensure option sycl, sycl-math only enabled one
-    bool Check2 =
-        ((Namespace == ExplicitNamespace::EN_SYCL ||
-          Namespace == ExplicitNamespace::EN_SYCL_Math) &&
-         (ExplicitNamespaceSet.size() == 1 &&
-          ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
-    // 3. Check whether option dpct duplicated
-    bool Check3 = (Namespace == ExplicitNamespace::EN_DPCT &&
-                   ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
-    if (Check1 || Check2 || Check3) {
-      ShowStatus(MigrationErrorInvalidExplicitNamespace);
-      dpctExit(MigrationErrorInvalidExplicitNamespace);
-    } else {
-      ExplicitNamespaceSet.insert(Namespace);
     }
   }
 }
@@ -1601,8 +1571,10 @@ void DpctGlobalInfo::buildReplacements() {
     DevDecl << MapNames::getDpctNamespace()
             << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
             << "get_current_device();";
-    QDecl << "&q_ct1 = dev_ct1." << DpctGlobalInfo::getDeviceQueueName()
-          << "();";
+    QDecl << "&q_ct1 = ";
+    if (DpctGlobalInfo::useSYCLCompat())
+      QDecl << '*';
+    QDecl << "dev_ct1." << DpctGlobalInfo::getDeviceQueueName() << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.
@@ -2356,7 +2328,6 @@ bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateBuildScriptOnly = false;
 bool DpctGlobalInfo::EnableComments = false;
-std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
@@ -2434,6 +2405,7 @@ unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 bool DpctGlobalInfo::AnalysisModeFlag = false;
+bool DpctGlobalInfo::UseSYCLCompatFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
