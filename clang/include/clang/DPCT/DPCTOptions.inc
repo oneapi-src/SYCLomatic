@@ -728,8 +728,7 @@ DPCT_ENUM_OPTION(
             "DEPRECATED : Experimental helper function used to help "
             "cross-group "
             "synchronization during migration. Please use the option: "
-            "--use-experimental-features=root-group to do the "
-            "migration.\n",
+            "--use-experimental-features=root-group instead.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "user-defined-reductions",
