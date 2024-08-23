@@ -1685,6 +1685,7 @@ public:
 #endif
   }
 
+  // Query pointer propreties listed in attributes and store the results in data array
   static void get(unsigned int numAttributes, type *attributes,
                   void **data, device_ptr ptr) {
     pointer_attributes sycl_attributes;
