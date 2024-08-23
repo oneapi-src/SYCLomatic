@@ -61,6 +61,13 @@ void CudaInstallationDetector::ParseThrustVersionFile(
   while (std::getline(CudaFile, Line)) {
     size_t Pos = Line.find("#define THRUST_VERSION ");
     if (Pos != std::string::npos) {
+      size_t Begin = Line.find_first_not_of(' ');
+      if (Begin != Pos) {
+        // To skip the matched line where there are some characters before
+        // "#define CUDA_VERSION ".
+        continue;
+      }
+
       Res = Line.substr(
           23); // 23 is the length of string "#define THRUST_VERSION ".
       break;
@@ -83,6 +90,13 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   while (std::getline(CudaFile, Line)) {
     size_t Pos = Line.find("#define CUDA_VERSION ");
     if (Pos != std::string::npos) {
+      size_t Begin = Line.find_first_not_of(' ');
+      if (Begin != Pos) {
+        // To skip the matched line where there are some characters before
+        // "#define CUDA_VERSION ".
+        continue;
+      }
+
       Res = Line.substr(
           21); // 21 is the length of string "#define CUDA_VERSION ".
       break;
