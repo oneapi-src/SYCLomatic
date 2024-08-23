@@ -749,10 +749,6 @@ static void constructWaringMsg(const std::string &Input, size_t index,
     LineNumber++;
   }
 
-  if (Warning.size() >= 2 && Warning.front() == '"' && Warning.back() == '"') {
-    Warning = Warning.substr(1, Warning.size() - 2);
-  }
-
   std::string WarningMsg =
       FileName + ":" + std::to_string(LineNumber) + ":warning:";
   WarningMsg += clang::dpct::DiagnosticsUtils::getMsgText(
