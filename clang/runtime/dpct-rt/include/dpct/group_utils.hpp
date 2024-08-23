@@ -852,6 +852,94 @@ public:
 private:
   uint8_t *_local_memory;
 };
+
+// Shuffles blocked arrangement of data across work items
+// template parameters :
+// ITEMS_PER_WORK_ITEM: size_t variable controlling the number of items per
+// thread/work_item
+// T:  datatype
+// Item : typename parameter resembling sycl::nd_item<3> .
+template <size_t ITEMS_PER_WORK_ITEM, typename T, typename Item>
+class workgroup_shuffle {
+public:
+  static size_t get_local_memory_size(size_t group_work_items) { return 0; }
+  workgroup_shuffle(uint8_t *local_memory) : _local_memory(local_memory) {}
+
+  T temp_storage[group_work_items];
+
+  enum shuffle_algorithm {
+
+    SHUFFLE_UP,
+    SHUFFLE_DOWN
+
+  };
+
+  // Shifts a blocked segment of workgroup items up by one item
+  __dpct_inline__ void shuffle_up(const Item &item,
+                                  T (&input)[ITEMS_PER_WORK_ITEM],
+                                  T (&prev)[ITEMS_PER_WORK_ITEM],
+                                  T &block_suffix) {
+
+    size_t linear_tid = item.get_local_linear_id();
+    size_t group_work_items = item.get_local_range().size();
+    temp_storage[linear_tid] = input[ITEMS_PER_WORK_ITEM - 1];
+
+    sycl::group_barrier(item.get_group());
+
+#pragma unroll
+    for (size_t idx = ITEMS_PER_WORK_ITEM - 1; idx > 0; --idx) {
+      prev[idx] = input[idx - 1];
+    }
+
+    if (linear_tid > 0) {
+
+      prev[0] = temp_storage[ITEMS_PER_WORK_ITEM - 1];
+    }
+
+    block_suffix = temp_storage[group_work_items - 1];
+  }
+
+  // Shifts a blocked segment of workgroup items down by one item
+  __dpct_inline__ void shuffle_down(const Item &item,
+                                    T (&input)[ITEMS_PER_WORK_ITEM],
+                                    T (&prev)[ITEMS_PER_WORK_ITEM],
+                                    T &block_prefix) {
+
+    size_t linear_tid = item.get_local_linear_id();
+    size_t group_work_items = item.get_local_range().size();
+    temp_storage[linear_tid] = input[0];
+
+    sycl::group_barrier(item.get_group());
+    
+#pragma unroll
+    for (size_t idx = 0; idx < ITEMS_PER_WORK_ITEM; ++idx) {
+      prev[idx] = input[idx + 1];
+    }
+
+    if (linear_tid < group_work_items - 1) {
+
+      prev[ITEMS_PER_WORK_ITEM - 1] = temp_storage[linear_tid + 1];
+    }
+
+    block_prefix = temp_storage[0];
+  }
+
+  __dpct_inline__ void shuffle(const Item &item, shuffle_algorithm ALGORITHM,
+                               T (&input)[ITEMS_PER_WORK_ITEM],
+                               T (&prev)[ITEMS_PER_WORK_ITEM], T &block_suffix,
+                               T &block_prefix) {
+
+    if constexpr (ALGORITHM == shuffle_algorithm::SHUFFLE_UP) {
+      shuffle_up<ITEMS_PER_WORK_ITEM, T>(item, input, prev, block_suffix);
+    } else if constexpr (ALGORITHM == shuffle_algorithm::SHUFFLE_DOWN) {
+      shuffle_down<ITEMS_PER_WORK_ITEM, T>(item, input, prev, block_prefix);
+    }
+  }
+
+private:
+  uint8_t *_local_memory;
+};
+
 } // namespace group
 } // namespace dpct
 
