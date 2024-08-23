@@ -703,6 +703,7 @@ RewriterMap createSIMDIntrinsicsRewriterMap();
 RewriterMap createSinglePrecisionIntrinsicsRewriterMap();
 RewriterMap createSinglePrecisionMathematicalFunctionsRewriterMap();
 RewriterMap createSTDFunctionsRewriterMap();
+RewriterMap createTypeCastingIntrinsicsRewriterMap();
 
 } // namespace dpct
 } // namespace clang

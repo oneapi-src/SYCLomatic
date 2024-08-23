@@ -650,6 +650,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMath() {
   RewriterMap->merge(createSinglePrecisionIntrinsicsRewriterMap());
   RewriterMap->merge(createSinglePrecisionMathematicalFunctionsRewriterMap());
   RewriterMap->merge(createSTDFunctionsRewriterMap());
+  RewriterMap->merge(createTypeCastingIntrinsicsRewriterMap());
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
