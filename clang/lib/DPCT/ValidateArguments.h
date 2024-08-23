@@ -82,6 +82,7 @@ enum class ExperimentalFeatures : unsigned int {
                           // this_group, this_subgroup.
   Exp_GroupSharedMemory,
   Exp_LogicalGroup,
+  Exp_RootGroup,
   Exp_UserDefineReductions,
   Exp_MaskedSubGroupFunction,
   Exp_DPLExperimentalAPI,

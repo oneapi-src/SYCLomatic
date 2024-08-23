@@ -1236,6 +1236,9 @@ public:
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
+  static bool useRootGroup() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_RootGroup>();
+  }
   static bool useFreeQueries() {
     return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
   }
@@ -2754,7 +2757,7 @@ private:
 
   void print(KernelPrinter &Printer);
   void printSubmit(KernelPrinter &Printer);
-  void printSubmitLamda(KernelPrinter &Printer);
+  void printSubmitLambda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
   template <typename IDTy, typename... Ts>
@@ -2841,6 +2844,7 @@ private:
     std::string GroupSizeFor1D = "";
     std::string LocalSizeFor1D = "";
     std::string &NdRange = Config[4];
+    std::string Properties = "";
     std::string &SubGroupSize = Config[5];
     bool IsDefaultStream = false;
     bool IsQueuePtr = true;

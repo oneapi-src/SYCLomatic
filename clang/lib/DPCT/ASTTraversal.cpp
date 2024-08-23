@@ -1755,6 +1755,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
                   "cooperative_groups::__v1::coalesced_group",
+                  "cooperative_groups::__v1::grid_group",
                   "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
                   "cudaGraphExec_t", "cudaGraphNode_t"))))))
           .bind("cudaTypeDefEA"),
@@ -2320,22 +2321,22 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
 
-        std::string group_type = "";
+        std::string GroupType = "";
         if (DpctGlobalInfo::useLogicalGroup())
-          group_type = MapNames::getDpctNamespace() +
+          GroupType = MapNames::getDpctNamespace() +
                        "experimental::group_base" + "<{{NEEDREPLACEG" +
                        std::to_string(Index) + "}}>";
         if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
           if (ETL.getBeginLoc().isMacroID())
-            group_type = "auto";
+            GroupType = "auto";
           else
-            group_type = MapNames::getClNamespace() + "group" +
+            GroupType = MapNames::getClNamespace() + "group" +
                          "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
         }
-        if (!group_type.empty())
+        if (!GroupType.empty())
           emplaceTransformation(new ReplaceText(
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              std::move(group_type)));
+              std::move(GroupType)));
         return;
       }
     }
@@ -8769,20 +8770,14 @@ void DeviceFunctionDeclRule::runRule(
   }
 
   if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {
-
     if (!Var->getInit())
       return;
-
     if (auto CE =
             dyn_cast<CallExpr>(Var->getInit()->IgnoreUnlessSpelledInSource())) {
       if (CE->getType().getCanonicalType().getAsString() !=
           "class cooperative_groups::__v1::grid_group")
         return;
-
       if (!DpctGlobalInfo::useNdRangeBarrier()) {
-        auto Name = Var->getNameAsString();
-        report(Var->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false,
-               "this_grid()");
         return;
       }
 
@@ -12014,14 +12009,14 @@ void CooperativeGroupsFunctionRule::runRule(
   };
 
   ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
-
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
       FuncName == "shfl_down" || FuncName == "shfl_up" || FuncName == "shfl" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
       FuncName == "reduce" || FuncName == "thread_index" ||
       FuncName == "group_index" || FuncName == "num_threads" ||
       FuncName == "inclusive_scan" || FuncName == "exclusive_scan" ||
-      FuncName == "coalesced_threads") {
+      FuncName == "coalesced_threads" || FuncName == "this_grid" ||
+      FuncName == "num_blocks" || FuncName == "block_rank") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
@@ -12036,6 +12031,7 @@ void CooperativeGroupsFunctionRule::runRule(
     // shfl_up       1/1   0/0   0/0
     // shfl_xor      1/1   0/0   0/0
     // meta_group_rank 1/1   0/0   0/0
+
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

@@ -857,6 +857,8 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
           else if (Option.ends_with("logical-group"))
             Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+          else if (Option.ends_with("root-group"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_RootGroup);
           else if (Option.ends_with("masked-sub-group-operation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_MaskedSubGroupFunction);

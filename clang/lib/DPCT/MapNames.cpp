@@ -27,6 +27,9 @@ std::string MapNames::getClNamespace(bool KeepNamespace, bool IsMathFunc) {
 std::string MapNames::getDpctNamespace(bool KeepNamespace) {
   return DpctNamespace[KeepNamespace];
 }
+std::string MapNames::getExpNamespace(bool KeepNamespace) {
+  return getClNamespace(KeepNamespace, false) + "ext::oneapi::experimental::";
+}
 
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
@@ -4516,6 +4519,7 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block",
+    "this_grid",
     "sync",
     "tiled_partition",
     "thread_rank",
@@ -4532,7 +4536,9 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "group_index",
     "inclusive_scan",
     "exclusive_scan",
-    "coalesced_threads"};
+    "coalesced_threads",
+    "num_blocks",
+    "block_rank"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::SamplingInfoToSetFeatureMap = {
