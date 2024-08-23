@@ -194,6 +194,8 @@ struct VarInfoForCodePin {
   bool TemplateFlag = false;
   bool TopTypeFlag = false;
   bool IsValid = false;
+  bool IsTypeDef = false;
+  std::string OrgTypeName;
   std::string HashKey;
   std::string VarRecordType;
   std::string VarName;

@@ -208,6 +208,18 @@ void GenCodePinHeaderRule::collectMemberInfo(
   if (!RD) {
     return;
   }
+  if (T->isTypedefNameType()) {
+    VI.IsTypeDef = true;
+    auto TypenameWithoutScope =
+        T.getCanonicalType().getUnqualifiedType().getAsString(PrintPolicy);
+    auto Begin = TypenameWithoutScope.find_last_of(':');
+    if (Begin == std::string::npos) {
+      Begin = 0;
+    } else {
+      Begin += 1;
+    }
+    VI.OrgTypeName = TypenameWithoutScope.substr(Begin);
+  }
   VI.IsValid = true;
   if (VI.VarRecordType.empty()) {
     VI.VarRecordType = getRecordTypeStr(RD);
@@ -262,7 +274,10 @@ void GenCodePinHeaderRule::collectMemberInfo(
 
 void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
   auto &Ctx = DpctGlobalInfo::getContext();
-  T = T.getUnqualifiedType();
+  T = T.getLocalUnqualifiedType();
+  clang::PrintingPolicy PrintPolicy(Ctx.getLangOpts());
+  PrintPolicy.SuppressTagKeyword = 1;
+  PrintPolicy.SuppressDefaultTemplateArgs = 1;
   if (T->isPointerType()) {
     collectInfoForCodePinDumpFunction(T->getPointeeType());
     return;
@@ -273,16 +288,12 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
     }
   }
 
-  clang::PrintingPolicy PrintPolicy(Ctx.getLangOpts());
-  PrintPolicy.SuppressTagKeyword = 1;
-  PrintPolicy.SuppressDefaultTemplateArgs = 1;
-
   std::vector<QualType> CurrentTypeQueue, NextTypeQueue;
   CurrentTypeQueue.push_back(T);
   bool TopTypeFlag = true;
   while (!CurrentTypeQueue.empty()) {
     for (auto &QT : CurrentTypeQueue) {
-      QT = QT.getUnqualifiedType();
+      QT = QT.getLocalUnqualifiedType();
       if (!QT->getAs<RecordType>() ||
           !isTypeInAnalysisScope(QT.getTypePtrOrNull())) {
         continue;
@@ -306,8 +317,14 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
       PrintPolicy.SuppressScope = 1;
       std::string TypenameWithoutScope = QT.getAsString(PrintPolicy);
       auto Pos = TypenameWithoutScope.find('<');
+      auto Begin = TypenameWithoutScope.find_last_of(':');
+      if (Begin == std::string::npos) {
+        Begin = 0;
+      } else {
+        Begin += 1;
+      }
       VarInfo.VarNameWithoutScopeAndTemplateArgs =
-          TypenameWithoutScope.substr(0, Pos);
+          TypenameWithoutScope.substr(Begin, Pos);
       if (Pos != std::string::npos) {
         VarInfo.TemplateInstArgs = TypenameWithoutScope.substr(Pos);
       }
