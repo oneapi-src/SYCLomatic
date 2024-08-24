@@ -27,7 +27,6 @@
 #include "llvm/Support/VirtualFileSystem.h"
 #include "llvm/TargetParser/Host.h"
 #include "llvm/TargetParser/TargetParser.h"
-#include <cstring>
 #include <system_error>
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <fstream>
@@ -50,7 +49,7 @@ int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 int ThrustVersion=0;
 
-bool CudaInstallationDetector::IsWhiteSpace(char Character) {
+bool CudaInstallationDetector::IsWhiteSpace(const char Character) const {
   return Character == ' ' || Character == '\t';
 }
 
@@ -64,38 +63,54 @@ void CudaInstallationDetector::ParseThrustVersionFile(
   std::string Line;
   std::string Res;
   while (std::getline(CudaFile, Line)) {
-    const size_t DefineLength = std::strlen("#define");
-    const size_t VersionLength = std::strlen("THRUST_VERSION");
-    size_t Pos = 0;
-    // Skip while space characters.
-    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
-      ;
-
-    Pos = Line.find("#define", Pos);
-    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + DefineLength])) {
-      continue;
-    }
-    Pos += DefineLength;
-
-    // Skip while space characters.
-    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
-      ;
-    Pos = Line.find("THRUST_VERSION", Pos);
-    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + VersionLength])) {
-      continue;
-    }
-
-    Pos += VersionLength;
-    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
-      ;
-
-    Res = Line.substr(Pos);
-    break;
+    if (FindTargetVersion(Line, "#define", "THRUST_VERSION", Res))
+      break;
   }
   if (Res == "") {
     return;
   }
   ThrustVersion = std::stoi(Res);
+}
+
+bool CudaInstallationDetector::FindTargetVersion(const std::string &Line,
+                                                 const std::string DefineStr,
+                                                 const std::string VersionStr,
+                                                 std::string &Result) {
+  const size_t DefineLength = DefineStr.length();
+  const size_t VersionLength = VersionStr.length();
+  size_t Pos = 0;
+  // Skip while space characters.
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  size_t Index = 0;
+  for (; Pos < Line.size() && Index < DefineLength &&
+         Line[Pos] == DefineStr[Index];
+       Pos++, Index++)
+    ;
+
+  if (Index != DefineLength || !IsWhiteSpace(Line[Pos])) {
+    return false;
+  }
+  // Skip while space characters.
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  Index = 0;
+  for (; Pos < Line.size() && Index < VersionLength &&
+         Line[Pos] == VersionStr[Index];
+       Pos++, Index++)
+    ;
+
+  if (Index != VersionLength || !IsWhiteSpace(Line[Pos])) {
+    return false;
+  }
+
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  Result = Line.substr(Pos);
+  return true;
 }
 
 bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath) {
@@ -106,37 +121,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   }
   std::string Line;
   std::string Res;
-
   while (std::getline(CudaFile, Line)) {
-    const size_t DefineLength = std::strlen("#define");
-    const size_t VersionLength = std::strlen("CUDA_VERSION");
-    size_t Pos = 0;
-    // Skip while space characters.
-    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
-      ;
-
-    Pos = Line.find("#define", Pos);
-    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + DefineLength])) {
-      continue;
-    }
-    Pos += DefineLength;
-
-    // Skip while space characters.
-    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
-      ;
-    Pos = Line.find("CUDA_VERSION", Pos);
-    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + VersionLength])) {
-      continue;
-    }
-
-    Pos += VersionLength;
-    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
-      ;
-
-    Res = Line.substr(Pos);
-    break;
+    if (FindTargetVersion(Line, "#define", "CUDA_VERSION", Res))
+      break;
   }
-
   if (Res == "") {
     return false;
   }

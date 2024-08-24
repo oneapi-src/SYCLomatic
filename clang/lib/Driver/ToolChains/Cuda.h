@@ -97,7 +97,9 @@ public:
 #ifdef SYCLomatic_CUSTOMIZATION
 private:
   bool ParseCudaVersionFile(const std::string &FilePath);
-  bool IsWhiteSpace(char Character);
+  bool IsWhiteSpace(const char Character) const;
+  bool FindTargetVersion(const std::string &Line, const std::string DefineStr,
+                         const std::string VersionStr, std::string &Result);
 #endif // SYCLomatic_CUSTOMIZATION
 };
 
