@@ -27,6 +27,7 @@
 #include "llvm/Support/VirtualFileSystem.h"
 #include "llvm/TargetParser/Host.h"
 #include "llvm/TargetParser/TargetParser.h"
+#include <cstring>
 #include <system_error>
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <fstream>
@@ -49,6 +50,10 @@ int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 int ThrustVersion=0;
 
+bool CudaInstallationDetector::IsWhiteSpace(char Character) {
+  return Character == ' ' || Character == '\t';
+}
+
 void CudaInstallationDetector::ParseThrustVersionFile(
     const std::string &FilePath) {
   std::ifstream CudaFile(FilePath, std::ios::in);
@@ -59,19 +64,33 @@ void CudaInstallationDetector::ParseThrustVersionFile(
   std::string Line;
   std::string Res;
   while (std::getline(CudaFile, Line)) {
-    size_t Pos = Line.find("#define THRUST_VERSION ");
-    if (Pos != std::string::npos) {
-      size_t Begin = Line.find_first_not_of(' ');
-      if (Begin != Pos) {
-        // To skip the matched line where there are some characters before
-        // "#define CUDA_VERSION ".
-        continue;
-      }
+    const size_t DefineLength = std::strlen("#define");
+    const size_t VersionLength = std::strlen("THRUST_VERSION");
+    size_t Pos = 0;
+    // Skip while space characters.
+    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+      ;
 
-      Res = Line.substr(
-          23); // 23 is the length of string "#define THRUST_VERSION ".
-      break;
+    Pos = Line.find("#define", Pos);
+    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + DefineLength])) {
+      continue;
     }
+    Pos += DefineLength;
+
+    // Skip while space characters.
+    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+      ;
+    Pos = Line.find("THRUST_VERSION", Pos);
+    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + VersionLength])) {
+      continue;
+    }
+
+    Pos += VersionLength;
+    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+      ;
+
+    Res = Line.substr(Pos);
+    break;
   }
   if (Res == "") {
     return;
@@ -87,21 +106,37 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   }
   std::string Line;
   std::string Res;
-  while (std::getline(CudaFile, Line)) {
-    size_t Pos = Line.find("#define CUDA_VERSION ");
-    if (Pos != std::string::npos) {
-      size_t Begin = Line.find_first_not_of(' ');
-      if (Begin != Pos) {
-        // To skip the matched line where there are some characters before
-        // "#define CUDA_VERSION ".
-        continue;
-      }
 
-      Res = Line.substr(
-          21); // 21 is the length of string "#define CUDA_VERSION ".
-      break;
+  while (std::getline(CudaFile, Line)) {
+    const size_t DefineLength = std::strlen("#define");
+    const size_t VersionLength = std::strlen("CUDA_VERSION");
+    size_t Pos = 0;
+    // Skip while space characters.
+    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+      ;
+
+    Pos = Line.find("#define", Pos);
+    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + DefineLength])) {
+      continue;
     }
+    Pos += DefineLength;
+
+    // Skip while space characters.
+    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+      ;
+    Pos = Line.find("CUDA_VERSION", Pos);
+    if (Pos == std::string::npos || !IsWhiteSpace(Line[Pos + VersionLength])) {
+      continue;
+    }
+
+    Pos += VersionLength;
+    for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+      ;
+
+    Res = Line.substr(Pos);
+    break;
   }
+
   if (Res == "") {
     return false;
   }
