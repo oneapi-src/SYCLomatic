@@ -86,13 +86,13 @@ int main() {
   // CHECK-NEXT: dpct::blas::matrix_mem_copy(d_A, A, ConstExprLdb, foo(ConstExprLda), 100, colsA, sizeof(A[0]));
   cublasGetMatrix(100, colsA, sizeof(A[0]), A, foo(ConstExprLda), d_A, ConstExprLdb);
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true));
-  // CHECK-NEXT: dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::cs::memcpy_direction::automatic, *stream, true));
+  // CHECK-NEXT: dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::cs::memcpy_direction::automatic, *stream, true);
   status = cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
   cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true));
-  // CHECK-NEXT: dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::cs::memcpy_direction::automatic, *stream, true));
+  // CHECK-NEXT: dpct::blas::matrix_mem_copy(d_A, A, 100, 100, 100, colsA, sizeof(A[0]), dpct::cs::memcpy_direction::automatic, *stream, true);
   status = cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
   cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
 

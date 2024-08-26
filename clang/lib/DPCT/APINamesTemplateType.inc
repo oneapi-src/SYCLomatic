@@ -37,7 +37,7 @@ TYPE_REWRITE_ENTRY(
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 TYPE_REWRITE_ENTRY(
     "thrust::constant_iterator",
-    TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "constant_iterator"),
+    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "constant_iterator"),
                      TEMPLATE_ARG(0))))
 
 TYPE_REWRITE_ENTRY(
@@ -61,14 +61,14 @@ TYPE_REWRITE_ENTRY("cub::TransformInputIterator",
 
 TYPE_REWRITE_ENTRY("cub::ConstantInputIterator",
                    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
-                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "constant_iterator"), TEMPLATE_ARG(0))))
+                   TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "constant_iterator"), TEMPLATE_ARG(0))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("cub::ArgIndexInputIterator",
                        HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
-                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "arg_index_input_iterator"),
+                           TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "arg_index_input_iterator"),
                                         TEMPLATE_ARG(0)))))
 
 TYPE_REWRITE_ENTRY(
@@ -93,23 +93,23 @@ TYPE_REWRITE_ENTRY("cub::Equality", TYPE_FACTORY(STR("std::equal_to"), STR("")))
 TYPE_REWRITE_ENTRY(
     "cub::NullType",
     HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
-                             TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type"))))
+                             TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "null_type"))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("cub::KeyValuePair",
                        HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
-                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "key_value_pair"),
+                           TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "key_value_pair"),
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
 TYPE_REWRITE_ENTRY("cub::ArgMax",
                     HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
-                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmax"))))
+                   TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "argmax"))))
 TYPE_REWRITE_ENTRY("cub::ArgMin",
                     HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
-                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmin"))))
+                   TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "argmin"))))
 TYPE_REWRITE_ENTRY(
     "cub::BlockRadixSort",
     HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
@@ -122,10 +122,34 @@ TYPE_REWRITE_ENTRY(
                              TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                               "group::exchange"),
                                           TEMPLATE_ARG(0), TEMPLATE_ARG(2))))
+TYPE_REWRITE_ENTRY("cub::BlockLoad",
+                   HEADER_INSERTION_FACTORY(
+                       HeaderType::HT_DPCT_GROUP_Utils,
+                       TYPE_CONDITIONAL_FACTORY(
+                           CheckTemplateArgCount(4),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_load"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                        TEMPLATE_ARG(3)),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_load"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+TYPE_REWRITE_ENTRY("cub::BlockStore",
+                   HEADER_INSERTION_FACTORY(
+                       HeaderType::HT_DPCT_GROUP_Utils,
+                       TYPE_CONDITIONAL_FACTORY(
+                           CheckTemplateArgCount(4),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_store"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                        TEMPLATE_ARG(3)),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_store"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
-                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                       TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
@@ -161,7 +185,7 @@ TYPE_REWRITE_ENTRY("thrust::detail::vector_base",
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",
-                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                       TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
@@ -236,7 +260,7 @@ TYPE_REWRITE_ENTRY(
         CheckForPostfixDeclaratorType(0),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR),
         HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
-        TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
+        TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
 
 TYPE_REWRITE_ENTRY(
     "cudaPos",
@@ -248,11 +272,11 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY("thrust::identity",
                    TYPE_FACTORY(STR("oneapi::dpl::identity")))
 
-TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type")))
+TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "null_type")))
 
-TYPE_REWRITE_ENTRY("thrust::device_system_tag", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "device_sys_tag")))
+TYPE_REWRITE_ENTRY("thrust::device_system_tag", TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "device_sys_tag")))
 
-TYPE_REWRITE_ENTRY("thrust::pointer", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "tagged_pointer"),
+TYPE_REWRITE_ENTRY("thrust::pointer", TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "tagged_pointer"),
                    TEMPLATE_ARG(0),
                    TEMPLATE_ARG(1)))
 
@@ -360,11 +384,11 @@ TYPE_REWRITE_ENTRY(
 
 TYPE_REWRITE_ENTRY("csrsv2Info_t",
                    TYPE_FACTORY(STR("std::shared_ptr<" +
-                                    MapNames::getDpctNamespace() +
+                                    MapNames::getLibraryHelperNamespace() +
                                     "sparse::optimize_info>")))
 TYPE_REWRITE_ENTRY("cusparseSolvePolicy_t", TYPE_FACTORY(STR("int")))
 TYPE_REWRITE_ENTRY("cusparseAction_t",
-                   TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                   TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
                                     "sparse::conversion_scope")))
 
 TYPE_REWRITE_ENTRY(
@@ -375,6 +399,15 @@ TYPE_REWRITE_ENTRY(
                          "ext::oneapi::experimental::opportunistic_group")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=non-uniform-groups"))))
+TYPE_REWRITE_ENTRY(
+    "cooperative_groups::__v1::grid_group",
+    TYPE_CONDITIONAL_FACTORY(
+        isUseRootGroupForType(),
+        TYPE_FACTORY(STR(MapNames::getExpNamespace() + "root_group")),
+        TYPE_CONDITIONAL_FACTORY(
+            isUseNdRangeBarrier(), TYPE_FACTORY(STR("")),
+            WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                            STR("--use-experimental-features=root-group")))))
 
 TYPE_REWRITE_ENTRY(
     "cooperative_groups::__v1::thread_block_tile",

@@ -868,17 +868,14 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
-    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
-    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-      OS << "using namespace dpct;" << getNL();
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      concatHeader(OS, getHeaderSpelling(HT_COMPAT_SYCLcompat));
+      HeaderInsertedBitMap[HT_COMPAT_SYCLcompat] = true;
+    } else {
+      concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+      HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
     }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL)) {
-      OS << "using namespace sycl;" << getNL();
-    }
+    DpctGlobalInfo::printUsingNamespace(OS);
     if (DpctGlobalInfo::useNoQueueDevice()) {
       static bool Flag = true;
       auto SourceFileType = GetSourceFileType(getFilePath());
@@ -1223,10 +1220,11 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
 }
 const std::string &DpctGlobalInfo::getDeviceQueueName() {
   static const std::string DeviceQueue = [&]() {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return "default_queue";
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       return "out_of_order_queue";
-    else
-      return "in_order_queue";
+    return "in_order_queue";
   }();
   return DeviceQueue;
 }
@@ -1310,34 +1308,6 @@ void DpctGlobalInfo::setExcludePath(std::vector<std::string> ExcludePathVec) {
     }
   }
 }
-void DpctGlobalInfo::setExplicitNamespace(
-    std::vector<ExplicitNamespace> NamespacesVec) {
-  size_t NamespaceVecSize = NamespacesVec.size();
-  if (!NamespaceVecSize || NamespaceVecSize > 2) {
-    ShowStatus(MigrationErrorInvalidExplicitNamespace);
-    dpctExit(MigrationErrorInvalidExplicitNamespace);
-  }
-  for (auto &Namespace : NamespacesVec) {
-    // 1. Ensure option none is alone
-    bool Check1 =
-        (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-    // 2. Ensure option sycl, sycl-math only enabled one
-    bool Check2 =
-        ((Namespace == ExplicitNamespace::EN_SYCL ||
-          Namespace == ExplicitNamespace::EN_SYCL_Math) &&
-         (ExplicitNamespaceSet.size() == 1 &&
-          ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
-    // 3. Check whether option dpct duplicated
-    bool Check3 = (Namespace == ExplicitNamespace::EN_DPCT &&
-                   ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
-    if (Check1 || Check2 || Check3) {
-      ShowStatus(MigrationErrorInvalidExplicitNamespace);
-      dpctExit(MigrationErrorInvalidExplicitNamespace);
-    } else {
-      ExplicitNamespaceSet.insert(Namespace);
-    }
-  }
-}
 int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
   auto Res = LocationInitIndexMap.find(FileNameAndOffset);
   if (Res == LocationInitIndexMap.end()) {
@@ -1373,8 +1343,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // R: range dim, used for built-in variables (threadIdx.x,...) migration
   // G: range dim, used for cg::thread_block migration
   // C: range dim, used for cub block migration
-  // F: free queries function migration, such as this_nd_item, this_group,
-  //    this_sub_group.
+  // F: free queries function migration, such as this_work_item::get_nd_item,
+  // this_work_item::get_work_group, this_work_item::get_sub_group.
   // E: extension, used for c source file migration
   // P: profiling enable or disable for time measurement.
   switch (Method) {
@@ -1601,8 +1571,10 @@ void DpctGlobalInfo::buildReplacements() {
     DevDecl << MapNames::getDpctNamespace()
             << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
             << "get_current_device();";
-    QDecl << "&q_ct1 = dev_ct1." << DpctGlobalInfo::getDeviceQueueName()
-          << "();";
+    QDecl << "&q_ct1 = ";
+    if (DpctGlobalInfo::useSYCLCompat())
+      QDecl << '*';
+    QDecl << "dev_ct1." << DpctGlobalInfo::getDeviceQueueName() << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.
@@ -2356,7 +2328,6 @@ bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateBuildScriptOnly = false;
 bool DpctGlobalInfo::EnableComments = false;
-std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
@@ -2434,6 +2405,7 @@ unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 bool DpctGlobalInfo::AnalysisModeFlag = false;
+bool DpctGlobalInfo::UseSYCLCompatFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
@@ -5445,18 +5417,25 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*/" << getNL();
     Printer.indent();
   }
+  if (DpctGlobalInfo::useRootGroup()) {
+    Printer << "auto exp_props = "
+               "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
+               "experimental::use_root_sync};\n";
+    ExecutionConfig.Properties = "exp_props";
+  }
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
+
   printStreamBase(Printer);
   if (SubmitStmts.empty()) {
     printParallelFor(Printer, false);
   } else {
     (Printer << "submit(").newLine();
-    printSubmitLamda(Printer);
+    printSubmitLambda(Printer);
   }
 }
-void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
+void KernelCallExpr::printSubmitLambda(KernelPrinter &Printer) {
   auto Lamda = Printer.block();
   Printer.line("[&](" + MapNames::getClNamespace() + "handler &cgh) {");
   {
@@ -5503,6 +5482,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       "(1)";
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
@@ -5525,6 +5507,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
@@ -5541,6 +5526,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   }
@@ -6885,13 +6873,13 @@ const FreeQueriesInfo::FreeQueriesNames &
 FreeQueriesInfo::getNames(FreeQueriesKind K) {
   static FreeQueriesNames Names[FreeQueriesInfo::FreeQueriesKind::End] = {
       {getItemName(),
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_nd_item",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_nd_item",
        getItemName()},
       {getItemName() + ".get_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_work_group",
        "group" + getCTFixedSuffix()},
       {getItemName() + ".get_sub_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_sub_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_sub_group",
        "sub_group" + getCTFixedSuffix()},
   };
   return Names[K];

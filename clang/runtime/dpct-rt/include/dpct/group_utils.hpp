@@ -716,6 +716,7 @@ enum class load_algorithm {
 // loads a linear segment of workgroup items into a blocked arrangement.
 template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
           typename Item>
+[[deprecated("Please use load_direct_blocked instead")]]
 __dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -733,6 +734,7 @@ __dpct_inline__ void load_blocked(const Item &item, InputIteratorT block_itr,
 // loads a linear segment of workgroup items into a striped arrangement.
 template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
           typename Item>
+[[deprecated("Please use load_direct_striped instead")]]
 __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
 
@@ -750,54 +752,96 @@ __dpct_inline__ void load_striped(const Item &item, InputIteratorT block_itr,
 /// Load a linear segment of elements into a blocked arrangement across the
 /// work-group.
 ///
-/// \tparam InputT The data type to load.
-///
+/// \tparam T The data type to load.
 /// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
 /// onto each work-item.
-///
 /// \tparam InputIteratorT  The random-access iterator type for input \iterator.
-///
-/// \param linear_tid A suitable linear identifier for the calling work-item.
-///
-/// \param block_itr The work-group's base input iterator for loading from.
-///
-/// \param items Data to load
-template <typename InputT, size_t ElementsPerWorkItem, typename InputIteratorT>
-__dpct_inline__ void load_direct_blocked(size_t linear_tid,
-                                         InputIteratorT block_itr,
-                                         InputT (&items)[ElementsPerWorkItem]) {
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+template <typename T, size_t ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void load_direct_blocked(const ItemT &item,
+                                         InputIteratorT input_iter,
+                                         T (&data)[ElementsPerWorkItem]) {
+  size_t work_item_id = item.get_local_linear_id();
 #pragma unroll
-  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
-    items[i] = block_itr[(linear_tid * ElementsPerWorkItem) + i];
-  }
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    data[i] = input_iter[(work_item_id * ElementsPerWorkItem) + i];
 }
 
 /// Load a linear segment of elements into a striped arrangement across the
 /// work-group.
 ///
-/// \tparam WorkGroupSize The work-group size.
-///
-/// \tparam InputT The data type to load.
-///
+/// \tparam T The data type to load.
 /// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
 /// onto each work-item.
-///
 /// \tparam InputIteratorT  The random-access iterator type for input \iterator.
-///
-/// \param linear_tid A suitable linear identifier for the calling work-item.
-///
-/// \param block_itr The work-group's base input iterator for loading from.
-///
-/// \param items Data to load
-template <size_t WorkGroupSize, typename InputT, int ElementsPerWorkItem,
-          typename InputIteratorT>
-__dpct_inline__ void load_direct_striped(size_t linear_tid,
-                                         InputIteratorT block_itr,
-                                         InputT (&items)[ElementsPerWorkItem]) {
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+template <typename T, int ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void load_direct_striped(const ItemT &item,
+                                         InputIteratorT input_iter,
+                                         T (&data)[ElementsPerWorkItem]) {
+  size_t work_group_size = item.get_group().get_local_linear_range();
+  size_t work_item_id = item.get_local_linear_id();
 #pragma unroll
-  for (size_t i = 0; i < ElementsPerWorkItem; i++) {
-    items[i] = block_itr[linear_tid + i * WorkGroupSize];
-  }
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    data[i] = input_iter[work_item_id + i * work_group_size];
+}
+
+/// Store a blocked arrangement of items across a work-group into a linear
+/// segment of items.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param data Data to store.
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void store_direct_blocked(const ItemT &item,
+                                          OutputIteratorT output_iter,
+                                          T (&data)[ElementsPerWorkItem]) {
+  size_t work_item_id = item.get_local_linear_id();
+  OutputIteratorT work_item_iter =
+      output_iter + (work_item_id * ElementsPerWorkItem);
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    work_item_iter[i] = data[i];
+}
+
+/// Store a striped arrangement of items across a work-group into a linear
+/// segment of items.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param items Data to store.
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void store_direct_striped(const ItemT &item,
+                                          OutputIteratorT output_iter,
+                                          T (&data)[ElementsPerWorkItem]) {
+  size_t work_group_size = item.get_group().get_local_linear_range();
+  size_t work_item_id = item.get_local_linear_id();
+  OutputIteratorT work_item_iter = output_iter + work_item_id;
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    work_item_iter[i * work_group_size] = data[i];
 }
 
 // loads a linear segment of workgroup items into a subgroup striped
@@ -825,6 +869,34 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
     new (&items[idx]) InputT(block_itr[initial_offset + (idx * subgroup_size)]);
   }
 }
+  
+/// Stores a subgroup-striped arrangement of work items linear segment of items.
+// Created as free function until exchange mechanism is
+// implemented.
+// To-do: inline this function with BLOCK_STORE_WARP_TRANSPOSE mechanism
+template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
+          typename Item>
+__dpct_inline__ void
+store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
+                       InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+
+  // This implementation does not take in account range storing across
+  // workgroup items To-do: Decide whether range storing is required for group
+  // loading
+  // This implementation loads linear segments into warp striped arrangement.
+  auto sub_group = item.get_sub_group();
+  uint32_t subgroup_offset = sub_group.get_local_linear_id();
+  uint32_t subgroup_size = sub_group.get_local_linear_range();
+  uint32_t subgroup_idx = sub_group.get_group_linear_id();
+  uint32_t initial_offset =
+      (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset;
+  OutputIteratorT workitem_itr = block_itr + initial_offset;
+#pragma unroll
+  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
+    workitem_itr[(idx * subgroup_size)] = items[idx];
+  }
+}
+  
 // template parameters :
 // ITEMS_PER_WORK_ITEM: size_t variable controlling the number of items per
 // thread/work_item
@@ -834,7 +906,8 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
 // Item : typename parameter resembling sycl::nd_item<3> .
 template <size_t ITEMS_PER_WORK_ITEM, load_algorithm ALGORITHM, typename InputT,
           typename InputIteratorT, typename Item>
-class workgroup_load {
+class [[deprecated(
+    "Please use dpct::group::group_load instead")]] workgroup_load {
 public:
   static size_t get_local_memory_size(size_t group_work_items) { return 0; }
   workgroup_load(uint8_t *local_memory) : _local_memory(local_memory) {}
@@ -853,108 +926,129 @@ private:
   uint8_t *_local_memory;
 };
 
-/// Store blocked/warped or striped work items into linear segment of items.
-/// Helper for Block Store
-enum class store_algorithm {
+/// Enumerates alternative algorithms for dpct::group::group_load to read a
+/// linear segment of data from memory into a blocked arrangement across a
+/// work-group.
+enum class group_load_algorithm {
+  /// A blocked arrangement of data is read directly from memory.
+  blocked,
 
-  BLOCK_STORE_DIRECT,
-  BLOCK_STORE_STRIPED,
-
+  /// A striped arrangement of data is read directly from memory.
+  striped
 };
 
-/// Stores a blocked arrangement of work items linear segment of items.
-template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
-          typename Item>
-__dpct_inline__ void store_blocked(const Item &item, OutputIteratorT block_itr,
-                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-
-  // This implementation does not take in account range storage across
-  // workgroup items To-do: Decide whether range storage is required for group
-  // storage
-  size_t linear_tid = item.get_local_linear_id();
-  OutputIteratorT workitem_itr = block_itr + (linear_tid * ITEMS_PER_WORK_ITEM);
-#pragma unroll
-  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
-    workitem_itr[idx] = items[idx];
-  }
-}
-
-/// Stores a striped arrangement of work items linear segment of items.
-template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
-          typename Item>
-__dpct_inline__ void store_striped(const Item &item, OutputIteratorT block_itr,
-                                   InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-
-  // This implementation does not take in account range storage across
-  // workgroup items To-do: Decide whether range storage is required for group
-  // storage
-  size_t linear_tid = item.get_local_linear_id();
-  OutputIteratorT workitem_itr = block_itr + linear_tid;
-  size_t group_work_items = item.get_local_range().size();
-#pragma unroll
-  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
-    workitem_itr[(idx * group_work_items)] = items[idx];
-  }
-}
-
-/// Stores a subgroup-striped arrangement of work items linear segment of items.
-// Created as free function until exchange mechanism is
-// implemented.
-// To-do: inline this function with BLOCK_STORE_WARP_TRANSPOSE mechanism
-template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
-          typename Item>
-__dpct_inline__ void
-store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
-                       InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-
-  // This implementation does not take in account range storing across
-  // workgroup items To-do: Decide whether range storing is required for group
-  // loading
-  // This implementation loads linear segments into warp striped arrangement.
-  auto sub_group = item.get_subgroup();
-  uint32_t subgroup_offset = sub_group.get_local_linear_id();
-  uint32_t subgroup_size = sub_group.get_local_linear_range();
-  uint32_t subgroup_idx = sub_group.get_group_linear_id();
-  uint32_t initial_offset =
-      (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset;
-  OutputIteratorT workitem_itr = block_itr + initial_offset;
-#pragma unroll
-  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
-    workitem_itr[(idx * subgroup_size)] = items[idx];
-  }
-}
-
-// template parameters :
-// ITEMS_PER_WORK_ITEM: size_t variable controlling the number of items per
-// thread/work_item
-// ALGORITHM: store_algorithm variable controlling the type of store operation.
-// InputT: type for input sequence.
-// OutputIteratorT:  output iterator type
-// Item : typename parameter resembling sycl::nd_item<3> .
-template <size_t ITEMS_PER_WORK_ITEM, store_algorithm ALGORITHM,
-          typename InputT, typename OutputIteratorT, typename Item>
-class workgroup_store {
+/// Provide methods for loading a linear segment of items from memory into a
+/// blocked arrangement across a work-group.
+///
+/// \tparam T The input data type.
+/// \tparam ElementsPerWorkItem The number of data elements assigned to a
+/// work-item.
+/// \tparam LoadAlgorithm The data movement strategy, default is blocked.
+template <typename T, size_t ElementsPerWorkItem,
+          group_load_algorithm LoadAlgorithm = group_load_algorithm::blocked>
+class group_load {
 public:
-  static size_t get_local_memory_size(size_t group_work_items) { return 0; }
-  workgroup_store(uint8_t *local_memory) : _local_memory(local_memory) {}
+  static size_t get_local_memory_size([[maybe_unused]] size_t work_group_size) {
+    return 0;
+  }
+  group_load(uint8_t *) {}
 
-  __dpct_inline__ void store(const Item &item, OutputIteratorT block_itr,
-                             InputT (&items)[ITEMS_PER_WORK_ITEM]) {
-
-    if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_DIRECT) {
-      store_blocked<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
-    } else if constexpr (ALGORITHM == store_algorithm::BLOCK_STORE_STRIPED) {
-      store_striped<ITEMS_PER_WORK_ITEM>(item, block_itr, items);
+  /// Load a linear segment of items from memory.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// \p input across the work-group is:
+  ///
+  ///   1, 2, 3, 4, 5, 6, 7, ..., 508, 509, 510, 511.
+  ///
+  /// The blocked order \p data of each work-item will be:
+  ///
+  ///   {[0,1,2,3], [4,5,6,7], ..., [508,509,510,511]}.
+  ///
+  /// The striped order \p output of each work-item will be:
+  ///
+  ///   {[0,128,256,384], [1,129,257,385], ..., [127,255,383,511]}.
+  ///
+  /// \tparam ItemT The sycl::nd_item index space class.
+  /// \tparam InputIteratorT The random-access iterator type for input
+  /// \iterator.
+  /// \param item The work-item identifier.
+  /// \param input_iter The work-group's base input iterator for loading from.
+  /// \param data The data to load.
+  template <typename ItemT, typename InputIteratorT>
+  __dpct_inline__ void load(const ItemT &item, InputIteratorT input_iter,
+                            T (&data)[ElementsPerWorkItem]) {
+    if constexpr (LoadAlgorithm == group_load_algorithm::blocked) {
+      load_direct_blocked<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data);
+    } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
+      load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data);
     }
   }
-
-private:
-  // local_memory is a placeholder ,currently unused, as no operations use
-  // extra memory but placed here to make migrations easier. 
-  // For future exchange operations might be necessary
-  uint8_t *_local_memory;
 };
 
+/// Enumerates alternative algorithms for dpct::group::group_load to write a
+/// blocked arrangement of items across a work-group to a linear segment of
+/// memory.
+enum class group_store_algorithm {
+  /// A blocked arrangement of data is written directly to memory.
+  blocked,
+
+  /// A striped arrangement of data is written directly to memory.
+  striped,
+};
+
+/// Provide methods for writing a blocked arrangement of elements partitioned
+/// across a work-group to a linear segment of memory.
+///
+/// \tparam T The output data type.
+/// \tparam ElementsPerWorkItem The number of data elements assigned to a
+/// work-item.
+/// \tparam StoreAlgorithm The data movement strategy, default is blocked.
+template <typename T, size_t ElementsPerWorkItem,
+          group_store_algorithm StoreAlgorithm = group_store_algorithm::blocked>
+class group_store {
+public:
+  static size_t get_local_memory_size([[maybe_unused]] size_t work_group_size) {
+    return 0;
+  }
+  group_store(uint8_t *) {}
+
+  /// Store items into a linear segment of memory.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and the
+  /// \p input across the work-group is:
+  ///
+  ///   {[0,1,2,3], [4,5,6,7], ..., [508,509,510,511]}.
+  ///
+  /// The blocked order \p output will be:
+  ///
+  ///   1, 2, 3, 4, 5, 6, 7, ..., 508, 509, 510, 511.
+  ///
+  /// The striped order \p output will be:
+  ///
+  ///   0, 128, 256, 384, 1, 129, 257, 385, ..., 127, 255, 383, 511.
+  ///
+  /// \tparam ItemT The sycl::nd_item index space class.
+  /// \tparam OutputIteratorT The random-access iterator type for \p output
+  /// iterator.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param data The data to store.
+  template <typename ItemT, typename OutputIteratorT>
+  __dpct_inline__ void store(const ItemT &item, OutputIteratorT output_iter,
+                             T (&data)[ElementsPerWorkItem]) {
+    if constexpr (StoreAlgorithm == group_store_algorithm::blocked) {
+      store_direct_blocked<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data);
+    } else if constexpr (StoreAlgorithm == group_store_algorithm::striped) {
+      store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data);
+    }
+  }
+};
 } // namespace group
 } // namespace dpct
 
