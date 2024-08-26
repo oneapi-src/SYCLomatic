@@ -178,7 +178,7 @@
 // cublasSetVectorAsync-NEXT:                        incx /*int*/, to /*void **/, incy /*int*/,
 // cublasSetVectorAsync-NEXT:                        stream /*cudaStream_t*/);
 // cublasSetVectorAsync-NEXT: Is migrated to:
-// cublasSetVectorAsync-NEXT:   dpct::blas::matrix_mem_copy(to, from, incy, incx, 1, n, elementsize, dpct::automatic, *stream, true);
+// cublasSetVectorAsync-NEXT:   dpct::blas::matrix_mem_copy(to, from, incy, incx, 1, n, elementsize, dpct::cs::memcpy_direction::automatic, *stream, true);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSsymv | FileCheck %s -check-prefix=cublasSsymv
 // cublasSsymv: CUDA API:
