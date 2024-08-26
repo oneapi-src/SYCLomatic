@@ -509,7 +509,7 @@ std::vector<std::string> SplitStr(const std::string &Str, char Delimiter) {
 }
 
 std::string
-GetInstalledToolKit(std::unordered_set<std::string> &AvaliableTool) {
+GetFirstAvailableTool(std::unordered_set<std::string> &ToolCandidates) {
   const char *EnvPath = std::getenv("PATH");
   if (EnvPath == nullptr) {
     return "";
@@ -523,7 +523,7 @@ GetInstalledToolKit(std::unordered_set<std::string> &AvaliableTool) {
 #endif
   );
   for (const auto &Dir : PathDir) {
-    for (auto &Tool : AvaliableTool) {
+    for (auto &Tool : ToolCandidates) {
       std::string ToolPath = appendPath(Dir, Tool);
       if (llvm::sys::fs::exists(ToolPath)) {
         return Tool;
@@ -533,7 +533,7 @@ GetInstalledToolKit(std::unordered_set<std::string> &AvaliableTool) {
   return "";
 }
 
-std::string GetInstalledPython() {
+std::string GetPython() {
   std::unordered_set<std::string> Tool = {
 #if defined(_WIN32)
     "py.exe",
@@ -543,7 +543,7 @@ std::string GetInstalledPython() {
     "python3"
   };
 
-  return GetInstalledToolKit(Tool);
+  return GetFirstAvailableTool(Tool);
 }
 
 int runDPCT(int argc, const char **argv) {
@@ -640,7 +640,7 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    std::string Python = GetInstalledPython();
+    std::string Python = GetPython();
     if (Python.empty()) {
       ShowStatus(CallIndependentToolError, "python");
       dpctExit(CallIndependentToolError);
