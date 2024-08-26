@@ -12314,8 +12314,23 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
     if (auto DRE = dyn_cast<DeclRefExpr>(AttrArg)) {
       if (auto AttrEnumConst = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
         std::string EnumName = AttrEnumConst->getName().str();
-        if (EnumName != "CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK")
-          report(C->getBeginLoc(), Diagnostics::UNSUPPORTED_KERNEL_ATTRIBUTE, false);
+        std::string MemberName, Desc;
+        if (EnumName == "CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES") {
+          MemberName = "shared_size_bytes";
+          Desc = "statically allocated shared memory";
+        } else if (EnumName == "CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES") {
+          MemberName = "const_size_bytes";
+          Desc = "memory size of user-defined constants";
+        } else if (EnumName == "CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES") {
+          MemberName = "local_size_bytes";
+          Desc = "local memory";
+        } else if (EnumName == "CU_FUNC_ATTRIBUTE_NUM_REGS") {
+          MemberName = "num_regs";
+          Desc = "required number of registers";
+        }
+        if (!MemberName.empty() and !Desc.empty()) {
+          report(C->getBeginLoc(), Diagnostics::UNSUPPORTED_KERNEL_ATTRIBUTE, false, Desc, MemberName);
+        }
       }
     }
     emplaceTransformation(EA.getReplacement());
