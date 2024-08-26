@@ -118,10 +118,10 @@ __global__ void kernelFunc1() {
   test11(threadBlockGroup);
 }
 
-// nd_range_barrier
+// sycl::group_barrier(root_group)
 
 // CHECK: void kernel(sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
-// CHECK-NEXT:   dpct::experimental::nd_range_barrier(sycl::ext::oneapi::this_work_item::get_nd_item<3>(), sync_ct1);
+// CHECK-NEXT:  sycl::group_barrier(grid);
 // CHECK-NEXT: }
 __global__ void kernel() {
   cg::grid_group grid = cg::this_grid();
