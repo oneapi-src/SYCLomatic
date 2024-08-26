@@ -29,17 +29,17 @@ public:
         E->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
       Value = ER.Val.getInt().getExtValue();
       if (Value == -1) {
-        Stream << MapNames::getDpctNamespace() << "fft::fft_direction::forward";
+        Stream << MapNames::getLibraryHelperNamespace() << "fft::fft_direction::forward";
         return;
       } else if (Value == 1) {
-        Stream << MapNames::getDpctNamespace()
+        Stream << MapNames::getLibraryHelperNamespace()
                << "fft::fft_direction::backward";
         return;
       }
     }
     clang::dpct::print(Stream, E);
-    Stream << " == 1 ? " << MapNames::getDpctNamespace()
-           << "fft::fft_direction::backward : " << MapNames::getDpctNamespace()
+    Stream << " == 1 ? " << MapNames::getLibraryHelperNamespace()
+           << "fft::fft_direction::backward : " << MapNames::getLibraryHelperNamespace()
            << "fft::fft_direction::forward";
   }
 

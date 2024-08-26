@@ -53,6 +53,7 @@ public:
                                     bool IsMathFunc = false);
   static std::string getExpNamespace(bool KeepNamespace = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
+  static const std::string &getLibraryHelperNamespace();
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
@@ -328,6 +329,7 @@ public:
   static const MapTy Dim3MemberNamesMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
+  static MapTy CUBEnumsMap;
   static MapTy BLASEnumsMap;
   static MapTy SPBLASEnumsMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;
