@@ -63,7 +63,7 @@ void CudaInstallationDetector::ParseThrustVersionFile(
   std::string Line;
   std::string Res;
   while (std::getline(CudaFile, Line)) {
-    if (FindTargetVersion(Line, "#define", "THRUST_VERSION", Res))
+    if (FindTargetVersion(Line, "define", "THRUST_VERSION", Res))
       break;
   }
   if (Res == "") {
@@ -80,6 +80,15 @@ bool CudaInstallationDetector::FindTargetVersion(const std::string &Line,
   const size_t VersionLength = VersionStr.length();
   size_t Pos = 0;
   // Skip while space characters.
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  if (Line[Pos] != '#') {
+    return false;
+  }
+  Pos += 1; // Skip '#'.
+
+  // Skip possible space characters.
   for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
     ;
 
@@ -122,7 +131,7 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   std::string Line;
   std::string Res;
   while (std::getline(CudaFile, Line)) {
-    if (FindTargetVersion(Line, "#define", "CUDA_VERSION", Res))
+    if (FindTargetVersion(Line, "define", "CUDA_VERSION", Res))
       break;
   }
   if (Res == "") {
