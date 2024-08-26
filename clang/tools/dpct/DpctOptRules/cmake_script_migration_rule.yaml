@@ -2825,19 +2825,14 @@
     value:
       MatchMode: Full
       In: CUDA_PROPAGATE_HOST_FLAGS
-      Out: DUMP_VAR
+      Out: SYCL_PROPAGATE_HOST_FLAGS
 
 - Rule: rule_CUDA_USE_STATIC_CUDA_RUNTIME
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: CUDA_USE_STATIC_CUDA_RUNTIME
-  In: ${func_name}(${value})
-  Out: ${func_name}(${value})
-  Subrules:
-    value:
-      MatchMode: Full
-      In: CUDA_USE_STATIC_CUDA_RUNTIME
-      Out: DUMP_VAR
+  In: option(CUDA_USE_STATIC_CUDA_RUNTIME ${value})
+  Out: ""
 
 - Rule: rule_cuda_source_property_format
   Kind: CMakeRule

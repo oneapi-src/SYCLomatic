@@ -1,3 +1,3 @@
-option(DUMP_VAR OFF)
 
-set(DUMP_VAR ON)
+
+
