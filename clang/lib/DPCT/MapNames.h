@@ -53,6 +53,7 @@ public:
                                     bool IsMathFunc = false);
   static std::string getExpNamespace(bool KeepNamespace = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
+  static const std::string &getLibraryHelperNamespace();
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
