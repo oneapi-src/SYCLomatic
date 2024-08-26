@@ -8,70 +8,48 @@
 #include <cuda_runtime.h>
 #include <iostream>
 
-template <typename InputT, int ITEMS_PER_THREAD, typename InputIteratorT>
-__device__ void LoadDirectBlocked(int linear_tid, InputIteratorT block_itr,
-                                  InputT (&items)[ITEMS_PER_THREAD]) {
-#pragma unroll
-  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    items[ITEM] = block_itr[(linear_tid * ITEMS_PER_THREAD) + ITEM];
-  }
-}
-
-template <typename T, int ITEMS_PER_THREAD, typename OutputIteratorT>
-__device__ void StoreDirectBlocked(int linear_tid, OutputIteratorT block_itr,
-                                   T (&items)[ITEMS_PER_THREAD]) {
-  OutputIteratorT thread_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
-
-#pragma unroll
-  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    thread_itr[ITEM] = items[ITEM];
-  }
-}
-
-template <int BLOCK_THREADS, typename InputT, int ITEMS_PER_THREAD,
-          typename InputIteratorT>
-__device__ void LoadDirectStriped(int linear_tid, InputIteratorT block_itr,
-                                  InputT (&items)[ITEMS_PER_THREAD]) {
-#pragma unroll
-  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    items[ITEM] = block_itr[linear_tid + ITEM * BLOCK_THREADS];
-  }
-}
-
-template <int BLOCK_THREADS, typename T, int ITEMS_PER_THREAD,
-          typename OutputIteratorT>
-__device__ void StoreDirectStriped(int linear_tid, OutputIteratorT block_itr,
-                                   T (&items)[ITEMS_PER_THREAD]) {
-  OutputIteratorT thread_itr = block_itr + linear_tid;
-
-#pragma unroll
-  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    thread_itr[(ITEM * BLOCK_THREADS)] = items[ITEM];
-  }
-}
-
 __global__ void StripedToBlockedKernel(int *d_data) {
   // CHECK: typedef dpct::group::exchange<int, 4> BlockExchange;
-  // CHECK-NOT:__shared__ typename BlockExchange::TempStorage temp_storage;
+  // CHECK-NEXT: using BlockLoad = dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::striped>;
+  // CHECK-NEXT: using BlockStore = dpct::group::group_store<int, 4, dpct::group::group_store_algorithm::striped>;
+  // CHECK-NOT: __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  // CHECK-NOT: __shared__ typename BlockStore::TempStorage temp_storage_store;
+  // CHECK-NOT: __shared__ typename BlockExchange::TempStorage temp_storage;
   typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+  using BlockLoad = cub::BlockLoad<int, 128, 4, cub::BLOCK_LOAD_STRIPED>;
+  using BlockStore = cub::BlockStore<int, 128, 4, cub::BLOCK_STORE_STRIPED>;
+  __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  __shared__ typename BlockStore::TempStorage temp_storage_store;
   __shared__ typename BlockExchange::TempStorage temp_storage;
   int thread_data[4];
-  LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
-  // CHECK: BlockExchange(temp_storage).striped_to_blocked(item_ct1, thread_data, thread_data);
+  // CHECK: BlockLoad(temp_storage_load).load(item_ct1, d_data, thread_data);
+  // CHECK-NEXT: BlockExchange(temp_storage).striped_to_blocked(item_ct1, thread_data, thread_data);
+  // CHECK-NEXT: BlockStore(temp_storage_store).store(item_ct1, d_data, thread_data);
+  BlockLoad(temp_storage_load).Load(d_data, thread_data);
   BlockExchange(temp_storage).StripedToBlocked(thread_data, thread_data);
-  StoreDirectStriped<128>(threadIdx.x, d_data, thread_data);
+  BlockStore(temp_storage_store).Store(d_data, thread_data);
 }
 
 __global__ void BlockedToStripedKernel(int *d_data) {
   // CHECK: typedef dpct::group::exchange<int, 4> BlockExchange;
-  // CHECK-NOT:__shared__ typename BlockExchange::TempStorage temp_storage;
+  // CHECK-NEXT: using BlockLoad = dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::striped>;
+  // CHECK-NEXT: using BlockStore = dpct::group::group_store<int, 4, dpct::group::group_store_algorithm::striped>;
+  // CHECK-NOT: __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  // CHECK-NOT: __shared__ typename BlockStore::TempStorage temp_storage_store;
+  // CHECK-NOT: __shared__ typename BlockExchange::TempStorage temp_storage;
   typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+  using BlockLoad = cub::BlockLoad<int, 128, 4, cub::BLOCK_LOAD_STRIPED>;
+  using BlockStore = cub::BlockStore<int, 128, 4, cub::BLOCK_STORE_STRIPED>;
+  __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  __shared__ typename BlockStore::TempStorage temp_storage_store;
   __shared__ typename BlockExchange::TempStorage temp_storage;
   int thread_data[4];
-  LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
-  // CHECK: BlockExchange(temp_storage).blocked_to_striped(item_ct1, thread_data, thread_data);
+  // CHECK: BlockLoad(temp_storage_load).load(item_ct1, d_data, thread_data);
+  // CHECK-NEXT: BlockExchange(temp_storage).blocked_to_striped(item_ct1, thread_data, thread_data);
+  // CHECK-NEXT: BlockStore(temp_storage_store).store(item_ct1, d_data, thread_data);
+  BlockLoad(temp_storage_load).Load(d_data, thread_data);
   BlockExchange(temp_storage).BlockedToStriped(thread_data, thread_data);
-  StoreDirectStriped<128>(threadIdx.x, d_data, thread_data);
+  BlockStore(temp_storage_store).Store(d_data, thread_data);
 }
 
 __global__ void ScatterToBlockedKernel(int *d_data, int *d_rank) {
@@ -80,11 +58,14 @@ __global__ void ScatterToBlockedKernel(int *d_data, int *d_rank) {
   using BlockExchange = cub::BlockExchange<int, 128, 4>;
   __shared__ typename BlockExchange::TempStorage temp_storage;
   int thread_data[4], thread_rank[4];
-  LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
-  LoadDirectStriped<128>(threadIdx.x, d_rank, thread_rank);
-  // CHECK: BlockExchange(temp_storage).scatter_to_blocked(item_ct1, thread_data, thread_rank);
+  // CHECK: dpct::group::load_direct_striped(item_ct1, d_data, thread_data);
+  // CHECK-NEXT: dpct::group::load_direct_striped(item_ct1, d_rank, thread_rank);
+  // CHECK-NEXT: BlockExchange(temp_storage).scatter_to_blocked(item_ct1, thread_data, thread_rank);
+  // CHECK-NEXT: dpct::group::store_direct_striped(item_ct1, d_data, thread_data);
+  cub::LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
+  cub::LoadDirectStriped<128>(threadIdx.x, d_rank, thread_rank);
   BlockExchange(temp_storage).ScatterToBlocked(thread_data, thread_rank);
-  StoreDirectStriped<128>(threadIdx.x, d_data, thread_data);
+  cub::StoreDirectStriped<128>(threadIdx.x, d_data, thread_data);
 }
 
 __global__ void ScatterToStripedKernel(int *d_data, int *d_rank) {
@@ -93,11 +74,14 @@ __global__ void ScatterToStripedKernel(int *d_data, int *d_rank) {
   using BlockExchange = cub::BlockExchange<int, 128, 4>;
   __shared__ typename BlockExchange::TempStorage temp_storage;
   int thread_data[4], thread_rank[4];
-  LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
-  LoadDirectStriped<128>(threadIdx.x, d_rank, thread_rank);
-  // CHECK: BlockExchange(temp_storage).scatter_to_striped(item_ct1, thread_data, thread_rank);
+  // CHECK: dpct::group::load_direct_striped(item_ct1, d_data, thread_data);
+  // CHECK-NEXT: dpct::group::load_direct_striped(item_ct1, d_rank, thread_rank);
+  // CHECK-NEXT: BlockExchange(temp_storage).scatter_to_striped(item_ct1, thread_data, thread_rank);
+  // CHECK-NEXT: dpct::group::store_direct_striped(item_ct1, d_data, thread_data);
+  cub::LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
+  cub::LoadDirectStriped<128>(threadIdx.x, d_rank, thread_rank);
   BlockExchange(temp_storage).ScatterToStriped(thread_data, thread_rank);
-  StoreDirectStriped<128>(threadIdx.x, d_data, thread_data);
+  cub::StoreDirectStriped<128>(threadIdx.x, d_data, thread_data);
 }
 
 bool test_striped_to_blocked() {
@@ -112,12 +96,14 @@ bool test_striped_to_blocked() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_load_acc(dpct::group::group_load<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_store_acc(dpct::group::group_store<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::exchange<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         StripedToBlockedKernel(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         StripedToBlockedKernel(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   StripedToBlockedKernel<<<1, 128>>>(d_data);
@@ -145,12 +131,14 @@ bool test_blocked_to_striped() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_load_acc(dpct::group::group_load<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_store_acc(dpct::group::group_store<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::exchange<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         BlockedToStripedKernel(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         BlockedToStripedKernel(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   BlockedToStripedKernel<<<1, 128>>>(d_data);
