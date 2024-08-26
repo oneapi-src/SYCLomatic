@@ -72,6 +72,8 @@ void CudaInstallationDetector::ParseThrustVersionFile(
   ThrustVersion = std::stoi(Res);
 }
 
+// Find pattern "#define DefineStr VersionStr NUM" in line, return NUM in Result
+// return true if find.
 bool CudaInstallationDetector::FindTargetVersion(const std::string &Line,
                                                  const std::string DefineStr,
                                                  const std::string VersionStr,
