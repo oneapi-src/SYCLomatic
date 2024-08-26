@@ -4425,7 +4425,7 @@ const MapNames::MapTy MapNames::Dim3MemberNamesMap{
     // ...
 };
 
-const std::unordered_map<unsigned, std::string> MapNames::ArrayFlagMap{
+const std::map<unsigned, std::string> MapNames::ArrayFlagMap{
     {0, "standard"},
     {1, "array"},
 };
