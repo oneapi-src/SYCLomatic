@@ -25,8 +25,8 @@
    => item_ct1.get_sub_group().barrier()
 
    cg::sync(cg::grid_group)
-   => if UseNDRangeBarrier then
-   dpct::experimental::nd_range_barrier(item_ct1, sync_ct1)
+   => if UseRootGroup then
+   sycl::group_barrier(sycl::root_group)
    otherwise unsupported
 
    Also, issue warning about barrier performance tuning.
@@ -34,40 +34,46 @@
 CONDITIONAL_FACTORY_ENTRY(
     CheckParamType(0, "const class cooperative_groups::__v1::thread_block &"),
     WARNING_FACTORY_ENTRY(
-        "sync",
-        MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM,
-                                  false, "barrier"),
+        "sync", MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM, false, "barrier"),
         Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item")),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckParamType(0, "const class cooperative_groups::__v1::coalesced_group &"),
+        CheckParamType(
+            0, "const class cooperative_groups::__v1::coalesced_group &"),
         WARNING_FACTORY_ENTRY(
-            "sync",
-            MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM,
-                                      false, "barrier"),
+            "sync", MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM, false, "barrier"),
             Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item")),
         CONDITIONAL_FACTORY_ENTRY(
             argHasThreadBlockTileType(0, 32),
             WARNING_FACTORY_ENTRY(
                 "sync",
-                MEMBER_CALL_FACTORY_ENTRY("sync",
-                                          SUBGROUP, false, "barrier"),
+                MEMBER_CALL_FACTORY_ENTRY("sync", SUBGROUP, false, "barrier"),
                 Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
             CONDITIONAL_FACTORY_ENTRY(
-                CheckParamType(0, "const class cooperative_groups::__v1::grid_group &"),
+                CheckParamType(
+                    0, "const class cooperative_groups::__v1::grid_group &"),
                 CONDITIONAL_FACTORY_ENTRY(
-                    UseNDRangeBarrier,
+                    UseRootGroup,
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::device_ext,
-                        CALL_FACTORY_ENTRY(
-                            "sync",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "experimental::nd_range_barrier",
-                                 NDITEM, ARG(DpctGlobalInfo::getSyncName())))),
-                    UNSUPPORT_FACTORY_ENTRY("sync",
-                                            Diagnostics::ND_RANGE_BARRIER,
-                                            makeCombinedArg(MemberExprBase(), ARG(".sync()")))),
-                UNSUPPORT_FACTORY_ENTRY("sync",
-                                        Diagnostics::API_NOT_MIGRATED,
+                        CALL_FACTORY_ENTRY("sync",
+                                           CALL(MapNames::getClNamespace() +
+                                                    "group_barrier",
+                                                ARG(0)))),
+                    CONDITIONAL_FACTORY_ENTRY(
+                        UseNDRangeBarrier,
+                        FEATURE_REQUEST_FACTORY(
+                            HelperFeatureEnum::device_ext,
+                            CALL_FACTORY_ENTRY(
+                                "sync",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "experimental::nd_range_barrier",
+                                     NDITEM,
+                                     ARG(DpctGlobalInfo::getSyncName())))),
+                        UNSUPPORT_FACTORY_ENTRY(
+                            "sync", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cooperative_groups::__v1::grid_group.sync"),
+                            ARG("--use-experimental-features=root-group")))),
+                UNSUPPORT_FACTORY_ENTRY("sync", Diagnostics::API_NOT_MIGRATED,
                                         ARG("sync"))))))
 
 /*
@@ -251,14 +257,6 @@ CONDITIONAL_FACTORY_ENTRY(
     UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.sync",
                             Diagnostics::API_NOT_MIGRATED,
                             ARG("sync")))
-CONDITIONAL_FACTORY_ENTRY(
-    UseNDRangeBarrier,
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        CALL_FACTORY_ENTRY(
-            "cooperative_groups::__v1::grid_group.sync",
-            CALL(MapNames::getDpctNamespace() + "experimental::nd_range_barrier", NDITEM, ARG(DpctGlobalInfo::getSyncName())))),
-    UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync", Diagnostics::ND_RANGE_BARRIER, makeCombinedArg(MemberExprBase(), ARG(".sync()"))))
 
 /*
   --- X.size() ---
@@ -368,6 +366,89 @@ CASE_FACTORY_ENTRY(
         UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.num_threads",
                                 Diagnostics::API_NOT_MIGRATED, ARG("num_threads"))))
 
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
+    MEMBER_CALL_FACTORY_ENTRY("this_grid", NDITEM, false,
+                              "ext_oneapi_get_root_group"),
+    CONDITIONAL_FACTORY_ENTRY(
+        UseNDRangeBarrier, CALL_FACTORY_ENTRY("this_grid", CALL("")),
+        UNSUPPORT_FACTORY_ENTRY(
+            "this_grid", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+            ARG("cooperative_groups::__v1::grid_group::this_grid"),
+            ARG("--use-experimental-features=root-group"))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
+    CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync",
+                       CALL(MapNames::getClNamespace() + "group_barrier",
+                            MemberExprBase())),
+    CONDITIONAL_FACTORY_ENTRY(
+        UseNDRangeBarrier,
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync",
+                               CALL(MapNames::getDpctNamespace() +
+                                        "experimental::nd_range_barrier",
+                                    NDITEM,
+                                    ARG(DpctGlobalInfo::getSyncName())))),
+        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.sync",
+                                Diagnostics::ND_RANGE_BARRIER,
+                                makeCombinedArg(MemberExprBase(),
+                                                ARG(".sync()")))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.thread_rank", MemberExprBase(),
+        false, "get_local_linear_id"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.thread_rank",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::grid_group.thread_rank"),
+        ARG("--use-experimental-features=root-group")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.block_rank",
+                              MemberExprBase(), false, "get_group_linear_id"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.block_rank",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::grid_group.block_rank"),
+        ARG("--use-experimental-features=root-group")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.num_threads", MemberExprBase(),
+        false, "get_local_linear_range"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.num_threads",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::grid_group.num_threads"),
+        ARG("--use-experimental-features=root-group")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.size", MemberExprBase(),
+        false, "get_local_linear_range"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.size",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::grid_group.size"),
+        ARG("--use-experimental-features=root-group")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseRootGroup,
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.num_blocks",
+                              MemberExprBase(), false,
+                              "get_group_linear_range"),
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::grid_group.num_blocks",
+        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        ARG("cooperative_groups::__v1::grid_group.num_blocks"),
+        ARG("--use-experimental-features=root-group")))
 
 /*
   --- X.thread_rank() ---

@@ -204,8 +204,8 @@ DEF_WARNING(SUBGROUP_SIZE_CONFLICT, 1085, LOW_LEVEL, "The function %0 requires s
 DEF_COMMENT(SUBGROUP_SIZE_CONFLICT, 1085, LOW_LEVEL, "The function {0} requires sub-group size to be {1}, while other sub-group functions in the same SYCL kernel require a different sub-group size. You may need to adjust the code.")
 DEF_WARNING(ACTIVE_MASK, 1086, HIGH_LEVEL, "__activemask() is migrated to 0xffffffff. You may need to adjust the code.")
 DEF_COMMENT(ACTIVE_MASK, 1086, HIGH_LEVEL, "__activemask() is migrated to 0xffffffff. You may need to adjust the code.")
-DEF_WARNING(ND_RANGE_BARRIER, 1087, LOW_LEVEL, "SYCL currently does not support cross group synchronization. You can specify \"--use-experimental-features=nd_range_barrier\" to use the dpct helper function nd_range_barrier to migrate %0.")
-DEF_COMMENT(ND_RANGE_BARRIER, 1087, LOW_LEVEL, "SYCL currently does not support cross group synchronization. You can specify \"--use-experimental-features=nd_range_barrier\" to use the dpct helper function nd_range_barrier to migrate {0}.")
+DEF_WARNING(ND_RANGE_BARRIER, 1087, LOW_LEVEL, "SYCL currently does not support cross group synchronization. You can specify \"--use-experimental-features=root-group\" to use the root-group to migrate %0.")
+DEF_COMMENT(ND_RANGE_BARRIER, 1087, LOW_LEVEL, "SYCL currently does not support cross group synchronization. You can specify \"--use-experimental-features=root-group\" to use the root-group to migrate {0}.")
 DEF_WARNING(FREE_QUERIES_DIMENSION, 1088, MEDIUM_LEVEL, "The macro definition has multiple migration results in the dimension of free queries function that could not be unified. You may need to modify the code.")
 DEF_COMMENT(FREE_QUERIES_DIMENSION, 1088, MEDIUM_LEVEL, "The macro definition has multiple migration results in the dimension of free queries function that could not be unified. You may need to modify the code.")
 DEF_WARNING(SUBGROUP_SIZE_NOT_EVALUATED, 1089, LOW_LEVEL,"The value of the sub-group size attribute argument '%0' cannot be evaluated. Replace \"dpct_placeholder\" with an integral constant expression.")
@@ -288,6 +288,8 @@ DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The typ
 DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
 DEF_WARNING(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
 DEF_COMMENT(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
+DEF_WARNING(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"%0\" is not supported with SYCLcompat currently, please adjust the code manually.")
+DEF_COMMENT(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"{0}\" is not supported with SYCLcompat currently, please adjust the code manually.")
 // clang-format on
 
 #undef DEF_COMMENT
