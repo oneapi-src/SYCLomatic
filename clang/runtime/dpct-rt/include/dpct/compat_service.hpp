@@ -26,6 +26,7 @@ namespace ns = ::syclcompat;
 template <typename T> using DataType = ::syclcompat::detail::DataType<T>;
 using memcpy_direction = ::syclcompat::experimental::memcpy_direction;
 template <class... Args> using kernel_name = syclcompat_kernel_name<Args...>;
+#define __dpct_inline__ __syclcompat_inline__
 #endif
 
 using ns::get_current_device;
