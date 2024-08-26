@@ -1,0 +1,5 @@
+find_library(CUDA_LIB "")
+
+find_library(CUBLAS_LIB ${MKL_LIB})
+
+find_library(NVTOOLSEXT_LIB "")
