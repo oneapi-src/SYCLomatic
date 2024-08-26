@@ -832,6 +832,20 @@ inline void dpct_free(void *ptr,
 #endif // DPCT_USM_LEVEL_NONE
   }
 }
+
+inline sycl::event async_dpct_free(const std::vector<void *> &pointers,
+                                   const std::vector<sycl::event> &events,
+                                   sycl::queue q) {
+  return q.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(events);
+    cgh.host_task([=] {
+      for (auto p : pointers)
+        if (p) {
+          detail::dpct_free(p, q);
+        }
+    });
+  });
+}
 } // namespace detail
 
 #ifdef DPCT_USM_LEVEL_NONE
@@ -990,15 +1004,7 @@ static inline void dpct_free(void *ptr,
 inline void async_dpct_free(const std::vector<void *> &pointers,
                             const std::vector<sycl::event> &events,
                             sycl::queue &q = get_default_queue()) {
-  q.submit([&](sycl::handler &cgh) {
-    cgh.depends_on(events);
-    cgh.host_task([=] {
-      for (auto p : pointers)
-        if (p) {
-          detail::dpct_free(p, q);
-        }
-    });
-  });
+  detail::async_dpct_free(pointers, events, q);
 }
 
 /// Synchronously copies \p size bytes from the address specified by \p from_ptr
