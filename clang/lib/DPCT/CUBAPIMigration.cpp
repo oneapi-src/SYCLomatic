@@ -100,7 +100,8 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cub::TransformInputIterator", "cub::ConstantInputIterator",
         "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
         "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin",
-        "cub::BlockRadixSort", "cub::BlockExchange");
+        "cub::BlockRadixSort", "cub::BlockExchange", "cub::BlockLoad",
+        "cub::BlockStore");
   };
 
   MF.addMatcher(
@@ -158,14 +159,15 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-          allOf(
-              on(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
-                  hasAnyName("cub::ArgIndexInputIterator",
-                             "cub::BlockRadixSort", "cub::BlockExchange"))))))),
-              callee(cxxMethodDecl(hasAnyName(
-                  "normalize", "Sort", "SortDescending", "BlockedToStriped",
-                  "StripedToBlocked", "ScatterToBlocked", "ScatterToStriped",
-                  "SortBlockedToStriped", "SortDescendingBlockedToStriped")))))
+          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
+                    hasAnyName("cub::ArgIndexInputIterator",
+                               "cub::BlockRadixSort", "cub::BlockExchange",
+                               "cub::BlockLoad", "cub::BlockStore"))))))),
+                callee(cxxMethodDecl(hasAnyName(
+                    "normalize", "Sort", "SortDescending", "BlockedToStriped",
+                    "StripedToBlocked", "ScatterToBlocked", "ScatterToStriped",
+                    "SortBlockedToStriped", "SortDescendingBlockedToStriped",
+                    "Load", "Store")))))
           .bind("memberCall"),
       this);
 
@@ -252,9 +254,17 @@ void CubMemberCallRule::runRule(
         Name == "BlockedToStriped" || Name == "StripedToBlocked" ||
         Name == "StripedToBlocked" || Name == "ScatterToBlocked" ||
         Name == "ScatterToStriped";
-    if (isBlockRadixSort || isBlockExchange) {
-      std::string HelpFuncName =
-          isBlockRadixSort ? "group_radix_sort" : "exchange";
+    if (isBlockRadixSort || isBlockExchange || Name == "Load" ||
+        Name == "Store") {
+      std::string HelpFuncName;
+      if (isBlockRadixSort)
+        HelpFuncName = "group_radix_sort";
+      else if (isBlockExchange)
+        HelpFuncName = "exchange";
+      else if (Name == "Load")
+        HelpFuncName = "group_load";
+      else if (Name == "Store")
+        HelpFuncName = "group_store";
       auto [TempStorage, DataTypeLoc] =
           getTempstorageVarAndValueTypeLoc(BlockMC);
       auto *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TempStorage);
@@ -298,7 +308,8 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                        "DeviceCountUncached", "DeviceCountCachedValue",
                        "PtxVersion", "PtxVersionUncached", "SmVersion",
                        "SmVersionUncached", "RowMajorTid", "LoadDirectBlocked",
-                       "LoadDirectStriped", "ShuffleDown", "ShuffleUp"),
+                       "LoadDirectStriped", "StoreDirectBlocked",
+                       "StoreDirectStriped", "ShuffleDown", "ShuffleUp"),
                    hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);

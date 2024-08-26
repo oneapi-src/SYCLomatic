@@ -122,6 +122,30 @@ TYPE_REWRITE_ENTRY(
                              TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                               "group::exchange"),
                                           TEMPLATE_ARG(0), TEMPLATE_ARG(2))))
+TYPE_REWRITE_ENTRY("cub::BlockLoad",
+                   HEADER_INSERTION_FACTORY(
+                       HeaderType::HT_DPCT_GROUP_Utils,
+                       TYPE_CONDITIONAL_FACTORY(
+                           CheckTemplateArgCount(4),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_load"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                        TEMPLATE_ARG(3)),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_load"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+TYPE_REWRITE_ENTRY("cub::BlockStore",
+                   HEADER_INSERTION_FACTORY(
+                       HeaderType::HT_DPCT_GROUP_Utils,
+                       TYPE_CONDITIONAL_FACTORY(
+                           CheckTemplateArgCount(4),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_store"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2),
+                                        TEMPLATE_ARG(3)),
+                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                            "group::group_store"),
+                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",

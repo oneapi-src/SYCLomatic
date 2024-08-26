@@ -165,7 +165,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
               CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
                                                "group::load_direct_blocked",
                                            0, 1, 2),
-                   ARG(0), ARG(1), ARG(2))))
+                   NDITEM, ARG(1), ARG(2))))
       // cub::LoadDirectStriped
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
@@ -173,8 +173,27 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
               "cub::LoadDirectStriped",
               CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
                                                "group::load_direct_striped",
-                                           0, 1, 2, 3),
-                   ARG(0), ARG(1), ARG(2))))
+                                           1, 2, 3),
+                   NDITEM, ARG(1), ARG(2))))
+
+      // cub::StoreDirectBlocked
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::StoreDirectBlocked",
+              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                               "group::store_direct_blocked",
+                                           0, 1, 2),
+                   NDITEM, ARG(1), ARG(2))))
+      // cub::StoreDirectStriped
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CALL_FACTORY_ENTRY(
+              "cub::StoreDirectStriped",
+              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                               "group::store_direct_striped",
+                                           1, 2, 3),
+                   NDITEM, ARG(1), ARG(2))))
       // cub::ShuffleDown
       SUBGROUPSIZE_FACTORY(
           UINT_MAX,

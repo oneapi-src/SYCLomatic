@@ -328,6 +328,7 @@ public:
   static const MapTy Dim3MemberNamesMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
+  static MapTy CUBEnumsMap;
   static MapTy BLASEnumsMap;
   static MapTy SPBLASEnumsMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;
