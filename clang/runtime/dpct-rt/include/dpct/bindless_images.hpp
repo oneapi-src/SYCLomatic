@@ -1303,7 +1303,11 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
 }
 
 using image_mem_wrapper_ptr = image_mem_wrapper *;
+#ifdef _WIN32
 using external_mem_wrapper_ptr = external_mem_wrapper *;
+#else
+using external_mem_wrapper_ptr = external_mem_wrapper_base *;
+#endif
 using bindless_image_wrapper_base_p = bindless_image_wrapper_base *;
 
 #endif
