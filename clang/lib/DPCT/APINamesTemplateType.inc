@@ -110,6 +110,18 @@ TYPE_REWRITE_ENTRY("cub::ArgMin",
                     HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
                    TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "argmin"))))
+TYPE_REWRITE_ENTRY(
+    "cub::BlockRadixSort",
+    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                             TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                              "group::group_radix_sort"),
+                                          TEMPLATE_ARG(0), TEMPLATE_ARG(2))))
+TYPE_REWRITE_ENTRY(
+    "cub::BlockExchange",
+    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
+                             TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                              "group::exchange"),
+                                          TEMPLATE_ARG(0), TEMPLATE_ARG(2))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
@@ -363,6 +375,15 @@ TYPE_REWRITE_ENTRY(
                          "ext::oneapi::experimental::opportunistic_group")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=non-uniform-groups"))))
+TYPE_REWRITE_ENTRY(
+    "cooperative_groups::__v1::grid_group",
+    TYPE_CONDITIONAL_FACTORY(
+        isUseRootGroupForType(),
+        TYPE_FACTORY(STR(MapNames::getExpNamespace() + "root_group")),
+        TYPE_CONDITIONAL_FACTORY(
+            isUseNdRangeBarrier(), TYPE_FACTORY(STR("")),
+            WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                            STR("--use-experimental-features=root-group")))))
 
 TYPE_REWRITE_ENTRY(
     "cooperative_groups::__v1::thread_block_tile",
