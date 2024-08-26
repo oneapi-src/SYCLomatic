@@ -1343,8 +1343,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // R: range dim, used for built-in variables (threadIdx.x,...) migration
   // G: range dim, used for cg::thread_block migration
   // C: range dim, used for cub block migration
-  // F: free queries function migration, such as this_nd_item, this_group,
-  //    this_sub_group.
+  // F: free queries function migration, such as this_work_item::get_nd_item,
+  // this_work_item::get_work_group, this_work_item::get_sub_group.
   // E: extension, used for c source file migration
   // P: profiling enable or disable for time measurement.
   switch (Method) {
@@ -6873,13 +6873,13 @@ const FreeQueriesInfo::FreeQueriesNames &
 FreeQueriesInfo::getNames(FreeQueriesKind K) {
   static FreeQueriesNames Names[FreeQueriesInfo::FreeQueriesKind::End] = {
       {getItemName(),
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_nd_item",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_nd_item",
        getItemName()},
       {getItemName() + ".get_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_work_group",
        "group" + getCTFixedSuffix()},
       {getItemName() + ".get_sub_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_sub_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_sub_group",
        "sub_group" + getCTFixedSuffix()},
   };
   return Names[K];
