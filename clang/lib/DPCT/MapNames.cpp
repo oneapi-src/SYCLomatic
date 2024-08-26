@@ -58,6 +58,7 @@ MapNames::MapTy MapNames::BLASAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 MapNames::MapTy MapNames::BLASEnumsMap;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
+MapNames::MapTy MapNames::CUBEnumsMap;
 
 namespace {
 auto EnumBit = [](auto EnumValue) {
@@ -99,6 +100,7 @@ const std::string &getDpctNamespaceName() {
   return Name;
 }
 
+std::string LibraryHelperNamespace("dpct::");
 bool ExplicitHelperNamespace = true;
 bool ExplicitSYCLNamespace = true;
 
@@ -112,6 +114,10 @@ void DpctGlobalInfo::printUsingNamespace(llvm::raw_ostream &OS) {
     printUsing(OS, getDpctNamespaceName());
   if (!ExplicitSYCLNamespace)
     printUsing(OS, "sycl");
+}
+
+const std::string &MapNames::getLibraryHelperNamespace() {
+  return LibraryHelperNamespace;
 }
 
 void MapNames::setExplicitNamespaceMap(
@@ -132,6 +138,7 @@ void MapNames::setExplicitNamespaceMap(
     // always use dpct::/syclcompat:: explicitly
     DpctNamespace[0] = DpctNamespace[1] = getDpctNamespaceName() + "::";
   } else {
+    LibraryHelperNamespace.clear();
     DpctNamespace[1] = getDpctNamespaceName() + "::";
   }
 
@@ -259,22 +266,22 @@ void MapNames::setExplicitNamespaceMap(
       {"ushort3", std::make_shared<TypeNameRule>(getClNamespace() + "ushort3")},
       {"ushort4", std::make_shared<TypeNameRule>(getClNamespace() + "ushort4")},
       {"cublasHandle_t", std::make_shared<TypeNameRule>(
-                             getDpctNamespace() + "blas::descriptor_ptr",
+                             getLibraryHelperNamespace() + "blas::descriptor_ptr",
                              HelperFeatureEnum::device_ext)},
       {"cublasStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cublasStatus", std::make_shared<TypeNameRule>("int")},
       {"cublasGemmAlgo_t", std::make_shared<TypeNameRule>("int")},
       {"cudaDataType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "library_data_t",
                                       HelperFeatureEnum::device_ext)},
       {"cudaDataType",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "library_data_t",
                                       HelperFeatureEnum::device_ext)},
       {"cublasDataType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "library_data_t",
                                       HelperFeatureEnum::device_ext)},
       {"cublasComputeType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "compute_type")},
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "compute_type")},
       {"cuComplex",
        std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
       {"cuFloatComplex",
@@ -289,7 +296,7 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasPointerMode_t", std::make_shared<TypeNameRule>("int")},
       {"cublasAtomicsMode_t", std::make_shared<TypeNameRule>("int")},
       {"cublasMath_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "blas::math_mode")},
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "blas::math_mode")},
       {"cusparsePointerMode_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseFillMode_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::uplo")},
@@ -298,14 +305,14 @@ void MapNames::setExplicitNamespaceMap(
       {"cusparseIndexBase_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
       {"cusparseMatrixType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "sparse::matrix_info::matrix_type",
                                       HelperFeatureEnum::device_ext)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cusparseAlgMode_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSolveAnalysisInfo_t",
-       std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
+       std::make_shared<TypeNameRule>("std::shared_ptr<" + getLibraryHelperNamespace() +
                                           "sparse::optimize_info>",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_ptr",
@@ -417,25 +424,25 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaTextureFilterMode",
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
       {"curandGenerator_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "rng::host_rng_ptr",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "rng::host_rng_ptr",
                                       HelperFeatureEnum::device_ext)},
       {"curandRngType_t", std::make_shared<TypeNameRule>(
-                              getDpctNamespace() + "rng::random_engine_type",
+                              getLibraryHelperNamespace() + "rng::random_engine_type",
                               HelperFeatureEnum::device_ext)},
       {"curandRngType", std::make_shared<TypeNameRule>(
-                            getDpctNamespace() + "rng::random_engine_type",
+                            getLibraryHelperNamespace() + "rng::random_engine_type",
                             HelperFeatureEnum::device_ext)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"curandOrdering_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "rng::random_mode")},
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "rng::random_mode")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseMatDescr_t",
-       std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
+       std::make_shared<TypeNameRule>("std::shared_ptr<" + getLibraryHelperNamespace() +
                                           "sparse::matrix_info>",
                                       HelperFeatureEnum::device_ext)},
       {"cusparseHandle_t", std::make_shared<TypeNameRule>(
-                               getDpctNamespace() + "sparse::descriptor_ptr")},
+                               getLibraryHelperNamespace() + "sparse::descriptor_ptr")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
       {"cudaStreamCaptureStatus",
        std::make_shared<TypeNameRule>(
@@ -484,13 +491,13 @@ void MapNames::setExplicitNamespaceMap(
       {"cufftResult_t", std::make_shared<TypeNameRule>("int")},
       {"cufftResult", std::make_shared<TypeNameRule>("int")},
       {"cufftType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "fft::fft_type",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "fft::fft_type",
                                       HelperFeatureEnum::device_ext)},
       {"cufftType",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "fft::fft_type",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "fft::fft_type",
                                       HelperFeatureEnum::device_ext)},
       {"cufftHandle", std::make_shared<TypeNameRule>(
-                          getDpctNamespace() + "fft::fft_engine_ptr",
+                          getLibraryHelperNamespace() + "fft::fft_engine_ptr",
                           HelperFeatureEnum::device_ext)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
@@ -556,16 +563,16 @@ void MapNames::setExplicitNamespaceMap(
                            getClNamespace() + "marray<" + getClNamespace() +
                            "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "version_field",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "version_field",
                                       HelperFeatureEnum::device_ext)},
       {"libraryPropertyType",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "version_field",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "version_field",
                                       HelperFeatureEnum::device_ext)},
       {"ncclUniqueId",
        std::make_shared<TypeNameRule>("oneapi::ccl::kvs::address_type",
                                       HelperFeatureEnum::device_ext)},
       {"ncclComm_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "ccl::comm_ptr",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "ccl::comm_ptr",
                                       HelperFeatureEnum::device_ext)},
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
       {"ncclDataType_t",
@@ -580,28 +587,28 @@ void MapNames::setExplicitNamespaceMap(
       {"CUuuid",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
       {"cusparseIndexType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t")},
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "library_data_t")},
       {"cusparseFormat_t", std::make_shared<TypeNameRule>(
-                               getDpctNamespace() + "sparse::matrix_format")},
+                               getLibraryHelperNamespace() + "sparse::matrix_format")},
       {"cusparseDnMatDescr_t",
-       std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
+       std::make_shared<TypeNameRule>("std::shared_ptr<" + getLibraryHelperNamespace() +
                                       "sparse::dense_matrix_desc>")},
       {"cusparseConstDnMatDescr_t",
-       std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
+       std::make_shared<TypeNameRule>("std::shared_ptr<" + getLibraryHelperNamespace() +
                                       "sparse::dense_matrix_desc>")},
       {"cusparseOrder_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::layout")},
       {"cusparseDnVecDescr_t",
-       std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
+       std::make_shared<TypeNameRule>("std::shared_ptr<" + getLibraryHelperNamespace() +
                                       "sparse::dense_vector_desc>")},
       {"cusparseConstDnVecDescr_t",
-       std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
+       std::make_shared<TypeNameRule>("std::shared_ptr<" + getLibraryHelperNamespace() +
                                       "sparse::dense_vector_desc>")},
       {"cusparseSpMatDescr_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                       "sparse::sparse_matrix_desc_t")},
       {"cusparseConstSpMatDescr_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                       "sparse::sparse_matrix_desc_t")},
       {"cusparseSpMMAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
@@ -622,105 +629,105 @@ void MapNames::setExplicitNamespaceMap(
       {"cusparseSpSMAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cublasLtHandle_t",
        std::make_shared<TypeNameRule>(
-           getDpctNamespace() + "blas_gemm::experimental::descriptor_ptr")},
+           getLibraryHelperNamespace() + "blas_gemm::experimental::descriptor_ptr")},
       {"cublasLtMatmulDesc_t",
        std::make_shared<TypeNameRule>(
-           getDpctNamespace() + "blas_gemm::experimental::matmul_desc_ptr")},
+           getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_ptr")},
       {"cublasLtOrder_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                       "blas_gemm::experimental::order_t")},
       {"cublasLtPointerMode_t",
        std::make_shared<TypeNameRule>(
-           getDpctNamespace() + "blas_gemm::experimental::pointer_mode_t")},
+           getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t")},
       {"cublasLtMatrixLayout_t",
        std::make_shared<TypeNameRule>(
-           getDpctNamespace() + "blas_gemm::experimental::matrix_layout_ptr")},
+           getLibraryHelperNamespace() + "blas_gemm::experimental::matrix_layout_ptr")},
       {"cublasLtMatrixLayoutAttribute_t",
        std::make_shared<TypeNameRule>(
-           getDpctNamespace() +
+           getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute")},
       {"cublasLtMatmulDescAttributes_t",
        std::make_shared<TypeNameRule>(
-           getDpctNamespace() +
+           getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute")},
       {"cublasLtMatmulAlgo_t", std::make_shared<TypeNameRule>("int")},
       {"cublasLtEpilogue_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                       "blas_gemm::experimental::epilogue_t")},
       {"cublasLtMatmulPreference_t", std::make_shared<TypeNameRule>("int")},
       {"cublasLtMatmulHeuristicResult_t",
        std::make_shared<TypeNameRule>("int")},
       {"cublasLtMatrixTransformDesc_t",
        std::make_shared<TypeNameRule>(
-           getDpctNamespace() + "blas_gemm::experimental::transform_desc_ptr")},
+           getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_ptr")},
       // ...
   };
 
   // Host Random Engine Type mapping
   RandomEngineTypeMap = {
       {"CURAND_RNG_PSEUDO_DEFAULT",
-       getDpctNamespace() + "rng::random_engine_type::mcg59"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::mcg59"},
       {"CURAND_RNG_PSEUDO_XORWOW",
-       getDpctNamespace() + "rng::random_engine_type::mcg59"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::mcg59"},
       {"CURAND_RNG_PSEUDO_MRG32K3A",
-       getDpctNamespace() + "rng::random_engine_type::mrg32k3a"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::mrg32k3a"},
       {"CURAND_RNG_PSEUDO_MTGP32",
-       getDpctNamespace() + "rng::random_engine_type::mt2203"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::mt2203"},
       {"CURAND_RNG_PSEUDO_MT19937",
-       getDpctNamespace() + "rng::random_engine_type::mt19937"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::mt19937"},
       {"CURAND_RNG_PSEUDO_PHILOX4_32_10",
-       getDpctNamespace() + "rng::random_engine_type::philox4x32x10"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::philox4x32x10"},
       {"CURAND_RNG_QUASI_DEFAULT",
-       getDpctNamespace() + "rng::random_engine_type::sobol"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::sobol"},
       {"CURAND_RNG_QUASI_SOBOL32",
-       getDpctNamespace() + "rng::random_engine_type::sobol"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::sobol"},
       {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32",
-       getDpctNamespace() + "rng::random_engine_type::sobol"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::sobol"},
       {"CURAND_RNG_QUASI_SOBOL64",
-       getDpctNamespace() + "rng::random_engine_type::sobol"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::sobol"},
       {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64",
-       getDpctNamespace() + "rng::random_engine_type::sobol"},
+       getLibraryHelperNamespace() + "rng::random_engine_type::sobol"},
   };
 
   // Random Ordering Type mapping
   RandomOrderingTypeMap = {
       {"CURAND_ORDERING_PSEUDO_DEFAULT",
-       getDpctNamespace() + "rng::random_mode::best"},
+       getLibraryHelperNamespace() + "rng::random_mode::best"},
       {"CURAND_ORDERING_PSEUDO_BEST",
-       getDpctNamespace() + "rng::random_mode::best"},
+       getLibraryHelperNamespace() + "rng::random_mode::best"},
       // CURAND_ORDERING_PSEUDO_SEEDED not support now.
       {"CURAND_ORDERING_PSEUDO_LEGACY",
-       getDpctNamespace() + "rng::random_mode::legacy"},
+       getLibraryHelperNamespace() + "rng::random_mode::legacy"},
       {"CURAND_ORDERING_PSEUDO_DYNAMIC",
-       getDpctNamespace() + "rng::random_mode::optimal"},
+       getLibraryHelperNamespace() + "rng::random_mode::optimal"},
       // CURAND_ORDERING_QUASI_DEFAULT not support now.
   };
 
   // Device Random Generator Type mapping
   DeviceRandomGeneratorTypeMap = {
-      {"curandStateXORWOW_t", getDpctNamespace() +
+      {"curandStateXORWOW_t", getLibraryHelperNamespace() +
                                   "rng::device::rng_generator<oneapi::"
                                   "mkl::rng::device::mcg59<1>>"},
-      {"curandStateXORWOW", getDpctNamespace() +
+      {"curandStateXORWOW", getLibraryHelperNamespace() +
                                 "rng::device::rng_generator<oneapi::"
                                 "mkl::rng::device::mcg59<1>>"},
-      {"curandState_t", getDpctNamespace() +
+      {"curandState_t", getLibraryHelperNamespace() +
                             "rng::device::rng_generator<oneapi::mkl::"
                             "rng::device::mcg59<1>>"},
-      {"curandState", getDpctNamespace() +
+      {"curandState", getLibraryHelperNamespace() +
                           "rng::device::rng_generator<oneapi::mkl::"
                           "rng::device::mcg59<1>>"},
       {"curandStatePhilox4_32_10_t",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "rng::device::rng_generator<oneapi::mkl::rng::device::"
            "philox4x32x10<1>>"},
       {"curandStatePhilox4_32_10",
-       getDpctNamespace() + "rng::device::rng_generator<"
+       getLibraryHelperNamespace() + "rng::device::rng_generator<"
                             "oneapi::mkl::rng::device::philox4x32x10<1>>"},
-      {"curandStateMRG32k3a_t", getDpctNamespace() +
+      {"curandStateMRG32k3a_t", getLibraryHelperNamespace() +
                                     "rng::device::rng_generator<"
                                     "oneapi::mkl::rng::device::mrg32k3a<1>>"},
-      {"curandStateMRG32k3a", getDpctNamespace() +
+      {"curandStateMRG32k3a", getLibraryHelperNamespace() +
                                   "rng::device::rng_generator<oneapi::"
                                   "mkl::rng::device::mrg32k3a<1>>"},
   };
@@ -728,77 +735,77 @@ void MapNames::setExplicitNamespaceMap(
   // CuDNN Type names mapping.
   CuDNNTypeNamesMap = {
       {"cudnnHandle_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::engine_ext",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::engine_ext",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnStatus_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "err1",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "err1",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnTensorDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::memory_desc_ext",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnFilterDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::memory_desc_ext",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnTensorFormat_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::memory_format_tag",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnDataType_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "library_data_t",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnActivationDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::activation_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnActivationMode_t",
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnLRNDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::lrn_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::lrn_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnLRNMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnPoolingDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::pooling_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::pooling_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnPoolingMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnSoftmaxAlgorithm_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::softmax_algorithm",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnSoftmaxMode_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::softmax_mode",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::softmax_mode",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnReduceTensorDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::reduction_op",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::reduction_op",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnReduceTensorOp_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::reduction_op",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::reduction_op",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnOpTensorDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::binary_op",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::binary_op",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnOpTensorOp_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::binary_op",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::binary_op",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnBatchNormOps_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::batch_normalization_ops",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnBatchNormMode_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::batch_normalization_mode",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnNormOps_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::batch_normalization_ops",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnNormMode_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::batch_normalization_mode",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnConvolutionDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::convolution_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnConvolutionFwdAlgo_t",
@@ -808,40 +815,40 @@ void MapNames::setExplicitNamespaceMap(
       {"cudnnConvolutionBwdFilterAlgo_t",
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnConvolutionFwdAlgoPerf_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::convolution_algorithm_info",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnConvolutionBwdFilterAlgoPerf_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::convolution_algorithm_info",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnConvolutionBwdDataAlgoPerf_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::convolution_algorithm_info",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnRNNMode_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_mode",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::rnn_mode",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnRNNBiasMode_t", std::make_shared<TypeNameRule>(
-                                 getDpctNamespace() + "dnnl::rnn_bias_mode",
+                                 getLibraryHelperNamespace() + "dnnl::rnn_bias_mode",
                                  HelperFeatureEnum::device_ext)},
       {"cudnnDirectionMode_t", std::make_shared<TypeNameRule>(
-                                   getDpctNamespace() + "dnnl::rnn_direction",
+                                   getLibraryHelperNamespace() + "dnnl::rnn_direction",
                                    HelperFeatureEnum::device_ext)},
       {"cudnnRNNDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::rnn_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnForwardMode_t", std::make_shared<TypeNameRule>("dnnl::prop_kind")},
       {"cudnnRNNDataDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::memory_desc_ext",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnRNNDataLayout_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::rnn_memory_format_tag",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnDropoutDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::dropout_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::dropout_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnConvolutionMode_t", std::make_shared<TypeNameRule>("int")},
       {"cudnnNanPropagation_t", std::make_shared<TypeNameRule>("int")},
@@ -850,24 +857,24 @@ void MapNames::setExplicitNamespaceMap(
   // CuDNN Enum constants name mapping.
   CuDNNTypeRule::CuDNNEnumNamesMap = {
       {"CUDNN_TENSOR_NCHW",
-       getDpctNamespace() + "dnnl::memory_format_tag::nchw"},
+       getLibraryHelperNamespace() + "dnnl::memory_format_tag::nchw"},
       {"CUDNN_TENSOR_NHWC",
-       getDpctNamespace() + "dnnl::memory_format_tag::nhwc"},
+       getLibraryHelperNamespace() + "dnnl::memory_format_tag::nhwc"},
       {"CUDNN_TENSOR_NCHW_VECT_C",
-       getDpctNamespace() + "dnnl::memory_format_tag::nchw_blocked"},
-      {"CUDNN_DATA_FLOAT", getDpctNamespace() + "library_data_t::real_float"},
-      {"CUDNN_DATA_DOUBLE", getDpctNamespace() + "library_data_t::real_double"},
-      {"CUDNN_DATA_HALF", getDpctNamespace() + "library_data_t::real_half"},
-      {"CUDNN_DATA_INT8", getDpctNamespace() + "library_data_t::real_int8"},
-      {"CUDNN_DATA_UINT8", getDpctNamespace() + "library_data_t::real_uint8"},
-      {"CUDNN_DATA_INT32", getDpctNamespace() + "library_data_t::real_int32"},
-      {"CUDNN_DATA_INT8x4", getDpctNamespace() + "library_data_t::real_int8_4"},
+       getLibraryHelperNamespace() + "dnnl::memory_format_tag::nchw_blocked"},
+      {"CUDNN_DATA_FLOAT", getLibraryHelperNamespace() + "library_data_t::real_float"},
+      {"CUDNN_DATA_DOUBLE", getLibraryHelperNamespace() + "library_data_t::real_double"},
+      {"CUDNN_DATA_HALF", getLibraryHelperNamespace() + "library_data_t::real_half"},
+      {"CUDNN_DATA_INT8", getLibraryHelperNamespace() + "library_data_t::real_int8"},
+      {"CUDNN_DATA_UINT8", getLibraryHelperNamespace() + "library_data_t::real_uint8"},
+      {"CUDNN_DATA_INT32", getLibraryHelperNamespace() + "library_data_t::real_int32"},
+      {"CUDNN_DATA_INT8x4", getLibraryHelperNamespace() + "library_data_t::real_int8_4"},
       {"CUDNN_DATA_INT8x32",
-       getDpctNamespace() + "library_data_t::real_int8_32"},
+       getLibraryHelperNamespace() + "library_data_t::real_int8_32"},
       {"CUDNN_DATA_UINT8x4",
-       getDpctNamespace() + "library_data_t::real_uint8_4"},
+       getLibraryHelperNamespace() + "library_data_t::real_uint8_4"},
       {"CUDNN_DATA_BFLOAT16",
-       getDpctNamespace() + "library_data_t::real_bfloat16"},
+       getLibraryHelperNamespace() + "library_data_t::real_bfloat16"},
       {"CUDNN_ACTIVATION_SIGMOID",
        "dnnl::algorithm::eltwise_logistic_use_dst_for_bwd"},
       {"CUDNN_ACTIVATION_RELU",
@@ -886,61 +893,61 @@ void MapNames::setExplicitNamespaceMap(
        "dnnl::algorithm::pooling_avg_exclude_padding"},
       {"CUDNN_POOLING_MAX_DETERMINISTIC", "dnnl::algorithm::pooling_max"},
       {"CUDNN_SOFTMAX_FAST",
-       getDpctNamespace() + "dnnl::softmax_algorithm::normal"},
+       getLibraryHelperNamespace() + "dnnl::softmax_algorithm::normal"},
       {"CUDNN_SOFTMAX_ACCURATE",
-       getDpctNamespace() + "dnnl::softmax_algorithm::normal"},
+       getLibraryHelperNamespace() + "dnnl::softmax_algorithm::normal"},
       {"CUDNN_SOFTMAX_LOG",
-       getDpctNamespace() + "dnnl::softmax_algorithm::log"},
+       getLibraryHelperNamespace() + "dnnl::softmax_algorithm::log"},
       {"CUDNN_SOFTMAX_MODE_INSTANCE",
-       getDpctNamespace() + "dnnl::softmax_mode::instance"},
+       getLibraryHelperNamespace() + "dnnl::softmax_mode::instance"},
       {"CUDNN_SOFTMAX_MODE_CHANNEL",
-       getDpctNamespace() + "dnnl::softmax_mode::channel"},
+       getLibraryHelperNamespace() + "dnnl::softmax_mode::channel"},
       {"CUDNN_REDUCE_TENSOR_ADD",
-       getDpctNamespace() + "dnnl::reduction_op::sum"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::sum"},
       {"CUDNN_REDUCE_TENSOR_MUL",
-       getDpctNamespace() + "dnnl::reduction_op::mul"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::mul"},
       {"CUDNN_REDUCE_TENSOR_MIN",
-       getDpctNamespace() + "dnnl::reduction_op::min"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::min"},
       {"CUDNN_REDUCE_TENSOR_MAX",
-       getDpctNamespace() + "dnnl::reduction_op::max"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::max"},
       {"CUDNN_REDUCE_TENSOR_AMAX",
-       getDpctNamespace() + "dnnl::reduction_op::amax"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::amax"},
       {"CUDNN_REDUCE_TENSOR_AVG",
-       getDpctNamespace() + "dnnl::reduction_op::mean"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::mean"},
       {"CUDNN_REDUCE_TENSOR_NORM1",
-       getDpctNamespace() + "dnnl::reduction_op::norm1"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::norm1"},
       {"CUDNN_REDUCE_TENSOR_NORM2",
-       getDpctNamespace() + "dnnl::reduction_op::norm2"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::norm2"},
       {"CUDNN_REDUCE_TENSOR_MUL_NO_ZEROS",
-       getDpctNamespace() + "dnnl::reduction_op::mul_no_zeros"},
-      {"CUDNN_OP_TENSOR_ADD", getDpctNamespace() + "dnnl::binary_op::add"},
-      {"CUDNN_OP_TENSOR_MUL", getDpctNamespace() + "dnnl::binary_op::mul"},
-      {"CUDNN_OP_TENSOR_MIN", getDpctNamespace() + "dnnl::binary_op::min"},
-      {"CUDNN_OP_TENSOR_MAX", getDpctNamespace() + "dnnl::binary_op::max"},
-      {"CUDNN_OP_TENSOR_SQRT", getDpctNamespace() + "dnnl::binary_op::sqrt"},
-      {"CUDNN_OP_TENSOR_NOT", getDpctNamespace() + "dnnl::binary_op::neg"},
+       getLibraryHelperNamespace() + "dnnl::reduction_op::mul_no_zeros"},
+      {"CUDNN_OP_TENSOR_ADD", getLibraryHelperNamespace() + "dnnl::binary_op::add"},
+      {"CUDNN_OP_TENSOR_MUL", getLibraryHelperNamespace() + "dnnl::binary_op::mul"},
+      {"CUDNN_OP_TENSOR_MIN", getLibraryHelperNamespace() + "dnnl::binary_op::min"},
+      {"CUDNN_OP_TENSOR_MAX", getLibraryHelperNamespace() + "dnnl::binary_op::max"},
+      {"CUDNN_OP_TENSOR_SQRT", getLibraryHelperNamespace() + "dnnl::binary_op::sqrt"},
+      {"CUDNN_OP_TENSOR_NOT", getLibraryHelperNamespace() + "dnnl::binary_op::neg"},
       {"CUDNN_BATCHNORM_OPS_BN",
-       getDpctNamespace() + "dnnl::batch_normalization_ops::none"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_ops::none"},
       {"CUDNN_BATCHNORM_OPS_BN_ACTIVATION",
-       getDpctNamespace() + "dnnl::batch_normalization_ops::activation"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_ops::activation"},
       {"CUDNN_BATCHNORM_OPS_BN_ADD_ACTIVATION",
-       getDpctNamespace() + "dnnl::batch_normalization_ops::add_activation"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_ops::add_activation"},
       {"CUDNN_BATCHNORM_PER_ACTIVATION",
-       getDpctNamespace() + "dnnl::batch_normalization_mode::per_activation"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_mode::per_activation"},
       {"CUDNN_BATCHNORM_SPATIAL",
-       getDpctNamespace() + "dnnl::batch_normalization_mode::spatial"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_mode::spatial"},
       {"CUDNN_BATCHNORM_SPATIAL_PERSISTENT",
-       getDpctNamespace() + "dnnl::batch_normalization_mode::spatial"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_mode::spatial"},
       {"CUDNN_NORM_OPS_NORM",
-       getDpctNamespace() + "dnnl::batch_normalization_ops::none"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_ops::none"},
       {"CUDNN_NORM_OPS_NORM_ACTIVATION",
-       getDpctNamespace() + "dnnl::batch_normalization_ops::activation"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_ops::activation"},
       {"CUDNN_NORM_OPS_NORM_ADD_ACTIVATION",
-       getDpctNamespace() + "dnnl::batch_normalization_ops::add_activation"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_ops::add_activation"},
       {"CUDNN_NORM_PER_ACTIVATION",
-       getDpctNamespace() + "dnnl::batch_normalization_mode::per_activation"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_mode::per_activation"},
       {"CUDNN_NORM_PER_CHANNEL",
-       getDpctNamespace() + "dnnl::batch_normalization_mode::spatial"},
+       getLibraryHelperNamespace() + "dnnl::batch_normalization_mode::spatial"},
       {"CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM",
        "dnnl::algorithm::convolution_auto"},
       {"CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM",
@@ -979,21 +986,21 @@ void MapNames::setExplicitNamespaceMap(
        "dnnl::algorithm::convolution_winograd"},
       {"CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED",
        "dnnl::algorithm::convolution_winograd"},
-      {"CUDNN_RNN_RELU", getDpctNamespace() + "dnnl::rnn_mode::vanilla_relu"},
-      {"CUDNN_RNN_TANH", getDpctNamespace() + "dnnl::rnn_mode::vanilla_tanh"},
-      {"CUDNN_LSTM", getDpctNamespace() + "dnnl::rnn_mode::lstm"},
-      {"CUDNN_GRU", getDpctNamespace() + "dnnl::rnn_mode::gru"},
-      {"CUDNN_RNN_NO_BIAS", getDpctNamespace() + "dnnl::rnn_bias_mode::none"},
+      {"CUDNN_RNN_RELU", getLibraryHelperNamespace() + "dnnl::rnn_mode::vanilla_relu"},
+      {"CUDNN_RNN_TANH", getLibraryHelperNamespace() + "dnnl::rnn_mode::vanilla_tanh"},
+      {"CUDNN_LSTM", getLibraryHelperNamespace() + "dnnl::rnn_mode::lstm"},
+      {"CUDNN_GRU", getLibraryHelperNamespace() + "dnnl::rnn_mode::gru"},
+      {"CUDNN_RNN_NO_BIAS", getLibraryHelperNamespace() + "dnnl::rnn_bias_mode::none"},
       {"CUDNN_RNN_SINGLE_INP_BIAS",
-       getDpctNamespace() + "dnnl::rnn_bias_mode::single"},
+       getLibraryHelperNamespace() + "dnnl::rnn_bias_mode::single"},
       {"CUDNN_UNIDIRECTIONAL",
-       getDpctNamespace() + "dnnl::rnn_direction::unidirectional"},
+       getLibraryHelperNamespace() + "dnnl::rnn_direction::unidirectional"},
       {"CUDNN_BIDIRECTIONAL",
-       getDpctNamespace() + "dnnl::rnn_direction::bidirectional"},
+       getLibraryHelperNamespace() + "dnnl::rnn_direction::bidirectional"},
       {"CUDNN_FWD_MODE_INFERENCE", "dnnl::prop_kind::forward_inference"},
       {"CUDNN_FWD_MODE_TRAINING", "dnnl::prop_kind::forward_training"},
       {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
-       getDpctNamespace() + "dnnl::rnn_memory_format_tag::tnc"},
+       getLibraryHelperNamespace() + "dnnl::rnn_memory_format_tag::tnc"},
       {"CUDNN_DEFAULT_MATH", "dnnl::fpmath_mode::strict"},
       {"CUDNN_TENSOR_OP_MATH", "dnnl::fpmath_mode::strict"},
       {"CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION", "dnnl::fpmath_mode::any"},
@@ -1310,82 +1317,82 @@ void MapNames::setExplicitNamespaceMap(
                                       HelperFeatureEnum::device_ext)},
       // enum libraryPropertyType_t
       {"MAJOR_VERSION", std::make_shared<EnumNameRule>(
-                            getDpctNamespace() + "version_field::major",
+                            getLibraryHelperNamespace() + "version_field::major",
                             HelperFeatureEnum::device_ext)},
       {"MINOR_VERSION", std::make_shared<EnumNameRule>(
-                            getDpctNamespace() + "version_field::update",
+                            getLibraryHelperNamespace() + "version_field::update",
                             HelperFeatureEnum::device_ext)},
       {"PATCH_LEVEL", std::make_shared<EnumNameRule>(
-                          getDpctNamespace() + "version_field::patch",
+                          getLibraryHelperNamespace() + "version_field::patch",
                           HelperFeatureEnum::device_ext)},
       // enum cudaDataType_t
       {"CUDA_R_16F", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_half")},
+                         getLibraryHelperNamespace() + "library_data_t::real_half")},
       {"CUDA_C_16F", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::complex_half")},
+                         getLibraryHelperNamespace() + "library_data_t::complex_half")},
       {"CUDA_R_16BF",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::real_bfloat16")},
       {"CUDA_C_16BF",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::complex_bfloat16")},
       {"CUDA_R_32F", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_float")},
+                         getLibraryHelperNamespace() + "library_data_t::real_float")},
       {"CUDA_C_32F", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::complex_float")},
+                         getLibraryHelperNamespace() + "library_data_t::complex_float")},
       {"CUDA_R_64F", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_double")},
+                         getLibraryHelperNamespace() + "library_data_t::real_double")},
       {"CUDA_C_64F",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::complex_double")},
       {"CUDA_R_4I", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_int4")},
+                        getLibraryHelperNamespace() + "library_data_t::real_int4")},
       {"CUDA_C_4I", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::complex_int4")},
+                        getLibraryHelperNamespace() + "library_data_t::complex_int4")},
       {"CUDA_R_4U", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_uint4")},
+                        getLibraryHelperNamespace() + "library_data_t::real_uint4")},
       {"CUDA_C_4U", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::complex_uint4")},
+                        getLibraryHelperNamespace() + "library_data_t::complex_uint4")},
       {"CUDA_R_8I", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_int8")},
+                        getLibraryHelperNamespace() + "library_data_t::real_int8")},
       {"CUDA_C_8I", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::complex_int8")},
+                        getLibraryHelperNamespace() + "library_data_t::complex_int8")},
       {"CUDA_R_8U", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_uint8")},
+                        getLibraryHelperNamespace() + "library_data_t::real_uint8")},
       {"CUDA_C_8U", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::complex_uint8")},
+                        getLibraryHelperNamespace() + "library_data_t::complex_uint8")},
       {"CUDA_R_16I", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_int16")},
+                         getLibraryHelperNamespace() + "library_data_t::real_int16")},
       {"CUDA_C_16I", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::complex_int16")},
+                         getLibraryHelperNamespace() + "library_data_t::complex_int16")},
       {"CUDA_R_16U", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_uint16")},
+                         getLibraryHelperNamespace() + "library_data_t::real_uint16")},
       {"CUDA_C_16U",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::complex_uint16")},
       {"CUDA_R_32I", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_int32")},
+                         getLibraryHelperNamespace() + "library_data_t::real_int32")},
       {"CUDA_C_32I", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::complex_int32")},
+                         getLibraryHelperNamespace() + "library_data_t::complex_int32")},
       {"CUDA_R_32U", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_uint32")},
+                         getLibraryHelperNamespace() + "library_data_t::real_uint32")},
       {"CUDA_C_32U",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::complex_uint32")},
       {"CUDA_R_64I", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_int64")},
+                         getLibraryHelperNamespace() + "library_data_t::real_int64")},
       {"CUDA_C_64I", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::complex_int64")},
+                         getLibraryHelperNamespace() + "library_data_t::complex_int64")},
       {"CUDA_R_64U", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_uint64")},
+                         getLibraryHelperNamespace() + "library_data_t::real_uint64")},
       {"CUDA_C_64U",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::complex_uint64")},
       {"CUDA_R_8F_E4M3",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::real_f8_e4m3")},
       {"CUDA_R_8F_E5M2",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
+       std::make_shared<EnumNameRule>(getLibraryHelperNamespace() +
                                       "library_data_t::real_f8_e5m2")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() +
@@ -1413,26 +1420,26 @@ void MapNames::setExplicitNamespaceMap(
                                       "memory_order::seq_cst")},
       {"CUFFT_R2C",
        std::make_shared<EnumNameRule>(
-           getDpctNamespace() + "fft::fft_type::real_float_to_complex_float",
+           getLibraryHelperNamespace() + "fft::fft_type::real_float_to_complex_float",
            HelperFeatureEnum::device_ext)},
       {"CUFFT_C2R",
        std::make_shared<EnumNameRule>(
-           getDpctNamespace() + "fft::fft_type::complex_float_to_real_float",
+           getLibraryHelperNamespace() + "fft::fft_type::complex_float_to_real_float",
            HelperFeatureEnum::device_ext)},
       {"CUFFT_D2Z",
        std::make_shared<EnumNameRule>(
-           getDpctNamespace() + "fft::fft_type::real_double_to_complex_double",
+           getLibraryHelperNamespace() + "fft::fft_type::real_double_to_complex_double",
            HelperFeatureEnum::device_ext)},
       {"CUFFT_Z2D",
        std::make_shared<EnumNameRule>(
-           getDpctNamespace() + "fft::fft_type::complex_double_to_real_double",
+           getLibraryHelperNamespace() + "fft::fft_type::complex_double_to_real_double",
            HelperFeatureEnum::device_ext)},
       {"CUFFT_C2C",
        std::make_shared<EnumNameRule>(
-           getDpctNamespace() + "fft::fft_type::complex_float_to_complex_float",
+           getLibraryHelperNamespace() + "fft::fft_type::complex_float_to_complex_float",
            HelperFeatureEnum::device_ext)},
       {"CUFFT_Z2Z", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() +
+                        getLibraryHelperNamespace() +
                             "fft::fft_type::complex_double_to_complex_double",
                         HelperFeatureEnum::device_ext)},
       {"ncclSum",
@@ -1496,28 +1503,38 @@ void MapNames::setExplicitNamespaceMap(
       {"CUSPARSE_INDEX_BASE_ZERO", "oneapi::mkl::index_base::zero"},
       {"CUSPARSE_INDEX_BASE_ONE", "oneapi::mkl::index_base::one"},
       {"CUSPARSE_MATRIX_TYPE_GENERAL",
-       getDpctNamespace() + "sparse::matrix_info::matrix_type::ge"},
+       getLibraryHelperNamespace() + "sparse::matrix_info::matrix_type::ge"},
       {"CUSPARSE_MATRIX_TYPE_SYMMETRIC",
-       getDpctNamespace() + "sparse::matrix_info::matrix_type::sy"},
+       getLibraryHelperNamespace() + "sparse::matrix_info::matrix_type::sy"},
       {"CUSPARSE_MATRIX_TYPE_HERMITIAN",
-       getDpctNamespace() + "sparse::matrix_info::matrix_type::he"},
+       getLibraryHelperNamespace() + "sparse::matrix_info::matrix_type::he"},
       {"CUSPARSE_MATRIX_TYPE_TRIANGULAR",
-       getDpctNamespace() + "sparse::matrix_info::matrix_type::tr"},
+       getLibraryHelperNamespace() + "sparse::matrix_info::matrix_type::tr"},
       {"CUSPARSE_SPMAT_FILL_MODE",
-       getDpctNamespace() + "sparse::matrix_attribute::uplo"},
+       getLibraryHelperNamespace() + "sparse::matrix_attribute::uplo"},
       {"CUSPARSE_SPMAT_DIAG_TYPE",
-       getDpctNamespace() + "sparse::matrix_attribute::diag"},
+       getLibraryHelperNamespace() + "sparse::matrix_attribute::diag"},
       {"CUSPARSE_INDEX_16U",
-       getDpctNamespace() + "library_data_t::real_uint16"},
-      {"CUSPARSE_INDEX_32I", getDpctNamespace() + "library_data_t::real_int32"},
-      {"CUSPARSE_INDEX_64I", getDpctNamespace() + "library_data_t::real_int64"},
+       getLibraryHelperNamespace() + "library_data_t::real_uint16"},
+      {"CUSPARSE_INDEX_32I", getLibraryHelperNamespace() + "library_data_t::real_int32"},
+      {"CUSPARSE_INDEX_64I", getLibraryHelperNamespace() + "library_data_t::real_int64"},
       {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
       {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
       {"CUSPARSE_ACTION_SYMBOLIC",
-       getDpctNamespace() + "sparse::conversion_scope::index"},
+       getLibraryHelperNamespace() + "sparse::conversion_scope::index"},
       {"CUSPARSE_ACTION_NUMERIC",
-       getDpctNamespace() + "sparse::conversion_scope::index_and_value"},
+       getLibraryHelperNamespace() + "sparse::conversion_scope::index_and_value"},
   };
+
+  // CUB enums mapping
+  // clang-format off
+  CUBEnumsMap = {
+    {"BLOCK_STORE_DIRECT", getDpctNamespace() + "group::group_store_algorithm::blocked"},
+    {"BLOCK_STORE_STRIPED", getDpctNamespace() + "group::group_store_algorithm::striped"},
+    {"BLOCK_LOAD_DIRECT", getDpctNamespace() + "group::group_load_algorithm::blocked"},
+    {"BLOCK_LOAD_STRIPED", getDpctNamespace() + "group::group_load_algorithm::striped"}
+  };
+  // clang-format on
 
   // BLAS enums mapping
   BLASEnumsMap = {
@@ -1531,138 +1548,138 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLAS_DIAG_NON_UNIT", "oneapi::mkl::diag::nonunit"},
       {"CUBLAS_DIAG_UNIT", "oneapi::mkl::diag::unit"},
       {"CUBLAS_DEFAULT_MATH",
-       getDpctNamespace() + "blas::math_mode::mm_default"},
+       getLibraryHelperNamespace() + "blas::math_mode::mm_default"},
       {"CUBLAS_TENSOR_OP_MATH",
-       getDpctNamespace() + "blas::math_mode::mm_tf32"},
+       getLibraryHelperNamespace() + "blas::math_mode::mm_tf32"},
       {"CUBLAS_PEDANTIC_MATH",
-       getDpctNamespace() + "blas::math_mode::mm_default"},
+       getLibraryHelperNamespace() + "blas::math_mode::mm_default"},
       {"CUBLAS_TF32_TENSOR_OP_MATH",
-       getDpctNamespace() + "blas::math_mode::mm_tf32"},
+       getLibraryHelperNamespace() + "blas::math_mode::mm_tf32"},
       {"CUBLAS_MATH_DISALLOW_REDUCED_PRECISION_REDUCTION",
-       getDpctNamespace() + "blas::math_mode::mm_default"},
+       getLibraryHelperNamespace() + "blas::math_mode::mm_default"},
       {"CUBLASLT_ORDER_COL",
-       getDpctNamespace() + "blas_gemm::experimental::order_t::col"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col"},
       {"CUBLASLT_ORDER_ROW",
-       getDpctNamespace() + "blas_gemm::experimental::order_t::row"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::row"},
       {"CUBLASLT_ORDER_COL32",
-       getDpctNamespace() + "blas_gemm::experimental::order_t::col32"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col32"},
       {"CUBLASLT_ORDER_COL4_4R2_8C",
-       getDpctNamespace() + "blas_gemm::experimental::order_t::col4_4r2_8c"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col4_4r2_8c"},
       {"CUBLASLT_ORDER_COL32_2R_4R4",
-       getDpctNamespace() + "blas_gemm::experimental::order_t::col32_2r_4r4"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col32_2r_4r4"},
       {"CUBLASLT_POINTER_MODE_HOST",
-       getDpctNamespace() + "blas_gemm::experimental::pointer_mode_t::host"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::host"},
       {"CUBLASLT_POINTER_MODE_DEVICE",
-       getDpctNamespace() + "blas_gemm::experimental::pointer_mode_t::device"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::device"},
       {"CUBLASLT_POINTER_MODE_DEVICE_VECTOR",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::pointer_mode_t::device_vector"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_ZERO",
-       getDpctNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
+       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
                             "device_vector_beta_zero"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_HOST",
-       getDpctNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
+       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
                             "device_vector_beta_host"},
       {"CUBLASLT_MATRIX_LAYOUT_TYPE",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::type"},
       {"CUBLASLT_MATRIX_LAYOUT_ORDER",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::order"},
       {"CUBLASLT_MATRIX_LAYOUT_ROWS",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::rows"},
       {"CUBLASLT_MATRIX_LAYOUT_COLS",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::cols"},
       {"CUBLASLT_MATRIX_LAYOUT_LD",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::ld"},
       {"CUBLASLT_MATMUL_DESC_COMPUTE_TYPE",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::compute_type"},
       {"CUBLASLT_MATMUL_DESC_SCALE_TYPE",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATMUL_DESC_POINTER_MODE",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::pointer_mode"},
       {"CUBLASLT_MATMUL_DESC_TRANSA",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::trans_a"},
       {"CUBLASLT_MATMUL_DESC_TRANSB",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::trans_b"},
       {"CUBLASLT_MATMUL_DESC_TRANSC",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::trans_c"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::epilogue"},
       {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_MATMUL_DESC_FAST_ACCUM",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_MATMUL_DESC_A_SCALE_POINTER",
-       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
                             ":a_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_B_SCALE_POINTER",
-       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
                             ":b_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_D_SCALE_POINTER",
-       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
                             ":d_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_AMAX_D_POINTER",
-       getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
                             ":absmax_d_pointer"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_COLS",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_OUT_COUNTERS_POINTER",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_IN_COUNTERS_POINTER",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_EPILOGUE_DEFAULT",
-       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
       {"CUBLASLT_EPILOGUE_RELU",
-       getDpctNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_POINTER_MODE",
-       getDpctNamespace() + "blas_gemm::experimental::transform_desc_t::"
+       getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_t::"
                             "attribute::pointer_mode"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_a"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSB",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_b"},
       // cublasComputeType_t
-      {"CUBLAS_COMPUTE_16F", getDpctNamespace() + "compute_type::f16"},
+      {"CUBLAS_COMPUTE_16F", getLibraryHelperNamespace() + "compute_type::f16"},
       {"CUBLAS_COMPUTE_16F_PEDANTIC",
-       getDpctNamespace() + "compute_type::f16_standard"},
-      {"CUBLAS_COMPUTE_32F", getDpctNamespace() + "compute_type::f32"},
+       getLibraryHelperNamespace() + "compute_type::f16_standard"},
+      {"CUBLAS_COMPUTE_32F", getLibraryHelperNamespace() + "compute_type::f32"},
       {"CUBLAS_COMPUTE_32F_PEDANTIC",
-       getDpctNamespace() + "compute_type::f32_standard"},
-      {"CUBLAS_COMPUTE_32F_FAST_16F", getDpctNamespace() + "compute_type::f32"},
+       getLibraryHelperNamespace() + "compute_type::f32_standard"},
+      {"CUBLAS_COMPUTE_32F_FAST_16F", getLibraryHelperNamespace() + "compute_type::f32"},
       {"CUBLAS_COMPUTE_32F_FAST_16BF",
-       getDpctNamespace() + "compute_type::f32_fast_bf16"},
+       getLibraryHelperNamespace() + "compute_type::f32_fast_bf16"},
       {"CUBLAS_COMPUTE_32F_FAST_TF32",
-       getDpctNamespace() + "compute_type::f32_fast_tf32"},
-      {"CUBLAS_COMPUTE_64F", getDpctNamespace() + "compute_type::f64"},
+       getLibraryHelperNamespace() + "compute_type::f32_fast_tf32"},
+      {"CUBLAS_COMPUTE_64F", getLibraryHelperNamespace() + "compute_type::f64"},
       {"CUBLAS_COMPUTE_64F_PEDANTIC",
-       getDpctNamespace() + "compute_type::f64_standard"},
-      {"CUBLAS_COMPUTE_32I", getDpctNamespace() + "compute_type::i32"},
+       getLibraryHelperNamespace() + "compute_type::f64_standard"},
+      {"CUBLAS_COMPUTE_32I", getLibraryHelperNamespace() + "compute_type::i32"},
       {"CUBLAS_COMPUTE_32I_PEDANTIC",
-       getDpctNamespace() + "compute_type::i32_standard"},
+       getLibraryHelperNamespace() + "compute_type::i32_standard"},
   };
 
   ClassFieldMap = {};
@@ -1760,11 +1777,11 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasSetStream_v2", "handle = s"},
       {"cublasGetStream_v2", "s = handle"},
       {"cublasSetKernelStream",
-       getDpctNamespace() + "blas::descriptor::set_saved_queue"},
+       getLibraryHelperNamespace() + "blas::descriptor::set_saved_queue"},
       {"cublasSetMathMode",
-       getDpctNamespace() + "blas::descriptor::set_math_mode"},
+       getLibraryHelperNamespace() + "blas::descriptor::set_math_mode"},
       {"cublasGetMathMode",
-       getDpctNamespace() + "blas::descriptor::get_math_mode"},
+       getLibraryHelperNamespace() + "blas::descriptor::get_math_mode"},
       {"cublasHgemm", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasSgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasDgemm_v2", "oneapi::mkl::blas::column_major::gemm"},
@@ -1802,23 +1819,23 @@ void MapNames::setExplicitNamespaceMap(
        "oneapi::mkl::blas::column_major::gemm_batch"},
       {"cublasZgemmStridedBatched",
        "oneapi::mkl::blas::column_major::gemm_batch"},
-      {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
-      {"cublasDotEx", getDpctNamespace() + "dot_ex"},
-      {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
-      {"cublasScalEx", getDpctNamespace() + "scal_ex"},
-      {"cublasAxpyEx", getDpctNamespace() + "axpy_ex"},
-      {"cublasRotEx", getDpctNamespace() + "rot_ex"},
-      {"cublasGemmEx", getDpctNamespace() + "blas::gemm"},
-      {"cublasSgemmEx", getDpctNamespace() + "blas::gemm"},
-      {"cublasCgemmEx", getDpctNamespace() + "blas::gemm"},
-      {"cublasGemmBatchedEx", getDpctNamespace() + "blas::gemm_batch"},
-      {"cublasGemmStridedBatchedEx", getDpctNamespace() + "blas::gemm_batch"},
-      {"cublasSsyrkx", getDpctNamespace() + "blas::syrk"},
-      {"cublasDsyrkx", getDpctNamespace() + "blas::syrk"},
-      {"cublasCsyrkx", getDpctNamespace() + "blas::syrk"},
-      {"cublasZsyrkx", getDpctNamespace() + "blas::syrk"},
-      {"cublasCherkx", getDpctNamespace() + "blas::herk"},
-      {"cublasZherkx", getDpctNamespace() + "blas::herk"},
+      {"cublasNrm2Ex", getLibraryHelperNamespace() + "nrm2_ex"},
+      {"cublasDotEx", getLibraryHelperNamespace() + "dot_ex"},
+      {"cublasDotcEx", getLibraryHelperNamespace() + "dotc_ex"},
+      {"cublasScalEx", getLibraryHelperNamespace() + "scal_ex"},
+      {"cublasAxpyEx", getLibraryHelperNamespace() + "axpy_ex"},
+      {"cublasRotEx", getLibraryHelperNamespace() + "rot_ex"},
+      {"cublasGemmEx", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasSgemmEx", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasCgemmEx", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasGemmBatchedEx", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasGemmStridedBatchedEx", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasSsyrkx", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasDsyrkx", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasCsyrkx", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasZsyrkx", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasCherkx", getLibraryHelperNamespace() + "blas::herk"},
+      {"cublasZherkx", getLibraryHelperNamespace() + "blas::herk"},
       {"cublasSgeam", "oneapi::mkl::blas::column_major::omatadd"},
       {"cublasDgeam", "oneapi::mkl::blas::column_major::omatadd"},
       {"cublasCgeam", "oneapi::mkl::blas::column_major::omatadd"},
@@ -1827,39 +1844,39 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasDdgmm", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasCdgmm", "oneapi::mkl::blas::column_major::dgmm"},
       {"cublasZdgmm", "oneapi::mkl::blas::column_major::dgmm"},
-      {"cublasHgemmBatched", getDpctNamespace() + "blas::gemm_batch"},
-      {"cublasSgemmBatched", getDpctNamespace() + "blas::gemm_batch"},
-      {"cublasDgemmBatched", getDpctNamespace() + "blas::gemm_batch"},
-      {"cublasCgemmBatched", getDpctNamespace() + "blas::gemm_batch"},
-      {"cublasZgemmBatched", getDpctNamespace() + "blas::gemm_batch"},
-      {"cublasStrsmBatched", getDpctNamespace() + "blas::trsm_batch"},
-      {"cublasDtrsmBatched", getDpctNamespace() + "blas::trsm_batch"},
-      {"cublasCtrsmBatched", getDpctNamespace() + "blas::trsm_batch"},
-      {"cublasZtrsmBatched", getDpctNamespace() + "blas::trsm_batch"},
-      {"cublasStrmm_v2", getDpctNamespace() + "blas::trmm"},
-      {"cublasDtrmm_v2", getDpctNamespace() + "blas::trmm"},
-      {"cublasCtrmm_v2", getDpctNamespace() + "blas::trmm"},
-      {"cublasZtrmm_v2", getDpctNamespace() + "blas::trmm"},
-      {"cublasSgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
-      {"cublasDgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
-      {"cublasCgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
-      {"cublasZgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
-      {"cublasSgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
-      {"cublasDgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
-      {"cublasCgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
-      {"cublasZgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
-      {"cublasSgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
-      {"cublasDgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
-      {"cublasCgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
-      {"cublasZgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
-      {"cublasSgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
-      {"cublasDgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
-      {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
-      {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
-      {"cublasSgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
-      {"cublasDgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
-      {"cublasCgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
-      {"cublasZgelsBatched", getDpctNamespace() + "gels_batch_wrapper"},
+      {"cublasHgemmBatched", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasSgemmBatched", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasDgemmBatched", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasCgemmBatched", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasZgemmBatched", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasStrsmBatched", getLibraryHelperNamespace() + "blas::trsm_batch"},
+      {"cublasDtrsmBatched", getLibraryHelperNamespace() + "blas::trsm_batch"},
+      {"cublasCtrsmBatched", getLibraryHelperNamespace() + "blas::trsm_batch"},
+      {"cublasZtrsmBatched", getLibraryHelperNamespace() + "blas::trsm_batch"},
+      {"cublasStrmm_v2", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasDtrmm_v2", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasCtrmm_v2", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasZtrmm_v2", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasSgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasDgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasCgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasZgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasSgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasDgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasCgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasZgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasSgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasDgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasCgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasZgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasSgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasDgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasCgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasZgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasSgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
+      {"cublasDgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
+      {"cublasCgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
+      {"cublasZgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
       {"cublasGetStatusString", ""},
       {"cublasCgemm3m", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasZgemm3m", "oneapi::mkl::blas::column_major::gemm"},
@@ -2146,66 +2163,66 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasZhpr2_v2_64", "oneapi::mkl::blas::column_major::hpr2"},
       {"cublasCgemm3m_64", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasZgemm3m_64", "oneapi::mkl::blas::column_major::gemm"},
-      {"cublasSsyrkx_64", getDpctNamespace() + "blas::syrk"},
-      {"cublasDsyrkx_64", getDpctNamespace() + "blas::syrk"},
-      {"cublasCsyrkx_64", getDpctNamespace() + "blas::syrk"},
-      {"cublasZsyrkx_64", getDpctNamespace() + "blas::syrk"},
-      {"cublasCherkx_64", getDpctNamespace() + "blas::herk"},
-      {"cublasZherkx_64", getDpctNamespace() + "blas::herk"},
-      {"cublasStrmm_v2_64", getDpctNamespace() + "blas::trmm"},
-      {"cublasDtrmm_v2_64", getDpctNamespace() + "blas::trmm"},
-      {"cublasCtrmm_v2_64", getDpctNamespace() + "blas::trmm"},
-      {"cublasZtrmm_v2_64", getDpctNamespace() + "blas::trmm"},
+      {"cublasSsyrkx_64", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasDsyrkx_64", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasCsyrkx_64", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasZsyrkx_64", getLibraryHelperNamespace() + "blas::syrk"},
+      {"cublasCherkx_64", getLibraryHelperNamespace() + "blas::herk"},
+      {"cublasZherkx_64", getLibraryHelperNamespace() + "blas::herk"},
+      {"cublasStrmm_v2_64", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasDtrmm_v2_64", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasCtrmm_v2_64", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasZtrmm_v2_64", getLibraryHelperNamespace() + "blas::trmm"},
       // cublasLt
       {"cublasLtCreate",
-       "new " + getDpctNamespace() + "blas_gemm::experimental::descriptor"},
+       "new " + getLibraryHelperNamespace() + "blas_gemm::experimental::descriptor"},
       {"cublasLtDestroy",
-       "delete " + getDpctNamespace() + "blas_gemm::experimental::descriptor"},
+       "delete " + getLibraryHelperNamespace() + "blas_gemm::experimental::descriptor"},
       {"cublasLtMatmulDescCreate",
-       "new " + getDpctNamespace() + "blas_gemm::experimental::matmul_desc_t"},
+       "new " + getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t"},
       {"cublasLtMatmulDescDestroy",
-       "delete " + getDpctNamespace() +
+       "delete " + getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t"},
       {"cublasLtMatmulDescSetAttribute",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::set_attribute"},
       {"cublasLtMatmulDescGetAttribute",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::get_attribute"},
       {"cublasLtMatrixLayoutCreate",
-       "new " + getDpctNamespace() +
+       "new " + getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t"},
       {"cublasLtMatrixLayoutDestroy",
-       "delete " + getDpctNamespace() +
+       "delete " + getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t"},
       {"cublasLtMatrixLayoutSetAttribute",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::set_attribute"},
       {"cublasLtMatrixLayoutGetAttribute",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::get_attribute"},
       {"cublasLtMatmul",
-       getDpctNamespace() + "blas_gemm::experimental::matmul"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul"},
       {"cublasLtMatmulPreferenceCreate", ""},
       {"cublasLtMatmulPreferenceDestroy", ""},
       {"cublasLtMatmulPreferenceSetAttribute", ""},
       {"cublasLtMatmulPreferenceGetAttribute", ""},
       {"cublasLtMatmulAlgoGetHeuristic", ""},
       {"cublasLtMatrixTransformDescCreate",
-       "new " + getDpctNamespace() +
+       "new " + getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t"},
       {"cublasLtMatrixTransformDescDestroy",
-       "delete" + getDpctNamespace() +
+       "delete" + getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t"},
       {"cublasLtMatrixTransformDescSetAttribute",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::set_attribute"},
       {"cublasLtMatrixTransformDescGetAttribute",
-       getDpctNamespace() +
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::get_attribute"},
       {"cublasLtMatrixTransform",
-       getDpctNamespace() + "blas_gemm::experimental::matrix_transform"},
-      {"cublasLtGetVersion", getDpctNamespace() + "dnnl::get_version"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matrix_transform"},
+      {"cublasLtGetVersion", getLibraryHelperNamespace() + "dnnl::get_version"},
   };
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
