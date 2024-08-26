@@ -66,6 +66,13 @@ void CudaInstallationDetector::ParseThrustVersionFile(
     if (FindTargetVersion(Line, "define", "THRUST_VERSION", Res))
       break;
   }
+
+  // The length of thrust version string is 6(CUDA-12.4 or later) or not
+  // defined(before CUDA-12.4)
+  if (Res.length() != 6) {
+    return;
+  }
+
   if (Res == "") {
     return;
   }
@@ -120,7 +127,11 @@ bool CudaInstallationDetector::FindTargetVersion(const std::string &Line,
   for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
     ;
 
-  Result = Line.substr(Pos);
+  size_t End = Pos;
+  for (; End < Line.size() && std::isdigit(Line[End]); End++)
+    ;
+
+  Result = Line.substr(Pos, End - Pos);
   return true;
 }
 
@@ -135,6 +146,12 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   while (std::getline(CudaFile, Line)) {
     if (FindTargetVersion(Line, "define", "CUDA_VERSION", Res))
       break;
+  }
+
+  // The length of CUDA version string is 4(before CUDA-10) or
+  // 5(CUDA-10 and later).
+  if (Res.length() != 4 && Res.length() != 5) {
+    return false;
   }
   if (Res == "") {
     return false;
