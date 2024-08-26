@@ -4087,7 +4087,8 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     return;
   CallFuncExprOffset = DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).second;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
-  buildTextureObjectArgsInfo(CE);
+  if (!DpctGlobalInfo::useSYCLCompat())
+    buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
     IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, FD, TemplateArgs);
@@ -4531,7 +4532,8 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   buildReplaceLocInfo(
       FD->getTypeSourceInfo()->getTypeLoc().getAs<FunctionTypeLoc>(),
       FD->hasAttrs() ? FD->getAttrs() : NullAttrs);
-  buildTextureObjectParamsInfo(FD->parameters());
+  if(!DpctGlobalInfo::useSYCLCompat())
+    buildTextureObjectParamsInfo(FD->parameters());
 }
 DeviceFunctionDecl::DeviceFunctionDecl(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
@@ -4546,7 +4548,8 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   IsDefFilePathNeeded = false;
 
   buildReplaceLocInfo(FTL, Attrs);
-  buildTextureObjectParamsInfo(FTL.getParams());
+  if (!DpctGlobalInfo::useSYCLCompat())
+    buildTextureObjectParamsInfo(FTL.getParams());
 }
 std::shared_ptr<DeviceFunctionInfo>
 DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE,

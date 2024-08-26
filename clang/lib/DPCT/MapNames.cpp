@@ -31,6 +31,7 @@ std::string MapNames::getExpNamespace(bool KeepNamespace) {
   return getClNamespace(KeepNamespace, false) + "ext::oneapi::experimental::";
 }
 
+std::unordered_set<std::string> MapNames::SYCLcompatUnsupportTypes;
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
@@ -803,6 +804,43 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
   };
+  // SYCLcompat unsupport types
+  SYCLcompatUnsupportTypes = {
+      "cudaChannelFormatDesc",
+      "cudaChannelFormatKind",
+      "cudaArray",
+      "cudaArray_t",
+      "cudaMipmappedArray",
+      "cudaMipmappedArray_t",
+      "cudaTextureDesc",
+      "cudaResourceDesc",
+      "cudaTextureObject_t",
+      "textureReference",
+      "cudaTextureAddressMode",
+      "cudaTextureFilterMode",
+      "CUDA_ARRAY3D_DESCRIPTOR",
+      "CUDA_ARRAY_DESCRIPTOR",
+      "CUtexObject",
+      "CUarray_format",
+      "CUarray",
+      "CUarray_st",
+      "CUDA_RESOURCE_DESC",
+      "CUDA_TEXTURE_DESC",
+      "CUaddress_mode",
+      "CUaddress_mode_enum",
+      "CUfilter_mode",
+      "CUfilter_mode_enum",
+      "CUresourcetype_enum",
+      "CUresourcetype",
+      "cudaResourceType",
+      "CUtexref",
+      "cudaStreamCaptureStatus",
+  };
+
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    for (const auto &Type : SYCLcompatUnsupportTypes)
+      TypeNamesMap.erase(Type);
+  }
 
   // Host Random Engine Type mapping
   RandomEngineTypeMap = {
