@@ -1669,7 +1669,8 @@ void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
                       "cuOccupancyMaxActiveBlocksPerMultiprocessor",
-                      "cudaOccupancyMaxPotentialBlockSize");
+                      "cudaOccupancyMaxPotentialBlockSize",
+                      "cuGetExportTable");
   };
 
   MF.addMatcher(
