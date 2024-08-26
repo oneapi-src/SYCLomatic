@@ -9,13 +9,10 @@
 #ifndef __DPCT_RNG_UTILS_HPP__
 #define __DPCT_RNG_UTILS_HPP__
 
-#include <sycl/sycl.hpp>
-
-#include <oneapi/mkl.hpp>
-#include <oneapi/mkl/rng/device.hpp>
-
-#include "device.hpp"
+#include "compat_service.hpp"
 #include "lib_common_utils.hpp"
+
+#include <oneapi/mkl/rng/device.hpp>
 
 namespace dpct {
 namespace rng {
@@ -334,7 +331,7 @@ class rng_generator : public rng_generator_base {
 public:
   /// Constructor of rng_generator.
   /// \param q The queue where the generator should be executed.
-  rng_generator(sycl::queue &q = dpct::get_default_queue())
+  rng_generator(sycl::queue &q = ::dpct::cs::get_default_queue())
       : rng_generator_base(&q),
         _engine(create_engine(&q, _seed, _dimensions, _mode)) {}
 
@@ -588,7 +585,7 @@ typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
 /// \return The pointer of random number generator.
 inline host_rng_ptr
 create_host_rng(const random_engine_type type,
-                sycl::queue &q = dpct::get_default_queue()) {
+                sycl::queue &q = ::dpct::cs::get_default_queue()) {
   switch (type) {
   case random_engine_type::philox4x32x10:
     return std::make_shared<

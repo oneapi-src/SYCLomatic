@@ -13,14 +13,8 @@
 #ifndef __DPCT_BLAS_GEMM_UTILS_HPP__
 #define __DPCT_BLAS_GEMM_UTILS_HPP__
 
+#include "compat_service.hpp"
 #include "dnnl_utils.hpp"
-#include "lib_common_utils.hpp"
-#include "memory.hpp"
-
-#include <oneapi/dnnl/dnnl.hpp>
-#include <oneapi/dnnl/dnnl_sycl.hpp>
-
-#include <sycl/sycl.hpp>
 
 namespace dpct {
 namespace blas_gemm {
@@ -112,12 +106,13 @@ private:
                             matrix_layout_ptr a_desc, const void *b,
                             matrix_layout_ptr b_desc, const void *beta,
                             const void *c, matrix_layout_ptr c_desc, void *d,
-                            matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
+                            matrix_layout_ptr d_desc,
+                            ::dpct::cs::queue_ptr q_ptr);
   friend sycl::event
   matrix_transform(transform_desc_ptr transform_desc, const void *alpha,
                    const void *a, matrix_layout_ptr a_desc, const void *beta,
                    const void *b, matrix_layout_ptr b_desc, void *c,
-                   matrix_layout_ptr c_desc, queue_ptr q_ptr);
+                   matrix_layout_ptr c_desc, ::dpct::cs::queue_ptr q_ptr);
 };
 
 class matmul_desc_t {
@@ -194,14 +189,16 @@ private:
                             matrix_layout_ptr a_desc, const void *b,
                             matrix_layout_ptr b_desc, const void *beta,
                             const void *c, matrix_layout_ptr c_desc, void *d,
-                            matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr);
+                            matrix_layout_ptr d_desc,
+                            ::dpct::cs::queue_ptr q_ptr);
 };
 
 namespace detail {
 /// Sacling each row of matrix D with the corresponding element of vector alpha.
 template <class T, class Talpha>
-sycl::event scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols,
-                                           T *d, const Talpha *alpha,
+sycl::event scale_d_with_vector_alpha_impl(::dpct::cs::queue_ptr q_ptr,
+                                           int rows, int cols, T *d,
+                                           const Talpha *alpha,
                                            std::vector<sycl::event> deps) {
   return q_ptr->submit([&](sycl::handler &cgh) {
     cgh.depends_on(deps);
@@ -210,7 +207,7 @@ sycl::event scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols,
     access_wrapper<const Talpha *> alpha_acc(alpha, cgh);
 #endif
     cgh.parallel_for<
-        dpct_kernel_name<class scale_with_vector_alpha, T, Talpha>>(
+        ::dpct::cs::kernel_name<class scale_with_vector_alpha, T, Talpha>>(
         sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
 #ifdef DPCT_USM_LEVEL_NONE
           auto d_data = d_acc.get_raw_pointer();
@@ -228,8 +225,8 @@ sycl::event scale_d_with_vector_alpha_impl(queue_ptr q_ptr, int rows, int cols,
 }
 
 // a is col major without padding
-inline sycl::event scale_a_with_vector_alpha(queue_ptr q_ptr, int rows,
-                                             int cols, void *a,
+inline sycl::event scale_a_with_vector_alpha(::dpct::cs::queue_ptr q_ptr,
+                                             int rows, int cols, void *a,
                                              library_data_t a_type,
                                              const void *alpha,
                                              library_data_t alpha_type,
@@ -378,9 +375,9 @@ inline auto type_dispatch(library_data_t type, args_t &&...args) {
 }
 
 template <typename T> struct matrix_transform_impl {
-  sycl::event operator()(queue_ptr q_ptr, size_t rows, size_t cols, size_t a_ld,
-                         order_t a_order, const void *a, size_t c_ld,
-                         order_t c_order, void *c,
+  sycl::event operator()(::dpct::cs::queue_ptr q_ptr, size_t rows, size_t cols,
+                         size_t a_ld, order_t a_order, const void *a,
+                         size_t c_ld, order_t c_order, void *c,
                          std::vector<sycl::event> deps) {
     if ((a_order != order_t::col && c_order != order_t::col) ||
         (a_order == order_t::col && c_order == order_t::col)) {
@@ -395,7 +392,8 @@ template <typename T> struct matrix_transform_impl {
       access_wrapper<const T *> a_acc(a, cgh);
       access_wrapper<T *> c_acc(c, cgh);
 #endif
-      cgh.parallel_for<dpct_kernel_name<class matrix_transform_col_to_row, T>>(
+      cgh.parallel_for<
+          ::dpct::cs::kernel_name<class matrix_transform_col_to_row, T>>(
           sycl::range<2>(a_ld, cols), [=](sycl::id<2> index) {
 #ifdef DPCT_USM_LEVEL_NONE
             auto a_data = a_acc.get_raw_pointer();
@@ -420,14 +418,15 @@ template <typename T> struct matrix_transform_impl {
 // Convert an integer to an float.
 // The integer may on the host or the device, the float is on the device.
 #ifdef DPCT_USM_LEVEL_NONE
-inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
+inline sycl::event int2float(::dpct::cs::queue_ptr q_ptr, void *int_ptr,
+                             bool is_host_ptr,
                              sycl::buffer<float, 1> float_buffer) {
   if (is_host_ptr) {
     int alpha_host = *reinterpret_cast<int *>(int_ptr);
     return q_ptr->submit([&](sycl::handler &cgh) {
       sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
                                sycl::no_init);
-      cgh.single_task<dpct_kernel_name<class inthost2float>>(
+      cgh.single_task<::dpct::cs::kernel_name<class inthost2float>>(
           [=]() { float_acc[0] = alpha_host; });
     });
   } else {
@@ -435,7 +434,7 @@ inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
       access_wrapper<int *> int_acc(int_ptr, cgh);
       sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
                                sycl::no_init);
-      cgh.single_task<dpct_kernel_name<class intdevice2float>>([=]() {
+      cgh.single_task<::dpct::cs::kernel_name<class intdevice2float>>([=]() {
         auto int_data = int_acc.get_raw_pointer();
         float_acc[0] = int_data[0];
       });
@@ -443,9 +442,9 @@ inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 
-inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
-                                 const void *a, const void *b,
-                                 std::vector<sycl::event> deps) {
+inline sycl::event multiply_impl(::dpct::cs::queue_ptr q_ptr,
+                                 ::dnnl::memory *dnnl_memory, const void *a,
+                                 const void *b, std::vector<sycl::event> deps) {
   auto result = ::dnnl::sycl_interop::get_buffer<float, 1>(*dnnl_memory);
   if (a && b)
     return q_ptr->submit([&](sycl::handler &cgh) {
@@ -453,7 +452,7 @@ inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
       sycl::accessor result_acc(result, cgh);
       access_wrapper<const float *> a_acc(a, cgh);
       access_wrapper<const float *> b_acc(b, cgh);
-      cgh.single_task<dpct_kernel_name<class multiply_a_b>>([=]() {
+      cgh.single_task<::dpct::cs::kernel_name<class multiply_a_b>>([=]() {
         auto a_ptr = a_acc.get_raw_pointer();
         auto b_ptr = b_acc.get_raw_pointer();
         result_acc[0] = result_acc[0] * a_ptr[0] * b_ptr[0];
@@ -464,7 +463,7 @@ inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
       cgh.depends_on(deps);
       sycl::accessor result_acc(result, cgh);
       access_wrapper<const float *> a_acc(a, cgh);
-      cgh.single_task<dpct_kernel_name<class multiply_a>>([=]() {
+      cgh.single_task<::dpct::cs::kernel_name<class multiply_a>>([=]() {
         auto a_ptr = a_acc.get_raw_pointer();
         result_acc[0] = result_acc[0] * a_ptr[0];
       });
@@ -474,7 +473,7 @@ inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
       cgh.depends_on(deps);
       sycl::accessor result_acc(result, cgh);
       access_wrapper<const float *> b_acc(b, cgh);
-      cgh.single_task<dpct_kernel_name<class multiply_b>>([=]() {
+      cgh.single_task<::dpct::cs::kernel_name<class multiply_b>>([=]() {
         auto b_ptr = b_acc.get_raw_pointer();
         result_acc[0] = result_acc[0] * b_ptr[0];
       });
@@ -485,7 +484,7 @@ inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
 
 template <typename T> struct scale_d_impl {
   sycl::event operator()(const void *d_scale_ptr, void *d, size_t ld,
-                         size_t rows, size_t cols, dpct::queue_ptr q_ptr,
+                         size_t rows, size_t cols, ::dpct::cs::queue_ptr q_ptr,
                          dpct::library_data_t scale_type,
                          std::vector<sycl::event> deps) {
     if (scale_type == dpct::library_data_t::real_float)
@@ -494,7 +493,7 @@ template <typename T> struct scale_d_impl {
         access_wrapper<const float *> d_scale_acc(
             static_cast<const float *>(d_scale_ptr), cgh);
         access_wrapper<T *> d_acc(d, cgh);
-        cgh.parallel_for<dpct_kernel_name<class scale_d_float, T>>(
+        cgh.parallel_for<::dpct::cs::kernel_name<class scale_d_float, T>>(
             sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
               float scale_factor = d_scale_acc.get_raw_pointer()[0];
               auto d_data = d_acc.get_raw_pointer();
@@ -513,7 +512,7 @@ template <typename T> struct scale_d_impl {
         access_wrapper<const int *> d_scale_acc(
             static_cast<const int *>(d_scale_ptr), cgh);
         access_wrapper<T *> d_acc(d, cgh);
-        cgh.parallel_for<dpct_kernel_name<class scale_d_int, T>>(
+        cgh.parallel_for<::dpct::cs::kernel_name<class scale_d_int, T>>(
             sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
               float scale_factor =
                   static_cast<float>(d_scale_acc.get_raw_pointer()[0]);
@@ -537,19 +536,19 @@ template <typename T> struct set_buffer_impl {
   }
 };
 #else
-inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
-                             void *float_ptr) {
+inline sycl::event int2float(::dpct::cs::queue_ptr q_ptr, void *int_ptr,
+                             bool is_host_ptr, void *float_ptr) {
   if (is_host_ptr) {
     int alpha_host = *reinterpret_cast<int *>(int_ptr);
     return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.single_task<dpct_kernel_name<class inthost2float>>([=]() {
+      cgh.single_task<::dpct::cs::kernel_name<class inthost2float>>([=]() {
         auto float_data = (float *)float_ptr;
         float_data[0] = alpha_host;
       });
     });
   } else {
     return q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.single_task<dpct_kernel_name<class intdevice2float>>([=]() {
+      cgh.single_task<::dpct::cs::kernel_name<class intdevice2float>>([=]() {
         auto int_data = (int *)int_ptr;
         auto float_data = (float *)float_ptr;
         float_data[0] = int_data[0];
@@ -558,16 +557,16 @@ inline sycl::event int2float(queue_ptr q_ptr, void *int_ptr, bool is_host_ptr,
   }
 }
 
-inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
-                                 const void *a, const void *b,
-                                 std::vector<sycl::event> deps) {
+inline sycl::event multiply_impl(::dpct::cs::queue_ptr q_ptr,
+                                 ::dnnl::memory *dnnl_memory, const void *a,
+                                 const void *b, std::vector<sycl::event> deps) {
   auto result_T = (float *)(dnnl_memory->get_data_handle());
   auto a_T = (const float *)a;
   auto b_T = (const float *)b;
   if (a_T || b_T)
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
-      cgh.single_task<dpct_kernel_name<class multiply>>([=]() {
+      cgh.single_task<::dpct::cs::kernel_name<class multiply>>([=]() {
         if (a_T)
           result_T[0] = result_T[0] * a_T[0];
         if (b_T)
@@ -580,12 +579,12 @@ inline sycl::event multiply_impl(queue_ptr q_ptr, ::dnnl::memory *dnnl_memory,
 
 template <typename T> struct scale_d_impl {
   sycl::event operator()(const void *d_scale_ptr, void *d, size_t ld,
-                         size_t rows, size_t cols, dpct::queue_ptr q_ptr,
+                         size_t rows, size_t cols, ::dpct::cs::queue_ptr q_ptr,
                          dpct::library_data_t scale_type,
                          std::vector<sycl::event> deps) {
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
-      cgh.parallel_for<dpct_kernel_name<class scale_d, T>>(
+      cgh.parallel_for<::dpct::cs::kernel_name<class scale_d, T>>(
           sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
             float scale_factor;
             if (scale_type == dpct::library_data_t::real_float)
@@ -609,10 +608,11 @@ template <typename T> struct scale_d_impl {
 #endif
 
 template <typename T> struct get_beta_value_impl {
-  int operator()(const void *beta, dpct::queue_ptr q_ptr) {
+  int operator()(const void *beta, ::dpct::cs::queue_ptr q_ptr) {
     T beta_host;
-    dpct::dpct_memcpy(&beta_host, beta, sizeof(T), memcpy_direction::automatic,
-                      *q_ptr);
+    ::dpct::cs::memcpy(*q_ptr, &beta_host, beta, sizeof(T),
+                       ::dpct::cs::memcpy_direction::automatic)
+        .wait();
     T zero = T(0);
     T one = T(1);
     if (beta_host == zero)
@@ -633,7 +633,7 @@ template <typename T> struct abs_max_op {
 
 template <typename T> struct absmax_impl {
   sycl::event operator()(void *absmax_ptr, const void *new_d, size_t ld,
-                         size_t rows, size_t cols, dpct::queue_ptr q_ptr,
+                         size_t rows, size_t cols, ::dpct::cs::queue_ptr q_ptr,
                          std::vector<sycl::event> deps) {
     return q_ptr->submit([&](sycl::handler &cgh) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -647,7 +647,7 @@ template <typename T> struct absmax_impl {
           {sycl::property::reduction::initialize_to_identity()});
 #endif
       cgh.depends_on(deps);
-      cgh.parallel_for<dpct_kernel_name<class absmax_reduction, T>>(
+      cgh.parallel_for<::dpct::cs::kernel_name<class absmax_reduction, T>>(
           sycl::range<2>(ld, cols), absmax_reduction,
           [=](sycl::id<2> idx, auto &absmax) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -712,7 +712,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                           matrix_layout_ptr a_desc, const void *b,
                           matrix_layout_ptr b_desc, const void *beta,
                           const void *c, matrix_layout_ptr c_desc, void *d,
-                          matrix_layout_ptr d_desc, dpct::queue_ptr q_ptr) {
+                          matrix_layout_ptr d_desc,
+                          ::dpct::cs::queue_ptr q_ptr) {
   const size_t m = compute_desc->_trans_a == oneapi::mkl::transpose::nontrans
                        ? a_desc->_rows
                        : a_desc->_cols;
@@ -727,7 +728,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   const library_data_t scale_type = compute_desc->_scale_type;
 
   if (!q_ptr)
-    q_ptr = &get_default_queue();
+    q_ptr = &::dpct::cs::get_default_queue();
   handle->init(q_ptr);
   bool vector_alpha = false;
   if (compute_desc->_pointer_mode == pointer_mode_t::device_vector ||
@@ -801,7 +802,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         dpct::detail::library_data_size[static_cast<unsigned int>(
             a_desc->_type)] /
         8;
-    new_a = dpct_malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
+    new_a =
+        ::dpct::cs::malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
     new_a_allocated = true;
     sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
         a_desc->_type, q_ptr, a_desc->_rows, a_desc->_cols, a_desc->_ld,
@@ -820,11 +822,12 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         dpct::detail::library_data_size[static_cast<unsigned int>(
             a_desc->_type)] /
         8;
-    new_a = dpct_malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
+    new_a =
+        ::dpct::cs::malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
     new_a_allocated = true;
-    sycl::event e_cp = dpct::detail::dpct_memcpy(
+    sycl::event e_cp = ::dpct::cs::memcpy(
         *q_ptr, (void *)new_a, a, size_of_element * a_desc->_cols * new_lda,
-        dpct::memcpy_direction::device_to_device);
+        ::dpct::cs::memcpy_direction::device_to_device);
     sycl::event e_scale_d_with_vec_alpha;
     e_scale_d_with_vec_alpha = detail::scale_a_with_vector_alpha(
         q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, {e_cp});
@@ -836,7 +839,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         dpct::detail::library_data_size[static_cast<unsigned int>(
             b_desc->_type)] /
         8;
-    new_b = dpct_malloc(size_of_element * b_desc->_cols * new_ldb, *q_ptr);
+    new_b =
+        ::dpct::cs::malloc(size_of_element * b_desc->_cols * new_ldb, *q_ptr);
     new_b_allocated = true;
     sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
         b_desc->_type, q_ptr, b_desc->_rows, b_desc->_cols, b_desc->_ld,
@@ -851,7 +855,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         dpct::detail::library_data_size[static_cast<unsigned int>(
             c_desc->_type)] /
         8;
-    new_c = dpct_malloc(size_of_element * c_desc->_cols * new_ldc, *q_ptr);
+    new_c =
+        ::dpct::cs::malloc(size_of_element * c_desc->_cols * new_ldc, *q_ptr);
     new_c_allocated = true;
     sycl::event e = detail::type_dispatch<detail::matrix_transform_impl>(
         c_desc->_type, q_ptr, c_desc->_rows, c_desc->_cols, c_desc->_ld,
@@ -866,7 +871,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         dpct::detail::library_data_size[static_cast<unsigned int>(
             d_desc->_type)] /
         8;
-    new_d = dpct_malloc(size_of_element * d_desc->_cols * new_ldd, *q_ptr);
+    new_d =
+        ::dpct::cs::malloc(size_of_element * d_desc->_cols * new_ldd, *q_ptr);
     new_d_allocated = true;
   }
 
@@ -965,14 +971,14 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         scalar_alpha_e = q_ptr->submit([&](sycl::handler &cgh) {
           access_wrapper<const float *> alpha_acc(alpha, cgh);
           sycl::accessor acc(buf, cgh, sycl::write_only, sycl::no_init);
-          cgh.single_task<dpct_kernel_name<class copy_alpha_dev_ptr>>(
+          cgh.single_task<::dpct::cs::kernel_name<class copy_alpha_dev_ptr>>(
               [=]() { acc[0] = alpha_acc.get_raw_pointer()[0]; });
         });
       } else {
         float alpha_host = *static_cast<const float *>(alpha);
         scalar_alpha_e = q_ptr->submit([&](sycl::handler &cgh) {
           sycl::accessor acc(buf, cgh, sycl::write_only, sycl::no_init);
-          cgh.single_task<dpct_kernel_name<class copy_alpha_host_ptr>>(
+          cgh.single_task<::dpct::cs::kernel_name<class copy_alpha_host_ptr>>(
               [=]() { acc[0] = alpha_host; });
         });
       }
@@ -1044,13 +1050,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       if (!vector_alpha)
         delete scales_alpha;
       if (new_a_allocated)
-        dpct::detail::dpct_free((void *)new_a, *q_ptr);
+        ::dpct::cs::free((void *)new_a, *q_ptr);
       if (new_b_allocated)
-        dpct::detail::dpct_free((void *)new_b, *q_ptr);
+        ::dpct::cs::free((void *)new_b, *q_ptr);
       if (new_c_allocated)
-        dpct::detail::dpct_free((void *)new_c, *q_ptr);
+        ::dpct::cs::free((void *)new_c, *q_ptr);
       if (new_d_allocated)
-        dpct::detail::dpct_free((void *)new_d, *q_ptr);
+        ::dpct::cs::free((void *)new_d, *q_ptr);
     });
   });
   return free_event;
@@ -1096,7 +1102,7 @@ private:
   matrix_transform(transform_desc_ptr transform_desc, const void *alpha,
                    const void *a, matrix_layout_ptr a_desc, const void *beta,
                    const void *b, matrix_layout_ptr b_desc, void *c,
-                   matrix_layout_ptr c_desc, queue_ptr q_ptr);
+                   matrix_layout_ptr c_desc, ::dpct::cs::queue_ptr q_ptr);
 };
 
 /// This function does operation:
@@ -1118,9 +1124,9 @@ inline sycl::event matrix_transform(transform_desc_ptr transform_desc,
                                     matrix_layout_ptr a_desc, const void *beta,
                                     const void *b, matrix_layout_ptr b_desc,
                                     void *c, matrix_layout_ptr c_desc,
-                                    queue_ptr q_ptr) {
+                                    ::dpct::cs::queue_ptr q_ptr) {
   if (!q_ptr)
-    q_ptr = &get_default_queue();
+    q_ptr = &::dpct::cs::get_default_queue();
 
   if (transform_desc->_pointer_mode != pointer_mode_t::host) {
     throw std::runtime_error(

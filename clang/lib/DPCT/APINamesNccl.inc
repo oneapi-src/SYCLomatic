@@ -9,19 +9,19 @@
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclGetVersion", DEREF(0),
-                                            CALL(MapNames::getDpctNamespace() +
+                                            CALL(MapNames::getLibraryHelperNamespace() +
                                                  "ccl::get_version"))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclGetUniqueId", DEREF(0),
-                                            CALL(MapNames::getDpctNamespace() +
+                                            CALL(MapNames::getLibraryHelperNamespace() +
                                                  "ccl::create_kvs_address"))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommInitRank", DEREF(0),
-                                            NEW(MapNames::getDpctNamespace() +
+                                            NEW(MapNames::getLibraryHelperNamespace() +
                                                     "ccl::communicator_wrapper",
                                                 ARG(1), ARG(3), ARG(2)))))
 

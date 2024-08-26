@@ -9,34 +9,34 @@
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cufftGetVersion",
-                       CALL(MapNames::getDpctNamespace() + "mkl_get_version",
-                            ARG(MapNames::getDpctNamespace() + "version_field::major"), ARG(0)))))
+                       CALL(MapNames::getLibraryHelperNamespace() + "mkl_get_version",
+                            ARG(MapNames::getLibraryHelperNamespace() + "version_field::major"), ARG(0)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cufftGetProperty",
-                       CALL(MapNames::getDpctNamespace() + "mkl_get_version",
+                       CALL(MapNames::getLibraryHelperNamespace() + "mkl_get_version",
                             ARG(0), ARG(1)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGN_FACTORY_ENTRY("cufftPlan1d", DEREF(0),
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::create",
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::create",
                             QUEUEPTRSTR, ARG(1), ARG(2), ARG(3)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGN_FACTORY_ENTRY("cufftPlan2d", DEREF(0),
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::create",
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::create",
                             QUEUEPTRSTR, ARG(1), ARG(2), ARG(3)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGN_FACTORY_ENTRY("cufftPlan3d", DEREF(0),
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::create",
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::create",
                             QUEUEPTRSTR, ARG(1), ARG(2), ARG(3), ARG(4)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGN_FACTORY_ENTRY("cufftPlanMany", DEREF(0),
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::create",
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::create",
                             QUEUEPTRSTR, ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
@@ -76,24 +76,24 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGN_FACTORY_ENTRY("cufftCreate", DEREF(0),
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::create"))))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::create"))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cufftDestroy",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::destroy", ARG(0)))))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::destroy", ARG(0)))))
 
 ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecR2C", ARG(0), true, "compute<float, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::forward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecR2C", ARG(0), true, "compute<float, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_direction::forward"))))
 ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecC2R", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, float>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::backward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecC2R", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, float>", ARG(1), ARG(2), ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_direction::backward"))))
 ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecD2Z", ARG(0), true, "compute<double, " + MapNames::getClNamespace() + "double2>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::forward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecD2Z", ARG(0), true, "compute<double, " + MapNames::getClNamespace() + "double2>", ARG(1), ARG(2), ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_direction::forward"))))
 ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecZ2D", ARG(0), true, "compute<" + MapNames::getClNamespace() + "double2, double>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::backward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecZ2D", ARG(0), true, "compute<" + MapNames::getClNamespace() + "double2, double>", ARG(1), ARG(2), ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_direction::backward"))))
 ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecC2C", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), makeFFTDirExprCallArgCreator(3))))
@@ -113,65 +113,65 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     WARNING_FACTORY_ENTRY("cufftEstimate1d",
     WARNING_FACTORY_ENTRY("cufftEstimate1d",
     CALL_FACTORY_ENTRY("cufftEstimate1d",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(0), ARG(1), ARG(2), ARG(3))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(0), ARG(1), ARG(2), ARG(3))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftEstimate2d",
     WARNING_FACTORY_ENTRY("cufftEstimate2d",
     CALL_FACTORY_ENTRY("cufftEstimate2d",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(0), ARG(1), ARG(2), ARG(3))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(0), ARG(1), ARG(2), ARG(3))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftEstimate3d",
     WARNING_FACTORY_ENTRY("cufftEstimate3d",
     CALL_FACTORY_ENTRY("cufftEstimate3d",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftEstimateMany",
     WARNING_FACTORY_ENTRY("cufftEstimateMany",
     CALL_FACTORY_ENTRY("cufftEstimateMany",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftGetSize1d",
     WARNING_FACTORY_ENTRY("cufftGetSize1d",
     CALL_FACTORY_ENTRY("cufftGetSize1d",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(1), ARG(2), ARG(3), ARG(4))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(1), ARG(2), ARG(3), ARG(4))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftGetSize2d",
     WARNING_FACTORY_ENTRY("cufftGetSize2d",
     CALL_FACTORY_ENTRY("cufftGetSize2d",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(1), ARG(2), ARG(3), ARG(4))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(1), ARG(2), ARG(3), ARG(4))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftGetSize3d",
     WARNING_FACTORY_ENTRY("cufftGetSize3d",
     CALL_FACTORY_ENTRY("cufftGetSize3d",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftGetSizeMany",
     WARNING_FACTORY_ENTRY("cufftGetSizeMany",
     CALL_FACTORY_ENTRY("cufftGetSizeMany",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cufftGetSizeMany64",
     WARNING_FACTORY_ENTRY("cufftGetSizeMany64",
     CALL_FACTORY_ENTRY("cufftGetSizeMany64",
-                       CALL(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size",
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getDpctNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
+                       CALL(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))), Diagnostics::FFT_DIRECTION_AND_PLACEMENT, ARG(MapNames::getLibraryHelperNamespace() + "fft::fft_engine::estimate_size")), Diagnostics::FFT_EXTERNAL_WORKSPACE)))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

@@ -10,12 +10,14 @@
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCUB.h"
 #include "CallExprRewriterCommon.h"
+#include "InclusionHeaders.h"
 #include "clang/AST/ExprCXX.h"
 #include "llvm/Support/raw_ostream.h"
 #include <functional>
 
 using namespace clang::dpct;
 
+namespace {
 static inline std::function<std::string(const CallExpr *)>
 printCallExprPretty() {
   return [](const CallExpr *C) {
@@ -26,6 +28,36 @@ printCallExprPretty() {
     return Buffer;
   };
 }
+
+class CheckCUBEnumTemplateArg {
+  unsigned Idx;
+
+public:
+  CheckCUBEnumTemplateArg(unsigned I) : Idx(I) {}
+  bool operator()(const CallExpr *C) const {
+    ArrayRef<TemplateArgumentLoc> TemplateArgsList;
+    const auto *Callee = C->getCallee()->IgnoreImplicitAsWritten();
+    if (const auto *DRE = dyn_cast<DeclRefExpr>(Callee))
+      TemplateArgsList = DRE->template_arguments();
+    else if (const auto *ULE = dyn_cast<UnresolvedLookupExpr>(Callee))
+      TemplateArgsList = ULE->template_arguments();
+    if (Idx >= TemplateArgsList.size())
+      return true;
+    auto Arg = TemplateArgsList[Idx];
+    if (Arg.getArgument().isDependent())
+      return true;
+    const auto *EnumArg = Arg.getArgument().getAsExpr();
+    Expr::EvalResult ER;
+    int64_t Value = -1;
+    if (!EnumArg->isValueDependent() &&
+        EnumArg->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+      Value = ER.Val.getInt().getExtValue();
+      return Value == 1 || Value == 0;
+    }
+    return false;
+  }
+};
+} // namespace
 
 RewriterMap dpct::createClassMethodsRewriterMap() {
   return RewriterMap{
@@ -179,6 +211,27 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                 "cub::BlockExchange.ScatterToStriped",
                                 MemberExprBase(), false, "scatter_to_striped",
                                 NDITEM, ARG(0), ARG(1)))
+      // cub::BlockLoad::Load
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CONDITIONAL_FACTORY_ENTRY(
+              makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+              MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load", MemberExprBase(),
+                                        false, "load", NDITEM, ARG(0), ARG(1)),
+              UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      printCallExprPretty())))
+      // cub::BlockStore::Store
+      HEADER_INSERT_FACTORY(
+          HeaderType::HT_DPCT_GROUP_Utils,
+          CONDITIONAL_FACTORY_ENTRY(
+              makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+              MEMBER_CALL_FACTORY_ENTRY("cub::BlockStore.Store",
+                                        MemberExprBase(), false, "store",
+                                        NDITEM, ARG(0), ARG(1)),
+              UNSUPPORT_FACTORY_ENTRY("cub::BlockStore.Store",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      printCallExprPretty())))
 
   };
 }

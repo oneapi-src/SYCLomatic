@@ -6,12 +6,15 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "PatternRewriter.h"
 #include "AnalysisInfo.h"
+#include "Diagnostics.h"
+#include "MigrateCmakeScript.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Path.h"
-#include <PatternRewriter.h>
 
 #include <optional>
 #include <ostream>
@@ -43,6 +46,7 @@ struct MatchResult {
   int Start;
   int End;
   std::unordered_map<std::string, std::string> Bindings;
+  bool FullMatchFound = false;
 };
 
 static SourceFileType SrcFileType = SourceFileType::SFT_CAndCXXSource;
@@ -496,6 +500,11 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
         return {};
       }
 
+      if (PatternIndex == PatternSize - 1 &&
+          !isIdentifiedChar(Input[Index + 1])) {
+        Result.FullMatchFound = true;
+      }
+
       Index++;
       PatternIndex++;
       continue;
@@ -719,8 +728,46 @@ void setFileTypeProcessed(enum SourceFileType FileType) {
   SrcFileType = FileType;
 }
 
+static void constructWaringMsg(const std::string &Input, size_t index,
+                               const std::string &FileName,
+                               const std::string &FrontPart,
+                               std::string Warning, std::string &OutStr) {
+  std::string Buffer;
+  if (!FrontPart.empty())
+    Buffer = FrontPart + Input;
+
+  size_t LineNumber = 1;
+  size_t Count = 0;
+  const auto Lines = split(Buffer, '\n');
+  for (auto Line : Lines) {
+    if (index + FrontPart.size() > Count &&
+        index + FrontPart.size() <= Count + Line.size()) {
+      break;
+    }
+
+    Count += Line.size() + 1;
+    LineNumber++;
+  }
+
+  std::string WarningMsg =
+      FileName + ":" + std::to_string(LineNumber) + ":warning:";
+  WarningMsg += clang::dpct::DiagnosticsUtils::getMsgText(
+      clang::dpct::CMakeScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
+      Warning);
+  WarningMsg += "\n";
+  addWarningMsg(WarningMsg, FileName);
+
+  OutStr =
+      "\n# " +
+      clang::dpct::DiagnosticsUtils::getMsgText(
+          clang::dpct::CMakeScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
+          Warning) +
+      "\n" + OutStr;
+}
+
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
-                                 const std::string &Input) {
+                                 const std::string &Input, std::string FileName,
+                                 std::string FrontPart) {
   std::stringstream OutputStream;
 
   if (PP.In.size() == 0) {
@@ -750,13 +797,29 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
       for (const auto &[Name, Value] : Match.Bindings) {
         const auto &SubruleIterator = PP.Subrules.find(Name);
         if (SubruleIterator != PP.Subrules.end()) {
-          Match.Bindings[Name] =
-              applyPatternRewriter(SubruleIterator->second, Value);
+
+          if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+            auto Pos = Input.find(Value);
+            if (Pos != std::string::npos) {
+              FrontPart = Input.substr(0, Pos);
+            }
+          }
+
+          Match.Bindings[Name] = applyPatternRewriter(
+              SubruleIterator->second, Value, FileName, FrontPart);
         }
       }
 
+      std::string OutStr = PP.Out;
+
+      if (SrcFileType == SourceFileType::SFT_CMakeScript &&
+          !PP.Warning.empty() && Result->FullMatchFound) {
+        constructWaringMsg(Input, Match.End, FileName, FrontPart, PP.Warning,
+                           OutStr);
+      }
+
       const int Indentation = detectIndentation(Input, Index);
-      instantiateTemplate(PP.Out, Match.Bindings, Indentation, OutputStream);
+      instantiateTemplate(OutStr, Match.Bindings, Indentation, OutputStream);
       Index = Match.End;
       while (Input[Index] == '\n') {
         OutputStream << Input[Index];

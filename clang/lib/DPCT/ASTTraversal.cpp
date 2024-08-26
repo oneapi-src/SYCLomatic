@@ -2035,7 +2035,8 @@ void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
                       "cuOccupancyMaxActiveBlocksPerMultiprocessor",
-                      "cudaOccupancyMaxPotentialBlockSize");
+                      "cudaOccupancyMaxPotentialBlockSize",
+                      "cuGetExportTable");
   };
 
   MF.addMatcher(
@@ -4016,7 +4017,7 @@ std::string getValueStr(const Expr *Expr, std::string ExprStr,
     }
   }
   requestFeature(HelperFeatureEnum::device_ext);
-  return MapNames::getDpctNamespace() + "get_value(" + ExprStr + ", " +
+  return MapNames::getLibraryHelperNamespace() + "get_value(" + ExprStr + ", " +
          QueueStr + ")";
 }
 
@@ -4203,7 +4204,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     const auto *const Arg0 = CE->getArg(0);
     requestFeature(HelperFeatureEnum::device_ext);
     std::string RHS =
-        buildString(" = ", MapNames::getDpctNamespace(),
+        buildString(" = ", MapNames::getLibraryHelperNamespace(),
                     "rng::create_host_rng(", ExprAnalysis::ref(CE->getArg(1)));
     if (FuncName == "curandCreateGeneratorHost") {
       RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
@@ -4380,7 +4381,7 @@ void DeviceRandomFunctionCallRule::runRule(
                 FirstOffsetArg + ")";
     } else {
       std::string Factor = "8";
-      if (GeneratorType == MapNames::getDpctNamespace() +
+      if (GeneratorType == MapNames::getLibraryHelperNamespace() +
                                "rng::device::rng_generator<oneapi::"
                                "mkl::rng::device::philox4x32x10<1>>" &&
           DRefArg3Type == "curandStatePhilox4_32_10") {
@@ -5077,7 +5078,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     requestFeature(HelperFeatureEnum::device_ext);
     CallExprReplStr = CallExprReplStr + ReplInfo.ReplName + "(" +
-                      MapNames::getDpctNamespace() +
+                      MapNames::getLibraryHelperNamespace() +
                       "blas::descriptor::get_saved_queue()";
     std::string IndentStr =
         getIndent(PrefixInsertLoc, (Result.Context)->getSourceManager()).str();
@@ -5496,7 +5497,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName),
-             MapNames::getDpctNamespace() + "blas::matrix_mem_copy");
+             MapNames::getLibraryHelperNamespace() + "blas::matrix_mem_copy");
       return;
     }
     const Expr *IncxExpr = CE->getArg(3);
@@ -5542,7 +5543,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName),
-             MapNames::getDpctNamespace() + "blas::matrix_mem_copy");
+             MapNames::getLibraryHelperNamespace() + "blas::matrix_mem_copy");
       return;
     }
     const Expr *RowsExpr = CE->getArg(0);

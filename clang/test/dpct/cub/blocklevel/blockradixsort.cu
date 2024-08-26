@@ -8,47 +8,48 @@
 #include <cub/cub.cuh>
 #include <cuda_runtime.h>
 
-template <typename InputT, int ITEMS_PER_THREAD, typename InputIteratorT>
-__device__ void LoadDirectBlocked(int linear_tid, InputIteratorT block_itr,
-                                  InputT (&items)[ITEMS_PER_THREAD]) {
-#pragma unroll
-  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    items[ITEM] = block_itr[(linear_tid * ITEMS_PER_THREAD) + ITEM];
-  }
-}
-
-template <typename T, int ITEMS_PER_THREAD, typename OutputIteratorT>
-__device__ void StoreDirectBlocked(int linear_tid, OutputIteratorT block_itr,
-                                   T (&items)[ITEMS_PER_THREAD]) {
-  OutputIteratorT thread_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
-#pragma unroll
-  for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++) {
-    thread_itr[ITEM] = items[ITEM];
-  }
-}
-
 __global__ void Sort(int *data) {
   // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
-  // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
+  // CHECK-NEXT: using BlockLoad = dpct::group::group_load<int, 4>;
+  // CHECK-NEXT: using BlockStore = dpct::group::group_store<int, 4>;
+  // CHECK-NOT:  __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  // CHECK-NOT:  __shared__ typename BlockStore::TempStorage temp_storage_store;
+  // CHECK-NOT:  __shared__ typename BlockRadixSort::TempStorage temp_storage;
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
+  using BlockLoad = cub::BlockLoad<int, 128, 4>;
+  using BlockStore = cub::BlockStore<int, 128, 4>;
+  __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  __shared__ typename BlockStore::TempStorage temp_storage_store;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort(item_ct1, thread_keys);
+  // CHECK: BlockLoad(temp_storage_load).load(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort(item_ct1, thread_keys);
+  // CHECK-NEXT: BlockStore(temp_storage_store).store(item_ct1, data, thread_keys);
+  BlockLoad(temp_storage_load).Load(data, thread_keys);
   BlockRadixSort(temp_storage).Sort(thread_keys);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  BlockStore(temp_storage_store).Store(data, thread_keys);
 }
 
 __global__ void SortDescending(int *data) {
   // CHECK: using BlockRadixSort = dpct::group::group_radix_sort<int, 4>;
+  // CHECK-NEXT: using BlockLoad = dpct::group::group_load<int, 4, dpct::group::group_load_algorithm::blocked>;
+  // CHECK-NEXT: using BlockStore = dpct::group::group_store<int, 4, dpct::group::group_store_algorithm::blocked>;
+  // CHECK-NOT: __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  // CHECK-NOT: __shared__ typename BlockStore::TempStorage temp_storage_store;
   // CHECK-NOT: __shared__ typename BlockRadixSort::TempStorage temp_storage;
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
+  using BlockLoad = cub::BlockLoad<int, 128, 4, cub::BLOCK_LOAD_DIRECT>;
+  using BlockStore = cub::BlockStore<int, 128, 4, cub::BLOCK_STORE_DIRECT>;
+  __shared__ typename BlockLoad::TempStorage temp_storage_load;
+  __shared__ typename BlockStore::TempStorage temp_storage_store;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort_descending(item_ct1, thread_keys);
+  // CHECK: BlockLoad(temp_storage_load).load(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort_descending(item_ct1, thread_keys);
+  // CHECK-NEXT: BlockStore(temp_storage_store).store(item_ct1, data, thread_keys);
+  BlockLoad(temp_storage_load).Load(data, thread_keys);
   BlockRadixSort(temp_storage).SortDescending(thread_keys);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  BlockStore(temp_storage_store).Store(data, thread_keys);
 }
 
 __global__ void SortBlockedToStriped(int *data) {
@@ -57,10 +58,12 @@ __global__ void SortBlockedToStriped(int *data) {
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort_blocked_to_striped(item_ct1, thread_keys);
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort_blocked_to_striped(item_ct1, thread_keys);
+  // CHECK-NEXT: dpct::group::store_direct_blocked(item_ct1, data, thread_keys);
+  cub::LoadDirectBlocked(threadIdx.x, data, thread_keys);
   BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  cub::StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
 __global__ void SortDescendingBlockedToStriped(int *data) {
@@ -69,10 +72,12 @@ __global__ void SortDescendingBlockedToStriped(int *data) {
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort_descending_blocked_to_striped(item_ct1, thread_keys);
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort_descending_blocked_to_striped(item_ct1, thread_keys);
+  // CHECK-NEXT: dpct::group::store_direct_blocked(item_ct1, data, thread_keys);
+  cub::LoadDirectBlocked(threadIdx.x, data, thread_keys);
   BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  cub::StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
 __global__ void SortBit(int *data) {
@@ -81,10 +86,12 @@ __global__ void SortBit(int *data) {
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort(item_ct1, thread_keys, 4, 16);
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort(item_ct1, thread_keys, 4, 16);
+  // CHECK-NEXT: dpct::group::store_direct_blocked(item_ct1, data, thread_keys);
+  cub::LoadDirectBlocked(threadIdx.x, data, thread_keys);
   BlockRadixSort(temp_storage).Sort(thread_keys, 4, 16);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  cub::StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
 __global__ void SortDescendingBit(int *data) {
@@ -93,10 +100,12 @@ __global__ void SortDescendingBit(int *data) {
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort_descending(item_ct1, thread_keys, 4, 16);
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort_descending(item_ct1, thread_keys, 4, 16);
+  // CHECK-NEXT: dpct::group::store_direct_blocked(item_ct1, data, thread_keys);
+  cub::LoadDirectBlocked(threadIdx.x, data, thread_keys);
   BlockRadixSort(temp_storage).SortDescending(thread_keys, 4, 16);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  cub::StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
 __global__ void SortBlockedToStripedBit(int *data) {
@@ -105,10 +114,12 @@ __global__ void SortBlockedToStripedBit(int *data) {
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort_blocked_to_striped(item_ct1, thread_keys, 4, 16);
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort_blocked_to_striped(item_ct1, thread_keys, 4, 16);
+  // CHECK-NEXT: dpct::group::store_direct_blocked(item_ct1, data, thread_keys);
+  cub::LoadDirectBlocked(threadIdx.x, data, thread_keys);
   BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, 4, 16);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  cub::StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
 __global__ void SortDescendingBlockedToStripedBit(int *data) {
@@ -117,10 +128,12 @@ __global__ void SortDescendingBlockedToStripedBit(int *data) {
   using BlockRadixSort = cub::BlockRadixSort<int, 128, 4>;
   __shared__ typename BlockRadixSort::TempStorage temp_storage;
   int thread_keys[4];
-  LoadDirectBlocked(threadIdx.x, data, thread_keys);
-  // CHECK: BlockRadixSort(temp_storage).sort_descending_blocked_to_striped(item_ct1, thread_keys, 4, 16);
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, data, thread_keys);
+  // CHECK-NEXT: BlockRadixSort(temp_storage).sort_descending_blocked_to_striped(item_ct1, thread_keys, 4, 16);
+  // CHECK-NEXT: dpct::group::store_direct_blocked(item_ct1, data, thread_keys);
+  cub::LoadDirectBlocked(threadIdx.x, data, thread_keys);
   BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(thread_keys, 4, 16);
-  StoreDirectBlocked(threadIdx.x, data, thread_keys);
+  cub::StoreDirectBlocked(threadIdx.x, data, thread_keys);
 }
 
 #ifndef BUILD_TEST
@@ -174,12 +187,14 @@ bool test_sort() {
   cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_load_acc(dpct::group::group_load<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_store_acc(dpct::group::group_store<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         Sort(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         Sort(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   Sort<<<1, 128>>>(d_data);
@@ -208,12 +223,14 @@ bool test_sort_descending() {
   cudaMemcpy(d_data, data, sizeof(data), cudaMemcpyHostToDevice);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_load_acc(dpct::group::group_load<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_store_acc(dpct::group::group_store<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> temp_storage_acc(dpct::group::group_radix_sort<int, 4>::get_local_memory_size(sycl::range<3>(1, 1, 128).size()), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         SortDescending(d_data, item_ct1, &temp_storage_acc[0]);
+  // CHECK-NEXT:         SortDescending(d_data, item_ct1, &temp_storage_load_acc[0], &temp_storage_store_acc[0], &temp_storage_acc[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   SortDescending<<<1, 128>>>(d_data);

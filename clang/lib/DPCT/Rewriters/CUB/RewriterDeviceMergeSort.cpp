@@ -106,7 +106,7 @@ RewriterMap dpct::createDeviceMergeSortRewriterMap() {
                                makeCheckNot(CheckArgIsDefaultCudaStream(6))),
                   CALL_FACTORY_ENTRY(
                       "cub::DeviceMergeSort::SortPairs",
-                      CALL(MapNames::getDpctNamespace() + "sort",
+                      CALL(MapNames::getLibraryHelperNamespace() + "sort",
                            CALL("oneapi::dpl::execution::device_policy",
                                 STREAM(6)),
                            ARG(2),
@@ -114,7 +114,7 @@ RewriterMap dpct::createDeviceMergeSortRewriterMap() {
                            ARG(3), ARG(5))),
                   CALL_FACTORY_ENTRY(
                       "cub::DeviceMergeSort::SortPairs",
-                      CALL(MapNames::getDpctNamespace() + "sort",
+                      CALL(MapNames::getLibraryHelperNamespace() + "sort",
                            CALL("oneapi::dpl::execution::device_policy",
                                 QUEUESTR),
                            ARG(2),
@@ -132,7 +132,7 @@ RewriterMap dpct::createDeviceMergeSortRewriterMap() {
                                makeCheckNot(CheckArgIsDefaultCudaStream(6))),
                   CALL_FACTORY_ENTRY(
                       "cub::DeviceMergeSort::StableSortPairs",
-                      CALL(MapNames::getDpctNamespace() + "stable_sort",
+                      CALL(MapNames::getLibraryHelperNamespace() + "stable_sort",
                            CALL("oneapi::dpl::execution::device_policy",
                                 STREAM(6)),
                            ARG(2),
@@ -140,7 +140,7 @@ RewriterMap dpct::createDeviceMergeSortRewriterMap() {
                            ARG(3), ARG(5))),
                   CALL_FACTORY_ENTRY(
                       "cub::DeviceMergeSort::StableSortPairs",
-                      CALL(MapNames::getDpctNamespace() + "stable_sort",
+                      CALL(MapNames::getLibraryHelperNamespace() + "stable_sort",
                            CALL("oneapi::dpl::execution::device_policy",
                                 QUEUESTR),
                            ARG(2),
