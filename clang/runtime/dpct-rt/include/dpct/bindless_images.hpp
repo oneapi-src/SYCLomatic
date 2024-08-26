@@ -169,7 +169,7 @@ public:
                                  "Resource cannot be mapped more than once.");
       }
 
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240803)
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION >= 20240823)
       _res_buf_ptr =
           sycl::ext::oneapi::experimental::map_external_linear_memory(
               get_external_mem(), 0, _res_size_bytes, q);
@@ -761,7 +761,7 @@ inline bool check_duplicate_entries(int count, T **entries) {
 /// \param [in] count The count of resources to map.
 /// \param [in] handles The external mem wrappers used to map the resources.
 /// \param [in] q The queue used to map the resource with.
-inline void map_resources(int count, external_mem_wrapper **handles,
+inline void map_resources(int count, external_mem_wrapper_base **handles,
                           queue_ptr q_ptr = &get_default_queue()) {
   if (detail::check_duplicate_entries(count, handles)) {
     throw std::runtime_error(
@@ -777,7 +777,7 @@ inline void map_resources(int count, external_mem_wrapper **handles,
 /// \param [in] count The count of resources to unmap.
 /// \param [in] handles The external mem wrappers used to unmap the resources.
 /// \param [in] q The queue used to unmap the resource with.
-inline void unmap_resources(int count, external_mem_wrapper **handles,
+inline void unmap_resources(int count, external_mem_wrapper_base **handles,
                             queue_ptr q_ptr = &get_default_queue()) {
   if (detail::check_duplicate_entries(count, handles) &&
       "Duplicate handle entries found during resource unmapping!")
