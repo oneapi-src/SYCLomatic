@@ -160,8 +160,6 @@ private:
 
   std::set<const Expr *> DeviceFunctionCallArgs;
 
-  bool IsDifferenceBetweenThreadIdxXAndIndexConstant = false;
-
   // This map contains pairs meet below pattern:
   // loop {
   //   ...

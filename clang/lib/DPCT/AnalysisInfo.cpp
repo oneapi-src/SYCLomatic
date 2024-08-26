@@ -1175,10 +1175,6 @@ void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
     SYCLSourceExtension = ".cpp";
     SYCLHeaderExtension = ".hpp";
     break;
-  default:
-    SYCLSourceExtension = ".dp.cpp";
-    SYCLHeaderExtension = ".dp.hpp";
-    break;
   }
 }
 
