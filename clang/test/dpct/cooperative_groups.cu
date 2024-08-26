@@ -1,7 +1,8 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/cooperative_groups %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --format-range=none -out-root %T/cooperative_groups %s --cuda-include-path="%cuda-path/include" --use-experimental-features=root-group,logical-group -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/cooperative_groups/cooperative_groups.dp.cpp
+// Add the build lit?
 
 #include <cooperative_groups.h>
 
@@ -67,7 +68,9 @@ __device__ void foo() {
   cg::sync(ctile32);
   cg::sync(tile32);
 
-  // CHECK-COUNT-3: dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
+  // CHECK: sycl::group_barrier(item_ct1.ext_oneapi_get_root_group());
+  // CHECK-NEXT: sycl::group_barrier(cgg);
+  // CHECK-NEXT: sycl::group_barrier(gg);
   cg::sync(cg::this_grid());
   cg::sync(cgg);
   cg::sync(gg);
@@ -119,7 +122,9 @@ __device__ void foo() {
   ctile32.sync();
   tile32.sync();
 
-  // CHECK-COUNT-3: dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
+  // CHECK: sycl::group_barrier(item_ct1.ext_oneapi_get_root_group());
+  // CHECK-NEXT: sycl::group_barrier(cgg);
+  // CHECK-NEXT: sycl::group_barrier(gg);
   cg::this_grid().sync();
   cgg.sync();
   gg.sync();

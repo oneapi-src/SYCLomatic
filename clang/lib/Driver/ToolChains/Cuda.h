@@ -70,6 +70,7 @@ public:
   /// validate whether FilePath is the directory of CUDA header files
   bool validateCudaHeaderDirectory(const std::string &FilePath,
                                    const Driver &D);
+  void ParseThrustVersionFile(const std::string &FilePath);
 #endif // SYCLomatic_CUSTOMIZATION
   /// Print information about the detected CUDA installation.
   void print(raw_ostream &OS) const;
@@ -96,6 +97,9 @@ public:
 #ifdef SYCLomatic_CUSTOMIZATION
 private:
   bool ParseCudaVersionFile(const std::string &FilePath);
+  bool IsWhiteSpace(const char Character) const;
+  bool FindTargetVersion(const std::string &Line, const std::string DefineStr,
+                         const std::string VersionStr, std::string &Result);
 #endif // SYCLomatic_CUSTOMIZATION
 };
 
