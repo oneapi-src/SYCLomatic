@@ -61,8 +61,8 @@ void foo() {
   cudaStream_t stream;
   //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize));
   //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize));
-  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize, dpct::automatic, *stream, true));
-  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize, dpct::automatic, *stream, true));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize, dpct::cs::memcpy_direction::automatic, *stream, true));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, incy, incx, 1, n, elemSize, dpct::cs::memcpy_direction::automatic, *stream, true));
   status = cublasSetVector_64(n, elemSize, A_s, incx, C_s, incy);
   status = cublasGetVector_64(n, elemSize, A_s, incx, C_s, incy);
   status = cublasSetVectorAsync_64(n, elemSize, A_s, incx, C_s, incy, stream);
@@ -70,8 +70,8 @@ void foo() {
 
   //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize));
   //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize));
-  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize, dpct::automatic, *stream, true));
-  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize, dpct::automatic, *stream, true));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize, dpct::cs::memcpy_direction::automatic, *stream, true));
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::matrix_mem_copy(C_s, A_s, ldb, lda, m, n, elemSize, dpct::cs::memcpy_direction::automatic, *stream, true));
   status = cublasSetMatrix_64(m, n, elemSize, A_s, lda, C_s, ldb);
   status = cublasGetMatrix_64(m, n, elemSize, A_s, lda, C_s, ldb);
   status = cublasSetMatrixAsync_64(m, n, elemSize, A_s, lda, C_s, ldb, stream);

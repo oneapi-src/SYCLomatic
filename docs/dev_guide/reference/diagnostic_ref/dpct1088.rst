@@ -54,7 +54,7 @@ results in the following migrated SYCL code:
      code.
      */
      #define TB(b)                                                                  \
-       auto b = sycl::ext::oneapi::experimental::this_group<                        \
+       auto b = sycl::ext::oneapi::this_work_item::get_work_group<                        \
            dpct_placeholder /* Fix the dimension manually */>();
      
      void test1() {
@@ -88,7 +88,7 @@ which is manually adjusted to:
    :linenos:
 
      #define TB(b, d)                                                                  \
-       auto b = sycl::ext::oneapi::experimental::this_group<d>();
+       auto b = sycl::ext::oneapi::this_work_item::get_work_group<d>();
      
      void test1() {
        TB(b, 3);
