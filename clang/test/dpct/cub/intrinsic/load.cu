@@ -11,12 +11,12 @@
 
 __global__ void TestLoadStriped(int *d_data) {
   int thread_data[4];
-  // CHECK: dpct::group::load_direct_striped<128>(item_ct1.get_local_id(2), d_data, thread_data);
+  // CHECK: dpct::group::load_direct_striped(item_ct1, d_data, thread_data);
   cub::LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
 }
 
 __global__ void BlockedToStripedKernel(int *d_data) {
   int thread_data[4];
-  // CHECK: dpct::group::load_direct_blocked(item_ct1.get_local_id(2), d_data, thread_data);
+  // CHECK: dpct::group::load_direct_blocked(item_ct1, d_data, thread_data);
   cub::LoadDirectBlocked(threadIdx.x, d_data, thread_data);
 }

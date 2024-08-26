@@ -25,13 +25,13 @@ RewriterMap dpct::createDevicePartitionRewriterMap() {
                                makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                   CALL_FACTORY_ENTRY(
                       "cub::DevicePartition::Flagged",
-                      CALL(MapNames::getDpctNamespace() + "partition_flagged",
+                      CALL(MapNames::getLibraryHelperNamespace() + "partition_flagged",
                            CALL("oneapi::dpl::execution::device_policy",
                                 STREAM(7)),
                            ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
                   CALL_FACTORY_ENTRY(
                       "cub::DevicePartition::Flagged",
-                      CALL(MapNames::getDpctNamespace() + "partition_flagged",
+                      CALL(MapNames::getLibraryHelperNamespace() + "partition_flagged",
                            CALL("oneapi::dpl::execution::device_policy",
                                 QUEUESTR),
                            ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))))))
@@ -47,7 +47,7 @@ RewriterMap dpct::createDevicePartitionRewriterMap() {
                                      /* IncludeDefaultArg */ false),
                        CALL_FACTORY_ENTRY(
                            "cub::DevicePartition::If",
-                           CALL(MapNames::getDpctNamespace() + "partition_if",
+                           CALL(MapNames::getLibraryHelperNamespace() + "partition_if",
                                 CALL("oneapi::dpl::execution::device_policy",
                                      STREAM(10)),
                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
@@ -56,7 +56,7 @@ RewriterMap dpct::createDevicePartitionRewriterMap() {
                                      /* IncludeDefaultArg */ false),
                        CALL_FACTORY_ENTRY(
                            "cub::DevicePartition::If",
-                           CALL(MapNames::getDpctNamespace() + "partition_if",
+                           CALL(MapNames::getLibraryHelperNamespace() + "partition_if",
                                 CALL("oneapi::dpl::execution::device_policy",
                                      QUEUESTR),
                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
@@ -65,14 +65,14 @@ RewriterMap dpct::createDevicePartitionRewriterMap() {
                                      /* IncludeDefaultArg */ false),
                        CALL_FACTORY_ENTRY(
                            "cub::DevicePartition::If",
-                           CALL(MapNames::getDpctNamespace() + "partition_if",
+                           CALL(MapNames::getLibraryHelperNamespace() + "partition_if",
                                 CALL("oneapi::dpl::execution::device_policy",
                                      STREAM(7)),
                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))),
 
                   OTHERWISE(CALL_FACTORY_ENTRY(
                       "cub::DevicePartition::If",
-                      CALL(MapNames::getDpctNamespace() + "partition_if",
+                      CALL(MapNames::getLibraryHelperNamespace() + "partition_if",
                            CALL("oneapi::dpl::execution::device_policy",
                                 QUEUESTR),
                            ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))

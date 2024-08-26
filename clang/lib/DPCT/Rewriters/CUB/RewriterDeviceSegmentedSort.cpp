@@ -156,7 +156,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedSort::SortPairs",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_pairs",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -166,7 +166,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                           LITERAL("true")))),
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedSort::SortPairs",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "segmented_sort_pairs",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -182,7 +182,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                        CheckArgIsDefaultCudaStream(10))),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedSort::SortPairs",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -192,7 +192,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                         LITERAL("false")))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedSort::SortPairs",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -221,7 +221,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                     CALL_FACTORY_ENTRY(
                                         "cub::DeviceSegmentedSort::"
                                         "SortPairsDescending",
-                                        CALL(MapNames::getDpctNamespace() +
+                                        CALL(MapNames::getLibraryHelperNamespace() +
                                                  "segmented_sort_pairs",
                                              CALL("oneapi::dpl::execution::"
                                                   "device_policy",
@@ -232,7 +232,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                OTHERWISE(CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedSort::"
                                    "SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -249,7 +249,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedSort::"
                                    "SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -259,7 +259,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                         LITERAL("true")))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedSort::SortPairsDescending",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -405,7 +405,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedSort::StableSortPairs",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(10)),
@@ -417,7 +417,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                CheckParamType(9, "_Bool")),
                            CALL_FACTORY_ENTRY(
                                "cub::DeviceSegmentedSort::StableSortPairs",
-                               CALL(MapNames::getDpctNamespace() +
+                               CALL(MapNames::getLibraryHelperNamespace() +
                                         "segmented_sort_pairs",
                                     CALL("oneapi::dpl::execution::device_"
                                          "policy",
@@ -430,7 +430,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedSort::StableSortPairs",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -441,7 +441,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedSort::StableSortPairs",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_"
                                         "policy",
@@ -450,7 +450,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                    ARG(7), LITERAL("false"), LITERAL("true")))),
                       OTHERWISE(CALL_FACTORY_ENTRY(
                           "cub::DeviceSegmentedSort::StableSortPairs",
-                          CALL(MapNames::getDpctNamespace() +
+                          CALL(MapNames::getLibraryHelperNamespace() +
                                    "segmented_sort_pairs",
                                CALL("oneapi::dpl::execution::device_policy",
                                     QUEUESTR),
@@ -473,7 +473,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedSort::"
                               "StableSortPairsDescending",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(10)),
@@ -486,7 +486,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                            CALL_FACTORY_ENTRY(
                                "cub::DeviceSegmentedSort::"
                                "StableSortPairsDescending",
-                               CALL(MapNames::getDpctNamespace() +
+                               CALL(MapNames::getLibraryHelperNamespace() +
                                         "segmented_sort_pairs",
                                     CALL("oneapi::dpl::execution::device_"
                                          "policy",
@@ -499,7 +499,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedSort::"
                               "StableSortPairsDescending",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -510,7 +510,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                            CALL_FACTORY_ENTRY(
                                "cub::DeviceSegmentedSort::"
                                "StableSortPairsDescending",
-                               CALL(MapNames::getDpctNamespace() +
+                               CALL(MapNames::getLibraryHelperNamespace() +
                                         "segmented_sort_pairs",
                                     CALL("oneapi::dpl::execution::device_"
                                          "policy",
@@ -519,7 +519,7 @@ RewriterMap dpct::createDeviceSegmentedSortRewriterMap() {
                                     ARG(7), LITERAL("true"), LITERAL("true")))),
                       OTHERWISE(CALL_FACTORY_ENTRY(
                           "cub::DeviceSegmentedSort::StableSortPairsDescending",
-                          CALL(MapNames::getDpctNamespace() +
+                          CALL(MapNames::getLibraryHelperNamespace() +
                                    "segmented_sort_pairs",
                                CALL("oneapi::dpl::execution::device_policy",
                                     QUEUESTR),

@@ -22,7 +22,7 @@ public:
       : Arg(std::forward<ArgT>(Arg)), DataType(DataType) {}
   template <class StreamT> void print(StreamT &Stream) const {
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      Stream << MapNames::getDpctNamespace() << "rvalue_ref_to_lvalue_ref("
+      Stream << MapNames::getLibraryHelperNamespace() << "rvalue_ref_to_lvalue_ref("
              << MapNames::getDpctNamespace() << "get_buffer<" << DataType
              << ">(";
       clang::dpct::print(Stream, Arg);
@@ -76,7 +76,7 @@ public:
         clang::dpct::print(Stream, Sub);
       }
     } else {
-      Stream << MapNames::getDpctNamespace() << "get_value(";
+      Stream << MapNames::getLibraryHelperNamespace() << "get_value(";
       clang::dpct::print(Stream, Arg);
       Stream << ", ";
       if (needExtraParensInMemberExpr(Handle)) {

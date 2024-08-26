@@ -2437,6 +2437,7 @@
       In: -static-libstdc++
       Out: ""
       MatchMode: Full
+      Warning: "-static-libstdc++"
 
 - Rule: rule_target_link_directories
   Kind: CMakeRule

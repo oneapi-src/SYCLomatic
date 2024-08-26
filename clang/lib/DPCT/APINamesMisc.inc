@@ -130,3 +130,6 @@ REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStop",
 
 REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuFuncSetAttribute",
                          getRemovedAPIWarningMessage("cuFuncSetAttribute"))
+
+REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuGetExportTable",
+                         getRemovedAPIWarningMessage("cuGetExportTable"))
