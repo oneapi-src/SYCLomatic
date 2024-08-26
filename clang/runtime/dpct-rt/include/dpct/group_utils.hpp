@@ -712,7 +712,7 @@ enum class load_algorithm {
 
   BLOCK_LOAD_DIRECT,
   BLOCK_LOAD_STRIPED,
-
+};
 // loads a linear segment of workgroup items into a blocked arrangement.
 template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename InputIteratorT,
           typename Item>
