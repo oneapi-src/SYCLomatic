@@ -171,6 +171,8 @@ void DpctOptionBase::init() {
       continue;
     Option->setExclusiveByAction();
   }
+  setExclusive(DpctOptionNameKind::OPT_UseSYCLCompat,
+               DpctOptionNameKind::OPT_GenHelperFunction);
   setDependency(DpctOptionNameKind::OPT_ProcessAll,
                 DpctOptionNameKind::OPT_InRoot);
   setDependency(DpctOptionNameKind::OPT_BuildScriptFile,

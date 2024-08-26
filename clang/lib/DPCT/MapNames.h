@@ -43,13 +43,15 @@ class MapNames {
   static std::vector<std::string> DpctNamespace;
 
 public:
-  static void setExplicitNamespaceMap();
+  static void setExplicitNamespaceMap(
+      const std::set<ExplicitNamespace> &ExplicitNamespaces);
   // KeepNamespace = true for function or type that need avoid ambiguous.
   // Example: sycl::exception <--> std::exception
   // IsMathFunc = true for namespace before math functions.
   // Example: sycl::exp
   static std::string getClNamespace(bool KeepNamespace = false,
                                     bool IsMathFunc = false);
+  static std::string getExpNamespace(bool KeepNamespace = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
 
   struct SOLVERFuncReplInfo {

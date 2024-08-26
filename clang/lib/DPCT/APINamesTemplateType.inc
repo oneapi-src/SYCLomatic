@@ -375,6 +375,15 @@ TYPE_REWRITE_ENTRY(
                          "ext::oneapi::experimental::opportunistic_group")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=non-uniform-groups"))))
+TYPE_REWRITE_ENTRY(
+    "cooperative_groups::__v1::grid_group",
+    TYPE_CONDITIONAL_FACTORY(
+        isUseRootGroupForType(),
+        TYPE_FACTORY(STR(MapNames::getExpNamespace() + "root_group")),
+        TYPE_CONDITIONAL_FACTORY(
+            isUseNdRangeBarrier(), TYPE_FACTORY(STR("")),
+            WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                            STR("--use-experimental-features=root-group")))))
 
 TYPE_REWRITE_ENTRY(
     "cooperative_groups::__v1::thread_block_tile",
