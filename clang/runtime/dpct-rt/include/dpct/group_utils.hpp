@@ -883,7 +883,7 @@ store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
   // This implementation does not take in account range storing across
   // workgroup items To-do: Decide whether range storing is required for group
   // loading
-  // This implementation loads linear segments into warp striped arrangement.
+  // This implementation loads linear segments into subgroup striped arrangement.
   auto sub_group = item.get_sub_group();
   uint32_t subgroup_offset = sub_group.get_local_linear_id();
   uint32_t subgroup_size = sub_group.get_local_linear_range();
