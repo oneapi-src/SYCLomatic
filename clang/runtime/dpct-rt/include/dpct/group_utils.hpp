@@ -874,11 +874,11 @@ uninitialized_load_subgroup_striped(const Item &item, InputIteratorT block_itr,
 // Created as free function until exchange mechanism is
 // implemented.
 // To-do: inline this function with BLOCK_STORE_WARP_TRANSPOSE mechanism
-template <size_t ITEMS_PER_WORK_ITEM, typename InputT, typename OutputIteratorT,
-          typename Item>
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
 __dpct_inline__ void
-store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
-                       InputT (&items)[ITEMS_PER_WORK_ITEM]) {
+store_subgroup_striped(const ItemT &item, OutputIteratorT block_itr,
+                       T (&data)[ElementsPerWorkItem]) {
 
   // This implementation does not take in account range storing across
   // workgroup items To-do: Decide whether range storing is required for group
@@ -889,11 +889,11 @@ store_subgroup_striped(const Item &item, OutputIteratorT block_itr,
   uint32_t subgroup_size = sub_group.get_local_linear_range();
   uint32_t subgroup_idx = sub_group.get_group_linear_id();
   uint32_t initial_offset =
-      (subgroup_idx * ITEMS_PER_WORK_ITEM * subgroup_size) + subgroup_offset;
+      (subgroup_idx * ElementsPerWorkItem * subgroup_size) + subgroup_offset;
   OutputIteratorT workitem_itr = block_itr + initial_offset;
 #pragma unroll
-  for (uint32_t idx = 0; idx < ITEMS_PER_WORK_ITEM; idx++) {
-    workitem_itr[(idx * subgroup_size)] = items[idx];
+  for (uint32_t idx = 0; idx < ElementsPerWorkItem; idx++) {
+    workitem_itr[(idx * subgroup_size)] = data[idx];
   }
 }
   
