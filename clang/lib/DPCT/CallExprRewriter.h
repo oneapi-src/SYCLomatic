@@ -335,9 +335,9 @@ public:
       if ((CheckAssigned && IsAssigned) || (CheckInRetStmt && IsInRetStmt)) {
         if (UseDpctCheckError) {
           if (ExtraParen) {
-            return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+            return MapNames::getCheckErrorMacroName() + "((" + Result.value() + "))";
           }
-          return "DPCT_CHECK_ERROR(" + Result.value() + ")";
+          return MapNames::getCheckErrorMacroName() + "(" + Result.value() + ")";
         } else {
           if (ExtraParen) {
             return "[&](){ (" + Result.value() + "); }()";

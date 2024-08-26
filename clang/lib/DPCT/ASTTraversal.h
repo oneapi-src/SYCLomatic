@@ -369,7 +369,7 @@ protected:
       }
       if (Flags.IsAssigned) {
         insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd,
-                          "DPCT_CHECK_ERROR(", ")");
+                          MapNames::getCheckErrorMacroName() + "(", ")");
         requestFeature(HelperFeatureEnum::device_ext);
       }
 
@@ -1061,7 +1061,7 @@ public:
       emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
                                             std::move(CallExprReplStr)));
       if (IsAssigned) {
-        insertAroundRange(FuncNameBegin, FuncCallEnd, "DPCT_CHECK_ERROR(", ")");
+        insertAroundRange(FuncNameBegin, FuncCallEnd, MapNames::getCheckErrorMacroName() + "(", ")");
         requestFeature(HelperFeatureEnum::device_ext);
       }
     }

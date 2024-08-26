@@ -54,6 +54,7 @@ public:
   static std::string getExpNamespace(bool KeepNamespace = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
   static const std::string &getLibraryHelperNamespace();
+  static const std::string &getCheckErrorMacroName();
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
