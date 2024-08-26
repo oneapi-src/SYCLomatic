@@ -603,6 +603,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
+      REPLACE_ENUM(MapNames::CUBEnumsMap);
 #undef REPLACE_ENUM
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
