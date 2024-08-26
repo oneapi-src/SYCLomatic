@@ -1097,7 +1097,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   }
 
   auto RewriteType = [&](std::string &TypeStr, const TypeLoc &TLoc) {
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TypeStr);
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TLoc);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
       auto Rewriter = Itr->second->create(TLoc);
       auto Result = Rewriter->rewrite();
@@ -1144,11 +1144,10 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     auto PP = Context.getPrintingPolicy();
     PP.PrintCanonicalTypes = 1;
-    PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-                        TSTL.getTypePtr()->getTemplateName());
+    PrintFullTemplateName(OS, PP, TSTL.getTypePtr()->getTemplateName());
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TL);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
       auto Rewriter = Itr->second->create(TSTL);
       auto Result = Rewriter->rewrite();

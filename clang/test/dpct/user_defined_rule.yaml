@@ -143,3 +143,11 @@
   Out: filtergoo2($1)
   APIRestrictCondition:
     ArgCount: -4
+- Rule: type_template
+  Kind: Type
+  Priority: Takeover
+  In: MyClass
+  Out: MyClass2<$template_arg($1)>
+  Includes: []
+  Attributes:
+    NumOfTemplateArgs: 1
