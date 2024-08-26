@@ -381,8 +381,8 @@ public:
 #endif
 
 template <typename Tx, typename Tr>
-inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
-                         void *result) {
+inline void nrm2_impl(sycl::queue &q, std::int64_t n, const void *x,
+                      std::int64_t incx, void *result) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
@@ -1290,51 +1290,6 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
   std::vector<void *> ptrs{scratchpad, a_shared, tau_shared};
   ::dpct::cs::enqueue_free(ptrs, {e}, exec_queue);
 #endif
-}
-
-/// Computes the Euclidean norm of a vector.
-/// \param [in] q The queue where the routine should be executed.
-/// \param [in] n Number of elements in vector x.
-/// \param [in] x Input vector x.
-/// \param [in] x_type Data type of the vector x.
-/// \param [in] incx Stride of vector x.
-/// \param [out] result The result scalar.
-/// \param [in] result_type Data type of the result.
-inline void nrm2(sycl::queue &q, int n, const void *x, library_data_t x_type,
-                    int incx, void *result, library_data_t result_type) {
-  std::uint64_t key = detail::get_type_combination_id(x_type, result_type);
-  switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                       library_data_t::real_float): {
-    detail::nrm2_impl<float, float>(q, n, x, incx, result);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                       library_data_t::real_double): {
-    detail::nrm2_impl<double, double>(q, n, x, incx, result);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                       library_data_t::real_float): {
-    detail::nrm2_impl<std::complex<float>, float>(
-        q, n, x, incx, result);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                       library_data_t::real_double): {
-    detail::nrm2_impl<std::complex<double>, double>(
-        q, n, x, incx, result);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_half,
-                       library_data_t::real_half): {
-    detail::nrm2_impl<sycl::half, sycl::half>(
-        q, n, x, incx, result);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
 }
 
 /// Computes the dot product of two vectors.
@@ -2280,6 +2235,50 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                                         data_c, ldc DPCT_COMPUTE_MODE_ARG);
 }
 
+/// Computes the Euclidean norm of a vector.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] result The result scalar.
+/// \param [in] result_type Data type of the result.
+inline void nrm2(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
+                 library_data_t x_type, std::int64_t incx, void *result,
+                 library_data_t result_type) {
+  sycl::queue q = desc_ptr->get_queue();
+  std::uint64_t key = detail::get_type_combination_id(x_type, result_type);
+  switch (key) {
+  case detail::get_type_combination_id(library_data_t::real_float,
+                                       library_data_t::real_float): {
+    detail::nrm2_impl<float, float>(q, n, x, incx, result);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_double,
+                                       library_data_t::real_double): {
+    detail::nrm2_impl<double, double>(q, n, x, incx, result);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float,
+                                       library_data_t::real_float): {
+    detail::nrm2_impl<std::complex<float>, float>(q, n, x, incx, result);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double,
+                                       library_data_t::real_double): {
+    detail::nrm2_impl<std::complex<double>, double>(q, n, x, incx, result);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_half,
+                                       library_data_t::real_half): {
+    detail::nrm2_impl<sycl::half, sycl::half>(q, n, x, incx, result);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
 /// Finds the least squares solutions for a batch of overdetermined linear
 /// systems. Uses the QR factorization to solve a grouped batch of linear
 /// systems with full rank matrices.
@@ -2579,6 +2578,21 @@ trmm(sycl::queue &q, oneapi::mkl::side left_right,
   desc.set_queue(&q);
   blas::trmm<T>(&desc, left_right, upper_lower, trans, unit_diag, m, n, alpha,
                 a, lda, b, ldb, c, ldc);
+}
+
+/// Computes the Euclidean norm of a vector.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] result The result scalar.
+/// \param [in] result_type Data type of the result.
+inline void nrm2(sycl::queue &q, int n, const void *x, library_data_t x_type,
+                 int incx, void *result, library_data_t result_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::nrm2(&desc, n, x, x_type, incx, result, result_type);
 }
 } // namespace dpct
 #undef DPCT_COMPUTE_MODE_ARG
