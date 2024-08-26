@@ -26,6 +26,10 @@
 #define DPCT_HEADER(Name, Spelling) HEADER(DPCT_ ## Name, Spelling)
 #endif
 
+#ifndef COMPAT_HEADER
+#define COMPAT_HEADER(Name, Spelling) HEADER(COMPAT_ ## Name, Spelling)
+#endif
+
 STD_HEADER(SYCL, "<sycl/sycl.hpp>")
 STD_HEADER(Math, "<cmath>")
 STD_HEADER(Algorithm, "<algorithm>")
@@ -75,7 +79,11 @@ DPCT_HEADER(CodePin_SYCL, "<dpct/codepin/codepin.hpp>")
 DPCT_HEADER(CodePin_CUDA, "<dpct/codepin/codepin.hpp>")
 DPCT_HEADER(Graph, "<dpct/graph.hpp>")
 
+COMPAT_HEADER(SYCLcompat, "<syclcompat/syclcompat.hpp>")
+
 #undef MKL_HEADER
 #undef ONEDPL_HEADER
 #undef STD_HEADER
+#undef DPCT_HEADER
+#undef COMPAT_HEADER
 #undef HEADER
