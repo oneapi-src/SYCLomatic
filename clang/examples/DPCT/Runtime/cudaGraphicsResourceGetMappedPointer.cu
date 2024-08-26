@@ -3,7 +3,7 @@
 void test(void *ptr, size_t *s, cudaGraphicsResource_t r) {
   // Start
   cudaGraphicsResourceGetMappedPointer(&ptr /*void ***/,
-                                        s /*size_t **/,
-                                        r /*cudaGraphicsResource_t*/);
+                                       s /*size_t **/,
+                                       r /*cudaGraphicsResource_t*/);
   // End
 }
