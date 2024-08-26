@@ -122,43 +122,85 @@ GEMM(cublasZgemm_v2_64, "std::complex<double>", true)
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasNrm2Ex",
-                       CALL(MapNames::getLibraryHelperNamespace() + "nrm2", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+    CALL_FACTORY_ENTRY(
+        "cublasNrm2Ex",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::nrm2", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasNrm2Ex_64",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::nrm2", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasDotEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "dot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9)))))
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::dot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasDotEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::dot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasDotcEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "dotc", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9)))))
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::dotc",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasDotcEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::dotc",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasScalEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "scal", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+    CALL_FACTORY_ENTRY(
+        "cublasScalEx",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::scal", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasScalEx_64",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::scal", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasAxpyEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "axpy", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9)))))
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::axpy",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasAxpyEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::axpy",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasRotEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9), ARG(10)))))
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::rot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9), ARG(10)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasRotEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::rot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9), ARG(10)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

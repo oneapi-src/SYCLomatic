@@ -474,4 +474,27 @@ void foo() {
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::herk(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc));
   status = cublasCherkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc);
   status = cublasZherkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc);
+
+  cudaDataType type_x;
+  cudaDataType type_y;
+  cudaDataType type_res;
+  cudaDataType type_exec;
+  cudaDataType type_alpha;
+  cudaDataType type_cs;
+  void *res;
+  void *x;
+  void *y;
+  void *alpha;
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::nrm2(handle, n, x, type_x, incx, res, type_res));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::dot(handle, n, x, type_x, incx, y, type_y, incy, res, type_res));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::dotc(handle, n, x, type_x, incx, y, type_y, incy, res, type_res));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::scal(handle, n, alpha, type_alpha, x, type_x, incx));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::axpy(handle, n, alpha, type_alpha, x, type_x, incx, y, type_y, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::rot(handle, n, x, type_x, incx, y, type_y, incy, c, s, type_cs));
+  status = cublasNrm2Ex_64(handle, n, x, type_x, incx, res, type_res, type_exec);
+  status = cublasDotEx_64(handle, n, x, type_x, incx, y, type_y, incy, res, type_res, type_exec);
+  status = cublasDotcEx_64(handle, n, x, type_x, incx, y, type_y, incy, res, type_res, type_exec);
+  status = cublasScalEx_64(handle, n, alpha, type_alpha, x, type_x, incx, type_exec);
+  status = cublasAxpyEx_64(handle, n, alpha, type_alpha, x, type_x, incx, y, type_y, incy, type_exec);
+  status = cublasRotEx_64(handle, n, x, type_x, incx, y, type_y, incy, c, s, type_cs, type_exec);
 }

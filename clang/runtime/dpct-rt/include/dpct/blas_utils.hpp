@@ -403,8 +403,9 @@ inline void nrm2_impl(sycl::queue &q, std::int64_t n, const void *x,
 }
 
 template <bool is_conjugate, class Txy, class Tr>
-inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
-                          const Txy *y, int incy, Tr *result) {
+inline void dotuc_impl(sycl::queue &q, std::int64_t n, const Txy *x,
+                       std::int64_t incx, const Txy *y, std::int64_t incy,
+                       Tr *result) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
@@ -431,41 +432,45 @@ inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
   if constexpr (std::is_same_v<Txy, std::complex<float>> ||
                 std::is_same_v<Txy, std::complex<double>>) {
     if constexpr (is_conjugate)
-      oneapi::mkl::blas::column_major::dotc(q, n, x, incx, y, incy, res_mem.get_ptr());
+      oneapi::mkl::blas::column_major::dotc(q, n, x, incx, y, incy,
+                                            res_mem.get_ptr());
     else
-      oneapi::mkl::blas::column_major::dotu(q, n, x, incx, y, incy, res_mem.get_ptr());
+      oneapi::mkl::blas::column_major::dotu(q, n, x, incx, y, incy,
+                                            res_mem.get_ptr());
   } else
-    oneapi::mkl::blas::column_major::dot(q, n, x, incx, y, incy, res_mem.get_ptr());
+    oneapi::mkl::blas::column_major::dot(q, n, x, incx, y, incy,
+                                         res_mem.get_ptr());
 #endif
 #endif
 }
 
 template <bool is_conjugate>
-inline void dotuc(sycl::queue &q, int n, const void *x,
-                     library_data_t x_type, int incx, const void *y,
-                     library_data_t y_type, int incy, void *result,
-                     library_data_t result_type) {
-  std::uint64_t key = detail::get_type_combination_id(x_type, y_type, result_type);
+inline void dotuc(sycl::queue &q, std::int64_t n, const void *x,
+                  library_data_t x_type, std::int64_t incx, const void *y,
+                  library_data_t y_type, std::int64_t incy, void *result,
+                  library_data_t result_type) {
+  std::uint64_t key =
+      detail::get_type_combination_id(x_type, y_type, result_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float, library_data_t::real_float,
-                       library_data_t::real_float): {
-    detail::dotuc_impl<is_conjugate>(
-        q, n, reinterpret_cast<const float *>(x), incx,
-        reinterpret_cast<const float *>(y), incy,
-        reinterpret_cast<float *>(result));
+  case detail::get_type_combination_id(library_data_t::real_float,
+                                       library_data_t::real_float,
+                                       library_data_t::real_float): {
+    detail::dotuc_impl<is_conjugate>(q, n, reinterpret_cast<const float *>(x),
+                                     incx, reinterpret_cast<const float *>(y),
+                                     incy, reinterpret_cast<float *>(result));
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double, library_data_t::real_double,
-                       library_data_t::real_double): {
-    detail::dotuc_impl<is_conjugate>(
-        q, n, reinterpret_cast<const double *>(x), incx,
-        reinterpret_cast<const double *>(y), incy,
-        reinterpret_cast<double *>(result));
+  case detail::get_type_combination_id(library_data_t::real_double,
+                                       library_data_t::real_double,
+                                       library_data_t::real_double): {
+    detail::dotuc_impl<is_conjugate>(q, n, reinterpret_cast<const double *>(x),
+                                     incx, reinterpret_cast<const double *>(y),
+                                     incy, reinterpret_cast<double *>(result));
     break;
   }
   case detail::get_type_combination_id(library_data_t::complex_float,
-                       library_data_t::complex_float,
-                       library_data_t::complex_float): {
+                                       library_data_t::complex_float,
+                                       library_data_t::complex_float): {
     detail::dotuc_impl<is_conjugate>(
         q, n, reinterpret_cast<const std::complex<float> *>(x), incx,
         reinterpret_cast<const std::complex<float> *>(y), incy,
@@ -473,16 +478,17 @@ inline void dotuc(sycl::queue &q, int n, const void *x,
     break;
   }
   case detail::get_type_combination_id(library_data_t::complex_double,
-                       library_data_t::complex_double,
-                       library_data_t::complex_double): {
+                                       library_data_t::complex_double,
+                                       library_data_t::complex_double): {
     detail::dotuc_impl<is_conjugate>(
         q, n, reinterpret_cast<const std::complex<double> *>(x), incx,
         reinterpret_cast<const std::complex<double> *>(y), incy,
         reinterpret_cast<std::complex<double> *>(result));
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half, library_data_t::real_half,
-                       library_data_t::real_half): {
+  case detail::get_type_combination_id(library_data_t::real_half,
+                                       library_data_t::real_half,
+                                       library_data_t::real_half): {
     detail::dotuc_impl<is_conjugate>(
         q, n, reinterpret_cast<const sycl::half *>(x), incx,
         reinterpret_cast<const sycl::half *>(y), incy,
@@ -495,22 +501,22 @@ inline void dotuc(sycl::queue &q, int n, const void *x,
 }
 
 template <class Tx, class Te>
-inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
-                         int incx) {
+inline void scal_impl(sycl::queue &q, std::int64_t n, const void *alpha,
+                      void *x, std::int64_t incx) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
 #else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory<Tx>(x);
-  oneapi::mkl::blas::column_major::scal(q, n, alpha_val,
-                                        data_x, incx);
+  oneapi::mkl::blas::column_major::scal(q, n, alpha_val, data_x, incx);
 #endif
 }
 
 template <class Txy, class Te>
-inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
-                        int incx, void *y, int incy) {
+inline void axpy_impl(sycl::queue &q, std::int64_t n, const void *alpha,
+                      const void *x, std::int64_t incx, void *y,
+                      std::int64_t incy) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
@@ -518,15 +524,14 @@ inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory<const Txy>(x);
   auto data_y = get_memory<Txy>(y);
-  oneapi::mkl::blas::column_major::axpy(q, n, alpha_val,
-                                        data_x, incx,
-                                        data_y, incy);
+  oneapi::mkl::blas::column_major::axpy(q, n, alpha_val, data_x, incx, data_y,
+                                        incy);
 #endif
 }
 
 template <class Txy, class Tc, class Ts>
-inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
-                        int incy, const void *c, const void *s) {
+inline void rot_impl(sycl::queue &q, std::int64_t n, void *x, std::int64_t incx,
+                     void *y, std::int64_t incy, const void *c, const void *s) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
@@ -535,9 +540,8 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
   Ts s_value = dpct::get_value(reinterpret_cast<const Ts *>(s), q);
   auto data_x = get_memory<Txy>(x);
   auto data_y = get_memory<Txy>(y);
-  oneapi::mkl::blas::column_major::rot(q, n, data_x, incx,
-                                       data_y, incy, c_value,
-                                       s_value);
+  oneapi::mkl::blas::column_major::rot(q, n, data_x, incx, data_y, incy,
+                                       c_value, s_value);
 #endif
 }
 
@@ -1290,200 +1294,6 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
   std::vector<void *> ptrs{scratchpad, a_shared, tau_shared};
   ::dpct::cs::enqueue_free(ptrs, {e}, exec_queue);
 #endif
-}
-
-/// Computes the dot product of two vectors.
-/// \param [in] q The queue where the routine should be executed.
-/// \param [in] n Number of elements in vector x.
-/// \param [in] x Input vector x.
-/// \param [in] x_type Data type of the vector x.
-/// \param [in] incx Stride of vector x.
-/// \param [in] y Input vector y.
-/// \param [in] y_type Data type of the vector y.
-/// \param [in] incy Stride of vector y.
-/// \param [out] result The result scalar.
-/// \param [in] result_type Data type of the result.
-inline void dot(sycl::queue &q, int n, const void *x, library_data_t x_type,
-                   int incx, const void *y, library_data_t y_type, int incy,
-                   void *result, library_data_t result_type) {
-  detail::dotuc<false>(q, n, x, x_type, incx, y, y_type, incy, result,
-                          result_type);
-}
-
-/// Computes the dot product of two vectors, conjugating the first vector.
-/// \param [in] q The queue where the routine should be executed.
-/// \param [in] n Number of elements in vector x.
-/// \param [in] x Input vector x.
-/// \param [in] x_type Data type of the vector x.
-/// \param [in] incx Stride of vector x.
-/// \param [in] y Input vector y.
-/// \param [in] y_type Data type of the vector y.
-/// \param [in] incy Stride of vector y.
-/// \param [out] result The result scalar.
-/// \param [in] result_type Data type of the result.
-inline void dotc(sycl::queue &q, int n, const void *x, library_data_t x_type,
-                    int incx, const void *y, library_data_t y_type, int incy,
-                    void *result, library_data_t result_type) {
-  detail::dotuc<true>(q, n, x, x_type, incx, y, y_type, incy, result,
-                         result_type);
-}
-
-/// Computes the product of a vector by a scalar.
-/// \param [in] q The queue where the routine should be executed.
-/// \param [in] n Number of elements in vector x.
-/// \param [in] alpha The scale factor alpha.
-/// \param [in] alpha_type The data type of alpha.
-/// \param [in, out] x Input/Output vector x.
-/// \param [in] x_type Data type of the vector x.
-/// \param [in] incx Stride of vector x.
-inline void scal(sycl::queue &q, int n, const void *alpha,
-                    library_data_t alpha_type, void *x, library_data_t x_type,
-                    int incx) {
-  std::uint64_t key = detail::get_type_combination_id(x_type);
-  switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float): {
-    detail::scal_impl<float, float>(q, n, alpha, x, incx);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_double): {
-    detail::scal_impl<double, double>(q, n, alpha, x, incx);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_float): {
-    detail::scal_impl<std::complex<float>, std::complex<float>>(q, n, alpha,
-                                                                   x, incx);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_double): {
-    detail::scal_impl<std::complex<double>, std::complex<double>>(
-        q, n, alpha, x, incx);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_half): {
-    float alpha_value =
-        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
-    sycl::half alaph_half(alpha_value);
-    detail::scal_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
-}
-
-/// Computes a vector-scalar product and adds the result to a vector.
-/// \param [in] q The queue where the routine should be executed.
-/// \param [in] n Number of elements in vector x.
-/// \param [in] alpha The scale factor alpha.
-/// \param [in] alpha_type The data type of alpha.
-/// \param [in] x Input vector x.
-/// \param [in] x_type Data type of the vector x.
-/// \param [in] incx Stride of vector x.
-/// \param [in, out] y Input/Output vector y.
-/// \param [in] y_type Data type of the vector y.
-/// \param [in] incy Stride of vector y.
-inline void axpy(sycl::queue &q, int n, const void *alpha,
-                    library_data_t alpha_type, const void *x, library_data_t x_type,
-                    int incx, void *y, library_data_t y_type, int incy) {
-  std::uint64_t key = detail::get_type_combination_id(x_type, alpha_type);
-  switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                       library_data_t::real_float): {
-    detail::axpy_impl<float, float>(q, n, alpha, x, incx, y, incy);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                       library_data_t::real_double): {
-    detail::axpy_impl<double, double>(q, n, alpha, x, incx, y, incy);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                       library_data_t::complex_float): {
-    detail::axpy_impl<std::complex<float>, std::complex<float>>(
-        q, n, alpha, x, incx, y, incy);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                       library_data_t::complex_double): {
-    detail::axpy_impl<std::complex<double>, std::complex<double>>(
-        q, n, alpha, x, incx, y, incy);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_half,
-                       library_data_t::real_float): {
-    float alpha_value =
-        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
-    sycl::half alaph_half(alpha_value);
-    detail::axpy_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx, y, incy);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
-}
-
-/// Performs rotation of points in the plane.
-/// \param [in] q The queue where the routine should be executed.
-/// \param [in] n Number of elements in vector x.
-/// \param [in, out] x Input/Output vector x.
-/// \param [in] x_type Data type of the vector x.
-/// \param [in] incx Stride of vector x.
-/// \param [in, out] y Input/Output vector y.
-/// \param [in] y_type Data type of the vector y.
-/// \param [in] incy Stride of vector y.
-/// \param [in] c Scaling factor.
-/// \param [in] s Scaling factor.
-/// \param [in] cs_type Data type of the scaling factors.
-inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
-                   int incx, void *y, library_data_t y_type, int incy,
-                   const void *c, const void *s, library_data_t cs_type) {
-  std::uint64_t key = detail::get_type_combination_id(x_type, cs_type);
-  switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                       library_data_t::real_float): {
-    detail::rot_impl<float, float, float>(q, n, x, incx, y, incy, c, s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                       library_data_t::real_double): {
-    detail::rot_impl<double, double, double>(q, n, x, incx, y, incy, c, s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                       library_data_t::real_float): {
-    detail::rot_impl<std::complex<float>, float, float>(q, n, x, incx, y, incy, c,
-                                                    s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                       library_data_t::real_double): {
-    detail::rot_impl<std::complex<double>, double, double>(q, n, x, incx, y, incy, c,
-                                                      s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                       library_data_t::complex_float): {
-    detail::rot_impl<std::complex<float>, float, std::complex<float>>(q, n, x, incx, y, incy, c, s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                       library_data_t::complex_double): {
-    detail::rot_impl<std::complex<double>, double, std::complex<double>>(q, n, x, incx, y, incy, c, s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_half,
-                       library_data_t::real_half): {
-    detail::rot_impl<sycl::half, sycl::half, sycl::half>(q, n, x, incx, y, incy, c, s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_bfloat16,
-                       library_data_t::real_bfloat16): {
-    detail::rot_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, oneapi::mkl::bfloat16>(q, n, x, incx, y, incy, c, s);
-    break;
-  }
-  default:
-    throw std::runtime_error("the combination of data type is unsupported");
-  }
 }
 
 namespace blas {
@@ -2279,6 +2089,214 @@ inline void nrm2(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
   }
 }
 
+/// Computes the dot product of two vectors.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in] y Input vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+/// \param [out] result The result scalar.
+/// \param [in] result_type Data type of the result.
+inline void dot(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
+                library_data_t x_type, std::int64_t incx, const void *y,
+                library_data_t y_type, std::int64_t incy, void *result,
+                library_data_t result_type) {
+  sycl::queue q = desc_ptr->get_queue();
+  detail::dotuc<false>(q, n, x, x_type, incx, y, y_type, incy, result,
+                       result_type);
+}
+
+/// Computes the dot product of two vectors, conjugating the first vector.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in] y Input vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+/// \param [out] result The result scalar.
+/// \param [in] result_type Data type of the result.
+inline void dotc(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
+                 library_data_t x_type, std::int64_t incx, const void *y,
+                 library_data_t y_type, std::int64_t incy, void *result,
+                 library_data_t result_type) {
+  sycl::queue q = desc_ptr->get_queue();
+  detail::dotuc<true>(q, n, x, x_type, incx, y, y_type, incy, result,
+                      result_type);
+}
+
+/// Computes the product of a vector by a scalar.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] alpha The scale factor alpha.
+/// \param [in] alpha_type The data type of alpha.
+/// \param [in, out] x Input/Output vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+inline void scal(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
+                 library_data_t alpha_type, void *x, library_data_t x_type,
+                 std::int64_t incx) {
+  sycl::queue q = desc_ptr->get_queue();
+  std::uint64_t key = detail::get_type_combination_id(x_type);
+  switch (key) {
+  case detail::get_type_combination_id(library_data_t::real_float): {
+    detail::scal_impl<float, float>(q, n, alpha, x, incx);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_double): {
+    detail::scal_impl<double, double>(q, n, alpha, x, incx);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float): {
+    detail::scal_impl<std::complex<float>, std::complex<float>>(q, n, alpha, x,
+                                                                incx);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double): {
+    detail::scal_impl<std::complex<double>, std::complex<double>>(q, n, alpha,
+                                                                  x, incx);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_half): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    sycl::half alaph_half(alpha_value);
+    detail::scal_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
+/// Computes a vector-scalar product and adds the result to a vector.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] alpha The scale factor alpha.
+/// \param [in] alpha_type The data type of alpha.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in, out] y Input/Output vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+inline void axpy(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
+                 library_data_t alpha_type, const void *x,
+                 library_data_t x_type, std::int64_t incx, void *y,
+                 library_data_t y_type, std::int64_t incy) {
+  sycl::queue q = desc_ptr->get_queue();
+  std::uint64_t key = detail::get_type_combination_id(x_type, alpha_type);
+  switch (key) {
+  case detail::get_type_combination_id(library_data_t::real_float,
+                                       library_data_t::real_float): {
+    detail::axpy_impl<float, float>(q, n, alpha, x, incx, y, incy);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_double,
+                                       library_data_t::real_double): {
+    detail::axpy_impl<double, double>(q, n, alpha, x, incx, y, incy);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float,
+                                       library_data_t::complex_float): {
+    detail::axpy_impl<std::complex<float>, std::complex<float>>(q, n, alpha, x,
+                                                                incx, y, incy);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double,
+                                       library_data_t::complex_double): {
+    detail::axpy_impl<std::complex<double>, std::complex<double>>(
+        q, n, alpha, x, incx, y, incy);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_half,
+                                       library_data_t::real_float): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    sycl::half alaph_half(alpha_value);
+    detail::axpy_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx, y,
+                                              incy);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
+/// Performs rotation of points in the plane.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in, out] x Input/Output vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in, out] y Input/Output vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+/// \param [in] c Scaling factor.
+/// \param [in] s Scaling factor.
+/// \param [in] cs_type Data type of the scaling factors.
+inline void rot(descriptor_ptr desc_ptr, std::int64_t n, void *x,
+                library_data_t x_type, std::int64_t incx, void *y,
+                library_data_t y_type, std::int64_t incy, const void *c,
+                const void *s, library_data_t cs_type) {
+  sycl::queue q = desc_ptr->get_queue();
+  std::uint64_t key = detail::get_type_combination_id(x_type, cs_type);
+  switch (key) {
+  case detail::get_type_combination_id(library_data_t::real_float,
+                                       library_data_t::real_float): {
+    detail::rot_impl<float, float, float>(q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_double,
+                                       library_data_t::real_double): {
+    detail::rot_impl<double, double, double>(q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float,
+                                       library_data_t::real_float): {
+    detail::rot_impl<std::complex<float>, float, float>(q, n, x, incx, y, incy,
+                                                        c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double,
+                                       library_data_t::real_double): {
+    detail::rot_impl<std::complex<double>, double, double>(q, n, x, incx, y,
+                                                           incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float,
+                                       library_data_t::complex_float): {
+    detail::rot_impl<std::complex<float>, float, std::complex<float>>(
+        q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double,
+                                       library_data_t::complex_double): {
+    detail::rot_impl<std::complex<double>, double, std::complex<double>>(
+        q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_half,
+                                       library_data_t::real_half): {
+    detail::rot_impl<sycl::half, sycl::half, sycl::half>(q, n, x, incx, y, incy,
+                                                         c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_bfloat16,
+                                       library_data_t::real_bfloat16): {
+    detail::rot_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                     oneapi::mkl::bfloat16>(q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
 /// Finds the least squares solutions for a batch of overdetermined linear
 /// systems. Uses the QR factorization to solve a grouped batch of linear
 /// systems with full rank matrices.
@@ -2588,11 +2606,109 @@ trmm(sycl::queue &q, oneapi::mkl::side left_right,
 /// \param [in] incx Stride of vector x.
 /// \param [out] result The result scalar.
 /// \param [in] result_type Data type of the result.
-inline void nrm2(sycl::queue &q, int n, const void *x, library_data_t x_type,
-                 int incx, void *result, library_data_t result_type) {
+[[deprecated("Please use dpct::blas::nrm2(...) instead.")]] inline void
+nrm2(sycl::queue &q, int n, const void *x, library_data_t x_type, int incx,
+     void *result, library_data_t result_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
   blas::nrm2(&desc, n, x, x_type, incx, result, result_type);
+}
+
+/// Computes the dot product of two vectors.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in] y Input vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+/// \param [out] result The result scalar.
+/// \param [in] result_type Data type of the result.
+[[deprecated("Please use dpct::blas::dot(...) instead.")]] inline void
+dot(sycl::queue &q, int n, const void *x, library_data_t x_type, int incx,
+    const void *y, library_data_t y_type, int incy, void *result,
+    library_data_t result_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::dot(q, n, x, x_type, incx, y, y_type, incy, result, result_type);
+}
+
+/// Computes the dot product of two vectors, conjugating the first vector.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in] y Input vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+/// \param [out] result The result scalar.
+/// \param [in] result_type Data type of the result.
+[[deprecated("Please use dpct::blas::dotc(...) instead.")]] inline void
+dotc(sycl::queue &q, int n, const void *x, library_data_t x_type, int incx,
+     const void *y, library_data_t y_type, int incy, void *result,
+     library_data_t result_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::dotc(q, n, x, x_type, incx, y, y_type, incy, result, result_type);
+}
+
+/// Computes the product of a vector by a scalar.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] alpha The scale factor alpha.
+/// \param [in] alpha_type The data type of alpha.
+/// \param [in, out] x Input/Output vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+[[deprecated("Please use dpct::blas::scal(...) instead.")]] inline void
+scal(sycl::queue &q, int n, const void *alpha, library_data_t alpha_type,
+     void *x, library_data_t x_type, int incx) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::scal(q, n, alpha, alpha_type, x, x_type, incx);
+}
+
+/// Computes a vector-scalar product and adds the result to a vector.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] alpha The scale factor alpha.
+/// \param [in] alpha_type The data type of alpha.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in, out] y Input/Output vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+[[deprecated("Please use dpct::blas::axpy(...) instead.")]] inline void
+axpy(sycl::queue &q, int n, const void *alpha, library_data_t alpha_type,
+     const void *x, library_data_t x_type, int incx, void *y,
+     library_data_t y_type, int incy) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::axpy(q, n, alpha, alpha_type, x, x_type, incx, y, y_type, incy);
+}
+
+/// Performs rotation of points in the plane.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] n Number of elements in vector x.
+/// \param [in, out] x Input/Output vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in, out] y Input/Output vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+/// \param [in] c Scaling factor.
+/// \param [in] s Scaling factor.
+/// \param [in] cs_type Data type of the scaling factors.
+[[deprecated("Please use dpct::blas::rot(...) instead.")]] inline void
+rot(sycl::queue &q, int n, void *x, library_data_t x_type, int incx, void *y,
+    library_data_t y_type, int incy, const void *c, const void *s,
+    library_data_t cs_type) {
+  blas::descriptor desc;
+  desc.set_queue(&q);
+  blas::rot(q, n, x, x_type, incx, y, y_type, incy, c, s, cs_type);
 }
 } // namespace dpct
 #undef DPCT_COMPUTE_MODE_ARG
