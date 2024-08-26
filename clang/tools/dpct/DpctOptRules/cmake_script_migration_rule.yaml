@@ -778,7 +778,7 @@
   Out: target_link_libraries(${target} ${libs})
   Subrules:
     libs:
-      In: "cudnn"
+      In: cudnn
       Out: |
         \${DNN_LIB}
       MatchMode: Full
@@ -896,7 +896,7 @@
   Out: link_libraries(${libs})
   Subrules:
     libs:
-      In: "cudnn"
+      In: cudnn
       Out: |
         \${DNN_LIB}
       MatchMode: Full
@@ -977,7 +977,7 @@
   Out: find_library(${var_lib} ${libs})
   Subrules:
     libs:
-      In: "cudnn"
+      In: cudnn
       Out: |
         \${DNN_LIB}
       MatchMode: Full
@@ -3109,7 +3109,7 @@
     value:
       MatchMode: Full
       In: nvcc.exe
-      Out: ${CMAKE_SYCL_COMPILER}
+      Out: ${CMAKE_CXX_COMPILER}
 
 - Rule: rule_CUDAToolkit_BIN_DIR
   Kind: CMakeRule
