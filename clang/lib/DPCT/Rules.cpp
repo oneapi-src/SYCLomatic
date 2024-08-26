@@ -247,7 +247,8 @@ void deregisterAPIRule(MetaRuleObject &R) {
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
   MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
-      R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId, R.CmakeSyntax, R.Priority));
+      R.In, R.Out, R.Subrules, R.MatchMode, R.Warning, R.RuleId, R.CmakeSyntax,
+      R.Priority));
 }
 
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
@@ -257,6 +258,7 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     In = PR.In;
     Out = PR.Out;
     MatchMode = PR.MatchMode;
+    Warning = PR.Warning;
     Subrules = PR.Subrules;
     Priority = PR.Priority;
     CmakeSyntax = PR.CmakeSyntax;
@@ -266,15 +268,17 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
 
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const MetaRuleObject::PatternRewriter &PR)
-    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), CmakeSyntax(PR.CmakeSyntax),
-      RuleId(PR.RuleId), Priority(PR.Priority), Subrules(PR.Subrules) {}
+    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), Warning(PR.Warning),
+      CmakeSyntax(PR.CmakeSyntax), RuleId(PR.RuleId), Priority(PR.Priority),
+      Subrules(PR.Subrules) {}
 
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const std::string &I, const std::string &O,
     const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
-    std::string RuleId, std::string CmakeSyntax, RulePriority Priority)
-    : In(I), Out(O), MatchMode(MatchMode), CmakeSyntax(CmakeSyntax),
-      RuleId(RuleId), Priority(Priority) {
+    std::string Warning, std::string RuleId, std::string CmakeSyntax,
+    RulePriority Priority)
+    : In(I), Out(O), MatchMode(MatchMode), Warning(Warning),
+      CmakeSyntax(CmakeSyntax), RuleId(RuleId), Priority(Priority) {
   Subrules = S;
 }
 

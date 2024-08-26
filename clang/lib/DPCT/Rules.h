@@ -98,6 +98,7 @@ public:
     std::string In = "";
     std::string Out = "";
     RuleMatchMode MatchMode = RuleMatchMode::Partial;
+    std::string Warning = "";
     std::string CmakeSyntax = "";
     std::string RuleId = "";
     RulePriority Priority = RulePriority::Default;
@@ -108,8 +109,9 @@ public:
     PatternRewriter(const PatternRewriter &PR);
     PatternRewriter(const std::string &I, const std::string &O,
                     const std::map<std::string, PatternRewriter> &S,
-                    RuleMatchMode MatchMode, std::string RuleId,
-                    std::string CmakeSyntax, RulePriority Priority);
+                    RuleMatchMode MatchMode, std::string Warning,
+                    std::string RuleId, std::string CmakeSyntax,
+                    RulePriority Priority);
   };
 
   static std::vector<clang::tooling::UnifiedPath> RuleFiles;
@@ -117,6 +119,7 @@ public:
   std::string RuleId;
   RulePriority Priority;
   RuleMatchMode MatchMode;
+  std::string Warning;
   std::string CmakeSyntax;
   RuleKind Kind;
   std::string In;
@@ -131,10 +134,15 @@ public:
   std::map<std::string, PatternRewriter> Subrules;
   APIRestrictCondition RuleAPIRestrictCondition;
   MetaRuleObject()
-      : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial), Kind(RuleKind::API) {}
-  MetaRuleObject(std::string id, RulePriority priority, RuleKind kind, RuleMatchMode MatchMode)
-      : RuleId(id), Priority(priority), MatchMode(MatchMode), Kind(kind) {}
-  static void setRuleFiles(clang::tooling::UnifiedPath File) { RuleFiles.push_back(File); }
+      : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial),
+        Kind(RuleKind::API) {}
+  MetaRuleObject(std::string id, RulePriority priority, RuleKind kind,
+                 RuleMatchMode MatchMode)
+      : RuleId(id), Priority(priority), MatchMode(MatchMode), Warning{Warning},
+        Kind(kind) {}
+  static void setRuleFiles(clang::tooling::UnifiedPath File) {
+    RuleFiles.push_back(File);
+  }
 };
 
 template <>
@@ -222,6 +230,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Attributes", Doc->RuleAttributes);
     Io.mapOptional("Subrules", Doc->Subrules);
     Io.mapOptional("MatchMode", Doc->MatchMode);
+    Io.mapOptional("Warning", Doc->Warning);
     Io.mapOptional("APIRestrictCondition", Doc->RuleAPIRestrictCondition);
   }
 };
@@ -264,6 +273,7 @@ struct llvm::yaml::MappingTraits<MetaRuleObject::PatternRewriter> {
     Io.mapRequired("Out", Doc.Out);
     Io.mapOptional("Subrules", Doc.Subrules);
     Io.mapOptional("MatchMode", Doc.MatchMode);
+    Io.mapOptional("Warning", Doc.Warning);
     Io.mapOptional("RuleId", Doc.RuleId);
   }
 };
