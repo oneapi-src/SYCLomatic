@@ -193,5 +193,37 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
               CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
                                                "group::store_direct_striped",
                                            1, 2, 3),
-                   NDITEM, ARG(1), ARG(2))))};
+                   NDITEM, ARG(1), ARG(2))))
+      // cub::ShuffleDown
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() + "experimental::shift_sub_group_left",
+          CONDITIONAL_FACTORY_ENTRY(
+              UseNonUniformGroups,
+              CALL_FACTORY_ENTRY(
+                  "cub::ShuffleDown",
+                  CALL(
+                      TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                           "experimental::shift_sub_group_left",
+                                       0, 1),
+                      SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
+              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleDown",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      LITERAL("cub::ShuffleDown"))))
+      // cub::ShuffleUp
+      SUBGROUPSIZE_FACTORY(
+          UINT_MAX,
+          MapNames::getDpctNamespace() + "experimental::shift_sub_group_right",
+          CONDITIONAL_FACTORY_ENTRY(
+              UseNonUniformGroups,
+              CALL_FACTORY_ENTRY(
+                  "cub::ShuffleUp",
+                  CALL(TEMPLATED_CALLEE(
+                           MapNames::getDpctNamespace() +
+                               "experimental::shift_sub_group_right",
+                           0, 1),
+                       SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
+              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleUp",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      LITERAL("cub::ShuffleUp"))))};
 }
