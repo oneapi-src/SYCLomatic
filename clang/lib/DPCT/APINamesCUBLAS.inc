@@ -58,11 +58,14 @@ SETGET_VECTOR(cublasGetVector_64)
 #define SETGET_VECTOR_ASYNC(NAME)                                              \
   ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
       HelperFeatureEnum::device_ext,                                           \
-      CALL_FACTORY_ENTRY(                                                      \
-          #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::matrix_mem_copy",  \
-                      ARG(4), ARG(2), ARG(5), ARG(3), ARG("1"), ARG(0),        \
-                      ARG(1), ARG(MapNames::getLibraryHelperNamespace() + "cs::automatic"), \
-                      DEREF(6), ARG("true")))))
+      CALL_FACTORY_ENTRY(#NAME,                                                \
+                         CALL(MapNames::getLibraryHelperNamespace() +          \
+                                  "blas::matrix_mem_copy",                     \
+                              ARG(4), ARG(2), ARG(5), ARG(3), ARG("1"),        \
+                              ARG(0), ARG(1),                                  \
+                              ARG(MapNames::getLibraryHelperNamespace() +      \
+                                  "cs::memcpy_direction::automatic"),          \
+                              DEREF(6), ARG("true")))))
 SETGET_VECTOR_ASYNC(cublasSetVectorAsync)
 SETGET_VECTOR_ASYNC(cublasGetVectorAsync)
 SETGET_VECTOR_ASYNC(cublasSetVectorAsync_64)
@@ -86,9 +89,11 @@ SETGET_MATRIX(cublasGetMatrix_64)
   ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
       HelperFeatureEnum::device_ext,                                           \
       CALL_FACTORY_ENTRY(                                                      \
-          #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::matrix_mem_copy",  \
+          #NAME, CALL(MapNames::getLibraryHelperNamespace() +                  \
+                          "blas::matrix_mem_copy",                             \
                       ARG(5), ARG(3), ARG(6), ARG(4), ARG(0), ARG(1), ARG(2),  \
-                      ARG(MapNames::getLibraryHelperNamespace() + "cs::automatic"),         \
+                      ARG(MapNames::getLibraryHelperNamespace() +              \
+                          "cs::memcpy_direction::automatic"),                  \
                       DEREF(7), ARG("true")))))
 SETGET_MATRIX_ASYNC(cublasSetMatrixAsync)
 SETGET_MATRIX_ASYNC(cublasGetMatrixAsync)
