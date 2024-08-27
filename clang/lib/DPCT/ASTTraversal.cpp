@@ -1728,9 +1728,11 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
-              "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
-              "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
-              "cublasMath_t", "cudaPointerAttributes", "thrust::zip_iterator",
+              "cublasComputeType_t", "cublasAtomicsMode_t", "cublasMath_t",
+              "CUmem_advise_enum", "CUmem_advise", "CUmemorytype",
+              "CUmemorytype_enum", "thrust::tuple_element",
+              "thrust::tuple_size", "thrust::zip_iterator",
+              "cudaPointerAttributes", "CUpointer_attribute",
               "cusolverEigRange_t", "cudaUUID_t", "cusolverDnFunction_t",
               "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
@@ -3232,6 +3234,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "libraryPropertyType_t", "cudaDataType_t",
                   "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum",
+                  "CUpointer_attribute_enum", "CUmemorytype_enum",
                   "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
@@ -6141,10 +6144,11 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cuDeviceCanAccessPeer", "cudaFuncSetAttribute",
         "cudaRuntimeGetVersion", "clock64", "__nanosleep",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
-        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
-        "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
-        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaProfilerStart",
-        "cudaProfilerStop", "__trap", "cuCtxEnablePeerAccess");
+        "cudaPointerGetAttributes", "cuPointerGetAttributes",
+        "cuCtxSetCacheConfig", "cuCtxSetLimit", "cudaCtxResetPersistingL2Cache",
+        "cuCtxResetPersistingL2Cache", "cudaStreamSetAttribute",
+        "cudaStreamGetAttribute", "cudaProfilerStart", "cudaProfilerStop",
+        "__trap", "cuCtxEnablePeerAccess");
   };
 
   MF.addMatcher(

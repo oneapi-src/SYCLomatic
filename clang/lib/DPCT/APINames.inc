@@ -1764,7 +1764,7 @@ ENTRY(cuMemPrefetchAsync_v2, cuMemPrefetchAsync_v2, false, NO_FLAG, P4, "Partial
 ENTRY(cuMemRangeGetAttribute, cuMemRangeGetAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemRangeGetAttributes, cuMemRangeGetAttributes, false, NO_FLAG, P4, "comment")
 ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, false, NO_FLAG, P4, "comment")
-ENTRY(cuPointerGetAttributes, cuPointerGetAttributes, false, NO_FLAG, P4, "comment")
+ENTRY(cuPointerGetAttributes, cuPointerGetAttributes, true, NO_FLAG, P4, "Partial: Only 5 attributes are supported")
 ENTRY(cuPointerSetAttribute, cuPointerSetAttribute, false, NO_FLAG, P4, "comment")
 
 // Stream Management
