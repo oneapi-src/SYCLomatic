@@ -667,6 +667,8 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasLtMatrixTransformDesc_t",
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_ptr")},
+      {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
+      {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1549,6 +1551,20 @@ void MapNames::setExplicitNamespaceMap(
       {"CUSOLVER_EIG_RANGE_I",
        std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsMapFlags
+      {"cudaGraphicsMapFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsReadOnly", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsWriteDiscard", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsRegisterFlags
+      {"cudaGraphicsRegisterFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsReadOnly",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsWriteDiscard",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsSurfaceLoadStore",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsTextureGather",
+       std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
@@ -4441,6 +4457,10 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
 
 const MapNames::MapTy MapNames::FunctionAttrMap{
     {"CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK", "max_work_group_size"},
+    {"CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES",     "shared_size_bytes /* statically allocated shared memory per work-group in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES",      "local_size_bytes /* local memory per work-item in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES",      "const_size_bytes /* user-defined constant kernel memory in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_NUM_REGS",              "num_regs /* number of registers for each thread */"},
     // ...
 };
 

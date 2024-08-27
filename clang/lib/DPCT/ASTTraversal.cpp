@@ -1751,7 +1751,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtMatmulDescAttributes_t", "cublasLtMatmulAlgo_t",
               "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
               "cublasLtMatmulHeuristicResult_t",
-              "cublasLtMatrixTransformDesc_t"))))))
+              "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
+              "cudaGraphicsRegisterFlags"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -1760,7 +1761,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::coalesced_group",
                   "cooperative_groups::__v1::grid_group",
                   "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
-                  "cudaGraphExec_t", "cudaGraphNode_t"))))))
+                  "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
+                  "cudaGraphicsResource_t"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -2302,6 +2304,15 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       report(TL->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              CanonicalTypeStr);
       return;
+    }
+
+    if (CanonicalTypeStr == "cudaGraphicsRegisterFlags" ||
+        CanonicalTypeStr == "cudaGraphicsMapFlags") {
+      if (!DpctGlobalInfo::useExtBindlessImages()) {
+        report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               CanonicalTypeStr,
+               "--use-experimental-features=bindless_images");
+      }
     }
 
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
@@ -3223,7 +3234,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "libraryPropertyType_t", "cudaDataType_t",
                   "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum",
-                  "CUpointer_attribute_enum", "CUmemorytype_enum"))),
+                  "CUpointer_attribute_enum", "CUmemorytype_enum",
+                  "cudaGraphicsMapFlags", "cudaGraphicsRegisterFlags"))),
               matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
@@ -3298,6 +3310,18 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   } else if (EnumName == "cudaStreamCaptureStatusInvalidated") {
     report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
+    return;
+  } else if (!DpctGlobalInfo::useExtBindlessImages() &&
+             (EnumName == "cudaGraphicsRegisterFlagsNone" ||
+              EnumName == "cudaGraphicsRegisterFlagsReadOnly" ||
+              EnumName == "cudaGraphicsRegisterFlagsWriteDiscard" ||
+              EnumName == "cudaGraphicsRegisterFlagsSurfaceLoadStore" ||
+              EnumName == "cudaGraphicsRegisterFlagsTextureGather" ||
+              EnumName == "cudaGraphicsMapFlagsNone" ||
+              EnumName == "cudaGraphicsMapFlagsReadOnly" ||
+              EnumName == "cudaGraphicsMapFlagsWriteDiscard")) {
+    report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+           EnumName, "--use-experimental-features=bindless_images");
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
@@ -12315,6 +12339,29 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {
     ExprAnalysis EA;
     EA.analyze(C);
+    const auto *AttrArg = C->getArg(1);
+    if (auto DRE = dyn_cast<DeclRefExpr>(AttrArg)) {
+      if (auto AttrEnumConst = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+        std::string EnumName = AttrEnumConst->getName().str();
+        std::string MemberName, Desc;
+        if (EnumName == "CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES") {
+          MemberName = "shared_size_bytes";
+          Desc = "statically allocated shared memory";
+        } else if (EnumName == "CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES") {
+          MemberName = "const_size_bytes";
+          Desc = "memory size of user-defined constants";
+        } else if (EnumName == "CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES") {
+          MemberName = "local_size_bytes";
+          Desc = "local memory";
+        } else if (EnumName == "CU_FUNC_ATTRIBUTE_NUM_REGS") {
+          MemberName = "num_regs";
+          Desc = "required number of registers";
+        }
+        if (!MemberName.empty() and !Desc.empty()) {
+          report(C->getBeginLoc(), Diagnostics::UNSUPPORTED_KERNEL_ATTRIBUTE, false, Desc, MemberName);
+        }
+      }
+    }
     emplaceTransformation(EA.getReplacement());
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "member")) {
     auto MemberName = M->getMemberNameInfo();
@@ -15085,3 +15132,33 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(GraphRule, PassKind::PK_Migration)
+
+void GraphicsInteropRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto graphicsInteropAPI = [&]() {
+    return hasAnyName(
+        "cudaGraphicsD3D11RegisterResource",
+        "cudaGraphicsResourceSetMapFlags", "cudaGraphicsMapResources",
+        "cudaGraphicsResourceGetMappedPointer",
+        "cudaGraphicsResourceGetMappedMipmappedArray",
+        "cudaGraphicsSubResourceGetMappedArray",
+        "cudaGraphicsUnmapResources", "cudaGraphicsUnregisterResource");
+  };
+
+  MF.addMatcher(
+      callExpr(callee(functionDecl(graphicsInteropAPI()))).bind("call"),
+      this);
+}
+
+void GraphicsInteropRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
+  if (!CE) {
+    return;
+  }
+
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
+}
+
+REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
