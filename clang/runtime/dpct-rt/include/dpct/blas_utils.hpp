@@ -324,7 +324,7 @@ using descriptor_ptr = descriptor *;
 template <typename T> inline T get_value(const T *s, sycl::queue &q) {
   return detail::get_value(s, q);
 }
-template <typename sycl::vec<T, 2>>
+template <typename T>
 inline std::complex<T> get_value(const sycl::vec<T, 2> *s, sycl::queue &q) {
   return detail::get_value(s, q);
 }

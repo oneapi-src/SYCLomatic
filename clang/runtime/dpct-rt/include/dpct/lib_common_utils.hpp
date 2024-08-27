@@ -17,7 +17,7 @@ namespace dpct {
 namespace detail {
 template <typename T> struct lib_data_traits { using type = T; };
 template <typename T> struct lib_data_traits<sycl::vec<T, 2>> {
-  using type = detail::complex_type<T>;
+  using type = std::complex<T>;
 };
 template <class T> using lib_data_traits_t = typename lib_data_traits<T>::type;
 
