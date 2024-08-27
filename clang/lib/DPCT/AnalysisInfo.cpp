@@ -480,7 +480,7 @@ public:
         "function call async_rnn_backward");
 
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "DPCT_CHECK_ERROR(";
+      DataRepl << MapNames::getCheckErrorMacroName() << "(";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("

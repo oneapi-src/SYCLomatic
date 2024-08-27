@@ -3854,7 +3854,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (IsAssigned) {
     requestFeature(HelperFeatureEnum::device_ext);
-    insertAroundStmt(CE, "DPCT_CHECK_ERROR(", ")");
+    insertAroundStmt(CE, MapNames::getCheckErrorMacroName() + "(", ")");
   }
 
   if (FuncName == "curandCreateGenerator" ||
@@ -5688,7 +5688,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string AssignPostfix = "";
 
   if (IsAssigned) {
-    AssignPrefix = "DPCT_CHECK_ERROR(";
+    AssignPrefix = MapNames::getCheckErrorMacroName() + "(";
     AssignPostfix = ")";
   }
 
@@ -6054,7 +6054,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (IsAssigned) {
       requestFeature(HelperFeatureEnum::device_ext);
       emplaceTransformation(
-          new ReplaceStmt(CE, true, "DPCT_CHECK_ERROR(" + Repl + ")"));
+          new ReplaceStmt(CE, true, MapNames::getCheckErrorMacroName() + "(" + Repl + ")"));
     } else {
       emplaceTransformation(new ReplaceStmt(CE, true, Repl));
     }
@@ -6263,7 +6263,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   std::string Prefix, Suffix;
   if (IsAssigned) {
-    Prefix = "DPCT_CHECK_ERROR(";
+    Prefix = MapNames::getCheckErrorMacroName() + "(";
     Suffix = ")";
   }
 
@@ -6357,7 +6357,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string ReplStr = getDrefName(CE->getArg(0));
       ReplStr += " = false";
       if (IsAssigned)
-        ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+        ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
       emplaceTransformation(new ReplaceStmt(CE, ReplStr));
       return;
     }
@@ -6386,7 +6386,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
     if (IsAssigned)
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaDeviceGetP2PAttribute") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
@@ -6411,7 +6411,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     if (IsAssigned)
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
@@ -6428,7 +6428,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -6532,7 +6532,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     ReplStr += Arg0Str;
     ReplStr += " = 0";
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -6990,7 +6990,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string ReplStr{getStmtSpelling(CE->getArg(0))};
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
-        ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+        ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
         requestFeature(HelperFeatureEnum::device_ext);
       }
       emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -7000,7 +7000,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string ReplStr{getStmtSpelling(CE->getArg(0))};
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
-        ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+        ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
         NeedReport = true;
       }
 
@@ -7194,7 +7194,7 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         std::string ReplaceStr;
         ReplaceStr = MapNames::getDpctNamespace() + "sync_barrier";
         emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplaceStr)));
-        emplaceTransformation(new InsertBeforeStmt(CE, "DPCT_CHECK_ERROR("));
+        emplaceTransformation(new InsertBeforeStmt(CE, MapNames::getCheckErrorMacroName() + "("));
         emplaceTransformation(new InsertAfterStmt(CE, ")"));
         report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
         return;
@@ -7230,7 +7230,7 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
       }
       StmtStr = "*" + ArgName + " = " + Str;
     }
-    StmtStr = "DPCT_CHECK_ERROR(" + StmtStr + ")";
+    StmtStr = MapNames::getCheckErrorMacroName() + "(" + StmtStr + ")";
 
     emplaceTransformation(new ReplaceStmt(CE, std::move(StmtStr)));
 
@@ -7392,7 +7392,7 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
         std::string Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
         StmtStr = "*" + EventName + " = " + Str;
       }
-      StmtStr = "DPCT_CHECK_ERROR(" + StmtStr + ")";
+      StmtStr = MapNames::getCheckErrorMacroName() + "(" + StmtStr + ")";
 
       auto ReplWithSubmitBarrier =
           ReplaceStmt(CE, StmtStr).getReplacement(Context);
@@ -7499,7 +7499,7 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
         << StopTimeStr << " - " << StartTimeStr << ") / 1000000.0f";
     if (IsAssigned) {
       std::ostringstream Temp;
-      Temp << "DPCT_CHECK_ERROR(" << Repl.str() << ")";
+      Temp << MapNames::getCheckErrorMacroName() + "(" << Repl.str() << ")";
       Repl = std::move(Temp);
       requestFeature(HelperFeatureEnum::device_ext);
     }
@@ -7519,7 +7519,7 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
         << StmtStrArg2 << " - " << StmtStrArg1 << ").count()";
     if (IsAssigned) {
       std::ostringstream Temp;
-      Temp << "DPCT_CHECK_ERROR((" << Repl.str() << "))";
+      Temp << MapNames::getCheckErrorMacroName() + "((" << Repl.str() << "))";
       Repl = std::move(Temp);
       requestFeature(HelperFeatureEnum::device_ext);
     }
@@ -8182,7 +8182,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
     }
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
     if (FuncName == "cudaStreamCreateWithFlags" ||
@@ -8200,7 +8200,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
                    "}}.destroy_queue(" + StmtStr0 + ")";
     requestFeature(HelperFeatureEnum::device_ext);
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
     }
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamSynchronize" ||
@@ -8221,7 +8221,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     const std::string Name =
         CE->getCalleeDecl()->getAsFunction()->getNameAsString();
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
@@ -8234,7 +8234,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     ReplStr += StmtStr1;
     ReplStr += ") = 0";
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     const std::string Name =
@@ -8267,7 +8267,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
         ReplStr = StreamName + "->" + "ext_oneapi_empty()";
       }
       if (IsAssigned) {
-        ReplStr = "DPCT_CHECK_ERROR((" + ReplStr + "))";
+        ReplStr = MapNames::getCheckErrorMacroName() + "((" + ReplStr + "))";
       }
       emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
       return;
@@ -8310,7 +8310,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
                 StmtStr1 + "})";
     }
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -8329,7 +8329,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     ReplStr += "); ";
     ReplStr += "})";
     if (IsAssigned) {
-      ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
+      ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
@@ -10095,7 +10095,7 @@ void MemoryMigrationRule::mallocMigration(
     if (DpctGlobalInfo::getUsmLevel() ==  UsmLevel::UL_Restricted) {
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
       if (IsAssigned)
-        emplaceTransformation(new InsertBeforeStmt(C, "DPCT_CHECK_ERROR("));
+        emplaceTransformation(new InsertBeforeStmt(C, MapNames::getCheckErrorMacroName() + "("));
       mallocMigrationWithTransformation(
           *Result.SourceManager, C, Name,
           MapNames::getClNamespace() + "malloc_device",
@@ -10110,7 +10110,7 @@ void MemoryMigrationRule::mallocMigration(
       std::ostringstream OS;
       std::string Type;
       if (IsAssigned)
-        OS << "DPCT_CHECK_ERROR(";
+        OS << MapNames::getCheckErrorMacroName() + "(";
       printDerefOp(OS, C->getArg(2)->IgnoreCasts()->IgnoreParens(), &Type);
       if (Type != "NULL TYPE" && Type != "void *")
         OS << " = (" << Type << ")";
@@ -10130,7 +10130,7 @@ void MemoryMigrationRule::mallocMigration(
     std::ostringstream OS;
     std::string Type;
     if (IsAssigned)
-      OS << "DPCT_CHECK_ERROR(";
+      OS << MapNames::getCheckErrorMacroName() + "(";
     printDerefOp(OS, C->getArg(0)->IgnoreCasts()->IgnoreParens(), &Type);
     if (Name != "cudaMalloc3D" && Type != "NULL TYPE" && Type != "void *")
       OS << " = (" << Type << ")";
@@ -10898,7 +10898,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
     if (DpctGlobalInfo::useDeviceInfo()) {
       std::ostringstream OS;
       if (IsAssigned)
-        OS << "DPCT_CHECK_ERROR(";
+        OS << MapNames::getCheckErrorMacroName() + "(";
       OS << MapNames::getDpctNamespace() + "get_current_device().get_memory_info";
       OS << "(";
       printDerefOp(OS, C->getArg(0));
@@ -10918,7 +10918,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       auto &SM = DpctGlobalInfo::getSourceManager();
       std::ostringstream OS;
       if (IsAssigned)
-        OS << "DPCT_CHECK_ERROR(";
+        OS << MapNames::getCheckErrorMacroName() + "(";
 
       auto SecondArg = C->getArg(1);
       printDerefOp(OS, SecondArg);
@@ -11181,17 +11181,17 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaGetMipmappedArrayLevel") &&
         Name.compare("cudaFreeMipmappedArray")) {
       requestFeature(HelperFeatureEnum::device_ext);
-      insertAroundStmt(C, "DPCT_CHECK_ERROR(", ")");
+      insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
                DpctGlobalInfo::getUsmLevel() !=  UsmLevel::UL_None) {
       requestFeature(HelperFeatureEnum::device_ext);
-      insertAroundStmt(C, "DPCT_CHECK_ERROR(", ")");
+      insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaArrayGetInfo")) {
       requestFeature(HelperFeatureEnum::device_ext);
       std::string IndentStr =
           getIndent(C->getBeginLoc(), *Result.SourceManager).str();
       IndentStr += "  ";
-      std::string PreStr{"DPCT_CHECK_ERROR([&](){"};
+      std::string PreStr{MapNames::getCheckErrorMacroName() + "([&](){"};
       PreStr += getNL();
       PreStr += IndentStr;
       std::string PostStr{";"};
@@ -12321,7 +12321,7 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     if (isAssigned(C)) {
       emplaceTransformation(new ReplaceToken(
-          C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
+          C->getBeginLoc(), MapNames::getCheckErrorMacroName() + "(" + MapNames::getDpctNamespace() +
                                 "get_kernel_function_info"));
       emplaceTransformation(new InsertAfterStmt(C, ")"));
     } else {
@@ -14204,7 +14204,7 @@ void DriverModuleAPIRule::runRule(
       (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData" ||
        APIName == "cuModuleLoadDataEx" || APIName == "cuModuleGetFunction")) {
     requestFeature(HelperFeatureEnum::device_ext);
-    insertAroundStmt(CE, "DPCT_CHECK_ERROR(", ")");
+    insertAroundStmt(CE, MapNames::getCheckErrorMacroName() + "(", ")");
   }
 
   ExprAnalysis EA;
@@ -14255,7 +14255,7 @@ void DriverDeviceAPIRule::runRule(
 
   if (APIName == "cuDeviceGet") {
     if (IsAssigned)
-      OS << "DPCT_CHECK_ERROR(";
+      OS << MapNames::getCheckErrorMacroName() + "(";
     auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
     auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
 
@@ -14271,7 +14271,7 @@ void DriverDeviceAPIRule::runRule(
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
   } else if (APIName == "cuDeviceGetName") {
     if (IsAssigned)
-      OS << "DPCT_CHECK_ERROR(";
+      OS << MapNames::getCheckErrorMacroName() + "(";
     auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
     auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
     auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
@@ -14340,7 +14340,7 @@ void DriverDeviceAPIRule::runRule(
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
   } else if (APIName == "cuDeviceGetCount") {
     if (IsAssigned)
-      OS << "DPCT_CHECK_ERROR(";
+      OS << MapNames::getCheckErrorMacroName() + "(";
     auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
     printDerefOp(OS, Arg);
     OS << " = "
@@ -14357,7 +14357,7 @@ void DriverDeviceAPIRule::runRule(
       return;
     }
     if (IsAssigned)
-      OS << "DPCT_CHECK_ERROR(";
+      OS << MapNames::getCheckErrorMacroName() + "(";
     auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
     printDerefOp(OS, Arg);
     ExprAnalysis SecEA(CE->getArg(1));
@@ -14457,7 +14457,7 @@ void DriverContextAPIRule::runRule(
   }
 
   if (IsAssigned) {
-    OS << "DPCT_CHECK_ERROR(";
+    OS << MapNames::getCheckErrorMacroName() + "(";
   }
   if (APIName == "cuInit") {
     std::string Msg = "this functionality is redundant in SYCL.";

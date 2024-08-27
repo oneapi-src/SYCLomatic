@@ -1381,7 +1381,7 @@ void ManagedPointerAnalysis::RecursiveAnalyze() {
 void ManagedPointerAnalysis::buildCallExprRepl() {
   std::ostringstream OS;
   if (Assigned)
-    OS << "DPCT_CHECK_ERROR(";
+    OS << MapNames::getCheckErrorMacroName();
   auto E = FirstArg;
   bool NeedParen = false;
   if (NeedDerefOp) {
