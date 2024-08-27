@@ -4531,8 +4531,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   buildReplaceLocInfo(
       FD->getTypeSourceInfo()->getTypeLoc().getAs<FunctionTypeLoc>(),
       FD->hasAttrs() ? FD->getAttrs() : NullAttrs);
-  if(!DpctGlobalInfo::useSYCLCompat())
-    buildTextureObjectParamsInfo(FD->parameters());
+  buildTextureObjectParamsInfo(FD->parameters());
 }
 DeviceFunctionDecl::DeviceFunctionDecl(
     unsigned Offset, const clang::tooling::UnifiedPath &FilePathIn,
@@ -4547,8 +4546,7 @@ DeviceFunctionDecl::DeviceFunctionDecl(
   IsDefFilePathNeeded = false;
 
   buildReplaceLocInfo(FTL, Attrs);
-  if (!DpctGlobalInfo::useSYCLCompat())
-    buildTextureObjectParamsInfo(FTL.getParams());
+  buildTextureObjectParamsInfo(FTL.getParams());
 }
 std::shared_ptr<DeviceFunctionInfo>
 DeviceFunctionDecl::LinkUnresolved(const UnresolvedLookupExpr *ULE,
@@ -4743,6 +4741,8 @@ const FormatInfo &DeviceFunctionDecl::getFormatInfo() {
 void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     const ArrayRef<ParmVarDecl *> &Parms) {
   TextureObjectList.assign(Parms.size(), std::shared_ptr<TextureObjectInfo>());
+  if (DpctGlobalInfo::useSYCLCompat())
+    return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
     if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
