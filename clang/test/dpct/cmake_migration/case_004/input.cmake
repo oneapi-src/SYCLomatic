@@ -25,5 +25,3 @@ target_link_libraries(cublas-cudnn-test cublas cudnn)
 target_link_libraries(tsne  ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES} ${CUDA_cusparse_LIBRARY})
 
 target_link_libraries(mdgx cufft cusparse curand cudadevrt nccl nvrtc nvidia-ml)
-
-target_link_libraries(tgt cuda_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC cuda_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED)
