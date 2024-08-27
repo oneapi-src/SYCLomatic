@@ -4087,8 +4087,7 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
     return;
   CallFuncExprOffset = DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).second;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts(), CE->getNumArgs());
-  if (!DpctGlobalInfo::useSYCLCompat())
-    buildTextureObjectArgsInfo(CE);
+  buildTextureObjectArgsInfo(CE);
   bool HasImplicitArg = false;
   if (auto FD = CE->getDirectCallee()) {
     IsAllTemplateArgsSpecified = deduceTemplateArguments(CE, FD, TemplateArgs);
