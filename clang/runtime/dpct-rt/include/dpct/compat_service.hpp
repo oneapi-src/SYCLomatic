@@ -18,12 +18,10 @@ namespace dpct {
 namespace cs {
 #if USE_DPCT_HELPER
 namespace ns = ::dpct;
-template <typename T> using DataType = ::dpct::DataType<T>;
 using memcpy_direction = ::dpct::memcpy_direction;
 template <class... Args> using kernel_name = dpct_kernel_name<Args...>;
 #else
 namespace ns = ::syclcompat;
-template <typename T> using DataType = ::syclcompat::detail::DataType<T>;
 using memcpy_direction = ::syclcompat::experimental::memcpy_direction;
 template <class... Args> using kernel_name = syclcompat_kernel_name<Args...>;
 #ifndef __dpct_inline__

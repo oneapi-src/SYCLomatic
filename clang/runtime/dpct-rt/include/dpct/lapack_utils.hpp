@@ -117,7 +117,7 @@ template <typename T, typename Tw>
 inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                  oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
                  Tw *w, T *scratchpad, int scratchpad_size, int *info) {
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
 #ifdef DPCT_USM_LEVEL_NONE
   auto info_buf = get_buffer<int>(info);
   auto a_buffer = get_buffer<Ty>(a);
@@ -189,7 +189,7 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   struct matrix_info_t {
     oneapi::mkl::uplo uplo_info;
     std::int64_t n_info;
@@ -260,7 +260,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   struct matrix_info_t {
     oneapi::mkl::uplo uplo_info;
     std::int64_t n_info;

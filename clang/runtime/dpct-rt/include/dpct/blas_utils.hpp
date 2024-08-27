@@ -321,8 +321,11 @@ using descriptor_ptr = descriptor *;
 /// Copy the data to host synchronously, then return the data.
 /// \param [in] p The pointer points the data.
 /// \param [in] q The queue where the memory copy should be executed.
-template <typename T>
-inline auto get_value(const T *s, sycl::queue &q) {
+template <typename T> inline T get_value(const T *s, sycl::queue &q) {
+  return detail::get_value(s, q);
+}
+template <typename sycl::vec<T, 2>>
+inline std::complex<T> get_value(const sycl::vec<T, 2> *s, sycl::queue &q) {
   return detail::get_value(s, q);
 }
 
@@ -642,8 +645,8 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
   // For Hermitian matrix, this function performs: C = alpha*OP(A)*(OP(B))^H + beta*C
   // The gemmt() function performs: C = alpha*OPA(A)*OPB(B) + beta*C
   // So the OPB need be updated before we call gemmt().
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
-  using Ts = typename ::dpct::cs::DataType<Tbeta>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
+  using Ts = typename ::dpct::detail::lib_data_traits_t<Tbeta>;
   Ty alpha_value = dpct::get_value(reinterpret_cast<const Ty *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   oneapi::mkl::transpose trans_A = trans, trans_B = trans;
@@ -759,7 +762,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
 #else
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   // Set the info array value to 0
   ::dpct::cs::fill<unsigned char>(exec_queue, info, 0,
                                   sizeof(int) * batch_size);
@@ -845,7 +848,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[], int lda,
     detail::getrfnp_batch_wrapper(exec_queue, n, a, lda, info, batch_size);
     return;
   }
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   // Set the info array value to 0
   ::dpct::cs::fill<unsigned char>(exec_queue, info, 0,
                                   sizeof(int) * batch_size);
@@ -958,7 +961,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
                                 oneapi::mkl::transpose trans, int n, int nrhs,
                                 const T *a[], int lda, const int *ipiv, T *b[],
                                 int ldb, int *info, int batch_size) {
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   // Set the info value to 0
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1082,7 +1085,7 @@ template <typename T>
 inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
                                 int lda, int *ipiv, T *b[], int ldb, int *info,
                                 int batch_size) {
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   // Set the info array value to 0
   ::dpct::cs::fill<unsigned char>(exec_queue, info, 0,
                                   sizeof(int) * batch_size);
@@ -1206,7 +1209,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n, const T *a[],
 template <typename T>
 inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n, T *a[],
                                 int lda, T *tau[], int *info, int batch_size) {
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   // Set the info value to 0
   *info = 0;
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1558,7 +1561,7 @@ inline library_data_t compute_type_to_library_data_t(compute_type ct) {
 template <typename T>
 inline oneapi::mkl::blas::compute_mode
 deduce_compute_mode(std::optional<compute_type> ct, math_mode mm) {
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   if (ct) {
     switch (ct.value()) {
     case compute_type::f16_standard:
@@ -2262,7 +2265,7 @@ inline void trmm(descriptor_ptr desc_ptr, oneapi::mkl::side left_right,
                  oneapi::mkl::diag unit_diag, std::int64_t m, std::int64_t n,
                  const T *alpha, const T *a, std::int64_t lda, const T *b,
                  std::int64_t ldb, T *c, std::int64_t ldc) {
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
   auto cm = deduce_compute_mode<Ty>(std::nullopt, desc_ptr->get_math_mode());
@@ -2310,7 +2313,7 @@ gels_batch_wrapper(descriptor_ptr desc_ptr, oneapi::mkl::transpose trans, int m,
                            "Project does not support this API.");
 #endif
 #else
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   sycl::queue exec_queue = desc_ptr->get_queue();
   struct matrix_info_t {
     oneapi::mkl::transpose trans_info;
