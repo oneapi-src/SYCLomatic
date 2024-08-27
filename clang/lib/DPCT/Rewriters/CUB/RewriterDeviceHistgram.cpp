@@ -26,7 +26,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::HistogramEven",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "histogram_even_roi",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(10)),
@@ -37,7 +37,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::HistogramEven",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "histogram_even_roi",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -48,7 +48,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::HistogramEven",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "histogram_even",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(8)),
@@ -56,7 +56,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                    ARG(7)))),
                       OTHERWISE(CALL_FACTORY_ENTRY(
                           "cub::DeviceHistogram::HistogramEven",
-                          CALL(MapNames::getDpctNamespace() + "histogram_even",
+                          CALL(MapNames::getLibraryHelperNamespace() + "histogram_even",
                                CALL("oneapi::dpl::execution::device_policy",
                                     QUEUESTR),
                                ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -77,7 +77,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::MultiHistogramEven",
                               CALL(TEMPLATED_CALLEE(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "multi_histogram_even_roi",
                                        0, 1),
                                    CALL("oneapi::dpl::execution::device_policy",
@@ -90,7 +90,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::MultiHistogramEven",
                               CALL(TEMPLATED_CALLEE(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "multi_histogram_even_roi",
                                        0, 1),
                                    CALL("oneapi::dpl::execution::device_policy",
@@ -103,7 +103,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::MultiHistogramEven",
                               CALL(TEMPLATED_CALLEE(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "multi_histogram_even",
                                        0, 1),
                                    CALL("oneapi::dpl::execution::device_policy",
@@ -112,7 +112,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                    ARG(7)))),
                       OTHERWISE(CALL_FACTORY_ENTRY(
                           "cub::DeviceHistogram::MultiHistogramEven",
-                          CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                          CALL(TEMPLATED_CALLEE(MapNames::getLibraryHelperNamespace() +
                                                     "multi_histogram_even",
                                                 0, 1),
                                CALL("oneapi::dpl::execution::device_policy",
@@ -134,7 +134,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::HistogramRange",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "histogram_range_roi",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(9)),
@@ -145,7 +145,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::HistogramRange",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "histogram_range_roi",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -156,14 +156,14 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                         /* IncludeDefaultArg */ false),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::HistogramRange",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "histogram_range",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(7)),
                                    ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))),
                       OTHERWISE(CALL_FACTORY_ENTRY(
                           "cub::DeviceHistogram::HistogramRange",
-                          CALL(MapNames::getDpctNamespace() + "histogram_range",
+                          CALL(MapNames::getLibraryHelperNamespace() + "histogram_range",
                                CALL("oneapi::dpl::execution::device_policy",
                                     QUEUESTR),
                                ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))))))))
@@ -183,7 +183,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::MultiHistogramRange",
                               CALL(TEMPLATED_CALLEE(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "multi_histogram_range_roi",
                                        0, 1),
                                    CALL("oneapi::dpl::execution::device_policy",
@@ -196,7 +196,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::MultiHistogramRange",
                               CALL(TEMPLATED_CALLEE(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "multi_histogram_range_roi",
                                        0, 1),
                                    CALL("oneapi::dpl::execution::device_policy",
@@ -209,7 +209,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceHistogram::MultiHistogramRange",
                               CALL(TEMPLATED_CALLEE(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "multi_histogram_range",
                                        0, 1),
                                    CALL("oneapi::dpl::execution::device_policy",
@@ -217,7 +217,7 @@ RewriterMap dpct::createDeviceHistgramRewriterMap() {
                                    ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))),
                       OTHERWISE(CALL_FACTORY_ENTRY(
                           "cub::DeviceHistogram::MultiHistogramRange",
-                          CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                          CALL(TEMPLATED_CALLEE(MapNames::getLibraryHelperNamespace() +
                                                     "multi_histogram_range",
                                                 0, 1),
                                CALL("oneapi::dpl::execution::device_policy",
