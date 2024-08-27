@@ -834,6 +834,23 @@ int runDPCT(int argc, const char **argv) {
 
     Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
+    constexpr StringRef UnsupportedStr{"// UNSUPPORTED:"};
+    bool win_unsupported = false;
+    bool lin_unsupported = false;
+    if (SourceCode.starts_with(UnsupportedStr)) {
+      while (SourceCode.consume_front(UnsupportedStr)) {
+        auto UnsupportedPlatform = SourceCode.substr(
+            0, SourceCode.find_first_of('\n'));
+        UnsupportedPlatform = UnsupportedPlatform.trim(' ');
+        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
+
+        if (UnsupportedPlatform == "system-windows")
+          win_unsupported = true;
+        if (UnsupportedPlatform == "system-linux")
+          lin_unsupported = true;
+      }
+    }
+
     static const std::string OptionStr{"// Option:"};
     if (SourceCode.starts_with(OptionStr)) {
       QueryAPIMappingOpt += " (with the option";
@@ -885,6 +902,23 @@ int runDPCT(int argc, const char **argv) {
     EndPos = SourceCode.find_last_of('\n', EndPos);
     QueryAPIMappingSrc =
         SourceCode.substr(StartPos, EndPos - StartPos + 1).str();
+#ifdef _WIN32
+    if (win_unsupported) {
+      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
+                   << "The API mapping query for this API is not available "
+                    "on Windows.\n";
+      return MigrationSucceeded;
+    }
+#else
+    if (lin_unsupported) {
+      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
+                   << "The API mapping query for this API is not available "
+                    "on Linux.\n";
+      return MigrationSucceeded;
+    }
+#endif
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {

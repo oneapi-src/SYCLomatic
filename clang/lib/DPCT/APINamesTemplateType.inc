@@ -447,3 +447,21 @@ TYPE_REWRITE_ENTRY(
                          "experimental::node_ptr")),
         WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                         STR("--use-experimental-features=graph"))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraphicsResource",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableBindlessImagesForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::external_mem_wrapper")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=bindless_images"))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaGraphicsResource_t",
+    TYPE_CONDITIONAL_FACTORY(
+        checkEnableBindlessImagesForType(),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                         "experimental::external_mem_wrapper_ptr")),
+        WARNING_FACTORY(Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                        STR("--use-experimental-features=bindless_images"))))

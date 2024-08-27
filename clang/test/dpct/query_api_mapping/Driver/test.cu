@@ -265,6 +265,14 @@
 // CUMEMPREFETCHASYNC-NEXT:   dpct::queue_ptr cs;
 // CUMEMPREFETCHASYNC-NEXT:   cs->prefetch(pd, s);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuPointerGetAttributes | FileCheck %s -check-prefix=CUPOINTERGETATTRIBUTES
+// CUPOINTERGETATTRIBUTES: CUDA API:
+// CUPOINTERGETATTRIBUTES-NEXT:   cuPointerGetAttributes(numAttr /*unsigned int*/,
+// CUPOINTERGETATTRIBUTES-NEXT:                            attr /*CUpointer_attribute **/, data /*void ***/,
+// CUPOINTERGETATTRIBUTES-NEXT:                            ptr /*CUdeviceptr*/);
+// CUPOINTERGETATTRIBUTES-NEXT: Is migrated to:
+// CUPOINTERGETATTRIBUTES-NEXT:   dpct::pointer_attributes::get(numAttr, attr, data, ptr);
+
 /// Stream Management
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuStreamAddCallback | FileCheck %s -check-prefix=CUSTREAMADDCALLBACK
