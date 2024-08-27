@@ -351,7 +351,7 @@ public:
   std::string Str;
   std::vector<std::shared_ptr<OutputBuilder>> SubBuilders;
   void parse(std::string &);
-
+  virtual ~OutputBuilder();
 protected:
   // /OutStr is the string specified in rule's "Out" session
   virtual std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
@@ -362,7 +362,7 @@ protected:
   void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
 };
 
-class TypeOutputBuilder : public OutputBuilder{
+class TypeOutputBuilder : public OutputBuilder {
 private:
   // /OutStr is the string specified in rule's "Out" session
   std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,

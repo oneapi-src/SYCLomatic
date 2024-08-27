@@ -20,6 +20,8 @@
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
+OutputBuilder::~OutputBuilder() {}
+
 template <class Functor>
 void reisterMigrationRule(const std::string &Name, Functor F) {
   class UserDefinedRuleFactory : public clang::dpct::MigrationRuleFactoryBase {

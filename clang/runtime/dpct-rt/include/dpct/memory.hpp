@@ -1663,6 +1663,15 @@ using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::all
 
 class pointer_attributes {
 public:
+  enum class type {
+    memory_type,
+    device_pointer,
+    host_pointer,
+    is_managed,
+    device_id,
+    unsupported
+  };
+
   void init(const void *ptr,
               sycl::queue &q = dpct::get_default_queue()) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1682,6 +1691,41 @@ public:
     sycl::device device_obj = sycl::get_pointer_device(ptr, q.get_context());
     device_id = dpct::dev_mgr::instance().get_device_id(device_obj);
 #endif
+  }
+
+  // Query pointer propreties listed in attributes and store the results in data array
+  static void get(unsigned int numAttributes, type *attributes,
+                  void **data, device_ptr ptr) {
+    pointer_attributes sycl_attributes;
+
+    sycl_attributes.init(ptr);
+
+    for (int i = 0; i < numAttributes; i++) {
+      switch (attributes[i]) {
+      case type::memory_type:
+        *static_cast<int *>(data[i]) =
+            static_cast<int>(sycl_attributes.get_memory_type());
+        break;
+      case type::device_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_device_pointer());
+        break;
+      case type::host_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_host_pointer());
+        break;
+      case type::is_managed:
+        *static_cast<unsigned int *>(data[i]) =
+            sycl_attributes.is_memory_shared();
+        break;
+      case type::device_id:
+        *static_cast<unsigned int *>(data[i]) = sycl_attributes.get_device_id();
+        break;
+      default:
+        data[i] = nullptr;
+        break;
+      }
+    }
   }
 
   sycl::usm::alloc get_memory_type() {
@@ -1710,5 +1754,6 @@ private:
   const void *host_pointer = nullptr;
   unsigned int device_id = -1;
 };
+
 } // namespace dpct
 #endif // __DPCT_MEMORY_HPP__
