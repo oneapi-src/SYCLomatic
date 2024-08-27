@@ -140,6 +140,9 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
     return false;
   }
   int DefineVersion = std::stoi(Res);
+  if (DefineVersion < 8000) { // 8000 is for CUDA-8.0
+    return false;
+  }
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
   SDKVersionMajor = Major;
