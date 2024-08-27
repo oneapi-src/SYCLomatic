@@ -247,11 +247,13 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
         "cuMemcpyDtoD_v2", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
         ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"))))))
 
-ASSIGNABLE_FACTORY(
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
     ASSIGN_FACTORY_ENTRY(
         "cuMemAllocPitch_v2", DEREF(makeDerefArgCreatorWithCall(0)),
-        CAST(getDerefedType(0), CALL(MapNames::getDpctNamespace() + "dpct_malloc", DEREF(makeCallArgCreatorWithCall(1)), ARG(2), ARG(3))))))
+        CAST(getDerefedType(0),
+             CALL(getMemoryHelperFunctionName("malloc"),
+                  DEREF(makeCallArgCreatorWithCall(1)), ARG(2), ARG(3))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     makeCheckNot(CheckArgIsDefaultCudaStream(3)),
@@ -426,16 +428,16 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CheckDerefedTypeBeforeCast(0, "void *"),
         ASSIGN_FACTORY_ENTRY(
             "cudaMallocPitch", DEREF(makeDerefArgCreatorWithCall(0)),
-            CALL(MapNames::getDpctNamespace() + "dpct_malloc",
+            CALL(getMemoryHelperFunctionName("malloc"),
                  DEREF(makeCallArgCreatorWithCall(1)),
-                 makeCallArgCreatorWithCall(2), makeDerefArgCreatorWithCall(3))),
+                 makeCallArgCreatorWithCall(2),
+                 makeDerefArgCreatorWithCall(3))),
         ASSIGN_FACTORY_ENTRY(
             "cudaMallocPitch", DEREF(makeDerefArgCreatorWithCall(0)),
-            CAST(getDerefedType(0),
-                 CALL(MapNames::getDpctNamespace() + "dpct_malloc",
-                      DEREF(makeCallArgCreatorWithCall(1)),
-                      makeCallArgCreatorWithCall(2),
-                      makeCallArgCreatorWithCall(3)))))))
+            CAST(getDerefedType(0), CALL(getMemoryHelperFunctionName("malloc"),
+                                         DEREF(makeCallArgCreatorWithCall(1)),
+                                         makeCallArgCreatorWithCall(2),
+                                         makeCallArgCreatorWithCall(3)))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -621,78 +623,78 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD8_v2",
-                       CALL(MapNames::getDpctNamespace() + "dpct_memset",
+                       CALL(getMemoryHelperFunctionName("memset"),
                             ARG(0), ARG(1), ARG(2)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD16_v2",
-                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d16",
+                       CALL(getMemoryHelperFunctionName("memset_d16"),
                             ARG(0), ARG(1), ARG(2)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD32_v2",
-                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d32",
+                       CALL(getMemoryHelperFunctionName("memset_d32"),
                             ARG(0), ARG(1), ARG(2)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD8Async",
-                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset",
+                       CALL(getMemoryHelperFunctionName("memset_async"),
                             ARG(0), ARG(1), ARG(2),
                             DEREF(makeCallArgCreatorWithCall(3))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD16Async",
-                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d16",
+                       CALL(getMemoryHelperFunctionName("memset_d16_async"),
                             ARG(0), ARG(1), ARG(2),
                             DEREF(makeCallArgCreatorWithCall(3))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD32Async",
-                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d32",
+                       CALL(getMemoryHelperFunctionName("memset_d32_async"),
                             ARG(0), ARG(1), ARG(2),
                             DEREF(makeCallArgCreatorWithCall(3))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD2D8_v2",
-                       CALL(MapNames::getDpctNamespace() + "dpct_memset",
+                       CALL(getMemoryHelperFunctionName("memset"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD2D16_v2",
-                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d16",
+                       CALL(getMemoryHelperFunctionName("memset_d16"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD2D32_v2",
-                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d32",
+                       CALL(getMemoryHelperFunctionName("memset_d32"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD2D8Async",
-                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset",
+                       CALL(getMemoryHelperFunctionName("memset_async"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), 
                             DEREF(makeCallArgCreatorWithCall(5))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD2D16Async",
-                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d16",
+                       CALL(getMemoryHelperFunctionName("memset_d16_async"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
                             DEREF(makeCallArgCreatorWithCall(5))))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD2D32Async",
-                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d32",
+                       CALL(getMemoryHelperFunctionName("memset_d32_async"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
                             DEREF(makeCallArgCreatorWithCall(5))))))
 

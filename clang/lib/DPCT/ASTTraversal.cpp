@@ -4503,14 +4503,15 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                               " = " + MapNames::getClNamespace() +
                               "malloc_shared<int64_t>(" + "1, " + DefaultQueue +
                               ");" + getNL() + IndentStr;
-            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "int " +
-                              ResultTempHost + " = (int)*" + ResultTempPtr +
-                              ";" + getNL() + IndentStr +
-                              MapNames::getDpctNamespace() + "dpct_memcpy(" +
-                              ExprAnalysis::ref(CE->getArg(i)) + ", &" +
-                              ResultTempHost + ", sizeof(int));" + getNL() +
-                              IndentStr + MapNames::getClNamespace() + "free(" +
-                              ResultTempPtr + ", " + DefaultQueue + ");";
+            SuffixInsertStr =
+                SuffixInsertStr + getNL() + IndentStr + "int " +
+                ResultTempHost + " = (int)*" + ResultTempPtr + ";" + getNL() +
+                IndentStr +
+                MemoryMigrationRule::getMemoryHelperFunctionName("memcpy") +
+                "(" + ExprAnalysis::ref(CE->getArg(i)) + ", &" +
+                ResultTempHost + ", sizeof(int));" + getNL() + IndentStr +
+                MapNames::getClNamespace() + "free(" + ResultTempPtr + ", " +
+                DefaultQueue + ");";
             CurrentArgumentRepl = ResultTempPtr;
           } else {
             CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
@@ -4640,14 +4641,15 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                               " = " + MapNames::getClNamespace() +
                               "malloc_shared<int64_t>(" + "1, " + DefaultQueue +
                               ");" + getNL() + IndentStr;
-            SuffixInsertStr = SuffixInsertStr + getNL() + IndentStr + "int " +
-                              ResultTempHost + " = (int)*" + ResultTempPtr +
-                              ";" + getNL() + IndentStr +
-                              MapNames::getDpctNamespace() + "dpct_memcpy(" +
-                              ExprAnalysis::ref(CE->getArg(i)) + ", &" +
-                              ResultTempHost + ", sizeof(int));" + getNL() +
-                              IndentStr + MapNames::getClNamespace() + "free(" +
-                              ResultTempPtr + ", " + DefaultQueue + ");";
+            SuffixInsertStr =
+                SuffixInsertStr + getNL() + IndentStr + "int " +
+                ResultTempHost + " = (int)*" + ResultTempPtr + ";" + getNL() +
+                IndentStr +
+                MemoryMigrationRule::getMemoryHelperFunctionName("memcpy") +
+                "(" + ExprAnalysis::ref(CE->getArg(i)) + ", &" +
+                ResultTempHost + ", sizeof(int));" + getNL() + IndentStr +
+                MapNames::getClNamespace() + "free(" + ResultTempPtr + ", " +
+                DefaultQueue + ");";
             CurrentArgumentRepl = ResultTempPtr;
           } else if (ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<float>" ||
@@ -5704,7 +5706,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   if (HasDeviceAttr) {
     report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
            MapNames::ITFName.at(FuncName),
-           MapNames::getDpctNamespace() + "dpct_memcpy");
+           MemoryMigrationRule::getMemoryHelperFunctionName("memcpy"));
     return;
   }
 
@@ -10162,7 +10164,7 @@ void MemoryMigrationRule::mallocMigration(
     requestFeature(HelperFeatureEnum::device_ext);
     emplaceTransformation(new InsertBeforeStmt(C, OS.str()));
     emplaceTransformation(
-        new ReplaceCalleeName(C, MapNames::getDpctNamespace() + "dpct_malloc"));
+        new ReplaceCalleeName(C, MemoryMigrationRule::getMemoryHelperFunctionName("malloc")));
     emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
     std::ostringstream OS2;
     printDerefOp(OS2, C->getArg(1));
@@ -10343,10 +10345,10 @@ void MemoryMigrationRule::memcpyMigration(
 
   if (ReplaceStr.empty()) {
     if (IsAsync) {
-      ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
+      ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName("memcpy_async");
       requestFeature(HelperFeatureEnum::device_ext);
     } else {
-      ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
+      ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName("memcpy");
       requestFeature(HelperFeatureEnum::device_ext);
     }
   }
@@ -10757,10 +10759,10 @@ void MemoryMigrationRule::memsetMigration(
   bool IsAsync = NameRef.ends_with("Async");
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
-    ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memset";
+    ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName("memset_async");
     requestFeature(HelperFeatureEnum::device_ext);
   } else {
-    ReplaceStr = MapNames::getDpctNamespace() + "dpct_memset";
+    ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName("memset");
     requestFeature(HelperFeatureEnum::device_ext);
   }
 
@@ -11456,6 +11458,10 @@ void MemoryMigrationRule::aggregate3DVectorClassCtor(
 }
 
 void MemoryMigrationRule::handleDirection(const CallExpr *C, unsigned i) {
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    emplaceTransformation(removeArg(C, i, DpctGlobalInfo::getSourceManager()));
+    return;
+  }
   if (C->getNumArgs() > i && !C->getArg(i)->isDefaultArgument()) {
     if (auto DRE = dyn_cast<DeclRefExpr>(C->getArg(i))) {
       if (auto Enum = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
