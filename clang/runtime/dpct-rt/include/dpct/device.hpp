@@ -577,7 +577,7 @@ public:
 
   void
   has_capability_or_fail(const std::initializer_list<sycl::aspect> &props) {
-    has_capability_or_fail(*this, props);
+    ::dpct::has_capability_or_fail(*this, props);
   }
 
 private:
@@ -961,7 +961,7 @@ static inline unsigned int pop_device_for_curr_thread(void) {
 }
 
 static inline unsigned int device_count() {
-  return detail::dev_mgr::instance().device_count();
+  return dev_mgr::instance().device_count();
 }
 } // namespace dpct
 
