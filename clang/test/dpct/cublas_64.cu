@@ -497,4 +497,22 @@ void foo() {
   status = cublasScalEx_64(handle, n, alpha, type_alpha, x, type_x, incx, type_exec);
   status = cublasAxpyEx_64(handle, n, alpha, type_alpha, x, type_x, incx, y, type_y, incy, type_exec);
   status = cublasRotEx_64(handle, n, x, type_x, incx, y, type_y, incy, c, s, type_cs, type_exec);
+
+  void **a_array;
+  void **b_array;
+  void **c_array;
+  void *aa;
+  void *bb;
+  void *cc;
+  cudaDataType type_a;
+  cudaDataType type_b;
+  cudaDataType type_c;
+  void *beta;
+  cublasGemmAlgo_t algo;
+  int64_t batch;
+  int64_t stride_a;
+  int64_t stride_b;
+  int64_t stride_c;
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::blas::gemm_batch(handle, transa, transb, m, n, k, alpha, aa, type_a, lda, stride_a, bb, type_b, ldb, stride_b, beta, cc, type_c, ldc, stride_c, batch, type_exec));
+  status = cublasGemmStridedBatchedEx(handle, transa, transb, m, n, k, alpha, aa, type_a, lda, stride_a, bb, type_b, ldb, stride_b, beta, cc, type_c, ldc, stride_c, batch, type_exec, algo);
 }

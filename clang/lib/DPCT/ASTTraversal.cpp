@@ -4139,7 +4139,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasDotEx", "cublasDotEx_64", "cublasDotcEx", "cublasDotcEx_64",
         "cublasScalEx", "cublasScalEx_64", "cublasAxpyEx", "cublasAxpyEx_64",
         "cublasRotEx", "cublasRotEx_64", "cublasGemmBatchedEx",
-        "cublasGemmStridedBatchedEx", "cublasSdgmm", "cublasDdgmm",
+        "cublasGemmBatchedEx_64", "cublasGemmStridedBatchedEx",
+        "cublasGemmStridedBatchedEx_64", "cublasSdgmm", "cublasDdgmm",
         "cublasCdgmm", "cublasZdgmm", "cublasSgeam", "cublasDgeam",
         "cublasCgeam", "cublasZgeam",
         /*Legacy API*/
@@ -4404,7 +4405,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
        FuncName == "cublasDgemmBatched" || FuncName == "cublasCgemmBatched" ||
        FuncName == "cublasZgemmBatched" || FuncName == "cublasStrsmBatched" ||
        FuncName == "cublasDtrsmBatched" || FuncName == "cublasCtrsmBatched" ||
-       FuncName == "cublasZtrsmBatched" || FuncName == "cublasGemmBatchedEx")) {
+       FuncName == "cublasZtrsmBatched" || FuncName == "cublasGemmBatchedEx" ||
+       FuncName == "cublasGemmBatchedEx_64")) {
     report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
     return;
   }

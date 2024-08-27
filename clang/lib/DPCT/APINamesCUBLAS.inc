@@ -234,11 +234,38 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(14),
                                        BOOL(false), BOOL(false)),
              ARG(15), ARG(16), ARG(17), ARG(18)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasGemmBatchedEx_64",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm_batch", ARG(0),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(3), ARG(4), ARG(5), ARG(6),
+             DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(7), BOOL(true),
+                                       BOOL(false)),
+             ARG(8), ARG(9),
+             DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(10), BOOL(true),
+                                       BOOL(false)),
+             ARG(11), ARG(12), ARG(13),
+             DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(14),
+                                       BOOL(false), BOOL(false)),
+             ARG(15), ARG(16), ARG(17), ARG(18)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasGemmStridedBatchedEx",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm_batch", ARG(0),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+             ARG(18), ARG(19), ARG(20), ARG(21)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasGemmStridedBatchedEx_64",
         CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm_batch", ARG(0),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),

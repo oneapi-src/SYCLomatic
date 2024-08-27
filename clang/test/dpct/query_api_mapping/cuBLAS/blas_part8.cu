@@ -16,7 +16,7 @@
 // cublasScalEx-NEXT:                alphatype /*cudaDataType*/, x /*void **/, xtype /*cudaDataType*/,
 // cublasScalEx-NEXT:                incx /*int*/, computetype /*cudaDataType*/);
 // cublasScalEx-NEXT: Is migrated to:
-// cublasScalEx-NEXT:   dpct::scal(handle->get_queue(), n, alpha, alphatype, x, xtype, incx);
+// cublasScalEx-NEXT:   dpct::blas::scal(handle, n, alpha, alphatype, x, xtype, incx);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDger | FileCheck %s -check-prefix=cublasDger
 // cublasDger: CUDA API:

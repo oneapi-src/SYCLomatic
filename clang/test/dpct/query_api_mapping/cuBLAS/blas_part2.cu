@@ -5,7 +5,7 @@
 // cublasDotEx-NEXT:               ytype /*cudaDataType*/, incy /*int*/, res /*void **/,
 // cublasDotEx-NEXT:               restype /*cudaDataType*/, computetype /*cudaDataType*/);
 // cublasDotEx-NEXT: Is migrated to:
-// cublasDotEx-NEXT:   dpct::dot(handle->get_queue(), n, x, xtype, incx, y, ytype, incy, res, restype);
+// cublasDotEx-NEXT:   dpct::blas::dot(handle, n, x, xtype, incx, y, ytype, incy, res, restype);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtbmv | FileCheck %s -check-prefix=cublasDtbmv
 // cublasDtbmv: CUDA API:
