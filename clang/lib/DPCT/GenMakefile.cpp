@@ -309,6 +309,8 @@ static void getCompileInfo(
           // For macros like -DMSG="message", will migrated to '-DMSG="message"'
           // in auto-generated Makefile.
           NewOptions += "\'" + Option + "\' ";
+        } else {
+          NewOptions += Option + " ";
         }
       } else if (llvm::StringRef(Option).starts_with("-std=")) {
 
