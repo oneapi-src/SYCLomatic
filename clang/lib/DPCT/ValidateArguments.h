@@ -57,7 +57,8 @@ enum class ExplicitNamespace : unsigned int {
   // 1 means EN_CL and it has already been removed
   EN_SYCL = 2,
   EN_SYCL_Math = 3,
-  EN_DPCT = 4
+  EN_DPCT = 4,
+  EN_SYCLCompat
 };
 enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0,
@@ -81,6 +82,7 @@ enum class ExperimentalFeatures : unsigned int {
                           // this_group, this_subgroup.
   Exp_GroupSharedMemory,
   Exp_LogicalGroup,
+  Exp_RootGroup,
   Exp_UserDefineReductions,
   Exp_MaskedSubGroupFunction,
   Exp_DPLExperimentalAPI,

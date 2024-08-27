@@ -20,6 +20,7 @@ set(dpct_rt_files
   include/dpct/group_utils.hpp
   include/dpct/blas_gemm_utils.hpp
   include/dpct/graph.hpp
+  include/dpct/compat_service.hpp
 )
 
 set(dpct_rt_dpstd_files

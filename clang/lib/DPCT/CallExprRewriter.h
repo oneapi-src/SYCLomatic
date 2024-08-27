@@ -57,6 +57,7 @@ private:
   static void initRewriterMapComplex();
   static void initRewriterMapDriver();
   static void initRewriterMapGraph();
+  static void initRewriterMapGraphicsInterop();
   static void initRewriterMapMemory();
   static void initRewriterMapMisc();
   static void initRewriterMapNccl();
@@ -335,9 +336,9 @@ public:
       if ((CheckAssigned && IsAssigned) || (CheckInRetStmt && IsInRetStmt)) {
         if (UseDpctCheckError) {
           if (ExtraParen) {
-            return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+            return MapNames::getCheckErrorMacroName() + "((" + Result.value() + "))";
           }
-          return "DPCT_CHECK_ERROR(" + Result.value() + ")";
+          return MapNames::getCheckErrorMacroName() + "(" + Result.value() + ")";
         } else {
           if (ExtraParen) {
             return "[&](){ (" + Result.value() + "); }()";
@@ -1758,14 +1759,17 @@ createUserDefinedMethodRewriterFactory(
 class CheckParamType {
   unsigned Idx;
   std::string TypeName;
+  bool isStrict;
 
 public:
-  CheckParamType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  CheckParamType(unsigned I, std::string Name, bool isStrict = false)
+      : Idx(I), TypeName(Name), isStrict(isStrict) {}
   bool operator()(const CallExpr *C) {
     std::string ParamType = getParamTypeStr(C, Idx);
     if (ParamType.empty())
       return true;
-    return ParamType.find(TypeName) != std::string::npos;
+    return isStrict ? ParamType == TypeName
+                    : ParamType.find(TypeName) != std::string::npos;
   }
 };
 

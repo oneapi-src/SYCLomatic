@@ -603,6 +603,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
+      REPLACE_ENUM(MapNames::CUBEnumsMap);
 #undef REPLACE_ENUM
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
@@ -1097,7 +1098,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   }
 
   auto RewriteType = [&](std::string &TypeStr, const TypeLoc &TLoc) {
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TypeStr);
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TLoc);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
       auto Rewriter = Itr->second->create(TLoc);
       auto Result = Rewriter->rewrite();
@@ -1144,11 +1145,10 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     auto PP = Context.getPrintingPolicy();
     PP.PrintCanonicalTypes = 1;
-    PrintFullTemplateName(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-                        TSTL.getTypePtr()->getTemplateName());
+    PrintFullTemplateName(OS, PP, TSTL.getTypePtr()->getTemplateName());
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
-    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TL);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
       auto Rewriter = Itr->second->create(TSTL);
       auto Result = Rewriter->rewrite();
@@ -1381,7 +1381,7 @@ void ManagedPointerAnalysis::RecursiveAnalyze() {
 void ManagedPointerAnalysis::buildCallExprRepl() {
   std::ostringstream OS;
   if (Assigned)
-    OS << "DPCT_CHECK_ERROR(";
+    OS << MapNames::getCheckErrorMacroName();
   auto E = FirstArg;
   bool NeedParen = false;
   if (NeedDerefOp) {

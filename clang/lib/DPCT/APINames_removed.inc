@@ -40,3 +40,6 @@ ENTRY(cuMemHostUnregister,             "SYCL currently does not support register
 ENTRY(cudaProfilerStart,               "SYCL currently does not support this function. Remove the profiler API will not impact the outcome.")
 ENTRY(cudaProfilerStop,                "SYCL currently does not support this function. Remove the profiler API will not impact the outcome.")
 ENTRY(cuFuncSetAttribute,              "SYCL currently does not support setting kernel function attributes")
+ENTRY(cuGetExportTable,                "SYCL does not provide a standard API to export internal runtime or driver API. Check and implement the functionality corresponding to the function of the first parameter `const void **table` populated by the API.")
+
+ENTRY(cudaGraphicsResourceSetMapFlags, "this functionality is deprecated in DX12 and hence is not supported in SYCL.")

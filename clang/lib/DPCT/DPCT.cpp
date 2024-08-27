@@ -601,6 +601,13 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationOptionParsingError);
   }
   DpctOptionBase::check();
+  if (UseSYCLCompat && USMLevel.getValue() == UsmLevel::UL_None) {
+    llvm::errs()
+        << "Currently SYCLcompat header-only library (syclcompat:: namespace) "
+           "doesn't support buffer and accessor data management..\n";
+    ShowStatus(MigrationErrorConflictOptions);
+    dpctExit(MigrationErrorConflictOptions);
+  }
 
   DpctInstallPath = getInstallPath(argv[0]);
 
@@ -880,6 +887,23 @@ int runDPCT(int argc, const char **argv) {
 
     Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
+    constexpr StringRef UnsupportedStr{"// UNSUPPORTED:"};
+    bool win_unsupported = false;
+    bool lin_unsupported = false;
+    if (SourceCode.starts_with(UnsupportedStr)) {
+      while (SourceCode.consume_front(UnsupportedStr)) {
+        auto UnsupportedPlatform = SourceCode.substr(
+            0, SourceCode.find_first_of('\n'));
+        UnsupportedPlatform = UnsupportedPlatform.trim(' ');
+        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
+
+        if (UnsupportedPlatform == "system-windows")
+          win_unsupported = true;
+        if (UnsupportedPlatform == "system-linux")
+          lin_unsupported = true;
+      }
+    }
+
     static const std::string OptionStr{"// Option:"};
     if (SourceCode.starts_with(OptionStr)) {
       QueryAPIMappingOpt += " (with the option";
@@ -903,6 +927,8 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
           else if (Option.ends_with("logical-group"))
             Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+          else if (Option.ends_with("root-group"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_RootGroup);
           else if (Option.ends_with("masked-sub-group-operation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_MaskedSubGroupFunction);
@@ -929,6 +955,23 @@ int runDPCT(int argc, const char **argv) {
     EndPos = SourceCode.find_last_of('\n', EndPos);
     QueryAPIMappingSrc =
         SourceCode.substr(StartPos, EndPos - StartPos + 1).str();
+#ifdef _WIN32
+    if (win_unsupported) {
+      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
+                   << "The API mapping query for this API is not available "
+                    "on Windows.\n";
+      return MigrationSucceeded;
+    }
+#else
+    if (lin_unsupported) {
+      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
+                   << "The API mapping query for this API is not available "
+                    "on Linux.\n";
+      return MigrationSucceeded;
+    }
+#endif
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {
@@ -1064,6 +1107,7 @@ int runDPCT(int argc, const char **argv) {
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
+  DpctGlobalInfo::setUseSYCLCompat(UseSYCLCompat);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRootPath;
 
@@ -1071,14 +1115,16 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::setExcludePath(ExcludePathList);
   }
 
-  std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
-      ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
-  if (UseExplicitNamespace.getNumOccurrences())
-    DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-  else
-    DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-
-  MapNames::setExplicitNamespaceMap();
+  std::set<ExplicitNamespace> ExplicitNamespaces;
+  if (UseExplicitNamespace.getNumOccurrences()) {
+    ExplicitNamespaces.insert(UseExplicitNamespace.begin(),
+                              UseExplicitNamespace.end());
+  } else {
+    ExplicitNamespaces.insert({UseSYCLCompat ? ExplicitNamespace::EN_SYCLCompat
+                                             : ExplicitNamespace::EN_DPCT,
+                               ExplicitNamespace::EN_SYCL});
+  }
+  MapNames::setExplicitNamespaceMap(ExplicitNamespaces);
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
@@ -1149,7 +1195,7 @@ int runDPCT(int argc, const char **argv) {
                      DpctGlobalInfo::getHelperFuncPreferenceFlag(),
                      Preferences.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
-                     DpctGlobalInfo::getExplicitNamespaceSet(),
+                     ExplicitNamespaces,
                      UseExplicitNamespace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
@@ -1168,6 +1214,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_UseSYCLCompat, UseSYCLCompat.getValue(),
+                     UseSYCLCompat.getNumOccurrences());
     if (!MigrateBuildScriptOnly &&
         clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
@@ -1175,21 +1223,6 @@ int runDPCT(int argc, const char **argv) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);
         return MigrationErrorDifferentOptSet;
       }
-    }
-  }
-
-  if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
-      ReportType.getValue() == ReportTypeEnum::RTE_Stats) {
-    // When option "--report-type=stats" or option " --report-type=all" is
-    // specified to get the migration status report, dpct namespace should be
-    // enabled temporarily to get LOC migrated to helper functions in function
-    // getLOCStaticFromCodeRepls() if it is not enabled.
-    auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-    if (!NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
-      std::vector<ExplicitNamespace> ENVec;
-      ENVec.push_back(ExplicitNamespace::EN_DPCT);
-      DpctGlobalInfo::setExplicitNamespace(ENVec);
-      DpctGlobalInfo::setDPCTNamespaceTempEnabled();
     }
   }
 
