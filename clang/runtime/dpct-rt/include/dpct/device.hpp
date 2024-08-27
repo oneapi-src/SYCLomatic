@@ -575,6 +575,11 @@ public:
   }
   sycl::context get_context() const { return _ctx; }
 
+  void
+  has_capability_or_fail(const std::initializer_list<sycl::aspect> &props) {
+    has_capability_or_fail(*this, props);
+  }
+
 private:
   void clear_queues() {
     _queues.clear();
@@ -955,6 +960,9 @@ static inline unsigned int pop_device_for_curr_thread(void) {
   return dev_mgr::instance().pop_device();
 }
 
+static inline unsigned int device_count() {
+  return detail::dev_mgr::instance().device_count();
+}
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

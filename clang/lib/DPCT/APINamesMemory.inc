@@ -255,51 +255,63 @@ ASSIGNABLE_FACTORY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     makeCheckNot(CheckArgIsDefaultCudaStream(3)),
-    MEMBER_CALL_FACTORY_ENTRY(
-        "cuMemPrefetchAsync", ARG(3), true, "prefetch", ARG(0), ARG(1)),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-            MEMBER_CALL_FACTORY_ENTRY(
-                "cuMemPrefetchAsync", MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
-                false, "get_device", ARG(2)), false, DpctGlobalInfo::getDeviceQueueName()), false, "prefetch", ARG(0), ARG(1)))))
-
+    MEMBER_CALL_FACTORY_ENTRY("cuMemPrefetchAsync", ARG(3), true, "prefetch",
+                              ARG(0), ARG(1)),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemPrefetchAsync",
+            MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
+                             ARG(2)),
+                        false, DpctGlobalInfo::getDeviceQueueName()),
+            false, "prefetch", ARG(0), ARG(1)))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkArgSpelling(3, "CU_DEVICE_CPU"),
     CONDITIONAL_FACTORY_ENTRY(
         checkIsArgIntegerLiteral(2),
-            WARNING_FACTORY_ENTRY("cuMemAdvise",
-                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        MEMBER_CALL_FACTORY_ENTRY(
-                        "cuMemAdvise",
-                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, DpctGlobalInfo::getDeviceQueueName()),
+        WARNING_FACTORY_ENTRY(
+            "cuMemAdvise",
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::device_ext,
+                MEMBER_CALL_FACTORY_ENTRY(
+                    "cuMemAdvise",
+                    MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                     "cpu_device"),
+                                false, DpctGlobalInfo::getDeviceQueueName()),
                     false, "mem_advise", ARG(0), ARG(1), ARG("0"))),
-                Diagnostics::DEFAULT_MEM_ADVICE,
-                ARG(" and was set to 0")),
+            Diagnostics::DEFAULT_MEM_ADVICE, ARG(" and was set to 0")),
 
-            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                    MEMBER_CALL_FACTORY_ENTRY(
-                        "cuMemAdvise",
-                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, DpctGlobalInfo::getDeviceQueueName()),
-                        false, "mem_advise", ARG(0), ARG(1), ARG(2)))),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cuMemAdvise",
+                MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"),
+                            false, DpctGlobalInfo::getDeviceQueueName()),
+                false, "mem_advise", ARG(0), ARG(1), ARG(2)))),
 
     CONDITIONAL_FACTORY_ENTRY(
         checkIsArgIntegerLiteral(2),
-            WARNING_FACTORY_ENTRY("cuMemAdvise",
-                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        MEMBER_CALL_FACTORY_ENTRY(
-                            "cuMemAdvise",
-                            MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
-                            false, "get_device", ARG(3)), false, DpctGlobalInfo::getDeviceQueueName()),
-                            false, "mem_advise", ARG(0), ARG(1), ARG("0"))),
-                Diagnostics::DEFAULT_MEM_ADVICE,
-                ARG(" and was set to 0")),
-
-            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                    MEMBER_CALL_FACTORY_ENTRY(
-                        "cuMemAdvise",
-                        MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
-                        false, "get_device", ARG(3)), false, DpctGlobalInfo::getDeviceQueueName()),
-                        false, "mem_advise", ARG(0), ARG(1), ARG(2))))))
+        WARNING_FACTORY_ENTRY(
+            "cuMemAdvise",
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::device_ext,
+                MEMBER_CALL_FACTORY_ENTRY(
+                    "cuMemAdvise",
+                    MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                         "get_device",
+                                     ARG(3)),
+                                false, DpctGlobalInfo::getDeviceQueueName()),
+                    false, "mem_advise", ARG(0), ARG(1), ARG("0"))),
+            Diagnostics::DEFAULT_MEM_ADVICE, ARG(" and was set to 0")),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cuMemAdvise",
+                MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
+                                 ARG(3)),
+                            false, DpctGlobalInfo::getDeviceQueueName()),
+                false, "mem_advise", ARG(0), ARG(1), ARG(2))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
@@ -307,12 +319,15 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
         CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getDpctNamespace() + "dpct_free", ARG(0))))))
 
-ASSIGNABLE_FACTORY(
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                ASSIGN_FACTORY_ENTRY("cuDeviceTotalMem_v2", DEREF(makeDerefArgCreatorWithCall(0)),
-                    MEMBER_CALL(MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
-                        false, "get_device", ARG(1)),
-                        false, "get_device_info"), false, "get_global_mem_size"))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    ASSIGN_FACTORY_ENTRY(
+        "cuDeviceTotalMem_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+        MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                         "get_device",
+                                     ARG(1)),
+                                false, "get_device_info"),
+                    false, "get_global_mem_size"))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
@@ -679,10 +694,9 @@ CONDITIONAL_FACTORY_ENTRY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cuDeviceCanAccessPeer", DEREF(ARG_WC(0)),
         MEMBER_CALL(
-          MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false, "get_device", ARG_WC(1)),
-          false,
-          "ext_oneapi_can_access_peer",
-          MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false, "get_device", ARG_WC(2))))),
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(1)), false,
+            "ext_oneapi_can_access_peer",
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(2))))),
     ASSIGNABLE_FACTORY(
         WARNING_FACTORY_ENTRY("cuDeviceCanAccessPeer",
                               ASSIGN_FACTORY_ENTRY("cuDeviceCanAccessPeer",
@@ -693,13 +707,10 @@ CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudaDeviceCanAccessPeer", DEREF(ARG_WC(0)),
-        MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
-                             "dev_mgr::instance().get_device",
-                         ARG_WC(1)),
-                    false, "ext_oneapi_can_access_peer",
-                    CALL(MapNames::getDpctNamespace() +
-                             "dev_mgr::instance().get_device",
-                         ARG_WC(2))))),
+        MEMBER_CALL(
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(1)), false,
+            "ext_oneapi_can_access_peer",
+            CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(2))))),
     ASSIGNABLE_FACTORY(
         WARNING_FACTORY_ENTRY("cudaDeviceCanAccessPeer",
                               ASSIGN_FACTORY_ENTRY("cudaDeviceCanAccessPeer",
@@ -712,8 +723,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cudaDeviceEnablePeerAccess",
         CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
         "ext_oneapi_enable_peer_access",
-        CALL(MapNames::getDpctNamespace() + "dev_mgr::instance().get_device",
-             ARG_WC(0)))),
+        CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(0)))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cudaDeviceEnablePeerAccess",
         "SYCL currently does not support memory access across peer devices. "
@@ -726,8 +736,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cudaDeviceDisablePeerAccess",
         CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
         "ext_oneapi_disable_peer_access",
-        CALL(MapNames::getDpctNamespace() + "dev_mgr::instance().get_device",
-             ARG_WC(0)))),
+        CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(0)))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cudaDeviceDisablePeerAccess",
         "SYCL currently does not support memory access across peer devices. "
@@ -740,8 +749,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cuCtxEnablePeerAccess",
         CALL(MapNames::getDpctNamespace() + "get_current_device"), false,
         "ext_oneapi_enable_peer_access",
-        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-                    "get_device", ARG_WC(0)))),
+        CALL(MapNames::getDpctNamespace() + "get_device", ARG_WC(0)))),
     REMOVE_API_FACTORY_ENTRY_WITH_MSG(
         "cuCtxEnablePeerAccess",
         "SYCL currently does not support memory access across peer devices. "

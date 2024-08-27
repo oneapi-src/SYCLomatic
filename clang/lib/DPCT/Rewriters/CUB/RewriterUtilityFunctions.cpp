@@ -105,25 +105,18 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
           MEMBER_CALL_FACTORY_ENTRY("cub::SyncStream", QUEUESTR, false, "wait"),
           MEMBER_CALL_FACTORY_ENTRY("cub::SyncStream", ARG(0), true, "wait"))
       // cub::DeviceCount
-      MEMBER_CALL_FACTORY_ENTRY(
-          "cub::DeviceCount",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "device_count")
+      CALL_FACTORY_ENTRY("cub::DeviceCount",
+                         CALL(MapNames::getDpctNamespace() + "device_count"))
       // cub::DeviceCountUncached
-      MEMBER_CALL_FACTORY_ENTRY(
-          "cub::DeviceCountUncached",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "device_count")
+      CALL_FACTORY_ENTRY("cub::DeviceCountUncached",
+                         CALL(MapNames::getDpctNamespace() + "device_count"))
       // cub::DeviceCountCachedValue
-      MEMBER_CALL_FACTORY_ENTRY(
-          "cub::DeviceCountCachedValue",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "device_count")
+      CALL_FACTORY_ENTRY("cub::DeviceCountCachedValue",
+                         CALL(MapNames::getDpctNamespace() + "device_count"))
       // cub::CurrentDevice
-      MEMBER_CALL_FACTORY_ENTRY(
+      CALL_FACTORY_ENTRY(
           "cub::CurrentDevice",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "current_device_id")
+          CALL(MapNames::getDpctNamespace() + "get_current_device_id"))
       // cub::PtxVersion
       ASSIGN_FACTORY_ENTRY("cub::PtxVersion", ARG(0),
                            LITERAL("DPCT_COMPATIBILITY_TEMP"))

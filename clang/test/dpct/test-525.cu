@@ -6,7 +6,7 @@ class C {
   int nDevices;
 public:
   void problem() {
-    // CHECK: nDevices = dpct::dev_mgr::instance().device_count();
+    // CHECK: nDevices = dpct::device_count();
     cudaGetDeviceCount(&nDevices);
   }
 };

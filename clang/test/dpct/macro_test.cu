@@ -190,7 +190,7 @@ void foo() {
 // CHECK-NEXT:     if (err != 0) \
 // CHECK-NEXT:     { \
 // CHECK-NEXT:         int currentDevice; \
-// CHECK-NEXT:         currentDevice = dpct::dev_mgr::instance().current_device_id(); \
+// CHECK-NEXT:         currentDevice = dpct::get_current_device_id(); \
 // CHECK-NEXT:     } \
 // CHECK-NEXT: } while (0)
 #define HANDLE_GPU_ERROR(err) \
@@ -1102,7 +1102,7 @@ template<class T1, class T2, int N> __global__ void foo31();
 #define FOO31(DIMS) foo31<unsigned int, float, DIMS><<<1,1>>>();
 
 //CHECK: {
-//CHECK-NEXT:   dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+//CHECK-NEXT:   q_ct1.get_device().has_capability_or_fail({sycl::aspect::fp64});
 //CHECK-EMPTY:
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*

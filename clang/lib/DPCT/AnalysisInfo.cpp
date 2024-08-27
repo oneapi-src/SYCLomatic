@@ -5983,9 +5983,8 @@ void KernelCallExpr::addDevCapCheckStmt() {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string Str;
     llvm::raw_string_ostream OS(Str);
-    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
     printStreamBase(OS);
-    OS << "get_device(), {" << AspectList.front();
+    OS << "get_device().has_capability_or_fail({" << AspectList.front();
     for (size_t i = 1; i < AspectList.size(); ++i) {
       OS << ", " << AspectList[i];
     }
