@@ -66,13 +66,6 @@ void CudaInstallationDetector::ParseThrustVersionFile(
     if (FindTargetVersion(Line, "define", "THRUST_VERSION", Res))
       break;
   }
-
-  // The length of thrust version string is 6(CUDA-12.4 or later) or not
-  // defined(before CUDA-12.4)
-  if (Res.length() != 6) {
-    return;
-  }
-
   if (Res == "") {
     return;
   }
@@ -127,11 +120,7 @@ bool CudaInstallationDetector::FindTargetVersion(const std::string &Line,
   for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
     ;
 
-  size_t End = Pos;
-  for (; End < Line.size() && std::isdigit(Line[End]); End++)
-    ;
-
-  Result = Line.substr(Pos, End - Pos);
+  Result = Line.substr(Pos);
   return true;
 }
 
@@ -147,16 +136,13 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
     if (FindTargetVersion(Line, "define", "CUDA_VERSION", Res))
       break;
   }
-
-  // The length of CUDA version string is 4(before CUDA-10) or
-  // 5(CUDA-10 and later).
-  if (Res.length() != 4 && Res.length() != 5) {
-    return false;
-  }
   if (Res == "") {
     return false;
   }
   int DefineVersion = std::stoi(Res);
+  if (DefineVersion < 8000) { // 8000 is for CUDA-8.0
+    return false;
+  }
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
   SDKVersionMajor = Major;
