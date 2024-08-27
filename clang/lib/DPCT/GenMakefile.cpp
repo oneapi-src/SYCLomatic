@@ -286,18 +286,30 @@ static void getCompileInfo(
         IsSystemInclude = true;
       } else if (llvm::StringRef(Option).starts_with("-D")) {
         // Parse macros defined.
+        bool NeedSigleQuote = false;
         std::size_t Len = Option.length() - strlen("-D");
         std::size_t Pos = Option.find("=");
         if (Pos != std::string::npos) {
+          std::string Value = Option.substr(Pos + 1, Option.length() - Pos);
+          if (Value.size() >= 2 && Value.front() == '"' &&
+              Value.back() == '"') {
+            NeedSigleQuote = true;
+          }
+
           Len = Pos - strlen("-D");
         }
         std::string MacroName = Option.substr(strlen("-D"), Len);
         auto Iter = MapNames::MacroRuleMap.find(MacroName);
-        if (Iter != MapNames::MacroRuleMap.end())
+        if (Iter != MapNames::MacroRuleMap.end()) {
           // Skip macros defined in helper function header files
           continue;
-        else
-          NewOptions += Option + " ";
+        }
+
+        if (NeedSigleQuote) {
+          // For macros like -DMSG="message", will migrated to '-DMSG="message"'
+          // in auto-generated Makefile.
+          NewOptions += "\'" + Option + "\' ";
+        }
       } else if (llvm::StringRef(Option).starts_with("-std=")) {
 
         size_t Idx = 0;
