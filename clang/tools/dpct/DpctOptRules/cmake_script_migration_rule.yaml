@@ -824,30 +824,6 @@
       MatchMode: Full
       RuleId: "remove_-static-libstdc++"
 
-- Rule: rule_target_link_libraries_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC
-  In: target_link_libraries(${target} ${libs})
-  Out: target_link_libraries(${target} ${libs})
-  Subrules:
-    libs:
-      In: CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC
-      Out: ""
-      MatchMode: Full
-
-- Rule: rule_target_link_libraries_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED
-  In: target_link_libraries(${target} ${libs})
-  Out: target_link_libraries(${target} ${libs})
-  Subrules:
-    libs:
-      In: CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED
-      Out: ""
-      MatchMode: Full
-
 - Rule: rule_link_libraries_cuda
   Kind: CMakeRule
   Priority: Fallback
@@ -3112,6 +3088,19 @@
       Out: |
         \${CMAKE_CXX_COMPILER}
 
+- Rule: rule_find_program_nvcc_exe
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_program_nvcc_exe
+  In: find_program(${var} ${value})
+  Out: find_program(${var} ${value})
+  Subrules:
+    value:
+      MatchMode: StrictFull
+      In: nvcc.exe
+      Out: |
+        \${CMAKE_CXX_COMPILER}.exe
+
 - Rule: rule_CUDAToolkit_BIN_DIR
   Kind: CMakeRule
   Priority: Fallback
@@ -3123,3 +3112,27 @@
       MatchMode: Full
       In: CUDAToolkit_BIN_DIR
       Out: SYCL_BIN_DIR
+
+- Rule: rule_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC
+  In: ${func_name}(${args})
+  Out: ${func_name}(${args})
+  Subrules:
+    args:
+      MatchMode: Full
+      In: \${CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC}
+      Out: ""
+
+- Rule: rule_CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED
+  In: ${func_name}(${args})
+  Out: ${func_name}(${args})
+  Subrules:
+    args:
+      MatchMode: Full
+      In: \${CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED}
+      Out: ""
