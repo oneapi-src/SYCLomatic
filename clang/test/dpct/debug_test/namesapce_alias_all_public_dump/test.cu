@@ -12,6 +12,11 @@ struct P2{
 using Point2D = P2;
 };
 
+typedef struct {
+  int x;
+  int y;
+} PP2;
+
 template<typename T>
 class Point3D {
 public:
@@ -37,6 +42,12 @@ struct PointCloud {
 };
 
 __global__ void kernel2d(test_codepin::Point2D* a, test_codepin::Point2D* b, test_codepin::Point2D* c) {
+  int i = threadIdx.x;
+  c[i].x = a[i].x + b[i].x;
+  c[i].y = a[i].y + b[i].y;
+}
+
+__global__ void kernel2d_2(PP2* a, PP2* b, PP2* c) {
   int i = threadIdx.x;
   c[i].x = a[i].x + b[i].x;
   c[i].y = a[i].y + b[i].y;
@@ -85,6 +96,22 @@ int main() {
   cudaMemcpy(d_b2d, h_2d, sizeof(test_codepin::Point2D) * NUM, cudaMemcpyHostToDevice);
   cudaMemcpy(d_c2d, h_2d, sizeof(test_codepin::Point2D) * NUM, cudaMemcpyHostToDevice);
   kernel2d<<<1, NUM>>>(d_a2d, d_b2d, d_c2d);
+  cudaDeviceSynchronize();
+  
+
+  PP2 h_pp2_2d[NUM];
+  for(int i = 0; i < NUM; i++) {
+    h_pp2_2d[i].x = i;
+    h_pp2_2d[i].y = i;
+  }  
+  PP2 *d_pp2_a2d, *d_pp2_b2d, *d_pp2_c2d;	
+  cudaMalloc(&d_pp2_a2d, sizeof(PP2) * NUM);
+  cudaMalloc(&d_pp2_b2d, sizeof(PP2) * NUM);
+  cudaMalloc(&d_pp2_c2d, sizeof(PP2) * NUM);
+  cudaMemcpy(d_pp2_a2d, h_pp2_2d, sizeof(PP2) * NUM, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_pp2_b2d, h_pp2_2d, sizeof(PP2) * NUM, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_pp2_c2d, h_pp2_2d, sizeof(PP2) * NUM, cudaMemcpyHostToDevice);
+  kernel2d_2<<<1, NUM>>>(d_pp2_a2d, d_pp2_b2d, d_pp2_c2d);
   cudaDeviceSynchronize();
 
   Point3D<float> h_3d[NUM];

@@ -11597,8 +11597,12 @@ void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
 
 void UnnamedTypesRule::runRule(const MatchFinder::MatchResult &Result) {
   auto D = getNodeAsType<CXXRecordDecl>(Result, "unnamedType");
-  if (D && D->getName().empty())
-    emplaceTransformation(new InsertClassName(D));
+  if (D && D->getName().empty()) {
+    if (DpctGlobalInfo::isCodePinEnabled()) {
+      emplaceTransformation(new InsertClassName(D, RT_CUDAWithCodePin));
+    }
+    emplaceTransformation(new InsertClassName(D, RT_ForSYCLMigration));
+  }
 }
 
 REGISTER_RULE(UnnamedTypesRule, PassKind::PK_Migration)

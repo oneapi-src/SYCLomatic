@@ -218,7 +218,15 @@ void GenCodePinHeaderRule::collectMemberInfo(
     } else {
       Begin += 1;
     }
-    VI.OrgTypeName = TypenameWithoutScope.substr(Begin);
+    std::string OrgType = TypenameWithoutScope.substr(Begin);
+    clang::QualType TypedefType =  T.getLocalUnqualifiedType();
+    if (const clang::RecordType *RecordType = TypedefType->getAs<clang::RecordType>()) {
+        const clang::RecordDecl *RecordDecl = RecordType->getDecl();
+        if (!RecordDecl->getIdentifier()) {
+          OrgType = "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
+        }
+    }
+    VI.OrgTypeName = OrgType;
   }
   VI.IsValid = true;
   if (VI.VarRecordType.empty()) {

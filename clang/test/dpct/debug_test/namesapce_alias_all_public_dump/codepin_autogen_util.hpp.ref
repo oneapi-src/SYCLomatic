@@ -9,6 +9,9 @@
 //CHECK: class P3;
 //CHECK: using Point3DExt = P3;
 
+//CHECK: struct dpct_type_140125;
+//CHECK: using PP2 = dpct_type_140125;
+
 //CHECK: namespace test_codepin{
 //CHECK: struct P2;
 //CHECK: using Point2D = P2;
@@ -38,6 +41,12 @@
 //CHECK: class Point3DExt_codepin : public Point3D_codepin<int> {
 //CHECK: public:
 //CHECK:   Color_codepin col;
+//CHECK: };
+
+//CHECK: struct PP2_codepin {
+//CHECK: public:
+//CHECK:   int x;
+//CHECK:   int y;
 //CHECK: };
 
 //CHECK: struct Point2D_codepin {
@@ -310,6 +319,45 @@
 //CHECK:   }
 //CHECK: };
 
+//CHECK: template <> class data_ser<PP2_codepin> {
+//CHECK:  public:
+//CHECK:    static void dump(dpctexp::codepin::detail::json_stringstream &ss, PP2_codepin &value,
+//CHECK:                     dpctexp::codepin::queue_t queue) {
+//CHECK:      auto arr = ss.array();
+//CHECK:      {
+//CHECK:        auto obj0 = arr.object();
+//CHECK:        obj0.key("x");
+//CHECK:        auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
+//CHECK:        dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
+//CHECK:        obj0.key("Data");
+//CHECK:        dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x, queue);
+//CHECK:      }
+//CHECK:      {
+//CHECK:        auto obj1 = arr.object();
+//CHECK:        obj1.key("y");
+//CHECK:        auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
+//CHECK:        dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
+//CHECK:        obj1.key("Data");
+//CHECK:        dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y, queue);
+//CHECK:      }
+//CHECK:    }
+//CHECK:    static void print_type_name(json_stringstream::json_obj &obj) {
+//CHECK:      obj.key("Type");
+//CHECK:      obj.value("PP2_codepin");
+//CHECK:    }
+//CHECK:  };
+//CHECK:  template <> class data_ser<PP2> {
+//CHECK:  public:
+//CHECK:    static void dump(dpctexp::codepin::detail::json_stringstream &ss, PP2 &value,
+//CHECK:                     dpctexp::codepin::queue_t queue) {
+//CHECK:      PP2_codepin& temp = reinterpret_cast<PP2_codepin&>(value);
+//CHECK:      dpctexp::codepin::detail::data_ser<PP2_codepin>::dump(ss, temp, queue);
+//CHECK:    }
+//CHECK:    static void print_type_name(json_stringstream::json_obj &obj) {
+//CHECK:      obj.key("Type");
+//CHECK:      obj.value("PP2");
+//CHECK:    }
+//CHECK:  };
 
 //CHECK: }
 //CHECK: }
