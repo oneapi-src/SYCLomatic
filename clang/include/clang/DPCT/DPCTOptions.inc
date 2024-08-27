@@ -610,13 +610,17 @@ DPCT_ENUM_OPTION(
             "Generate code with sycl:: namespace, applied only for "
             "SYCL math functions.\n"
             "Cannot be used with cl or sycl values.",
-            false)),
+            false),
+        DPCT_OPTION_ENUM_VALUE("syclcompat",
+                               int(ExplicitNamespace::EN_SYCLCompat),
+                               "Generate code with syclcompat:: namespace.",
+                               false)),
     llvm::cl::desc("Defines the namespaces to use explicitly in generated "
                    "code. The <value> is a comma\n"
-                   "separated list. Default: dpct, sycl.\n"
+                   "separated list. Default: dpct/syclcompat, sycl.\n"
                    "Possible values are:"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
-    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
+    llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(
     clang::dpct::bits, DPCPPExtensionsDefaultEnabled, NoDPCPPExtensions,
@@ -718,10 +722,17 @@ DPCT_ENUM_OPTION(
             "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
             "Experimental helper function used to logically group work-items.",
             false),
+        DPCT_OPTION_ENUM_VALUE("root-group",
+                               int(ExperimentalFeatures::Exp_RootGroup),
+                               "Experimental extension that allows use of root "
+                               "group class and relative API.\n",
+                               false),
         DPCT_OPTION_ENUM_VALUE(
             "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-            "Experimental helper function used to help cross-group "
-            "synchronization during migration.\n",
+            "DEPRECATED : Experimental helper function used to help "
+            "cross-group "
+            "synchronization during migration. Please use the option: "
+            "--use-experimental-features=root-group instead.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "user-defined-reductions",
@@ -781,7 +792,8 @@ DPCT_ENUM_OPTION(
             "Enable all experimental extensions listed in this option.\n",
             false)),
     llvm::cl::desc(
-        "A comma-separated list of experimental features to be used in migrated "
+        "A comma-separated list of experimental features to be used in "
+        "migrated "
         "code.\n"
         "By default, experimental features will not be used in migrated "
         "code.\nThe values are:\n"),
@@ -938,6 +950,16 @@ DPCT_ENUM_OPTION(
     llvm::cl::desc("The preference of helper function usage in migration.\n"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
+
+DPCT_FLAG_OPTION(
+    UseSYCLCompat, clang::dpct::DpctOptionClass::OC_Attribute,
+    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
+                        clang::dpct::DpctActionKind::DAK_Migration),
+    "use-syclcompat",
+    llvm::cl::desc(
+        "Use SYCLcompat header-only library (syclcompat:: namespace) to assist "
+        "the migration of input source code.\nDefault: off.\n"),
+    llvm::cl::cat(DPCTCodeGenCat), llvm::cl::cat(DPCTCat))
 
 DPCT_FLAG_OPTION(
     AnalysisMode, clang::dpct::DpctOptionClass::OC_Action,
