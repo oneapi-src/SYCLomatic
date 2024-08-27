@@ -1,4 +1,4 @@
-//===--------------- ASTTraversal.h ---------------------------------------===//
+//===--------------------------- ASTTraversal.h ---------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -1795,6 +1795,12 @@ public:
 };
 
 class AssertRule : public NamedMigrationRule<AssertRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

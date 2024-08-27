@@ -315,7 +315,7 @@ ENTRY(cudaD3D10UnregisterResource, cudaD3D10UnregisterResource, false, NO_FLAG, 
 // Direct3D 11 interoperability functions of runtime API
 ENTRY(cudaD3D11GetDevice, cudaD3D11GetDevice, false, NO_FLAG, P4, "comment")
 ENTRY(cudaD3D11GetDevices, cudaD3D11GetDevices, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphicsD3D11RegisterResource, cudaGraphicsD3D11RegisterResource, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphicsD3D11RegisterResource, cudaGraphicsD3D11RegisterResource, true, NO_FLAG, P4, "Successful/DPCT1119")
 
 // deprecated Direct3D 11 interoperability functions of runtime API
 ENTRY(cudaD3D11GetDirect3DDevice, cudaD3D11GetDirect3DDevice, false, NO_FLAG, P4, "comment")
@@ -342,13 +342,13 @@ ENTRY(cudaGraphicsEGLRegisterImage, cudaGraphicsEGLRegisterImage, false, NO_FLAG
 ENTRY(cudaGraphicsResourceGetMappedEglFrame, cudaGraphicsResourceGetMappedEglFrame, false, NO_FLAG, P4, "comment")
 
 // graphics interoperability functions of runtime API
-ENTRY(cudaGraphicsMapResources, cudaGraphicsMapResources, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsResourceGetMappedMipmappedArray, cudaGraphicsResourceGetMappedMipmappedArray, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphicsResourceGetMappedPointer, cudaGraphicsResourceGetMappedPointer, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsResourceSetMapFlags, cudaGraphicsResourceSetMapFlags, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsSubResourceGetMappedArray, cudaGraphicsSubResourceGetMappedArray, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsUnmapResources, cudaGraphicsUnmapResources, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsUnregisterResource, cudaGraphicsUnregisterResource, false, NO_FLAG, P0, "comment")
+ENTRY(cudaGraphicsMapResources, cudaGraphicsMapResources, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsResourceGetMappedMipmappedArray, cudaGraphicsResourceGetMappedMipmappedArray, true, NO_FLAG, P4, "Successful/DPCT1119")
+ENTRY(cudaGraphicsResourceGetMappedPointer, cudaGraphicsResourceGetMappedPointer, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsResourceSetMapFlags, cudaGraphicsResourceSetMapFlags, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
+ENTRY(cudaGraphicsSubResourceGetMappedArray, cudaGraphicsSubResourceGetMappedArray, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsUnmapResources, cudaGraphicsUnmapResources, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsUnregisterResource, cudaGraphicsUnregisterResource, true, NO_FLAG, P0, "Successful/DPCT1119")
 
 // low level texture reference management functions of runtime API
 ENTRY(cudaBindTexture, cudaBindTexture, true, NO_FLAG, P0, "Successful")

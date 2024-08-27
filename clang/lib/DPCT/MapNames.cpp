@@ -661,6 +661,8 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasLtMatrixTransformDesc_t",
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_ptr")},
+      {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
+      {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1488,6 +1490,20 @@ void MapNames::setExplicitNamespaceMap(
       {"CUSOLVER_EIG_RANGE_I",
        std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsMapFlags
+      {"cudaGraphicsMapFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsReadOnly", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsWriteDiscard", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsRegisterFlags
+      {"cudaGraphicsRegisterFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsReadOnly",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsWriteDiscard",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsSurfaceLoadStore",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsTextureGather",
+       std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
