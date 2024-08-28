@@ -751,7 +751,10 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
   std::vector<char> _host_buffer;
 #endif
 
-  void create_image(sycl::queue q) {
+public:
+  void create_image(sycl::queue &q = get_default_queue()) {
+    if (_image)
+      return;
     auto &data = get_data();
     if (data.get_data_type() == image_data_type::matrix) {
       _image = static_cast<image_matrix_p>(data.get_data_ptr())
@@ -791,7 +794,6 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
     return;
   }
 
-public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
       typename image_accessor_ext<T, IsImageArray ? (dimensions - 1) : dimensions,
@@ -801,10 +803,9 @@ public:
   ~image_wrapper() override { detach(); }
 
   /// Get image accessor.
-  accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {
-    if (!_image)
-      create_image(q);
-    return accessor_t(*_image, cgh);
+  accessor_t get_access(sycl::handler &cgh) {
+    if (_image)
+      return accessor_t(*_image, cgh);
   }
 
   /// Detach data.
