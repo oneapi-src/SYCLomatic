@@ -32,6 +32,7 @@ int main() {
 // CHECK-NEXT:      a.init();
 // CHECK-NEXT:      b.init();
 // CHECK-NEXT:      al.init();
+// CHECK-NEXT:      static_cast<dpct::image_wrapper<sycl::uint2, 1> *>(tex21)->create_image();
 // CHECK-EMPTY:
 // CHECK-NEXT:      dpct::get_in_order_queue().submit(
 // CHECK-NEXT:          [&](sycl::handler &cgh) {
