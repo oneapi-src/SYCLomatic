@@ -10367,6 +10367,15 @@ void MemoryMigrationRule::memcpyMigration(
 void MemoryMigrationRule::arrayMigration(
     const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    ExprAnalysis EA;
+    if (ULExpr)
+      EA.analyze(ULExpr);
+    else
+      EA.analyze(C);
+    emplaceTransformation(EA.getReplacement());
+    return;
+  }
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
@@ -13118,11 +13127,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "cudaTextureDesc", "cudaResourceDesc", "cudaResourceType",
               "cudaTextureAddressMode", "cudaTextureFilterMode", "cudaArray",
               "cudaArray_t", "CUarray_st", "CUarray", "CUarray_format",
-              "CUarray_format_enum", "CUdeviceptr", "CUresourcetype",
-              "CUresourcetype_enum", "CUaddress_mode", "CUaddress_mode_enum",
-              "CUfilter_mode", "CUfilter_mode_enum", "CUDA_RESOURCE_DESC",
-              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
-              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
+              "CUarray_format_enum", "CUresourcetype", "CUresourcetype_enum",
+              "CUaddress_mode", "CUaddress_mode_enum", "CUfilter_mode",
+              "CUfilter_mode_enum", "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC",
+              "CUtexref", "textureReference", "cudaMipmappedArray",
+              "cudaMipmappedArray_t"))))))
           .bind("texType"),
       this);
 

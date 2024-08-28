@@ -40,6 +40,23 @@ void initRewriterMapSYCLcompatUnsupport(
 RewriterMap.insert({
 #include "../APINamesGraph.inc"
 #include "../APINamesTexture.inc"
+SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DArrayToArray")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DFromArray")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DFromArrayAsync")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DToArray")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DToArrayAsync")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpyArrayToArray")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpyToArray")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpyToArrayAsync")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpyFromArray")
+SYCLCOMPAT_UNSUPPORT("cudaMemcpyFromArrayAsync")
+SYCLCOMPAT_UNSUPPORT("cuMemcpyAtoH_v2")
+SYCLCOMPAT_UNSUPPORT("cuMemcpyHtoA_v2")
+SYCLCOMPAT_UNSUPPORT("cuMemcpyAtoHAsync_v2")
+SYCLCOMPAT_UNSUPPORT("cuMemcpyHtoAAsync_v2")
+SYCLCOMPAT_UNSUPPORT("cuMemcpyAtoD_v2")
+SYCLCOMPAT_UNSUPPORT("cuMemcpyDtoA_v2")
+SYCLCOMPAT_UNSUPPORT("cuMemcpyAtoA_v2")
         });
 }
 

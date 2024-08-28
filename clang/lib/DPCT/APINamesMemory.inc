@@ -266,7 +266,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
             MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
                              ARG(2)),
                         false, DpctGlobalInfo::getDeviceQueueName()),
-            false, "prefetch", ARG(0), ARG(1)))))
+            DpctGlobalInfo::useSYCLCompat(), "prefetch", ARG(0), ARG(1)))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkArgSpelling(3, "CU_DEVICE_CPU"),
@@ -281,7 +281,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                     MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
                                      "cpu_device"),
                                 false, DpctGlobalInfo::getDeviceQueueName()),
-                    false, "mem_advise", ARG(0), ARG(1), ARG("0"))),
+                    DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG("0"))),
             Diagnostics::DEFAULT_MEM_ADVICE, ARG(" and was set to 0")),
 
         FEATURE_REQUEST_FACTORY(
@@ -290,7 +290,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 "cuMemAdvise",
                 MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"),
                             false, DpctGlobalInfo::getDeviceQueueName()),
-                false, "mem_advise", ARG(0), ARG(1), ARG(2)))),
+                DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG(2)))),
 
     CONDITIONAL_FACTORY_ENTRY(
         checkIsArgIntegerLiteral(2),
@@ -304,7 +304,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                                          "get_device",
                                      ARG(3)),
                                 false, DpctGlobalInfo::getDeviceQueueName()),
-                    false, "mem_advise", ARG(0), ARG(1), ARG("0"))),
+                    DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG("0"))),
             Diagnostics::DEFAULT_MEM_ADVICE, ARG(" and was set to 0")),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
@@ -313,7 +313,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
                                  ARG(3)),
                             false, DpctGlobalInfo::getDeviceQueueName()),
-                false, "mem_advise", ARG(0), ARG(1), ARG(2))))))
+                DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG(2))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
