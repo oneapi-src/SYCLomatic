@@ -54,6 +54,7 @@ public:
   static std::string getExpNamespace(bool KeepNamespace = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
   static const std::string &getLibraryHelperNamespace();
+  static const std::string &getCheckErrorMacroName();
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
@@ -309,6 +310,7 @@ public:
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
+  static std::unordered_set<std::string> SYCLcompatUnsupportTypes;
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       TypeNamesMap;
   static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
@@ -316,6 +318,7 @@ public:
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       CuDNNTypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
+  static const std::map<unsigned, std::string> ArrayFlagMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
   static MapTy CUBEnumsMap;

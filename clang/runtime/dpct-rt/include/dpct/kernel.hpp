@@ -36,6 +36,10 @@ typedef void (*kernel_functor)(sycl::queue &, const sycl::nd_range<3> &,
 
 struct kernel_function_info {
   int max_work_group_size = 0;
+  int shared_size_bytes = 0;
+  int local_size_bytes = 0;
+  int const_size_bytes = 0;
+  int num_regs = 0;
 };
 
 static inline void get_kernel_function_info(kernel_function_info *kernel_info,

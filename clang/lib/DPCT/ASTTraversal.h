@@ -1,4 +1,4 @@
-//===--------------- ASTTraversal.h ---------------------------------------===//
+//===--------------------------- ASTTraversal.h ---------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -369,7 +369,7 @@ protected:
       }
       if (Flags.IsAssigned) {
         insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd,
-                          "DPCT_CHECK_ERROR(", ")");
+                          MapNames::getCheckErrorMacroName() + "(", ")");
         requestFeature(HelperFeatureEnum::device_ext);
       }
 
@@ -1055,7 +1055,7 @@ private:
   std::string getTypeStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
   std::string getAssignedStr(const Expr *E, const std::string &Arg0Str);
   void mallocArrayMigration(const CallExpr *C, const std::string &Name,
-                            size_t FlagIndex, SourceManager &SM);
+                            const std::string &Flag, SourceManager &SM);
   void mallocMigrationWithTransformation(SourceManager &SM, const CallExpr *C,
                                          const std::string &CallName,
                                          std::string &&ReplaceName,
@@ -1438,6 +1438,12 @@ public:
 };
 
 class AssertRule : public NamedMigrationRule<AssertRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
