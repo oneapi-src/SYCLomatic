@@ -6,8 +6,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-// clang-format off
-
 TYPE_REWRITE_ENTRY(
     "cuda::atomic",
         TYPE_CONDITIONAL_FACTORY(
@@ -110,42 +108,62 @@ TYPE_REWRITE_ENTRY("cub::ArgMin",
                     HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
                    TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() + "argmin"))))
+// cub::BlockRadixSort
 TYPE_REWRITE_ENTRY(
     "cub::BlockRadixSort",
-    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
-                             TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                              "group::group_radix_sort"),
-                                          TEMPLATE_ARG(0), TEMPLATE_ARG(2))))
+    TYPE_CONDITIONAL_FACTORY(
+        UseSYCLCompat(),
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
+        HEADER_INSERTION_FACTORY(
+            HeaderType::HT_DPCT_GROUP_Utils,
+            TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                             "group::group_radix_sort"),
+                         TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+
+// cub::BlockExchange
 TYPE_REWRITE_ENTRY(
     "cub::BlockExchange",
-    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
-                             TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                              "group::exchange"),
-                                          TEMPLATE_ARG(0), TEMPLATE_ARG(2))))
-TYPE_REWRITE_ENTRY("cub::BlockLoad",
-                   HEADER_INSERTION_FACTORY(
-                       HeaderType::HT_DPCT_GROUP_Utils,
-                       TYPE_CONDITIONAL_FACTORY(
-                           CheckTemplateArgCount(4),
-                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                            "group::group_load"),
-                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2),
-                                        TEMPLATE_ARG(3)),
-                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                            "group::group_load"),
-                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
-TYPE_REWRITE_ENTRY("cub::BlockStore",
-                   HEADER_INSERTION_FACTORY(
-                       HeaderType::HT_DPCT_GROUP_Utils,
-                       TYPE_CONDITIONAL_FACTORY(
-                           CheckTemplateArgCount(4),
-                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                            "group::group_store"),
-                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2),
-                                        TEMPLATE_ARG(3)),
-                           TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                            "group::group_store"),
-                                        TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+    TYPE_CONDITIONAL_FACTORY(
+        UseSYCLCompat(),
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
+        HEADER_INSERTION_FACTORY(
+            HeaderType::HT_DPCT_GROUP_Utils,
+            TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                             "group::exchange"),
+                         TEMPLATE_ARG(0), TEMPLATE_ARG(2)))))
+// cub::BlockLoad
+TYPE_REWRITE_ENTRY(
+    "cub::BlockLoad",
+    TYPE_CONDITIONAL_FACTORY(
+        UseSYCLCompat(),
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
+        HEADER_INSERTION_FACTORY(
+            HeaderType::HT_DPCT_GROUP_Utils,
+            TYPE_CONDITIONAL_FACTORY(
+                CheckTemplateArgCount(4),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::group_load"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(2), TEMPLATE_ARG(3)),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::group_load"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(2))))))
+// cub::BlockStore
+TYPE_REWRITE_ENTRY(
+    "cub::BlockStore",
+    TYPE_CONDITIONAL_FACTORY(
+        UseSYCLCompat(),
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT, TYPESTR),
+        HEADER_INSERTION_FACTORY(
+            HeaderType::HT_DPCT_GROUP_Utils,
+            TYPE_CONDITIONAL_FACTORY(
+                CheckTemplateArgCount(4),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::group_store"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(2), TEMPLATE_ARG(3)),
+                TYPE_FACTORY(STR(MapNames::getLibraryHelperNamespace() +
+                                 "group::group_store"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(2))))))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",

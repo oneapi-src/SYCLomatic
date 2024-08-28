@@ -245,6 +245,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
     StaticsInfo::printReplacements(Transforms, Context);
   }
   Transforms.clear();
+  Context.getParentMapContext().clear(); // Clear the lazy parent map.
 }
 
 void DpctToolAction::runPass(PassKind Pass) {

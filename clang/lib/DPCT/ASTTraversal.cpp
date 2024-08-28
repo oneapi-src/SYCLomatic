@@ -2579,6 +2579,12 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
   if (auto TL =getNodeAsType<TypeLoc>(Result, "cudaTypeDefEA")) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(
+          TL->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+          DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context));
+      return;
+    }
     ExprAnalysis EA;
     EA.analyze(*TL);
     emplaceTransformation(EA.getReplacement());
@@ -10368,7 +10374,7 @@ std::string MemoryMigrationRule::getTransformedMallocPrefixStr(
 /// Common migration for cudaMallocArray and cudaMalloc3DArray.
 void MemoryMigrationRule::mallocArrayMigration(const CallExpr *C,
                                                const std::string &Name,
-                                               size_t FlagIndex,
+                                               const std::string &Flag,
                                                SourceManager &SM) {
 
   requestFeature(HelperFeatureEnum::device_ext);
@@ -10376,7 +10382,7 @@ void MemoryMigrationRule::mallocArrayMigration(const CallExpr *C,
       SM, C, Name, "new " + MapNames::getDpctNamespace() + "image_matrix", "",
       false);
 
-  emplaceTransformation(removeArg(C, FlagIndex, SM));
+  emplaceTransformation(new ReplaceStmt(C->getArg(C->getNumArgs() - 1), Flag));
 
   std::ostringstream OS;
   printDerefOp(OS, C->getArg(1));
@@ -10525,6 +10531,15 @@ void MemoryMigrationRule::mallocMigration(
       requestFeature(HelperFeatureEnum::device_ext);
     }
   } else if (Name == "cudaMalloc3DArray") {
+    Expr::EvalResult ER;
+    std::string ImageType = "image_type::standard";
+    if (!C->getArg(3)->isValueDependent() &&
+        C->getArg(3)->EvaluateAsInt(ER, *Result.Context)) {
+      int64_t Value = ER.Val.getInt().getExtValue();
+      const auto &ImageTypePair = MapNames::ArrayFlagMap.find(Value);
+      if (ImageTypePair != MapNames::ArrayFlagMap.end())
+        ImageType = "image_type::" + ImageTypePair->second;
+    }
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
@@ -10532,10 +10547,13 @@ void MemoryMigrationRule::mallocMigration(
       OS << " = new " << MapNames::getDpctNamespace()
          << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ")";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::" << ImageType << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
-    mallocArrayMigration(C, Name, 3, *Result.SourceManager);
+    mallocArrayMigration(C, Name, MapNames::getDpctNamespace() + ImageType,
+                         *Result.SourceManager);
   } else if (Name == "cudaMallocArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
@@ -10548,7 +10566,9 @@ void MemoryMigrationRule::mallocMigration(
          << ExprAnalysis::ref(C->getArg(3)) << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
-    mallocArrayMigration(C, Name, 4, *Result.SourceManager);
+    mallocArrayMigration(C, Name,
+                         MapNames::getDpctNamespace() + "image_type::standard",
+                         *Result.SourceManager);
     static std::string SizeClassName =
         DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 2);
     if (C->getArg(3)->isDefaultArgument())
@@ -13701,6 +13721,12 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!TST)
       return;
 
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(VD->getLocation(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+             VD->getName());
+      return;
+    }
+
     std::string Name =
         TST->getTemplateName().getAsTemplateDecl()->getNameAsString();
 
@@ -13720,7 +13746,11 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     auto TST = VD->getType()->getAs<TemplateSpecializationType>();
     if (!TST)
       return;
-
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(VD->getLocation(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+             VD->getName());
+      return;
+    }
     auto Args = TST->template_arguments();
 
     if (Args.size() == 3) {
@@ -13748,6 +13778,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceVarDecl(VD, Tex->getHostDeclString()));
 
   } else if (auto ME = getNodeAsType<MemberExpr>(Result, "texMember")) {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return;
     auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
         ME->getBase()->getType(), *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
@@ -13808,6 +13840,12 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "texType")) {
     if (isCapturedByLambda(TL))
       return;
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(TL->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+             DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(),
+                                                    *Result.Context));
+      return;
+    }
     const std::string &ReplType = MapNames::findReplacedName(
         MapNames::TypeNamesMap,
         DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context));
@@ -13822,6 +13860,10 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                                              std::string(ReplType)));
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "call")) {
     auto Name = CE->getDirectCallee()->getNameAsString();
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false, Name);
+      return;
+    }
     if (Name == "cuTexRefSetFlags") {
       StringRef MethodName;
       auto Value = getTextureFlagsSetterInfo(CE->getArg(1), MethodName);
@@ -13880,6 +13922,11 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "texObj")) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(TL->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+             DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context));
+      return;
+    }
     if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
       if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
         return;

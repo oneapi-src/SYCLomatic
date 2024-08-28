@@ -230,10 +230,10 @@ cublasSgeqrfBatched,YES,:ref:`DPCT1020`
 cublasDgeqrfBatched,YES,:ref:`DPCT1020`
 cublasCgeqrfBatched,YES,:ref:`DPCT1020`
 cublasZgeqrfBatched,YES,:ref:`DPCT1020`
-cublasSgelsBatched,NO,
-cublasDgelsBatched,NO,
-cublasCgelsBatched,NO,
-cublasZgelsBatched,NO,
+cublasSgelsBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1028`
+cublasDgelsBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1028`
+cublasCgelsBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1028`
+cublasZgelsBatched,YES,:ref:`DPCT1020` / :ref:`DPCT1028`
 cublasStpttr,NO,
 cublasDtpttr,NO,
 cublasCtpttr,NO,
@@ -257,7 +257,7 @@ cublasDotEx,YES,:ref:`DPCT1020`
 cublasScalEx,YES,:ref:`DPCT1020`
 cublasLtCreate,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cublasLtDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cublasLtGetVersion,NO,
+cublasLtGetVersion,YES,:ref:`DPCT1043`
 cublasLtGetCudartVersion,NO,
 cublasLtGetProperty,NO,
 cublasLtMatmul,YES,
@@ -514,7 +514,7 @@ cublasGetStatusName,NO,
 cublasGetStatusString,YES,:ref:`DPCT1009`
 cublasLogCallback,NO,
 cublasMigrateComputeType,NO,
-cublasSetWorkspace,NO,
+cublasSetWorkspace,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cublasSgemvBatched,NO,
 cublasDgemvBatched,NO,
 cublasCgemvBatched,NO,
@@ -689,10 +689,10 @@ cublasStrsm_64,YES,:ref:`DPCT1020`
 cublasDtrsm_64,YES,:ref:`DPCT1020`
 cublasCtrsm_64,YES,:ref:`DPCT1020`
 cublasZtrsm_64,YES,:ref:`DPCT1020`
-cublasStrmm_64,NO,
-cublasDtrmm_64,NO,
-cublasCtrmm_64,NO,
-cublasZtrmm_64,NO,
+cublasStrmm_64,YES,:ref:`DPCT1020`
+cublasDtrmm_64,YES,:ref:`DPCT1020`
+cublasCtrmm_64,YES,:ref:`DPCT1020`
+cublasZtrmm_64,YES,:ref:`DPCT1020`
 cublasSgeam_64,YES,:ref:`DPCT1020`
 cublasDgeam_64,YES,:ref:`DPCT1020`
 cublasCgeam_64,YES,:ref:`DPCT1020`
@@ -737,10 +737,10 @@ cublasHSHgemvStridedBatched_64,NO,
 cublasHSSgemvStridedBatched_64,NO,
 cublasTSTgemvStridedBatched_64,NO,
 cublasTSSgemvStridedBatched_64,NO,
-cublasCgemm3m_64,NO,
+cublasCgemm3m_64,YES,:ref:`DPCT1020`
 cublasCgemm3mEx_64,NO,
-cublasZgemm3m_64,NO,
-cublasHgemm_64,NO,
+cublasZgemm3m_64,YES,:ref:`DPCT1020`
+cublasHgemm_64,YES,:ref:`DPCT1020`
 cublasSgemmEx_64,NO,
 cublasGemmEx_64,NO,
 cublasCgemmEx_64,NO,
@@ -748,12 +748,12 @@ cublasCsyrkEx_64,NO,
 cublasCsyrk3mEx_64,NO,
 cublasCherkEx_64,NO,
 cublasCherk3mEx_64,NO,
-cublasSsyrkx_64,NO,
-cublasDsyrkx_64,NO,
-cublasCsyrkx_64,NO,
-cublasZsyrkx_64,NO,
-cublasCherkx_64,NO,
-cublasZherkx_64,NO,
+cublasSsyrkx_64,YES,:ref:`DPCT1020`
+cublasDsyrkx_64,YES,:ref:`DPCT1020`
+cublasCsyrkx_64,YES,:ref:`DPCT1020`
+cublasZsyrkx_64,YES,:ref:`DPCT1020`
+cublasCherkx_64,YES,:ref:`DPCT1020`
+cublasZherkx_64,YES,:ref:`DPCT1020`
 cublasHgemmBatched_64,NO,
 cublasSgemmBatched_64,NO,
 cublasDgemmBatched_64,NO,

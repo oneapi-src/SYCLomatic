@@ -12,6 +12,9 @@
 
 namespace clang {
 namespace dpct {
+inline auto UseSYCLCompat() {
+  return [](const TypeLoc) -> bool { return DpctGlobalInfo::useSYCLCompat(); };
+}
 
 TemplateArgumentInfo getTemplateArg(const TypeLoc &TL, unsigned Idx) {
   if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
