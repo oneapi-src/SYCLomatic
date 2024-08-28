@@ -496,7 +496,7 @@ static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
       // If match pattern template has been matched to the end but input value
       // still not the end, it is considered not matched case.
       if (PatternIndex == PatternSize - 1 &&
-          isIdentifiedChar(Input[Index + 1])) {
+          (isIdentifiedChar(Input[Index + 1]) || Input[Index + 1] == '.')) {
         return {};
       }
 
