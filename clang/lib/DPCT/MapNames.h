@@ -321,6 +321,7 @@ public:
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
+  static std::unordered_set<std::string> SYCLcompatUnsupportTypes;
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       TypeNamesMap;
   static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
