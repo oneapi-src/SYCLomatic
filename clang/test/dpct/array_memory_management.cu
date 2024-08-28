@@ -39,13 +39,13 @@ void foo() {
   // CHECK: a1 = new dpct::image_matrix(channel, sycl::range<2>(width, height));
   cudaMallocArray(&a1, &channel, width, height);
 
-  // CHECK: a1 = new dpct::image_matrix(channel, sycl::range<2>(width, height));
+  // CHECK: a1 = new dpct::image_matrix(channel, sycl::range<2>(width, height), dpct::image_type::standard);
   cudaMallocArray(&a1, &channel, width, height, 0);
 
   // CHECK: a1 = new dpct::image_matrix(channel, extent);
   cudaMalloc3DArray(&a1, &channel, extent);
 
-  // CHECK: a1 = new dpct::image_matrix(channel, extent);
+  // CHECK: a1 = new dpct::image_matrix(channel, extent, dpct::image_type::standard);
   cudaMalloc3DArray(&a1, &channel, extent, 0);
 
   // CHECK: dpct::dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));

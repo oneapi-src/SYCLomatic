@@ -37,10 +37,16 @@ public:
                     sycl::ext::oneapi::experimental::image_type type =
                         sycl::ext::oneapi::experimental::image_type::standard,
                     unsigned int num_levels = 1)
-      : _channel(channel),
-        _desc(sycl::ext::oneapi::experimental::image_descriptor(
-            range, _channel.get_channel_num(), _channel.get_channel_type(),
-            type, num_levels)) {
+      : _channel(channel) {
+    unsigned array_size = 1;
+    if (type == sycl::ext::oneapi::experimental::image_type::array) {
+      assert(dimensions == 3);
+      array_size = range[2];
+      range[2] = 0;
+    }
+    _desc = sycl::ext::oneapi::experimental::image_descriptor(
+        range, _channel.get_channel_num(), _channel.get_channel_type(), type,
+        num_levels, array_size);
     auto q = get_default_queue();
     _handle = alloc_image_mem(_desc, q);
     init_mip_level_wrappers(q);
@@ -138,7 +144,7 @@ private:
   }
 
   image_channel _channel;
-  const sycl::ext::oneapi::experimental::image_descriptor _desc;
+  sycl::ext::oneapi::experimental::image_descriptor _desc;
   sycl::ext::oneapi::experimental::image_mem_handle _handle;
   image_mem_wrapper *_sub_wrappers{nullptr};
 };

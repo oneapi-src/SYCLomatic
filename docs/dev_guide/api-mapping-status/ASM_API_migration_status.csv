@@ -6,7 +6,7 @@ addc,NO,
 alloca,NO,
 and,YES,
 applypriority,NO,
-atom,NO,
+atom,YES, Partial
 bar,YES, Partial
 barrier,NO,
 bfe,YES,
@@ -40,7 +40,7 @@ getctarank,NO,
 griddepcontrol,NO,
 isspacep,NO,
 istypep,NO,
-ld,NO,
+ld,YES, Partial
 ldmatrix,NO,
 ldu,NO,
 lg2,YES,
@@ -87,7 +87,7 @@ shr,YES,
 sin,YES,
 slct,YES, Partial
 sqrt,YES,
-st,NO,
+st,YES, Partial
 stackrestore,NO,
 stacksave,NO,
 stmatrix,NO,

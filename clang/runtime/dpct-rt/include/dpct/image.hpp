@@ -22,6 +22,11 @@ enum class image_channel_data_type {
   fp,
 };
 
+enum class image_type {
+  standard,
+  array,
+};
+
 class image_channel;
 class image_wrapper_base;
 namespace detail {
@@ -323,8 +328,13 @@ class image_matrix {
 public:
   /// Constructor with channel info and dimension size info.
   template <int dimensions>
-  image_matrix(image_channel channel, sycl::range<dimensions> range)
+  image_matrix(image_channel channel, sycl::range<dimensions> range,
+               image_type type = image_type::standard)
       : _channel(channel) {
+    if (type == image_type::array && range[1] == 0) {
+      range[1] = range[2];
+      range[2] = 0;
+    }
     set_range(range);
     _host_data = std::malloc(range.size() * _channel.get_total_size());
   }
