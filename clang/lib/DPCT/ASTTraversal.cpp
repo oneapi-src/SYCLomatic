@@ -10002,7 +10002,7 @@ std::string MemoryMigrationRule::getTransformedMallocPrefixStr(
 /// Common migration for cudaMallocArray and cudaMalloc3DArray.
 void MemoryMigrationRule::mallocArrayMigration(const CallExpr *C,
                                                const std::string &Name,
-                                               size_t FlagIndex,
+                                               const std::string &Flag,
                                                SourceManager &SM) {
 
   requestFeature(HelperFeatureEnum::device_ext);
@@ -10010,7 +10010,7 @@ void MemoryMigrationRule::mallocArrayMigration(const CallExpr *C,
       SM, C, Name, "new " + MapNames::getDpctNamespace() + "image_matrix", "",
       false);
 
-  emplaceTransformation(removeArg(C, FlagIndex, SM));
+  emplaceTransformation(new ReplaceStmt(C->getArg(C->getNumArgs() - 1), Flag));
 
   std::ostringstream OS;
   printDerefOp(OS, C->getArg(1));
@@ -10159,6 +10159,15 @@ void MemoryMigrationRule::mallocMigration(
       requestFeature(HelperFeatureEnum::device_ext);
     }
   } else if (Name == "cudaMalloc3DArray") {
+    Expr::EvalResult ER;
+    std::string ImageType = "image_type::standard";
+    if (!C->getArg(3)->isValueDependent() &&
+        C->getArg(3)->EvaluateAsInt(ER, *Result.Context)) {
+      int64_t Value = ER.Val.getInt().getExtValue();
+      const auto &ImageTypePair = MapNames::ArrayFlagMap.find(Value);
+      if (ImageTypePair != MapNames::ArrayFlagMap.end())
+        ImageType = "image_type::" + ImageTypePair->second;
+    }
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
@@ -10166,10 +10175,13 @@ void MemoryMigrationRule::mallocMigration(
       OS << " = new " << MapNames::getDpctNamespace()
          << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ")";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ", "
+         << MapNames::getClNamespace()
+         << "ext::oneapi::experimental::" << ImageType << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
-    mallocArrayMigration(C, Name, 3, *Result.SourceManager);
+    mallocArrayMigration(C, Name, MapNames::getDpctNamespace() + ImageType,
+                         *Result.SourceManager);
   } else if (Name == "cudaMallocArray") {
     if (DpctGlobalInfo::useExtBindlessImages()) {
       std::string Replacement;
@@ -10182,7 +10194,9 @@ void MemoryMigrationRule::mallocMigration(
          << ExprAnalysis::ref(C->getArg(3)) << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
-    mallocArrayMigration(C, Name, 4, *Result.SourceManager);
+    mallocArrayMigration(C, Name,
+                         MapNames::getDpctNamespace() + "image_type::standard",
+                         *Result.SourceManager);
     static std::string SizeClassName =
         DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 2);
     if (C->getArg(3)->isDefaultArgument())
