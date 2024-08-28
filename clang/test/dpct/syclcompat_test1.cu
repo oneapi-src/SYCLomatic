@@ -30,7 +30,7 @@ void f1() {
 #endif
   cudaDeviceProp deviceProp;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaGetDeviceProperties_v2" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "{{cudaGetDeviceProperties(_v2)?}}" is not supported with SYCLcompat currently, please adjust the code manually.
   // CHECK-NEXT: */
 #ifndef BUILD_TEST
   cudaGetDeviceProperties(&deviceProp, 0);
