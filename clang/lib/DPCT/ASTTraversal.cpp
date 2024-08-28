@@ -7199,7 +7199,8 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
       } else {
         if (DpctGlobalInfo::useSYCLCompat()) {
-          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false);
+          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+                 "cudaEventRecord");
           return;
         }
         std::string ReplaceStr;
@@ -7279,7 +7280,8 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
       } else {
         if (DpctGlobalInfo::useSYCLCompat()) {
-          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false);
+          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+                 "cudaEventRecord");
           return;
         }
         std::string ReplaceStr;
@@ -7314,7 +7316,8 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
       } else {
         if (DpctGlobalInfo::useSYCLCompat()) {
-          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false);
+          report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+                 "cudaEventRecord");
           return;
         }
         std::string ReplaceStr;

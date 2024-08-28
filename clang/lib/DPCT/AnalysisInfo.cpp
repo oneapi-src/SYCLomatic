@@ -1390,7 +1390,10 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'P': {
     std::string ReplStr;
     if (DpctGlobalInfo::getEnablepProfilingFlag())
-      ReplStr = std::string("#define DPCT_PROFILING_ENABLED") + getNL();
+      ReplStr = (DpctGlobalInfo::useSYCLCompat()
+                     ? std::string("#define SYCLCOMPAT_PROFILING_ENABLED")
+                     : std::string("#define DPCT_PROFILING_ENABLED")) +
+                getNL();
 
     return ReplStr;
   }
@@ -4623,7 +4626,9 @@ void DeviceFunctionDecl::emplaceReplacement() {
                                          nullptr));
   }
   if (FuncInfo->IsForceInlineDevFunc()) {
-    std::string StrRepl = "__dpct_inline__ ";
+    std::string StrRepl = DpctGlobalInfo::useSYCLCompat()
+                              ? "__syclcompat_inline__ "
+                              : "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
                                          nullptr));
