@@ -286,14 +286,14 @@ static void getCompileInfo(
         IsSystemInclude = true;
       } else if (llvm::StringRef(Option).starts_with("-D")) {
         // Parse macros defined.
-        bool NeedSigleQuote = false;
+        bool NeedSingleQuote = false;
         std::size_t Len = Option.length() - strlen("-D");
         std::size_t Pos = Option.find("=");
         if (Pos != std::string::npos) {
           std::string Value = Option.substr(Pos + 1, Option.length() - Pos);
           if (Value.size() >= 2 && Value.front() == '"' &&
               Value.back() == '"') {
-            NeedSigleQuote = true;
+            NeedSingleQuote = true;
           }
 
           Len = Pos - strlen("-D");
@@ -305,7 +305,7 @@ static void getCompileInfo(
           continue;
         }
 
-        if (NeedSigleQuote) {
+        if (NeedSingleQuote) {
           // For macros like -DMSG="message", will migrated to '-DMSG="message"'
           // in auto-generated Makefile.
           NewOptions += "\'" + Option + "\' ";
