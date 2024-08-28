@@ -1695,6 +1695,10 @@ inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExpNonUniformGroups();
 };
 
+inline auto UseSYCLCompat = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useSYCLCompat();
+};
+
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
   std::string TypeName;
