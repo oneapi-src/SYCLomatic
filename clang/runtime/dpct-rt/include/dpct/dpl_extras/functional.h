@@ -20,7 +20,6 @@
 #include <tuple>
 #include <utility>
 
-#include "../dpct.hpp"
 #define _DPCT_GCC_VERSION                                                      \
   (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 

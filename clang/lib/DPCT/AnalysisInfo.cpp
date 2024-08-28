@@ -480,7 +480,7 @@ public:
         "function call async_rnn_backward");
 
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "DPCT_CHECK_ERROR(";
+      DataRepl << MapNames::getCheckErrorMacroName() << "(";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
@@ -1174,10 +1174,6 @@ void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
   case SYCLFileExtensionEnum::CPP:
     SYCLSourceExtension = ".cpp";
     SYCLHeaderExtension = ".hpp";
-    break;
-  default:
-    SYCLSourceExtension = ".dp.cpp";
-    SYCLHeaderExtension = ".dp.hpp";
     break;
   }
 }
@@ -4453,6 +4449,9 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   return Result + getName(FD);
 }
 void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
+  buildTextureObjectArgsInfo<CallExpr>(CE);
+  if (DpctGlobalInfo::useExtBindlessImages() || DpctGlobalInfo::useSYCLCompat())
+    return;
   if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
     if (auto DRE = dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImpCasts())) {
       auto BaseObject = makeTextureObjectInfo<StructureTextureObjectInfo>(
@@ -4461,7 +4460,6 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
         BaseTextureObject = std::move(BaseObject);
     }
   }
-  buildTextureObjectArgsInfo<CallExpr>(CE);
 }
 template <class CallT>
 void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
@@ -4470,7 +4468,8 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto ArgsNum = std::distance(Args.begin(), Args.end());
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
-  if (DpctGlobalInfo::useExtBindlessImages()) {
+  if (DpctGlobalInfo::useExtBindlessImages() ||
+      DpctGlobalInfo::useSYCLCompat()) {
     // Need return after resize, ortherwise will cause array out of bound.
     return;
   }
@@ -4742,6 +4741,8 @@ const FormatInfo &DeviceFunctionDecl::getFormatInfo() {
 void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     const ArrayRef<ParmVarDecl *> &Parms) {
   TextureObjectList.assign(Parms.size(), std::shared_ptr<TextureObjectInfo>());
+  if (DpctGlobalInfo::useSYCLCompat())
+    return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
     if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
