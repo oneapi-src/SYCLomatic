@@ -85,68 +85,92 @@ FEATURE_REQUEST_FACTORY(
                                 ARG(1)))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxCreate_v2",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0),
-                                                ARG(2))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v2"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "cuCtxCreate_v2", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "push_device_for_curr_thread", ARG(2))))))
+    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cuCtxCreate_v2",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cuCtxCreate_v2")),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsUseNoQueueDevice(),
+        WARNING_FACTORY_ENTRY(
+            "cuCtxCreate_v2",
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0),
+                                                    ARG(2))),
+            Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v2"),
+            std::string("it is redundant if it is migrated with option "
+                        "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                        "and queue.")),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                "cuCtxCreate_v2", DEREF(0),
+                CALL(MapNames::getDpctNamespace() + "push_device_for_curr_thread", ARG(2))))))
+)
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxCreate_v3",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v3", DEREF(0),
-                                                ARG(4))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v3"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "cuCtxCreate_v3", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(4))))))
+    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cuCtxCreate_v3",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cuCtxCreate_v3")),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsUseNoQueueDevice(),
+        WARNING_FACTORY_ENTRY(
+            "cuCtxCreate_v3",
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v3", DEREF(0),
+                                                    ARG(4))),
+            Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v3"),
+            std::string("it is redundant if it is migrated with option "
+                        "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                        "and queue.")),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                "cuCtxCreate_v3", DEREF(0),
+                CALL(MapNames::getDpctNamespace() + "select_device", ARG(4))))))
+)
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxCreate_v4",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v4", DEREF(0),
-                                                ARG(3))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v4"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "cuCtxCreate_v4", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(3))))))
+    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cuCtxCreate_v4",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cuCtxCreate_v4")),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsUseNoQueueDevice(),
+        WARNING_FACTORY_ENTRY(
+            "cuCtxCreate_v4",
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v4", DEREF(0),
+                                                    ARG(3))),
+            Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v4"),
+            std::string("it is redundant if it is migrated with option "
+                        "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                        "and queue.")),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                "cuCtxCreate_v4", DEREF(0),
+                CALL(MapNames::getDpctNamespace() + "select_device", ARG(3))))))
+)
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuDevicePrimaryCtxRetain",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuDevicePrimaryCtxRetain",
-                                                DEREF(0), ARG(1))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuDevicePrimaryCtxRetain"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "cuDevicePrimaryCtxRetain", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(1))))))
+    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cuDevicePrimaryCtxRetain",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cuDevicePrimaryCtxRetain")),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsUseNoQueueDevice(),
+        WARNING_FACTORY_ENTRY(
+            "cuDevicePrimaryCtxRetain",
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuDevicePrimaryCtxRetain",
+                                                    DEREF(0), ARG(1))),
+            Diagnostics::FUNC_CALL_REMOVED, std::string("cuDevicePrimaryCtxRetain"),
+            std::string("it is redundant if it is migrated with option "
+                        "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                        "and queue.")),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                "cuDevicePrimaryCtxRetain", DEREF(0),
+                CALL(MapNames::getDpctNamespace() + "select_device", ARG(1))))))
+)
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaHostGetFlags", DEREF(0), ARG("0")))
 
@@ -187,20 +211,26 @@ WARNING_FACTORY_ENTRY("cuDriverGetVersion",
     Diagnostics::TYPE_MISMATCH)
 
 CONDITIONAL_FACTORY_ENTRY(
-    clang::dpct::checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxGetDevice",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),
-                                                LITERAL("0"))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxGetDevice"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                                "cuCtxGetDevice", DEREF(0),
-                                CALL(MapNames::getDpctNamespace() +
-                                     "get_current_device_id")))))
+    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cuCtxGetDevice",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cuCtxGetDevice")),
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::checkIsUseNoQueueDevice(),
+        WARNING_FACTORY_ENTRY(
+            "cuCtxGetDevice",
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),
+                                                    LITERAL("0"))),
+            Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxGetDevice"),
+            std::string("it is redundant if it is migrated with option "
+                        "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                        "and queue.")),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                                ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                    "cuCtxGetDevice", DEREF(0),
+                                    CALL(MapNames::getDpctNamespace() +
+                                         "get_current_device_id")))))
+)
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -209,36 +239,48 @@ FEATURE_REQUEST_FACTORY(
                                                  "get_sycl_language_version"))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    clang::dpct::checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxPushCurrent_v2",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPushCurrent_v2", DEREF(0),
-                                                LITERAL("0"))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPushCurrent_v2"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-                              "cuCtxPushCurrent_v2", CALL(
-                                MapNames::getDpctNamespace() + "push_device_for_curr_thread",
-                                ARG(0))))))
+    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cuCtxPushCurrent_v2",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cuCtxPushCurrent_v2")),
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::checkIsUseNoQueueDevice(),
+        WARNING_FACTORY_ENTRY(
+            "cuCtxPushCurrent_v2",
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPushCurrent_v2", DEREF(0),
+                                                    LITERAL("0"))),
+            Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPushCurrent_v2"),
+            std::string("it is redundant if it is migrated with option "
+                        "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                        "and queue.")),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                                ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                                  "cuCtxPushCurrent_v2", CALL(
+                                    MapNames::getDpctNamespace() + "push_device_for_curr_thread",
+                                    ARG(0))))))
+)
 
 CONDITIONAL_FACTORY_ENTRY(
-    clang::dpct::checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxPopCurrent_v2",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPopCurrent_v2", DEREF(0),
-                                                LITERAL("0"))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPopCurrent_v2"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                                "cuCtxPopCurrent_v2", DEREF(0),
-                                CALL(MapNames::getDpctNamespace() +
-                                     "pop_device_for_curr_thread")))))
+    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cuCtxPopCurrent_v2",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cuCtxPopCurrent_v2")),
+    CONDITIONAL_FACTORY_ENTRY(
+        clang::dpct::checkIsUseNoQueueDevice(),
+        WARNING_FACTORY_ENTRY(
+            "cuCtxPopCurrent_v2",
+            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPopCurrent_v2", DEREF(0),
+                                                    LITERAL("0"))),
+            Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPopCurrent_v2"),
+            std::string("it is redundant if it is migrated with option "
+                        "--helper-function-preference=no-queue-device which declares a global SYCL device "
+                        "and queue.")),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                                ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                    "cuCtxPopCurrent_v2", DEREF(0),
+                                    CALL(MapNames::getDpctNamespace() +
+                                         "pop_device_for_curr_thread")))))
+)
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsGetWorkGroupDim(1),
