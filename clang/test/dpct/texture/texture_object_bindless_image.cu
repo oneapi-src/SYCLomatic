@@ -34,6 +34,14 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   tex3DLod<T>(tex, j, k, m, l);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_mipmap<int>(tex, sycl::float3(j, k, m), l);
   tex3DLod(&i, tex, j, k, m, l);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image_array<sycl::short2>(tex, float(j), i);
+  tex1DLayered<short2>(tex, j, i);
+  // CHECK: k = sycl::ext::oneapi::experimental::sample_image_array<float>(tex, float(j), i);
+  tex1DLayered(&k, tex, j, i);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image_array<T>(tex, sycl::float2(j, k), i);
+  tex2DLayered<T>(tex, j, k, i);
+  // CHECK: l = sycl::ext::oneapi::experimental::sample_image_array<float>(tex, sycl::float2(j, k), i);
+  tex2DLayered(&l, tex, j, k, i);
 #ifndef BUILD_TEST
   T t;
   // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));
@@ -320,8 +328,12 @@ int main() {
   cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
-  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::standard);
   cudaMalloc3DArray(&pArr, &desc, e);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::array);
+  cudaMalloc3DArray(&pArr, &desc, e, cudaArrayLayered);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::array);
+  cudaMalloc3DArray(&pArr, &desc, e, 1);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, w, h);
   cudaMallocArray(&pArr, &desc, w, h);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, 1, 0.1);
