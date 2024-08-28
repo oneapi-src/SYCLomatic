@@ -9,6 +9,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
+#include "MapNames.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -5906,8 +5907,16 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
+      if (DpctGlobalInfo::useSYCLCompat() && A.isDim3Var())
+        ExecutionConfig.Config[Idx] =
+            "static_cast<" + MapNames::getClNamespace() + "range<3>>(" +
+            ExecutionConfig.Config[Idx] + ")";
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
+      if (DpctGlobalInfo::useSYCLCompat() && A.isDim3Var())
+        ExecutionConfig.Config[Idx] =
+            "static_cast<" + MapNames::getClNamespace() + "range<3>>(" +
+            ExecutionConfig.Config[Idx] + ")";
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
@@ -5948,9 +5957,17 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
     if (Idx == 0) {
       GridDim = AnalysisTry1D.Dim;
       ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+      if (DpctGlobalInfo::useSYCLCompat() && AnalysisTry1D.isDim3Var())
+        ExecutionConfig.GroupSizeFor1D =
+            "static_cast<" + MapNames::getClNamespace() + "range<1>>(" +
+            ExecutionConfig.GroupSizeFor1D + ")";
     } else if (Idx == 1) {
       BlockDim = AnalysisTry1D.Dim;
       ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
+      if (DpctGlobalInfo::useSYCLCompat() && AnalysisTry1D.isDim3Var())
+        ExecutionConfig.LocalSizeFor1D =
+            "static_cast<" + MapNames::getClNamespace() + "range<1>>(" +
+            ExecutionConfig.LocalSizeFor1D + ")";
     }
     ++Idx;
   }
