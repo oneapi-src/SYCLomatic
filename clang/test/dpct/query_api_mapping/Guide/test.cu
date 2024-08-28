@@ -24,28 +24,28 @@
 // __SYNCTHREADS: CUDA API:
 // __SYNCTHREADS-NEXT:   __syncthreads();
 // __SYNCTHREADS-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
-// __SYNCTHREADS-NEXT:   sycl::ext::oneapi::experimental::this_nd_item<3>().barrier(sycl::access::fence_space::local_space);
+// __SYNCTHREADS-NEXT:   sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier(sycl::access::fence_space::local_space);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__syncthreads_count | FileCheck %s -check-prefix=__SYNCTHREADSCOUNT
 // __SYNCTHREADSCOUNT: CUDA API:
 // __SYNCTHREADSCOUNT-NEXT:   __syncthreads_count(i /*int*/);
 // __SYNCTHREADSCOUNT-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
-// __SYNCTHREADSCOUNT-NEXT:   sycl::ext::oneapi::experimental::this_nd_item<3>().barrier();
-// __SYNCTHREADSCOUNT-NEXT:   sycl::reduce_over_group(sycl::ext::oneapi::experimental::this_group<3>(), i == 0 ? 0 : 1, sycl::ext::oneapi::plus<>());
+// __SYNCTHREADSCOUNT-NEXT:   sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
+// __SYNCTHREADSCOUNT-NEXT:   sycl::reduce_over_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), i == 0 ? 0 : 1, sycl::ext::oneapi::plus<>());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__syncthreads_and | FileCheck %s -check-prefix=__SYNCTHREADS_AND
 // __SYNCTHREADS_AND: CUDA API:
 // __SYNCTHREADS_AND-NEXT:   __syncthreads_and(i /*int*/);
 // __SYNCTHREADS_AND-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
-// __SYNCTHREADS_AND-NEXT:   sycl::ext::oneapi::experimental::this_nd_item<3>().barrier();
-// __SYNCTHREADS_AND-NEXT:   sycl::all_of_group(sycl::ext::oneapi::experimental::this_group<3>(), i);
+// __SYNCTHREADS_AND-NEXT:   sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
+// __SYNCTHREADS_AND-NEXT:   sycl::all_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), i);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__syncthreads_or | FileCheck %s -check-prefix=__SYNCTHREADS_OR
 // __SYNCTHREADS_OR: CUDA API:
 // __SYNCTHREADS_OR-NEXT:   __syncthreads_or(i /*int*/);
 // __SYNCTHREADS_OR-NEXT: Is migrated to (with the option --use-experimental-features=free-function-queries):
-// __SYNCTHREADS_OR-NEXT:   sycl::ext::oneapi::experimental::this_nd_item<3>().barrier();
-// __SYNCTHREADS_OR-NEXT:   sycl::any_of_group(sycl::ext::oneapi::experimental::this_group<3>(), i);
+// __SYNCTHREADS_OR-NEXT:   sycl::ext::oneapi::this_work_item::get_nd_item<3>().barrier();
+// __SYNCTHREADS_OR-NEXT:   sycl::any_of_group(sycl::ext::oneapi::this_work_item::get_work_group<3>(), i);
 
 /// Texture Functions
 

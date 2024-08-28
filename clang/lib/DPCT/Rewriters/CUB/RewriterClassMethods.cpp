@@ -71,167 +71,232 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                    MEMBER_CALL(MemberExprBase(), false,
                                                LITERAL("create_normalize")))))
       // cub::BlockRadixSort.Sort
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CASE_FACTORY_ENTRY(
-              CASE(
-                  makeCheckAnd(
-                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::BlockRadixSort.Sort")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CASE_FACTORY_ENTRY(
+                  CASE(makeCheckAnd(
+                           makeCheckAnd(
+                               CheckArgCount(3, std::equal_to<>(),
+                                             /*IncludeDefaultArg=*/false),
+                               CheckParamType(1, "int", /*isStrict=*/true)),
+                           CheckParamType(2, "int", /*isStrict=*/true)),
+                       MEMBER_CALL_FACTORY_ENTRY(
+                           "cub::BlockRadixSort.Sort", MemberExprBase(), false,
+                           "sort", NDITEM, ARG(0), ARG(1), ARG(2))),
+                  CASE(
+                      makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
                                                  /*IncludeDefaultArg=*/false),
                                    CheckParamType(1, "int", /*isStrict=*/true)),
-                      CheckParamType(2, "int", /*isStrict=*/true)),
-                  MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
-                                            MemberExprBase(), false, "sort",
-                                            NDITEM, ARG(0), ARG(1), ARG(2))),
-              CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
-                                              /*IncludeDefaultArg=*/false),
-                                CheckParamType(1, "int", /*isStrict=*/true)),
-                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
-                                             MemberExprBase(), false, "sort",
-                                             NDITEM, ARG(0), ARG(1))),
-              CASE(CheckArgCount(1, std::equal_to<>(),
-                                 /*IncludeDefaultArg=*/false),
-                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
-                                             MemberExprBase(), false, "sort",
-                                             NDITEM, ARG(0))),
-              OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
-                                                Diagnostics::API_NOT_MIGRATED,
-                                                printCallExprPretty()))))
+                      MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
+                                                MemberExprBase(), false, "sort",
+                                                NDITEM, ARG(0), ARG(1))),
+                  CASE(CheckArgCount(1, std::equal_to<>(),
+                                     /*IncludeDefaultArg=*/false),
+                       MEMBER_CALL_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
+                                                 MemberExprBase(), false,
+                                                 "sort", NDITEM, ARG(0))),
+                  OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+                      "cub::BlockRadixSort.Sort", Diagnostics::API_NOT_MIGRATED,
+                      printCallExprPretty())))))
       // cub::BlockRadixSort.SortDescending
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CASE_FACTORY_ENTRY(
-              CASE(
-                  makeCheckAnd(
-                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY(
+              "cub::BlockRadixSort.SortDescending",
+              Diagnostics::UNSUPPORT_SYCLCOMPAT,
+              LITERAL("cub::BlockRadixSort.SortDescending")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CASE_FACTORY_ENTRY(
+                  CASE(makeCheckAnd(
+                           makeCheckAnd(
+                               CheckArgCount(3, std::equal_to<>(),
+                                             /*IncludeDefaultArg=*/false),
+                               CheckParamType(1, "int", /*isStrict=*/true)),
+                           CheckParamType(2, "int", /*isStrict=*/true)),
+                       MEMBER_CALL_FACTORY_ENTRY(
+                           "cub::BlockRadixSort.SortDescending",
+                           MemberExprBase(), false, "sort_descending", NDITEM,
+                           ARG(0), ARG(1), ARG(2))),
+                  CASE(
+                      makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
                                                  /*IncludeDefaultArg=*/false),
                                    CheckParamType(1, "int", /*isStrict=*/true)),
-                      CheckParamType(2, "int", /*isStrict=*/true)),
-                  MEMBER_CALL_FACTORY_ENTRY(
-                      "cub::BlockRadixSort.SortDescending", MemberExprBase(),
-                      false, "sort_descending", NDITEM, ARG(0), ARG(1),
-                      ARG(2))),
-              CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
-                                              /*IncludeDefaultArg=*/false),
-                                CheckParamType(1, "int", /*isStrict=*/true)),
-                   MEMBER_CALL_FACTORY_ENTRY(
-                       "cub::BlockRadixSort.SortDescending", MemberExprBase(),
-                       false, "sort_descending", NDITEM, ARG(0), ARG(1))),
-              CASE(CheckArgCount(1, std::equal_to<>(),
-                                 /*IncludeDefaultArg=*/false),
-                   MEMBER_CALL_FACTORY_ENTRY(
-                       "cub::BlockRadixSort.SortDescending", MemberExprBase(),
-                       false, "sort_descending", NDITEM, ARG(0))),
-              OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
-                  "cub::BlockRadixSort.SortDescending",
-                  Diagnostics::API_NOT_MIGRATED, printCallExprPretty()))))
+                      MEMBER_CALL_FACTORY_ENTRY(
+                          "cub::BlockRadixSort.SortDescending",
+                          MemberExprBase(), false, "sort_descending", NDITEM,
+                          ARG(0), ARG(1))),
+                  CASE(CheckArgCount(1, std::equal_to<>(),
+                                     /*IncludeDefaultArg=*/false),
+                       MEMBER_CALL_FACTORY_ENTRY(
+                           "cub::BlockRadixSort.SortDescending",
+                           MemberExprBase(), false, "sort_descending", NDITEM,
+                           ARG(0))),
+                  OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+                      "cub::BlockRadixSort.SortDescending",
+                      Diagnostics::API_NOT_MIGRATED, printCallExprPretty())))))
       // cub::BlockRadixSort.SortBlockedToStriped
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CASE_FACTORY_ENTRY(
-              CASE(
-                  makeCheckAnd(
-                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY(
+              "cub::BlockRadixSort.SortBlockedToStriped",
+              Diagnostics::UNSUPPORT_SYCLCOMPAT,
+              LITERAL("cub::BlockRadixSort.SortBlockedToStriped")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CASE_FACTORY_ENTRY(
+                  CASE(makeCheckAnd(
+                           makeCheckAnd(
+                               CheckArgCount(3, std::equal_to<>(),
+                                             /*IncludeDefaultArg=*/false),
+                               CheckParamType(1, "int", /*isStrict=*/true)),
+                           CheckParamType(2, "int", /*isStrict=*/true)),
+                       MEMBER_CALL_FACTORY_ENTRY(
+                           "cub::BlockRadixSort.SortBlockedToStriped",
+                           MemberExprBase(), false, "sort_blocked_to_striped",
+                           NDITEM, ARG(0), ARG(1), ARG(2))),
+                  CASE(
+                      makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
                                                  /*IncludeDefaultArg=*/false),
                                    CheckParamType(1, "int", /*isStrict=*/true)),
-                      CheckParamType(2, "int", /*isStrict=*/true)),
-                  MEMBER_CALL_FACTORY_ENTRY(
+                      MEMBER_CALL_FACTORY_ENTRY(
+                          "cub::BlockRadixSort.SortBlockedToStriped",
+                          MemberExprBase(), false, "sort_blocked_to_striped",
+                          NDITEM, ARG(0), ARG(1))),
+                  CASE(CheckArgCount(1, std::equal_to<>(),
+                                     /*IncludeDefaultArg=*/false),
+                       MEMBER_CALL_FACTORY_ENTRY(
+                           "cub::BlockRadixSort.SortBlockedToStriped",
+                           MemberExprBase(), false, "sort_blocked_to_striped",
+                           NDITEM, ARG(0))),
+                  OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
                       "cub::BlockRadixSort.SortBlockedToStriped",
-                      MemberExprBase(), false, "sort_blocked_to_striped",
-                      NDITEM, ARG(0), ARG(1), ARG(2))),
-              CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
-                                              /*IncludeDefaultArg=*/false),
-                                CheckParamType(1, "int", /*isStrict=*/true)),
-                   MEMBER_CALL_FACTORY_ENTRY(
-                       "cub::BlockRadixSort.SortBlockedToStriped",
-                       MemberExprBase(), false, "sort_blocked_to_striped",
-                       NDITEM, ARG(0), ARG(1))),
-              CASE(CheckArgCount(1, std::equal_to<>(),
-                                 /*IncludeDefaultArg=*/false),
-                   MEMBER_CALL_FACTORY_ENTRY(
-                       "cub::BlockRadixSort.SortBlockedToStriped",
-                       MemberExprBase(), false, "sort_blocked_to_striped",
-                       NDITEM, ARG(0))),
-              OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
-                  "cub::BlockRadixSort.SortBlockedToStriped",
-                  Diagnostics::API_NOT_MIGRATED, printCallExprPretty()))))
+                      Diagnostics::API_NOT_MIGRATED, printCallExprPretty())))))
       // cub::BlockRadixSort.SortDescendingBlockedToStriped
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CASE_FACTORY_ENTRY(
-              CASE(
-                  makeCheckAnd(
-                      makeCheckAnd(CheckArgCount(3, std::equal_to<>(),
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY(
+              "cub::BlockRadixSort.SortDescendingBlockedToStriped",
+              Diagnostics::UNSUPPORT_SYCLCOMPAT,
+              LITERAL("cub::BlockRadixSort.SortDescendingBlockedToStriped")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CASE_FACTORY_ENTRY(
+                  CASE(makeCheckAnd(
+                           makeCheckAnd(
+                               CheckArgCount(3, std::equal_to<>(),
+                                             /*IncludeDefaultArg=*/false),
+                               CheckParamType(1, "int", /*isStrict=*/true)),
+                           CheckParamType(2, "int", /*isStrict=*/true)),
+                       MEMBER_CALL_FACTORY_ENTRY(
+                           "cub::BlockRadixSort.SortDescendingBlockedToStriped",
+                           MemberExprBase(), false,
+                           "sort_descending_blocked_to_striped", NDITEM, ARG(0),
+                           ARG(1), ARG(2))),
+                  CASE(
+                      makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
                                                  /*IncludeDefaultArg=*/false),
                                    CheckParamType(1, "int", /*isStrict=*/true)),
-                      CheckParamType(2, "int", /*isStrict=*/true)),
-                  MEMBER_CALL_FACTORY_ENTRY(
+                      MEMBER_CALL_FACTORY_ENTRY(
+                          "cub::BlockRadixSort.SortDescendingBlockedToStriped",
+                          MemberExprBase(), false,
+                          "sort_descending_blocked_to_striped", NDITEM, ARG(0),
+                          ARG(1))),
+                  CASE(CheckArgCount(1, std::equal_to<>(),
+                                     /*IncludeDefaultArg=*/false),
+                       MEMBER_CALL_FACTORY_ENTRY(
+                           "cub::BlockRadixSort.SortDescendingBlockedToStriped",
+                           MemberExprBase(), false,
+                           "sort_descending_blocked_to_striped", NDITEM,
+                           ARG(0))),
+                  OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
                       "cub::BlockRadixSort.SortDescendingBlockedToStriped",
-                      MemberExprBase(), false,
-                      "sort_descending_blocked_to_striped", NDITEM, ARG(0),
-                      ARG(1), ARG(2))),
-              CASE(makeCheckAnd(CheckArgCount(2, std::equal_to<>(),
-                                              /*IncludeDefaultArg=*/false),
-                                CheckParamType(1, "int", /*isStrict=*/true)),
-                   MEMBER_CALL_FACTORY_ENTRY(
-                       "cub::BlockRadixSort.SortDescendingBlockedToStriped",
-                       MemberExprBase(), false,
-                       "sort_descending_blocked_to_striped", NDITEM, ARG(0),
-                       ARG(1))),
-              CASE(CheckArgCount(1, std::equal_to<>(),
-                                 /*IncludeDefaultArg=*/false),
-                   MEMBER_CALL_FACTORY_ENTRY(
-                       "cub::BlockRadixSort.SortDescendingBlockedToStriped",
-                       MemberExprBase(), false,
-                       "sort_descending_blocked_to_striped", NDITEM, ARG(0))),
-              OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
-                  "cub::BlockRadixSort.SortDescendingBlockedToStriped",
-                  Diagnostics::API_NOT_MIGRATED, printCallExprPretty()))))
+                      Diagnostics::API_NOT_MIGRATED, printCallExprPretty())))))
       // cub::BlockExchange.BlockedToStriped
-      HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
-                            MEMBER_CALL_FACTORY_ENTRY(
-                                "cub::BlockExchange.BlockedToStriped",
-                                MemberExprBase(), false, "blocked_to_striped",
-                                NDITEM, ARG(0), ARG(1)))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY(
+              "cub::BlockExchange.BlockedToStriped",
+              Diagnostics::UNSUPPORT_SYCLCOMPAT,
+              LITERAL("cub::BlockExchange.BlockedToStriped")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              MEMBER_CALL_FACTORY_ENTRY(
+                  "cub::BlockExchange.BlockedToStriped", MemberExprBase(),
+                  false, "blocked_to_striped", NDITEM, ARG(0), ARG(1))))
       // cub::BlockExchange.StripedToBlocked
-      HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
-                            MEMBER_CALL_FACTORY_ENTRY(
-                                "cub::BlockExchange.StripedToBlocked",
-                                MemberExprBase(), false, "striped_to_blocked",
-                                NDITEM, ARG(0), ARG(1)))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY(
+              "cub::BlockExchange.StripedToBlocked",
+              Diagnostics::UNSUPPORT_SYCLCOMPAT,
+              LITERAL("cub::BlockExchange.StripedToBlocked")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              MEMBER_CALL_FACTORY_ENTRY(
+                  "cub::BlockExchange.StripedToBlocked", MemberExprBase(),
+                  false, "striped_to_blocked", NDITEM, ARG(0), ARG(1))))
       // cub::BlockExchange.ScatterToBlocked
-      HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
-                            MEMBER_CALL_FACTORY_ENTRY(
-                                "cub::BlockExchange.ScatterToBlocked",
-                                MemberExprBase(), false, "scatter_to_blocked",
-                                NDITEM, ARG(0), ARG(1)))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY(
+              "cub::BlockExchange.ScatterToBlocked",
+              Diagnostics::UNSUPPORT_SYCLCOMPAT,
+              LITERAL("cub::BlockExchange.ScatterToBlocked")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              MEMBER_CALL_FACTORY_ENTRY(
+                  "cub::BlockExchange.ScatterToBlocked", MemberExprBase(),
+                  false, "scatter_to_blocked", NDITEM, ARG(0), ARG(1))))
       // cub::BlockExchange.ScatterToStriped
-      HEADER_INSERT_FACTORY(HeaderType::HT_DPCT_GROUP_Utils,
-                            MEMBER_CALL_FACTORY_ENTRY(
-                                "cub::BlockExchange.ScatterToStriped",
-                                MemberExprBase(), false, "scatter_to_striped",
-                                NDITEM, ARG(0), ARG(1)))
-      // cub::BlockLoad::Load
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CONDITIONAL_FACTORY_ENTRY(
-              makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
-              MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load", MemberExprBase(),
-                                        false, "load", NDITEM, ARG(0), ARG(1)),
-              UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      printCallExprPretty())))
-      // cub::BlockStore::Store
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CONDITIONAL_FACTORY_ENTRY(
-              makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
-              MEMBER_CALL_FACTORY_ENTRY("cub::BlockStore.Store",
-                                        MemberExprBase(), false, "store",
-                                        NDITEM, ARG(0), ARG(1)),
-              UNSUPPORT_FACTORY_ENTRY("cub::BlockStore.Store",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      printCallExprPretty())))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY(
+              "cub::BlockExchange.ScatterToStriped",
+              Diagnostics::UNSUPPORT_SYCLCOMPAT,
+              LITERAL("cub::BlockExchange.ScatterToStriped")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              MEMBER_CALL_FACTORY_ENTRY(
+                  "cub::BlockExchange.ScatterToStriped", MemberExprBase(),
+                  false, "scatter_to_striped", NDITEM, ARG(0), ARG(1))))
+      // cub::BlockLoad.Load
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::BlockLoad::Load")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CONDITIONAL_FACTORY_ENTRY(
+                  makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+                  MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load",
+                                            MemberExprBase(), false, "load",
+                                            NDITEM, ARG(0), ARG(1)),
+                  UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
+                                          Diagnostics::API_NOT_MIGRATED,
+                                          printCallExprPretty()))))
+      // cub::BlockStore.Store
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::BlockStore.Store",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::BlockStore::Store")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CONDITIONAL_FACTORY_ENTRY(
+                  makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+                  MEMBER_CALL_FACTORY_ENTRY("cub::BlockStore.Store",
+                                            MemberExprBase(), false, "store",
+                                            NDITEM, ARG(0), ARG(1)),
+                  UNSUPPORT_FACTORY_ENTRY("cub::BlockStore.Store",
+                                          Diagnostics::API_NOT_MIGRATED,
+                                          printCallExprPretty()))))
 
   };
 }

@@ -480,7 +480,7 @@ public:
         "function call async_rnn_backward");
 
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "DPCT_CHECK_ERROR(";
+      DataRepl << MapNames::getCheckErrorMacroName() << "(";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
@@ -1175,10 +1175,6 @@ void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
     SYCLSourceExtension = ".cpp";
     SYCLHeaderExtension = ".hpp";
     break;
-  default:
-    SYCLSourceExtension = ".dp.cpp";
-    SYCLHeaderExtension = ".dp.hpp";
-    break;
   }
 }
 
@@ -1343,8 +1339,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // R: range dim, used for built-in variables (threadIdx.x,...) migration
   // G: range dim, used for cg::thread_block migration
   // C: range dim, used for cub block migration
-  // F: free queries function migration, such as this_nd_item, this_group,
-  //    this_sub_group.
+  // F: free queries function migration, such as this_work_item::get_nd_item,
+  // this_work_item::get_work_group, this_work_item::get_sub_group.
   // E: extension, used for c source file migration
   // P: profiling enable or disable for time measurement.
   switch (Method) {
@@ -4453,6 +4449,9 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   return Result + getName(FD);
 }
 void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
+  buildTextureObjectArgsInfo<CallExpr>(CE);
+  if (DpctGlobalInfo::useExtBindlessImages() || DpctGlobalInfo::useSYCLCompat())
+    return;
   if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
     if (auto DRE = dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImpCasts())) {
       auto BaseObject = makeTextureObjectInfo<StructureTextureObjectInfo>(
@@ -4461,7 +4460,6 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
         BaseTextureObject = std::move(BaseObject);
     }
   }
-  buildTextureObjectArgsInfo<CallExpr>(CE);
 }
 template <class CallT>
 void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
@@ -4470,7 +4468,8 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto ArgsNum = std::distance(Args.begin(), Args.end());
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
-  if (DpctGlobalInfo::useExtBindlessImages()) {
+  if (DpctGlobalInfo::useExtBindlessImages() ||
+      DpctGlobalInfo::useSYCLCompat()) {
     // Need return after resize, ortherwise will cause array out of bound.
     return;
   }
@@ -4742,6 +4741,8 @@ const FormatInfo &DeviceFunctionDecl::getFormatInfo() {
 void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     const ArrayRef<ParmVarDecl *> &Parms) {
   TextureObjectList.assign(Parms.size(), std::shared_ptr<TextureObjectInfo>());
+  if (DpctGlobalInfo::useSYCLCompat())
+    return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
     if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
@@ -6873,13 +6874,13 @@ const FreeQueriesInfo::FreeQueriesNames &
 FreeQueriesInfo::getNames(FreeQueriesKind K) {
   static FreeQueriesNames Names[FreeQueriesInfo::FreeQueriesKind::End] = {
       {getItemName(),
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_nd_item",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_nd_item",
        getItemName()},
       {getItemName() + ".get_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_work_group",
        "group" + getCTFixedSuffix()},
       {getItemName() + ".get_sub_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_sub_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_sub_group",
        "sub_group" + getCTFixedSuffix()},
   };
   return Names[K];
