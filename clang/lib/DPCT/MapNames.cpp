@@ -31,6 +31,7 @@ std::string MapNames::getExpNamespace(bool KeepNamespace) {
   return getClNamespace(KeepNamespace, false) + "ext::oneapi::experimental::";
 }
 
+std::unordered_set<std::string> MapNames::SYCLcompatUnsupportTypes;
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
@@ -327,6 +328,8 @@ void MapNames::setExplicitNamespaceMap(
       {"CUfunction",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_function",
                                       HelperFeatureEnum::device_ext)},
+      {"CUpointer_attribute",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes::type")},
       {"cudaPointerAttributes",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
                                       HelperFeatureEnum::device_ext)},
@@ -589,6 +592,10 @@ void MapNames::setExplicitNamespaceMap(
                ? getClNamespace() + "ext::oneapi::experimental::queue_state"
                : "cudaStreamCaptureStatus")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
+      {"CUmemorytype",
+       std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
+      {"CUmemorytype_enum",
+       std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
       {"cudaExtent",
        std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
@@ -803,6 +810,43 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
   };
+  // SYCLcompat unsupport types
+  SYCLcompatUnsupportTypes = {
+      "cudaChannelFormatDesc",
+      "cudaChannelFormatKind",
+      "cudaArray",
+      "cudaArray_t",
+      "cudaMipmappedArray",
+      "cudaMipmappedArray_t",
+      "cudaTextureDesc",
+      "cudaResourceDesc",
+      "cudaTextureObject_t",
+      "textureReference",
+      "cudaTextureAddressMode",
+      "cudaTextureFilterMode",
+      "CUDA_ARRAY3D_DESCRIPTOR",
+      "CUDA_ARRAY_DESCRIPTOR",
+      "CUtexObject",
+      "CUarray_format",
+      "CUarray",
+      "CUarray_st",
+      "CUDA_RESOURCE_DESC",
+      "CUDA_TEXTURE_DESC",
+      "CUaddress_mode",
+      "CUaddress_mode_enum",
+      "CUfilter_mode",
+      "CUfilter_mode_enum",
+      "CUresourcetype_enum",
+      "CUresourcetype",
+      "cudaResourceType",
+      "CUtexref",
+      "cudaStreamCaptureStatus",
+  };
+
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    for (const auto &Type : SYCLcompatUnsupportTypes)
+      TypeNamesMap.erase(Type);
+  }
 
   // Host Random Engine Type mapping
   RandomEngineTypeMap = {
@@ -1396,6 +1440,61 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("get_device_info().get_local_mem_size",
                                       HelperFeatureEnum::device_ext)},
 
+      // enum CUpointer_attribute
+      {"CU_POINTER_ATTRIBUTE_CONTEXT",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_MEMORY_TYPE",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::memory_type")},
+      {"CU_POINTER_ATTRIBUTE_DEVICE_POINTER",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::device_pointer")},
+      {"CU_POINTER_ATTRIBUTE_HOST_POINTER",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::host_pointer")},
+      {"CU_POINTER_ATTRIBUTE_P2P_TOKENS",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_SYNC_MEMOPS",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_BUFFER_ID",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_IS_MANAGED",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::is_managed")},
+      {"CU_POINTER_ATTRIBUTE_DEVICE_ORDINAL",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::device_id")},
+      {"CU_POINTER_ATTRIBUTE_IS_LEGACY_CUDA_IPC_CAPABLE",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_RANGE_START_ADDR",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_RANGE_SIZE",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_MAPPED",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_ALLOWED_HANDLE_TYPES",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+
+      // enum CUmemorytype Type
+      {"CU_MEMORYTYPE_HOST",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::host",
+                                      HelperFeatureEnum::device_ext)},
+      {"CU_MEMORYTYPE_DEVICE",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::device",
+                                      HelperFeatureEnum::device_ext)},
+      {"CU_MEMORYTYPE_UNIFIED",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::shared",
+                                      HelperFeatureEnum::device_ext)},
+      
       // enum CUlimit
       {"CU_LIMIT_PRINTF_FIFO_SIZE", std::make_shared<EnumNameRule>("INT_MAX")},
 
@@ -4362,6 +4461,11 @@ const std::map<std::string, std::vector<unsigned int>>
 const MapNames::MapTy MapNames::Dim3MemberNamesMap{
     {"x", "[2]"}, {"y", "[1]"}, {"z", "[0]"},
     // ...
+};
+
+const std::map<unsigned, std::string> MapNames::ArrayFlagMap{
+    {0, "standard"},
+    {1, "array"},
 };
 
 std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap;
