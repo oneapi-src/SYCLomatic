@@ -8160,6 +8160,43 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     EA.applyAllSubExprRepl();
     return;
   }
+  if (FuncName == "cudaStreamIsCapturing") {
+    if (!DpctGlobalInfo::useExtGraph()) {
+      report(CE->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+             "cudaStreamIsCapturing", "--use-experimental-features=graph");
+      return;
+    }
+    std::string ReplStr;
+    std::string StreamName;
+    auto StmtStr0 = getStmtSpelling(CE->getArg(1));
+    // TODO: simplify expression
+    if (StmtStr0[0] == '&')
+      ReplStr = StmtStr0.substr(1);
+    else
+      ReplStr = "*(" + StmtStr0 + ")";
+    ReplStr += " = ";
+    bool IsDefaultStream = isDefaultStream(CE->getArg(0));
+    if (IsDefaultStream) {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+      StreamName = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+      ReplStr += StreamName + "ext_oneapi_get_state()";
+    } else {
+      auto StreamArg = CE->getArg(0);
+      StreamName = getStmtSpelling(StreamArg);
+      if (needExtraParensInMemberExpr(StreamArg)) {
+        StreamName = "(" + StreamName + ")";
+      }
+      ReplStr += StreamName + "->" + "ext_oneapi_get_state()";
+    }
+    if (IsAssigned) {
+      ReplStr = MapNames::getCheckErrorMacroName() + "((" + ReplStr + "))";
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    return;
+  }
 
   if (FuncName == "cudaStreamCreate" || FuncName == "cuStreamCreate" ||
       FuncName == "cudaStreamCreateWithFlags" ||
