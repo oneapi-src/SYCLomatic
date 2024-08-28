@@ -2425,6 +2425,20 @@
       Out: ""
       RuleId: "remove_target_link_options_cuda_arg"
 
+#'-static-libstdc++' is not supported together with '-fsycl' when using icpx compiler.
+- Rule: rule_static_libstdc++_target_link_options
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: static_libstdc++_target_link_options
+  In: target_link_options${empty}(${target} ${libs})
+  Out: target_link_options(${target} ${libs})
+  Subrules:
+    libs:
+      In: -static-libstdc++
+      Out: ""
+      MatchMode: Full
+      Warning: "-static-libstdc++"
+
 - Rule: rule_target_link_directories
   Kind: CMakeRule
   Priority: Fallback
@@ -2439,7 +2453,7 @@
       MatchMode: Full
       RuleId: "replace_cuda_toolkit_lib_with_oneapi_lib"
 
-- Rule: rule_set_source_files_properties
+- Rule: rule_set_source_files_properties_lang
   Kind: CMakeRule
   Priority: Fallback
   CmakeSyntax: set_source_files_properties_lang
@@ -2801,3 +2815,29 @@
       MatchMode: Full
       In: NVIDIA
       Out: IntelLLVM
+
+- Rule: rule_CUDA_PROPAGATE_HOST_FLAGS
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_PROPAGATE_HOST_FLAGS
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: CUDA_PROPAGATE_HOST_FLAGS
+      Out: SYCL_PROPAGATE_HOST_FLAGS
+
+- Rule: rule_CUDA_USE_STATIC_CUDA_RUNTIME
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: CUDA_USE_STATIC_CUDA_RUNTIME
+  In: option(CUDA_USE_STATIC_CUDA_RUNTIME ${value})
+  Out: ""
+
+- Rule: rule_cuda_source_property_format
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: set_source_files_properties_cuda_source_property_format
+  In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}CUDA_SOURCE_PROPERTY_FORMAT OBJ${other_props})
+  Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}${other_props})

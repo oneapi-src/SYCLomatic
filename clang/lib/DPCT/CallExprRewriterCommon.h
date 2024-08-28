@@ -275,15 +275,6 @@ makeBLASEnumCallArgCreator(unsigned Idx, BLASEnumExpr::BLASEnumType BET) {
   };
 }
 
-inline std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
-  return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
-}
-
-inline std::function<const StringRef(const CallExpr *)>
-makeCallArgCreator(std::string Str) {
-  return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
-}
-
 inline std::function<bool(const CallExpr *)> makeBooleanCreator(bool B) {
   return [=](const CallExpr *C) -> bool { return B; };
 }
@@ -1528,14 +1519,6 @@ createBindTextureRewriterFactory(const std::string &Source) {
               makeCallArgCreatorWithCall(StartIdx + Idx)...)));
 }
 
-template <class... MsgArgs>
-inline std::shared_ptr<CallExprRewriterFactoryBase>
-createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
-                               MsgArgs &&...Args) {
-  return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
-      Source, MsgID, std::forward<MsgArgs>(Args)...);
-}
-
 template <class ArgT>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createDerefExprRewriterFactory(
@@ -1695,6 +1678,9 @@ public:
 inline auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useNdRangeBarrier();
 };
+inline auto UseRootGroup = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useRootGroup();
+};
 inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
@@ -1709,6 +1695,10 @@ inline auto UseExtGraph = [](const CallExpr *C) -> bool {
 
 inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExpNonUniformGroups();
+};
+
+inline auto UseSYCLCompat = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useSYCLCompat();
 };
 
 class CheckDerefedTypeBeforeCast {

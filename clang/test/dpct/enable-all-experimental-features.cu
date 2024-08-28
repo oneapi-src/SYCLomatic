@@ -37,21 +37,21 @@ __global__ void kernelFunc() {
   auto block = cg::this_thread_block();
   // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
-  // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
+  // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
 
   // CHECK:   testThreadGroup(dpct::experimental::group(threadBlockGroup, item_ct1));
   testThreadGroup(threadBlockGroup);
-  // CHECK:  dpct::experimental::logical_group tilePartition16 = dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16);
+  // CHECK:  dpct::experimental::logical_group tilePartition16 = dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::this_work_item::get_work_group<3>(), 16);
   cg::thread_block_tile<16> tilePartition16 = cg::tiled_partition<16>(threadBlockGroup);
   // CHECK:   testThreadGroup(dpct::experimental::group(tilePartition16, item_ct1));
   testThreadGroup(tilePartition16);
-  // CHECK:  sycl::sub_group tilePartition32 = sycl::ext::oneapi::experimental::this_sub_group();
+  // CHECK:  sycl::sub_group tilePartition32 = sycl::ext::oneapi::this_work_item::get_sub_group();
   cg::thread_block_tile<32> tilePartition32 = cg::tiled_partition<32>(threadBlockGroup);
   // CHECK:   testThreadGroup(dpct::experimental::group(tilePartition32, item_ct1));
   testThreadGroup(tilePartition32);
-  // CHECK:  dpct::experimental::logical_group tilePartition16_1(dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16));
-  // CHECK:  sycl::sub_group tilePartition32_2(sycl::ext::oneapi::experimental::this_sub_group());
+  // CHECK:  dpct::experimental::logical_group tilePartition16_1(dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::this_work_item::get_work_group<3>(), 16));
+  // CHECK:  sycl::sub_group tilePartition32_2(sycl::ext::oneapi::this_work_item::get_sub_group());
   cg::thread_block_tile<16> tilePartition16_1(cg::tiled_partition<16>(threadBlockGroup));
   cg::thread_block_tile<32> tilePartition32_2(cg::tiled_partition<32>(threadBlockGroup));
 }
@@ -63,8 +63,8 @@ public:
   // CHECK-NEXT:    /*
   // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory_for_overwrite is used to allocate group-local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
   // CHECK-NEXT:    */
-  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory_for_overwrite<int>(sycl::ext::oneapi::experimental::this_group<3>()); // the size of s is static
-  // CHECK-NEXT:  a0 = sycl::ext::oneapi::experimental::this_nd_item<3>().get_local_id(2);
+  // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory_for_overwrite<int>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is static
+  // CHECK-NEXT:  a0 = sycl::ext::oneapi::this_work_item::get_nd_item<3>().get_local_id(2);
   __device__ static void run(int *in, int *out) {
     __shared__ int a0; // the size of s is static
     a0 = threadIdx.x;
@@ -73,7 +73,7 @@ public:
 };
 
 // CHECK: void memberAcc() {
-// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TestObject>(sycl::ext::oneapi::experimental::this_group<3>()); // the size of s is static
+// CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory_for_overwrite<TestObject>(sycl::ext::oneapi::this_work_item::get_work_group<3>()); // the size of s is static
 // CHECK-NEXT: s.test();
 // CHECK-NEXT: }
 __global__ void memberAcc() {
@@ -96,7 +96,7 @@ __global__ void kernelFunc1() {
   auto block = cg::this_thread_block();
   // CHECK: dpct::dim3(block.get_local_id());
   block.thread_index();
-  // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
+  // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::this_work_item::get_work_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
 
   testThreadGroup(threadBlockGroup);
@@ -110,18 +110,18 @@ __global__ void kernelFunc1() {
 
   test11(tilePartition16);
   testThreadGroup(tilePartition16);
-  // CHECK:   test44(dpct::experimental::group(tilePartition16, sycl::ext::oneapi::experimental::this_nd_item<3>()));
-  // CHECK:   test11(dpct::experimental::group(tilePartition32, sycl::ext::oneapi::experimental::this_nd_item<3>()));
-  // CHECK:   test11(dpct::experimental::group(threadBlockGroup, sycl::ext::oneapi::experimental::this_nd_item<3>()));
+  // CHECK:   test44(dpct::experimental::group(tilePartition16, sycl::ext::oneapi::this_work_item::get_nd_item<3>()));
+  // CHECK:   test11(dpct::experimental::group(tilePartition32, sycl::ext::oneapi::this_work_item::get_nd_item<3>()));
+  // CHECK:   test11(dpct::experimental::group(threadBlockGroup, sycl::ext::oneapi::this_work_item::get_nd_item<3>()));
   test44(tilePartition16);
   test11(tilePartition32);
   test11(threadBlockGroup);
 }
 
-// nd_range_barrier
+// sycl::group_barrier(root_group)
 
 // CHECK: void kernel(sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
-// CHECK-NEXT:   dpct::experimental::nd_range_barrier(sycl::ext::oneapi::experimental::this_nd_item<3>(), sync_ct1);
+// CHECK-NEXT:  sycl::group_barrier(grid);
 // CHECK-NEXT: }
 __global__ void kernel() {
   cg::grid_group grid = cg::this_grid();
@@ -213,7 +213,7 @@ __global__ void kernel1() {
   // CHECK: /*
   // CHECK: DPCT1108:{{[0-9]+}}: '__shfl_sync' was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
   // CHECK: */
-  // CHECK: dpct::experimental::select_from_sub_group(mask, sycl::ext::oneapi::experimental::this_sub_group(), val, srcLane);
+  // CHECK: dpct::experimental::select_from_sub_group(mask, sycl::ext::oneapi::this_work_item::get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane);
 }
 
@@ -347,7 +347,7 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
   // CHECK: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_fill(sycl::ext::oneapi::experimental::this_sub_group(), acc_frag.get(), 0.0f);
+  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_fill(sycl::ext::oneapi::this_work_item::get_sub_group(), acc_frag.get(), 0.0f);
   nvcuda::wmma::fill_fragment(acc_frag, 0.0f);
 
   // Loop over k
@@ -360,13 +360,13 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
     // Bounds checking
     if (aRow < m_ld && aCol < k_ld && bRow < k_ld && bCol < n_ld) {
       // Load the inputs
-      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::experimental::this_sub_group(), a_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(a + aCol + aRow * lda), lda);
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), a_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(a + aCol + aRow * lda), lda);
       nvcuda::wmma::load_matrix_sync(a_frag, a + aCol + aRow * lda, lda);
-      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::experimental::this_sub_group(), b_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(b + bRow + bCol * ldb), ldb);
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), b_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(b + bRow + bCol * ldb), ldb);
       nvcuda::wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
 
       // Perform the matrix multiplication
-      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_mad(sycl::ext::oneapi::experimental::this_sub_group(), acc_frag.get(), a_frag.get(), b_frag.get(), acc_frag.get());
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_mad(sycl::ext::oneapi::this_work_item::get_sub_group(), acc_frag.get(), a_frag.get(), b_frag.get(), acc_frag.get());
       nvcuda::wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
     }
   }
@@ -377,12 +377,12 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int cRow = warpM * WMMA_M;
 
   if (cRow < m_ld && cCol < n_ld) {
-    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::experimental::this_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc, nvcuda::wmma::mem_row_major);
-    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::experimental::this_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, ly);
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(sycl::ext::oneapi::this_work_item::get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, ly);
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc, ly);
     // Store the output
-    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(sycl::ext::oneapi::experimental::this_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::col_major);
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(sycl::ext::oneapi::this_work_item::get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::col_major);
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc, nvcuda::wmma::mem_col_major);
   }
 }

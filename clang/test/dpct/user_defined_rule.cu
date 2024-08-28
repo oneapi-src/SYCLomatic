@@ -204,4 +204,12 @@ void foo10(){
 #if defined(__NVCC__)
 #endif
 
+template<class T> class MyClass{};
+int foo11(){
+  //CHECK: MyClass2<int> a;
+  MyClass<int> a;
+  //CHECK: MyClass2<MyClass2<float>> b;
+  MyClass<MyClass<float>> b;
+}
+
 #endif
