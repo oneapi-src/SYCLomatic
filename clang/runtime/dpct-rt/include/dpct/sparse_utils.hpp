@@ -179,7 +179,7 @@ template <typename T> struct csrmv_impl {
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
 #else
-    using Ty = typename ::dpct::cs::DataType<T>::T2;
+    using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
     auto alpha_value =
         dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
     auto beta_value =
@@ -352,7 +352,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans_a,
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
 #else
-  using Ty = typename ::dpct::cs::DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   auto alpha_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
@@ -472,7 +472,7 @@ template <typename T> struct optimize_csrsv_impl {
                   const std::shared_ptr<matrix_info> info, const void *val,
                   const int *row_ptr, const int *col_ind,
                   std::shared_ptr<optimize_info> optimize_info) {
-    using Ty = typename ::dpct::cs::DataType<T>::T2;
+    using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
     auto data_row_ptr = dpct::detail::get_memory<int>(row_ptr);
     auto data_col_ind = dpct::detail::get_memory<int>(col_ind);
     auto data_val = dpct::detail::get_memory<Ty>(val);
@@ -495,7 +495,7 @@ template <typename T> struct csrsv_impl {
                   const void *val, const int *row_ptr, const int *col_ind,
                   std::shared_ptr<optimize_info> optimize_info, const void *x,
                   void *y) {
-    using Ty = typename ::dpct::cs::DataType<T>::T2;
+    using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
     auto alpha_value =
         dpct::detail::get_value(static_cast<const Ty *>(alpha), queue);
     auto data_x = dpct::detail::get_memory<Ty>(x);
@@ -1457,7 +1457,7 @@ template <typename T> struct csr2csc_impl {
                   const int *from_col_ind, void *to_val, int *to_col_ptr,
                   int *to_row_ind, conversion_scope range,
                   oneapi::mkl::index_base base) {
-    using Ty = typename ::dpct::cs::DataType<T>::T2;
+    using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
     oneapi::mkl::sparse::matrix_handle_t from_handle = nullptr;
     oneapi::mkl::sparse::matrix_handle_t to_handle = nullptr;
     oneapi::mkl::sparse::init_matrix_handle(&from_handle);
