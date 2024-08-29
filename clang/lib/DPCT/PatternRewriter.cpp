@@ -55,6 +55,8 @@ static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
 }
 
+static bool isNotWhitespace(char Character) { return !isWhitespace(Character); }
+
 static bool isRightDelimiter(char Character) {
   return Character == '}' || Character == ']' || Character == ')';
 }
@@ -435,6 +437,33 @@ static void updateCplusplusStandard(
   }
 }
 
+static bool checkMatchContition(const int Size, const int Index,
+                                const int PatternSize, const int PatternIndex,
+                                const std::string &Input, MatchResult &Result,
+                                bool (*FuncPtr)(char)) {
+  if (PatternIndex == 0 && Index - 1 >= 0 && FuncPtr(Input[Index - 1]) &&
+      FuncPtr(Input[Index])) {
+    return false;
+  }
+
+  // If input value has been matched to the end but match pattern template
+  // still has value, it is considered not matched case.
+  if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
+    return false;
+  }
+
+  // If match pattern template has been matched to the end but input value
+  // still not the end, it is considered not matched case.
+  if (PatternIndex == PatternSize - 1 && FuncPtr(Input[Index + 1])) {
+    return false;
+  }
+
+  if (PatternIndex == PatternSize - 1 && !FuncPtr(Input[Index + 1])) {
+    Result.FullMatchFound = true;
+  }
+  return true;
+}
+
 static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                                             const std::string &Input,
                                             const int Start,
@@ -473,53 +502,18 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
         return {};
       }
 
-      if (Mode == RuleMatchMode::Full) {
-        if (PatternIndex == 0 && Index - 1 >= 0 &&
-            isIdentifiedChar(Input[Index - 1]) &&
-            isIdentifiedChar(Input[Index])) {
-          return {};
-        }
+      if (Mode == RuleMatchMode::Full &&
+          !checkMatchContition(Size, Index, PatternSize, PatternIndex, Input,
+                               Result, isIdentifiedChar)) {
 
-        // If input value has been matched to the end but match pattern template
-        // still has value, it is considered not matched case.
-        if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
-          return {};
-        }
+        return {};
+      }
 
-        // If match pattern template has been matched to the end but input value
-        // still not the end, it is considered not matched case.
-        if (PatternIndex == PatternSize - 1 &&
-            isIdentifiedChar(Input[Index + 1])) {
-          return {};
-        }
+      if (Mode == RuleMatchMode::StrictFull &&
+          !checkMatchContition(Size, Index, PatternSize, PatternIndex, Input,
+                               Result, isNotWhitespace)) {
 
-        if (PatternIndex == PatternSize - 1 &&
-            !isIdentifiedChar(Input[Index + 1])) {
-          Result.FullMatchFound = true;
-        }
-
-      } else if (Mode == RuleMatchMode::RawStringMatch) {
-        if (PatternIndex == 0 && Index - 1 >= 0 &&
-            !isWhitespace(Input[Index - 1]) && !isWhitespace(Input[Index])) {
-          return {};
-        }
-
-        // If input value has been matched to the end but match pattern template
-        // still has value, it is considered not matched case.
-        if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
-          return {};
-        }
-
-        // If match pattern template has been matched to the end but input value
-        // still not the end, it is considered not matched case.
-        if (PatternIndex == PatternSize - 1 &&
-            !isWhitespace(Input[Index + 1])) {
-          return {};
-        }
-
-        if (PatternIndex == PatternSize - 1 && isWhitespace(Input[Index + 1])) {
-          Result.FullMatchFound = true;
-        }
+        return {};
       }
 
       Index++;

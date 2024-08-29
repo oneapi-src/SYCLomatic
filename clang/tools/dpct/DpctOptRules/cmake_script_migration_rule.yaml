@@ -2850,7 +2850,7 @@
   Out: find_program(${var} ${value})
   Subrules:
     value:
-      MatchMode: RawStringMatch
+      MatchMode: StrictFull
       In: nvcc
       Out: |
         \${CMAKE_CXX_COMPILER} 
