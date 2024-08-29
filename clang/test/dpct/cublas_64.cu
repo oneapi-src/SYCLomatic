@@ -516,3 +516,25 @@ void foo() {
   // CHECK: status = DPCT_CHECK_ERROR(dpct::blas::gemm_batch(handle, transa, transb, m, n, k, alpha, aa, type_a, lda, stride_a, bb, type_b, ldb, stride_b, beta, cc, type_c, ldc, stride_c, batch, type_exec));
   status = cublasGemmStridedBatchedEx(handle, transa, transb, m, n, k, alpha, aa, type_a, lda, stride_a, bb, type_b, ldb, stride_b, beta, cc, type_c, ldc, stride_c, batch, type_exec, algo);
 }
+
+void foo2() {
+  cublasHandle_t handle;
+  int n;
+  void *x, *y;
+  int incx, incy;
+  void *res;
+  int64_t *idx;
+  void *param;
+  // CHECK: dpct::blas::copy(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::swap(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::iamaxmin<true>(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::iamaxmin<false>(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::asum(handle, n, x, dpct::library_data_t::real_float, incx, res, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::blas::rotm(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy, param, dpct::library_data_t::real_float);
+  cublasCopyEx_64(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasSwapEx_64(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasIamaxEx_64(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasIaminEx_64(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasAsumEx_64(handle, n, x, CUDA_R_32F, incx, res, CUDA_R_32F, CUDA_R_32F);
+  cublasRotmEx_64(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy, param, CUDA_R_32F, CUDA_R_32F);
+}

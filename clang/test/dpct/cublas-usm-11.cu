@@ -53,3 +53,25 @@ void foo3() {
   cublasGetMathMode(handle, &Mathmode);
   cublasSetMathMode(handle, Mathmode);
 }
+
+void foo4() {
+  cublasHandle_t handle;
+  int n;
+  void *x, *y;
+  int incx, incy;
+  void *res;
+  int *idx;
+  void *param;
+  // CHECK: dpct::blas::copy(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::swap(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::iamaxmin<true>(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::iamaxmin<false>(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::asum(handle, n, x, dpct::library_data_t::real_float, incx, res, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::blas::rotm(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy, param, dpct::library_data_t::real_float);
+  cublasCopyEx(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasSwapEx(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasIamaxEx(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasIaminEx(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasAsumEx(handle, n, x, CUDA_R_32F, incx, res, CUDA_R_32F, CUDA_R_32F);
+  cublasRotmEx(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy, param, CUDA_R_32F, CUDA_R_32F);
+}
