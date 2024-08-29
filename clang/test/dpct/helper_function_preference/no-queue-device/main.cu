@@ -83,7 +83,9 @@ void f() {
 // CHECK-NEXT:   DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   deviceProp.set_major_version(0);
+// CHECK-NEXT: #ifndef BUILD_TEST
 // CHECK-NEXT:   dev_ct1.get_device_info(deviceProp);
+// CHECK-NEXT: #endif
 // CHECK-NEXT:   h_Data = (int *)malloc(SIZE * sizeof(int));
 // CHECK-NEXT:   d_Data = sycl::malloc_device<int>(SIZE, q_ct1);
 // CHECK-NEXT:   malloc1();
