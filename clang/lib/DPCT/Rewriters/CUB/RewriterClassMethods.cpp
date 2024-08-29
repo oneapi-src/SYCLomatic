@@ -72,10 +72,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                                LITERAL("create_normalize")))))
       // cub::BlockRadixSort.Sort
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::BlockRadixSort.Sort",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::BlockRadixSort.Sort")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::BlockRadixSort.Sort"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CASE_FACTORY_ENTRY(
@@ -106,10 +103,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockRadixSort.SortDescending
       CONDITIONAL_FACTORY_ENTRY(
           UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY(
-              "cub::BlockRadixSort.SortDescending",
-              Diagnostics::UNSUPPORT_SYCLCOMPAT,
-              LITERAL("cub::BlockRadixSort.SortDescending")),
+          SYCLCOMPAT_UNSUPPORT("cub::BlockRadixSort.SortDescending"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CASE_FACTORY_ENTRY(
@@ -143,10 +137,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockRadixSort.SortBlockedToStriped
       CONDITIONAL_FACTORY_ENTRY(
           UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY(
-              "cub::BlockRadixSort.SortBlockedToStriped",
-              Diagnostics::UNSUPPORT_SYCLCOMPAT,
-              LITERAL("cub::BlockRadixSort.SortBlockedToStriped")),
+          SYCLCOMPAT_UNSUPPORT("cub::BlockRadixSort.SortBlockedToStriped"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CASE_FACTORY_ENTRY(
@@ -180,10 +171,8 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockRadixSort.SortDescendingBlockedToStriped
       CONDITIONAL_FACTORY_ENTRY(
           UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY(
-              "cub::BlockRadixSort.SortDescendingBlockedToStriped",
-              Diagnostics::UNSUPPORT_SYCLCOMPAT,
-              LITERAL("cub::BlockRadixSort.SortDescendingBlockedToStriped")),
+          SYCLCOMPAT_UNSUPPORT(
+              "cub::BlockRadixSort.SortDescendingBlockedToStriped"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CASE_FACTORY_ENTRY(
@@ -220,10 +209,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockExchange.BlockedToStriped
       CONDITIONAL_FACTORY_ENTRY(
           UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY(
-              "cub::BlockExchange.BlockedToStriped",
-              Diagnostics::UNSUPPORT_SYCLCOMPAT,
-              LITERAL("cub::BlockExchange.BlockedToStriped")),
+          SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.BlockedToStriped"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               MEMBER_CALL_FACTORY_ENTRY(
@@ -232,10 +218,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockExchange.StripedToBlocked
       CONDITIONAL_FACTORY_ENTRY(
           UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY(
-              "cub::BlockExchange.StripedToBlocked",
-              Diagnostics::UNSUPPORT_SYCLCOMPAT,
-              LITERAL("cub::BlockExchange.StripedToBlocked")),
+          SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.StripedToBlocked"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               MEMBER_CALL_FACTORY_ENTRY(
@@ -244,10 +227,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockExchange.ScatterToBlocked
       CONDITIONAL_FACTORY_ENTRY(
           UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY(
-              "cub::BlockExchange.ScatterToBlocked",
-              Diagnostics::UNSUPPORT_SYCLCOMPAT,
-              LITERAL("cub::BlockExchange.ScatterToBlocked")),
+          SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.ScatterToBlocked"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               MEMBER_CALL_FACTORY_ENTRY(
@@ -256,10 +236,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockExchange.ScatterToStriped
       CONDITIONAL_FACTORY_ENTRY(
           UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY(
-              "cub::BlockExchange.ScatterToStriped",
-              Diagnostics::UNSUPPORT_SYCLCOMPAT,
-              LITERAL("cub::BlockExchange.ScatterToStriped")),
+          SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.ScatterToStriped"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               MEMBER_CALL_FACTORY_ENTRY(
@@ -267,10 +244,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                   false, "scatter_to_striped", NDITEM, ARG(0), ARG(1))))
       // cub::BlockLoad.Load
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::BlockLoad::Load")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::BlockLoad.Load"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CONDITIONAL_FACTORY_ENTRY(
@@ -283,10 +257,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                           printCallExprPretty()))))
       // cub::BlockStore.Store
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::BlockStore.Store",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::BlockStore::Store")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::BlockStore.Store"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CONDITIONAL_FACTORY_ENTRY(

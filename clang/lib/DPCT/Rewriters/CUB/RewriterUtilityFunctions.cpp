@@ -160,10 +160,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                 "get_local_linear_id")
       // cub::LoadDirectBlocked
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::LoadDirectBlocked",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::LoadDirectBlocked")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::LoadDirectBlocked"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CALL_FACTORY_ENTRY(
@@ -174,10 +171,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                        NDITEM, ARG(1), ARG(2)))))
       // cub::LoadDirectStriped
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::LoadDirectStriped",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::LoadDirectStriped")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::LoadDirectStriped"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CALL_FACTORY_ENTRY(
@@ -188,10 +182,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                        NDITEM, ARG(1), ARG(2)))))
       // cub::StoreDirectBlocked
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::StoreDirectBlocked",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::StoreDirectBlocked")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::StoreDirectBlocked"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CALL_FACTORY_ENTRY("cub::StoreDirectBlocked",
@@ -202,10 +193,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                       NDITEM, ARG(1), ARG(2)))))
       // cub::StoreDirectStriped
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::StoreDirectStriped",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::StoreDirectStriped")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::StoreDirectStriped"),
           HEADER_INSERT_FACTORY(
               HeaderType::HT_DPCT_GROUP_Utils,
               CALL_FACTORY_ENTRY("cub::StoreDirectStriped",
@@ -216,10 +204,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                       NDITEM, ARG(1), ARG(2)))))
       // cub::ShuffleDown
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::ShuffleDown",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::ShuffleDown")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::ShuffleDown"),
           SUBGROUPSIZE_FACTORY(
               UINT_MAX,
               MapNames::getDpctNamespace() +
@@ -238,10 +223,7 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
                                           LITERAL("cub::ShuffleDown")))))
       // cub::ShuffleUp
       CONDITIONAL_FACTORY_ENTRY(
-          UseSYCLCompat,
-          UNSUPPORT_FACTORY_ENTRY("cub::ShuffleUp",
-                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                  LITERAL("cub::ShuffleUp")),
+          UseSYCLCompat, SYCLCOMPAT_UNSUPPORT("cub::ShuffleUp"),
           SUBGROUPSIZE_FACTORY(
               UINT_MAX,
               MapNames::getDpctNamespace() +

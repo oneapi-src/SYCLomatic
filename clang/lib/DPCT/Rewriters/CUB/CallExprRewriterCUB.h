@@ -64,6 +64,8 @@ createRemoveCubTempStorageFactory(
 
 #define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
   createRemoveCubTempStorageFactory(INNER 0),
+#define SYCLCOMPAT_UNSUPPORT(NAME)                                             \
+  UNSUPPORT_FACTORY_ENTRY(NAME, Diagnostics::UNSUPPORT_SYCLCOMPAT, ARG(NAME))
 
 typedef std::unordered_map<std::string,
                            std::shared_ptr<CallExprRewriterFactoryBase>>
