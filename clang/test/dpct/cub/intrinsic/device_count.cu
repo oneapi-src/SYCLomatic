@@ -9,11 +9,11 @@
 #include <cub/cub.cuh>
 
 int main() {
-  // CHECK: dpct::dev_mgr::instance().device_count();
+  // CHECK: dpct::device_count();
   cub::DeviceCount();
-  // CHECK: dpct::dev_mgr::instance().device_count();
+  // CHECK: dpct::device_count();
   cub::DeviceCountUncached();
-  // CHECK: dpct::dev_mgr::instance().device_count();
+  // CHECK: dpct::device_count();
   cub::DeviceCountCachedValue();
   return 0;
 }

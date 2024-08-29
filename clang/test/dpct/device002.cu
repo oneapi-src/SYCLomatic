@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 {
 int devID = atoi(argv[1]);
 cudaDeviceProp cdp;
-// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::get_device_info(cdp, dpct::dev_mgr::instance().get_device(devID)));
+// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::get_device(devID).get_device_info(cdp));
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
@@ -30,23 +30,23 @@ if (error_code == cudaSuccess) {
 }
 
 int deviceCount = 0;
-// CHECK: deviceCount = dpct::dev_mgr::instance().device_count();
+// CHECK: deviceCount = dpct::device_count();
 cudaGetDeviceCount(&deviceCount);
 
 int dev_id;
-// CHECK: dev_id = dpct::dev_mgr::instance().current_device_id();
+// CHECK: dev_id = dpct::get_current_device_id();
 cudaGetDevice(&dev_id);
 
 cudaDeviceProp deviceProp;
-// CHECK: dpct::get_device_info(deviceProp, dpct::dev_mgr::instance().get_device(0));
+// CHECK: dpct::get_device(0).get_device_info(deviceProp);
 cudaGetDeviceProperties(&deviceProp, 0);
 
 int atomicSupported;
-// CHECK: atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported();
+// CHECK: atomicSupported = dpct::get_device(dev_id).is_native_atomic_supported();
 cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id);
 
 int val;
-// CHECK: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
+// CHECK: val = dpct::get_device(dev_id).get_major_version();
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
 struct attr{
@@ -59,13 +59,13 @@ struct attr{
 cudaDeviceGetAttribute(&val, attr1.attr, dev_id);
 
 // CHECK: int attr2 = 86;
-// CHECK-NEXT: atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported();
+// CHECK-NEXT: atomicSupported = dpct::get_device(dev_id).is_native_atomic_supported();
 cudaDeviceAttr attr2 = cudaDevAttrHostNativeAtomicSupported;
 cudaDeviceGetAttribute(&atomicSupported, attr2, dev_id);
 
 // CHECK: int attr3;
 // CHECK-NEXT: attr3 = 75;
-// CHECK-NEXT: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
+// CHECK-NEXT: val = dpct::get_device(dev_id).get_major_version();
 cudaDeviceAttr attr3;
 attr3 = cudaDevAttrComputeCapabilityMajor;
 cudaDeviceGetAttribute(&val, attr3, dev_id);
@@ -73,7 +73,7 @@ cudaDeviceGetAttribute(&val, attr3, dev_id);
 // CHECK: int attr4;
 // CHECK-NEXT: attr4 = 86;
 // CHECK-NEXT: attr4 = 75;
-// CHECK-NEXT: val = dpct::dev_mgr::instance().get_device(dev_id).get_major_version();
+// CHECK-NEXT: val = dpct::get_device(dev_id).get_major_version();
 cudaDeviceAttr attr4;
 attr4 = cudaDevAttrHostNativeAtomicSupported;
 attr4 = cudaDevAttrComputeCapabilityMajor;
@@ -99,7 +99,7 @@ cudaDeviceGetAttribute(&val, attr5, dev_id);
 
 // CHECK: attr5 = 86;
 // CHECK-NEXT: attr6 = attr5;
-// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(val = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
+// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(val = dpct::get_device(dev_id).is_native_atomic_supported()));
 attr5 = cudaDevAttrHostNativeAtomicSupported;
 attr6 = attr5;
 checkError(cudaDeviceGetAttribute(&val, attr5, dev_id));
@@ -116,24 +116,24 @@ int computeMode = -1, minor = 0;
 // CHECK-NEXT: */
 // CHECK-NEXT: checkError(DPCT_CHECK_ERROR(computeMode = 1));
 checkError(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, dev_id));
-// CHECK: checkError(DPCT_CHECK_ERROR(minor = dpct::dev_mgr::instance().get_device(dev_id).get_minor_version()));
+// CHECK: checkError(DPCT_CHECK_ERROR(minor = dpct::get_device(dev_id).get_minor_version()));
 checkError(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, dev_id));
 
 int multiProcessorCount = 0, clockRate = 0;
-// CHECK: checkError(DPCT_CHECK_ERROR(multiProcessorCount = dpct::dev_mgr::instance().get_device(dev_id).get_max_compute_units()));
+// CHECK: checkError(DPCT_CHECK_ERROR(multiProcessorCount = dpct::get_device(dev_id).get_max_compute_units()));
 checkError(cudaDeviceGetAttribute(&multiProcessorCount, cudaDevAttrMultiProcessorCount, dev_id));
-// CHECK: checkError(DPCT_CHECK_ERROR(clockRate = dpct::dev_mgr::instance().get_device(dev_id).get_max_clock_frequency()));
+// CHECK: checkError(DPCT_CHECK_ERROR(clockRate = dpct::get_device(dev_id).get_max_clock_frequency()));
 checkError(cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, dev_id));
 
 int integrated = -1;
-// CHECK: checkError(DPCT_CHECK_ERROR(integrated = dpct::dev_mgr::instance().get_device(dev_id).get_integrated()));
+// CHECK: checkError(DPCT_CHECK_ERROR(integrated = dpct::get_device(dev_id).get_integrated()));
 checkError(cudaDeviceGetAttribute(&integrated, cudaDevAttrIntegrated, dev_id));
 
 int alignment;
 // CHECK: /*
 // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with cudaDevAttrTextureAlignment. It was migrated to get_mem_base_addr_align_in_bytes. You may need to adjust the value of get_mem_base_addr_align_in_bytes for the specific device.
 // CHECK-NEXT: */
-// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(alignment = dpct::dev_mgr::instance().get_device(dev_id).get_mem_base_addr_align_in_bytes()));
+// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(alignment = dpct::get_device(dev_id).get_mem_base_addr_align_in_bytes()));
 checkError(cudaDeviceGetAttribute(&alignment, cudaDevAttrTextureAlignment, dev_id));
 
 int device1 = 0;

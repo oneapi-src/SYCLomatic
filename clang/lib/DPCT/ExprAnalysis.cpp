@@ -2150,7 +2150,13 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
     initExpression(E);
     handleDim3Ctor(E, SourceRange(), &E, &E + 1);
     DirectRef = true;
+    IsDim3Var = E->getType()->isDependentType();
     return;
+  }
+  if (IsDim3Config && isa<CXXConstructExpr>(E)) {
+    if (const auto &Ctor = dyn_cast<CXXConstructExpr>(E)) {
+      IsDim3Var = Ctor->getNumArgs() == 1;
+    }
   }
   ArgumentAnalysis::analyze(E);
 }
