@@ -306,7 +306,7 @@ static void getCompileInfo(
         }
 
         if (NeedSingleQuote) {
-          // For macros like -DMSG="message", will migrated to '-DMSG="message"'
+          // For macros like -DMSG="message", will be migrated to '-DMSG="message"'
           // in auto-generated Makefile.
           NewOptions += "\'" + Option + "\' ";
         } else {
