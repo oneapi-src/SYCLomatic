@@ -486,8 +486,8 @@ int main() {
   // CHECK: dpct::async_dpct_memcpy(p3d, *s);
   cudaMemcpy3DAsync(&p3d, s);
 
-  // CHECK: dpct::memcpy_parameter p3dp;
-  cudaMemcpy3DPeerParms p3dp;
+  // CHECK: dpct::memcpy_parameter p3dp = {};
+  cudaMemcpy3DPeerParms p3dp = {0};
   int d;
   // CHECK: p3dp.from.image_bindless = pArr;
   p3dp.srcArray = pArr;
