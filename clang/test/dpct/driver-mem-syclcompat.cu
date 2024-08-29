@@ -176,55 +176,55 @@ int main(){
     // CHECK-NEXT: int advise = 0;
     CUmem_advise advise = CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION;
 
-    // CHECK: syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, advise);
+    // CHECK: syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, advise);
     cuMemAdvise(devicePtr, count, advise, cudevice);
 
-    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, advise)));
+    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, advise)));
     cuCheckError(cuMemAdvise(devicePtr, count, advise, cudevice));
 
-    // CHECK: cu_err = SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, advise));
+    // CHECK: cu_err = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, advise));
     cu_err = cuMemAdvise(devicePtr, count, advise, cudevice);
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0);
+    // CHECK-NEXT: syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0);
     cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, (CUmem_advise)1, cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, CUmem_advise(1), cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, static_cast<CUmem_advise>(1), cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cu_err = SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0));
+    // CHECK-NEXT: cu_err = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0));
     cu_err = cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0);
+    // CHECK-NEXT: syclcompat::get_device(cudevice).default_queue()->mem_advise(devicePtr, count, 0);
     cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
 
     // CHECK: /*
@@ -240,21 +240,21 @@ int main(){
     cuMemPrefetchAsync (devPtr, 100, cudevice, stream);
     // CHECK: (*&stream)->prefetch(devPtr, 100);
     cuMemPrefetchAsync (devPtr, 100, cudevice, *&stream);
-    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100));
+    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, NULL);
-    // CHECK: syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100);
+    // CHECK: syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100);
     cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
-    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100));
+    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault);
-    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100));
+    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy);
-    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100));
+    // CHECK: curesult = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
-    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
+    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
     cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault));
-    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
+    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
     cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy));
-    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
+    // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
     cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread));
 
     // CHECK: syclcompat::experimental::memcpy_parameter cpy2;
