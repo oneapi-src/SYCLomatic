@@ -20,4 +20,4 @@
 // CUDASTREAMISCAPTURING-NEXT:   cudaStreamIsCapturing(s /*cudaStream_t*/,
 // CUDASTREAMISCAPTURING-NEXT:                         ps /* enum cudaStreamCaptureStatus **/);
 // CUDASTREAMISCAPTURING-NEXT: Is migrated to (with the option --use-experimental-features=graph):
-// CUDASTREAMISCAPTURING-NEXT: *ps = s->ext_oneapi_get_state();
+// CUDASTREAMISCAPTURING-NEXT: *(ps) = s->ext_oneapi_get_state();
