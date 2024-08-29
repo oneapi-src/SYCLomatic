@@ -40,6 +40,6 @@ int main() {
 void foo() {
   int dev = 1;
   cudaDeviceProp p;
-  // CHECK: CHECK(DPCT_CHECK_ERROR(dpct::get_device_info(p, dpct::dev_mgr::instance().get_device(dev))));
+  // CHECK: CHECK(DPCT_CHECK_ERROR(dpct::get_device(dev).get_device_info(p)));
   CHECK(cudaGetDeviceProperties(&p, dev));
 }
