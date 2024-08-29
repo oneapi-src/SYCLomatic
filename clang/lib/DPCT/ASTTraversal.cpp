@@ -10250,6 +10250,8 @@ void MemoryMigrationRule::memcpyMigration(
   // Detect if there is Async in the func name and crop the async substr
   std::string NameRef = Name;
   bool IsAsync = false;
+  // Whether in experimental namespace in syclcompat.
+  bool IsExperimentalInSYCLCompat = false;
   size_t AsyncLoc = NameRef.find("Async");
   if (AsyncLoc != std::string::npos) {
     IsAsync = true;
@@ -10268,6 +10270,7 @@ void MemoryMigrationRule::memcpyMigration(
     llvm::raw_string_ostream OS(Replacement);
     DerefExpr(C->getArg(0), C).print(OS);
     emplaceTransformation(new ReplaceStmt(C->getArg(0), Replacement));
+    IsExperimentalInSYCLCompat = true;
   } else if (!NameRef.compare("cudaMemcpy") ||
              NameRef.rfind("cuMemcpyDtoH", 0) == 0) {
     if (!NameRef.compare("cudaMemcpy")) {
@@ -10345,10 +10348,12 @@ void MemoryMigrationRule::memcpyMigration(
 
   if (ReplaceStr.empty()) {
     if (IsAsync) {
-      ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName("memcpy_async");
+      ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName(
+          "memcpy_async", IsExperimentalInSYCLCompat);
       requestFeature(HelperFeatureEnum::device_ext);
     } else {
-      ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName("memcpy");
+      ReplaceStr = MemoryMigrationRule::getMemoryHelperFunctionName(
+          "memcpy", IsExperimentalInSYCLCompat);
       requestFeature(HelperFeatureEnum::device_ext);
     }
   }

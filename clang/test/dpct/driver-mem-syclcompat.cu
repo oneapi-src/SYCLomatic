@@ -94,13 +94,12 @@ int main(){
     // CHECK: r = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(f_D, f_D2, size));
     r = cuMemcpyAsync(f_D, f_D2, size, 0);
 
-    // CHECK: syclcompat::memcpy(f_D, c1, f_D2, c2, size);
+#ifndef BUILD_TEST
+    // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeer" is not supported with SYCLcompat currently, please adjust the code manually.
     cuMemcpyPeer(f_D, c1, f_D2, c2, size);
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1124:{{[0-9]+}}: cuMemcpyPeerAsync is migrated to asynchronous memcpy API. While the origin API might be synchronous, it depends on the type of operand memory, so you may need to call wait() on event return by memcpy API to ensure synchronization behavior.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: syclcompat::memcpy_async(f_D, c1, f_D2, c2, size, *stream);
+    // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeerAsync" is not supported with SYCLcompat currently, please adjust the code manually.
     cuMemcpyPeerAsync(f_D, c1, f_D2, c2, size, stream);
+#endif
 
     unsigned int v32 = 50000;
     unsigned short v16 = 20000;
@@ -130,7 +129,7 @@ int main(){
     cuMemsetD2D16Async(f_D, 1, v16, 4 * 2, 6, stream);
     cuMemsetD2D8Async(f_D, 1, v8, 4 * 4, 6, stream);
 
-    // CHECK: syclcompat::memcpy_parameter cpy;
+    // CHECK: syclcompat::experimental::memcpy_parameter cpy;
     // CHECK-NEXT: cpy.to.pitched.set_data_ptr(f_A);
     // CHECK-NEXT: cpy.to.pitched.set_pitch(20);
     // CHECK-NEXT: cpy.to.pos[1] = 10;
@@ -159,9 +158,9 @@ int main(){
     cpy.WidthInBytes = 4;
     cpy.Height = 7;
 
-    // CHECK: syclcompat::memcpy(cpy);
+    // CHECK: syclcompat::experimental::memcpy(cpy);
     cuMemcpy2D(&cpy);
-    // CHECK: syclcompat::memcpy_async(cpy, *stream);
+    // CHECK: syclcompat::experimental::memcpy_async(cpy, *stream);
     cuMemcpy2DAsync(&cpy, stream);
 
     CUdeviceptr devicePtr;
@@ -258,9 +257,8 @@ int main(){
     // CHECK: cuCheckError(SYCLCOMPAT_CHECK_ERROR(syclcompat::dev_mgr::instance().get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
     cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread));
 
-    // CHECK: syclcompat::memcpy_parameter cpy2;
-    // CHECK-EMPTY:
-    // CHECK-NEXT: /*
+    // CHECK: syclcompat::experimental::memcpy_parameter cpy2;
+    // CHECK: /*
     // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "CUarray" is not supported with SYCLcompat currently, please adjust the code manually.
     // CHECK-NEXT: */
     // CHECK-NEXT: CUarray ca;
@@ -270,8 +268,7 @@ int main(){
     // CHECK-NEXT: cpy2.to.pos[1] = 3;
     // CHECK-NEXT: cpy2.to.pos[2] = 2;
     // CHECK-NEXT: cpy2.to.pos[0] = 1;
-    // CHECK-EMPTY:
-    // CHECK-NEXT: cpy2.from.pitched.set_data_ptr(f_A);
+    // CHECK: cpy2.from.pitched.set_data_ptr(f_A);
     // CHECK-NEXT: cpy2.from.pitched.set_pitch(5);
     // CHECK-NEXT: cpy2.from.pitched.set_y(4);
     // CHECK-NEXT: cpy2.from.pos[1] = 3;
@@ -282,7 +279,7 @@ int main(){
     // CHECK-NEXT: cpy2.size[1] = 2;
     // CHECK-NEXT: cpy2.size[2] = 1;
     CUDA_MEMCPY3D cpy2;
-
+#ifndef BUILD_TEST
     CUarray ca;
     cpy2.dstMemoryType = CU_MEMORYTYPE_ARRAY;
     cpy2.dstArray = ca;
@@ -292,6 +289,7 @@ int main(){
     cpy2.dstZ = 2;
     cpy2.dstXInBytes = 1;
     cpy2.dstLOD = 0;
+#endif
 
     cpy2.srcMemoryType = CU_MEMORYTYPE_HOST;
     cpy2.srcHost = f_A;
@@ -306,11 +304,11 @@ int main(){
     cpy2.Height = 2;
     cpy2.Depth = 1;
 
-    // CHECK: syclcompat::memcpy(cpy2);
+    // CHECK: syclcompat::experimental::memcpy(cpy2);
     cuMemcpy3D(&cpy2);
 
     CUstream cs;
-    // CHECK: syclcompat::memcpy_async(cpy2, *cs);
+    // CHECK: syclcompat::experimental::memcpy_async(cpy2, *cs);
     cuMemcpy3DAsync(&cpy2, cs);
 
     float *h_A = (float *)malloc(100);

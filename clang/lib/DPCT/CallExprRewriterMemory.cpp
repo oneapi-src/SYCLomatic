@@ -16,7 +16,10 @@ namespace dpct {
 /// functions and w/o in syclcompat.
 /// If has "_async" suffix, the name in dpct helper function will have 'async_'
 /// prefix and remove the suffix.
-std::string getMemoryHelperFunctionName(StringRef RawName) {
+/// If `ExperimentalInSYCLCompat` is true, will add `experimental` namespace
+/// in syclcompat.
+std::string getMemoryHelperFunctionName(StringRef RawName,
+                                        bool ExperimentalInSYCLCompat = false) {
   const static std::string AsyncSuffix = "_async";
   const static std::string AsyncPrefix = "async_";
 
@@ -29,13 +32,16 @@ std::string getMemoryHelperFunctionName(StringRef RawName) {
       OS << AsyncPrefix;
     }
     OS << "dpct_";
+  } else if (ExperimentalInSYCLCompat) {
+    OS << "experimental::";
   }
   OS << RawName;
   return Result;
 }
 
-std::string MemoryMigrationRule::getMemoryHelperFunctionName(StringRef Name) {
-  return dpct::getMemoryHelperFunctionName(Name);
+std::string MemoryMigrationRule::getMemoryHelperFunctionName(
+    StringRef Name, bool ExperimentalInSYCLCompat) {
+  return dpct::getMemoryHelperFunctionName(Name, ExperimentalInSYCLCompat);
 }
 
 // clang-format off

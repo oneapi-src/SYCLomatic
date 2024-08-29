@@ -183,13 +183,10 @@ void foo() {
   // CHECK: syclcompat::memcpy(h_A, size, d_A, size, size, size);
   cudaMemcpy2D(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
 
-  // CHECK: syclcompat::memcpy(parms);
+  // CHECK: syclcompat::experimental::memcpy(parms);
   cudaMemcpy3D(&parms);
-#ifndef BUILD_TEST
-  struct cudaMemcpy3DParms *parms_pointer;
-  // Followed call can't be processed.
+  // CHECK: syclcompat::experimental::memcpy(*(parms_pointer));
   cudaMemcpy3D(parms_pointer);
-#endif
 
   // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
@@ -205,11 +202,11 @@ void foo() {
   // CHECK: syclcompat::memcpy_async(h_A, size, d_A, size, size, size, *stream);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, stream);
 
-  // CHECK: syclcompat::memcpy_async(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
   cudaMemcpy3DAsync(&parms);
-  // CHECK: syclcompat::memcpy_async(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
   cudaMemcpy3DAsync(&parms, 0);
-  // CHECK: syclcompat::memcpy_async(parms, *stream);
+  // CHECK: syclcompat::experimental::memcpy_async(parms, *stream);
   cudaMemcpy3DAsync(&parms, stream);
   /// memcpy from symbol
 
@@ -554,7 +551,6 @@ void foo3() {
   cudaMemcpy3DParms parms;
   int *data;
   size_t width, height, depth, pitch, woffset, hoffset;
-  cudaArray_t a1;
   int deviceID = 0;
 
   // CHECK: auto s1 = std::make_shared<syclcompat::queue_ptr>((syclcompat::queue_ptr)&q_ct1);
@@ -641,15 +637,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamPerThread));
 
-  // CHECK: syclcompat::memcpy_async(parms);
-  // CHECK: syclcompat::memcpy_async(parms);
-  // CHECK: syclcompat::memcpy_async(parms);
-  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(parms));
-  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(parms));
-  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(parms));
-  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(parms)));
-  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(parms)));
-  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(parms)));
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms)));
   cudaMemcpy3DAsync(&parms, cudaStreamDefault);
   cudaMemcpy3DAsync(&parms, cudaStreamLegacy);
   cudaMemcpy3DAsync(&parms, cudaStreamPerThread);
@@ -660,7 +656,8 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy3DAsync(&parms, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy3DAsync(&parms, cudaStreamPerThread));
 
-
+#ifndef BUILD_TEST
+  cudaArray_t a1;
   // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
   // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
   // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
@@ -738,6 +735,7 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamDefault));
   MY_SAFE_CALL(cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamPerThread));
+#endif
 
 
   // CHECK: q_ct1.memset(d_A, 23, size);
