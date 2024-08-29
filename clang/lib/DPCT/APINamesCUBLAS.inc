@@ -1674,6 +1674,52 @@ GEMM_BATCH(cublasCgemmStridedBatched, "std::complex<float>", true)
 GEMM_BATCH(cublasZgemmStridedBatched, "std::complex<double>", true)
 #undef GEMM_BATCH
 
+#define COPY_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL(MapNames::getLibraryHelperNamespace() + "blas::copy", ARG(0),       \
+           ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
+COPY_EX(cublasCopyEx)
+COPY_EX(cublasCopyEx_64)
+#undef COPY_EX
+
+#define SWAP_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL(MapNames::getLibraryHelperNamespace() + "blas::swap", ARG(0),       \
+           ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
+SWAP_EX(cublasSwapEx)
+SWAP_EX(cublasSwapEx_64)
+#undef SWAP_EX
+
+#define ASUM_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::asum",        \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
+ASUM_EX(cublasAsumEx)
+ASUM_EX(cublasAsumEx_64)
+#undef ASUM_EX
+
+#define ROTM_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::rotm",        \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),      \
+                  ARG(7), ARG(8), ARG(9))))
+ROTM_EX(cublasRotmEx)
+ROTM_EX(cublasRotmEx_64)
+#undef ROTM_EX
+
+#define IAMAXMIN_EX(NAME, IS_MAX)                                              \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::iamaxmin<" +  \
+                      #IS_MAX + ">",                                           \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
+IAMAXMIN_EX(cublasIamaxEx, true)
+IAMAXMIN_EX(cublasIamaxEx_64, true)
+IAMAXMIN_EX(cublasIaminEx, false)
+IAMAXMIN_EX(cublasIaminEx_64, false)
+#undef IAMAXMIN_EX
+
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cublasLtCreate", DEREF(0),
     NEW(MapNames::getLibraryHelperNamespace() + "blas_gemm::experimental::descriptor")))

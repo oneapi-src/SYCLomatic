@@ -4175,7 +4175,10 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasGemmBatchedEx_64", "cublasGemmStridedBatchedEx",
         "cublasGemmStridedBatchedEx_64", "cublasSdgmm", "cublasDdgmm",
         "cublasCdgmm", "cublasZdgmm", "cublasSgeam", "cublasDgeam",
-        "cublasCgeam", "cublasZgeam",
+        "cublasCgeam", "cublasZgeam", "cublasCopyEx", "cublasSwapEx",
+        "cublasIamaxEx", "cublasIaminEx", "cublasAsumEx", "cublasRotmEx",
+        "cublasCopyEx_64", "cublasSwapEx_64", "cublasIamaxEx_64",
+        "cublasIaminEx_64", "cublasAsumEx_64", "cublasRotmEx_64",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         "cublasSetKernelStream", "cublasGetVersion",
