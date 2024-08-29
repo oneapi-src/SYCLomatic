@@ -1,4 +1,3 @@
-// FIXME
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --use-syclcompat --usm-level=restricted -out-root %T/usm-syclcompat %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/usm-syclcompat/usm-syclcompat.dp.cpp %s
@@ -32,7 +31,7 @@ void foo() {
 
   cudaPitchedPtr p_A;
   cudaExtent e;
-  cudaMemcpy3DParms parms;
+  cudaMemcpy3DParms parms, *parms_pointer;
   cudaStream_t stream;
 
   /// malloc
@@ -185,7 +184,7 @@ void foo() {
 
   // CHECK: syclcompat::experimental::memcpy(parms);
   cudaMemcpy3D(&parms);
-  // CHECK: syclcompat::experimental::memcpy(*(parms_pointer));
+  // CHECK: syclcompat::experimental::memcpy(*parms_pointer);
   cudaMemcpy3D(parms_pointer);
 
   // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size);

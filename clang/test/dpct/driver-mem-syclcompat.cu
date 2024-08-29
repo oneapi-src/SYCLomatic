@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -use-syclcompat -out-root %T/driver-mem-syclcompat %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-mem-syclcompat/driver-mem-syclcompat.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/driver-mem-syclcompat/driver-mem-syclcompat.dp.cpp -o %T/driver-mem/driver-mem-syclcompat.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/driver-mem-syclcompat/driver-mem-syclcompat.dp.cpp -o %T/driver-mem/driver-mem-syclcompat.dp.o %}
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
