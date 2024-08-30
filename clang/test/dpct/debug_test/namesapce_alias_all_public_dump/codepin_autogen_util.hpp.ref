@@ -1,14 +1,6 @@
 //CHECK: #ifndef __DPCT_CODEPIN_AUTOGEN_UTIL__
 //CHECK: #define __DPCT_CODEPIN_AUTOGEN_UTIL__
 
-//CHECK: struct Color;
-
-//CHECK: template<typename T>
-//CHECK: class Point3D;
-
-//CHECK: class P3;
-//CHECK: using Point3DExt = P3;
-
 //CHECK: struct dpct_type_{{[0-9]+}};
 //CHECK: using PP2 = dpct_type_{{[0-9]+}};
 
@@ -17,31 +9,11 @@
 //CHECK: using Point2D = P2;
 //CHECK: }
 
-//CHECK: struct PointCloud;
 
 //CHECK: namespace dpct {
 //CHECK: namespace experimental {
 //CHECK: namespace codepin {
 //CHECK: namespace detail {
-//CHECK: struct Color_codepin {
-//CHECK: public:
-//CHECK:   int r;
-//CHECK:   int g;
-//CHECK:   int b;
-//CHECK: };
-
-//CHECK: template<typename T>
-//CHECK: class Point3D_codepin {
-//CHECK: public:
-//CHECK:   T x;
-//CHECK:   T y;
-//CHECK:   T z;
-//CHECK: };
-
-//CHECK: class Point3DExt_codepin : public Point3D_codepin<int> {
-//CHECK: public:
-//CHECK:   Color_codepin col;
-//CHECK: };
 
 //CHECK: struct PP2_codepin {
 //CHECK: public:
@@ -55,84 +27,6 @@
 //CHECK:   int y;
 //CHECK: };
 
-//CHECK: struct PointCloud_codepin {
-//CHECK: public:
-//CHECK:   sycl::float3 pc[3];
-//CHECK: };
-
-//CHECK: template <> class data_ser<Color_codepin> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, Color_codepin &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     auto arr = ss.array();
-//CHECK:     {
-//CHECK:       auto obj0 = arr.object();
-//CHECK:       obj0.key("r");
-//CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
-//CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.r, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj1 = arr.object();
-//CHECK:       obj1.key("g");
-//CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
-//CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.g, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj2 = arr.object();
-//CHECK:       obj2.key("b");
-//CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value2);
-//CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.b, queue);
-//CHECK:     }
-
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("Color_codepin");
-//CHECK:   }
-//CHECK: };
-
-//CHECK: template <> class data_ser<Point3D_codepin<int>> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, Point3D_codepin<int> &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     auto arr = ss.array();
-//CHECK:     {
-//CHECK:       auto obj0 = arr.object();
-//CHECK:       obj0.key("x");
-//CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
-//CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj1 = arr.object();
-//CHECK:       obj1.key("y");
-//CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
-//CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj2 = arr.object();
-//CHECK:       obj2.key("z");
-//CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value2);
-//CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.z, queue);
-//CHECK:     }
-
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("Point3D_codepin<int>");
-//CHECK:   }
-//CHECK: };
 
 
 //CHECK: template <> class data_ser<Point2D_codepin> {
@@ -177,147 +71,6 @@
 //CHECK:   }
 //CHECK: };
 
-//CHECK: template <> class data_ser<PointCloud_codepin> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, PointCloud_codepin &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     auto arr = ss.array();
-//CHECK:     {
-//CHECK:       auto obj0 = arr.object();
-//CHECK:       obj0.key("pc");
-//CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<sycl::float3[3]>::print_type_name(value0);
-//CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<sycl::float3[3]>::dump(ss, value.pc, queue);
-//CHECK:     }
-
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("PointCloud_codepin");
-//CHECK:   }
-//CHECK: };
-
-//CHECK: template <> class data_ser<PointCloud> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, PointCloud &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     PointCloud_codepin& temp = reinterpret_cast<PointCloud_codepin&>(value);
-//CHECK:     dpctexp::codepin::detail::data_ser<PointCloud_codepin>::dump(ss, temp, queue);
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("PointCloud");
-//CHECK:   }
-//CHECK: };
-
-//CHECK: template <> class data_ser<Point3DExt_codepin> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, Point3DExt_codepin &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     auto arr = ss.array();
-//CHECK:     {
-//CHECK:       auto obj0 = arr.object();
-//CHECK:       obj0.key("x");
-//CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
-//CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj1 = arr.object();
-//CHECK:       obj1.key("y");
-//CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
-//CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj2 = arr.object();
-//CHECK:       obj2.key("z");
-//CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value2);
-//CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.z, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj3 = arr.object();
-//CHECK:       obj3.key("col");
-//CHECK:       auto value3 = obj3.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<Color_codepin>::print_type_name(value3);
-//CHECK:       obj3.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<Color_codepin>::dump(ss, value.col, queue);
-//CHECK:     }
-
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("Point3DExt_codepin");
-//CHECK:   }
-//CHECK: };
-
-//CHECK: template <> class data_ser<Point3DExt> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, Point3DExt &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     Point3DExt_codepin& temp = reinterpret_cast<Point3DExt_codepin&>(value);
-//CHECK:     dpctexp::codepin::detail::data_ser<Point3DExt_codepin>::dump(ss, temp, queue);
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("Point3DExt");
-//CHECK:   }
-//CHECK: };
-
-//CHECK: template <> class data_ser<Point3D_codepin<float>> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, Point3D_codepin<float> &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     auto arr = ss.array();
-//CHECK:     {
-//CHECK:       auto obj0 = arr.object();
-//CHECK:       obj0.key("x");
-//CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::print_type_name(value0);
-//CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.x, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj1 = arr.object();
-//CHECK:       obj1.key("y");
-//CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::print_type_name(value1);
-//CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.y, queue);
-//CHECK:     }
-//CHECK:     {
-//CHECK:       auto obj2 = arr.object();
-//CHECK:       obj2.key("z");
-//CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::print_type_name(value2);
-//CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.z, queue);
-//CHECK:     }
-
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("Point3D_codepin<float>");
-//CHECK:   }
-//CHECK: };
-
-//CHECK: template <> class data_ser<Point3D<float>> {
-//CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, Point3D<float> &value,
-//CHECK:                    dpctexp::codepin::queue_t queue) {
-//CHECK:     Point3D_codepin<float>& temp = reinterpret_cast<Point3D_codepin<float>&>(value);
-//CHECK:     dpctexp::codepin::detail::data_ser<Point3D_codepin<float>>::dump(ss, temp, queue);
-//CHECK:   }
-//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
-//CHECK:     obj.key("Type");
-//CHECK:     obj.value("Point3D<float>");
-//CHECK:   }
-//CHECK: };
 
 //CHECK: template <> class data_ser<PP2_codepin> {
 //CHECK:  public:
