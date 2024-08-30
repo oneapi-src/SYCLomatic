@@ -4742,9 +4742,9 @@ const MapNames::MapTy MemoryDataTypeRule::DirectReplMemberNames{
     {"dstDevice", "to.dev_id"},
     // CUDA_MEMCPY2D fields.
     {"Height", "size[1]"},
-    {"WidthInBytes", "size[0]"},
-    {"dstXInBytes", "to.pos[0]"},
-    {"srcXInBytes", "from.pos[0]"},
+    {"WidthInBytes", "sizeXByte"},
+    {"dstXInBytes", "to.offsetXByte"},
+    {"srcXInBytes", "from.offsetXByte"},
     {"dstY", "to.pos[1]"},
     {"srcY", "from.pos[1]"},
     // CUDA_MEMCPY3D fields.

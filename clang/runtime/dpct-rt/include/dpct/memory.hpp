@@ -82,18 +82,24 @@ namespace experimental {
 class image_mem_wrapper;
 namespace detail {
 static sycl::event dpct_memcpy(const image_mem_wrapper *src,
-                               const sycl::id<3> &src_id, pitched_data &dest,
-                               const sycl::id<3> &dest_id,
-                               const sycl::range<3> &copy_extend,
-                               sycl::queue q);
+                               const sycl::id<3> &src_id,
+                               const size_t src_x_offest_byte,
+                               pitched_data &dest, const sycl::id<3> &dest_id,
+                               const size_t dest_x_offest_byte,
+                               const sycl::range<3> &size,
+                               const size_t copy_x_size_byte, sycl::queue q);
 static sycl::event
 dpct_memcpy(const pitched_data src, const sycl::id<3> &src_id,
-            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
-            const sycl::range<3> &copy_extend, sycl::queue q);
+            const size_t src_x_offest_byte, image_mem_wrapper *dest,
+            const sycl::id<3> &dest_id, const size_t dest_x_offest_byte,
+            const sycl::range<3> &size, const size_t copy_x_size_byte,
+            sycl::queue q);
 static sycl::event
 dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
-            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
-            const sycl::range<3> &copy_extend, sycl::queue q);
+            const size_t src_x_offest_byte, image_mem_wrapper *dest,
+            const sycl::id<3> &dest_id, const size_t dest_x_offest_byte,
+            const sycl::range<3> &size, const size_t copy_x_size_byte,
+            sycl::queue q);
 } // namespace detail
 } // namespace experimental
 #endif
@@ -107,6 +113,7 @@ struct memcpy_parameter {
   struct data_wrapper {
     pitched_data pitched{};
     sycl::id<3> pos{};
+    size_t offsetXByte{0};
     int dev_id{0};
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
     experimental::image_mem_wrapper *image_bindless{nullptr};
@@ -116,6 +123,7 @@ struct memcpy_parameter {
   data_wrapper from{};
   data_wrapper to{};
   sycl::range<3> size{};
+  size_t sizeXByte{0};
   memcpy_direction direction{memcpy_direction::automatic};
 };
 
@@ -736,18 +744,32 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
   if (param.to.image_bindless != nullptr &&
       param.from.image_bindless != nullptr) {
     return {experimental::detail::dpct_memcpy(
-        param.from.image_bindless, param.from.pos, param.to.image_bindless,
-        param.to.pos, param.size, q)};
+        param.from.image_bindless, param.from.pos, param.from.offsetXByte,
+        param.to.image_bindless, param.to.pos, param.to.offsetXByte, param.size,
+        param.sizeXByte, q)};
   } else if (param.to.image_bindless != nullptr) {
-    return {experimental::detail::dpct_memcpy(from, param.from.pos,
-                                              param.to.image_bindless,
-                                              param.to.pos, param.size, q)};
+    return {experimental::detail::dpct_memcpy(
+        from, param.from.pos, param.from.offsetXByte, param.to.image_bindless,
+        param.to.pos, param.to.offsetXByte, param.size, param.sizeXByte, q)};
   } else if (param.from.image_bindless != nullptr) {
-    return {experimental::detail::dpct_memcpy(param.from.image_bindless,
-                                              param.from.pos, to, param.to.pos,
-                                              param.size, q)};
+    return {experimental::detail::dpct_memcpy(
+        param.from.image_bindless, param.from.pos, param.from.offsetXByte, to,
+        param.to.pos, param.to.offsetXByte, param.size, param.sizeXByte, q)};
   }
 #endif
+  auto size = param.size;
+  auto to_pos = param.to.pos;
+  auto from_pos = param.from.pos;
+  // If the src and dest are not bindless image, the x can be set to XInByte.
+  if (param.sizeXByte != 0) {
+    size[0] = param.sizeXByte;
+  }
+  if (param.to.offsetXByte != 0) {
+    to_pos[0] = param.to.offsetXByte;
+  }
+  if (param.from.offsetXByte != 0) {
+    from_pos[0] = param.from.offsetXByte;
+  }
   if (param.to.image != nullptr) {
     to = to_pitched_data(param.to.image);
   }
@@ -756,10 +778,9 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
   }
   if (deduce_memcpy_direction(q, to.get_data_ptr(), from.get_data_ptr(),
                               param.direction) == device_to_device)
-    return dpct_memcpy(q, to, param.to.pos, param.to.dev_id, from,
-                       param.from.pos, param.from.dev_id, param.size);
-  return dpct_memcpy(q, to, param.to.pos, from, param.from.pos, param.size,
-                     param.direction);
+    return dpct_memcpy(q, to, to_pos, param.to.dev_id, from, from_pos,
+                       param.from.dev_id, size);
+  return dpct_memcpy(q, to, to_pos, from, from_pos, size, param.direction);
 }
 
 namespace deprecated {

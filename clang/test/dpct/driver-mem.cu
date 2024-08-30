@@ -134,14 +134,14 @@ int main(){
     // CHECK-NEXT: cpy.to.pitched.set_data_ptr(f_A);
     // CHECK-NEXT: cpy.to.pitched.set_pitch(20);
     // CHECK-NEXT: cpy.to.pos[1] = 10;
-    // CHECK-NEXT: cpy.to.pos[0] = 15;
+    // CHECK-NEXT: cpy.to.offsetXByte = 15;
     // CHECK-EMPTY:
     // CHECK-NEXT: cpy.from.pitched.set_data_ptr(f_D);
     // CHECK-NEXT: cpy.from.pitched.set_pitch(20);
     // CHECK-NEXT: cpy.from.pos[1] = 10;
-    // CHECK-NEXT: cpy.from.pos[0] = 15;
+    // CHECK-NEXT: cpy.from.offsetXByte = 15;
     // CHECK-EMPTY:
-    // CHECK-NEXT: cpy.size[0] = 4;
+    // CHECK-NEXT: cpy.sizeXByte = 4;
     // CHECK-NEXT: cpy.size[1] = 7;
     CUDA_MEMCPY2D cpy;
     cpy.dstMemoryType = CU_MEMORYTYPE_HOST;
@@ -266,16 +266,16 @@ int main(){
     // CHECK-NEXT: cpy2.to.pitched.set_y(4);
     // CHECK-NEXT: cpy2.to.pos[1] = 3;
     // CHECK-NEXT: cpy2.to.pos[2] = 2;
-    // CHECK-NEXT: cpy2.to.pos[0] = 1;
+    // CHECK-NEXT: cpy2.to.offsetXByte = 1;
     // CHECK-EMPTY:
     // CHECK-NEXT: cpy2.from.pitched.set_data_ptr(f_A);
     // CHECK-NEXT: cpy2.from.pitched.set_pitch(5);
     // CHECK-NEXT: cpy2.from.pitched.set_y(4);
     // CHECK-NEXT: cpy2.from.pos[1] = 3;
     // CHECK-NEXT: cpy2.from.pos[2] = 2;
-    // CHECK-NEXT: cpy2.from.pos[0] = 1;
+    // CHECK-NEXT: cpy2.from.offsetXByte = 1;
     // CHECK-EMPTY:
-    // CHECK-NEXT: cpy2.size[0] = 3;
+    // CHECK-NEXT: cpy2.sizeXByte = 3;
     // CHECK-NEXT: cpy2.size[1] = 2;
     // CHECK-NEXT: cpy2.size[2] = 1;
     CUDA_MEMCPY3D cpy2;
