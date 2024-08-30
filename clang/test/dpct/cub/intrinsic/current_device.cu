@@ -9,7 +9,7 @@
 #include <cub/cub.cuh>
 
 int main() {
-  // CHECK: dpct::dev_mgr::instance().current_device_id();
+  // CHECK: dpct::get_current_device_id();
   cub::CurrentDevice();
   return 0;
 }

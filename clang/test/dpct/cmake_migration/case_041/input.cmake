@@ -23,3 +23,9 @@ PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/stubs/libpthread-2.17_stub.so
     -Wl,--pop-state
 )
+
+target_link_options(opts
+PRIVATE
+    ${CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_SHARED}
+    ${CMAKE_CUDA_RUNTIME_LIBRARY_LINK_OPTIONS_STATIC}
+)

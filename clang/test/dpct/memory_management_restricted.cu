@@ -77,16 +77,16 @@ int main(){
     // CHECK: (*&stream)->prefetch(a,100);
     cudaMemPrefetchAsync (a, 100, deviceID, *&stream);
 
-    // CHECK: err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100));
+    // CHECK: err = DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100));
     err = cudaMemPrefetchAsync(a, 100, deviceID);
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, 0));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
 
     // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::cpu_device().in_order_queue().prefetch(a,100)));
@@ -122,16 +122,16 @@ int foo() {
     // CHECK: (*&stream)->prefetch(a,100);
     cudaMemPrefetchAsync (a, 100, deviceID, *&stream);
 
-    // CHECK: err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100));
+    // CHECK: err = DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100));
     err = cudaMemPrefetchAsync(a, 100, deviceID);
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, 0));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
     return 0;
 }

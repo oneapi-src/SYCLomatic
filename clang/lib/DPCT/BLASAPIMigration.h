@@ -48,7 +48,7 @@ public:
           }
         }
         requestFeature(HelperFeatureEnum::device_ext);
-        Stream << MapNames::getDpctNamespace() << "get_transpose(";
+        Stream << MapNames::getLibraryHelperNamespace() << "get_transpose(";
         clang::dpct::print(Stream, SubExpr);
         Stream << ")";
         break;
