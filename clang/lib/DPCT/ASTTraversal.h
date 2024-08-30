@@ -1344,6 +1344,16 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
+  /// Get helper function name with namespace which has 'dpct_' in dpct helper
+  /// functions and w/o in syclcompat.
+  /// If has "_async" suffix, the name in dpct helper function will have
+  /// 'async_' prefix and remove the suffix.
+  /// If `ExperimentalInSYCLCompat` is true, will add `experimental` namespace
+  /// in syclcompat.
+  static std::string
+  getMemoryHelperFunctionName(StringRef RawName,
+                              bool ExperimentalInSYCLCompat = false);
+
 private:
   void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
