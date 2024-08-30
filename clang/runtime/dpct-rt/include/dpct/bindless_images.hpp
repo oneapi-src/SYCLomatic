@@ -729,11 +729,10 @@ dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
             pitched_data &dest, const sycl::id<3> &dest_id,
             const sycl::range<3> &copy_extend, sycl::queue q) {
   const auto ele_size = get_ele_size(src->get_desc());
-  const auto src_offset =
-      sycl::range<3>(src_id[0] * ele_size, src_id[1], src_id[2]);
-  const auto dest_offset =
-      sycl::range<3>(dest_id[0] * ele_size, dest_id[1], dest_id[2]);
-  const auto dest_extend = sycl::range<3>(dest.get_pitch(), dest.get_y(), 1);
+  const auto src_offset = sycl::range<3>(src_id[0], src_id[1], src_id[2]);
+  const auto dest_offset = sycl::range<3>(dest_id[0], dest_id[1], dest_id[2]);
+  const auto dest_extend =
+      sycl::range<3>(dest.get_pitch() / ele_size, dest.get_y(), 1);
   return q.ext_oneapi_copy(src->get_handle(), src_offset, src->get_desc(),
                            dest.get_data_ptr(), dest_offset, dest_extend,
                            copy_extend);
