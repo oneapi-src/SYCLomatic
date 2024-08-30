@@ -498,54 +498,6 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
   }
 }
 
-std::vector<std::string> SplitStr(const std::string &Str, char Delimiter) {
-  std::vector<std::string> Result;
-  std::istringstream Stream(Str);
-  std::string Token;
-  while (std::getline(Stream, Token, Delimiter)) {
-    Result.push_back(Token);
-  }
-  return Result;
-}
-
-std::string
-GetFirstAvailableTool(std::unordered_set<std::string> &ToolCandidates) {
-  const char *EnvPath = std::getenv("PATH");
-  if (EnvPath == nullptr) {
-    return "";
-  }
-  std::string EnvPathStr(EnvPath);
-  std::vector<std::string> PathDir = SplitStr(EnvPathStr,
-#if defined(_WIN32)
-                                              ';'
-#else
-                                              ':'
-#endif
-  );
-  for (const auto &Dir : PathDir) {
-    for (auto &Tool : ToolCandidates) {
-      std::string ToolPath = appendPath(Dir, Tool);
-      if (llvm::sys::fs::exists(ToolPath)) {
-        return Tool;
-      }
-    }
-  }
-  return "";
-}
-
-std::string GetPython() {
-  std::unordered_set<std::string> Tool = {
-#if defined(_WIN32)
-    "py.exe",
-    "python3.exe",
-    "python.exe",
-#endif
-    "python3"
-  };
-
-  return GetFirstAvailableTool(Tool);
-}
-
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
