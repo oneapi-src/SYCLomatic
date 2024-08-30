@@ -47,6 +47,10 @@ public:
   static void initRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 private:
+  static void initRewriterMapSYCLcompat(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>
+          &RewriterMap);
   static void initRewriterMapAtomic();
   static void initRewriterMapCUB();
   static void initRewriterMapCUFFT();
@@ -1857,6 +1861,23 @@ using CheckIntergerTemplateArgValueNE = CheckIntergerTemplateArgValue<std::not_e
 using CheckIntergerTemplateArgValueLE = CheckIntergerTemplateArgValue<std::less_equal<std::int64_t>>;
 
 std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx);
+
+template <class... MsgArgs>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
+                               MsgArgs &&...Args) {
+  return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
+      Source, MsgID, std::forward<MsgArgs>(Args)...);
+}
+
+inline std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
+}
+
+inline std::function<const StringRef(const CallExpr *)>
+makeCallArgCreator(std::string Str) {
+  return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
+}
 
 } // namespace dpct
 } // namespace clang

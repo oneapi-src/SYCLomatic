@@ -321,6 +321,7 @@ public:
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
+  static std::unordered_set<std::string> SYCLcompatUnsupportTypes;
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       TypeNamesMap;
   static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
@@ -328,6 +329,7 @@ public:
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       CuDNNTypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
+  static const std::map<unsigned, std::string> ArrayFlagMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
   static MapTy CUBEnumsMap;

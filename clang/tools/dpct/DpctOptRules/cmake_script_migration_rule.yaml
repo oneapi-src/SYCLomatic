@@ -2841,3 +2841,16 @@
   CmakeSyntax: set_source_files_properties_cuda_source_property_format
   In: set_source_files_properties${empty}(${src_files} PROPERTIES${some_other_prop}CUDA_SOURCE_PROPERTY_FORMAT OBJ${other_props})
   Out: set_source_files_properties(${src_files} PROPERTIES${some_other_prop}${other_props})
+
+- Rule: rule_find_program_nvcc
+  Kind: CMakeRule
+  Priority: Fallback
+  CmakeSyntax: find_program_nvcc
+  In: find_program(${var} ${value})
+  Out: find_program(${var} ${value})
+  Subrules:
+    value:
+      MatchMode: StrictFull
+      In: nvcc
+      Out: |
+        \${CMAKE_CXX_COMPILER} 

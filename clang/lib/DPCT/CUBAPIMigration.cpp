@@ -92,6 +92,17 @@ REGISTER_RULE(CubMemberCallRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubIntrinsicRule, PassKind::PK_Analysis)
 
+#define REPORT_UNSUPPORT_SYCLCOMPACT(S)                                        \
+  if (DpctGlobalInfo::useSYCLCompat()) {                                       \
+    std::string PrettyStmt;                                                    \
+    llvm::raw_string_ostream OS(PrettyStmt);                                   \
+    S->printPretty(OS, /*Helper=*/nullptr,                                     \
+                   DpctGlobalInfo::getContext().getPrintingPolicy());          \
+    report(S->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT,                \
+           /*UseTextBegin=*/false, PrettyStmt);                                \
+    return;                                                                    \
+  }
+
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName(
