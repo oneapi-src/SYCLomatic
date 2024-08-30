@@ -835,19 +835,24 @@ int runDPCT(int argc, const char **argv) {
     Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
     constexpr StringRef UnsupportedStr{"// UNSUPPORTED:"};
+#ifdef _WIN32
     bool win_unsupported = false;
+#else
     bool lin_unsupported = false;
+#endif
     if (SourceCode.starts_with(UnsupportedStr)) {
       while (SourceCode.consume_front(UnsupportedStr)) {
         auto UnsupportedPlatform = SourceCode.substr(
             0, SourceCode.find_first_of('\n'));
         UnsupportedPlatform = UnsupportedPlatform.trim(' ');
         SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
-
+#ifdef _WIN32
         if (UnsupportedPlatform == "system-windows")
           win_unsupported = true;
+#else
         if (UnsupportedPlatform == "system-linux")
           lin_unsupported = true;
+#endif
       }
     }
 
@@ -1180,7 +1185,11 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateBuildScriptOnly) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    doCmakeScriptMigration(InRootPath, OutRootPath);
+    runWithCrashGuard(
+        [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
+        "Error: dpct internal error. Migrating CMake scripts in \"" +
+            InRootPath.getCanonicalPath().str() +
+            "\" causing the error skipped. Migration continues.\n");
 
     if (cmakeScriptNotFound()) {
       std::cout << CmakeScriptMigrationHelpHint << "\n";
