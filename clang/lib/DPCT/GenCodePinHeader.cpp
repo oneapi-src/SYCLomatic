@@ -210,23 +210,12 @@ void GenCodePinHeaderRule::collectMemberInfo(
   }
   if (T->isTypedefNameType()) {
     VI.IsTypeDef = true;
-    auto TypenameWithoutScope =
-        T.getCanonicalType().getUnqualifiedType().getAsString(PrintPolicy);
-    auto Begin = TypenameWithoutScope.find_last_of(':');
-    if (Begin == std::string::npos) {
-      Begin = 0;
-    } else {
-      Begin += 1;
-    }
-    std::string OrgType = TypenameWithoutScope.substr(Begin);
-    clang::QualType TypedefType =  T.getLocalUnqualifiedType();
-    if (const clang::RecordType *RecordType = TypedefType->getAs<clang::RecordType>()) {
-        const clang::RecordDecl *RecordDecl = RecordType->getDecl();
-        if (!RecordDecl->getIdentifier()) {
-          OrgType = "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
-        }
-    }
-    VI.OrgTypeName = OrgType;
+    const TypedefType *TT = T->getAs<TypedefType>();
+    if (!TT->getAsRecordDecl()->getIdentifier())
+      VI.OrgTypeName =
+          "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
+    else
+      VI.OrgTypeName = TT->getAsRecordDecl()->getIdentifier()->getName().str();
   }
   VI.IsValid = true;
   if (VI.VarRecordType.empty()) {
@@ -324,15 +313,16 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
       collectMemberInfo(QT, VarInfo, NextTypeQueue, false, PrintPolicy);
       PrintPolicy.SuppressScope = 1;
       std::string TypenameWithoutScope = QT.getAsString(PrintPolicy);
+      if (QT->isTypedefNameType())
+        TypenameWithoutScope = QT->getAs<TypedefType>()
+                                   ->getDecl()
+                                   ->getIdentifier()
+                                   ->getName()
+                                   .str();
+
       auto Pos = TypenameWithoutScope.find('<');
-      auto Begin = TypenameWithoutScope.find_last_of(':');
-      if (Begin == std::string::npos) {
-        Begin = 0;
-      } else {
-        Begin += 1;
-      }
       VarInfo.VarNameWithoutScopeAndTemplateArgs =
-          TypenameWithoutScope.substr(Begin, Pos);
+          TypenameWithoutScope.substr(0, Pos);
       if (Pos != std::string::npos) {
         VarInfo.TemplateInstArgs = TypenameWithoutScope.substr(Pos);
       }
