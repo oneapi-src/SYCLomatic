@@ -1,3 +1,1 @@
-find_program(CUDAToolkit_NVCC_EXECUTABLE NAMES ${CMAKE_CXX_COMPILER} nvcc.exe
-    PATHS ${CUDAToolkit_BIN_DIR}
-    NO_DEFAULT_PATH) 
+find_program(NVCC_EXECUTABLE NAMES ${CMAKE_CXX_COMPILER}.exe nvcc.exe.exe)
