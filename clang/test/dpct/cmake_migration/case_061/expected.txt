@@ -1,0 +1,1 @@
+find_program(NVCC_EXECUTABLE NAMES ${CMAKE_CXX_COMPILER}.exe nvcc.exe.exe)

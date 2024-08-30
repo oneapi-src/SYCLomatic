@@ -9,6 +9,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
+#include "MapNames.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -1390,7 +1391,10 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'P': {
     std::string ReplStr;
     if (DpctGlobalInfo::getEnablepProfilingFlag())
-      ReplStr = std::string("#define DPCT_PROFILING_ENABLED") + getNL();
+      ReplStr = (DpctGlobalInfo::useSYCLCompat()
+                     ? std::string("#define SYCLCOMPAT_PROFILING_ENABLED")
+                     : std::string("#define DPCT_PROFILING_ENABLED")) +
+                getNL();
 
     return ReplStr;
   }
@@ -4623,7 +4627,9 @@ void DeviceFunctionDecl::emplaceReplacement() {
                                          nullptr));
   }
   if (FuncInfo->IsForceInlineDevFunc()) {
-    std::string StrRepl = "__dpct_inline__ ";
+    std::string StrRepl = DpctGlobalInfo::useSYCLCompat()
+                              ? "__syclcompat_inline__ "
+                              : "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
                                          nullptr));
@@ -5912,8 +5918,16 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
+      if (DpctGlobalInfo::useSYCLCompat() && A.isDim3Var())
+        ExecutionConfig.Config[Idx] =
+            "static_cast<" + MapNames::getClNamespace() + "range<3>>(" +
+            ExecutionConfig.Config[Idx] + ")";
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
+      if (DpctGlobalInfo::useSYCLCompat() && A.isDim3Var())
+        ExecutionConfig.Config[Idx] =
+            "static_cast<" + MapNames::getClNamespace() + "range<3>>(" +
+            ExecutionConfig.Config[Idx] + ")";
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
@@ -5954,9 +5968,17 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
     if (Idx == 0) {
       GridDim = AnalysisTry1D.Dim;
       ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+      if (DpctGlobalInfo::useSYCLCompat() && AnalysisTry1D.isDim3Var())
+        ExecutionConfig.GroupSizeFor1D =
+            "static_cast<" + MapNames::getClNamespace() + "range<1>>(" +
+            ExecutionConfig.GroupSizeFor1D + ")";
     } else if (Idx == 1) {
       BlockDim = AnalysisTry1D.Dim;
       ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
+      if (DpctGlobalInfo::useSYCLCompat() && AnalysisTry1D.isDim3Var())
+        ExecutionConfig.LocalSizeFor1D =
+            "static_cast<" + MapNames::getClNamespace() + "range<1>>(" +
+            ExecutionConfig.LocalSizeFor1D + ")";
     }
     ++Idx;
   }
@@ -5989,9 +6011,10 @@ void KernelCallExpr::addDevCapCheckStmt() {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string Str;
     llvm::raw_string_ostream OS(Str);
-    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    OS << MapNames::getDpctNamespace() << "get_device(";
+    OS << MapNames::getDpctNamespace() << "get_device_id(";
     printStreamBase(OS);
-    OS << "get_device(), {" << AspectList.front();
+    OS << "get_device())).has_capability_or_fail({" << AspectList.front();
     for (size_t i = 1; i < AspectList.size(); ++i) {
       OS << ", " << AspectList[i];
     }

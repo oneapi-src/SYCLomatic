@@ -72,7 +72,7 @@ struct make_index_sequence
 template <int... Ints>
 struct make_index_sequence<0, Ints...> : public integer_sequence<Ints...> {};
 
-template <typename T> struct DataType { using T2 = T; };
+template <typename T> struct [[deprecated]] DataType { using T2 = T; };
 template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };

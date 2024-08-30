@@ -1,11 +1,10 @@
-// FIXME
 // UNSUPPORTED: system-windows
-// RUN: dpct --format-range=none --usm-level=restricted -out-root %T/USM-restricted %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --match-full-lines --input-file %T/USM-restricted/USM-restricted.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/USM-restricted/USM-restricted.dp.cpp -o %T/USM-restricted/USM-restricted.dp.o %}
+// RUN: dpct --format-range=none --use-syclcompat --usm-level=restricted -out-root %T/usm-syclcompat %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --match-full-lines --input-file %T/usm-syclcompat/usm-syclcompat.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/usm-syclcompat/usm-syclcompat.dp.cpp -o %T/usm-syclcompat/usm-syclcompat.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
-// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <syclcompat/syclcompat.hpp>
 #include <cuda_runtime.h>
 #include <cuda.h>
 #include <stdio.h>
@@ -23,8 +22,8 @@ int foo_b(int a){
 }
 
 void foo() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+  // CHECK: syclcompat::device_ext &dev_ct1 = syclcompat::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = *dev_ct1.default_queue();
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
   float *d_A = NULL;
@@ -32,15 +31,15 @@ void foo() {
 
   cudaPitchedPtr p_A;
   cudaExtent e;
-  cudaMemcpy3DParms parms;
+  cudaMemcpy3DParms parms, *parms_pointer;
   cudaStream_t stream;
 
   /// malloc
   // CHECK: d_A = (float *)sycl::malloc_device(size, q_ct1);
   cudaMalloc((void **)&d_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(d_A = (float *)sycl::malloc_device(size, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(d_A = (float *)sycl::malloc_device(size, q_ct1));
   errorCode = cudaMalloc((void **)&d_A, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(d_A = (float *)sycl::malloc_device(size, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(d_A = (float *)sycl::malloc_device(size, q_ct1)));
   MY_SAFE_CALL(cudaMalloc((void **)&d_A, size));
 
   // CHECK: d_A = (float *)sycl::malloc_device(sizeof(sycl::double2) + size, q_ct1);
@@ -50,16 +49,16 @@ void foo() {
   cudaMalloc((void **)&d_A, sizeof(uchar4) + size);
   cudaMalloc((void **)&d_A, sizeof(d_A[0]));
 
-  // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
+  // CHECK: d_A = (float *)syclcompat::malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
-  // CHECK: p_A = dpct::dpct_malloc(e);
+  // CHECK: p_A = syclcompat::malloc(e);
   cudaMalloc3D(&p_A, e);
 
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
   cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
   errorCode = cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
   MY_SAFE_CALL(cudaHostAlloc((void **)&h_A, size, cudaHostAllocDefault));
 
   // CHECK: /*
@@ -76,16 +75,16 @@ void foo() {
   void *h_B = h_A;
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
   cudaMallocHost((void **)&h_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
   errorCode = cudaMallocHost((void **)&h_A, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
   MY_SAFE_CALL(cudaMallocHost((void **)&h_A, size));
 
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
   cuMemAllocHost((void **)&h_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
   errorCode = cuMemAllocHost((void **)&h_A, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
   MY_SAFE_CALL(cuMemAllocHost((void **)&h_A, size));
 
   // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) * size, q_ct1);
@@ -95,9 +94,9 @@ void foo() {
 
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
   cudaMallocHost(&h_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
   errorCode = cudaMallocHost(&h_A, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
   MY_SAFE_CALL(cudaMallocHost(&h_A, size));
 
   // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) / size, q_ct1);
@@ -115,9 +114,9 @@ void foo() {
 
   // CHECK: d_A = (float *)sycl::malloc_shared(size, q_ct1);
   cudaMallocManaged((void **)&d_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(d_A = (float *)sycl::malloc_shared(size, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(d_A = (float *)sycl::malloc_shared(size, q_ct1));
   errorCode = cudaMallocManaged((void **)&d_A, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(d_A = (float *)sycl::malloc_shared(size, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(d_A = (float *)sycl::malloc_shared(size, q_ct1)));
   MY_SAFE_CALL(cudaMallocManaged((void **)&d_A, size));
 
   // CHECK: d_A = (float *)sycl::malloc_shared(sizeof(sycl::double2) + size + sizeof(sycl::uchar4), q_ct1);
@@ -126,29 +125,29 @@ void foo() {
   cudaMallocManaged((void **)&d_A, sizeof(double2) * size * sizeof(uchar4));
 
   CUdeviceptr* D_ptr;
-  // CHECK: *D_ptr = (dpct::device_ptr)sycl::malloc_shared(size, q_ct1);
+  // CHECK: *D_ptr = (syclcompat::device_ptr)sycl::malloc_shared(size, q_ct1);
   cuMemAllocManaged(D_ptr, size, CU_MEM_ATTACH_HOST);
 
   /// memcpy
 
   // CHECK: q_ct1.memcpy(d_A, h_A, size);
   cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: errorCode  = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
+  // CHECK: errorCode  = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
   errorCode  = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
   MY_SAFE_CALL(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
 #define MACRO_A(x) size
 #define MACRO_A2(x) MACRO_A(x)
 #define MACRO_B size
 #define MACOR_C(x) cudaMemcpyDeviceToHost
 #define MY_SAFE_CALL2(x) MY_SAFE_CALL(x)
-  //CHECK: MY_SAFE_CALL2(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
+  //CHECK: MY_SAFE_CALL2(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice));
-  //CHECK: MY_SAFE_CALL2(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, MACRO_B)));
+  //CHECK: MY_SAFE_CALL2(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, MACRO_B)));
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_B, cudaMemcpyDeviceToHost));
-  //CHECK: MY_SAFE_CALL2(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, MACRO_A2(1))));
+  //CHECK: MY_SAFE_CALL2(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, MACRO_A2(1))));
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, MACRO_A2(1), MACOR_C(1)));
-  //CHECK: MY_SAFE_CALL2(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, foo_b(1))));
+  //CHECK: MY_SAFE_CALL2(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, foo_b(1))));
   MY_SAFE_CALL2(cudaMemcpy(d_A, h_A, foo_b(1), MACOR_C(1)));
 
 #define SIZE 100
@@ -159,57 +158,54 @@ void foo() {
 
   // CHECK: q_ct1.memcpy(d_A, h_A, size);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
   errorCode = cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice));
 
   // CHECK: q_ct1.memcpy(d_A, h_A, size);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
   errorCode = cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, 0));
 
   // CHECK: stream->memcpy(d_A, h_A, size);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(stream->memcpy(d_A, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(stream->memcpy(d_A, h_A, size));
   errorCode = cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(stream->memcpy(d_A, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(stream->memcpy(d_A, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream));
 
-  // CHECK: dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  // CHECK: syclcompat::memcpy(d_A, size, h_A, size, size, size);
   cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
-  // CHECK: dpct::dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
+  // CHECK: syclcompat::memcpy(h_A, size, d_A, size, size, size);
   cudaMemcpy2D(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
 
-  // CHECK: dpct::dpct_memcpy(parms);
+  // CHECK: syclcompat::experimental::memcpy(parms);
   cudaMemcpy3D(&parms);
-#ifndef BUILD_TEST
-  struct cudaMemcpy3DParms *parms_pointer;
-  // Followed call can't be processed.
+  // CHECK: syclcompat::experimental::memcpy(*parms_pointer);
   cudaMemcpy3D(parms_pointer);
-#endif
 
-  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
-  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, 0);
-  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device, *stream);
+  // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size, *stream);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, stream);
 
-  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
+  // CHECK: syclcompat::memcpy_async(h_A, size, d_A, size, size, size);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
-  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
+  // CHECK: syclcompat::memcpy_async(h_A, size, d_A, size, size, size);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, 0);
-  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host, *stream);
+  // CHECK: syclcompat::memcpy_async(h_A, size, d_A, size, size, size, *stream);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, stream);
 
-  // CHECK: dpct::async_dpct_memcpy(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
   cudaMemcpy3DAsync(&parms);
-  // CHECK: dpct::async_dpct_memcpy(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
   cudaMemcpy3DAsync(&parms, 0);
-  // CHECK: dpct::async_dpct_memcpy(parms, *stream);
+  // CHECK: syclcompat::experimental::memcpy_async(parms, *stream);
   cudaMemcpy3DAsync(&parms, stream);
   /// memcpy from symbol
 
@@ -217,18 +213,18 @@ void foo() {
   cudaMemcpyFromSymbol(h_A, constData, size, 1);
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbol(h_A, "constData", size, 1);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size, 1);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbol(h_A, constData, size, 1));
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbol(h_A, "constData", size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait()));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size).wait()));
   MY_SAFE_CALL(cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost));
 
   /// memcpy from symbol async
@@ -237,25 +233,25 @@ void foo() {
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbolAsync(h_A, "constData", size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost));
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0));
 
   // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
   // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, "constData", size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream));
 
   /// memcpy to symbol
@@ -263,18 +259,18 @@ void foo() {
   cudaMemcpyToSymbol(constData, h_A, size, 1);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbol("constData", h_A, size, 1);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
   errorCode = cudaMemcpyToSymbol(constData, h_A, size, 1);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbol(constData, h_A, size, 1));
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbol("constData", h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
   errorCode = cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait()));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size).wait()));
   MY_SAFE_CALL(cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice));
 
   /// memcpy to symbol async
@@ -283,99 +279,99 @@ void foo() {
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbolAsync("constData", h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice));
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size);
   cudaMemcpyToSymbolAsync("constData", h_A, size, 2, cudaMemcpyHostToDevice, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0));
 
   // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
   // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync("constData", h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream));
 
   /// memset
 
   // CHECK: q_ct1.memset(d_A, 23, size).wait();
   cudaMemset(d_A, 23, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size).wait());
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size).wait());
   errorCode = cudaMemset(d_A, 23, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size).wait()));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size).wait()));
   MY_SAFE_CALL(cudaMemset(d_A, 23, size));
 
   /// memset async
 
   // CHECK: q_ct1.memset(d_A, 23, size);
   cudaMemsetAsync(d_A, 23, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
   errorCode = cudaMemsetAsync(d_A, 23, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
   MY_SAFE_CALL(cudaMemsetAsync(d_A, 23, size));
 
   // CHECK: q_ct1.memset(d_A, 23, size);
   cudaMemsetAsync(d_A, 23, size, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
   errorCode = cudaMemsetAsync(d_A, 23, size, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
   MY_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, 0));
 
   // CHECK: stream->memset(d_A, 23, size);
   cudaMemsetAsync(d_A, 23, size, stream);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(stream->memset(d_A, 23, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(stream->memset(d_A, 23, size));
   errorCode = cudaMemsetAsync(d_A, 23, size, stream);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(stream->memset(d_A, 23, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(stream->memset(d_A, 23, size)));
   MY_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, stream));
 
-  // CHECK: dpct::dpct_memset(d_A, size, 0xf, size, size);
+  // CHECK: syclcompat::memset(d_A, size, 0xf, size, size);
   cudaMemset2D(d_A, size, 0xf, size, size);
-  // CHECK: dpct::dpct_memset(p_A, 0xf, e);
+  // CHECK: syclcompat::memset(p_A, 0xf, e);
   cudaMemset3D(p_A, 0xf, e);
 
-  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
+  // CHECK: syclcompat::memset_async(d_A, size, 0xf, size, size);
   cudaMemset2DAsync(d_A, size, 0xf, size, size);
-  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
+  // CHECK: syclcompat::memset_async(d_A, size, 0xf, size, size);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, 0);
-  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size, *stream);
+  // CHECK: syclcompat::memset_async(d_A, size, 0xf, size, size, *stream);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, stream);
 
-  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
+  // CHECK: syclcompat::memset_async(p_A, 0xf, e);
   cudaMemset3DAsync(p_A, 0xf, e);
-  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
+  // CHECK: syclcompat::memset_async(p_A, 0xf, e);
   cudaMemset3DAsync(p_A, 0xf, e, 0);
-  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e, *stream);
+  // CHECK: syclcompat::memset_async(p_A, 0xf, e, *stream);
   cudaMemset3DAsync(p_A, 0xf, e, stream);
 
   // CHECK: sycl::free(h_A, q_ct1);
   cudaFreeHost(h_A);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(sycl::free(h_A, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(sycl::free(h_A, q_ct1));
   errorCode = cudaFreeHost(h_A);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(sycl::free(h_A, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(sycl::free(h_A, q_ct1)));
   MY_SAFE_CALL(cudaFreeHost(h_A));
 
   // CHECK: *(void **)&d_A = (float *)h_A;
   cudaHostGetDevicePointer((void **)&d_A, h_A, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(d_A = (float *)h_A);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(d_A = (float *)h_A);
   errorCode = cudaHostGetDevicePointer(&d_A, h_A, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(d_A = (float *)h_A));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(d_A = (float *)h_A));
   MY_SAFE_CALL(cudaHostGetDevicePointer(&d_A, h_A, 0));
 
-  // CHECK: *D_ptr = (dpct::device_ptr)h_A;
+  // CHECK: *D_ptr = (syclcompat::device_ptr)h_A;
   cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(*D_ptr = (dpct::device_ptr)h_A);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(*D_ptr = (syclcompat::device_ptr)h_A);
   errorCode = cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(*D_ptr = (dpct::device_ptr)h_A));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(*D_ptr = (syclcompat::device_ptr)h_A));
   MY_SAFE_CALL(cuMemHostGetDevicePointer(D_ptr, h_A, 0));
 
   cudaHostRegister(h_A, size, 0);
@@ -394,8 +390,8 @@ void foo() {
 
 template <typename T>
 int foo2() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
+  // CHECK: syclcompat::device_ext &dev_ct1 = syclcompat::get_current_device();
+  // CHECK-NEXT: sycl::queue &q_ct1 = *dev_ct1.default_queue();
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
   float *d_A = NULL;
@@ -408,25 +404,25 @@ int foo2() {
   cudaMemcpyFromSymbol(h_A, constData, size, 1);
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbol(h_A, "constData", size, 1);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size, 1);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbol(h_A, constData, size, 1));
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbol(h_A, constData, size, 1, cudaMemcpyDeviceToHost));
 
   // CHECK: q_ct1.memcpy(h_A, constData.get_ptr(), size);
   cudaMemcpyFromSymbol(h_A, constData, size);
   // CHECK: q_ct1.memcpy(h_A, constData.get_ptr(), size);
   cudaMemcpyFromSymbol(h_A, "constData", size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size));
   errorCode = cudaMemcpyFromSymbol(h_A, constData, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size).wait()));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size).wait()));
   MY_SAFE_CALL(cudaMemcpyFromSymbol(h_A, constData, size));
 
   /// memcpy from symbol async
@@ -435,41 +431,41 @@ int foo2() {
   cudaMemcpyFromSymbolAsync(h_A, constData, size);
   // CHECK: q_ct1.memcpy(h_A, constData.get_ptr(), size);
   cudaMemcpyFromSymbolAsync(h_A, "constData", size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, constData.get_ptr(), size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size));
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 1);
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbolAsync(h_A, "constData", size, 1);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 1);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 1));
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 1, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 1, cudaMemcpyDeviceToHost));
 
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 2, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 2, cudaMemcpyDeviceToHost, 0));
 
   // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
   // CHECK: stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size);
   cudaMemcpyFromSymbolAsync(h_A, "constData", size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size));
   errorCode = cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(stream->memcpy(h_A, (char *)(constData.get_ptr(*stream)) + 3, size)));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, stream));
 
   /// memcpy to symbol
@@ -477,25 +473,25 @@ int foo2() {
   cudaMemcpyToSymbol(constData, h_A, size, 1);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbol("constData", h_A, size, 1);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
   errorCode = cudaMemcpyToSymbol(constData, h_A, size, 1);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbol(constData, h_A, size, 1));
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
   errorCode = cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbol(constData, h_A, size, 1, cudaMemcpyHostToDevice));
 
   // CHECK: q_ct1.memcpy(constData.get_ptr(), h_A, size);
   cudaMemcpyToSymbol(constData, h_A, size);
   // CHECK: q_ct1.memcpy(constData.get_ptr(), h_A, size);
   cudaMemcpyToSymbol("constData", h_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size));
   errorCode = cudaMemcpyToSymbol(constData, h_A, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size).wait()));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size).wait()));
   MY_SAFE_CALL(cudaMemcpyToSymbol(constData, h_A, size));
 
   /// memcpy to symbol async
@@ -503,41 +499,41 @@ int foo2() {
   cudaMemcpyToSymbolAsync(constData, h_A, size);
   // CHECK: q_ct1.memcpy(constData.get_ptr(), h_A, size);
   cudaMemcpyToSymbolAsync("constData", h_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size));
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbolAsync("constData", h_A, size, 1);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 1);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 1));
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice));
 
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 2, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 2, cudaMemcpyHostToDevice, 0));
 
   // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
   // CHECK: stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size);
   cudaMemcpyToSymbolAsync("constData", h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size));
   errorCode = cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream);
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(stream->memcpy((char *)(constData.get_ptr(*stream)) + 3, h_A, size)));
   MY_SAFE_CALL(cudaMemcpyToSymbolAsync(constData, h_A, size, 3, cudaMemcpyHostToDevice, stream));
 }
 
@@ -554,12 +550,11 @@ void foo3() {
   cudaMemcpy3DParms parms;
   int *data;
   size_t width, height, depth, pitch, woffset, hoffset;
-  cudaArray_t a1;
   int deviceID = 0;
 
-  // CHECK: auto s1 = std::make_shared<dpct::queue_ptr>((dpct::queue_ptr)&q_ct1);
-  // CHECK: auto s2 = std::make_shared<dpct::queue_ptr>(&q_ct1);
-  // CHECK: auto s3 = std::make_shared<dpct::queue_ptr>(&q_ct1);
+  // CHECK: auto s1 = std::make_shared<syclcompat::queue_ptr>((syclcompat::queue_ptr)&q_ct1);
+  // CHECK: auto s2 = std::make_shared<syclcompat::queue_ptr>(&q_ct1);
+  // CHECK: auto s3 = std::make_shared<syclcompat::queue_ptr>(&q_ct1);
   auto s1 = std::make_shared<cudaStream_t>((cudaStream_t)cudaStreamDefault);
   auto s2 = std::make_shared<cudaStream_t>(cudaStreamLegacy);
   auto s3 = std::make_shared<cudaStream_t>(cudaStreamPerThread);
@@ -567,12 +562,12 @@ void foo3() {
   // CHECK: q_ct1.memcpy(d_A, h_A, size);
   // CHECK: q_ct1.memcpy(d_A, h_A, size);
   // CHECK: q_ct1.memcpy(d_A, h_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(d_A, h_A, size)));
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, cudaStreamDefault);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, cudaStreamLegacy);
   cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, cudaStreamPerThread);
@@ -587,12 +582,12 @@ void foo3() {
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
   // CHECK: q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy((char *)(constData.get_ptr()) + 1, h_A, size)));
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice, cudaStreamDefault);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice, cudaStreamLegacy);
   cudaMemcpyToSymbolAsync(constData, h_A, size, 1, cudaMemcpyHostToDevice, cudaStreamPerThread);
@@ -606,12 +601,12 @@ void foo3() {
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size);
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size);
   // CHECK: q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size)));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(h_A, (char *)(constData.get_ptr()) + 3, size)));
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -622,15 +617,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
-  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
-  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
-  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device)));
+  // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size);
+  // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size);
+  // CHECK: syclcompat::memcpy_async(d_A, size, h_A, size, size, size);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(d_A, size, h_A, size, size, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(d_A, size, h_A, size, size, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(d_A, size, h_A, size, size, size));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(d_A, size, h_A, size, size, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(d_A, size, h_A, size, size, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memcpy_async(d_A, size, h_A, size, size, size)));
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamDefault);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamLegacy);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamPerThread);
@@ -641,15 +636,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamPerThread));
 
-  // CHECK: dpct::async_dpct_memcpy(parms);
-  // CHECK: dpct::async_dpct_memcpy(parms);
-  // CHECK: dpct::async_dpct_memcpy(parms);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(parms)));
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
+  // CHECK: syclcompat::experimental::memcpy_async(parms);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::experimental::memcpy_async(parms)));
   cudaMemcpy3DAsync(&parms, cudaStreamDefault);
   cudaMemcpy3DAsync(&parms, cudaStreamLegacy);
   cudaMemcpy3DAsync(&parms, cudaStreamPerThread);
@@ -660,16 +655,17 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy3DAsync(&parms, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy3DAsync(&parms, cudaStreamPerThread));
 
-
-  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
-  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
-  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1))));
+#ifndef BUILD_TEST
+  cudaArray_t a1;
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -680,16 +676,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
-
-  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
-  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
-  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1))));
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -701,15 +696,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
 
-  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1))));
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -721,15 +716,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
 
-  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1))));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1))));
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -739,17 +734,18 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamDefault));
   MY_SAFE_CALL(cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamPerThread));
+#endif
 
 
   // CHECK: q_ct1.memset(d_A, 23, size);
   // CHECK: q_ct1.memset(d_A, 23, size);
   // CHECK: q_ct1.memset(d_A, 23, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(q_ct1.memset(d_A, 23, size)));
   cudaMemsetAsync(d_A, 23, size, cudaStreamDefault);
   cudaMemsetAsync(d_A, 23, size, cudaStreamLegacy);
   cudaMemsetAsync(d_A, 23, size, cudaStreamPerThread);
@@ -761,15 +757,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, cudaStreamPerThread));
 
 
-  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
-  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
-  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memset(d_A, size, 0xf, size, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memset(d_A, size, 0xf, size, size));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memset(d_A, size, 0xf, size, size));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memset(d_A, size, 0xf, size, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memset(d_A, size, 0xf, size, size)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memset(d_A, size, 0xf, size, size)));
+  // CHECK: syclcompat::memset_async(d_A, size, 0xf, size, size);
+  // CHECK: syclcompat::memset_async(d_A, size, 0xf, size, size);
+  // CHECK: syclcompat::memset_async(d_A, size, 0xf, size, size);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(d_A, size, 0xf, size, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(d_A, size, 0xf, size, size));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(d_A, size, 0xf, size, size));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(d_A, size, 0xf, size, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(d_A, size, 0xf, size, size)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(d_A, size, 0xf, size, size)));
   cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamDefault);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamLegacy);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamPerThread);
@@ -781,15 +777,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamPerThread));
 
 
-  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
-  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
-  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memset(p_A, 0xf, e));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memset(p_A, 0xf, e));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::async_dpct_memset(p_A, 0xf, e));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memset(p_A, 0xf, e)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memset(p_A, 0xf, e)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memset(p_A, 0xf, e)));
+  // CHECK: syclcompat::memset_async(p_A, 0xf, e);
+  // CHECK: syclcompat::memset_async(p_A, 0xf, e);
+  // CHECK: syclcompat::memset_async(p_A, 0xf, e);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(p_A, 0xf, e));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(p_A, 0xf, e));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(p_A, 0xf, e));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(p_A, 0xf, e)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(p_A, 0xf, e)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::memset_async(p_A, 0xf, e)));
   cudaMemset3DAsync(p_A, 0xf, e, cudaStreamDefault);
   cudaMemset3DAsync(p_A, 0xf, e, cudaStreamLegacy);
   cudaMemset3DAsync(p_A, 0xf, e, cudaStreamPerThread);
@@ -801,15 +797,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemset3DAsync(p_A, 0xf, e, cudaStreamPerThread));
 
 
-  // CHECK: dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100);
-  // CHECK: dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100);
-  // CHECK: dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device(deviceID).in_order_queue().prefetch(d_A,100)));
+  // CHECK: syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100);
+  // CHECK: syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100);
+  // CHECK: syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(deviceID).default_queue()->prefetch(d_A,100)));
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamDefault);
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamLegacy);
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread);
@@ -821,17 +817,17 @@ void foo3() {
   MY_SAFE_CALL(cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread));
   // CHECK: int cudevice = 0;
   CUdevice cudevice = 0;
-  // CHECK: dpct::device_ptr devPtr;
+  // CHECK: syclcompat::device_ptr devPtr;
   CUdeviceptr devPtr;
-  // CHECK: dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
-  // CHECK: dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
-  // CHECK: dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
+  // CHECK: syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100);
+  // CHECK: syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100);
+  // CHECK: syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100);
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::get_device(cudevice).default_queue()->prefetch(devPtr, 100)));
   cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault);
   cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy);
   cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
@@ -857,12 +853,12 @@ void foo4(){
   // CHECK: /*
   // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK: */
-  // CHECK: errorCode = DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
+  // CHECK: errorCode = SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1));
   errorCode = cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE);
   // CHECK: /*
   // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK: */
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(h_A = (float *)sycl::malloc_host(size, q_ct1)));
   MY_SAFE_CALL(cuMemHostAlloc((void **)&h_A, size, CU_MEMHOSTALLOC_PORTABLE));
   // CHECK: /*
   // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
@@ -885,9 +881,9 @@ void foo4(){
 }
 
 void foo5(float* a) {
-// CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-// CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-// CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+// CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+// CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+// CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
@@ -895,8 +891,8 @@ void foo5(float* a) {
 
 
 void foo6(float* a) {
-  // CHECK: printf("%d\n", DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
-  // CHECK: printf("%d\n", DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+  // CHECK: printf("%d\n", SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+  // CHECK: printf("%d\n", SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
   printf("%d\n", cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   printf("%d\n", cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
 }
@@ -1002,47 +998,47 @@ int foo12() {
 }
 
 void foo13(float* a, bool flag) {
-  // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-  // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+  // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+  // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   while(flag) {
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
     MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
     MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
     if(flag) {
-      // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-      // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), a, 16).wait()));
+      // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+      // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), a, 16).wait()));
       MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
       MY_SAFE_CALL3(cudaMemcpyToSymbol(constData, a, 16));
     } else {
-      // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), a, 16)));
-      // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+      // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(constData.get_ptr(), a, 16)));
+      // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
       MY_SAFE_CALL3(cudaMemcpyToSymbol(constData, a, 16));
       MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
     }
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
     MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
     MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   }
 
   do {
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, constData.get_ptr(), 16).wait()));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, constData.get_ptr(), 16).wait()));
     MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
     MY_SAFE_CALL3(cudaMemcpyFromSymbol(a, constData, 16));
   } while(flag);
 
   for(;;) {
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, constData.get_ptr(), 16)));
-    // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, constData.get_ptr(), 16)));
+    // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
     MY_SAFE_CALL3(cudaMemcpyFromSymbol(a, constData, 16));
     MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   }
-  // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
-  // CHECK: MY_SAFE_CALL3(DPCT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
+  // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16)));
+  // CHECK: MY_SAFE_CALL3(SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(a, a, 16).wait()));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
 }
@@ -1065,7 +1061,7 @@ struct TEST_STR {
 void foo15() {
   std::vector<volatile TEST_STR *> buf;
   for (int i = 0; i < 32; i++) {
-    //CHECK: buf[i] = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_in_order_queue());
+    //CHECK: buf[i] = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), syclcompat::get_default_queue());
     cudaMallocHost(&buf[i], sizeof(TEST_STR));
   }
 }
@@ -1073,7 +1069,7 @@ void foo15() {
 void foo16() {
   std::vector<volatile TEST_STR *> buf;
   for (int i = 0; i < 32; i++) {
-    //CHECK: (buf.front()) = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_in_order_queue());
+    //CHECK: (buf.front()) = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), syclcompat::get_default_queue());
     cudaMallocHost(&buf.front(), sizeof(TEST_STR));
   }
 }

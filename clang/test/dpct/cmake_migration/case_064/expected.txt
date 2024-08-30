@@ -1,0 +1,9 @@
+find_library(CUDA_LIB "" PATHS ${prefix_path})
+
+find_library(CUDA_LIBS ${MKL_LIB} ${DNN_LIB} "" "" "" ${MKL_LIB} "" PATHS ${SYCL_TOOLKIT_ROOT_DIR}/lib)
+
+find_library(NPP_LIBS "" "" "" PATHS ENV NPP_PATHS)
+
+find_library(NVJPEG_LIBS "" "" "" PATHS ${NPP_PATHS})
+
+find_library(NV_TOOLS_LIBRARIES NAMES "" PATHS ${SYCL_TOOLKIT_ROOT_DIR}/lib ${SYCL_TOOLKIT_ROOT_DIR}/lib64)

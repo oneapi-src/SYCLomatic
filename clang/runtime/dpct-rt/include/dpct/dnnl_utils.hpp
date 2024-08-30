@@ -1022,7 +1022,7 @@ class engine_ext {
   void transform_no_zero_with_type(sycl::queue *q, void *src, void *dst,
                                    size_t num) {
     q->submit([&](sycl::handler &cgh) {
-      cgh.parallel_for<dpct_kernel_name<class zero_to_one, T>>(
+      cgh.parallel_for<::dpct::cs::kernel_name<class zero_to_one, T>>(
           sycl::range<1>(num), [=](sycl::id<1> idx) {
             T *src_ptr = static_cast<T *>(src) + idx[0];
             T *dst_ptr = static_cast<T *>(dst) + idx[0];

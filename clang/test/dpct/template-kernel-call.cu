@@ -256,7 +256,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:void convert(){
 // CHECK-NEXT:  T b;
 // CHECK-NEXT:  {
-// CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_out_of_order_queue().get_device(), {sycl::aspect::fp64});
+// CHECK-NEXT:  dpct::get_device(dpct::get_device_id(dpct::get_out_of_order_queue().get_device())).has_capability_or_fail({sycl::aspect::fp64});
 // CHECK-EMPTY:
 // CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {

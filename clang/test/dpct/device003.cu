@@ -21,26 +21,26 @@ int main(int argc, char **argv)
 {
 int deviceCount = 0;
 
-// CHECK: checkErrors(DPCT_CHECK_ERROR(deviceCount = dpct::dev_mgr::instance().device_count()));
+// CHECK: checkErrors(DPCT_CHECK_ERROR(deviceCount = dpct::device_count()));
 checkErrors(cudaGetDeviceCount(&deviceCount));
 
 int dev_id;
-// CHECK: checkErrors(DPCT_CHECK_ERROR(dev_id = dpct::dev_mgr::instance().current_device_id()));
+// CHECK: checkErrors(DPCT_CHECK_ERROR(dev_id = dpct::get_current_device_id()));
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
-// CHECK:checkErrors(DPCT_CHECK_ERROR(dpct::get_device_info(deviceProp, dpct::dev_mgr::instance().get_device(0))));
+// CHECK:checkErrors(DPCT_CHECK_ERROR(dpct::get_device(0).get_device_info(deviceProp)));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
 
-// CHECK:CUDA_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device_info(deviceProp, dpct::dev_mgr::instance().get_device(dev_id))));
+// CHECK:CUDA_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_device(dev_id).get_device_info(deviceProp)));
 CUDA_SAFE_CALL(cudaGetDeviceProperties(&deviceProp, dev_id));
 
 int atomicSupported;
-// CHECK: checkErrors(DPCT_CHECK_ERROR(atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
+// CHECK: checkErrors(DPCT_CHECK_ERROR(atomicSupported = dpct::get_device(dev_id).is_native_atomic_supported()));
 checkErrors(cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id));
 
 int maxThreadsPerBlock;
-// CHECK: checkErrors(DPCT_CHECK_ERROR(maxThreadsPerBlock = dpct::dev_mgr::instance().get_device(0).get_max_work_group_size()));
+// CHECK: checkErrors(DPCT_CHECK_ERROR(maxThreadsPerBlock = dpct::get_device(0).get_max_work_group_size()));
 checkErrors(cudaDeviceGetAttribute(&maxThreadsPerBlock, cudaDevAttrMaxThreadsPerBlock, 0));
 
 int device1 = 0;

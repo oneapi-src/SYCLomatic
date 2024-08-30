@@ -22,3 +22,8 @@ target_link_options(nvcv_util_compat PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/stubs/libpthread-2.17_stub.so
     -Wl,--pop-state
 )
+
+target_link_options(opts PRIVATE
+    
+    
+)
