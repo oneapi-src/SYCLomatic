@@ -56,7 +56,7 @@ void foo3() {
 
 void foo4() {
   cublasHandle_t handle;
-  int n;
+  int m, n, k;
   void *x, *y;
   int incx, incy;
   void *res;
@@ -74,4 +74,13 @@ void foo4() {
   cublasIaminEx(handle, n, x, CUDA_R_32F, incx, idx);
   cublasAsumEx(handle, n, x, CUDA_R_32F, incx, res, CUDA_R_32F, CUDA_R_32F);
   cublasRotmEx(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy, param, CUDA_R_32F, CUDA_R_32F);
+
+  cublasOperation_t transa;
+  cublasOperation_t transb;
+  cuComplex *alpha, *beta;
+  void *A, *B, *C;
+  int lda, ldb, ldc;
+  cudaDataType_t a_type, b_type, c_type;
+  // CHECK: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha, A, a_type, lda, B, b_type, ldb, beta, C, c_type, ldc, oneapi::mkl::blas::compute_mode::complex_3m);
+  cublasCgemm3mEx(handle, transa, transb, m, n, k, alpha, A, a_type, lda, B, b_type, ldb, beta, C, c_type, ldc);
 }
