@@ -31,6 +31,7 @@ std::string MapNames::getExpNamespace(bool KeepNamespace) {
   return getClNamespace(KeepNamespace, false) + "ext::oneapi::experimental::";
 }
 
+std::unordered_set<std::string> MapNames::SYCLcompatUnsupportTypes;
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
@@ -121,6 +122,13 @@ const std::string &MapNames::getLibraryHelperNamespace() {
   return LibraryHelperNamespace;
 }
 
+const std::string &MapNames::getCheckErrorMacroName() {
+  static const std::string Name = DpctGlobalInfo::useSYCLCompat()
+                                      ? "SYCLCOMPAT_CHECK_ERROR"
+                                      : "DPCT_CHECK_ERROR";
+  return Name;
+}
+
 void MapNames::setExplicitNamespaceMap(
     const std::set<ExplicitNamespace> &ExplicitNamespaces) {
 
@@ -168,7 +176,138 @@ void MapNames::setExplicitNamespaceMap(
       {"__int_as_float", {"float", "int"}},
       {"__longlong_as_double", {"double", "long long"}},
       {"__uint_as_float", {"float", "unsigned int"}}};
+  MacroRuleMap = {
+      {"__forceinline__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__forceinline__",
+                          DpctGlobalInfo::useSYCLCompat()
+                              ? "__syclcompat_inline__"
+                              : "__dpct_inline__",
+                          HelperFeatureEnum::device_ext)},
+      {"__align__", MacroMigrationRule("dpct_build_in_macro_rule",
+                                       RulePriority::Fallback, "__align__",
+                                       DpctGlobalInfo::useSYCLCompat()
+                                           ? "__syclcompat_align__"
+                                           : "__dpct_align__",
+                                       HelperFeatureEnum::device_ext)},
+      {"__CUDA_ALIGN__",
+       MacroMigrationRule(
+           "dpct_build_in_macro_rule", RulePriority::Fallback, "__CUDA_ALIGN__",
+           DpctGlobalInfo::useSYCLCompat() ? "__syclcompat_align__"
+                                           : "__dpct_align__",
+           HelperFeatureEnum::device_ext)},
+      {"__noinline__",
+       MacroMigrationRule(
+           "dpct_build_in_macro_rule", RulePriority::Fallback, "__noinline__",
+           DpctGlobalInfo::useSYCLCompat() ? "__syclcompat_noinline__"
+                                           : "__dpct_noinline__",
+           HelperFeatureEnum::device_ext)},
+      {"cudaMemAttachGlobal",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaMemAttachGlobal", "0")},
+      {"cudaStreamDefault",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaStreamDefault", "0")},
 
+      {"CU_LAUNCH_PARAM_BUFFER_SIZE",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CU_LAUNCH_PARAM_BUFFER_SIZE", "((void *) 2)",
+                          HelperFeatureEnum::device_ext)},
+      {"CU_LAUNCH_PARAM_BUFFER_POINTER",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CU_LAUNCH_PARAM_BUFFER_POINTER", "((void *) 1)",
+                          HelperFeatureEnum::device_ext)},
+      {"CU_LAUNCH_PARAM_END",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CU_LAUNCH_PARAM_END", "((void *) 0)",
+                          HelperFeatureEnum::device_ext)},
+      {"CUDART_PI_F",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUDART_PI_F", "3.141592654F")},
+      {"CUB_MAX",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUB_MAX", "std::max")},
+      {"CUB_MIN",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUB_MIN", "std::min")},
+      {"CUB_RUNTIME_FUNCTION",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUB_RUNTIME_FUNCTION", "")},
+      {"cudaStreamAttrValue",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaStreamAttrValue", "int")},
+      {"NCCL_VERSION_CODE",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "NCCL_VERSION_CODE", "DPCT_COMPAT_CCL_VERSION")},
+      {"__CUDA_ARCH__",
+       MacroMigrationRule(
+           "dpct_build_in_macro_rule", RulePriority::Fallback, "__CUDA_ARCH__",
+           DpctGlobalInfo::useSYCLCompat() ? "SYCLCOMPAT_COMPATIBILITY_TEMP"
+                                           : "DPCT_COMPATIBILITY_TEMP",
+           clang::dpct::HelperFeatureEnum::device_ext)},
+      {"__NVCC__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__NVCC__", "SYCL_LANGUAGE_VERSION")},
+      {"__CUDACC__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__CUDACC__", "SYCL_LANGUAGE_VERSION")},
+      {"__DRIVER_TYPES_H__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__DRIVER_TYPES_H__",
+                          DpctGlobalInfo::useSYCLCompat()
+                              ? "SYCLCOMPAT_COMPATIBILITY_TEMP"
+                              : "__DPCT_HPP__")},
+      {"__CUDA_RUNTIME_H__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__CUDA_RUNTIME_H__",
+                          DpctGlobalInfo::useSYCLCompat()
+                              ? "SYCLCOMPAT_COMPATIBILITY_TEMP"
+                              : "__DPCT_HPP__")},
+      {"CUDART_VERSION",
+       MacroMigrationRule(
+           "dpct_build_in_macro_rule", RulePriority::Fallback, "CUDART_VERSION",
+           DpctGlobalInfo::useSYCLCompat() ? "SYCLCOMPAT_VERSION"
+                                           : "DPCT_COMPAT_RT_VERSION")},
+      {"__CUDART_API_VERSION",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__CUDART_API_VERSION",
+                          DpctGlobalInfo::useSYCLCompat()
+                              ? "SYCLCOMPAT_VERSION"
+                              : "DPCT_COMPAT_RT_VERSION")},
+      {"CUDA_VERSION",
+       MacroMigrationRule(
+           "dpct_build_in_macro_rule", RulePriority::Fallback, "CUDA_VERSION",
+           DpctGlobalInfo::useSYCLCompat() ? "SYCLCOMPAT_VERSION"
+                                           : "DPCT_COMPAT_RT_VERSION")},
+      {"__CUDACC_VER_MAJOR__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__CUDACC_VER_MAJOR__",
+                          DpctGlobalInfo::useSYCLCompat()
+                              ? "SYCLCOMPAT_MAJOR_VERSION"
+                              : "DPCT_COMPAT_RT_MAJOR_VERSION")},
+      {"__CUDACC_VER_MINOR__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__CUDACC_VER_MINOR__",
+                          DpctGlobalInfo::useSYCLCompat()
+                              ? "SYCLCOMPAT_MINOR_VERSION"
+                              : "DPCT_COMPAT_RT_MINOR_VERSION")},
+      {"CUBLAS_V2_H_",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUBLAS_V2_H_", "MKL_SYCL_HPP")},
+      {"__CUDA__",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "__CUDA__", "SYCL_LANGUAGE_VERSION")},
+      {"CUFFT_FORWARD",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUFFT_FORWARD", "-1")},
+      {"CUFFT_INVERSE",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUFFT_INVERSE", "1")},
+      {"cudaEventDefault",
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "cudaEventDefault", "0")},
+      //...
+  };
   // Type names mapping.
   TypeNamesMap = {
       {"cudaDeviceProp",
@@ -189,6 +328,8 @@ void MapNames::setExplicitNamespaceMap(
       {"CUfunction",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_function",
                                       HelperFeatureEnum::device_ext)},
+      {"CUpointer_attribute",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes::type")},
       {"cudaPointerAttributes",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
                                       HelperFeatureEnum::device_ext)},
@@ -317,13 +458,13 @@ void MapNames::setExplicitNamespaceMap(
                                           "sparse::optimize_info>",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_ptr",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "device_pointer",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_pointer",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_reference",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "device_reference",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_reference",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_vector",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "device_vector",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_vector",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_malloc_allocator",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
@@ -451,6 +592,10 @@ void MapNames::setExplicitNamespaceMap(
                ? getClNamespace() + "ext::oneapi::experimental::queue_state"
                : "cudaStreamCaptureStatus")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
+      {"CUmemorytype",
+       std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
+      {"CUmemorytype_enum",
+       std::make_shared<TypeNameRule>(getClNamespace() + "usm::alloc")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
       {"cudaExtent",
        std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
@@ -661,8 +806,47 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasLtMatrixTransformDesc_t",
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_ptr")},
+      {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
+      {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
   };
+  // SYCLcompat unsupport types
+  SYCLcompatUnsupportTypes = {
+      "cudaChannelFormatDesc",
+      "cudaChannelFormatKind",
+      "cudaArray",
+      "cudaArray_t",
+      "cudaMipmappedArray",
+      "cudaMipmappedArray_t",
+      "cudaTextureDesc",
+      "cudaResourceDesc",
+      "cudaTextureObject_t",
+      "textureReference",
+      "cudaTextureAddressMode",
+      "cudaTextureFilterMode",
+      "CUDA_ARRAY3D_DESCRIPTOR",
+      "CUDA_ARRAY_DESCRIPTOR",
+      "CUtexObject",
+      "CUarray_format",
+      "CUarray",
+      "CUarray_st",
+      "CUDA_RESOURCE_DESC",
+      "CUDA_TEXTURE_DESC",
+      "CUaddress_mode",
+      "CUaddress_mode_enum",
+      "CUfilter_mode",
+      "CUfilter_mode_enum",
+      "CUresourcetype_enum",
+      "CUresourcetype",
+      "cudaResourceType",
+      "CUtexref",
+      "cudaStreamCaptureStatus",
+  };
+
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    for (const auto &Type : SYCLcompatUnsupportTypes)
+      TypeNamesMap.erase(Type);
+  }
 
   // Host Random Engine Type mapping
   RandomEngineTypeMap = {
@@ -1256,6 +1440,61 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("get_device_info().get_local_mem_size",
                                       HelperFeatureEnum::device_ext)},
 
+      // enum CUpointer_attribute
+      {"CU_POINTER_ATTRIBUTE_CONTEXT",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_MEMORY_TYPE",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::memory_type")},
+      {"CU_POINTER_ATTRIBUTE_DEVICE_POINTER",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::device_pointer")},
+      {"CU_POINTER_ATTRIBUTE_HOST_POINTER",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::host_pointer")},
+      {"CU_POINTER_ATTRIBUTE_P2P_TOKENS",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_SYNC_MEMOPS",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_BUFFER_ID",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_IS_MANAGED",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::is_managed")},
+      {"CU_POINTER_ATTRIBUTE_DEVICE_ORDINAL",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::device_id")},
+      {"CU_POINTER_ATTRIBUTE_IS_LEGACY_CUDA_IPC_CAPABLE",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_RANGE_START_ADDR",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_RANGE_SIZE",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_MAPPED",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+      {"CU_POINTER_ATTRIBUTE_ALLOWED_HANDLE_TYPES",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "pointer_attributes::type::unsupported")},
+
+      // enum CUmemorytype Type
+      {"CU_MEMORYTYPE_HOST",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::host",
+                                      HelperFeatureEnum::device_ext)},
+      {"CU_MEMORYTYPE_DEVICE",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::device",
+                                      HelperFeatureEnum::device_ext)},
+      {"CU_MEMORYTYPE_UNIFIED",
+       std::make_shared<EnumNameRule>(getClNamespace() + "usm::alloc::shared",
+                                      HelperFeatureEnum::device_ext)},
+      
       // enum CUlimit
       {"CU_LIMIT_PRINTF_FIFO_SIZE", std::make_shared<EnumNameRule>("INT_MAX")},
 
@@ -1488,6 +1727,20 @@ void MapNames::setExplicitNamespaceMap(
       {"CUSOLVER_EIG_RANGE_I",
        std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       {"ncclSuccess", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsMapFlags
+      {"cudaGraphicsMapFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsReadOnly", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsMapFlagsWriteDiscard", std::make_shared<EnumNameRule>("0")},
+      // enum cudaGraphicsRegisterFlags
+      {"cudaGraphicsRegisterFlagsNone", std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsReadOnly",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsWriteDiscard",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsSurfaceLoadStore",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaGraphicsRegisterFlagsTextureGather",
+       std::make_shared<EnumNameRule>("0")},
       // ...
   };
 
@@ -4210,110 +4463,12 @@ const MapNames::MapTy MapNames::Dim3MemberNamesMap{
     // ...
 };
 
-std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
-    {"__forceinline__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__forceinline__", "__dpct_inline__",
-                        HelperFeatureEnum::device_ext)},
-    {"__align__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__align__", "__dpct_align__",
-                        HelperFeatureEnum::device_ext)},
-    {"__CUDA_ALIGN__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDA_ALIGN__", "__dpct_align__",
-                        HelperFeatureEnum::device_ext)},
-    {"__noinline__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__noinline__", "__dpct_noinline__",
-                        HelperFeatureEnum::device_ext)},
-    {"cudaMemAttachGlobal",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "cudaMemAttachGlobal", "0")},
-    {"cudaStreamDefault",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "cudaStreamDefault", "0")},
-
-    {"CU_LAUNCH_PARAM_BUFFER_SIZE",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CU_LAUNCH_PARAM_BUFFER_SIZE", "((void *) 2)",
-                        HelperFeatureEnum::device_ext)},
-    {"CU_LAUNCH_PARAM_BUFFER_POINTER",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CU_LAUNCH_PARAM_BUFFER_POINTER", "((void *) 1)",
-                        HelperFeatureEnum::device_ext)},
-    {"CU_LAUNCH_PARAM_END",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CU_LAUNCH_PARAM_END", "((void *) 0)",
-                        HelperFeatureEnum::device_ext)},
-    {"CUDART_PI_F",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUDART_PI_F", "3.141592654F")},
-    {"CUB_MAX",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUB_MAX", "std::max")},
-    {"CUB_MIN",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUB_MIN", "std::min")},
-    {"CUB_RUNTIME_FUNCTION",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUB_RUNTIME_FUNCTION", "")},
-    {"cudaStreamAttrValue",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "cudaStreamAttrValue", "int")},
-    {"NCCL_VERSION_CODE",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "NCCL_VERSION_CODE", "DPCT_COMPAT_CCL_VERSION")},
-    {"__CUDA_ARCH__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDA_ARCH__", "DPCT_COMPATIBILITY_TEMP",
-                        clang::dpct::HelperFeatureEnum::device_ext)},
-    {"__NVCC__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__NVCC__", "SYCL_LANGUAGE_VERSION")},
-    {"__CUDACC__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDACC__", "SYCL_LANGUAGE_VERSION")},
-    {"__DRIVER_TYPES_H__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__DRIVER_TYPES_H__", "__DPCT_HPP__")},
-    {"__CUDA_RUNTIME_H__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDA_RUNTIME_H__", "__DPCT_HPP__")},
-    {"CUDART_VERSION",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUDART_VERSION", "DPCT_COMPAT_RT_VERSION")},
-    {"__CUDART_API_VERSION",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDART_API_VERSION", "DPCT_COMPAT_RT_VERSION")},
-    {"CUDA_VERSION",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUDA_VERSION", "DPCT_COMPAT_RT_VERSION")},
-    {"__CUDACC_VER_MAJOR__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDACC_VER_MAJOR__",
-                        "DPCT_COMPAT_RT_MAJOR_VERSION")},
-    {"__CUDACC_VER_MINOR__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDACC_VER_MINOR__",
-                        "DPCT_COMPAT_RT_MINOR_VERSION")},
-    {"CUBLAS_V2_H_",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUBLAS_V2_H_", "MKL_SYCL_HPP")},
-    {"__CUDA__",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "__CUDA__", "SYCL_LANGUAGE_VERSION")},
-    {"CUFFT_FORWARD",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUFFT_FORWARD", "-1")},
-    {"CUFFT_INVERSE",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "CUFFT_INVERSE", "1")},
-    {"cudaEventDefault",
-     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                        "cudaEventDefault", "0")},
-    //...
+const std::map<unsigned, std::string> MapNames::ArrayFlagMap{
+    {0, "standard"},
+    {1, "array"},
 };
+
+std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap;
 
 std::unordered_map<std::string, MetaRuleObject &> MapNames::HeaderRuleMap{};
 
@@ -4380,6 +4535,10 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
 
 const MapNames::MapTy MapNames::FunctionAttrMap{
     {"CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK", "max_work_group_size"},
+    {"CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES",     "shared_size_bytes /* statically allocated shared memory per work-group in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES",      "local_size_bytes /* local memory per work-item in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES",      "const_size_bytes /* user-defined constant kernel memory in bytes */"},
+    {"CU_FUNC_ATTRIBUTE_NUM_REGS",              "num_regs /* number of registers for each thread */"},
     // ...
 };
 

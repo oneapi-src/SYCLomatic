@@ -177,55 +177,55 @@ int main(){
     // CHECK-NEXT: int advise = 0;
     CUmem_advise advise = CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION;
 
-    // CHECK: dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, advise);
+    // CHECK: dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, advise);
     cuMemAdvise(devicePtr, count, advise, cudevice);
 
-    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, advise)));
+    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, advise)));
     cuCheckError(cuMemAdvise(devicePtr, count, advise, cudevice));
 
-    // CHECK: cu_err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, advise));
+    // CHECK: cu_err = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, advise));
     cu_err = cuMemAdvise(devicePtr, count, advise, cudevice);
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0);
+    // CHECK-NEXT: dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0);
     cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, (CUmem_advise)1, cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, CUmem_advise(1), cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
+    // CHECK-NEXT: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0)));
     cuCheckError(cuMemAdvise(devicePtr, count, static_cast<CUmem_advise>(1), cudevice));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: cu_err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0));
+    // CHECK-NEXT: cu_err = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0));
     cu_err = cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
     // CHECK-NEXT: */
-    // CHECK-NEXT: dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0);
+    // CHECK-NEXT: dpct::get_device(cudevice).in_order_queue().mem_advise(devicePtr, count, 0);
     cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
 
     // CHECK: /*
@@ -241,21 +241,21 @@ int main(){
     cuMemPrefetchAsync (devPtr, 100, cudevice, stream);
     // CHECK: (*&stream)->prefetch(devPtr, 100);
     cuMemPrefetchAsync (devPtr, 100, cudevice, *&stream);
-    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
+    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, NULL);
-    // CHECK: dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
+    // CHECK: dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
     cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
-    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
+    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault);
-    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
+    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy);
-    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
+    // CHECK: curesult = DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
     curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
-    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
+    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
     cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault));
-    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
+    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
     cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy));
-    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
+    // CHECK: cuCheckError(DPCT_CHECK_ERROR(dpct::get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
     cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread));
 
     // CHECK: dpct::memcpy_parameter cpy2;

@@ -28,7 +28,7 @@ enum RuleKind {
 };
 
 enum RulePriority { Takeover, Default, Fallback };
-enum RuleMatchMode { Partial , Full };
+enum RuleMatchMode { Partial, Full, StrictFull };
 
 struct TypeNameRule {
   std::string NewName;
@@ -193,7 +193,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleMatchMode> {
   static void enumeration(llvm::yaml::IO &Io, RuleMatchMode &Value) {
     Io.enumCase(Value, "Partial", RuleMatchMode::Partial);
     Io.enumCase(Value, "Full", RuleMatchMode::Full);
-
+    Io.enumCase(Value, "StrictFull", RuleMatchMode::StrictFull);
   }
 };
 
@@ -351,7 +351,7 @@ public:
   std::string Str;
   std::vector<std::shared_ptr<OutputBuilder>> SubBuilders;
   void parse(std::string &);
-
+  virtual ~OutputBuilder();
 protected:
   // /OutStr is the string specified in rule's "Out" session
   virtual std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
@@ -362,7 +362,7 @@ protected:
   void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
 };
 
-class TypeOutputBuilder : public OutputBuilder{
+class TypeOutputBuilder : public OutputBuilder {
 private:
   // /OutStr is the string specified in rule's "Out" session
   std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,

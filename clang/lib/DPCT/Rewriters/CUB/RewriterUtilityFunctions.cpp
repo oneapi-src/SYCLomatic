@@ -105,31 +105,32 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
           MEMBER_CALL_FACTORY_ENTRY("cub::SyncStream", QUEUESTR, false, "wait"),
           MEMBER_CALL_FACTORY_ENTRY("cub::SyncStream", ARG(0), true, "wait"))
       // cub::DeviceCount
-      MEMBER_CALL_FACTORY_ENTRY(
-          "cub::DeviceCount",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "device_count")
+      CALL_FACTORY_ENTRY("cub::DeviceCount",
+                         CALL(MapNames::getDpctNamespace() + "device_count"))
       // cub::DeviceCountUncached
-      MEMBER_CALL_FACTORY_ENTRY(
-          "cub::DeviceCountUncached",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "device_count")
+      CALL_FACTORY_ENTRY("cub::DeviceCountUncached",
+                         CALL(MapNames::getDpctNamespace() + "device_count"))
       // cub::DeviceCountCachedValue
-      MEMBER_CALL_FACTORY_ENTRY(
-          "cub::DeviceCountCachedValue",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "device_count")
+      CALL_FACTORY_ENTRY("cub::DeviceCountCachedValue",
+                         CALL(MapNames::getDpctNamespace() + "device_count"))
       // cub::CurrentDevice
-      MEMBER_CALL_FACTORY_ENTRY(
+      CALL_FACTORY_ENTRY(
           "cub::CurrentDevice",
-          CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-          "current_device_id")
+          CALL(MapNames::getDpctNamespace() + "get_current_device_id"))
       // cub::PtxVersion
-      ASSIGN_FACTORY_ENTRY("cub::PtxVersion", ARG(0),
-                           LITERAL("DPCT_COMPATIBILITY_TEMP"))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          ASSIGN_FACTORY_ENTRY("cub::PtxVersion", ARG(0),
+                               LITERAL("SYCLCOMPAT_COMPATIBILITY_TEMP")),
+          ASSIGN_FACTORY_ENTRY("cub::PtxVersion", ARG(0),
+                               LITERAL("DPCT_COMPATIBILITY_TEMP")))
       // cub::PtxVersionUncached
-      ASSIGN_FACTORY_ENTRY("cub::PtxVersionUncached", ARG(0),
-                           LITERAL("DPCT_COMPATIBILITY_TEMP"))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          ASSIGN_FACTORY_ENTRY("cub::PtxVersionUncached", ARG(0),
+                               LITERAL("SYCLCOMPAT_COMPATIBILITY_TEMP")),
+          ASSIGN_FACTORY_ENTRY("cub::PtxVersionUncached", ARG(0),
+                               LITERAL("DPCT_COMPATIBILITY_TEMP")))
       // cub::SmVersion
       ASSIGN_FACTORY_ENTRY(
           "cub::SmVersion", ARG(0),
@@ -158,72 +159,103 @@ RewriterMap dpct::createUtilityFunctionsRewriterMap() {
       MEMBER_CALL_FACTORY_ENTRY("cub::RowMajorTid", NDITEM, /*IsArrow=*/false,
                                 "get_local_linear_id")
       // cub::LoadDirectBlocked
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::LoadDirectBlocked",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::load_direct_blocked",
-                                           0, 1, 2),
-                   NDITEM, ARG(1), ARG(2))))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::LoadDirectBlocked",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::LoadDirectBlocked")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CALL_FACTORY_ENTRY(
+                  "cub::LoadDirectBlocked",
+                  CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                                   "group::load_direct_blocked",
+                                               0, 1, 2),
+                       NDITEM, ARG(1), ARG(2)))))
       // cub::LoadDirectStriped
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::LoadDirectStriped",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::load_direct_striped",
-                                           1, 2, 3),
-                   NDITEM, ARG(1), ARG(2))))
-
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::LoadDirectStriped",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::LoadDirectStriped")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CALL_FACTORY_ENTRY(
+                  "cub::LoadDirectStriped",
+                  CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
+                                                   "group::load_direct_striped",
+                                               1, 2, 3),
+                       NDITEM, ARG(1), ARG(2)))))
       // cub::StoreDirectBlocked
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::StoreDirectBlocked",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::store_direct_blocked",
-                                           0, 1, 2),
-                   NDITEM, ARG(1), ARG(2))))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::StoreDirectBlocked",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::StoreDirectBlocked")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CALL_FACTORY_ENTRY("cub::StoreDirectBlocked",
+                                 CALL(PRETTY_TEMPLATED_CALLEE(
+                                          MapNames::getDpctNamespace() +
+                                              "group::store_direct_blocked",
+                                          0, 1, 2),
+                                      NDITEM, ARG(1), ARG(2)))))
       // cub::StoreDirectStriped
-      HEADER_INSERT_FACTORY(
-          HeaderType::HT_DPCT_GROUP_Utils,
-          CALL_FACTORY_ENTRY(
-              "cub::StoreDirectStriped",
-              CALL(PRETTY_TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                               "group::store_direct_striped",
-                                           1, 2, 3),
-                   NDITEM, ARG(1), ARG(2))))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::StoreDirectStriped",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::StoreDirectStriped")),
+          HEADER_INSERT_FACTORY(
+              HeaderType::HT_DPCT_GROUP_Utils,
+              CALL_FACTORY_ENTRY("cub::StoreDirectStriped",
+                                 CALL(PRETTY_TEMPLATED_CALLEE(
+                                          MapNames::getDpctNamespace() +
+                                              "group::store_direct_striped",
+                                          1, 2, 3),
+                                      NDITEM, ARG(1), ARG(2)))))
       // cub::ShuffleDown
-      SUBGROUPSIZE_FACTORY(
-          UINT_MAX,
-          MapNames::getDpctNamespace() + "experimental::shift_sub_group_left",
-          CONDITIONAL_FACTORY_ENTRY(
-              UseNonUniformGroups,
-              CALL_FACTORY_ENTRY(
-                  "cub::ShuffleDown",
-                  CALL(
-                      TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
-                                           "experimental::shift_sub_group_left",
-                                       0, 1),
-                      SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
-              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleDown",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      LITERAL("cub::ShuffleDown"))))
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::ShuffleDown",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::ShuffleDown")),
+          SUBGROUPSIZE_FACTORY(
+              UINT_MAX,
+              MapNames::getDpctNamespace() +
+                  "experimental::shift_sub_group_left",
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseNonUniformGroups,
+                  CALL_FACTORY_ENTRY(
+                      "cub::ShuffleDown",
+                      CALL(TEMPLATED_CALLEE(
+                               MapNames::getDpctNamespace() +
+                                   "experimental::shift_sub_group_left",
+                               0, 1),
+                           SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
+                  UNSUPPORT_FACTORY_ENTRY("cub::ShuffleDown",
+                                          Diagnostics::API_NOT_MIGRATED,
+                                          LITERAL("cub::ShuffleDown")))))
       // cub::ShuffleUp
-      SUBGROUPSIZE_FACTORY(
-          UINT_MAX,
-          MapNames::getDpctNamespace() + "experimental::shift_sub_group_right",
-          CONDITIONAL_FACTORY_ENTRY(
-              UseNonUniformGroups,
-              CALL_FACTORY_ENTRY(
-                  "cub::ShuffleUp",
-                  CALL(TEMPLATED_CALLEE(
-                           MapNames::getDpctNamespace() +
-                               "experimental::shift_sub_group_right",
-                           0, 1),
-                       SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
-              UNSUPPORT_FACTORY_ENTRY("cub::ShuffleUp",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      LITERAL("cub::ShuffleUp"))))};
+      CONDITIONAL_FACTORY_ENTRY(
+          UseSYCLCompat,
+          UNSUPPORT_FACTORY_ENTRY("cub::ShuffleUp",
+                                  Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                  LITERAL("cub::ShuffleUp")),
+          SUBGROUPSIZE_FACTORY(
+              UINT_MAX,
+              MapNames::getDpctNamespace() +
+                  "experimental::shift_sub_group_right",
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseNonUniformGroups,
+                  CALL_FACTORY_ENTRY(
+                      "cub::ShuffleUp",
+                      CALL(TEMPLATED_CALLEE(
+                               MapNames::getDpctNamespace() +
+                                   "experimental::shift_sub_group_right",
+                               0, 1),
+                           SUBGROUP, ARG(0), ARG(1), ARG(2), ARG(3))),
+                  UNSUPPORT_FACTORY_ENTRY("cub::ShuffleUp",
+                                          Diagnostics::API_NOT_MIGRATED,
+                                          LITERAL("cub::ShuffleUp")))))};
 }
