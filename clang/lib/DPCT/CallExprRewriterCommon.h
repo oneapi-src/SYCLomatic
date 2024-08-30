@@ -792,14 +792,12 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       DerefQT = ET->getNamedType();
       if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
         auto *TDecl = TDT->getDecl();
-        bool IsFromCuda = false;
-        for (const auto& D : TDecl->redecls())
-           if (dpct::DpctGlobalInfo::isInCudaPath(TDecl->getLocation())) {
-             IsFromCuda = true;
-             break;
-           }
-         if (IsFromCuda)
-           break;
+        const auto Redecls = TDecl->redecls();
+        auto IsDeclInCudaHeader = [](const TypedefNameDecl * D)-> bool {
+          return dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
+        };
+        if (std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader))
+          break;
         DerefQT = TDecl->getUnderlyingType();
       }
     }
