@@ -799,7 +799,6 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
         };
         if (std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader))
           break;
-        
         DerefQT = TDecl->getUnderlyingType();
       }
     }
