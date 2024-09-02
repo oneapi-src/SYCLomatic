@@ -3874,8 +3874,12 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(" = ", MapNames::getLibraryHelperNamespace(),
                     "rng::create_host_rng(", ExprAnalysis::ref(CE->getArg(1)));
     if (FuncName == "curandCreateGeneratorHost") {
-      RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
-                        "cpu_device().default_queue()");
+      if (DpctGlobalInfo::useSYCLCompat())
+        RHS = buildString(RHS, ", *", MapNames::getDpctNamespace(),
+                          "cpu_device().default_queue()");
+      else
+        RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
+                          "cpu_device().default_queue()");
     }
     RHS = buildString(RHS, ")");
     if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {

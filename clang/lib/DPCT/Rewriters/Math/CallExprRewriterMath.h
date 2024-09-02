@@ -9,6 +9,7 @@
 #ifndef DPCT_REWRITERS_MATH_CALL_EXPR_REWRITER_MATH_H
 #define DPCT_REWRITERS_MATH_CALL_EXPR_REWRITER_MATH_H
 
+#include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
 #include <cstddef>
@@ -628,6 +629,18 @@ createMathAPIRewriterHost(
       createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                std::move(HostPerf), std::move(HostNormal)),
       {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+}
+
+template <bool IsDouble> std::string getPiString() {
+  if constexpr (IsDouble) {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return "(3.141592653589793115998)";
+    return "DPCT_PI";
+  } else {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return "(3.14159274101257f)";
+    return "DPCT_PI_F";
+  }
 }
 
 #define EMPTY_FACTORY_ENTRY(NAME)                                              \

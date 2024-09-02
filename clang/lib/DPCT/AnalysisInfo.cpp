@@ -9,6 +9,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
+#include "IncrementalMigrationUtility.h"
 #include "MapNames.h"
 #include "Statics.h"
 #include "TextModification.h"
@@ -1643,7 +1644,10 @@ void DpctGlobalInfo::processCudaArchMacro() {
             nullptr));
       }
     } else {
-      (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
+      if (useSYCLCompat())
+        (*Repl).setReplacementText("!SYCLCOMPAT_COMPATIBILITY_TEMP");
+      else
+        (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
     }
   };
 
@@ -3242,20 +3246,28 @@ const std::string &MemVarInfo::getMemoryAttr() {
   requestFeature(HelperFeatureEnum::device_ext);
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = MapNames::getDpctNamespace() + "global";
+    static std::string DeviceMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::global" : "global");
     return DeviceMemory;
   }
   case clang::dpct::MemVarInfo::Constant: {
     static std::string ConstantMemory =
-        MapNames::getDpctNamespace() + "constant";
+        MapNames::getDpctNamespace() + (DpctGlobalInfo::useSYCLCompat()
+                                            ? "memory_region::constant"
+                                            : "constant");
     return ConstantMemory;
   }
   case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = MapNames::getDpctNamespace() + "local";
+    static std::string SharedMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::local" : "local");
     return SharedMemory;
   }
   case clang::dpct::MemVarInfo::Managed: {
-    static std::string ManagedMemory = MapNames::getDpctNamespace() + "shared";
+    static std::string ManagedMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::shared" : "shared");
     return ManagedMemory;
   }
   default:

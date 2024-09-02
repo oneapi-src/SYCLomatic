@@ -344,6 +344,8 @@ inline std::function<std::string(const CallExpr *)> makeQueueStr() {
 
 inline std::function<std::string(const CallExpr *)> makeQueuePtrStr() {
   return [=](const CallExpr *C) -> std::string {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return MapNames::getLibraryHelperNamespace() + "cs::get_default_queue()";
     return registerAndGetQueueStr(C, "&");
   };
 }
