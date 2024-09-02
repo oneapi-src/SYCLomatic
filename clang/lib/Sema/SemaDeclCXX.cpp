@@ -12403,7 +12403,11 @@ Decl *Sema::ActOnUsingEnumDeclaration(Scope *S, AccessSpecifier AS,
                                       SourceLocation EnumLoc, SourceRange TyLoc,
                                       const IdentifierInfo &II, ParsedType Ty,
                                       CXXScopeSpec *SS) {
+#ifdef SYCLomatic_CUSTOMIZATION
+  assert(SS && !SS->isInvalid() && "ScopeSpec is invalid");
+#else
   assert(!SS->isInvalid() && "ScopeSpec is invalid");
+#endif
   TypeSourceInfo *TSI = nullptr;
   SourceLocation IdentLoc = TyLoc.getBegin();
   QualType EnumTy = GetTypeFromParser(Ty, &TSI);

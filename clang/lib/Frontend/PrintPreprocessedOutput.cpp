@@ -1029,6 +1029,9 @@ static void PrintPreprocessedTokens(Preprocessor &PP, Token &Tok,
         PrintComma = true;
       }
       IsStartOfLine = true;
+#ifdef SYCLomatic_CUSTOMIZATION
+      continue;
+#endif
     } else if (Tok.isAnnotation()) {
       // Ignore annotation tokens created by pragmas - the pragmas themselves
       // will be reproduced in the preprocessed output.

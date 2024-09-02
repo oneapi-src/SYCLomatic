@@ -51,6 +51,10 @@ private:
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
           &RewriterMap);
+  static void initRewriterMethodMapSYCLcompat(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>
+          &MethodRewriterMap);
   static void initRewriterMapAtomic();
   static void initRewriterMapCUB();
   static void initRewriterMapCUFFT();
@@ -233,11 +237,11 @@ public:
   template <class... CaseTs>
   CaseRewriterFactory(CaseTs&&... cases)
     : Cases{std::forward<CaseTs>(cases)...} {}
-  
+
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
-    for (const auto& [Pred, Factory] : Cases) {
+    for (const auto &[Pred, Factory] : Cases) {
       if (Pred(C)) {
-	return Factory->create(C);
+        return Factory->create(C);
       }
     }
     throw std::runtime_error("Non-exhaustive CaseRewriterFactory");

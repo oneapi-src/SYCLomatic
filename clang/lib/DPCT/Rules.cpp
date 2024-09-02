@@ -121,11 +121,11 @@ void registerHeaderRule(MetaRuleObject &R) {
 }
 
 void registerTypeRule(MetaRuleObject &R) {
-  TypeOutputBuilder TOB;
-  TOB.Kind = TypeOutputBuilder::Kind::Top;
-  TOB.RuleName = R.RuleId;
-  TOB.RuleFile = R.RuleFile;
-  TOB.parse(R.Out);
+  std::shared_ptr TOB = std::make_shared<TypeOutputBuilder>();
+  TOB->Kind = TypeOutputBuilder::Kind::Top;
+  TOB->RuleName = R.RuleId;
+  TOB->RuleFile = R.RuleFile;
+  TOB->parse(R.Out);
 
   if (R.RuleAttributes.NumOfTemplateArgs != -1) {
     dpct::TypeMatchingDesc TMD =
@@ -154,7 +154,7 @@ void registerTypeRule(MetaRuleObject &R) {
                                   R.Includes.begin(), R.Includes.end());
     }
   } else {
-    reisterMigrationRule(R.RuleId, [=] {
+    reisterMigrationRule(R.RuleId, [&R] {
       return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
     });
     auto RulePtr = std::make_shared<TypeNameRule>(
