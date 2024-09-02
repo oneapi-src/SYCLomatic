@@ -744,6 +744,33 @@ GEMM_EX(cublasCgemm3mEx_64, "oneapi::mkl::blas::compute_mode::complex_3m")
 GEMM_EX(cublasGemmEx_64, 17)
 #undef GEMM_EX
 
+#define SYHERK(NAME, IS_HERMITIAN, COMPUTE_TYPE)                               \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME, CALL(MapNames::getLibraryHelperNamespace() +                  \
+                          "blas::syherk<" + #IS_HERMITIAN + ">",               \
+                      ARG(0),                                                  \
+                      BLAS_ENUM_ARG(                                           \
+                          1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),   \
+                      BLAS_ENUM_ARG(                                           \
+                          2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),  \
+                      ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),  \
+                      ARG(10), ARG(11), ARG(12), ARG(COMPUTE_TYPE)))))
+SYHERK(cublasCsyrkEx, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCsyrk3mEx, false, "oneapi::mkl::blas::compute_mode::complex_3m")
+SYHERK(cublasCherkEx, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCherk3mEx, true, "oneapi::mkl::blas::compute_mode::complex_3m")
+SYHERK(cublasCsyrkEx_64, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCsyrk3mEx_64, false, "oneapi::mkl::blas::compute_mode::complex_3m")
+SYHERK(cublasCherkEx_64, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCherk3mEx_64, true, "oneapi::mkl::blas::compute_mode::complex_3m")
+#undef SYHERK
+
 #define SYRK(NAME, TYPE, IS_COMPLEX)                                           \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
       #NAME,                                                                   \

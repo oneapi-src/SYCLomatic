@@ -2471,6 +2471,16 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasCgemmEx_64", getLibraryHelperNamespace() + "blas::gemm"},
       {"cublasCgemm3mEx_64", getLibraryHelperNamespace() + "blas::gemm"},
       {"cublasGemmEx_64", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasCsyrkEx", getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCsyrk3mEx", getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCherkEx", getLibraryHelperNamespace() + "blas::syherk<true>"},
+      {"cublasCherk3mEx", getLibraryHelperNamespace() + "blas::syherk<true>"},
+      {"cublasCsyrkEx_64", getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCsyrk3mEx_64",
+       getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCherkEx_64", getLibraryHelperNamespace() + "blas::syherk<true>"},
+      {"cublasCherk3mEx_64",
+       getLibraryHelperNamespace() + "blas::syherk<true>"},
       // cublasLt
       {"cublasLtCreate", "new " + getLibraryHelperNamespace() +
                              "blas_gemm::experimental::descriptor"},

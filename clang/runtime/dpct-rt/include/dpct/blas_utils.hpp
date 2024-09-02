@@ -725,6 +725,26 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       batch_size DPCT_COMPUTE_MODE_ARG);
 }
 
+template <bool is_hermitian, class T>
+inline void syherk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
+                        oneapi::mkl::transpose trans, int n, int k,
+                        const void *alpha, const void *a, int lda,
+                        const void *beta, void *c,
+                        int ldc DPCT_COMPUTE_MODE_PARAM) {
+  T alpha_value = dpct::get_value(reinterpret_cast<const T *>(alpha), q);
+  T beta_value = dpct::get_value(reinterpret_cast<const T *>(beta), q);
+  auto data_a = get_memory<const T>(a);
+  auto data_c = get_memory<T>(c);
+  if constexpr (is_hermitian)
+    oneapi::mkl::blas::column_major::herk(q, uplo, trans, n, k, alpha_value,
+                                          data_a, lda, beta_value, data_c,
+                                          ldc DPCT_COMPUTE_MODE_ARG);
+  else
+    oneapi::mkl::blas::column_major::syrk(q, uplo, trans, n, k, alpha_value,
+                                          data_a, lda, beta_value, data_c,
+                                          ldc DPCT_COMPUTE_MODE_ARG);
+}
+
 template <bool is_hermitian, class T, class Tbeta>
 inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
                     oneapi::mkl::transpose trans, int n, int k, const T *alpha,
@@ -1952,6 +1972,56 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
     break;
   }
   default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
+template <bool is_hermitian>
+inline void syherk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
+                   oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
+                   const void *alpha, const void *a, library_data_t a_type,
+                   std::int64_t lda, const void *beta, void *c,
+                   library_data_t c_type, std::int64_t ldc,
+                   std::variant<compute_type, library_data_t> ct) {
+  sycl::queue q = desc_ptr->get_queue();
+#ifdef __INTEL_MKL__
+  oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
+  if (auto ct_p = std::get_if<compute_type>(&ct)) {
+    cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+  } else {
+    cm = deduce_compute_mode(std::nullopt, desc_ptr->get_math_mode(),
+                             a_type == library_data_t::complex_float ||
+                                 a_type == library_data_t::complex_double);
+  }
+#endif
+  std::uint64_t key = dpct::detail::get_type_combination_id(a_type, c_type);
+  if (!is_hermitian &&
+      dpct::detail::get_type_combination_id(
+          library_data_t::real_float, library_data_t::real_float) == key) {
+    dpct::detail::syherk_impl<is_hermitian, float>(q, uplo, trans, n, k, alpha,
+                                                   a, lda, beta, c,
+                                                   ldc DPCT_COMPUTE_MODE_ARG);
+  } else if (!is_hermitian && dpct::detail::get_type_combination_id(
+                                  library_data_t::real_double,
+                                  library_data_t::real_double) == key) {
+    dpct::detail::syherk_impl<is_hermitian, double>(q, uplo, trans, n, k, alpha,
+                                                    a, lda, beta, c,
+                                                    ldc DPCT_COMPUTE_MODE_ARG);
+  } else if (dpct::detail::get_type_combination_id(
+                 library_data_t::complex_float,
+                 library_data_t::complex_float) == key) {
+    dpct::detail::syherk_impl<is_hermitian, std::complex<float>>(
+        q, uplo, trans, n, k, alpha, a, lda, beta, c,
+        ldc DPCT_COMPUTE_MODE_ARG);
+  } else if (dpct::detail::get_type_combination_id(
+                 library_data_t::complex_double,
+                 library_data_t::complex_double) == key) {
+    dpct::detail::syherk_impl<is_hermitian, std::complex<double>>(
+        q, uplo, trans, n, k, alpha, a, lda, beta, c,
+        ldc DPCT_COMPUTE_MODE_ARG);
+  } else {
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }

@@ -4174,7 +4174,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSdgmm", "cublasDdgmm", "cublasCdgmm", "cublasZdgmm",
         "cublasSgeam", "cublasDgeam", "cublasCgeam", "cublasZgeam",
         "cublasCopyEx", "cublasSwapEx", "cublasIamaxEx", "cublasIaminEx",
-        "cublasAsumEx", "cublasRotmEx",
+        "cublasAsumEx", "cublasRotmEx", "cublasCsyrkEx", "cublasCsyrk3mEx",
+        "cublasCherkEx", "cublasCherk3mEx",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         "cublasSetKernelStream", "cublasGetVersion",
@@ -4276,7 +4277,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCopyEx_64", "cublasSwapEx_64", "cublasIamaxEx_64",
         "cublasIaminEx_64", "cublasAsumEx_64", "cublasRotmEx_64",
         "cublasSgemmEx_64", "cublasCgemmEx_64", "cublasCgemm3mEx_64",
-        "cublasGemmEx_64",
+        "cublasGemmEx_64", "cublasCsyrkEx_64", "cublasCsyrk3mEx_64",
+        "cublasCherkEx_64", "cublasCherk3mEx_64",
         /*cublasLt*/
         "cublasLtCreate", "cublasLtDestroy", "cublasLtMatmulDescCreate",
         "cublasLtMatmulDescDestroy", "cublasLtMatmulDescSetAttribute",
