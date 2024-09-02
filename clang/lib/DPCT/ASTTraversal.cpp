@@ -10205,8 +10205,10 @@ void MemoryMigrationRule::mallocMigration(
       OS << " = new " << MapNames::getDpctNamespace()
          << "experimental::image_mem_wrapper(";
       DerefExpr(C->getArg(1), C).print(OS);
-      OS << ", " << ExprAnalysis::ref(C->getArg(2)) << ", "
-         << ExprAnalysis::ref(C->getArg(3)) << ")";
+      OS << ", " << ExprAnalysis::ref(C->getArg(2));
+      if (!C->getArg(3)->isDefaultArgument())
+        OS << ", " << ExprAnalysis::ref(C->getArg(3));
+      OS << ")";
       return emplaceTransformation(new ReplaceStmt(C, Replacement));
     }
     mallocArrayMigration(C, Name,
