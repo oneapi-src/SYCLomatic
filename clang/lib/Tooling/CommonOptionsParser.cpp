@@ -197,6 +197,8 @@ llvm::Error CommonOptionsParser::init(
   DatabaseStatus ErrCode =
       CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in DPCT
   IsPSpecified = BuildPath.getNumOccurrences();
+  ArgsAfter.erase(std::remove(ArgsAfter.begin(), ArgsAfter.end(), "-DNDEBUG"),
+                  ArgsAfter.end());
   for (auto &I : ArgsAfter) {
     if (I.size() > 2 && I.substr(0, 2) == "-x") {
       SpecifyLanguageInOption = true;

@@ -771,6 +771,9 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       // "error: unknown argument: '-cubin'".
       bool IsModuleFile = false;
       for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+        if (CommandLine[Index] == "-DNDEBUG") {
+          CommandLine.erase(CommandLine.begin() + Index--);
+        }
         if (CommandLine[Index] == "-ptx" || CommandLine[Index] == "--ptx" ||
             CommandLine[Index] == "-cubin" || CommandLine[Index] == "--cubin") {
           CommandLine.erase(CommandLine.begin() + Index--);
