@@ -40,6 +40,8 @@ void CallExprRewriterFactoryBase::initRewriterMapSYCLcompat(
   RewriterMap.insert({
 #include "../APINamesGraph.inc"
 #include "../APINamesTexture.inc"
+#include "../APINamesGraphicsInterop.inc"
+#include "../APINamesWmma.inc"
 SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DArrayToArray")
 SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DFromArray")
 SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DFromArrayAsync")
@@ -67,6 +69,7 @@ SYCLCOMPAT_UNSUPPORT("cub::StoreDirectBlocked")
 SYCLCOMPAT_UNSUPPORT("cub::StoreDirectStriped")
 SYCLCOMPAT_UNSUPPORT("cub::ShuffleDown")
 SYCLCOMPAT_UNSUPPORT("cub::ShuffleUp")
+SYCLCOMPAT_UNSUPPORT("cuPointerGetAttributes")
   });
   // clang-format on
 }
