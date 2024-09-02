@@ -16,6 +16,3 @@ u64 foo(CUfunction cuFunc, CUmodule cuMod) {
   return function;
 }
 
-void createNew(u64 function) {
-  CUfunction cuFunc = function;
-}
