@@ -208,14 +208,15 @@ void GenCodePinHeaderRule::collectMemberInfo(
   if (!RD) {
     return;
   }
-  if (T->isTypedefNameType()) {
+  if (const TypedefType *TT = T->getAs<TypedefType>()) {
     VI.IsTypeDef = true;
-    const TypedefType *TT = T->getAs<TypedefType>();
-    if (!TT->getAsRecordDecl()->getIdentifier())
+    llvm::StringRef TypeName =
+        TT->getDecl()->getUnderlyingType()->getAsRecordDecl()->getName();
+    if (TypeName.empty())
       VI.OrgTypeName =
           "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
     else
-      VI.OrgTypeName = TT->getAsRecordDecl()->getIdentifier()->getName().str();
+      VI.OrgTypeName = TypeName.str();
   }
   VI.IsValid = true;
   if (VI.VarRecordType.empty()) {
@@ -319,7 +320,6 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
                                    ->getIdentifier()
                                    ->getName()
                                    .str();
-
       auto Pos = TypenameWithoutScope.find('<');
       VarInfo.VarNameWithoutScopeAndTemplateArgs =
           TypenameWithoutScope.substr(0, Pos);
