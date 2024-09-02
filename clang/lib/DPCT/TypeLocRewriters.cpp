@@ -12,6 +12,9 @@
 
 namespace clang {
 namespace dpct {
+inline auto UseSYCLCompat() {
+  return [](const TypeLoc) -> bool { return DpctGlobalInfo::useSYCLCompat(); };
+}
 
 TemplateArgumentInfo getTemplateArg(const TypeLoc &TL, unsigned Idx) {
   if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
@@ -65,18 +68,19 @@ makeTemplateArgCreator(unsigned Idx) {
 }
 
 std::function<std::string(const TypeLoc)>
-makeUserDefinedTypeStrCreator(MetaRuleObject &R, TypeOutputBuilder &TOB) {
-  return [=](const TypeLoc TL) {
+makeUserDefinedTypeStrCreator(MetaRuleObject &R,
+                              std::shared_ptr<TypeOutputBuilder> TOB) {
+  return [&R, TOB](const TypeLoc TL) {
     if (!TL)
       return std::string();
     auto Range = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
-    for (auto ItHeader : R.Includes) {
+    for (const auto &ItHeader : R.Includes) {
       DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), ItHeader);
     }
 
     std::string ResultStr;
     llvm::raw_string_ostream OS(ResultStr);
-    for (auto &tob : TOB.SubBuilders) {
+    for (auto &tob : TOB->SubBuilders) {
       switch (tob->Kind) {
       case (OutputBuilder::Kind::String):
         OS << tob->Str;

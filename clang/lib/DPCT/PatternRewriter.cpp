@@ -55,6 +55,8 @@ static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
 }
 
+static bool isNotWhitespace(char Character) { return !isWhitespace(Character); }
+
 static bool isRightDelimiter(char Character) {
   return Character == '}' || Character == ']' || Character == ')';
 }
@@ -228,19 +230,16 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
 
 static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                                             const std::string &Input,
-                                            const int Start);
-
-static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
-                                                const std::string &Input,
-                                                const int Start);
+                                            const int Start,
+                                            RuleMatchMode Mode);
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            bool IsPartialMatch = true);
+                            RuleMatchMode Mode);
 
 static int parseBlock(char LeftDelimiter, char RightDelimiter,
                       const std::string &Input, const int Start,
-                      bool IsPartialMatch) {
+                      RuleMatchMode Mode) {
   const int Size = Input.size();
   int Index = Start;
 
@@ -249,7 +248,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
   }
   Index++;
 
-  Index = parseCodeElement({}, Input, Index, IsPartialMatch);
+  Index = parseCodeElement({}, Input, Index, Mode);
   if (Index == -1) {
     return -1;
   }
@@ -263,7 +262,7 @@ static int parseBlock(char LeftDelimiter, char RightDelimiter,
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
-                            bool IsPartialMatch) {
+                            RuleMatchMode Mode) {
   int Index = Start;
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
@@ -283,11 +282,7 @@ static int parseCodeElement(const MatchPattern &Suffix,
     if (Suffix.size() > 0) {
       std::optional<MatchResult> SuffixMatch;
 
-      if (IsPartialMatch) {
-        SuffixMatch = findMatch(Suffix, Input, Index);
-      } else {
-        SuffixMatch = findFullMatch(Suffix, Input, Index);
-      }
+      SuffixMatch = findMatch(Suffix, Input, Index, Mode);
 
       if (SuffixMatch.has_value()) {
         return Index;
@@ -299,17 +294,17 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     if (Character == '{') {
-      Index = parseBlock('{', '}', Input, Index, IsPartialMatch);
+      Index = parseBlock('{', '}', Input, Index, Mode);
       continue;
     }
 
     if (Character == '[') {
-      Index = parseBlock('[', ']', Input, Index, IsPartialMatch);
+      Index = parseBlock('[', ']', Input, Index, Mode);
       continue;
     }
 
     if (Character == '(') {
-      Index = parseBlock('(', ')', Input, Index, IsPartialMatch);
+      Index = parseBlock('(', ')', Input, Index, Mode);
       continue;
     }
 
@@ -442,113 +437,37 @@ static void updateCplusplusStandard(
   }
 }
 
-static std::optional<MatchResult> findFullMatch(const MatchPattern &Pattern,
-                                                const std::string &Input,
-                                                const int Start) {
-
-  MatchResult Result;
-
-  int Index = Start;
-  int PatternIndex = 0;
-  const int PatternSize = Pattern.size();
-  const int Size = Input.size();
-
-  while (PatternIndex < PatternSize && Index < Size) {
-
-    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
-      if (Input[Index] == '#') {
-        for (; Index < Size && Input[Index] != '\n'; Index++) {
-        }
-      }
-    }
-
-    const auto &Element = Pattern[PatternIndex];
-
-    if (std::holds_alternative<SpacingElement>(Element)) {
-      if (!isWhitespace(Input[Index])) {
-        return {};
-      }
-      while (Index < Size && isWhitespace(Input[Index])) {
-        Index++;
-      }
-      PatternIndex++;
-      continue;
-    }
-
-    if (std::holds_alternative<LiteralElement>(Element)) {
-      const auto &Literal = std::get<LiteralElement>(Element);
-      if (Input[Index] != Literal.Value) {
-        return {};
-      }
-
-      if (PatternIndex == 0 && Index - 1 >= 0 &&
-          isIdentifiedChar(Input[Index - 1]) &&
-          isIdentifiedChar(Input[Index])) {
-        return {};
-      }
-
-      // If input value has been matched to the end but match pattern template
-      // still has value, it is considered not matched case.
-      if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
-        return {};
-      }
-
-      // If match pattern template has been matched to the end but input value
-      // still not the end, it is considered not matched case.
-      if (PatternIndex == PatternSize - 1 &&
-          isIdentifiedChar(Input[Index + 1])) {
-        return {};
-      }
-
-      if (PatternIndex == PatternSize - 1 &&
-          !isIdentifiedChar(Input[Index + 1])) {
-        Result.FullMatchFound = true;
-      }
-
-      Index++;
-      PatternIndex++;
-      continue;
-    }
-
-    if (std::holds_alternative<CodeElement>(Element)) {
-      const auto &Code = std::get<CodeElement>(Element);
-      MatchPattern Suffix(Pattern.begin() + PatternIndex + 1,
-                          Pattern.begin() + PatternIndex + 1 +
-                              Code.SuffixLength);
-
-      int Next = parseCodeElement(Suffix, Input, Index, false);
-      if (Next == -1) {
-        return {};
-      }
-
-      std::string ElementContents = Input.substr(Index, Next - Index);
-      if (SrcFileType == SourceFileType::SFT_CMakeScript) {
-        if (Code.Name == "empty" && !ElementContents.empty() &&
-            ElementContents.find_first_not_of(' ') != std::string::npos) {
-          // For reversed variable ${empty}, it should be empty string or string
-          // only including spaces.
-          return {};
-        }
-        updateExtentionName(Input, Next, Result.Bindings);
-      }
-
-      Result.Bindings[Code.Name] = std::move(ElementContents);
-      Index = Next;
-      PatternIndex++;
-      continue;
-    }
-
-    throw std::runtime_error("Internal error: invalid pattern element");
+static bool checkMatchContition(const int Size, const int Index,
+                                const int PatternSize, const int PatternIndex,
+                                const std::string &Input, MatchResult &Result,
+                                bool (*FuncPtr)(char)) {
+  if (PatternIndex == 0 && Index - 1 >= 0 && FuncPtr(Input[Index - 1]) &&
+      FuncPtr(Input[Index])) {
+    return false;
   }
 
-  Result.Start = Start;
-  Result.End = Index;
-  return Result;
+  // If input value has been matched to the end but match pattern template
+  // still has value, it is considered not matched case.
+  if (Index == Size - 1 && PatternIndex < PatternSize - 1) {
+    return false;
+  }
+
+  // If match pattern template has been matched to the end but input value
+  // still not the end, it is considered not matched case.
+  if (PatternIndex == PatternSize - 1 && FuncPtr(Input[Index + 1])) {
+    return false;
+  }
+
+  if (PatternIndex == PatternSize - 1 && !FuncPtr(Input[Index + 1])) {
+    Result.FullMatchFound = true;
+  }
+  return true;
 }
 
 static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                                             const std::string &Input,
-                                            const int Start) {
+                                            const int Start,
+                                            RuleMatchMode Mode) {
   MatchResult Result;
 
   int Index = Start;
@@ -583,6 +502,20 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
         return {};
       }
 
+      if (Mode == RuleMatchMode::Full &&
+          !checkMatchContition(Size, Index, PatternSize, PatternIndex, Input,
+                               Result, isIdentifiedChar)) {
+
+        return {};
+      }
+
+      if (Mode == RuleMatchMode::StrictFull &&
+          !checkMatchContition(Size, Index, PatternSize, PatternIndex, Input,
+                               Result, isNotWhitespace)) {
+
+        return {};
+      }
+
       Index++;
       PatternIndex++;
       continue;
@@ -594,7 +527,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
                           Pattern.begin() + PatternIndex + 1 +
                               Code.SuffixLength);
 
-      int Next = parseCodeElement(Suffix, Input, Index);
+      int Next = parseCodeElement(Suffix, Input, Index, Mode);
       if (Next == -1) {
         return {};
       }
@@ -608,6 +541,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
           return {};
         }
         updateCplusplusStandard(Result.Bindings);
+        updateExtentionName(Input, Next, Result.Bindings);
       }
 
       Result.Bindings[Code.Name] = std::move(ElementContents);
@@ -739,7 +673,7 @@ static void constructWaringMsg(const std::string &Input, size_t index,
   size_t LineNumber = 1;
   size_t Count = 0;
   const auto Lines = split(Buffer, '\n');
-  for (auto Line : Lines) {
+  for (const auto &Line : Lines) {
     if (index + FrontPart.size() > Count &&
         index + FrontPart.size() <= Count + Line.size()) {
       break;
@@ -786,11 +720,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     }
 
     std::optional<MatchResult> Result;
-    if (PP.MatchMode) {
-      Result = findFullMatch(Pattern, Input, Index);
-    } else {
-      Result = findMatch(Pattern, Input, Index);
-    }
+    Result = findMatch(Pattern, Input, Index, PP.MatchMode);
 
     if (Result.has_value()) {
       auto &Match = Result.value();

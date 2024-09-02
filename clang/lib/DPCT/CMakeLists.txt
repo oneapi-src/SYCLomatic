@@ -145,6 +145,7 @@ add_clang_library(DPCT
   Rewriters/Math/RewriterSIMDIntrinsics.cpp
   Rewriters/Math/RewriterCXXAPIRoutines.cpp
   Rewriters/Math/RewriterOverload.cpp
+  Rewriters/RewriterSYCLcompat.cpp
   CallExprRewriter.cpp
   CallExprRewriterAtomic.cpp
   CallExprRewriterCUFFT.cpp

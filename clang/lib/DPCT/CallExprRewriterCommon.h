@@ -24,6 +24,7 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/Options.h"
+#include <algorithm>
 #include <cstdarg>
 
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
@@ -273,15 +274,6 @@ makeBLASEnumCallArgCreator(unsigned Idx, BLASEnumExpr::BLASEnumType BET) {
   return [=](const CallExpr *C) -> BLASEnumExpr {
     return BLASEnumExpr::create(C->getArg(Idx), BET);
   };
-}
-
-inline std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
-  return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
-}
-
-inline std::function<const StringRef(const CallExpr *)>
-makeCallArgCreator(std::string Str) {
-  return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
 }
 
 inline std::function<bool(const CallExpr *)> makeBooleanCreator(bool B) {
@@ -801,7 +793,11 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       DerefQT = ET->getNamedType();
       if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
         auto *TDecl = TDT->getDecl();
-        if (dpct::DpctGlobalInfo::isInCudaPath(TDecl->getLocation()))
+        const auto Redecls = TDecl->redecls();
+        auto IsDeclInCudaHeader = [](const TypedefNameDecl * D) {
+          return dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
+        };
+        if (std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader))
           break;
         DerefQT = TDecl->getUnderlyingType();
       }
@@ -1526,14 +1522,6 @@ createBindTextureRewriterFactory(const std::string &Source) {
               makeCallArgCreatorWithCall(StartIdx + Idx)...)));
 }
 
-template <class... MsgArgs>
-inline std::shared_ptr<CallExprRewriterFactoryBase>
-createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
-                               MsgArgs &&...Args) {
-  return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
-      Source, MsgID, std::forward<MsgArgs>(Args)...);
-}
-
 template <class ArgT>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createDerefExprRewriterFactory(
@@ -1710,6 +1698,10 @@ inline auto UseExtGraph = [](const CallExpr *C) -> bool {
 
 inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useExpNonUniformGroups();
+};
+
+inline auto UseSYCLCompat = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useSYCLCompat();
 };
 
 class CheckDerefedTypeBeforeCast {

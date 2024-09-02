@@ -211,7 +211,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
                                 "cub::BlockExchange.ScatterToStriped",
                                 MemberExprBase(), false, "scatter_to_striped",
                                 NDITEM, ARG(0), ARG(1)))
-      // cub::BlockLoad::Load
+      // cub::BlockLoad.Load
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CONDITIONAL_FACTORY_ENTRY(
@@ -221,7 +221,7 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
               UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
                                       Diagnostics::API_NOT_MIGRATED,
                                       printCallExprPretty())))
-      // cub::BlockStore::Store
+      // cub::BlockStore.Store
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
           CONDITIONAL_FACTORY_ENTRY(
