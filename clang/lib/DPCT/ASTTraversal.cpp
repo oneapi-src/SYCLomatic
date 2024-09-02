@@ -13099,10 +13099,10 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                             "cudaTextureObject_t", "CUtexObject"))))))
                     .bind("texObj"),
                 this);
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(hasAnyName(
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(type(hasUnqualifiedDesugaredType(recordType(hasDeclaration(recordDecl(hasAnyName(
                                "cudaChannelFormatDesc", "cudaTextureDesc",
                                "cudaResourceDesc", "textureReference",
-                               "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC")))))
+                               "CUDA_RESOURCE_DESC_st", "CUDA_TEXTURE_DESC_st")))))))))
                     .bind("texMember"),
                 this);
   MF.addMatcher(
@@ -13420,7 +13420,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::useSYCLCompat())
       return;
     auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
-        ME->getBase()->getType(), *Result.Context);
+        ME->getBase()->getType().getDesugaredType(*Result.Context), *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
     if (BaseTy == "cudaResourceDesc" || BaseTy == "CUDA_RESOURCE_DESC_st" ||
         BaseTy == "CUDA_RESOURCE_DESC") {
