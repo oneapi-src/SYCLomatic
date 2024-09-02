@@ -814,7 +814,7 @@ public:
 
   /// Get image accessor.
   accessor_t get_access(sycl::handler &cgh) {
-    assert(_image, "Image not created");
+    assert(_image != nullptr, "Image not created");
     return accessor_t(*_image, cgh);
   }
 
