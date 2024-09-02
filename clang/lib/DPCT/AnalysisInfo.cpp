@@ -9,7 +9,6 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
-#include "IncrementalMigrationUtility.h"
 #include "MapNames.h"
 #include "Statics.h"
 #include "TextModification.h"

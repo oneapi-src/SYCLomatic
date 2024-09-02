@@ -9,7 +9,6 @@
 #ifndef DPCT_REWRITERS_MATH_CALL_EXPR_REWRITER_MATH_H
 #define DPCT_REWRITERS_MATH_CALL_EXPR_REWRITER_MATH_H
 
-#include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
 #include <cstddef>
