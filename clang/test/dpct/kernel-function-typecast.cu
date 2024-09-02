@@ -12,7 +12,10 @@ u64 foo(CUfunction cuFunc, CUmodule cuMod) {
   // CHECK: cuFunc = dpct::get_kernel_function(cuMod, "kfoo");
   cuModuleGetFunction(&cuFunc, cuMod, "kfoo");
   u64 function = (u64)cuFunc;
-  u64 functionTwo = cuFunc;
 
   return function;
+}
+
+void createNew(u64 function) {
+  CUfunction cuFunc = function;
 }

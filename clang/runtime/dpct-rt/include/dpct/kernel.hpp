@@ -401,7 +401,7 @@ public:
     ptr(q, range, a, args, extra);
   }
 
-  operator uint64_t() const { return (uint64_t)this; }
+  explicit operator uint64_t() const { return (uint64_t)this; }
 
 private:
   dpct::kernel_functor ptr;
