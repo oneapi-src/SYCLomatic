@@ -11,16 +11,11 @@
 namespace clang {
 namespace dpct {
 
-void initRewriterMapSYCLcompatUnsupport(
-    std::unordered_map<std::string,
-                       std::shared_ptr<CallExprRewriterFactoryBase>>
-        &RewriterMap) {
-
 #define ARG(x) makeCallArgCreator(x)
-#define UNSUPPORT_FACTORY_ENTRY(FuncName, ...)                                \
-  std::make_pair(                                                              \
-      FuncName, createUnsupportRewriterFactory(FuncName, __VA_ARGS__)),
-#define SYCLCOMPAT_UNSUPPORT(NAME)                                        \
+#define UNSUPPORT_FACTORY_ENTRY(FuncName, ...)                                 \
+  std::make_pair(FuncName,                                                     \
+                 createUnsupportRewriterFactory(FuncName, __VA_ARGS__)),
+#define SYCLCOMPAT_UNSUPPORT(NAME)                                             \
   UNSUPPORT_FACTORY_ENTRY(NAME, Diagnostics::UNSUPPORT_SYCLCOMPAT, ARG(NAME))
 #define ENTRY_UNSUPPORTED(...) UNSUPPORT_FACTORY_ENTRY(__VA_ARGS__)
 #define CONDITIONAL_FACTORY_ENTRY(COND, A, B) A
@@ -37,7 +32,12 @@ void initRewriterMapSYCLcompatUnsupport(
 #define MULTI_STMTS_FACTORY_ENTRY(NAME, ...) SYCLCOMPAT_UNSUPPORT(NAME)
 #define WARNING_FACTORY_ENTRY(NAME, ...) SYCLCOMPAT_UNSUPPORT(NAME)
 
-RewriterMap.insert({
+void CallExprRewriterFactoryBase::initRewriterMapSYCLcompat(
+    std::unordered_map<std::string,
+                       std::shared_ptr<CallExprRewriterFactoryBase>>
+        &RewriterMap) {
+  // clang-format off
+  RewriterMap.insert({
 #include "../APINamesGraph.inc"
 #include "../APINamesTexture.inc"
 SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DArrayToArray")
@@ -61,14 +61,34 @@ SYCLCOMPAT_UNSUPPORT("cuMemcpyPeer")
 SYCLCOMPAT_UNSUPPORT("cuMemcpyPeerAsync")
 SYCLCOMPAT_UNSUPPORT("cudaMemcpyPeer")
 SYCLCOMPAT_UNSUPPORT("cudaMemcpyPeerAsync")
-        });
+SYCLCOMPAT_UNSUPPORT("cub::LoadDirectBlocked")
+SYCLCOMPAT_UNSUPPORT("cub::LoadDirectStriped")
+SYCLCOMPAT_UNSUPPORT("cub::StoreDirectBlocked")
+SYCLCOMPAT_UNSUPPORT("cub::StoreDirectStriped")
+SYCLCOMPAT_UNSUPPORT("cub::ShuffleDown")
+SYCLCOMPAT_UNSUPPORT("cub::ShuffleUp")
+  });
+  // clang-format on
 }
 
-void CallExprRewriterFactoryBase::initRewriterMapSYCLcompat(
+void CallExprRewriterFactoryBase::initRewriterMethodMapSYCLcompat(
     std::unordered_map<std::string,
                        std::shared_ptr<CallExprRewriterFactoryBase>>
-        &RewriterMap) {
-  initRewriterMapSYCLcompatUnsupport(RewriterMap);
+        &MethodRewriterMap) {
+  // clang-format off
+  MethodRewriterMap.insert({
+SYCLCOMPAT_UNSUPPORT("cub::BlockRadixSort.Sort")
+SYCLCOMPAT_UNSUPPORT("cub::BlockRadixSort.SortDescending")
+SYCLCOMPAT_UNSUPPORT("cub::BlockRadixSort.SortBlockedToStriped")
+SYCLCOMPAT_UNSUPPORT("cub::BlockRadixSort.SortDescendingBlockedToStriped")
+SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.BlockedToStriped")
+SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.StripedToBlocked")
+SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.ScatterToBlocked")
+SYCLCOMPAT_UNSUPPORT("cub::BlockExchange.ScatterToStriped")
+SYCLCOMPAT_UNSUPPORT("cub::BlockLoad.Load")
+SYCLCOMPAT_UNSUPPORT("cub::BlockStore.Store")
+  });
+  // clang-format on
 }
 
 } // namespace dpct

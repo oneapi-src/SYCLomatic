@@ -51,6 +51,10 @@ private:
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>
           &RewriterMap);
+  static void initRewriterMethodMapSYCLcompat(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>
+          &MethodRewriterMap);
   static void initRewriterMapAtomic();
   static void initRewriterMapCUB();
   static void initRewriterMapCUFFT();
