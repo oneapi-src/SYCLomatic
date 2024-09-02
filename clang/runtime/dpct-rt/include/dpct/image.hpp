@@ -772,7 +772,7 @@ public:
       if (data.get_data_type() == image_data_type::pitch)
         sz *= channel.get_total_size() * data.get_y();
       _host_buffer.resize(sz);
-      q.memcpy(_host_buffer.data(), ptr, sz).wait();
+      q.memcpy(_host_buffer.data(), ptr, sz);
       ptr = _host_buffer.data();
 #endif
     }
@@ -804,8 +804,8 @@ public:
 
   /// Get image accessor.
   accessor_t get_access(sycl::handler &cgh) {
-    if (_image)
-      return accessor_t(*_image, cgh);
+    assert(_image, "Image not created");
+    return accessor_t(*_image, cgh);
   }
 
   /// Detach data.

@@ -33,6 +33,7 @@ int main() {
 // CHECK-NEXT:      b.init();
 // CHECK-NEXT:      al.init();
 // CHECK-EMPTY:
+// CHECK:           tex21.create_image();
 // CHECK-NEXT:      dpct::get_in_order_queue().submit(
 // CHECK-NEXT:          [&](sycl::handler &cgh) {
 // CHECK-NEXT:            sycl::stream stream_ct1(64 * 1024, 80, cgh);
