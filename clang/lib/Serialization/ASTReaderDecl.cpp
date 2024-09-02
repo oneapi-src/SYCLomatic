@@ -4215,6 +4215,9 @@ void ASTReader::PassInterestingDeclsToConsumer() {
   };
   std::deque<Decl *> MaybeInterestingDecls =
       std::move(PotentiallyInterestingDecls);
+#ifdef SYCLomatic_CUSTOMIZATION
+  PotentiallyInterestingDecls.clear();
+#endif
   assert(PotentiallyInterestingDecls.empty());
   while (!MaybeInterestingDecls.empty()) {
     Decl *D = MaybeInterestingDecls.front();

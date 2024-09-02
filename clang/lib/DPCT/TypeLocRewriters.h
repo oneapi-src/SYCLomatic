@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriter.h"
+#include <memory>
 
 namespace clang {
 namespace dpct {
@@ -269,7 +270,8 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
 }
 
 std::function<std::string(const TypeLoc)>
-makeUserDefinedTypeStrCreator(MetaRuleObject &R, TypeOutputBuilder &TOB);
+makeUserDefinedTypeStrCreator(MetaRuleObject &R,
+                              std::shared_ptr<TypeOutputBuilder> TOB);
 
 std::function<std::string(const TypeLoc)> makeStringCreator(
     std::string TypeName,

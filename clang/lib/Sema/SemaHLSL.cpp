@@ -578,8 +578,11 @@ class DiagnoseHLSLAvailability
   // True if scanning a function that was already scanned in a different
   // shader stage context, and therefore we should not report issues that
   // depend only on shader model version because they would be duplicate.
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool ReportOnlyShaderStageIssues = false;
+#else
   bool ReportOnlyShaderStageIssues;
-
+#endif
   // Helper methods for dealing with current stage context / environment
   void SetShaderStageContext(llvm::Triple::EnvironmentType ShaderType) {
     static_assert(sizeof(unsigned) >= 4);
