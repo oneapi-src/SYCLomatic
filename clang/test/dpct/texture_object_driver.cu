@@ -244,3 +244,18 @@ void foo(){
   tex_tmp.flags = CU_TRSF_NORMALIZED_COORDINATES;
 }
 
+// CHECK: typedef dpct::image_data REDEF_CUDA_RESOURCE_DESC;
+// CHECK-NEXT: REDEF_CUDA_RESOURCE_DESC check_typedefed_cuda_type(dpct::image_matrix_p arr) {
+// CHECK-NEXT:   REDEF_CUDA_RESOURCE_DESC rdesc;
+// CHECK-NEXT:   rdesc.set_data_type(dpct::image_data_type::matrix);
+// CHECK-NEXT:   rdesc.set_data_ptr(arr);
+// CHECK-NEXT:   return rdesc;
+// CHECK-NEXT: }
+typedef CUDA_RESOURCE_DESC REDEF_CUDA_RESOURCE_DESC;
+REDEF_CUDA_RESOURCE_DESC check_typedefed_cuda_type(CUarray arr) {
+  REDEF_CUDA_RESOURCE_DESC rdesc;
+  rdesc.resType = CU_RESOURCE_TYPE_ARRAY;
+  rdesc.res.array.hArray = arr;
+  return rdesc;
+}
+#undef REDEF_CUDA_RESOURCE_DESC

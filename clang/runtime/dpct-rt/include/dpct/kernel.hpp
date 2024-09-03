@@ -9,6 +9,7 @@
 #ifndef __DPCT_KERNEL_HPP__
 #define __DPCT_KERNEL_HPP__
 
+#include <cstdint>
 #include <sycl/sycl.hpp>
 #ifdef _WIN32
 #include <unordered_set>
@@ -399,6 +400,8 @@ public:
                   unsigned int a, void **args, void **extra) {
     ptr(q, range, a, args, extra);
   }
+
+  explicit operator uint64_t() const { return (uint64_t)this; }
 
 private:
   dpct::kernel_functor ptr;
