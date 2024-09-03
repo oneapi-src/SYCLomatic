@@ -16,7 +16,7 @@ void f1_1() {
   int istride;
   int* inembed;
   int * n;
-  // CHECK: plan1->commit(&syclcompat::get_current_device().default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
+  // CHECK: plan1->commit(&*syclcompat::get_current_device().default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 
@@ -76,7 +76,7 @@ void f5() {
 
 void f6_1() {
   cusolverDnHandle_t handle;
-  // CHECK: handle = &syclcompat::get_current_device().default_queue();
+  // CHECK: handle = &*syclcompat::get_current_device().default_queue();
   cusolverDnCreate(&handle);
 }
 

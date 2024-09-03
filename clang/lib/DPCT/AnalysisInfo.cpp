@@ -73,7 +73,7 @@ const std::string &getDefaultString(HelperFuncType HFT) {
         DpctGlobalInfo::useNoQueueDevice()
             ? DpctGlobalInfo::getGlobalQueueName()
             : (DpctGlobalInfo::useSYCLCompat()
-                   ? buildString(MapNames::getDpctNamespace() +
+                   ? buildString("*" + MapNames::getDpctNamespace() +
                                  "get_current_device().default_queue()")
                    : buildString(MapNames::getDpctNamespace() + "get_" +
                                  DpctGlobalInfo::getDeviceQueueName() + "()"));

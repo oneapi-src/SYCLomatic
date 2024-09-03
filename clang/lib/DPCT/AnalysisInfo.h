@@ -665,7 +665,7 @@ public:
                           DpctGlobalInfo::getDeviceQueueName(), "()"),
               MapNames::getDpctNamespace() + "get_current_device()",
               (DpctGlobalInfo::useSYCLCompat()
-                   ? buildString(MapNames::getDpctNamespace() +
+                   ? buildString("*" + MapNames::getDpctNamespace() +
                                  "get_current_device().default_queue()")
                    : buildString(MapNames::getDpctNamespace() + "get_" +
                                  DpctGlobalInfo::getDeviceQueueName() +
