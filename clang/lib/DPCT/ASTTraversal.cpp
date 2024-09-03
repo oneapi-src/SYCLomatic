@@ -2376,7 +2376,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       if (const auto *RD = NTL.getType().getCanonicalType()->getAsRecordDecl())
         if (DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()) &&
             (TypeStr == "cudaMemcpy3DParms" || TypeStr == "CUDA_MEMCPY3D" ||
-             TypeStr == "CUDA_MEMCPY2D"))
+             TypeStr == "CUDA_MEMCPY2D" || TypeStr == "cudaMemcpy3DPeerParms" ||
+             TypeStr == "CUDA_MEMCPY3D_PEER"))
           if (const auto *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL))
             if (const auto *Init = VarD->getInit())
               if (const auto *VarInitExpr = dyn_cast<InitListExpr>(Init))

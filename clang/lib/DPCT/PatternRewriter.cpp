@@ -673,7 +673,7 @@ static void constructWaringMsg(const std::string &Input, size_t index,
   size_t LineNumber = 1;
   size_t Count = 0;
   const auto Lines = split(Buffer, '\n');
-  for (auto Line : Lines) {
+  for (const auto &Line : Lines) {
     if (index + FrontPart.size() > Count &&
         index + FrontPart.size() <= Count + Line.size()) {
       break;
