@@ -408,13 +408,6 @@ updateExtentionName(const std::string &Input, size_t Next,
                     const clang::tooling::UnifiedPath OutRoot) {
   auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
-
-    // To get the directory path where CMake script is located
-    SmallString<512> CMakeDirectory(FileName);
-    llvm::sys::path::replace_path_prefix(
-        CMakeDirectory, OutRoot.getCanonicalPath().str() + "/", "");
-    llvm::sys::path::remove_filename(CMakeDirectory);
-
     size_t Pos = Next - 1;
     for (; Pos > 0 && (isIdentifiedChar(Input[Pos]) || Input[Pos] == '.');
          Pos--) {
@@ -423,13 +416,28 @@ updateExtentionName(const std::string &Input, size_t Next,
     std::string SrcFile = Input.substr(Pos, Next + strlen(".cpp") - Pos);
     bool HasCudaSyntax = false;
     for (const auto &File : MainSrcFilesHasCudaSyntex) {
+      if (llvm::sys::path::filename(FileName) == "CMakeLists.txt") {
+        // In a CMakeLists.txt file, the relative directory path for a source
+        // file is the location of the CMakeLists.txt file itself
 
+        // To get the directory path where CMake script is located
+        SmallString<512> CMakeDirectory(FileName);
+        llvm::sys::path::replace_path_prefix(
+            CMakeDirectory, OutRoot.getCanonicalPath().str() + "/", "");
+        llvm::sys::path::remove_filename(CMakeDirectory);
 
-      std::string CMakeFilePath = CMakeDirectory.c_str();
-      CMakeFilePath = CMakeFilePath + "/" + SrcFile;
+        std::string CMakeFilePath = CMakeDirectory.c_str();
+        CMakeFilePath = CMakeFilePath + "/" + SrcFile;
 
-      if (File.find(CMakeFilePath) != std::string::npos) {
-        HasCudaSyntax = true;
+        if (File.find(CMakeFilePath) != std::string::npos) {
+          HasCudaSyntax = true;
+        }
+      } else {
+        // For other module files (e.g., .cmake files), just check the
+        // file names.
+        if (llvm::sys::path::filename(File) == SrcFile) {
+          HasCudaSyntax = true;
+        }
       }
     }
 
