@@ -6057,8 +6057,8 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      Repl = LHS + " = &{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueuePtr);
+      Repl = LHS + " = &{{NEEDREPLACEZ" + std::to_string(Index) + "}}";
     } else if (FuncName == "cusolverDnDestroy") {
       dpct::ExprAnalysis EA(CE->getArg(0));
       Repl = EA.getReplacedString() + " = nullptr";

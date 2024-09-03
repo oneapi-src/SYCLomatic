@@ -4,6 +4,7 @@
 
 #include <cufft.h>
 #include <curand.h>
+#include <cusolverDn.h>
 
 void f1_1() {
   cufftHandle plan1;
@@ -71,4 +72,19 @@ void f5() {
 #if CUDART_VERSION
   cudaMalloc(&f, 4);
 #endif
+}
+
+void f6_1() {
+  cusolverDnHandle_t handle;
+  // CHECK: handle = &syclcompat::get_current_device().default_queue();
+  cusolverDnCreate(&handle);
+}
+
+void f6_2() {
+  float *f;
+  // CHECK: f = sycl::malloc_device<float>(1, q_ct1);
+  cudaMalloc(&f, sizeof(float));
+  cusolverDnHandle_t handle;
+  // CHECK: handle = &q_ct1;
+  cusolverDnCreate(&handle);
 }
