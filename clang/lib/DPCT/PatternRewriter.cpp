@@ -429,14 +429,16 @@ updateExtentionName(const std::string &Input, size_t Next,
         std::string CMakeFilePath = CMakeDirectory.c_str();
         CMakeFilePath = CMakeFilePath + "/" + SrcFile;
 
-        if (File.find(CMakeFilePath) != std::string::npos) {
+        if (llvm::StringRef(File).ends_with(CMakeFilePath)) {
           HasCudaSyntax = true;
+          break;
         }
       } else {
         // For other module files (e.g., .cmake files), just check the
         // file names.
         if (llvm::sys::path::filename(File) == SrcFile) {
           HasCudaSyntax = true;
+          break;
         }
       }
     }
