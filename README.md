@@ -207,3 +207,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 ## Trademarks information
 Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries.<br>
 \*Other names and brands may be claimed as the property of others. SYCL is a trademark of the Khronos Group Inc.
+
