@@ -3452,9 +3452,7 @@ std::string TextureInfo::getAccessorDecl(const std::string &QueueStr) {
 }
 std::string TextureInfo::InitDecl(const std::string &QueueStr) {
   ParameterStream PS;
-  PS << "static_cast<";
-  getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-      << " *>(" << Name << ")->create_image(" << QueueStr << ");";
+  PS << Name << ".create_image(" << QueueStr << ");";
   return PS.Str;
 }
 void TextureInfo::addDecl(StmtList &InitList, StmtList &AccessorList,
@@ -3499,6 +3497,13 @@ std::string TextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
   printQueueStr(PS, QueueString);
   PS << ");";
   requestFeature(HelperFeatureEnum::device_ext);
+  return PS.Str;
+}
+std::string TextureObjectInfo::InitDecl(const std::string &QueueStr) {
+  ParameterStream PS;
+  PS << "static_cast<";
+  getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+      << " *>(" << Name << ")->create_image(" << QueueStr << ");";
   return PS.Str;
 }
 std::string TextureObjectInfo::getSamplerDecl() {

@@ -2023,6 +2023,7 @@ public:
 
   virtual ~TextureObjectInfo() = default;
   std::string getAccessorDecl(const std::string &QueueString) override;
+  std::string InitDecl(const std::string &QueueStr) override;
   std::string getSamplerDecl() override;
   inline unsigned getParamIdx() const { return ParamIdx; }
   std::string getParamDeclType();

@@ -154,8 +154,8 @@ int main() {
 
   // CHECK: desc21 = a42->get_channel();
   cudaGetChannelDesc(&desc21, a42);
-  // CHECK:   static_cast<dpct::image_wrapper<sycl::float4, 2> *>(tex42)->create_image();
-  // CHECK:   static_cast<dpct::image_wrapper<sycl::uint2, 1> *>(tex21)->create_image();
+  // CHECK:   tex42.create_image();
+  // CHECK:   tex21.create_image();
   // CHECK:   dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto tex42_acc = tex42.get_access(cgh);
