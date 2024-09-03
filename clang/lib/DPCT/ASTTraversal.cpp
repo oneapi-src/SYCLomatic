@@ -6985,6 +6985,11 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+             FuncName);
+      return;
+    }
     std::string ReplStr = MapNames::getDpctNamespace() + "sycl_event_query";
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplStr)));
   } else if (FuncName == "cudaEventRecord" || FuncName == "cuEventRecord") {

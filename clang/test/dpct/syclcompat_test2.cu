@@ -88,3 +88,13 @@ void f6_2() {
   // CHECK: handle = &q_ct1;
   cusolverDnCreate(&handle);
 }
+
+void f7() {
+  cudaEvent_t e;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventQuery" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: */
+#ifndef BUILD_TEST
+  cudaEventQuery(e);
+#endif
+}
