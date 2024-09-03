@@ -1,7 +1,7 @@
 ---
-MainSourceFile:  '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/MainSrcFiles_placehold'
+MainSourceFile:  '/path/to//MainSrcFiles_placehold'
 Replacements:
-  - FilePath:        '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/DALI/third_party/cvcuda/src/nvcv_types/priv/Image.cpp'
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
     Offset:          706
     Length:          0
     ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"
@@ -10,7 +10,7 @@ Replacements:
     InitStr:         ''
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
-  - FilePath:        '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/DALI/third_party/cvcuda/src/nvcv_types/priv/Image.cpp'
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
     Offset:          835
     Length:          26
     ReplacementText: ''
@@ -19,7 +19,7 @@ Replacements:
     InitStr:         ''
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
-  - FilePath:        '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/DALI/third_party/cvcuda/src/nvcv_types/priv/Image.cpp'
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
     Offset:          1343
     Length:          19
     ReplacementText: 'DPCT_CHECK_ERROR(dev = dpct::dev_mgr::instance().current_device_id())'
@@ -28,7 +28,7 @@ Replacements:
     InitStr:         ''
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
-  - FilePath:        '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/DALI/third_party/cvcuda/src/nvcv_types/priv/Image.cpp'
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
     Offset:          2379
     Length:          0
     ReplacementText: "        /*\n        DPCT1051:432: SYCL does not support a device property functionally compatible with cudaDevAttrTextureAlignment. It was migrated to get_mem_base_addr_align_in_bytes. You may need to adjust the value of get_mem_base_addr_align_in_bytes for the specific device.\n        */\n"
@@ -38,7 +38,7 @@ Replacements:
     NewHostVarName:  ''
     BlockLevelFormatFlag: false
 MainSourceFilesDigest:
-  - MainSourceFile:  '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/DALI/third_party/cvcuda/src/nvcv_types/priv/Image.cpp'
+  - MainSourceFile:  '/path/to/src/nvcv_types/priv/Image.cpp'
     Digest:          80a9873e8ab8a95f59e7f11682db7690
 DpctVersion:     19.0.0
 MainHelperFileName: ''
@@ -47,7 +47,7 @@ FeatureMap:      {}
 CompileTargets:  {}
 OptionMap:
   AnalysisScopePath:
-    Value:           '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/DALI'
+    Value:           '/path/to//DALI'
     Specified:       false
   AsyncHandler:
     Value:           'false'
@@ -62,7 +62,7 @@ OptionMap:
     Value:           'false'
     Specified:       false
   CompilationsDir:
-    Value:           '/mnt/hdd/Chenwei/dpct_issues/CTST-5585/build'
+    Value:           '/path/to//build'
     Specified:       true
   CtadEnabled:
     Value:           'false'
@@ -100,7 +100,7 @@ OptionMap:
   RuleFile:
     Value:           ''
     ValueVec:
-      - '/mnt/hdd/Chenwei/dpct_issues/CTST-6793/daily_build/extensions/cmake_rules/cmake_script_migration_rule.yaml'
+      - '/pat/to/extensions/cmake_rules/cmake_script_migration_rule.yaml'
     Specified:       false
   SyclNamedLambda:
     Value:           'false'
