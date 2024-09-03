@@ -327,26 +327,25 @@ makeExtendStr(unsigned Idx, const std::string Suffix) {
   };
 }
 
-inline std::string registerAndGetQueueStr(const CallExpr *C, std::string Prefix) {
-  int Index = getPlaceholderIdx(C);
-  if (Index == 0) {
-    Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-  }
-  buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-  return Prefix + "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-}
-
 inline std::function<std::string(const CallExpr *)> makeQueueStr() {
   return [=](const CallExpr *C) -> std::string {
-    return registerAndGetQueueStr(C, "");
+    int Index = getPlaceholderIdx(C);
+    if (Index == 0) {
+      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    }
+    buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+    return "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
   };
 }
 
 inline std::function<std::string(const CallExpr *)> makeQueuePtrStr() {
   return [=](const CallExpr *C) -> std::string {
-    if (DpctGlobalInfo::useSYCLCompat())
-      return MapNames::getLibraryHelperNamespace() + "cs::get_default_queue()";
-    return registerAndGetQueueStr(C, "&");
+    int Index = getPlaceholderIdx(C);
+    if (Index == 0) {
+      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    }
+    buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueuePtr);
+    return "&{{NEEDREPLACEZ" + std::to_string(Index) + "}}";
   };
 }
 

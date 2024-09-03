@@ -5,7 +5,7 @@
 #include <cufft.h>
 #include <curand.h>
 
-void f1() {
+void f1_1() {
   cufftHandle plan1;
   size_t* work_size;
   int odist;
@@ -15,7 +15,24 @@ void f1() {
   int istride;
   int* inembed;
   int * n;
-  // CHECK: plan1->commit(dpct::cs::get_default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
+  // CHECK: plan1->commit(&syclcompat::get_current_device().default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
+  cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
+}
+
+void f1_2() {
+  float *f;
+  // CHECK: f = sycl::malloc_device<float>(1, q_ct1);
+  cudaMalloc(&f, sizeof(float));
+  cufftHandle plan1;
+  size_t* work_size;
+  int odist;
+  int ostride;
+  int * onembed;
+  int idist;
+  int istride;
+  int* inembed;
+  int * n;
+  // CHECK: plan1->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 

@@ -68,6 +68,17 @@ const std::string &getDefaultString(HelperFuncType HFT) {
                           DpctGlobalInfo::getDeviceQueueName() + "()");
     return DefaultQueue;
   }
+  case clang::dpct::HelperFuncType::HFT_DefaultQueuePtr: {
+    const static std::string DefaultQueue =
+        DpctGlobalInfo::useNoQueueDevice()
+            ? DpctGlobalInfo::getGlobalQueueName()
+            : (DpctGlobalInfo::useSYCLCompat()
+                   ? buildString(MapNames::getDpctNamespace() +
+                                 "get_current_device().default_queue()")
+                   : buildString(MapNames::getDpctNamespace() + "get_" +
+                                 DpctGlobalInfo::getDeviceQueueName() + "()"));
+    return DefaultQueue;
+  }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
     const static std::string DefaultDevice =
         DpctGlobalInfo::useNoQueueDevice()
@@ -88,8 +99,8 @@ const std::string &getDefaultString(HelperFuncType HFT) {
 std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index) {
   if (HFT == HelperFuncType::HFT_DefaultQueue ||
+      HFT == HelperFuncType::HFT_DefaultQueuePtr ||
       HFT == HelperFuncType::HFT_CurrentDevice) {
-
     if (DpctGlobalInfo::getDeviceChangedFlag() ||
         !DpctGlobalInfo::getUsingDRYPattern()) {
       return getDefaultString(HFT);
@@ -1344,6 +1355,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // this_work_item::get_work_group, this_work_item::get_sub_group.
   // E: extension, used for c source file migration
   // P: profiling enable or disable for time measurement.
+  // Z: queue pointer.
   switch (Method) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
@@ -1381,6 +1393,9 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'Q':
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueue, Index);
+  case 'Z':
+    return getStringForRegexDefaultQueueAndDevice(
+        HelperFuncType::HFT_DefaultQueuePtr, Index);
   case 'E': {
     auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
     return Vec[Index]->hasCUDASyntax()
@@ -1591,6 +1606,7 @@ void DpctGlobalInfo::buildReplacements() {
     if (DpctGlobalInfo::useNoQueueDevice()) {
       Counter.second.PlaceholderStr[1] = DpctGlobalInfo::getGlobalQueueName();
       Counter.second.PlaceholderStr[2] = DpctGlobalInfo::getGlobalDeviceName();
+      Counter.second.PlaceholderStr[3] = DpctGlobalInfo::getGlobalQueueName();
       // Need not insert q_ct1 and dev_ct1 declrations and request feature.
       continue;
     }
@@ -1605,6 +1621,7 @@ void DpctGlobalInfo::buildReplacements() {
             DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
         if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
           Counter.second.PlaceholderStr[1] = "q_ct1";
+          Counter.second.PlaceholderStr[3] = "q_ct1";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
               DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
         }
