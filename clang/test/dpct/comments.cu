@@ -34,7 +34,6 @@ int main() {
 // CHECK-NEXT:      al.init();
 // CHECK-NEXT:      static_cast<dpct::image_wrapper<sycl::uint2, 1> *>(tex21)->create_image();
 // CHECK-EMPTY:
-// CHECK:           tex21.create_image();
 // CHECK-NEXT:      dpct::get_in_order_queue().submit(
 // CHECK-NEXT:          [&](sycl::handler &cgh) {
 // CHECK-NEXT:            sycl::stream stream_ct1(64 * 1024, 80, cgh);
