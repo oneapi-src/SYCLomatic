@@ -210,11 +210,8 @@ void GenCodePinHeaderRule::collectMemberInfo(
   }
   if (const TypedefType *TT = T->getAs<TypedefType>()) {
     VI.IsTypeDef = true;
-    llvm::StringRef TypeName = TT->getDecl()
-                                   ->getCanonicalDecl()
-                                   ->getUnderlyingType()
-                                   ->getAsRecordDecl()
-                                   ->getName();
+    llvm::StringRef TypeName =
+        TT->getCanonicalTypeInternal()->getAsRecordDecl()->getName();
     if (TypeName.empty())
       VI.OrgTypeName =
           "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
