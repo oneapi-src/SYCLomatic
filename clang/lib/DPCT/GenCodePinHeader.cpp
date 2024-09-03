@@ -210,8 +210,11 @@ void GenCodePinHeaderRule::collectMemberInfo(
   }
   if (const TypedefType *TT = T->getAs<TypedefType>()) {
     VI.IsTypeDef = true;
-    llvm::StringRef TypeName =
-        TT->getDecl()->getUnderlyingType()->getAsRecordDecl()->getName();
+    llvm::StringRef TypeName = TT->getDecl()
+                                   ->getCanonicalDecl()
+                                   ->getUnderlyingType()
+                                   ->getAsRecordDecl()
+                                   ->getName();
     if (TypeName.empty())
       VI.OrgTypeName =
           "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
@@ -315,11 +318,8 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
       PrintPolicy.SuppressScope = 1;
       std::string TypenameWithoutScope = QT.getAsString(PrintPolicy);
       if (QT->isTypedefNameType())
-        TypenameWithoutScope = QT->getAs<TypedefType>()
-                                   ->getDecl()
-                                   ->getIdentifier()
-                                   ->getName()
-                                   .str();
+        TypenameWithoutScope =
+            QT->getAs<TypedefType>()->getDecl()->getName().str();
       auto Pos = TypenameWithoutScope.find('<');
       VarInfo.VarNameWithoutScopeAndTemplateArgs =
           TypenameWithoutScope.substr(0, Pos);
