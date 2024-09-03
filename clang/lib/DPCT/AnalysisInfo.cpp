@@ -24,7 +24,6 @@
 #include <fstream>
 #include <optional>
 #include <string>
-#include <iostream>
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
