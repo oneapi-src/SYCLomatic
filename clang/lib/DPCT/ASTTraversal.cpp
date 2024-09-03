@@ -13423,7 +13423,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::useSYCLCompat())
       return;
     auto BaseTy = DpctGlobalInfo::getUnqualifiedTypeName(
-        ME->getBase()->getType().getDesugaredType(*Result.Context), *Result.Context);
+        ME->getBase()->getType().getDesugaredType(*Result.Context),
+        *Result.Context);
     auto MemberName = ME->getMemberNameInfo().getAsString();
     if (BaseTy == "cudaResourceDesc" || BaseTy == "CUDA_RESOURCE_DESC_st" ||
         BaseTy == "CUDA_RESOURCE_DESC") {
