@@ -963,6 +963,9 @@ static inline void tokenizeWindowsCommandLineImpl(
         }
       } else if (Src[I] == '\"') {
         Token += NormalChars;
+#ifdef SYCLomatic_CUSTOMIZATION
+        Token += '"';
+#endif
         State = QUOTED;
       } else if (Src[I] == '\\') {
         assert(!CommandName && "or else we'd have treated it as a normal char");
@@ -1014,6 +1017,12 @@ static inline void tokenizeWindowsCommandLineImpl(
       } else {
         Token.push_back(Src[I]);
       }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+      if (Src[I] == '"') {
+        Token.push_back(Src[I]);
+      }
+#endif
       break;
     }
   }
