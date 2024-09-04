@@ -2206,11 +2206,13 @@ public:
 
   const joint_matrix_type &get() const { return matrix; }
 
-  struct storage_element_type {
+  class matrix_accessor {
+    friend joint_matrix;
     joint_matrix_type &matrix;
-    storage_element_type(joint_matrix_type &matrix) : matrix(matrix) {}
-    decltype(auto) operator[](unsigned I) { return get_wi_data(matrix)[I]; }
+    matrix_accessor(joint_matrix_type &matrix) : matrix(matrix) {}
 
+  public:
+    decltype(auto) operator[](unsigned I) { return get_wi_data(matrix)[I]; }
     decltype(auto) operator[](unsigned I) const {
       return get_wi_data(matrix)[I];
     }
@@ -2220,7 +2222,7 @@ private:
   joint_matrix_type matrix;
 
 public:
-  storage_element_type x;
+  matrix_accessor x;
   const size_t num_elements;
 };
 } // namespace matrix
