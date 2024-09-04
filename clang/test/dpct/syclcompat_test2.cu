@@ -16,7 +16,7 @@ void f1_1() {
   int istride;
   int* inembed;
   int * n;
-  // CHECK: plan1->commit(&*syclcompat::get_current_device().default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
+  // CHECK: plan1->commit(syclcompat::get_current_device().default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 
@@ -50,6 +50,7 @@ __constant__ float const_float[10][10];
 __global__ void k3() {
   float ff = const_float[1][1];
   double d;
+  // CHECK: d = sycl::sincos(d * (3.141592653589793115998), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::yes>(&d));
   sincospi(d, &d, &d);
 }
 
@@ -76,7 +77,7 @@ void f5() {
 
 void f6_1() {
   cusolverDnHandle_t handle;
-  // CHECK: handle = &*syclcompat::get_current_device().default_queue();
+  // CHECK: handle = syclcompat::get_current_device().default_queue();
   cusolverDnCreate(&handle);
 }
 

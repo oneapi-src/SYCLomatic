@@ -345,7 +345,7 @@ inline std::function<std::string(const CallExpr *)> makeQueuePtrStr() {
       Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     }
     buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueuePtr);
-    return "&{{NEEDREPLACEZ" + std::to_string(Index) + "}}";
+    return "{{NEEDREPLACEZ" + std::to_string(Index) + "}}";
   };
 }
 

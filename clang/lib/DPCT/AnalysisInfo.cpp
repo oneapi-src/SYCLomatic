@@ -73,9 +73,9 @@ const std::string &getDefaultString(HelperFuncType HFT) {
         DpctGlobalInfo::useNoQueueDevice()
             ? DpctGlobalInfo::getGlobalQueueName()
             : (DpctGlobalInfo::useSYCLCompat()
-                   ? buildString("*" + MapNames::getDpctNamespace() +
+                   ? buildString(MapNames::getDpctNamespace() +
                                  "get_current_device().default_queue()")
-                   : buildString(MapNames::getDpctNamespace() + "get_" +
+                   : buildString("&" + MapNames::getDpctNamespace() + "get_" +
                                  DpctGlobalInfo::getDeviceQueueName() + "()"));
     return DefaultQueue;
   }
@@ -1606,7 +1606,7 @@ void DpctGlobalInfo::buildReplacements() {
     if (DpctGlobalInfo::useNoQueueDevice()) {
       Counter.second.PlaceholderStr[1] = DpctGlobalInfo::getGlobalQueueName();
       Counter.second.PlaceholderStr[2] = DpctGlobalInfo::getGlobalDeviceName();
-      Counter.second.PlaceholderStr[3] = DpctGlobalInfo::getGlobalQueueName();
+      Counter.second.PlaceholderStr[3] = "&" + DpctGlobalInfo::getGlobalQueueName();
       // Need not insert q_ct1 and dev_ct1 declrations and request feature.
       continue;
     }
@@ -1621,7 +1621,7 @@ void DpctGlobalInfo::buildReplacements() {
             DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
         if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
           Counter.second.PlaceholderStr[1] = "q_ct1";
-          Counter.second.PlaceholderStr[3] = "q_ct1";
+          Counter.second.PlaceholderStr[3] = "&q_ct1";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
               DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
         }

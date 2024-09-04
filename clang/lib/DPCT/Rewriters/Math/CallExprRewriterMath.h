@@ -11,6 +11,7 @@
 
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
+#include "Config.h"
 #include <cstddef>
 
 namespace clang {
@@ -633,11 +634,11 @@ createMathAPIRewriterHost(
 template <bool IsDouble> std::string getPiString() {
   if constexpr (IsDouble) {
     if (DpctGlobalInfo::useSYCLCompat())
-      return "(3.141592653589793115998)";
+      return STRINGIFY(__DPCT_PI);
     return "DPCT_PI";
   } else {
     if (DpctGlobalInfo::useSYCLCompat())
-      return "(3.14159274101257f)";
+      return STRINGIFY(__DPCT_PI_F);
     return "DPCT_PI_F";
   }
 }
