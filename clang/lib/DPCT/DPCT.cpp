@@ -899,8 +899,7 @@ int runDPCT(int argc, const char **argv) {
       llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
                    << QueryAPIMappingSrc << llvm::raw_ostream::RESET;
       llvm::outs() << "On Windows, is migrated to" << QueryAPIMappingOpt << ":"
-                   << llvm::raw_ostream::BLUE << "\n  "
-                   << MigratedToStr << "\n"
+                   << llvm::raw_ostream::BLUE << "\n  " << MigratedToStr << "\n"
                    << llvm::raw_ostream::RESET;
       dpctExit(MigrationSucceeded);
     }
