@@ -11,7 +11,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("cudnnGetVersion",
                           CALL_FACTORY_ENTRY("cudnnGetVersion",
-                                             CALL(MapNames::getDpctNamespace() +
+                                             CALL(MapNames::getLibraryHelperNamespace() +
                                                   "dnnl::get_version")),
                           Diagnostics::TYPE_MISMATCH))
 
@@ -408,7 +408,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cudnnDeriveBNTensorDescriptor",
-        CALL(MapNames::getDpctNamespace() +
+        CALL(MapNames::getLibraryHelperNamespace() +
                  "dnnl::engine_ext::derive_batch_normalization_memory_desc",
              ARG_WC(0), ARG_WC(1), ARG_WC(2))))
 
@@ -433,7 +433,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cudnnDeriveNormTensorDescriptor",
-        CALL(MapNames::getDpctNamespace() +
+        CALL(MapNames::getLibraryHelperNamespace() +
                  "dnnl::engine_ext::derive_batch_normalization_memory_desc",
              ARG_WC(0), ARG_WC(1), ARG_WC(2), ARG_WC(3))))
 
@@ -822,7 +822,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnDropoutGetReserveSpaceSize", DEREF(ARG_WC(1)),
-                            CALL(MapNames::getDpctNamespace() +
+                            CALL(MapNames::getLibraryHelperNamespace() +
                             "dnnl::engine_ext::get_dropout_workspace_size",
                             ARG_WC(0)))))
 

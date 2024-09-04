@@ -960,7 +960,7 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::engine_ext",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnStatus_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "err1",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err1",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnTensorDescriptor_t",
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
