@@ -893,7 +893,7 @@ int runDPCT(int argc, const char **argv) {
     // Print static migration info for cudaGraphicsD3D11RegisterResource
     // on linux, as the API is unavailable on Linux and hence, no API mapping.
 #ifndef _WIN32
-    if (SourceCode.contains("cudaGraphicsD3D11RegisterResource")) {
+    if (QueryAPIMapping == "cudaGraphicsD3D11RegisterResource") {
       const std::string MigratedToStr =
           "r = new dpct::experimental::external_mem_wrapper(pD3Dr, f);";
       llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
