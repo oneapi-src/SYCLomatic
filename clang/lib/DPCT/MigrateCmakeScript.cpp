@@ -678,9 +678,11 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
           }
           RelativePathPrefix += "dpct.cmake";
           NewPR.Out += "include(" + RelativePathPrefix + ")\n";
-          Buffer = applyPatternRewriter(NewPR, Buffer, Entry.first.getPath().str());
+          Buffer = applyPatternRewriter(
+              NewPR, Buffer, Entry.first.getPath().str(), "", OutRoot);
         } else {
-          Buffer = applyPatternRewriter(PR, Buffer, Entry.first.getPath().str());
+          Buffer = applyPatternRewriter(PR, Buffer, Entry.first.getPath().str(),
+                                        "", OutRoot);
         }
       }
     }
