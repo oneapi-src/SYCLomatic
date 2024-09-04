@@ -892,7 +892,7 @@ int runDPCT(int argc, const char **argv) {
         SourceCode.substr(StartPos, EndPos - StartPos + 1).str();
     // Print static migration info for cudaGraphicsD3D11RegisterResource
     // on linux, as the API is unavailable on Linux and hence, no API mapping.
-#ifndef _WIN32
+#if defined(__linux__)
     if (QueryAPIMapping == "cudaGraphicsD3D11RegisterResource") {
       const std::string MigratedToStr =
           "r = new dpct::experimental::external_mem_wrapper(pD3Dr, f);";
@@ -904,7 +904,7 @@ int runDPCT(int argc, const char **argv) {
                    << llvm::raw_ostream::RESET;
       dpctExit(MigrationSucceeded);
     }
-#endif // _WIN32
+#endif // __linux__
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {
