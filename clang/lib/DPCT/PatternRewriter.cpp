@@ -228,10 +228,10 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
   return Result;
 }
 
-static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
-                                            const std::string &Input,
-                                            const int Start,
-                                            RuleMatchMode Mode);
+static std::optional<MatchResult>
+findMatch(const MatchPattern &Pattern, const std::string &Input,
+          const int Start, RuleMatchMode Mode, std::string FileName = "",
+          const clang::tooling::UnifiedPath OutRoot = "");
 
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start,
@@ -403,7 +403,9 @@ static bool isIdentifiedChar(char Char) {
 
 static void
 updateExtentionName(const std::string &Input, size_t Next,
-                    std::unordered_map<std::string, std::string> &Bindings) {
+                    std::unordered_map<std::string, std::string> &Bindings,
+                    std::string FileName,
+                    const clang::tooling::UnifiedPath OutRoot) {
   auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
     size_t Pos = Next - 1;
@@ -411,11 +413,33 @@ updateExtentionName(const std::string &Input, size_t Next,
          Pos--) {
     }
     Pos = Pos == 0 ? 0 : Pos + 1;
-    std::string FileName = Input.substr(Pos, Next + strlen(".cpp") - Pos);
+    std::string SrcFile = Input.substr(Pos, Next + strlen(".cpp") - Pos);
     bool HasCudaSyntax = false;
     for (const auto &File : MainSrcFilesHasCudaSyntex) {
-      if (llvm::sys::path::filename(File) == FileName) {
-        HasCudaSyntax = true;
+      if (llvm::sys::path::filename(FileName) == "CMakeLists.txt") {
+        // In a CMakeLists.txt file, the relative directory path for a source
+        // file is the location of the CMakeLists.txt file itself
+
+        // To get the directory path where CMake script is located
+        SmallString<512> CMakeDirectory(FileName);
+        llvm::sys::path::replace_path_prefix(
+            CMakeDirectory, OutRoot.getCanonicalPath().str() + "/", "");
+        llvm::sys::path::remove_filename(CMakeDirectory);
+
+        std::string CMakeFilePath = CMakeDirectory.c_str();
+        CMakeFilePath = CMakeFilePath + "/" + SrcFile;
+
+        if (llvm::StringRef(File).ends_with(CMakeFilePath)) {
+          HasCudaSyntax = true;
+          break;
+        }
+      } else {
+        // For other module files (e.g., .cmake files), just check the
+        // file names.
+        if (llvm::sys::path::filename(File) == SrcFile) {
+          HasCudaSyntax = true;
+          break;
+        }
       }
     }
 
@@ -464,10 +488,10 @@ static bool checkMatchContition(const int Size, const int Index,
   return true;
 }
 
-static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
-                                            const std::string &Input,
-                                            const int Start,
-                                            RuleMatchMode Mode) {
+static std::optional<MatchResult>
+findMatch(const MatchPattern &Pattern, const std::string &Input,
+          const int Start, RuleMatchMode Mode, std::string FileName,
+          const clang::tooling::UnifiedPath OutRoot) {
   MatchResult Result;
 
   int Index = Start;
@@ -541,7 +565,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
           return {};
         }
         updateCplusplusStandard(Result.Bindings);
-        updateExtentionName(Input, Next, Result.Bindings);
+        updateExtentionName(Input, Next, Result.Bindings, FileName, OutRoot);
       }
 
       Result.Bindings[Code.Name] = std::move(ElementContents);
@@ -701,7 +725,8 @@ static void constructWaringMsg(const std::string &Input, size_t index,
 
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                                  const std::string &Input, std::string FileName,
-                                 std::string FrontPart) {
+                                 std::string FrontPart,
+                                 const clang::tooling::UnifiedPath OutRoot) {
   std::stringstream OutputStream;
 
   if (PP.In.size() == 0) {
@@ -720,7 +745,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
     }
 
     std::optional<MatchResult> Result;
-    Result = findMatch(Pattern, Input, Index, PP.MatchMode);
+    Result = findMatch(Pattern, Input, Index, PP.MatchMode, FileName, OutRoot);
 
     if (Result.has_value()) {
       auto &Match = Result.value();
@@ -736,7 +761,7 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
           }
 
           Match.Bindings[Name] = applyPatternRewriter(
-              SubruleIterator->second, Value, FileName, FrontPart);
+              SubruleIterator->second, Value, FileName, FrontPart, OutRoot);
         }
       }
 
