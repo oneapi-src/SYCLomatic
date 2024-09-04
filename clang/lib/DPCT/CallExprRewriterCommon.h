@@ -792,14 +792,9 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
     while (const auto *ET = dyn_cast<ElaboratedType>(DerefQT)) {
       DerefQT = ET->getNamedType();
       if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
-        auto *TDecl = TDT->getDecl();
-        const auto Redecls = TDecl->redecls();
-        auto IsDeclInCudaHeader = [](const TypedefNameDecl * D) {
-          return dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
-        };
-        if (std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader))
+        if (isRedeclIsInCUDAHeader(TDT))
           break;
-        DerefQT = TDecl->getUnderlyingType();
+        DerefQT = TDT->getDecl()->getUnderlyingType();
       }
     }
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
