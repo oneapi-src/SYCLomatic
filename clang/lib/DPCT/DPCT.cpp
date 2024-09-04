@@ -222,8 +222,7 @@ UnifiedPath getInstallPath(const char *invokeCommand) {
   }
 
   UnifiedPath InstalledPath(InstalledPathStr);
-  StringRef InstalledPathParent(
-      llvm::sys::path::parent_path(InstalledPath.getCanonicalPath()));
+  StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath.getCanonicalPath()));
   // Move up to parent directory of bin directory
   InstalledPath = llvm::sys::path::parent_path(InstalledPathParent);
   return InstalledPath;
@@ -629,8 +628,7 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::enableAnalysisMode();
 
   if (InRootPath.getPath().size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --in-root '" << InRootPath.getPath()
-              << "' is too long\n";
+    DpctLog() << "Error: --in-root '" << InRootPath.getPath() << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
@@ -653,7 +651,8 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorPathTooLong);
   }
   if (OutputFile.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
+    DpctLog() << "Error: --output-file '" << OutputFile
+              << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
@@ -809,8 +808,7 @@ int runDPCT(int argc, const char **argv) {
     }
     // Set a virtual file for --query-api-mapping.
     llvm::SmallString<16> VirtFolderSS;
-    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true,
-                                           VirtFolderSS);
+    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFolderSS);
     UnifiedPath VirtFolderPath(VirtFolderSS);
 
     // Need set a virtual path and it will used by AnalysisScope.
@@ -937,13 +935,12 @@ int runDPCT(int argc, const char **argv) {
     bool NeedCheckOutRootEmpty =
         !(BuildScript == BuildScriptKind::BS_Cmake) && !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
-        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) &&
-        !EnableCodePin) {
+        !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
     if (EnableCodePin) {
-      OutRootPathCUDACodepin = OutRootPath.getPath().str() + "_codepin_cuda";
+      OutRootPathCUDACodepin =  OutRootPath.getPath().str()  + "_codepin_cuda";
       OutRootPath = OutRootPath.getPath().str() + "_codepin_sycl";
     }
 
@@ -964,8 +961,7 @@ int runDPCT(int argc, const char **argv) {
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
   if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRootPath) ||
-      (!InRootPath.getPath().empty() &&
-       !isChildOrSamePath(AnalysisScope, InRootPath))) {
+      (!InRootPath.getPath().empty() && !isChildOrSamePath(AnalysisScope, InRootPath))) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
@@ -1126,8 +1122,7 @@ int runDPCT(int argc, const char **argv) {
 #endif
     setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAll.getValue(),
                      ProcessAll.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda,
-                     SyclNamedLambda.getValue(),
+    setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambda.getValue(),
                      SyclNamedLambda.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
@@ -1135,7 +1130,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_HelperFuncPreferenceFlag,
                      DpctGlobalInfo::getHelperFuncPreferenceFlag(),
                      Preferences.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace, ExplicitNamespaces,
+    setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
+                     ExplicitNamespaces,
                      UseExplicitNamespace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
@@ -1147,15 +1143,14 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
-                     EnablepProfiling.getValue(), EnablepProfiling.getValue());
+    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling, EnablepProfiling.getValue(),
+                     EnablepProfiling.getValue());
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_UseSYCLCompat,
-                     UseSYCLCompat.getValue(),
+    setValueToOptMap(clang::dpct::OPTION_UseSYCLCompat, UseSYCLCompat.getValue(),
                      UseSYCLCompat.getNumOccurrences());
     if (!MigrateBuildScriptOnly &&
         clang::dpct::DpctGlobalInfo::isIncMigration()) {
@@ -1261,7 +1256,8 @@ int runDPCT(int argc, const char **argv) {
     LangOptions DefaultLangOptions;
     Rewriter Rewrite(Sources, DefaultLangOptions);
     // Must be only 1 file.
-    tooling::applyAllReplacements(ReplSYCL.begin()->second, Rewrite);
+    tooling::applyAllReplacements(ReplSYCL.begin()->second,
+                                  Rewrite);
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
@@ -1329,8 +1325,7 @@ int runDPCT(int argc, const char **argv) {
     }
   }
   // if run was successful
-  int Status = saveNewFiles(Tool, InRootPath, OutRootPath,
-                            OutRootPathCUDACodepin, ReplCUDA, ReplSYCL);
+  int Status = saveNewFiles(Tool, InRootPath, OutRootPath, OutRootPathCUDACodepin, ReplCUDA, ReplSYCL);
 
   if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     loadMainSrcFileInfo(OutRootPath);
