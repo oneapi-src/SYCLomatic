@@ -338,6 +338,8 @@ int main() {
   cudaMallocArray(&pArr, &desc, w, h);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, 1, 0.1);
   cudaMallocArray(&pArr, &desc, 1, 0.1);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, l);
+  cudaMallocArray(&pArr, &desc, l);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::mipmap, l);
   cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, sycl::range<3>(), sycl::ext::oneapi::experimental::image_type::mipmap, 2);

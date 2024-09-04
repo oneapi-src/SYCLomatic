@@ -90,6 +90,10 @@ static sycl::event
 dpct_memcpy(const pitched_data src, const sycl::id<3> &src_id,
             image_mem_wrapper *dest, const sycl::id<3> &dest_id,
             const sycl::range<3> &copy_extend, sycl::queue q);
+static sycl::event
+dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
+            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q);
 } // namespace detail
 } // namespace experimental
 #endif
@@ -731,17 +735,9 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
   if (param.to.image_bindless != nullptr &&
       param.from.image_bindless != nullptr) {
-    // TODO: Need change logic when sycl support image_mem to image_mem copy.
-    std::vector<sycl::event> event_list;
-    host_buffer buf(param.size.size(), q, event_list);
-    to.set_data_ptr(buf.get_ptr());
-    experimental::detail::dpct_memcpy(param.from.image_bindless, param.from.pos,
-                                      to, sycl::id<3>(0, 0, 0), param.size, q);
-    from.set_data_ptr(buf.get_ptr());
-    event_list.push_back(experimental::detail::dpct_memcpy(
-        from, sycl::id<3>(0, 0, 0), param.to.image_bindless, param.to.pos,
-        param.size, q));
-    return event_list;
+    return {experimental::detail::dpct_memcpy(
+        param.from.image_bindless, param.from.pos, param.to.image_bindless,
+        param.to.pos, param.size, q)};
   } else if (param.to.image_bindless != nullptr) {
     return {experimental::detail::dpct_memcpy(from, param.from.pos,
                                               param.to.image_bindless,
