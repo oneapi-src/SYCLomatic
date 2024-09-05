@@ -9,11 +9,12 @@
 // Base API
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    WARNING_FACTORY_ENTRY("cudnnGetVersion",
-                          CALL_FACTORY_ENTRY("cudnnGetVersion",
-                                             CALL(MapNames::getLibraryHelperNamespace() +
-                                                  "dnnl::get_version")),
-                          Diagnostics::TYPE_MISMATCH))
+    WARNING_FACTORY_ENTRY(
+        "cudnnGetVersion",
+        CALL_FACTORY_ENTRY("cudnnGetVersion",
+                           CALL(MapNames::getLibraryHelperNamespace() +
+                                "dnnl::get_version")),
+        Diagnostics::TYPE_MISMATCH))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -819,12 +820,13 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             "cudnnDropoutGetStatesSize", DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_dropout_state_size"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                            "cudnnDropoutGetReserveSpaceSize", DEREF(ARG_WC(1)),
-                            CALL(MapNames::getLibraryHelperNamespace() +
-                            "dnnl::engine_ext::get_dropout_workspace_size",
-                            ARG_WC(0)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudnnDropoutGetReserveSpaceSize", DEREF(ARG_WC(1)),
+        CALL(MapNames::getLibraryHelperNamespace() +
+                 "dnnl::engine_ext::get_dropout_workspace_size",
+             ARG_WC(0)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
