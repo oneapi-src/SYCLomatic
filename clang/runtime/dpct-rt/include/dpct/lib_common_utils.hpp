@@ -9,13 +9,18 @@
 #ifndef __DPCT_LIB_COMMON_UTILS_HPP__
 #define __DPCT_LIB_COMMON_UTILS_HPP__
 
-#include <sycl/sycl.hpp>
+#include "compat_service.hpp"
+
 #include <oneapi/mkl.hpp>
-#include "memory.hpp"
-#include "util.hpp"
 
 namespace dpct {
 namespace detail {
+template <typename T> struct lib_data_traits { using type = T; };
+template <typename T> struct lib_data_traits<sycl::vec<T, 2>> {
+  using type = std::complex<T>;
+};
+template <class T> using lib_data_traits_t = typename lib_data_traits<T>::type;
+
 template <typename T> inline auto get_memory(const void *x) {
   T *new_x = reinterpret_cast<T *>(const_cast<void *>(x));
 #ifdef DPCT_USM_LEVEL_NONE
@@ -26,11 +31,14 @@ template <typename T> inline auto get_memory(const void *x) {
 }
 
 template <typename T>
-inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
-  using Ty = typename DataType<T>::T2;
+inline typename ::dpct::detail::lib_data_traits_t<T> get_value(const T *s,
+                                                               sycl::queue &q) {
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   Ty s_h;
-  if (get_pointer_attribute(q, s) == pointer_access_attribute::device_only)
-    detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), device_to_host)
+  if (::dpct::cs::detail::get_pointer_attribute(q, s) ==
+      ::dpct::cs::detail::pointer_access_attribute::device_only)
+    ::dpct::cs::memcpy(q, (void *)&s_h, (void *)s, sizeof(T),
+                       ::dpct::cs::memcpy_direction::device_to_host)
         .wait();
   else
     s_h = *reinterpret_cast<const Ty *>(s);

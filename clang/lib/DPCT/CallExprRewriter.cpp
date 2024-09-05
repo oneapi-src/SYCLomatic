@@ -129,6 +129,10 @@ std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
 
 void CallExprRewriterFactoryBase::initRewriterMap() {
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    initRewriterMapSYCLcompat(*RewriterMap);
+    initRewriterMethodMapSYCLcompat(*MethodRewriterMap);
+  }
   initRewriterMapAtomic();
   initRewriterMapCUB();
   initRewriterMapCUFFT();
@@ -139,6 +143,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapComplex();
   initRewriterMapDriver();
   initRewriterMapGraph();
+  initRewriterMapGraphicsInterop();
   initRewriterMapMemory();
   initRewriterMapMisc();
   initRewriterMapNccl();

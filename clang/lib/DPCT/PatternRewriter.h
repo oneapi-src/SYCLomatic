@@ -14,8 +14,11 @@
 
 #include "Rules.h"
 
-std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
-                                 const std::string &Input);
+std::string
+applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
+                     const std::string &Input, std::string FileName = "",
+                     std::string FrontPart = "",
+                     const clang::tooling::UnifiedPath OutRoot = "");
 
 bool fixLineEndings(const std::string &Input, std::string &Output);
 

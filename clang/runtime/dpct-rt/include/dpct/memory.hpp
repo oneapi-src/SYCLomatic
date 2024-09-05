@@ -90,6 +90,10 @@ static sycl::event
 dpct_memcpy(const pitched_data src, const sycl::id<3> &src_id,
             image_mem_wrapper *dest, const sycl::id<3> &dest_id,
             const sycl::range<3> &copy_extend, sycl::queue q);
+static sycl::event
+dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
+            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
+            const sycl::range<3> &copy_extend, sycl::queue q);
 } // namespace detail
 } // namespace experimental
 #endif
@@ -731,17 +735,9 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
   if (param.to.image_bindless != nullptr &&
       param.from.image_bindless != nullptr) {
-    // TODO: Need change logic when sycl support image_mem to image_mem copy.
-    std::vector<sycl::event> event_list;
-    host_buffer buf(param.size.size(), q, event_list);
-    to.set_data_ptr(buf.get_ptr());
-    experimental::detail::dpct_memcpy(param.from.image_bindless, param.from.pos,
-                                      to, sycl::id<3>(0, 0, 0), param.size, q);
-    from.set_data_ptr(buf.get_ptr());
-    event_list.push_back(experimental::detail::dpct_memcpy(
-        from, sycl::id<3>(0, 0, 0), param.to.image_bindless, param.to.pos,
-        param.size, q));
-    return event_list;
+    return {experimental::detail::dpct_memcpy(
+        param.from.image_bindless, param.from.pos, param.to.image_bindless,
+        param.to.pos, param.size, q)};
   } else if (param.to.image_bindless != nullptr) {
     return {experimental::detail::dpct_memcpy(from, param.from.pos,
                                               param.to.image_bindless,
@@ -831,6 +827,20 @@ inline void dpct_free(void *ptr,
     sycl::free(ptr, q.get_context());
 #endif // DPCT_USM_LEVEL_NONE
   }
+}
+
+inline sycl::event async_dpct_free(const std::vector<void *> &pointers,
+                                   const std::vector<sycl::event> &events,
+                                   sycl::queue q) {
+  return q.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(events);
+    cgh.host_task([=] {
+      for (auto p : pointers)
+        if (p) {
+          detail::dpct_free(p, q);
+        }
+    });
+  });
 }
 } // namespace detail
 
@@ -990,15 +1000,7 @@ static inline void dpct_free(void *ptr,
 inline void async_dpct_free(const std::vector<void *> &pointers,
                             const std::vector<sycl::event> &events,
                             sycl::queue &q = get_default_queue()) {
-  q.submit([&](sycl::handler &cgh) {
-    cgh.depends_on(events);
-    cgh.host_task([=] {
-      for (auto p : pointers)
-        if (p) {
-          detail::dpct_free(p, q);
-        }
-    });
-  });
+  detail::async_dpct_free(pointers, events, q);
 }
 
 /// Synchronously copies \p size bytes from the address specified by \p from_ptr
@@ -1657,6 +1659,15 @@ using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::all
 
 class pointer_attributes {
 public:
+  enum class type {
+    memory_type,
+    device_pointer,
+    host_pointer,
+    is_managed,
+    device_id,
+    unsupported
+  };
+
   void init(const void *ptr,
               sycl::queue &q = dpct::get_default_queue()) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1676,6 +1687,41 @@ public:
     sycl::device device_obj = sycl::get_pointer_device(ptr, q.get_context());
     device_id = dpct::dev_mgr::instance().get_device_id(device_obj);
 #endif
+  }
+
+  // Query pointer propreties listed in attributes and store the results in data array
+  static void get(unsigned int numAttributes, type *attributes,
+                  void **data, device_ptr ptr) {
+    pointer_attributes sycl_attributes;
+
+    sycl_attributes.init(ptr);
+
+    for (int i = 0; i < numAttributes; i++) {
+      switch (attributes[i]) {
+      case type::memory_type:
+        *static_cast<int *>(data[i]) =
+            static_cast<int>(sycl_attributes.get_memory_type());
+        break;
+      case type::device_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_device_pointer());
+        break;
+      case type::host_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_host_pointer());
+        break;
+      case type::is_managed:
+        *static_cast<unsigned int *>(data[i]) =
+            sycl_attributes.is_memory_shared();
+        break;
+      case type::device_id:
+        *static_cast<unsigned int *>(data[i]) = sycl_attributes.get_device_id();
+        break;
+      default:
+        data[i] = nullptr;
+        break;
+      }
+    }
   }
 
   sycl::usm::alloc get_memory_type() {
@@ -1704,5 +1750,6 @@ private:
   const void *host_pointer = nullptr;
   unsigned int device_id = -1;
 };
+
 } // namespace dpct
 #endif // __DPCT_MEMORY_HPP__

@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriter.h"
+#include <memory>
 
 namespace clang {
 namespace dpct {
@@ -109,14 +110,63 @@ public:
   }
 };
 
+class TypeMatchingDesc {
+private:
+  std::string Name;
+
+public:
+  TypeMatchingDesc(const std::string &Name, const int TAC = -1)
+      : Name(Name), TemplateArgCount(TAC) {}
+  TypeMatchingDesc(TypeLoc TL) {
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    // ignore template args
+    if (auto ETL = TL.getAs<ElaboratedTypeLoc>()) {
+      // A::B::C::typename<int>
+      //          ^           ^ <-- getNamedTypeLoc
+      TL = ETL.getNamedTypeLoc();
+    }
+    if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      llvm::raw_string_ostream OS(Name);
+      auto PP = Context.getPrintingPolicy();
+      PrintFullTemplateName(OS, PP, TSTL.getTypePtr()->getTemplateName());
+      if (auto DeclPtr =
+              TSTL.getTypePtr()->getTemplateName().getAsTemplateDecl()) {
+        TemplateArgCount = DeclPtr->getTemplateParameters()->size();
+      }
+    } else {
+      Name = dpct::DpctGlobalInfo::getTypeName(TL.getType(), Context);
+    }
+  }
+  bool operator==(const TypeMatchingDesc &RHS) const {
+    if (!Name.compare(RHS.Name) &&
+        (RHS.TemplateArgCount == TemplateArgCount ||
+         RHS.TemplateArgCount == -1 || TemplateArgCount == -1)) {
+      return true;
+    }
+    return false;
+  }
+  const std::string &getName() const { return Name; }
+
+  struct hash {
+    std::size_t operator()(const TypeMatchingDesc &TM) const noexcept {
+      return std::hash<std::string>{}(TM.getName());
+    }
+  };
+  // -1 means ignore template args in matching and replacing.
+  // 0, 1, 2, 3... means the explicit template arg count in matching and
+  // replacing.
+  int TemplateArgCount = -1;
+};
+
 class TypeLocRewriterFactoryBase {
 public:
   virtual std::shared_ptr<TypeLocRewriter> create(const TypeLoc) const = 0;
   virtual ~TypeLocRewriterFactoryBase() {}
 
   static std::unique_ptr<std::unordered_map<
-    std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>>
-    TypeLocRewriterMap;
+      TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>,
+      TypeMatchingDesc::hash>>
+      TypeLocRewriterMap;
   static void initTypeLocRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 };
@@ -194,6 +244,40 @@ public:
     return SubRewriterFactory->create(TL);
   }
 };
+
+// Print a templated type. Pass a STR("") as a template argument for types with
+// no template argument e.g. MyType<>
+template <class TypeNameT, class... TemplateArgsT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
+    std::function<TypeNameT(const TypeLoc)> TypeNameCreator,
+    std::function<TemplateArgsT(const TypeLoc)>... TAsCreator) {
+  return std::make_shared<TypeLocRewriterFactory<
+      TemplateTypeLocRewriter<TypeNameT, TemplateArgsT...>,
+      std::function<TypeNameT(const TypeLoc)>,
+      std::function<TemplateArgsT(const TypeLoc)>...>>(
+      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator),
+      std::forward<std::function<TemplateArgsT(const TypeLoc)>>(TAsCreator)...);
+}
+
+// Print a type with no template.
+template <class TypeNameT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
+    std::function<TypeNameT(const TypeLoc)> TypeNameCreator) {
+  return std::make_shared<
+      TypeLocRewriterFactory<TypeNameTypeLocRewriter<TypeNameT>,
+                             std::function<TypeNameT(const TypeLoc)>>>(
+      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator));
+}
+
+std::function<std::string(const TypeLoc)>
+makeUserDefinedTypeStrCreator(MetaRuleObject &R,
+                              std::shared_ptr<TypeOutputBuilder> TOB);
+
+std::function<std::string(const TypeLoc)> makeStringCreator(
+    std::string TypeName,
+    clang::dpct::HelperFeatureEnum RequestFeature =
+        clang::dpct::HelperFeatureEnum::none,
+    const std::vector<std::string> &Headers = std::vector<std::string>());
 
 } // namespace dpct
 } // namespace clang

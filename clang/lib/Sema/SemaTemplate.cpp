@@ -2512,7 +2512,10 @@ struct ConvertConstructorToDeductionGuideTransform {
     if (NestedPattern)
       TSI = SemaRef.SubstType(TSI, OuterInstantiationArgs, Loc,
                               DeductionGuideName);
-
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (!TSI)
+      return nullptr;
+#endif
     FunctionProtoTypeLoc FPTL =
         TSI->getTypeLoc().castAs<FunctionProtoTypeLoc>();
 
@@ -2523,6 +2526,10 @@ struct ConvertConstructorToDeductionGuideTransform {
       if (NestedPattern)
         TSI = SemaRef.SubstType(TSI, OuterInstantiationArgs, Loc,
                                 DeclarationName());
+#ifdef SYCLomatic_CUSTOMIZATION
+      if (!TSI)
+        return nullptr;
+#endif
       ParmVarDecl *NewParam =
           ParmVarDecl::Create(SemaRef.Context, DC, Loc, Loc, nullptr,
                               TSI->getType(), TSI, SC_None, nullptr);

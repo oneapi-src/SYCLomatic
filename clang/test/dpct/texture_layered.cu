@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
-// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4, cuda-12.5, cuda-12.6
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4, v12.5, v12.6
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_layered %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture_layered/texture_layered.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/texture_layered/texture_layered.dp.cpp -o %T/texture_layered/texture_layered.dp.o %}
@@ -59,6 +59,7 @@ int main() {
   // CHECK-NEXT: d_data42 = (sycl::float4 *)dpct::dpct_malloc(sizeof(sycl::float4) * 32 * 32);
   // CHECK-NEXT: dpct::image_channel desc42 = dpct::image_channel(32, 32, 32, 32, dpct::image_channel_data_type::fp);
   // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32));
+  // CHECK-NEXT: a42 = new dpct::image_matrix(desc42, {32, 0, 32}, dpct::image_type::array);
   // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: tex42.set(sycl::filtering_mode::nearest);
@@ -68,6 +69,7 @@ int main() {
   cudaMalloc(&d_data42, sizeof(float4) * 32 * 32);
   cudaChannelFormatDesc desc42 = cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindFloat);
   cudaMallocArray(&a42, &desc42, 32, 32);
+  cudaMalloc3DArray(&a42, &desc42, {32, 0, 32}, cudaArrayLayered);
   cudaMemcpyToArray(a42, 0, 0, d_data42, 32 * 32 * sizeof(float4), cudaMemcpyDeviceToDevice);
   tex42.addressMode[0] = cudaAddressModeClamp;
   tex42.addressMode[1] = cudaAddressModeClamp;
@@ -99,7 +101,8 @@ int main() {
 
   float4 *d;
   cudaMalloc(&d, sizeof(float4) * 4);
-
+  // CHECK:  tex42.create_image();
+  // CHECK:  tex21.create_image();
   // CHECK:   dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_acc_ct0 = dpct::get_access(d, cgh);

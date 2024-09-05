@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
-// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4, cuda-12.5, cuda-12.6
+// UNSUPPORTED: v12.0, v12.1, v12.2, v12.3, v12.4, v12.5, v12.6
 // RUN: dpct --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/comments/comments.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/comments/comments.dp.cpp -o %T/comments/comments.dp.o %}
@@ -32,6 +32,7 @@ int main() {
 // CHECK-NEXT:      a.init();
 // CHECK-NEXT:      b.init();
 // CHECK-NEXT:      al.init();
+// CHECK-NEXT:      tex21.create_image();
 // CHECK-EMPTY:
 // CHECK-NEXT:      dpct::get_in_order_queue().submit(
 // CHECK-NEXT:          [&](sycl::handler &cgh) {

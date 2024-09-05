@@ -89,38 +89,44 @@ CALL_FACTORY_ENTRY("__assertfail", CALL("assert", LITERAL("0")))
 CALL_FACTORY_ENTRY("__assert_fail", CALL("assert", LITERAL("0")))
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUseNoQueueDevice(),
-    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        CALL_FACTORY_ENTRY(
-            "cudaGetDeviceProperties",
-            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
-                 ARG(DpctGlobalInfo::getGlobalDeviceName()))))),
-    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        CALL_FACTORY_ENTRY(
-            "cudaGetDeviceProperties",
-            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
-                 CALL(MapNames::getDpctNamespace() +
-                          "dev_mgr::instance().get_device",
-                      ARG(1)))))))
+    makeCheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cudaGetDeviceProperties",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cudaGetDeviceProperties")),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsUseNoQueueDevice(),
+        ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cudaGetDeviceProperties",
+                ARG(DpctGlobalInfo::getGlobalDeviceName()), false,
+                "get_device_info", DEREF(0)))),
+        ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cudaGetDeviceProperties",
+                CALL(MapNames::getDpctNamespace() + "get_device", ARG(1)),
+                false, "get_device_info", DEREF(0))))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUseNoQueueDevice(),
-    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        CALL_FACTORY_ENTRY(
-            "cudaGetDeviceProperties_v2",
-            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
-                 ARG(DpctGlobalInfo::getGlobalDeviceName()))))),
-    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        CALL_FACTORY_ENTRY(
-            "cudaGetDeviceProperties_v2",
-            CALL(MapNames::getDpctNamespace() + "get_device_info", DEREF(0),
-                 CALL(MapNames::getDpctNamespace() +
-                          "dev_mgr::instance().get_device",
-                      ARG(1)))))))
+    makeCheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    UNSUPPORT_FACTORY_ENTRY("cudaGetDeviceProperties_v2",
+                            Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                            LITERAL("cudaGetDeviceProperties_v2")),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsUseNoQueueDevice(),
+        ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cudaGetDeviceProperties_v2",
+                ARG(DpctGlobalInfo::getGlobalDeviceName()), false,
+                "get_device_info", DEREF(0)))),
+        ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::device_ext,
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cudaGetDeviceProperties_v2",
+                CALL(MapNames::getDpctNamespace() + "get_device", ARG(1)),
+                false, "get_device_info", DEREF(0))))))
 
 REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStart",
                          getRemovedAPIWarningMessage("cudaProfilerStart"))
@@ -130,3 +136,6 @@ REMOVE_API_FACTORY_ENTRY_WITH_MSG("cudaProfilerStop",
 
 REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuFuncSetAttribute",
                          getRemovedAPIWarningMessage("cuFuncSetAttribute"))
+
+REMOVE_API_FACTORY_ENTRY_WITH_MSG("cuGetExportTable",
+                         getRemovedAPIWarningMessage("cuGetExportTable"))

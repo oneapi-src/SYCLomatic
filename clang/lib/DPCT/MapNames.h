@@ -43,14 +43,18 @@ class MapNames {
   static std::vector<std::string> DpctNamespace;
 
 public:
-  static void setExplicitNamespaceMap();
+  static void setExplicitNamespaceMap(
+      const std::set<ExplicitNamespace> &ExplicitNamespaces);
   // KeepNamespace = true for function or type that need avoid ambiguous.
   // Example: sycl::exception <--> std::exception
   // IsMathFunc = true for namespace before math functions.
   // Example: sycl::exp
   static std::string getClNamespace(bool KeepNamespace = false,
                                     bool IsMathFunc = false);
+  static std::string getExpNamespace(bool KeepNamespace = false);
   static std::string getDpctNamespace(bool KeepNamespace = false);
+  static const std::string &getLibraryHelperNamespace();
+  static const std::string &getCheckErrorMacroName();
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
@@ -317,6 +321,7 @@ public:
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
+  static std::unordered_set<std::string> SYCLcompatUnsupportTypes;
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       TypeNamesMap;
   static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
@@ -324,8 +329,10 @@ public:
   static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
       CuDNNTypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
+  static const std::map<unsigned, std::string> ArrayFlagMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
   static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
+  static MapTy CUBEnumsMap;
   static MapTy BLASEnumsMap;
   static MapTy SPBLASEnumsMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;

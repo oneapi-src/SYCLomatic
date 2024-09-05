@@ -358,12 +358,13 @@ void ExtReplacements::postProcess() {
     // V: vector size, used for rand API migration
     // R: range dim, used for built-in variables (threadIdx.x, ...) migration
     // C: cub group dim, used for cub API migration
-    // F: free queries function migration, such as this_nd_item, this_group,
-    // this_sub_group.
+    // F: free queries function migration, such as this_work_item::get_nd_item,
+    // this_work_item::get_work_group, this_work_item::get_sub_group.
     // G: group dim size, used for cg::thread_block migration
     // E: extension, used for c source file migration
+    // Z: queue pointer.
     StringRef OriginalText = R.second->getReplacementText();
-    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCGEPI][0-9]*\\}\\}");
+    std::regex RE("\\{\\{NEEDREPLACE[DQVRFCGEPIZ][0-9]*\\}\\}");
     std::match_results<StringRef::const_iterator> Result;
     std::optional<std::string> NewText;
     auto Begin = OriginalText.begin(), End = OriginalText.end();
