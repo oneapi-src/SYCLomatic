@@ -6381,7 +6381,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                DpctGlobalInfo::useSYCLCompat()) {
       ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
       ReplStr += StmtStrArg2;
-      ReplStr += ").get_mem_base_addr_align_in_bytes() / 8";
+      ReplStr += ").get_mem_base_addr_align() / 8";
       requestFeature(HelperFeatureEnum::device_ext);
     } else {
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);

@@ -265,7 +265,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
             BO(BinaryOperatorKind::BO_Div,
                 MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
                                              "get_device", ARG(2)),
-                            false, "get_mem_base_addr_align_in_bytes"),
+                            false, "get_mem_base_addr_align"),
                 ARG("8"))),
         ASSIGN_FACTORY_ENTRY(
             "cuDeviceGetAttribute", DEREF(0),
