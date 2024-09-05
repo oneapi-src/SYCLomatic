@@ -225,9 +225,12 @@ void test_texref() {
   cuTexRefSetAddress2D(tex, &desc, dptr, b);
 }
 
-// CHECK: sycl::addressing_mode AddrMode[] = {
-// CHECK-NEXT:     sycl::addressing_mode::repeat, sycl::addressing_mode::clamp_to_edge,
-// CHECK-NEXT:     sycl::addressing_mode::clamp};
+// CHECK: sycl::addressing_mode AddrMode[] =
+// CHECK-NEXT: {
+// CHECK-NEXT:   sycl::addressing_mode::repeat,
+// CHECK-NEXT:   sycl::addressing_mode::clamp_to_edge,
+// CHECK-NEXT:   sycl::addressing_mode::clamp
+// CHECK-NEXT: };
 CUaddress_mode AddrMode[] =
 {
   CU_TR_ADDRESS_MODE_WRAP,
@@ -235,8 +238,11 @@ CUaddress_mode AddrMode[] =
   CU_TR_ADDRESS_MODE_BORDER
 };
 
-// CHECK: sycl::filtering_mode FltMode[] = {
-// CHECK-NEXT:     sycl::filtering_mode::nearest, sycl::filtering_mode::linear};
+// CHECK: sycl::filtering_mode FltMode[] =
+// CHECK-NEXT: {
+// CHECK-NEXT:   sycl::filtering_mode::nearest,
+// CHECK-NEXT:   sycl::filtering_mode::linear
+// CHECK-NEXT: };
 CUfilter_mode FltMode[] =
 {
   CU_TR_FILTER_MODE_POINT,
