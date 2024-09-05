@@ -415,7 +415,6 @@ updateExtentionName(const std::string &Input, size_t Next,
     std::string SrcFile = Input.substr(Pos, Next + strlen(".cpp") - Pos);
 
     SmallString<512> _SrcFile(SrcFile);
-    llvm::sys::path::remove_dots(_SrcFile, /* remove_dot_dot= */ true);
     llvm::sys::path::replace_path_prefix(_SrcFile, "${CMAKE_SOURCE_DIR}/", "");
     SrcFile = _SrcFile.c_str();
 
