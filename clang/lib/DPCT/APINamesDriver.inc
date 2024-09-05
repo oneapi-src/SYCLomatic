@@ -258,10 +258,21 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
         MEMBER_EXPR(CALL(MapNames::getDpctNamespace() +
                                      "get_device", ARG(2)),
                     false, makeFuncNameFromDevAttrCreator(1))),
-    ASSIGN_FACTORY_ENTRY(
-        "cuDeviceGetAttribute", DEREF(0),
-        MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
-                                     "get_device", ARG(2)),
-                    false, makeFuncNameFromDevAttrCreator(1))))))
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckAnd(UseSYCLCompat, isTextureAlignment(1)),
+        ASSIGN_FACTORY_ENTRY(
+            "cuDeviceGetAttribute", DEREF(0),
+            BO(BinaryOperatorKind::BO_Div,
+                MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                             "get_device", ARG(2)),
+                            false, "get_mem_base_addr_align"),
+                ARG("8"))),
+        ASSIGN_FACTORY_ENTRY(
+            "cuDeviceGetAttribute", DEREF(0),
+            MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                         "get_device", ARG(2)),
+                        false, makeFuncNameFromDevAttrCreator(1)))
+    )
+)))
 
 // clang-format on

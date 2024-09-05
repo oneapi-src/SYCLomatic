@@ -27,4 +27,10 @@
 #define DPCT_VERSION_MINOR "0"
 #define DPCT_VERSION_PATCH "0"
 
+// define PI here for M_PI in cmath/math.h(GNU) is not a standard C++ Macro.
+// used when syclcompat header only library is used to assist the migration.
+// dpct header file dpct.hpp has also defined the two macros.
+#define __DPCT_PI (3.141592653589793115998)
+#define __DPCT_PI_F (3.14159274101257f)
+
 #endif
