@@ -450,7 +450,8 @@ private:
             "Only standard and mipmap images are supported!");
       }
 
-      _res_size_bytes *= res_arr_size * res_num_levels * channel.get_total_size();
+      _res_size_bytes *=
+          res_arr_size * res_num_levels * channel.get_total_size();
 
       sycl::ext::oneapi::experimental::image_type img_type =
           (res_num_levels > 1)
