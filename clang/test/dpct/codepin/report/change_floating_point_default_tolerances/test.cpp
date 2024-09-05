@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: cat %S/cuda.json > %T/cuda.json
 // RUN: cat %S/sycl.json > %T/sycl.json
 // RUN: cat %S/tolerances.json> %T/tolerances.json
