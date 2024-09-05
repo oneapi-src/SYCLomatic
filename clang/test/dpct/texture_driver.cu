@@ -224,6 +224,7 @@ void test_texref() {
   CUDA_ARRAY_DESCRIPTOR desc;
   cuTexRefSetAddress2D(tex, &desc, dptr, b);
 }
+
 // CHECK: sycl::addressing_mode AddrMode[] =
 // CHECK-NEXT: {
 // CHECK-NEXT:   sycl::addressing_mode::repeat,

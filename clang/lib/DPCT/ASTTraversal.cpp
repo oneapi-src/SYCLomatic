@@ -3875,8 +3875,12 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(" = ", MapNames::getLibraryHelperNamespace(),
                     "rng::create_host_rng(", ExprAnalysis::ref(CE->getArg(1)));
     if (FuncName == "curandCreateGeneratorHost") {
-      RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
-                        "cpu_device().default_queue()");
+      if (DpctGlobalInfo::useSYCLCompat())
+        RHS = buildString(RHS, ", *", MapNames::getDpctNamespace(),
+                          "cpu_device().default_queue()");
+      else
+        RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
+                          "cpu_device().default_queue()");
     }
     RHS = buildString(RHS, ")");
     if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {
@@ -6054,8 +6058,8 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      Repl = LHS + " = &{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueuePtr);
+      Repl = LHS + " = {{NEEDREPLACEZ" + std::to_string(Index) + "}}";
     } else if (FuncName == "cusolverDnDestroy") {
       dpct::ExprAnalysis EA(CE->getArg(0));
       Repl = EA.getReplacedString() + " = nullptr";
@@ -6982,6 +6986,11 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+             FuncName);
+      return;
+    }
     std::string ReplStr = MapNames::getDpctNamespace() + "sycl_event_query";
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplStr)));
   } else if (FuncName == "cudaEventRecord" || FuncName == "cuEventRecord") {
@@ -13152,6 +13161,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                       "cudaChannelFormatKind", "cudaResourceType",
                       "CUarray_format_enum", "CUaddress_mode_enum",
                       "CUfilter_mode_enum"))))))
+
           .bind("texEnum"),
       this);
 
