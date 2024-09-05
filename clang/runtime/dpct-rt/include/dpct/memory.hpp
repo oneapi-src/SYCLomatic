@@ -61,7 +61,7 @@ public:
       : _data(data), _pitch(pitch), _x(x), _y(y) {}
 
   void *get_data_ptr() { return _data; }
-  void set_data_ptr(void *data) { _data = data; }
+  void set_data_ptr(const void *data) { _data = const_cast<void *>(data); }
 
   size_t get_pitch() { return _pitch; }
   void set_pitch(size_t pitch) { _pitch = pitch; }
