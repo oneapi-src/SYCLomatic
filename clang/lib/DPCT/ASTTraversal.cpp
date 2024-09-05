@@ -13160,7 +13160,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
           to(enumConstantDecl(hasType(enumDecl(hasAnyName(
               "cudaTextureAddressMode", "cudaTextureFilterMode",
               "cudaChannelFormatKind", "cudaResourceType",
-              "CUarray_format_enum", "CUaddress_mode", "CUfilter_mode"))))))
+              "CUarray_format_enum", "CUaddress_mode_enum",
+              "CUfilter_mode_enum"))))))
           .bind("texEnum"),
       this);
 
