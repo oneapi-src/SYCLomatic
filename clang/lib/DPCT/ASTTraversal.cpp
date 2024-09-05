@@ -6381,6 +6381,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (AttributeName == "cudaDevAttrComputeMode") {
       report(CE->getBeginLoc(), Diagnostics::COMPUTE_MODE, false);
       ReplStr += " = 1";
+    } else if (AttributeName == "cudaDevAttrTextureAlignment" &&
+               DpctGlobalInfo::useSYCLCompat()) {
+      ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
+      ReplStr += StmtStrArg2;
+      ReplStr += ").get_mem_base_addr_align() / 8";
+      requestFeature(HelperFeatureEnum::device_ext);
     } else {
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
