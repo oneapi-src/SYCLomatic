@@ -1981,8 +1981,9 @@ public:
   virtual std::string getHostDeclString();
   virtual std::string getSamplerDecl();
   virtual std::string getAccessorDecl(const std::string &QueueStr);
-  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-                       const std::string &QueueStr);
+  virtual std::string InitDecl(const std::string &QueueStr);
+  virtual void addDecl(StmtList &InitList, StmtList &AccessorList,
+                       StmtList &SamplerList, const std::string &QueueStr);
   ParameterStream &getFuncDecl(ParameterStream &PS);
   ParameterStream &getFuncArg(ParameterStream &PS);
   virtual ParameterStream &getKernelArg(ParameterStream &OS);
@@ -2022,6 +2023,7 @@ public:
 
   virtual ~TextureObjectInfo() = default;
   std::string getAccessorDecl(const std::string &QueueString) override;
+  std::string InitDecl(const std::string &QueueStr) override;
   std::string getSamplerDecl() override;
   inline unsigned getParamIdx() const { return ParamIdx; }
   std::string getParamDeclType();
@@ -2066,8 +2068,8 @@ class MemberTextureObjectInfo : public TextureObjectInfo {
 
 public:
   static std::shared_ptr<MemberTextureObjectInfo> create(const MemberExpr *ME);
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-               const std::string &QueueStr) override;
+  void addDecl(StmtList &InitList, StmtList &AccessorList,
+               StmtList &SamplerList, const std::string &QueueStr) override;
   void setBaseName(StringRef Name) { BaseName = Name; }
   StringRef getMemberName() { return MemberName; }
 };
@@ -2091,8 +2093,8 @@ public:
   bool isBase() const { return IsBase; }
   bool containsVirtualPointer() const { return ContainsVirtualPointer; }
   std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME);
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-               const std::string &Queue) override;
+  void addDecl(StmtList &InitList, StmtList &AccessorList,
+               StmtList &SamplerList, const std::string &Queue) override;
   void addParamDeclReplacement() override { return; };
   void merge(std::shared_ptr<StructureTextureObjectInfo> Target);
   void merge(std::shared_ptr<TextureObjectInfo> Target) override;
