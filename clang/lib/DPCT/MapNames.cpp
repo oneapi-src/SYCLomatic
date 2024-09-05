@@ -264,33 +264,22 @@ void MapNames::setExplicitNamespaceMap(
                               ? "SYCLCOMPAT_COMPATIBILITY_TEMP"
                               : "__DPCT_HPP__")},
       {"CUDART_VERSION",
-       MacroMigrationRule(
-           "dpct_build_in_macro_rule", RulePriority::Fallback, "CUDART_VERSION",
-           DpctGlobalInfo::useSYCLCompat() ? "SYCLCOMPAT_VERSION"
-                                           : "DPCT_COMPAT_RT_VERSION")},
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUDART_VERSION", "DPCT_COMPAT_RT_VERSION")},
       {"__CUDART_API_VERSION",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                          "__CUDART_API_VERSION",
-                          DpctGlobalInfo::useSYCLCompat()
-                              ? "SYCLCOMPAT_VERSION"
-                              : "DPCT_COMPAT_RT_VERSION")},
+                          "__CUDART_API_VERSION", "DPCT_COMPAT_RT_VERSION")},
       {"CUDA_VERSION",
-       MacroMigrationRule(
-           "dpct_build_in_macro_rule", RulePriority::Fallback, "CUDA_VERSION",
-           DpctGlobalInfo::useSYCLCompat() ? "SYCLCOMPAT_VERSION"
-                                           : "DPCT_COMPAT_RT_VERSION")},
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUDA_VERSION", "DPCT_COMPAT_RT_VERSION")},
       {"__CUDACC_VER_MAJOR__",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "__CUDACC_VER_MAJOR__",
-                          DpctGlobalInfo::useSYCLCompat()
-                              ? "SYCLCOMPAT_MAJOR_VERSION"
-                              : "DPCT_COMPAT_RT_MAJOR_VERSION")},
+                          "DPCT_COMPAT_RT_MAJOR_VERSION")},
       {"__CUDACC_VER_MINOR__",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "__CUDACC_VER_MINOR__",
-                          DpctGlobalInfo::useSYCLCompat()
-                              ? "SYCLCOMPAT_MINOR_VERSION"
-                              : "DPCT_COMPAT_RT_MINOR_VERSION")},
+                          "DPCT_COMPAT_RT_MINOR_VERSION")},
       {"CUBLAS_V2_H_",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "CUBLAS_V2_H_", "MKL_SYCL_HPP")},
@@ -1290,7 +1279,9 @@ void MapNames::setExplicitNamespaceMap(
       // enum Device Attribute
       // ...
       {"cudaDevAttrHostNativeAtomicSupported",
-       std::make_shared<EnumNameRule>("is_native_atomic_supported",
+       std::make_shared<EnumNameRule>(DpctGlobalInfo::useSYCLCompat()
+                                          ? "is_native_host_atomic_supported"
+                                          : "is_native_atomic_supported",
                                       HelperFeatureEnum::device_ext)},
       {"cudaDevAttrComputeCapabilityMajor",
        std::make_shared<EnumNameRule>("get_major_version",
@@ -1473,7 +1464,9 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("get_max_compute_units",
                                       HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED",
-       std::make_shared<EnumNameRule>("is_native_atomic_supported",
+       std::make_shared<EnumNameRule>(DpctGlobalInfo::useSYCLCompat()
+                                          ? "is_native_host_atomic_supported"
+                                          : "is_native_atomic_supported",
                                       HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X",
        std::make_shared<EnumNameRule>("get_max_work_item_sizes",
