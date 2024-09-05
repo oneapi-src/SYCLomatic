@@ -436,9 +436,20 @@ updateExtentionName(const std::string &Input, size_t Next,
           CMakeFilePath = CMakeDirectory.c_str();
           CMakeFilePath = CMakeFilePath + "/" + SrcFile;
         } else {
-          CMakeFilePath = SrcFile;
-        }
+          std::string FileName = llvm::sys::path::filename(SrcFile).str();
+          SmallString<512> _SrcFile(SrcFile);
+          llvm::sys::path::remove_filename(_SrcFile);
+          std::string ParentPath = _SrcFile.c_str();
 
+          auto LastDotPos = ParentPath.find_last_of('.');
+          if (LastDotPos != std::string::npos) {
+            auto PrexPos = ParentPath.find('/', LastDotPos);
+            if (PrexPos != std::string::npos)
+              ParentPath = ParentPath.substr(PrexPos + 1);
+          }
+
+          CMakeFilePath = ParentPath + "/" + FileName;
+        }
         if (llvm::StringRef(File).ends_with(CMakeFilePath)) {
           HasCudaSyntax = true;
           break;
