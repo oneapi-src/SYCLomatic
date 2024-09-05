@@ -3469,13 +3469,19 @@ std::string TextureInfo::getAccessorDecl(const std::string &QueueStr) {
   OS << ");";
   return Ret;
 }
-void TextureInfo::addDecl(StmtList &AccessorList, StmtList &SamplerList,
-                          const std::string &QueueStr) {
+std::string TextureInfo::InitDecl(const std::string &QueueStr) {
+  ParameterStream PS;
+  PS << Name << ".create_image(" << QueueStr << ");";
+  return PS.Str;
+}
+void TextureInfo::addDecl(StmtList &InitList, StmtList &AccessorList,
+                          StmtList &SamplerList, const std::string &QueueStr) {
   if (DpctGlobalInfo::useExtBindlessImages()) {
     AccessorList.emplace_back("auto " + NewVarName + "_handle = " + Name +
                               ".get_handle();");
     return;
   }
+  InitList.emplace_back(InitDecl(QueueStr));
   AccessorList.emplace_back(getAccessorDecl(QueueStr));
   SamplerList.emplace_back(getSamplerDecl());
 }
@@ -3510,6 +3516,13 @@ std::string TextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
   printQueueStr(PS, QueueString);
   PS << ");";
   requestFeature(HelperFeatureEnum::device_ext);
+  return PS.Str;
+}
+std::string TextureObjectInfo::InitDecl(const std::string &QueueStr) {
+  ParameterStream PS;
+  PS << "static_cast<";
+  getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+      << " *>(" << Name << ")->create_image(" << QueueStr << ");";
   return PS.Str;
 }
 std::string TextureObjectInfo::getSamplerDecl() {
@@ -3611,11 +3624,12 @@ MemberTextureObjectInfo::create(const MemberExpr *ME) {
   Ret->MemberName = ME->getMemberDecl()->getNameAsString();
   return Ret;
 }
-void MemberTextureObjectInfo::addDecl(StmtList &AccessorList,
+void MemberTextureObjectInfo::addDecl(StmtList &InitList,
+                                      StmtList &AccessorList,
                                       StmtList &SamplerList,
                                       const std::string &QueueStr) {
   NewVarNameRAII RAII(this);
-  TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
+  TextureObjectInfo::addDecl(InitList, AccessorList, SamplerList, QueueStr);
 }
 ///// class StructureTextureObjectInfo /////
 StructureTextureObjectInfo::StructureTextureObjectInfo(const ParmVarDecl *PVD)
@@ -3651,7 +3665,8 @@ StructureTextureObjectInfo::addMember(const MemberExpr *ME) {
   auto Member = MemberTextureObjectInfo::create(ME);
   return Members.emplace(Member->getMemberName().str(), Member).first->second;
 }
-void StructureTextureObjectInfo::addDecl(StmtList &AccessorList,
+void StructureTextureObjectInfo::addDecl(StmtList &InitList,
+                                         StmtList &AccessorList,
                                          StmtList &SamplerList,
                                          const std::string &Queue) {
   for (const auto &M : Members) {
@@ -5656,13 +5671,13 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      Tex->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
-                   getQueueStr());
+      Tex->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
+                   SubmitStmts.SamplerList, getQueueStr());
     }
   }
   for (auto &Tex : VM.getTextureMap()) {
-    Tex.second->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
-                        getQueueStr());
+    Tex.second->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
+                        SubmitStmts.SamplerList, getQueueStr());
   }
   for (auto &Tmp : VM.getTempStorageMap()) {
     Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,
