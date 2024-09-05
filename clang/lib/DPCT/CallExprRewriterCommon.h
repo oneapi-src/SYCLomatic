@@ -793,7 +793,7 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
     while (const auto *ET = dyn_cast<ElaboratedType>(DerefQT)) {
       DerefQT = ET->getNamedType();
       if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
-        if (isRedeclIsInCUDAHeader(TDT))
+        if (isRedeclInCUDAHeader(TDT))
           break;
         DerefQT = TDT->getDecl()->getUnderlyingType();
       }

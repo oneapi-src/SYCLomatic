@@ -2245,7 +2245,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
   if (const auto *TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
-    if(const auto *TypePtr = TL->getTypePtr()) {
+    if (const auto *TypePtr = TL->getTypePtr()) {
       if (isTypeInAnalysisScope(TypePtr)) {
         if (const auto *const ET = dyn_cast<ElaboratedType>(TypePtr))
           TypePtr = ET->getNamedType().getTypePtr();
@@ -2258,7 +2258,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         // When a CUDA type is redefined in the files under analysis we
         // want to migrate them.
         const auto *TT = dyn_cast<TypedefType>(TypePtr);
-        if(!isRedeclIsInCUDAHeader(TT))
+        if (!isRedeclInCUDAHeader(TT))
           return;
       }
     }
