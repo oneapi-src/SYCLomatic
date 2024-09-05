@@ -409,25 +409,35 @@ updateExtentionName(const std::string &Input, size_t Next,
   auto Extension = clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
     size_t Pos = Next - 1;
-    for (; Pos > 0 && (isIdentifiedChar(Input[Pos]) || Input[Pos] == '.');
-         Pos--) {
+    for (; Pos > 0 && !isWhitespace(Input[Pos]); Pos--) {
     }
     Pos = Pos == 0 ? 0 : Pos + 1;
     std::string SrcFile = Input.substr(Pos, Next + strlen(".cpp") - Pos);
+
+    SmallString<512> _SrcFile(SrcFile);
+    llvm::sys::path::remove_dots(_SrcFile, /* remove_dot_dot= */ true);
+    llvm::sys::path::replace_path_prefix(_SrcFile, "${CMAKE_SOURCE_DIR}/", "");
+    SrcFile = _SrcFile.c_str();
+
     bool HasCudaSyntax = false;
     for (const auto &File : MainSrcFilesHasCudaSyntex) {
       if (llvm::sys::path::filename(FileName) == "CMakeLists.txt") {
         // In a CMakeLists.txt file, the relative directory path for a source
         // file is the location of the CMakeLists.txt file itself
 
-        // To get the directory path where CMake script is located
-        SmallString<512> CMakeDirectory(FileName);
-        llvm::sys::path::replace_path_prefix(
-            CMakeDirectory, OutRoot.getCanonicalPath().str() + "/", "");
-        llvm::sys::path::remove_filename(CMakeDirectory);
+        std::string CMakeFilePath;
+        if (llvm::sys::path::filename(SrcFile) == SrcFile) {
+          // To get the directory path where CMake script is located
+          SmallString<512> CMakeDirectory(FileName);
+          llvm::sys::path::replace_path_prefix(
+              CMakeDirectory, OutRoot.getCanonicalPath().str() + "/", "");
+          llvm::sys::path::remove_filename(CMakeDirectory);
 
-        std::string CMakeFilePath = CMakeDirectory.c_str();
-        CMakeFilePath = CMakeFilePath + "/" + SrcFile;
+          CMakeFilePath = CMakeDirectory.c_str();
+          CMakeFilePath = CMakeFilePath + "/" + SrcFile;
+        } else {
+          CMakeFilePath = SrcFile;
+        }
 
         if (llvm::StringRef(File).ends_with(CMakeFilePath)) {
           HasCudaSyntax = true;
@@ -436,7 +446,8 @@ updateExtentionName(const std::string &Input, size_t Next,
       } else {
         // For other module files (e.g., .cmake files), just check the
         // file names.
-        if (llvm::sys::path::filename(File) == SrcFile) {
+        if (llvm::sys::path::filename(File) ==
+            llvm::sys::path::filename(SrcFile)) {
           HasCudaSyntax = true;
           break;
         }
