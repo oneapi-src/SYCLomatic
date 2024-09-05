@@ -272,7 +272,7 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                      CALL(MapNames::getClNamespace() + "sincos",
                           BO(BinaryOperatorKind::BO_Mul,
                              CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
-                             makeLiteral("DPCT_PI")),
+                             makeLiteral(getPiString<true>())),
                           makeArgWithAddressSpaceCast(2)))),
               Diagnostics::MATH_EMULATION, std::string("sincospi"),
               MapNames::getClNamespace() + std::string("sincos")),
@@ -284,7 +284,7 @@ RewriterMap dpct::createDoublePrecisionMathematicalFunctionsRewriterMap() {
                      CALL(MapNames::getClNamespace() + "sincos",
                           BO(BinaryOperatorKind::BO_Mul,
                              CAST_IF_NOT_SAME(getDerefedType(1), ARG(0)),
-                             makeLiteral("DPCT_PI_F")),
+                             makeLiteral(getPiString<false>())),
                           makeArgWithAddressSpaceCast(2)))),
               Diagnostics::MATH_EMULATION, std::string("sincospi"),
               MapNames::getClNamespace() + std::string("sincos")))

@@ -224,3 +224,36 @@ void test_texref() {
   CUDA_ARRAY_DESCRIPTOR desc;
   cuTexRefSetAddress2D(tex, &desc, dptr, b);
 }
+
+// CHECK: sycl::addressing_mode AddrMode[] =
+// CHECK-NEXT: {
+// CHECK-NEXT:   sycl::addressing_mode::repeat,
+// CHECK-NEXT:   sycl::addressing_mode::clamp_to_edge,
+// CHECK-NEXT:   sycl::addressing_mode::clamp
+// CHECK-NEXT: };
+CUaddress_mode AddrMode[] =
+{
+  CU_TR_ADDRESS_MODE_WRAP,
+  CU_TR_ADDRESS_MODE_CLAMP,
+  CU_TR_ADDRESS_MODE_BORDER
+};
+
+// CHECK: sycl::filtering_mode FltMode[] =
+// CHECK-NEXT: {
+// CHECK-NEXT:   sycl::filtering_mode::nearest,
+// CHECK-NEXT:   sycl::filtering_mode::linear
+// CHECK-NEXT: };
+CUfilter_mode FltMode[] =
+{
+  CU_TR_FILTER_MODE_POINT,
+  CU_TR_FILTER_MODE_LINEAR
+};
+
+// CHECK: void TestAssignment(sycl::addressing_mode a) {
+// CHECK-NEXT:   if (a == sycl::addressing_mode::repeat);
+// CHECK-NEXT:   if (a == sycl::addressing_mode::clamp_to_edge);
+// CHECK-NEXT: }
+void TestAssignment(CUaddress_mode a) {
+  if (a == CU_TR_ADDRESS_MODE_WRAP);
+  if (a == CU_TR_ADDRESS_MODE_CLAMP);
+}

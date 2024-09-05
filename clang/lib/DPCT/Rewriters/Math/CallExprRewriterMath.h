@@ -11,6 +11,7 @@
 
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
+#include "Config.h"
 #include <cstddef>
 
 namespace clang {
@@ -628,6 +629,18 @@ createMathAPIRewriterHost(
       createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                std::move(HostPerf), std::move(HostNormal)),
       {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+}
+
+template <bool IsDouble> std::string getPiString() {
+  if constexpr (IsDouble) {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return STRINGIFY(__DPCT_PI);
+    return "DPCT_PI";
+  } else {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return STRINGIFY(__DPCT_PI_F);
+    return "DPCT_PI_F";
+  }
 }
 
 #define EMPTY_FACTORY_ENTRY(NAME)                                              \
