@@ -3206,9 +3206,16 @@ ExprResult SemaObjC::BuildInstanceMessage(
     }
     if (!isDesignatedInitChain) {
       const ObjCMethodDecl *InitMethod = nullptr;
+#ifdef SYCLomatic_CUSTOMIZATION
+      auto *CurMD = SemaRef.getCurMethodDecl();
+      assert(CurMD && "Current method declaration should not be null");
+      bool isDesignated =
+          CurMD->isDesignatedInitializerForTheInterface(&InitMethod);
+#else
       bool isDesignated =
           SemaRef.getCurMethodDecl()->isDesignatedInitializerForTheInterface(
               &InitMethod);
+#endif
       assert(isDesignated && InitMethod);
       (void)isDesignated;
       Diag(SelLoc, SuperLoc.isValid() ?

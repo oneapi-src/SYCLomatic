@@ -2155,7 +2155,14 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
   }
   if (IsDim3Config && isa<CXXConstructExpr>(E)) {
     if (const auto &Ctor = dyn_cast<CXXConstructExpr>(E)) {
-      IsDim3Var = Ctor->getNumArgs() == 1;
+      if (Ctor->getNumArgs() == 1) {
+        if (const auto &InnerCtor =
+                dyn_cast<CXXConstructExpr>(Ctor->getArg(0)->IgnoreImplicit())) {
+          IsDim3Var = InnerCtor->getNumArgs() == 1;
+        } else {
+          IsDim3Var = true;
+        }
+      }
     }
   }
   ArgumentAnalysis::analyze(E);

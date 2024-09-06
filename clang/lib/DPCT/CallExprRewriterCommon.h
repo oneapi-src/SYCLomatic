@@ -24,6 +24,7 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Driver/Options.h"
+#include <algorithm>
 #include <cstdarg>
 
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
@@ -327,24 +328,25 @@ makeExtendStr(unsigned Idx, const std::string Suffix) {
   };
 }
 
-inline std::string registerAndGetQueueStr(const CallExpr *C, std::string Prefix) {
-  int Index = getPlaceholderIdx(C);
-  if (Index == 0) {
-    Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-  }
-  buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-  return Prefix + "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-}
-
 inline std::function<std::string(const CallExpr *)> makeQueueStr() {
   return [=](const CallExpr *C) -> std::string {
-    return registerAndGetQueueStr(C, "");
+    int Index = getPlaceholderIdx(C);
+    if (Index == 0) {
+      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    }
+    buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+    return "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
   };
 }
 
 inline std::function<std::string(const CallExpr *)> makeQueuePtrStr() {
   return [=](const CallExpr *C) -> std::string {
-    return registerAndGetQueueStr(C, "&");
+    int Index = getPlaceholderIdx(C);
+    if (Index == 0) {
+      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    }
+    buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueuePtr);
+    return "{{NEEDREPLACEZ" + std::to_string(Index) + "}}";
   };
 }
 
@@ -792,7 +794,11 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       DerefQT = ET->getNamedType();
       if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
         auto *TDecl = TDT->getDecl();
-        if (dpct::DpctGlobalInfo::isInCudaPath(TDecl->getLocation()))
+        const auto Redecls = TDecl->redecls();
+        auto IsDeclInCudaHeader = [](const TypedefNameDecl * D) {
+          return dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
+        };
+        if (std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader))
           break;
         DerefQT = TDecl->getUnderlyingType();
       }
@@ -973,6 +979,19 @@ inline std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t inde
     }
     return false;
     };
+}
+
+inline std::function<bool(const CallExpr *C)> isTextureAlignment(size_t idx) {
+  return [=](const CallExpr *CE) -> bool {
+    const auto *Arg = CE->getArg(idx)->IgnoreImplicitAsWritten();
+    if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg)) {
+      auto ArgName = DRE->getNameInfo().getAsString();
+      if (ArgName == "CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT") {
+        return true;
+      }
+    }
+    return false;
+  };
 }
 
 inline std::function<bool(const CallExpr *C)>
