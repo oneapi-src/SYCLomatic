@@ -750,7 +750,13 @@ void genCodePinDecl(dpct::RawFDOStream &RS, std::vector<std::string> &SortedVec,
     }
     RS << Info.VarRecordType;
     if (IsForwardDecl) {
-      RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << ";" << getNL();
+      if (Info.IsTypeDef) {
+        RS << " " << Info.OrgTypeName << ";" << getNL();
+        RS << "using " << Info.VarNameWithoutScopeAndTemplateArgs << " = "
+           << Info.OrgTypeName << ";" << getNL();
+      } else {
+        RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << ";" << getNL();
+      }
     } else {
       RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << "_codepin";
       if (!Info.Bases.empty()) {

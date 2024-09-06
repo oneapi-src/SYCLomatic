@@ -102,6 +102,13 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
       // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), b_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(b + bRow + bCol * ldb), ldb);
       nvcuda::wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
 
+      // CHECK: for (int i = 0; i < c_frag.num_elements; i++) {
+      // CHECK-NEXT:  c_frag.x[i] = alpha * acc_frag.x[i] + beta * c_frag.x[i];
+      // CHECK-NEXT: }
+      for (int i = 0; i < c_frag.num_elements; i++) {
+        c_frag.x[i] = alpha * acc_frag.x[i] + beta * c_frag.x[i];
+      }
+
       // Perform the matrix multiplication
       // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_mad(item_ct1.get_sub_group(), acc_frag.get(), a_frag.get(), b_frag.get(), acc_frag.get());
       nvcuda::wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);

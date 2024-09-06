@@ -2179,9 +2179,16 @@ class joint_matrix {
       sycl::sub_group, T, use::value, matrix_size_traits<use, m, n, k>::rows,
       matrix_size_traits<use, m, n, k>::cols, layout::value>;
 
+  static inline decltype(auto) get_wi_data(joint_matrix_type &matrix) {
+    return sycl::ext::oneapi::detail::get_wi_data(
+        sycl::ext::oneapi::this_work_item::get_sub_group(), matrix);
+  }
+
 public:
-  joint_matrix() : matrix() {}
-  joint_matrix(joint_matrix &other) {
+  joint_matrix()
+      : matrix(), x(matrix), num_elements(get_wi_data(matrix).length()) {}
+  joint_matrix(joint_matrix &other)
+      : x(matrix), num_elements(get_wi_data(matrix).length()) {
     syclex::matrix::joint_matrix_copy(
         sycl::ext::oneapi::this_work_item::get_sub_group(), other.get(),
         matrix);
@@ -2199,8 +2206,24 @@ public:
 
   const joint_matrix_type &get() const { return matrix; }
 
+  class matrix_accessor {
+    friend joint_matrix;
+    joint_matrix_type &matrix;
+    matrix_accessor(joint_matrix_type &matrix) : matrix(matrix) {}
+
+  public:
+    decltype(auto) operator[](unsigned I) { return get_wi_data(matrix)[I]; }
+    decltype(auto) operator[](unsigned I) const {
+      return get_wi_data(matrix)[I];
+    }
+  };
+
 private:
   joint_matrix_type matrix;
+
+public:
+  matrix_accessor x;
+  const size_t num_elements;
 };
 } // namespace matrix
 } // namespace experimental
