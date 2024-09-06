@@ -1088,7 +1088,7 @@ void foo28(){
 //CHECK: void foo29(double red_acc[8][8/*BLOCK_PAIR / SIMD_SIZE*/]) {
 //CHECK-NEXT: }
 __global__ void foo29() {
-  local_allocate_store_charge();
+  local_allocate_store_charge()
 }
 
 template<class T1, class T2, int N> __global__ void foo31();
