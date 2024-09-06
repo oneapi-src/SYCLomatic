@@ -2182,8 +2182,8 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
         Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       }
       buildTempVariableMap(Index, replExpr, HelperFuncType::HFT_DefaultQueue);
-      std::string Repl = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-      emplaceTransformation(new ReplaceStmt(replExpr, "&" + Repl));
+      std::string Repl = "{{NEEDREPLACEZ" + std::to_string(Index) + "}}";
+      emplaceTransformation(new ReplaceStmt(replExpr, Repl));
     }
   };
 
@@ -14966,7 +14966,7 @@ void CudaStreamCastRule::runRule(
       buildTempVariableMap(Index, CE->getSubExpr(),
                            HelperFuncType::HFT_DefaultQueue);
       emplaceTransformation(new ReplaceStmt(
-          CE, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
+          CE, "{{NEEDREPLACEZ" + std::to_string(Index) + "}}"));
     } else if (CE->getSubExpr()->getType()->isIntegerType()) {
       requestFeature(HelperFeatureEnum::device_ext);
       emplaceTransformation(new ReplaceStmt(
