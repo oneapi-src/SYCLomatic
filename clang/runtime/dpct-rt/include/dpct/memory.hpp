@@ -1519,13 +1519,10 @@ public:
   }
 
   /// Allocate memory with default queue, and init memory if has initial value.
-  void init() {
-    init(dpct::get_default_queue());
-  }
-  /// Allocate memory with specified queue, and init memory if has initial value.
-  void init(sycl::queue &q) {
-    (void)get_ptr_impl(q);
-  }
+  void init() { init(dpct::get_default_queue()); }
+  /// Allocate memory with specified queue, and init memory if has initial
+  /// value.
+  void init(sycl::queue &q) { (void)get_ptr_impl(q); }
 
   /// The variable is assigned to a device pointer.
 #ifndef DPCT_USM_LEVLE_NONE
@@ -1538,14 +1535,10 @@ public:
 
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used.
-  value_t *get_ptr() {
-    return get_ptr(get_default_queue());
-  }
+  value_t *get_ptr() { return get_ptr(get_default_queue()); }
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used.
-  value_t *get_ptr(sycl::queue &q) {
-    return get_ptr_impl(q);
-  }
+  value_t *get_ptr(sycl::queue &q) { return get_ptr_impl(q); }
 
   /// Get the device memory object size in bytes.
   size_t get_size() { return _size; }
@@ -1554,8 +1547,7 @@ public:
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
     auto ptr = get_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
-    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
-               ptr)
+    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(ptr)
         .template get_access<sycl::access_mode::read_write>()[index];
 #else
     return ptr[index];
@@ -1589,8 +1581,8 @@ private:
     _q = q;
 #ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
-      return (value_t *)sycl::malloc_shared(
-          _size, q.get_device(), q.get_context());
+      return (value_t *)sycl::malloc_shared(_size, q.get_device(),
+                                            q.get_context());
     }
 #ifdef SYCL_EXT_ONEAPI_USM_DEVICE_READ_ONLY
     if (Memory == constant) {
