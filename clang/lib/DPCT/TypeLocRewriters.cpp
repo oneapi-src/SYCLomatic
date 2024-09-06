@@ -325,7 +325,7 @@ void initTypeLocSYCLCompatRewriterMap(
                        std::shared_ptr<TypeLocRewriterFactoryBase>,
                        TypeMatchingDesc::hash> &TypeLocRewriterMap) {
 #define SYCLCOMPAT_UNSUPPORT(NAME)                                             \
-  TypeLocRewriterMap[TypeMatchingDesc(NAME)] =                              \
+  TypeLocRewriterMap[TypeMatchingDesc(NAME)] =                                 \
       createReportWarningTypeLocRewriterFactory(                               \
           Diagnostics::UNSUPPORT_SYCLCOMPAT, makeStringCreator(NAME));
 
