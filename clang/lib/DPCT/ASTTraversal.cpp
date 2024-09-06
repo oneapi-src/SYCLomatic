@@ -6394,6 +6394,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (AttributeName == "cudaDevAttrComputeMode") {
       report(CE->getBeginLoc(), Diagnostics::COMPUTE_MODE, false);
       ReplStr += " = 1";
+    } else if (AttributeName == "cudaDevAttrTextureAlignment" &&
+               DpctGlobalInfo::useSYCLCompat()) {
+      ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
+      ReplStr += StmtStrArg2;
+      ReplStr += ").get_mem_base_addr_align() / 8";
+      requestFeature(HelperFeatureEnum::device_ext);
     } else {
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
@@ -11708,8 +11714,12 @@ void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
 
 void UnnamedTypesRule::runRule(const MatchFinder::MatchResult &Result) {
   auto D = getNodeAsType<CXXRecordDecl>(Result, "unnamedType");
-  if (D && D->getName().empty())
-    emplaceTransformation(new InsertClassName(D));
+  if (D && D->getName().empty()) {
+    if (DpctGlobalInfo::isCodePinEnabled()) {
+      emplaceTransformation(new InsertClassName(D, RT_CUDAWithCodePin));
+    }
+    emplaceTransformation(new InsertClassName(D, RT_ForSYCLMigration));
+  }
 }
 
 REGISTER_RULE(UnnamedTypesRule, PassKind::PK_Migration)
@@ -13169,11 +13179,12 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      declRefExpr(
-          to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-              "cudaTextureAddressMode", "cudaTextureFilterMode",
-              "cudaChannelFormatKind", "cudaResourceType",
-              "CUarray_format_enum", "CUaddress_mode", "CUfilter_mode"))))))
+      declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
+                      "cudaTextureAddressMode", "cudaTextureFilterMode",
+                      "cudaChannelFormatKind", "cudaResourceType",
+                      "CUarray_format_enum", "CUaddress_mode_enum",
+                      "CUfilter_mode_enum"))))))
+
           .bind("texEnum"),
       this);
 

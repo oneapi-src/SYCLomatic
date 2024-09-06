@@ -976,6 +976,19 @@ inline std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t inde
     };
 }
 
+inline std::function<bool(const CallExpr *C)> isTextureAlignment(size_t idx) {
+  return [=](const CallExpr *CE) -> bool {
+    const auto *Arg = CE->getArg(idx)->IgnoreImplicitAsWritten();
+    if (const auto *DRE = dyn_cast<DeclRefExpr>(Arg)) {
+      auto ArgName = DRE->getNameInfo().getAsString();
+      if (ArgName == "CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT") {
+        return true;
+      }
+    }
+    return false;
+  };
+}
+
 inline std::function<bool(const CallExpr *C)>
 checkIsMigratedToHasAspect(size_t index) {
   return [=](const CallExpr *C) -> bool {
