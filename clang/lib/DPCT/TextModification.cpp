@@ -649,6 +649,7 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " dpct_type_" + getHashStrFromLoc(BeginLoc).substr(0, 6), this);
   Repl->setSYCLHeaderNeeded(false);
+  Repl->IsForCodePin = IsForCodePin;
   return Repl;
 }
 

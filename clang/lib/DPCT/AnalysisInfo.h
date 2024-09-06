@@ -56,7 +56,8 @@ std::string buildStringFromPrinter(F Func, Ts &&...Args) {
 enum class HelperFuncType : int {
   HFT_InitValue = 0,
   HFT_DefaultQueue = 1,
-  HFT_CurrentDevice = 2
+  HFT_CurrentDevice = 2,
+  HFT_DefaultQueuePtr = 3
 };
 
 enum class KernelArgType : int {
@@ -194,6 +195,8 @@ struct VarInfoForCodePin {
   bool TemplateFlag = false;
   bool TopTypeFlag = false;
   bool IsValid = false;
+  bool IsTypeDef = false;
+  std::string OrgTypeName;
   std::string HashKey;
   std::string VarRecordType;
   std::string VarName;
@@ -662,10 +665,16 @@ public:
               "",
               buildString(MapNames::getDpctNamespace(), "get_",
                           DpctGlobalInfo::getDeviceQueueName(), "()"),
-              MapNames::getDpctNamespace() + "get_current_device()"} {}
+              MapNames::getDpctNamespace() + "get_current_device()",
+              (DpctGlobalInfo::useSYCLCompat()
+                   ? buildString(MapNames::getDpctNamespace() +
+                                 "get_current_device().default_queue()")
+                   : buildString("&" + MapNames::getDpctNamespace() + "get_" +
+                                 DpctGlobalInfo::getDeviceQueueName() +
+                                 "()"))} {}
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
-    std::string PlaceholderStr[3];
+    std::string PlaceholderStr[4];
   };
 
   static std::string removeSymlinks(clang::FileManager &FM,
@@ -3063,6 +3072,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
       DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
   switch (HFT) {
   case HelperFuncType::HFT_DefaultQueue:
+  case HelperFuncType::HFT_DefaultQueuePtr:
     ++Iter->second.DefaultQueueCounter;
     break;
   case HelperFuncType::HFT_CurrentDevice:

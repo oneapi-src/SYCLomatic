@@ -264,33 +264,22 @@ void MapNames::setExplicitNamespaceMap(
                               ? "SYCLCOMPAT_COMPATIBILITY_TEMP"
                               : "__DPCT_HPP__")},
       {"CUDART_VERSION",
-       MacroMigrationRule(
-           "dpct_build_in_macro_rule", RulePriority::Fallback, "CUDART_VERSION",
-           DpctGlobalInfo::useSYCLCompat() ? "SYCLCOMPAT_VERSION"
-                                           : "DPCT_COMPAT_RT_VERSION")},
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUDART_VERSION", "DPCT_COMPAT_RT_VERSION")},
       {"__CUDART_API_VERSION",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
-                          "__CUDART_API_VERSION",
-                          DpctGlobalInfo::useSYCLCompat()
-                              ? "SYCLCOMPAT_VERSION"
-                              : "DPCT_COMPAT_RT_VERSION")},
+                          "__CUDART_API_VERSION", "DPCT_COMPAT_RT_VERSION")},
       {"CUDA_VERSION",
-       MacroMigrationRule(
-           "dpct_build_in_macro_rule", RulePriority::Fallback, "CUDA_VERSION",
-           DpctGlobalInfo::useSYCLCompat() ? "SYCLCOMPAT_VERSION"
-                                           : "DPCT_COMPAT_RT_VERSION")},
+       MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
+                          "CUDA_VERSION", "DPCT_COMPAT_RT_VERSION")},
       {"__CUDACC_VER_MAJOR__",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "__CUDACC_VER_MAJOR__",
-                          DpctGlobalInfo::useSYCLCompat()
-                              ? "SYCLCOMPAT_MAJOR_VERSION"
-                              : "DPCT_COMPAT_RT_MAJOR_VERSION")},
+                          "DPCT_COMPAT_RT_MAJOR_VERSION")},
       {"__CUDACC_VER_MINOR__",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "__CUDACC_VER_MINOR__",
-                          DpctGlobalInfo::useSYCLCompat()
-                              ? "SYCLCOMPAT_MINOR_VERSION"
-                              : "DPCT_COMPAT_RT_MINOR_VERSION")},
+                          "DPCT_COMPAT_RT_MINOR_VERSION")},
       {"CUBLAS_V2_H_",
        MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                           "CUBLAS_V2_H_", "MKL_SYCL_HPP")},
@@ -956,11 +945,11 @@ void MapNames::setExplicitNamespaceMap(
 
   // CuDNN Type names mapping.
   CuDNNTypeNamesMap = {
-      {"cudnnHandle_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::engine_ext",
-                                      HelperFeatureEnum::device_ext)},
+      {"cudnnHandle_t", std::make_shared<TypeNameRule>(
+                            getLibraryHelperNamespace() + "dnnl::engine_ext",
+                            HelperFeatureEnum::device_ext)},
       {"cudnnStatus_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "err1",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err1",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnTensorDescriptor_t",
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
@@ -974,9 +963,9 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::memory_format_tag",
                                       HelperFeatureEnum::device_ext)},
-      {"cudnnDataType_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "library_data_t",
-                                      HelperFeatureEnum::device_ext)},
+      {"cudnnDataType_t", std::make_shared<TypeNameRule>(
+                              getLibraryHelperNamespace() + "library_data_t",
+                              HelperFeatureEnum::device_ext)},
       {"cudnnActivationDescriptor_t",
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::activation_desc",
@@ -984,11 +973,13 @@ void MapNames::setExplicitNamespaceMap(
       {"cudnnActivationMode_t",
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnLRNDescriptor_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::lrn_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::lrn_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnLRNMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnPoolingDescriptor_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::pooling_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::pooling_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnPoolingMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnSoftmaxAlgorithm_t",
@@ -996,20 +987,24 @@ void MapNames::setExplicitNamespaceMap(
                                           "dnnl::softmax_algorithm",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnSoftmaxMode_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::softmax_mode",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::softmax_mode",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnReduceTensorDescriptor_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::reduction_op",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::reduction_op",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnReduceTensorOp_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::reduction_op",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::reduction_op",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnOpTensorDescriptor_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::binary_op",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::binary_op",
                                       HelperFeatureEnum::device_ext)},
-      {"cudnnOpTensorOp_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::binary_op",
-                                      HelperFeatureEnum::device_ext)},
+      {"cudnnOpTensorOp_t", std::make_shared<TypeNameRule>(
+                                getLibraryHelperNamespace() + "dnnl::binary_op",
+                                HelperFeatureEnum::device_ext)},
       {"cudnnBatchNormOps_t",
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::batch_normalization_ops",
@@ -1048,17 +1043,20 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
                                           "dnnl::convolution_algorithm_info",
                                       HelperFeatureEnum::device_ext)},
-      {"cudnnRNNMode_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::rnn_mode",
+      {"cudnnRNNMode_t", std::make_shared<TypeNameRule>(
+                             getLibraryHelperNamespace() + "dnnl::rnn_mode",
+                             HelperFeatureEnum::device_ext)},
+      {"cudnnRNNBiasMode_t",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::rnn_bias_mode",
                                       HelperFeatureEnum::device_ext)},
-      {"cudnnRNNBiasMode_t", std::make_shared<TypeNameRule>(
-                                 getLibraryHelperNamespace() + "dnnl::rnn_bias_mode",
-                                 HelperFeatureEnum::device_ext)},
-      {"cudnnDirectionMode_t", std::make_shared<TypeNameRule>(
-                                   getLibraryHelperNamespace() + "dnnl::rnn_direction",
-                                   HelperFeatureEnum::device_ext)},
+      {"cudnnDirectionMode_t",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::rnn_direction",
+                                      HelperFeatureEnum::device_ext)},
       {"cudnnRNNDescriptor_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::rnn_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::rnn_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnForwardMode_t", std::make_shared<TypeNameRule>("dnnl::prop_kind")},
       {"cudnnRNNDataDescriptor_t",
@@ -1070,7 +1068,8 @@ void MapNames::setExplicitNamespaceMap(
                                           "dnnl::rnn_memory_format_tag",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnDropoutDescriptor_t",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "dnnl::dropout_desc",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "dnnl::dropout_desc",
                                       HelperFeatureEnum::device_ext)},
       {"cudnnConvolutionMode_t", std::make_shared<TypeNameRule>("int")},
       {"cudnnNanPropagation_t", std::make_shared<TypeNameRule>("int")},
@@ -1290,7 +1289,9 @@ void MapNames::setExplicitNamespaceMap(
       // enum Device Attribute
       // ...
       {"cudaDevAttrHostNativeAtomicSupported",
-       std::make_shared<EnumNameRule>("is_native_atomic_supported",
+       std::make_shared<EnumNameRule>(DpctGlobalInfo::useSYCLCompat()
+                                          ? "is_native_host_atomic_supported"
+                                          : "is_native_atomic_supported",
                                       HelperFeatureEnum::device_ext)},
       {"cudaDevAttrComputeCapabilityMajor",
        std::make_shared<EnumNameRule>("get_major_version",
@@ -1473,7 +1474,9 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("get_max_compute_units",
                                       HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED",
-       std::make_shared<EnumNameRule>("is_native_atomic_supported",
+       std::make_shared<EnumNameRule>(DpctGlobalInfo::useSYCLCompat()
+                                          ? "is_native_host_atomic_supported"
+                                          : "is_native_atomic_supported",
                                       HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X",
        std::make_shared<EnumNameRule>("get_max_work_item_sizes",

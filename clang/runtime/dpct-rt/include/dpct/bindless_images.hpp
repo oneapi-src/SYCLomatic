@@ -14,10 +14,7 @@
 #include <d3d11.h>
 #include <dxgi.h>
 #include <dxgi1_2.h>
-
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "dxgi.lib")
-#endif
+#endif // _WIN32
 
 namespace dpct {
 namespace experimental {
@@ -353,12 +350,6 @@ public:
   /// Cleans up the external mem wrapper by releasing the SYCL external
   /// memory handle and the shared handle created for the DX11 resource.
   virtual ~external_mem_wrapper() {
-    if (_res_D3D11_set.find(_res_D3D11) == _res_D3D11_set.end()) {
-      throw std::runtime_error(
-          "Resource is not registered! "
-          "Resource should be registered before unregistration.");
-    }
-
     // Release the mutex when done
     _res_keyed_mutex->ReleaseSync(0);
 
@@ -373,11 +364,13 @@ public:
         get_external_mem(), get_default_queue());
 
     // Remove the resource from the tracking set.
-    _res_D3D11_set.erase(_res_D3D11);
+    if (_res_D3D11_set.find(_res_D3D11) != _res_D3D11_set.end()) {
+      _res_D3D11_set.erase(_res_D3D11);
+    }
   }
 
 private:
-  static std::set<ID3D11Resource *> _res_D3D11_set;
+  inline static std::set<ID3D11Resource *> _res_D3D11_set;
 
   ID3D11Resource *_res_D3D11 = nullptr;
   IDXGIKeyedMutex *_res_keyed_mutex = nullptr;
@@ -385,14 +378,11 @@ private:
 
   /// Helper function to query the properties of DX11 resource
   void query_res_info(ID3D11Resource *resource) {
-    unsigned int res_width = 1;
-    unsigned int res_height = 1;
-    unsigned int res_depth = 1;
+    unsigned int res_width = 0;
+    unsigned int res_height = 0;
+    unsigned int res_depth = 0;
     unsigned int res_num_levels = 1;
     unsigned int res_arr_size = 1;
-
-    sycl::image_channel_type img_ch_type =
-        sycl::image_channel_type::unsigned_int8;
 
     image_channel channel;
 
@@ -419,6 +409,7 @@ private:
       res_num_levels = (desc.MipLevels ? desc.MipLevels : 1);
 
       channel = get_img_ch_info(desc.Format);
+      _res_size_bytes = res_width;
       break;
     }
     case D3D11_RESOURCE_DIMENSION_TEXTURE2D: {
@@ -431,6 +422,7 @@ private:
       res_num_levels = (desc.MipLevels ? desc.MipLevels : 1);
 
       channel = get_img_ch_info(desc.Format);
+      _res_size_bytes = res_width * res_height;
       break;
     }
     case D3D11_RESOURCE_DIMENSION_TEXTURE3D: {
@@ -443,6 +435,7 @@ private:
       res_num_levels = (desc.MipLevels ? desc.MipLevels : 1);
 
       channel = get_img_ch_info(desc.Format);
+      _res_size_bytes = res_width * res_height * res_depth;
       break;
     }
     default:
@@ -457,8 +450,8 @@ private:
             "Only standard and mipmap images are supported!");
       }
 
-      _res_size_bytes = res_width * res_height * res_depth * res_arr_size *
-                        res_num_levels * channel.get_total_size();
+      _res_size_bytes *=
+          res_arr_size * res_num_levels * channel.get_total_size();
 
       sycl::ext::oneapi::experimental::image_type img_type =
           (res_num_levels > 1)
@@ -787,11 +780,12 @@ inline bool check_duplicate_entries(int count, T **entries) {
 }
 } // namespace detail
 
+#ifdef _WIN32
 /// Map the resource memories to mem handles
 /// \param [in] count The count of resources to map.
 /// \param [in] handles The external mem wrappers used to map the resources.
 /// \param [in] q The queue used to map the resource with.
-inline void map_resources(int count, external_mem_wrapper_base **handles,
+inline void map_resources(int count, external_mem_wrapper **handles,
                           queue_ptr q_ptr = &get_default_queue()) {
   if (detail::check_duplicate_entries(count, handles)) {
     throw std::runtime_error(
@@ -807,7 +801,7 @@ inline void map_resources(int count, external_mem_wrapper_base **handles,
 /// \param [in] count The count of resources to unmap.
 /// \param [in] handles The external mem wrappers used to unmap the resources.
 /// \param [in] q The queue used to unmap the resource with.
-inline void unmap_resources(int count, external_mem_wrapper_base **handles,
+inline void unmap_resources(int count, external_mem_wrapper **handles,
                             queue_ptr q_ptr = &get_default_queue()) {
   if (detail::check_duplicate_entries(count, handles) &&
       "Duplicate handle entries found during resource unmapping!")
@@ -817,6 +811,7 @@ inline void unmap_resources(int count, external_mem_wrapper_base **handles,
     handles[i]->unmap_resource(*q_ptr);
   }
 }
+#endif // _WIN32
 
 /// Create bindless image according to image data and sampling info.
 /// \param [in] data The image data used to create bindless image.
@@ -1337,7 +1332,7 @@ using image_mem_wrapper_ptr = image_mem_wrapper *;
 using external_mem_wrapper_ptr = external_mem_wrapper *;
 #else
 using external_mem_wrapper_ptr = external_mem_wrapper_base *;
-#endif
+#endif // _WIN32
 using bindless_image_wrapper_base_p = bindless_image_wrapper_base *;
 
 #endif

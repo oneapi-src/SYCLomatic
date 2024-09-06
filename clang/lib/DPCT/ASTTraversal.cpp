@@ -3875,8 +3875,12 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(" = ", MapNames::getLibraryHelperNamespace(),
                     "rng::create_host_rng(", ExprAnalysis::ref(CE->getArg(1)));
     if (FuncName == "curandCreateGeneratorHost") {
-      RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
-                        "cpu_device().default_queue()");
+      if (DpctGlobalInfo::useSYCLCompat())
+        RHS = buildString(RHS, ", *", MapNames::getDpctNamespace(),
+                          "cpu_device().default_queue()");
+      else
+        RHS = buildString(RHS, ", ", MapNames::getDpctNamespace(),
+                          "cpu_device().default_queue()");
     }
     RHS = buildString(RHS, ")");
     if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {
@@ -6054,8 +6058,8 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      Repl = LHS + " = &{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueuePtr);
+      Repl = LHS + " = {{NEEDREPLACEZ" + std::to_string(Index) + "}}";
     } else if (FuncName == "cusolverDnDestroy") {
       dpct::ExprAnalysis EA(CE->getArg(0));
       Repl = EA.getReplacedString() + " = nullptr";
@@ -6377,6 +6381,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (AttributeName == "cudaDevAttrComputeMode") {
       report(CE->getBeginLoc(), Diagnostics::COMPUTE_MODE, false);
       ReplStr += " = 1";
+    } else if (AttributeName == "cudaDevAttrTextureAlignment" &&
+               DpctGlobalInfo::useSYCLCompat()) {
+      ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
+      ReplStr += StmtStrArg2;
+      ReplStr += ").get_mem_base_addr_align() / 8";
+      requestFeature(HelperFeatureEnum::device_ext);
     } else {
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
@@ -6982,6 +6992,11 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(CE->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+             FuncName);
+      return;
+    }
     std::string ReplStr = MapNames::getDpctNamespace() + "sycl_event_query";
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(ReplStr)));
   } else if (FuncName == "cudaEventRecord" || FuncName == "cuEventRecord") {
@@ -11686,8 +11701,12 @@ void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
 
 void UnnamedTypesRule::runRule(const MatchFinder::MatchResult &Result) {
   auto D = getNodeAsType<CXXRecordDecl>(Result, "unnamedType");
-  if (D && D->getName().empty())
-    emplaceTransformation(new InsertClassName(D));
+  if (D && D->getName().empty()) {
+    if (DpctGlobalInfo::isCodePinEnabled()) {
+      emplaceTransformation(new InsertClassName(D, RT_CUDAWithCodePin));
+    }
+    emplaceTransformation(new InsertClassName(D, RT_ForSYCLMigration));
+  }
 }
 
 REGISTER_RULE(UnnamedTypesRule, PassKind::PK_Migration)
@@ -13147,11 +13166,12 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       this);
 
   MF.addMatcher(
-      declRefExpr(
-          to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-              "cudaTextureAddressMode", "cudaTextureFilterMode",
-              "cudaChannelFormatKind", "cudaResourceType",
-              "CUarray_format_enum", "CUaddress_mode", "CUfilter_mode"))))))
+      declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
+                      "cudaTextureAddressMode", "cudaTextureFilterMode",
+                      "cudaChannelFormatKind", "cudaResourceType",
+                      "CUarray_format_enum", "CUaddress_mode_enum",
+                      "CUfilter_mode_enum"))))))
+
           .bind("texEnum"),
       this);
 

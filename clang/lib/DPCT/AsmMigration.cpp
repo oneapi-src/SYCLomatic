@@ -10,6 +10,7 @@
 #include "AnalysisInfo.h"
 #include "Asm/AsmNodes.h"
 #include "Asm/AsmParser.h"
+#include "Asm/AsmTokenKinds.h"
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
@@ -51,6 +52,7 @@ class SYCLGenBase {
   SmallVector<SmallString<10>, 4> VecExprTypeRecord;
   raw_ostream *Stream;
   InlineAsmContext &Context;
+  bool MigrationStopped = false;
 
 protected:
   const InlineAsmInstruction *CurrInst = nullptr;
@@ -133,6 +135,10 @@ public:
     for (unsigned I = 0; I < Num; ++I)
       Indent.append(IndentUnit);
   }
+
+  void cutOffMigration() { MigrationStopped = true; }
+
+  bool isMigrationStopped() const { return MigrationStopped; }
 
 protected:
   void indent() { OS() << Indent; }
@@ -1729,6 +1735,12 @@ protected:
   }
 
   bool HandleVset(const InlineAsmInstruction *I, StringRef Fn) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(Diagnostics::UNSUPPORT_SYCLCOMPAT, /*UseTextBegin=*/true,
+             GAS->getAsmString()->getString());
+      cutOffMigration();
+      return SYCLGenSuccess();
+    }
     if (I->getNumInputOperands() < 2 || I->getNumTypes() != 2 ||
         CheckSIMDInstructionType(I))
       return SYCLGenError();
@@ -2655,6 +2667,8 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
       report(GAS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
       return;
     }
+    if (CodeGen.isMigrationStopped())
+      return;
   } while (!Parser.getCurToken().is(asmtok::eof));
 
   StringRef Ref = ReplaceString;
