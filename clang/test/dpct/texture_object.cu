@@ -29,7 +29,8 @@ __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1050:{{[0-9]+}}: The template argument of the image_accessor_ext could not be deduced. You need to update this code.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  stream->submit(
+// CHECK-NEXT:    static_cast<dpct::image_wrapper<dpct_placeholder/*Fix the type manually*/, 1> *>(gridTexObj)->create_image(*stream);
+// CHECK:  stream->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      auto gridTexObj_acc = static_cast<dpct::image_wrapper<dpct_placeholder/*Fix the type manually*/, 1> *>(gridTexObj)->get_access(cgh, *stream);
 // CHECK-EMPTY:
@@ -176,7 +177,8 @@ int main() {
   texDesc21.filterMode = cudaFilterModeLinear;
   texDesc21.readMode = cudaReadModeElementType;
   cudaCreateTextureObject(&tex21, &res21, &texDesc21, NULL);
-
+  // CHECK:  static_cast<dpct::image_wrapper<sycl::uint2, 1> *>(tex21)->create_image();
+  // CHECK-NEXT:  static_cast<dpct::image_wrapper<sycl::float4, 2> *>(tex42)->create_image();
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     auto tex21_acc = static_cast<dpct::image_wrapper<sycl::uint2, 1> *>(tex21)->get_access(cgh);
@@ -334,7 +336,10 @@ __global__ void texlist_kernel(TexList list, TexList list1) {
   tex2D(&b, list.tex2, 0.5f, 0.5f);
   tex2D(&b, list.tex3, 0.5f, 0.5f);
 }
-
+// CHECK:  static_cast<dpct::image_wrapper<int, 1> *>(list1.tex1)->create_image();
+// CHECK-NEXT:  static_cast<dpct::image_wrapper<int, 1> *>(list.tex1)->create_image();
+// CHECK-NEXT:  static_cast<dpct::image_wrapper<float, 2> *>(list.tex2)->create_image();
+// CHECK-NEXT:  static_cast<dpct::image_wrapper<float, 2> *>(list.tex3)->create_image();
 // CHECK: dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
 // CHECK-NEXT:       auto tex1_acc = static_cast<dpct::image_wrapper<int, 1> *>(list1.tex1)->get_access(cgh);

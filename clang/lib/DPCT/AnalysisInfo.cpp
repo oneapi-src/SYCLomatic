@@ -68,6 +68,17 @@ const std::string &getDefaultString(HelperFuncType HFT) {
                           DpctGlobalInfo::getDeviceQueueName() + "()");
     return DefaultQueue;
   }
+  case clang::dpct::HelperFuncType::HFT_DefaultQueuePtr: {
+    const static std::string DefaultQueue =
+        DpctGlobalInfo::useNoQueueDevice()
+            ? DpctGlobalInfo::getGlobalQueueName()
+            : (DpctGlobalInfo::useSYCLCompat()
+                   ? buildString(MapNames::getDpctNamespace() +
+                                 "get_current_device().default_queue()")
+                   : buildString("&" + MapNames::getDpctNamespace() + "get_" +
+                                 DpctGlobalInfo::getDeviceQueueName() + "()"));
+    return DefaultQueue;
+  }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
     const static std::string DefaultDevice =
         DpctGlobalInfo::useNoQueueDevice()
@@ -88,8 +99,8 @@ const std::string &getDefaultString(HelperFuncType HFT) {
 std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index) {
   if (HFT == HelperFuncType::HFT_DefaultQueue ||
+      HFT == HelperFuncType::HFT_DefaultQueuePtr ||
       HFT == HelperFuncType::HFT_CurrentDevice) {
-
     if (DpctGlobalInfo::getDeviceChangedFlag() ||
         !DpctGlobalInfo::getUsingDRYPattern()) {
       return getDefaultString(HFT);
@@ -1344,6 +1355,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // this_work_item::get_work_group, this_work_item::get_sub_group.
   // E: extension, used for c source file migration
   // P: profiling enable or disable for time measurement.
+  // Z: queue pointer.
   switch (Method) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
@@ -1381,6 +1393,9 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'Q':
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueue, Index);
+  case 'Z':
+    return getStringForRegexDefaultQueueAndDevice(
+        HelperFuncType::HFT_DefaultQueuePtr, Index);
   case 'E': {
     auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
     return Vec[Index]->hasCUDASyntax()
@@ -1591,6 +1606,7 @@ void DpctGlobalInfo::buildReplacements() {
     if (DpctGlobalInfo::useNoQueueDevice()) {
       Counter.second.PlaceholderStr[1] = DpctGlobalInfo::getGlobalQueueName();
       Counter.second.PlaceholderStr[2] = DpctGlobalInfo::getGlobalDeviceName();
+      Counter.second.PlaceholderStr[3] = "&" + DpctGlobalInfo::getGlobalQueueName();
       // Need not insert q_ct1 and dev_ct1 declrations and request feature.
       continue;
     }
@@ -1605,6 +1621,7 @@ void DpctGlobalInfo::buildReplacements() {
             DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
         if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
           Counter.second.PlaceholderStr[1] = "q_ct1";
+          Counter.second.PlaceholderStr[3] = "&q_ct1";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
               DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
         }
@@ -1643,7 +1660,10 @@ void DpctGlobalInfo::processCudaArchMacro() {
             nullptr));
       }
     } else {
-      (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
+      if (useSYCLCompat())
+        (*Repl).setReplacementText("!SYCLCOMPAT_COMPATIBILITY_TEMP");
+      else
+        (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
     }
   };
 
@@ -3242,20 +3262,28 @@ const std::string &MemVarInfo::getMemoryAttr() {
   requestFeature(HelperFeatureEnum::device_ext);
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = MapNames::getDpctNamespace() + "global";
+    static std::string DeviceMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::global" : "global");
     return DeviceMemory;
   }
   case clang::dpct::MemVarInfo::Constant: {
     static std::string ConstantMemory =
-        MapNames::getDpctNamespace() + "constant";
+        MapNames::getDpctNamespace() + (DpctGlobalInfo::useSYCLCompat()
+                                            ? "memory_region::constant"
+                                            : "constant");
     return ConstantMemory;
   }
   case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = MapNames::getDpctNamespace() + "local";
+    static std::string SharedMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::local" : "local");
     return SharedMemory;
   }
   case clang::dpct::MemVarInfo::Managed: {
-    static std::string ManagedMemory = MapNames::getDpctNamespace() + "shared";
+    static std::string ManagedMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::shared" : "shared");
     return ManagedMemory;
   }
   default:
@@ -3450,13 +3478,19 @@ std::string TextureInfo::getAccessorDecl(const std::string &QueueStr) {
   OS << ");";
   return Ret;
 }
-void TextureInfo::addDecl(StmtList &AccessorList, StmtList &SamplerList,
-                          const std::string &QueueStr) {
+std::string TextureInfo::InitDecl(const std::string &QueueStr) {
+  ParameterStream PS;
+  PS << Name << ".create_image(" << QueueStr << ");";
+  return PS.Str;
+}
+void TextureInfo::addDecl(StmtList &InitList, StmtList &AccessorList,
+                          StmtList &SamplerList, const std::string &QueueStr) {
   if (DpctGlobalInfo::useExtBindlessImages()) {
     AccessorList.emplace_back("auto " + NewVarName + "_handle = " + Name +
                               ".get_handle();");
     return;
   }
+  InitList.emplace_back(InitDecl(QueueStr));
   AccessorList.emplace_back(getAccessorDecl(QueueStr));
   SamplerList.emplace_back(getSamplerDecl());
 }
@@ -3491,6 +3525,13 @@ std::string TextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
   printQueueStr(PS, QueueString);
   PS << ");";
   requestFeature(HelperFeatureEnum::device_ext);
+  return PS.Str;
+}
+std::string TextureObjectInfo::InitDecl(const std::string &QueueStr) {
+  ParameterStream PS;
+  PS << "static_cast<";
+  getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+      << " *>(" << Name << ")->create_image(" << QueueStr << ");";
   return PS.Str;
 }
 std::string TextureObjectInfo::getSamplerDecl() {
@@ -3592,11 +3633,12 @@ MemberTextureObjectInfo::create(const MemberExpr *ME) {
   Ret->MemberName = ME->getMemberDecl()->getNameAsString();
   return Ret;
 }
-void MemberTextureObjectInfo::addDecl(StmtList &AccessorList,
+void MemberTextureObjectInfo::addDecl(StmtList &InitList,
+                                      StmtList &AccessorList,
                                       StmtList &SamplerList,
                                       const std::string &QueueStr) {
   NewVarNameRAII RAII(this);
-  TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
+  TextureObjectInfo::addDecl(InitList, AccessorList, SamplerList, QueueStr);
 }
 ///// class StructureTextureObjectInfo /////
 StructureTextureObjectInfo::StructureTextureObjectInfo(const ParmVarDecl *PVD)
@@ -3632,7 +3674,8 @@ StructureTextureObjectInfo::addMember(const MemberExpr *ME) {
   auto Member = MemberTextureObjectInfo::create(ME);
   return Members.emplace(Member->getMemberName().str(), Member).first->second;
 }
-void StructureTextureObjectInfo::addDecl(StmtList &AccessorList,
+void StructureTextureObjectInfo::addDecl(StmtList &InitList,
+                                         StmtList &AccessorList,
                                          StmtList &SamplerList,
                                          const std::string &Queue) {
   for (const auto &M : Members) {
@@ -5637,13 +5680,13 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      Tex->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
-                   getQueueStr());
+      Tex->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
+                   SubmitStmts.SamplerList, getQueueStr());
     }
   }
   for (auto &Tex : VM.getTextureMap()) {
-    Tex.second->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
-                        getQueueStr());
+    Tex.second->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
+                        SubmitStmts.SamplerList, getQueueStr());
   }
   for (auto &Tmp : VM.getTempStorageMap()) {
     Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,

@@ -1,0 +1,117 @@
+---
+MainSourceFile:  '/path/to//MainSrcFiles_placehold'
+Replacements:
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
+    Offset:          706
+    Length:          0
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
+    Offset:          835
+    Length:          26
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
+    Offset:          1343
+    Length:          19
+    ReplacementText: 'DPCT_CHECK_ERROR(dev = dpct::dev_mgr::instance().current_device_id())'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/path/to/src/nvcv_types/priv/Image.cpp'
+    Offset:          2379
+    Length:          0
+    ReplacementText: "        /*\n        DPCT1051:432: SYCL does not support a device property functionally compatible with cudaDevAttrTextureAlignment. It was migrated to get_mem_base_addr_align_in_bytes. You may need to adjust the value of get_mem_base_addr_align_in_bytes for the specific device.\n        */\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+MainSourceFilesDigest:
+  - MainSourceFile:  '/path/to/src/nvcv_types/priv/Image.cpp'
+    Digest:          80a9873e8ab8a95f59e7f11682db7690
+  - MainSourceFile:  '/path/to/src/nvcv_types/priv/foo.cpp'
+    Digest:          80a9873e8ab8a95f59e7f11682db7690
+  - MainSourceFile:  '/path/to/infrastructure/Utilities.cpp'
+    Digest:          5fba1ea8b69476a153fc01f408e467b8
+  - MainSourceFile:  '/path/to/infrastructure/bar.cpp'
+    Digest:          4fba1ea8b69476a153fc01f408e467b8
+DpctVersion:     19.0.0
+MainHelperFileName: ''
+USMLevel:        ''
+FeatureMap:      {}
+CompileTargets:  {}
+OptionMap:
+  AnalysisScopePath:
+    Value:           '/path/to//DALI'
+    Specified:       false
+  AsyncHandler:
+    Value:           'false'
+    Specified:       false
+  BuildScript:
+    Value:           '1'
+    Specified:       true
+  CodePinEnabled:
+    Value:           'false'
+    Specified:       false
+  CommentsEnabled:
+    Value:           'false'
+    Specified:       false
+  CompilationsDir:
+    Value:           '/path/to//build'
+    Specified:       true
+  CtadEnabled:
+    Value:           'false'
+    Specified:       false
+  EnablepProfiling:
+    Value:           'false'
+    Specified:       false
+  ExperimentalFlag:
+    Value:           '0'
+    Specified:       false
+  ExplicitNamespace:
+    Value:           '20'
+    Specified:       false
+  ExtensionDDFlag:
+    Value:           '0'
+    Specified:       false
+  ExtensionDEFlag:
+    Value:           '4294967295'
+    Specified:       false
+  HelperFuncPreferenceFlag:
+    Value:           '0'
+    Specified:       false
+  NDRangeDim:
+    Value:           '3'
+    Specified:       false
+  NoDRYPattern:
+    Value:           'false'
+    Specified:       false
+  OptimizeMigration:
+    Value:           'false'
+    Specified:       false
+  ProcessAll:
+    Value:           'false'
+    Specified:       false
+  RuleFile:
+    Value:           ''
+    ValueVec:
+      - '/pat/to/extensions/cmake_rules/cmake_script_migration_rule.yaml'
+    Specified:       false
+  SyclNamedLambda:
+    Value:           'false'
+    Specified:       false
+  UsmLevel:
+    Value:           '1'
+    Specified:       false
+...
