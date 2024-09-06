@@ -118,6 +118,7 @@ void test(float *d_Out, int rSize, int pSize, int pPitch) {
   int blocks = (rSize + numThreadsPerBlock - 1) / numThreadsPerBlock;
   dim3 blockSz(numThreadsPerBlock);
   dim3 gridSz(blocks, pSize);
+  //CHECK:  static_cast<dpct::image_wrapper<float, 2> *>(tex_Input[0])->create_image();
   //CHECK: dpct::get_in_order_queue().submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
   //CHECK-NEXT:     auto tex_Input_0_acc = static_cast<dpct::image_wrapper<float, 2> *>(tex_Input[0])->get_access(cgh);

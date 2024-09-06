@@ -1,5 +1,4 @@
 // UNSUPPORTED: system-linux
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGraphicsD3D11RegisterResource | FileCheck %s -check-prefix=CUDA_GRAPHICS_RESOURCE_D33D11_REGISTER_RESOURCE

@@ -89,7 +89,7 @@ CALL_FACTORY_ENTRY("__assertfail", CALL("assert", LITERAL("0")))
 CALL_FACTORY_ENTRY("__assert_fail", CALL("assert", LITERAL("0")))
 
 CONDITIONAL_FACTORY_ENTRY(
-    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    makeCheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
     UNSUPPORT_FACTORY_ENTRY("cudaGetDeviceProperties",
                             Diagnostics::UNSUPPORT_SYCLCOMPAT,
                             LITERAL("cudaGetDeviceProperties")),
@@ -109,7 +109,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 false, "get_device_info", DEREF(0))))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    CheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
+    makeCheckAnd(UseSYCLCompat, checkIsUseNoQueueDevice()),
     UNSUPPORT_FACTORY_ENTRY("cudaGetDeviceProperties_v2",
                             Diagnostics::UNSUPPORT_SYCLCOMPAT,
                             LITERAL("cudaGetDeviceProperties_v2")),

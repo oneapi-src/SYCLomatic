@@ -338,6 +338,8 @@ int main() {
   cudaMallocArray(&pArr, &desc, w, h);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, 1, 0.1);
   cudaMallocArray(&pArr, &desc, 1, 0.1);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, l);
+  cudaMallocArray(&pArr, &desc, l);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::mipmap, l);
   cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, sycl::range<3>(), sycl::ext::oneapi::experimental::image_type::mipmap, 2);
@@ -486,8 +488,8 @@ int main() {
   // CHECK: dpct::async_dpct_memcpy(p3d, *s);
   cudaMemcpy3DAsync(&p3d, s);
 
-  // CHECK: dpct::memcpy_parameter p3dp;
-  cudaMemcpy3DPeerParms p3dp;
+  // CHECK: dpct::memcpy_parameter p3dp = {};
+  cudaMemcpy3DPeerParms p3dp = {0};
   int d;
   // CHECK: p3dp.from.image_bindless = pArr;
   p3dp.srcArray = pArr;

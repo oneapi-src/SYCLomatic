@@ -28,7 +28,7 @@ enum RuleKind {
 };
 
 enum RulePriority { Takeover, Default, Fallback };
-enum RuleMatchMode { Partial , Full };
+enum RuleMatchMode { Partial, Full, StrictFull };
 
 struct TypeNameRule {
   std::string NewName;
@@ -193,7 +193,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleMatchMode> {
   static void enumeration(llvm::yaml::IO &Io, RuleMatchMode &Value) {
     Io.enumCase(Value, "Partial", RuleMatchMode::Partial);
     Io.enumCase(Value, "Full", RuleMatchMode::Full);
-
+    Io.enumCase(Value, "StrictFull", RuleMatchMode::StrictFull);
   }
 };
 

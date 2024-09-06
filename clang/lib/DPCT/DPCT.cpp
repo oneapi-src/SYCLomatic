@@ -599,8 +599,13 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
+    std::string Python = GetPython();
+    if (Python.empty()) {
+      ShowStatus(CallIndependentToolError, "python");
+      dpctExit(CallIndependentToolError);
+    }
     std::string SystemCallCommand =
-        "python3 " + std::string(ExecutableScriptPath.str());
+        Python + " " + std::string(ExecutableScriptPath.str());
     for (int Index = 2; Index < argc; Index++) {
       SystemCallCommand.append(" ");
       SystemCallCommand.append(std::string(argv[Index]));
@@ -834,23 +839,6 @@ int runDPCT(int argc, const char **argv) {
 
     Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
-    constexpr StringRef UnsupportedStr{"// UNSUPPORTED:"};
-    bool win_unsupported = false;
-    bool lin_unsupported = false;
-    if (SourceCode.starts_with(UnsupportedStr)) {
-      while (SourceCode.consume_front(UnsupportedStr)) {
-        auto UnsupportedPlatform = SourceCode.substr(
-            0, SourceCode.find_first_of('\n'));
-        UnsupportedPlatform = UnsupportedPlatform.trim(' ');
-        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
-
-        if (UnsupportedPlatform == "system-windows")
-          win_unsupported = true;
-        if (UnsupportedPlatform == "system-linux")
-          lin_unsupported = true;
-      }
-    }
-
     static const std::string OptionStr{"// Option:"};
     if (SourceCode.starts_with(OptionStr)) {
       QueryAPIMappingOpt += " (with the option";
@@ -902,23 +890,20 @@ int runDPCT(int argc, const char **argv) {
     EndPos = SourceCode.find_last_of('\n', EndPos);
     QueryAPIMappingSrc =
         SourceCode.substr(StartPos, EndPos - StartPos + 1).str();
-#ifdef _WIN32
-    if (win_unsupported) {
+    // Print static migration info for cudaGraphicsD3D11RegisterResource
+    // on linux, as the API is unavailable on Linux and hence, no API mapping.
+#if defined(__linux__)
+    if (QueryAPIMapping == "cudaGraphicsD3D11RegisterResource") {
+      const std::string MigratedToStr =
+          "r = new dpct::experimental::external_mem_wrapper(pD3Dr, f);";
       llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
-                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
-                   << "The API mapping query for this API is not available "
-                    "on Windows.\n";
-      return MigrationSucceeded;
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET;
+      llvm::outs() << "On Windows, is migrated to" << QueryAPIMappingOpt << ":"
+                   << llvm::raw_ostream::BLUE << "\n  " << MigratedToStr << "\n"
+                   << llvm::raw_ostream::RESET;
+      dpctExit(MigrationSucceeded);
     }
-#else
-    if (lin_unsupported) {
-      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
-                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET
-                   << "The API mapping query for this API is not available "
-                    "on Linux.\n";
-      return MigrationSucceeded;
-    }
-#endif
+#endif // __linux__
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {
@@ -1180,7 +1165,11 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateBuildScriptOnly) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    doCmakeScriptMigration(InRootPath, OutRootPath);
+    runWithCrashGuard(
+        [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
+        "Error: dpct internal error. Migrating CMake scripts in \"" +
+            InRootPath.getCanonicalPath().str() +
+            "\" causing the error skipped. Migration continues.\n");
 
     if (cmakeScriptNotFound()) {
       std::cout << CmakeScriptMigrationHelpHint << "\n";
