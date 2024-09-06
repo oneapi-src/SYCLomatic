@@ -6,6 +6,10 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
+#define MY_SAFE_CALL(CALL) do {    \
+  int Error = CALL;                \
+} while (0)
+
 int main(){
 #ifndef BUILD_TEST
   CUdevice device;

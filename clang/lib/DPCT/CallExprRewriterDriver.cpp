@@ -45,7 +45,7 @@ createContextFactory(
       createAssignableFactory(std::move(LegacyFactory)));
 }
 
-#define CONTEXT_ENTRY(NOQUEUEDEVICE, LEGACY)                             \
+#define CONTEXT_ENTRY(NOQUEUEDEVICE, LEGACY)                                   \
   createContextFactory(NOQUEUEDEVICE LEGACY 0),
 
 void CallExprRewriterFactoryBase::initRewriterMapDriver() {
