@@ -14965,8 +14965,8 @@ void CudaStreamCastRule::runRule(
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE->getSubExpr(),
                            HelperFuncType::HFT_DefaultQueue);
-      emplaceTransformation(new ReplaceStmt(
-          CE, "{{NEEDREPLACEZ" + std::to_string(Index) + "}}"));
+      emplaceTransformation(
+          new ReplaceStmt(CE, "{{NEEDREPLACEZ" + std::to_string(Index) + "}}"));
     } else if (CE->getSubExpr()->getType()->isIntegerType()) {
       requestFeature(HelperFeatureEnum::device_ext);
       emplaceTransformation(new ReplaceStmt(
