@@ -612,7 +612,7 @@ Stop migration and generation of reports if parsing errors happened. Default: ``
 .. _desc-suppress-warnings:
 
 A comma-separated list of migration warnings to suppress. Valid warning IDs
-range from 1000 to 1127. Hyphen-separated ranges are also allowed. For
+range from 1000 to 1132. Hyphen-separated ranges are also allowed. For
 example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _end-suppress-warnings:
@@ -683,6 +683,7 @@ The values are:
 - ``=free-function-queries``: Experimental extension that allows getting
   ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances
   globally. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_free_function_queries.asciidoc>`__.
+- ``=graph``: Experimental extension that allows use of SYCL Graph APIs. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_graph.asciidoc>`__.
 - ``=local-memory-kernel-scope-allocation``: Experimental extension that
   allows allocation of local memory objects at the kernel functor scope. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/supported/sycl_ext_oneapi_local_memory.asciidoc>`__.
 - ``=logical-group``: Experimental helper function used to logically
@@ -690,7 +691,8 @@ The values are:
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
   sub-group operation with mask. See more details in ``dpct::experimental::select_from_sub_group``, ``dpct::experimental::shift_sub_group_left``, ``dpct::experimental::shift_sub_group_right`` and ``dpct::experimental::shift_sub_group_right`` in header file ``util.hpp``.
 - ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_matrix/sycl_ext_oneapi_matrix.asciidoc>`__.
-- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration. See more details in ``dpct::experimental::nd_range_barrier`` in header file ``util.hpp``.
+- ``=root-group``: Experimental extension that allows use of root group class and relative API. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_root_group.asciidoc>`__.
+- ``=nd_range_barrier``: DEPRECATED : Experimental helper function used to help cross-group synchronization during migration. Please use the option: --use-experimental-features=root-group instead. See more details in ``dpct::experimental::nd_range_barrier`` in header file ``util.hpp``.
 - ``=occupancy-calculation``: Experimental helper function used to calculate occupancy. See more details in ``dpct::experimental::calculate_max_active_wg_per_xecore`` and ``dpct::experimental::calculate_max_potential_wg`` in header file ``util.hpp``.
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
   reductions. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_user_defined_reductions.asciidoc>`__.
@@ -710,7 +712,7 @@ The values are:
 .. _desc-use-explicit-namespace:
 
 Defines the namespaces to use explicitly in generated code. The value is
-a comma-separated list. Default: ``dpct, sycl``.
+a comma-separated list. Default: ``dpct/syclcompat, sycl``.
 
 Possible values are:
 
@@ -720,10 +722,19 @@ Possible values are:
   or ``sycl-math`` values.
 - ``=sycl-math``: Generate code with ``sycl::`` namespace, applied only for SYCL
   math functions. Cannot be used with ``cl`` or ``sycl`` values.
+- ``=syclcompat``: Generate code with ``syclcompat::`` namespace.
 
 .. _end-use-explicit-namespace:
 
+.. _opt-use-syclcompat:
 
+``--use-syclcompat``
+
+.. _desc-use-syclcompat:
+
+Use SYCLcompat header-only library (``syclcompat::`` namespace) to assist the migration of input source code. Default: ``off``.
+
+.. _end-use-syclcompat:
 
 .. _opt-usm-level:
 

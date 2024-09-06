@@ -1,0 +1,23 @@
+.. _DPCT1131:
+
+DPCT1131
+========
+
+Message
+-------
+
+.. _msg-1131-start:
+
+The migration of "*<API name>*" is not supported with SYCLcompat currently, please adjust the code manually.
+
+.. _msg-1131-end:
+
+Detailed Help
+-------------
+
+See :ref:`DPCT1128`.
+
+Suggestions to Fix
+------------------
+
+See :ref:`DPCT1128`.

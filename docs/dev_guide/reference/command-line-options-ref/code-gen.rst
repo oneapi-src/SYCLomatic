@@ -96,6 +96,12 @@ The following table lists command line options to customize how your code is mig
           :start-after: desc-use-explicit-namespace:
           :end-before: end-use-explicit-namespace:
    * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-use-syclcompat:
+          :end-before: desc-use-syclcompat:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-use-syclcompat:
+          :end-before: end-use-syclcompat:
+   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-usm-level:
           :end-before: desc-usm-level:
      - .. include:: /_include_files/options_def.rst

@@ -1,0 +1,23 @@
+.. _DPCT1130:
+
+DPCT1130
+========
+
+Message
+-------
+
+.. _msg-1130-start:
+
+SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.
+
+.. _msg-1130-end:
+
+Detailed Help
+-------------
+
+See :ref:`DPCT1128`.
+
+Suggestions to Fix
+------------------
+
+See :ref:`DPCT1128`.

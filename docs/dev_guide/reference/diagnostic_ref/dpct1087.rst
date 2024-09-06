@@ -9,8 +9,7 @@ Message
 .. _msg-1087-start:
 
 SYCL currently does not support cross group synchronization. You can specify
-``--use-experimental-features=nd_range_barrier`` to use the dpct helper function
-``nd_range_barrier`` to migrate *<synchronization API call>*.
+``--use-experimental-features=root-group`` to use the root-group to migrate *<synchronization API call>*.
 
 .. _msg-1087-end:
 

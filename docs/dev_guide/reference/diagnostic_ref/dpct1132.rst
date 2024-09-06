@@ -1,0 +1,23 @@
+.. _DPCT1132:
+
+DPCT1132
+========
+
+Message
+-------
+
+.. _msg-1132-start:
+
+SYCL 2020 does not support accessing the *<property name>* for then kernel. The API is replaced with member variable "*<variable name>*". Please set the appropriate value for "*<variable name>*".
+
+.. _msg-1132-end:
+
+Detailed Help
+-------------
+
+See :ref:`DPCT1128`.
+
+Suggestions to Fix
+------------------
+
+See :ref:`DPCT1128`.
