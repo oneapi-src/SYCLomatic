@@ -11,11 +11,11 @@
 
 #include "clang/Basic/Version.inc"
 
-// Keep the code to avoid pull down conflict
-#if 0
 #define STRINGIFY_(NUM) #NUM
 #define STRINGIFY(NUM) STRINGIFY_(NUM)
 
+// Keep the code to avoid pull down conflict
+#if 0
 #define TOOL_NAME "dpct"
 #define DPCT_VERSION_MAJOR STRINGIFY(CLANG_VERSION_MAJOR)
 #define DPCT_VERSION_MINOR STRINGIFY(CLANG_VERSION_MINOR)
