@@ -278,6 +278,11 @@ std::unique_ptr<std::unordered_map<
       TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>,
       TypeMatchingDesc::hash>> TypeLocRewriterFactoryBase::TypeLocRewriterMap;
 
+void initTypeLocSYCLCompatRewriterMap(
+    std::unordered_map<TypeMatchingDesc,
+                       std::shared_ptr<TypeLocRewriterFactoryBase>,
+                       TypeMatchingDesc::hash> &TypeLocRewriterMap);
+
 void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
   TypeLocRewriterMap = std::make_unique<std::unordered_map<
       TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>,
@@ -311,6 +316,26 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #undef TEMPLATE_ARG
 #undef STR
       }));
+  if (DpctGlobalInfo::useSYCLCompat())
+    initTypeLocSYCLCompatRewriterMap(*TypeLocRewriterMap);
+}
+
+void initTypeLocSYCLCompatRewriterMap(
+    std::unordered_map<TypeMatchingDesc,
+                       std::shared_ptr<TypeLocRewriterFactoryBase>,
+                       TypeMatchingDesc::hash> &TypeLocRewriterMap) {
+#define SYCLCOMPAT_UNSUPPORT(NAME)                                             \
+  TypeLocRewriterMap[TypeMatchingDesc(NAME)] =                              \
+      createReportWarningTypeLocRewriterFactory(                               \
+          Diagnostics::UNSUPPORT_SYCLCOMPAT, makeStringCreator(NAME));
+
+  SYCLCOMPAT_UNSUPPORT("cudaGraph_t")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphExec_t")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphNode_t")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource_t")
+
+#undef SYCLCOMPAT_UNSUPPORT
 }
 } // namespace dpct
 } // namespace clang
