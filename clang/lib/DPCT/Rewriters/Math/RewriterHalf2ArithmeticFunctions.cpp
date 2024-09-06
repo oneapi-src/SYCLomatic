@@ -138,9 +138,12 @@ RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
                                                   "ext::intel::math::hcmadd",
                                               ARG(0), ARG(1), ARG(2))))),
               EMPTY_FACTORY_ENTRY("__hcmadd"),
-              CALL_FACTORY_ENTRY("__hcmadd", CALL(MapNames::getDpctNamespace() +
-                                                      "complex_mul_add",
-                                                  ARG(0), ARG(1), ARG(2)))))
+              CALL_FACTORY_ENTRY("__hcmadd",
+                                 CALL(MapNames::getDpctNamespace() +
+                                          (DpctGlobalInfo::useSYCLCompat()
+                                               ? "cmul_add"
+                                               : "complex_mul_add"),
+                                      ARG(0), ARG(1), ARG(2)))))
       // __hfma2
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half2"),
