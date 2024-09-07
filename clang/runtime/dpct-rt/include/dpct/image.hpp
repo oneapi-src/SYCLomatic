@@ -39,11 +39,11 @@ template <class T> struct image_trait {
   template <int dimensions>
   using accessor_t =
       sycl::accessor<acc_data_t, dimensions, sycl::access_mode::read,
-                         sycl::access::target::image>;
+                     sycl::access::target::image>;
   template <int dimensions>
   using array_accessor_t =
       sycl::accessor<acc_data_t, dimensions, sycl::access_mode::read,
-                         sycl::access::target::image_array>;
+                     sycl::access::target::image_array>;
   using data_t = T;
   using elem_t = T;
   static constexpr image_channel_data_type data_type =
@@ -59,13 +59,11 @@ struct image_trait<std::uint8_t> : public image_trait<std::uint32_t> {
   using elem_t = data_t;
 };
 template <>
-struct image_trait<std::uint16_t>
-    : public image_trait<std::uint32_t> {
+struct image_trait<std::uint16_t> : public image_trait<std::uint32_t> {
   using data_t = std::uint16_t;
   using elem_t = data_t;
 };
-template <>
-struct image_trait<std::int8_t> : public image_trait<std::int32_t> {
+template <> struct image_trait<std::int8_t> : public image_trait<std::int32_t> {
   using data_t = std::int8_t;
   using elem_t = data_t;
 };
@@ -82,20 +80,17 @@ struct image_trait<char>
 template <class T>
 struct image_trait<sycl::vec<T, 1>> : public image_trait<T> {};
 
-template <class T>
-struct image_trait<sycl::vec<T, 2>> : public image_trait<T> {
+template <class T> struct image_trait<sycl::vec<T, 2>> : public image_trait<T> {
   using data_t = sycl::vec<T, 2>;
   static constexpr int channel_num = 2;
 };
 
 template <class T>
-struct image_trait<sycl::vec<T, 3>>
-    : public image_trait<sycl::vec<T, 4>> {
+struct image_trait<sycl::vec<T, 3>> : public image_trait<sycl::vec<T, 4>> {
   static constexpr int channel_num = 3;
 };
 
-template <class T>
-struct image_trait<sycl::vec<T, 4>> : public image_trait<T> {
+template <class T> struct image_trait<sycl::vec<T, 4>> : public image_trait<T> {
   using data_t = sycl::vec<T, 4>;
   static constexpr int channel_num = 4;
 };
@@ -109,8 +104,7 @@ template <class T> struct fetch_data {
     return (return_t)original_data.r();
   }
 };
-template <class T>
-struct fetch_data<sycl::vec<T, 1>> : public fetch_data<T> {};
+template <class T> struct fetch_data<sycl::vec<T, 1>> : public fetch_data<T> {};
 template <class T> struct fetch_data<sycl::vec<T, 2>> {
   using return_t = typename image_trait<sycl::vec<T, 2>>::data_t;
   using acc_data_t = typename image_trait<sycl::vec<T, 2>>::acc_data_t;
@@ -120,8 +114,7 @@ template <class T> struct fetch_data<sycl::vec<T, 2>> {
   }
 };
 template <class T>
-struct fetch_data<sycl::vec<T, 3>>
-    : public fetch_data<sycl::vec<T, 4>> {};
+struct fetch_data<sycl::vec<T, 3>> : public fetch_data<sycl::vec<T, 4>> {};
 template <class T> struct fetch_data<sycl::vec<T, 4>> {
   using return_t = typename image_trait<sycl::vec<T, 4>>::data_t;
   using acc_data_t = typename image_trait<sycl::vec<T, 4>>::acc_data_t;
@@ -140,7 +133,8 @@ template <class T>
 static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 
 /// Create image with channel info and specified dimensions.
-static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
+static image_wrapper_base *create_image_wrapper(image_channel channel,
+                                                int dims);
 
 } // namespace detail
 
@@ -296,8 +290,7 @@ public:
   /// Set channel size.
   /// \param in_channel_num Channels number to set.
   /// \param channel_size Size for each channel in bits.
-  void set_channel_size(unsigned in_channel_num,
-                        unsigned channel_size) {
+  void set_channel_size(unsigned in_channel_num, unsigned channel_size) {
     if (in_channel_num < _channel_num)
       return;
     _channel_num = in_channel_num;
@@ -467,9 +460,7 @@ public:
   }
 
   unsigned get_channel_num() { return _channel.get_channel_num(); }
-  void set_channel_num(unsigned num) {
-    return _channel.set_channel_num(num);
-  }
+  void set_channel_num(unsigned num) { return _channel.set_channel_num(num); }
 
   sycl::image_channel_type get_channel_type() {
     return _channel.get_channel_type();
@@ -488,8 +479,7 @@ private:
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
 class sampling_info {
-  sycl::addressing_mode _addressing_mode =
-      sycl::addressing_mode::clamp_to_edge;
+  sycl::addressing_mode _addressing_mode = sycl::addressing_mode::clamp_to_edge;
   sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
   sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       sycl::coordinate_normalization_mode::unnormalized;
@@ -635,7 +625,8 @@ public:
   /// Attach linear data to this class.
   void attach(const void *ptr, size_t count, image_channel channel) {
     detach();
-    image_wrapper_base::set_data(image_data(const_cast<void *>(ptr), count, channel));
+    image_wrapper_base::set_data(
+        image_data(const_cast<void *>(ptr), count, channel));
   }
   /// Attach 2D data to this class.
   void attach(const void *data, size_t x, size_t y, size_t pitch) {
@@ -661,9 +652,7 @@ public:
   virtual void detach() {}
 
   sampling_info get_sampling_info() { return _sampling_info; }
-  void set_sampling_info(sampling_info info) {
-    _sampling_info = info;
-  }
+  void set_sampling_info(sampling_info info) { _sampling_info = info; }
   const image_data &get_data() { return _data; }
   void set_data(image_data data) { _data = data; }
 
@@ -699,8 +688,7 @@ public:
   sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
     return _sampling_info.get_coordinate_normalization_mode();
   }
-  void
-  set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+  void set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
     _sampling_info.set(coordinate_normalization_mode);
   }
 
@@ -710,10 +698,9 @@ public:
   void set_coordinate_normalization_mode(int is_normalized) {
     _sampling_info.set_coordinate_normalization_mode(is_normalized);
   }
-  void
-  set(sycl::addressing_mode addressing_mode,
-      sycl::filtering_mode filtering_mode,
-      sycl::coordinate_normalization_mode coordinate_normalization_mode) {
+  void set(sycl::addressing_mode addressing_mode,
+           sycl::filtering_mode filtering_mode,
+           sycl::coordinate_normalization_mode coordinate_normalization_mode) {
     set(addressing_mode);
     set(filtering_mode);
     set(coordinate_normalization_mode);
@@ -726,9 +713,7 @@ public:
   }
 
   unsigned get_channel_num() { return _data.get_channel_num(); }
-  void set_channel_num(unsigned num) {
-    return _data.set_channel_num(num);
-  }
+  void set_channel_num(unsigned num) { return _data.set_channel_num(num); }
 
   sycl::image_channel_type get_channel_type() {
     return _data.get_channel_type();
@@ -754,7 +739,8 @@ using image_wrapper_base_p = image_wrapper_base *;
 template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 
 /// Image class, wrapper of sycl::image.
-template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
+template <class T, int dimensions, bool IsImageArray = false>
+class image_wrapper : public image_wrapper_base {
   sycl::image<dimensions> *_image = nullptr;
 
 #ifndef DPCT_USM_LEVEL_NONE
@@ -768,13 +754,14 @@ public:
     auto &data = get_data();
     if (data.get_data_type() == image_data_type::matrix) {
       _image = static_cast<image_matrix_p>(data.get_data_ptr())
-          ->create_image<dimensions>(data.get_channel());
+                   ->create_image<dimensions>(data.get_channel());
       return;
     }
     auto ptr = data.get_data_ptr();
     auto channel = data.get_channel();
 
-    if (detail::get_pointer_attribute(q, ptr) == detail::pointer_access_attribute::device_only) {
+    if (detail::get_pointer_attribute(q, ptr) ==
+        detail::pointer_access_attribute::device_only) {
 #ifdef DPCT_USM_LEVEL_NONE
       ptr = get_buffer(ptr).get_host_access().get_pointer();
 #else
@@ -790,8 +777,8 @@ public:
     if constexpr (dimensions == 1) {
       assert(data.get_data_type() == image_data_type::linear);
       _image = new sycl::image<1>(
-        ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<1>(data.get_x() / channel.get_total_size()));
+          ptr, channel.get_channel_order(), channel.get_channel_type(),
+          sycl::range<1>(data.get_x() / channel.get_total_size()));
     } else if constexpr (dimensions == 2) {
       assert(data.get_data_type() == image_data_type::pitch);
       _image = new sycl::image<2>(ptr, channel.get_channel_order(),
@@ -806,8 +793,9 @@ public:
 
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
-      typename image_accessor_ext<T, IsImageArray ? (dimensions - 1) : dimensions,
-                              IsImageArray>::accessor_t;
+      typename image_accessor_ext<T,
+                                  IsImageArray ? (dimensions - 1) : dimensions,
+                                  IsImageArray>::accessor_t;
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
   ~image_wrapper() override { detach(); }
@@ -861,8 +849,7 @@ public:
   /// Read data from accessor.
   template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(float x, float y) {
-    return detail::fetch_data<T>()(
-        _img_acc.read(sycl::float2(x, y), _sampler));
+    return detail::fetch_data<T>()(_img_acc.read(sycl::float2(x, y), _sampler));
   }
   /// Read data from accessor.
   template <class Coord0, class Coord1,
@@ -870,8 +857,7 @@ public:
                              std::is_integral<Coord0>::value
                                  &&std::is_integral<Coord1>::value>
   typename std::enable_if<Available, data_t>::type read(Coord0 x, Coord1 y) {
-    return detail::fetch_data<T>()(
-        _img_acc.read(sycl::int2(x, y), _sampler));
+    return detail::fetch_data<T>()(_img_acc.read(sycl::int2(x, y), _sampler));
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 1>
@@ -886,7 +872,8 @@ public:
   }
 };
 
-template <class T, int dimensions> class image_accessor_ext<T, dimensions, true> {
+template <class T, int dimensions>
+class image_accessor_ext<T, dimensions, true> {
 public:
   using accessor_t =
       typename detail::image_trait<T>::template array_accessor_t<dimensions>;
@@ -907,21 +894,20 @@ public:
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 2>
-  typename std::enable_if<Available, data_t>::type read(int index, int x, int y) {
+  typename std::enable_if<Available, data_t>::type read(int index, int x,
+                                                        int y) {
     return detail::fetch_data<T>()(
         _img_acc[index].read(sycl::int2(x, y), _sampler));
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(int index, float x) {
-    return detail::fetch_data<T>()(
-        _img_acc[index].read(x, _sampler));
+    return detail::fetch_data<T>()(_img_acc[index].read(x, _sampler));
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 1>
   typename std::enable_if<Available, data_t>::type read(int index, int x) {
-    return detail::fetch_data<T>()(
-        _img_acc[index].read(x, _sampler));
+    return detail::fetch_data<T>()(_img_acc[index].read(x, _sampler));
   }
 };
 
@@ -931,7 +917,7 @@ public:
 /// \param info Image sampling info used to create image wrapper.
 /// \returns Pointer to base class of created image wrapper object.
 static inline image_wrapper_base *create_image_wrapper(image_data data,
-                              sampling_info info) {
+                                                       sampling_info info) {
   image_channel channel;
   int dims = 1;
   if (data.get_data_type() == image_data_type::matrix) {
@@ -973,7 +959,8 @@ template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
 }
 /// Create image with given data type \p T, channel order and dims
 template <class T>
-static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims) {
+static image_wrapper_base *create_image_wrapper(unsigned channel_num,
+                                                int dims) {
   switch (channel_num) {
   case 1:
     return create_image_wrapper<T>(dims);
@@ -989,7 +976,8 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims) 
 }
 
 /// Create image with channel info and specified dimensions.
-static image_wrapper_base *create_image_wrapper(image_channel channel, int dims) {
+static image_wrapper_base *create_image_wrapper(image_channel channel,
+                                                int dims) {
   switch (channel.get_channel_type()) {
   case sycl::image_channel_type::fp16:
     return create_image_wrapper<sycl::half>(channel.get_channel_num(), dims);

@@ -16,8 +16,8 @@
 #include "Config.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
-#include "Utility.h"
 #include "ToolChains/Cuda.h"
+#include "Utility.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
@@ -27,7 +27,8 @@
 #include <algorithm>
 #include <cstdarg>
 
-extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
+extern clang::tooling::UnifiedPath
+    DpctInstallPath; // Installation directory for this tool
 
 using namespace clang::ast_matchers;
 namespace clang {
@@ -234,11 +235,8 @@ public:
   }
 };
 
-inline std::function<std::string(const CallExpr *)>
-makeCharPtrCreator() {
-  return [=](const CallExpr *C) -> std::string {
-    return "char *";
-  };
+inline std::function<std::string(const CallExpr *)> makeCharPtrCreator() {
+  return [=](const CallExpr *C) -> std::string { return "char *"; };
 }
 
 inline std::function<DerefStreamExpr(const CallExpr *)>
@@ -255,10 +253,10 @@ makeAddrOfExprCreator(unsigned Idx) {
   };
 }
 
-inline std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
-  return [=](const CallExpr *C) -> DerefExpr {
-    return DerefExpr(C->getArg(Idx));
-  };
+inline std::function<DerefExpr(const CallExpr *)>
+makeDerefExprCreator(unsigned Idx) {
+  return
+      [=](const CallExpr *C) -> DerefExpr { return DerefExpr(C->getArg(Idx)); };
 }
 
 inline std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(
@@ -280,7 +278,8 @@ inline std::function<bool(const CallExpr *)> makeBooleanCreator(bool B) {
   return [=](const CallExpr *C) -> bool { return B; };
 }
 
-inline std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
+inline std::function<
+    std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
     return std::pair<const CallExpr *, const Expr *>(C, C->getArg(Idx));
@@ -299,7 +298,8 @@ inline const Expr *removeCStyleCast(const Expr *E) {
 // Should be used when the cast information is not relevant.
 // e.g. migrating cudaMallocHost((void**)ptr, size) to
 // *ptr = sycl::malloc_host<float>(size, q_ct1);
-inline std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
+inline std::function<
+    std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeDerefArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
     return std::pair<const CallExpr *, const Expr *>(
@@ -458,8 +458,8 @@ makeCallArgCreatorFromTemplateArg(unsigned Idx) {
 
 template <class First>
 inline void setTemplateArgumentInfo(const CallExpr *C,
-                             std::vector<TemplateArgumentInfo> &Vec,
-                             std::function<First(const CallExpr *)> F) {
+                                    std::vector<TemplateArgumentInfo> &Vec,
+                                    std::function<First(const CallExpr *)> F) {
   TemplateArgumentInfo TAI;
   TAI.setAsType(F(C));
   Vec.emplace_back(TAI);
@@ -467,9 +467,9 @@ inline void setTemplateArgumentInfo(const CallExpr *C,
 
 template <class First, class... ArgsT>
 inline void setTemplateArgumentInfo(const CallExpr *C,
-                             std::vector<TemplateArgumentInfo> &Vec,
-                             std::function<First(const CallExpr *)> F,
-                             ArgsT... Args) {
+                                    std::vector<TemplateArgumentInfo> &Vec,
+                                    std::function<First(const CallExpr *)> F,
+                                    ArgsT... Args) {
   TemplateArgumentInfo TAI;
   TAI.setAsType(F(C));
   Vec.emplace_back(TAI);
@@ -511,7 +511,8 @@ makeUnaryOperatorCreator(std::function<ET(const CallExpr *)> E) {
 }
 
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
-inline std::function<BinaryOperatorPrinter<Op, LValueT, RValueT>(const CallExpr *)>
+inline std::function<
+    BinaryOperatorPrinter<Op, LValueT, RValueT>(const CallExpr *)>
 makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
                           std::function<RValueT(const CallExpr *)> R) {
   return PrinterCreator<BinaryOperatorPrinter<Op, LValueT, RValueT>,
@@ -546,15 +547,15 @@ makeCallExprCreator(std::string Callee,
                                                                        Args...);
 }
 
-template < class BaseT, class ArgValueT>
+template <class BaseT, class ArgValueT>
 inline std::function<
     ArraySubscriptExprPrinter<BaseT, ArgValueT>(const CallExpr *)>
 makeArraySubscriptExprCreator(std::function<BaseT(const CallExpr *)> E,
-                          std::function<ArgValueT(const CallExpr *)> I) {
+                              std::function<ArgValueT(const CallExpr *)> I) {
   return PrinterCreator<ArraySubscriptExprPrinter<BaseT, ArgValueT>,
                         std::function<BaseT(const CallExpr *)>,
-                        std::function<ArgValueT(const CallExpr *)>>(std::move(E),
-                                                                  std::move(I));
+                        std::function<ArgValueT(const CallExpr *)>>(
+      std::move(E), std::move(I));
 }
 
 inline std::function<std::string(const CallExpr *)>
@@ -572,12 +573,15 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
     return "";
   };
 }
-inline std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
+inline std::function<std::string(const CallExpr *)>
+getWorkGroupDim(unsigned index) {
   return [=](const CallExpr *C) {
     if (!dyn_cast<DeclRefExpr>(C->getArg(index)->IgnoreImplicitAsWritten()))
       return "";
-    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
-                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+    auto Arg =
+        dyn_cast<DeclRefExpr>(C->getArg(index)->IgnoreImplicitAsWritten())
+            ->getNameInfo()
+            .getAsString();
     if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
       return "0";
     else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {
@@ -589,11 +593,12 @@ inline std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned ind
   };
 }
 
-inline std::function<std::string(const CallExpr *)> makeLiteral(std::string Str) {
+inline std::function<std::string(const CallExpr *)>
+makeLiteral(std::string Str) {
   return [=](const CallExpr *) { return Str; };
 }
 
-inline std::function<bool(const CallExpr *)> SinCosPerfPred(){
+inline std::function<bool(const CallExpr *)> SinCosPerfPred() {
   return [=](const CallExpr *) { return true; };
 }
 
@@ -674,7 +679,8 @@ makeDerefCastIfNeedExprCreator(
 }
 
 template <class SubExprT>
-inline std::function<DoublePointerConstCastExprPrinter<SubExprT>(const CallExpr *)>
+inline std::function<
+    DoublePointerConstCastExprPrinter<SubExprT>(const CallExpr *)>
 makeDoublePointerConstCastExprCreator(
     std::function<std::string(const CallExpr *)> TypeInfo,
     std::function<SubExprT(const CallExpr *)> Sub,
@@ -711,8 +717,7 @@ makeDeclCreator(std::string Type, std::string Var,
 
 template <class SubExprT>
 inline std::function<TypenameExprPrinter<SubExprT>(const CallExpr *)>
-makeTypenameExprCreator(
-                   std::function<SubExprT(const CallExpr *)> SubExpr) {
+makeTypenameExprCreator(std::function<SubExprT(const CallExpr *)> SubExpr) {
   return PrinterCreator<TypenameExprPrinter<SubExprT>,
                         std::function<SubExprT(const CallExpr *)>>(SubExpr);
 }
@@ -766,7 +771,8 @@ inline QualType DerefQualType(QualType QT) {
 
 // Get the replaced type of a function call argument
 // For example, foo(x) where x is an int2, this function will return sycl::int2
-inline std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx) {
+inline std::function<std::string(const CallExpr *C)>
+getReplacedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     if (Idx >= C->getNumArgs())
       return "";
@@ -776,7 +782,8 @@ inline std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx)
 
 // Get the derefed type name of an arg while getDereferencedExpr is get the
 // derefed expr.
-inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
+inline std::function<std::string(const CallExpr *C)>
+getDerefedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     if (Idx >= C->getNumArgs())
       return "";
@@ -795,7 +802,7 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
         auto *TDecl = TDT->getDecl();
         const auto Redecls = TDecl->redecls();
-        auto IsDeclInCudaHeader = [](const TypedefNameDecl * D) {
+        auto IsDeclInCudaHeader = [](const TypedefNameDecl *D) {
           return dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
         };
         if (std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader))
@@ -826,7 +833,8 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
 inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     std::string TemplateArgStr = "";
-    if (auto *Callee = dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts())) {
+    if (auto *Callee =
+            dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts())) {
       auto TAL = Callee->template_arguments();
       if (TAL.size() <= Idx) {
         return TemplateArgStr;
@@ -853,7 +861,8 @@ inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
 }
 
 // Can only be used if CheckCanUseTemplateMalloc is true.
-inline std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t Idx) {
+inline std::function<std::string(const CallExpr *C)>
+getDoubleDerefedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     if (Idx >= C->getNumArgs())
       return "";
@@ -877,8 +886,8 @@ inline std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t
 
 // Remove sizeof(T) if using template version.
 // Can only be used if CheckCanUseTemplateMalloc is true.
-inline std::function<std::string(const CallExpr *C)> getSizeForMalloc(size_t PtrIdx,
-                                                               size_t SizeIdx) {
+inline std::function<std::string(const CallExpr *C)>
+getSizeForMalloc(size_t PtrIdx, size_t SizeIdx) {
   return [=](const CallExpr *C) -> std::string {
     auto AllocatedExpr = C->getArg(PtrIdx);
     auto SizeExpr = C->getArg(SizeIdx);
@@ -954,8 +963,8 @@ inline std::function<bool(const CallExpr *C)> checkIsUseNoQueueDevice() {
   };
 }
 
-inline std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
-                                                        std::string str) {
+inline std::function<bool(const CallExpr *C)>
+checkArgSpelling(size_t index, std::string str) {
   return [=](const CallExpr *C) -> bool {
     return getStmtSpelling(C->getArg(index)) == str;
   };
@@ -965,20 +974,21 @@ inline std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
   return [=](const CallExpr *C) -> bool {
     auto parentStmt = getParentStmt(C);
     if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
-                          dyn_cast<ExprWithCleanups>(parentStmt)))
+                                  dyn_cast<ExprWithCleanups>(parentStmt)))
       return true;
     return false;
-    };
+  };
 }
 
-inline std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t index) {
+inline std::function<bool(const CallExpr *C)>
+checkIsGetWorkGroupDim(size_t index) {
   return [=](const CallExpr *C) -> bool {
-    if (getStmtSpelling(C->getArg(index)).
-          find("CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_") != std::string::npos) {
+    if (getStmtSpelling(C->getArg(index))
+            .find("CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_") != std::string::npos) {
       return true;
     }
     return false;
-    };
+  };
 }
 
 inline std::function<bool(const CallExpr *C)> isTextureAlignment(size_t idx) {
@@ -1006,7 +1016,8 @@ checkIsMigratedToHasAspect(size_t index) {
   };
 }
 
-inline std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
+inline std::function<bool(const CallExpr *C)>
+checkIsArgIntegerLiteral(size_t index) {
   return [=](const CallExpr *C) -> bool {
     auto Arg2Expr = C->getArg(index);
     if (auto NamedCaster = dyn_cast<ExplicitCastExpr>(Arg2Expr)) {
@@ -1057,7 +1068,7 @@ inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMultiStmtsRewriterFactory(
     const std::string &SourceName, bool CheckAssigned, bool CheckInRetStmt,
     bool UseDdpctCheckError, bool ExtraParen,
-    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
       (CheckAssigned && CheckInRetStmt)
           ? isCallAssignedOrInRetStmt
@@ -1080,7 +1091,7 @@ createMultiStmtsRewriterFactory(
 template <class... StmtPrinters>
 inline std::shared_ptr<CallExprRewriterFactoryBase> createLambdaRewriterFactory(
     const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
   return std::make_shared<CallExprRewriterFactory<
       PrinterRewriter<LambdaPrinter<StmtPrinters...>>,
       std::function<std::string(const CallExpr *)>,
@@ -1110,7 +1121,8 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createLambdaRewriterFactory(
 /// \p SourceName the source callee name of original call expr.
 /// \p ArgValueCreator use to get argument value from original call expr.
 template <UnaryOperatorKind UO, class ArgValue>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createUnaryOpRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createUnaryOpRewriterFactory(
     const std::string &SourceName,
     std::function<ArgValue(const CallExpr *)> &&ArgValueCreator) {
   DpctGlobalInfo::setNeedParenAPI(SourceName);
@@ -1126,7 +1138,8 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createUnaryOpRewriterFactory
 /// \p LValueCreator use to get lhs from original call expr.
 /// \p RValueCreator use to get rhs from original call expr.
 template <BinaryOperatorKind BO, class LValue, class RValue>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createBinaryOpRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createBinaryOpRewriterFactory(
     const std::string &SourceName,
     std::function<LValue(const CallExpr *)> &&LValueCreator,
     std::function<RValue(const CallExpr *)> &&RValueCreator) {
@@ -1188,7 +1201,8 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createIfElseRewriterFactory(
 /// \p SourceName the source callee name of original call expr.
 /// \p ArgsCreator use to get call args from original call expr.
 template <class CalleeT, class... CallArgsT>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createCallExprRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createCallExprRewriterFactory(
     const std::string &SourceName,
     std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>
         Args) {
@@ -1273,7 +1287,8 @@ createArraySubscriptExprRewriterFactory(
 }
 
 template <class... ArgsT>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createReportWarningRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createReportWarningRewriterFactory(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         Factory,
     const std::string &FuncName, Diagnostics MsgId, ArgsT... ArgsCreator) {
@@ -1293,7 +1308,8 @@ createDeleterCallExprRewriterFactory(
 }
 
 template <class ArgT>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createToStringExprRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createToStringExprRewriterFactory(
     const std::string &SourceName,
     std::function<ArgT(const CallExpr *)> &&ArgCreator) {
   return std::make_shared<CallExprRewriterFactory<
@@ -1384,7 +1400,6 @@ createFeatureRequestFactory(
   return createFeatureRequestFactory(Feature, std::move(Input));
 }
 
-
 /// Create RewriterFactoryWithHeaderFile key-value pair with inner
 /// key-value. Will call insertHeader when used to create CallExprRewriter.
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1394,8 +1409,7 @@ createInsertHeaderFactory(
         &&Input) {
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       std::move(Input.first),
-      std::make_shared<RewriterFactoryWithHeaderFile>(Header,
-                                                          Input.second));
+      std::make_shared<RewriterFactoryWithHeaderFile>(Header, Input.second));
 }
 /// Create RewriterFactoryWithHeaderFile key-value pair with inner
 /// key-value. Will call insertHeader when used to create CallExprRewriter.
@@ -1468,22 +1482,20 @@ createMathSpecificElseEmuRewriterFactory(
 
 template <typename T>
 inline std::pair<std::string, CaseRewriterFactory::CaseT>
-createCase(
-    CaseRewriterFactory::PredT pred,
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>&& entry, T) {
-  return {std::move(entry.first),
-          {std::move(pred), std::move(entry.second)}};
+createCase(CaseRewriterFactory::PredT pred,
+           std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+               &&entry,
+           T) {
+  return {std::move(entry.first), {std::move(pred), std::move(entry.second)}};
 }
 
 template <class... Ts>
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createCaseRewriterFactory(
-    std::pair<std::string, CaseRewriterFactory::CaseT> first,
-    Ts... rest) {
+    std::pair<std::string, CaseRewriterFactory::CaseT> first, Ts... rest) {
   return {std::move(first.first),
-          std::make_shared<CaseRewriterFactory>(
-               std::move(first.second),
-               std::move(rest.second)...)};
+          std::make_shared<CaseRewriterFactory>(std::move(first.second),
+                                                std::move(rest.second)...)};
 }
 
 inline std::function<bool(const CallExpr *)> makePointerChecker(unsigned Idx) {
@@ -1615,6 +1627,7 @@ public:
 class CheckCanUseCLibraryMallocOrFree {
   unsigned AddrArgIdx;
   bool isFree;
+
 public:
   CheckCanUseCLibraryMallocOrFree(unsigned AddrIdx, bool isFree)
       : AddrArgIdx(AddrIdx), isFree(isFree) {}
@@ -1632,7 +1645,7 @@ public:
     } else {
       AE = AllocatedExpr->IgnoreImplicitAsWritten();
     }
-    const DeclRefExpr* DRE = nullptr;
+    const DeclRefExpr *DRE = nullptr;
     if (isFree) {
       DRE = dyn_cast<DeclRefExpr>(AE);
     } else if (auto UO = dyn_cast<UnaryOperator>(AE)) {
@@ -1872,21 +1885,29 @@ public:
     if (C->getNumArgs() <= Idx)
       return false;
 
-    std::string ArgType = C->getArg(Idx)->getType().getCanonicalType().getUnqualifiedType().getAsString();
-    if (// Explicitly known policy types
-        // thrust::device
-        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::par_t>"             ||
-        ArgType=="struct thrust::cuda_cub::par_t"                                                           ||
+    std::string ArgType = C->getArg(Idx)
+                              ->getType()
+                              .getCanonicalType()
+                              .getUnqualifiedType()
+                              .getAsString();
+    if ( // Explicitly known policy types
+         // thrust::device
+        ArgType == "struct thrust::detail::execution_policy_base<struct "
+                   "thrust::cuda_cub::par_t>" ||
+        ArgType == "struct thrust::cuda_cub::par_t" ||
         // thrust::host
-        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::system::cpp::detail::par_t>"  ||
-        ArgType=="struct thrust::system::cpp::detail::par_t"                                                ||
+        ArgType == "struct thrust::detail::execution_policy_base<struct "
+                   "thrust::system::cpp::detail::par_t>" ||
+        ArgType == "struct thrust::system::cpp::detail::par_t" ||
         // thrust::seq
-        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::detail::seq_t>"               ||
-        ArgType=="struct thrust::detail::seq_t"                                                             ||
+        ArgType == "struct thrust::detail::execution_policy_base<struct "
+                   "thrust::detail::seq_t>" ||
+        ArgType == "struct thrust::detail::seq_t" ||
         // cudaStream_t stream;
         // thrust::cuda::par.on(stream)
-        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::execute_on_stream>" ||
-        ArgType=="struct thrust::cuda_cub::execute_on_stream"                                               ||
+        ArgType == "struct thrust::detail::execution_policy_base<struct "
+                   "thrust::cuda_cub::execute_on_stream>" ||
+        ArgType == "struct thrust::cuda_cub::execute_on_stream" ||
         // class MyAlloctor {};
         // template<typename T>
         // void foo() {
@@ -1895,32 +1916,46 @@ public:
         //   auto policy = thrust::cuda::par(thrust_allocator).on(stream);
         //   ...
         //  }
-        // Here ArgType for policy is "struct thrust::detail::execute_with_allocator<class MyAlloctor &, thrust::cuda_cub::execute_on_stream_base>"
-        ArgType.find("struct thrust::detail::execute_with_allocator") != std::string::npos)
+        // Here ArgType for policy is "struct
+        // thrust::detail::execute_with_allocator<class MyAlloctor &,
+        // thrust::cuda_cub::execute_on_stream_base>"
+        ArgType.find("struct thrust::detail::execute_with_allocator") !=
+            std::string::npos)
       return true;
 
-    if (// Templated policy types.  If we see a templated type assume it is a policy if it is not the same type as the next argument type
-        // FIXME, this check is a hack.  It would be better if we analyzed the templated type rather than comparing it against the
-        // next argument.
+    if ( // Templated policy types.  If we see a templated type assume it is a
+         // policy if it is not the same type as the next argument type
+         // FIXME, this check is a hack.  It would be better if we analyzed the
+         // templated type rather than comparing it against the next argument.
 
-        (//template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typename Predicate, typename Iterator3>
-         //__global__ void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2) {
-         //  *result2 = thrust::copy_if(exec, first, last, result1, pred);
-         //
-         // For the above code, exec will have type type-parameter-0-0
-         ArgType=="type-parameter-0-0" ||
+        ( // template<typename ExecutionPolicy, typename Iterator1, typename
+          // Iterator2, typename Predicate, typename Iterator3>
+          //__global__ void copy_if_kernel(ExecutionPolicy exec, Iterator1
+          //first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3
+          //result2) {
+          //  *result2 = thrust::copy_if(exec, first, last, result1, pred);
+          //
+          // For the above code, exec will have type type-parameter-0-0
+            ArgType == "type-parameter-0-0" ||
 
-         //template <typename InputType, typename OutputType>
-         //void myfunction(const std::shared_ptr<const Container<InputType>> &inImageData,
-         //                int *dev_a, int *dev_b) {
-         //  thrust::transform(thrust::cuda::par.on(inImageData->getStream()), dev_a, dev_a + 10, dev_b, my_math());
-         //
-         // For the above code, thrust::cuda::par.on(inImageData->getStream()) will have type <dependent type>
-         ArgType=="<dependent type>") &&
+            // template <typename InputType, typename OutputType>
+            // void myfunction(const std::shared_ptr<const Container<InputType>>
+            // &inImageData,
+            //                int *dev_a, int *dev_b) {
+            //  thrust::transform(thrust::cuda::par.on(inImageData->getStream()),
+            //  dev_a, dev_a + 10, dev_b, my_math());
+            //
+            // For the above code,
+            // thrust::cuda::par.on(inImageData->getStream()) will have type
+            // <dependent type>
+            ArgType == "<dependent type>") &&
 
-        (Idx+1) < C->getNumArgs() &&
-        C->getArg(Idx+0)->getType().getCanonicalType().getUnqualifiedType() !=
-        C->getArg(Idx+1)->getType().getCanonicalType().getUnqualifiedType())
+        (Idx + 1) < C->getNumArgs() &&
+        C->getArg(Idx + 0)->getType().getCanonicalType().getUnqualifiedType() !=
+            C->getArg(Idx + 1)
+                ->getType()
+                .getCanonicalType()
+                .getUnqualifiedType())
       return true;
 
     return false;
@@ -1936,7 +1971,7 @@ public:
   }
 };
 
-template<class Attr> class IsDirectCalleeHasAttribute {
+template <class Attr> class IsDirectCalleeHasAttribute {
 public:
   IsDirectCalleeHasAttribute() {}
   bool operator()(const CallExpr *C) {
@@ -1972,6 +2007,7 @@ inline std::function<std::string(const CallExpr *)> MemberExprBase() {
 
 class NeedExtraParens {
   unsigned Idx;
+
 public:
   NeedExtraParens(unsigned I) : Idx(I) {}
   bool operator()(const CallExpr *C) { return needExtraParens(C->getArg(Idx)); }
@@ -1979,6 +2015,7 @@ public:
 
 class IsParameterIntegerType {
   unsigned Idx;
+
 public:
   IsParameterIntegerType(unsigned Idx) : Idx(Idx) {}
   bool operator()(const CallExpr *C) {
@@ -1988,6 +2025,7 @@ public:
 
 class IsArgumentIntegerType {
   unsigned Idx;
+
 public:
   IsArgumentIntegerType(unsigned Idx) : Idx(Idx) {}
   bool operator()(const CallExpr *C) {
@@ -2082,10 +2120,8 @@ const std::string MipmapNeedBindlessImage =
   makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
 #define TEMPLATED_CALLEE_WITH_ARGS(FuncName, ...)                              \
   makeTemplatedCalleeWithArgsCreator(FuncName, __VA_ARGS__)
-#define CASE(Pred, Entry) \
-  createCase(Pred, Entry 0)
-#define OTHERWISE(Entry) \
-  createCase(CaseRewriterFactory::true_pred, Entry 0)
+#define CASE(Pred, Entry) createCase(Pred, Entry 0)
+#define OTHERWISE(Entry) createCase(CaseRewriterFactory::true_pred, Entry 0)
 
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
