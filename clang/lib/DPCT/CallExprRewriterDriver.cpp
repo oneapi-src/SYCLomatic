@@ -36,9 +36,9 @@ createContextFactory(
   if (DpctGlobalInfo::useSYCLCompat()) {
     return std::make_pair(
         LegacyFactory.first,
-        createUnsupportRewriterFactory(LegacyFactory.first,
+        createUnsupportRewriterFactory(std::string(LegacyFactory.first),
                                        Diagnostics::UNSUPPORT_SYCLCOMPAT,
-                                       LegacyFactory.first));
+                                       std::string(LegacyFactory.first)));
   }
   return createFeatureRequestFactory(
       HelperFeatureEnum::device_ext,
