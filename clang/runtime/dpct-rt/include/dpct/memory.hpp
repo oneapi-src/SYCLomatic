@@ -113,7 +113,7 @@ struct memcpy_parameter {
   struct data_wrapper {
     pitched_data pitched{};
     sycl::id<3> pos{};
-    size_t offsetXByte{0};
+    size_t pos_x_byte{0};
     int dev_id{0};
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
     experimental::image_mem_wrapper *image_bindless{nullptr};
@@ -123,7 +123,7 @@ struct memcpy_parameter {
   data_wrapper from{};
   data_wrapper to{};
   sycl::range<3> size{};
-  size_t sizeXByte{0};
+  size_t size_x_byte{0};
   memcpy_direction direction{memcpy_direction::automatic};
 };
 
@@ -744,31 +744,31 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
   if (param.to.image_bindless != nullptr &&
       param.from.image_bindless != nullptr) {
     return {experimental::detail::dpct_memcpy(
-        param.from.image_bindless, param.from.pos, param.from.offsetXByte,
-        param.to.image_bindless, param.to.pos, param.to.offsetXByte, param.size,
-        param.sizeXByte, q)};
+        param.from.image_bindless, param.from.pos, param.from.pos_x_byte,
+        param.to.image_bindless, param.to.pos, param.to.pos_x_byte, param.size,
+        param.size_x_byte, q)};
   } else if (param.to.image_bindless != nullptr) {
     return {experimental::detail::dpct_memcpy(
-        from, param.from.pos, param.from.offsetXByte, param.to.image_bindless,
-        param.to.pos, param.to.offsetXByte, param.size, param.sizeXByte, q)};
+        from, param.from.pos, param.from.pos_x_byte, param.to.image_bindless,
+        param.to.pos, param.to.pos_x_byte, param.size, param.size_x_byte, q)};
   } else if (param.from.image_bindless != nullptr) {
     return {experimental::detail::dpct_memcpy(
-        param.from.image_bindless, param.from.pos, param.from.offsetXByte, to,
-        param.to.pos, param.to.offsetXByte, param.size, param.sizeXByte, q)};
+        param.from.image_bindless, param.from.pos, param.from.pos_x_byte, to,
+        param.to.pos, param.to.pos_x_byte, param.size, param.size_x_byte, q)};
   }
 #endif
   auto size = param.size;
   auto to_pos = param.to.pos;
   auto from_pos = param.from.pos;
   // If the src and dest are not bindless image, the x can be set to XInByte.
-  if (param.sizeXByte != 0) {
-    size[0] = param.sizeXByte;
+  if (param.size_x_byte != 0) {
+    size[0] = param.size_x_byte;
   }
-  if (param.to.offsetXByte != 0) {
-    to_pos[0] = param.to.offsetXByte;
+  if (param.to.pos_x_byte != 0) {
+    to_pos[0] = param.to.pos_x_byte;
   }
-  if (param.from.offsetXByte != 0) {
-    from_pos[0] = param.from.offsetXByte;
+  if (param.from.pos_x_byte != 0) {
+    from_pos[0] = param.from.pos_x_byte;
   }
   if (param.to.image != nullptr) {
     to = to_pitched_data(param.to.image);
