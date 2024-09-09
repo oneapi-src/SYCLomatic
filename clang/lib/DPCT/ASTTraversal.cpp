@@ -11523,7 +11523,7 @@ const Expr *getRhs(const Stmt *);
 TextModification *ReplaceMemberAssignAsSetMethod(
     SourceLocation EndLoc, const MemberExpr *ME, StringRef MethodName,
     StringRef ReplacedArg, StringRef ExtraArg = "", StringRef ExtraFeild = "",
-    StringRef ReplacedArgTypCast="") {
+    StringRef ReplacedArgTypCast = "") {
   auto Arg = ReplacedArg.str();
   if (!ReplacedArgTypCast.empty()) {
     Arg = buildString("(" + ReplacedArgTypCast + ")" + ReplacedArg);
@@ -11534,13 +11534,10 @@ TextModification *ReplaceMemberAssignAsSetMethod(
                   "(", ExtraArg, ExtraArg.empty() ? "" : ", ", Arg, ")"));
 }
 
-TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
-                                                 const MemberExpr *ME,
-                                                 StringRef MethodName,
-                                                 StringRef ReplacedArg = "",
-                                                 StringRef ExtraArg = "",
-                                                 StringRef ExtraFeild = "",
-                                                 StringRef ReplacedArgTypCast="") {
+TextModification *ReplaceMemberAssignAsSetMethod(
+    const Expr *E, const MemberExpr *ME, StringRef MethodName,
+    StringRef ReplacedArg = "", StringRef ExtraArg = "",
+    StringRef ExtraFeild = "", StringRef ReplacedArgTypCast = "") {
   if (ReplacedArg.empty()) {
     if (auto RHS = getRhs(E)) {
       return ReplaceMemberAssignAsSetMethod(
@@ -11679,10 +11676,10 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
         MapNames::findReplacedName(GetSetReplMemberNames, MemberName.str());
     const std::string ExtraFeild =
         MemberName.starts_with("src") ? "from.pitched." : "to.pitched.";
-    const std::string ReplacedArgTyCast = Replace == "data_ptr"? "void *": "";
+    const std::string ReplacedArgTyCast = Replace == "data_ptr" ? "void *" : "";
     if (BO) {
-      return emplaceTransformation(
-          ReplaceMemberAssignAsSetMethod(BO, M, Replace, "", "", ExtraFeild, ReplacedArgTyCast));
+      return emplaceTransformation(ReplaceMemberAssignAsSetMethod(
+          BO, M, Replace, "", "", ExtraFeild, ReplacedArgTyCast));
     }
     emplaceTransformation(new ReplaceToken(
         M->getMemberLoc(), buildString(ExtraFeild + "get_", Replace, "()")));
