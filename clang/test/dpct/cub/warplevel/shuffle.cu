@@ -32,7 +32,7 @@ void print_data(int* data, int num) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  int input = data[threadid];
 // CHECK-NEXT:  int output = 0;
-// CHECK-NEXT:  output = item_ct1.get_sub_group().shuffle(input, 0);
+// CHECK-NEXT:  output = dpct::select_from_sub_group(item_ct1.get_sub_group(), input, 0);
 // CHECK-NEXT:  data[threadid] = output;
 // CHECK-NEXT:}
 __global__ void ShuffleIndexKernel1(int* data) {
@@ -51,10 +51,7 @@ __global__ void ShuffleIndexKernel2(int* data) {
 
   int input = data[threadid];
   int output = 0;
-// CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::ShuffleIndex(int, int, unsigned int) is not supported.
-// CHECK-NEXT: */
-// CHECK-NEXT: output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
+  // CHECK: output = dpct::experimental::select_from_sub_group(0xaaaaaaaa, item_ct1.get_sub_group(), input, 0);
   output = cub::ShuffleIndex<32>(input, 0, 0xaaaaaaaa);
   data[threadid] = output;
 }
@@ -105,11 +102,11 @@ int main() {
   verify_data(dev_data, TotalThread);
 
   init_data(dev_data, TotalThread);
-//CHECK:    q_ct1.parallel_for(
-//CHECK-NEXT:            sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:              ShuffleIndexKernel2(dev_data, item_ct1);
-//CHECK-NEXT:            });
+  // CHECK:    q_ct1.parallel_for(
+  // CHECK-NEXT:            sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+  // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:              ShuffleIndexKernel2(dev_data, item_ct1);
+  // CHECK-NEXT:            });
   ShuffleIndexKernel2<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);

@@ -1025,17 +1025,31 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     WarpSize = TA->get(0).getAsIntegral().getExtValue();
     std::string ValueType =
         TA->get(1).getAsType().getUnqualifiedType().getAsString();
-    auto MemberMask = CE->getArg(2);
-    auto Mask = dyn_cast<IntegerLiteral>(MemberMask);
-    if (Mask && Mask->getValue().getZExtValue() == 0xffffffff) {
-      const Expr *Value = CE->getArg(0);
-      const Expr *Lane = CE->getArg(1);
-      ExprAnalysis ValueEA(Value);
-      ExprAnalysis LaneEA(Lane);
-      auto DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
-      Repl = DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) + ".shuffle(" +
-             ValueEA.getReplacedString() + ", " + LaneEA.getReplacedString() +
-             ")";
+    const auto *MemberMask = CE->getArg(2);
+    const auto *Mask = dyn_cast<IntegerLiteral>(MemberMask);
+    const Expr *Value = CE->getArg(0);
+    const Expr *Lane = CE->getArg(1);
+    const auto *DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
+    ExprAnalysis ValueEA(Value);
+    ExprAnalysis LaneEA(Lane);
+    llvm::raw_string_ostream OS(Repl);
+    if (Mask) {
+      if (Mask->getValue().getZExtValue() == 0xffffffff) {
+        OS << MapNames::getDpctNamespace() << "select_from_sub_group("
+           << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
+           << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
+        if (WarpSize != 32)
+          OS << ", " << WarpSize;
+        OS << ')';
+      } else {
+        OS << MapNames::getDpctNamespace() << "experimental::"
+           << "select_from_sub_group(" << getStmtSpelling(Mask) << ", "
+           << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
+           << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
+        if (WarpSize != 32)
+          OS << ", " << WarpSize;
+        OS << ')';
+      }
       emplaceTransformation(new ReplaceStmt(CE, Repl));
       if (DeviceFuncDecl) {
         auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
