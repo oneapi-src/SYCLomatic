@@ -38,11 +38,21 @@ void clang::dpct::WMMARule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "type")) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      if (auto TD = TL->getType()->getAsTagDecl()) {
+        report(TL->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
+               TD->getQualifiedNameAsString());
+      }
+      return;
+    }
     EA.analyze(*TL);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     EA.analyze(CE);
   } else if (const DeclRefExpr *DRE =
                  getNodeAsType<DeclRefExpr>(Result, "enum")) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      return;
+    }
     EA.analyze(DRE);
   } else {
     return;

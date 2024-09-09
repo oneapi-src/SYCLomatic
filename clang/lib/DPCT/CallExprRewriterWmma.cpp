@@ -25,7 +25,7 @@ void CallExprRewriterFactoryBase::initRewriterMapWmma() {
   // Using SYCL experimental type as the the mapping of
   // nvcuda::wmma::mem_row_major, this mapping must be protected by option
   // "--use-experimental-features=matrix".
-  if (DpctGlobalInfo::useExtJointMatrix()) {
+  if (DpctGlobalInfo::useExtJointMatrix() && !DpctGlobalInfo::useSYCLCompat()) {
     EnumConstantRule::EnumNamesMap.insert(
         {"nvcuda::wmma::mem_row_major",
          std::make_shared<EnumNameRule>(
