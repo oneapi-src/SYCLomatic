@@ -210,7 +210,7 @@ public:
                    queue_t queue) {
     auto arr = ss.array();
     size_t size = sizeof(T) / sizeof(value[0]);
-    for (size_t i = 0; i < size;) {
+    for (size_t i = 0; i < size; ++i) {
       if (size > CODEPIN_SAMPLING_THRESHHOLD && i != 0) {
         float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
         if (r > CODEPIN_SAMPLING_RATE)
