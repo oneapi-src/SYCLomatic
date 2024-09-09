@@ -11522,12 +11522,16 @@ REGISTER_RULE(MemoryMigrationRule, PassKind::PK_Migration)
 const Expr *getRhs(const Stmt *);
 TextModification *ReplaceMemberAssignAsSetMethod(
     SourceLocation EndLoc, const MemberExpr *ME, StringRef MethodName,
-    StringRef ReplacedArg, StringRef ExtraArg = "", StringRef ExtraFeild = "") {
+    StringRef ReplacedArg, StringRef ExtraArg = "", StringRef ExtraFeild = "",
+    StringRef ReplacedArgTypCast="") {
+  auto Arg = ReplacedArg.str();
+  if (!ReplacedArgTypCast.empty()) {
+    Arg = buildString("(" + ReplacedArgTypCast + ")" + ReplacedArg);
+  }
   return new ReplaceToken(
       ME->getMemberLoc(), EndLoc,
       buildString(ExtraFeild + "set", MethodName.empty() ? "" : "_", MethodName,
-                  "(", ExtraArg, ExtraArg.empty() ? "" : ", ", ReplacedArg,
-                  ")"));
+                  "(", ExtraArg, ExtraArg.empty() ? "" : ", ", Arg, ")"));
 }
 
 TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
@@ -11535,16 +11539,18 @@ TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
                                                  StringRef MethodName,
                                                  StringRef ReplacedArg = "",
                                                  StringRef ExtraArg = "",
-                                                 StringRef ExtraFeild = "") {
+                                                 StringRef ExtraFeild = "",
+                                                 StringRef ReplacedArgTypCast="") {
   if (ReplacedArg.empty()) {
     if (auto RHS = getRhs(E)) {
       return ReplaceMemberAssignAsSetMethod(
           getStmtExpansionSourceRange(E).getEnd(), ME, MethodName,
-          ExprAnalysis::ref(RHS), ExtraArg, ExtraFeild);
+          ExprAnalysis::ref(RHS), ExtraArg, ExtraFeild, ReplacedArgTypCast);
     }
   }
   return ReplaceMemberAssignAsSetMethod(getStmtExpansionSourceRange(E).getEnd(),
-                                        ME, MethodName, ReplacedArg, ExtraArg);
+                                        ME, MethodName, ReplacedArg, ExtraArg,
+                                        ReplacedArgTypCast);
 }
 
 void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
@@ -11673,9 +11679,10 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
         MapNames::findReplacedName(GetSetReplMemberNames, MemberName.str());
     const std::string ExtraFeild =
         MemberName.starts_with("src") ? "from.pitched." : "to.pitched.";
+    const std::string ReplacedArgTyCast = Replace == "data_ptr"? "void *": "";
     if (BO) {
       return emplaceTransformation(
-          ReplaceMemberAssignAsSetMethod(BO, M, Replace, "", "", ExtraFeild));
+          ReplaceMemberAssignAsSetMethod(BO, M, Replace, "", "", ExtraFeild, ReplacedArgTyCast));
     }
     emplaceTransformation(new ReplaceToken(
         M->getMemberLoc(), buildString(ExtraFeild + "get_", Replace, "()")));
