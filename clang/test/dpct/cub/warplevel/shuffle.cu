@@ -92,11 +92,11 @@ int main() {
   cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
 
   init_data(dev_data, TotalThread);
-//CHECK:  q_ct1.parallel_for(
-//CHECK-NEXT:            sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-//CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:              ShuffleIndexKernel1(dev_data, item_ct1);
-//CHECK-NEXT:            });
+  // CHECK:  q_ct1.parallel_for(
+  // CHECK-NEXT:            sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+  // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:              ShuffleIndexKernel1(dev_data, item_ct1);
+  // CHECK-NEXT:            });
   ShuffleIndexKernel1<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
@@ -104,7 +104,7 @@ int main() {
   init_data(dev_data, TotalThread);
   // CHECK:    q_ct1.parallel_for(
   // CHECK-NEXT:            sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
-  // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:              ShuffleIndexKernel2(dev_data, item_ct1);
   // CHECK-NEXT:            });
   ShuffleIndexKernel2<<<GridSize, BlockSize>>>(dev_data);

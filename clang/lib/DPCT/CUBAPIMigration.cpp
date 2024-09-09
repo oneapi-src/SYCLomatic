@@ -1051,12 +1051,6 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
         OS << ')';
       }
       emplaceTransformation(new ReplaceStmt(CE, Repl));
-      if (DeviceFuncDecl) {
-        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
-        if (DI) {
-          DI->addSubGroupSizeRequest(WarpSize, CE->getBeginLoc(), "shuffle");
-        }
-      }
     } else {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              GetFunctionName(CE));
