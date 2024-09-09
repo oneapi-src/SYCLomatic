@@ -15,11 +15,11 @@ int main(){
 
   unsigned int flags = CU_CTX_MAP_HOST;
   CUexecAffinityParam* paramsArray;
-  // CHECK: ctx = dpct::select_device(device);
+  // CHECK: ctx = dpct::push_device_for_curr_thread(device);
   cuCtxCreate_v3(&ctx, paramsArray, 1, flags, device);
 
   CUctxCreateParams* ctxCreateParams;
-  // CHECK: ctx = dpct::select_device(device);
+  // CHECK: ctx = dpct::push_device_for_curr_thread(device);
   cuCtxCreate_v4(&ctx, ctxCreateParams, flags, device);
 #endif
   return 0;

@@ -1050,8 +1050,11 @@ void ASTContext::PerModuleInitializers::resolve(ASTContext &Ctx) {
 
   auto LazyInits = std::move(LazyInitializers);
   LazyInitializers.clear();
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  for (const auto &ID : LazyInits)
+#else
   for (auto ID : LazyInits)
+#endif
     Initializers.push_back(Source->GetExternalDecl(ID));
 
   assert(LazyInitializers.empty() &&
