@@ -57,11 +57,11 @@ typedef sycl::buffer<byte_t> buffer_t;
 class pitched_data {
 public:
   pitched_data() : pitched_data(nullptr, 0, 0, 0) {}
-  pitched_data(const void *data, size_t pitch, size_t x, size_t y)
+  pitched_data(void *data, size_t pitch, size_t x, size_t y)
       : _data(data), _pitch(pitch), _x(x), _y(y) {}
 
-  const void *get_data_ptr() { return _data; }
-  void set_data_ptr(const void *data) { _data = data; }
+  void *get_data_ptr() { return _data; }
+  void set_data_ptr(void *data) { _data = data; }
 
   size_t get_pitch() { return _pitch; }
   void set_pitch(size_t pitch) { _pitch = pitch; }
@@ -73,7 +73,7 @@ public:
   void set_y(size_t y) { _y = y; }
 
 private:
-  const void *_data;
+  void *_data;
   size_t _pitch, _x, _y;
 };
 
