@@ -8,15 +8,19 @@ Message
 
 .. _msg-3002-start:
 
-
+"<Library specific to CUDA>" is removed because it is not supported to be used
+together with option "-fsycl" of SYCL compiler. You may need to check the build options.
 
 .. _msg-3002-end:
 
 Detailed Help
 -------------
 
-
+"<Library specific to CUDA>" is removed because it is not supported to be used
+together with option "-fsycl" of SYCL compiler. You may need to check the build options.
 
 Suggestions to Fix
 ------------------
 
+For example, "-static-libstdc++" is removed because it is not supported to be used
+together with option "-fsycl" of SYCL compiler. You may need to check the build options.

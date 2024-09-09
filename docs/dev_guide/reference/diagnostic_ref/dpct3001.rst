@@ -8,15 +8,25 @@ Message
 
 .. _msg-3001-start:
 
-
+"<CMake common command >" is used to copy an input file to an output file while performing transformations
+of the input file content. You may need to update the name of the input and output file if the input file
+contains CUDA syntax, and make sure the input file exists by copying or migrating the original input file
+from in-root folder.
 
 .. _msg-3001-end:
 
 Detailed Help
 -------------
 
-
+"<CMake common command >" is used to copy an input file to an output file while performing transformations
+of the input file content. You may need to update the name of the input and output file if the input file
+contains CUDA syntax, and make sure the input file exists by copying or migrating the original input file
+from in-root folder.
 
 Suggestions to Fix
 ------------------
 
+For example, "configure_file" is used to copy an input file to an output file while performing transformations
+of the input file content. You may need to update the name of the input and output file if the input file
+contains CUDA syntax, and make sure the input file exists by copying or migrating the original input file
+from in-root folder.

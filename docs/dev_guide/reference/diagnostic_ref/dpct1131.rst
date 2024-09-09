@@ -15,9 +15,34 @@ The migration of "*<API name>*" is not supported with SYCLcompat currently, plea
 Detailed Help
 -------------
 
-See :ref:`DPCT1128`.
+When using syclcompat header-only library to assist the migration, this API migration is not supported.
 
 Suggestions to Fix
 ------------------
 
-See :ref:`DPCT1128`.
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   cudaChannelFormatDesc desc42 = cudaCreateChannelDesc<float4>();
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1131:0: The migration of "cudaChannelFormatDesc" is not supported with
+   SYCLcompat currently, please adjust the code manually.
+   */
+   /*
+   DPCT1131:1: The migration of "cudaCreateChannelDesc" is not supported with
+   SYCLcompat currently, please adjust the code manually.
+   */
+   cudaChannelFormatDesc desc42 = cudaCreateChannelDesc<sycl::float4>();
+
+which need be rewritten to:
+
+   This kind of code requires manual migration.
+
