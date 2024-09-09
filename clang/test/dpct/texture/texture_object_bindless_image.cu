@@ -651,3 +651,12 @@ int main() {
   cudaFreeMipmappedArray(pMipMapArr);
   return 0;
 }
+
+// CHECK: dpct::memcpy_parameter test_const_arg(const void *pSrc) {
+CUDA_MEMCPY2D test_const_arg(const void *pSrc) {
+  // CHECK: dpct::memcpy_parameter cpy;
+  CUDA_MEMCPY2D cpy;
+  // CHECK: cpy.from.pitched.set_data_ptr((void *)pSrc);
+  cpy.srcHost = pSrc;
+  return cpy;
+}
