@@ -23,6 +23,19 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <stdlib.h>
+
+#ifndef CODEPIN_RAND_SEED
+#define CODEPIN_RAND_SEED 0
+#endif
+
+#ifndef CODEPIN_SAMPLING_THRESHHOLD
+#define CODEPIN_SAMPLING_THRESHHOLD 20
+#endif
+
+#ifndef CODEPIN_SAMPLING_RATE
+#define CODEPIN_SAMPLING_RATE 0.01
+#endif
 
 namespace dpct {
 namespace experimental {
@@ -30,7 +43,7 @@ namespace codepin {
 
 inline static std::map<std::string, int> api_index;
 inline static std::map<std::string, event_t> event_map;
-
+inline static bool rand_seed_setup = false;
 namespace detail {
 
 inline static std::unordered_set<void *> ptr_unique;
@@ -169,6 +182,11 @@ public:
     }
     auto arr = ss.array();
     for (int i = 0; i < size; ++i) {
+      if (size > CODEPIN_SAMPLING_THRESHHOLD && i != 0) {
+        float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        if (r > CODEPIN_SAMPLING_RATE)
+          continue;
+      }
       auto obj = arr.object();
       detail::data_ser<PointeeType>::print_type_name(obj);
       obj.key("Data");
@@ -192,7 +210,12 @@ public:
                    queue_t queue) {
     auto arr = ss.array();
     size_t size = sizeof(T) / sizeof(value[0]);
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size;) {
+      if (size > CODEPIN_SAMPLING_THRESHHOLD && i != 0) {
+        float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        if (r > CODEPIN_SAMPLING_RATE)
+          continue;
+      }
       auto obj = arr.object();
       detail::data_ser<
           std::remove_extent_t<T>>::print_type_name(obj);
@@ -212,6 +235,10 @@ template <class... Args>
 void gen_log_API_CP(const std::string &cp_id, std::string device_name,
                     size_t free_byte, size_t total_byte, float elapse_time,
                     queue_t queue, Args... args) {
+  if (!rand_seed_setup) {
+    srand(CODEPIN_RAND_SEED);
+    rand_seed_setup = true;
+  }
   log.print_CP(cp_id, device_name, free_byte, total_byte, elapse_time, queue,
                args...);
 }
