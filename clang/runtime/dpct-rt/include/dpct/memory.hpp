@@ -1492,10 +1492,10 @@ public:
   /// Constructor with range
   device_memory(const sycl::range<Dimension> &range_in)
       : _size(range_in.size() * sizeof(T)), _range(range_in), _reference(false),
-        _host_ptr(nullptr), _device_ptr(nullptr) {
-    static_assert(
-        (Memory == global) || (Memory == constant) || (Memory == shared),
-        "device memory region should be global, constant or shared");
+        _host_ptr(nullptr), _device_ptrs(get_ptrs_size(), nullptr) {
+    static_assert((Memory == global) || (Memory == constant) ||
+                      (Memory == shared),
+                  "device memory region should be global, constant or shared");
     // Make sure that singleton class mem_mgr and dev_mgr will destruct later
     // than this.
     detail::mem_mgr::instance();
@@ -1508,28 +1508,26 @@ public:
       : device_memory(sycl::range<Dimension>(Arguments...)) {}
 
   ~device_memory() {
-    if (_device_ptr && !_reference)
-      dpct::dpct_free(_device_ptr, _q);
+    if (!_reference) {
+      for (unsigned i = 0; i < _device_ptrs.size(); ++i) {
+        if (auto ptr = _device_ptrs[i])
+          dpct::dpct_free(ptr, get_device(i).default_queue());
+      }
+    }
     if (_host_ptr)
       std::free(_host_ptr);
   }
 
   /// Allocate memory with default queue, and init memory if has initial value.
-  void init() {
-    init(dpct::get_default_queue());
-  }
-  /// Allocate memory with specified queue, and init memory if has initial value.
-  void init(sycl::queue &q) {
-    if (_device_ptr)
-      return;
-    if (!_size)
-      return;
-    allocate_device(q);
-    if (_host_ptr)
-      detail::dpct_memcpy(q, _device_ptr, _host_ptr, _size, host_to_device);
-  }
+  void init() { init(dpct::get_default_queue()); }
+  /// Allocate memory with specified queue, and init memory if has initial
+  /// value.
+  void init(sycl::queue &q) { (void)get_ptr_impl(q); }
 
   /// The variable is assigned to a device pointer.
+#ifndef DPCT_USM_LEVLE_NONE
+  [[deprecated]]
+#endif
   void assign(value_t *src, size_t size) {
     this->~device_memory();
     new (this) device_memory(src, size);
@@ -1537,35 +1535,29 @@ public:
 
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used.
-  value_t *get_ptr() {
-    return get_ptr(get_default_queue());
-  }
+  value_t *get_ptr() { return get_ptr(get_default_queue()); }
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used.
-  value_t *get_ptr(sycl::queue &q) {
-    init(q);
-    return _device_ptr;
-  }
+  value_t *get_ptr(sycl::queue &q) { return get_ptr_impl(q); }
 
   /// Get the device memory object size in bytes.
   size_t get_size() { return _size; }
 
   template <size_t D = Dimension>
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
-    init();
+    auto ptr = get_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
-    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
-               _device_ptr)
+    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(ptr)
         .template get_access<sycl::access_mode::read_write>()[index];
 #else
-    return _device_ptr[index];
+    return ptr[index];
 #endif // DPCT_USM_LEVEL_NONE
   }
 
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(sycl::handler &cgh) {
-    return get_buffer(_device_ptr)
+    return get_buffer(_device_ptrs.front())
         .template reinterpret<T, Dimension>(_range)
         .template get_access<detail::memory_traits<Memory, T>::mode,
                              detail::memory_traits<Memory, T>::target>(cgh);
@@ -1576,40 +1568,60 @@ public:
   template <size_t D = Dimension>
   typename std::enable_if<D != 1, dpct_accessor_t>::type
   get_access(sycl::handler &cgh) {
-    return dpct_accessor_t((T *)_device_ptr, _range);
+    return dpct_accessor_t((T *)_device_ptrs.front(), _range);
   }
 #endif // DPCT_USM_LEVEL_NONE
 
 private:
   device_memory(value_t *memory_ptr, size_t size)
       : _size(size), _range(size / sizeof(T)), _reference(true),
-        _device_ptr(memory_ptr) {}
+        _device_ptrs(get_ptrs_size(), memory_ptr) {}
 
-  void allocate_device(sycl::queue &q) {
+  value_t *allocate_device(sycl::queue &q) {
     _q = q;
 #ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
-      _device_ptr = (value_t *)sycl::malloc_shared(
-          _size, q.get_device(), q.get_context());
-      return;
+      return (value_t *)sycl::malloc_shared(_size, q.get_device(),
+                                            q.get_context());
     }
 #ifdef SYCL_EXT_ONEAPI_USM_DEVICE_READ_ONLY
     if (Memory == constant) {
-      _device_ptr = (value_t *)sycl::malloc_device(
+      return (value_t *)sycl::malloc_device(
           _size, q.get_device(), q.get_context(),
           sycl::ext::oneapi::property::usm::device_read_only());
-      return;
     }
 #endif
 #endif
-    _device_ptr = (value_t *)detail::dpct_malloc(_size, q);
+    return (value_t *)detail::dpct_malloc(_size, q);
+  }
+
+  value_t *get_ptr_impl(sycl::queue &q) {
+#ifdef DPCT_USM_LEVEL_NONE
+    auto &ptr = _device_ptrs.front();
+#else
+    auto &ptr = _device_ptrs[get_device_id(q.get_device())];
+#endif
+    if (ptr || !_size)
+      return ptr;
+    ptr = allocate_device(q);
+    if (_host_ptr)
+      detail::dpct_memcpy(q, ptr, _host_ptr, _size, host_to_device);
+    return ptr;
+  }
+
+  static size_t get_ptrs_size() {
+#ifdef DPCT_USM_LEVEL_NONE
+    return 1;
+#else
+    return device_count();
+#endif
   }
 
   size_t _size;
   sycl::range<Dimension> _range;
   bool _reference;
   value_t *_host_ptr;
-  value_t *_device_ptr;
+  std::vector<value_t *> _device_ptrs;
   sycl::queue _q;
 };
 template <class T, memory_region Memory>
