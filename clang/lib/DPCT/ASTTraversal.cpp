@@ -2212,13 +2212,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
-  if (auto TL =getNodeAsType<TypeLoc>(Result, "cudaTypeDefEA")) {
-    if (DpctGlobalInfo::useSYCLCompat()) {
-      report(
-          TL->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT, false,
-          DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context));
-      return;
-    }
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDefEA")) {
     ExprAnalysis EA;
     EA.analyze(*TL);
     emplaceTransformation(EA.getReplacement());

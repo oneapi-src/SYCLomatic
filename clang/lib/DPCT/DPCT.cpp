@@ -1320,8 +1320,17 @@ int runDPCT(int argc, const char **argv) {
       return MigrationSucceeded;
     }
   }
+
   // if run was successful
-  int Status = saveNewFiles(Tool, InRootPath, OutRootPath, OutRootPathCUDACodepin, ReplCUDA, ReplSYCL);
+  int Status = 0;
+  runWithCrashGuard(
+      [&]() {
+        Status = saveNewFiles(Tool, InRootPath, OutRootPath,
+                              OutRootPathCUDACodepin, ReplCUDA, ReplSYCL);
+      },
+      "Error: dpct internal error. Saving in \"" +
+          OutRootPath.getCanonicalPath().str() +
+          "\" causing the error skipped. Migration continues.\n");
 
   if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     loadMainSrcFileInfo(OutRootPath);
