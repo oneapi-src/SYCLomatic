@@ -24,7 +24,6 @@
 #include <fstream>
 #include <optional>
 #include <string>
-
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
@@ -612,7 +611,7 @@ void DpctFileInfo::buildReplacements() {
   // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (const auto &Entry : MemVarMap) {
-    if (Entry.second->isIgnore())
+    if (Entry.second->isIgnore() || !Entry.second->isConstant())
       continue;
 
     auto Name = Entry.second->getName();
@@ -3172,6 +3171,26 @@ void MemVarInfo::setInitList(const Expr *E, const VarDecl *V) {
   if (auto Ctor = dyn_cast<CXXConstructExpr>(E)) {
     if (!Ctor->getNumArgs() || Ctor->getArg(0)->isDefaultArgument())
       return;
+  }
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto Beg = E->getBeginLoc();
+  auto End = E->getEndLoc();
+  if (Beg.isMacroID() && End.isMacroID()) {
+    if (SM.getExpansionLoc(Beg) != SM.getExpansionLoc(End)) {
+      if (auto IL = dyn_cast<InitListExpr>(E->IgnoreImplicitAsWritten())) {
+        std::string Result;
+        size_t InitsNum = IL->getNumInits();
+        for (unsigned i = 0; i < InitsNum; ++i) {
+          const Expr *IE = IL->getInit(i);
+          Result += getStmtSpelling(IE);
+          if (i != InitsNum - 1) {
+            Result += ", ";
+          }
+        }
+        InitList = "{" + Result + "}";
+        return;
+      }
+    }
   }
   InitList = getStmtSpelling(E, V->getSourceRange());
 }
