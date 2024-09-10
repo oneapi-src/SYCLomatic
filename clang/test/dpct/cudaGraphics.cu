@@ -4,6 +4,7 @@
 // RUN: FileCheck --input-file %T/cudaGraphics/cudaGraphics.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics/cudaGraphics.dp.cpp -o %T/cudaGraphics/cudaGraphics.dp.o %}
 
+#ifndef BUILD_TEST
 #include <cuda.h>
 #ifdef _WIN32
 #include <cuda_d3d11_interop.h>
@@ -103,3 +104,4 @@ int main() {
 
   return 0;
 }
+#endif
