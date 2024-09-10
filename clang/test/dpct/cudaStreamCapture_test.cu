@@ -34,9 +34,10 @@ int main() {
   cudaStreamCaptureStatus captureStatus;
   cudaStreamCaptureStatus *captureStatus2;
 
+
   // CHECK: captureStatus = stream->ext_oneapi_get_state();
-  // CHECK: *(captureStatus2) = q_ct1.ext_oneapi_get_state();
-  // CHECK: *(captureStatus2) = q_ct1.ext_oneapi_get_state();
+  // CHECK: *captureStatus2 = q_ct1.ext_oneapi_get_state();
+  // CHECK: *captureStatus2 = q_ct1.ext_oneapi_get_state();
   cudaStreamIsCapturing(stream, &captureStatus);
   cudaStreamIsCapturing(cudaStreamLegacy, captureStatus2);
   cudaStreamIsCapturing(cudaStreamDefault, captureStatus2);

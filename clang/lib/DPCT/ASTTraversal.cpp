@@ -52,6 +52,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ostream>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -8169,14 +8170,10 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr;
     std::string StreamName;
     auto StmtStr0 = getStmtSpelling(CE->getArg(1));
-    // TODO: simplify expression
-    if (StmtStr0[0] == '&')
-      ReplStr = StmtStr0.substr(1);
-    else
-      ReplStr = "*(" + StmtStr0 + ")";
-    ReplStr += " = ";
-    bool IsDefaultStream = isDefaultStream(CE->getArg(0));
-    if (IsDefaultStream) {
+    std::ostringstream OS;
+    printDerefOp(OS, CE->getArg(1));
+    ReplStr = OS.str() + " = ";
+    if (isDefaultStream(CE->getArg(0))) {
       if (isPlaceholderIdxDuplicated(CE))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
