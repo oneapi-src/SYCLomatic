@@ -8,6 +8,13 @@
 // CHECK: inline void foo(unsigned int p){}
 __device__ void foo(unsigned int p){}
 // CHECK: dpct::global_memory<unsigned int, 0> a1(4 * 2);
+// CHECK: __dpct_inline__ void kernel0(unsigned int &a1){
+// CHECK:   /*
+// CHECK:   DPCT1133:{{[0-9]+}}: The function atomicInc is migrated to atomic_fetch_compare_inc which is a slow code path for the atomic operation. Please try to replace it with atomic_fetch_add, which is a fast code path, by adjusting the second parameter and corresponding logic. Also refers to DPCT1116.
+// CHECK:   */
+// CHECK:   dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>(&a1, 0x73ffffff);
+// CHECK: }
+
 // CHECK: __dpct_inline__ void kernel1(unsigned int &a1){
 // CHECK:   /*
 // CHECK:   DPCT1116:{{[0-9]+}}: The atomicInc was migrated to dpct::atomic_fetch_add(&a1, 2) / 2 for performance, and 2 is computed by (UINT_MAX + 1) / ('0x7fffffff' + 1). This migration requires the initial value of 'a1' to be scaled by multiplying 2, and any usage of value of 'a1' outside atomic function to be scaled by dividing 2.
@@ -17,6 +24,12 @@ __device__ void foo(unsigned int p){}
 // CHECK:   foo(a1 / 2);
 // CHECK: }
 __device__ unsigned int a1 = 4;
+
+__global__ void kernel0(){
+
+  atomicInc(&a1, 0x73ffffff);
+
+}
 
 __global__ void kernel1(){
 
@@ -122,6 +135,7 @@ int main(){
   cudaGetSymbolAddress((void **)&d_addr, a3);
   cudaMemset(d_addr, 0, 10 * sizeof(int));
 
+  kernel0<<<1, 1>>>();
   kernel1<<<1, 1>>>();
   kernel2<<<1, 1>>>();
   kernel3<<<1, 1>>>();

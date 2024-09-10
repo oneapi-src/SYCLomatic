@@ -1652,8 +1652,10 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
     return;
   }
   std::string FuncNameRepl = "atomic_fetch_add";
+  std::string DirectMappingFuncName = "atomic_fetch_compare_inc";
   if (FuncName == "atomicDec") {
     FuncNameRepl = "atomic_fetch_sub";
+    DirectMappingFuncName = "atomic_fetch_compare_dec";
   }
 
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -1690,7 +1692,9 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
   };
   // Ensure the 0x100000000ul(unsigned int range) is divisible by
   // (UpperLimit + 1).
-  if(!IL) {
+  if (!IL) {
+    report(CE->getBeginLoc(), Diagnostics::ATOMIC_OPTIMIZATION_HINT, false,
+           FuncName, DirectMappingFuncName, FuncNameRepl);
     return;
   }
   UpperLimit = IL->getValue().getZExtValue();
@@ -1700,6 +1704,8 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
     return;
   }
   if (0x100000000ull % ((uint64_t)UpperLimit + 1) != 0) {
+    report(CE->getBeginLoc(), Diagnostics::ATOMIC_OPTIMIZATION_HINT, false,
+           FuncName, DirectMappingFuncName, FuncNameRepl);
     return;
   }
   Step = 0x100000000ull / ((uint64_t)UpperLimit + 1);
