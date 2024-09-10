@@ -509,14 +509,14 @@ def parser_build_log(parser):
     parser.add_argument(
         "--parse-build-log",
         metavar="<file>",
-        help="""Specifies the file path of the build log.""")
+        help="""Specify the file path of the build log.""")
 
 def parser_work_directory(parser):
     parser.add_argument(
         "--work-directory",
         metavar="<path>",
         default=argparse.SUPPRESS,
-        help="""Specifies the working directory of the command that generates the build log specified by option --parse-build-log.
+        help="""Specify the working directory of the command that generates the build log specified by option --parse-build-log.
                  (default: the directory of build log file specified by option --parse-build-log)""")
 
 def parser_add_linker_entry(parser):

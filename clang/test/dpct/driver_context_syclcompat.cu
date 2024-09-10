@@ -27,18 +27,18 @@ int main(){
   cuCtxCreate_v4(&ctx, ctxCreateParams, flags, device);  
 
   // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuCtxCreate_v2" is not supported with SYCLcompat currently, please adjust the code manually.
-  cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);  
+  cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuCtxPushCurrent" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuCtxPushCurrent_v2" is not supported with SYCLcompat currently, please adjust the code manually.
   MY_SAFE_CALL(cuCtxPushCurrent(ctx));
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuCtxPopCurrent" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuCtxPopCurrent_v2" is not supported with SYCLcompat currently, please adjust the code manually.
   cuCtxPopCurrent(&ctx);
 
-  // CHECK: ctx = dpct::select_device(device);
+  // CHECK: ctx = syclcompat::select_device(device);
   cuDevicePrimaryCtxRetain(&ctx, device);
 
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::select_device(ctx)));
+  // CHECK: MY_SAFE_CALL(SYCLCOMPAT_CHECK_ERROR(syclcompat::select_device(ctx)));
   MY_SAFE_CALL(cuCtxSetCurrent(ctx));
 #endif
   return 0;

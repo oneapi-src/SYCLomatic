@@ -2858,7 +2858,7 @@ struct CommandLineCommonOptions {
 #ifdef SYCLomatic_CUSTOMIZATION
   cl::opt<VersionPrinter, true, parser<bool>> VersOp{
       "version",
-      cl::desc("Shows the version of the tool."),
+      cl::desc("Show the version of the tool."),
       cl::location(VersionPrinterInstance),
       cl::ValueDisallowed,
       cl::cat(cl::getDPCTCategory()),
