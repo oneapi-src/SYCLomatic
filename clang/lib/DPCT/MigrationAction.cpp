@@ -269,6 +269,7 @@ void DpctToolAction::runPasses() {
   for (auto Pass : Passes) {
     runPass(Pass);
   }
+  DpctGlobalInfo::getInstance().setMainFile(nullptr);
   runWithCrashGuard(
       [&]() {
         Global.buildReplacements();
