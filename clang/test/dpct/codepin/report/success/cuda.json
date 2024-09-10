@@ -1,5 +1,10 @@
 [
     {
+        "CodePin Random Seed": "0",
+        "CodePin Sampling Threshhold": "20",
+        "CodePin Sampling Rate": "0.01"
+    },
+    {
         "ID": "serial123:prolog:0",
         "Device Name": "GPU",
         "Device ID": "0",

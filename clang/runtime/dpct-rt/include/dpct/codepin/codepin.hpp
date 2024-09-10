@@ -23,19 +23,34 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <iostream>
 #include <stdlib.h>
 
+// Random seed for data sampling.
 #ifndef CODEPIN_RAND_SEED
 #define CODEPIN_RAND_SEED 0
 #endif
 
+// Data size thresh hold for data sampling.
+// array/pointer size larger than the threshhold will be sampled.
 #ifndef CODEPIN_SAMPLING_THRESHHOLD
 #define CODEPIN_SAMPLING_THRESHHOLD 20
 #endif
 
+// Sampling rate, interval: (0, 1]
 #ifndef CODEPIN_SAMPLING_RATE
 #define CODEPIN_SAMPLING_RATE 0.01
 #endif
+
+#define CODEPIN_TO_STR(x) CODEPIN_STR(x)
+#define CODEPIN_STR(x) #x
+#pragma message("CodePin sampling feature is enabled.")
+#pragma message("CODEPIN_RAND_SEED: " CODEPIN_TO_STR(CODEPIN_RAND_SEED))
+#pragma message("CODEPIN_SAMPLING_THRESHHOLD: " CODEPIN_TO_STR(                \
+    CODEPIN_SAMPLING_THRESHHOLD))
+#pragma message("CODEPIN_SAMPLING_RATE: " CODEPIN_TO_STR(CODEPIN_SAMPLING_RATE))
+#pragma message(                                                               \
+    "Define the macros in the build command to change sampling config.")
 
 namespace dpct {
 namespace experimental {
@@ -51,7 +66,15 @@ inline static std::unordered_set<void *> ptr_unique;
 class logger {
 public:
   logger(const std::string &dump_file)
-      : opf(dump_file), json_ss(opf), arr(json_ss) {}
+      : opf(dump_file), json_ss(opf), arr(json_ss) {
+    auto top_obj = arr.object();
+    top_obj.key("CodePin Random Seed");
+    top_obj.value(CODEPIN_RAND_SEED);
+    top_obj.key("CodePin Sampling Threshhold");
+    top_obj.value(CODEPIN_SAMPLING_THRESHHOLD);
+    top_obj.key("CodePin Sampling Rate");
+    top_obj.value(float(CODEPIN_SAMPLING_RATE));
+  }
   ~logger() {}
 
   detail::json_stringstream &get_stringstream() {
@@ -238,6 +261,11 @@ void gen_log_API_CP(const std::string &cp_id, std::string device_name,
   if (!rand_seed_setup) {
     srand(CODEPIN_RAND_SEED);
     rand_seed_setup = true;
+    std::cout << "CodePin Sampling is enabled:" << std::endl;
+    std::cout << "CODEPIN_RAND_SEED: " << CODEPIN_RAND_SEED << std::endl;
+    std::cout << "CODEPIN_SAMPLING_THRESHHOLD: " << CODEPIN_SAMPLING_THRESHHOLD
+              << std::endl;
+    std::cout << "CODEPIN_SAMPLING_RATE: " << CODEPIN_SAMPLING_RATE << std::endl;
   }
   log.print_CP(cp_id, device_name, free_byte, total_byte, elapse_time, queue,
                args...);
