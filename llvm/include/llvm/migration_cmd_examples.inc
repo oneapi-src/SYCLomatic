@@ -19,8 +19,8 @@ R"(
 R"(
       $ dpct --intercept-build --parse-build-log <logfile>
 
-    Estimate the migration efforts to complete a migration
-      $ dpct --analysis-mode source.cu --analysis-mode-output-file
+    Migrate src code with SYCLcompat header-only library (syclcompat:: namespace)
+      $ dpct --use-syclcompat source.cu
 
   Migrate your code
   =================
@@ -52,11 +52,17 @@ R"(
   Utils to assist migration
   =========================
 
+    Estimate the migration efforts to complete a migration
+      $ dpct --analysis-mode source.cu --analysis-mode-output-file
+
     Query functionally compatible SYCL API for a CUDA API
       $ dpct --query-api-mapping=cudaMalloc
 
     Generate instrumented CUDA and SYCL code for debugging
       $ dpct --enable-codepin source.cu
+
+    Generate codepin summary report using instrumented CUDA and SYCL logs
+      $ dpct --codepin-report --instrumented-cuda-log cuda.json --instrumented-sycl-log sycl.json
 
     Generate helper function files in the out-root directory
       $ dpct --gen-helper-function
