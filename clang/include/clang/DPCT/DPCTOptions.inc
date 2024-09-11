@@ -615,7 +615,7 @@ DPCT_ENUM_OPTION(
                                int(ExplicitNamespace::EN_SYCLCompat),
                                "Generate code with syclcompat:: namespace.",
                                false)),
-    llvm::cl::desc("Defines the namespaces to use explicitly in generated "
+    llvm::cl::desc("Define the namespaces to use explicitly in generated "
                    "code. The <value> is a comma\n"
                    "separated list. Default: dpct/syclcompat, sycl.\n"
                    "Possible values are:"),
