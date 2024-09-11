@@ -288,10 +288,10 @@ DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The typ
 DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
 DEF_WARNING(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
 DEF_COMMENT(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
-DEF_WARNING(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"%0\" is not supported with SYCLcompat currently, please adjust the code manually.")
-DEF_COMMENT(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"{0}\" is not supported with SYCLcompat currently, please adjust the code manually.")
-DEF_WARNING(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not support accessing the %0 for then kernel. The API is replaced with member variable \"%1\". Please set the appropriate value for \"%1\".")
-DEF_COMMENT(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not support accessing the {0} for then kernel. The API is replaced with member variable \"{1}\". Please set the appropriate value for \"{1}\".")
+DEF_WARNING(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"%0\" is not currently supported with SYCLcompat. Please adjust the code manually.")
+DEF_COMMENT(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"{0}\" is not currently supported with SYCLcompat. Please adjust the code manually.")
+DEF_WARNING(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not support accessing the %0 for the kernel. The API is replaced with member variable \"%1\". Please set the appropriate value for \"%1\".")
+DEF_COMMENT(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not support accessing the {0} for the kernel. The API is replaced with member variable \"{1}\". Please set the appropriate value for \"{1}\".")
 // clang-format on
 
 #undef DEF_COMMENT

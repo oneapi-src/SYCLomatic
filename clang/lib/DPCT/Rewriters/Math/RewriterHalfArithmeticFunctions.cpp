@@ -153,12 +153,17 @@ RewriterMap dpct::createHalfArithmeticFunctionsRewriterMap() {
                                 ARG(1), ARG(2)))))),
           MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
               "__hfma_relu",
-              CALL_FACTORY_ENTRY(
-                  "__hfma_relu",
-                  CALL(MapNames::getDpctNamespace() + "relu",
-                       CALL(MapNames::getClNamespace(false, true) +
-                                "ext::oneapi::experimental::fma",
-                            ARG(0), ARG(1), ARG(2)))),
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__hfma_relu",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__hfma_relu")),
+                  CALL_FACTORY_ENTRY(
+                      "__hfma_relu",
+                      CALL(MapNames::getDpctNamespace() + "relu",
+                           CALL(MapNames::getClNamespace(false, true) +
+                                    "ext::oneapi::experimental::fma",
+                                ARG(0), ARG(1), ARG(2))))),
               EMPTY_FACTORY_ENTRY("__hfma_relu")))
       // __hfma_sat
       MATH_API_REWRITER_DEVICE_OVERLOAD(

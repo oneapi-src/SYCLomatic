@@ -731,8 +731,8 @@ DPCT_ENUM_OPTION(
             "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
             "DEPRECATED : Experimental helper function used to help "
             "cross-group "
-            "synchronization during migration. Please use the option: "
-            "--use-experimental-features=root-group instead.\n",
+            "synchronization during migration. Please use the following option "
+            "instead: --use-experimental-features=root-group.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "user-defined-reductions",

@@ -93,9 +93,21 @@ void f6_2() {
 void f7() {
   cudaEvent_t e;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventQuery" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventQuery" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
 #ifndef BUILD_TEST
   cudaEventQuery(e);
 #endif
+}
+
+void f8() {
+  // CHECK: syclcompat::queue_ptr s = &q_ct1;
+  cudaStream_t s = cudaStreamLegacy;
+  // CHECK: syclcompat::queue_ptr s1 = &q_ct1;
+  cudaStream_t s1 = cudaStreamDefault;
+}
+
+void f8_1() {
+  // CHECK: syclcompat::queue_ptr s = syclcompat::get_current_device().default_queue();
+  cudaStream_t s = cudaStreamLegacy;
 }

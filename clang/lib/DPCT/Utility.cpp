@@ -3276,6 +3276,7 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
   }
   return ND;
 }
+
 bool isTypeInAnalysisScope(const clang::Type *TypePtr) {
   bool IsInAnalysisScope = false;
   if (const auto *ND = getNamedDecl(TypePtr)) {
@@ -3284,6 +3285,17 @@ bool isTypeInAnalysisScope(const clang::Type *TypePtr) {
       IsInAnalysisScope = true;
   }
   return IsInAnalysisScope;
+}
+
+/// This function returns true if any of the redeclartions of typedef is in CUDA
+/// header
+bool isRedeclInCUDAHeader(const clang::TypedefType *T) {
+  const auto *TND = T->getDecl();
+  const auto Redecls = TND->redecls();
+  auto IsDeclInCudaHeader = [](const TypedefNameDecl *D) {
+    return dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
+  };
+  return std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader);
 }
 
 /// This function will find all assignments to the DRE of \p HandleDecl in
