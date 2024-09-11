@@ -615,7 +615,7 @@ DPCT_ENUM_OPTION(
                                int(ExplicitNamespace::EN_SYCLCompat),
                                "Generate code with syclcompat:: namespace.",
                                false)),
-    llvm::cl::desc("Define the namespaces to use explicitly in generated "
+    llvm::cl::desc("Defines the namespaces to use explicitly in generated "
                    "code. The <value> is a comma\n"
                    "separated list. Default: dpct/syclcompat, sycl.\n"
                    "Possible values are:"),
@@ -731,8 +731,8 @@ DPCT_ENUM_OPTION(
             "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
             "DEPRECATED : Experimental helper function used to help "
             "cross-group "
-            "synchronization during migration. Please use the option: "
-            "--use-experimental-features=root-group instead.\n",
+            "synchronization during migration. Please use the following option "
+            "instead: --use-experimental-features=root-group.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "user-defined-reductions",
