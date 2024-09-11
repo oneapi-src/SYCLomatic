@@ -93,7 +93,7 @@ void f6_2() {
 void f7() {
   cudaEvent_t e;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventQuery" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventQuery" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
 #ifndef BUILD_TEST
   cudaEventQuery(e);
