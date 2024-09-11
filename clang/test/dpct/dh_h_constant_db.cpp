@@ -18,6 +18,7 @@
 // RUN: echo "]" >> compile_commands.json
 // RUN: dpct -p=. --out-root=./out --cuda-include-path="%cuda-path/include"
 // RUN: rm compile_commands.json
+// RUN: rm %T/dh_h_constant_db/out/MainSourceFiles.yaml
 // RUN: dpct dh_h_constant_db.cpp --out-root=./out --cuda-include-path="%cuda-path/include" -- -x c --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/dh_h_constant_db/out/constant_header.h
 // RUN: cd ..
