@@ -9,7 +9,6 @@
 // CHECK-NEXT: #include <iostream>
 // CHECK-NEXT: #include <algorithm>
 // CHECK-NEXT: #include "dnn.h"
-// CHECK-NEXT: #include <dpct/dnnl_utils.hpp>
 #include <stdlib.h>
 #include <iostream>
 #include <algorithm>

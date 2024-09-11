@@ -95,9 +95,9 @@ int main(){
     r = cuMemcpyAsync(f_D, f_D2, size, 0);
 
 #ifndef BUILD_TEST
-    // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeer" is not supported with SYCLcompat currently, please adjust the code manually.
+    // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeer" is not currently supported with SYCLcompat. Please adjust the code manually.
     cuMemcpyPeer(f_D, c1, f_D2, c2, size);
-    // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeerAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+    // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeerAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
     cuMemcpyPeerAsync(f_D, c1, f_D2, c2, size, stream);
 #endif
 
@@ -259,7 +259,7 @@ int main(){
 
     // CHECK: syclcompat::experimental::memcpy_parameter cpy2;
     // CHECK: /*
-    // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "CUarray" is not supported with SYCLcompat currently, please adjust the code manually.
+    // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "CUarray" is not currently supported with SYCLcompat. Please adjust the code manually.
     // CHECK-NEXT: */
     // CHECK-NEXT: CUarray ca;
     // CHECK-NEXT: cpy2.to.image = ca;
