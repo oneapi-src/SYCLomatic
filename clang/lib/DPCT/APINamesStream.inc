@@ -52,13 +52,3 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaStreamEndCapture"),
                             ARG("--use-experimental-features=graph"))))
-
-ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-    UseExtGraph,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-        "cudaStreamIsCapturing", DEREF(1),
-        MEMBER_CALL(ARG(0), true, "ext_oneapi_get_state"))),
-    UNSUPPORT_FACTORY_ENTRY("cudaStreamIsCapturing",
-                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-                            ARG("cudaStreamIsCapturing"),
-                            ARG("--use-experimental-features=graph"))))
