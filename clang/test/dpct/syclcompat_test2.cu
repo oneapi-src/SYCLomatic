@@ -99,3 +99,15 @@ void f7() {
   cudaEventQuery(e);
 #endif
 }
+
+void f8() {
+  // CHECK: syclcompat::queue_ptr s = &q_ct1;
+  cudaStream_t s = cudaStreamLegacy;
+  // CHECK: syclcompat::queue_ptr s1 = &q_ct1;
+  cudaStream_t s1 = cudaStreamDefault;
+}
+
+void f8_1() {
+  // CHECK: syclcompat::queue_ptr s = syclcompat::get_current_device().default_queue();
+  cudaStream_t s = cudaStreamLegacy;
+}
