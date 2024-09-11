@@ -31,26 +31,29 @@
 #define CODEPIN_RAND_SEED 0
 #endif
 
-// Data size thresh hold for data sampling.
-// array/pointer size larger than the threshhold will be sampled.
-#ifndef CODEPIN_SAMPLING_THRESHHOLD
-#define CODEPIN_SAMPLING_THRESHHOLD 20
+// Data size threshold to trigger data sampling.
+// array/pointer size larger than the threshold will be sampled.
+#ifndef CODEPIN_SAMPLING_THRESHOLD
+#define CODEPIN_SAMPLING_THRESHOLD 20
 #endif
 
-// Sampling rate, interval: (0, 1]
-#ifndef CODEPIN_SAMPLING_RATE
-#define CODEPIN_SAMPLING_RATE 0.01
+// Sampling percent, interval: [0, 100]
+// 0: No data will be logged.  
+// 100: all data will be logged.
+#ifndef CODEPIN_SAMPLING_PERCENT
+#define CODEPIN_SAMPLING_PERCENT 1
 #endif
 
 #define CODEPIN_TO_STR(x) CODEPIN_STR(x)
 #define CODEPIN_STR(x) #x
-#pragma message("CodePin sampling feature is enabled.")
-#pragma message("CODEPIN_RAND_SEED: " CODEPIN_TO_STR(CODEPIN_RAND_SEED))
-#pragma message("CODEPIN_SAMPLING_THRESHHOLD: " CODEPIN_TO_STR(                \
-    CODEPIN_SAMPLING_THRESHHOLD))
-#pragma message("CODEPIN_SAMPLING_RATE: " CODEPIN_TO_STR(CODEPIN_SAMPLING_RATE))
 #pragma message(                                                               \
-    "Define the macros in the build command to change sampling config.")
+    "CodePin data sampling feature is enabled for data dump. As follow list 3 configs for data sampling:")
+#pragma message("CODEPIN_RAND_SEED: " CODEPIN_TO_STR(CODEPIN_RAND_SEED))
+#pragma message("CODEPIN_SAMPLING_THRESHOLD: " CODEPIN_TO_STR(                \
+    CODEPIN_SAMPLING_THRESHOLD))
+#pragma message("CODEPIN_SAMPLING_PERCENT: " CODEPIN_TO_STR(CODEPIN_SAMPLING_PERCENT))
+#pragma message(                                                               \
+    "Define the macros in the build command to change sampling configs. Also refer to codepin.hpp for definitions and default value of the macros.")
 
 namespace dpct {
 namespace experimental {
@@ -70,10 +73,10 @@ public:
     auto top_obj = arr.object();
     top_obj.key("CodePin Random Seed");
     top_obj.value(CODEPIN_RAND_SEED);
-    top_obj.key("CodePin Sampling Threshhold");
-    top_obj.value(CODEPIN_SAMPLING_THRESHHOLD);
-    top_obj.key("CodePin Sampling Rate");
-    top_obj.value(float(CODEPIN_SAMPLING_RATE));
+    top_obj.key("CodePin Sampling Threshold");
+    top_obj.value(CODEPIN_SAMPLING_THRESHOLD);
+    top_obj.key("CodePin Sampling Percent");
+    top_obj.value(CODEPIN_SAMPLING_PERCENT);
   }
   ~logger() {}
 
@@ -205,9 +208,9 @@ public:
     }
     auto arr = ss.array();
     for (int i = 0; i < size; ++i) {
-      if (size > CODEPIN_SAMPLING_THRESHHOLD && i != 0) {
+      if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
         float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        if (r > CODEPIN_SAMPLING_RATE)
+        if (r > CODEPIN_SAMPLING_PERCENT/100)
           continue;
       }
       auto obj = arr.object();
@@ -234,9 +237,9 @@ public:
     auto arr = ss.array();
     size_t size = sizeof(T) / sizeof(value[0]);
     for (size_t i = 0; i < size; ++i) {
-      if (size > CODEPIN_SAMPLING_THRESHHOLD && i != 0) {
+      if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
         float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        if (r > CODEPIN_SAMPLING_RATE)
+        if (r > CODEPIN_SAMPLING_PERCENT/100)
           continue;
       }
       auto obj = arr.object();
@@ -261,11 +264,14 @@ void gen_log_API_CP(const std::string &cp_id, std::string device_name,
   if (!rand_seed_setup) {
     srand(CODEPIN_RAND_SEED);
     rand_seed_setup = true;
-    std::cout << "CodePin Sampling is enabled:" << std::endl;
-    std::cout << "CODEPIN_RAND_SEED: " << CODEPIN_RAND_SEED << std::endl;
-    std::cout << "CODEPIN_SAMPLING_THRESHHOLD: " << CODEPIN_SAMPLING_THRESHHOLD
+    std::cout << "CodePin data sampling is enabled for data dump As follow list 3 "
+                 "configs for data sampling:"
               << std::endl;
-    std::cout << "CODEPIN_SAMPLING_RATE: " << CODEPIN_SAMPLING_RATE << std::endl;
+    std::cout << "CODEPIN_RAND_SEED: " << CODEPIN_RAND_SEED << std::endl;
+    std::cout << "CODEPIN_SAMPLING_THRESHOLD: " << CODEPIN_SAMPLING_THRESHOLD
+              << std::endl;
+    std::cout << "CODEPIN_SAMPLING_PERCENT: " << CODEPIN_SAMPLING_PERCENT
+              << std::endl;
   }
   log.print_CP(cp_id, device_name, free_byte, total_byte, elapse_time, queue,
                args...);

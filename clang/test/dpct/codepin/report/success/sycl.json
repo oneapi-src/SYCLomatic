@@ -1,8 +1,8 @@
 [
     {
         "CodePin Random Seed": "0",
-        "CodePin Sampling Threshhold": "20",
-        "CodePin Sampling Rate": "0.01"
+        "CodePin Sampling Threshold": "20",
+        "CodePin Sampling Percent": "1"
     },
     {
         "ID": "serial123:prolog:0",
