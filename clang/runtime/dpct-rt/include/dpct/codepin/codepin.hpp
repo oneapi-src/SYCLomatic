@@ -264,7 +264,7 @@ void gen_log_API_CP(const std::string &cp_id, std::string device_name,
   if (!rand_seed_setup) {
     srand(CODEPIN_RAND_SEED);
     rand_seed_setup = true;
-    std::cout << "CodePin data sampling is enabled for data dump As follow list 3 "
+    std::cout << "CodePin data sampling is enabled for data dump. As follow list 3 "
                  "configs for data sampling:"
               << std::endl;
     std::cout << "CODEPIN_RAND_SEED: " << CODEPIN_RAND_SEED << std::endl;
