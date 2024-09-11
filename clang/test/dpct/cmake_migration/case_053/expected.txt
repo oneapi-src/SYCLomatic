@@ -1,4 +1,4 @@
-# DPCT3001:1: "configure_file" is used to copy an input file to an output file while performing transformations of the input file content. You may need to update the name of the input and output file if the input file contains CUDA syntax, and make sure the input file exists by copying or migrating the original input file from in-root folder.
+# DPCT3001:1: "configure_file" is used to generate an output file by performing transformation on input file. You may need to update the name of the input and output file, as well as migrate the input file if the input file contains CUDA syntax.
 configure_file(foo.in.dp.cpp foo.dp.cpp @ONLY)
-# DPCT3001:3: "configure_file" is used to copy an input file to an output file while performing transformations of the input file content. You may need to update the name of the input and output file if the input file contains CUDA syntax, and make sure the input file exists by copying or migrating the original input file from in-root folder.
+# DPCT3001:3: "configure_file" is used to generate an output file by performing transformation on input file. You may need to update the name of the input and output file, as well as migrate the input file if the input file contains CUDA syntax.
 configure_file(bar.in.dp.cpp bar.dp.cpp @ONLY)

@@ -17,6 +17,7 @@
 // RUN: echo "        \"file\": \"%/T/d_hd_constant_db_win/d_hd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json
 // RUN: echo "]" >> compile_commands.json
+// RUN: rm %T/d_hd_constant_db_win/out/MainSourceFiles.yaml
 // RUN: dpct -p=. --out-root=./out --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/d_hd_constant_db_win/out/constant_header.h
 // RUN: cd ..

@@ -11,7 +11,7 @@
 
 #ifndef BUILD_TEST
 int main() {
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsResource_t" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsResource_t" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsResource_t resource;
 
   cudaMipmappedArray_t mipmappedArray;
@@ -20,30 +20,30 @@ int main() {
 #ifdef _WIN32
   ID3D11Resource *pD3DResource;
 
-  // CHECK-WINDOWS: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsD3D11RegisterResource" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-WINDOWS: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsD3D11RegisterResource" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsD3D11RegisterResource(&resource, pD3DResource, cudaGraphicsRegisterFlagsNone);
 #endif
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsResourceSetMapFlags" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsResourceSetMapFlags" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsResourceSetMapFlags(resource, cudaGraphicsMapFlagsNone);
 
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsUnmapResources" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsUnmapResources" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsUnmapResources(2, &resource, stream);
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsMapResources" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsMapResources" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsMapResources(1, &resource);
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsResourceGetMappedMipmappedArray" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsResourceGetMappedMipmappedArray" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsResourceGetMappedMipmappedArray(&mipmappedArray, resource);
 
   unsigned int arrayIndex, mipLevel;
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsSubResourceGetMappedArray" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsSubResourceGetMappedArray" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsSubResourceGetMappedArray(&array, resource, arrayIndex, mipLevel);
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsUnregisterResource" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaGraphicsUnregisterResource" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaGraphicsUnregisterResource(resource);
 
   return 0;

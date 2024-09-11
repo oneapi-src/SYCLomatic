@@ -35,7 +35,7 @@ to be migrated. Default: the value of ``--in-root``.
 
 .. _desc-assume-nd-range-dim:
 
-Provides a hint to the tool on the dimensionality of nd_range to use in
+Provide a hint to the tool on the dimensionality of nd_range to use in
 generated code. The values are:
 
 - ``=1``: Generate kernel code assuming 1D ``nd_range`` where possible, and 3D
@@ -52,7 +52,7 @@ generated code. The values are:
 
 .. _desc-build-script-file:
 
-Specifies the name of generated makefile for migrated file(s). Default name:
+Specify the name of generated makefile for migrated file(s). Default name:
 ``Makefile.dpct``.
 
 .. _end-build-script-file:
@@ -159,12 +159,12 @@ arguments for the migration command.
 
 .. _desc-format-range:
 
-Sets the range of formatting.
+Set the range of formatting.
 
 The values are:
 
-- ``=all``: Formats all code.
-- ``=migrated``: Only formats the migrated code (default).
+- ``=all``: Format all code.
+- ``=migrated``: Only format the migrated code (default).
 - ``=none``: Do not format any code.
 
 .. _end-format-range:
@@ -177,7 +177,7 @@ The values are:
 
 .. _desc-format-style:
 
-Sets the formatting style.
+Set the formatting style.
 
 The values are:
 
@@ -205,7 +205,7 @@ Example for the .clang-format file content:
 
 .. _desc-gen-build-script:
 
-Generates makefile for migrated file(s) in ``-out-root`` directory.
+Generate makefile for migrated file(s) in ``-out-root`` directory.
 Default: ``off``.
 
 .. _end-gen-build-script:
@@ -313,7 +313,7 @@ Details:
 
 .. _desc-in-root-exclude:
 
-Excludes the specified directory or file from processing.
+Exclude the specified directory or file from processing.
 
 .. _end-in-root-exclude:
 
@@ -325,7 +325,7 @@ Excludes the specified directory or file from processing.
 
 .. _desc-keep-original-code:
 
-Keeps the original code in the comments of generated SYCL files. Default: ``off``.
+Keep the original code in the comments of generated SYCL files. Default: ``off``.
 
 .. _end-keep-original-code:
 
@@ -374,7 +374,7 @@ Do not use a Don't Repeat Yourself (DRY) pattern when functions from the
 
 .. _desc-no-incremental-migration:
 
-Tells the tool to not perform an incremental migration. Default: ``off``
+Tell the tool to not perform an incremental migration. Default: ``off``
 (incremental migration happens).
 
 .. _end-no-incremental-migration:
@@ -387,7 +387,7 @@ Tells the tool to not perform an incremental migration. Default: ``off``
 
 .. _desc-optimize-migration:
 
-Generates SYCL code applying more aggressive assumptions that
+Generate SYCL code applying more aggressive assumptions that
 potentially may alter the semantics of your program. Default: ``off``.
 
 .. _end-optimize-migration:
@@ -427,7 +427,7 @@ To limit file extension changes to ``.cu`` and ``.cuh`` files only, use the
 
 .. _desc-output-file:
 
-Redirects the ``stdout``/``stderr`` output to ``<file>`` in the
+Redirect the ``stdout``/``stderr`` output to ``<file>`` in the
 output directory specified by the ``--out-root`` option.
 
 .. _end-output-file:
@@ -440,7 +440,7 @@ output directory specified by the ``--out-root`` option.
 
 .. _desc-output-verbosity:
 
-Sets the output verbosity level:
+Set the output verbosity level:
 
 - ``=detailed``: 'normal' and messages about which file is being processed.
 - ``=diagnostics``: 'detailed' and information about the detected conflicts
@@ -472,7 +472,7 @@ Alias for ``--compilation-database``.
 
 .. _desc-process-all:
 
-Migrates or copies all files, except hidden, from the ``--in-root``
+Migrate or copy all files, except hidden, from the ``--in-root``
 directory to the ``--out-root`` directory. The ``--in-root`` option should
 be explicitly specified. Default: ``off``.
 
@@ -566,7 +566,7 @@ Generate migration reports only. No SYCL code will be generated. Default: ``off`
 
 .. _desc-report-type:
 
-Specifies the type of migration report. Values are:
+Specify the type of migration report. Values are:
 
 - ``=all``: All of the migration reports.
 - ``=apis``: Information about API signatures that need migration and the
@@ -587,7 +587,7 @@ Specifies the type of migration report. Values are:
 
 .. _desc-rule-file:
 
-Specifies the rule file path that contains rules used for migration.
+Specify the rule file path that contains rules used for migration.
 
 .. _end-rule-file:
 
@@ -625,7 +625,7 @@ example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _desc-suppress-warnings-all:
 
-Suppresses all migration warnings. Default: ``off``.
+Suppress all migration warnings. Default: ``off``.
 
 .. _end-suppress-warnings-all:
 
@@ -637,7 +637,7 @@ Suppresses all migration warnings. Default: ``off``.
 
 .. _desc-sycl-named-lambda:
 
-Generates kernels with the kernel name. Default: ``off``.
+Generate kernels with the kernel name. Default: ``off``.
 
 .. _end-sycl-named-lambda:
 
@@ -709,7 +709,7 @@ The values are:
 
 .. _desc-use-explicit-namespace:
 
-Defines the namespaces to use explicitly in generated code. The value is
+Define the namespaces to use explicitly in generated code. The value is
 a comma-separated list. Default: ``dpct, sycl``.
 
 Possible values are:
@@ -731,7 +731,7 @@ Possible values are:
 
 .. _desc-usm-level:
 
-Sets the Unified Shared Memory (USM) level to use in source code generation:
+Set the Unified Shared Memory (USM) level to use in source code generation:
 
 - ``=none``: Uses helper functions from |tool_name| header files
   for memory management migration.
@@ -759,7 +759,7 @@ used to guide the migration.
 
 .. _desc-version:
 
-Shows the version of the tool.
+Show the version of the tool.
 
 .. _end-version:
 
@@ -789,7 +789,7 @@ Same as -p.
 
 .. _desc-gen-helper-func:
 
-Generates helper function files in the ``--out-root`` directory. Default: ``off``.
+Generate helper function files in the ``--out-root`` directory. Default: ``off``.
 
 .. _end-gen-helper-func:
 
@@ -811,7 +811,7 @@ Only generate a report for porting effort. Default: ``off``.
 
 .. _desc-analysis-mode-output-file:
 
-Specifies the file where the analysis mode report is saved. Default: Output to ``stdout``.
+Specify the file where the analysis mode report is saved. Default: Output to ``stdout``.
 
 .. _end-analysis-mode-output-file:
 
@@ -878,7 +878,7 @@ EXPERIMENTAL: Only migrate the build script(s). Default: ``off``.
 
 .. _desc-sycl-file-extension:
 
-Specifies the extension of migrated source file(s).
+Specify the extension of migrated source file(s).
 The values are:
 
 - ``=dp-cpp``: Use extension '.dp.cpp' and '.dp.hpp' (default).
@@ -918,12 +918,12 @@ The following table lists `intercept-build` tool command line options.
      - Do not generate linker entry in compilation database if the `--no-linker-entry`
        option is present. Default: disabled.
    * - `--parse-build-log <file>`
-     - Specifies the file path of the build log.
+     - Specify the file path of the build log.
    * - `--verbose`, `-v`
      - Enable verbose output from `intercept-build`. A second, third, and fourth
        flag increases verbosity.
    * - `--work-directory <path>`
-     - Specifies the working directory of the command that generates the build log
+     - Specify the working directory of the command that generates the build log
        specified by option `-parse-build-log`. Default: the directory of build log
        file specified by option `-parse-build-log`.
 
