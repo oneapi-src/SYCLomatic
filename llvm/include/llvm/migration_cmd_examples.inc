@@ -1,4 +1,4 @@
-//===--------------- migration_cmd_examples.inc-----------------------------===//
+//===--------------------- migration_cmd_examples.inc ---------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+// clang-format off
 const char *const DPCTExamplesMsg = R"(EXAMPLES:
 
   Prepare for Migration
@@ -69,3 +70,4 @@ R"(
       $ dpct --helper-function-dir
 
 )";
+// clang-format on

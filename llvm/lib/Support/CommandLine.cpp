@@ -2369,9 +2369,7 @@ enum class HelpCategory {
   HC_Examples
 };
 
-// clang-format off
 #include "llvm/migration_cmd_examples.inc"
-// clang-format on
 #endif // SYCLomatic_CUSTOMIZATION
 
 class HelpPrinter {
