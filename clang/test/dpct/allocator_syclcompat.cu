@@ -9,6 +9,7 @@
 #include <iostream>
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>
+#include <thrust/device_allocator.h>
 #include <thrust/execution_policy.h>
 #include <thrust/functional.h>
 #include <thrust/iterator/constant_iterator.h>
