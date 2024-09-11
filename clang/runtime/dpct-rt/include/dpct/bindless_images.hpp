@@ -450,6 +450,8 @@ private:
             "Only standard and mipmap images are supported!");
       }
 
+      // Calculate the size of a resource in bytes by multiplyting its dims
+      // with arr size, num levels & channel size
       _res_size_bytes *=
           res_arr_size * res_num_levels * channel.get_total_size();
 
