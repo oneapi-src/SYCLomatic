@@ -657,15 +657,15 @@ void foo3() {
 
 #ifndef BUILD_TEST
   cudaArray_t a1;
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -676,15 +676,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -696,15 +696,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyToArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -716,15 +716,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpyFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamPerThread);

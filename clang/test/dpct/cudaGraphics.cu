@@ -4,7 +4,6 @@
 // RUN: FileCheck --input-file %T/cudaGraphics/cudaGraphics.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics/cudaGraphics.dp.cpp -o %T/cudaGraphics/cudaGraphics.dp.o %}
 
-#ifndef BUILD_TEST
 #include <cuda.h>
 #ifdef _WIN32
 #include <cuda_d3d11_interop.h>
@@ -46,7 +45,7 @@ int main() {
 
   // CHECK-WINDOWS: resource1 = new dpct::experimental::external_mem_wrapper(pD3DResource1, regFlags1);
   cudaGraphicsD3D11RegisterResource(&resource1, pD3DResource1, regFlags1);
-#endif
+#endif // _WIN32
 
   resources_arr[0] = resource;
   resources_arr[1] = resource1;
@@ -71,14 +70,16 @@ int main() {
   cudaStream_t stream;
   cudaStreamCreate(&stream);
 
-  // CHECK: dpct::experimental::map_resources(2, resources_arr, stream);
+#ifdef _WIN32
+  // CHECK-WINDOWS: dpct::experimental::map_resources(2, resources_arr, stream);
   cudaGraphicsMapResources(2, resources_arr, stream);
 
-  // CHECK: dpct::experimental::unmap_resources(2, resources_arr, stream);
+  // CHECK-WINDOWS: dpct::experimental::unmap_resources(2, resources_arr, stream);
   cudaGraphicsUnmapResources(2, resources_arr, stream);
 
-  // CHECK: dpct::experimental::map_resources(1, &resource);
+  // CHECK-WINDOWS: dpct::experimental::map_resources(1, &resource);
   cudaGraphicsMapResources(1, &resource);
+#endif // _WIN32
 
   // CHECK: mipmappedArray = resource->get_mapped_mipmapped_array();
   cudaGraphicsResourceGetMappedMipmappedArray(&mipmappedArray, resource);
@@ -93,8 +94,10 @@ int main() {
   // CHECK: *array_ptr = resource->get_sub_resource_mapped_array(arrayIndex, mipLevel);
   cudaGraphicsSubResourceGetMappedArray(array_ptr, resource, arrayIndex, mipLevel);
 
-  // CHECK: dpct::experimental::unmap_resources(1, &resource);
+#ifdef _WIN32
+  // CHECK-WINDOWS: dpct::experimental::unmap_resources(1, &resource);
   cudaGraphicsUnmapResources(1, &resource);
+#endif // _WIN32
 
   // CHECK: delete resource;
   cudaGraphicsUnregisterResource(resource);
@@ -104,4 +107,3 @@ int main() {
 
   return 0;
 }
-#endif

@@ -232,6 +232,8 @@ void driverMemoryManagement() {
 void driver() {
   // CHECK: dpct::queue_ptr s;
   CUstream s;
+  const int data[1] = {0};
+  const void *cv;
   void *v;
   // CHECK: dpct::device_ptr dp;
   CUdeviceptr dp;
@@ -249,8 +251,9 @@ void driver() {
   p3dp.srcZ = 3;
   p3dp.srcLOD = 4;
   p3dp.srcMemoryType = CU_MEMORYTYPE_HOST;
-  // CHECK: p3dp.from.pitched.set_data_ptr(v);
-  p3dp.srcHost = v;
+  // CHECK: p3dp.from.pitched.set_data_ptr(data);
+  p3dp.srcHost = data;
+  p3dp.srcHost = cv;
   // CHECK: p3dp.from.pitched.set_data_ptr(dp);
   p3dp.srcDevice = dp;
   // CHECK: p3dp.from.image_bindless = a;

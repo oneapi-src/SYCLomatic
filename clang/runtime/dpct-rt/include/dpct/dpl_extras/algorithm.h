@@ -966,20 +966,21 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
       internal::make_wrapped_policy<internal::copy_call1>(policy);
   auto _copy_call2 = internal::make_wrapped_policy<internal::copy_call2>(
       std::forward<Policy>(policy));
+  using _IterValueT = typename std::iterator_traits<Iter1>::value_type;
 
   auto _n = std::distance(first, last);
-  internal::__buffer<typename std::iterator_traits<Iter1>::value_type> _tmp(_n);
+  internal::__buffer<_IterValueT> _tmp1(_n);
+  internal::__buffer<_IterValueT> _tmp2(_n);
 
-  auto _tmp_first = _tmp.get();
-  auto _tmp_last = _tmp_first + _n;
-  auto _tmp_last_rev = std::reverse_iterator(_tmp_last);
+  auto _tmp1_first = _tmp1.get();
+  auto _tmp2_first = _tmp2.get();
 
   auto _end_pair =
       stable_partition_copy(std::move(_partition_call1), first, last, mask,
-                            _tmp_first, _tmp_last_rev, p);
-  auto _first_part_end = std::copy(std::move(_copy_call1), _tmp_first,
+                            _tmp1_first, _tmp2_first, p);
+  auto _first_part_end = std::copy(std::move(_copy_call1), _tmp1_first,
                                    std::get<0>(_end_pair), first);
-  std::copy(std::move(_copy_call2), _tmp_last_rev, std::get<1>(_end_pair),
+  std::copy(std::move(_copy_call2), _tmp2_first, std::get<1>(_end_pair),
             _first_part_end);
 
   return _first_part_end;
@@ -1012,41 +1013,7 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
-typename std::enable_if<internal::is_hetero_execution_policy<
-                            typename std::decay<Policy>::type>::value,
-                        Iter1>::type
-partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
-  static_assert(
-      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
-                   std::random_access_iterator_tag>::value &&
-          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
-                       std::random_access_iterator_tag>::value,
-      "Iterators passed to algorithms must be random-access iterators.");
-  auto _partition_call1 =
-      internal::make_wrapped_policy<internal::partition_call1>(policy);
-  auto _copy_call1 = internal::make_wrapped_policy<internal::copy_call1>(
-      std::forward<Policy>(policy));
-
-  auto _n = std::distance(first, last);
-  internal::__buffer<typename std::iterator_traits<Iter1>::value_type> _tmp(_n);
-
-  auto _tmp_first = _tmp.get();
-  auto _tmp_last = _tmp_first + _n;
-  auto _tmp_last_rev = std::reverse_iterator(_tmp_last);
-
-  auto _end_pair =
-      stable_partition_copy(std::move(_partition_call1), first, last, mask,
-                            _tmp_first, _tmp_last_rev, p);
-  auto _first_n = std::distance(_tmp_first, std::get<0>(_end_pair));
-  std::copy(std::move(_copy_call1), _tmp_first, _tmp_last, first);
-
-  return first + _first_n;
-}
-
-template <typename Policy, typename Iter1, typename Iter2, typename Pred>
-typename std::enable_if<!internal::is_hetero_execution_policy<
-                            typename std::decay<Policy>::type>::value,
-                        Iter1>::type
+internal::enable_if_execution_policy<Policy, Iter1>
 partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   static_assert(
       std::is_same<typename std::iterator_traits<Iter1>::iterator_category,

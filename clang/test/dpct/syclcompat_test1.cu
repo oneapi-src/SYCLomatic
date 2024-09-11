@@ -23,14 +23,14 @@ void f1() {
   // CHECK: syclcompat::err0 err = SYCLCOMPAT_CHECK_ERROR(f = sycl::malloc_device<float>(1, q_ct1));
   cudaError_t err = cudaMalloc(&f, sizeof(float));
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventRecord" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventRecord" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
 #ifndef BUILD_TEST
   cudaEventRecord(start, 0);
 #endif
   cudaDeviceProp deviceProp;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "{{cudaGetDeviceProperties(_v2)?}}" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "{{cudaGetDeviceProperties(_v2)?}}" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
 #ifndef BUILD_TEST
   cudaGetDeviceProperties(&deviceProp, 0);
