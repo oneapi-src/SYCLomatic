@@ -10,7 +10,7 @@ __device__ void foo(unsigned int p){}
 // CHECK: dpct::global_memory<unsigned int, 0> a1(4 * 2);
 // CHECK: __dpct_inline__ void kernel0(unsigned int &a1){
 // CHECK:   /*
-// CHECK:   DPCT1133:{{[0-9]+}}: The function atomicInc is migrated to atomic_fetch_compare_inc which is a slow code path for the atomic operation. Please try to replace it with atomic_fetch_add, which is a fast code path, by adjusting the second parameter and corresponding logic. Also refers to DPCT1116.
+// CHECK:   DPCT1133:{{[0-9]+}}: The function atomicInc is migrated to atomic_fetch_compare_inc, which is a slow code path for the atomic operation. Please try to replace it with atomic_fetch_add, which is a fast code path. To do so, adjust the second parameter and corresponding logic. This also refers to DPCT1116.
 // CHECK:   */
 // CHECK:   dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>(&a1, 0x73ffffff);
 // CHECK: }
