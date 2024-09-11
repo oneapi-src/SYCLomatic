@@ -210,7 +210,7 @@ public:
     for (int i = 0; i < size; ++i) {
       if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
         float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        if (r > CODEPIN_SAMPLING_PERCENT/100)
+        if (r > (float)CODEPIN_SAMPLING_PERCENT/(float)100)
           continue;
       }
       auto obj = arr.object();
