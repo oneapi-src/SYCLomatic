@@ -2238,12 +2238,25 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     return;
   }
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
-    if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
-      auto Loc = ND->getBeginLoc();
-      if (DpctGlobalInfo::isInAnalysisScope(Loc))
-        return;
+  if (const auto *TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
+    if (const auto *TypePtr = TL->getTypePtr()) {
+      if (isTypeInAnalysisScope(TypePtr)) {
+        if (const auto *const ET = dyn_cast<ElaboratedType>(TypePtr))
+          TypePtr = ET->getNamedType().getTypePtr();
+
+        // The definition of the type is in current files for analysis and
+        // neither they are typedefed. We donot want to migarte such types.
+        if (TypePtr->getTypeClass() != clang::Type::Typedef)
+          return;
+
+        // When a CUDA type is redefined in the files under analysis we
+        // want to migrate them.
+        const auto *TT = dyn_cast<TypedefType>(TypePtr);
+        if (!isRedeclInCUDAHeader(TT))
+          return;
+      }
     }
+
     // if TL is the T in
     // template<typename T> void foo(T a);
     if (TL->getType()->getTypeClass() == clang::Type::SubstTemplateTypeParm ||
