@@ -1976,6 +1976,23 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
   }
 }
 
+/// Performs a symmetric/hermitian rank-k update.
+/// \tparam is_hermitian True means current matrix is hermitian.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] uplo Specifies whether matrix c is upper or lower triangular.
+/// \param [in] trans Specifies op(a), the transposition operation applied to
+/// matrix a.
+/// \param [in] n Number of rows and columns of matrix c.
+/// \param [in] k Number of columns of matrix op(a).
+/// \param [in] alpha Scaling factor for the rank-k update.
+/// \param [in] a Input matrix a.
+/// \param [in] a_type Data type of the matrix a.
+/// \param [in] lda Leading dimension of the matrix a.
+/// \param [in] beta Scaling factor for the rank-k update.
+/// \param [in, out] c Input/Output matrix c.
+/// \param [in] c_type Data type of the matrix c.
+/// \param [in] ldc Leading dimension of the matrix c.
+/// \param [in] ct Compute type.
 template <bool is_hermitian>
 inline void syherk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
                    oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
@@ -2455,6 +2472,17 @@ inline void rot(descriptor_ptr desc_ptr, std::int64_t n, void *x,
   }
 }
 
+/// Performs modified Givens rotation of points in the plane.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in, out] x Input/Output vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in, out] y Input/Output vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
+/// \param [in] param Array of 5 parameters.
+/// \param [in] param_type Data type of \p param.
 inline void rotm(descriptor_ptr desc_ptr, std::int64_t n, void *x,
                  library_data_t x_type, int64_t incx, void *y,
                  library_data_t y_type, int64_t incy, const void *param,
@@ -2479,6 +2507,15 @@ inline void rotm(descriptor_ptr desc_ptr, std::int64_t n, void *x,
   }
 }
 
+/// Copies a vector to another vector.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] y Output vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
 inline void copy(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                  library_data_t x_type, std::int64_t incx, void *y,
                  library_data_t y_type, std::int64_t incy) {
@@ -2512,6 +2549,15 @@ inline void copy(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
   }
 }
 
+/// Swaps a vector with another vector.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in, out] x Input/Output vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [in, out] y Input/Output vector y.
+/// \param [in] y_type Data type of the vector y.
+/// \param [in] incy Stride of vector y.
 inline void swap(descriptor_ptr desc_ptr, std::int64_t n, void *x,
                  library_data_t x_type, std::int64_t incx, void *y,
                  library_data_t y_type, std::int64_t incy) {
@@ -2545,6 +2591,14 @@ inline void swap(descriptor_ptr desc_ptr, std::int64_t n, void *x,
   }
 }
 
+/// Computes the sum of magnitudes of the vector elements.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] result The scalar result.
+/// \param [in] result_type Data type of \p result.
 inline void asum(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                  library_data_t x_type, std::int64_t incx, void *result,
                  library_data_t result_type) {
@@ -2578,9 +2632,19 @@ inline void asum(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
   }
 }
 
+/// Finds the index of the element with the largest/smallest absolute value in a
+/// vector.
+/// \tparam is_max True means finding the the largest absolute value index.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] result The index of the maximal/minimum element.
 template <bool is_max>
 inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
-                     library_data_t x_type, std::int64_t incx, std::int64_t *result) {
+                     library_data_t x_type, std::int64_t incx,
+                     std::int64_t *result) {
   sycl::queue q = desc_ptr->get_queue();
   std::uint64_t key = detail::get_type_combination_id(x_type);
   switch (key) {
@@ -2605,6 +2669,15 @@ inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
   }
 }
 
+/// Finds the index of the element with the largest/smallest absolute value in a
+/// vector.
+/// \tparam is_max True means finding the the largest absolute value index.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] result The index of the maximal/minimum element.
 template <bool is_max>
 inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                      library_data_t x_type, std::int64_t incx, int *result) {
