@@ -200,6 +200,48 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool needBitCast(const InlineAsmType *From, const InlineAsmType *To) {
+    if (From == To)
+      return false;
+    if (const auto *BIFrom = dyn_cast<InlineAsmBuiltinType>(From),
+        *BITo = dyn_cast<InlineAsmBuiltinType>(To);
+        BIFrom->isScalar() && BITo->isScalar())
+      return false;
+    return true;
+  }
+
+  bool emitBitCast(const InlineAsmType *From, const InlineAsmType *To,
+                   std::string &Val) {
+    assert(needBitCast(From, To) && "Bit cast is unnecessary");
+    std::string Buffer;
+    llvm::raw_string_ostream TmpOS(Buffer);
+    llvm::SaveAndRestore<llvm::raw_ostream *> OutStream(Stream);
+    switchOutStream(TmpOS);
+    std::string FromT, ToT;
+    if (tryEmitType(FromT, From))
+      return SYCLGenError();
+    if (tryEmitType(ToT, To))
+      return SYCLGenError();
+    auto isVecTy = [&](const InlineAsmType *Ty) {
+      if (isa<InlineAsmVectorType>(Ty))
+        return true;
+      const auto *BI = dyn_cast<InlineAsmBuiltinType>(Ty);
+      return BI && BI->isVector();
+    };
+    if (isVecTy(From))
+      OS() << Val;
+    else
+      OS() << MapNames::getClNamespace() << "vec<" << FromT << ", 1>(" << Val
+           << ')';
+    OS() << ".template as<";
+    if (isVecTy(To))
+      OS() << ToT << ">()";
+    else
+      OS() << MapNames::getClNamespace() << "vec<" << ToT << ", 1>>().x()";
+    Val = std::move(Buffer);
+    return SYCLGenSuccess();
+  }
+
   // Types
   bool emitType(const InlineAsmType *T);
   bool emitBuiltinType(const InlineAsmBuiltinType *T);
@@ -1496,13 +1538,19 @@ protected:
     std::string Op;
     if (tryEmitStmt(Op, Inst->getInputOperand(0)))
       return SYCLGenError();
-
+    if (needBitCast(Inst->getInputOperand(0)->getType(), Inst->getType(0)) &&
+        emitBitCast(Inst->getInputOperand(0)->getType(), Inst->getType(0), Op))
+      return SYCLGenError();
     std::string ReplaceString = MapNames::getClNamespace() + MathFn.str() + '(';
     if (Inst->getOpcode() == asmtok::op_ex2)
       ReplaceString += "2, ";
     ReplaceString += Op + ")";
     if (Inst->hasAttr(InstAttr::rn, InstAttr::rz, InstAttr::rm, InstAttr::rp))
       report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, true);
+    if (needBitCast(Inst->getType(0), Inst->getOutputOperand()->getType()) &&
+        emitBitCast(Inst->getType(0), Inst->getOutputOperand()->getType(),
+                    ReplaceString))
+      return SYCLGenError();
     OS() << ReplaceString;
     endstmt();
     return SYCLGenSuccess();

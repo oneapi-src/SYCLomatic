@@ -1335,7 +1335,11 @@ int runDPCT(int argc, const char **argv) {
   if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScripts(InRootPath, OutRootPath);
-    doCmakeScriptMigration(InRootPath, OutRootPath);
+    runWithCrashGuard(
+        [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
+        "Error: dpct internal error. Migrating CMake scripts in \"" +
+            InRootPath.getCanonicalPath().str() +
+            "\" causing the error skipped. Migration continues.\n");
 
     if (cmakeScriptNotFound()) {
       std::cout << CmakeScriptMigrationHelpHint << "\n";
