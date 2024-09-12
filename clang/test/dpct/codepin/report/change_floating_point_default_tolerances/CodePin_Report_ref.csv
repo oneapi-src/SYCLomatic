@@ -1,5 +1,8 @@
 // CHECK: CodePin Summary
 // CHECK: Totally APIs count, 1
+// CHECK: CodePin Random Seed, N/A
+// CHECK: CodePin Sampling Threshold, N/A
+// CHECK: CodePin Sampling Percent, N/A
 // CHECK: Consistently APIs count, 1
 // CHECK: Most Time-consuming Kernel(CUDA), serial123:epilog:0, time:0.0
 // CHECK: Most Time-consuming Kernel(SYCL), serial123:epilog:0, time:0.0
