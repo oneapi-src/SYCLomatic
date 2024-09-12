@@ -542,7 +542,10 @@ public:
   /// Get the method in which sampling between mipmap levels is performed.
   /// \returns The method in which sampling between mipmap levels is performed.
   sycl::filtering_mode get_mipmap_filtering() const noexcept {
-    return _mipmap_filtering;
+    // Make sure the return value is legal filtering_mode when using memset.
+    return _mipmap_filtering == sycl::filtering_mode::linear
+               ? sycl::filtering_mode::linear
+               : sycl::filtering_mode::nearest;
   }
   /// Set the method in which sampling between mipmap levels is performed.
   /// \param [in] filtering_mode The method in which sampling between mipmap
