@@ -11319,6 +11319,15 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::useExtBindlessImages() &&
         Replace.find("image") != std::string::npos)
       Replace += "_bindless";
+    // TODO: Need remove these code when sycl compat updated.
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      if (MemberName == "WidthInBytes")
+        Replace = "size[0]";
+      else if (MemberName == "dstXInBytes")
+        Replace = "to.pos[0]";
+      else if (MemberName == "srcXInBytes")
+        Replace = "from.pos[0]";
+    }
     if (MemberName.contains("Device") && M->getType().getAsString() != "int") {
       // The field srcDevice/dstDevice has different meaning in different struct
       // type.
