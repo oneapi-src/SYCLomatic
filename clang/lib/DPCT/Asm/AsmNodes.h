@@ -105,6 +105,7 @@ public:
   bool isInt() const { return isSigned() || isUnsigned(); }
   bool isFloat() const { return isOneOf(f16, f32, f64); }
   bool isScalar() const { return isInt() || isFloat(); }
+  bool isVector() const { return isOneOf(f16x2, bf16x2, s16x2, u16x2); }
   unsigned getWidth() const;
 
   static bool classof(const InlineAsmType *T) {
