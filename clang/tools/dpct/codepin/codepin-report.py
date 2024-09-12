@@ -33,6 +33,12 @@ GRAPH_FILENAME = "CodePin_DataFlowGraph"
 CODEPIN_GRAPH_FILE_PATH = os.path.join(os.getcwd())
 ERROR_CSV_PATTERN = "CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail\n"
 EPSILON_FILE = ""
+CODEPIN_RANDOM_SEED = "CodePin Random Seed"
+CODEPIN_SAMPLING_THRESHOLD = "CodePin Sampling Threshold"
+CODEPIN_SAMPLING_PERCENT = "CodePin Sampling Percent"
+CODEPIN_RANDOM_SEED_VALUE = "N/A"
+CODEPIN_SAMPLING_THRESHOLD_VALUE = "N/A"
+CODEPIN_SAMPLING_PERCENT_VALUE = "N/A"
 
 # Reference: https://en.wikipedia.org/wiki/Machine_epsilon
 # bfloat16 reference: https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
@@ -307,7 +313,16 @@ def read_data_from_json_file(file_path):
         print(f"File not found: {file_path}")
         exit(2)
     with open(file_path) as f:
-        return parse_json(f.read())
+        dc_array = parse_json(f.read())
+        if len(dc_array) > 0 and CODEPIN_RANDOM_SEED in dc_array[0]:
+            global CODEPIN_RANDOM_SEED_VALUE
+            CODEPIN_RANDOM_SEED_VALUE = dc_array[0][CODEPIN_RANDOM_SEED]
+            global CODEPIN_SAMPLING_THRESHOLD_VALUE
+            CODEPIN_SAMPLING_THRESHOLD_VALUE = dc_array[0][CODEPIN_SAMPLING_THRESHOLD]
+            global CODEPIN_SAMPLING_PERCENT_VALUE
+            CODEPIN_SAMPLING_PERCENT_VALUE = dc_array[0][CODEPIN_SAMPLING_PERCENT]
+            return dc_array[1:]
+        return dc_array
 
 
 def get_checkpoint_list_from_json_file(file_path):
@@ -649,6 +664,12 @@ def main():
     with open(CODEPIN_REPORT_FILE, "w") as f:
         f.write("CodePin Summary\n")
         f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
+        f.write("CodePin Random Seed, " +
+                str(CODEPIN_RANDOM_SEED_VALUE) + "\n")
+        f.write("CodePin Sampling Threshold, " +
+                str(CODEPIN_SAMPLING_THRESHOLD_VALUE) + "\n")
+        f.write("CodePin Sampling Percent, " +
+                str(CODEPIN_SAMPLING_PERCENT_VALUE) + "\n")
         f.write("Consistently APIs count, " + str(match_checkpoint_num) + "\n")
         f.write(
             "Most Time-consuming Kernel(CUDA), "
