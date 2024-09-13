@@ -22,13 +22,13 @@
 template<class T>
 int foo() {
 #ifndef BUILD_TEST
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "thrust::system::cuda::experimental::pinned_allocator" is not currently supported with SYCLcompat, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "thrust::system::cuda::experimental::pinned_allocator" is not currently supported with SYCLcompat. Please adjust the code manually.
   std::vector<float, thrust::system::cuda::experimental::pinned_allocator<float>> hVec(SIZE);
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "thrust::system::cuda::experimental::pinned_allocator" is not currently supported with SYCLcompat, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "thrust::system::cuda::experimental::pinned_allocator" is not currently supported with SYCLcompat. Please adjust the code manually.
   std::vector<float, thrust::cuda::experimental::pinned_allocator<float>> hVecCopy = hVec;
 
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "thrust::device_allocator" is not currently supported with SYCLcompat, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "thrust::device_allocator" is not currently supported with SYCLcompat. Please adjust the code manually.
   thrust::device_vector<T, thrust::device_allocator<T>> dvec;
 #endif
 
