@@ -514,7 +514,10 @@ public:
   }
 
   sycl::filtering_mode get_filtering_mode() const noexcept {
-    return _filtering_mode;
+    // Make sure the return value is legal filtering_mode when using memset.
+    return _filtering_mode == sycl::filtering_mode::linear
+               ? sycl::filtering_mode::linear
+               : sycl::filtering_mode::nearest;
   }
   void set(sycl::filtering_mode filtering_mode) noexcept {
     _filtering_mode = filtering_mode;
