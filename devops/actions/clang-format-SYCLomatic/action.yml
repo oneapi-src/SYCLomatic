@@ -3,29 +3,46 @@ description: 'Run clang-format on pull request'
 runs:
   using: "composite"
   steps:
-  - name: Run clang-format for the patch
-    shell: bash {0}
-    run: |
-      pattern_to_exclude_from_clang=".*clang/test/dpct"
-      allfiles=`git diff --name-only ${{ github.event.pull_request.base.sha }}`
-      files_array=($allfiles)
-      echo "changed files are $files_array"
-      
-      for i in "${!files_array[@]}"
-      do
-         if [[ "${files_array[$i]}" =~ ${pattern_to_exclude_from_clang} ]];then
-             echo "${files_array[$i]} will be excluded from format checking"
-             unset files_array[$i]
-         fi
-      done
+    - name: Checkout through merge base
+      uses: rmacklin/fetch-through-merge-base@v0
+      with:
+        base_ref: ${{ github.event.pull_request.base.ref }}
+        head_ref: ${{ github.event.pull_request.head.sha }}
+        deepen_length: 100
+
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+
+    - name: List Files
+      shell: bash
+      env:
+        CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+      run: |
+         pattern_to_exclude_from_clang=".*clang/test/dpct"
+         files_to_be_check=""
+         echo "changed files are $CHANGED_FILES"
+         
+         for i in "${CHANGED_FILES}"
+         do
+            if [[ "$i" =~ ${pattern_to_exclude_from_clang} ]];then
+                echo "${i} will be excluded from format checking"
+            else
+                files_to_be_check="${files_to_be_check} $i" 
+            fi
+
+         done
  
-      git clang-format ${{ github.event.pull_request.base.sha }} ${files_array[@]}
-      git diff > ./clang-format.patch
-  # Add patch with formatting fixes to CI job artifacts
-  - uses: actions/upload-artifact@v1
-    with:
-      name: clang-format-patch
-      path: ./clang-format.patch
-  - name: Check if clang-format patch is empty
-    shell: bash
-    run: bash -c "if [ -s ./clang-format.patch ]; then cat ./clang-format.patch; exit 1; fi"
+         echo "git clang-format ${{ github.event.pull_request.base.sha }} ${files_to_be_check}"
+         git clang-format ${{ github.event.pull_request.base.sha }} ${files_to_be_check} || echo "Files need to be formated are detected."
+         echo "before git diff"
+         git diff > ./clang-format.patch
+      # Add patch with formatting fixes to CI job artifacts
+    - uses: actions/upload-artifact@v4
+      with:
+        name: clang-format-patch
+        path: ./clang-format.patch
+    - name: Check if clang-format patch is empty
+      shell: bash
+      run: bash -c "if [ -s ./clang-format.patch ]; then cat ./clang-format.patch; exit 1; fi"
+

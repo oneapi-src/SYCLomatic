@@ -334,6 +334,9 @@ void initTypeLocSYCLCompatRewriterMap(
   SYCLCOMPAT_UNSUPPORT("cudaGraphNode_t")
   SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource")
   SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource_t")
+  SYCLCOMPAT_UNSUPPORT("thrust::system::cuda::experimental::pinned_allocator")
+  SYCLCOMPAT_UNSUPPORT("thrust::cuda::experimental::pinned_allocator")
+  SYCLCOMPAT_UNSUPPORT("thrust::device_allocator")
 
 #undef SYCLCOMPAT_UNSUPPORT
 }
