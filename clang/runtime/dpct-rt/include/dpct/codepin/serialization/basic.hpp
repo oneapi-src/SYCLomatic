@@ -177,7 +177,7 @@ json_stringstream::json_obj::value<json_stringstream::json_obj>() {
   return js.object();
 }
 
-template <typename T> std::string demangle_name() {
+template <typename T> inline std::string demangle_name() {
   std::string ret_str = "";
 #if defined(__linux__)
   int s;
@@ -197,11 +197,11 @@ template <typename T> std::string demangle_name() {
 }
 
 #ifdef __NVCC__
-template <> std::string demangle_name<__half>() { return "fp16"; }
-template <> std::string demangle_name<__nv_bfloat16>() { return "bf16"; }
+template <> inline std::string demangle_name<__half>() { return "fp16"; }
+template <> inline std::string demangle_name<__nv_bfloat16>() { return "bf16"; }
 #else
-template <> std::string demangle_name<sycl::half>() { return "fp16"; }
-template <> std::string demangle_name<sycl::ext::oneapi::bfloat16>() {
+template <> inline std::string demangle_name<sycl::half>() { return "fp16"; }
+template <> inline std::string demangle_name<sycl::ext::oneapi::bfloat16>() {
   return "bf16";
 }
 #endif
