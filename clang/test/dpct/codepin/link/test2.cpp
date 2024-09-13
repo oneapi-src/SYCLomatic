@@ -1,3 +1,4 @@
+// RUN: echo 0
 #include <dpct/codepin/serialization/basic.hpp>
 #include <sycl/sycl.hpp>
 
