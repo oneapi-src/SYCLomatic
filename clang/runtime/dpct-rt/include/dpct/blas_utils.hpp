@@ -602,19 +602,6 @@ inline void asum_impl(sycl::queue &q, std::int64_t n, const void *x,
 #endif
 }
 
-template <class Tx, class Tres>
-inline void asum_impl(sycl::queue &q, std::int64_t n, const void *x,
-                      std::int64_t incx, void *res) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
-  auto data_x = get_memory<Tx>(x);
-  auto data_res = get_memory<Tres>(res);
-  oneapi::mkl::blas::column_major::asum(q, n, data_x, incx, data_res);
-#endif
-}
-
 template <class T, bool is_max>
 inline void iamaxmin_impl(sycl::queue &q, std::int64_t n, const void *x,
                           std::int64_t incx, std::int64_t *res) {
@@ -622,7 +609,7 @@ inline void iamaxmin_impl(sycl::queue &q, std::int64_t n, const void *x,
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
 #else
-  auto data_x = get_memory<Tx>(x);
+  auto data_x = get_memory<T>(x);
   auto data_res = get_memory<std::int64_t>(res);
   if constexpr (is_max)
     oneapi::mkl::blas::column_major::iamax(q, n, data_x, incx, data_res,
@@ -2232,31 +2219,34 @@ inline void nrm2(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                  library_data_t x_type, std::int64_t incx, void *result,
                  library_data_t result_type) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type, result_type);
+  std::uint64_t key =
+      ::dpct::detail::get_type_combination_id(x_type, result_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::nrm2_impl<float, float>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::nrm2_impl<float, float>(q, n, x, incx, result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::nrm2_impl<double, double>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::nrm2_impl<double, double>(q, n, x, incx, result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::real_float): {
-    detail::nrm2_impl<std::complex<float>, float>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::nrm2_impl<std::complex<float>, float>(q, n, x, incx,
+                                                          result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::real_double): {
-    detail::nrm2_impl<std::complex<double>, double>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::nrm2_impl<std::complex<double>, double>(q, n, x, incx,
+                                                            result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half,
-                                       library_data_t::real_half): {
-    detail::nrm2_impl<sycl::half, sycl::half>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_half,
+                                               library_data_t::real_half): {
+    ::dpct::detail::nrm2_impl<sycl::half, sycl::half>(q, n, x, incx, result);
     break;
   }
   default:
@@ -2280,8 +2270,8 @@ inline void dot(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                 library_data_t y_type, std::int64_t incy, void *result,
                 library_data_t result_type) {
   sycl::queue q = desc_ptr->get_queue();
-  detail::dotuc<false>(q, n, x, x_type, incx, y, y_type, incy, result,
-                       result_type);
+  ::dpct::detail::dotuc<false>(q, n, x, x_type, incx, y, y_type, incy, result,
+                               result_type);
 }
 
 /// Computes the dot product of two vectors, conjugating the first vector.
@@ -2300,8 +2290,8 @@ inline void dotc(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                  library_data_t y_type, std::int64_t incy, void *result,
                  library_data_t result_type) {
   sycl::queue q = desc_ptr->get_queue();
-  detail::dotuc<true>(q, n, x, x_type, incx, y, y_type, incy, result,
-                      result_type);
+  ::dpct::detail::dotuc<true>(q, n, x, x_type, incx, y, y_type, incy, result,
+                              result_type);
 }
 
 /// Computes the product of a vector by a scalar.
@@ -2316,31 +2306,33 @@ inline void scal(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
                  library_data_t alpha_type, void *x, library_data_t x_type,
                  std::int64_t incx) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type);
+  std::uint64_t key = ::dpct::detail::get_type_combination_id(x_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float): {
-    detail::scal_impl<float, float>(q, n, alpha, x, incx);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float): {
+    ::dpct::detail::scal_impl<float, float>(q, n, alpha, x, incx);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double): {
-    detail::scal_impl<double, double>(q, n, alpha, x, incx);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double): {
+    ::dpct::detail::scal_impl<double, double>(q, n, alpha, x, incx);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float): {
-    detail::scal_impl<std::complex<float>, std::complex<float>>(q, n, alpha, x,
-                                                                incx);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float): {
+    ::dpct::detail::scal_impl<std::complex<float>, std::complex<float>>(
+        q, n, alpha, x, incx);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double): {
-    detail::scal_impl<std::complex<double>, std::complex<double>>(q, n, alpha,
-                                                                  x, incx);
+  case ::dpct::detail::get_type_combination_id(
+      library_data_t::complex_double): {
+    ::dpct::detail::scal_impl<std::complex<double>, std::complex<double>>(
+        q, n, alpha, x, incx);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half): {
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_half): {
     float alpha_value =
         dpct::get_value(reinterpret_cast<const float *>(alpha), q);
     sycl::half alaph_half(alpha_value);
-    detail::scal_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx);
+    ::dpct::detail::scal_impl<sycl::half, sycl::half>(q, n, &alaph_half, x,
+                                                      incx);
     break;
   }
   default:
@@ -2364,37 +2356,38 @@ inline void axpy(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
                  library_data_t x_type, std::int64_t incx, void *y,
                  library_data_t y_type, std::int64_t incy) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type, alpha_type);
+  std::uint64_t key =
+      ::dpct::detail::get_type_combination_id(x_type, alpha_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::axpy_impl<float, float>(q, n, alpha, x, incx, y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::axpy_impl<float, float>(q, n, alpha, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::axpy_impl<double, double>(q, n, alpha, x, incx, y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::axpy_impl<double, double>(q, n, alpha, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::complex_float): {
-    detail::axpy_impl<std::complex<float>, std::complex<float>>(q, n, alpha, x,
-                                                                incx, y, incy);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::complex_double): {
-    detail::axpy_impl<std::complex<double>, std::complex<double>>(
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                               library_data_t::complex_float): {
+    ::dpct::detail::axpy_impl<std::complex<float>, std::complex<float>>(
         q, n, alpha, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half,
-                                       library_data_t::real_float): {
+  case ::dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double): {
+    ::dpct::detail::axpy_impl<std::complex<double>, std::complex<double>>(
+        q, n, alpha, x, incx, y, incy);
+    break;
+  }
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_half,
+                                               library_data_t::real_float): {
     float alpha_value =
         dpct::get_value(reinterpret_cast<const float *>(alpha), q);
     sycl::half alaph_half(alpha_value);
-    detail::axpy_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx, y,
-                                              incy);
+    ::dpct::detail::axpy_impl<sycl::half, sycl::half>(q, n, &alaph_half, x,
+                                                      incx, y, incy);
     break;
   }
   default:
@@ -2419,52 +2412,55 @@ inline void rot(descriptor_ptr desc_ptr, std::int64_t n, void *x,
                 library_data_t y_type, std::int64_t incy, const void *c,
                 const void *s, library_data_t cs_type) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type, cs_type);
+  std::uint64_t key = ::dpct::detail::get_type_combination_id(x_type, cs_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::rot_impl<float, float, float>(q, n, x, incx, y, incy, c, s);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::rot_impl<float, float, float>(q, n, x, incx, y, incy, c, s);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::rot_impl<double, double, double>(q, n, x, incx, y, incy, c, s);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::rot_impl<double, double, double>(q, n, x, incx, y, incy, c,
+                                                     s);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::real_float): {
-    detail::rot_impl<std::complex<float>, float, float>(q, n, x, incx, y, incy,
-                                                        c, s);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::rot_impl<std::complex<float>, float, float>(q, n, x, incx,
+                                                                y, incy, c, s);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::real_double): {
-    detail::rot_impl<std::complex<double>, double, double>(q, n, x, incx, y,
-                                                           incy, c, s);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::complex_float): {
-    detail::rot_impl<std::complex<float>, float, std::complex<float>>(
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::rot_impl<std::complex<double>, double, double>(
         q, n, x, incx, y, incy, c, s);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::complex_double): {
-    detail::rot_impl<std::complex<double>, double, std::complex<double>>(
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                               library_data_t::complex_float): {
+    ::dpct::detail::rot_impl<std::complex<float>, float, std::complex<float>>(
         q, n, x, incx, y, incy, c, s);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half,
-                                       library_data_t::real_half): {
-    detail::rot_impl<sycl::half, sycl::half, sycl::half>(q, n, x, incx, y, incy,
-                                                         c, s);
+  case ::dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double): {
+    ::dpct::detail::rot_impl<std::complex<double>, double,
+                             std::complex<double>>(q, n, x, incx, y, incy, c,
+                                                   s);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_bfloat16,
-                                       library_data_t::real_bfloat16): {
-    detail::rot_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
-                     oneapi::mkl::bfloat16>(q, n, x, incx, y, incy, c, s);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_half,
+                                               library_data_t::real_half): {
+    ::dpct::detail::rot_impl<sycl::half, sycl::half, sycl::half>(q, n, x, incx,
+                                                                 y, incy, c, s);
+    break;
+  }
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_bfloat16,
+                                               library_data_t::real_bfloat16): {
+    ::dpct::detail::rot_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                             oneapi::mkl::bfloat16>(q, n, x, incx, y, incy, c,
+                                                    s);
     break;
   }
   default:
@@ -2488,18 +2484,21 @@ inline void rotm(descriptor_ptr desc_ptr, std::int64_t n, void *x,
                  library_data_t y_type, int64_t incy, const void *param,
                  library_data_t param_type) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type, cs_type);
+  std::uint64_t key =
+      ::dpct::detail::get_type_combination_id(x_type, param_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::rotm_impl<float, float, float>(q, n, x, incx, y, incy, param);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                               library_data_t::real_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::rotm_impl<float, float, float>(q, n, x, incx, y, incy,
+                                                   param);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::rotm_impl<double, double, double>(q, n, x, incx, y, incy, param);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                               library_data_t::real_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::rotm_impl<double, double, double>(q, n, x, incx, y, incy,
+                                                      param);
     break;
   }
   default:
@@ -2520,28 +2519,28 @@ inline void copy(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                  library_data_t x_type, std::int64_t incx, void *y,
                  library_data_t y_type, std::int64_t incy) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type, y_type);
+  std::uint64_t key = ::dpct::detail::get_type_combination_id(x_type, y_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::copy_impl<float, float>(q, n, x, incx, y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::copy_impl<float, float>(q, n, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::copy_impl<double, double>(q, n, x, incx, y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::copy_impl<double, double>(q, n, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::complex_float): {
-    detail::copy_impl<std::complex<float>, std::complex<float>>(q, n, x, incx,
-                                                                y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                               library_data_t::complex_float): {
+    ::dpct::detail::copy_impl<std::complex<float>, std::complex<float>>(
+        q, n, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::complex_double): {
-    detail::copy_impl<std::complex<double>, std::complex<double>>(q, n, x, incx,
-                                                                  y, incy);
+  case ::dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double): {
+    ::dpct::detail::copy_impl<std::complex<double>, std::complex<double>>(
+        q, n, x, incx, y, incy);
     break;
   }
   default:
@@ -2562,28 +2561,28 @@ inline void swap(descriptor_ptr desc_ptr, std::int64_t n, void *x,
                  library_data_t x_type, std::int64_t incx, void *y,
                  library_data_t y_type, std::int64_t incy) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type, y_type);
+  std::uint64_t key = ::dpct::detail::get_type_combination_id(x_type, y_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::swap_impl<float, float>(q, n, x, incx, y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::swap_impl<float, float>(q, n, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::swap_impl<double, double>(q, n, x, incx, y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::swap_impl<double, double>(q, n, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::complex_float): {
-    detail::swap_impl<std::complex<float>, std::complex<float>>(q, n, x, incx,
-                                                                y, incy);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                               library_data_t::complex_float): {
+    ::dpct::detail::swap_impl<std::complex<float>, std::complex<float>>(
+        q, n, x, incx, y, incy);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::complex_double): {
-    detail::swap_impl<std::complex<double>, std::complex<double>>(q, n, x, incx,
-                                                                  y, incy);
+  case ::dpct::detail::get_type_combination_id(
+      library_data_t::complex_double, library_data_t::complex_double): {
+    ::dpct::detail::swap_impl<std::complex<double>, std::complex<double>>(
+        q, n, x, incx, y, incy);
     break;
   }
   default:
@@ -2603,28 +2602,29 @@ inline void asum(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                  library_data_t x_type, std::int64_t incx, void *result,
                  library_data_t result_type) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type, result_type);
+  std::uint64_t key =
+      ::dpct::detail::get_type_combination_id(x_type, result_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float): {
-    detail::asum_impl<float, float>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::asum_impl<float, float>(q, n, x, incx, result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double): {
-    detail::asum_impl<double, double>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::asum_impl<double, double>(q, n, x, incx, result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::complex_float): {
-    detail::asum_impl<std::complex<float>, std::complex<float>>(q, n, x, incx,
-                                                                result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                               library_data_t::real_float): {
+    ::dpct::detail::asum_impl<std::complex<float>, float>(q, n, x, incx,
+                                                          result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::complex_double): {
-    detail::asum_impl<std::complex<double>, std::complex<double>>(q, n, x, incx,
-                                                                  result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_double,
+                                               library_data_t::real_double): {
+    ::dpct::detail::asum_impl<std::complex<double>, double>(q, n, x, incx,
+                                                            result);
     break;
   }
   default:
@@ -2646,22 +2646,25 @@ inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                      library_data_t x_type, std::int64_t incx,
                      std::int64_t *result) {
   sycl::queue q = desc_ptr->get_queue();
-  std::uint64_t key = detail::get_type_combination_id(x_type);
+  std::uint64_t key = ::dpct::detail::get_type_combination_id(x_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float): {
-    detail::iamaxmin_impl<float>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float): {
+    ::dpct::detail::iamaxmin_impl<float, is_max>(q, n, x, incx, result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double): {
-    detail::iamaxmin_impl<double>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double): {
+    ::dpct::detail::iamaxmin_impl<double, is_max>(q, n, x, incx, result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float): {
-    detail::iamaxmin_impl<std::complex<float>>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float): {
+    ::dpct::detail::iamaxmin_impl<std::complex<float>, is_max>(q, n, x, incx,
+                                                               result);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double): {
-    detail::iamaxmin_impl<std::complex<double>>(q, n, x, incx, result);
+  case ::dpct::detail::get_type_combination_id(
+      library_data_t::complex_double): {
+    ::dpct::detail::iamaxmin_impl<std::complex<double>, is_max>(q, n, x, incx,
+                                                                result);
     break;
   }
   default:
@@ -2682,7 +2685,7 @@ template <bool is_max>
 inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                      library_data_t x_type, std::int64_t incx, int *result) {
   dpct::blas::wrapper_int_to_int64_out wrapper(desc_ptr->get_queue(), result);
-  iamaxmin<is_max>(desc_ptr, n, x, x_type, incx, wrapper.get());
+  iamaxmin<is_max>(desc_ptr, n, x, x_type, incx, wrapper.get_ptr());
 }
 
 /// Finds the least squares solutions for a batch of overdetermined linear
@@ -3019,7 +3022,7 @@ dot(sycl::queue &q, int n, const void *x, library_data_t x_type, int incx,
     library_data_t result_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
-  blas::dot(q, n, x, x_type, incx, y, y_type, incy, result, result_type);
+  blas::dot(&desc, n, x, x_type, incx, y, y_type, incy, result, result_type);
 }
 
 /// Computes the dot product of two vectors, conjugating the first vector.
@@ -3039,7 +3042,7 @@ dotc(sycl::queue &q, int n, const void *x, library_data_t x_type, int incx,
      library_data_t result_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
-  blas::dotc(q, n, x, x_type, incx, y, y_type, incy, result, result_type);
+  blas::dotc(&desc, n, x, x_type, incx, y, y_type, incy, result, result_type);
 }
 
 /// Computes the product of a vector by a scalar.
@@ -3055,7 +3058,7 @@ scal(sycl::queue &q, int n, const void *alpha, library_data_t alpha_type,
      void *x, library_data_t x_type, int incx) {
   blas::descriptor desc;
   desc.set_queue(&q);
-  blas::scal(q, n, alpha, alpha_type, x, x_type, incx);
+  blas::scal(&desc, n, alpha, alpha_type, x, x_type, incx);
 }
 
 /// Computes a vector-scalar product and adds the result to a vector.
@@ -3075,7 +3078,7 @@ axpy(sycl::queue &q, int n, const void *alpha, library_data_t alpha_type,
      library_data_t y_type, int incy) {
   blas::descriptor desc;
   desc.set_queue(&q);
-  blas::axpy(q, n, alpha, alpha_type, x, x_type, incx, y, y_type, incy);
+  blas::axpy(&desc, n, alpha, alpha_type, x, x_type, incx, y, y_type, incy);
 }
 
 /// Performs rotation of points in the plane.
@@ -3096,7 +3099,7 @@ rot(sycl::queue &q, int n, void *x, library_data_t x_type, int incx, void *y,
     library_data_t cs_type) {
   blas::descriptor desc;
   desc.set_queue(&q);
-  blas::rot(q, n, x, x_type, incx, y, y_type, incy, c, s, cs_type);
+  blas::rot(&desc, n, x, x_type, incx, y, y_type, incy, c, s, cs_type);
 }
 } // namespace dpct
 #undef DPCT_COMPUTE_MODE_ARG
