@@ -71,17 +71,17 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   // Tile using a 2D grid
   int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / warpSize;
   int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::layout_t" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::layout_t" is not currently supported with SYCLcompat. Please adjust the code manually.
   nvcuda::wmma::layout_t ly = nvcuda::wmma::mem_row_major;
   // Declare the fragments
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::fragment" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::fragment" is not currently supported with SYCLcompat. Please adjust the code manually.
   nvcuda::wmma::fragment<nvcuda::wmma::matrix_a, WMMA_M, WMMA_N, WMMA_K, half, nvcuda::wmma::row_major>
       a_frag;
   nvcuda::wmma::fragment<nvcuda::wmma::matrix_b, WMMA_M, WMMA_N, WMMA_K, half, nvcuda::wmma::col_major>
       b_frag;
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::fill_fragment" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::fill_fragment" is not currently supported with SYCLcompat. Please adjust the code manually.
   nvcuda::wmma::fill_fragment(acc_frag, 0.0f);
 
   // Loop over k
@@ -94,13 +94,13 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
     // Bounds checking
     if (aRow < m_ld && aCol < k_ld && bRow < k_ld && bCol < n_ld) {
       // Load the inputs
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not currently supported with SYCLcompat. Please adjust the code manually.
       nvcuda::wmma::load_matrix_sync(a_frag, a + aCol + aRow * lda, lda);
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not currently supported with SYCLcompat. Please adjust the code manually.
       nvcuda::wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
 
       // Perform the matrix multiplication
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::mma_sync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::mma_sync" is not currently supported with SYCLcompat. Please adjust the code manually.
       nvcuda::wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
     }
   }
@@ -111,13 +111,13 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int cRow = warpM * WMMA_M;
 
   if (cRow < m_ld && cCol < n_ld) {
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not currently supported with SYCLcompat. Please adjust the code manually.
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
                                    nvcuda::wmma::mem_row_major);
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::load_matrix_sync" is not currently supported with SYCLcompat. Please adjust the code manually.
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc, ly);
     // Store the output
-  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::store_matrix_sync" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK: DPCT1131:{{[0-9]+}}: The migration of "nvcuda::wmma::store_matrix_sync" is not currently supported with SYCLcompat. Please adjust the code manually.
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
                                     nvcuda::wmma::mem_col_major);
   }

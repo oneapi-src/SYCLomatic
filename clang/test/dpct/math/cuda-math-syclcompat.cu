@@ -12,79 +12,79 @@ __global__ void kernelFuncBfloat162Arithmetic() {
   __nv_bfloat16 bf16, bf16_1, bf16_2, bf16_3;
   __nv_bfloat162 bf162, bf162_1, bf162_2, bf162_3;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hadd2_sat" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hadd2_sat" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hadd2_sat(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hcmadd" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hcmadd" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hcmadd(bf162_1, bf162_2, bf162_3);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hfma2_sat" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hfma2_sat" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hfma2_sat(bf162_1, bf162_2, bf162_3);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmul2_sat" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmul2_sat" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hmul2_sat(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hsub2_sat" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hsub2_sat" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hsub2_sat(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__heq2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__heq2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __heq2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hequ2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hequ2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hequ2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hge2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hge2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hge2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hgeu2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hgeu2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hgeu2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hgt2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hgt2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hgt2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hgtu2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hgtu2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hgtu2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hle2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hle2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hle2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hleu2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hleu2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hleu2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hlt2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hlt2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hlt2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hltu2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hltu2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hltu2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmax2_nan" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmax2_nan" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hmax2_nan(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmin2_nan" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmin2_nan" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hmin2_nan(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hne2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hne2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hne2_mask(bf162_1, bf162_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hneu2_mask" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hneu2_mask" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf162 = __hneu2_mask(bf162_1, bf162_2);
   // CHECK: /*
@@ -92,17 +92,17 @@ __global__ void kernelFuncBfloat162Arithmetic() {
   // CHECK-NEXT: */
   bf16 = __hfma_relu(bf16_1, bf16_2, bf16_3);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmax_nan" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmax_nan" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf16 = __hmax_nan(bf16_1, bf16_2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmin_nan" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hmin_nan" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   bf16 = __hmin_nan(bf16_1, bf16_2);
 
   __half2 h2, h2_1, h2_2;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hcmadd" is not supported with SYCLcompat currently, please adjust the code manually.
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hcmadd" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   h2_2 = __hcmadd(h2, h2_1, h2_2);
 }

@@ -98,7 +98,7 @@ void driverMemoryManagement() {
   pDesc.Width = s;
   // CHECK: dpct::memcpy_parameter p2d;
   CUDA_MEMCPY2D p2d;
-  // CHECK: p2d.from.pos[0] = s;
+  // CHECK: p2d.from.pos_x_in_bytes = s;
   p2d.srcXInBytes = s;
   // CHECK: p2d.from.pos[1] = s;
   p2d.srcY = s;
@@ -112,7 +112,7 @@ void driverMemoryManagement() {
   p2d.srcArray = *pArr;
   // CHECK: p2d.from.pitched.set_pitch(s);
   p2d.srcPitch = s;
-  // CHECK: p2d.to.pos[0] = s;
+  // CHECK: p2d.to.pos_x_in_bytes = s;
   p2d.dstXInBytes = s;
   // CHECK: p2d.to.pos[1] = s;
   p2d.dstY = s;
@@ -126,13 +126,13 @@ void driverMemoryManagement() {
   p2d.dstArray = *pArr;
   // CHECK: p2d.to.pitched.set_pitch(s);
   p2d.dstPitch = s;
-  // CHECK: p2d.size[0] = s;
+  // CHECK: p2d.size_x_in_bytes = s;
   p2d.WidthInBytes = s;
   // CHECK: p2d.size[1] = s;
   p2d.Height = s;
   // CHECK: dpct::memcpy_parameter p3d;
   CUDA_MEMCPY3D p3d;
-  // CHECK: p3d.from.pos[0] = s;
+  // CHECK: p3d.from.pos_x_in_bytes = s;
   p3d.srcXInBytes = s;
   // CHECK: p3d.from.pos[1] = s;
   p3d.srcY = s;
@@ -152,7 +152,7 @@ void driverMemoryManagement() {
   p3d.srcPitch = s;
   // CHECK: p3d.from.pitched.set_y(s);
   p3d.srcHeight = s;
-  // CHECK: p3d.to.pos[0] = s;
+  // CHECK: p3d.to.pos_x_in_bytes = s;
   p3d.dstXInBytes = s;
   // CHECK: p3d.to.pos[1] = s;
   p3d.dstY = s;
@@ -172,7 +172,7 @@ void driverMemoryManagement() {
   p3d.dstPitch = s;
   // CHECK: p3d.to.pitched.set_y(s);
   p3d.dstHeight = s;
-  // CHECK: p3d.size[0] = s;
+  // CHECK: p3d.size_x_in_bytes = s;
   p3d.WidthInBytes = s;
   // CHECK: p3d.size[1] = s;
   p3d.Height = s;
@@ -232,6 +232,8 @@ void driverMemoryManagement() {
 void driver() {
   // CHECK: dpct::queue_ptr s;
   CUstream s;
+  const int data[1] = {0};
+  const void *cv;
   void *v;
   // CHECK: dpct::device_ptr dp;
   CUdeviceptr dp;
@@ -241,7 +243,7 @@ void driver() {
   CUcontext c;
   // CHECK: dpct::memcpy_parameter p3dp;
   CUDA_MEMCPY3D_PEER p3dp;
-  // CHECK: p3dp.from.pos[0] = 1;
+  // CHECK: p3dp.from.pos_x_in_bytes = 1;
   p3dp.srcXInBytes = 1;
   // CHECK: p3dp.from.pos[1] = 2;
   p3dp.srcY = 2;
@@ -249,8 +251,9 @@ void driver() {
   p3dp.srcZ = 3;
   p3dp.srcLOD = 4;
   p3dp.srcMemoryType = CU_MEMORYTYPE_HOST;
-  // CHECK: p3dp.from.pitched.set_data_ptr(v);
-  p3dp.srcHost = v;
+  // CHECK: p3dp.from.pitched.set_data_ptr(data);
+  p3dp.srcHost = data;
+  p3dp.srcHost = cv;
   // CHECK: p3dp.from.pitched.set_data_ptr(dp);
   p3dp.srcDevice = dp;
   // CHECK: p3dp.from.image_bindless = a;
@@ -262,7 +265,7 @@ void driver() {
   // CHECK: p3dp.from.pitched.set_y(6);
   p3dp.srcHeight = 6;
 
-  // CHECK: p3dp.to.pos[0] = 1;
+  // CHECK: p3dp.to.pos_x_in_bytes = 1;
   p3dp.dstXInBytes = 1;
   // CHECK: p3dp.to.pos[1] = 2;
   p3dp.dstY = 2;
@@ -283,7 +286,7 @@ void driver() {
   // CHECK: p3dp.to.pitched.set_y(6);
   p3dp.dstHeight = 6;
 
-  // CHECK: p3dp.size[0] = 3;
+  // CHECK: p3dp.size_x_in_bytes = 3;
   p3dp.WidthInBytes = 3;
   // CHECK: p3dp.size[1] = 2;
   p3dp.Height = 2;

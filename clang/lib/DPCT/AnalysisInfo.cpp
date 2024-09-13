@@ -842,11 +842,11 @@ StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
 }
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                                 ReplacementType IsForCodePin) {
-  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
-      Type == HT_DPCT_DNNL_Utils) {
-    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          Type, FirstIncludeOffset);
+  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_SYCL) {
+    if (auto MF = DpctGlobalInfo::getInstance().getMainFile())
+      if (this != MF.get())
+        DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            Type, FirstIncludeOffset);
   }
   if (HeaderInsertedBitMap[Type])
     return;

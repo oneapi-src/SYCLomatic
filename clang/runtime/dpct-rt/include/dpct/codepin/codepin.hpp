@@ -23,6 +23,37 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <iostream>
+#include <stdlib.h>
+
+// Random seed for data sampling.
+#ifndef CODEPIN_RAND_SEED
+#define CODEPIN_RAND_SEED 0
+#endif
+
+// Data size threshold to trigger data sampling.
+// array/pointer size larger than the threshold will be sampled.
+#ifndef CODEPIN_SAMPLING_THRESHOLD
+#define CODEPIN_SAMPLING_THRESHOLD 20
+#endif
+
+// Sampling percent, interval: [0, 100]
+// 0: No data will be logged.  
+// 100: all data will be logged.
+#ifndef CODEPIN_SAMPLING_PERCENT
+#define CODEPIN_SAMPLING_PERCENT 1
+#endif
+
+#define CODEPIN_TO_STR(x) CODEPIN_STR(x)
+#define CODEPIN_STR(x) #x
+#pragma message(                                                               \
+    "CodePin data sampling feature is enabled for data dump. As follow list 3 configs for data sampling:")
+#pragma message("CODEPIN_RAND_SEED: " CODEPIN_TO_STR(CODEPIN_RAND_SEED))
+#pragma message("CODEPIN_SAMPLING_THRESHOLD: " CODEPIN_TO_STR(                \
+    CODEPIN_SAMPLING_THRESHOLD))
+#pragma message("CODEPIN_SAMPLING_PERCENT: " CODEPIN_TO_STR(CODEPIN_SAMPLING_PERCENT))
+#pragma message(                                                               \
+    "Define the macros in the build command to change sampling configs. Also refer to codepin.hpp for definitions and default value of the macros.")
 
 namespace dpct {
 namespace experimental {
@@ -30,7 +61,7 @@ namespace codepin {
 
 inline static std::map<std::string, int> api_index;
 inline static std::map<std::string, event_t> event_map;
-
+inline static bool rand_seed_setup = false;
 namespace detail {
 
 inline static std::unordered_set<void *> ptr_unique;
@@ -38,7 +69,15 @@ inline static std::unordered_set<void *> ptr_unique;
 class logger {
 public:
   logger(const std::string &dump_file)
-      : opf(dump_file), json_ss(opf), arr(json_ss) {}
+      : opf(dump_file), json_ss(opf), arr(json_ss) {
+    auto top_obj = arr.object();
+    top_obj.key("CodePin Random Seed");
+    top_obj.value(CODEPIN_RAND_SEED);
+    top_obj.key("CodePin Sampling Threshold");
+    top_obj.value(CODEPIN_SAMPLING_THRESHOLD);
+    top_obj.key("CodePin Sampling Percent");
+    top_obj.value(CODEPIN_SAMPLING_PERCENT);
+  }
   ~logger() {}
 
   detail::json_stringstream &get_stringstream() {
@@ -169,6 +208,11 @@ public:
     }
     auto arr = ss.array();
     for (int i = 0; i < size; ++i) {
+      if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
+        float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        if (r > (float)CODEPIN_SAMPLING_PERCENT/(float)100)
+          continue;
+      }
       auto obj = arr.object();
       detail::data_ser<PointeeType>::print_type_name(obj);
       obj.key("Data");
@@ -192,7 +236,12 @@ public:
                    queue_t queue) {
     auto arr = ss.array();
     size_t size = sizeof(T) / sizeof(value[0]);
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; ++i) {
+      if (size > CODEPIN_SAMPLING_THRESHOLD && i != 0) {
+        float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        if (r > (float)CODEPIN_SAMPLING_PERCENT/(float)100)
+          continue;
+      }
       auto obj = arr.object();
       detail::data_ser<
           std::remove_extent_t<T>>::print_type_name(obj);
@@ -212,6 +261,18 @@ template <class... Args>
 void gen_log_API_CP(const std::string &cp_id, std::string device_name,
                     size_t free_byte, size_t total_byte, float elapse_time,
                     queue_t queue, Args... args) {
+  if (!rand_seed_setup) {
+    srand(CODEPIN_RAND_SEED);
+    rand_seed_setup = true;
+    std::cout << "CodePin data sampling is enabled for data dump. As follow list 3 "
+                 "configs for data sampling:"
+              << std::endl;
+    std::cout << "CODEPIN_RAND_SEED: " << CODEPIN_RAND_SEED << std::endl;
+    std::cout << "CODEPIN_SAMPLING_THRESHOLD: " << CODEPIN_SAMPLING_THRESHOLD
+              << std::endl;
+    std::cout << "CODEPIN_SAMPLING_PERCENT: " << CODEPIN_SAMPLING_PERCENT
+              << std::endl;
+  }
   log.print_CP(cp_id, device_name, free_byte, total_byte, elapse_time, queue,
                args...);
 }

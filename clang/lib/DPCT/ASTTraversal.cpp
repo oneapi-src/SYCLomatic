@@ -52,6 +52,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ostream>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -2238,12 +2239,25 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     return;
   }
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
-    if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
-      auto Loc = ND->getBeginLoc();
-      if (DpctGlobalInfo::isInAnalysisScope(Loc))
-        return;
+  if (const auto *TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
+    if (const auto *TypePtr = TL->getTypePtr()) {
+      if (isTypeInAnalysisScope(TypePtr)) {
+        if (const auto *const ET = dyn_cast<ElaboratedType>(TypePtr))
+          TypePtr = ET->getNamedType().getTypePtr();
+
+        // The definition of the type is in current files for analysis and
+        // neither they are typedefed. We donot want to migarte such types.
+        if (TypePtr->getTypeClass() != clang::Type::Typedef)
+          return;
+
+        // When a CUDA type is redefined in the files under analysis we
+        // want to migrate them.
+        const auto *TT = dyn_cast<TypedefType>(TypePtr);
+        if (!isRedeclInCUDAHeader(TT))
+          return;
+      }
     }
+
     // if TL is the T in
     // template<typename T> void foo(T a);
     if (TL->getType()->getTypeClass() == clang::Type::SubstTemplateTypeParm ||
@@ -8184,6 +8198,39 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     EA.applyAllSubExprRepl();
     return;
   }
+  if (FuncName == "cudaStreamIsCapturing") {
+    if (!DpctGlobalInfo::useExtGraph()) {
+      report(CE->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+             "cudaStreamIsCapturing", "--use-experimental-features=graph");
+      return;
+    }
+    std::string ReplStr;
+    std::string StreamName;
+    auto StmtStr0 = getStmtSpelling(CE->getArg(1));
+    std::ostringstream OS;
+    printDerefOp(OS, CE->getArg(1));
+    ReplStr = OS.str() + " = ";
+    if (isDefaultStream(CE->getArg(0))) {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+      StreamName = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+      ReplStr += StreamName + "ext_oneapi_get_state()";
+    } else {
+      auto StreamArg = CE->getArg(0);
+      StreamName = getStmtSpelling(StreamArg);
+      if (needExtraParensInMemberExpr(StreamArg)) {
+        StreamName = "(" + StreamName + ")";
+      }
+      ReplStr += StreamName + "->" + "ext_oneapi_get_state()";
+    }
+    if (IsAssigned) {
+      ReplStr = MapNames::getCheckErrorMacroName() + "((" + ReplStr + "))";
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    return;
+  }
 
   if (FuncName == "cudaStreamCreate" || FuncName == "cuStreamCreate" ||
       FuncName == "cudaStreamCreateWithFlags" ||
@@ -11661,6 +11708,15 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DpctGlobalInfo::useExtBindlessImages() &&
         Replace.find("image") != std::string::npos)
       Replace += "_bindless";
+    // TODO: Need remove these code when sycl compat updated.
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      if (MemberName == "WidthInBytes")
+        Replace = "size[0]";
+      else if (MemberName == "dstXInBytes")
+        Replace = "to.pos[0]";
+      else if (MemberName == "srcXInBytes")
+        Replace = "from.pos[0]";
+    }
     if (MemberName.contains("Device") && M->getType().getAsString() != "int") {
       // The field srcDevice/dstDevice has different meaning in different struct
       // type.
