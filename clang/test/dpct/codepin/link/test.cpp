@@ -7,3 +7,7 @@
 void test() {
 	dpct::experimental::codepin::detail::demangle_name<sycl::half>();
 }
+
+int main() {
+	return 0;
+}
