@@ -740,8 +740,9 @@ inline unsigned vectorized_unary(unsigned a, const UnaryOperation unary_op) {
 template <typename VecT>
 inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
   sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.as<VecT>();
-  auto v3 = v1.as<VecT>();
+  // Need convert element type to wider signed type to avoid overflow.
+  auto v2 = v0.as<VecT>().template convert<int>();
+  auto v3 = v1.as<VecT>().template convert<int>();
   auto v4 = sycl::abs_diff(v2, v3);
   unsigned sum = 0;
   for (size_t i = 0; i < v4.size(); ++i) {
