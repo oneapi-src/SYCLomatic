@@ -411,6 +411,8 @@ def get_memory_used(cp_list):
 def generate_data_flow_graph(
     device_stream_dic_cuda,
     device_stream_dic_sycl,
+    elapse_time_cuda,
+    elapse_time_sycl,
     ordered_pro_id_cuda,
     ordered_epi_id_cuda,
     ordered_pro_id_sycl,
@@ -477,7 +479,7 @@ def generate_data_flow_graph(
             stream_id = stream_id_map[device][stream]
         kernel_node["stream"] = stream_id
         kernel_node["index"] = segs[0] + "_V" + str(index)
-        kernel_node["comment"] = segs[0] + ":" + segs[1] + ":" + segs[2] + ":" + segs[3]
+        kernel_node["comment"] = "Kernel Name: " + segs[0] + "\nStream Id: " + str(stream_id) + "\nElapse Time(ms): " + str(elapse_time_cuda[ordered_epi_id_cuda[index]]) + "\nLocation: " + segs[1] + ":" + segs[2] + ":" + segs[3]
         for arg in pcheckpoint:
             input_node = {}
             output_node = {}
@@ -530,7 +532,7 @@ def generate_data_flow_graph(
                 layer_top -= 100
 
             kernel_node = layers[device_id][index]["kernel"]
-            dot.node(kernel_node["index"], "Stream Id: " + str(kernel_node["stream"]) + "\n" + kernel_node["comment"], shape="box", pos=str(stream_step * kernel_node["stream"] + stream_step / 2) + "," + str(layer_top) + "!")
+            dot.node(kernel_node["index"], kernel_node["comment"], shape="box", pos=str(stream_step * kernel_node["stream"] + stream_step / 2) + "," + str(layer_top) + "!")
             layer_top -= 100
 
             output_node_num = len(layers[device_id][index]["out"])
@@ -651,6 +653,8 @@ def main():
         generate_data_flow_graph(
             device_stream_dic_cuda,
             device_stream_dic_sycl,
+            time_cuda,
+            time_sycl,
             ordered_pro_id_cuda,
             ordered_epi_id_cuda,
             ordered_pro_id_sycl,
