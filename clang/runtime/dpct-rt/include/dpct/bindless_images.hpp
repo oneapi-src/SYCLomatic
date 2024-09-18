@@ -619,7 +619,7 @@ static inline std::vector<sycl::event> dpct_memcpy_to_host(
       sycl::range<3>(w_offset_src / ele_size, h_offset_src, 0);
   const auto dest_offset = sycl::range<3>(offset_dest / ele_size, 0, 0);
   const auto dest_extend = sycl::range<3>(0, 0, 0);
-  const auto copy_extend = sycl::range<3>((s - w_offset_src) / ele_size, 1, 0);
+  const auto copy_extend = sycl::range<3>((s - offset_dest) / ele_size, 1, 0);
   event_list.push_back(q.ext_oneapi_copy(src, src_offset, desc_src,
                                          dest_host_ptr, dest_offset,
                                          dest_extend, copy_extend));
@@ -691,8 +691,7 @@ static inline std::vector<sycl::event> dpct_memcpy_from_host(
   const auto src_extend = sycl::range<3>(0, 0, 0);
   const auto dest_offset =
       sycl::range<3>(w_offset_dest / ele_size, h_offset_dest, 0);
-  const auto copy_extend =
-      sycl::range<3>((s - offset_src - w_offset_dest) / ele_size, 1, 0);
+  const auto copy_extend = sycl::range<3>((s - offset_src) / ele_size, 1, 0);
   // TODO: Remove const_cast after refining the signature of ext_oneapi_copy.
   event_list.push_back(q.ext_oneapi_copy(const_cast<void *>(src_host_ptr),
                                          src_offset, src_extend, dest,
