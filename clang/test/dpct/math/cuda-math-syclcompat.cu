@@ -11,6 +11,7 @@
 __global__ void kernelFuncBfloat162Arithmetic() {
   __nv_bfloat16 bf16, bf16_1, bf16_2, bf16_3;
   __nv_bfloat162 bf162, bf162_1, bf162_2, bf162_3;
+  unsigned u, u_1, u_2;
   // CHECK: /*
   // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hadd2_sat" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
@@ -105,5 +106,86 @@ __global__ void kernelFuncBfloat162Arithmetic() {
   // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__hcmadd" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
   h2_2 = __hcmadd(h2, h2_1, h2_2);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpeq2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpeq2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpeq4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpeq4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpges2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpges2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpges4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpges4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpgeu2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpgeu2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpgeu4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpgeu4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpgts2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpgts2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpgts4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpgts4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpgtu2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpgtu2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpgtu4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpgtu4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmples2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmples2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmples4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmples4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpleu2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpleu2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpleu4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpleu4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmplts2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmplts2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmplts4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmplts4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpltu2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpltu2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpltu4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpltu4(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpne2" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpne2(u, u_1);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "__vcmpne4" is not currently supported with SYCLcompat. Please adjust the code manually.
+  // CHECK-NEXT: */
+  u_2 = __vcmpne4(u, u_1);
 }
 #endif

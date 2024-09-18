@@ -507,6 +507,9 @@ class sampling_info {
 
 public:
   sycl::addressing_mode get_addressing_mode() const noexcept {
+    // Make sure the return value is legal addressing_mode when using memset.
+    if ((unsigned)_addressing_mode == 0)
+      return sycl::addressing_mode::clamp_to_edge;
     return _addressing_mode;
   }
   void set(sycl::addressing_mode addressing_mode) noexcept {
@@ -514,7 +517,10 @@ public:
   }
 
   sycl::filtering_mode get_filtering_mode() const noexcept {
-    return _filtering_mode;
+    // Make sure the return value is legal filtering_mode when using memset.
+    return _filtering_mode == sycl::filtering_mode::linear
+               ? sycl::filtering_mode::linear
+               : sycl::filtering_mode::nearest;
   }
   void set(sycl::filtering_mode filtering_mode) noexcept {
     _filtering_mode = filtering_mode;

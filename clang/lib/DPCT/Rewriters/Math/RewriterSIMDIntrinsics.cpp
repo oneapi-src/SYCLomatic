@@ -397,13 +397,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpeq2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpeq2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpeq2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "ushort2>",
-                           ARG(0), ARG(1), LITERAL("std::equal_to<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpeq2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpeq2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY("__vcmpeq2",
+                                         CALL(MapNames::getDpctNamespace() +
+                                                  "vectorized_binary<" +
+                                                  MapNames::getClNamespace() +
+                                                  "ushort2>",
+                                              ARG(0), ARG(1),
+                                              LITERAL("std::equal_to<>()")))))))
       // __vcmpeq4
       MATH_API_REWRITER_DEVICE(
           "__vcmpeq4",
@@ -416,13 +423,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpeq4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpeq4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpeq4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "uchar4>",
-                           ARG(0), ARG(1), LITERAL("std::equal_to<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpeq4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpeq4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY("__vcmpeq4",
+                                         CALL(MapNames::getDpctNamespace() +
+                                                  "vectorized_binary<" +
+                                                  MapNames::getClNamespace() +
+                                                  "uchar4>",
+                                              ARG(0), ARG(1),
+                                              LITERAL("std::equal_to<>()")))))))
       // __vcmpges2
       MATH_API_REWRITER_DEVICE(
           "__vcmpges2",
@@ -435,14 +449,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpges2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpges2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpges2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "short2>",
-                           ARG(0), ARG(1),
-                           LITERAL("std::greater_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpges2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpges2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpges2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "short2>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::greater_equal<>()")))))))
       // __vcmpges4
       MATH_API_REWRITER_DEVICE(
           "__vcmpges4",
@@ -455,14 +475,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpges4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpges4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpges4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "char4>",
-                           ARG(0), ARG(1),
-                           LITERAL("std::greater_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpges4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpges4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpges4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "char4>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::greater_equal<>()")))))))
       // __vcmpgeu2
       MATH_API_REWRITER_DEVICE(
           "__vcmpgeu2",
@@ -475,14 +501,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpgeu2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpgeu2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpgeu2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "ushort2>",
-                           ARG(0), ARG(1),
-                           LITERAL("std::greater_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpgeu2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpgeu2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpgeu2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "ushort2>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::greater_equal<>()")))))))
       // __vcmpgeu4
       MATH_API_REWRITER_DEVICE(
           "__vcmpgeu4",
@@ -495,14 +527,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpgeu4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpgeu4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpgeu4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "uchar4>",
-                           ARG(0), ARG(1),
-                           LITERAL("std::greater_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpgeu4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpgeu4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpgeu4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "uchar4>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::greater_equal<>()")))))))
       // __vcmpgts2
       MATH_API_REWRITER_DEVICE(
           "__vcmpgts2",
@@ -515,13 +553,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpgts2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpgts2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpgts2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "short2>",
-                           ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpgts2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpgts2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpgts2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "short2>",
+                               ARG(0), ARG(1), LITERAL("std::greater<>()")))))))
       // __vcmpgts4
       MATH_API_REWRITER_DEVICE(
           "__vcmpgts4",
@@ -534,13 +578,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpgts4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpgts4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpgts4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "char4>",
-                           ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpgts4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpgts4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpgts4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "char4>",
+                               ARG(0), ARG(1), LITERAL("std::greater<>()")))))))
       // __vcmpgtu2
       MATH_API_REWRITER_DEVICE(
           "__vcmpgtu2",
@@ -553,13 +603,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpgtu2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpgtu2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpgtu2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "ushort2>",
-                           ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpgtu2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpgtu2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpgtu2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "ushort2>",
+                               ARG(0), ARG(1), LITERAL("std::greater<>()")))))))
       // __vcmpgtu4
       MATH_API_REWRITER_DEVICE(
           "__vcmpgtu4",
@@ -572,13 +628,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpgtu4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpgtu4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpgtu4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "uchar4>",
-                           ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpgtu4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpgtu4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpgtu4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "uchar4>",
+                               ARG(0), ARG(1), LITERAL("std::greater<>()")))))))
       // __vcmples2
       MATH_API_REWRITER_DEVICE(
           "__vcmples2",
@@ -591,13 +653,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmples2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmples2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmples2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "short2>",
-                           ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmples2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmples2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmples2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "short2>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::less_equal<>()")))))))
       // __vcmples4
       MATH_API_REWRITER_DEVICE(
           "__vcmples4",
@@ -610,13 +679,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmples4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmples4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmples4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "char4>",
-                           ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmples4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmples4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmples4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "char4>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::less_equal<>()")))))))
       // __vcmpleu2
       MATH_API_REWRITER_DEVICE(
           "__vcmpleu2",
@@ -629,13 +705,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpleu2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpleu2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpleu2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "ushort2>",
-                           ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpleu2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpleu2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpleu2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "ushort2>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::less_equal<>()")))))))
       // __vcmpleu4
       MATH_API_REWRITER_DEVICE(
           "__vcmpleu4",
@@ -648,13 +731,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpleu4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpleu4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpleu4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "uchar4>",
-                           ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpleu4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpleu4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpleu4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "uchar4>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::less_equal<>()")))))))
       // __vcmplts2
       MATH_API_REWRITER_DEVICE(
           "__vcmplts2",
@@ -667,13 +757,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmplts2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmplts2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmplts2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "short2>",
-                           ARG(0), ARG(1), LITERAL("std::less<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmplts2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmplts2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmplts2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "short2>",
+                               ARG(0), ARG(1), LITERAL("std::less<>()")))))))
       // __vcmplts4
       MATH_API_REWRITER_DEVICE(
           "__vcmplts4",
@@ -686,13 +782,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmplts4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmplts4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmplts4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "char4>",
-                           ARG(0), ARG(1), LITERAL("std::less<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmplts4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmplts4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmplts4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "char4>",
+                               ARG(0), ARG(1), LITERAL("std::less<>()")))))))
       // __vcmpltu2
       MATH_API_REWRITER_DEVICE(
           "__vcmpltu2",
@@ -705,13 +807,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpltu2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpltu2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpltu2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "ushort2>",
-                           ARG(0), ARG(1), LITERAL("std::less<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpltu2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpltu2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpltu2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "ushort2>",
+                               ARG(0), ARG(1), LITERAL("std::less<>()")))))))
       // __vcmpltu4
       MATH_API_REWRITER_DEVICE(
           "__vcmpltu4",
@@ -724,13 +832,19 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpltu4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpltu4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpltu4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "uchar4>",
-                           ARG(0), ARG(1), LITERAL("std::less<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpltu4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpltu4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpltu4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "uchar4>",
+                               ARG(0), ARG(1), LITERAL("std::less<>()")))))))
       // __vcmpne2
       MATH_API_REWRITER_DEVICE(
           "__vcmpne2",
@@ -743,13 +857,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpne2",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpne2"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpne2",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "ushort2>",
-                           ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpne2",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpne2")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpne2",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "ushort2>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::not_equal_to<>()")))))))
       // __vcmpne4
       MATH_API_REWRITER_DEVICE(
           "__vcmpne4",
@@ -762,13 +883,20 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                                               "ext::intel::math::vcmpne4",
                                           ARG(0), ARG(1)))),
               EMPTY_FACTORY_ENTRY("__vcmpne4"),
-              FEATURE_REQUEST_FACTORY(
-                  HelperFeatureEnum::device_ext,
-                  CALL_FACTORY_ENTRY(
-                      "__vcmpne4",
-                      CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
-                               MapNames::getClNamespace() + "uchar4>",
-                           ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__vcmpne4",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__vcmpne4")),
+                  FEATURE_REQUEST_FACTORY(
+                      HelperFeatureEnum::device_ext,
+                      CALL_FACTORY_ENTRY(
+                          "__vcmpne4",
+                          CALL(MapNames::getDpctNamespace() +
+                                   "vectorized_binary<" +
+                                   MapNames::getClNamespace() + "uchar4>",
+                               ARG(0), ARG(1),
+                               LITERAL("std::not_equal_to<>()")))))))
       // __vhaddu2
       MATH_API_REWRITER_DEVICE(
           "__vhaddu2",
