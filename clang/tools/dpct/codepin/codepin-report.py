@@ -411,6 +411,8 @@ def get_memory_used(cp_list):
 def generate_data_flow_graph(
     device_stream_dic_cuda,
     device_stream_dic_sycl,
+    elapse_time_cuda,
+    elapse_time_sycl,
     ordered_pro_id_cuda,
     ordered_epi_id_cuda,
     ordered_pro_id_sycl,
@@ -477,7 +479,11 @@ def generate_data_flow_graph(
             stream_id = stream_id_map[device][stream]
         kernel_node["stream"] = stream_id
         kernel_node["index"] = segs[0] + "_V" + str(index)
-        kernel_node["comment"] = segs[0] + ":" + segs[1] + ":" + segs[2] + ":" + segs[3]
+        kernel_node["comment"] = "Kernel: " + segs[0] + "\nType: CUDA" + "\nDevice Name: " + \
+                                 device_name_map_cuda[device] + "\nDevice Id: " + str(device) + \
+                                 "\nStream Id: " + str(stream_id) + "\nElapse Time(ms): " + \
+                                 str(elapse_time_cuda[ordered_epi_id_cuda[index]]) + "\nLocation: " + \
+                                 segs[1] + ":" + segs[2] + ":" + segs[3]
         for arg in pcheckpoint:
             input_node = {}
             output_node = {}
@@ -511,10 +517,11 @@ def generate_data_flow_graph(
 # 3. Create Graph Nodes and Edges
     layer_right = 0
     device_num = len(stream_id_map)
+    total_width = 0
     for device_id in range(device_num):
         stream_num = len(stream_id_map[device_id])
         layer_width = max(stream_num * 1000, max_input_node_num[device_id] * 400)
-        dot.node("Device Name:" + device_name_map_cuda[device_id] + " VS " + device_name_map_sycl[device_id] + "\nDevice Id: " + str(device_id), shape="box", pos=str(layer_right + layer_width / 2) + ",150!")
+        total_width += layer_width
         layer_right += layer_width
         layer_top = -50
         stream_step = layer_width / stream_num
@@ -527,11 +534,11 @@ def generate_data_flow_graph(
                 for node in layers[device_id][index]["in"]:
                     dot.node(node["name"] + str(index) + "i", node["name"] + ":V" + str(node["version"]) + ":" + node["address"], color=node["color"], penwidth="3" if node["color"] == "red" else "1", pos=str(input_right_pos) + "," + str(layer_top) + "!")
                     input_right_pos += input_right_step
-                layer_top -= 100
+                layer_top -= 150
 
             kernel_node = layers[device_id][index]["kernel"]
-            dot.node(kernel_node["index"], "Stream Id: " + str(kernel_node["stream"]) + "\n" + kernel_node["comment"], shape="box", pos=str(stream_step * kernel_node["stream"] + stream_step / 2) + "," + str(layer_top) + "!")
-            layer_top -= 100
+            dot.node(kernel_node["index"], kernel_node["comment"], shape="box", pos=str(stream_step * kernel_node["stream"] + stream_step / 2) + "," + str(layer_top) + "!")
+            layer_top -= 150
 
             output_node_num = len(layers[device_id][index]["out"])
             if output_node_num:
@@ -540,13 +547,14 @@ def generate_data_flow_graph(
                 for node in layers[device_id][index]["out"]:
                     dot.node(node["name"] + str(index) + "o", node["name"] + ":V" + str(node["version"]) + ":" + node["address"], color=node["color"], penwidth="3" if node["color"] == "red" else "1", pos=str(output_right_pos) + "," + str(layer_top) + "!")
                     output_right_pos += output_right_step
-                layer_top -= 100
+                layer_top -= 150
             if input_node_num:
                 for node in layers[device_id][index]["in"]:
                     dot.edge(node["name"] + str(index) + "i", kernel_node["index"])
             if output_node_num:
                 for node in layers[device_id][index]["out"]:
                     dot.edge(kernel_node["index"], node["name"] + str(index) + "o")
+    dot.node("Data Flow Graph showing kernel execution and comparing the data node between CUDA and SYCL", shape="plaintext", pos=str(total_width / 2) + ",150!", style='bold', fontsize='20')
 # 4. Render Graph
     dot.render(filename=GRAPH_FILENAME, format='pdf', directory=CODEPIN_GRAPH_FILE_PATH, cleanup=True)
 
@@ -651,6 +659,8 @@ def main():
         generate_data_flow_graph(
             device_stream_dic_cuda,
             device_stream_dic_sycl,
+            time_cuda,
+            time_sycl,
             ordered_pro_id_cuda,
             ordered_epi_id_cuda,
             ordered_pro_id_sycl,
