@@ -576,7 +576,11 @@ int runDPCT(int argc, const char **argv) {
   AnalysisScope = AnalysisScopeOpt;
 
   if (PathToHelperFunction) {
-    SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
+    SmallString<512> HelperFunctionPathStr;
+    if (UseSYCLCompat)
+      HelperFunctionPathStr = getInstallPath("icpx").getCanonicalPath();
+    else
+      HelperFunctionPathStr = DpctInstallPath.getCanonicalPath();
     llvm::sys::path::append(HelperFunctionPathStr, "include");
     if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
       ShowStatus(MigrationErrorInvalidInstallPath, "Helper functions");
