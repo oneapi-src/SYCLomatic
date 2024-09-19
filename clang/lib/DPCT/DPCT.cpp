@@ -1216,18 +1216,18 @@ int runDPCT(int argc, const char **argv) {
 
     if (!cmakeScriptNotFound()) {
       runWithCrashGuard(
-        [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
-        "Error: dpct internal error. Migrating CMake scripts in \"" +
-            InRootPath.getCanonicalPath().str() +
-            "\" causing the error skipped. Migration continues.\n");
+          [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
+          "Error: dpct internal error. Migrating CMake scripts in \"" +
+              InRootPath.getCanonicalPath().str() +
+              "\" causing the error skipped. Migration continues.\n");
     }
 
     if (!pythonSetupScriptNotFound()) {
       runWithCrashGuard(
-        [&]() { doPythonSetupScriptMigration(InRootPath, OutRootPath); },
-        "Error: dpct internal error. Migrating Python scripts in \"" +
-            InRootPath.getCanonicalPath().str() +
-            "\" causing the error skipped. Migration continues.\n");
+          [&]() { doPythonSetupScriptMigration(InRootPath, OutRootPath); },
+          "Error: dpct internal error. Migrating Python scripts in \"" +
+              InRootPath.getCanonicalPath().str() +
+              "\" causing the error skipped. Migration continues.\n");
     }
 
     if (cmakeScriptNotFound() && pythonSetupScriptNotFound()) {

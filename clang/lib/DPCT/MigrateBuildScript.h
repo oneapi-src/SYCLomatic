@@ -16,10 +16,10 @@
 std::string readFile(const clang::tooling::UnifiedPath &Name);
 
 std::vector<std::string> split(const std::string &Input,
-                                      const std::string &Delimiter);
+                               const std::string &Delimiter);
 
-void storeBufferToFile(std::map<clang::tooling::UnifiedPath, std::string>
-                                  BuildScriptFileBufferMap,
-                       std::map<clang::tooling::UnifiedPath, bool>
-                                  ScriptFileCRLFMap);
+void storeBufferToFile(
+    std::map<clang::tooling::UnifiedPath, std::string>
+        &BuildScriptFileBufferMap,
+    std::map<clang::tooling::UnifiedPath, bool> &ScriptFileCRLFMap);
 #endif

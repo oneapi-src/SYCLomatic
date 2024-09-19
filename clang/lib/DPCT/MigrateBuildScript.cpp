@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateBuildScript.h"
+#include "PatternRewriter.h"
 #include "Utility.h"
 
 using namespace clang::dpct;
@@ -37,10 +38,10 @@ std::vector<std::string> split(const std::string &Input,
   return Vec;
 }
 
-void storeBufferToFile(std::map<clang::tooling::UnifiedPath, std::string>
-                                  BuildScriptFileBufferMap,
-                       std::map<clang::tooling::UnifiedPath, bool>
-                                  ScriptFileCRLFMap) {
+void storeBufferToFile(
+    std::map<clang::tooling::UnifiedPath, std::string>
+        &BuildScriptFileBufferMap,
+    std::map<clang::tooling::UnifiedPath, bool> &ScriptFileCRLFMap) {
   for (auto &Entry : BuildScriptFileBufferMap) {
     auto &FileName = Entry.first;
     auto &Buffer = Entry.second;

@@ -464,7 +464,7 @@ void processExecuteProcess(std::string &Input, size_t &Size, size_t &Index) {
 // described with yaml based rule syntax. Currently only migration of
 // cmake_minimum_required() is implemented by implicit migration rule.
 void applyImplicitMigrationRule(std::string &Input,
-                                const std::string &CmakeSyntax,
+                                const std::string &BuildScriptSyntax,
                                 void (*Func)(std::string &, size_t &,
                                              size_t &)) {
 
@@ -493,7 +493,7 @@ void applyImplicitMigrationRule(std::string &Input,
       std::string Command = Input.substr(Begin, End - Begin);
 
       // Process implict cmake syntax
-      if (Command == CmakeSyntax) {
+      if (Command == BuildScriptSyntax) {
         (*Func)(Input, Size, Index);
       }
 
@@ -629,8 +629,8 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
         // to be described with yaml based rule syntax. Currently only migration
         // of cmake_minimum_required() is implemented by implicit migration
         // rule.
-        applyImplicitMigrationRule(Buffer, PR.CmakeSyntax,
-                                   DispatchTable.at(PR.CmakeSyntax));
+        applyImplicitMigrationRule(Buffer, PR.BuildScriptSyntax,
+                                   DispatchTable.at(PR.BuildScriptSyntax));
 
       } else {
         if (PR.RuleId == "rule_project") {
@@ -683,30 +683,6 @@ static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
 
 bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
 
-/*
-static void storeBufferToFile() {
-  for (auto &Entry : CmakeScriptFileBufferMap) {
-    auto &FileName = Entry.first;
-    auto &Buffer = Entry.second;
-
-    dpct::RawFDOStream Stream(FileName.getCanonicalPath().str());
-    // Restore original endline format
-    auto IsCRLF = ScriptFileCRLFMap[FileName];
-    if (IsCRLF) {
-      std::stringstream ResultStream;
-      std::vector<std::string> SplitedStr = split(Buffer, '\n');
-      for (auto &SS : SplitedStr) {
-        ResultStream << SS << "\r\n";
-      }
-      Stream << llvm::StringRef(ResultStream.str().c_str());
-    } else {
-      Stream << llvm::StringRef(Buffer.c_str());
-    }
-    Stream.flush();
-  }
-}
-*/
-
 // cmake systaxes need to be processed by implicit migration rules, as they are
 // difficult to be described with yaml based rule syntax.
 static const std::vector<std::string> ImplicitMigrationRules = {
@@ -715,8 +691,8 @@ static const std::vector<std::string> ImplicitMigrationRules = {
 static void reserveImplicitMigrationRules() {
   for (const auto &Rule : ImplicitMigrationRules) {
     MetaRuleObject::PatternRewriter PrePR;
-    PrePR.CmakeSyntax = Rule;
-    CmakeBuildInRules[PrePR.CmakeSyntax] = PrePR;
+    PrePR.BuildScriptSyntax = Rule;
+    CmakeBuildInRules[PrePR.BuildScriptSyntax] = PrePR;
   }
 }
 
@@ -733,12 +709,12 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 void registerCmakeMigrationRule(MetaRuleObject &R) {
   auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
                                             R.MatchMode, R.Warning, R.RuleId,
-                                            R.CmakeSyntax, R.Priority);
-  auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
+                                            R.BuildScriptSyntax, R.Priority);
+  auto Iter = CmakeBuildInRules.find(PR.BuildScriptSyntax);
   if (Iter != CmakeBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover &&
         Iter->second.Priority > PR.Priority) {
-      CmakeBuildInRules[PR.CmakeSyntax] = PR;
+      CmakeBuildInRules[PR.BuildScriptSyntax] = PR;
     } else {
       llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
                    << ", Rule:" << Iter->second.RuleId
@@ -746,6 +722,6 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
                    << ") is ignored.\n";
     }
   } else {
-    CmakeBuildInRules[PR.CmakeSyntax] = PR;
+    CmakeBuildInRules[PR.BuildScriptSyntax] = PR;
   }
 }

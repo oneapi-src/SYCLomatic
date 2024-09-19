@@ -11,7 +11,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: import_torch
+  PythonSyntax: import_torch
   In: import torch
   Out: |
     import torch
@@ -22,7 +22,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: from_torch_utils_import_cpp_extension_only
+  PythonSyntax: from_torch_utils_import_cpp_extension_only
   In: from torch.utils import cpp_extension
   Out: from intel_extension_for_pytorch.xpu import cpp_extension
 
@@ -30,7 +30,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: torch_utils_cpp_extension
+  PythonSyntax: torch_utils_cpp_extension
   In: torch.utils.cpp_extension
   Out: intel_extension_for_pytorch.xpu.cpp_extension
 
@@ -38,7 +38,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: utils_cpp_extension
+  PythonSyntax: utils_cpp_extension
   In: utils.cpp_extension
   Out: intel_extension_for_pytorch.xpu.cpp_extension
 
@@ -46,7 +46,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: cpp_extension_import_CppExtension
+  PythonSyntax: cpp_extension_import_CppExtension
   In: from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}CppExtension,${class_suffix})
   Out: |
     from ${mod_prefix}cpp_extension import${ws1}(${class_prefix}${class_suffix})
@@ -56,7 +56,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: CUDA_HOME
+  PythonSyntax: CUDA_HOME
   In: CUDA_HOME
   Out: SYCL_HOME
 
@@ -64,7 +64,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: cpp_extension_import_SYCL_HOME
+  PythonSyntax: cpp_extension_import_SYCL_HOME
   In: from ${mod_prefix}cpp_extension import${ws}(${class_prefix}SYCL_HOME,${class_suffix})
   Out: from ${mod_prefix}cpp_extension import${ws}(${class_prefix}${class_suffix})
 
@@ -72,7 +72,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: CUDAExtension
+  PythonSyntax: CUDAExtension
   In: CUDAExtension
   Out: DPCPPExtension
 
@@ -80,7 +80,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: cuda_is_available
+  PythonSyntax: cuda_is_available
   In: cuda.is_available
   Out: xpu.is_available
 
@@ -88,7 +88,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: include_dirs
+  PythonSyntax: include_dirs
   In: DPCPPExtension(${args})
   Out: DPCPPExtension(${args}, include_dirs=cpp_extension.include_paths(),)
 
@@ -96,7 +96,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: BuildExtension
+  PythonSyntax: BuildExtension
   In: BuildExtension
   Out: DpcppBuildExtension
 
@@ -104,7 +104,7 @@
   Kind: PySetupRule
   Priority: Fallback
   MatchMode: Partial
-  PySetupSyntax: cu_file
+  PythonSyntax: cu_file
   In: ${func_name}(${value})
   Out: ${func_name}(${value})
   Subrules:

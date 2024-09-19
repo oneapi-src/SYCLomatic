@@ -36,8 +36,7 @@ struct TypeNameRule {
   clang::dpct::HelperFeatureEnum RequestFeature;
   RulePriority Priority;
   RuleMatchMode MatchMode;
-  std::string CmakeSyntax;
-  std::string PySetupSyntax;
+  std::string BuildScriptSyntax;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
       : NewName(Name), RequestFeature(clang::dpct::HelperFeatureEnum::none),
@@ -102,8 +101,7 @@ public:
     std::string Out = "";
     RuleMatchMode MatchMode = RuleMatchMode::Partial;
     std::string Warning = "";
-    std::string CmakeSyntax = "";
-    std::string PySetupSyntax = "";
+    std::string BuildScriptSyntax = "";
     std::string RuleId = "";
     RulePriority Priority = RulePriority::Default;
     std::map<std::string, PatternRewriter> Subrules;
@@ -114,7 +112,7 @@ public:
     PatternRewriter(const std::string &I, const std::string &O,
                     const std::map<std::string, PatternRewriter> &S,
                     RuleMatchMode MatchMode, std::string Warning,
-                    std::string RuleId, std::string CmakeSyntax,
+                    std::string RuleId, std::string BuildScriptSyntax,
                     RulePriority Priority);
   };
 
@@ -124,8 +122,7 @@ public:
   RulePriority Priority;
   RuleMatchMode MatchMode;
   std::string Warning;
-  std::string CmakeSyntax;
-  std::string PySetupSyntax;
+  std::string BuildScriptSyntax;
   RuleKind Kind;
   std::string In;
   std::string Out;
@@ -224,8 +221,8 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("Rule", Doc->RuleId);
     Io.mapRequired("Kind", Doc->Kind);
     Io.mapRequired("Priority", Doc->Priority);
-    Io.mapOptional("CmakeSyntax", Doc->CmakeSyntax);
-    Io.mapOptional("PySetupSyntax", Doc->PySetupSyntax);
+    Io.mapOptional("CmakeSyntax", Doc->BuildScriptSyntax);
+    Io.mapOptional("PythonSyntax", Doc->BuildScriptSyntax);
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
     Io.mapOptional("Includes", Doc->Includes);

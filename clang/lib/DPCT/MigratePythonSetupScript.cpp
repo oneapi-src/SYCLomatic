@@ -44,8 +44,6 @@ static std::map<std::string /*file path*/,
                 std::vector<std::string> /*warning msg*/>
     FileWarningsMap;
 
-void pythonSetupSyntaxProcessed(std::string &Input);
-
 void collectPythonSetupScripts(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot) {
   std::error_code EC;
@@ -186,29 +184,6 @@ static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
 }
 
 bool pythonSetupScriptNotFound() { return PythonSetupScriptFilesSet.empty(); }
-/*
-static void storeBufferToFile() {
-  for (auto &Entry : PythonSetupScriptFileBufferMap) {
-    auto &FileName = Entry.first;
-    auto &Buffer = Entry.second;
-
-    dpct::RawFDOStream Stream(FileName.getCanonicalPath().str());
-    // Restore original endline format
-    auto IsCRLF = ScriptFileCRLFMap[FileName];
-    if (IsCRLF) {
-      std::stringstream ResultStream;
-      std::vector<std::string> SplitedStr = split(Buffer, '\n');
-      for (auto &SS : SplitedStr) {
-        ResultStream << SS << "\r\n";
-      }
-      Stream << llvm::StringRef(ResultStream.str().c_str());
-    } else {
-      Stream << llvm::StringRef(Buffer.c_str());
-    }
-    Stream.flush();
-  }
-}
-*/
 
 void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot) {
@@ -220,14 +195,14 @@ void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 
 void registerPythonSetupMigrationRule(MetaRuleObject &R) {
   auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
-                                            R.MatchMode, R.RuleId, R.Priority,
-                                            "", R.PySetupSyntax);
+                                            R.MatchMode, R.Warning, R.RuleId,
+                                            R.BuildScriptSyntax, R.Priority);
 
-  auto Iter = PythonSetupBuildInRules.find(PR.PySetupSyntax);
+  auto Iter = PythonSetupBuildInRules.find(PR.BuildScriptSyntax);
   if (Iter != PythonSetupBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover &&
         Iter->second.Priority > PR.Priority) {
-      PythonSetupBuildInRules[PR.PySetupSyntax] = PR;
+      PythonSetupBuildInRules[PR.BuildScriptSyntax] = PR;
     } else {
       llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
                    << ", Rule:" << Iter->second.RuleId
@@ -235,6 +210,6 @@ void registerPythonSetupMigrationRule(MetaRuleObject &R) {
                    << ") is ignored.\n";
     }
   } else {
-    PythonSetupBuildInRules[PR.PySetupSyntax] = PR;
+    PythonSetupBuildInRules[PR.BuildScriptSyntax] = PR;
   }
 }
