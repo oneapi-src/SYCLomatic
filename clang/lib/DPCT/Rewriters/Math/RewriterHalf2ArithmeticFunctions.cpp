@@ -236,13 +236,18 @@ RewriterMap dpct::createHalf2ArithmeticFunctionsRewriterMap() {
                            LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))))),
           MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
               "__hfma2_sat",
-              CALL_FACTORY_ENTRY(
-                  "__hfma2_sat",
-                  CALL(MapNames::getDpctNamespace() + "clamp",
-                       CALL(MapNames::getClNamespace(false, true) +
-                                "ext::oneapi::experimental::fma",
-                            ARG(0), ARG(1), ARG(2)),
-                       LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}"))),
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__hfma2_sat",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__hfma2_sat")),
+                  CALL_FACTORY_ENTRY(
+                      "__hfma2_sat",
+                      CALL(MapNames::getDpctNamespace() + "clamp",
+                           CALL(MapNames::getClNamespace(false, true) +
+                                    "ext::oneapi::experimental::fma",
+                                ARG(0), ARG(1), ARG(2)),
+                           LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}")))),
               CONDITIONAL_FACTORY_ENTRY(
                   UseSYCLCompat,
                   UNSUPPORT_FACTORY_ENTRY("__hfma2_sat",
