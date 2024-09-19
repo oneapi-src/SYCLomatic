@@ -168,3 +168,6 @@ void bar(int *pd, int len) {
   int shareSz = 1024;
   foo<<<32, 8, shareSz>>>(pd, len);
 }
+
+// CHECK: void f(sycl::uint4 x) { }
+__global__ void f() { static __constant__ uint4 x = {1, 2, 3, 4}; }
