@@ -1348,7 +1348,9 @@ private:
   public:
     LateParsedClass(Parser *P, ParsingClass *C);
     ~LateParsedClass() override;
-
+#ifdef SYCLomatic_CUSTOMIZATION
+    LateParsedClass &operator=(const LateParsedClass &) = delete;
+#endif
     void ParseLexedMethodDeclarations() override;
     void ParseLexedMemberInitializers() override;
     void ParseLexedMethodDefs() override;
