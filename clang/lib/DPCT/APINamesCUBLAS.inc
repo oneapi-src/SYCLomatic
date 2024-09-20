@@ -734,13 +734,15 @@ GEMM_EX(cublasSgemmEx,
         MapNames::getLibraryHelperNamespace() + "library_data_t::real_float")
 GEMM_EX(cublasCgemmEx,
         MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
-GEMM_EX(cublasCgemm3mEx, "oneapi::mkl::blas::compute_mode::complex_3m")
+GEMM_EX(cublasCgemm3mEx,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
 GEMM_EX(cublasGemmEx, 17)
 GEMM_EX(cublasSgemmEx_64,
         MapNames::getLibraryHelperNamespace() + "library_data_t::real_float")
 GEMM_EX(cublasCgemmEx_64,
         MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
-GEMM_EX(cublasCgemm3mEx_64, "oneapi::mkl::blas::compute_mode::complex_3m")
+GEMM_EX(cublasCgemm3mEx_64,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
 GEMM_EX(cublasGemmEx_64, 17)
 #undef GEMM_EX
 
@@ -759,16 +761,20 @@ GEMM_EX(cublasGemmEx_64, 17)
                       ARG(10), ARG(11), ARG(12), ARG(COMPUTE_TYPE)))))
 SYHERK(cublasCsyrkEx, false,
        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
-SYHERK(cublasCsyrk3mEx, false, "oneapi::mkl::blas::compute_mode::complex_3m")
+SYHERK(cublasCsyrk3mEx, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
 SYHERK(cublasCherkEx, true,
        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
-SYHERK(cublasCherk3mEx, true, "oneapi::mkl::blas::compute_mode::complex_3m")
+SYHERK(cublasCherk3mEx, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
 SYHERK(cublasCsyrkEx_64, false,
        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
-SYHERK(cublasCsyrk3mEx_64, false, "oneapi::mkl::blas::compute_mode::complex_3m")
+SYHERK(cublasCsyrk3mEx_64, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
 SYHERK(cublasCherkEx_64, true,
        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
-SYHERK(cublasCherk3mEx_64, true, "oneapi::mkl::blas::compute_mode::complex_3m")
+SYHERK(cublasCherk3mEx_64, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
 #undef SYHERK
 
 #define SYRK(NAME, TYPE, IS_COMPLEX)                                           \

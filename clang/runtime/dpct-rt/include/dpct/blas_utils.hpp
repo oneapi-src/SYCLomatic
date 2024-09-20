@@ -1477,14 +1477,13 @@ deduce_compute_mode(std::optional<compute_type> ct, math_mode mm,
 /// \param [in] c_type Data type of the matrix C.
 /// \param [in] ldc Leading dimension of C.
 /// \param [in] ct Compute type.
-inline void
-gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
-     oneapi::mkl::transpose b_trans, std::int64_t m, std::int64_t n,
-     std::int64_t k, const void *alpha, const void *a, library_data_t a_type,
-     std::int64_t lda, const void *b, library_data_t b_type, std::int64_t ldb,
-     const void *beta, void *c, library_data_t c_type, std::int64_t ldc,
-     std::variant<compute_type, library_data_t, oneapi::mkl::blas::compute_mode>
-         ct) {
+inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
+                 oneapi::mkl::transpose b_trans, std::int64_t m, std::int64_t n,
+                 std::int64_t k, const void *alpha, const void *a,
+                 library_data_t a_type, std::int64_t lda, const void *b,
+                 library_data_t b_type, std::int64_t ldb, const void *beta,
+                 void *c, library_data_t c_type, std::int64_t ldc,
+                 std::variant<compute_type, library_data_t> ct) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
@@ -1989,13 +1988,12 @@ inline void gemm_batch(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
 /// \param [in] ldc Leading dimension of the matrix c.
 /// \param [in] ct Compute type.
 template <bool is_hermitian>
-inline void syherk(
-    descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
-    oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
-    const void *alpha, const void *a, library_data_t a_type, std::int64_t lda,
-    const void *beta, void *c, library_data_t c_type, std::int64_t ldc,
-    std::variant<compute_type, library_data_t, oneapi::mkl::blas::compute_mode>
-        ct) {
+inline void syherk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
+                   oneapi::mkl::transpose trans, std::int64_t n, std::int64_t k,
+                   const void *alpha, const void *a, library_data_t a_type,
+                   std::int64_t lda, const void *beta, void *c,
+                   library_data_t c_type, std::int64_t ldc,
+                   std::variant<compute_type, library_data_t> ct) {
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
   oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;

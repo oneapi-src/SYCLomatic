@@ -81,16 +81,16 @@ void foo4() {
   void *A, *B, *C;
   int lda, ldb, ldc;
   cudaDataType_t a_type, b_type, c_type;
-  // CHECK: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha, A, a_type, lda, B, b_type, ldb, beta, C, c_type, ldc, oneapi::mkl::blas::compute_mode::complex_3m);
+  // CHECK: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha, A, a_type, lda, B, b_type, ldb, beta, C, c_type, ldc, dpct::library_data_t::complex_float);
   cublasCgemm3mEx(handle, transa, transb, m, n, k, alpha, A, a_type, lda, B, b_type, ldb, beta, C, c_type, ldc);
 
   cublasFillMode_t uplo;
   cublasOperation_t trans;
   float *alpha_s, *beta_s;
   // CHECK: dpct::blas::syherk<false>(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc, dpct::library_data_t::complex_float);
-  // CHECK-NEXT: dpct::blas::syherk<false>(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc, oneapi::mkl::blas::compute_mode::complex_3m);
+  // CHECK-NEXT: dpct::blas::syherk<false>(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc, dpct::library_data_t::complex_float);
   // CHECK-NEXT: dpct::blas::syherk<true>(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc, dpct::library_data_t::complex_float);
-  // CHECK-NEXT: dpct::blas::syherk<true>(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc, oneapi::mkl::blas::compute_mode::complex_3m);
+  // CHECK-NEXT: dpct::blas::syherk<true>(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc, dpct::library_data_t::complex_float);
   cublasCsyrkEx(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc);
   cublasCsyrk3mEx(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc);
   cublasCherkEx(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc);
