@@ -2266,11 +2266,12 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin,
 void traversePossibleLocations(const SourceLocation &SL,
                                const SourceLocation &RangeBegin,
                                const SourceLocation &RangeEnd,
-                               SourceLocation &Result, bool IsBegin, std::unordered_set<unsigned> &Cache) {
+                               SourceLocation &Result, bool IsBegin,
+                               std::unordered_set<unsigned> &Cache) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (!SL.isValid())
     return;
-  if(Cache.find(SL.getHashValue())!=Cache.end())
+  if (Cache.find(SL.getHashValue()) != Cache.end())
     return;
   Cache.insert(SL.getHashValue());
   if (!SL.isMacroID()) {
