@@ -1349,6 +1349,7 @@ private:
     LateParsedClass(Parser *P, ParsingClass *C);
     ~LateParsedClass() override;
 #ifdef SYCLomatic_CUSTOMIZATION
+    LateParsedClass(const LateParsedClass &) = delete;
     LateParsedClass &operator=(const LateParsedClass &) = delete;
 #endif
     void ParseLexedMethodDeclarations() override;
