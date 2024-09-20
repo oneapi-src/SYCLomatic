@@ -2714,7 +2714,8 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
             SM->getDecomposedExpansionLoc(SpellingEnd).second;
         while (
             SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
-                .second <= EndLocOffset && !Tok.is(tok::TokenKind::eof)) {
+                .second <= EndLocOffset
+            && !Tok.is(tok::TokenKind::eof)) {
           SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
           SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
           if (Tok.is(tok::TokenKind::raw_identifier) &&
