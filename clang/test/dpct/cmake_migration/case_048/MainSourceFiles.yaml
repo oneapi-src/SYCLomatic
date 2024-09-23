@@ -27,6 +27,10 @@ MainSourceFilesDigest:
     Digest:          991d7e4825fc597205bf68f2eda27acd
   - MainSourceFile:  '/path/to/src/layer.cudnn.cpp'
     Digest:          991d7e4825fc597205bf68f2eda27ace
+  - MainSourceFile:  '/path/to/xxhash/xxhash.c'
+    Digest:          9f681b5a2cafa7dff67d7e4ac13d1302
+  - MainSourceFile:  '/path/to/xxhash/xxhash.cc'
+    Digest:          9f681b5a2cafa7dff67d7e4ac13d1303
 DpctVersion:     19.0.0
 MainHelperFileName: ''
 USMLevel:        ''

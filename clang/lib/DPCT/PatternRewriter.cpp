@@ -414,6 +414,9 @@ updateExtentionName(const std::string &Input, size_t Next,
     Pos = Pos == 0 ? 0 : Pos + 1;
     std::string SrcFile = Input.substr(Pos, Next + strlen(".cpp") - Pos);
     bool HasCudaSyntax = false;
+
+    // printf("SrcFile: [%s]\n", SrcFile.c_str());
+
     for (const auto &_File : MainSrcFilesHasCudaSyntex) {
 
       llvm::SmallString<512> File(_File);
@@ -485,7 +488,187 @@ updateExtentionName(const std::string &Input, size_t Next,
       Bindings["rewrite_extention_name"] = "cpp" + Extension;
     else
       Bindings["rewrite_extention_name"] = "cpp";
+
+   } else if(Input.compare(Next, strlen(".c"), ".c") == 0 && !isIdentifiedChar(Input[Next + strlen(".c")])) {
+
+    printf("#########[%c]\n", Input[Next + strlen(".c")]);
+    size_t Pos = Next - 1;
+    for (; Pos > 0 && !isWhitespace(Input[Pos]); Pos--) {
+    }
+    Pos = Pos == 0 ? 0 : Pos + 1;
+    std::string SrcFile = Input.substr(Pos, Next + strlen(".c") - Pos);
+    bool HasCudaSyntax = false;
+
+      printf("SrcFile c file: [%s]\n", SrcFile.c_str());
+
+
+    for (const auto &_File : MainSrcFilesHasCudaSyntex) {
+
+      llvm::SmallString<512> File(_File);
+      llvm::sys::path::native(File);
+
+#ifdef _WIN32
+      if (llvm::sys::path::filename(FileName).lower() == "cmakelists.txt") {
+#else
+      if (llvm::sys::path::filename(FileName) == "CMakeLists.txt") {
+#endif
+        // In a CMakeLists.txt file, the relative directory path for a source
+        // file is the location of the CMakeLists.txt file itself
+
+        llvm::SmallString<512> CMakeFilePath;
+        if (llvm::sys::path::filename(SrcFile) == SrcFile) {
+          // To get the directory path where CMake script is located
+          SmallString<512> CMakeDirectory(FileName);
+          llvm::sys::path::replace_path_prefix(
+              CMakeDirectory, OutRoot.getCanonicalPath().str(), ".");
+          llvm::sys::path::remove_dots(CMakeDirectory,
+                                       /* remove_dot_dot= */ true);
+          llvm::sys::path::remove_filename(CMakeDirectory);
+
+          std::string TempFile = CMakeDirectory.c_str();
+          TempFile = TempFile + "/" + SrcFile;
+          CMakeFilePath = TempFile.c_str();
+
+          llvm::sys::path::native(CMakeFilePath);
+        } else {
+          std::string FileName = llvm::sys::path::filename(SrcFile).str();
+          SmallString<512> _SrcFile(SrcFile);
+          llvm::sys::path::remove_dots(_SrcFile, /* remove_dot_dot= */ true);
+          llvm::sys::path::replace_path_prefix(_SrcFile, "${CMAKE_SOURCE_DIR}",
+                                               ".");
+          llvm::sys::path::remove_dots(_SrcFile, /* remove_dot_dot= */ true);
+          llvm::sys::path::remove_filename(_SrcFile);
+          std::string ParentPath = _SrcFile.c_str();
+
+          auto LastDotPos = ParentPath.find_last_of('.');
+          if (LastDotPos != std::string::npos) {
+#ifdef _WIN32
+            auto PrexPos = ParentPath.find('\\', LastDotPos);
+#else
+            auto PrexPos = ParentPath.find('/', LastDotPos);
+#endif
+            if (PrexPos != std::string::npos)
+              ParentPath = ParentPath.substr(PrexPos + 1);
+          }
+
+          CMakeFilePath = ParentPath + "/" + FileName;
+          llvm::sys::path::native(CMakeFilePath);
+        }
+        if (llvm::StringRef(File).ends_with(CMakeFilePath)) {
+          HasCudaSyntax = true;
+          break;
+        }
+      } else {
+        // For other module files (e.g., .cmake files), just check the
+        // file names.
+        if (llvm::sys::path::filename(File) ==
+            llvm::sys::path::filename(SrcFile)) {
+          HasCudaSyntax = true;
+          break;
+        }
+      }
+    }
+
+    if (HasCudaSyntax)
+      Bindings["rewrite_extention_name"] = "c" + Extension;
+    else
+      Bindings["rewrite_extention_name"] = "c";
+
+
+
+  } else if(Input.compare(Next, strlen(".cc"), ".cc") == 0 && !isIdentifiedChar(Input[Next + strlen(".cc")])) {
+
+    printf("#########[%c]\n", Input[Next + strlen(".cc")]);
+    size_t Pos = Next - 1;
+    for (; Pos > 0 && !isWhitespace(Input[Pos]); Pos--) {
+    }
+    Pos = Pos == 0 ? 0 : Pos + 1;
+    std::string SrcFile = Input.substr(Pos, Next + strlen(".cc") - Pos);
+    bool HasCudaSyntax = false;
+
+      printf("SrcFile cc file: [%s]\n", SrcFile.c_str());
+
+
+    for (const auto &_File : MainSrcFilesHasCudaSyntex) {
+
+      llvm::SmallString<512> File(_File);
+      llvm::sys::path::native(File);
+
+#ifdef _WIN32
+      if (llvm::sys::path::filename(FileName).lower() == "cmakelists.txt") {
+#else
+      if (llvm::sys::path::filename(FileName) == "CMakeLists.txt") {
+#endif
+        // In a CMakeLists.txt file, the relative directory path for a source
+        // file is the location of the CMakeLists.txt file itself
+
+        llvm::SmallString<512> CMakeFilePath;
+        if (llvm::sys::path::filename(SrcFile) == SrcFile) {
+          // To get the directory path where CMake script is located
+          SmallString<512> CMakeDirectory(FileName);
+          llvm::sys::path::replace_path_prefix(
+              CMakeDirectory, OutRoot.getCanonicalPath().str(), ".");
+          llvm::sys::path::remove_dots(CMakeDirectory,
+                                       /* remove_dot_dot= */ true);
+          llvm::sys::path::remove_filename(CMakeDirectory);
+
+          std::string TempFile = CMakeDirectory.c_str();
+          TempFile = TempFile + "/" + SrcFile;
+          CMakeFilePath = TempFile.c_str();
+
+          llvm::sys::path::native(CMakeFilePath);
+        } else {
+          std::string FileName = llvm::sys::path::filename(SrcFile).str();
+          SmallString<512> _SrcFile(SrcFile);
+          llvm::sys::path::remove_dots(_SrcFile, /* remove_dot_dot= */ true);
+          llvm::sys::path::replace_path_prefix(_SrcFile, "${CMAKE_SOURCE_DIR}",
+                                               ".");
+          llvm::sys::path::remove_dots(_SrcFile, /* remove_dot_dot= */ true);
+          llvm::sys::path::remove_filename(_SrcFile);
+          std::string ParentPath = _SrcFile.c_str();
+
+          auto LastDotPos = ParentPath.find_last_of('.');
+          if (LastDotPos != std::string::npos) {
+#ifdef _WIN32
+            auto PrexPos = ParentPath.find('\\', LastDotPos);
+#else
+            auto PrexPos = ParentPath.find('/', LastDotPos);
+#endif
+            if (PrexPos != std::string::npos)
+              ParentPath = ParentPath.substr(PrexPos + 1);
+          }
+
+          CMakeFilePath = ParentPath + "/" + FileName;
+          llvm::sys::path::native(CMakeFilePath);
+        }
+        if (llvm::StringRef(File).ends_with(CMakeFilePath)) {
+          HasCudaSyntax = true;
+          break;
+        }
+      } else {
+        // For other module files (e.g., .cmake files), just check the
+        // file names.
+        if (llvm::sys::path::filename(File) ==
+            llvm::sys::path::filename(SrcFile)) {
+          HasCudaSyntax = true;
+          break;
+        }
+      }
+    }
+
+    if (HasCudaSyntax)
+      Bindings["rewrite_extention_name"] = "cc" + Extension;
+    else
+      Bindings["rewrite_extention_name"] = "cc";
+
+
+
+
+
+
+
   } else {
+    printf("Extension other : [%s]\n", Extension.c_str());
     Bindings["rewrite_extention_name"] = Extension.erase(0, 1);
   }
 }
