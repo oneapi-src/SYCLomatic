@@ -576,19 +576,35 @@ int runDPCT(int argc, const char **argv) {
   AnalysisScope = AnalysisScopeOpt;
 
   if (PathToHelperFunction) {
-    SmallString<512> HelperFunctionPathStr;
-    if (UseSYCLCompat)
-      HelperFunctionPathStr = getInstallPath("icpx").getCanonicalPath();
-    else
-      HelperFunctionPathStr = DpctInstallPath.getCanonicalPath();
-    llvm::sys::path::append(HelperFunctionPathStr, "include");
-    if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
-      ShowStatus(MigrationErrorInvalidInstallPath, "Helper functions");
-      dpctExit(MigrationErrorInvalidInstallPath);
+    auto FindHelperPath = [&](const char *Cmd) {
+      SmallString<512> Path;
+      Path = getInstallPath(Cmd).getCanonicalPath();
+      llvm::sys::path::append(Path, "include");
+      if (!llvm::sys::fs::exists(Path))
+        return false;
+      else if (UseSYCLCompat) {
+        auto CompatPath = Path;
+        llvm::sys::path::append(CompatPath, "syclcompat");
+        if (!llvm::sys::fs::exists(CompatPath))
+          return false;
+      }
+      std::cout << Path.c_str() << std::endl;
+      return true;
+    };
+    auto Success = true;
+    if (UseSYCLCompat) {
+      Success = FindHelperPath("clang") | FindHelperPath("icpx");
+      if (!Success)
+        DpctLog() << "SYCLcompat is usually installed in include folder of "
+                     "SYCL compiler.\n";
+    } else {
+      Success = FindHelperPath(argv[0]);
     }
-    std::cout << HelperFunctionPathStr.c_str() << "\n";
-    ShowStatus(MigrationSucceeded);
-    dpctExit(MigrationSucceeded);
+    auto Ret = MigrationSucceeded;
+    if (!Success)
+      Ret = MigrationErrorInvalidInstallPath;
+    ShowStatus(Ret, "Helper functions");
+    dpctExit(Ret);
   }
 
   if (!OutputFile.empty()) {
