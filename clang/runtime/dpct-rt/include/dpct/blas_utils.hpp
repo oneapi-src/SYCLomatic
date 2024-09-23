@@ -1491,9 +1491,7 @@ inline void gemm(descriptor_ptr desc_ptr, oneapi::mkl::transpose a_trans,
   sycl::queue q = desc_ptr->get_queue();
   oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
   library_data_t scaling_type;
-  if (auto ct_p = std::get_if<oneapi::mkl::blas::compute_mode>(&ct)) {
-    cm = *ct_p;
-  } else if (auto ct_p = std::get_if<compute_type>(&ct)) {
+  if (auto ct_p = std::get_if<compute_type>(&ct)) {
     cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
                              a_type == library_data_t::complex_float ||
                                  a_type == library_data_t::complex_double);
@@ -1997,9 +1995,7 @@ inline void syherk(descriptor_ptr desc_ptr, oneapi::mkl::uplo uplo,
   sycl::queue q = desc_ptr->get_queue();
 #ifdef __INTEL_MKL__
   oneapi::mkl::blas::compute_mode cm = oneapi::mkl::blas::compute_mode::unset;
-  if (auto ct_p = std::get_if<oneapi::mkl::blas::compute_mode>(&ct)) {
-    cm = *ct_p;
-  } else if (auto ct_p = std::get_if<compute_type>(&ct)) {
+  if (auto ct_p = std::get_if<compute_type>(&ct)) {
     cm = deduce_compute_mode(*ct_p, desc_ptr->get_math_mode(),
                              a_type == library_data_t::complex_float ||
                                  a_type == library_data_t::complex_double);
