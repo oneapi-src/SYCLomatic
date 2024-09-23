@@ -493,7 +493,8 @@ updateExtentionName(const std::string &Input, size_t Next,
                     std::unordered_map<std::string, std::string> &Bindings,
                     std::string FileName,
                     const clang::tooling::UnifiedPath OutRoot) {
-  if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0) {
+  if (Input.compare(Next, strlen(".cpp"), ".cpp") == 0 &&
+      !isIdentifiedChar(Input[Next + strlen(".cpp")])) {
     applyExtenstionNameChange(Input, Next, Bindings, FileName, OutRoot, "cpp");
   } else if (Input.compare(Next, strlen(".c"), ".c") == 0 &&
              !isIdentifiedChar(Input[Next + strlen(".c")])) {
