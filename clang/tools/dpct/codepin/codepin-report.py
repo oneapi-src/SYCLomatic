@@ -673,14 +673,14 @@ def main():
 
     with open(CODEPIN_REPORT_FILE, "w") as f:
         f.write("CodePin Summary\n")
-        f.write("Totally APIs count, " + str(checkpoint_size) + "\n")
+        f.write("Total API count, " + str(checkpoint_size) + "\n")
         f.write("CodePin Random Seed, " +
                 str(CODEPIN_RANDOM_SEED_VALUE) + "\n")
         f.write("CodePin Sampling Threshold, " +
                 str(CODEPIN_SAMPLING_THRESHOLD_VALUE) + "\n")
         f.write("CodePin Sampling Percent, " +
                 str(CODEPIN_SAMPLING_PERCENT_VALUE) + "\n")
-        f.write("Consistently APIs count, " + str(match_checkpoint_num) + "\n")
+        f.write("Consistent API count, " + str(match_checkpoint_num) + "\n")
         f.write(
             "Most Time-consuming Kernel(CUDA), "
             + str(bottleneck_cuda[0])
