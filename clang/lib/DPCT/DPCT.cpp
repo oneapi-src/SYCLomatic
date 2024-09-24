@@ -588,21 +588,21 @@ int runDPCT(int argc, const char **argv) {
         if (!llvm::sys::fs::exists(CompatPath))
           return false;
       }
-      std::cout << Path.c_str() << std::endl;
+      DpctLog() << Path << '\n';
       return true;
     };
-    auto Success = true;
+    auto Ret = MigrationSucceeded;
     if (UseSYCLCompat) {
-      Success = FindHelperPath("clang") | FindHelperPath("icpx");
-      if (!Success)
+      auto Success = FindHelperPath("clang");
+      Success |= FindHelperPath("icpx");
+      if (!Success) {
         DpctLog() << "SYCLcompat is usually installed in include folder of "
                      "SYCL compiler.\n";
-    } else {
-      Success = FindHelperPath(argv[0]);
-    }
-    auto Ret = MigrationSucceeded;
-    if (!Success)
+        Ret = MigrationErrorInvalidInstallPath;
+      }
+    } else if (!FindHelperPath(argv[0])) {
       Ret = MigrationErrorInvalidInstallPath;
+    }
     ShowStatus(Ret, "Helper functions");
     dpctExit(Ret);
   }
