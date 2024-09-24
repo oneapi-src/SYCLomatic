@@ -954,7 +954,8 @@ DPCT_ENUM_OPTION(
 DPCT_FLAG_OPTION(
     UseSYCLCompat, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
-                        clang::dpct::DpctActionKind::DAK_Migration),
+                        clang::dpct::DpctActionKind::DAK_Migration,
+                        clang::dpct::DpctActionKind::DAK_Query),
     "use-syclcompat",
     llvm::cl::desc(
         "Use SYCLcompat header-only library (syclcompat:: namespace) to assist "
