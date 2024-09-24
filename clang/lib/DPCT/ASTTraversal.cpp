@@ -2710,15 +2710,16 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       // remove the volatile qualifier and trailing spaces
       Token Tok;
       // Get the range of variable declaration
-      SourceRange SpellingRange = getDefinitionRange(VD->getBeginLoc(), VD->getEndLoc());
+      SourceRange SpellingRange =
+          getDefinitionRange(VD->getBeginLoc(), VD->getEndLoc());
       Lexer::getRawToken(SpellingRange.getBegin(), Tok, *SM,
                          DpctGlobalInfo::getContext().getLangOpts(), true);
       unsigned int EndLocOffset =
           SM->getDecomposedExpansionLoc(SpellingRange.getEnd()).second;
       // Look for volatile in the above found range of declaration
-      while (
-          SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
-              .second <= EndLocOffset && !Tok.is(tok::TokenKind::eof)) {
+      while (SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
+                     .second <= EndLocOffset &&
+             !Tok.is(tok::TokenKind::eof)) {
         SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
         SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
 
@@ -2732,7 +2733,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
           break;
         }
         Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
-                            DpctGlobalInfo::getContext().getLangOpts(), true);
+                           DpctGlobalInfo::getContext().getLangOpts(), true);
       }
     }
   }
