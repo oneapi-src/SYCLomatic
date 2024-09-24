@@ -171,6 +171,45 @@
       In: ${arg}.cpp
       Out: ${arg}.${rewrite_extention_name}
 
+- Rule: rule_user_defined_function_c_file
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_function_c_file
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.c
+      Out: ${arg}.${rewrite_extention_name}
+
+- Rule: rule_user_defined_function_cc_file
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_function_cc_file
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cc
+      Out: ${arg}.${rewrite_extention_name}
+
+- Rule: rule_user_defined_function_cxx_file
+  Kind: CMakeRule
+  Priority: Fallback
+  MatchMode: Partial
+  CmakeSyntax: user_defined_function_cxx_file
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cxx
+      Out: ${arg}.${rewrite_extention_name}
+
 - Rule: rule_user_defined_function_cu_file
   Kind: CMakeRule
   Priority: Fallback
