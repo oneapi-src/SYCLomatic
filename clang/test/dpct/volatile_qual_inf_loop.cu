@@ -5012,11 +5012,8 @@
 
 // CHECK: void foo(volatile sycl::float4 *sh_vol_var) {
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified
-// CHECK-NEXT:  vector type. The volatile qualifier was removed. You may need to rewrite the
-// CHECK-NEXT:  code.
+// CHECK-NEXT:  DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
 // CHECK-NEXT:  */
-// CHECK-NEXT: }
 __global__ void foo() {
   __shared__ volatile float4 sh_vol_var[128];
 }
