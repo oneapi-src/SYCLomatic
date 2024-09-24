@@ -794,6 +794,55 @@ __dpct_inline__ void load_direct_striped(const ItemT &item,
     data[i] = input_iter[work_item_id + i * work_group_size];
 }
 
+/// Load a linear segment of elements into a blocked arrangement across the
+/// work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load
+template <typename T, size_t ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+load_direct_blocked(const ItemT &item, InputIteratorT input_iter,
+                    T (&data)[ElementsPerWorkItem], int valid_items) {
+  size_t work_item_id = item.get_local_linear_id();
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if ((work_item_id * ElementsPerWorkItem) + i < valid_items)
+      data[i] = input_iter[(work_item_id * ElementsPerWorkItem) + i];
+}
+
+/// Load a linear segment of elements into a striped arrangement across the
+/// work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load
+template <typename T, int ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+load_direct_striped(const ItemT &item, InputIteratorT input_iter,
+                    T (&data)[ElementsPerWorkItem], int valid_items) {
+  size_t work_group_size = item.get_group().get_local_linear_range();
+  size_t work_item_id = item.get_local_linear_id();
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if (work_item_id + (i * work_group_size) < valid_items)
+      data[i] = input_iter[work_item_id + i * work_group_size];
+}
+
 /// Store a blocked arrangement of items across a work-group into a linear
 /// segment of items.
 ///
@@ -956,6 +1005,41 @@ public:
     } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
       load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
           item, input_iter, data);
+    }
+  }
+
+  /// Load a linear segment of items from memory, guarded by range.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and
+  /// valid_items is 5, the \p input across the work-group is:
+  ///
+  ///   0, 1, 2, 3, 4, 5, 6, 7, ..., 508, 509, 510, 511.
+  ///
+  /// The blocked order \p data of each work-item will be:
+  ///
+  ///   {[0,1,2,3], [4,?,?,?], ..., [?,?,?,?]}.
+  ///
+  /// The striped order \p output of each work-item will be:
+  ///
+  ///   {[0,?,?,?], [1,?,?,?], [2,?,?,?], [3,?,?,?] ..., [?,?,?,?]}.
+  ///
+  /// \tparam ItemT The sycl::nd_item index space class.
+  /// \tparam InputIteratorT The random-access iterator type for input
+  /// \iterator.
+  /// \param item The work-item identifier.
+  /// \param input_iter The work-group's base input iterator for loading from.
+  /// \param data The data to load.
+  /// \param valid_items Number of valid items to load
+  template <typename ItemT, typename InputIteratorT>
+  __dpct_inline__ void load(const ItemT &item, InputIteratorT input_iter,
+                            T (&data)[ElementsPerWorkItem], int valid_items) {
+    if constexpr (LoadAlgorithm == group_load_algorithm::blocked) {
+      load_direct_blocked<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data, valid_items);
+    } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
+      load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data, valid_items);
     }
   }
 };
