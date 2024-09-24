@@ -3865,23 +3865,33 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
-    if (!CorrectCall) {
-      // emit warning
-      return;
+    std::map<int /*CE*/, int /*MatchedCE*/> InsertBeforeIdxMap;
+    if (CorrectCall) {
+      InsertBeforeIdxMap = {
+          {8, 8},
+          {12, 13},
+      };
+    } else {
+      report(
+          DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
+          Diagnostics::SPARSE_NNZ, true,
+          MapNames::getLibraryHelperNamespace() + "sparse::csrgemm");
+      InsertBeforeIdxMap = {
+          {8, -1},
+          {12, -1},
+      };
     }
-    const static std::map<unsigned /*CE*/, unsigned /*MatchedCE*/>
-        InsertBeforeIdxMap = {
-            {8, 8},
-            {12, 13},
-        };
     std::string MigratedCall;
-    MigratedCall =
-        MapNames::getDpctNamespace() + "sparse::csrgemm_nnz(";
+    MigratedCall = MapNames::getDpctNamespace() + "sparse::csrgemm_nnz(";
     for (unsigned i = 0; i < MigratedArgs.size(); i++) {
       if (InsertBeforeIdxMap.count(i)) {
-        MigratedCall +=
-            (ExprAnalysis::ref(CorrectCall->getArg(InsertBeforeIdxMap.at(i))) +
-             ", ");
+        if (InsertBeforeIdxMap.at(i) == -1) {
+          MigratedCall += ("dpct_placeholder, ");
+        } else {
+          MigratedCall += (ExprAnalysis::ref(
+                               CorrectCall->getArg(InsertBeforeIdxMap.at(i))) +
+                           ", ");
+        }
       }
       MigratedCall += MigratedArgs[i];
       if (i != MigratedArgs.size() - 1)
