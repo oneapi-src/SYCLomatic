@@ -512,6 +512,10 @@ public:
     return get_device_info().get_global_mem_size();
   }
 
+  bool get_virtual_mem_support() const {
+    return has(sycl::aspect::ext_oneapi_virtual_mem);
+  }
+
   /// Get the number of bytes of free and total memory on the SYCL device.
   /// \param [out] free_memory The number of bytes of free memory on the SYCL device.
   /// \param [out] total_memory The number of bytes of total memory on the SYCL device.
