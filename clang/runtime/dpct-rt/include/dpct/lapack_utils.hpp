@@ -294,8 +294,8 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
       &has_execption, api_name, queue, nullptr, info,
       matrix_info->group_size_info, oneapi::mkl::lapack::potrs_batch, queue,
       &(matrix_info->uplo_info), &(matrix_info->n_info),
-      &(matrix_info->nrhs_info), (Ty **)a, &(matrix_info->lda_info), (Ty **)b,
-      &(matrix_info->ldb_info), (std::int64_t)1,
+      &(matrix_info->nrhs_info), (const Ty *const *)a, &(matrix_info->lda_info),
+      (Ty **)b, &(matrix_info->ldb_info), (std::int64_t)1,
       &(matrix_info->group_size_info), (Ty *)scratchpad,
       (std::int64_t)scratchpad_size, empty_events);
 
