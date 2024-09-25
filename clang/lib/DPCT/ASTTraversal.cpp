@@ -2693,42 +2693,47 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     // qualifier and emit a warning.
     if (!NeedRemoveVolatile)
       return;
-    const ValueDecl *VD = DpctGlobalInfo::findAncestor<ValueDecl>(TL);
-    if (VD) {
-      bool isPointerToVolatile = false;
-      if (const auto PT = dyn_cast<PointerType>(VD->getType())) {
-        isPointerToVolatile = PT->getPointeeType().isVolatileQualified();
-      }
-      if (isPointerToVolatile || VD->getType().isVolatileQualified()) {
-        SourceLocation Loc = SM->getExpansionLoc(VD->getBeginLoc());
-        report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
 
-        // remove the volatile qualifier and trailing spaces
-        Token Tok;
-        SourceLocation SpellingBeg = SM->getSpellingLoc(VD->getBeginLoc());
-        SourceLocation SpellingEnd = SM->getSpellingLoc(VD->getEndLoc());
-        Loc = SpellingBeg;
-        Lexer::getRawToken(Loc, Tok, *SM,
-                           DpctGlobalInfo::getContext().getLangOpts(), true);
-        unsigned int EndLocOffset =
-            SM->getDecomposedExpansionLoc(SpellingEnd).second;
-        while (
-            SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
-                .second <= EndLocOffset) {
-          SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
-          SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
-          if (Tok.is(tok::TokenKind::raw_identifier) &&
-              Tok.getRawIdentifier().str() == "volatile") {
-            emplaceTransformation(
-                new ReplaceText(TokBegLoc,
-                                getLenIncludingTrailingSpaces(
-                                    SourceRange(TokBegLoc, TokEndLoc), *SM),
-                                ""));
-            break;
-          }
-          Lexer::getRawToken(TokEndLoc, Tok, *SM,
-                             DpctGlobalInfo::getContext().getLangOpts(), true);
+    const ValueDecl *VD = DpctGlobalInfo::findAncestor<ValueDecl>(TL);
+    if (!VD)
+      return;
+
+    bool isPointerToVolatile = false;
+    if (const auto PT = dyn_cast<PointerType>(VD->getType())) {
+      isPointerToVolatile = PT->getPointeeType().isVolatileQualified();
+    }
+
+    if (isPointerToVolatile || VD->getType().isVolatileQualified()) {
+      SourceLocation Loc = SM->getExpansionLoc(VD->getBeginLoc());
+      report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
+
+      // remove the volatile qualifier and trailing spaces
+      Token Tok;
+      // Get the range of variable declaration
+      SourceRange SpellingRange =
+          getDefinitionRange(VD->getBeginLoc(), VD->getEndLoc());
+      Lexer::getRawToken(SpellingRange.getBegin(), Tok, *SM,
+                         DpctGlobalInfo::getContext().getLangOpts(), true);
+      unsigned int EndLocOffset =
+          SM->getDecomposedExpansionLoc(SpellingRange.getEnd()).second;
+      // Look for volatile in the above found range of declaration
+      while (SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
+                     .second <= EndLocOffset &&
+             !Tok.is(tok::TokenKind::eof)) {
+        SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
+        SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
+
+        if (Tok.is(tok::TokenKind::raw_identifier) &&
+            Tok.getRawIdentifier().str() == "volatile") {
+          emplaceTransformation(
+              new ReplaceText(TokBegLoc,
+                              getLenIncludingTrailingSpaces(
+                                  SourceRange(TokBegLoc, TokEndLoc), *SM),
+                              ""));
+          break;
         }
+        Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
+                           DpctGlobalInfo::getContext().getLangOpts(), true);
       }
     }
   }
