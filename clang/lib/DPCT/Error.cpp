@@ -194,10 +194,10 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorCMakeAndPythonSetupScriptPathInvalid:
     StatusString = "Error: Path of CMake and Python setup Script is invalid.";
     break;
-  case MigrateCmakeScriptOnlyNotSpecifed:
+  case MigrateBuildScriptOnlyNotSpecifed:
     StatusString =
         "Error: option '-migrate-build-script-only' is not specified "
-        "for CMake script migration.";
+        "for CMake/ Python setup script migration.";
     break;
   case MigratePythonSetupScriptOnlyNotSpecifed:
     StatusString =

@@ -61,7 +61,7 @@ enum ProcessStatus {
   MigrationErrorCannotDetectCudaPath = -46,
   CallIndependentToolError = -47,
   MigrationErrorCMakeAndPythonSetupScriptPathInvalid = -48,
-  MigrateCmakeScriptOnlyNotSpecifed = -49,
+  MigrateBuildScriptOnlyNotSpecifed = -49,
   MigrateBuildScriptIncorrectUse = -50,
   MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse = -51,
   MigrationErrorNoExplicitInRootAndCMakeOrPythonSetupScript = -52,

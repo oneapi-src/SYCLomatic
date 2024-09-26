@@ -57,6 +57,7 @@ static std::map<std::string /*file path*/,
 
 void cmakeSyntaxProcessed(std::string &Input);
 
+/*
 clang::tooling::UnifiedPath
 getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot) {
@@ -163,7 +164,14 @@ void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
     }
   }
 }
+*/
+void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
+                         const clang::tooling::UnifiedPath &OutRoot) {
+  collectBuildScripts(InRoot, OutRoot, CmakeScriptFilesSet,
+                        BuildScriptKind::BS_Cmake);
+}
 
+/*
 bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
                               const clang::tooling::UnifiedPath OutRoot,
                               clang::tooling::UnifiedPath InFileName) {
@@ -188,27 +196,14 @@ bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
   }
   return IsCmakeScript;
 }
+*/
 
 void collectCmakeScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot) {
-  auto CmakeScriptLists = OptParser->getSourcePathList();
-  if (!CmakeScriptLists.empty()) {
-    for (auto &FilePath : CmakeScriptLists) {
-      if (fs::is_directory(FilePath)) {
-
-        collectCmakeScripts(FilePath, OutRoot);
-      } else {
-        if (llvm::sys::path::filename(FilePath).ends_with(".cmake") ||
-            llvm::sys::path::filename(FilePath).ends_with(".txt")) {
-          CmakeScriptFilesSet.push_back(FilePath);
-        }
-      }
-    }
-  } else {
-    collectCmakeScripts(InRoot, OutRoot);
-  }
+  collectBuildScriptsSpecified(OptParser, InRoot, OutRoot, CmakeScriptFilesSet,
+                               BuildScriptKind::BS_Cmake);
 }
 
 static size_t skipWhiteSpaces(const std::string Input, size_t Index) {
@@ -588,14 +583,10 @@ static void doCmakeScriptAnalysis() {
   }
 }
 
-static void unifyInputFileFormat() {
+static void convertAllCmakeCommandsToLowerCase() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &Buffer = Entry.second;
     const std::string FileName = Entry.first.getPath().str();
-
-    // Convert input file to be LF
-    bool IsCRLF = fixLineEndings(Buffer, Buffer);
-    ScriptFileCRLFMap[Entry.first] = IsCRLF;
 
     // Convert cmake command to lower case in cmake script files
     Buffer = convertCmakeCommandsToLower(Buffer, FileName);
@@ -673,13 +664,16 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
   }
 }
 
+/*
 static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot) {
   for (const auto &ScriptFile : CmakeScriptFilesSet) {
-    if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile))
+    if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile,
+                                  CmakeScriptFileBufferMap))
       continue;
   }
 }
+*/
 
 bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
 
@@ -698,8 +692,10 @@ static void reserveImplicitMigrationRules() {
 
 void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot) {
-  loadBufferFromFile(InRoot, OutRoot);
-  unifyInputFileFormat();
+  loadBufferFromFile(InRoot, OutRoot, CmakeScriptFilesSet,
+                     CmakeScriptFileBufferMap);
+  unifyInputFileFormat(CmakeScriptFileBufferMap, ScriptFileCRLFMap);
+  convertAllCmakeCommandsToLowerCase();
   reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
   applyCmakeMigrationRules(InRoot, OutRoot);

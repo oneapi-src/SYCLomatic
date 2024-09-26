@@ -717,8 +717,7 @@ int runDPCT(int argc, const char **argv) {
 
   if (MigrateBuildScriptOnly) {
     if (InRootPath.getPath().empty() &&
-        !cmakeScriptFileSpecified(OptParser->getSourcePathList()) &&
-        !pythonSetupScriptFileSpecified(OptParser->getSourcePathList())) {
+        !buildScriptFileSpecified(OptParser->getSourcePathList())) {
       ShowStatus(MigrationErrorNoExplicitInRootAndCMakeOrPythonSetupScript);
       dpctExit(MigrationErrorNoExplicitInRootAndCMakeOrPythonSetupScript);
     }
@@ -740,14 +739,9 @@ int runDPCT(int argc, const char **argv) {
       dpctExit(MigrationErrorNoFileTypeAvail);
     }
 
-    if (cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
-      ShowStatus(MigrateCmakeScriptOnlyNotSpecifed);
-      dpctExit(MigrateCmakeScriptOnlyNotSpecifed);
-    }
-
-    if (pythonSetupScriptFileSpecified(OptParser->getSourcePathList())) {
-      ShowStatus(MigratePythonSetupScriptOnlyNotSpecifed);
-      dpctExit(MigratePythonSetupScriptOnlyNotSpecifed);
+    if (buildScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrateBuildScriptOnlyNotSpecifed);
+      dpctExit(MigrateBuildScriptOnlyNotSpecifed);
     }
 
   } else {
