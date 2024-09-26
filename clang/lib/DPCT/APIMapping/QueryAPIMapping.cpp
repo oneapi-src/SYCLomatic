@@ -35,14 +35,14 @@ void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
     EntryMap.try_emplace(Name, TargetIndex);
   }
   const auto EmplaceWithAndWithoutSuffix =
-      [TargetIndex](std::string Name, const std::string Suffix) {
+      [TargetIndex](const std::string &Name, llvm::StringRef Suffix) {
         EntryMap.try_emplace(Name, TargetIndex);
-        if (Name.size() > Suffix.length() &&
-            Name.substr(Name.size() - Suffix.length()) == Suffix) {
-          EntryMap.try_emplace(Name.substr(0, Name.size() - Suffix.length()),
+        if (Name.size() > Suffix.size() &&
+            Name.substr(Name.size() - Suffix.size()) == Suffix) {
+          EntryMap.try_emplace(Name.substr(0, Name.size() - Suffix.size()),
                                TargetIndex);
         } else {
-          EntryMap.try_emplace(Name + Suffix, TargetIndex);
+          EntryMap.try_emplace(Name + Suffix.str(), TargetIndex);
         }
       };
   // 3. Remove partial or all leading '_'.
