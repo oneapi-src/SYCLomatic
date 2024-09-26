@@ -21,5 +21,6 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot);
 void registerCmakeMigrationRule(MetaRuleObject &R);
 bool cmakeScriptNotFound();
-void addWarningMsg(const std::string &WarningMsg, const std::string FileName);
+void addCmakeWarningMsg(const std::string &WarningMsg,
+                        const std::string FileName);
 #endif

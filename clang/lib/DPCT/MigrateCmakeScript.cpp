@@ -434,7 +434,8 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
   return OutputStream.str();
 }
 
-void addWarningMsg(const std::string &WarningMsg, const std::string FileName) {
+void addCmakeWarningMsg(const std::string &WarningMsg,
+                        const std::string FileName) {
   FileWarningsMap[FileName].push_back(WarningMsg);
 }
 

@@ -21,4 +21,6 @@ void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot);
 void registerPythonSetupMigrationRule(MetaRuleObject &R);
 bool pythonSetupScriptNotFound();
+void addPythonSetupWarningMsg(const std::string &WarningMsg,
+                              const std::string FileName);
 #endif

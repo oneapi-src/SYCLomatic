@@ -10,6 +10,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "MigrateCmakeScript.h"
+#include "MigratePythonSetupScript.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 
@@ -768,18 +769,37 @@ static void constructWaringMsg(const std::string &Input, size_t index,
 
   std::string WarningMsg =
       FileName + ":" + std::to_string(LineNumber) + ":warning:";
-  WarningMsg += clang::dpct::DiagnosticsUtils::getMsgText(
-      clang::dpct::CMakeScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
-      Warning);
-  WarningMsg += "\n";
-  addWarningMsg(WarningMsg, FileName);
 
-  OutStr =
-      "\n# " +
-      clang::dpct::DiagnosticsUtils::getMsgText(
-          clang::dpct::CMakeScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
-          Warning) +
-      "\n" + OutStr;
+  if (llvm::StringRef(FileName).ends_with(".txt") ||
+      llvm::StringRef(FileName).ends_with(".cmake")) {
+    WarningMsg += clang::dpct::DiagnosticsUtils::getMsgText(
+        clang::dpct::CMakeScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
+        Warning);
+    WarningMsg += "\n";
+
+    addCmakeWarningMsg(WarningMsg, FileName);
+
+    OutStr =
+        "\n# " +
+        clang::dpct::DiagnosticsUtils::getMsgText(
+            clang::dpct::CMakeScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
+            Warning) +
+        "\n" + OutStr;
+  } else if (llvm::StringRef(FileName).ends_with(".py")) {
+    WarningMsg += clang::dpct::DiagnosticsUtils::getMsgText(
+        clang::dpct::PythonSetupScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
+        Warning);
+    WarningMsg += "\n";
+
+    addPythonSetupWarningMsg(WarningMsg, FileName);
+
+    OutStr = "\n# " +
+             clang::dpct::DiagnosticsUtils::getMsgText(
+                 clang::dpct::PythonSetupScriptMigrationMsgs::
+                     WARNING_FOR_SYNTAX_REMOVED,
+                 Warning) +
+             "\n" + OutStr;
+  }
 }
 
 std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,

@@ -59,6 +59,11 @@ void collectPythonSetupScriptsSpecified(
                                BuildScriptKind::BS_PySetup);
 }
 
+void addPythonSetupWarningMsg(const std::string &WarningMsg,
+                              const std::string FileName) {
+  FileWarningsMap[FileName].push_back(WarningMsg);
+}
+
 static void
 applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
                                const clang::tooling::UnifiedPath OutRoot) {
