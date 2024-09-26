@@ -57,146 +57,11 @@ static std::map<std::string /*file path*/,
 
 void cmakeSyntaxProcessed(std::string &Input);
 
-/*
-clang::tooling::UnifiedPath
-getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
-                            const clang::tooling::UnifiedPath &OutRoot) {
-  std::error_code EC;
-
-  clang::tooling::UnifiedPath CmakeBuildDirectory;
-  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
-       End;
-       Iter != End; Iter.increment(EC)) {
-    if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Access : " + std::string(InRoot.getCanonicalPath()) +
-          " fail: " + EC.message() + "\n";
-      PrintMsg(ErrMsg);
-    }
-
-    clang::tooling::UnifiedPath FilePath(Iter->path());
-
-    // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot, FilePath))
-      continue;
-
-    bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
-                              PE = path::end(FilePath.getCanonicalPath());
-         PI != PE; ++PI) {
-      StringRef Comp = *PI;
-      if (Comp.starts_with(".")) {
-        IsHidden = true;
-        break;
-      }
-    }
-    // Skip hidden folder or file whose name begins with ".".
-    if (IsHidden) {
-      continue;
-    }
-
-    if (Iter->type() == fs::file_type::directory_file) {
-      const clang::tooling::UnifiedPath Path = Iter->path();
-      if (fs::exists(appendPath(Path.getCanonicalPath().str(), "CMakeFiles")) &&
-          fs::exists(
-              appendPath(Path.getCanonicalPath().str(), "CMakeCache.txt"))) {
-        CmakeBuildDirectory = Path;
-        break;
-      }
-    }
-  }
-  return CmakeBuildDirectory;
-}
-
-void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
-                         const clang::tooling::UnifiedPath &OutRoot) {
-  std::error_code EC;
-
-  clang::tooling::UnifiedPath CmakeBuildDirectory =
-      getCmakeBuildPathFromInRoot(InRoot, OutRoot);
-  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
-       End;
-       Iter != End; Iter.increment(EC)) {
-    if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Access : " + std::string(InRoot.getCanonicalPath()) +
-          " fail: " + EC.message() + "\n";
-      PrintMsg(ErrMsg);
-    }
-
-    clang::tooling::UnifiedPath FilePath(Iter->path());
-
-    // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot, FilePath))
-      continue;
-
-    // Skip cmake build directory if it is in the in-root directory.
-    if (!CmakeBuildDirectory.getPath().empty() &&
-        isChildOrSamePath(CmakeBuildDirectory, FilePath))
-      continue;
-
-    bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
-                              PE = path::end(FilePath.getCanonicalPath());
-         PI != PE; ++PI) {
-      StringRef Comp = *PI;
-      if (Comp.starts_with(".")) {
-        IsHidden = true;
-        break;
-      }
-    }
-    // Skip hidden folder or file whose name begins with ".".
-    if (IsHidden) {
-      continue;
-    }
-
-    if (Iter->type() == fs::file_type::regular_file) {
-      llvm::StringRef Name =
-          llvm::sys::path::filename(FilePath.getCanonicalPath());
-#ifdef _WIN32
-      if (Name.lower() == "cmakelists.txt" ||
-          llvm::StringRef(Name.lower()).ends_with(".cmake")) {
-#else
-      if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
-#endif
-        CmakeScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
-      }
-    }
-  }
-}
-*/
 void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
                          const clang::tooling::UnifiedPath &OutRoot) {
   collectBuildScripts(InRoot, OutRoot, CmakeScriptFilesSet,
-                        BuildScriptKind::BS_Cmake);
+                      BuildScriptKind::BS_Cmake);
 }
-
-/*
-bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
-                              const clang::tooling::UnifiedPath OutRoot,
-                              clang::tooling::UnifiedPath InFileName) {
-  clang::tooling::UnifiedPath OutFileName(InFileName);
-  if (!rewriteCanonicalDir(OutFileName, InRoot, OutRoot)) {
-    return false;
-  }
-  createDirectories(path::parent_path(OutFileName.getCanonicalPath()));
-  CmakeScriptFileBufferMap[OutFileName] = readFile(InFileName);
-  return true;
-}
-
-bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
-  bool IsCmakeScript = false;
-  for (const auto &FilePath : SourceFiles) {
-    if (!llvm::sys::path::has_extension(FilePath) ||
-        llvm::sys::path::filename(FilePath).ends_with(".cmake") ||
-        llvm::sys::path::filename(FilePath).ends_with(".txt")) {
-      IsCmakeScript = true;
-      break;
-    }
-  }
-  return IsCmakeScript;
-}
-*/
 
 void collectCmakeScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
@@ -663,17 +528,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
     }
   }
 }
-
-/*
-static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
-                               const clang::tooling::UnifiedPath &OutRoot) {
-  for (const auto &ScriptFile : CmakeScriptFilesSet) {
-    if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile,
-                                  CmakeScriptFileBufferMap))
-      continue;
-  }
-}
-*/
 
 bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
 

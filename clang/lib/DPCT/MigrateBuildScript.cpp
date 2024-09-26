@@ -224,7 +224,7 @@ void collectBuildScriptsSpecified(
     for (auto &FilePath : BuildScriptLists) {
       if (fs::is_directory(FilePath)) {
         collectBuildScripts(FilePath, OutRoot, BuildScriptFilesSet,
-                        BuildScript);
+                            BuildScript);
       } else {
         if (BuildScript == BuildScriptKind::BS_Cmake) {
           if (llvm::sys::path::filename(FilePath).ends_with(".cmake") ||
@@ -243,12 +243,12 @@ void collectBuildScriptsSpecified(
   }
 }
 
-void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
-                        const clang::tooling::UnifiedPath &OutRoot,
-                        std::vector<clang::tooling::UnifiedPath>
-                            &BuildScriptFilesSet,
-                        std::map<clang::tooling::UnifiedPath, std::string>
-                            &BuildScriptFileBufferMap) {
+void loadBufferFromFile(
+    const clang::tooling::UnifiedPath &InRoot,
+    const clang::tooling::UnifiedPath &OutRoot,
+    std::vector<clang::tooling::UnifiedPath> &BuildScriptFilesSet,
+    std::map<clang::tooling::UnifiedPath, std::string>
+        &BuildScriptFileBufferMap) {
   for (const auto &ScriptFile : BuildScriptFilesSet) {
     if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile,
                                   BuildScriptFileBufferMap))
@@ -256,10 +256,10 @@ void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
   }
 }
 
-void unifyInputFileFormat(std::map<clang::tooling::UnifiedPath, std::string>
-                              &BuildScriptFileBufferMap,
-                          std::map<clang::tooling::UnifiedPath, bool>
-                              &ScriptFileCRLFMap) {
+void unifyInputFileFormat(
+    std::map<clang::tooling::UnifiedPath, std::string>
+        &BuildScriptFileBufferMap,
+    std::map<clang::tooling::UnifiedPath, bool> &ScriptFileCRLFMap) {
   for (auto &Entry : BuildScriptFileBufferMap) {
     auto &Buffer = Entry.second;
     const std::string FileName = Entry.first.getPath().str();

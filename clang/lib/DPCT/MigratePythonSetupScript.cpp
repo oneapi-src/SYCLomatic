@@ -44,85 +44,11 @@ static std::map<std::string /*file path*/,
                 std::vector<std::string> /*warning msg*/>
     FileWarningsMap;
 
-/*
-void collectPythonSetupScripts(const clang::tooling::UnifiedPath &InRoot,
-                               const clang::tooling::UnifiedPath &OutRoot) {
-  std::error_code EC;
-
-  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
-       End;
-       Iter != End; Iter.increment(EC)) {
-    if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Access : " + std::string(InRoot.getCanonicalPath()) +
-          " fail: " + EC.message() + "\n";
-      PrintMsg(ErrMsg);
-    }
-
-    clang::tooling::UnifiedPath FilePath(Iter->path());
-
-    // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot, FilePath))
-      continue;
-
-    bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
-                              PE = path::end(FilePath.getCanonicalPath());
-         PI != PE; ++PI) {
-      StringRef Comp = *PI;
-      if (Comp.starts_with(".")) {
-        IsHidden = true;
-        break;
-      }
-    }
-    // Skip hidden folder or file whose name begins with ".".
-    if (IsHidden) {
-      continue;
-    }
-
-    if (Iter->type() == fs::file_type::regular_file) {
-      llvm::StringRef Name =
-          llvm::sys::path::filename(FilePath.getCanonicalPath());
-      if (Name.ends_with(".py")) {
-        PythonSetupScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
-      }
-    }
-  }
-}
-*/
 void collectPythonSetupScripts(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot) {
   collectBuildScripts(InRoot, OutRoot, PythonSetupScriptFilesSet,
-                        BuildScriptKind::BS_PySetup);
+                      BuildScriptKind::BS_PySetup);
 }
-
-/*
-bool loadBufferFromPythonSetupScriptFile(
-    const clang::tooling::UnifiedPath InRoot,
-    const clang::tooling::UnifiedPath OutRoot,
-    clang::tooling::UnifiedPath InFileName) {
-  clang::tooling::UnifiedPath OutFileName(InFileName);
-  if (!rewriteCanonicalDir(OutFileName, InRoot, OutRoot)) {
-    return false;
-  }
-  createDirectories(path::parent_path(OutFileName.getCanonicalPath()));
-  PythonSetupScriptFileBufferMap[OutFileName] = readFile(InFileName);
-  return true;
-}
-
-bool pythonSetupScriptFileSpecified(
-    const std::vector<std::string> &SourceFiles) {
-  bool IsPythonSetupScript = false;
-  for (const auto &FilePath : SourceFiles) {
-    if (!llvm::sys::path::has_extension(FilePath) ||
-        llvm::sys::path::filename(FilePath).ends_with(".py")) {
-      IsPythonSetupScript = true;
-      break;
-    }
-  }
-  return IsPythonSetupScript;
-}
-*/
 
 void collectPythonSetupScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
@@ -132,19 +58,6 @@ void collectPythonSetupScriptsSpecified(
                                PythonSetupScriptFilesSet,
                                BuildScriptKind::BS_PySetup);
 }
-
-/*
-static void unifyInputFileFormat() {
-  for (auto &Entry : PythonSetupScriptFileBufferMap) {
-    auto &Buffer = Entry.second;
-    const std::string FileName = Entry.first.getPath().str();
-
-    // Convert input file to be LF
-    bool IsCRLF = fixLineEndings(Buffer, Buffer);
-    ScriptFileCRLFMap[Entry.first] = IsCRLF;
-  }
-}
-*/
 
 static void
 applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
@@ -175,17 +88,6 @@ applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
     }
   }
 }
-
-/*
-static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
-                               const clang::tooling::UnifiedPath &OutRoot) {
-  for (const auto &ScriptFile : PythonSetupScriptFilesSet) {
-    if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile,
-                                  PythonSetupScriptFileBufferMap))
-      continue;
-  }
-}
-*/
 
 bool pythonSetupScriptNotFound() { return PythonSetupScriptFilesSet.empty(); }
 
