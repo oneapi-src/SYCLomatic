@@ -105,7 +105,7 @@
 // CUDAMALLOC3DARRAY-NEXT:   cudaMalloc3DArray(pa /*cudaArray_t **/, pc, e /*cudaExtent*/, u);
 // CUDAMALLOC3DARRAY-NEXT: Is migrated to:
 // CUDAMALLOC3DARRAY-NEXT:   const dpct::image_channel *pc;
-// CUDAMALLOC3DARRAY-NEXT:   *pa = new dpct::image_matrix(*pc, e);
+// CUDAMALLOC3DARRAY-NEXT:   *pa = new dpct::image_matrix(*pc, e /*cudaExtent*/, dpct::image_type::standard);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocArray | FileCheck %s -check-prefix=CUDAMALLOCARRAY
 // CUDAMALLOCARRAY: CUDA API:
@@ -113,7 +113,7 @@
 // CUDAMALLOCARRAY-NEXT:   cudaMallocArray(pa /*cudaArray_t **/, pc, s1 /*size_t*/, s2 /*size_t*/, u);
 // CUDAMALLOCARRAY-NEXT: Is migrated to:
 // CUDAMALLOCARRAY-NEXT:   const dpct::image_channel *pc;
-// CUDAMALLOCARRAY-NEXT:   *pa = new dpct::image_matrix(*pc, sycl::range<2>(s1 /*size_t*/, s2));
+// CUDAMALLOCARRAY-NEXT:   *pa = new dpct::image_matrix(*pc, sycl::range<2>(s1 /*size_t*/, s2) /*size_t*/, dpct::image_type::standard);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocHost | FileCheck %s -check-prefix=CUDAMALLOCHOST
 // CUDAMALLOCHOST: CUDA API:

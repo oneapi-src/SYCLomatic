@@ -12,6 +12,10 @@
 namespace clang {
 namespace tooling {
 void UnifiedPath::makeCanonical(const std::string &CWD) {
+  // To remove quotation marks from _Path
+  if (_Path.size() >= 2 && _Path.front() == '"' && _Path.back() == '"') {
+    _Path = _Path.substr(1, _Path.size() - 2);
+  }
   if (_Path.empty()) {
     return;
   }
@@ -49,7 +53,7 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
 
   llvm::SmallString<512> RealPath;
   // We need make sure the input `Path` for llvm::sys::fs::real_path is
-  // exsiting, or else the behavior of real_path() is unexpected. 
+  // exsiting, or else the behavior of real_path() is unexpected.
   if (llvm::sys::fs::exists(Path)) {
     llvm::sys::fs::real_path(Path, RealPath, true);
   } else {
@@ -63,22 +67,32 @@ void UnifiedPath::makeCanonical(const std::string &CWD) {
         assert(0 && "no real directory found");
         return;
       }
-      llvm::sys::path::reverse_iterator RI = llvm::sys::path::rbegin(llvm::StringRef(Path));
+      llvm::sys::path::reverse_iterator RI =
+          llvm::sys::path::rbegin(llvm::StringRef(Path));
       llvm::SmallString<512> SuffixTemp(*RI);
-      llvm::sys::path::append(SuffixTemp, llvm::sys::path::Style::native, Suffix);
+      llvm::sys::path::append(SuffixTemp, llvm::sys::path::Style::native,
+                              Suffix);
       Suffix = SuffixTemp;
       Path = llvm::SmallString<512>(llvm::sys::path::parent_path(Path).str());
     }
     llvm::sys::fs::real_path(Path, RealPath, true);
     llvm::sys::path::append(RealPath, llvm::sys::path::Style::native, Suffix);
   }
+  _CanonicalPath = RealPath.str();
 #if defined(_WIN32)
-  _CanonicalPath = RealPath.str().lower();
-  if (_CanonicalPath.size() >= 3 && _CanonicalPath.substr(0, 3) == "unc") {
+  if (_CanonicalPath.size() >= 3 &&
+      llvm::StringRef(_CanonicalPath.substr(0, 3)).lower() == "unc") {
     _CanonicalPath = "\\" + _CanonicalPath.substr(3);
   }
-#else
-  _CanonicalPath = RealPath.str();
+  std::string CanonicalPathWithLowerCase =
+      llvm::StringRef(_CanonicalPath).lower();
+  auto FindRes = CanonicalPathCache.find(CanonicalPathWithLowerCase);
+  if (FindRes != CanonicalPathCache.end()) {
+    _CanonicalPath = FindRes->second;
+  } else {
+    CanonicalPathCache.insert(
+        std::pair(CanonicalPathWithLowerCase, _CanonicalPath));
+  }
 #endif
   CanonicalPathCache.insert(std::pair(_Path, _CanonicalPath));
 }

@@ -553,11 +553,19 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationOptionParsingError);
   }
   DpctOptionBase::check();
+  if (UseSYCLCompat && USMLevel.getValue() == UsmLevel::UL_None) {
+    llvm::errs()
+        << "Currently SYCLcompat header-only library (syclcompat:: namespace) "
+           "doesn't support buffer and accessor data management..\n";
+    ShowStatus(MigrationErrorConflictOptions);
+    dpctExit(MigrationErrorConflictOptions);
+  }
 
   DpctInstallPath = getInstallPath(argv[0]);
 
   InRootPath = InRoot;
   OutRootPath = OutRoot;
+  std::string OutRootPathCUDACodepin = "";
   CudaIncludePath = CudaInclude;
   SDKPath = SDKPathOpt;
   std::transform(
@@ -568,15 +576,35 @@ int runDPCT(int argc, const char **argv) {
   AnalysisScope = AnalysisScopeOpt;
 
   if (PathToHelperFunction) {
-    SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(HelperFunctionPathStr, "include");
-    if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
-      ShowStatus(MigrationErrorInvalidInstallPath, "Helper functions");
-      dpctExit(MigrationErrorInvalidInstallPath);
+    auto FindHelperPath = [&](const char *Cmd) {
+      SmallString<512> Path;
+      Path = getInstallPath(Cmd).getCanonicalPath();
+      llvm::sys::path::append(Path, "include");
+      if (!llvm::sys::fs::exists(Path))
+        return false;
+      else if (UseSYCLCompat) {
+        auto CompatPath = Path;
+        llvm::sys::path::append(CompatPath, "syclcompat");
+        if (!llvm::sys::fs::exists(CompatPath))
+          return false;
+      }
+      DpctLog() << Path << '\n';
+      return true;
+    };
+    auto Ret = MigrationSucceeded;
+    if (UseSYCLCompat) {
+      auto Success = FindHelperPath("clang");
+      Success |= FindHelperPath("icpx");
+      if (!Success) {
+        DpctLog() << "SYCLcompat is usually installed in include folder of "
+                     "SYCL compiler.\n";
+        Ret = MigrationErrorInvalidInstallPath;
+      }
+    } else if (!FindHelperPath(argv[0])) {
+      Ret = MigrationErrorInvalidInstallPath;
     }
-    std::cout << HelperFunctionPathStr.c_str() << "\n";
-    ShowStatus(MigrationSucceeded);
-    dpctExit(MigrationSucceeded);
+    ShowStatus(Ret, "Helper functions");
+    dpctExit(Ret);
   }
 
   if (!OutputFile.empty()) {
@@ -591,8 +619,13 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath, IndependentTool + " tool");
       dpctExit(MigrationErrorInvalidInstallPath);
     }
+    std::string Python = GetPython();
+    if (Python.empty()) {
+      ShowStatus(CallIndependentToolError, "python");
+      dpctExit(CallIndependentToolError);
+    }
     std::string SystemCallCommand =
-        "python3 " + std::string(ExecutableScriptPath.str());
+        Python + " " + std::string(ExecutableScriptPath.str());
     for (int Index = 2; Index < argc; Index++) {
       SystemCallCommand.append(" ");
       SystemCallCommand.append(std::string(argv[Index]));
@@ -849,6 +882,8 @@ int runDPCT(int argc, const char **argv) {
             Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
           else if (Option.ends_with("logical-group"))
             Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+          else if (Option.ends_with("root-group"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_RootGroup);
           else if (Option.ends_with("masked-sub-group-operation"))
             Experimentals.addValue(
                 ExperimentalFeatures::Exp_MaskedSubGroupFunction);
@@ -875,6 +910,20 @@ int runDPCT(int argc, const char **argv) {
     EndPos = SourceCode.find_last_of('\n', EndPos);
     QueryAPIMappingSrc =
         SourceCode.substr(StartPos, EndPos - StartPos + 1).str();
+    // Print static migration info for cudaGraphicsD3D11RegisterResource
+    // on linux, as the API is unavailable on Linux and hence, no API mapping.
+#if defined(__linux__)
+    if (QueryAPIMapping == "cudaGraphicsD3D11RegisterResource") {
+      const std::string MigratedToStr =
+          "r = new dpct::experimental::external_mem_wrapper(pD3Dr, f);";
+      llvm::outs() << "CUDA API:" << llvm::raw_ostream::GREEN
+                   << QueryAPIMappingSrc << llvm::raw_ostream::RESET;
+      llvm::outs() << "On Windows, is migrated to" << QueryAPIMappingOpt << ":"
+                   << llvm::raw_ostream::BLUE << "\n  " << MigratedToStr << "\n"
+                   << llvm::raw_ostream::RESET;
+      dpctExit(MigrationSucceeded);
+    }
+#endif // __linux__
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {
@@ -906,6 +955,11 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
     }
+    if (EnableCodePin) {
+      OutRootPathCUDACodepin =  OutRootPath.getPath().str()  + "_codepin_cuda";
+      OutRootPath = OutRootPath.getPath().str() + "_codepin_sycl";
+    }
+
     dpct::DpctGlobalInfo::setOutRoot(OutRootPath);
   }
 
@@ -1005,6 +1059,7 @@ int runDPCT(int argc, const char **argv) {
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtension);
+  DpctGlobalInfo::setUseSYCLCompat(UseSYCLCompat);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRootPath;
 
@@ -1012,14 +1067,16 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::setExcludePath(ExcludePathList);
   }
 
-  std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
-      ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
-  if (UseExplicitNamespace.getNumOccurrences())
-    DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-  else
-    DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
-
-  MapNames::setExplicitNamespaceMap();
+  std::set<ExplicitNamespace> ExplicitNamespaces;
+  if (UseExplicitNamespace.getNumOccurrences()) {
+    ExplicitNamespaces.insert(UseExplicitNamespace.begin(),
+                              UseExplicitNamespace.end());
+  } else {
+    ExplicitNamespaces.insert({UseSYCLCompat ? ExplicitNamespace::EN_SYCLCompat
+                                             : ExplicitNamespace::EN_DPCT,
+                               ExplicitNamespace::EN_SYCL});
+  }
+  MapNames::setExplicitNamespaceMap(ExplicitNamespaces);
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
@@ -1090,7 +1147,7 @@ int runDPCT(int argc, const char **argv) {
                      DpctGlobalInfo::getHelperFuncPreferenceFlag(),
                      Preferences.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
-                     DpctGlobalInfo::getExplicitNamespaceSet(),
+                     ExplicitNamespaces,
                      UseExplicitNamespace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
@@ -1109,6 +1166,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScopeOpt.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_UseSYCLCompat, UseSYCLCompat.getValue(),
+                     UseSYCLCompat.getNumOccurrences());
     if (!MigrateBuildScriptOnly &&
         clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
@@ -1119,21 +1178,6 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
-  if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
-      ReportType.getValue() == ReportTypeEnum::RTE_Stats) {
-    // When option "--report-type=stats" or option " --report-type=all" is
-    // specified to get the migration status report, dpct namespace should be
-    // enabled temporarily to get LOC migrated to helper functions in function
-    // getLOCStaticFromCodeRepls() if it is not enabled.
-    auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-    if (!NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
-      std::vector<ExplicitNamespace> ENVec;
-      ENVec.push_back(ExplicitNamespace::EN_DPCT);
-      DpctGlobalInfo::setExplicitNamespace(ENVec);
-      DpctGlobalInfo::setDPCTNamespaceTempEnabled();
-    }
-  }
-
   if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
   }
@@ -1141,7 +1185,11 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateBuildScriptOnly) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    doCmakeScriptMigration(InRootPath, OutRootPath);
+    runWithCrashGuard(
+        [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
+        "Error: dpct internal error. Migrating CMake scripts in \"" +
+            InRootPath.getCanonicalPath().str() +
+            "\" causing the error skipped. Migration continues.\n");
 
     if (cmakeScriptNotFound()) {
       std::cout << CmakeScriptMigrationHelpHint << "\n";
@@ -1294,12 +1342,24 @@ int runDPCT(int argc, const char **argv) {
   }
 
   // if run was successful
-  int Status = saveNewFiles(Tool, InRootPath, OutRootPath, ReplCUDA, ReplSYCL);
+  int Status = 0;
+  runWithCrashGuard(
+      [&]() {
+        Status = saveNewFiles(Tool, InRootPath, OutRootPath,
+                              OutRootPathCUDACodepin, ReplCUDA, ReplSYCL);
+      },
+      "Error: dpct internal error. Saving in \"" +
+          OutRootPath.getCanonicalPath().str() +
+          "\" causing the error skipped. Migration continues.\n");
 
   if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Cmake) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScripts(InRootPath, OutRootPath);
-    doCmakeScriptMigration(InRootPath, OutRootPath);
+    runWithCrashGuard(
+        [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
+        "Error: dpct internal error. Migrating CMake scripts in \"" +
+            InRootPath.getCanonicalPath().str() +
+            "\" causing the error skipped. Migration continues.\n");
 
     if (cmakeScriptNotFound()) {
       std::cout << CmakeScriptMigrationHelpHint << "\n";

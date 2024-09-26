@@ -36,16 +36,15 @@ void foo() {
   cudaSetDeviceFlags(flags);
 
   // CHECK:  dpct::get_current_device().ext_oneapi_enable_peer_access(
-  // CHECK-NEXT:    dpct::dev_mgr::instance().get_device(peerDevice));
+  // CHECK-NEXT:    dpct::get_device(peerDevice));
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
   // CHECK:  dpct::get_current_device().ext_oneapi_disable_peer_access(
-  // CHECK-NEXT:    dpct::dev_mgr::instance().get_device(peerDevice));
+  // CHECK-NEXT:    dpct::get_device(peerDevice));
   cudaDeviceDisablePeerAccess(peerDevice);
 
-  // CHECK:  *canAccessPeer =
-  // CHECK-NEXT:      dpct::dev_mgr::instance().get_device(device).ext_oneapi_can_access_peer(
-  // CHECK-NEXT:          dpct::dev_mgr::instance().get_device(peerDevice));
+  // CHECK:  *canAccessPeer = dpct::get_device(device).ext_oneapi_can_access_peer(
+  // CHECK-NEXT:      dpct::get_device(peerDevice));
   cudaDeviceCanAccessPeer(canAccessPeer, device, peerDevice);
 
   // CHECK: /*

@@ -52,10 +52,10 @@ int main(){
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::select_device(ctx)));
   MY_SAFE_CALL(cuCtxSetCurrent(ctx));
 
-  // CHECK: dpct::get_current_device().ext_oneapi_enable_peer_access(dpct::dev_mgr::instance().get_device(ctx2));
+  // CHECK: dpct::get_current_device().ext_oneapi_enable_peer_access(dpct::get_device(ctx2));
   cuCtxEnablePeerAccess(ctx2, 0);
 
-  // CHECK: ctx2 = dpct::dev_mgr::instance().current_device_id();
+  // CHECK: ctx2 = dpct::get_current_device_id();
   cuCtxGetCurrent(&ctx2);
 
   // CHECK: if (ctx == -1) {
@@ -63,7 +63,7 @@ int main(){
     return 0;
   }
 
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx2 = dpct::dev_mgr::instance().current_device_id()));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx2 = dpct::get_current_device_id()));
   MY_SAFE_CALL(cuCtxGetCurrent(&ctx2));
 
   // CHECK: dpct::push_device_for_curr_thread(ctx);

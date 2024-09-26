@@ -21,7 +21,7 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
   if (!FD)
     return nullptr;
   StringRef FuncNameRef = FD->getName();
-  std::string ParameterTypes = MapNames::getDpctNamespace() +
+  std::string ParameterTypes = MapNames::getLibraryHelperNamespace() +
                                "fft::fft_engine_ptr engine";
   requestFeature(HelperFeatureEnum::device_ext);
   std::string Dir;
@@ -29,7 +29,7 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
   if (FuncNameRef == "cufftExecC2C") {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "float2 *in, " + MapNames::getClNamespace() +
-                     "float2 *out, " + MapNames::getDpctNamespace() +
+                     "float2 *out, " + MapNames::getLibraryHelperNamespace() +
                      "fft::fft_direction dir";
     Dir = "dir";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "float2, " +
@@ -37,7 +37,7 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
   } else if (FuncNameRef == "cufftExecZ2Z") {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "double2 *in, " + MapNames::getClNamespace() +
-                     "double2 *out, " + MapNames::getDpctNamespace() +
+                     "double2 *out, " + MapNames::getLibraryHelperNamespace() +
                      "fft::fft_direction dir";
     Dir = "dir";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "double2, " +
@@ -45,22 +45,22 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
   } else if (FuncNameRef == "cufftExecR2C") {
     ParameterTypes = ParameterTypes + ", float *in, " +
                      MapNames::getClNamespace() + "float2 *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::forward";
+    Dir = MapNames::getLibraryHelperNamespace() + "fft::fft_direction::forward";
     NewFuncName = "compute<float, " + MapNames::getClNamespace() + "float2>";
   } else if (FuncNameRef == "cufftExecC2R") {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "float2 *in, float *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::backward";
+    Dir = MapNames::getLibraryHelperNamespace() + "fft::fft_direction::backward";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "float2, float>";
   } else if (FuncNameRef == "cufftExecD2Z") {
     ParameterTypes = ParameterTypes + ", double *in, " +
                      MapNames::getClNamespace() + "double2 *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::forward";
+    Dir = MapNames::getLibraryHelperNamespace() + "fft::fft_direction::forward";
     NewFuncName = "compute<double, " + MapNames::getClNamespace() + "double2>";
   } else if (FuncNameRef == "cufftExecZ2D") {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "double2 *in, double *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::backward";
+    Dir = MapNames::getLibraryHelperNamespace() + "fft::fft_direction::backward";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "double2, double>";
   } else {
     return nullptr;

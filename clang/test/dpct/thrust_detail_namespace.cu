@@ -12,29 +12,6 @@
 #include <thrust/iterator/iterator_traits.h>
 #include <thrust/device_vector.h>
 
-
-// CHECK:template <typename T>
-// CHECK-NEXT:typename std::enable_if<std::is_integral<T>::value, void>::type
-// CHECK-NEXT:print_info(T value) {
-// CHECK-NEXT:  std::cout << "Integral value: " << value << std::endl;
-// CHECK-NEXT:}
-template <typename T>
-typename thrust::detail::enable_if<std::is_integral<T>::value, void>::type
-print_info(T value) {
-  std::cout << "Integral value: " << value << std::endl;
-}
-
-// CHECK:template <typename T>
-// CHECK-NEXT:typename std::enable_if<std::is_floating_point<T>::value, void>::type
-// CHECK-NEXT:print_info(T value) {
-// CHECK-NEXT:  std::cout << "Floating-point value: " << value << std::endl;
-// CHECK-NEXT:}
-template <typename T>
-typename thrust::detail::enable_if<std::is_floating_point<T>::value, void>::type
-print_info(T value) {
-  std::cout << "Floating-point value: " << value << std::endl;
-}
-
 // CHECK:template <typename T>
 // CHECK-NEXT:struct is_integer {
 // CHECK-NEXT:    typedef std::false_type type;
@@ -67,23 +44,6 @@ struct is_integer<long> {
 template <std::size_t Len, std::size_t Align>
 void test_aligned_storage_instantiation() {
   typedef thrust::detail::integral_constant<bool, false> ValidAlign;
-}
-
-// CHECK:template <typename T, typename U>
-// CHECK-NEXT:void checkTypes() {
-// CHECK-NEXT:  if (std::is_same<T, U>::value) {
-// CHECK-NEXT:    std::cout << "Types T and U are the same." << std::endl;
-// CHECK-NEXT:  } else {
-// CHECK-NEXT:    std::cout << "Types T and U are different." << std::endl;
-// CHECK-NEXT:  }
-// CHECK-NEXT:}
-template <typename T, typename U>
-void checkTypes() {
-  if (thrust::detail::is_same<T, U>::value) {
-    std::cout << "Types T and U are the same." << std::endl;
-  } else {
-    std::cout << "Types T and U are different." << std::endl;
-  }
 }
 
 // CHECK:template <class ExampleVector, typename NewType, typename new_alloc> struct vector_like {

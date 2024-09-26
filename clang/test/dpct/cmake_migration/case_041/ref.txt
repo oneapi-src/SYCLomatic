@@ -1,0 +1,1 @@
+// CHECK: {{.*}}input.cmake:15:warning:DPCT3002:{{[0-9]+}}: "-static-libstdc++" is removed because it is not supported for use alongside option "-fsycl" of SYCL compiler. You may need to check the build options.

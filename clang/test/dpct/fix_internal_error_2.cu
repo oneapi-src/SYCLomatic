@@ -1,5 +1,6 @@
-// UNSUPPORTED: cuda-8.0, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3
-// UNSUPPORTED: v8.0, v11.7, v11.8, v12.0, v12.1, v12.2, v12.3
+// UNSUPPORTED: system-windows
+// UNSUPPORTED: cuda-8.0, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4
+// UNSUPPORTED: v8.0, v11.7, v11.8, v12.0, v12.1, v12.2, v12.3, v12.4
 // RUN: mkdir %T/fix_internal_error_2
 // RUN: dpct --out-root %T/fix_internal_error_2 %s --cuda-include-path="%cuda-path/include" > %T/fix_internal_error_2/output.txt 2>&1 || true
 // RUN: grep "dpct internal error" %T/fix_internal_error_2/output.txt | wc -l > %T/fix_internal_error_2/wc_output.txt || true

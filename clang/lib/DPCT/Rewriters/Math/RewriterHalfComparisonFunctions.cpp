@@ -291,9 +291,15 @@ RewriterMap dpct::createHalfComparisonFunctionsRewriterMap() {
                                                   "ext::intel::math::hmax_nan",
                                               ARG(0), ARG(1))))),
               EMPTY_FACTORY_ENTRY("__hmax_nan"),
-              CALL_FACTORY_ENTRY("__hmax_nan",
-                                 CALL(MapNames::getDpctNamespace() + "fmax_nan",
-                                      ARG(0), ARG(1)))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__hmax_nan",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__hmax_nan")),
+                  CALL_FACTORY_ENTRY(
+                      "__hmax_nan",
+                      CALL(MapNames::getDpctNamespace() + "fmax_nan", ARG(0),
+                           ARG(1))))))
       // __hmin
       MATH_API_REWRITER_DEVICE_OVERLOAD(
           CheckArgType(0, "__half"),
@@ -335,9 +341,15 @@ RewriterMap dpct::createHalfComparisonFunctionsRewriterMap() {
                                                   "ext::intel::math::hmin_nan",
                                               ARG(0), ARG(1))))),
               EMPTY_FACTORY_ENTRY("__hmin_nan"),
-              CALL_FACTORY_ENTRY("__hmin_nan",
-                                 CALL(MapNames::getDpctNamespace() + "fmin_nan",
-                                      ARG(0), ARG(1)))))
+              CONDITIONAL_FACTORY_ENTRY(
+                  UseSYCLCompat,
+                  UNSUPPORT_FACTORY_ENTRY("__hmin_nan",
+                                          Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                                          LITERAL("__hmin_nan")),
+                  CALL_FACTORY_ENTRY(
+                      "__hmin_nan",
+                      CALL(MapNames::getDpctNamespace() + "fmin_nan", ARG(0),
+                           ARG(1))))))
       // __hne
       MATH_API_REWRITER_DEVICE(
           "__hne",

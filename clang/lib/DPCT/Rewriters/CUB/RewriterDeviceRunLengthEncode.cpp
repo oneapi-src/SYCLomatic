@@ -46,7 +46,7 @@ RewriterMap dpct::createDeviceRunLengthEncodeRewriterMap() {
                                               CALL(
                                                   TEMPLATED_CALLEE_WITH_ARGS(
                                                       MapNames::
-                                                              getDpctNamespace() +
+                                                              getLibraryHelperNamespace() +
                                                           "constant_iterator",
                                                       LITERAL("size_t")),
                                                   LITERAL("1")),
@@ -73,7 +73,7 @@ RewriterMap dpct::createDeviceRunLengthEncodeRewriterMap() {
                                               CALL(
                                                   TEMPLATED_CALLEE_WITH_ARGS(
                                                       MapNames::
-                                                              getDpctNamespace() +
+                                                              getLibraryHelperNamespace() +
                                                           "constant_iterator",
                                                       LITERAL("size_t")),
                                                   LITERAL("1")),
@@ -101,7 +101,7 @@ RewriterMap dpct::createDeviceRunLengthEncodeRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceRunLengthEncode::"
                               "NonTrivialRuns",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "nontrivial_run_length_encode",
                                    CALL("oneapi::dpl::execution::"
                                         "device_policy",
@@ -110,7 +110,7 @@ RewriterMap dpct::createDeviceRunLengthEncodeRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceRunLengthEncode::"
                               "NonTrivialRuns",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "nontrivial_run_length_encode",
                                    CALL("oneapi::dpl::execution::"
                                         "device_policy",

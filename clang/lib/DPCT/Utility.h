@@ -517,6 +517,7 @@ void checkIsPrivateVar(const clang::Expr *Expr, LocalVarAddrSpaceEnum &Result);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
 bool isDefaultStream(const clang::Expr *StreamArg);
 const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
+bool isRedeclInCUDAHeader(const clang::TypedefType *T);
 bool isTypeInAnalysisScope(const clang::Type *TypePtr);
 void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      const clang::CompoundStmt *CS,
@@ -641,6 +642,7 @@ int isArgumentInitialized(
     std::vector<const clang::VarDecl *> &DeclsRequireInit);
 const DeclRefExpr *getAddressedRef(const Expr *E);
 bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule);
+std::string GetPython();
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

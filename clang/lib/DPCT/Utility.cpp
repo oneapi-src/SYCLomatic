@@ -3276,6 +3276,7 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
   }
   return ND;
 }
+
 bool isTypeInAnalysisScope(const clang::Type *TypePtr) {
   bool IsInAnalysisScope = false;
   if (const auto *ND = getNamedDecl(TypePtr)) {
@@ -3284,6 +3285,17 @@ bool isTypeInAnalysisScope(const clang::Type *TypePtr) {
       IsInAnalysisScope = true;
   }
   return IsInAnalysisScope;
+}
+
+/// This function returns true if any of the redeclartions of typedef is in CUDA
+/// header
+bool isRedeclInCUDAHeader(const clang::TypedefType *T) {
+  const auto *TND = T->getDecl();
+  const auto Redecls = TND->redecls();
+  auto IsDeclInCudaHeader = [](const TypedefNameDecl *D) {
+    return dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
+  };
+  return std::any_of(Redecls.begin(), Redecls.end(), IsDeclInCudaHeader);
 }
 
 /// This function will find all assignments to the DRE of \p HandleDecl in
@@ -5355,5 +5367,60 @@ bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule) {
   insertIsDeviceCopyableSpecialization(Type, Rule, D);
   return false;
 }
+
+std::vector<std::string> SplitStr(const std::string &Str, char Delimiter) {
+  std::vector<std::string> Result;
+  std::istringstream Stream(Str);
+  std::string Token;
+  while (std::getline(Stream, Token, Delimiter)) {
+    Result.push_back(Token);
+  }
+  return Result;
+}
+
+std::string
+GetFirstAvailableTool(std::unordered_set<std::string> &ToolCandidates) {
+  const char *EnvPath = std::getenv("PATH");
+  if (EnvPath == nullptr) {
+    return "";
+  }
+  std::string EnvPathStr(EnvPath);
+  std::vector<std::string> PathDir = SplitStr(EnvPathStr,
+#if defined(_WIN32)
+                                              ';'
+#else
+                                              ':'
+#endif
+  );
+
+  for (auto &Tool : ToolCandidates) {
+    auto GetTool = [&](const std::string &Dir) {
+      std::string ToolPath = appendPath(Dir, Tool);
+      if (llvm::sys::fs::exists(ToolPath)) {
+        return true;
+      }
+      return false;
+    };
+    auto it = std::find_if(PathDir.begin(), PathDir.end(), GetTool);
+    if (it != PathDir.end()) {
+      return Tool;
+    }
+  }
+  return "";
+}
+
+std::string GetPython() {
+  std::unordered_set<std::string> Tool = {
+#if defined(_WIN32)
+    "py.exe",
+    "python3.exe",
+    "python.exe",
+#endif
+    "python3"
+  };
+
+  return GetFirstAvailableTool(Tool);
+}
+
 } // namespace dpct
 } // namespace clang

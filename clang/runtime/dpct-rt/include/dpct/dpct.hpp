@@ -28,6 +28,8 @@ template <int Arg> class dpct_kernel_scalar;
 #include "bindless_images.hpp"
 #include "graph.hpp"
 
+#define USE_DPCT_HELPER 1
+
 #if defined(_MSC_VER)
 #define __dpct_align__(n) __declspec(align(n))
 #define __dpct_inline__ __forceinline

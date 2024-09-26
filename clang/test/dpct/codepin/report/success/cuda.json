@@ -1,6 +1,14 @@
 [
     {
+        "CodePin Random Seed": "0",
+        "CodePin Sampling Threshold": "20",
+        "CodePin Sampling Percent": "1"
+    },
+    {
         "ID": "serial123:prolog:0",
+        "Device Name": "GPU",
+        "Device ID": "0",
+        "Stream Address": "0xe4bb30",
         "Free Device Memory": "100",
         "Total Device Memory": "500",
         "Elapse Time(ms)": "0",
@@ -32,6 +40,9 @@
     },
     {
         "ID": "serial1243:epilog:0",
+        "Device Name": "GPU",
+        "Device ID": "0",
+        "Stream Address": "0xe4bb30",
         "Free Device Memory": "100",
         "Total Device Memory": "500",
         "Elapse Time(ms)": "0.5",

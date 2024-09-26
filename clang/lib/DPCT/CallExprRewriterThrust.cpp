@@ -237,7 +237,7 @@ makeCallArgVectorCreator(unsigned idx, int number) {
 inline auto makeTemplatedCallArgCreator(unsigned idx) {
   return makeCallExprCreator(
       TEMPLATED_CALLEE_WITH_ARGS(
-          MapNames::getDpctNamespace() + "device_pointer", getDerefedType(idx)),
+          MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(idx)),
       ARG(idx));
 }
 

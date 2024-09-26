@@ -35,7 +35,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedRadixSort::SortKeys",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_keys",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -49,7 +49,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedRadixSort::SortKeys",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_keys",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -63,7 +63,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedRadixSort::SortKeys",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_keys",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -73,7 +73,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                           LITERAL("true"), ARG(7)))),
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedRadixSort::SortKeys",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "segmented_sort_keys",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -88,7 +88,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                        CheckArgIsDefaultCudaStream(10))),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::SortKeys",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -100,7 +100,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::SortKeys",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -112,7 +112,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::SortKeys",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -121,7 +121,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                         ARG(7), LITERAL("false"), ARG(8)))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedRadixSort::SortKeys",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_keys",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -152,7 +152,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortKeysDescending",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_keys",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -167,7 +167,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortKeysDescending",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_keys",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -182,7 +182,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortKeysDescending",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_keys",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -193,7 +193,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedRadixSort::"
                                   "SortKeysDescending",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "segmented_sort_keys",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -209,7 +209,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::"
                                    "SortKeysDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -222,7 +222,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::"
                                    "SortKeysDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -235,7 +235,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::"
                                    "SortKeysDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -245,7 +245,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedRadixSort::"
                               "SortKeysDescending",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_keys",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -276,7 +276,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortPairs",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_pairs",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -291,7 +291,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortPairs",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_pairs",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -306,7 +306,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortPairs",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_pairs",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -316,7 +316,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                           LITERAL("true"), ARG(8)))),
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedRadixSort::SortPairs",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "segmented_sort_pairs",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -332,7 +332,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                        CheckArgIsDefaultCudaStream(12))),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::SortPairs",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -344,7 +344,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::SortPairs",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -356,7 +356,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::SortPairs",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -366,7 +366,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                         LITERAL("false"), ARG(10)))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedRadixSort::SortPairs",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -398,7 +398,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortPairsDescending",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_pairs",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -413,7 +413,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortPairsDescending",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_pairs",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -428,7 +428,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                       "cub::DeviceSegmentedRadixSort::"
                                       "SortPairsDescending",
                                       CALL(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "segmented_sort_pairs",
                                           CALL("oneapi::dpl::execution::device_"
                                                "policy",
@@ -439,7 +439,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedRadixSort::"
                                   "SortPairsDescending",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "segmented_sort_pairs",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -456,7 +456,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::"
                                    "SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -469,7 +469,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::"
                                    "SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -482,7 +482,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceSegmentedRadixSort::"
                                    "SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "segmented_sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -493,7 +493,7 @@ RewriterMap dpct::createDeviceSegmentedRadixSortRewriterMap() {
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedRadixSort::"
                               "SortPairsDescending",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),

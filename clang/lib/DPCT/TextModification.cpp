@@ -337,16 +337,29 @@ ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   repLength =
       SM.getCharacterData(SR.getEnd()) - SM.getCharacterData(SR.getBegin()) + 1;
   // try to del  "    ;" in var declare
-  auto DataAfter = SM.getCharacterData(SR.getBegin());
-  auto Data = DataAfter[repLength];
-  while (Data != ';')
-    Data = DataAfter[++repLength];
-
+  SourceLocation Loc = D->getEndLoc();
+  while (true) {
+    auto Tok = Lexer::findNextToken(
+        Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+    if (Tok.has_value()) {
+      auto Val = Tok.value();
+      Loc = Tok.value().getLocation();
+      if (Val.is(tok::TokenKind::semi)) {
+        if (Loc.isFileID()) {
+          repLength =
+              SM.getCharacterData(Loc) - SM.getCharacterData(SR.getBegin()) + 1;
+        }
+        break;
+      }
+    } else {
+      break;
+    }
+  }
   // Erase the ReplaceVarDecl from the ReplaceMap since it is going to be
   // destructed
   ReplaceMap.erase(D->getBeginLoc().getRawEncoding());
-  auto R = std::make_shared<ExtReplacement>(
-      Context.getSourceManager(), SR.getBegin(), ++repLength, T, this);
+  auto R = std::make_shared<ExtReplacement>(Context.getSourceManager(),
+                                            SR.getBegin(), repLength, T, this);
   R->setConstantFlag(getConstantFlag());
   R->setConstantOffset(getConstantOffset());
   R->setInitStr(getInitStr());
@@ -636,6 +649,7 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " dpct_type_" + getHashStrFromLoc(BeginLoc).substr(0, 6), this);
   Repl->setSYCLHeaderNeeded(false);
+  Repl->IsForCodePin = IsForCodePin;
   return Repl;
 }
 

@@ -28,7 +28,7 @@ enum RuleKind {
 };
 
 enum RulePriority { Takeover, Default, Fallback };
-enum RuleMatchMode { Partial , Full };
+enum RuleMatchMode { Partial, Full, StrictFull };
 
 struct TypeNameRule {
   std::string NewName;
@@ -89,6 +89,7 @@ public:
   struct Attributes {
     bool ReplaceCalleeNameOnly = false;
     bool HasExplicitTemplateArgs = false;
+    int NumOfTemplateArgs = -1;
   };
   struct APIRestrictCondition {
     int ArgCount = -1;
@@ -98,6 +99,7 @@ public:
     std::string In = "";
     std::string Out = "";
     RuleMatchMode MatchMode = RuleMatchMode::Partial;
+    std::string Warning = "";
     std::string CmakeSyntax = "";
     std::string RuleId = "";
     RulePriority Priority = RulePriority::Default;
@@ -108,8 +110,9 @@ public:
     PatternRewriter(const PatternRewriter &PR);
     PatternRewriter(const std::string &I, const std::string &O,
                     const std::map<std::string, PatternRewriter> &S,
-                    RuleMatchMode MatchMode, std::string RuleId,
-                    std::string CmakeSyntax, RulePriority Priority);
+                    RuleMatchMode MatchMode, std::string Warning,
+                    std::string RuleId, std::string CmakeSyntax,
+                    RulePriority Priority);
   };
 
   static std::vector<clang::tooling::UnifiedPath> RuleFiles;
@@ -117,6 +120,7 @@ public:
   std::string RuleId;
   RulePriority Priority;
   RuleMatchMode MatchMode;
+  std::string Warning;
   std::string CmakeSyntax;
   RuleKind Kind;
   std::string In;
@@ -131,10 +135,15 @@ public:
   std::map<std::string, PatternRewriter> Subrules;
   APIRestrictCondition RuleAPIRestrictCondition;
   MetaRuleObject()
-      : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial), Kind(RuleKind::API) {}
-  MetaRuleObject(std::string id, RulePriority priority, RuleKind kind, RuleMatchMode MatchMode)
-      : RuleId(id), Priority(priority), MatchMode(MatchMode), Kind(kind) {}
-  static void setRuleFiles(clang::tooling::UnifiedPath File) { RuleFiles.push_back(File); }
+      : Priority(RulePriority::Default), MatchMode(RuleMatchMode::Partial),
+        Kind(RuleKind::API) {}
+  MetaRuleObject(std::string id, RulePriority priority, RuleKind kind,
+                 RuleMatchMode MatchMode)
+      : RuleId(id), Priority(priority), MatchMode(MatchMode), Warning{Warning},
+        Kind(kind) {}
+  static void setRuleFiles(clang::tooling::UnifiedPath File) {
+    RuleFiles.push_back(File);
+  }
 };
 
 template <>
@@ -184,7 +193,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleMatchMode> {
   static void enumeration(llvm::yaml::IO &Io, RuleMatchMode &Value) {
     Io.enumCase(Value, "Partial", RuleMatchMode::Partial);
     Io.enumCase(Value, "Full", RuleMatchMode::Full);
-
+    Io.enumCase(Value, "StrictFull", RuleMatchMode::StrictFull);
   }
 };
 
@@ -222,6 +231,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Attributes", Doc->RuleAttributes);
     Io.mapOptional("Subrules", Doc->Subrules);
     Io.mapOptional("MatchMode", Doc->MatchMode);
+    Io.mapOptional("Warning", Doc->Warning);
     Io.mapOptional("APIRestrictCondition", Doc->RuleAPIRestrictCondition);
   }
 };
@@ -264,6 +274,7 @@ struct llvm::yaml::MappingTraits<MetaRuleObject::PatternRewriter> {
     Io.mapRequired("Out", Doc.Out);
     Io.mapOptional("Subrules", Doc.Subrules);
     Io.mapOptional("MatchMode", Doc.MatchMode);
+    Io.mapOptional("Warning", Doc.Warning);
     Io.mapOptional("RuleId", Doc.RuleId);
   }
 };
@@ -273,6 +284,7 @@ struct llvm::yaml::MappingTraits<MetaRuleObject::Attributes> {
   static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attributes &Doc) {
     Io.mapOptional("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
     Io.mapOptional("HasExplicitTemplateArgs", Doc.HasExplicitTemplateArgs);
+    Io.mapOptional("NumOfTemplateArgs", Doc.NumOfTemplateArgs);
   }
 };
 
@@ -339,15 +351,22 @@ public:
   std::string Str;
   std::vector<std::shared_ptr<OutputBuilder>> SubBuilders;
   void parse(std::string &);
-
-private:
+  virtual ~OutputBuilder();
+protected:
   // /OutStr is the string specified in rule's "Out" session
-  std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
+  virtual std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
                                                 size_t &Idx);
   int consumeArgIndex(std::string &OutStr, size_t &Idx, std::string &&Keyword);
   void ignoreWhitespaces(std::string &OutStr, size_t &Idx);
   void consumeRParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
   void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
+};
+
+class TypeOutputBuilder : public OutputBuilder {
+private:
+  // /OutStr is the string specified in rule's "Out" session
+  std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
+                                                size_t &Idx) override;
 };
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles);

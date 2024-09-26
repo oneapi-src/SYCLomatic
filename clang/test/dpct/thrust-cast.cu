@@ -9,12 +9,16 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <complex>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+#include <cuda_runtime.h>
 #include <thrust/complex.h>
+#include <thrust/device_free.h>
+#include <thrust/device_malloc.h>
 #include <thrust/device_ptr.h>
 #include <thrust/device_vector.h>
-#include <thrust/device_malloc.h>
-#include <thrust/device_free.h>
-#include <cuda_runtime.h>
+#include <thrust/functional.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/transform_iterator.h>
+#include <thrust/scatter.h>
 
 // CHECK: void kernel(std::complex<double> *det) {}
 __global__ void kernel(thrust::complex<double> *det) {}
@@ -54,4 +58,106 @@ void foo(thrust::device_vector<float> &vec, const int i, const int j) {
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   kernel2<<<1, 1>>>(thrust::raw_pointer_cast(vec.data()) + i * j);
+}
+
+//CHECK: /*
+//CHECK-NEXT: DPCT1044:{{[0-9]+}}: thrust::unary_function was removed because std::unary_function has been deprecated in C++11. You may need to remove references to typedefs from thrust::unary_function in the class definition.
+//CHECK-NEXT: */
+//CHECK-NEXT: struct transpose_102_index {
+//CHECK-NEXT:   const size_t m, n, p;
+//CHECK-NEXT:   transpose_102_index(size_t _m, size_t _n, size_t _p) : m(_m), n(_n), p(_p) {}
+//CHECK-NEXT:   size_t operator()(size_t linear_index) const {
+//CHECK-NEXT:     size_t i = linear_index / (n * p);
+//CHECK-NEXT:     size_t rmdr = linear_index % (n * p);
+//CHECK-NEXT:     size_t j = rmdr / p;
+//CHECK-NEXT:     size_t k = rmdr % p;
+//CHECK-NEXT:     return m * p * j + p * i + k;
+//CHECK-NEXT:   }
+//CHECK-NEXT: };
+struct transpose_102_index : public thrust::unary_function<size_t, size_t> {
+  const size_t m, n, p;
+  __host__ __device__ transpose_102_index(size_t _m, size_t _n, size_t _p) : m(_m), n(_n), p(_p) {}
+  __host__ __device__ size_t operator()(size_t linear_index) {
+    size_t i = linear_index / (n * p);
+    size_t rmdr = linear_index % (n * p);
+    size_t j = rmdr / p;
+    size_t k = rmdr % p;
+    return m * p * j + p * i + k;
+  }
+};
+
+//CHECK: /*
+//CHECK-NEXT: DPCT1044:{{[0-9]+}}: thrust::unary_function was removed because std::unary_function has been deprecated in C++11. You may need to remove references to typedefs from thrust::unary_function in the class definition.
+//CHECK-NEXT: */
+//CHECK-NEXT:struct transpose_201_index {
+//CHECK-NEXT:  const size_t m, n, p;
+//CHECK-NEXT:  transpose_201_index(size_t _m, size_t _n, size_t _p) : m(_m), n(_n), p(_p) {}
+//CHECK-NEXT:  size_t operator()(size_t linear_index) const {
+//CHECK-NEXT:    size_t i = linear_index / (n * p);
+//CHECK-NEXT:    size_t rmdr = linear_index % (n * p);
+//CHECK-NEXT:    size_t j = rmdr / p;
+//CHECK-NEXT:    size_t k = rmdr % p;
+//CHECK-NEXT:    return m * n * k + n * i + j;
+//CHECK-NEXT:  }
+//CHECK-NEXT:};
+struct transpose_201_index : public thrust::unary_function<size_t, size_t> {
+  const size_t m, n, p;
+  __host__ __device__ transpose_201_index(size_t _m, size_t _n, size_t _p) : m(_m), n(_n), p(_p) {}
+  __host__ __device__ size_t operator()(size_t linear_index) {
+    size_t i = linear_index / (n * p);
+    size_t rmdr = linear_index % (n * p);
+    size_t j = rmdr / p;
+    size_t k = rmdr % p;
+    return m * n * k + n * i + j;
+  }
+};
+
+//CHECK: /*
+//CHECK-NEXT: DPCT1044:{{[0-9]+}}: thrust::unary_function was removed because std::unary_function has been deprecated in C++11. You may need to remove references to typedefs from thrust::unary_function in the class definition.
+//CHECK-NEXT: */
+//CHECK-NEXT:struct transpose_10_index {
+//CHECK-NEXT:  const size_t m, n;
+//CHECK-NEXT:  transpose_10_index(size_t _m, size_t _n) : m(_m), n(_n) {}
+//CHECK-NEXT:  size_t operator()(size_t linear_index) const {
+//CHECK-NEXT:    size_t i = linear_index / n;
+//CHECK-NEXT:    size_t rmdr = linear_index % n;
+//CHECK-NEXT:    size_t j = rmdr;
+//CHECK-NEXT:    return j * m + i;
+//CHECK-NEXT:  }
+//CHECK-NEXT:};
+struct transpose_10_index : public thrust::unary_function<size_t, size_t> {
+  const size_t m, n;
+  __host__ __device__ transpose_10_index(size_t _m, size_t _n) : m(_m), n(_n) {}
+  __host__ __device__ size_t operator()(size_t linear_index) {
+    size_t i = linear_index / n;
+    size_t rmdr = linear_index % n;
+    size_t j = rmdr;
+    return j * m + i;
+  }
+};
+
+void transpose_102(size_t m, size_t n, size_t p, thrust::device_vector<float> &src,
+                   thrust::device_vector<float> &dst) {
+  thrust::counting_iterator<size_t> indices(0);
+  thrust::scatter(src.begin(), src.end(),
+                  thrust::make_transform_iterator(indices, transpose_102_index(m, n, p)),
+                  dst.begin());
+}
+
+void transpose_201(size_t m, size_t n, size_t p, thrust::device_vector<float> &src,
+                   thrust::device_vector<float> &dst) {
+  thrust::counting_iterator<size_t> indices(0);
+  thrust::scatter(src.begin(), src.end(),
+                  thrust::make_transform_iterator(indices, transpose_201_index(m, n, p)),
+                  dst.begin());
+}
+
+template <typename T>
+void transpose_2d(size_t m, size_t n, thrust::device_vector<T> &src, thrust::device_vector<T> &dst) {
+  static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value || std::is_same<T, __half>::value,
+                "T must be float type or integer type");
+  thrust::counting_iterator<size_t> indices(0);
+  thrust::scatter(src.begin(), src.end(),
+                  thrust::make_transform_iterator(indices, transpose_10_index(m, n)),
+                  dst.begin());
 }

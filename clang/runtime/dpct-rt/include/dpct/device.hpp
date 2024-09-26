@@ -410,6 +410,49 @@ work groups is not supported."
   out = prop;
 }
 
+/// Util function to check whether a device supports some kinds of sycl::aspect.
+inline void
+has_capability_or_fail(const sycl::device &dev,
+                       const std::initializer_list<sycl::aspect> &props) {
+  for (const auto &it : props) {
+    if (dev.has(it))
+      continue;
+    switch (it) {
+    case sycl::aspect::fp64:
+      throw std::runtime_error("'double' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    case sycl::aspect::fp16:
+      throw std::runtime_error("'half' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    default:
+#define __SYCL_ASPECT(ASPECT, ID)                                              \
+  case sycl::aspect::ASPECT:                                                   \
+    return #ASPECT;
+#define __SYCL_ASPECT_DEPRECATED(ASPECT, ID, MESSAGE) __SYCL_ASPECT(ASPECT, ID)
+#define __SYCL_ASPECT_DEPRECATED_ALIAS(ASPECT, ID, MESSAGE)
+      auto getAspectNameStr = [](sycl::aspect AspectNum) -> std::string {
+        switch (AspectNum) {
+#include <sycl/info/aspects.def>
+#include <sycl/info/aspects_deprecated.def>
+        default:
+          return "unknown aspect";
+        }
+      };
+#undef __SYCL_ASPECT_DEPRECATED_ALIAS
+#undef __SYCL_ASPECT_DEPRECATED
+#undef __SYCL_ASPECT
+      throw std::runtime_error(
+          "'" + getAspectNameStr(it) + "' is not supported in '" +
+          dev.get_info<sycl::info::device::name>() + "' device");
+    }
+    break;
+  }
+}
+
 /// dpct device extension
 class device_ext : public sycl::device {
   typedef std::mutex mutex_type;
@@ -574,6 +617,11 @@ public:
     return _saved_queue;
   }
   sycl::context get_context() const { return _ctx; }
+
+  void
+  has_capability_or_fail(const std::initializer_list<sycl::aspect> &props) {
+    ::dpct::has_capability_or_fail(*this, props);
+  }
 
 private:
   void clear_queues() {
@@ -783,42 +831,20 @@ private:
     list_devices();
 #endif
   }
-  void check_id(unsigned int &id) const {
+  void check_id(unsigned int id) const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (id >= _devs.size()) {
-      if (!_stack_addr.count(&_dev_stack)) {
-        id = DEFAULT_DEVICE_ID;
-        return;
-      }
       throw std::runtime_error("invalid device id");
     }
   }
-
-  class stack_wrapper : public std::stack<unsigned int> {
-  public:
-    stack_wrapper() {
-      std::lock_guard<std::recursive_mutex> lock(instance().m_mutex);
-      _stack_addr.insert(this);
-    }
-    ~stack_wrapper() {
-      std::lock_guard<std::recursive_mutex> lock(instance().m_mutex);
-      _stack_addr.erase(this);
-    }
-  };
-
   std::vector<std::shared_ptr<device_ext>> _devs;
   /// stack of devices resulting from CUDA context change;
-  inline static thread_local stack_wrapper _dev_stack;
+  static inline thread_local std::stack<unsigned int> _dev_stack;
   /// DEFAULT_DEVICE_ID is used, if current_device_id() finds an empty
   /// _dev_stack, which means the default device should be used for the current
   /// thread.
   const unsigned int DEFAULT_DEVICE_ID = 0;
   int _cpu_device = -1;
-  // Add address when constructing _dev_stack, and remove it when destructing.
-  // It can be used to check if _dev_stack is destructed to avoid getting
-  // garbage data after _dev_stack is destroyed when destructing global static
-  // variables.
-  inline static std::set<stack_wrapper *> _stack_addr;
 };
 
 /// Util function to get the default queue of current selected device depends on
@@ -894,49 +920,6 @@ static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
 }
 
-/// Util function to check whether a device supports some kinds of sycl::aspect.
-inline void
-has_capability_or_fail(const sycl::device &dev,
-                       const std::initializer_list<sycl::aspect> &props) {
-  for (const auto &it : props) {
-    if (dev.has(it))
-      continue;
-    switch (it) {
-    case sycl::aspect::fp64:
-      throw std::runtime_error("'double' is not supported in '" +
-                               dev.get_info<sycl::info::device::name>() +
-                               "' device");
-      break;
-    case sycl::aspect::fp16:
-      throw std::runtime_error("'half' is not supported in '" +
-                               dev.get_info<sycl::info::device::name>() +
-                               "' device");
-      break;
-    default:
-#define __SYCL_ASPECT(ASPECT, ID)                                              \
-  case sycl::aspect::ASPECT:                                                   \
-    return #ASPECT;
-#define __SYCL_ASPECT_DEPRECATED(ASPECT, ID, MESSAGE) __SYCL_ASPECT(ASPECT, ID)
-#define __SYCL_ASPECT_DEPRECATED_ALIAS(ASPECT, ID, MESSAGE)
-      auto getAspectNameStr = [](sycl::aspect AspectNum) -> std::string {
-        switch (AspectNum) {
-#include <sycl/info/aspects.def>
-#include <sycl/info/aspects_deprecated.def>
-        default:
-          return "unknown aspect";
-        }
-      };
-#undef __SYCL_ASPECT_DEPRECATED_ALIAS
-#undef __SYCL_ASPECT_DEPRECATED
-#undef __SYCL_ASPECT
-      throw std::runtime_error(
-          "'" + getAspectNameStr(it) + "' is not supported in '" +
-          dev.get_info<sycl::info::device::name>() + "' device");
-    }
-    break;
-  }
-}
-
 /// Util function to do implicit sync among queues of the same device then
 /// insert a synchronize barrier in the queue. For USM, If the queue is the
 /// default in-order queue, try to sync with all queues available in the current
@@ -977,6 +960,9 @@ static inline unsigned int pop_device_for_curr_thread(void) {
   return dev_mgr::instance().pop_device();
 }
 
+static inline unsigned int device_count() {
+  return dev_mgr::instance().device_count();
+}
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

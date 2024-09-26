@@ -11,7 +11,7 @@
 // cublasGetVectorAsync-NEXT:                        incx /*int*/, to /*void **/, incy /*int*/,
 // cublasGetVectorAsync-NEXT:                        stream /*cudaStream_t*/);
 // cublasGetVectorAsync-NEXT: Is migrated to:
-// cublasGetVectorAsync-NEXT:   dpct::blas::matrix_mem_copy(to, from, incy, incx, 1, n, elementsize, dpct::automatic, *stream, true);
+// cublasGetVectorAsync-NEXT:   dpct::blas::matrix_mem_copy(to, from, incy, incx, 1, n, elementsize, dpct::cs::memcpy_direction::automatic, *stream, true);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZsyrk | FileCheck %s -check-prefix=cublasZsyrk
 // cublasZsyrk: CUDA API:

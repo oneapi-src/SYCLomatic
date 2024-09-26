@@ -92,6 +92,36 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
   }
 
+  template <typename VecType>
+  std::shared_ptr<CallExprRewriter>
+  createbindlessRewriterLayered(const CallExpr *C, bool RetAssign,
+                                const TemplateArgumentInfo &TAI,
+                                const std::string &VecTypeName) const {
+    const static std::string FuncName =
+        MapNames::getClNamespace() +
+        "ext::oneapi::experimental::sample_image_array";
+    using FuncNamePrinter =
+        TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
+    using ReaderPrinter =
+        CallExprPrinter<FuncNamePrinter,
+                        std::pair<const CallExpr *, const Expr *>, VecType,
+                        std::pair<const CallExpr *, const Expr *>>;
+    if (RetAssign) {
+      return std::make_shared<PrinterRewriter<
+          BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
+          C, Source, DerefExpr(C->getArg(0), C),
+          ReaderPrinter(
+              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
+              VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
+              std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
+    }
+    return std::make_shared<PrinterRewriter<ReaderPrinter>>(
+        C, Source, FuncNamePrinter(FuncName, {TAI}),
+        std::make_pair(C, C->getArg(0)),
+        VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
+        std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
+  }
+
   std::shared_ptr<CallExprRewriter>
   createbindlessRewriter(const CallExpr *C, bool RetAssign,
                          QualType TargetType) const {
@@ -121,6 +151,9 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
                         decltype(std::make_pair(C, C->getArg(Idx)))...>;
     if ((TexType & 0xf0) == 0x10)
       return createbindlessRewriterLod<VecType>(C, RetAssign, TAI, VecTypeName);
+    if ((TexType & 0xf0) == 0xf0)
+      return createbindlessRewriterLayered<VecType>(C, RetAssign, TAI,
+                                                    VecTypeName);
     return createbindlessRewriterNormal<VecType>(C, RetAssign, TAI,
                                                  VecTypeName);
   }

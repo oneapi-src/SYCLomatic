@@ -12,12 +12,16 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 
+#include "ToolChains/Cuda.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/TargetParser/Host.h"
 
 #include <fstream>
 #include <string>
@@ -119,10 +123,14 @@ static void getCompileInfo(
         } else if (Obj == "-shared" || Obj == "--shared") {
           IsShareLibary = true;
         } else if (Obj == "--push-state") {
+          // Add the options "-Wl" and "--whole-archive" to pass the static
+          // archive file referenced in a .so library to the linker.
+          PushStateOptionValue = "-Wl,--push-state,--whole-archive ";
           isPushStateOption = true;
         } else if (isPushStateOption && llvm::StringRef(Obj).ends_with(".a")) {
           PushStateOptionValue += Obj + " ";
         } else if (isPushStateOption && Obj == "--pop-state") {
+          PushStateOptionValue += "-Wl,--pop-state ";
           isPushStateOption = false;
         }
       }
@@ -206,6 +214,27 @@ static void getCompileInfo(
         clang::tooling::UnifiedPath IncPath = Option;
         rewriteCanonicalDir(IncPath, InRoot, OutRoot);
 
+        unsigned MissingArgIndex, MissingArgCount;
+        MissingArgIndex = MissingArgCount = 0;
+        auto &Opts = clang::driver::getDriverOptTable();
+        llvm::opt::InputArgList ParsedArgs =
+            Opts.ParseArgs(nullptr, MissingArgIndex, MissingArgCount);
+
+        // Create minimalist CudaInstallationDetector to call the member
+        // function validateCudaHeaderDirectory()
+        DiagnosticsEngine E(nullptr, nullptr, nullptr, false);
+        clang::driver::Driver Driver("", llvm::sys::getDefaultTargetTriple(),
+                                     E);
+        clang::driver::CudaInstallationDetector CudaIncludeDetector(
+            Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
+        bool Ret = CudaIncludeDetector.validateCudaHeaderDirectory(
+            IncPath.getCanonicalPath().str(), Driver);
+        if (Ret) {
+          // Skip CUDA SDK header path specified by option "-isystem" in the
+          // auto-generated Makefile.
+          continue;
+        }
+
         NewOptions += "-isystem ";
         SmallString<512> OutDirectory(IncPath.getCanonicalPath());
         llvm::sys::path::replace_path_prefix(OutDirectory,
@@ -257,18 +286,32 @@ static void getCompileInfo(
         IsSystemInclude = true;
       } else if (llvm::StringRef(Option).starts_with("-D")) {
         // Parse macros defined.
+        bool NeedSingleQuote = false;
         std::size_t Len = Option.length() - strlen("-D");
         std::size_t Pos = Option.find("=");
         if (Pos != std::string::npos) {
+          std::string Value = Option.substr(Pos + 1, Option.length() - Pos);
+          if (Value.size() >= 2 && Value.front() == '"' &&
+              Value.back() == '"') {
+            NeedSingleQuote = true;
+          }
+
           Len = Pos - strlen("-D");
         }
         std::string MacroName = Option.substr(strlen("-D"), Len);
         auto Iter = MapNames::MacroRuleMap.find(MacroName);
-        if (Iter != MapNames::MacroRuleMap.end())
+        if (Iter != MapNames::MacroRuleMap.end()) {
           // Skip macros defined in helper function header files
           continue;
-        else
+        }
+
+        if (NeedSingleQuote) {
+          // For macros like -DMSG="message", will be migrated to '-DMSG="message"'
+          // in auto-generated Makefile.
+          NewOptions += "\'" + Option + "\' ";
+        } else {
           NewOptions += Option + " ";
+        }
       } else if (llvm::StringRef(Option).starts_with("-std=")) {
 
         size_t Idx = 0;

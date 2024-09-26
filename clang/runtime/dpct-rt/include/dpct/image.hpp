@@ -22,6 +22,11 @@ enum class image_channel_data_type {
   fp,
 };
 
+enum class image_type {
+  standard,
+  array,
+};
+
 class image_channel;
 class image_wrapper_base;
 namespace detail {
@@ -174,9 +179,9 @@ public:
   image_channel_data_type get_channel_data_type() { return _type; }
   void set_channel_data_type(image_channel_data_type type) { _type = type; }
 
-  unsigned get_total_size() { return _total_size; }
+  unsigned get_total_size() const { return _total_size; }
 
-  unsigned get_channel_num() { return _channel_num; }
+  unsigned get_channel_num() const { return _channel_num; }
   void set_channel_num(unsigned channel_num) {
     _channel_num = channel_num;
     _total_size = _channel_size * _channel_num;
@@ -323,8 +328,13 @@ class image_matrix {
 public:
   /// Constructor with channel info and dimension size info.
   template <int dimensions>
-  image_matrix(image_channel channel, sycl::range<dimensions> range)
+  image_matrix(image_channel channel, sycl::range<dimensions> range,
+               image_type type = image_type::standard)
       : _channel(channel) {
+    if (type == image_type::array && range[1] == 0) {
+      range[1] = range[2];
+      range[2] = 0;
+    }
     set_range(range);
     _host_data = std::malloc(range.size() * _channel.get_total_size());
   }
@@ -497,6 +507,9 @@ class sampling_info {
 
 public:
   sycl::addressing_mode get_addressing_mode() const noexcept {
+    // Make sure the return value is legal addressing_mode when using memset.
+    if ((unsigned)_addressing_mode == 0)
+      return sycl::addressing_mode::clamp_to_edge;
     return _addressing_mode;
   }
   void set(sycl::addressing_mode addressing_mode) noexcept {
@@ -504,7 +517,10 @@ public:
   }
 
   sycl::filtering_mode get_filtering_mode() const noexcept {
-    return _filtering_mode;
+    // Make sure the return value is legal filtering_mode when using memset.
+    return _filtering_mode == sycl::filtering_mode::linear
+               ? sycl::filtering_mode::linear
+               : sycl::filtering_mode::nearest;
   }
   void set(sycl::filtering_mode filtering_mode) noexcept {
     _filtering_mode = filtering_mode;
@@ -532,7 +548,10 @@ public:
   /// Get the method in which sampling between mipmap levels is performed.
   /// \returns The method in which sampling between mipmap levels is performed.
   sycl::filtering_mode get_mipmap_filtering() const noexcept {
-    return _mipmap_filtering;
+    // Make sure the return value is legal filtering_mode when using memset.
+    return _mipmap_filtering == sycl::filtering_mode::linear
+               ? sycl::filtering_mode::linear
+               : sycl::filtering_mode::nearest;
   }
   /// Set the method in which sampling between mipmap levels is performed.
   /// \param [in] filtering_mode The method in which sampling between mipmap
@@ -751,7 +770,10 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
   std::vector<char> _host_buffer;
 #endif
 
-  void create_image(sycl::queue q) {
+public:
+  void create_image(sycl::queue &q = get_default_queue()) {
+    if (_image)
+      return;
     auto &data = get_data();
     if (data.get_data_type() == image_data_type::matrix) {
       _image = static_cast<image_matrix_p>(data.get_data_ptr())
@@ -769,7 +791,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
       if (data.get_data_type() == image_data_type::pitch)
         sz *= channel.get_total_size() * data.get_y();
       _host_buffer.resize(sz);
-      q.memcpy(_host_buffer.data(), ptr, sz).wait();
+      q.memcpy(_host_buffer.data(), ptr, sz);
       ptr = _host_buffer.data();
 #endif
     }
@@ -791,7 +813,6 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
     return;
   }
 
-public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
       typename image_accessor_ext<T, IsImageArray ? (dimensions - 1) : dimensions,
@@ -801,9 +822,8 @@ public:
   ~image_wrapper() override { detach(); }
 
   /// Get image accessor.
-  accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {
-    if (!_image)
-      create_image(q);
+  accessor_t get_access(sycl::handler &cgh) {
+    assert(_image != nullptr && "Image not created");
     return accessor_t(*_image, cgh);
   }
 

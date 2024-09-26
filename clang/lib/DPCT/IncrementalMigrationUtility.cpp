@@ -341,6 +341,10 @@ bool printOptions(
               HelperFuncPreference::NoQueueDevice)) == Value)
         Opts.emplace_back("--helper-function-preference=no-queue-device");
     }
+    if (Key == clang::dpct::OPTION_UseSYCLCompat) {
+      if ("true" == Value)
+        Opts.emplace_back("--use-syclcompat");
+    }
   }
 
   Msg = "";

@@ -1,4 +1,4 @@
-//===--------------- ASTTraversal.h ---------------------------------------===//
+//===--------------------------- ASTTraversal.h ---------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -369,7 +369,7 @@ protected:
       }
       if (Flags.IsAssigned) {
         insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd,
-                          "DPCT_CHECK_ERROR(", ")");
+                          MapNames::getCheckErrorMacroName() + "(", ")");
         requestFeature(HelperFeatureEnum::device_ext);
       }
 
@@ -1061,7 +1061,7 @@ public:
       emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
                                             std::move(CallExprReplStr)));
       if (IsAssigned) {
-        insertAroundRange(FuncNameBegin, FuncCallEnd, "DPCT_CHECK_ERROR(", ")");
+        insertAroundRange(FuncNameBegin, FuncCallEnd, MapNames::getCheckErrorMacroName() + "(", ")");
         requestFeature(HelperFeatureEnum::device_ext);
       }
     }
@@ -1344,6 +1344,16 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
+  /// Get helper function name with namespace which has 'dpct_' in dpct helper
+  /// functions and w/o in syclcompat.
+  /// If has "_async" suffix, the name in dpct helper function will have
+  /// 'async_' prefix and remove the suffix.
+  /// If `ExperimentalInSYCLCompat` is true, will add `experimental` namespace
+  /// in syclcompat.
+  static std::string
+  getMemoryHelperFunctionName(StringRef RawName,
+                              bool ExperimentalInSYCLCompat = false);
+
 private:
   void mallocMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                        const CallExpr *C,
@@ -1412,7 +1422,7 @@ private:
   std::string getTypeStrRemovedAddrOf(const Expr *E, bool isCOCE = false);
   std::string getAssignedStr(const Expr *E, const std::string &Arg0Str);
   void mallocArrayMigration(const CallExpr *C, const std::string &Name,
-                            size_t FlagIndex, SourceManager &SM);
+                            const std::string &Flag, SourceManager &SM);
   void mallocMigrationWithTransformation(SourceManager &SM, const CallExpr *C,
                                          const std::string &CallName,
                                          std::string &&ReplaceName,
@@ -1795,6 +1805,12 @@ public:
 };
 
 class AssertRule : public NamedMigrationRule<AssertRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

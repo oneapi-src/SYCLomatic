@@ -8,30 +8,30 @@
 
 // thrust::replace_copy_if
 thrustFactory("thrust::replace_copy_if",
-              {{7,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::device_ext       },
+              {{7,PolicyState::HasPolicy,4,MapNames::getLibraryHelperNamespace()+"replace_copy_if", HelperFeatureEnum::device_ext       },
                {6,PolicyState::HasPolicy,3,"oneapi::dpl::replace_copy_if",                 HelperFeatureEnum::none},
-               {6,PolicyState::NoPolicy ,4,MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::device_ext       },
+               {6,PolicyState::NoPolicy ,4,MapNames::getLibraryHelperNamespace()+"replace_copy_if", HelperFeatureEnum::device_ext       },
                {5,PolicyState::NoPolicy ,3,"oneapi::dpl::replace_copy_if",                 HelperFeatureEnum::none}}),
 
 // thrust::replace_if
 thrustFactory("thrust::replace_if",
-              {{6,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::device_ext       },
+              {{6,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace()+"replace_if", HelperFeatureEnum::device_ext       },
                {5,PolicyState::HasPolicy,2,"oneapi::dpl::replace_if",                 HelperFeatureEnum::none},
-               {5,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::device_ext       },
+               {5,PolicyState::NoPolicy ,3,MapNames::getLibraryHelperNamespace()+"replace_if", HelperFeatureEnum::device_ext       },
                {4,PolicyState::NoPolicy ,2,"oneapi::dpl::replace_if",                 HelperFeatureEnum::none}}),
 
 // thrust::remove_copy_if
 thrustFactory("thrust::remove_copy_if",
-              {{6,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::device_ext       },
+              {{6,PolicyState::HasPolicy,4,MapNames::getLibraryHelperNamespace()+"remove_copy_if", HelperFeatureEnum::device_ext       },
                {5,PolicyState::HasPolicy,3,"oneapi::dpl::remove_copy_if",                 HelperFeatureEnum::none},
-               {5,PolicyState::NoPolicy ,4,MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::device_ext       },
+               {5,PolicyState::NoPolicy ,4,MapNames::getLibraryHelperNamespace()+"remove_copy_if", HelperFeatureEnum::device_ext       },
                {4,PolicyState::NoPolicy ,3,"oneapi::dpl::remove_copy_if",                 HelperFeatureEnum::none}}),
 
 // thrust::remove_if
 thrustFactory("thrust::remove_if",
-              {{5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::device_ext       },
+              {{5,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace()+"remove_if", HelperFeatureEnum::device_ext       },
                {4,PolicyState::HasPolicy,2,"oneapi::dpl::remove_if",                 HelperFeatureEnum::none},
-               {4,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::device_ext       },
+               {4,PolicyState::NoPolicy ,3,MapNames::getLibraryHelperNamespace()+"remove_if", HelperFeatureEnum::device_ext       },
                {3,PolicyState::NoPolicy ,2,"oneapi::dpl::remove_if",                 HelperFeatureEnum::none}}),
 
 // thrust::not1
@@ -91,17 +91,17 @@ thrustFactory("thrust::mismatch",
 
 // thrust::gather_if
 thrustFactory("thrust::gather_if",
-              {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext},
-               {5,PolicyState::NoPolicy ,5,MapNames::getDpctNamespace()+"gather_if", HelperFeatureEnum::device_ext}}),
+              {{7,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace()+"gather_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy ,5,MapNames::getLibraryHelperNamespace()+"gather_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace()+"gather_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy ,5,MapNames::getLibraryHelperNamespace()+"gather_if", HelperFeatureEnum::device_ext}}),
 
 // thrust::merge_by_key
 thrustFactory("thrust::merge_by_key",
-              {{10,PolicyState::HasPolicy,8,MapNames::getDpctNamespace()+"merge", HelperFeatureEnum::device_ext},
-               { 9,PolicyState::HasPolicy,8,MapNames::getDpctNamespace()+"merge", HelperFeatureEnum::device_ext},
-               { 9,PolicyState::NoPolicy ,8,MapNames::getDpctNamespace()+"merge", HelperFeatureEnum::device_ext},
-               { 8,PolicyState::NoPolicy ,8,MapNames::getDpctNamespace()+"merge", HelperFeatureEnum::device_ext}}),
+              {{10,PolicyState::HasPolicy,8,MapNames::getLibraryHelperNamespace()+"merge", HelperFeatureEnum::device_ext},
+               { 9,PolicyState::HasPolicy,8,MapNames::getLibraryHelperNamespace()+"merge", HelperFeatureEnum::device_ext},
+               { 9,PolicyState::NoPolicy ,8,MapNames::getLibraryHelperNamespace()+"merge", HelperFeatureEnum::device_ext},
+               { 8,PolicyState::NoPolicy ,8,MapNames::getLibraryHelperNamespace()+"merge", HelperFeatureEnum::device_ext}}),
 
 // thrust::inclusive_scan
 thrustFactory("thrust::inclusive_scan",
@@ -112,30 +112,30 @@ thrustFactory("thrust::inclusive_scan",
 
 // thrust::gather
 thrustFactory("thrust::gather",
-              {{5,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"gather", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy ,4,MapNames::getDpctNamespace()+"gather", HelperFeatureEnum::device_ext}}),
+              {{5,PolicyState::HasPolicy,4,MapNames::getLibraryHelperNamespace()+"gather", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy ,4,MapNames::getLibraryHelperNamespace()+"gather", HelperFeatureEnum::device_ext}}),
 
 // thrust::scatter
 thrustFactory("thrust::scatter",
-              {{5,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"scatter", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy ,4,MapNames::getDpctNamespace()+"scatter", HelperFeatureEnum::device_ext}}),
+              {{5,PolicyState::HasPolicy,4,MapNames::getLibraryHelperNamespace()+"scatter", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy ,4,MapNames::getLibraryHelperNamespace()+"scatter", HelperFeatureEnum::device_ext}}),
 
 // thrust::transform_if
 thrustFactory("thrust::transform_if",
-              {{6,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::device_ext},
-               {5,PolicyState::NoPolicy,3,MapNames::getDpctNamespace()+"transform_if",  HelperFeatureEnum::device_ext},
-               {7,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy,4,MapNames::getDpctNamespace()+"transform_if",  HelperFeatureEnum::device_ext},
-               {8,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::device_ext},
-               {7,PolicyState::NoPolicy,4,MapNames::getDpctNamespace()+"transform_if",  HelperFeatureEnum::device_ext}}),
+              {{6,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace()+"transform_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy,3,MapNames::getLibraryHelperNamespace()+"transform_if",  HelperFeatureEnum::device_ext},
+               {7,PolicyState::HasPolicy,4,MapNames::getLibraryHelperNamespace()+"transform_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy,4,MapNames::getLibraryHelperNamespace()+"transform_if",  HelperFeatureEnum::device_ext},
+               {8,PolicyState::HasPolicy,4,MapNames::getLibraryHelperNamespace()+"transform_if", HelperFeatureEnum::device_ext},
+               {7,PolicyState::NoPolicy,4,MapNames::getLibraryHelperNamespace()+"transform_if",  HelperFeatureEnum::device_ext}}),
 
 
 // thrust::// thrust::unique_by_key_copy
 thrustFactory("thrust::unique_by_key_copy",
-              {{6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"unique_copy", HelperFeatureEnum::device_ext},
-               {5,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"unique_copy", HelperFeatureEnum::device_ext},
-               {7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"unique_copy", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"unique_copy", HelperFeatureEnum::device_ext}}),
+              {{6,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace()+"unique_copy", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy, 5,MapNames::getLibraryHelperNamespace()+"unique_copy", HelperFeatureEnum::device_ext},
+               {7,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace()+"unique_copy", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy, 5,MapNames::getLibraryHelperNamespace()+"unique_copy", HelperFeatureEnum::device_ext}}),
 
 
 // As the order of the last three parameters are changed in the mapping api, so just keep it.
@@ -174,10 +174,10 @@ CALL_FACTORY_ENTRY("thrust::make_pair",  CALL("std::make_pair",  ARG(0), ARG(1))
 
 // thrust::stable_sort_by_key
 thrustFactory("thrust::stable_sort_by_key",
-              {{5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace() + "stable_sort", HelperFeatureEnum::device_ext},
-               {4,PolicyState::HasPolicy,3,MapNames::getDpctNamespace() + "stable_sort", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace() + "stable_sort", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace() + "stable_sort", HelperFeatureEnum::device_ext}}),
+              {{5,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace() + "stable_sort", HelperFeatureEnum::device_ext},
+               {4,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace() + "stable_sort", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy ,3,MapNames::getLibraryHelperNamespace() + "stable_sort", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy ,3,MapNames::getLibraryHelperNamespace() + "stable_sort", HelperFeatureEnum::device_ext}}),
 
 
 // thrust::find
@@ -187,17 +187,17 @@ thrustFactory("thrust::find",
 
 // thrust::sort_by_key
 thrustFactory("thrust::sort_by_key",
-              {{5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace() + "sort", HelperFeatureEnum::device_ext},
-               {4,PolicyState::HasPolicy,3,MapNames::getDpctNamespace() + "sort", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace() + "sort", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace() + "sort", HelperFeatureEnum::device_ext}}),
+              {{5,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace() + "sort", HelperFeatureEnum::device_ext},
+               {4,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace() + "sort", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy ,3,MapNames::getLibraryHelperNamespace() + "sort", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy ,3,MapNames::getLibraryHelperNamespace() + "sort", HelperFeatureEnum::device_ext}}),
 
 // thrust::inner_product
 thrustFactory("thrust::inner_product",
-              {{5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::device_ext},
-               {7,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::device_ext}}),
+              {{5,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace()+"inner_product", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy, 3,MapNames::getLibraryHelperNamespace()+"inner_product", HelperFeatureEnum::device_ext},
+               {7,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace()+"inner_product", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy, 3,MapNames::getLibraryHelperNamespace()+"inner_product", HelperFeatureEnum::device_ext}}),
 
 
 // thrust::reduce_by_key
@@ -288,8 +288,8 @@ CONDITIONAL_FACTORY_ENTRY(
 thrustFactory("thrust::copy_if",
               {{5,PolicyState::HasPolicy,3,"std::copy_if", HelperFeatureEnum::none },
                {4,PolicyState::NoPolicy, 3,"std::copy_if", HelperFeatureEnum::none },
-               {6,PolicyState::HasPolicy,4, MapNames::getDpctNamespace() + "copy_if", HelperFeatureEnum::device_ext},
-               {5,PolicyState::NoPolicy ,4, MapNames::getDpctNamespace() + "copy_if", HelperFeatureEnum::device_ext}}),
+               {6,PolicyState::HasPolicy,4, MapNames::getLibraryHelperNamespace() + "copy_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy ,4, MapNames::getLibraryHelperNamespace() + "copy_if", HelperFeatureEnum::device_ext}}),
 
 // thrust::make_zip_iterator
 CALL_FACTORY_ENTRY("thrust::make_zip_iterator",  CALL("oneapi::dpl::make_zip_iterator",  ARG(0)))
@@ -388,10 +388,10 @@ CALL_FACTORY_ENTRY(
 
 // thrust::unique_by_key
 thrustFactory("thrust::unique_by_key",
-              {{4,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"unique", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace()+"unique", HelperFeatureEnum::device_ext},
-               {5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"unique", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace()+"unique", HelperFeatureEnum::device_ext}}),
+              {{4,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace()+"unique", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 3,MapNames::getLibraryHelperNamespace()+"unique", HelperFeatureEnum::device_ext},
+               {5,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace()+"unique", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy, 3,MapNames::getLibraryHelperNamespace()+"unique", HelperFeatureEnum::device_ext}}),
 
 // thrust::log10
 CALL_FACTORY_ENTRY("thrust::log10", CALL("std::log10", ARG(0)))
@@ -462,7 +462,7 @@ CALL_FACTORY_ENTRY("thrust::make_permutation_iterator",
 // thrust::make_transform_iterator
 CALL_FACTORY_ENTRY("thrust::make_transform_iterator",
                    CALL("oneapi::dpl::make_transform_iterator", ARG(0),
-                        ARG(1)))
+                        THRUST_FUNCTOR(1)))
 
 // thrust::norm
 CALL_FACTORY_ENTRY("thrust::norm", CALL("std::norm", ARG(0)))
@@ -475,7 +475,7 @@ CALL_FACTORY_ENTRY("thrust::proj", CALL("std::proj", ARG(0)))
 
 // thrust::raw_reference_cast
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-CALL_FACTORY_ENTRY("thrust::raw_reference_cast", CALL(MapNames::getDpctNamespace() + "get_raw_reference", ARG(0))))
+CALL_FACTORY_ENTRY("thrust::raw_reference_cast", CALL(MapNames::getLibraryHelperNamespace() + "get_raw_reference", ARG(0))))
 
 // thrust::minmax_element
 thrustFactory("thrust::minmax_element",
@@ -495,8 +495,8 @@ thrustFactory("thrust::is_sorted",
 thrustFactory("thrust::partition",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::partition", HelperFeatureEnum::none},
                {3,PolicyState::NoPolicy, 2,"oneapi::dpl::partition", HelperFeatureEnum::none},
-               {5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace() + "partition", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace() + "partition", HelperFeatureEnum::device_ext}}),
+               {5,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace() + "partition", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy, 3,MapNames::getLibraryHelperNamespace() + "partition", HelperFeatureEnum::device_ext}}),
 
 
 // thrust::unique_copy
@@ -515,10 +515,10 @@ thrustFactory("thrust::stable_sort",
 
 // thrust::set_difference_by_key
 thrustFactory("thrust::set_difference_by_key",
-              {{ 9,PolicyState::HasPolicy,8,MapNames::getDpctNamespace()+"set_difference", HelperFeatureEnum::device_ext},
-               { 8,PolicyState::NoPolicy, 8,MapNames::getDpctNamespace()+"set_difference", HelperFeatureEnum::device_ext},
-               {10,PolicyState::HasPolicy,8,MapNames::getDpctNamespace()+"set_difference", HelperFeatureEnum::device_ext},
-               { 9,PolicyState::NoPolicy, 8,MapNames::getDpctNamespace()+"set_difference", HelperFeatureEnum::device_ext}}),
+              {{ 9,PolicyState::HasPolicy,8,MapNames::getLibraryHelperNamespace()+"set_difference", HelperFeatureEnum::device_ext},
+               { 8,PolicyState::NoPolicy, 8,MapNames::getLibraryHelperNamespace()+"set_difference", HelperFeatureEnum::device_ext},
+               {10,PolicyState::HasPolicy,8,MapNames::getLibraryHelperNamespace()+"set_difference", HelperFeatureEnum::device_ext},
+               { 9,PolicyState::NoPolicy, 8,MapNames::getLibraryHelperNamespace()+"set_difference", HelperFeatureEnum::device_ext}}),
 
 // thrust::set_difference
 thrustFactory("thrust::set_difference",
@@ -548,9 +548,9 @@ CONDITIONAL_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
                           CALL("oneapi::dpl::transform_exclusive_scan",
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
                                 ARG(5), ARG(6), ARG(4)))),
       CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
                         CALL("oneapi::dpl::transform_exclusive_scan",
@@ -574,9 +574,9 @@ CONDITIONAL_FACTORY_ENTRY(
           CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
                             CALL("oneapi::dpl::transform_exclusive_scan",
                                   CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
                                   ARG(4), ARG(5), ARG(3)))),
         CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
                           CALL("oneapi::dpl::transform_exclusive_scan",
@@ -611,9 +611,9 @@ CONDITIONAL_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
                           CALL("oneapi::dpl::transform_inclusive_scan",
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
                                 ARG(5), ARG(4)))),
       CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
                         CALL("oneapi::dpl::transform_inclusive_scan",
@@ -637,9 +637,9 @@ CONDITIONAL_FACTORY_ENTRY(
           CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
                             CALL("oneapi::dpl::transform_inclusive_scan",
                                   CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
                                   ARG(4), ARG(3)))),
         CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
                           CALL("oneapi::dpl::transform_inclusive_scan",
@@ -662,8 +662,8 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::tabulate
 thrustFactory("thrust::tabulate",
-              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace() + "for_each_index", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace() + "for_each_index", HelperFeatureEnum::device_ext}}),
+              {{4,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace() + "for_each_index", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace() + "for_each_index", HelperFeatureEnum::device_ext}}),
 
 
 
@@ -681,7 +681,7 @@ CONDITIONAL_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("thrust::for_each_n",
                           CALL("oneapi::dpl::for_each_n",
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
                                 ARG(2), THRUST_FUNCTOR(3)))),
       CALL_FACTORY_ENTRY("thrust::for_each_n",
                         CALL("oneapi::dpl::for_each_n",
@@ -705,7 +705,7 @@ CONDITIONAL_FACTORY_ENTRY(
           CALL_FACTORY_ENTRY("thrust::for_each_n",
                             CALL("oneapi::dpl::for_each_n",
                                   CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
                                   ARG(1), THRUST_FUNCTOR(2)))),
         CALL_FACTORY_ENTRY("thrust::for_each_n",
                           CALL("oneapi::dpl::for_each_n",
@@ -728,10 +728,10 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::set_intersection_by_key
 thrustFactory("thrust::set_intersection_by_key",
-              {{8,PolicyState::HasPolicy,7,MapNames::getDpctNamespace()+"set_intersection", HelperFeatureEnum::device_ext},
-               {7,PolicyState::NoPolicy, 7,MapNames::getDpctNamespace()+"set_intersection", HelperFeatureEnum::device_ext},
-               {9,PolicyState::HasPolicy,7,MapNames::getDpctNamespace()+"set_intersection", HelperFeatureEnum::device_ext},
-               {8,PolicyState::NoPolicy, 7,MapNames::getDpctNamespace()+"set_intersection", HelperFeatureEnum::device_ext}}),
+              {{8,PolicyState::HasPolicy,7,MapNames::getLibraryHelperNamespace()+"set_intersection", HelperFeatureEnum::device_ext},
+               {7,PolicyState::NoPolicy, 7,MapNames::getLibraryHelperNamespace()+"set_intersection", HelperFeatureEnum::device_ext},
+               {9,PolicyState::HasPolicy,7,MapNames::getLibraryHelperNamespace()+"set_intersection", HelperFeatureEnum::device_ext},
+               {8,PolicyState::NoPolicy, 7,MapNames::getLibraryHelperNamespace()+"set_intersection", HelperFeatureEnum::device_ext}}),
 
 
 
@@ -739,16 +739,16 @@ thrustFactory("thrust::set_intersection_by_key",
 thrustFactory("thrust::partition_copy",
               {{6,PolicyState::HasPolicy,4,"oneapi::dpl::partition_copy", HelperFeatureEnum::none},
                {5,PolicyState::NoPolicy, 4,"oneapi::dpl::partition_copy", HelperFeatureEnum::none},
-               {7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace() + "partition_copy", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace() + "partition_copy", HelperFeatureEnum::device_ext}}),
+               {7,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace() + "partition_copy", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy, 5,MapNames::getLibraryHelperNamespace() + "partition_copy", HelperFeatureEnum::device_ext}}),
 
 
 // thrust::stable_partition_copy
 thrustFactory("thrust::stable_partition_copy",
-              {{6,PolicyState::HasPolicy,4,MapNames::getDpctNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext},
-               {5,PolicyState::NoPolicy, 4,MapNames::getDpctNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext},
-               {7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext}}),
+              {{6,PolicyState::HasPolicy,4,MapNames::getLibraryHelperNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy, 4,MapNames::getLibraryHelperNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext},
+               {7,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy, 5,MapNames::getLibraryHelperNamespace() + "stable_partition_copy", HelperFeatureEnum::device_ext}}),
 
 
 
@@ -756,8 +756,8 @@ thrustFactory("thrust::stable_partition_copy",
 thrustFactory("thrust::stable_partition",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::stable_partition", HelperFeatureEnum::none},
                {3,PolicyState::NoPolicy, 2,"oneapi::dpl::stable_partition", HelperFeatureEnum::none},
-               {5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace() + "stable_partition", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace() + "stable_partition", HelperFeatureEnum::device_ext}}),
+               {5,PolicyState::HasPolicy,3,MapNames::getLibraryHelperNamespace() + "stable_partition", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy, 3,MapNames::getLibraryHelperNamespace() + "stable_partition", HelperFeatureEnum::device_ext}}),
 
 // thrust::remove
 thrustFactory("thrust::remove",
@@ -784,9 +784,9 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL_FACTORY_ENTRY("thrust::copy_n",
                             CALL("std::copy_n",
                                   CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
                                   ARG(1),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
             CALL_FACTORY_ENTRY("thrust::copy_n",
                           CALL("std::copy_n",
                                 ARG("oneapi::dpl::execution::seq"),
@@ -813,9 +813,9 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL_FACTORY_ENTRY("thrust::copy_n",
                             CALL("std::copy_n",
                                   CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
                                   ARG(2),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
             CALL_FACTORY_ENTRY("thrust::copy_n",
                           CALL("std::copy_n",
                                 ARG("oneapi::dpl::execution::seq"),
@@ -860,31 +860,31 @@ CALL_FACTORY_ENTRY("thrust::advance", CALL("std::advance", ARG(0), ARG(1)))
 
 // thrust::make_transform_output_iterator
 CALL_FACTORY_ENTRY("thrust::make_transform_output_iterator",
-                   CALL(MapNames::getDpctNamespace() + "make_transform_output_iterator",
+                   CALL(MapNames::getLibraryHelperNamespace() + "make_transform_output_iterator",
                    ARG(0), ARG(1)))
 
 // thrust::equal_range
 thrustFactory("thrust::equal_range",
-              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
-               {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
-               {4,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext}}),
+              {{4,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace()+"equal_range", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace()+"equal_range", HelperFeatureEnum::device_ext},
+               {5,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace()+"equal_range", HelperFeatureEnum::device_ext},
+               {4,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace()+"equal_range", HelperFeatureEnum::device_ext}}),
 
 // thrust::unique_count
 thrustFactory("thrust::unique_count",
-              {{3,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
-               {2,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
-               {4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"unique_count", HelperFeatureEnum::device_ext}}),
+              {{3,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {2,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {4,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace()+"unique_count", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace()+"unique_count", HelperFeatureEnum::device_ext}}),
 
 // thrust::sequence
 thrustFactory("thrust::sequence",
-              {{3,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext},
-               {2,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext},
-               {4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext},
-               {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::device_ext}}),
+              {{3,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace()+"iota", HelperFeatureEnum::device_ext},
+               {2,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace()+"iota", HelperFeatureEnum::device_ext},
+               {4,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace()+"iota", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace()+"iota", HelperFeatureEnum::device_ext},
+               {5,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace()+"iota", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace()+"iota", HelperFeatureEnum::device_ext}}),
 
 // thrust::sort
 thrustFactory("thrust::sort",
@@ -904,15 +904,15 @@ thrustFactory("thrust::reduce",
 
 // thrust::device_free
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getDpctNamespace() + "free_device", ARG(0))))
+CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getLibraryHelperNamespace() + "free_device", ARG(0))))
 
 
 // thrust::device_malloc
-// CALL_FACTORY_ENTRY("thrust::device_malloc", CALL(MapNames::getDpctNamespace() + "device_malloc", ARG(0)))
+// CALL_FACTORY_ENTRY("thrust::device_malloc", CALL(MapNames::getLibraryHelperNamespace() + "device_malloc", ARG(0)))
 
 // thrust::raw_pointer_cast
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getDpctNamespace() + "get_raw_pointer", ARG(0))))
+CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getLibraryHelperNamespace() + "get_raw_pointer", ARG(0))))
 
 // thrust::count_if
 thrustFactory("thrust::count_if",
@@ -931,8 +931,8 @@ thrustFactory("thrust::fill_n",
 
 // thrust::partition_point
 thrustFactory("thrust::partition_point",
-              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::device_ext},
-               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::device_ext}}),
+              {{4,PolicyState::HasPolicy,2,MapNames::getLibraryHelperNamespace() + "partition_point", HelperFeatureEnum::device_ext},
+               {3,PolicyState::NoPolicy, 2,MapNames::getLibraryHelperNamespace() + "partition_point", HelperFeatureEnum::device_ext}}),
 
 // thrust::binary_search
 thrustFactory("thrust::binary_search",
@@ -1020,18 +1020,18 @@ CALL_FACTORY_ENTRY("thrust::make_discard_iterator", CALL("oneapi::dpl::discard_i
 
 // thrust::make_constant_iterator
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-CALL_FACTORY_ENTRY("thrust::make_constant_iterator", CALL(MapNames::getDpctNamespace() + "make_constant_iterator", ARG(0))))
+CALL_FACTORY_ENTRY("thrust::make_constant_iterator", CALL(MapNames::getLibraryHelperNamespace() + "make_constant_iterator", ARG(0))))
 
 // thrust::make_counting_iterator
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNamespace() + "make_counting_iterator", ARG(0))))
+CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getLibraryHelperNamespace() + "make_counting_iterator", ARG(0))))
 
 // thrust::scatter_if
 thrustFactory("thrust::scatter_if",
-              {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
-               {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
-               {5,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
+              {{7,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::NoPolicy, 5,MapNames::getLibraryHelperNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
+               {6,PolicyState::HasPolicy,5,MapNames::getLibraryHelperNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
+               {5,PolicyState::NoPolicy, 5,MapNames::getLibraryHelperNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
 
 // thrust::uninitialized_copy(
 thrustFactory("thrust::uninitialized_copy",
@@ -1052,9 +1052,9 @@ CONDITIONAL_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
                           CALL("oneapi::dpl::uninitialized_copy_n",
                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                               CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                               CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
                                ARG(2),
-                               CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
+                               CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
       CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
                         CALL("oneapi::dpl::uninitialized_copy_n",
                              ARG("oneapi::dpl::execution::seq"),
@@ -1077,9 +1077,9 @@ CONDITIONAL_FACTORY_ENTRY(
           CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
                             CALL("oneapi::dpl::uninitialized_copy_n",
                                   CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
                                   ARG(1),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getLibraryHelperNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
         CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
                           CALL("oneapi::dpl::uninitialized_copy_n",
                                 ARG("oneapi::dpl::execution::seq"),
@@ -1145,10 +1145,10 @@ thrustFactory("thrust::set_symmetric_difference",
 
 // thrust::set_symmetric_difference_by_key
 thrustFactory("thrust::set_symmetric_difference_by_key",
-              {{ 9, PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
-               { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
-               { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
-               { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext}}),
+              {{ 9, PolicyState::HasPolicy,8, MapNames::getLibraryHelperNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 8, PolicyState::NoPolicy, 8, MapNames::getLibraryHelperNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 10,PolicyState::HasPolicy,8, MapNames::getLibraryHelperNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 9, PolicyState::NoPolicy, 8, MapNames::getLibraryHelperNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext}}),
 
 // thrust::set_union
 thrustFactory("thrust::set_union",
@@ -1160,10 +1160,10 @@ thrustFactory("thrust::set_union",
 
 // thrust::set_union_by_key
 thrustFactory("thrust::set_union_by_key",
-              {{ 9, PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
-               { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
-               { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
-               { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext}}),
+              {{ 9, PolicyState::HasPolicy,8, MapNames::getLibraryHelperNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 8, PolicyState::NoPolicy, 8, MapNames::getLibraryHelperNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 10,PolicyState::HasPolicy,8, MapNames::getLibraryHelperNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 9, PolicyState::NoPolicy, 8, MapNames::getLibraryHelperNamespace() + "set_union", HelperFeatureEnum::device_ext}}),
 
 // thrust::swap_ranges
 thrustFactory("thrust::swap_ranges",
@@ -1192,4 +1192,4 @@ CALL_FACTORY_ENTRY("thrust::tie", CALL("std::tie",ARG(0), ARG(1)))
 CALL_FACTORY_ENTRY("thrust::make_tuple", CALL("std::make_tuple",ARG(0), ARG(1)))
 
 // thrust::return_temporary_buffer
-CALL_FACTORY_ENTRY("thrust::return_temporary_buffer", CALL(MapNames::getDpctNamespace() + "release_temporary_allocation",ARG(0), ARG(1)))
+CALL_FACTORY_ENTRY("thrust::return_temporary_buffer", CALL(MapNames::getLibraryHelperNamespace() + "release_temporary_allocation",ARG(0), ARG(1)))

@@ -61,7 +61,7 @@ public:
       : _data(data), _pitch(pitch), _x(x), _y(y) {}
 
   void *get_data_ptr() { return _data; }
-  void set_data_ptr(void *data) { _data = data; }
+  void set_data_ptr(const void *data) { _data = const_cast<void *>(data); }
 
   size_t get_pitch() { return _pitch; }
   void set_pitch(size_t pitch) { _pitch = pitch; }
@@ -82,14 +82,24 @@ namespace experimental {
 class image_mem_wrapper;
 namespace detail {
 static sycl::event dpct_memcpy(const image_mem_wrapper *src,
-                               const sycl::id<3> &src_id, pitched_data &dest,
-                               const sycl::id<3> &dest_id,
-                               const sycl::range<3> &copy_extend,
-                               sycl::queue q);
+                               const sycl::id<3> &src_id,
+                               const size_t src_x_offest_byte,
+                               pitched_data &dest, const sycl::id<3> &dest_id,
+                               const size_t dest_x_offest_byte,
+                               const sycl::range<3> &size,
+                               const size_t copy_x_size_byte, sycl::queue q);
 static sycl::event
 dpct_memcpy(const pitched_data src, const sycl::id<3> &src_id,
-            image_mem_wrapper *dest, const sycl::id<3> &dest_id,
-            const sycl::range<3> &copy_extend, sycl::queue q);
+            const size_t src_x_offest_byte, image_mem_wrapper *dest,
+            const sycl::id<3> &dest_id, const size_t dest_x_offest_byte,
+            const sycl::range<3> &size, const size_t copy_x_size_byte,
+            sycl::queue q);
+static sycl::event
+dpct_memcpy(const image_mem_wrapper *src, const sycl::id<3> &src_id,
+            const size_t src_x_offest_byte, image_mem_wrapper *dest,
+            const sycl::id<3> &dest_id, const size_t dest_x_offest_byte,
+            const sycl::range<3> &size, const size_t copy_x_size_byte,
+            sycl::queue q);
 } // namespace detail
 } // namespace experimental
 #endif
@@ -103,6 +113,7 @@ struct memcpy_parameter {
   struct data_wrapper {
     pitched_data pitched{};
     sycl::id<3> pos{};
+    size_t pos_x_in_bytes{0};
     int dev_id{0};
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
     experimental::image_mem_wrapper *image_bindless{nullptr};
@@ -112,6 +123,7 @@ struct memcpy_parameter {
   data_wrapper from{};
   data_wrapper to{};
   sycl::range<3> size{};
+  size_t size_x_in_bytes{0};
   memcpy_direction direction{memcpy_direction::automatic};
 };
 
@@ -731,27 +743,35 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
 #ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
   if (param.to.image_bindless != nullptr &&
       param.from.image_bindless != nullptr) {
-    // TODO: Need change logic when sycl support image_mem to image_mem copy.
-    std::vector<sycl::event> event_list;
-    host_buffer buf(param.size.size(), q, event_list);
-    to.set_data_ptr(buf.get_ptr());
-    experimental::detail::dpct_memcpy(param.from.image_bindless, param.from.pos,
-                                      to, sycl::id<3>(0, 0, 0), param.size, q);
-    from.set_data_ptr(buf.get_ptr());
-    event_list.push_back(experimental::detail::dpct_memcpy(
-        from, sycl::id<3>(0, 0, 0), param.to.image_bindless, param.to.pos,
-        param.size, q));
-    return event_list;
+    return {experimental::detail::dpct_memcpy(
+        param.from.image_bindless, param.from.pos, param.from.pos_x_in_bytes,
+        param.to.image_bindless, param.to.pos, param.to.pos_x_in_bytes,
+        param.size, param.size_x_in_bytes, q)};
   } else if (param.to.image_bindless != nullptr) {
-    return {experimental::detail::dpct_memcpy(from, param.from.pos,
-                                              param.to.image_bindless,
-                                              param.to.pos, param.size, q)};
+    return {experimental::detail::dpct_memcpy(
+        from, param.from.pos, param.from.pos_x_in_bytes,
+        param.to.image_bindless, param.to.pos, param.to.pos_x_in_bytes,
+        param.size, param.size_x_in_bytes, q)};
   } else if (param.from.image_bindless != nullptr) {
-    return {experimental::detail::dpct_memcpy(param.from.image_bindless,
-                                              param.from.pos, to, param.to.pos,
-                                              param.size, q)};
+    return {experimental::detail::dpct_memcpy(
+        param.from.image_bindless, param.from.pos, param.from.pos_x_in_bytes,
+        to, param.to.pos, param.to.pos_x_in_bytes, param.size,
+        param.size_x_in_bytes, q)};
   }
 #endif
+  auto size = param.size;
+  auto to_pos = param.to.pos;
+  auto from_pos = param.from.pos;
+  // If the src and dest are not bindless image, the x can be set to XInByte.
+  if (param.size_x_in_bytes != 0) {
+    size[0] = param.size_x_in_bytes;
+  }
+  if (param.to.pos_x_in_bytes != 0) {
+    to_pos[0] = param.to.pos_x_in_bytes;
+  }
+  if (param.from.pos_x_in_bytes != 0) {
+    from_pos[0] = param.from.pos_x_in_bytes;
+  }
   if (param.to.image != nullptr) {
     to = to_pitched_data(param.to.image);
   }
@@ -760,10 +780,9 @@ dpct_memcpy(sycl::queue &q, const memcpy_parameter &param) {
   }
   if (deduce_memcpy_direction(q, to.get_data_ptr(), from.get_data_ptr(),
                               param.direction) == device_to_device)
-    return dpct_memcpy(q, to, param.to.pos, param.to.dev_id, from,
-                       param.from.pos, param.from.dev_id, param.size);
-  return dpct_memcpy(q, to, param.to.pos, from, param.from.pos, param.size,
-                     param.direction);
+    return dpct_memcpy(q, to, to_pos, param.to.dev_id, from, from_pos,
+                       param.from.dev_id, size);
+  return dpct_memcpy(q, to, to_pos, from, from_pos, size, param.direction);
 }
 
 namespace deprecated {
@@ -831,6 +850,20 @@ inline void dpct_free(void *ptr,
     sycl::free(ptr, q.get_context());
 #endif // DPCT_USM_LEVEL_NONE
   }
+}
+
+inline sycl::event async_dpct_free(const std::vector<void *> &pointers,
+                                   const std::vector<sycl::event> &events,
+                                   sycl::queue q) {
+  return q.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(events);
+    cgh.host_task([=] {
+      for (auto p : pointers)
+        if (p) {
+          detail::dpct_free(p, q);
+        }
+    });
+  });
 }
 } // namespace detail
 
@@ -976,7 +1009,7 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
 #ifndef DPCT_USM_LEVEL_NONE
-  dpct::get_current_device().queues_wait_and_throw();
+  dpct::get_device(dpct::get_device_id(q.get_device())).queues_wait_and_throw();
 #endif
   detail::dpct_free(ptr, q);
 }
@@ -990,15 +1023,7 @@ static inline void dpct_free(void *ptr,
 inline void async_dpct_free(const std::vector<void *> &pointers,
                             const std::vector<sycl::event> &events,
                             sycl::queue &q = get_default_queue()) {
-  q.submit([&](sycl::handler &cgh) {
-    cgh.depends_on(events);
-    cgh.host_task([=] {
-      for (auto p : pointers)
-        if (p) {
-          detail::dpct_free(p, q);
-        }
-    });
-  });
+  detail::async_dpct_free(pointers, events, q);
 }
 
 /// Synchronously copies \p size bytes from the address specified by \p from_ptr
@@ -1490,10 +1515,10 @@ public:
   /// Constructor with range
   device_memory(const sycl::range<Dimension> &range_in)
       : _size(range_in.size() * sizeof(T)), _range(range_in), _reference(false),
-        _host_ptr(nullptr), _device_ptr(nullptr) {
-    static_assert(
-        (Memory == global) || (Memory == constant) || (Memory == shared),
-        "device memory region should be global, constant or shared");
+        _host_ptr(nullptr), _device_ptrs(get_ptrs_size(), nullptr) {
+    static_assert((Memory == global) || (Memory == constant) ||
+                      (Memory == shared),
+                  "device memory region should be global, constant or shared");
     // Make sure that singleton class mem_mgr and dev_mgr will destruct later
     // than this.
     detail::mem_mgr::instance();
@@ -1506,28 +1531,26 @@ public:
       : device_memory(sycl::range<Dimension>(Arguments...)) {}
 
   ~device_memory() {
-    if (_device_ptr && !_reference)
-      dpct::dpct_free(_device_ptr);
+    if (!_reference) {
+      for (unsigned i = 0; i < _device_ptrs.size(); ++i) {
+        if (auto ptr = _device_ptrs[i])
+          dpct::dpct_free(ptr, get_device(i).default_queue());
+      }
+    }
     if (_host_ptr)
       std::free(_host_ptr);
   }
 
   /// Allocate memory with default queue, and init memory if has initial value.
-  void init() {
-    init(dpct::get_default_queue());
-  }
-  /// Allocate memory with specified queue, and init memory if has initial value.
-  void init(sycl::queue &q) {
-    if (_device_ptr)
-      return;
-    if (!_size)
-      return;
-    allocate_device(q);
-    if (_host_ptr)
-      detail::dpct_memcpy(q, _device_ptr, _host_ptr, _size, host_to_device);
-  }
+  void init() { init(dpct::get_default_queue()); }
+  /// Allocate memory with specified queue, and init memory if has initial
+  /// value.
+  void init(sycl::queue &q) { (void)get_ptr_impl(q); }
 
   /// The variable is assigned to a device pointer.
+#ifndef DPCT_USM_LEVLE_NONE
+  [[deprecated]]
+#endif
   void assign(value_t *src, size_t size) {
     this->~device_memory();
     new (this) device_memory(src, size);
@@ -1535,35 +1558,29 @@ public:
 
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used.
-  value_t *get_ptr() {
-    return get_ptr(get_default_queue());
-  }
+  value_t *get_ptr() { return get_ptr(get_default_queue()); }
   /// Get memory pointer of the memory object, which is virtual pointer when
   /// usm is not used, and device pointer when usm is used.
-  value_t *get_ptr(sycl::queue &q) {
-    init(q);
-    return _device_ptr;
-  }
+  value_t *get_ptr(sycl::queue &q) { return get_ptr_impl(q); }
 
   /// Get the device memory object size in bytes.
   size_t get_size() { return _size; }
 
   template <size_t D = Dimension>
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
-    init();
+    auto ptr = get_ptr();
 #ifdef DPCT_USM_LEVEL_NONE
-    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
-               _device_ptr)
+    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(ptr)
         .template get_access<sycl::access_mode::read_write>()[index];
 #else
-    return _device_ptr[index];
+    return ptr[index];
 #endif // DPCT_USM_LEVEL_NONE
   }
 
 #ifdef DPCT_USM_LEVEL_NONE
   /// Get sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(sycl::handler &cgh) {
-    return get_buffer(_device_ptr)
+    return get_buffer(_device_ptrs.front())
         .template reinterpret<T, Dimension>(_range)
         .template get_access<detail::memory_traits<Memory, T>::mode,
                              detail::memory_traits<Memory, T>::target>(cgh);
@@ -1574,39 +1591,61 @@ public:
   template <size_t D = Dimension>
   typename std::enable_if<D != 1, dpct_accessor_t>::type
   get_access(sycl::handler &cgh) {
-    return dpct_accessor_t((T *)_device_ptr, _range);
+    return dpct_accessor_t((T *)_device_ptrs.front(), _range);
   }
 #endif // DPCT_USM_LEVEL_NONE
 
 private:
   device_memory(value_t *memory_ptr, size_t size)
       : _size(size), _range(size / sizeof(T)), _reference(true),
-        _device_ptr(memory_ptr) {}
+        _device_ptrs(get_ptrs_size(), memory_ptr) {}
 
-  void allocate_device(sycl::queue &q) {
+  value_t *allocate_device(sycl::queue &q) {
+    _q = q;
 #ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
-      _device_ptr = (value_t *)sycl::malloc_shared(
-          _size, q.get_device(), q.get_context());
-      return;
+      return (value_t *)sycl::malloc_shared(_size, q.get_device(),
+                                            q.get_context());
     }
 #ifdef SYCL_EXT_ONEAPI_USM_DEVICE_READ_ONLY
     if (Memory == constant) {
-      _device_ptr = (value_t *)sycl::malloc_device(
+      return (value_t *)sycl::malloc_device(
           _size, q.get_device(), q.get_context(),
           sycl::ext::oneapi::property::usm::device_read_only());
-      return;
     }
 #endif
 #endif
-    _device_ptr = (value_t *)detail::dpct_malloc(_size, q);
+    return (value_t *)detail::dpct_malloc(_size, q);
+  }
+
+  value_t *get_ptr_impl(sycl::queue &q) {
+#ifdef DPCT_USM_LEVEL_NONE
+    auto &ptr = _device_ptrs.front();
+#else
+    auto &ptr = _device_ptrs[get_device_id(q.get_device())];
+#endif
+    if (ptr || !_size)
+      return ptr;
+    ptr = allocate_device(q);
+    if (_host_ptr)
+      detail::dpct_memcpy(q, ptr, _host_ptr, _size, host_to_device);
+    return ptr;
+  }
+
+  static size_t get_ptrs_size() {
+#ifdef DPCT_USM_LEVEL_NONE
+    return 1;
+#else
+    return device_count();
+#endif
   }
 
   size_t _size;
   sycl::range<Dimension> _range;
   bool _reference;
   value_t *_host_ptr;
-  value_t *_device_ptr;
+  std::vector<value_t *> _device_ptrs;
+  sycl::queue _q;
 };
 template <class T, memory_region Memory>
 class device_memory<T, Memory, 0> : public device_memory<T, Memory, 1> {
@@ -1655,6 +1694,15 @@ using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::all
 
 class pointer_attributes {
 public:
+  enum class type {
+    memory_type,
+    device_pointer,
+    host_pointer,
+    is_managed,
+    device_id,
+    unsupported
+  };
+
   void init(const void *ptr,
               sycl::queue &q = dpct::get_default_queue()) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1674,6 +1722,41 @@ public:
     sycl::device device_obj = sycl::get_pointer_device(ptr, q.get_context());
     device_id = dpct::dev_mgr::instance().get_device_id(device_obj);
 #endif
+  }
+
+  // Query pointer propreties listed in attributes and store the results in data array
+  static void get(unsigned int numAttributes, type *attributes,
+                  void **data, device_ptr ptr) {
+    pointer_attributes sycl_attributes;
+
+    sycl_attributes.init(ptr);
+
+    for (int i = 0; i < numAttributes; i++) {
+      switch (attributes[i]) {
+      case type::memory_type:
+        *static_cast<int *>(data[i]) =
+            static_cast<int>(sycl_attributes.get_memory_type());
+        break;
+      case type::device_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_device_pointer());
+        break;
+      case type::host_pointer:
+        *(reinterpret_cast<void **>(data[i])) =
+            const_cast<void *>(sycl_attributes.get_host_pointer());
+        break;
+      case type::is_managed:
+        *static_cast<unsigned int *>(data[i]) =
+            sycl_attributes.is_memory_shared();
+        break;
+      case type::device_id:
+        *static_cast<unsigned int *>(data[i]) = sycl_attributes.get_device_id();
+        break;
+      default:
+        data[i] = nullptr;
+        break;
+      }
+    }
   }
 
   sycl::usm::alloc get_memory_type() {
@@ -1702,5 +1785,6 @@ private:
   const void *host_pointer = nullptr;
   unsigned int device_id = -1;
 };
+
 } // namespace dpct
 #endif // __DPCT_MEMORY_HPP__

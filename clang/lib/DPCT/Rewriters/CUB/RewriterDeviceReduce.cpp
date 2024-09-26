@@ -179,14 +179,14 @@ RewriterMap dpct::createDeviceReduceRewriterMap() {
                               makeCheckNot(CheckArgIsDefaultCudaStream(5))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceReduce::ArgMin",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "reduce_argmin",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(5)),
                                    ARG(2), ARG(3), ARG(4))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceReduce::ArgMin",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "reduce_argmin",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -209,14 +209,14 @@ RewriterMap dpct::createDeviceReduceRewriterMap() {
                               makeCheckNot(CheckArgIsDefaultCudaStream(5))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceReduce::ArgMax",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "reduce_argmax",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(5)),
                                    ARG(2), ARG(3), ARG(4))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceReduce::ArgMax",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "reduce_argmax",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),

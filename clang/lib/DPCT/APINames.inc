@@ -315,7 +315,7 @@ ENTRY(cudaD3D10UnregisterResource, cudaD3D10UnregisterResource, false, NO_FLAG, 
 // Direct3D 11 interoperability functions of runtime API
 ENTRY(cudaD3D11GetDevice, cudaD3D11GetDevice, false, NO_FLAG, P4, "comment")
 ENTRY(cudaD3D11GetDevices, cudaD3D11GetDevices, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphicsD3D11RegisterResource, cudaGraphicsD3D11RegisterResource, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphicsD3D11RegisterResource, cudaGraphicsD3D11RegisterResource, true, NO_FLAG, P4, "Successful/DPCT1119")
 
 // deprecated Direct3D 11 interoperability functions of runtime API
 ENTRY(cudaD3D11GetDirect3DDevice, cudaD3D11GetDirect3DDevice, false, NO_FLAG, P4, "comment")
@@ -342,13 +342,13 @@ ENTRY(cudaGraphicsEGLRegisterImage, cudaGraphicsEGLRegisterImage, false, NO_FLAG
 ENTRY(cudaGraphicsResourceGetMappedEglFrame, cudaGraphicsResourceGetMappedEglFrame, false, NO_FLAG, P4, "comment")
 
 // graphics interoperability functions of runtime API
-ENTRY(cudaGraphicsMapResources, cudaGraphicsMapResources, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsResourceGetMappedMipmappedArray, cudaGraphicsResourceGetMappedMipmappedArray, false, NO_FLAG, P4, "comment")
-ENTRY(cudaGraphicsResourceGetMappedPointer, cudaGraphicsResourceGetMappedPointer, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsResourceSetMapFlags, cudaGraphicsResourceSetMapFlags, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsSubResourceGetMappedArray, cudaGraphicsSubResourceGetMappedArray, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsUnmapResources, cudaGraphicsUnmapResources, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGraphicsUnregisterResource, cudaGraphicsUnregisterResource, false, NO_FLAG, P0, "comment")
+ENTRY(cudaGraphicsMapResources, cudaGraphicsMapResources, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsResourceGetMappedMipmappedArray, cudaGraphicsResourceGetMappedMipmappedArray, true, NO_FLAG, P4, "Successful/DPCT1119")
+ENTRY(cudaGraphicsResourceGetMappedPointer, cudaGraphicsResourceGetMappedPointer, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsResourceSetMapFlags, cudaGraphicsResourceSetMapFlags, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
+ENTRY(cudaGraphicsSubResourceGetMappedArray, cudaGraphicsSubResourceGetMappedArray, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsUnmapResources, cudaGraphicsUnmapResources, true, NO_FLAG, P0, "Successful/DPCT1119")
+ENTRY(cudaGraphicsUnregisterResource, cudaGraphicsUnregisterResource, true, NO_FLAG, P0, "Successful/DPCT1119")
 
 // low level texture reference management functions of runtime API
 ENTRY(cudaBindTexture, cudaBindTexture, true, NO_FLAG, P0, "Successful")
@@ -1573,8 +1573,8 @@ ENTRY(cuDevicePrimaryCtxSetFlags, cuDevicePrimaryCtxSetFlags_v2, false, NO_FLAG,
 
 // Context Management
 ENTRY(cuCtxCreate, cuCtxCreate, true, NO_FLAG, P4, "comment")
-ENTRY(cuCtxCreate_v3, cuCtxCreate_v3, false, NO_FLAG, P4, "comment")
-ENTRY(cuCtxCreate_v4, cuCtxCreate_v4, false, NO_FLAG, P4, "comment")
+ENTRY(cuCtxCreate_v3, cuCtxCreate_v3, true, NO_FLAG, P4, "comment")
+ENTRY(cuCtxCreate_v4, cuCtxCreate_v4, true, NO_FLAG, P4, "comment")
 ENTRY(cuCtxDestroy, cuCtxDestroy_v2, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(cuCtxGetApiVersion, cuCtxGetApiVersion, true, NO_FLAG, P4, "comment")
 ENTRY(cuCtxGetCacheConfig, cuCtxGetCacheConfig, false, NO_FLAG, P4, "comment")
@@ -1764,7 +1764,7 @@ ENTRY(cuMemPrefetchAsync_v2, cuMemPrefetchAsync_v2, false, NO_FLAG, P4, "Partial
 ENTRY(cuMemRangeGetAttribute, cuMemRangeGetAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemRangeGetAttributes, cuMemRangeGetAttributes, false, NO_FLAG, P4, "comment")
 ENTRY(cuPointerGetAttribute, cuPointerGetAttribute, false, NO_FLAG, P4, "comment")
-ENTRY(cuPointerGetAttributes, cuPointerGetAttributes, false, NO_FLAG, P4, "comment")
+ENTRY(cuPointerGetAttributes, cuPointerGetAttributes, true, NO_FLAG, P4, "Partial: Only 5 attributes are supported")
 ENTRY(cuPointerSetAttribute, cuPointerSetAttribute, false, NO_FLAG, P4, "comment")
 
 // Stream Management
@@ -2135,7 +2135,7 @@ ENTRY(cuGraphicsResourceGetMappedEglFrame, cuGraphicsResourceGetMappedEglFrame, 
 ENTRY(cooperative_groups::coalesced_threads, cooperative_groups::__v1::coalesced_threads, true, NO_FLAG, P4, "Successful/DPCT1119")
 ENTRY(cooperative_groups::thread_rank, cooperative_groups::__v1::thread_rank, true, NO_FLAG, P4, "Successful")
 ENTRY(cooperative_groups::this_thread, cooperative_groups::__v1::this_thread, false, NO_FLAG, P4, "comment")
-ENTRY(cooperative_groups::this_grid, cooperative_groups::__v1::this_grid, true, NO_FLAG, P4, "comment")
+ENTRY(cooperative_groups::this_grid, cooperative_groups::__v1::this_grid, true, NO_FLAG, P4, "Successful")
 ENTRY(cooperative_groups::this_multi_grid, cooperative_groups::__v1::this_multi_grid, false, NO_FLAG, P4, "comment")
 ENTRY(cooperative_groups::this_thread_block, cooperative_groups::__v1::this_thread_block, true, NO_FLAG, P4, "Successful")
 ENTRY(cooperative_groups::experimental::this_thread_block, cooperative_groups::__v1::experimental::this_thread_block, true, NO_FLAG, P4, "Successful")
@@ -2198,18 +2198,18 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::cluster_group, cooperative_groups::__v
 ENTRY_MEMBER_FUNCTION(cooperative_groups::cluster_group, cooperative_groups::__v1::cluster_group, size, size, false, NO_FLAG, P4, "Comment")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, is_valid, is_valid, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, sync, sync, true, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, thread_rank, thread_rank, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, block_rank, block_rank, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, sync, sync, true, NO_FLAG, P4, "Successful")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, thread_rank, thread_rank, true, NO_FLAG, P4, "Successful")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, block_rank, block_rank, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, cluster_rank, cluster_rank, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, num_threads, num_threads, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, num_blocks, num_blocks, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, num_threads, num_threads, true, NO_FLAG, P4, "Successful")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, num_blocks, num_blocks, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, num_clusters, num_clusters, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, dim_blocks, dim_blocks, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, dim_clusters, dim_clusters, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, block_index, block_index, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, cluster_index, cluster_index, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, size, size, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, size, size, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::grid_group, cooperative_groups::__v1::grid_group, group_dim, group_dim, false, NO_FLAG, P4, "Comment")
 
 // The multi_grid_group was deprecated in CUDA 11.3
@@ -2305,3 +2305,5 @@ ENTRY(make_cuDoubleComplex, make_cuDoubleComplex, true, NO_FLAG, P4, "comment")
 ENTRY(make_cuFloatComplex, make_cuFloatComplex, true, NO_FLAG, P4, "comment")
 ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
 ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
+
+ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Partial")

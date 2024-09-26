@@ -585,8 +585,10 @@ class InsertClassName : public TextModification {
   static unsigned Count;
 
 public:
-  InsertClassName(const CXXRecordDecl *C)
-      : TextModification(TMID::InsertClassName), CD(C) {}
+  InsertClassName(const CXXRecordDecl *C, ReplacementType IsForCodePin = RT_ForSYCLMigration)
+      : TextModification(TMID::InsertClassName), CD(C) {
+        this->IsForCodePin = IsForCodePin;
+      }
 
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;

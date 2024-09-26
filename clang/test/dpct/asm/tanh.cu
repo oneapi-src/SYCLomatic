@@ -11,8 +11,14 @@
 __global__ void tanh() {
   float f32;
 
-  // CHECK: f32 = sycl::tanh<float>(1.0f);
+  // CHECK: f32 = sycl::tanh(1.0f);
   asm("tanh.approx.f32 %0, %1;" : "=f"(f32) : "f"(1.0f));
+}
+
+__global__ void f(unsigned *out) {
+  unsigned const in = 0;
+  // CHECK:  *out = sycl::tanh(sycl::vec<uint32_t, 1>(in).template as<sycl::half2>()).template as<sycl::vec<uint32_t, 1>>().x();
+  asm volatile("tanh.approx.f16x2 %0, %1;" : "=r"(*out) : "r"(in));
 }
 
 // clang-format on

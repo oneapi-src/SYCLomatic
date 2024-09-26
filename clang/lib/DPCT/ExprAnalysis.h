@@ -847,6 +847,7 @@ private:
   bool Reversed = false;
   bool DirectRef = false;
   bool IsDim3Config = false;
+  bool IsDim3Var = false;
   unsigned int ArgIndex = 0;
   bool NeedEmitWGSizeWarning = true;
   unsigned int SizeOfHighestDimension = 0;
@@ -873,6 +874,7 @@ public:
 
   inline bool reversed() { return Reversed; }
   inline bool isDirectRef() { return DirectRef; }
+  inline bool isDim3Var() { return IsDim3Var; }
   inline bool isNeedEmitWGSizeWarning() { return NeedEmitWGSizeWarning; }
   unsigned int getSizeOfHighestDimension() { return SizeOfHighestDimension; }
   unsigned int Dim = 3;

@@ -6760,6 +6760,14 @@ QualType TreeTransform<Derived>::TransformUnaryTransformType(
                                                             TypeLocBuilder &TLB,
                                                      UnaryTransformTypeLoc TL) {
   QualType Result = TL.getType();
+#ifdef SYCLomatic_CUSTOMIZATION
+  TypeSourceInfo *NewBaseTSI =
+      getDerived().TransformType(TL.getUnderlyingTInfo());
+  if (!NewBaseTSI)
+    return QualType();
+#else
+  QualType NewBase = NewBaseTSI->getType();
+#endif
   if (Result->isDependentType()) {
     const UnaryTransformType *T = TL.getTypePtr();
     QualType NewBase =

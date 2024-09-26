@@ -84,21 +84,24 @@ FEATURE_REQUEST_FACTORY(
                                 false,
                                 ARG(1)))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxCreate_v2",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0),
-                                                ARG(2))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v2"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "cuCtxCreate_v2", DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "push_device_for_curr_thread", ARG(2))))))
+// clang-format on
+CONTEXT_ENTRY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0), ARG(2)),
+              ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0),
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "push_device_for_curr_thread",
+                                        ARG(2))))
+
+CONTEXT_ENTRY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v3", DEREF(0), ARG(4)),
+              ASSIGN_FACTORY_ENTRY("cuCtxCreate_v3", DEREF(0),
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "push_device_for_curr_thread",
+                                        ARG(4))))
+
+CONTEXT_ENTRY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v4", DEREF(0), ARG(3)),
+              ASSIGN_FACTORY_ENTRY("cuCtxCreate_v4", DEREF(0),
+                                   CALL(MapNames::getDpctNamespace() +
+                                            "push_device_for_curr_thread",
+                                        ARG(3))))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsUseNoQueueDevice(),
@@ -176,37 +179,18 @@ FEATURE_REQUEST_FACTORY(
                                             CALL(MapNames::getDpctNamespace() +
                                                  "get_sycl_language_version"))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    clang::dpct::checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxPushCurrent_v2",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPushCurrent_v2", DEREF(0),
-                                                LITERAL("0"))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPushCurrent_v2"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-                              "cuCtxPushCurrent_v2", CALL(
-                                MapNames::getDpctNamespace() + "push_device_for_curr_thread",
-                                ARG(0))))))
+CONTEXT_ENTRY(ASSIGN_FACTORY_ENTRY("cuCtxPushCurrent_v2", DEREF(0),
+                                   LITERAL("0")),
+              CALL_FACTORY_ENTRY("cuCtxPushCurrent_v2",
+                                 CALL(MapNames::getDpctNamespace() +
+                                          "push_device_for_curr_thread",
+                                      ARG(0))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    clang::dpct::checkIsUseNoQueueDevice(),
-    WARNING_FACTORY_ENTRY(
-        "cuCtxPopCurrent_v2",
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxPopCurrent_v2", DEREF(0),
-                                                LITERAL("0"))),
-        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxPopCurrent_v2"),
-        std::string("it is redundant if it is migrated with option "
-                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
-                    "and queue.")),
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                                "cuCtxPopCurrent_v2", DEREF(0),
-                                CALL(MapNames::getDpctNamespace() +
-                                     "pop_device_for_curr_thread")))))
+CONTEXT_ENTRY(ASSIGN_FACTORY_ENTRY("cuCtxPopCurrent_v2", DEREF(0),
+                                   LITERAL("0")),
+              ASSIGN_FACTORY_ENTRY("cuCtxPopCurrent_v2", DEREF(0),
+                                   CALL(MapNames::getDpctNamespace() +
+                                        "pop_device_for_curr_thread")))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsGetWorkGroupDim(1),
@@ -214,9 +198,8 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
         "cuDeviceGetAttribute", DEREF(0),
         MEMBER_CALL(
             MEMBER_CALL(
-                MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
-                                             "dev_mgr::instance"),
-                                        false, "get_device", ARG(2)),
+                MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                     "get_device", ARG(2)),
                             false, "get_device_info"),
                 false, makeFuncNameFromDevAttrCreator(1)),
             false, "get", getWorkGroupDim(1))),
@@ -224,15 +207,24 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsMigratedToHasAspect(1),
     ASSIGN_FACTORY_ENTRY(
         "cuDeviceGetAttribute", DEREF(0),
-        MEMBER_EXPR(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
-                                     "dev_mgr::instance"),
-                                false, "get_device", ARG(2)),
+        MEMBER_EXPR(CALL(MapNames::getDpctNamespace() +
+                                     "get_device", ARG(2)),
                     false, makeFuncNameFromDevAttrCreator(1))),
-    ASSIGN_FACTORY_ENTRY(
-        "cuDeviceGetAttribute", DEREF(0),
-        MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
-                                     "dev_mgr::instance"),
-                                false, "get_device", ARG(2)),
-                    false, makeFuncNameFromDevAttrCreator(1))))))
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckAnd(UseSYCLCompat, isTextureAlignment(1)),
+        ASSIGN_FACTORY_ENTRY(
+            "cuDeviceGetAttribute", DEREF(0),
+            BO(BinaryOperatorKind::BO_Div,
+                MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                             "get_device", ARG(2)),
+                            false, "get_mem_base_addr_align"),
+                ARG("8"))),
+        ASSIGN_FACTORY_ENTRY(
+            "cuDeviceGetAttribute", DEREF(0),
+            MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                         "get_device", ARG(2)),
+                        false, makeFuncNameFromDevAttrCreator(1)))
+    )
+)))
 
 // clang-format on

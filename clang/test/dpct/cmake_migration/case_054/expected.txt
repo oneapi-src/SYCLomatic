@@ -7,7 +7,7 @@ target_include_directories(${lib_name} SYSTEM INTERFACE "${SYCL_INCLUDE_DIR}")
 # TransformerEngine/transformer_engine/cmake/FindCUDNN.cmake
 target_include_directories(target $<BUILD_INTERFACE:${SYCL_INCLUDE_DIR}>)
 
-target_include_directories(nvshmem_device_lib INTERFACE ${SYCL_INCLUDE_DIR})
+target_include_directories(nvshmem_device_lib INTERFACE ${SYCLToolkit_LIBRARY_DIR})
 
 target_include_directories(quda SYSTEM PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${SYCL_INCLUDE_DIR}>)
 

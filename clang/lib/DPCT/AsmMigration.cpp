@@ -10,6 +10,7 @@
 #include "AnalysisInfo.h"
 #include "Asm/AsmNodes.h"
 #include "Asm/AsmParser.h"
+#include "Asm/AsmTokenKinds.h"
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
@@ -51,6 +52,7 @@ class SYCLGenBase {
   SmallVector<SmallString<10>, 4> VecExprTypeRecord;
   raw_ostream *Stream;
   InlineAsmContext &Context;
+  bool MigrationStopped = false;
 
 protected:
   const InlineAsmInstruction *CurrInst = nullptr;
@@ -134,6 +136,10 @@ public:
       Indent.append(IndentUnit);
   }
 
+  void cutOffMigration() { MigrationStopped = true; }
+
+  bool isMigrationStopped() const { return MigrationStopped; }
+
 protected:
   void indent() { OS() << Indent; }
 
@@ -191,6 +197,48 @@ protected:
     for (unsigned I = 0, E = Inst->getNumInputOperands(); I != E; ++I)
       if (tryEmitStmt(Ops[I], Inst->getInputOperand(I)))
         return SYCLGenError();
+    return SYCLGenSuccess();
+  }
+
+  bool needBitCast(const InlineAsmType *From, const InlineAsmType *To) {
+    if (From == To)
+      return false;
+    if (const auto *BIFrom = dyn_cast<InlineAsmBuiltinType>(From),
+        *BITo = dyn_cast<InlineAsmBuiltinType>(To);
+        BIFrom->isScalar() && BITo->isScalar())
+      return false;
+    return true;
+  }
+
+  bool emitBitCast(const InlineAsmType *From, const InlineAsmType *To,
+                   std::string &Val) {
+    assert(needBitCast(From, To) && "Bit cast is unnecessary");
+    std::string Buffer;
+    llvm::raw_string_ostream TmpOS(Buffer);
+    llvm::SaveAndRestore<llvm::raw_ostream *> OutStream(Stream);
+    switchOutStream(TmpOS);
+    std::string FromT, ToT;
+    if (tryEmitType(FromT, From))
+      return SYCLGenError();
+    if (tryEmitType(ToT, To))
+      return SYCLGenError();
+    auto isVecTy = [&](const InlineAsmType *Ty) {
+      if (isa<InlineAsmVectorType>(Ty))
+        return true;
+      const auto *BI = dyn_cast<InlineAsmBuiltinType>(Ty);
+      return BI && BI->isVector();
+    };
+    if (isVecTy(From))
+      OS() << Val;
+    else
+      OS() << MapNames::getClNamespace() << "vec<" << FromT << ", 1>(" << Val
+           << ')';
+    OS() << ".template as<";
+    if (isVecTy(To))
+      OS() << ToT << ">()";
+    else
+      OS() << MapNames::getClNamespace() << "vec<" << ToT << ", 1>>().x()";
+    Val = std::move(Buffer);
     return SYCLGenSuccess();
   }
 
@@ -1490,18 +1538,19 @@ protected:
     std::string Op;
     if (tryEmitStmt(Op, Inst->getInputOperand(0)))
       return SYCLGenError();
-
-    std::string TypeString;
-    if (tryEmitType(TypeString, Inst->getType(0)))
+    if (needBitCast(Inst->getInputOperand(0)->getType(), Inst->getType(0)) &&
+        emitBitCast(Inst->getInputOperand(0)->getType(), Inst->getType(0), Op))
       return SYCLGenError();
-
-    std::string ReplaceString =
-        MapNames::getClNamespace() + MathFn.str() + "<" + TypeString + ">(";
+    std::string ReplaceString = MapNames::getClNamespace() + MathFn.str() + '(';
     if (Inst->getOpcode() == asmtok::op_ex2)
       ReplaceString += "2, ";
     ReplaceString += Op + ")";
     if (Inst->hasAttr(InstAttr::rn, InstAttr::rz, InstAttr::rm, InstAttr::rp))
       report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, true);
+    if (needBitCast(Inst->getType(0), Inst->getOutputOperand()->getType()) &&
+        emitBitCast(Inst->getType(0), Inst->getOutputOperand()->getType(),
+                    ReplaceString))
+      return SYCLGenError();
     OS() << ReplaceString;
     endstmt();
     return SYCLGenSuccess();
@@ -1541,15 +1590,13 @@ protected:
     if (emitStmt(Inst->getOutputOperand()))
       return SYCLGenError();
     OS() << " = ";
-    std::string Op[3], TypeString;
+    std::string Op[3];
     for (int i = 0; i < 3; ++i)
       if (tryEmitStmt(Op[i], Inst->getInputOperand(i)))
         return SYCLGenError();
-    if (tryEmitType(TypeString, Inst->getType(0)))
-      return SYCLGenError();
 
-    OS() << MapNames::getClNamespace() << "abs_diff<" << TypeString << ">("
-         << Op[0] << ", " << Op[1] << ") + " << Op[2];
+    OS() << MapNames::getClNamespace() << "abs_diff(" << Op[0] << ", " << Op[1]
+         << ") + " << Op[2];
     endstmt();
     return SYCLGenSuccess();
   }
@@ -1736,6 +1783,12 @@ protected:
   }
 
   bool HandleVset(const InlineAsmInstruction *I, StringRef Fn) {
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(Diagnostics::UNSUPPORT_SYCLCOMPAT, /*UseTextBegin=*/true,
+             GAS->getAsmString()->getString());
+      cutOffMigration();
+      return SYCLGenSuccess();
+    }
     if (I->getNumInputOperands() < 2 || I->getNumTypes() != 2 ||
         CheckSIMDInstructionType(I))
       return SYCLGenError();
@@ -2423,7 +2476,7 @@ protected:
     OS() << '(';
     llvm::SaveAndRestore<const InlineAsmInstruction *> Save(CurrInst);
     CurrInst = Inst;
-    for (auto [I, Op] : llvm::enumerate(Inst->input_operands())) {
+    for (const auto &[I, Op] : llvm::enumerate(Inst->input_operands())) {
       if (emitStmt(Op))
         return SYCLGenError();
       if (I != Inst->getNumInputOperands() - 1)
@@ -2662,6 +2715,8 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
       report(GAS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
       return;
     }
+    if (CodeGen.isMigrationStopped())
+      return;
   } while (!Parser.getCurToken().is(asmtok::eof));
 
   StringRef Ref = ReplaceString;

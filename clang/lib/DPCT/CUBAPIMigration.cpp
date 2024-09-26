@@ -92,6 +92,17 @@ REGISTER_RULE(CubMemberCallRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubIntrinsicRule, PassKind::PK_Analysis)
 
+#define REPORT_UNSUPPORT_SYCLCOMPACT(S)                                        \
+  if (DpctGlobalInfo::useSYCLCompat()) {                                       \
+    std::string PrettyStmt;                                                    \
+    llvm::raw_string_ostream OS(PrettyStmt);                                   \
+    S->printPretty(OS, /*Helper=*/nullptr,                                     \
+                   DpctGlobalInfo::getContext().getPrintingPolicy());          \
+    report(S->getBeginLoc(), Diagnostics::UNSUPPORT_SYCLCOMPAT,                \
+           /*UseTextBegin=*/false, PrettyStmt);                                \
+    return;                                                                    \
+  }
+
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName(
@@ -99,7 +110,9 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cub::KeyValuePair", "cub::CountingInputIterator",
         "cub::TransformInputIterator", "cub::ConstantInputIterator",
         "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
-        "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin");
+        "cub::DoubleBuffer", "cub::NullType", "cub::ArgMax", "cub::ArgMin",
+        "cub::BlockRadixSort", "cub::BlockExchange", "cub::BlockLoad",
+        "cub::BlockStore");
   };
 
   MF.addMatcher(
@@ -157,9 +170,15 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
-                    namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
-                callee(cxxMethodDecl(hasName("normalize")))))
+          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(
+                    hasAnyName("cub::ArgIndexInputIterator",
+                               "cub::BlockRadixSort", "cub::BlockExchange",
+                               "cub::BlockLoad", "cub::BlockStore"))))))),
+                callee(cxxMethodDecl(hasAnyName(
+                    "normalize", "Sort", "SortDescending", "BlockedToStriped",
+                    "StripedToBlocked", "ScatterToBlocked", "ScatterToStriped",
+                    "SortBlockedToStriped", "SortDescendingBlockedToStriped",
+                    "Load", "Store")))))
           .bind("memberCall"),
       this);
 
@@ -172,11 +191,118 @@ void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
+static std::pair<const VarDecl *, TypeLoc>
+getTempstorageVarAndValueTypeLoc(const CXXMemberCallExpr *MC) {
+  Expr *Obj = MC->getImplicitObjectArgument();
+  const VarDecl *TempStorage = nullptr;
+
+  auto FindTempStorageVarInCtor = [](const Expr *E) -> const VarDecl * {
+    if (auto *Ctor = dyn_cast<CXXConstructExpr>(E)) {
+      if (auto *DRE = dyn_cast<DeclRefExpr>(Ctor->getArg(0))) {
+        if (auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+          if (VD->hasAttr<CUDASharedAttr>() && isCubVar(VD)) {
+            return VD;
+          }
+        }
+      }
+    }
+    return nullptr;
+  };
+
+  auto FindDataTypeLoc = [](TypeLoc Loc) -> TypeLoc {
+    if (Loc.isNull())
+      return Loc;
+    while (true) {
+      switch (Loc.getTypeLocClass()) {
+      case TypeLoc::Elaborated:
+        Loc = Loc.getNextTypeLoc();
+        break;
+      case TypeLoc::Typedef: {
+        auto NewLoc = Loc.castAs<TypedefTypeLoc>();
+        Loc = NewLoc.getTypedefNameDecl()->getTypeSourceInfo()->getTypeLoc();
+        break;
+      }
+      case TypeLoc::TemplateSpecialization: {
+        auto NewLoc = Loc.getAs<TemplateSpecializationTypeLoc>();
+        return NewLoc.getArgLocInfo(0).getAsTypeSourceInfo()->getTypeLoc();
+        break;
+      }
+      default:
+        return Loc;
+      }
+    }
+  };
+
+  TypeLoc DataTypeLoc;
+  if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Obj)) {
+    if (auto *TOE = dyn_cast<CXXTemporaryObjectExpr>(MTE->getSubExpr())) {
+      DataTypeLoc = FindDataTypeLoc(TOE->getTypeSourceInfo()->getTypeLoc());
+    } else if (auto *FC = dyn_cast<CXXFunctionalCastExpr>(MTE->getSubExpr())) {
+      DataTypeLoc = FindDataTypeLoc(FC->getTypeInfoAsWritten()->getTypeLoc());
+    }
+    TempStorage = FindTempStorageVarInCtor(MTE->getSubExpr()->IgnoreCasts());
+  } else if (const auto *DRE = dyn_cast<DeclRefExpr>(Obj)) {
+    if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+      DataTypeLoc = FindDataTypeLoc(VD->getTypeSourceInfo()->getTypeLoc());
+      if (isCubCollectiveRecordType(VD->getType()) && VD->hasInit())
+        TempStorage = FindTempStorageVarInCtor(VD->getInit());
+    }
+  }
+  return {TempStorage, DataTypeLoc};
+}
+
 void CubMemberCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
-  if (const auto *E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
-    EA.analyze(E1);
+  if (const auto *BlockMC =
+          getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
+    EA.analyze(BlockMC);
+    StringRef Name = BlockMC->getMethodDecl()->getName();
+    bool isBlockRadixSort = Name == "Sort" || Name == "SortDescending" ||
+                            Name == "SortBlockedToStriped" ||
+                            Name == "SortDescendingBlockedToStriped";
+    bool isBlockExchange =
+        Name == "BlockedToStriped" || Name == "StripedToBlocked" ||
+        Name == "StripedToBlocked" || Name == "ScatterToBlocked" ||
+        Name == "ScatterToStriped";
+    if (isBlockRadixSort || isBlockExchange || Name == "Load" ||
+        Name == "Store") {
+      std::string HelpFuncName;
+      if (isBlockRadixSort)
+        HelpFuncName = "group_radix_sort";
+      else if (isBlockExchange)
+        HelpFuncName = "exchange";
+      else if (Name == "Load")
+        HelpFuncName = "group_load";
+      else if (Name == "Store")
+        HelpFuncName = "group_store";
+      auto [TempStorage, DataTypeLoc] =
+          getTempstorageVarAndValueTypeLoc(BlockMC);
+      auto *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TempStorage);
+      if (!FD || !TempStorage || DataTypeLoc.isNull())
+        return;
+      QualType CanTy = BlockMC->getObjectType().getCanonicalType();
+      auto *ClassSpecDecl = dyn_cast<ClassTemplateSpecializationDecl>(
+          CanTy->getAs<RecordType>()->getDecl());
+      const auto &ValueTyArg = ClassSpecDecl->getTemplateArgs()[0];
+      const auto &ItemsPreThreadArg = ClassSpecDecl->getTemplateArgs()[2];
+      ValueTyArg.getAsType().getAsString();
+      std::string Fn;
+      llvm::raw_string_ostream OS(Fn);
+      OS << MapNames::getDpctNamespace() << "group::" << HelpFuncName << "<"
+         << ValueTyArg.getAsType().getAsString() << ", "
+         << ItemsPreThreadArg.getAsIntegral() << ">::get_local_memory_size";
+      if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(TempStorage);
+        ExprAnalysis EA;
+        EA.analyze(DataTypeLoc);
+        FuncInfo->getVarMap().addCUBTempStorage(
+            std::make_shared<TempStorageVarInfo>(
+                LocInfo.second, TempStorageVarInfo::BlockRadixSort,
+                TempStorage->getName(), Fn,
+                EA.getTemplateDependentStringInfo()));
+      }
+    }
   } else if (const auto *E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
     EA.analyze(E2);
   }
@@ -186,14 +312,16 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(
-          callee(functionDecl(allOf(
-              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
-                         "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
-                         "DeviceCountUncached", "DeviceCountCachedValue",
-                         "PtxVersion", "PtxVersionUncached", "SmVersion",
-                         "SmVersionUncached", "RowMajorTid"),
-              hasAncestor(namespaceDecl(hasName("cub")))))))
+      callExpr(callee(functionDecl(allOf(
+                   hasAnyName(
+                       "IADD3", "SHR_ADD", "SHL_ADD", "BFE", "BFI", "LaneId",
+                       "WarpId", "SyncStream", "CurrentDevice", "DeviceCount",
+                       "DeviceCountUncached", "DeviceCountCachedValue",
+                       "PtxVersion", "PtxVersionUncached", "SmVersion",
+                       "SmVersionUncached", "RowMajorTid", "LoadDirectBlocked",
+                       "LoadDirectStriped", "StoreDirectBlocked",
+                       "StoreDirectStriped", "ShuffleDown", "ShuffleUp"),
+                   hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
 }
@@ -897,24 +1025,32 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     WarpSize = TA->get(0).getAsIntegral().getExtValue();
     std::string ValueType =
         TA->get(1).getAsType().getUnqualifiedType().getAsString();
-    auto MemberMask = CE->getArg(2);
-    auto Mask = dyn_cast<IntegerLiteral>(MemberMask);
-    if (Mask && Mask->getValue().getZExtValue() == 0xffffffff) {
-      const Expr *Value = CE->getArg(0);
-      const Expr *Lane = CE->getArg(1);
-      ExprAnalysis ValueEA(Value);
-      ExprAnalysis LaneEA(Lane);
-      auto DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
-      Repl = DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) + ".shuffle(" +
-             ValueEA.getReplacedString() + ", " + LaneEA.getReplacedString() +
-             ")";
-      emplaceTransformation(new ReplaceStmt(CE, Repl));
-      if (DeviceFuncDecl) {
-        auto DI = DeviceFunctionDecl::LinkRedecls(DeviceFuncDecl);
-        if (DI) {
-          DI->addSubGroupSizeRequest(WarpSize, CE->getBeginLoc(), "shuffle");
-        }
+    const auto *MemberMask = CE->getArg(2);
+    const auto *Mask = dyn_cast<IntegerLiteral>(MemberMask);
+    const Expr *Value = CE->getArg(0);
+    const Expr *Lane = CE->getArg(1);
+    const auto *DeviceFuncDecl = getImmediateOuterFuncDecl(CE);
+    ExprAnalysis ValueEA(Value);
+    ExprAnalysis LaneEA(Lane);
+    llvm::raw_string_ostream OS(Repl);
+    if (Mask) {
+      if (Mask->getValue().getZExtValue() == 0xffffffff) {
+        OS << MapNames::getDpctNamespace() << "select_from_sub_group("
+           << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
+           << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
+        if (WarpSize != 32)
+          OS << ", " << WarpSize;
+        OS << ')';
+      } else {
+        OS << MapNames::getDpctNamespace() << "experimental::"
+           << "select_from_sub_group(" << getStmtSpelling(Mask) << ", "
+           << DpctGlobalInfo::getSubGroup(CE, DeviceFuncDecl) << ", "
+           << ValueEA.getReplacedString() << ", " << LaneEA.getReplacedString();
+        if (WarpSize != 32)
+          OS << ", " << WarpSize;
+        OS << ')';
       }
+      emplaceTransformation(new ReplaceStmt(CE, Repl));
     } else {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              GetFunctionName(CE));
@@ -1210,69 +1346,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
 
         NewFuncName = MapNames::getClNamespace() +
                       "ext::oneapi::experimental::reduce_over_group";
-        Expr *Obj = BlockMC->getImplicitObjectArgument();
-        const VarDecl *TempStorage = nullptr;
-
-        auto FindTempStorageVarInCtor = [&](const Expr *E) -> const VarDecl * {
-          if (auto *Ctor = dyn_cast<CXXConstructExpr>(E)) {
-            if (auto *DRE = dyn_cast<DeclRefExpr>(Ctor->getArg(0))) {
-              if (auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-                if (VD->hasAttr<CUDASharedAttr>() && isCubVar(VD)) {
-                  return VD;
-                }
-              }
-            }
-          }
-          return nullptr;
-        };
-
-        auto HandleTypeLoc = [&](TypeLoc Loc) -> TypeLoc {
-          if (Loc.isNull())
-            return Loc;
-          while (true) {
-            switch (Loc.getTypeLocClass()) {
-            case TypeLoc::Elaborated:
-              Loc = Loc.getNextTypeLoc();
-              break;
-            case TypeLoc::Typedef: {
-              auto NewLoc = Loc.castAs<TypedefTypeLoc>();
-              Loc = NewLoc.getTypedefNameDecl()
-                        ->getTypeSourceInfo()
-                        ->getTypeLoc();
-              break;
-            }
-            case TypeLoc::TemplateSpecialization: {
-              auto NewLoc = Loc.getAs<TemplateSpecializationTypeLoc>();
-              return NewLoc.getArgLocInfo(0).getAsTypeSourceInfo()->getTypeLoc();
-              break;
-            }
-            default:
-              return Loc;
-            }
-          }
-        };
-
-        TypeLoc DataTypeLoc;
-        if (const auto *MTE = dyn_cast<MaterializeTemporaryExpr>(Obj)) {
-          if (auto *TOE = dyn_cast<CXXTemporaryObjectExpr>(MTE->getSubExpr())) {
-            DataTypeLoc = HandleTypeLoc(TOE->getTypeSourceInfo()->getTypeLoc());
-          } else if (auto *FC =
-                         dyn_cast<CXXFunctionalCastExpr>(MTE->getSubExpr())) {
-            DataTypeLoc =
-                HandleTypeLoc(FC->getTypeInfoAsWritten()->getTypeLoc());
-          }
-          TempStorage =
-              FindTempStorageVarInCtor(MTE->getSubExpr()->IgnoreCasts());
-        } else if (const auto *DRE = dyn_cast<DeclRefExpr>(Obj)) {
-          if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-            DataTypeLoc = HandleTypeLoc(VD->getTypeSourceInfo()->getTypeLoc());
-            if (isCubCollectiveRecordType(VD->getType()) && VD->hasInit()) {
-              emplaceTransformation(new ReplaceVarDecl(VD, ""));
-              TempStorage = FindTempStorageVarInCtor(VD->getInit());
-            }
-          }
-        }
-
+        auto [TempStorage, DataTypeLoc] =
+            getTempstorageVarAndValueTypeLoc(BlockMC);
         auto *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TempStorage);
         if (!FD || !TempStorage || DataTypeLoc.isNull())
           return;
@@ -1282,7 +1357,8 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
           EA.analyze(DataTypeLoc);
           FuncInfo->getVarMap().addCUBTempStorage(
               std::make_shared<TempStorageVarInfo>(
-                  LocInfo.second, TempStorage->getName(),
+                  LocInfo.second, TempStorageVarInfo::BlockReduce,
+                  TempStorage->getName(), "",
                   EA.getTemplateDependentStringInfo()));
         }
         std::string Span = MapNames::getClNamespace() + "span<std::byte, 1>" +

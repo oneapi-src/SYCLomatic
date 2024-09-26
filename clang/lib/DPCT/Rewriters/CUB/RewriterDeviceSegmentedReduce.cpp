@@ -32,7 +32,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedReduce::Reduce",
                                   CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                           MapNames::getDpctNamespace() +
+                                           MapNames::getLibraryHelperNamespace() +
                                                "device::experimental::"
                                                "segmented_"
                                                "reduce",
@@ -46,7 +46,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                               MapNames::getDpctNamespace() +
+                                               MapNames::getLibraryHelperNamespace() +
                                                    "device::segmented_"
                                                    "reduce",
                                                LITERAL("128")),
@@ -59,7 +59,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                           "Reduce",
                                           CALL(
                                               TEMPLATED_CALLEE_WITH_ARGS(
-                                                  MapNames::getDpctNamespace() +
+                                                  MapNames::getLibraryHelperNamespace() +
                                                       "device::segmented_"
                                                       "reduce",
                                                   LITERAL("128")),
@@ -76,7 +76,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               CALL_FACTORY_ENTRY(
                                   "cub::DeviceSegmentedReduce::Reduce",
                                   CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                           MapNames::getDpctNamespace() +
+                                           MapNames::getLibraryHelperNamespace() +
                                                "device::experimental::"
                                                "segmented_"
                                                "reduce",
@@ -90,7 +90,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                   CALL_FACTORY_ENTRY(
                                       "cub::DeviceSegmentedReduce::Reduce",
                                       CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                               MapNames::getDpctNamespace() +
+                                               MapNames::getLibraryHelperNamespace() +
                                                    "device::segmented_"
                                                    "reduce",
                                                LITERAL("128")),
@@ -103,7 +103,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                           "Reduce",
                                           CALL(
                                               TEMPLATED_CALLEE_WITH_ARGS(
-                                                  MapNames::getDpctNamespace() +
+                                                  MapNames::getLibraryHelperNamespace() +
                                                       "device::segmented_"
                                                       "reduce",
                                                   LITERAL("128")),
@@ -133,7 +133,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedReduce::Sum",
                               CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "device::segmented_reduce",
                                        LITERAL("128")),
                                    STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
@@ -148,7 +148,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedReduce::Sum",
                               CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                       MapNames::getDpctNamespace() +
+                                       MapNames::getLibraryHelperNamespace() +
                                            "device::segmented_reduce",
                                        LITERAL("128")),
                                    QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
@@ -183,7 +183,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                   "cub::DeviceSegmentedReduce::Min",
                                   CALL(
                                       TEMPLATED_CALLEE_WITH_ARGS(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "device::segmented_reduce",
                                           LITERAL("128")),
                                       STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
@@ -205,7 +205,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                   "cub::DeviceSegmentedReduce::Min",
                                   CALL(
                                       TEMPLATED_CALLEE_WITH_ARGS(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "device::segmented_reduce",
                                           LITERAL("128")),
                                       QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
@@ -246,7 +246,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                   "cub::DeviceSegmentedReduce::Max",
                                   CALL(
                                       TEMPLATED_CALLEE_WITH_ARGS(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "device::segmented_reduce",
                                           LITERAL("128")),
                                       STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
@@ -268,7 +268,7 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                                   "cub::DeviceSegmentedReduce::Max",
                                   CALL(
                                       TEMPLATED_CALLEE_WITH_ARGS(
-                                          MapNames::getDpctNamespace() +
+                                          MapNames::getLibraryHelperNamespace() +
                                               "device::segmented_reduce",
                                           LITERAL("128")),
                                       QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
@@ -305,14 +305,14 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedReduce::ArgMin",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_reduce_argmin",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(7)),
                                    ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedReduce::ArgMin",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_reduce_argmin",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
@@ -336,14 +336,14 @@ RewriterMap dpct::createDeviceSegmentedReduceRewriterMap() {
                               makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedReduce::ArgMax",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_reduce_argmax",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(7)),
                                    ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
                           CALL_FACTORY_ENTRY(
                               "cub::DeviceSegmentedReduce::ArgMax",
-                              CALL(MapNames::getDpctNamespace() +
+                              CALL(MapNames::getLibraryHelperNamespace() +
                                        "segmented_reduce_argmax",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),

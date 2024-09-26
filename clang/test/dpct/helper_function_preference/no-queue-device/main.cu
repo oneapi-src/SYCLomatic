@@ -7,7 +7,7 @@
 // RUN: FileCheck --input-file %T/kernel2.dp.cpp --match-full-lines %S/kernel2.cu
 // RUN: %if build_lit %{icpx -c -fsycl %T/kernel2.dp.cpp -o %T/kernel2.dp.o %}
 // RUN: FileCheck --input-file %T/main.dp.cpp --match-full-lines %S/main.cu
-// RUN: %if build_lit %{icpx -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
+// RUN: %if build_lit %{icpx -DBUILD_TEST -c -fsycl %T/main.dp.cpp -o %T/main.dp.o %}
 
 // RUN: grep -x "extern sycl::device dev_ct1;" %T/*.cpp | wc -l > %T/extern_count1.txt
 // RUN: FileCheck --input-file %T/extern_count1.txt --match-full-lines extern_count.txt
@@ -83,7 +83,9 @@ void f() {
 // CHECK-NEXT:   DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   deviceProp.set_major_version(0);
-// CHECK-NEXT:   dpct::get_device_info(deviceProp, dev_ct1);
+// CHECK-NEXT: #ifndef BUILD_TEST
+// CHECK-NEXT:   dev_ct1.get_device_info(deviceProp);
+// CHECK-NEXT: #endif
 // CHECK-NEXT:   h_Data = (int *)malloc(SIZE * sizeof(int));
 // CHECK-NEXT:   d_Data = sycl::malloc_device<int>(SIZE, q_ct1);
 // CHECK-NEXT:   malloc1();
@@ -107,7 +109,9 @@ int main() {
   int *d_Data;
   cudaDeviceProp deviceProp;
   deviceProp.major = 0;
+#ifndef BUILD_TEST
   cudaGetDeviceProperties(&deviceProp, 0);
+#endif
   h_Data = (int *)malloc(SIZE * sizeof(int));
   cudaMalloc((void **)&d_Data, SIZE * sizeof(int));
   malloc1();

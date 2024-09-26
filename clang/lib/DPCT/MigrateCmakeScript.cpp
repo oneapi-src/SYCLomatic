@@ -598,6 +598,10 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
   return OutputStream.str();
 }
 
+void addWarningMsg(const std::string &WarningMsg, const std::string FileName) {
+  FileWarningsMap[FileName].push_back(WarningMsg);
+}
+
 static void doCmakeScriptAnalysis() {
 
   for (auto &Entry : CmakeScriptFileBufferMap) {
@@ -640,13 +644,6 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
 
     auto &Buffer = Entry.second;
     clang::tooling::UnifiedPath FileName = Entry.first.getPath();
-    auto Iter = FileWarningsMap.find(FileName.getPath().str());
-    if (Iter != FileWarningsMap.end()) {
-      std::vector WarningsVec = Iter->second;
-      for (auto &Warning : WarningsVec) {
-        llvm::outs() << Warning;
-      }
-    }
 
     // Apply user define migration rules
     for (const auto &CmakeSyntaxEntry : CmakeBuildInRules) {
@@ -681,10 +678,20 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
           }
           RelativePathPrefix += "dpct.cmake";
           NewPR.Out += "include(" + RelativePathPrefix + ")\n";
-          Buffer = applyPatternRewriter(NewPR, Buffer);
+          Buffer = applyPatternRewriter(
+              NewPR, Buffer, Entry.first.getPath().str(), "", OutRoot);
         } else {
-          Buffer = applyPatternRewriter(PR, Buffer);
+          Buffer = applyPatternRewriter(PR, Buffer, Entry.first.getPath().str(),
+                                        "", OutRoot);
         }
+      }
+    }
+
+    auto Iter = FileWarningsMap.find(FileName.getPath().str());
+    if (Iter != FileWarningsMap.end()) {
+      std::vector WarningsVec = Iter->second;
+      for (auto &Warning : WarningsVec) {
+        llvm::outs() << Warning;
       }
     }
   }
@@ -746,10 +753,9 @@ void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 }
 
 void registerCmakeMigrationRule(MetaRuleObject &R) {
-  auto PR =
-      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules, R.MatchMode,
-                                      R.RuleId, R.CmakeSyntax, R.Priority);
-
+  auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
+                                            R.MatchMode, R.Warning, R.RuleId,
+                                            R.CmakeSyntax, R.Priority);
   auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
   if (Iter != CmakeBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover &&

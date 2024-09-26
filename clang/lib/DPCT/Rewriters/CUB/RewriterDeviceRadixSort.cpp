@@ -32,7 +32,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                            CheckArgIsDefaultCudaStream(6))),
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::SortKeys",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_keys",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -43,7 +43,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                                  /* IncludeDefaultArg */ false),
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::SortKeys",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_keys",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -54,7 +54,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                                  /* IncludeDefaultArg */ false),
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::SortKeys",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_keys",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -63,7 +63,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                             LITERAL("true"), ARG(4)))),
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceRadixSort::SortKeys",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "sort_keys",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -78,7 +78,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                   makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                               CALL_FACTORY_ENTRY(
                                   "cub::DeviceRadixSort::SortKeys",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "sort_keys",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -89,7 +89,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortKeys",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -100,7 +100,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortKeys",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -109,7 +109,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                         LITERAL("false"), ARG(5)))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceRadixSort::SortKeys",
-                              CALL(MapNames::getDpctNamespace() + "sort_keys",
+                              CALL(MapNames::getLibraryHelperNamespace() + "sort_keys",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
                                    ARG(2), ARG(3), ARG(4),
@@ -138,7 +138,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::"
                                        "SortKeysDescending",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_keys",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -150,7 +150,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::"
                                        "SortKeysDescending",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_keys",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -162,7 +162,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::"
                                        "SortKeysDescending",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_keys",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -172,7 +172,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                               OTHERWISE(MULTI_STMTS_FACTORY_ENTRY(
                                   "cub::DeviceRadixSort::SortKeysDescending",
                                   true, false, true, true,
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "sort_keys",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -187,7 +187,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                        CheckArgIsDefaultCudaStream(7))),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortKeysDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -198,7 +198,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortKeysDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -209,7 +209,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortKeysDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_keys",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -218,7 +218,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                         ARG(5)))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceRadixSort::SortKeysDescending",
-                              CALL(MapNames::getDpctNamespace() + "sort_keys",
+                              CALL(MapNames::getLibraryHelperNamespace() + "sort_keys",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
                                    ARG(2), ARG(3), ARG(4),
@@ -244,7 +244,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                            CheckArgIsDefaultCudaStream(7))),
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::SortPairs",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_pairs",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -256,7 +256,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                                  /* IncludeDefaultArg */ false),
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::SortPairs",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_pairs",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -268,7 +268,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                                  /* IncludeDefaultArg */ false),
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::SortPairs",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_pairs",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -278,7 +278,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                             ARG(5)))),
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceRadixSort::SortPairs",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "sort_pairs",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -293,7 +293,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                        CheckArgIsDefaultCudaStream(9))),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortPairs",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -304,7 +304,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortPairs",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -315,7 +315,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortPairs",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -324,7 +324,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                         LITERAL("false"), ARG(7)))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceRadixSort::SortPairs",
-                              CALL(MapNames::getDpctNamespace() + "sort_pairs",
+                              CALL(MapNames::getLibraryHelperNamespace() + "sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
                                    ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -352,7 +352,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::"
                                        "SortPairsDescending",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_pairs",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -365,7 +365,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::"
                                        "SortPairsDescending",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_pairs",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -378,7 +378,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                    CALL_FACTORY_ENTRY(
                                        "cub::DeviceRadixSort::"
                                        "SortPairsDescending",
-                                       CALL(MapNames::getDpctNamespace() +
+                                       CALL(MapNames::getLibraryHelperNamespace() +
                                                 "sort_pairs",
                                             CALL("oneapi::dpl::execution::"
                                                  "device_policy",
@@ -388,7 +388,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                             ARG(5)))),
                               OTHERWISE(CALL_FACTORY_ENTRY(
                                   "cub::DeviceRadixSort::SortPairsDescending",
-                                  CALL(MapNames::getDpctNamespace() +
+                                  CALL(MapNames::getLibraryHelperNamespace() +
                                            "sort_pairs",
                                        CALL("oneapi::dpl::execution::device_"
                                             "policy",
@@ -403,7 +403,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                        CheckArgIsDefaultCudaStream(9))),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -414,7 +414,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -425,7 +425,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                              /* IncludeDefaultArg */ false),
                                CALL_FACTORY_ENTRY(
                                    "cub::DeviceRadixSort::SortPairsDescending",
-                                   CALL(MapNames::getDpctNamespace() +
+                                   CALL(MapNames::getLibraryHelperNamespace() +
                                             "sort_pairs",
                                         CALL("oneapi::dpl::execution::device_"
                                              "policy",
@@ -434,7 +434,7 @@ RewriterMap dpct::createDeviceRadixSortRewriterMap() {
                                         LITERAL("true"), ARG(7)))),
                           OTHERWISE(CALL_FACTORY_ENTRY(
                               "cub::DeviceRadixSort::SortPairsDescending",
-                              CALL(MapNames::getDpctNamespace() + "sort_pairs",
+                              CALL(MapNames::getLibraryHelperNamespace() + "sort_pairs",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
                                    ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),

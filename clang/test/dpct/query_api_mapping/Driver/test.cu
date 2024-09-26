@@ -73,40 +73,40 @@
 // CUDEVICEGETATTRIBUTE:       pi /*int **/, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED,
 // CUDEVICEGETATTRIBUTE:       d /*CUdevice*/);
 // CUDEVICEGETATTRIBUTE-NEXT: Is migrated to:
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 1 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_work_group_size();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 2 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_max_work_item_sizes().get(0);
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 3 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_max_work_item_sizes().get(1);
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 4 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_max_work_item_sizes().get(2);
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 5 */ *pi = dpct::dev_mgr::instance().get_device(d).get_device_info().get_local_mem_size();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 6 */ *pi = dpct::dev_mgr::instance().get_device(d).get_global_mem_size();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 7 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_sub_group_size();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 8 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_register_size_per_work_group();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 9 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_clock_frequency();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 10 */ *pi = dpct::dev_mgr::instance().get_device(d).get_mem_base_addr_align_in_bytes();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 11 */ *pi = dpct::dev_mgr::instance().get_device(d).get_max_compute_units();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 12 */ *pi = dpct::dev_mgr::instance().get_device(d).get_integrated();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 13 */ *pi = dpct::dev_mgr::instance().get_device(d).has(sycl::aspect::usm_host_allocations);
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 14 */ *pi = dpct::dev_mgr::instance().get_device(d).get_major_version();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 15 */ *pi = dpct::dev_mgr::instance().get_device(d).get_minor_version();
-// CUDEVICEGETATTRIBUTE-NEXT:  /* 16 */ *pi = dpct::dev_mgr::instance().get_device(d).is_native_atomic_supported();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 1 */ *pi = dpct::get_device(d).get_max_work_group_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 2 */ *pi = dpct::get_device(d).get_device_info().get_max_work_item_sizes().get(0);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 3 */ *pi = dpct::get_device(d).get_device_info().get_max_work_item_sizes().get(1);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 4 */ *pi = dpct::get_device(d).get_device_info().get_max_work_item_sizes().get(2);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 5 */ *pi = dpct::get_device(d).get_device_info().get_local_mem_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 6 */ *pi = dpct::get_device(d).get_global_mem_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 7 */ *pi = dpct::get_device(d).get_max_sub_group_size();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 8 */ *pi = dpct::get_device(d).get_max_register_size_per_work_group();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 9 */ *pi = dpct::get_device(d).get_max_clock_frequency();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 10 */ *pi = dpct::get_device(d).get_mem_base_addr_align_in_bytes();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 11 */ *pi = dpct::get_device(d).get_max_compute_units();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 12 */ *pi = dpct::get_device(d).get_integrated();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 13 */ *pi = dpct::get_device(d).has(sycl::aspect::usm_host_allocations);
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 14 */ *pi = dpct::get_device(d).get_major_version();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 15 */ *pi = dpct::get_device(d).get_minor_version();
+// CUDEVICEGETATTRIBUTE-NEXT:  /* 16 */ *pi = dpct::get_device(d).is_native_atomic_supported();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceGetCount | FileCheck %s -check-prefix=CUDEVICEGETCOUNT
 // CUDEVICEGETCOUNT: CUDA API:
 // CUDEVICEGETCOUNT-NEXT:   cuDeviceGetCount(pi /*int **/);
 // CUDEVICEGETCOUNT-NEXT: Is migrated to:
-// CUDEVICEGETCOUNT-NEXT:   *pi = dpct::dev_mgr::instance().device_count();
+// CUDEVICEGETCOUNT-NEXT:   *pi = dpct::device_count();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceGetName | FileCheck %s -check-prefix=CUDEVICEGETNAME
 // CUDEVICEGETNAME: CUDA API:
 // CUDEVICEGETNAME-NEXT:   cuDeviceGetName(pc /*char **/, i /*int*/, d /*CUdevice*/);
 // CUDEVICEGETNAME-NEXT: Is migrated to:
-// CUDEVICEGETNAME-NEXT:   memcpy(pc, dpct::dev_mgr::instance().get_device(d).get_info<sycl::info::device::name>().c_str(), i);
+// CUDEVICEGETNAME-NEXT:   memcpy(pc, dpct::get_device(d).get_info<sycl::info::device::name>().c_str(), i);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceTotalMem | FileCheck %s -check-prefix=CUDEVICETOTALMEM
 // CUDEVICETOTALMEM: CUDA API:
 // CUDEVICETOTALMEM-NEXT:   cuDeviceTotalMem(ps /*size_t **/, d /*CUdevice*/);
 // CUDEVICETOTALMEM-NEXT: Is migrated to:
-// CUDEVICETOTALMEM-NEXT:   *ps = dpct::dev_mgr::instance().get_device(d).get_device_info().get_global_mem_size();
+// CUDEVICETOTALMEM-NEXT:   *ps = dpct::get_device(d).get_device_info().get_global_mem_size();
 
 /// Device Management [DEPRECATED]
 
@@ -114,8 +114,8 @@
 // CUDEVICECOMPUTECAPABILITY: CUDA API:
 // CUDEVICECOMPUTECAPABILITY-NEXT:   cuDeviceComputeCapability(pi1 /*int **/, pi2 /*int **/, d /*CUdevice*/);
 // CUDEVICECOMPUTECAPABILITY-NEXT: Is migrated to:
-// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi1 = dpct::get_major_version(dpct::dev_mgr::instance().get_device(d));
-// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi2 = dpct::get_minor_version(dpct::dev_mgr::instance().get_device(d));
+// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi1 = dpct::get_major_version(dpct::get_device(d));
+// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi2 = dpct::get_minor_version(dpct::get_device(d));
 
 /// Primary Context Management
 
@@ -155,7 +155,7 @@
 // CUCTXGETCURRENT: CUDA API:
 // CUCTXGETCURRENT-NEXT:   cuCtxGetCurrent(pc /*CUcontext **/);
 // CUCTXGETCURRENT-NEXT: Is migrated to:
-// CUCTXGETCURRENT-NEXT:   *pc = dpct::dev_mgr::instance().current_device_id();
+// CUCTXGETCURRENT-NEXT:   *pc = dpct::get_current_device_id();
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxGetDevice | FileCheck %s -check-prefix=CUCTXGETDEVICE
 // CUCTXGETDEVICE: CUDA API:
@@ -254,7 +254,7 @@
 // CUMEMADVISE-NEXT:   cuMemAdvise(pd /*CUdeviceptr*/, s /*size_t*/, m /*CUmem_advise*/,
 // CUMEMADVISE-NEXT:               d /*CUdevice*/);
 // CUMEMADVISE-NEXT: Is migrated to:
-// CUMEMADVISE-NEXT:   dpct::dev_mgr::instance().get_device(d).in_order_queue().mem_advise(pd, s, m);
+// CUMEMADVISE-NEXT:   dpct::get_device(d).in_order_queue().mem_advise(pd, s, m);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemPrefetchAsync | FileCheck %s -check-prefix=CUMEMPREFETCHASYNC
 // CUMEMPREFETCHASYNC: CUDA API:
@@ -264,6 +264,14 @@
 // CUMEMPREFETCHASYNC-NEXT: Is migrated to:
 // CUMEMPREFETCHASYNC-NEXT:   dpct::queue_ptr cs;
 // CUMEMPREFETCHASYNC-NEXT:   cs->prefetch(pd, s);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuPointerGetAttributes | FileCheck %s -check-prefix=CUPOINTERGETATTRIBUTES
+// CUPOINTERGETATTRIBUTES: CUDA API:
+// CUPOINTERGETATTRIBUTES-NEXT:   cuPointerGetAttributes(numAttr /*unsigned int*/,
+// CUPOINTERGETATTRIBUTES-NEXT:                            attr /*CUpointer_attribute **/, data /*void ***/,
+// CUPOINTERGETATTRIBUTES-NEXT:                            ptr /*CUdeviceptr*/);
+// CUPOINTERGETATTRIBUTES-NEXT: Is migrated to:
+// CUPOINTERGETATTRIBUTES-NEXT:   dpct::pointer_attributes::get(numAttr, attr, data, ptr);
 
 /// Stream Management
 
@@ -519,10 +527,10 @@
 // CUCTXENABLEPEERACCESS: CUDA API:
 // CUCTXENABLEPEERACCESS-NEXT:   cuCtxEnablePeerAccess(c /*CUcontext*/, u /*unsigned*/);
 // CUCTXENABLEPEERACCESS-NEXT: Is migrated to:
-// CUCTXENABLEPEERACCESS-NEXT:   dpct::get_current_device().ext_oneapi_enable_peer_access(dpct::dev_mgr::instance().get_device(c));
+// CUCTXENABLEPEERACCESS-NEXT:   dpct::get_current_device().ext_oneapi_enable_peer_access(dpct::get_device(c));
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDeviceCanAccessPeer | FileCheck %s -check-prefix=CUDEVICECANACCESSPEER
 // CUDEVICECANACCESSPEER: CUDA API:
 // CUDEVICECANACCESSPEER-NEXT:   cuDeviceCanAccessPeer(pi /*int **/, d1 /*CUdevice*/, d2 /*CUdevice*/);
 // CUDEVICECANACCESSPEER-NEXT: Is migrated to:
-// CUDEVICECANACCESSPEER-NEXT:   *pi = dpct::dev_mgr::instance().get_device(d1).ext_oneapi_can_access_peer(dpct::dev_mgr::instance().get_device(d2));
+// CUDEVICECANACCESSPEER-NEXT:   *pi = dpct::get_device(d1).ext_oneapi_can_access_peer(dpct::get_device(d2));

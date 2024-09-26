@@ -14,10 +14,13 @@
 #include "MigrationRuleManager.h"
 #include "NCCLAPIMigration.h"
 #include "Utility.h"
+#include "TypeLocRewriters.h"
 #include "llvm/Support/YAMLTraits.h"
 
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
+
+OutputBuilder::~OutputBuilder() {}
 
 template <class Functor>
 void reisterMigrationRule(const std::string &Name, Functor F) {
@@ -118,6 +121,28 @@ void registerHeaderRule(MetaRuleObject &R) {
 }
 
 void registerTypeRule(MetaRuleObject &R) {
+  std::shared_ptr TOB = std::make_shared<TypeOutputBuilder>();
+  TOB->Kind = TypeOutputBuilder::Kind::Top;
+  TOB->RuleName = R.RuleId;
+  TOB->RuleFile = R.RuleFile;
+  TOB->parse(R.Out);
+
+  if (R.RuleAttributes.NumOfTemplateArgs != -1) {
+    dpct::TypeMatchingDesc TMD =
+        dpct::TypeMatchingDesc(R.In, R.RuleAttributes.NumOfTemplateArgs);
+    auto Value = clang::dpct::makeUserDefinedTypeStrCreator(R, TOB);
+    auto &Entry =
+        (*clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap)[TMD];
+    if (!Entry) {
+      Entry = clang::dpct::createTypeLocRewriterFactory(Value);
+      reisterMigrationRule(R.RuleId, [=] {
+        return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
+      });
+    } else if (Entry->Priority > R.Priority) {
+      Entry = clang::dpct::createTypeLocRewriterFactory(Value);
+    }
+  }
+
   auto It = MapNames::TypeNamesMap.find(R.In);
   if (It != MapNames::TypeNamesMap.end()) {
     if (It->second->Priority > R.Priority) {
@@ -129,7 +154,7 @@ void registerTypeRule(MetaRuleObject &R) {
                                   R.Includes.begin(), R.Includes.end());
     }
   } else {
-    reisterMigrationRule(R.RuleId, [=] {
+    reisterMigrationRule(R.RuleId, [&R] {
       return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
     });
     auto RulePtr = std::make_shared<TypeNameRule>(
@@ -247,7 +272,8 @@ void deregisterAPIRule(MetaRuleObject &R) {
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
   MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
-      R.In, R.Out, R.Subrules, R.MatchMode, R.RuleId, R.CmakeSyntax, R.Priority));
+      R.In, R.Out, R.Subrules, R.MatchMode, R.Warning, R.RuleId, R.CmakeSyntax,
+      R.Priority));
 }
 
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
@@ -257,6 +283,7 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     In = PR.In;
     Out = PR.Out;
     MatchMode = PR.MatchMode;
+    Warning = PR.Warning;
     Subrules = PR.Subrules;
     Priority = PR.Priority;
     CmakeSyntax = PR.CmakeSyntax;
@@ -266,15 +293,17 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
 
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const MetaRuleObject::PatternRewriter &PR)
-    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), CmakeSyntax(PR.CmakeSyntax),
-      RuleId(PR.RuleId), Priority(PR.Priority), Subrules(PR.Subrules) {}
+    : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), Warning(PR.Warning),
+      CmakeSyntax(PR.CmakeSyntax), RuleId(PR.RuleId), Priority(PR.Priority),
+      Subrules(PR.Subrules) {}
 
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const std::string &I, const std::string &O,
     const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
-    std::string RuleId, std::string CmakeSyntax, RulePriority Priority)
-    : In(I), Out(O), MatchMode(MatchMode), CmakeSyntax(CmakeSyntax),
-      RuleId(RuleId), Priority(Priority) {
+    std::string Warning, std::string RuleId, std::string CmakeSyntax,
+    RulePriority Priority)
+    : In(I), Out(O), MatchMode(MatchMode), Warning(Warning),
+      CmakeSyntax(CmakeSyntax), RuleId(RuleId), Priority(Priority) {
   Subrules = S;
 }
 
@@ -533,6 +562,20 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
   return ResultBuilder;
 }
 
+std::shared_ptr<OutputBuilder>
+TypeOutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
+  auto ResultBuilder = std::make_shared<TypeOutputBuilder>();
+  if (OutStr.substr(Idx, 13) == "$template_arg") {
+    Idx += 13;
+    OutputBuilder::consumeLParen(OutStr, Idx, "$template_arg");
+    ResultBuilder->Kind = Kind::TemplateArg;
+    ResultBuilder->ArgIndex =
+        OutputBuilder::consumeArgIndex(OutStr, Idx, "$template_arg");
+    OutputBuilder::consumeRParen(OutStr, Idx, "$template_arg");
+  }
+  return ResultBuilder;
+}
+
 class RefMatcherInterface
     : public clang::ast_matchers::internal::MatcherInterface<
           clang::DeclRefExpr> {
@@ -630,35 +673,10 @@ void clang::dpct::UserDefinedTypeRule::registerMatcher(
 void clang::dpct::UserDefinedTypeRule::runRule(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "typeLoc")) {
-    auto TypeStr =
-        DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
-    // if the TypeLoc is a TemplateSpecializationTypeLoc
-    // the TypeStr should be the substr before the "<"
-    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
-      TypeStr = TypeStr.substr(0, TypeStr.find("<"));
-    }
-    auto It = MapNames::TypeNamesMap.find(TypeStr);
-    if (It == MapNames::TypeNamesMap.end())
-      return;
-
-    auto ReplStr = It->second->NewName;
-
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
-    auto Len = Lexer::MeasureTokenLength(
-        Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
-    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
-      Range = getDefinitionRange(TSTL.getBeginLoc(), TSTL.getLAngleLoc());
-      Len = 0;
-    }
-    Len += SM.getDecomposedLoc(Range.getEnd()).second -
-           SM.getDecomposedLoc(Range.getBegin()).second;
-    emplaceTransformation(
-        new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
-    for (auto ItHeader = It->second->Includes.begin();
-         ItHeader != It->second->Includes.end(); ItHeader++) {
-      DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
-    }
+    dpct::ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 

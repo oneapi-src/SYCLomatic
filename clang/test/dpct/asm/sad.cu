@@ -16,22 +16,22 @@ __global__ void sad() {
   int64_t i64;
   uint64_t u64;
 
-  // CHECK: i16 = sycl::abs_diff<int16_t>(i16, i16) + i16;
+  // CHECK: i16 = sycl::abs_diff(i16, i16) + i16;
   asm("sad.s16 %0, %1, %2, %3;" : "=h"(i16) : "h"(i16), "h"(i16), "h"(i16));
   
-  // CHECK: u16 = sycl::abs_diff<uint16_t>(u16, u16) + u16;
+  // CHECK: u16 = sycl::abs_diff(u16, u16) + u16;
   asm("sad.u16 %0, %1, %2, %3;" : "=h"(u16) : "h"(u16), "h"(u16), "h"(u16));
   
-  // CHECK: i32 = sycl::abs_diff<int32_t>(i32, i32) + i32;
+  // CHECK: i32 = sycl::abs_diff(i32, i32) + i32;
   asm("sad.s32 %0, %1, %2, %3;" : "=r"(i32) : "r"(i32), "r"(i32), "r"(i32));
   
-  // CHECK: u32 = sycl::abs_diff<uint32_t>(u32, u32) + u32;
+  // CHECK: u32 = sycl::abs_diff(u32, u32) + u32;
   asm("sad.u32 %0, %1, %2, %3;" : "=r"(u32) : "r"(u32), "r"(u32), "r"(u32));
   
-  // CHECK: i64 = sycl::abs_diff<int64_t>(i64, i64) + i64;
+  // CHECK: i64 = sycl::abs_diff(i64, i64) + i64;
   asm("sad.s64 %0, %1, %2, %3;" : "=l"(i64) : "l"(i64), "l"(i64), "l"(i64));
   
-  // CHECK: u64 = sycl::abs_diff<uint64_t>(u64, u64) + u64;
+  // CHECK: u64 = sycl::abs_diff(u64, u64) + u64;
   asm("sad.u64 %0, %1, %2, %3;" : "=l"(u64) : "l"(u64), "l"(u64), "l"(u64));
 }
 

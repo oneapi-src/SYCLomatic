@@ -208,6 +208,16 @@ void GenCodePinHeaderRule::collectMemberInfo(
   if (!RD) {
     return;
   }
+  if (const TypedefType *TT = T->getAs<TypedefType>()) {
+    VI.IsTypeDef = true;
+    llvm::StringRef TypeName =
+        TT->getCanonicalTypeInternal()->getAsRecordDecl()->getName();
+    if (TypeName.empty())
+      VI.OrgTypeName =
+          "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
+    else
+      VI.OrgTypeName = TypeName.str();
+  }
   VI.IsValid = true;
   if (VI.VarRecordType.empty()) {
     VI.VarRecordType = getRecordTypeStr(RD);
@@ -262,7 +272,10 @@ void GenCodePinHeaderRule::collectMemberInfo(
 
 void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
   auto &Ctx = DpctGlobalInfo::getContext();
-  T = T.getUnqualifiedType();
+  T = T.getLocalUnqualifiedType();
+  clang::PrintingPolicy PrintPolicy(Ctx.getLangOpts());
+  PrintPolicy.SuppressTagKeyword = 1;
+  PrintPolicy.SuppressDefaultTemplateArgs = 1;
   if (T->isPointerType()) {
     collectInfoForCodePinDumpFunction(T->getPointeeType());
     return;
@@ -273,16 +286,12 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
     }
   }
 
-  clang::PrintingPolicy PrintPolicy(Ctx.getLangOpts());
-  PrintPolicy.SuppressTagKeyword = 1;
-  PrintPolicy.SuppressDefaultTemplateArgs = 1;
-
   std::vector<QualType> CurrentTypeQueue, NextTypeQueue;
   CurrentTypeQueue.push_back(T);
   bool TopTypeFlag = true;
   while (!CurrentTypeQueue.empty()) {
     for (auto &QT : CurrentTypeQueue) {
-      QT = QT.getUnqualifiedType();
+      QT = QT.getLocalUnqualifiedType();
       if (!QT->getAs<RecordType>() ||
           !isTypeInAnalysisScope(QT.getTypePtrOrNull())) {
         continue;
@@ -305,6 +314,9 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
       collectMemberInfo(QT, VarInfo, NextTypeQueue, false, PrintPolicy);
       PrintPolicy.SuppressScope = 1;
       std::string TypenameWithoutScope = QT.getAsString(PrintPolicy);
+      if (QT->isTypedefNameType())
+        TypenameWithoutScope =
+            QT->getAs<TypedefType>()->getDecl()->getName().str();
       auto Pos = TypenameWithoutScope.find('<');
       VarInfo.VarNameWithoutScopeAndTemplateArgs =
           TypenameWithoutScope.substr(0, Pos);

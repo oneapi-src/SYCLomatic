@@ -7,28 +7,32 @@
 //===----------------------------------------------------------------------===//
 
 #include "TypeLocRewriters.h"
+#include "Rules.h"
 #include "clang/AST/TypeLoc.h"
 
 namespace clang {
 namespace dpct {
-
-std::function<std::string(const TypeLoc)>
-makeStringCreator(std::string TypeName) {
-  return [=](const TypeLoc TL) -> std::string {
-    return TypeName;
-  };
+inline auto UseSYCLCompat() {
+  return [](const TypeLoc) -> bool { return DpctGlobalInfo::useSYCLCompat(); };
 }
 
-std::function<TemplateArgumentInfo(const TypeLoc)>
-makeTemplateArgCreator(unsigned Idx) {
-  return [=](const TypeLoc TL) -> TemplateArgumentInfo {
-    if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
-      if (TSTL.getNumArgs() > Idx) {
-        auto TAL = TSTL.getArgLoc(Idx);
-        return TemplateArgumentInfo(TAL, TL.getSourceRange());
-      }
+TemplateArgumentInfo getTemplateArg(const TypeLoc &TL, unsigned Idx) {
+  if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+    if (TSTL.getNumArgs() > Idx) {
+      auto TAL = TSTL.getArgLoc(Idx);
+      return TemplateArgumentInfo(TAL, TL.getSourceRange());
     }
-    return TemplateArgumentInfo("");
+  }
+  return TemplateArgumentInfo("");
+}
+
+std::function<std::string(const TypeLoc)>
+makeStringCreator(std::string TypeName,
+                  clang::dpct::HelperFeatureEnum RequestFeature,
+                  const std::vector<std::string> &Headers) {
+  return [=](const TypeLoc TL) -> std::string {
+    requestFeature(RequestFeature);
+    return TypeName;
   };
 }
 
@@ -47,10 +51,52 @@ makeAddPointerCreator(std::function<T(const TypeLoc)> f) {
 std::function<std::string(const TypeLoc)>
 makeTypeStrCreator() {
   return [=](const TypeLoc TL) {
+    if(!TL)
+      return std::string();
     auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
     PP.SuppressTagKeyword = true;
     PP.FullyQualifiedName = true;
     return TL.getType().getAsString(PP);
+  };
+}
+
+std::function<TemplateArgumentInfo(const TypeLoc)>
+makeTemplateArgCreator(unsigned Idx) {
+  return [=](const TypeLoc TL) -> TemplateArgumentInfo {
+    return getTemplateArg(TL, Idx);
+  };
+}
+
+std::function<std::string(const TypeLoc)>
+makeUserDefinedTypeStrCreator(MetaRuleObject &R,
+                              std::shared_ptr<TypeOutputBuilder> TOB) {
+  return [&R, TOB](const TypeLoc TL) {
+    if (!TL)
+      return std::string();
+    auto Range = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
+    for (const auto &ItHeader : R.Includes) {
+      DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), ItHeader);
+    }
+
+    std::string ResultStr;
+    llvm::raw_string_ostream OS(ResultStr);
+    for (auto &tob : TOB->SubBuilders) {
+      switch (tob->Kind) {
+      case (OutputBuilder::Kind::String):
+        OS << tob->Str;
+        break;
+      case (OutputBuilder::Kind::TemplateArg): {
+        OS << getTemplateArg(TL, tob->ArgIndex).getString();
+        break;
+      }
+      default:
+        DpctDebugs() << "[OutputBuilder::Kind] Unexpected value: " << tob->Kind
+                     << "\n";
+        assert(0);
+      }
+    }
+    OS.flush();
+    return ResultStr;
   };
 }
 
@@ -136,6 +182,10 @@ std::function<bool(const TypeLoc)> checkEnableGraphForType() {
   return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useExtGraph(); };
 }
 
+std::function<bool(const TypeLoc)> checkEnableBindlessImagesForType() {
+  return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useExtBindlessImages(); };
+}
+
 std::function<bool(const TypeLoc)> isUseNonUniformGroupsForType() {
   return [=](const TypeLoc) -> bool {
     return DpctGlobalInfo::useExpNonUniformGroups();
@@ -143,33 +193,16 @@ std::function<bool(const TypeLoc)> isUseNonUniformGroupsForType() {
 }
 
 std::function<bool(const TypeLoc)> isUseLogicalGroupsForType() {
+  return
+      [=](const TypeLoc) -> bool { return DpctGlobalInfo::useLogicalGroup(); };
+}
+std::function<bool(const TypeLoc)> isUseRootGroupForType() {
+  return [=](const TypeLoc) -> bool { return DpctGlobalInfo::useRootGroup(); };
+}
+std::function<bool(const TypeLoc)> isUseNdRangeBarrier() {
   return [=](const TypeLoc) -> bool {
-    return DpctGlobalInfo::useLogicalGroup();
+    return DpctGlobalInfo::useNdRangeBarrier();
   };
-}
-
-// Print a templated type. Pass a STR("") as a template argument for types with
-// no template argument e.g. MyType<>
-template <class TypeNameT, class... TemplateArgsT>
-std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
-    std::function<TypeNameT(const TypeLoc)> TypeNameCreator,
-    std::function<TemplateArgsT(const TypeLoc)>... TAsCreator) {
-  return std::make_shared<
-      TypeLocRewriterFactory<TemplateTypeLocRewriter<TypeNameT, TemplateArgsT...>,
-                             std::function<TypeNameT(const TypeLoc)>,
-                             std::function<TemplateArgsT(const TypeLoc)>...>>(
-      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator),
-      std::forward<std::function<TemplateArgsT(const TypeLoc)>>(TAsCreator)...);
-}
-
-// Print a type with no template.
-template <class TypeNameT>
-std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
-    std::function<TypeNameT(const TypeLoc)> TypeNameCreator) {
-  return std::make_shared<
-      TypeLocRewriterFactory<TypeNameTypeLocRewriter<TypeNameT>,
-                             std::function<TypeNameT(const TypeLoc)>>>(
-      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator));
 }
 
 // Print a templated type. Pass a STR("") as a template argument for types with
@@ -215,21 +248,21 @@ createReportWarningTypeLocRewriterFactory(Diagnostics MsgId,
     (MsgId, std::forward<Args>(args)...);
 }
 
-std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
 createFeatureRequestFactory(
     HelperFeatureEnum Feature,
-    std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+    std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
         &&Input) {
-  return std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>(
+  return std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>(
       std::move(Input.first),
       std::make_shared<TypeLocRewriterFactoryWithFeatureRequest>(Feature,
                                                           Input.second));
 }
 template <class T>
-std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
 createFeatureRequestFactory(
     HelperFeatureEnum Feature,
-    std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+    std::pair<TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>>
         &&Input,
     T) {
   return createFeatureRequestFactory(Feature, std::move(Input));
@@ -241,19 +274,25 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createHeaderInsertionFactory(
   return std::make_shared<HeaderInsertionRewriterFactory>(Header,
                                                           SubRewriterFactory);
 }
-
 std::unique_ptr<std::unordered_map<
-    std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>>
-    TypeLocRewriterFactoryBase::TypeLocRewriterMap;
+      TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>,
+      TypeMatchingDesc::hash>> TypeLocRewriterFactoryBase::TypeLocRewriterMap;
+
+void initTypeLocSYCLCompatRewriterMap(
+    std::unordered_map<TypeMatchingDesc,
+                       std::shared_ptr<TypeLocRewriterFactoryBase>,
+                       TypeMatchingDesc::hash> &TypeLocRewriterMap);
 
 void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
   TypeLocRewriterMap = std::make_unique<std::unordered_map<
-      std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>>(
-      std::unordered_map<std::string,
-                         std::shared_ptr<TypeLocRewriterFactoryBase>>({
+      TypeMatchingDesc, std::shared_ptr<TypeLocRewriterFactoryBase>,
+      TypeMatchingDesc::hash>>(
+      std::unordered_map<TypeMatchingDesc,
+                         std::shared_ptr<TypeLocRewriterFactoryBase>,
+                         TypeMatchingDesc::hash>({
 #define STR(Str) makeStringCreator(Str)
 #define TEMPLATE_ARG(Idx) makeTemplateArgCreator(Idx)
-#define TYPE_REWRITE_ENTRY(Name, Factory) {Name, Factory},
+#define TYPE_REWRITE_ENTRY(Name, Factory) {{Name}, Factory},
 #define TYPE_CONDITIONAL_FACTORY(Pred, First, Second)                          \
   createTypeLocConditionalFactory(Pred, First, Second)
 #define TYPE_FACTORY(...) createTypeLocRewriterFactory(__VA_ARGS__)
@@ -277,6 +316,29 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #undef TEMPLATE_ARG
 #undef STR
       }));
+  if (DpctGlobalInfo::useSYCLCompat())
+    initTypeLocSYCLCompatRewriterMap(*TypeLocRewriterMap);
+}
+
+void initTypeLocSYCLCompatRewriterMap(
+    std::unordered_map<TypeMatchingDesc,
+                       std::shared_ptr<TypeLocRewriterFactoryBase>,
+                       TypeMatchingDesc::hash> &TypeLocRewriterMap) {
+#define SYCLCOMPAT_UNSUPPORT(NAME)                                             \
+  TypeLocRewriterMap[TypeMatchingDesc(NAME)] =                                 \
+      createReportWarningTypeLocRewriterFactory(                               \
+          Diagnostics::UNSUPPORT_SYCLCOMPAT, makeStringCreator(NAME));
+
+  SYCLCOMPAT_UNSUPPORT("cudaGraph_t")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphExec_t")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphNode_t")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource")
+  SYCLCOMPAT_UNSUPPORT("cudaGraphicsResource_t")
+  SYCLCOMPAT_UNSUPPORT("thrust::system::cuda::experimental::pinned_allocator")
+  SYCLCOMPAT_UNSUPPORT("thrust::cuda::experimental::pinned_allocator")
+  SYCLCOMPAT_UNSUPPORT("thrust::device_allocator")
+
+#undef SYCLCOMPAT_UNSUPPORT
 }
 } // namespace dpct
 } // namespace clang

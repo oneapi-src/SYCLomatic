@@ -30,7 +30,6 @@
 #include <system_error>
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <fstream>
-#include <regex>
 #include "clang/DPCT/DPCT.h"
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -48,6 +47,82 @@ std::string RealSDKPath = "";
 std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
+int ThrustVersion=0;
+
+bool CudaInstallationDetector::IsWhiteSpace(const char Character) const {
+  return Character == ' ' || Character == '\t';
+}
+
+void CudaInstallationDetector::ParseThrustVersionFile(
+    const std::string &FilePath) {
+  std::ifstream CudaFile(FilePath, std::ios::in);
+  if (!CudaFile.is_open()) {
+    return;
+  }
+
+  std::string Line;
+  std::string Res;
+  while (std::getline(CudaFile, Line)) {
+    if (FindTargetVersion(Line, "define", "THRUST_VERSION", Res))
+      break;
+  }
+  if (Res == "") {
+    return;
+  }
+  ThrustVersion = std::stoi(Res);
+}
+
+// Find pattern "#define DefineStr VersionStr NUM" in line, return NUM in Result
+// return true if find.
+bool CudaInstallationDetector::FindTargetVersion(const std::string &Line,
+                                                 const std::string DefineStr,
+                                                 const std::string VersionStr,
+                                                 std::string &Result) {
+  const size_t DefineLength = DefineStr.length();
+  const size_t VersionLength = VersionStr.length();
+  size_t Pos = 0;
+  // Skip while space characters.
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  if (Line[Pos] != '#') {
+    return false;
+  }
+  Pos += 1; // Skip '#'.
+
+  // Skip possible space characters.
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  size_t Index = 0;
+  for (; Pos < Line.size() && Index < DefineLength &&
+         Line[Pos] == DefineStr[Index];
+       Pos++, Index++)
+    ;
+
+  if (Index != DefineLength || !IsWhiteSpace(Line[Pos])) {
+    return false;
+  }
+  // Skip while space characters.
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  Index = 0;
+  for (; Pos < Line.size() && Index < VersionLength &&
+         Line[Pos] == VersionStr[Index];
+       Pos++, Index++)
+    ;
+
+  if (Index != VersionLength || !IsWhiteSpace(Line[Pos])) {
+    return false;
+  }
+
+  for (; Pos < Line.size() && IsWhiteSpace(Line[Pos]); Pos++)
+    ;
+
+  Result = Line.substr(Pos);
+  return true;
+}
 
 bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath) {
   Version = CudaVersion::UNKNOWN;
@@ -58,19 +133,16 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
   std::string Line;
   std::string Res;
   while (std::getline(CudaFile, Line)) {
-    std::regex RE("^#define CUDA_VERSION [0-9]{4,5}", std::regex::extended);
-    std::smatch M;
-    std::regex_search(Line, M, RE);
-    if (!M.empty()) {
-      Res = M[0];
+    if (FindTargetVersion(Line, "define", "CUDA_VERSION", Res))
       break;
-    }
   }
   if (Res == "") {
     return false;
   }
-  Res = Res.substr(21);
   int DefineVersion = std::stoi(Res);
+  if (DefineVersion < 8000) { // 8000 is for CUDA-8.0
+    return false;
+  }
   int Major = DefineVersion / 1000;
   int Minor = (DefineVersion % 100) / 10;
   SDKVersionMajor = Major;
@@ -120,6 +192,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath)
     Version = CudaVersion::CUDA_123;
   } else if (Major == 12 && Minor == 4) {
     Version = CudaVersion::CUDA_124;
+  } else if (Major == 12 && Minor == 5) {
+    Version = CudaVersion::CUDA_125;
+  } else if (Major == 12 && Minor == 6) {
+    Version = CudaVersion::CUDA_126;
   }
 
 
@@ -185,6 +261,8 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_124;
   if (raw_version < 12060)
     return CudaVersion::CUDA_125;
+  if (raw_version < 12070)
+    return CudaVersion::CUDA_126;
   return CudaVersion::NEW;
 }
 
@@ -241,6 +319,7 @@ bool CudaInstallationDetector::validateCudaHeaderDirectory(
   if (!(FS.exists(FilePath + "/cuda_runtime.h") &&
         FS.exists(FilePath + "/cuda.h")))
     return false;
+  ParseThrustVersionFile(FilePath + "/thrust/version.h");
   IsIncludePathValid = true;
   IncludePath = FilePath;
   bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h");
@@ -266,7 +345,9 @@ CudaInstallationDetector::CudaInstallationDetector(
 
   // In decreasing order so we prefer newer versions to older versions.
 #ifdef SYCLomatic_CUSTOMIZATION
-  std::initializer_list<const char *> Versions = {"12.4"
+  std::initializer_list<const char *> Versions = {"12.6",
+                                                  "12.5",
+                                                  "12.4",
                                                   "12.3",
                                                   "12.2",
                                                   "12.1",

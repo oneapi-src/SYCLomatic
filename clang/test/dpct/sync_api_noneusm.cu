@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/sync_api_noneusm %s --cuda-include-path="%cuda-path/include" --usm-level=none --use-experimental-features=nd_range_barrier -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/sync_api_noneusm %s --cuda-include-path="%cuda-path/include" --usm-level=none --use-experimental-features=root-group -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api_noneusm/sync_api_noneusm.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/sync_api_noneusm/sync_api_noneusm.dp.cpp -o %T/sync_api_noneusm/sync_api_noneusm.dp.o %}
 
@@ -92,9 +92,9 @@ __global__ void k() {
   FOO(__syncthreads_count(p));
 }
 
-// CHECK: void kernel(const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:             sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
-// CHECK-NEXT:   dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
+// CHECK: void kernel(const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:   sycl::ext::oneapi::experimental::root_group grid = item_ct1.ext_oneapi_get_root_group();
+// CHECK-NEXT:   sycl::group_barrier(grid);
 // CHECK-NEXT: }
 __global__ void kernel() {
   cg::grid_group grid = cg::this_grid();
@@ -102,23 +102,13 @@ __global__ void kernel() {
 }
 
 int main() {
-// CHECK:  {
-// CHECK-NEXT:    dpct::global_memory<dpct::byte_t, 1> d_sync_ct1(4);
-// CHECK-NEXT:    d_sync_ct1.init(dpct::get_out_of_order_queue());
-// CHECK-NEXT:    dpct::dpct_memset(d_sync_ct1.get_ptr(), 0, sizeof(int));
-// CHECK-EMPTY:
-// CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
-// CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        auto sync_ct1 = dpct::get_access(d_sync_ct1.get_ptr(), cgh);
-// CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for(
-// CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
-// CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:            auto atm_sync_ct1 = sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space>(*(unsigned int *)&sync_ct1[0]);
-// CHECK-NEXT:            kernel(item_ct1, atm_sync_ct1);
-// CHECK-NEXT:          });
-// CHECK-NEXT:      }).wait();
-// CHECK-NEXT:  }
+// CHECK: auto exp_props = sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::use_root_sync};
+// CHECK-NEXT:  dpct::get_out_of_order_queue().parallel_for(
+// CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
+// CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:      kernel(item_ct1);
+// CHECK-NEXT:    });
+// CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   kernel<<<2, 2>>>();
   cudaDeviceSynchronize();
   return 0;

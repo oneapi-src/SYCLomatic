@@ -136,10 +136,16 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     WARNING_FACTORY_ENTRY("tex1Dfetch", ENTRY_TEXTURE("tex1Dfetch", 0x01, 1),
                           Diagnostics::TEX_FETCH))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ENTRY_TEXTURE("tex1DLayered", 0xF1, 2, 1))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ENTRY_TEXTURE("tex2DLayered", 0xF2, 3, 1, 2))
+CONDITIONAL_FACTORY_ENTRY(UseExtBindlessImages,
+                          ENTRY_TEXTURE("tex1DLayered", 0xF1, 1),
+                          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                                                  ENTRY_TEXTURE("tex1DLayered",
+                                                                0xF1, 2, 1)))
+CONDITIONAL_FACTORY_ENTRY(UseExtBindlessImages,
+                          ENTRY_TEXTURE("tex2DLayered", 0xF2, 1, 2),
+                          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                                                  ENTRY_TEXTURE("tex2DLayered",
+                                                                0xF2, 3, 1, 2)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture",

@@ -31,4 +31,5 @@ bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles);
 
 void registerCmakeMigrationRule(MetaRuleObject &R);
 bool cmakeScriptNotFound();
+void addWarningMsg(const std::string &WarningMsg, const std::string FileName);
 #endif

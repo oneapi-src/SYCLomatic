@@ -34,6 +34,14 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   tex3DLod<T>(tex, j, k, m, l);
   // CHECK: i = sycl::ext::oneapi::experimental::sample_mipmap<int>(tex, sycl::float3(j, k, m), l);
   tex3DLod(&i, tex, j, k, m, l);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image_array<sycl::short2>(tex, float(j), i);
+  tex1DLayered<short2>(tex, j, i);
+  // CHECK: k = sycl::ext::oneapi::experimental::sample_image_array<float>(tex, float(j), i);
+  tex1DLayered(&k, tex, j, i);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image_array<T>(tex, sycl::float2(j, k), i);
+  tex2DLayered<T>(tex, j, k, i);
+  // CHECK: l = sycl::ext::oneapi::experimental::sample_image_array<float>(tex, sycl::float2(j, k), i);
+  tex2DLayered(&l, tex, j, k, i);
 #ifndef BUILD_TEST
   T t;
   // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));
@@ -75,10 +83,8 @@ void driverMemoryManagement() {
   p3DDesc.Depth = s;
   // CHECK: p3DDesc.channel_type = f;
   p3DDesc.Format = f;
-#ifndef BUILD_TEST // TODO: Need delete later.
   // CHECK: p3DDesc.num_channels = u;
   p3DDesc.NumChannels = u;
-#endif
   p3DDesc.Flags = 1;
   // CHECK: sycl::ext::oneapi::experimental::image_descriptor pDesc;
   CUDA_ARRAY_DESCRIPTOR pDesc;
@@ -86,15 +92,13 @@ void driverMemoryManagement() {
   pDesc.Format = f;
   // CHECK: pDesc.height = s;
   pDesc.Height = s;
-#ifndef BUILD_TEST // TODO: Need delete later.
   // CHECK: pDesc.num_channels = u;
   pDesc.NumChannels = u;
-#endif
   // CHECK: pDesc.width = s;
   pDesc.Width = s;
   // CHECK: dpct::memcpy_parameter p2d;
   CUDA_MEMCPY2D p2d;
-  // CHECK: p2d.from.pos[0] = s;
+  // CHECK: p2d.from.pos_x_in_bytes = s;
   p2d.srcXInBytes = s;
   // CHECK: p2d.from.pos[1] = s;
   p2d.srcY = s;
@@ -108,7 +112,7 @@ void driverMemoryManagement() {
   p2d.srcArray = *pArr;
   // CHECK: p2d.from.pitched.set_pitch(s);
   p2d.srcPitch = s;
-  // CHECK: p2d.to.pos[0] = s;
+  // CHECK: p2d.to.pos_x_in_bytes = s;
   p2d.dstXInBytes = s;
   // CHECK: p2d.to.pos[1] = s;
   p2d.dstY = s;
@@ -122,13 +126,13 @@ void driverMemoryManagement() {
   p2d.dstArray = *pArr;
   // CHECK: p2d.to.pitched.set_pitch(s);
   p2d.dstPitch = s;
-  // CHECK: p2d.size[0] = s;
+  // CHECK: p2d.size_x_in_bytes = s;
   p2d.WidthInBytes = s;
   // CHECK: p2d.size[1] = s;
   p2d.Height = s;
   // CHECK: dpct::memcpy_parameter p3d;
   CUDA_MEMCPY3D p3d;
-  // CHECK: p3d.from.pos[0] = s;
+  // CHECK: p3d.from.pos_x_in_bytes = s;
   p3d.srcXInBytes = s;
   // CHECK: p3d.from.pos[1] = s;
   p3d.srcY = s;
@@ -148,7 +152,7 @@ void driverMemoryManagement() {
   p3d.srcPitch = s;
   // CHECK: p3d.from.pitched.set_y(s);
   p3d.srcHeight = s;
-  // CHECK: p3d.to.pos[0] = s;
+  // CHECK: p3d.to.pos_x_in_bytes = s;
   p3d.dstXInBytes = s;
   // CHECK: p3d.to.pos[1] = s;
   p3d.dstY = s;
@@ -168,7 +172,7 @@ void driverMemoryManagement() {
   p3d.dstPitch = s;
   // CHECK: p3d.to.pitched.set_y(s);
   p3d.dstHeight = s;
-  // CHECK: p3d.size[0] = s;
+  // CHECK: p3d.size_x_in_bytes = s;
   p3d.WidthInBytes = s;
   // CHECK: p3d.size[1] = s;
   p3d.Height = s;
@@ -228,6 +232,8 @@ void driverMemoryManagement() {
 void driver() {
   // CHECK: dpct::queue_ptr s;
   CUstream s;
+  const int data[1] = {0};
+  const void *cv;
   void *v;
   // CHECK: dpct::device_ptr dp;
   CUdeviceptr dp;
@@ -237,7 +243,7 @@ void driver() {
   CUcontext c;
   // CHECK: dpct::memcpy_parameter p3dp;
   CUDA_MEMCPY3D_PEER p3dp;
-  // CHECK: p3dp.from.pos[0] = 1;
+  // CHECK: p3dp.from.pos_x_in_bytes = 1;
   p3dp.srcXInBytes = 1;
   // CHECK: p3dp.from.pos[1] = 2;
   p3dp.srcY = 2;
@@ -245,8 +251,9 @@ void driver() {
   p3dp.srcZ = 3;
   p3dp.srcLOD = 4;
   p3dp.srcMemoryType = CU_MEMORYTYPE_HOST;
-  // CHECK: p3dp.from.pitched.set_data_ptr(v);
-  p3dp.srcHost = v;
+  // CHECK: p3dp.from.pitched.set_data_ptr(data);
+  p3dp.srcHost = data;
+  p3dp.srcHost = cv;
   // CHECK: p3dp.from.pitched.set_data_ptr(dp);
   p3dp.srcDevice = dp;
   // CHECK: p3dp.from.image_bindless = a;
@@ -258,7 +265,7 @@ void driver() {
   // CHECK: p3dp.from.pitched.set_y(6);
   p3dp.srcHeight = 6;
 
-  // CHECK: p3dp.to.pos[0] = 1;
+  // CHECK: p3dp.to.pos_x_in_bytes = 1;
   p3dp.dstXInBytes = 1;
   // CHECK: p3dp.to.pos[1] = 2;
   p3dp.dstY = 2;
@@ -279,7 +286,7 @@ void driver() {
   // CHECK: p3dp.to.pitched.set_y(6);
   p3dp.dstHeight = 6;
 
-  // CHECK: p3dp.size[0] = 3;
+  // CHECK: p3dp.size_x_in_bytes = 3;
   p3dp.WidthInBytes = 3;
   // CHECK: p3dp.size[1] = 2;
   p3dp.Height = 2;
@@ -324,12 +331,18 @@ int main() {
   cudaMipmappedArray_t pMipMapArr;
   // CHECK: dpct::image_channel desc;
   cudaChannelFormatDesc desc;
-  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::standard);
   cudaMalloc3DArray(&pArr, &desc, e);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::array);
+  cudaMalloc3DArray(&pArr, &desc, e, cudaArrayLayered);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::array);
+  cudaMalloc3DArray(&pArr, &desc, e, 1);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, w, h);
   cudaMallocArray(&pArr, &desc, w, h);
   // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, 1, 0.1);
   cudaMallocArray(&pArr, &desc, 1, 0.1);
+  // CHECK: pArr = new dpct::experimental::image_mem_wrapper(desc, l);
+  cudaMallocArray(&pArr, &desc, l);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, e, sycl::ext::oneapi::experimental::image_type::mipmap, l);
   cudaMallocMipmappedArray(&pMipMapArr, &desc, e, l, flag);
   // CHECK: pMipMapArr = new dpct::experimental::image_mem_wrapper(desc, sycl::range<3>(), sycl::ext::oneapi::experimental::image_type::mipmap, 2);
@@ -478,8 +491,8 @@ int main() {
   // CHECK: dpct::async_dpct_memcpy(p3d, *s);
   cudaMemcpy3DAsync(&p3d, s);
 
-  // CHECK: dpct::memcpy_parameter p3dp;
-  cudaMemcpy3DPeerParms p3dp;
+  // CHECK: dpct::memcpy_parameter p3dp = {};
+  cudaMemcpy3DPeerParms p3dp = {0};
   int d;
   // CHECK: p3dp.from.image_bindless = pArr;
   p3dp.srcArray = pArr;

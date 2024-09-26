@@ -2,26 +2,29 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --no-dpcpp-extensions=device_info --format-range=none --usm-level=none -out-root %T/memory_management %s --cuda-include-path="%cuda-path/include" -output-file=memory_management_outputfile.txt -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management/memory_management.dp.cpp %s
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/memory_management/memory_management.dp.cpp -o %T/memory_management/memory_management.dp.o %}
 
+#ifndef BUILD_TEST
+
+#include <cuda.h>
 #include <cuda_runtime.h>
-#include<cuda.h>
 
 __constant__ float constData[123 * 4];
 
-// CHECK: template<typename T>
-//CHECK-NEXT: void test(){
-//CHECK-NEXT:   int i = 0;
-//CHECK-NEXT:   T** ptr;
-//CHECK-NEXT:   T* array[10];
-//CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
-//CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
-//CHECK-NEXT:   array[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
-//CHECK-NEXT: }
-template<typename T>
-void test(){
+// CHECK: template <typename T>
+// CHECK-NEXT: void test() {
+// CHECK-NEXT:   int i = 0;
+// CHECK-NEXT:   T **ptr;
+// CHECK-NEXT:   T *array[10];
+// CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
+// CHECK-NEXT:   ptr[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
+// CHECK-NEXT:   array[i] = (T *)dpct::dpct_malloc(10 * sizeof(T));
+// CHECK-NEXT: }
+template <typename T>
+void test() {
   int i = 0;
-  T** ptr;
-  T* array[10];
+  T **ptr;
+  T *array[10];
   cudaMalloc(&ptr[i], 10 * sizeof(T));
   cudaMalloc(&(ptr[i]), 10 * sizeof(T));
   cudaMalloc(&array[i], 10 * sizeof(T));
@@ -195,8 +198,8 @@ void checkError(cudaError_t err) {
 
 void cuCheckError(CUresult err) {
 }
-//CHECK: #define PITCH(a,b,c,d) a = (float *)dpct::dpct_malloc(b, c, d);
-#define PITCH(a,b,c,d) cudaMallocPitch(a, b, c, d);
+// CHECK: #define PITCH(a, b, c, d) a = (float *)dpct::dpct_malloc(b, c, d);
+#define PITCH(a, b, c, d) cudaMallocPitch(a, b, c, d);
 
 void testCommas() {
   size_t size = 1234567 * sizeof(float);
@@ -426,7 +429,6 @@ void testCommas() {
   // CHECK:   checkError(DPCT_CHECK_ERROR(dpct::dpct_memcpy(d_B, constData.get_ptr(), size, dpct::device_to_device)));
   checkError(cudaMemcpyFromSymbol(d_B, constData, size, 0, cudaMemcpyDeviceToDevice));
 
-
   // CHECK:  dpct::dpct_memcpy(d_B, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_device);
   cudaMemcpyFromSymbol(d_B, constData, size, 1, cudaMemcpyDeviceToDevice);
   // CHECK:  dpct::dpct_memcpy(d_B, (char *)(constData.get_ptr()) + 1, size, dpct::device_to_device);
@@ -614,7 +616,6 @@ void testCommas_in_global_memory() {
   // CHECK: result2 = dpct::get_current_device().get_device_info().get_global_mem_size();
   cudaMemGetInfo(&result1, &result2);
 
-
   // CHECK: /*
   // CHECK: DPCT1072:{{[0-9]+}}: SYCL currently does not support getting the available memory on the current device. You may need to adjust the code.
   // CHECK: */
@@ -627,7 +628,7 @@ void testCommas_in_global_memory() {
   // CHECK: checkError(DPCT_CHECK_ERROR(result2 = dpct::get_current_device().get_device_info().get_global_mem_size()));
   checkError(cudaMemGetInfo(&result1, &result2));
 
-  CUdeviceptr  devicePtr;
+  CUdeviceptr devicePtr;
   // CHECK: devicePtr = (dpct::device_ptr)dpct::dpct_malloc(size, size, size);
   cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
 
@@ -636,15 +637,15 @@ void testCommas_in_global_memory() {
   // CHECK:  cuCheckError(DPCT_CHECK_ERROR(devicePtr = (dpct::device_ptr)dpct::dpct_malloc(size, size, size)));
   cuCheckError(cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size));
 
-  int* a;
+  int *a;
   cudaStream_t stream;
   int deviceID = 0;
-  CUdevice cudevice =0;
+  CUdevice cudevice = 0;
   CUdeviceptr devPtr;
   // CHECK:/*
   // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaMemPrefetchAsync is not supported.
   // CHECK-NEXT:*/
-  cudaMemPrefetchAsync (a, 100, deviceID, stream);
+  cudaMemPrefetchAsync(a, 100, deviceID, stream);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cuMemPrefetchAsync is not supported.
@@ -655,20 +656,19 @@ void testCommas_in_global_memory() {
   free(h_A);
 }
 
-#define MY_CHECKER(CALL)                                                           \
-    if ((CALL) != cudaSuccess) { \
-        exit(-1); \
-    }
+#define MY_CHECKER(CALL)       \
+  if ((CALL) != cudaSuccess) { \
+    exit(-1);                  \
+  }
 
 #define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 template <typename T>
 void my_error_checker(T ReturnValue, char const *const FuncName) {}
 
-
-template<typename T>
-void uninstantiated_template_call(const T * d_data, size_t width, size_t height) {
+template <typename T>
+void uninstantiated_template_call(const T *d_data, size_t width, size_t height) {
   size_t datasize = width * height;
-  T * data = new T[datasize];
+  T *data = new T[datasize];
   cudaMemcpy3DParms parms;
   // CHECK:  assert_cuda(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host)));
   assert_cuda(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
@@ -676,13 +676,13 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK: dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host);
   cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
-#define DATAMACRO data+32*32
+#define DATAMACRO data + 32 * 32
 
   // CHECK: dpct::dpct_memcpy(DATAMACRO, d_data, datasize * sizeof(T), dpct::device_to_host);
   cudaMemcpy(DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
-  // CHECK: dpct::dpct_memcpy(32*32+DATAMACRO, d_data, datasize * sizeof(T), dpct::device_to_host);
-  cudaMemcpy(32*32+DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
+  // CHECK: dpct::dpct_memcpy(32 * 32 + DATAMACRO, d_data, datasize * sizeof(T), dpct::device_to_host);
+  cudaMemcpy(32 * 32 + DATAMACRO, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:  checkError(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host)));
   checkError(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
@@ -696,9 +696,9 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host)));
   MY_ERROR_CHECKER(cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost));
 
-  // CHECK: #define CUDAMEMCPY dpct::dpct_memcpy
-  // CHECK-NEXT: CUDAMEMCPY(data, d_data, datasize * sizeof(T), dpct::device_to_host);
-  #define CUDAMEMCPY cudaMemcpy
+// CHECK: #define CUDAMEMCPY dpct::dpct_memcpy
+// CHECK-NEXT: CUDAMEMCPY(data, d_data, datasize * sizeof(T), dpct::device_to_host);
+#define CUDAMEMCPY cudaMemcpy
   CUDAMEMCPY(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:  assert_cuda(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host)));
@@ -710,8 +710,8 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK: dpct::dpct_memcpy(DATAMACRO, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
   cudaMemcpy2D(DATAMACRO, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
-  // CHECK: dpct::dpct_memcpy(32*32+DATAMACRO, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
-  cudaMemcpy2D(32*32+DATAMACRO, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
+  // CHECK: dpct::dpct_memcpy(32 * 32 + DATAMACRO, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
+  cudaMemcpy2D(32 * 32 + DATAMACRO, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
   // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host)));
   MY_CHECKER(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
@@ -719,9 +719,9 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host)));
   MY_ERROR_CHECKER(cudaMemcpy2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost));
 
-  // CHECK: #define CUDAMEMCPY2D dpct::dpct_memcpy
-  // CHECK-NEXT: CUDAMEMCPY2D(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
-  #define CUDAMEMCPY2D cudaMemcpy2D
+// CHECK: #define CUDAMEMCPY2D dpct::dpct_memcpy
+// CHECK-NEXT: CUDAMEMCPY2D(data, datasize, d_data, datasize, datasize, datasize, dpct::device_to_host);
+#define CUDAMEMCPY2D cudaMemcpy2D
   CUDAMEMCPY2D(data, datasize, d_data, datasize, datasize, datasize, cudaMemcpyDeviceToHost);
 
   // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(dpct::dpct_memcpy(parms)));
@@ -737,18 +737,18 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
 void test_segmentation_fault() {
   float *buffer;
   /*
-  * Original code in getSizeString():
-  * "SizeExpr->getBeginLoc()" cannot get the real SourceLocation of "N*sizeof(float)",
-  * and results in boundary violation in "dpctGlobalInfo::getSourceManager().getCharacterData(SizeBegin)"
-  * and fails with segmentation fault.
-  */
-  cudaMalloc(&buffer, N*sizeof(float));
+   * Original code in getSizeString():
+   * "SizeExpr->getBeginLoc()" cannot get the real SourceLocation of "N*sizeof(float)",
+   * and results in boundary violation in "dpctGlobalInfo::getSourceManager().getCharacterData(SizeBegin)"
+   * and fails with segmentation fault.
+   */
+  cudaMalloc(&buffer, N * sizeof(float));
 }
 
 // CHECK: static dpct::global_memory<uint32_t, 1> d_error(1);
 static __device__ uint32_t d_error[1];
 
-void test_foo(){
+void test_foo() {
   // CHECK: dpct::dpct_memset(d_error.get_ptr(), 0, sizeof(uint32_t));
   cudaMemset(d_error, 0, sizeof(uint32_t));
 }
@@ -766,18 +766,18 @@ void foobar() {
   // CHECK: flags = 0;
   cudaArrayGetInfo(&desc, &extent, &flags, array);
 
-  //CHECK: checkError(DPCT_CHECK_ERROR([&](){
-  //CHECK-NEXT:   desc = array->get_channel();
-  //CHECK-NEXT:   extent = array->get_range();
-  //CHECK-NEXT:   flags = 0;
-  //CHECK-NEXT:   }()));
+  // CHECK: checkError(DPCT_CHECK_ERROR([&](){
+  // CHECK-NEXT:   desc = array->get_channel();
+  // CHECK-NEXT:   extent = array->get_range();
+  // CHECK-NEXT:   flags = 0;
+  // CHECK-NEXT:   }()));
   checkError(cudaArrayGetInfo(&desc, &extent, &flags, array));
 
-  //CHECK: errorCode = DPCT_CHECK_ERROR([&](){
-  //CHECK-NEXT:   desc = array->get_channel();
-  //CHECK-NEXT:   extent = array->get_range();
-  //CHECK-NEXT:   flags = 0;
-  //CHECK-NEXT:   }());
+  // CHECK: errorCode = DPCT_CHECK_ERROR([&](){
+  // CHECK-NEXT:   desc = array->get_channel();
+  // CHECK-NEXT:   extent = array->get_range();
+  // CHECK-NEXT:   flags = 0;
+  // CHECK-NEXT:   }());
   errorCode = cudaArrayGetInfo(&desc, &extent, &flags, array);
 
   int host;
@@ -803,7 +803,6 @@ void foobar() {
   */
   CUmemAccessDesc c;
 
-
   int *devPtr;
 
   CUdeviceptr devicePtr;
@@ -812,7 +811,7 @@ void foobar() {
 
   CUdeviceptr cuDevPtr;
 
-  CUdevice cudevice =0;
+  CUdevice cudevice = 0;
 
   CUmem_advise advise = CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION;
 
@@ -867,17 +866,18 @@ void foobar() {
   errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
 }
 
-// CHECK: void copy_dir_1 (dpct::memcpy_direction kind) {}
-// CHECK-NEXT: void copy_dir_2 (dpct::memcpy_direction kind) {}
-// CHECK-NEXT: void copy_dir_3 (dpct::memcpy_direction kind) {}
-void copy_dir_1 (cudaMemcpyKind kind) {}
-void copy_dir_2 (enum cudaMemcpyKind kind) {}
-void copy_dir_3 (enum    cudaMemcpyKind kind) {}
+// CHECK: void copy_dir_1(dpct::memcpy_direction kind) {}
+// CHECK-NEXT: void copy_dir_2(dpct::memcpy_direction kind) {}
+// CHECK-NEXT: void copy_dir_3(dpct::memcpy_direction kind) {}
+void copy_dir_1(cudaMemcpyKind kind) {}
+void copy_dir_2(enum cudaMemcpyKind kind) {}
+void copy_dir_3(enum cudaMemcpyKind kind) {}
 
-// CHECK: void copy_dir_1 (int kind) {}
-// CHECK-NEXT: void copy_dir_2 (int kind) {}
-// CHECK-NEXT: void copy_dir_3 (int kind) {}
-void copy_dir_1 (cudaComputeMode kind) {}
-void copy_dir_2 (enum cudaComputeMode kind) {}
-void copy_dir_3 (enum    cudaComputeMode kind) {}
+// CHECK: void copy_dir_1(int kind) {}
+// CHECK-NEXT: void copy_dir_2(int kind) {}
+// CHECK-NEXT: void copy_dir_3(int kind) {}
+void copy_dir_1(cudaComputeMode kind) {}
+void copy_dir_2(enum cudaComputeMode kind) {}
+void copy_dir_3(enum cudaComputeMode kind) {}
 
+#endif

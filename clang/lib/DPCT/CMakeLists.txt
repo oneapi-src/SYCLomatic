@@ -25,6 +25,7 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/lapack_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/group_utils.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/blas_gemm_utils.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/compat_service.hpp
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/algorithm.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/functional.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/iterators.h
@@ -64,6 +65,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/group_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_gemm_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/compat_service.hpp.inc
 )
 
 add_custom_command(
@@ -143,6 +145,7 @@ add_clang_library(DPCT
   Rewriters/Math/RewriterSIMDIntrinsics.cpp
   Rewriters/Math/RewriterCXXAPIRoutines.cpp
   Rewriters/Math/RewriterOverload.cpp
+  Rewriters/RewriterSYCLcompat.cpp
   CallExprRewriter.cpp
   CallExprRewriterAtomic.cpp
   CallExprRewriterCUFFT.cpp
@@ -153,6 +156,7 @@ add_clang_library(DPCT
   CallExprRewriterComplex.cpp
   CallExprRewriterDriver.cpp
   CallExprRewriterGraph.cpp
+  CallExprRewriterGraphicsInterop.cpp
   CallExprRewriterMemory.cpp
   CallExprRewriterMisc.cpp
   CallExprRewriterNccl.cpp

@@ -27,6 +27,14 @@ MainSourceFilesDigest:
     Digest:          991d7e4825fc597205bf68f2eda27acd
   - MainSourceFile:  '/path/to/src/layer.cudnn.cpp'
     Digest:          991d7e4825fc597205bf68f2eda27ace
+  - MainSourceFile:  '/path/to/chash/chash.c'
+    Digest:          9f681b5a2cafa7dff67d7e4ac13d1302
+  - MainSourceFile:  '/path/to/cchash/cchash.cc'
+    Digest:          9f681b5a2cafa7dff67d7e4ac13d1303
+  - MainSourceFile:  '/path/to/cxxhash/cxxhash.cxx'
+    Digest:          9f681b5a2cafa7dff67d7e4ac13d1304
+  - MainSourceFile:  '/path/to/cxxhash/cpphash.cpp'
+    Digest:          9f681b5a2cafa7dff67d7e4ac13d1305
 DpctVersion:     19.0.0
 MainHelperFileName: ''
 USMLevel:        ''
@@ -58,7 +66,7 @@ OptionMap:
     Value:           'true'
     Specified:       true
   ExperimentalFlag:
-    Value:           '8192'
+    Value:           '16384'
     Specified:       true
   ExplicitNamespace:
     Value:           '20'

@@ -9,6 +9,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "ExprAnalysis.h"
+#include "MapNames.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -23,7 +24,6 @@
 #include <fstream>
 #include <optional>
 #include <string>
-
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
@@ -67,6 +67,17 @@ const std::string &getDefaultString(HelperFuncType HFT) {
                           DpctGlobalInfo::getDeviceQueueName() + "()");
     return DefaultQueue;
   }
+  case clang::dpct::HelperFuncType::HFT_DefaultQueuePtr: {
+    const static std::string DefaultQueue =
+        DpctGlobalInfo::useNoQueueDevice()
+            ? DpctGlobalInfo::getGlobalQueueName()
+            : (DpctGlobalInfo::useSYCLCompat()
+                   ? buildString(MapNames::getDpctNamespace() +
+                                 "get_current_device().default_queue()")
+                   : buildString("&" + MapNames::getDpctNamespace() + "get_" +
+                                 DpctGlobalInfo::getDeviceQueueName() + "()"));
+    return DefaultQueue;
+  }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
     const static std::string DefaultDevice =
         DpctGlobalInfo::useNoQueueDevice()
@@ -87,8 +98,8 @@ const std::string &getDefaultString(HelperFuncType HFT) {
 std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index) {
   if (HFT == HelperFuncType::HFT_DefaultQueue ||
+      HFT == HelperFuncType::HFT_DefaultQueuePtr ||
       HFT == HelperFuncType::HFT_CurrentDevice) {
-
     if (DpctGlobalInfo::getDeviceChangedFlag() ||
         !DpctGlobalInfo::getUsingDRYPattern()) {
       return getDefaultString(HFT);
@@ -480,7 +491,7 @@ public:
         "function call async_rnn_backward");
 
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "DPCT_CHECK_ERROR(";
+      DataRepl << MapNames::getCheckErrorMacroName() << "(";
       requestFeature(HelperFeatureEnum::device_ext);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
@@ -600,7 +611,7 @@ void DpctFileInfo::buildReplacements() {
   // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (const auto &Entry : MemVarMap) {
-    if (Entry.second->isIgnore())
+    if (Entry.second->isIgnore() || !Entry.second->isConstant())
       continue;
 
     auto Name = Entry.second->getName();
@@ -831,11 +842,11 @@ StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
 }
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                                 ReplacementType IsForCodePin) {
-  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
-      Type == HT_DPCT_DNNL_Utils) {
-    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          Type, FirstIncludeOffset);
+  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_SYCL) {
+    if (auto MF = DpctGlobalInfo::getInstance().getMainFile())
+      if (this != MF.get())
+        DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            Type, FirstIncludeOffset);
   }
   if (HeaderInsertedBitMap[Type])
     return;
@@ -856,7 +867,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   // is added later
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
-  case HT_DPCT_DNNL_Utils:
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
@@ -869,17 +879,14 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
-    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
-    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-      OS << "using namespace dpct;" << getNL();
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      concatHeader(OS, getHeaderSpelling(HT_COMPAT_SYCLcompat));
+      HeaderInsertedBitMap[HT_COMPAT_SYCLcompat] = true;
+    } else {
+      concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+      HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
     }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL)) {
-      OS << "using namespace sycl;" << getNL();
-    }
+    DpctGlobalInfo::printUsingNamespace(OS);
     if (DpctGlobalInfo::useNoQueueDevice()) {
       static bool Flag = true;
       auto SourceFileType = GetSourceFileType(getFilePath());
@@ -1179,10 +1186,6 @@ void DpctGlobalInfo::setSYCLFileExtension(SYCLFileExtensionEnum Extension) {
     SYCLSourceExtension = ".cpp";
     SYCLHeaderExtension = ".hpp";
     break;
-  default:
-    SYCLSourceExtension = ".dp.cpp";
-    SYCLHeaderExtension = ".dp.hpp";
-    break;
   }
 }
 
@@ -1224,10 +1227,11 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
 }
 const std::string &DpctGlobalInfo::getDeviceQueueName() {
   static const std::string DeviceQueue = [&]() {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return "default_queue";
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       return "out_of_order_queue";
-    else
-      return "in_order_queue";
+    return "in_order_queue";
   }();
   return DeviceQueue;
 }
@@ -1311,34 +1315,6 @@ void DpctGlobalInfo::setExcludePath(std::vector<std::string> ExcludePathVec) {
     }
   }
 }
-void DpctGlobalInfo::setExplicitNamespace(
-    std::vector<ExplicitNamespace> NamespacesVec) {
-  size_t NamespaceVecSize = NamespacesVec.size();
-  if (!NamespaceVecSize || NamespaceVecSize > 2) {
-    ShowStatus(MigrationErrorInvalidExplicitNamespace);
-    dpctExit(MigrationErrorInvalidExplicitNamespace);
-  }
-  for (auto &Namespace : NamespacesVec) {
-    // 1. Ensure option none is alone
-    bool Check1 =
-        (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-    // 2. Ensure option sycl, sycl-math only enabled one
-    bool Check2 =
-        ((Namespace == ExplicitNamespace::EN_SYCL ||
-          Namespace == ExplicitNamespace::EN_SYCL_Math) &&
-         (ExplicitNamespaceSet.size() == 1 &&
-          ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
-    // 3. Check whether option dpct duplicated
-    bool Check3 = (Namespace == ExplicitNamespace::EN_DPCT &&
-                   ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
-    if (Check1 || Check2 || Check3) {
-      ShowStatus(MigrationErrorInvalidExplicitNamespace);
-      dpctExit(MigrationErrorInvalidExplicitNamespace);
-    } else {
-      ExplicitNamespaceSet.insert(Namespace);
-    }
-  }
-}
 int DpctGlobalInfo::getSuffixIndexInitValue(std::string FileNameAndOffset) {
   auto Res = LocationInitIndexMap.find(FileNameAndOffset);
   if (Res == LocationInitIndexMap.end()) {
@@ -1374,10 +1350,11 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // R: range dim, used for built-in variables (threadIdx.x,...) migration
   // G: range dim, used for cg::thread_block migration
   // C: range dim, used for cub block migration
-  // F: free queries function migration, such as this_nd_item, this_group,
-  //    this_sub_group.
+  // F: free queries function migration, such as this_work_item::get_nd_item,
+  // this_work_item::get_work_group, this_work_item::get_sub_group.
   // E: extension, used for c source file migration
   // P: profiling enable or disable for time measurement.
+  // Z: queue pointer.
   switch (Method) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
@@ -1415,6 +1392,9 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'Q':
     return getStringForRegexDefaultQueueAndDevice(
         HelperFuncType::HFT_DefaultQueue, Index);
+  case 'Z':
+    return getStringForRegexDefaultQueueAndDevice(
+        HelperFuncType::HFT_DefaultQueuePtr, Index);
   case 'E': {
     auto &Vec = DpctGlobalInfo::getInstance().getCSourceFileInfo();
     return Vec[Index]->hasCUDASyntax()
@@ -1424,7 +1404,10 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'P': {
     std::string ReplStr;
     if (DpctGlobalInfo::getEnablepProfilingFlag())
-      ReplStr = std::string("#define DPCT_PROFILING_ENABLED") + getNL();
+      ReplStr = (DpctGlobalInfo::useSYCLCompat()
+                     ? std::string("#define SYCLCOMPAT_PROFILING_ENABLED")
+                     : std::string("#define DPCT_PROFILING_ENABLED")) +
+                getNL();
 
     return ReplStr;
   }
@@ -1602,8 +1585,10 @@ void DpctGlobalInfo::buildReplacements() {
     DevDecl << MapNames::getDpctNamespace()
             << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
             << "get_current_device();";
-    QDecl << "&q_ct1 = dev_ct1." << DpctGlobalInfo::getDeviceQueueName()
-          << "();";
+    QDecl << "&q_ct1 = ";
+    if (DpctGlobalInfo::useSYCLCompat())
+      QDecl << '*';
+    QDecl << "dev_ct1." << DpctGlobalInfo::getDeviceQueueName() << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.
@@ -1620,6 +1605,7 @@ void DpctGlobalInfo::buildReplacements() {
     if (DpctGlobalInfo::useNoQueueDevice()) {
       Counter.second.PlaceholderStr[1] = DpctGlobalInfo::getGlobalQueueName();
       Counter.second.PlaceholderStr[2] = DpctGlobalInfo::getGlobalDeviceName();
+      Counter.second.PlaceholderStr[3] = "&" + DpctGlobalInfo::getGlobalQueueName();
       // Need not insert q_ct1 and dev_ct1 declrations and request feature.
       continue;
     }
@@ -1634,6 +1620,7 @@ void DpctGlobalInfo::buildReplacements() {
             DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
         if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
           Counter.second.PlaceholderStr[1] = "q_ct1";
+          Counter.second.PlaceholderStr[3] = "&q_ct1";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
               DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
         }
@@ -1672,7 +1659,10 @@ void DpctGlobalInfo::processCudaArchMacro() {
             nullptr));
       }
     } else {
-      (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
+      if (useSYCLCompat())
+        (*Repl).setReplacementText("!SYCLCOMPAT_COMPATIBILITY_TEMP");
+      else
+        (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
     }
   };
 
@@ -2357,7 +2347,6 @@ bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::MigrateBuildScriptOnly = false;
 bool DpctGlobalInfo::EnableComments = false;
-std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
@@ -2435,6 +2424,7 @@ unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 bool DpctGlobalInfo::AnalysisModeFlag = false;
+bool DpctGlobalInfo::UseSYCLCompatFlag = false;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
@@ -2916,7 +2906,7 @@ void MemVarInfo::newConstVarInit(const VarDecl *Var) {
 std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   switch (Scope) {
   case clang::dpct::MemVarInfo::Local:
-    if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
+    if (isShared() && DpctGlobalInfo::useGroupLocalMemory() && VD) {
 
       auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext());
       if (FD && FD->hasAttr<CUDADeviceAttr>())
@@ -3182,6 +3172,26 @@ void MemVarInfo::setInitList(const Expr *E, const VarDecl *V) {
     if (!Ctor->getNumArgs() || Ctor->getArg(0)->isDefaultArgument())
       return;
   }
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto Beg = E->getBeginLoc();
+  auto End = E->getEndLoc();
+  if (Beg.isMacroID() && End.isMacroID()) {
+    if (SM.getExpansionLoc(Beg) != SM.getExpansionLoc(End)) {
+      if (auto IL = dyn_cast<InitListExpr>(E->IgnoreImplicitAsWritten())) {
+        std::string Result;
+        size_t InitsNum = IL->getNumInits();
+        for (unsigned i = 0; i < InitsNum; ++i) {
+          const Expr *IE = IL->getInit(i);
+          Result += getStmtSpelling(IE);
+          if (i != InitsNum - 1) {
+            Result += ", ";
+          }
+        }
+        InitList = "{" + Result + "}";
+        return;
+      }
+    }
+  }
   InitList = getStmtSpelling(E, V->getSourceRange());
 }
 std::string MemVarInfo::getMemoryType() {
@@ -3271,20 +3281,28 @@ const std::string &MemVarInfo::getMemoryAttr() {
   requestFeature(HelperFeatureEnum::device_ext);
   switch (Attr) {
   case clang::dpct::MemVarInfo::Device: {
-    static std::string DeviceMemory = MapNames::getDpctNamespace() + "global";
+    static std::string DeviceMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::global" : "global");
     return DeviceMemory;
   }
   case clang::dpct::MemVarInfo::Constant: {
     static std::string ConstantMemory =
-        MapNames::getDpctNamespace() + "constant";
+        MapNames::getDpctNamespace() + (DpctGlobalInfo::useSYCLCompat()
+                                            ? "memory_region::constant"
+                                            : "constant");
     return ConstantMemory;
   }
   case clang::dpct::MemVarInfo::Shared: {
-    static std::string SharedMemory = MapNames::getDpctNamespace() + "local";
+    static std::string SharedMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::local" : "local");
     return SharedMemory;
   }
   case clang::dpct::MemVarInfo::Managed: {
-    static std::string ManagedMemory = MapNames::getDpctNamespace() + "shared";
+    static std::string ManagedMemory =
+        MapNames::getDpctNamespace() +
+        (DpctGlobalInfo::useSYCLCompat() ? "memory_region::shared" : "shared");
     return ManagedMemory;
   }
   default:
@@ -3479,13 +3497,19 @@ std::string TextureInfo::getAccessorDecl(const std::string &QueueStr) {
   OS << ");";
   return Ret;
 }
-void TextureInfo::addDecl(StmtList &AccessorList, StmtList &SamplerList,
-                          const std::string &QueueStr) {
+std::string TextureInfo::InitDecl(const std::string &QueueStr) {
+  ParameterStream PS;
+  PS << Name << ".create_image(" << QueueStr << ");";
+  return PS.Str;
+}
+void TextureInfo::addDecl(StmtList &InitList, StmtList &AccessorList,
+                          StmtList &SamplerList, const std::string &QueueStr) {
   if (DpctGlobalInfo::useExtBindlessImages()) {
     AccessorList.emplace_back("auto " + NewVarName + "_handle = " + Name +
                               ".get_handle();");
     return;
   }
+  InitList.emplace_back(InitDecl(QueueStr));
   AccessorList.emplace_back(getAccessorDecl(QueueStr));
   SamplerList.emplace_back(getSamplerDecl());
 }
@@ -3522,6 +3546,13 @@ std::string TextureObjectInfo::getAccessorDecl(const std::string &QueueString) {
   requestFeature(HelperFeatureEnum::device_ext);
   return PS.Str;
 }
+std::string TextureObjectInfo::InitDecl(const std::string &QueueStr) {
+  ParameterStream PS;
+  PS << "static_cast<";
+  getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+      << " *>(" << Name << ")->create_image(" << QueueStr << ");";
+  return PS.Str;
+}
 std::string TextureObjectInfo::getSamplerDecl() {
   requestFeature(HelperFeatureEnum::device_ext);
   return buildString("auto ", NewVarName, "_smpl = ", Name, "->get_sampler();");
@@ -3549,26 +3580,46 @@ void TempStorageVarInfo::addAccessorDecl(StmtList &AccessorList,
                                          StringRef LocalSize) const {
   std::string Accessor;
   llvm::raw_string_ostream OS(Accessor);
-  OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
-     << "_acc(";
-  DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
-  OS << '(' << LocalSize << ".size() * sizeof(" << Type->getSourceString()
-     << ")), cgh);";
+  switch (Kind) {
+  case BlockReduce:
+    OS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> " << Name
+       << "_acc(";
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 1);
+    OS << '(' << LocalSize << ".size() * sizeof("
+       << ValueType->getSourceString() << ')' << ')';
+    break;
+  case BlockRadixSort:
+    OS << MapNames::getClNamespace() << "local_accessor<uint8_t, 1> " << Name
+       << "_acc(";
+    OS << TmpMemSizeCalFn << '(' << LocalSize << ".size()" << ')';
+    break;
+  }
+
+  OS << ", cgh);";
   AccessorList.emplace_back(Accessor);
 }
 void TempStorageVarInfo::applyTemplateArguments(
     const std::vector<TemplateArgumentInfo> &TAList) {
-  Type = Type->applyTemplateArguments(TAList);
+  ValueType = ValueType->applyTemplateArguments(TAList);
 }
 ParameterStream &TempStorageVarInfo::getFuncDecl(ParameterStream &PS) {
-  return PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> "
-            << Name;
+  switch (Kind) {
+  case BlockReduce:
+    PS << MapNames::getClNamespace() << "local_accessor<std::byte, 1> ";
+    break;
+  case BlockRadixSort:
+    PS << "uint8_t *";
+    break;
+  }
+  return PS << Name;
 }
 ParameterStream &TempStorageVarInfo::getFuncArg(ParameterStream &PS) {
   return PS << Name;
 }
 ParameterStream &TempStorageVarInfo::getKernelArg(ParameterStream &PS) {
-  return PS << Name << "_acc";
+  if (Kind == BlockReduce)
+    return PS << Name << "_acc";
+  return PS << "&" << Name << "_acc[0]";
 }
 ///// class CudaLaunchTextureObjectInfo /////
 std::string
@@ -3601,11 +3652,12 @@ MemberTextureObjectInfo::create(const MemberExpr *ME) {
   Ret->MemberName = ME->getMemberDecl()->getNameAsString();
   return Ret;
 }
-void MemberTextureObjectInfo::addDecl(StmtList &AccessorList,
+void MemberTextureObjectInfo::addDecl(StmtList &InitList,
+                                      StmtList &AccessorList,
                                       StmtList &SamplerList,
                                       const std::string &QueueStr) {
   NewVarNameRAII RAII(this);
-  TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
+  TextureObjectInfo::addDecl(InitList, AccessorList, SamplerList, QueueStr);
 }
 ///// class StructureTextureObjectInfo /////
 StructureTextureObjectInfo::StructureTextureObjectInfo(const ParmVarDecl *PVD)
@@ -3641,7 +3693,8 @@ StructureTextureObjectInfo::addMember(const MemberExpr *ME) {
   auto Member = MemberTextureObjectInfo::create(ME);
   return Members.emplace(Member->getMemberName().str(), Member).first->second;
 }
-void StructureTextureObjectInfo::addDecl(StmtList &AccessorList,
+void StructureTextureObjectInfo::addDecl(StmtList &InitList,
+                                         StmtList &AccessorList,
                                          StmtList &SamplerList,
                                          const std::string &Queue) {
   for (const auto &M : Members) {
@@ -4462,6 +4515,9 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   return Result + getName(FD);
 }
 void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
+  buildTextureObjectArgsInfo<CallExpr>(CE);
+  if (DpctGlobalInfo::useExtBindlessImages() || DpctGlobalInfo::useSYCLCompat())
+    return;
   if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
     if (auto DRE = dyn_cast<DeclRefExpr>(ME->getBase()->IgnoreImpCasts())) {
       auto BaseObject = makeTextureObjectInfo<StructureTextureObjectInfo>(
@@ -4470,7 +4526,6 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallExpr *CE) {
         BaseTextureObject = std::move(BaseObject);
     }
   }
-  buildTextureObjectArgsInfo<CallExpr>(CE);
 }
 template <class CallT>
 void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
@@ -4479,7 +4534,8 @@ void CallFunctionExpr::buildTextureObjectArgsInfo(const CallT *C) {
   auto ArgsNum = std::distance(Args.begin(), Args.end());
   unsigned Idx = 0;
   TextureObjectList.resize(ArgsNum);
-  if (DpctGlobalInfo::useExtBindlessImages()) {
+  if (DpctGlobalInfo::useExtBindlessImages() ||
+      DpctGlobalInfo::useSYCLCompat()) {
     // Need return after resize, ortherwise will cause array out of bound.
     return;
   }
@@ -4632,7 +4688,9 @@ void DeviceFunctionDecl::emplaceReplacement() {
                                          nullptr));
   }
   if (FuncInfo->IsForceInlineDevFunc()) {
-    std::string StrRepl = "__dpct_inline__ ";
+    std::string StrRepl = DpctGlobalInfo::useSYCLCompat()
+                              ? "__syclcompat_inline__ "
+                              : "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, OffsetForAttr, 0, StrRepl,
                                          nullptr));
@@ -4751,6 +4809,8 @@ const FormatInfo &DeviceFunctionDecl::getFormatInfo() {
 void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     const ArrayRef<ParmVarDecl *> &Parms) {
   TextureObjectList.assign(Parms.size(), std::shared_ptr<TextureObjectInfo>());
+  if (DpctGlobalInfo::useSYCLCompat())
+    return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
     if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
@@ -5426,18 +5486,25 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*/" << getNL();
     Printer.indent();
   }
+  if (DpctGlobalInfo::useRootGroup()) {
+    Printer << "auto exp_props = "
+               "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
+               "experimental::use_root_sync};\n";
+    ExecutionConfig.Properties = "exp_props";
+  }
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
+
   printStreamBase(Printer);
   if (SubmitStmts.empty()) {
     printParallelFor(Printer, false);
   } else {
     (Printer << "submit(").newLine();
-    printSubmitLamda(Printer);
+    printSubmitLambda(Printer);
   }
 }
-void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
+void KernelCallExpr::printSubmitLambda(KernelPrinter &Printer) {
   auto Lamda = Printer.block();
   Printer.line("[&](" + MapNames::getClNamespace() + "handler &cgh) {");
   {
@@ -5484,6 +5551,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
       "(1)";
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
@@ -5506,6 +5576,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSizeFor1D;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
@@ -5522,6 +5595,9 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer << ", ";
     Printer << ExecutionConfig.LocalSize;
     (Printer << "), ").newLine();
+    if (!ExecutionConfig.Properties.empty()) {
+      Printer << ExecutionConfig.Properties << ", ";
+    }
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   }
@@ -5623,13 +5699,13 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      Tex->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
-                   getQueueStr());
+      Tex->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
+                   SubmitStmts.SamplerList, getQueueStr());
     }
   }
   for (auto &Tex : VM.getTextureMap()) {
-    Tex.second->addDecl(SubmitStmts.TextureList, SubmitStmts.SamplerList,
-                        getQueueStr());
+    Tex.second->addDecl(OuterStmts.InitList, SubmitStmts.TextureList,
+                        SubmitStmts.SamplerList, getQueueStr());
   }
   for (auto &Tmp : VM.getTempStorageMap()) {
     Tmp.second->addAccessorDecl(SubmitStmts.AccessorList,
@@ -5903,8 +5979,16 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
+      if (DpctGlobalInfo::useSYCLCompat() && A.isDim3Var())
+        ExecutionConfig.Config[Idx] =
+            "static_cast<" + MapNames::getClNamespace() + "range<3>>(" +
+            ExecutionConfig.Config[Idx] + ")";
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
+      if (DpctGlobalInfo::useSYCLCompat() && A.isDim3Var())
+        ExecutionConfig.Config[Idx] =
+            "static_cast<" + MapNames::getClNamespace() + "range<3>>(" +
+            ExecutionConfig.Config[Idx] + ")";
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
@@ -5945,9 +6029,17 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
     if (Idx == 0) {
       GridDim = AnalysisTry1D.Dim;
       ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+      if (DpctGlobalInfo::useSYCLCompat() && AnalysisTry1D.isDim3Var())
+        ExecutionConfig.GroupSizeFor1D =
+            "static_cast<" + MapNames::getClNamespace() + "range<1>>(" +
+            ExecutionConfig.GroupSizeFor1D + ")";
     } else if (Idx == 1) {
       BlockDim = AnalysisTry1D.Dim;
       ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
+      if (DpctGlobalInfo::useSYCLCompat() && AnalysisTry1D.isDim3Var())
+        ExecutionConfig.LocalSizeFor1D =
+            "static_cast<" + MapNames::getClNamespace() + "range<1>>(" +
+            ExecutionConfig.LocalSizeFor1D + ")";
     }
     ++Idx;
   }
@@ -5980,9 +6072,10 @@ void KernelCallExpr::addDevCapCheckStmt() {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string Str;
     llvm::raw_string_ostream OS(Str);
-    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    OS << MapNames::getDpctNamespace() << "get_device(";
+    OS << MapNames::getDpctNamespace() << "get_device_id(";
     printStreamBase(OS);
-    OS << "get_device(), {" << AspectList.front();
+    OS << "get_device())).has_capability_or_fail({" << AspectList.front();
     for (size_t i = 1; i < AspectList.size(); ++i) {
       OS << ", " << AspectList[i];
     }
@@ -6866,13 +6959,13 @@ const FreeQueriesInfo::FreeQueriesNames &
 FreeQueriesInfo::getNames(FreeQueriesKind K) {
   static FreeQueriesNames Names[FreeQueriesInfo::FreeQueriesKind::End] = {
       {getItemName(),
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_nd_item",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_nd_item",
        getItemName()},
       {getItemName() + ".get_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_work_group",
        "group" + getCTFixedSuffix()},
       {getItemName() + ".get_sub_group()",
-       MapNames::getClNamespace() + "ext::oneapi::experimental::this_sub_group",
+       MapNames::getClNamespace() + "ext::oneapi::this_work_item::get_sub_group",
        "sub_group" + getCTFixedSuffix()},
   };
   return Names[K];

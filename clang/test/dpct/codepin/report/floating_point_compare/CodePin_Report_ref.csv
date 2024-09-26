@@ -1,5 +1,8 @@
 // CHECK: CodePin Summary
-// CHECK: Totally APIs count, 1
-// CHECK: Consistently APIs count, 0
+// CHECK: Total API count, 1
+// CHECK: CodePin Random Seed, N/A
+// CHECK: CodePin Sampling Threshold, N/A
+// CHECK: CodePin Sampling Percent, N/A
+// CHECK: Consistent API count, 0
 // CHECK: CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
 // CHECK: serial123:epilog:0,serial123:epilog:0,Data value,The location of failed ID Errors occurred during comparison: var_2->"Data"->[0]: bf16 values 1.12 and 1.1 are not close enough [Floating Point comparison fail]; var_3->"Data"->[0]: fp16 values 1.002 and 1 are not close enough [Floating Point comparison fail]; var_6->"Data"->[0]: float values 1.2 and 1.3 are not close enough [Floating Point comparison fail]

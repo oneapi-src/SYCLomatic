@@ -1619,7 +1619,11 @@ Compilation *Driver::BuildCompilation(ArrayRef<const char *> ArgList) {
 
   // Check for missing include directories.
   if (!Diags.isIgnored(diag::warn_missing_include_dirs, SourceLocation())) {
+#ifdef SYCLomatic_CUSTOMIZATION
+    for (const auto &IncludeDir : Args.getAllArgValues(options::OPT_I_Group)) {
+#else
     for (auto IncludeDir : Args.getAllArgValues(options::OPT_I_Group)) {
+#endif
       if (!VFS->exists(IncludeDir))
         Diag(diag::warn_missing_include_dirs) << IncludeDir;
     }

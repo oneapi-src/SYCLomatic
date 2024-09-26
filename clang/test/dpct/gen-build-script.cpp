@@ -28,7 +28,7 @@
 // RUN: cd ..
 // RUN: rm -rf ./gen-build-script
 
-// CHECK: -DFOOBAR -msse4.1 -mavx512vl -O2 -isystem {{.*}}/include
+// CHECK: -DFOOBAR -msse4.1 -mavx512vl -O2
 
 void foo() {
 }

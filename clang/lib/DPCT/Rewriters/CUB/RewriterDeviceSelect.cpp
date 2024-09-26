@@ -28,7 +28,7 @@ RewriterMap dpct::createDeviceSelectRewriterMap() {
                           ARG(7), true, "fill", ARG(5),
                           CALL(
                               "std::distance", ARG(4),
-                              CALL(MapNames::getDpctNamespace() + "copy_if",
+                              CALL(MapNames::getLibraryHelperNamespace() + "copy_if",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         STREAM(7)),
                                    ARG(2),
@@ -45,7 +45,7 @@ RewriterMap dpct::createDeviceSelectRewriterMap() {
                           QUEUESTR, false, "fill", ARG(5),
                           CALL(
                               "std::distance", ARG(4),
-                              CALL(MapNames::getDpctNamespace() + "copy_if",
+                              CALL(MapNames::getLibraryHelperNamespace() + "copy_if",
                                    CALL("oneapi::dpl::execution::device_policy",
                                         QUEUESTR),
                                    ARG(2),
@@ -121,7 +121,7 @@ RewriterMap dpct::createDeviceSelectRewriterMap() {
                                   CALL("std::distance", ARG(4),
                                        CALL(TEMPLATED_CALLEE_WITH_ARGS(
                                                 "std::get", LITERAL("0")),
-                                            CALL(MapNames::getDpctNamespace() +
+                                            CALL(MapNames::getLibraryHelperNamespace() +
                                                      "unique_copy",
                                                  CALL("oneapi::dpl::execution::"
                                                       "device_policy",
@@ -139,7 +139,7 @@ RewriterMap dpct::createDeviceSelectRewriterMap() {
                                   CALL("std::distance", ARG(4),
                                        CALL(TEMPLATED_CALLEE_WITH_ARGS(
                                                 "std::get", LITERAL("0")),
-                                            CALL(MapNames::getDpctNamespace() +
+                                            CALL(MapNames::getLibraryHelperNamespace() +
                                                      "unique_copy",
                                                  CALL("oneapi::dpl::execution::"
                                                       "device_policy",

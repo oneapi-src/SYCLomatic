@@ -740,8 +740,9 @@ inline unsigned vectorized_unary(unsigned a, const UnaryOperation unary_op) {
 template <typename VecT>
 inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
   sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.as<VecT>();
-  auto v3 = v1.as<VecT>();
+  // Need convert element type to wider signed type to avoid overflow.
+  auto v2 = v0.as<VecT>().template convert<int>();
+  auto v3 = v1.as<VecT>().template convert<int>();
   auto v4 = sycl::abs_diff(v2, v3);
   unsigned sum = 0;
   for (size_t i = 0; i < v4.size(); ++i) {
@@ -2179,16 +2180,25 @@ class joint_matrix {
       sycl::sub_group, T, use::value, matrix_size_traits<use, m, n, k>::rows,
       matrix_size_traits<use, m, n, k>::cols, layout::value>;
 
+  static inline decltype(auto) get_wi_data(joint_matrix_type &matrix) {
+    return sycl::ext::oneapi::detail::get_wi_data(
+        sycl::ext::oneapi::this_work_item::get_sub_group(), matrix);
+  }
+
 public:
-  joint_matrix() : matrix() {}
-  joint_matrix(joint_matrix &other) {
-    syclex::matrix::joint_matrix_copy(syclex::this_sub_group(), other.get(),
-                                      matrix);
+  joint_matrix()
+      : matrix(), x(matrix), num_elements(get_wi_data(matrix).length()) {}
+  joint_matrix(joint_matrix &other)
+      : x(matrix), num_elements(get_wi_data(matrix).length()) {
+    syclex::matrix::joint_matrix_copy(
+        sycl::ext::oneapi::this_work_item::get_sub_group(), other.get(),
+        matrix);
   }
   joint_matrix &operator=(joint_matrix &other) {
     if (this != &other) {
-      syclex::matrix::joint_matrix_copy(syclex::this_sub_group(), other.get(),
-                                        matrix);
+      syclex::matrix::joint_matrix_copy(
+          sycl::ext::oneapi::this_work_item::get_sub_group(), other.get(),
+          matrix);
     }
     return *this;
   }
@@ -2197,8 +2207,24 @@ public:
 
   const joint_matrix_type &get() const { return matrix; }
 
+  class matrix_accessor {
+    friend joint_matrix;
+    joint_matrix_type &matrix;
+    matrix_accessor(joint_matrix_type &matrix) : matrix(matrix) {}
+
+  public:
+    decltype(auto) operator[](unsigned I) { return get_wi_data(matrix)[I]; }
+    decltype(auto) operator[](unsigned I) const {
+      return get_wi_data(matrix)[I];
+    }
+  };
+
 private:
   joint_matrix_type matrix;
+
+public:
+  matrix_accessor x;
+  const size_t num_elements;
 };
 } // namespace matrix
 } // namespace experimental

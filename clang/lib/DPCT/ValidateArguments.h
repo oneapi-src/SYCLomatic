@@ -57,7 +57,8 @@ enum class ExplicitNamespace : unsigned int {
   // 1 means EN_CL and it has already been removed
   EN_SYCL = 2,
   EN_SYCL_Math = 3,
-  EN_DPCT = 4
+  EN_DPCT = 4,
+  EN_SYCLCompat
 };
 enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0,
@@ -81,6 +82,7 @@ enum class ExperimentalFeatures : unsigned int {
                           // this_group, this_subgroup.
   Exp_GroupSharedMemory,
   Exp_LogicalGroup,
+  Exp_RootGroup,
   Exp_UserDefineReductions,
   Exp_MaskedSubGroupFunction,
   Exp_DPLExperimentalAPI,
@@ -98,9 +100,11 @@ enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
 enum class SYCLFileExtensionEnum { DP_CPP, SYCL_CPP, CPP };
 
 bool makeInRootCanonicalOrSetDefaults(
-    clang::tooling::UnifiedPath &InRoot, const std::vector<std::string> SourceFiles);
-bool makeAnalysisScopeCanonicalOrSetDefaults(clang::tooling::UnifiedPath &AnalysisScope,
-                                             const clang::tooling::UnifiedPath &InRoot);
+    clang::tooling::UnifiedPath &InRoot,
+    const std::vector<std::string> SourceFiles);
+bool makeAnalysisScopeCanonicalOrSetDefaults(
+    clang::tooling::UnifiedPath &AnalysisScope,
+    const clang::tooling::UnifiedPath &InRoot);
 bool getDefaultOutRoot(clang::tooling::UnifiedPath &OutRootPar,
                        bool NeedCheckOutRootEmpty = true);
 /// Make sure files passed to tool are under the

@@ -9,3 +9,21 @@ target_link_options(quda PUBLIC )
 target_link_options( quda PUBLIC )
 
 target_link_options(quda PUBLIC  )
+
+target_link_options(nvcv_util_compat PUBLIC
+    # DPCT3002:1: "-static-libstdc++" is removed because it is not supported for use alongside option "-fsycl" of SYCL compiler. You may need to check the build options.
+    -static-libgcc
+    -Wl,--wrap=__libc_start_main
+    -Wl,-u__cxa_thread_atexit_impl
+    ${linkcompat}
+    -Wl,--push-state,--no-as-needed
+    ${CMAKE_CURRENT_SOURCE_DIR}/stubs/libdl-2.17_stub.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/stubs/librt-2.17_stub.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/stubs/libpthread-2.17_stub.so
+    -Wl,--pop-state
+)
+
+target_link_options(opts PRIVATE
+    
+    
+)

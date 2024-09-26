@@ -56,7 +56,8 @@ std::string buildStringFromPrinter(F Func, Ts &&...Args) {
 enum class HelperFuncType : int {
   HFT_InitValue = 0,
   HFT_DefaultQueue = 1,
-  HFT_CurrentDevice = 2
+  HFT_CurrentDevice = 2,
+  HFT_DefaultQueuePtr = 3
 };
 
 enum class KernelArgType : int {
@@ -194,6 +195,8 @@ struct VarInfoForCodePin {
   bool TemplateFlag = false;
   bool TopTypeFlag = false;
   bool IsValid = false;
+  bool IsTypeDef = false;
+  std::string OrgTypeName;
   std::string HashKey;
   std::string VarRecordType;
   std::string VarName;
@@ -662,10 +665,16 @@ public:
               "",
               buildString(MapNames::getDpctNamespace(), "get_",
                           DpctGlobalInfo::getDeviceQueueName(), "()"),
-              MapNames::getDpctNamespace() + "get_current_device()"} {}
+              MapNames::getDpctNamespace() + "get_current_device()",
+              (DpctGlobalInfo::useSYCLCompat()
+                   ? buildString(MapNames::getDpctNamespace() +
+                                 "get_current_device().default_queue()")
+                   : buildString("&" + MapNames::getDpctNamespace() + "get_" +
+                                 DpctGlobalInfo::getDeviceQueueName() +
+                                 "()"))} {}
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
-    std::string PlaceholderStr[3];
+    std::string PlaceholderStr[4];
   };
 
   static std::string removeSymlinks(clang::FileManager &FM,
@@ -864,11 +873,6 @@ public:
   static std::unordered_map<std::string, bool> getExcludePath() {
     return ExcludePath;
   }
-  static std::set<ExplicitNamespace> getExplicitNamespaceSet() {
-    return ExplicitNamespaceSet;
-  }
-  static void
-  setExplicitNamespace(std::vector<ExplicitNamespace> NamespacesVec);
   static bool isCtadEnabled() { return EnableCtad; }
   static void setCtadEnabled(bool Enable) { EnableCtad = Enable; }
   static bool isCodePinEnabled() { return EnableCodePin; }
@@ -1241,6 +1245,9 @@ public:
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
+  static bool useRootGroup() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_RootGroup>();
+  }
   static bool useFreeQueries() {
     return getUsingExperimental<ExperimentalFeatures::Exp_FreeQueries>();
   }
@@ -1286,6 +1293,8 @@ public:
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
+  static void setUseSYCLCompat(bool Flag = true) { UseSYCLCompatFlag = Flag; }
+  static bool useSYCLCompat() { return UseSYCLCompatFlag; }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(
         DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
@@ -1413,6 +1422,7 @@ public:
   static bool isNeedParenAPI(const std::string &Name) {
     return NeedParenAPISet.count(Name);
   }
+  static void printUsingNamespace(llvm::raw_ostream &);
   // #tokens, name of the second token, SourceRange of a macro
   static std::tuple<unsigned int, std::string, SourceRange> LastMacroRecord;
 
@@ -1509,7 +1519,6 @@ private:
   static bool GenBuildScript;
   static bool MigrateBuildScriptOnly;
   static bool EnableComments;
-  static std::set<ExplicitNamespace> ExplicitNamespaceSet;
 
   // This variable is only set true when option "--report-type=stats" or option
   // " --report-type=all" is specified to get the migration status report, while
@@ -1595,6 +1604,7 @@ private:
   static unsigned ExperimentalFlag;
   static unsigned HelperFuncPreferenceFlag;
   static bool AnalysisModeFlag;
+  static bool UseSYCLCompatFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
@@ -1980,8 +1990,9 @@ public:
   virtual std::string getHostDeclString();
   virtual std::string getSamplerDecl();
   virtual std::string getAccessorDecl(const std::string &QueueStr);
-  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-                       const std::string &QueueStr);
+  virtual std::string InitDecl(const std::string &QueueStr);
+  virtual void addDecl(StmtList &InitList, StmtList &AccessorList,
+                       StmtList &SamplerList, const std::string &QueueStr);
   ParameterStream &getFuncDecl(ParameterStream &PS);
   ParameterStream &getFuncArg(ParameterStream &PS);
   virtual ParameterStream &getKernelArg(ParameterStream &OS);
@@ -2021,6 +2032,7 @@ public:
 
   virtual ~TextureObjectInfo() = default;
   std::string getAccessorDecl(const std::string &QueueString) override;
+  std::string InitDecl(const std::string &QueueStr) override;
   std::string getSamplerDecl() override;
   inline unsigned getParamIdx() const { return ParamIdx; }
   std::string getParamDeclType();
@@ -2065,8 +2077,8 @@ class MemberTextureObjectInfo : public TextureObjectInfo {
 
 public:
   static std::shared_ptr<MemberTextureObjectInfo> create(const MemberExpr *ME);
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-               const std::string &QueueStr) override;
+  void addDecl(StmtList &InitList, StmtList &AccessorList,
+               StmtList &SamplerList, const std::string &QueueStr) override;
   void setBaseName(StringRef Name) { BaseName = Name; }
   StringRef getMemberName() { return MemberName; }
 };
@@ -2090,8 +2102,8 @@ public:
   bool isBase() const { return IsBase; }
   bool containsVirtualPointer() const { return ContainsVirtualPointer; }
   std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME);
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
-               const std::string &Queue) override;
+  void addDecl(StmtList &InitList, StmtList &AccessorList,
+               StmtList &SamplerList, const std::string &Queue) override;
   void addParamDeclReplacement() override { return; };
   void merge(std::shared_ptr<StructureTextureObjectInfo> Target);
   void merge(std::shared_ptr<TextureObjectInfo> Target) override;
@@ -2144,14 +2156,25 @@ private:
 };
 
 class TempStorageVarInfo {
+public:
+  enum APIKind {
+    BlockReduce,
+    BlockRadixSort,
+  };
+
+private:
   unsigned Offset;
+  APIKind Kind;
   std::string Name;
-  std::shared_ptr<TemplateDependentStringInfo> Type;
+  std::string TmpMemSizeCalFn;
+  std::shared_ptr<TemplateDependentStringInfo> ValueType;
 
 public:
-  TempStorageVarInfo(unsigned Off, StringRef Name,
-                     std::shared_ptr<TemplateDependentStringInfo> T)
-      : Offset(Off), Name(Name.str()), Type(T) {}
+  TempStorageVarInfo(unsigned Off, APIKind Kind, StringRef Name,
+                     std::string TmpMemSizeCalFn,
+                     std::shared_ptr<TemplateDependentStringInfo> ValT)
+      : Offset(Off), Kind(Kind), Name(Name.str()),
+        TmpMemSizeCalFn(TmpMemSizeCalFn), ValueType(ValT) {}
   const std::string &getName() const { return Name; }
   unsigned getOffset() const { return Offset; }
   void addAccessorDecl(StmtList &AccessorList, StringRef LocalSize) const;
@@ -2745,7 +2768,7 @@ private:
 
   void print(KernelPrinter &Printer);
   void printSubmit(KernelPrinter &Printer);
-  void printSubmitLamda(KernelPrinter &Printer);
+  void printSubmitLambda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
   template <typename IDTy, typename... Ts>
@@ -2832,6 +2855,7 @@ private:
     std::string GroupSizeFor1D = "";
     std::string LocalSizeFor1D = "";
     std::string &NdRange = Config[4];
+    std::string Properties = "";
     std::string &SubGroupSize = Config[5];
     bool IsDefaultStream = false;
     bool IsQueuePtr = true;
@@ -3048,6 +3072,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
       DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
   switch (HFT) {
   case HelperFuncType::HFT_DefaultQueue:
+  case HelperFuncType::HFT_DefaultQueuePtr:
     ++Iter->second.DefaultQueueCounter;
     break;
   case HelperFuncType::HFT_CurrentDevice:

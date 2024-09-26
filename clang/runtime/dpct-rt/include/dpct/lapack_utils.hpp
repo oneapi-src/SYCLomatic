@@ -9,12 +9,8 @@
 #ifndef __DPCT_LAPACK_UTILS_HPP__
 #define __DPCT_LAPACK_UTILS_HPP__
 
-#include "memory.hpp"
-#include "util.hpp"
+#include "compat_service.hpp"
 #include "lib_common_utils.hpp"
-
-#include <oneapi/mkl.hpp>
-#include <sycl/sycl.hpp>
 
 namespace dpct {
 namespace lapack {
@@ -69,7 +65,7 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   }
   queue.submit([&, info_val](sycl::handler &cgh) {
     auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-    cgh.single_task<dpct_kernel_name<class sygvd_set_info, T>>(
+    cgh.single_task<::dpct::cs::kernel_name<class sygvd_set_info, T>>(
         [=]() { info_acc[0] = info_val; });
   });
   return ret_val;
@@ -121,7 +117,7 @@ template <typename T, typename Tw>
 inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                  oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
                  Tw *w, T *scratchpad, int scratchpad_size, int *info) {
-  using Ty = typename DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
 #ifdef DPCT_USM_LEVEL_NONE
   auto info_buf = get_buffer<int>(info);
   auto a_buffer = get_buffer<Ty>(a);
@@ -148,7 +144,7 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   }
   queue.submit([&, info_val](sycl::handler &cgh) {
     auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-    cgh.single_task<dpct_kernel_name<class hegvd_set_info, T>>(
+    cgh.single_task<::dpct::cs::kernel_name<class hegvd_set_info, T>>(
         [=]() { info_acc[0] = info_val; });
   });
   return ret_val;
@@ -193,7 +189,7 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
-  using Ty = typename DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   struct matrix_info_t {
     oneapi::mkl::uplo uplo_info;
     std::int64_t n_info;
@@ -264,7 +260,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
-  using Ty = typename DataType<T>::T2;
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   struct matrix_info_t {
     oneapi::mkl::uplo uplo_info;
     std::int64_t n_info;
@@ -298,8 +294,8 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
       &has_execption, api_name, queue, nullptr, info,
       matrix_info->group_size_info, oneapi::mkl::lapack::potrs_batch, queue,
       &(matrix_info->uplo_info), &(matrix_info->n_info),
-      &(matrix_info->nrhs_info), (Ty **)a, &(matrix_info->lda_info), (Ty **)b,
-      &(matrix_info->ldb_info), (std::int64_t)1,
+      &(matrix_info->nrhs_info), (const Ty *const *)a, &(matrix_info->lda_info),
+      (Ty **)b, &(matrix_info->ldb_info), (std::int64_t)1,
       &(matrix_info->group_size_info), (Ty *)scratchpad,
       (std::int64_t)scratchpad_size, empty_events);
 
@@ -336,8 +332,8 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
     }
     int info_val = static_cast<int>(e.info());
     if (info)
-      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
-                                memcpy_direction::host_to_device)
+      ::dpct::cs::memcpy(q, info, &info_val, sizeof(int),
+                         ::dpct::cs::memcpy_direction::host_to_device)
           .wait();
     return 1;
   };
@@ -374,7 +370,7 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
     if (info)
-      dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int)).wait();
+      ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int)).wait();
     return 1;
   }
   return 0;
@@ -383,18 +379,14 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
 template <typename T> class working_memory {
 public:
   working_memory(std::size_t element_number, const sycl::queue &q) : _q(q) {
-    _ptr = dpct::detail::dpct_malloc(element_number * sizeof(T), _q);
+    _ptr = ::dpct::cs::malloc(element_number * sizeof(T), _q);
   }
-  auto get_memory() {
-    return dpct::detail::get_memory<T>(_ptr);
-  }
-  auto get_ptr() {
-    return _ptr;
-  }
+  auto get_memory() { return dpct::detail::get_memory<T>(_ptr); }
+  auto get_ptr() { return _ptr; }
   void set_event(sycl::event e) { _e = e; }
   ~working_memory() {
     if (_ptr) {
-      dpct::async_dpct_free({_ptr}, {_e}, _q);
+      ::dpct::cs::enqueue_free({_ptr}, {_e}, _q);
     }
   }
 
@@ -462,7 +454,7 @@ template <typename T> struct getrf_impl {
     auto device_ws_data = dpct::detail::get_memory<T>(device_ws);
     oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -480,7 +472,7 @@ template <typename T> struct getrs_impl {
     auto b_data = dpct::detail::get_memory<T>(b);
     oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,
                                b_data, ldb, device_ws_data, device_ws_size);
-    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    sycl::event e = ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
     device_ws.set_event(e);
   }
 };
@@ -504,7 +496,7 @@ template <typename T> struct geqrf_impl {
     auto device_ws_data = dpct::detail::get_memory<T>(device_ws);
     oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -523,7 +515,7 @@ template <typename T> struct getrfnp_impl {
     auto device_ws_data = dpct::detail::get_memory<T>(device_ws);
     oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,
                                        device_ws_data, device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };
@@ -563,7 +555,7 @@ template <typename T> struct gesvd_impl {
     oneapi::mkl::lapack::gesvd(q, jobu, jobvt, m, n, a_data, lda, s_data,
                                u_data, ldu, vt_data, ldvt, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
@@ -585,7 +577,7 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
     auto vt_data = dpct::detail::get_memory<T>(vt);
     oneapi::mkl::blas::row_major::imatcopy(q, oneapi::mkl::transpose::conjtrans,
                                            n, n, T(1.0f), vt_data, ldvt, ldvt);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };
@@ -607,7 +599,7 @@ template <typename T> struct potrf_impl {
     auto device_ws_data = dpct::detail::get_memory<T>(device_ws);
     oneapi::mkl::lapack::potrf(q, uplo, n, a_data, lda, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -624,7 +616,7 @@ template <typename T> struct potrs_impl {
     auto b_data = dpct::detail::get_memory<T>(b);
     oneapi::mkl::lapack::potrs(q, uplo, n, nrhs, a_data, lda, b_data, ldb,
                                device_ws_data, device_ws_size);
-    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    sycl::event e = ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
     device_ws.set_event(e);
   }
 };
@@ -733,11 +725,11 @@ template <typename T> struct syheevx_impl {
                                    vl_value, vu_value, il, iu, abstol,
                                    m_device_data, w_data, z_data, lda,
                                    device_ws_data, device_ws_size);
-    dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
-                            memcpy_direction::device_to_device, q);
-    dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
-                            memcpy_direction::device_to_host, q);
-    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::memcpy(q, a, z.get_ptr(), n * lda * sizeof(T),
+                       ::dpct::cs::memcpy_direction::device_to_device);
+    ::dpct::cs::memcpy(q, m, m_device.get_ptr(), sizeof(std::int64_t),
+                       ::dpct::cs::memcpy_direction::device_to_host);
+    sycl::event e = ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
     z.set_event(e);
     m_device.set_event(e);
 #endif
@@ -794,11 +786,11 @@ template <typename T> struct syhegvx_impl {
                                    lda, b_data, ldb, vl_value, vu_value, il, iu,
                                    abstol, m_device_data, w_data, z_data, lda,
                                    device_ws_data, device_ws_size);
-    dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
-                            memcpy_direction::device_to_device, q);
-    dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
-                            memcpy_direction::device_to_host, q);
-    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::memcpy(q, a, z.get_ptr(), n * lda * sizeof(T),
+                       ::dpct::cs::memcpy_direction::device_to_device);
+    ::dpct::cs::memcpy(q, m, m_device.get_ptr(), sizeof(std::int64_t),
+                       ::dpct::cs::memcpy_direction::device_to_host);
+    sycl::event e = ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
     z.set_event(e);
     m_device.set_event(e);
 #endif
@@ -828,7 +820,7 @@ template <typename T> struct syhegvd_impl {
     DISPATCH_FLOAT_FOR_CALCULATION(gvd, q, itype, jobz, uplo, n, a_data, lda,
                                    b_data, ldb, w_data, device_ws_data,
                                    device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -875,7 +867,7 @@ template <typename T> struct syheev_impl {
     auto w_data = dpct::detail::get_memory<value_t>(w);
     DISPATCH_FLOAT_FOR_CALCULATION(ev, q, jobz, uplo, n, a_data, lda, w_data,
                                    device_ws_data, device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };
@@ -900,7 +892,7 @@ template <typename T> struct syheevd_impl {
     auto w_data = dpct::detail::get_memory<value_t>(w);
     DISPATCH_FLOAT_FOR_CALCULATION(evd, q, jobz, uplo, n, a_data, lda, w_data,
                                    device_ws_data, device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -936,7 +928,7 @@ template <typename T> struct trtri_impl {
     auto device_ws_data = dpct::detail::get_memory<T>(device_ws);
     oneapi::mkl::lapack::trtri(q, uplo, diag, n, a_data, lda, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
+    ::dpct::cs::fill<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };

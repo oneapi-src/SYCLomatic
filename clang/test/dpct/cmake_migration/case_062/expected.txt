@@ -1,0 +1,3 @@
+link_directories(foo/bar)
+
+link_directories(SYCLToolkit_LIBRARY_DIR)

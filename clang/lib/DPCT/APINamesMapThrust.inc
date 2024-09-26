@@ -19,10 +19,10 @@
 *   Expected in both host and device code
 *
 ****************************************************************************/
-ENTRY_HOST("thrust::device_malloc", MapNames::getDpctNamespace() + "malloc_device", "")
-ENTRY_HOST("thrust::device_new", MapNames::getDpctNamespace() + "device_new", "")
-ENTRY_HOST("thrust::device_delete", MapNames::getDpctNamespace() + "device_delete", "")
-ENTRY_HOST("thrust::malloc", MapNames::getDpctNamespace() + "malloc", "")
-ENTRY_HOST("thrust::free", MapNames::getDpctNamespace() + "free", "")
-ENTRY_BOTH("thrust::device_pointer_cast", MapNames::getDpctNamespace() + "get_device_pointer", "")
-ENTRY_BOTH("thrust::get_temporary_buffer", MapNames::getDpctNamespace() + "get_temporary_allocation", "")
+ENTRY_HOST("thrust::device_malloc", MapNames::getLibraryHelperNamespace() + "malloc_device", "")
+ENTRY_HOST("thrust::device_new", MapNames::getLibraryHelperNamespace() + "device_new", "")
+ENTRY_HOST("thrust::device_delete", MapNames::getLibraryHelperNamespace() + "device_delete", "")
+ENTRY_HOST("thrust::malloc", MapNames::getLibraryHelperNamespace() + "malloc", "")
+ENTRY_HOST("thrust::free", MapNames::getLibraryHelperNamespace() + "free", "")
+ENTRY_BOTH("thrust::device_pointer_cast", MapNames::getLibraryHelperNamespace() + "get_device_pointer", "")
+ENTRY_BOTH("thrust::get_temporary_buffer", MapNames::getLibraryHelperNamespace() + "get_temporary_allocation", "")

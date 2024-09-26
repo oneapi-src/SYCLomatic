@@ -43,7 +43,7 @@ int main() {
   cudaCreateTextureObject(&tex, &res, &texDesc, NULL);
 
   void *args[2] = { &d_data, &tex };
-
+  // CHECK: static_cast<dpct::image_wrapper<int, 1> *>(tex)->create_image();
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:  [&](sycl::handler &cgh) {
   // CHECK-NEXT:    auto tex_acc = static_cast<dpct::image_wrapper<int, 1> *>(*(dpct::image_wrapper_base_p *)args[1])->get_access(cgh);

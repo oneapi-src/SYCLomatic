@@ -695,6 +695,7 @@
 // CHECK-NEXT: cuModuleLoadDataEx
 // CHECK-NEXT: cuModuleUnload
 // CHECK-NEXT: cuOccupancyMaxActiveBlocksPerMultiprocessor
+// CHECK-NEXT: cuPointerGetAttributes
 // CHECK-NEXT: cuStreamAddCallback
 // CHECK-NEXT: cuStreamAttachMemAsync
 // CHECK-NEXT: cuStreamCreate
@@ -1136,6 +1137,14 @@
 // CHECK-NEXT: cudaGetSymbolSize
 // CHECK-NEXT: cudaGetTextureObjectResourceDesc
 // CHECK-NEXT: cudaGetTextureObjectTextureDesc
+// CHECK-NEXT: cudaGraphicsD3D11RegisterResource
+// CHECK-NEXT: cudaGraphicsMapResources
+// CHECK-NEXT: cudaGraphicsResourceGetMappedMipmappedArray
+// CHECK-NEXT: cudaGraphicsResourceGetMappedPointer
+// CHECK-NEXT: cudaGraphicsResourceSetMapFlags
+// CHECK-NEXT: cudaGraphicsSubResourceGetMappedArray
+// CHECK-NEXT: cudaGraphicsUnmapResources
+// CHECK-NEXT: cudaGraphicsUnregisterResource
 // CHECK-NEXT: cudaHostAlloc
 // CHECK-NEXT: cudaHostGetDevicePointer
 // CHECK-NEXT: cudaHostGetFlags

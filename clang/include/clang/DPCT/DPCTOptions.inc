@@ -250,7 +250,7 @@ DPCT_FLAG_OPTION(
     KeepOriginalCode, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
     "keep-original-code",
-    llvm::cl::desc("Keeps the original code in comments of "
+    llvm::cl::desc("Keep the original code in comments of "
                    "generated SYCL files. Default: off.\n"),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat))
 
@@ -282,7 +282,7 @@ DPCT_ENUM_OPTION(
             "file name has the .stats\n"
             "suffix added (default)",
             false)),
-    llvm::cl::desc("Specifies the type of migration report. Values are:\n"),
+    llvm::cl::desc("Specify the type of migration report. Values are:\n"),
     llvm::cl::init(ReportTypeEnum::RTE_NotSetType),
     llvm::cl::value_desc("value"), llvm::cl::cat(DPCTReportGenCat),
     llvm::cl::Optional)
@@ -313,7 +313,7 @@ DPCT_ENUM_OPTION(
             "file name has the .stats\n"
             "suffix added (default)",
             false)),
-    llvm::cl::desc("Specifies the type of migration report. Values are:\n"),
+    llvm::cl::desc("Specify the type of migration report. Values are:\n"),
     llvm::cl::init(ReportTypeEnum::RTE_NotSetType),
     llvm::cl::value_desc("value"), llvm::cl::cat(DPCTReportGenCat),
     llvm::cl::Optional)
@@ -353,7 +353,7 @@ DPCT_FLAG_OPTION(
     SuppressWarningsAll, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
     "suppress-warnings-all",
-    llvm::cl::desc("Suppresses all migration warnings. Default: off."),
+    llvm::cl::desc("Suppress all migration warnings. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTWarningsCat))
 
 DPCT_FLAG_OPTION(StopOnParseErr, clang::dpct::DpctOptionClass::OC_Attribute,
@@ -391,7 +391,7 @@ DPCT_FLAG_OPTION(
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
                         clang::dpct::DpctActionKind::DAK_Analysis),
     "sycl-named-lambda",
-    llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
+    llvm::cl::desc("Generate kernels with the kernel name. Default: off.\n"),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat))
 
 DPCT_ENUM_OPTION(
@@ -414,7 +414,7 @@ DPCT_ENUM_OPTION(
             "'silent' and warnings, errors, and notes from dpct.", false),
         DPCT_OPTION_ENUM_VALUE("silent", int(OutputVerbosityLevel::OVL_Silent),
                                "Only messages from clang.", false)),
-    llvm::cl::desc("Sets the output verbosity level:"),
+    llvm::cl::desc("Set the output verbosity level:"),
     llvm::cl::init(OutputVerbosityLevel::OVL_Diagnostics),
     llvm::cl::value_desc("value"), llvm::cl::cat(DPCTWarningsCat),
     llvm::cl::Optional)
@@ -423,7 +423,7 @@ DPCT_PATH_OPTION(
     OutputFile, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
     "output-file",
-    llvm::cl::desc("Redirects the stdout/stderr output to <file> in the output"
+    llvm::cl::desc("Redirect the stdout/stderr output to <file> in the output"
                    " directory specified\n"
                    "by the --out-root option."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTWarningsCat),
@@ -435,7 +435,7 @@ DPCT_OPTION(clang::dpct::list, std::string, RuleFile,
                                 clang::dpct::DpctActionKind::DAK_BuildScript,
                                 clang::dpct::DpctActionKind::DAK_Analysis),
             "rule-file",
-            llvm::cl::desc("Specifies the rule file path that "
+            llvm::cl::desc("Specify the rule file path that "
                            "contains rules used for migration.\n"),
             llvm::cl::value_desc("file"), llvm::cl::cat(DPCTAdvancedCat),
             llvm::cl::ZeroOrMore)
@@ -455,7 +455,7 @@ DPCT_ENUM_OPTION(
         DPCT_OPTION_ENUM_VALUE(
             "restricted", int(UsmLevel::UL_Restricted),
             "Uses USM API for memory management migration. (default)", false)),
-    llvm::cl::desc("Sets the Unified Shared Memory (USM) level to use in "
+    llvm::cl::desc("Set the Unified Shared Memory (USM) level to use in "
                    "source code generation.\n"),
     llvm::cl::init(UsmLevel::UL_Restricted), llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::Optional)
@@ -479,13 +479,13 @@ DPCT_ENUM_OPTION(
     "format-range",
     DPCT_OPTION_VALUES(
         DPCT_OPTION_ENUM_VALUE("all", int(format::FormatRange::all),
-                               "Formats all code.", false),
+                               "Format all code.", false),
         DPCT_OPTION_ENUM_VALUE("migrated", int(format::FormatRange::migrated),
-                               "Only formats the migrated code (default).",
+                               "Only format the migrated code (default).",
                                false),
         DPCT_OPTION_ENUM_VALUE("none", int(format::FormatRange::none),
                                "Do not format any code.", false)),
-    llvm::cl::desc("Sets the range of formatting.\nThe values are:\n"),
+    llvm::cl::desc("Set the range of formatting.\nThe values are:\n"),
     llvm::cl::init(format::FormatRange::migrated),
     llvm::cl::value_desc("value"), llvm::cl::cat(DPCTAdvancedCat),
     llvm::cl::Optional)
@@ -504,7 +504,7 @@ DPCT_ENUM_OPTION(
                                "Use the LLVM coding style.", false),
         DPCT_OPTION_ENUM_VALUE("google", int(DPCTFormatStyle::FS_Google),
                                "Use the Google coding style.", false)),
-    llvm::cl::desc("Sets the formatting style.\nThe values are:\n"),
+    llvm::cl::desc("Set the formatting style.\nThe values are:\n"),
     llvm::cl::init(DPCTFormatStyle::FS_Custom), llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTAdvancedCat), llvm::cl::Optional)
 
@@ -522,7 +522,7 @@ DPCT_FLAG_OPTION(
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
                         clang::dpct::DpctActionKind::DAK_Analysis),
     "process-all",
-    llvm::cl::desc("Migrates or copies all files, except hidden, from the "
+    llvm::cl::desc("Migrate or copies all files, except hidden, from the "
                    "--in-root directory\n"
                    "to the --out-root directory. The --in-root option should "
                    "be explicitly specified.\n"
@@ -580,7 +580,7 @@ DPCT_ENUM_OPTION(
         DPCT_OPTION_ENUM_VALUE(
             "3", 3, "Generate kernel code assuming 3D nd_range (default).",
             false)),
-    llvm::cl::desc("Provides a hint to the tool on the dimensionality of "
+    llvm::cl::desc("Provide a hint to the tool on the dimensionality of "
                    "nd_range to use in generated code.\n"
                    "The values are:\n"),
     llvm::cl::init(AssumedNDRangeDimEnum::ARE_Dim3),
@@ -610,13 +610,17 @@ DPCT_ENUM_OPTION(
             "Generate code with sycl:: namespace, applied only for "
             "SYCL math functions.\n"
             "Cannot be used with cl or sycl values.",
-            false)),
-    llvm::cl::desc("Defines the namespaces to use explicitly in generated "
+            false),
+        DPCT_OPTION_ENUM_VALUE("syclcompat",
+                               int(ExplicitNamespace::EN_SYCLCompat),
+                               "Generate code with syclcompat:: namespace.",
+                               false)),
+    llvm::cl::desc("Define the namespaces to use explicitly in generated "
                    "code. The <value> is a comma\n"
-                   "separated list. Default: dpct, sycl.\n"
+                   "separated list. Default: dpct/syclcompat, sycl.\n"
                    "Possible values are:"),
     llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
-    llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
+    llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(
     clang::dpct::bits, DPCPPExtensionsDefaultEnabled, NoDPCPPExtensions,
@@ -718,10 +722,17 @@ DPCT_ENUM_OPTION(
             "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
             "Experimental helper function used to logically group work-items.",
             false),
+        DPCT_OPTION_ENUM_VALUE("root-group",
+                               int(ExperimentalFeatures::Exp_RootGroup),
+                               "Experimental extension that allows use of root "
+                               "group class and relative API.\n",
+                               false),
         DPCT_OPTION_ENUM_VALUE(
             "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-            "Experimental helper function used to help cross-group "
-            "synchronization during migration.\n",
+            "DEPRECATED : Experimental helper function used to help "
+            "cross-group "
+            "synchronization during migration. Please use the following option "
+            "instead: --use-experimental-features=root-group.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "user-defined-reductions",
@@ -781,7 +792,8 @@ DPCT_ENUM_OPTION(
             "Enable all experimental extensions listed in this option.\n",
             false)),
     llvm::cl::desc(
-        "A comma-separated list of experimental features to be used in migrated "
+        "A comma-separated list of experimental features to be used in "
+        "migrated "
         "code.\n"
         "By default, experimental features will not be used in migrated "
         "code.\nThe values are:\n"),
@@ -793,7 +805,7 @@ DPCT_FLAG_OPTION(GenBuildScript, clang::dpct::DpctOptionClass::OC_Attribute,
                  DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
                                      clang::dpct::DpctActionKind::DAK_Analysis),
                  "gen-build-script",
-                 llvm::cl::desc("Generates makefile for migrated file(s) "
+                 llvm::cl::desc("Generate makefile for migrated file(s) "
                                 "in -out-root directory. Default: off."),
                  llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTBuildScriptCat))
 
@@ -802,7 +814,7 @@ DPCT_PATH_OPTION(
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
     "build-script-file",
     llvm::cl::desc(
-        "Specifies the name of generated makefile for migrated file(s).\n"
+        "Specify the name of generated makefile for migrated file(s).\n"
         "Default name: Makefile.dpct."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTBuildScriptCat),
     llvm::cl::Optional)
@@ -821,7 +833,7 @@ DPCT_OPTION(
                         clang::dpct::DpctActionKind::DAK_Migration,
                         clang::dpct::DpctActionKind::DAK_Analysis),
     "in-root-exclude",
-    llvm::cl::desc("Excludes the specified directory or file from processing."),
+    llvm::cl::desc("Exclude the specified directory or file from processing."),
     llvm::cl::value_desc("dir|file"), llvm::cl::cat(DPCTBasicCat),
     llvm::cl::ZeroOrMore)
 
@@ -830,7 +842,7 @@ DPCT_FLAG_OPTION(
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
                         clang::dpct::DpctActionKind::DAK_Migration),
     "optimize-migration",
-    llvm::cl::desc("Generates SYCL code applying more aggressive assumptions "
+    llvm::cl::desc("Generate SYCL code applying more aggressive assumptions "
                    "that potentially\n"
                    "may alter the semantics of your program. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat))
@@ -840,7 +852,7 @@ DPCT_FLAG_OPTION(
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
                         clang::dpct::DpctActionKind::DAK_Migration),
     "no-incremental-migration",
-    llvm::cl::desc("Tells the tool to not perform an incremental migration.\n"
+    llvm::cl::desc("Tell the tool to not perform an incremental migration.\n"
                    "Default: off (incremental migration happens)."))
 
 DPCT_PATH_OPTION(
@@ -876,7 +888,7 @@ DPCT_ENUM_OPTION(
                                false),
         DPCT_OPTION_ENUM_VALUE("cpp", int(SYCLFileExtensionEnum::CPP),
                                "Use extension '.cpp' and '.hpp'.", false)),
-    llvm::cl::desc("Specifies the extension of migrated source file(s).\nThe "
+    llvm::cl::desc("Specify the extension of migrated source file(s).\nThe "
                    "values are:\n"),
     llvm::cl::init(SYCLFileExtensionEnum::DP_CPP),
     llvm::cl::value_desc("value"), llvm::cl::Optional)
@@ -940,6 +952,18 @@ DPCT_ENUM_OPTION(
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::ZeroOrMore)
 
 DPCT_FLAG_OPTION(
+    UseSYCLCompat, clang::dpct::DpctOptionClass::OC_Attribute,
+    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
+                        clang::dpct::DpctActionKind::DAK_Migration,
+                        clang::dpct::DpctActionKind::DAK_Help,
+                        clang::dpct::DpctActionKind::DAK_Query),
+    "use-syclcompat",
+    llvm::cl::desc(
+        "Use SYCLcompat header-only library (syclcompat:: namespace) to assist "
+        "the migration of input source code.\nDefault: off.\n"),
+    llvm::cl::cat(DPCTCodeGenCat), llvm::cl::cat(DPCTCat))
+
+DPCT_FLAG_OPTION(
     AnalysisMode, clang::dpct::DpctOptionClass::OC_Action,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis),
     "analysis-mode",
@@ -951,7 +975,7 @@ DPCT_PATH_OPTION(
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis),
     "analysis-mode-output-file",
     llvm::cl::desc(
-        "Specifies the file where the analysis mode report is saved. Default: "
+        "Specify the file where the analysis mode report is saved. Default: "
         "Output to stdout."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTBasicCat))
 

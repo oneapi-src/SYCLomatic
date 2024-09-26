@@ -546,9 +546,13 @@ bool Preprocessor::HandleEndOfFile(Token &Result, bool isEndOfMacro) {
       return LeavingSubmodule;
     }
   }
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (isInPrimaryFile() && getLangOpts().SYCLIsHost && CurPPLexer &&
+      !getPreprocessorOpts().IncludeFooter.empty()) {
+#else
   if (isInPrimaryFile() && getLangOpts().SYCLIsHost &&
       !getPreprocessorOpts().IncludeFooter.empty()) {
+#endif
     SourceManager &SourceMgr = getSourceManager();
     SourceLocation Loc = CurLexer->getFileLoc();
 

@@ -245,6 +245,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
     StaticsInfo::printReplacements(Transforms, Context);
   }
   Transforms.clear();
+  Context.getParentMapContext().clear(); // Clear the lazy parent map.
 }
 
 void DpctToolAction::runPass(PassKind Pass) {
@@ -268,6 +269,14 @@ void DpctToolAction::runPasses() {
   for (auto Pass : Passes) {
     runPass(Pass);
   }
+  // Before post-processing, we need to set the MainFile to empty since it is no
+  // longer valid. Currently, DpctFileInfo::insertHeader() is executed both
+  // before and during the post-processing. In that function, the MainFile value
+  // is accessed for inserting two kinds of header files: oneDPL header and SYCL
+  // header. We assume those two headers have already been inserted before the
+  // post-processing. So, clearing the value of MainFile can avoid the MainFile
+  // value used in the post-processing.
+  DpctGlobalInfo::getInstance().setMainFile(nullptr);
   runWithCrashGuard(
       [&]() {
         Global.buildReplacements();
