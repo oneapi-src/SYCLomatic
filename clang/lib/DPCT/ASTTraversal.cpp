@@ -8851,15 +8851,27 @@ void DeviceFunctionDeclRule::runRule(
     }
     std::string ReplacedStmt;
     llvm::raw_string_ostream OS(ReplacedStmt);
-    OS << DpctGlobalInfo::getStreamName() << " << ";
-    CE->getArg(0)->printPretty(OS, nullptr,
-                               Result.Context->getPrintingPolicy());
+    if (DpctGlobalInfo::useExpNonStandardSYCLBuiltins()) {
+      OS << MapNames::getClNamespace() << "ext::oneapi::experimental::printf";
+      std::vector<std::string> ArgsSpelling;
+      for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
+        ExprAnalysis ArgEA;
+        ArgEA.analyze(CE->getArg(I));
+        ArgsSpelling.push_back(ArgEA.getReplacedString());
+      }
+      OS << '(' << llvm::join(ArgsSpelling, ", ") << ')';
+    } else {
+      OS << DpctGlobalInfo::getStreamName() << " << ";
+      CE->getArg(0)->printPretty(OS, nullptr,
+                                 Result.Context->getPrintingPolicy());
+      if (CE->getNumArgs() > 1 ||
+          CE->getArg(0)->IgnoreImplicitAsWritten()->getStmtClass() !=
+              Stmt::StringLiteralClass)
+        report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING,
+               false);
+      FuncInfo->setStream();
+    }
     emplaceTransformation(new ReplaceStmt(CE, std::move(OS.str())));
-    if (CE->getNumArgs() > 1 ||
-        CE->getArg(0)->IgnoreImplicitAsWritten()->getStmtClass() !=
-            Stmt::StringLiteralClass)
-      report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING, false);
-    FuncInfo->setStream();
   } else if (auto Ctor =
                  getAssistNodeAsType<CXXConstructExpr>(Result, "CtorExpr")) {
     FuncInfo->addCallee(Ctor);
