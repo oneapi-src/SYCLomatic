@@ -110,6 +110,18 @@ struct csrgemm_args_info {
 
 class descriptor {
 public:
+  descriptor() {}
+  void set_queue(::dpct::cs::queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
+  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+
+private:
+  ::dpct::cs::queue_ptr _queue_ptr = &::dpct::cs::get_default_queue();
+#ifdef __INTEL_MKL__
+  std::unordered_map<detail::csrgemm_args_info, matmat_info,
+                     detail::csrgemm_args_info::Hash>
+      _csrgemm_info_map;
+
+public:
   struct matmat_info {
     matmat_info(oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a,
                 oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b,
@@ -122,21 +134,12 @@ public:
     oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c;
     oneapi::mkl::sparse::matmat_descr_t *matmat_desc;
   };
-
-  descriptor() {}
-  void set_queue(::dpct::cs::queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
-  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
   std::unordered_map<detail::csrgemm_args_info, matmat_info,
                      detail::csrgemm_args_info::Hash> &
   get_csrgemm_info_map() {
     return _csrgemm_info_map;
   }
-
-private:
-  ::dpct::cs::queue_ptr _queue_ptr = &::dpct::cs::get_default_queue();
-  std::unordered_map<detail::csrgemm_args_info, matmat_info,
-                     detail::csrgemm_args_info::Hash>
-      _csrgemm_info_map;
+#endif
 };
 
 using descriptor_ptr = descriptor *;
