@@ -1457,9 +1457,10 @@ public:
   accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
   accessor(const accessor_t &acc, const sycl::range<2> &in_range)
-      : accessor(
-            acc.template get_multi_ptr<sycl::access::decorated::no>().get(),
-            in_range) {}
+      : accessor(const_cast<pointer_t>(
+                     acc.template get_multi_ptr<sycl::access::decorated::no>()
+                         .get()),
+                 in_range) {}
 
   pointer_t operator[](size_t index) const {
     return _data + _range.get(1) * index;
