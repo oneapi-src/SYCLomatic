@@ -2735,7 +2735,8 @@ public:
 private:
   struct ArgInfo {
     ArgInfo(const ParmVarDecl *PVD, KernelArgumentAnalysis &Analysis,
-            const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE);
+            const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE,
+            const ParmVarDecl *TPVD);
     ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
             KernelCallExpr *Kernel);
     ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel);
@@ -2762,6 +2763,7 @@ private:
     bool IsDeviceRandomGeneratorType = false;
     bool HasImplicitConversion = false;
     bool IsDoublePointer = false;
+    bool IsDependentType = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
   };

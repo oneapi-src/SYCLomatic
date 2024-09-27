@@ -5224,9 +5224,11 @@ void DeviceFunctionInfo::mergeTextureObjectList(
 KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelArgumentAnalysis &Analysis,
                                  const Expr *Arg, bool Used, int Index,
-                                 KernelCallExpr *BASE)
+                                 KernelCallExpr *BASE, const ParmVarDecl *TPVD)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
+  if (TPVD && TPVD->getType()->isDependentType())
+    IsDependentType = true;
   if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
   } else if (const auto *CCE = dyn_cast<CXXConstructExpr>(Arg)) {
@@ -5875,8 +5877,10 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
       if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
         Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
       const auto FD = CE->getDirectCallee();
-      ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis, Arg,
-                            Used, Idx, this);
+      const FunctionTemplateDecl *FTD = FD ? FD->getPrimaryTemplate() : nullptr;
+      ArgsInfo.emplace_back(
+          FD ? FD->parameters()[Idx] : nullptr, Analysis, Arg, Used, Idx, this,
+          FTD ? FTD->getTemplatedDecl()->parameters()[Idx] : nullptr);
     }
   }
 }
@@ -6226,7 +6230,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
       std::string TypeStr = "auto";
-      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty()) {
+      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty() &&
+          !Arg.IsDependentType) {
         TypeStr = Arg.getTypeString();
       }
       SubmitStmts.CommandGroupList.emplace_back(
