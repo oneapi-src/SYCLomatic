@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "QueryAPIMapping.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/raw_ostream.h"
 #include <unordered_map>
 
@@ -34,17 +35,16 @@ void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
     Name.erase(Name.end() - 1);
     EntryMap.try_emplace(Name, TargetIndex);
   }
-  const auto EmplaceWithAndWithoutSuffix =
-      [TargetIndex](const std::string &Name, llvm::StringRef Suffix) {
-        EntryMap.try_emplace(Name, TargetIndex);
-        if (Name.size() > Suffix.size() &&
-            Name.substr(Name.size() - Suffix.size()) == Suffix) {
-          EntryMap.try_emplace(Name.substr(0, Name.size() - Suffix.size()),
-                               TargetIndex);
-        } else {
-          EntryMap.try_emplace(Name + Suffix.str(), TargetIndex);
-        }
-      };
+  const auto EmplaceWithAndWithoutSuffix = [TargetIndex](
+                                               llvm::StringRef Name,
+                                               llvm::StringRef Suffix) {
+    EntryMap.try_emplace(Name.str(), TargetIndex);
+    if (Name.take_back(Suffix.size()) == Suffix) {
+      EntryMap.try_emplace(Name.drop_back(Suffix.size()).str(), TargetIndex);
+    } else {
+      EntryMap.try_emplace(llvm::Twine(Name).concat(Suffix).str(), TargetIndex);
+    }
+  };
   // 3. Remove partial or all leading '_'.
   // 4. For each name got by step 1, put 2 kind of fuzzed name into the map
   // keys:
