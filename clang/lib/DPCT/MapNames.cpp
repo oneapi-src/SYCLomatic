@@ -1488,8 +1488,8 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("get_max_work_item_sizes",
                                       HelperFeatureEnum::device_ext)},
       {"CU_DEVICE_ATTRIBUTE_VIRTUAL_MEMORY_MANAGEMENT_SUPPORTED",
-       std::make_shared<EnumNameRule>("get_virtual_mem_support",
-                                      HelperFeatureEnum::device_ext)},
+       std::make_shared<EnumNameRule>(
+           "has(sycl::aspect::ext_oneapi_virtual_mem)")},
       {"CU_CTX_MAP_HOST", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},

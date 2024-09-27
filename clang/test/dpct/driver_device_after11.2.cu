@@ -9,7 +9,7 @@
 int main() {
   int i;
   CUdevice d;
-  // CHECK: i = dpct::get_device(d).get_virtual_mem_support();
+  // CHECK: i = dpct::get_device(d).has(sycl::aspect::ext_oneapi_virtual_mem);
   cuDeviceGetAttribute(&i, CU_DEVICE_ATTRIBUTE_VIRTUAL_MEMORY_MANAGEMENT_SUPPORTED, d);
   return 0;
 }
