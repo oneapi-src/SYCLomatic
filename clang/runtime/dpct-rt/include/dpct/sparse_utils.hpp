@@ -1663,7 +1663,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 #else
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_c, rows_c, cols_c,
                                       info_c->get_index_base(), row_ptr_c,
-                                      nullptr, nullptr);
+                                      (int *)nullptr, (Ty *)nullptr);
 #endif
 
     matmat_desc = new oneapi::mkl::sparse::matmat_descr_t();
