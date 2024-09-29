@@ -1715,13 +1715,13 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
 
   emit_cmake_warning(argv, argc);
 
-  int is_file_found = 0;
+  int is_tool_existence = 0;
 
   if(!access(argv[0], F_OK )){
-    is_file_found = 1;
+    is_tool_existence = 1;
   }
 
-  if (is_file_found) {
+  if (is_tool_existence) {
     for (size_t it = 0; it < argc; ++it) {
       fprintf(fd, "%s%c", argv[it], US);
     }
@@ -1879,6 +1879,15 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
       }
     }
 
+    fprintf(fd, "%c", GS);
+    if (fclose(fd)) {
+      perror("bear: fclose");
+      pthread_mutex_unlock(&mutex);
+      exit(EXIT_FAILURE);
+    }
+    free((void *)cwd);
+    pthread_mutex_unlock(&mutex);
+
     if (is_nvcc_or_ld == 1 && flag_object == 1) {
       ret = 1;
     } else if (is_nvcc_or_ld == 1) {
@@ -1977,7 +1986,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   free((void *)cwd);
   pthread_mutex_unlock(&mutex);
 #ifdef SYCLomatic_CUSTOMIZATION
-  if(is_file_found) {
+  if(is_tool_existence) {
     return 0;
   }
 #endif // SYCLomatic_CUSTOMIZATION
