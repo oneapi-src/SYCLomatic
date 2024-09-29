@@ -693,13 +693,13 @@ inline unsigned vectorized_binary(unsigned a, unsigned b,
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op The operation with pred to do with the two values
-/// \param [in] pred_hi The pred pointer that pass into high halfword operation
-/// \param [in] pred_lo The pred pointer that pass into low halfword operation
+/// \param [out] pred_hi The pred pointer that pass into high halfword operation
+/// \param [out] pred_lo The pred pointer that pass into low halfword operation
 /// \returns The vectorized binary operation value of the two values
 template <typename T, typename BinaryOperation>
-inline unsigned vectorized_with_pred(unsigned a, unsigned b,
-                                     const BinaryOperation binary_op,
-                                     bool *pred_hi, bool *pred_lo) {
+inline unsigned vectorized_binary_with_pred(unsigned a, unsigned b,
+                                            const BinaryOperation binary_op,
+                                            bool *pred_hi, bool *pred_lo) {
   auto v1 = sycl::vec<unsigned, 1>(a).as<sycl::vec<T, 2>>();
   auto v2 = sycl::vec<unsigned, 1>(b).as<sycl::vec<T, 2>>();
   sycl::vec<T, 2> ret;
@@ -812,13 +812,12 @@ inline unsigned vectorized_ternary(unsigned a, unsigned b, unsigned c,
   const auto v1 = sycl::vec<unsigned, 1>(a).as<VecT>();
   const auto v2 = sycl::vec<unsigned, 1>(b).as<VecT>();
   const auto v3 = sycl::vec<unsigned, 1>(c).as<VecT>();
-  auto temp =
+  auto v4 =
       detail::vectorized_binary<VecT, BinaryOperation1>()(v1, v2, binary_op1);
-  temp =
-      detail::vectorized_binary<VecT, BinaryOperation2>()(temp, v3, binary_op2);
+  v4 = detail::vectorized_binary<VecT, BinaryOperation2>()(v4, v3, binary_op2);
   if (need_relu)
-    temp = relu(temp);
-  return temp.template as<sycl::vec<unsigned, 1>>();
+    v4 = relu(v4);
+  return v4.template as<sycl::vec<unsigned, 1>>();
 }
 
 namespace detail {
