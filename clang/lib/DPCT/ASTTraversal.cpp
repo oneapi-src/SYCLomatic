@@ -14158,6 +14158,13 @@ void DriverDeviceAPIRule::runRule(
     auto SecArg = CE->getArg(1);
     if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
       auto AttributeName = DRE->getNameInfo().getAsString();
+      if (AttributeName ==
+              "CU_DEVICE_ATTRIBUTE_VIRTUAL_MEMORY_MANAGEMENT_SUPPORTED" &&
+          !DpctGlobalInfo::useExtVirtualMem()) {
+        report(CE->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+               AttributeName, "--use-experimental-features=virtual_mem");
+        return;
+      }
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
         report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
