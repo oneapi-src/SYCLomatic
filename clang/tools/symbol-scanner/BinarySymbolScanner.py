@@ -1,18 +1,18 @@
 #--------------------------------------------------------------------------------
 # MIT License
-# 
+#
 # Copyright (c) Intel Corporation
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,8 +33,8 @@
 # The captured functions from the binaries in the search path will be saved in
 # 'product-name.funcs.csv'. If statistics flag is turned on, function occurrence
 # histogram will be saved to 'product-name.stats.csv'.
-# 
-# 
+#
+#
 #  | Options/flags                                | Description                                              |
 #  | -------------------------------------------- | ---------------------------------------------------------|
 #  | -h, --help                                   | Show this help message and exit                          |
@@ -42,10 +42,10 @@
 #  | -p PROD_NAME, --product-name PROD_NAME       | Product name for which the binaries are being scanned.   |
 #  | -b BIN_DIR, --binary-dir BIN_DIR             | Application binary directory to be scanned. If the       |
 #  |                                              | option is not provided, the script will scan the         |
-#  |                                              | current directory and all child directories for binaries.| 
+#  |                                              | current directory and all child directories for binaries.|
 #  | -d, --debug                                  | Enable debugging help.                                   |
 #  | -s, --statistics                             | Create function histograms.                              |
-#  | -x, --extend-non-intel                       | Extend the scanning to non-Intel performance libraries.  | 
+#  | -x, --extend-non-intel                       | Extend the scanning to non-Intel performance libraries.  |
 #
 
 import argparse
@@ -54,6 +54,63 @@ import re
 import sys
 import subprocess
 from pathlib import Path
+import pandas as p
+import numpy as np
+# Class which creates the dictionary of API Migration Support Status
+class api_mapping_support:
+    def __init__(self):
+        # Array of URLs for the API Mapping CSV files in SYCLomatic repo
+        self.api_mapping_urls=["https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/CUB_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/NCCL_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/NVML_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/Runtime_and_Driver_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuBLAS_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuDNN_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuFFT_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuRAND_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuSOLVER_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/cuSPARSE_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/nvGRAPH_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/nvJPEG_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/thrust_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/ASM_API_migration_status.csv",
+                "https://raw.githubusercontent.com/oneapi-src/SYCLomatic/SYCLomatic/docs/dev_guide/api-mapping-status/wmma_API_migration_status.csv"]
+
+        # Reading the contents of the individual CSV files into one unified Dataframe
+        np1=p.read_csv(self.api_mapping_urls[0])
+        np2=p.read_csv(self.api_mapping_urls[1])
+        j = p.concat([np1,np2],axis=0)
+        for i in range(2,len(self.api_mapping_urls)):
+            np3=p.read_csv(self.api_mapping_urls[i])
+            j = p.concat([j,np3],axis=0)
+        # Creating a Python Dictionary with key as function name and value as Migration Support (YES/NO)
+        self.api_mapping_dict={j.values[0][0]: j.values[0][1]}
+        for i in range(1,j.values.shape[0]):
+            self.api_mapping_dict[j.values[i][0]]=j.values[i][1]
+
+# Class which takes as input the CSV file produced by Binary Symbol Scanner and looksup the migration support for the undefined symbols from customer application binaries
+class migration_status:
+    def __init__(self, input):
+        self.input = input
+        self.api_mapping_reference = api_mapping_support()
+        self.successful_migration = []
+        self.failed_migration = []
+        input_data = p.read_csv(input, sep="|")
+        for i in range(1, input_data.values.shape[0]):
+            lookup_api = input_data.values[i][1].split("(")[0].strip()
+            #print(input_data.values)
+            try:
+                migration_status = self.api_mapping_reference.api_mapping_dict[lookup_api]
+                self.successful_migration.append(lookup_api)
+            except KeyError:
+                self.failed_migration.append(lookup_api)
+        print(f"List of Migratable APIs: {self.successful_migration}\n")
+        print(f"List of Non-Migratable APIs: {self.failed_migration}\n")
+        total_entries = len(self.successful_migration) + len(self.failed_migration)
+        self.migration_percentage = (len(self.successful_migration)/total_entries)*100
+        print(f"**********************************************************************************************")
+        print(f"Percentage of CUDA Host/Library APIs Migratable by SYCLomatic: {self.migration_percentage:.2f}%")
+        print(f"**********************************************************************************************")
 
 # Commands to use to determine the symbols in the binaries on Windows and Linux
 if os.name == "nt":
@@ -83,18 +140,18 @@ regex_dict = {
     "MKL PDE": ["[ds]_.", "free_trig_transform", "free_Hemholtz_.", "free_sph_." ],
     "MKL NL Opt. Solvers": ["[ds]trnlsp_.", "[ds]trnlspbc_.", "[ds]jacobi."],
     "MKL Support": ["xerbla", "pxerbla", "lsame.", "second", "dsecnd"],
-    "MKL BLACS": ["blacs_.", "[isdcz]gam.", "[isdcz]gsum.", "[isdcz]gesd2d", "[isdcz]trsd2d", "[isdcz]gerv2d", 
+    "MKL BLACS": ["blacs_.", "[isdcz]gam.", "[isdcz]gsum.", "[isdcz]gesd2d", "[isdcz]trsd2d", "[isdcz]gerv2d",
                   "[isdcz]trrv2d", "[isdcz]gebs2d", "[isdcz]trbs2d", "[isdcz]gebr2d", "[isdcz]trbr2d"],
     "MKL Data Fitting": ["df[ds][A-Z].", "dfi[ds][A-Z].", "df[A-Z]."],
-    "MKL C LAPACK": ["LAPACKE_.", "LAPACKE_[sdcz].", "[sdcz]g[gebt].", "[sdcz]dt.", "[sdcz]p[osfpbt][tcres].", 
-                   "[sdcz]sy[egtcrs][qrofvw].", "[sdcz]h[efgpbs].", "[sdcz]s[fupbt].", "[sdcz]t[gzfrpb][tcrqmes][qvnxeyrofjt].", 
+    "MKL C LAPACK": ["LAPACKE_.", "LAPACKE_[sdcz].", "[sdcz]g[gebt].", "[sdcz]dt.", "[sdcz]p[osfpbt][tcres].",
+                   "[sdcz]sy[egtcrs][qrofvw].", "[sdcz]h[efgpbs].", "[sdcz]s[fupbt].", "[sdcz]t[gzfrpb][tcrqmes][qvnxeyrofjt].",
                    "[sdcz]or[bcgm].", "[sdcz]un[bcgm].", "[sdcz]b[db].", "[sdcz][ou]p[gm].", "[sdcz]disna.",
                   "[sdcz]la[cgknprstu].", "i[sdcz]m.", "ila[vem]."],
-    "MKL ScaLAPACK": ["p[sdcz]g[egb].", "p[sdcz]d[bt].", "p[sdcz]p[obt].", "p[sdcz]t[rz].", "p[sdcz]or[gm].", 
-                      "p[sdcz]un[gm].", "p[sdcz]sy[egnt].", "p[sdcz]he.", "p[sdcz]su.", "p[sdcz]la[bcehimnpqrstuw].", 
-                      "p[sdcz]max.", "p[ijm].", "[sdcz]comb.", "[sdcz]la[hmpqrs].", "[sdcz][sdpt][btr][e].", 
+    "MKL ScaLAPACK": ["p[sdcz]g[egb].", "p[sdcz]d[bt].", "p[sdcz]p[obt].", "p[sdcz]t[rz].", "p[sdcz]or[gm].",
+                      "p[sdcz]un[gm].", "p[sdcz]sy[egnt].", "p[sdcz]he.", "p[sdcz]su.", "p[sdcz]la[bcehimnpqrstuw].",
+                      "p[sdcz]max.", "p[ijm].", "[sdcz]comb.", "[sdcz]la[hmpqrs].", "[sdcz][sdpt][btr][e].",
                       "p[sdcz]r[os].", "descinit", "numroc"],
-    "MKL PARDISO/Cluster Sparse/DSS/RCI ISS/LU/": ["pardiso.", "mkl_pardiso.", "cluster_sparse.", "dss_.", 
+    "MKL PARDISO/Cluster Sparse/DSS/RCI ISS/LU/": ["pardiso.", "mkl_pardiso.", "cluster_sparse.", "dss_.",
                                                    "dcg_.", "dcgmr[eh]s.", "dcsrilu.", "sparse_matrix_checker."],
     "MKL Graph": ["^.*mkl_graph_."],
     "MKL C++ BLAS": ["^.*oneapi::mkl::blas::."],
@@ -139,7 +196,7 @@ regex_dict = {
 
 # Regular expression dictionary for all the function signatures of similar offerings
 # from NVIDIA and AMD.
-regex_ext_dict = {
+regex_ext_cuda_dict = {
     # NVIDIA Library signature regex
     "VPI": ["^.*vpi[A-Z]."],
     "cuFFT":  ["^.*cufft.", "^.*cufftdx::."],
@@ -156,10 +213,13 @@ regex_ext_dict = {
     "AmgX": ["^.*amgx::."],
     "Thrust": ["^.*thrust::."],
     "nvSHMEM": ["^.*nvshmem_."],
-    "CUDA": ["^.*cuda.", "^.*make_cuda."],
+    "CUDA": ["^cuda[^_]*$", "^.*make_cuda.", "^cuda*_v.$"],
     "CUB": ["^.*Cub[A-Z]."],
     "NVVM": ["^nvvm"],
-    "TensorRT": ["^nvinfer1", "^nvcaffeparser1", "^nvonnxparser", "^nvuffparser"],
+    "TensorRT": ["^nvinfer1", "^nvcaffeparser1", "^nvonnxparser", "^nvuffparser"]
+}
+
+regex_ext_amd_dict = {
     # AMD library signature regex TO BE COMPLETED (hipeigen, etc)
     "rocBLAS": ["^.*rocblas_."],
     "rocRAND": ["^.*rocrand."],
@@ -187,7 +247,7 @@ def scan_functions_linux(binary: str, debug_output):
                 if re.match("U|u|w|W", tokens[0]):
                     # Sometimes functions signatures can have spaces in them
                     # and will result in multiple tokens. We piece them back
-                    # here 
+                    # here
                     func_sig = ""
                     for i in range(token_count):
                         if i > 0:
@@ -212,7 +272,7 @@ def scan_functions_linux(binary: str, debug_output):
     return functions
 
 def demangle_function_name(func: str):
-    # Check to see if the name is mangled - if so, it will 
+    # Check to see if the name is mangled - if so, it will
     # begin with '?'
     if func.find('?') > -1:
         cmd = ["undname", "0x1002", func]
@@ -242,8 +302,8 @@ def scan_functions_windows(binary: str, debug_output):
         no_of_tks = len(tokens)
         if no_of_tks > 0:
            func = tokens[no_of_tks-1]
-           # If the function name is mangled, we have to undecorate it 
-           # on Windows. The utility on Linux demangles the name, so 
+           # If the function name is mangled, we have to undecorate it
+           # on Windows. The utility on Linux demangles the name, so
            # no additional work is needed
            if os.name == "nt" and not re.search(".dll|.exe", func):
                func = demangle_function_name(func)
@@ -270,7 +330,7 @@ def is_hidden(dir, dir_lut):
 def scan_directory(path, file_dict):
     # Scan directories in provided path
     # 1. Record the hidden directories in the provided path
-    # 2. Capture all files in current 'root' directory that don't begin 
+    # 2. Capture all files in current 'root' directory that don't begin
     #    with '.' and all child directories that don't begin with '.'
     #    TBD: Not sure if this restriction should be placed, especially
     #    if applications use hidden directories to place files
@@ -282,7 +342,7 @@ def scan_directory(path, file_dict):
             if d.startswith('.'):
                 full_path = os.path.join(root, d)
                 hidden_dir_lut[full_path] = True
-        # Find the list of files in the current directory that are 
+        # Find the list of files in the current directory that are
         # hidden files and put them in 'list'
         list = [];
         for f in f_names:
@@ -306,7 +366,7 @@ def pattern_match_store(regex_dict, symbols, out_dict, debug):
                 if debug:
                     out_text = "---------- Symbol  '{}' <==  Pattern [{}] = {}"
                     print(out_text.format(sym, pattern, re.match(pattern, sym)))
-                # This is now a state machine. If a symbol has matched one of the 
+                # This is now a state machine. If a symbol has matched one of the
                 # patterns, we don't try to match that symbol again
                 if not symbols[sym] and re.match(pattern, sym):
                    if debug:
@@ -316,7 +376,7 @@ def pattern_match_store(regex_dict, symbols, out_dict, debug):
                    symbols[sym] = True
         out_dict[lib_key] = lib_funcs
 
-def scan_files(dict, debug_output, extend_scan):
+def scan_files(dict, debug_output, extend_scan, migrate):
     # 1. 'dict' is the dictionary prepared by scan_directory()
     # 2. For each file in the list, scan it for symbols
     # 3. If the symbol matches any of the regular expressions, record it
@@ -332,14 +392,18 @@ def scan_files(dict, debug_output, extend_scan):
             symbols = scan_functions(full_path, debug_output)
             # Test for Intel library signatures
             pattern_match_store(regex_dict, symbols, lib_lut, debug_output)
-            if extend_scan:
+            if migrate and extend_scan:
+                # Test for NVIDIA library signatures only
+                pattern_match_store(regex_ext_cuda_dict, symbols, lib_lut, debug_output)
+            if extend_scan and not(migrate):
                 # Test for NVidia and AMD library signatures
-                pattern_match_store(regex_ext_dict, symbols, lib_lut, debug_output)
+                pattern_match_store(regex_ext_cuda_dict, symbols, lib_lut, debug_output)
+                pattern_match_store(regex_ext_amd_dict, symbols, lib_lut, debug_output)
 
             file_lut[file] = lib_lut
         search_lut[key] = file_lut
     return search_lut
-    
+
 
 def do_scrub(args):
     if not args.product_name:
@@ -351,12 +415,13 @@ def do_scrub(args):
     stats_fname = csv_fname + ".stats.csv"
     csv_fname += ".funcs.csv"
     non_intel = args.extend_non_intel
+    migrate = args.migration_status
     if debug_output:
         print("Debugging output enabled for pattern matching!")
     file_dict = {}
     # Scan directories in binary directory
     scan_directory(args.binary_dir, file_dict)
-    search_lut = scan_files(file_dict, debug_output, non_intel)
+    search_lut = scan_files(file_dict, debug_output, non_intel, migrate)
 
     path = Path(csv_fname)
     if path.is_file():
@@ -373,7 +438,7 @@ def do_scrub(args):
                 for func in funcs:
                     func_csv_f.write("%s|%s|%s|%s|%s|%s\n" %(args.company_name, args.product_name, os_name, file, lib_key, func))
                     if func.endswith('_'):
-                        # FORTRAN function signatures have this, so remove the 
+                        # FORTRAN function signatures have this, so remove the
                         # trailing '_' for accurate statistics
                         mod_func = func[:-1]
                     else:
@@ -399,14 +464,18 @@ def do_scrub(args):
             stats_csv_f.write("%s|%d\n" %(func, func_stats[func]))
         stats_csv_f.close()
 
+    # Lookup the migration status of the undefined symbols from non-Intel Runtime/Libraries
+    if args.migration_status:
+        migration_status(csv_fname)
+
     return 0
 
 
 def main():
     curr_dir = os.getcwd()
 
-    parser = argparse.ArgumentParser(prog="BinarySymbolScanner.py", 
-                                     description=" The captured functions will be saved in 'PROD_NAME.funcs.csv'\n and if statistics flag is turned on, function use histograms will\n be saved to 'PROD_NAME.stats.csv'. ", 
+    parser = argparse.ArgumentParser(prog="BinarySymbolScanner.py",
+                                     description=" The captured functions will be saved in 'PROD_NAME.funcs.csv'\n and if statistics flag is turned on, function use histograms will\n be saved to 'PROD_NAME.stats.csv'. ",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-c", "--company-name", required=True, metavar="COMPANY_NAME", help="Company name the product belongs to.")
     parser.add_argument("-p", "--product-name", required=True, metavar="PROD_NAME", help="Product name for which the binaries are being scanned.")
@@ -414,8 +483,13 @@ def main():
     parser.add_argument("-d", "--debug", action='store_true', help="Enable debugging help.")
     parser.add_argument("-s", "--statistics", action='store_true', help="Create function histograms.")
     parser.add_argument("-x", "--extend-non-intel", action='store_true', help="Extend the scanning to non-Intel performance libraries.")
+    parser.add_argument("-m", "--migration-status", action='store_true', help="Scans only for NVIDIA library APIs and emits the % of APIs which can be migrated to SYCL equiavlent")
 
     args = parser.parse_args()
+
+    # Enable -x when -m is enabled to scan for NVIDIA library signatures
+    if args.migration_status:
+        args.extend_non_intel=True
 
     print("")
     print(" +--------------------------------------------------------------------+")
