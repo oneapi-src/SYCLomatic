@@ -53,6 +53,7 @@ extern char **environ;
 
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <ctype.h>
+#include <sys/stat.h>
 #define PATH_MAX 4096
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -478,6 +479,29 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 #endif
 
 #ifdef SYCLomatic_CUSTOMIZATION
+
+static int call_eaccess(const char *pathname, int mode) {
+  typedef int (*func)(const char *, int);
+  DLSYM(func, fp, "eaccess");
+  int const result = (*fp)(pathname, mode);
+  return result;
+}
+
+int eaccess(const char *pathname, int mode) {
+  int len = strlen(pathname);
+  if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
+      pathname[1] == 'v' && pathname[0] == 'n') {
+    // To handle case like "nvcc foo.cu ..."
+    return 0;
+  }
+  if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
+      pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
+      pathname[len - 5] == '/') {
+    // To handle case like "/path/to/nvcc foo.cu ..."
+    return 0;
+  }
+  return call_eaccess(pathname, mode);
+}
 
 /*
 * The content of g_data[] comes from hex dump of file foo.a,
@@ -1662,6 +1686,11 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
 /* this method is to write log about the process creation. */
 
 #ifdef SYCLomatic_CUSTOMIZATION
+int file_exists(const char *filename) {
+  struct stat buffer;
+  return (stat(filename, &buffer) == 0);
+}
+
 // This method parses the command execution issued by the build tool make to
 // write log for the compile options and fake the expecting outcome for the
 // command. It returns whether intercept-stub is used to take over the command
@@ -1716,8 +1745,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   emit_cmake_warning(argv, argc);
 
   int is_tool_existence = 0;
-
-  if(!access(argv[0], F_OK )){
+  if (file_exists(argv[0])) {
     is_tool_existence = 1;
   }
 
