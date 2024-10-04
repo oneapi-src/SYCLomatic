@@ -4,7 +4,7 @@ Frequently Asked Questions
 
 **General Information**
 
-* `How do I migrate source files that use C++11 or newer standard features on Linux\* and Windows\*?`_
+* `How do I migrate source files that use C++20 or newer standard features on Linux\* and Windows\*?`_
 * `How do I migrate files on Windows when using a CMake project?`_
 * `How is the migrated code formatted?`_
 * `Why does the compilation database not contain all source files in the project?`_
@@ -27,23 +27,24 @@ Frequently Asked Questions
 General Information
 -------------------
 
-How do I migrate source files that use C++11 or newer standard features on Linux\* and Windows\*?
+How do I migrate source files that use C++20 or newer standard features on Linux\* and Windows\*?
 *************************************************************************************************
 
 On Linux, the default C++ standard for |tool_name|'s
-parser is C++98, with some C++11 features
-accepted. If you want to enable other C++11 or newer standard
-features in |tool_name|, you need to add
+parser is C++17. If you want to enable newer standard features
+in |tool_name|, you need to add
 the ``--extra-arg="-std=<value>"`` option to the
 command line. The supported values are:
 
--  ``c++11``
 -  ``c++14``
 -  ``c++17``
+-  ``c++20``
+-  ``c++23``
+-  ``c++26``
 
 On Windows, the default C++ standard for |tool_name|'s
-parser is C++14. If you want to enable C++17
-features in |tool_name|, you need to add
+parser is C++17. If you want to enable C20 features 
+in |tool_name|, you need to add
 the option ``--extra-arg="-std=c++17"`` to the command line.
 
 How do I migrate files on Windows when using a CMake project?
