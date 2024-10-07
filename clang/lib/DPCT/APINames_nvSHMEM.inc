@@ -31,8 +31,9 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
+// clang-format off
 
-
+// Library Setup, Exit and Query Routines
 ENTRY(nvshmem_init, nvshmem_init, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_init_attr, nvshmemx_init_attr, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_hostlib_init_attr, nvshmemx_hostlib_init_attr, false, NO_FLAG, P4, "comment")
@@ -49,26 +50,25 @@ ENTRY(nvshmem_info_get_version, nvshmem_info_get_version, false, NO_FLAG, P4, "c
 ENTRY(nvshmem_info_get_name, nvshmem_info_get_name, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_vendor_get_version_info, nvshmemx_vendor_get_version_info, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmem_init_thread, nvshmem_init_thread, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_query_thread, nvshmem_query_thread, false, NO_FLAG, P4, "comment")
-
 
 ENTRY(nvshmemx_collective_launch, nvshmemx_collective_launch, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_collective_launch_query_gridsize, nvshmemx_collective_launch_query_gridsize, false, NO_FLAG, P4, "comment")
 
 
+// Memory Management
 ENTRY(nvshmem_malloc, nvshmem_malloc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_free, nvshmem_free, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_align, nvshmem_align, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_calloc, nvshmem_calloc, false, NO_FLAG, P4, "comment")
-
 
 ENTRY(nvshmemx_buffer_register, nvshmemx_buffer_register, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_buffer_unregister, nvshmemx_buffer_unregister, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_buffer_unregister_all, nvshmemx_buffer_unregister_all, false, NO_FLAG, P4, "comment")
 
 
+// Team Management Routines
 ENTRY(nvshmem_team_my_pe, nvshmem_team_my_pe, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_team_n_pes, nvshmem_team_n_pes, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_team_get_config, nvshmem_team_get_config, false, NO_FLAG, P4, "comment")
@@ -78,6 +78,8 @@ ENTRY(nvshmem_team_split_2d, nvshmem_team_split_2d, false, NO_FLAG, P4, "comment
 ENTRY(nvshmem_team_destroy, nvshmem_team_destroy, false, NO_FLAG, P4, "comment")
 
 
+// Remote Memory Access (RMA)
+// nvshmem_TYPENAME_put
 ENTRY(nvshmem_float_put, nvshmem_float_put, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_put, nvshmem_double_put, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_put, nvshmem_char_put, false, NO_FLAG, P4, "comment")
@@ -102,6 +104,7 @@ ENTRY(nvshmem_uint64_put, nvshmem_uint64_put, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_put, nvshmem_size_put, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_put, nvshmem_ptrdiff_put, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_on_stream
 ENTRY(nvshmemx_float_put_on_stream, nvshmemx_float_put_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_on_stream, nvshmemx_double_put_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_on_stream, nvshmemx_char_put_on_stream, false, NO_FLAG, P4, "comment")
@@ -126,30 +129,32 @@ ENTRY(nvshmemx_uint64_put_on_stream, nvshmemx_uint64_put_on_stream, false, NO_FL
 ENTRY(nvshmemx_size_put_on_stream, nvshmemx_size_put_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_on_stream, nvshmemx_ptrdiff_put_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_put_block, nvshmem_float_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_put_block, nvshmem_double_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_put_block, nvshmem_char_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_put_block, nvshmem_schar_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_put_block, nvshmem_short_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_put_block, nvshmem_int_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_put_block, nvshmem_long_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_put_block, nvshmem_longlong_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_put_block, nvshmem_uchar_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_put_block, nvshmem_ushort_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_put_block, nvshmem_uint_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_put_block, nvshmem_ulong_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_put_block, nvshmem_ulonglong_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_put_block, nvshmem_int8_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_put_block, nvshmem_int16_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_put_block, nvshmem_int32_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_put_block, nvshmem_int64_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_put_block, nvshmem_uint8_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_put_block, nvshmem_uint16_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_put_block, nvshmem_uint32_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_put_block, nvshmem_uint64_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_put_block, nvshmem_size_put_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_put_block, nvshmem_ptrdiff_put_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_put_block
+ENTRY(nvshmemx_float_put_block, nvshmemx_float_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_put_block, nvshmemx_double_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_put_block, nvshmemx_char_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_put_block, nvshmemx_schar_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_put_block, nvshmemx_short_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_put_block, nvshmemx_int_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_put_block, nvshmemx_long_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_put_block, nvshmemx_longlong_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_put_block, nvshmemx_uchar_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_put_block, nvshmemx_ushort_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_put_block, nvshmemx_uint_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_put_block, nvshmemx_ulong_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_put_block, nvshmemx_ulonglong_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_put_block, nvshmemx_int8_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_put_block, nvshmemx_int16_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_put_block, nvshmemx_int32_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_put_block, nvshmemx_int64_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_put_block, nvshmemx_uint8_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_put_block, nvshmemx_uint16_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_put_block, nvshmemx_uint32_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_put_block, nvshmemx_uint64_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_put_block, nvshmemx_size_put_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_put_block, nvshmemx_ptrdiff_put_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_warp
 ENTRY(nvshmemx_float_put_warp, nvshmemx_float_put_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_warp, nvshmemx_double_put_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_warp, nvshmemx_char_put_warp, false, NO_FLAG, P4, "comment")
@@ -174,26 +179,28 @@ ENTRY(nvshmemx_uint64_put_warp, nvshmemx_uint64_put_warp, false, NO_FLAG, P4, "c
 ENTRY(nvshmemx_size_put_warp, nvshmemx_size_put_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_warp, nvshmemx_ptrdiff_put_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_putSIZE
 ENTRY(nvshmem_put8, nvshmem_put8, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put16, nvshmem_put16, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put32, nvshmem_put32, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put64, nvshmem_put64, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put128, nvshmem_put128, false, NO_FLAG, P4, "comment")
 
-
+// nvshmemx_putSIZE_on_stream
 ENTRY(nvshmemx_put8_on_stream, nvshmemx_put8_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_on_stream, nvshmemx_put16_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_on_stream, nvshmemx_put32_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_on_stream, nvshmemx_put64_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_on_stream, nvshmemx_put128_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_block
 ENTRY(nvshmemx_put8_block, nvshmemx_put8_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_block, nvshmemx_put16_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_block, nvshmemx_put32_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_block, nvshmemx_put64_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_block, nvshmemx_put128_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_warp
 ENTRY(nvshmemx_put8_warp, nvshmemx_put8_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_warp, nvshmemx_put16_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_warp, nvshmemx_put32_warp, false, NO_FLAG, P4, "comment")
@@ -205,7 +212,7 @@ ENTRY(nvshmemx_putmem_on_stream, nvshmemx_putmem_on_stream, false, NO_FLAG, P4, 
 ENTRY(nvshmemx_putmem_block, nvshmemx_putmem_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_warp, nvshmemx_putmem_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_p
 ENTRY(nvshmem_float_p, nvshmem_float_p, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_p, nvshmem_double_p, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_p, nvshmem_char_p, false, NO_FLAG, P4, "comment")
@@ -230,7 +237,7 @@ ENTRY(nvshmem_uint64_p, nvshmem_uint64_p, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_p, nvshmem_size_p, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_p, nvshmem_ptrdiff_p, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_iput
 ENTRY(nvshmem_float_iput, nvshmem_float_iput, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_iput, nvshmem_double_iput, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_iput, nvshmem_char_iput, false, NO_FLAG, P4, "comment")
@@ -255,6 +262,7 @@ ENTRY(nvshmem_uint64_iput, nvshmem_uint64_iput, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_iput, nvshmem_size_iput, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_iput, nvshmem_ptrdiff_iput, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_iput_on_stream
 ENTRY(nvshmemx_float_iput_on_stream, nvshmemx_float_iput_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_iput_on_stream, nvshmemx_double_iput_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_iput_on_stream, nvshmemx_char_iput_on_stream, false, NO_FLAG, P4, "comment")
@@ -279,30 +287,32 @@ ENTRY(nvshmemx_uint64_iput_on_stream, nvshmemx_uint64_iput_on_stream, false, NO_
 ENTRY(nvshmemx_size_iput_on_stream, nvshmemx_size_iput_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_iput_on_stream, nvshmemx_ptrdiff_iput_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_iput_block, nvshmem_float_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_iput_block, nvshmem_double_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_iput_block, nvshmem_char_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_iput_block, nvshmem_schar_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_iput_block, nvshmem_short_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_iput_block, nvshmem_int_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_iput_block, nvshmem_long_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_iput_block, nvshmem_longlong_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_iput_block, nvshmem_uchar_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_iput_block, nvshmem_ushort_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_iput_block, nvshmem_uint_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_iput_block, nvshmem_ulong_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_iput_block, nvshmem_ulonglong_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_iput_block, nvshmem_int8_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_iput_block, nvshmem_int16_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_iput_block, nvshmem_int32_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_iput_block, nvshmem_int64_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_iput_block, nvshmem_uint8_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_iput_block, nvshmem_uint16_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_iput_block, nvshmem_uint32_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_iput_block, nvshmem_uint64_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_iput_block, nvshmem_size_iput_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_iput_block, nvshmem_ptrdiff_iput_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_iput_block
+ENTRY(nvshmemx_float_iput_block, nvshmemx_float_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_iput_block, nvshmemx_double_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_iput_block, nvshmemx_char_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_iput_block, nvshmemx_schar_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_iput_block, nvshmemx_short_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_iput_block, nvshmemx_int_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_iput_block, nvshmemx_long_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_iput_block, nvshmemx_longlong_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_iput_block, nvshmemx_uchar_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_iput_block, nvshmemx_ushort_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_iput_block, nvshmemx_uint_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_iput_block, nvshmemx_ulong_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_iput_block, nvshmemx_ulonglong_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_iput_block, nvshmemx_int8_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_iput_block, nvshmemx_int16_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_iput_block, nvshmemx_int32_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_iput_block, nvshmemx_int64_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_iput_block, nvshmemx_uint8_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_iput_block, nvshmemx_uint16_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_iput_block, nvshmemx_uint32_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_iput_block, nvshmemx_uint64_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_iput_block, nvshmemx_size_iput_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_iput_block, nvshmemx_ptrdiff_iput_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_iput_warp
 ENTRY(nvshmemx_float_iput_warp, nvshmemx_float_iput_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_iput_warp, nvshmemx_double_iput_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_iput_warp, nvshmemx_char_iput_warp, false, NO_FLAG, P4, "comment")
@@ -327,29 +337,35 @@ ENTRY(nvshmemx_uint64_iput_warp, nvshmemx_uint64_iput_warp, false, NO_FLAG, P4, 
 ENTRY(nvshmemx_size_iput_warp, nvshmemx_size_iput_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_iput_warp, nvshmemx_ptrdiff_iput_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_iputSIZE
 ENTRY(nvshmem_iput8, nvshmem_iput8, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iput16, nvshmem_iput16, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iput32, nvshmem_iput32, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iput64, nvshmem_iput64, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iput128, nvshmem_iput128, false, NO_FLAG, P4, "comment")
+
+// nvshmemx_iputSIZE_on_stream
 ENTRY(nvshmemx_iput8_on_stream, nvshmemx_iput8_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput16_on_stream, nvshmemx_iput16_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput32_on_stream, nvshmemx_iput32_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput64_on_stream, nvshmemx_iput64_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput128_on_stream, nvshmemx_iput128_on_stream, false, NO_FLAG, P4, "comment")
+
+// nvshmemx_iputSIZE_block
 ENTRY(nvshmemx_iput8_block, nvshmemx_iput8_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput16_block, nvshmemx_iput16_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput32_block, nvshmemx_iput32_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput64_block, nvshmemx_iput64_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput128_block, nvshmemx_iput128_block, false, NO_FLAG, P4, "comment")
+
+// nvshmemx_iputSIZE_warp
 ENTRY(nvshmemx_iput8_warp, nvshmemx_iput8_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput16_warp, nvshmemx_iput16_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput32_warp, nvshmemx_iput32_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput64_warp, nvshmemx_iput64_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iput128_warp, nvshmemx_iput128_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_get
 ENTRY(nvshmem_float_get, nvshmem_float_get, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_get, nvshmem_double_get, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_get, nvshmem_char_get, false, NO_FLAG, P4, "comment")
@@ -374,6 +390,7 @@ ENTRY(nvshmem_uint64_get, nvshmem_uint64_get, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_get, nvshmem_size_get, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_get, nvshmem_ptrdiff_get, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_get_on_stream
 ENTRY(nvshmemx_float_get_on_stream, nvshmemx_float_get_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_get_on_stream, nvshmemx_double_get_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_get_on_stream, nvshmemx_char_get_on_stream, false, NO_FLAG, P4, "comment")
@@ -398,30 +415,32 @@ ENTRY(nvshmemx_uint64_get_on_stream, nvshmemx_uint64_get_on_stream, false, NO_FL
 ENTRY(nvshmemx_size_get_on_stream, nvshmemx_size_get_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_get_on_stream, nvshmemx_ptrdiff_get_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_get_block, nvshmem_float_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_get_block, nvshmem_double_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_get_block, nvshmem_char_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_get_block, nvshmem_schar_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_get_block, nvshmem_short_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_get_block, nvshmem_int_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_get_block, nvshmem_long_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_get_block, nvshmem_longlong_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_get_block, nvshmem_uchar_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_get_block, nvshmem_ushort_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_get_block, nvshmem_uint_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_get_block, nvshmem_ulong_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_get_block, nvshmem_ulonglong_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_get_block, nvshmem_int8_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_get_block, nvshmem_int16_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_get_block, nvshmem_int32_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_get_block, nvshmem_int64_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_get_block, nvshmem_uint8_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_get_block, nvshmem_uint16_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_get_block, nvshmem_uint32_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_get_block, nvshmem_uint64_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_get_block, nvshmem_size_get_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_get_block, nvshmem_ptrdiff_get_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_get_block
+ENTRY(nvshmemx_float_get_block, nvshmemx_float_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_get_block, nvshmemx_double_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_get_block, nvshmemx_char_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_get_block, nvshmemx_schar_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_get_block, nvshmemx_short_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_get_block, nvshmemx_int_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_get_block, nvshmemx_long_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_get_block, nvshmemx_longlong_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_get_block, nvshmemx_uchar_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_get_block, nvshmemx_ushort_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_get_block, nvshmemx_uint_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_get_block, nvshmemx_ulong_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_get_block, nvshmemx_ulonglong_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_get_block, nvshmemx_int8_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_get_block, nvshmemx_int16_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_get_block, nvshmemx_int32_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_get_block, nvshmemx_int64_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_get_block, nvshmemx_uint8_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_get_block, nvshmemx_uint16_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_get_block, nvshmemx_uint32_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_get_block, nvshmemx_uint64_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_get_block, nvshmemx_size_get_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_get_block, nvshmemx_ptrdiff_get_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_get_warp
 ENTRY(nvshmemx_float_get_warp, nvshmemx_float_get_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_get_warp, nvshmemx_double_get_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_get_warp, nvshmemx_char_get_warp, false, NO_FLAG, P4, "comment")
@@ -446,35 +465,40 @@ ENTRY(nvshmemx_uint64_get_warp, nvshmemx_uint64_get_warp, false, NO_FLAG, P4, "c
 ENTRY(nvshmemx_size_get_warp, nvshmemx_size_get_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_get_warp, nvshmemx_ptrdiff_get_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_getSIZE
 ENTRY(nvshmem_get8, nvshmem_get8, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get16, nvshmem_get16, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get32, nvshmem_get32, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get64, nvshmem_get64, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get128, nvshmem_get128, false, NO_FLAG, P4, "comment")
+
+// nvshmemx_getSIZE_on_stream
 ENTRY(nvshmemx_get8_on_stream, nvshmemx_get8_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get16_on_stream, nvshmemx_get16_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get32_on_stream, nvshmemx_get32_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get64_on_stream, nvshmemx_get64_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get128_on_stream, nvshmemx_get128_on_stream, false, NO_FLAG, P4, "comment")
+
+// nvshmemx_getSIZE_block
 ENTRY(nvshmemx_get8_block, nvshmemx_get8_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get16_block, nvshmemx_get16_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get32_block, nvshmemx_get32_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get64_block, nvshmemx_get64_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get128_block, nvshmemx_get128_block, false, NO_FLAG, P4, "comment")
+
+// nvshmemx_getSIZE_warp
 ENTRY(nvshmemx_get8_warp, nvshmemx_get8_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get16_warp, nvshmemx_get16_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get32_warp, nvshmemx_get32_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get64_warp, nvshmemx_get64_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get128_warp, nvshmemx_get128_warp, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmem_getmem, nvshmem_getmem, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_getmem_on_stream, nvshmemx_getmem_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_getmem_block, nvshmemx_getmem_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_getmem_warp, nvshmemx_getmem_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_g
 ENTRY(nvshmem_float_g, nvshmem_float_g, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_g, nvshmem_double_g, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_g, nvshmem_char_g, false, NO_FLAG, P4, "comment")
@@ -499,7 +523,7 @@ ENTRY(nvshmem_uint64_g, nvshmem_uint64_g, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_g, nvshmem_size_g, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_g, nvshmem_ptrdiff_g, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_iget
 ENTRY(nvshmem_float_iget, nvshmem_float_iget, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_iget, nvshmem_double_iget, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_iget, nvshmem_char_iget, false, NO_FLAG, P4, "comment")
@@ -524,6 +548,7 @@ ENTRY(nvshmem_uint64_iget, nvshmem_uint64_iget, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_iget, nvshmem_size_iget, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_iget, nvshmem_ptrdiff_iget, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_iget_on_stream
 ENTRY(nvshmemx_float_iget_on_stream, nvshmemx_float_iget_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_iget_on_stream, nvshmemx_double_iget_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_iget_on_stream, nvshmemx_char_iget_on_stream, false, NO_FLAG, P4, "comment")
@@ -548,30 +573,32 @@ ENTRY(nvshmemx_uint64_iget_on_stream, nvshmemx_uint64_iget_on_stream, false, NO_
 ENTRY(nvshmemx_size_iget_on_stream, nvshmemx_size_iget_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_iget_on_stream, nvshmemx_ptrdiff_iget_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_iget_block, nvshmem_float_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_iget_block, nvshmem_double_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_iget_block, nvshmem_char_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_iget_block, nvshmem_schar_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_iget_block, nvshmem_short_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_iget_block, nvshmem_int_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_iget_block, nvshmem_long_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_iget_block, nvshmem_longlong_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_iget_block, nvshmem_uchar_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_iget_block, nvshmem_ushort_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_iget_block, nvshmem_uint_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_iget_block, nvshmem_ulong_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_iget_block, nvshmem_ulonglong_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_iget_block, nvshmem_int8_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_iget_block, nvshmem_int16_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_iget_block, nvshmem_int32_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_iget_block, nvshmem_int64_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_iget_block, nvshmem_uint8_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_iget_block, nvshmem_uint16_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_iget_block, nvshmem_uint32_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_iget_block, nvshmem_uint64_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_iget_block, nvshmem_size_iget_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_iget_block, nvshmem_ptrdiff_iget_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_iget_block
+ENTRY(nvshmemx_float_iget_block, nvshmemx_float_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_iget_block, nvshmemx_double_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_iget_block, nvshmemx_char_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_iget_block, nvshmemx_schar_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_iget_block, nvshmemx_short_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_iget_block, nvshmemx_int_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_iget_block, nvshmemx_long_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_iget_block, nvshmemx_longlong_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_iget_block, nvshmemx_uchar_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_iget_block, nvshmemx_ushort_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_iget_block, nvshmemx_uint_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_iget_block, nvshmemx_ulong_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_iget_block, nvshmemx_ulonglong_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_iget_block, nvshmemx_int8_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_iget_block, nvshmemx_int16_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_iget_block, nvshmemx_int32_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_iget_block, nvshmemx_int64_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_iget_block, nvshmemx_uint8_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_iget_block, nvshmemx_uint16_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_iget_block, nvshmemx_uint32_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_iget_block, nvshmemx_uint64_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_iget_block, nvshmemx_size_iget_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_iget_block, nvshmemx_ptrdiff_iget_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_iget_warp
 ENTRY(nvshmemx_float_iget_warp, nvshmemx_float_iget_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_iget_warp, nvshmemx_double_iget_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_iget_warp, nvshmemx_char_iget_warp, false, NO_FLAG, P4, "comment")
@@ -596,25 +623,28 @@ ENTRY(nvshmemx_uint64_iget_warp, nvshmemx_uint64_iget_warp, false, NO_FLAG, P4, 
 ENTRY(nvshmemx_size_iget_warp, nvshmemx_size_iget_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_iget_warp, nvshmemx_ptrdiff_iget_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_igetSIZE
 ENTRY(nvshmem_iget8, nvshmem_iget8, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iget16, nvshmem_iget16, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iget32, nvshmem_iget32, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iget64, nvshmem_iget64, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_iget128, nvshmem_iget128, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_igetSIZE_on_stream
 ENTRY(nvshmemx_iget8_on_stream, nvshmemx_iget8_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget16_on_stream, nvshmemx_iget16_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget32_on_stream, nvshmemx_iget32_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget64_on_stream, nvshmemx_iget64_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget128_on_stream, nvshmemx_iget128_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_igetSIZE_block
 ENTRY(nvshmemx_iget8_block, nvshmemx_iget8_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget16_block, nvshmemx_iget16_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget32_block, nvshmemx_iget32_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget64_block, nvshmemx_iget64_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget128_block, nvshmemx_iget128_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_igetSIZE_warp
 ENTRY(nvshmemx_iget8_warp, nvshmemx_iget8_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget16_warp, nvshmemx_iget16_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget32_warp, nvshmemx_iget32_warp, false, NO_FLAG, P4, "comment")
@@ -622,6 +652,8 @@ ENTRY(nvshmemx_iget64_warp, nvshmemx_iget64_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_iget128_warp, nvshmemx_iget128_warp, false, NO_FLAG, P4, "comment")
 
 
+// Nonblocking RMA
+// nvshmem_TYPENAME_put_nbi
 ENTRY(nvshmem_float_put_nbi, nvshmem_float_put_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_put_nbi, nvshmem_double_put_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_put_nbi, nvshmem_char_put_nbi, false, NO_FLAG, P4, "comment")
@@ -646,6 +678,7 @@ ENTRY(nvshmem_uint64_put_nbi, nvshmem_uint64_put_nbi, false, NO_FLAG, P4, "comme
 ENTRY(nvshmem_size_put_nbi, nvshmem_size_put_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_put_nbi, nvshmem_ptrdiff_put_nbi, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_nbi_on_stream
 ENTRY(nvshmemx_float_put_nbi_on_stream, nvshmemx_float_put_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_nbi_on_stream, nvshmemx_double_put_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_nbi_on_stream, nvshmemx_char_put_nbi_on_stream, false, NO_FLAG, P4, "comment")
@@ -670,30 +703,32 @@ ENTRY(nvshmemx_uint64_put_nbi_on_stream, nvshmemx_uint64_put_nbi_on_stream, fals
 ENTRY(nvshmemx_size_put_nbi_on_stream, nvshmemx_size_put_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_nbi_on_stream, nvshmemx_ptrdiff_put_nbi_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_put_nbi_block, nvshmem_float_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_put_nbi_block, nvshmem_double_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_put_nbi_block, nvshmem_char_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_put_nbi_block, nvshmem_schar_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_put_nbi_block, nvshmem_short_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_put_nbi_block, nvshmem_int_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_put_nbi_block, nvshmem_long_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_put_nbi_block, nvshmem_longlong_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_put_nbi_block, nvshmem_uchar_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_put_nbi_block, nvshmem_ushort_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_put_nbi_block, nvshmem_uint_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_put_nbi_block, nvshmem_ulong_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_put_nbi_block, nvshmem_ulonglong_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_put_nbi_block, nvshmem_int8_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_put_nbi_block, nvshmem_int16_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_put_nbi_block, nvshmem_int32_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_put_nbi_block, nvshmem_int64_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_put_nbi_block, nvshmem_uint8_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_put_nbi_block, nvshmem_uint16_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_put_nbi_block, nvshmem_uint32_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_put_nbi_block, nvshmem_uint64_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_put_nbi_block, nvshmem_size_put_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_put_nbi_block, nvshmem_ptrdiff_put_nbi_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_put_nbi_block
+ENTRY(nvshmemx_float_put_nbi_block, nvshmemx_float_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_put_nbi_block, nvshmemx_double_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_put_nbi_block, nvshmemx_char_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_put_nbi_block, nvshmemx_schar_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_put_nbi_block, nvshmemx_short_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_put_nbi_block, nvshmemx_int_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_put_nbi_block, nvshmemx_long_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_put_nbi_block, nvshmemx_longlong_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_put_nbi_block, nvshmemx_uchar_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_put_nbi_block, nvshmemx_ushort_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_put_nbi_block, nvshmemx_uint_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_put_nbi_block, nvshmemx_ulong_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_put_nbi_block, nvshmemx_ulonglong_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_put_nbi_block, nvshmemx_int8_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_put_nbi_block, nvshmemx_int16_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_put_nbi_block, nvshmemx_int32_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_put_nbi_block, nvshmemx_int64_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_put_nbi_block, nvshmemx_uint8_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_put_nbi_block, nvshmemx_uint16_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_put_nbi_block, nvshmemx_uint32_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_put_nbi_block, nvshmemx_uint64_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_put_nbi_block, nvshmemx_size_put_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_put_nbi_block, nvshmemx_ptrdiff_put_nbi_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_nbi_warp
 ENTRY(nvshmemx_float_put_nbi_warp, nvshmemx_float_put_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_nbi_warp, nvshmemx_double_put_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_nbi_warp, nvshmemx_char_put_nbi_warp, false, NO_FLAG, P4, "comment")
@@ -718,37 +753,40 @@ ENTRY(nvshmemx_uint64_put_nbi_warp, nvshmemx_uint64_put_nbi_warp, false, NO_FLAG
 ENTRY(nvshmemx_size_put_nbi_warp, nvshmemx_size_put_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_nbi_warp, nvshmemx_ptrdiff_put_nbi_warp, false, NO_FLAG, P4, "comment")
 
+// nvshmem_putSIZE_nbi
 ENTRY(nvshmem_put8_nbi, nvshmem_put8_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put16_nbi, nvshmem_put16_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put32_nbi, nvshmem_put32_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put64_nbi, nvshmem_put64_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put128_nbi, nvshmem_put128_nbi, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_nbi_on_stream
 ENTRY(nvshmemx_put8_nbi_on_stream, nvshmemx_put8_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_nbi_on_stream, nvshmemx_put16_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_nbi_on_stream, nvshmemx_put32_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_nbi_on_stream, nvshmemx_put64_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_nbi_on_stream, nvshmemx_put128_nbi_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_nbi_block
 ENTRY(nvshmemx_put8_nbi_block, nvshmemx_put8_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_nbi_block, nvshmemx_put16_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_nbi_block, nvshmemx_put32_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_nbi_block, nvshmemx_put64_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_nbi_block, nvshmemx_put128_nbi_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_nbi_warp
 ENTRY(nvshmemx_put8_nbi_warp, nvshmemx_put8_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_nbi_warp, nvshmemx_put16_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_nbi_warp, nvshmemx_put32_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_nbi_warp, nvshmemx_put64_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_nbi_warp, nvshmemx_put128_nbi_warp, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmem_putmem_nbi, nvshmem_putmem_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_nbi_on_stream, nvshmemx_putmem_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_nbi_block, nvshmemx_putmem_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_nbi_warp, nvshmemx_putmem_nbi_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_get_nbi
 ENTRY(nvshmem_float_get_nbi, nvshmem_float_get_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_get_nbi, nvshmem_double_get_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_get_nbi, nvshmem_char_get_nbi, false, NO_FLAG, P4, "comment")
@@ -773,6 +811,7 @@ ENTRY(nvshmem_uint64_get_nbi, nvshmem_uint64_get_nbi, false, NO_FLAG, P4, "comme
 ENTRY(nvshmem_size_get_nbi, nvshmem_size_get_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_get_nbi, nvshmem_ptrdiff_get_nbi, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_get_nbi_on_stream
 ENTRY(nvshmemx_float_get_nbi_on_stream, nvshmemx_float_get_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_get_nbi_on_stream, nvshmemx_double_get_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_get_nbi_on_stream, nvshmemx_char_get_nbi_on_stream, false, NO_FLAG, P4, "comment")
@@ -797,30 +836,32 @@ ENTRY(nvshmemx_uint64_get_nbi_on_stream, nvshmemx_uint64_get_nbi_on_stream, fals
 ENTRY(nvshmemx_size_get_nbi_on_stream, nvshmemx_size_get_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_get_nbi_on_stream, nvshmemx_ptrdiff_get_nbi_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_get_nbi_block, nvshmem_float_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_get_nbi_block, nvshmem_double_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_get_nbi_block, nvshmem_char_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_get_nbi_block, nvshmem_schar_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_get_nbi_block, nvshmem_short_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_get_nbi_block, nvshmem_int_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_get_nbi_block, nvshmem_long_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_get_nbi_block, nvshmem_longlong_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_get_nbi_block, nvshmem_uchar_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_get_nbi_block, nvshmem_ushort_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_get_nbi_block, nvshmem_uint_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_get_nbi_block, nvshmem_ulong_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_get_nbi_block, nvshmem_ulonglong_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_get_nbi_block, nvshmem_int8_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_get_nbi_block, nvshmem_int16_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_get_nbi_block, nvshmem_int32_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_get_nbi_block, nvshmem_int64_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_get_nbi_block, nvshmem_uint8_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_get_nbi_block, nvshmem_uint16_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_get_nbi_block, nvshmem_uint32_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_get_nbi_block, nvshmem_uint64_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_get_nbi_block, nvshmem_size_get_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_get_nbi_block, nvshmem_ptrdiff_get_nbi_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_get_nbi_block
+ENTRY(nvshmemx_float_get_nbi_block, nvshmemx_float_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_get_nbi_block, nvshmemx_double_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_get_nbi_block, nvshmemx_char_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_get_nbi_block, nvshmemx_schar_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_get_nbi_block, nvshmemx_short_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_get_nbi_block, nvshmemx_int_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_get_nbi_block, nvshmemx_long_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_get_nbi_block, nvshmemx_longlong_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_get_nbi_block, nvshmemx_uchar_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_get_nbi_block, nvshmemx_ushort_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_get_nbi_block, nvshmemx_uint_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_get_nbi_block, nvshmemx_ulong_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_get_nbi_block, nvshmemx_ulonglong_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_get_nbi_block, nvshmemx_int8_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_get_nbi_block, nvshmemx_int16_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_get_nbi_block, nvshmemx_int32_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_get_nbi_block, nvshmemx_int64_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_get_nbi_block, nvshmemx_uint8_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_get_nbi_block, nvshmemx_uint16_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_get_nbi_block, nvshmemx_uint32_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_get_nbi_block, nvshmemx_uint64_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_get_nbi_block, nvshmemx_size_get_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_get_nbi_block, nvshmemx_ptrdiff_get_nbi_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_get_nbi_warp
 ENTRY(nvshmemx_float_get_nbi_warp, nvshmemx_float_get_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_get_nbi_warp, nvshmemx_double_get_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_get_nbi_warp, nvshmemx_char_get_nbi_warp, false, NO_FLAG, P4, "comment")
@@ -845,30 +886,33 @@ ENTRY(nvshmemx_uint64_get_nbi_warp, nvshmemx_uint64_get_nbi_warp, false, NO_FLAG
 ENTRY(nvshmemx_size_get_nbi_warp, nvshmemx_size_get_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_get_nbi_warp, nvshmemx_ptrdiff_get_nbi_warp, false, NO_FLAG, P4, "comment")
 
+// nvshmem_getSIZE_nbi
 ENTRY(nvshmem_get8_nbi, nvshmem_get8_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get16_nbi, nvshmem_get16_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get32_nbi, nvshmem_get32_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get64_nbi, nvshmem_get64_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_get128_nbi, nvshmem_get128_nbi, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_getSIZE_nbi_on_stream
 ENTRY(nvshmemx_get8_nbi_on_stream, nvshmemx_get8_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get16_nbi_on_stream, nvshmemx_get16_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get32_nbi_on_stream, nvshmemx_get32_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get64_nbi_on_stream, nvshmemx_get64_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get128_nbi_on_stream, nvshmemx_get128_nbi_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_getSIZE_nbi_block
 ENTRY(nvshmemx_get8_nbi_block, nvshmemx_get8_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get16_nbi_block, nvshmemx_get16_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get32_nbi_block, nvshmemx_get32_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get64_nbi_block, nvshmemx_get64_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get128_nbi_block, nvshmemx_get128_nbi_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_getSIZE_nbi_warp
 ENTRY(nvshmemx_get8_nbi_warp, nvshmemx_get8_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get16_nbi_warp, nvshmemx_get16_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get32_nbi_warp, nvshmemx_get32_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get64_nbi_warp, nvshmemx_get64_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_get128_nbi_warp, nvshmemx_get128_nbi_warp, false, NO_FLAG, P4, "comment")
-
 
 ENTRY(nvshmem_getmem_nbi, nvshmem_getmem_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_getmem_nbi_on_stream, nvshmemx_getmem_nbi_on_stream, false, NO_FLAG, P4, "comment")
@@ -876,6 +920,8 @@ ENTRY(nvshmemx_getmem_nbi_block, nvshmemx_getmem_nbi_block, false, NO_FLAG, P4, 
 ENTRY(nvshmemx_getmem_nbi_warp, nvshmemx_getmem_nbi_warp, false, NO_FLAG, P4, "comment")
 
 
+// Atomic Memory Operations (AMO)
+// nvshmem_TYPENAME_atomic_fetch
 ENTRY(nvshmem_float_atomic_fetch, nvshmem_float_atomic_fetch, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_atomic_fetch, nvshmem_double_atomic_fetch, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_atomic_fetch, nvshmem_int_atomic_fetch, false, NO_FLAG, P4, "comment")
@@ -884,6 +930,7 @@ ENTRY(nvshmem_longlong_atomic_fetch, nvshmem_longlong_atomic_fetch, false, NO_FL
 ENTRY(nvshmem_size_atomic_fetch, nvshmem_size_atomic_fetch, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_fetch, nvshmem_ptrdiff_atomic_fetch, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_set
 ENTRY(nvshmem_float_atomic_set, nvshmem_float_atomic_set, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_atomic_set, nvshmem_double_atomic_set, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_atomic_set, nvshmem_int_atomic_set, false, NO_FLAG, P4, "comment")
@@ -892,12 +939,14 @@ ENTRY(nvshmem_longlong_atomic_set, nvshmem_longlong_atomic_set, false, NO_FLAG, 
 ENTRY(nvshmem_size_atomic_set, nvshmem_size_atomic_set, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_set, nvshmem_ptrdiff_atomic_set, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_compare_swap
 ENTRY(nvshmem_int_atomic_compare_swap, nvshmem_int_atomic_compare_swap, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_atomic_compare_swap, nvshmem_long_atomic_compare_swap, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_longlong_atomic_compare_swap, nvshmem_longlong_atomic_compare_swap, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_atomic_compare_swap, nvshmem_size_atomic_compare_swap, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_compare_swap, nvshmem_ptrdiff_atomic_compare_swap, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_swap
 ENTRY(nvshmem_float_atomic_swap, nvshmem_float_atomic_swap, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_atomic_swap, nvshmem_double_atomic_swap, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_atomic_swap, nvshmem_int_atomic_swap, false, NO_FLAG, P4, "comment")
@@ -906,30 +955,35 @@ ENTRY(nvshmem_longlong_atomic_swap, nvshmem_longlong_atomic_swap, false, NO_FLAG
 ENTRY(nvshmem_size_atomic_swap, nvshmem_size_atomic_swap, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_swap, nvshmem_ptrdiff_atomic_swap, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_fetch_inc
 ENTRY(nvshmem_int_atomic_fetch_inc, nvshmem_int_atomic_fetch_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_atomic_fetch_inc, nvshmem_long_atomic_fetch_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_longlong_atomic_fetch_inc, nvshmem_longlong_atomic_fetch_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_atomic_fetch_inc, nvshmem_size_atomic_fetch_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_fetch_inc, nvshmem_ptrdiff_atomic_fetch_inc, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_inc
 ENTRY(nvshmem_int_atomic_inc, nvshmem_int_atomic_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_atomic_inc, nvshmem_long_atomic_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_longlong_atomic_inc, nvshmem_longlong_atomic_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_atomic_inc, nvshmem_size_atomic_inc, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_inc, nvshmem_ptrdiff_atomic_inc, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_fetch_add
 ENTRY(nvshmem_int_atomic_fetch_add, nvshmem_int_atomic_fetch_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_atomic_fetch_add, nvshmem_long_atomic_fetch_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_longlong_atomic_fetch_add, nvshmem_longlong_atomic_fetch_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_atomic_fetch_add, nvshmem_size_atomic_fetch_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_fetch_add, nvshmem_ptrdiff_atomic_fetch_add, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_add
 ENTRY(nvshmem_int_atomic_add, nvshmem_int_atomic_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_atomic_add, nvshmem_long_atomic_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_longlong_atomic_add, nvshmem_longlong_atomic_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_atomic_add, nvshmem_size_atomic_add, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_atomic_add, nvshmem_ptrdiff_atomic_add, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_fetch_and
 ENTRY(nvshmem_uint_atomic_fetch_and, nvshmem_uint_atomic_fetch_and, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulong_atomic_fetch_and, nvshmem_ulong_atomic_fetch_and, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulonglong_atomic_fetch_and, nvshmem_ulonglong_atomic_fetch_and, false, NO_FLAG, P4, "comment")
@@ -938,6 +992,7 @@ ENTRY(nvshmem_int64_atomic_fetch_and, nvshmem_int64_atomic_fetch_and, false, NO_
 ENTRY(nvshmem_uint32_atomic_fetch_and, nvshmem_uint32_atomic_fetch_and, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint64_atomic_fetch_and, nvshmem_uint64_atomic_fetch_and, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_and
 ENTRY(nvshmem_uint_atomic_and, nvshmem_uint_atomic_and, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulong_atomic_and, nvshmem_ulong_atomic_and, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulonglong_atomic_and, nvshmem_ulonglong_atomic_and, false, NO_FLAG, P4, "comment")
@@ -946,6 +1001,7 @@ ENTRY(nvshmem_int64_atomic_and, nvshmem_int64_atomic_and, false, NO_FLAG, P4, "c
 ENTRY(nvshmem_uint32_atomic_and, nvshmem_uint32_atomic_and, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint64_atomic_and, nvshmem_uint64_atomic_and, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_fetch_or
 ENTRY(nvshmem_uint_atomic_fetch_or, nvshmem_uint_atomic_fetch_or, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulong_atomic_fetch_or, nvshmem_ulong_atomic_fetch_or, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulonglong_atomic_fetch_or, nvshmem_ulonglong_atomic_fetch_or, false, NO_FLAG, P4, "comment")
@@ -954,6 +1010,7 @@ ENTRY(nvshmem_int64_atomic_fetch_or, nvshmem_int64_atomic_fetch_or, false, NO_FL
 ENTRY(nvshmem_uint32_atomic_fetch_or, nvshmem_uint32_atomic_fetch_or, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint64_atomic_fetch_or, nvshmem_uint64_atomic_fetch_or, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_or
 ENTRY(nvshmem_uint_atomic_or, nvshmem_uint_atomic_or, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulong_atomic_or, nvshmem_ulong_atomic_or, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulonglong_atomic_or, nvshmem_ulonglong_atomic_or, false, NO_FLAG, P4, "comment")
@@ -962,6 +1019,7 @@ ENTRY(nvshmem_int64_atomic_or, nvshmem_int64_atomic_or, false, NO_FLAG, P4, "com
 ENTRY(nvshmem_uint32_atomic_or, nvshmem_uint32_atomic_or, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint64_atomic_or, nvshmem_uint64_atomic_or, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_fetch_xor
 ENTRY(nvshmem_uint_atomic_fetch_xor, nvshmem_uint_atomic_fetch_xor, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulong_atomic_fetch_xor, nvshmem_ulong_atomic_fetch_xor, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulonglong_atomic_fetch_xor, nvshmem_ulonglong_atomic_fetch_xor, false, NO_FLAG, P4, "comment")
@@ -970,6 +1028,7 @@ ENTRY(nvshmem_int64_atomic_fetch_xor, nvshmem_int64_atomic_fetch_xor, false, NO_
 ENTRY(nvshmem_uint32_atomic_fetch_xor, nvshmem_uint32_atomic_fetch_xor, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint64_atomic_fetch_xor, nvshmem_uint64_atomic_fetch_xor, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_atomic_xor
 ENTRY(nvshmem_uint_atomic_xor, nvshmem_uint_atomic_xor, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulong_atomic_xor, nvshmem_ulong_atomic_xor, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ulonglong_atomic_xor, nvshmem_ulonglong_atomic_xor, false, NO_FLAG, P4, "comment")
@@ -979,6 +1038,8 @@ ENTRY(nvshmem_uint32_atomic_xor, nvshmem_uint32_atomic_xor, false, NO_FLAG, P4, 
 ENTRY(nvshmem_uint64_atomic_xor, nvshmem_uint64_atomic_xor, false, NO_FLAG, P4, "comment")
 
 
+// Signaling Operations
+// nvshmem_TYPENAME_put_signal
 ENTRY(nvshmem_float_put_signal, nvshmem_float_put_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_put_signal, nvshmem_double_put_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_put_signal, nvshmem_char_put_signal, false, NO_FLAG, P4, "comment")
@@ -1003,6 +1064,7 @@ ENTRY(nvshmem_uint64_put_signal, nvshmem_uint64_put_signal, false, NO_FLAG, P4, 
 ENTRY(nvshmem_size_put_signal, nvshmem_size_put_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_put_signal, nvshmem_ptrdiff_put_signal, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_signal_on_stream
 ENTRY(nvshmemx_float_put_signal_on_stream, nvshmemx_float_put_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_signal_on_stream, nvshmemx_double_put_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_signal_on_stream, nvshmemx_char_put_signal_on_stream, false, NO_FLAG, P4, "comment")
@@ -1027,30 +1089,32 @@ ENTRY(nvshmemx_uint64_put_signal_on_stream, nvshmemx_uint64_put_signal_on_stream
 ENTRY(nvshmemx_size_put_signal_on_stream, nvshmemx_size_put_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_signal_on_stream, nvshmemx_ptrdiff_put_signal_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_put_signal_block, nvshmem_float_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_put_signal_block, nvshmem_double_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_put_signal_block, nvshmem_char_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_put_signal_block, nvshmem_schar_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_put_signal_block, nvshmem_short_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_put_signal_block, nvshmem_int_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_put_signal_block, nvshmem_long_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_put_signal_block, nvshmem_longlong_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_put_signal_block, nvshmem_uchar_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_put_signal_block, nvshmem_ushort_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_put_signal_block, nvshmem_uint_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_put_signal_block, nvshmem_ulong_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_put_signal_block, nvshmem_ulonglong_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_put_signal_block, nvshmem_int8_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_put_signal_block, nvshmem_int16_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_put_signal_block, nvshmem_int32_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_put_signal_block, nvshmem_int64_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_put_signal_block, nvshmem_uint8_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_put_signal_block, nvshmem_uint16_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_put_signal_block, nvshmem_uint32_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_put_signal_block, nvshmem_uint64_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_put_signal_block, nvshmem_size_put_signal_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_put_signal_block, nvshmem_ptrdiff_put_signal_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_put_signal_block
+ENTRY(nvshmemx_float_put_signal_block, nvshmemx_float_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_put_signal_block, nvshmemx_double_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_put_signal_block, nvshmemx_char_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_put_signal_block, nvshmemx_schar_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_put_signal_block, nvshmemx_short_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_put_signal_block, nvshmemx_int_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_put_signal_block, nvshmemx_long_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_put_signal_block, nvshmemx_longlong_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_put_signal_block, nvshmemx_uchar_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_put_signal_block, nvshmemx_ushort_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_put_signal_block, nvshmemx_uint_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_put_signal_block, nvshmemx_ulong_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_put_signal_block, nvshmemx_ulonglong_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_put_signal_block, nvshmemx_int8_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_put_signal_block, nvshmemx_int16_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_put_signal_block, nvshmemx_int32_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_put_signal_block, nvshmemx_int64_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_put_signal_block, nvshmemx_uint8_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_put_signal_block, nvshmemx_uint16_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_put_signal_block, nvshmemx_uint32_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_put_signal_block, nvshmemx_uint64_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_put_signal_block, nvshmemx_size_put_signal_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_put_signal_block, nvshmemx_ptrdiff_put_signal_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_signal_warp
 ENTRY(nvshmemx_float_put_signal_warp, nvshmemx_float_put_signal_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_signal_warp, nvshmemx_double_put_signal_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_signal_warp, nvshmemx_char_put_signal_warp, false, NO_FLAG, P4, "comment")
@@ -1075,38 +1139,40 @@ ENTRY(nvshmemx_uint64_put_signal_warp, nvshmemx_uint64_put_signal_warp, false, N
 ENTRY(nvshmemx_size_put_signal_warp, nvshmemx_size_put_signal_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_signal_warp, nvshmemx_ptrdiff_put_signal_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_putSIZE_signal
 ENTRY(nvshmem_put8_signal, nvshmem_put8_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put16_signal, nvshmem_put16_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put32_signal, nvshmem_put32_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put64_signal, nvshmem_put64_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put128_signal, nvshmem_put128_signal, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_signal_on_stream
 ENTRY(nvshmemx_put8_signal_on_stream, nvshmemx_put8_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_signal_on_stream, nvshmemx_put16_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_signal_on_stream, nvshmemx_put32_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_signal_on_stream, nvshmemx_put64_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_signal_on_stream, nvshmemx_put128_signal_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_signal_block
 ENTRY(nvshmemx_put8_signal_block, nvshmemx_put8_signal_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_signal_block, nvshmemx_put16_signal_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_signal_block, nvshmemx_put32_signal_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_signal_block, nvshmemx_put64_signal_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_signal_block, nvshmemx_put128_signal_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_signal_warp
 ENTRY(nvshmemx_put8_signal_warp, nvshmemx_put8_signal_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_signal_warp, nvshmemx_put16_signal_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_signal_warp, nvshmemx_put32_signal_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_signal_warp, nvshmemx_put64_signal_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_signal_warp, nvshmemx_put128_signal_warp, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmem_putmem_signal, nvshmem_putmem_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_on_stream, nvshmemx_putmem_signal_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_block, nvshmemx_putmem_signal_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_warp, nvshmemx_putmem_signal_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_put_signal_nbi
 ENTRY(nvshmem_float_put_signal_nbi, nvshmem_float_put_signal_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_put_signal_nbi, nvshmem_double_put_signal_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_put_signal_nbi, nvshmem_char_put_signal_nbi, false, NO_FLAG, P4, "comment")
@@ -1131,6 +1197,7 @@ ENTRY(nvshmem_uint64_put_signal_nbi, nvshmem_uint64_put_signal_nbi, false, NO_FL
 ENTRY(nvshmem_size_put_signal_nbi, nvshmem_size_put_signal_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_put_signal_nbi, nvshmem_ptrdiff_put_signal_nbi, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_signal_nbi_on_stream
 ENTRY(nvshmemx_float_put_signal_nbi_on_stream, nvshmemx_float_put_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_signal_nbi_on_stream, nvshmemx_double_put_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_signal_nbi_on_stream, nvshmemx_char_put_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
@@ -1155,30 +1222,32 @@ ENTRY(nvshmemx_uint64_put_signal_nbi_on_stream, nvshmemx_uint64_put_signal_nbi_o
 ENTRY(nvshmemx_size_put_signal_nbi_on_stream, nvshmemx_size_put_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_signal_nbi_on_stream, nvshmemx_ptrdiff_put_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 
-ENTRY(nvshmem_float_put_signal_nbi_block, nvshmem_float_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_double_put_signal_nbi_block, nvshmem_double_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_char_put_signal_nbi_block, nvshmem_char_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_schar_put_signal_nbi_block, nvshmem_schar_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_short_put_signal_nbi_block, nvshmem_short_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int_put_signal_nbi_block, nvshmem_int_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_long_put_signal_nbi_block, nvshmem_long_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_longlong_put_signal_nbi_block, nvshmem_longlong_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uchar_put_signal_nbi_block, nvshmem_uchar_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ushort_put_signal_nbi_block, nvshmem_ushort_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint_put_signal_nbi_block, nvshmem_uint_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulong_put_signal_nbi_block, nvshmem_ulong_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ulonglong_put_signal_nbi_block, nvshmem_ulonglong_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int8_put_signal_nbi_block, nvshmem_int8_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int16_put_signal_nbi_block, nvshmem_int16_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int32_put_signal_nbi_block, nvshmem_int32_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_int64_put_signal_nbi_block, nvshmem_int64_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint8_put_signal_nbi_block, nvshmem_uint8_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint16_put_signal_nbi_block, nvshmem_uint16_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint32_put_signal_nbi_block, nvshmem_uint32_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_uint64_put_signal_nbi_block, nvshmem_uint64_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_size_put_signal_nbi_block, nvshmem_size_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_ptrdiff_put_signal_nbi_block, nvshmem_ptrdiff_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+// nvshmemx_TYPENAME_put_signal_nbi_block
+ENTRY(nvshmemx_float_put_signal_nbi_block, nvshmemx_float_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_double_put_signal_nbi_block, nvshmemx_double_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_char_put_signal_nbi_block, nvshmemx_char_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_schar_put_signal_nbi_block, nvshmemx_schar_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_short_put_signal_nbi_block, nvshmemx_short_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int_put_signal_nbi_block, nvshmemx_int_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_long_put_signal_nbi_block, nvshmemx_long_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_longlong_put_signal_nbi_block, nvshmemx_longlong_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uchar_put_signal_nbi_block, nvshmemx_uchar_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ushort_put_signal_nbi_block, nvshmemx_ushort_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint_put_signal_nbi_block, nvshmemx_uint_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulong_put_signal_nbi_block, nvshmemx_ulong_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ulonglong_put_signal_nbi_block, nvshmemx_ulonglong_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int8_put_signal_nbi_block, nvshmemx_int8_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int16_put_signal_nbi_block, nvshmemx_int16_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int32_put_signal_nbi_block, nvshmemx_int32_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_int64_put_signal_nbi_block, nvshmemx_int64_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint8_put_signal_nbi_block, nvshmemx_uint8_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint16_put_signal_nbi_block, nvshmemx_uint16_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint32_put_signal_nbi_block, nvshmemx_uint32_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_uint64_put_signal_nbi_block, nvshmemx_uint64_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_size_put_signal_nbi_block, nvshmemx_size_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmemx_ptrdiff_put_signal_nbi_block, nvshmemx_ptrdiff_put_signal_nbi_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_put_signal_nbi_warp
 ENTRY(nvshmemx_float_put_signal_nbi_warp, nvshmemx_float_put_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_put_signal_nbi_warp, nvshmemx_double_put_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_put_signal_nbi_warp, nvshmemx_char_put_signal_nbi_warp, false, NO_FLAG, P4, "comment")
@@ -1203,41 +1272,42 @@ ENTRY(nvshmemx_uint64_put_signal_nbi_warp, nvshmemx_uint64_put_signal_nbi_warp, 
 ENTRY(nvshmemx_size_put_signal_nbi_warp, nvshmemx_size_put_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_put_signal_nbi_warp, nvshmemx_ptrdiff_put_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_putSIZE_signal_nbi
 ENTRY(nvshmem_put8_signal_nbi, nvshmem_put8_signal_nbi, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_put16_signal_nbi, nvshmem_put16_signal_nbi_signal, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_put16_signal_nbi, nvshmem_put16_signal_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_put32_signal_nbi, nvshmem_put32_signal_nbi, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_put64_signal_nbi_signal, nvshmem_put64_signal_nbi_signal, false, NO_FLAG, P4, "comment")
-ENTRY(nvshmem_put128_signal_nbi_signal, nvshmem_put128_signal_nbi_signal, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_put64_signal_nbi, nvshmem_put64_signal_nbi, false, NO_FLAG, P4, "comment")
+ENTRY(nvshmem_put128_signal_nbi, nvshmem_put128_signal_nbi, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_signal_nbi_on_stream
 ENTRY(nvshmemx_put8_signal_nbi_on_stream, nvshmemx_put8_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_signal_nbi_on_stream, nvshmemx_put16_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_signal_nbi_on_stream, nvshmemx_put32_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_signal_nbi_on_stream, nvshmemx_put64_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_signal_nbi_on_stream, nvshmemx_put128_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_signal_nbi_block
 ENTRY(nvshmemx_put8_signal_nbi_block, nvshmemx_put8_signal_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_signal_nbi_block, nvshmemx_put16_signal_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_signal_nbi_block, nvshmemx_put32_signal_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_signal_nbi_block, nvshmemx_put64_signal_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_signal_nbi_block, nvshmemx_put128_signal_nbi_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_putSIZE_signal_nbi_warp
 ENTRY(nvshmemx_put8_signal_nbi_warp, nvshmemx_put8_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put16_signal_nbi_warp, nvshmemx_put16_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put32_signal_nbi_warp, nvshmemx_put32_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put64_signal_nbi_warp, nvshmemx_put64_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_put128_signal_nbi_warp, nvshmemx_put128_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmem_putmem_signal_nbi, nvshmem_putmem_signal_nbi, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_nbi_on_stream, nvshmemx_putmem_signal_nbi_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_nbi_block, nvshmemx_putmem_signal_nbi_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_putmem_signal_nbi_warp, nvshmemx_putmem_signal_nbi_warp, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmem_signal_fetch, nvshmem_signal_fetch, false, NO_FLAG, P4, "comment")
 
-
+// nvshmemx_TYPENAME_signal
 ENTRY(nvshmemx_short_signal, nvshmemx_short_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_int_signal, nvshmemx_int_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_long_signal, nvshmemx_long_signal, false, NO_FLAG, P4, "comment")
@@ -1253,10 +1323,10 @@ ENTRY(nvshmemx_uint64_signal, nvshmemx_uint64_signal, false, NO_FLAG, P4, "comme
 ENTRY(nvshmemx_size_signal, nvshmemx_size_signal, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_signal, nvshmemx_ptrdiff_signal, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmemx_signal_op, nvshmemx_signal_op, false, NO_FLAG, P4, "comment")
 
 
+// Collective Operations
 ENTRY(nvshmem_barrier_all, nvshmem_barrier_all, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_barrier_all_on_stream, nvshmemx_barrier_all_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_barrier_all_block, nvshmemx_barrier_all_block, false, NO_FLAG, P4, "comment")
@@ -1266,7 +1336,6 @@ ENTRY(nvshmem_barrier, nvshmem_barrier, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_barrier_on_stream, nvshmemx_barrier_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_barrier_block, nvshmemx_barrier_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_barrier_warp, nvshmemx_barrier_warp, false, NO_FLAG, P4, "comment")
-
 
 ENTRY(nvshmem_sync, nvshmem_sync, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_sync_on_stream, nvshmemx_sync_on_stream, false, NO_FLAG, P4, "comment")
@@ -1283,7 +1352,7 @@ ENTRY(nvshmemx_sync_all_on_stream, nvshmemx_sync_all_on_stream, false, NO_FLAG, 
 ENTRY(nvshmemx_sync_all_block, nvshmemx_sync_all_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_sync_all_warp, nvshmemx_sync_all_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_alltoall
 ENTRY(nvshmem_float_alltoall, nvshmem_float_alltoall, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_alltoall, nvshmem_double_alltoall, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_alltoall, nvshmem_char_alltoall, false, NO_FLAG, P4, "comment")
@@ -1308,6 +1377,7 @@ ENTRY(nvshmem_uint64_alltoall, nvshmem_uint64_alltoall, false, NO_FLAG, P4, "com
 ENTRY(nvshmem_size_alltoall, nvshmem_size_alltoall, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_alltoall, nvshmem_ptrdiff_alltoall, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_alltoall_on_stream
 ENTRY(nvshmemx_float_alltoall_on_stream, nvshmemx_float_alltoall_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_alltoall_on_stream, nvshmemx_double_alltoall_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_alltoall_on_stream, nvshmemx_char_alltoall_on_stream, false, NO_FLAG, P4, "comment")
@@ -1332,6 +1402,7 @@ ENTRY(nvshmemx_uint64_alltoall_on_stream, nvshmemx_uint64_alltoall_on_stream, fa
 ENTRY(nvshmemx_size_alltoall_on_stream, nvshmemx_size_alltoall_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_alltoall_on_stream, nvshmemx_ptrdiff_alltoall_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_alltoall_block
 ENTRY(nvshmemx_float_alltoall_block, nvshmemx_float_alltoall_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_alltoall_block, nvshmemx_double_alltoall_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_alltoall_block, nvshmemx_char_alltoall_block, false, NO_FLAG, P4, "comment")
@@ -1356,6 +1427,7 @@ ENTRY(nvshmemx_uint64_alltoall_block, nvshmemx_uint64_alltoall_block, false, NO_
 ENTRY(nvshmemx_size_alltoall_block, nvshmemx_size_alltoall_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_alltoall_block, nvshmemx_ptrdiff_alltoall_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_alltoall_warp
 ENTRY(nvshmemx_float_alltoall_warp, nvshmemx_float_alltoall_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_alltoall_warp, nvshmemx_double_alltoall_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_alltoall_warp, nvshmemx_char_alltoall_warp, false, NO_FLAG, P4, "comment")
@@ -1380,13 +1452,12 @@ ENTRY(nvshmemx_uint64_alltoall_warp, nvshmemx_uint64_alltoall_warp, false, NO_FL
 ENTRY(nvshmemx_size_alltoall_warp, nvshmemx_size_alltoall_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_alltoall_warp, nvshmemx_ptrdiff_alltoall_warp, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmem_alltoallmem, nvshmem_alltoallmem, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_alltoallmem_on_stream, nvshmemx_alltoallmem_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_alltoallmem_block, nvshmemx_alltoallmem_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_alltoallmem_warp, nvshmemx_alltoallmem_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_broadcast
 ENTRY(nvshmem_float_broadcast, nvshmem_float_broadcast, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_broadcast, nvshmem_double_broadcast, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_broadcast, nvshmem_char_broadcast, false, NO_FLAG, P4, "comment")
@@ -1411,6 +1482,7 @@ ENTRY(nvshmem_uint64_broadcast, nvshmem_uint64_broadcast, false, NO_FLAG, P4, "c
 ENTRY(nvshmem_size_broadcast, nvshmem_size_broadcast, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_broadcast, nvshmem_ptrdiff_broadcast, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_broadcast_on_stream
 ENTRY(nvshmemx_float_broadcast_on_stream, nvshmemx_float_broadcast_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_broadcast_on_stream, nvshmemx_double_broadcast_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_broadcast_on_stream, nvshmemx_char_broadcast_on_stream, false, NO_FLAG, P4, "comment")
@@ -1435,6 +1507,7 @@ ENTRY(nvshmemx_uint64_broadcast_on_stream, nvshmemx_uint64_broadcast_on_stream, 
 ENTRY(nvshmemx_size_broadcast_on_stream, nvshmemx_size_broadcast_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_broadcast_on_stream, nvshmemx_ptrdiff_broadcast_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_broadcast_block
 ENTRY(nvshmemx_float_broadcast_block, nvshmemx_float_broadcast_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_broadcast_block, nvshmemx_double_broadcast_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_broadcast_block, nvshmemx_char_broadcast_block, false, NO_FLAG, P4, "comment")
@@ -1459,6 +1532,7 @@ ENTRY(nvshmemx_uint64_broadcast_block, nvshmemx_uint64_broadcast_block, false, N
 ENTRY(nvshmemx_size_broadcast_block, nvshmemx_size_broadcast_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_broadcast_block, nvshmemx_ptrdiff_broadcast_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_broadcast_warp
 ENTRY(nvshmemx_float_broadcast_warp, nvshmemx_float_broadcast_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_broadcast_warp, nvshmemx_double_broadcast_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_broadcast_warp, nvshmemx_char_broadcast_warp, false, NO_FLAG, P4, "comment")
@@ -1488,7 +1562,7 @@ ENTRY(nvshmemx_broadcastmem_on_stream, nvshmemx_broadcastmem_on_stream, false, N
 ENTRY(nvshmemx_broadcastmem_block, nvshmemx_broadcastmem_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_broadcastmem_warp, nvshmemx_broadcastmem_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_fcollect
 ENTRY(nvshmem_float_fcollect, nvshmem_float_fcollect, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_fcollect, nvshmem_double_fcollect, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_char_fcollect, nvshmem_char_fcollect, false, NO_FLAG, P4, "comment")
@@ -1513,6 +1587,7 @@ ENTRY(nvshmem_uint64_fcollect, nvshmem_uint64_fcollect, false, NO_FLAG, P4, "com
 ENTRY(nvshmem_size_fcollect, nvshmem_size_fcollect, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_fcollect, nvshmem_ptrdiff_fcollect, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_fcollect_on_stream
 ENTRY(nvshmemx_float_fcollect_on_stream, nvshmemx_float_fcollect_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_fcollect_on_stream, nvshmemx_double_fcollect_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_fcollect_on_stream, nvshmemx_char_fcollect_on_stream, false, NO_FLAG, P4, "comment")
@@ -1537,6 +1612,7 @@ ENTRY(nvshmemx_uint64_fcollect_on_stream, nvshmemx_uint64_fcollect_on_stream, fa
 ENTRY(nvshmemx_size_fcollect_on_stream, nvshmemx_size_fcollect_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_fcollect_on_stream, nvshmemx_ptrdiff_fcollect_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_fcollect_block
 ENTRY(nvshmemx_float_fcollect_block, nvshmemx_float_fcollect_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_fcollect_block, nvshmemx_double_fcollect_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_fcollect_block, nvshmemx_char_fcollect_block, false, NO_FLAG, P4, "comment")
@@ -1561,6 +1637,7 @@ ENTRY(nvshmemx_uint64_fcollect_block, nvshmemx_uint64_fcollect_block, false, NO_
 ENTRY(nvshmemx_size_fcollect_block, nvshmemx_size_fcollect_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_fcollect_block, nvshmemx_ptrdiff_fcollect_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_fcollect_warp
 ENTRY(nvshmemx_float_fcollect_warp, nvshmemx_float_fcollect_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_fcollect_warp, nvshmemx_double_fcollect_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_char_fcollect_warp, nvshmemx_char_fcollect_warp, false, NO_FLAG, P4, "comment")
@@ -1590,7 +1667,7 @@ ENTRY(nvshmemx_fcollectmem_on_stream, nvshmemx_fcollectmem_on_stream, false, NO_
 ENTRY(nvshmemx_fcollectmem_block, nvshmemx_fcollectmem_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_fcollectmem_warp, nvshmemx_fcollectmem_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_and_reduce
 ENTRY(nvshmem_uchar_and_reduce, nvshmem_uchar_and_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ushort_and_reduce, nvshmem_ushort_and_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint_and_reduce, nvshmem_uint_and_reduce, false, NO_FLAG, P4, "comment")
@@ -1606,6 +1683,7 @@ ENTRY(nvshmem_uint32_and_reduce, nvshmem_uint32_and_reduce, false, NO_FLAG, P4, 
 ENTRY(nvshmem_uint64_and_reduce, nvshmem_uint64_and_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_and_reduce, nvshmem_size_and_reduce, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_and_reduce_on_stream
 ENTRY(nvshmemx_uchar_and_reduce_on_stream, nvshmemx_uchar_and_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_and_reduce_on_stream, nvshmemx_ushort_and_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_and_reduce_on_stream, nvshmemx_uint_and_reduce_on_stream, false, NO_FLAG, P4, "comment")
@@ -1621,6 +1699,7 @@ ENTRY(nvshmemx_uint32_and_reduce_on_stream, nvshmemx_uint32_and_reduce_on_stream
 ENTRY(nvshmemx_uint64_and_reduce_on_stream, nvshmemx_uint64_and_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_and_reduce_on_stream, nvshmemx_size_and_reduce_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_and_reduce_block
 ENTRY(nvshmemx_uchar_and_reduce_block, nvshmemx_uchar_and_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_and_reduce_block, nvshmemx_ushort_and_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_and_reduce_block, nvshmemx_uint_and_reduce_block, false, NO_FLAG, P4, "comment")
@@ -1636,6 +1715,7 @@ ENTRY(nvshmemx_uint32_and_reduce_block, nvshmemx_uint32_and_reduce_block, false,
 ENTRY(nvshmemx_uint64_and_reduce_block, nvshmemx_uint64_and_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_and_reduce_block, nvshmemx_size_and_reduce_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_and_reduce_warp
 ENTRY(nvshmemx_uchar_and_reduce_warp, nvshmemx_uchar_and_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_and_reduce_warp, nvshmemx_ushort_and_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_and_reduce_warp, nvshmemx_uint_and_reduce_warp, false, NO_FLAG, P4, "comment")
@@ -1651,7 +1731,7 @@ ENTRY(nvshmemx_uint32_and_reduce_warp, nvshmemx_uint32_and_reduce_warp, false, N
 ENTRY(nvshmemx_uint64_and_reduce_warp, nvshmemx_uint64_and_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_and_reduce_warp, nvshmemx_size_and_reduce_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_or_reduce
 ENTRY(nvshmem_uchar_or_reduce, nvshmem_uchar_or_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ushort_or_reduce, nvshmem_ushort_or_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint_or_reduce, nvshmem_uint_or_reduce, false, NO_FLAG, P4, "comment")
@@ -1667,6 +1747,7 @@ ENTRY(nvshmem_uint32_or_reduce, nvshmem_uint32_or_reduce, false, NO_FLAG, P4, "c
 ENTRY(nvshmem_uint64_or_reduce, nvshmem_uint64_or_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_or_reduce, nvshmem_size_or_reduce, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_or_reduce_on_stream
 ENTRY(nvshmemx_uchar_or_reduce_on_stream, nvshmemx_uchar_or_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_or_reduce_on_stream, nvshmemx_ushort_or_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_or_reduce_on_stream, nvshmemx_uint_or_reduce_on_stream, false, NO_FLAG, P4, "comment")
@@ -1682,6 +1763,7 @@ ENTRY(nvshmemx_uint32_or_reduce_on_stream, nvshmemx_uint32_or_reduce_on_stream, 
 ENTRY(nvshmemx_uint64_or_reduce_on_stream, nvshmemx_uint64_or_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_or_reduce_on_stream, nvshmemx_size_or_reduce_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_or_reduce_block
 ENTRY(nvshmemx_uchar_or_reduce_block, nvshmemx_uchar_or_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_or_reduce_block, nvshmemx_ushort_or_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_or_reduce_block, nvshmemx_uint_or_reduce_block, false, NO_FLAG, P4, "comment")
@@ -1697,6 +1779,7 @@ ENTRY(nvshmemx_uint32_or_reduce_block, nvshmemx_uint32_or_reduce_block, false, N
 ENTRY(nvshmemx_uint64_or_reduce_block, nvshmemx_uint64_or_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_or_reduce_block, nvshmemx_size_or_reduce_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_or_reduce_warp
 ENTRY(nvshmemx_uchar_or_reduce_warp, nvshmemx_uchar_or_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_or_reduce_warp, nvshmemx_ushort_or_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_or_reduce_warp, nvshmemx_uint_or_reduce_warp, false, NO_FLAG, P4, "comment")
@@ -1712,7 +1795,7 @@ ENTRY(nvshmemx_uint32_or_reduce_warp, nvshmemx_uint32_or_reduce_warp, false, NO_
 ENTRY(nvshmemx_uint64_or_reduce_warp, nvshmemx_uint64_or_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_or_reduce_warp, nvshmemx_size_or_reduce_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_xor_reduce
 ENTRY(nvshmem_uchar_xor_reduce, nvshmem_uchar_xor_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ushort_xor_reduce, nvshmem_ushort_xor_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_uint_xor_reduce, nvshmem_uint_xor_reduce, false, NO_FLAG, P4, "comment")
@@ -1728,6 +1811,7 @@ ENTRY(nvshmem_uint32_xor_reduce, nvshmem_uint32_xor_reduce, false, NO_FLAG, P4, 
 ENTRY(nvshmem_uint64_xor_reduce, nvshmem_uint64_xor_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_xor_reduce, nvshmem_size_xor_reduce, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_xor_reduce_on_stream
 ENTRY(nvshmemx_uchar_xor_reduce_on_stream, nvshmemx_uchar_xor_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_xor_reduce_on_stream, nvshmemx_ushort_xor_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_xor_reduce_on_stream, nvshmemx_uint_xor_reduce_on_stream, false, NO_FLAG, P4, "comment")
@@ -1743,6 +1827,7 @@ ENTRY(nvshmemx_uint32_xor_reduce_on_stream, nvshmemx_uint32_xor_reduce_on_stream
 ENTRY(nvshmemx_uint64_xor_reduce_on_stream, nvshmemx_uint64_xor_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_xor_reduce_on_stream, nvshmemx_size_xor_reduce_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_xor_reduce_block
 ENTRY(nvshmemx_uchar_xor_reduce_block, nvshmemx_uchar_xor_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_xor_reduce_block, nvshmemx_ushort_xor_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_xor_reduce_block, nvshmemx_uint_xor_reduce_block, false, NO_FLAG, P4, "comment")
@@ -1758,6 +1843,7 @@ ENTRY(nvshmemx_uint32_xor_reduce_block, nvshmemx_uint32_xor_reduce_block, false,
 ENTRY(nvshmemx_uint64_xor_reduce_block, nvshmemx_uint64_xor_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_xor_reduce_block, nvshmemx_size_xor_reduce_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_xor_reduce_warp
 ENTRY(nvshmemx_uchar_xor_reduce_warp, nvshmemx_uchar_xor_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ushort_xor_reduce_warp, nvshmemx_ushort_xor_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_uint_xor_reduce_warp, nvshmemx_uint_xor_reduce_warp, false, NO_FLAG, P4, "comment")
@@ -1773,7 +1859,7 @@ ENTRY(nvshmemx_uint32_xor_reduce_warp, nvshmemx_uint32_xor_reduce_warp, false, N
 ENTRY(nvshmemx_uint64_xor_reduce_warp, nvshmemx_uint64_xor_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_size_xor_reduce_warp, nvshmemx_size_xor_reduce_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_max_reduce
 ENTRY(nvshmem_char_max_reduce, nvshmem_char_max_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_schar_max_reduce, nvshmem_schar_max_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_short_max_reduce, nvshmem_short_max_reduce, false, NO_FLAG, P4, "comment")
@@ -1798,6 +1884,7 @@ ENTRY(nvshmem_ptrdiff_max_reduce, nvshmem_ptrdiff_max_reduce, false, NO_FLAG, P4
 ENTRY(nvshmem_float_max_reduce, nvshmem_float_max_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_max_reduce, nvshmem_double_max_reduce, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_max_reduce_on_stream
 ENTRY(nvshmemx_char_max_reduce_on_stream, nvshmemx_char_max_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_max_reduce_on_stream, nvshmemx_schar_max_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_max_reduce_on_stream, nvshmemx_short_max_reduce_on_stream, false, NO_FLAG, P4, "comment")
@@ -1822,6 +1909,7 @@ ENTRY(nvshmemx_ptrdiff_max_reduce_on_stream, nvshmemx_ptrdiff_max_reduce_on_stre
 ENTRY(nvshmemx_float_max_reduce_on_stream, nvshmemx_float_max_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_max_reduce_on_stream, nvshmemx_double_max_reduce_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_max_reduce_block
 ENTRY(nvshmemx_char_max_reduce_block, nvshmemx_char_max_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_max_reduce_block, nvshmemx_schar_max_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_max_reduce_block, nvshmemx_short_max_reduce_block, false, NO_FLAG, P4, "comment")
@@ -1846,6 +1934,7 @@ ENTRY(nvshmemx_ptrdiff_max_reduce_block, nvshmemx_ptrdiff_max_reduce_block, fals
 ENTRY(nvshmemx_float_max_reduce_block, nvshmemx_float_max_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_max_reduce_block, nvshmemx_double_max_reduce_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_max_reduce_warp
 ENTRY(nvshmemx_char_max_reduce_warp, nvshmemx_char_max_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_max_reduce_warp, nvshmemx_schar_max_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_max_reduce_warp, nvshmemx_short_max_reduce_warp, false, NO_FLAG, P4, "comment")
@@ -1870,7 +1959,7 @@ ENTRY(nvshmemx_ptrdiff_max_reduce_warp, nvshmemx_ptrdiff_max_reduce_warp, false,
 ENTRY(nvshmemx_float_max_reduce_warp, nvshmemx_float_max_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_max_reduce_warp, nvshmemx_double_max_reduce_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_min_reduce
 ENTRY(nvshmem_char_min_reduce, nvshmem_char_min_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_schar_min_reduce, nvshmem_schar_min_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_short_min_reduce, nvshmem_short_min_reduce, false, NO_FLAG, P4, "comment")
@@ -1895,6 +1984,7 @@ ENTRY(nvshmem_ptrdiff_min_reduce, nvshmem_ptrdiff_min_reduce, false, NO_FLAG, P4
 ENTRY(nvshmem_float_min_reduce, nvshmem_float_min_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_min_reduce, nvshmem_double_min_reduce, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_min_reduce_on_stream
 ENTRY(nvshmemx_char_min_reduce_on_stream, nvshmemx_char_min_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_min_reduce_on_stream, nvshmemx_schar_min_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_min_reduce_on_stream, nvshmemx_short_min_reduce_on_stream, false, NO_FLAG, P4, "comment")
@@ -1919,6 +2009,7 @@ ENTRY(nvshmemx_ptrdiff_min_reduce_on_stream, nvshmemx_ptrdiff_min_reduce_on_stre
 ENTRY(nvshmemx_float_min_reduce_on_stream, nvshmemx_float_min_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_min_reduce_on_stream, nvshmemx_double_min_reduce_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_min_reduce_block
 ENTRY(nvshmemx_char_min_reduce_block, nvshmemx_char_min_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_min_reduce_block, nvshmemx_schar_min_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_min_reduce_block, nvshmemx_short_min_reduce_block, false, NO_FLAG, P4, "comment")
@@ -1943,6 +2034,7 @@ ENTRY(nvshmemx_ptrdiff_min_reduce_block, nvshmemx_ptrdiff_min_reduce_block, fals
 ENTRY(nvshmemx_float_min_reduce_block, nvshmemx_float_min_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_min_reduce_block, nvshmemx_double_min_reduce_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_min_reduce_warp
 ENTRY(nvshmemx_char_min_reduce_warp, nvshmemx_char_min_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_min_reduce_warp, nvshmemx_schar_min_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_min_reduce_warp, nvshmemx_short_min_reduce_warp, false, NO_FLAG, P4, "comment")
@@ -1967,7 +2059,7 @@ ENTRY(nvshmemx_ptrdiff_min_reduce_warp, nvshmemx_ptrdiff_min_reduce_warp, false,
 ENTRY(nvshmemx_float_min_reduce_warp, nvshmemx_float_min_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_min_reduce_warp, nvshmemx_double_min_reduce_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_sum_reduce
 ENTRY(nvshmem_char_sum_reduce, nvshmem_char_sum_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_schar_sum_reduce, nvshmem_schar_sum_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_short_sum_reduce, nvshmem_short_sum_reduce, false, NO_FLAG, P4, "comment")
@@ -1992,6 +2084,7 @@ ENTRY(nvshmem_ptrdiff_sum_reduce, nvshmem_ptrdiff_sum_reduce, false, NO_FLAG, P4
 ENTRY(nvshmem_float_sum_reduce, nvshmem_float_sum_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_sum_reduce, nvshmem_double_sum_reduce, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_sum_reduce_on_stream
 ENTRY(nvshmemx_char_sum_reduce_on_stream, nvshmemx_char_sum_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_sum_reduce_on_stream, nvshmemx_schar_sum_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_sum_reduce_on_stream, nvshmemx_short_sum_reduce_on_stream, false, NO_FLAG, P4, "comment")
@@ -2016,6 +2109,7 @@ ENTRY(nvshmemx_ptrdiff_sum_reduce_on_stream, nvshmemx_ptrdiff_sum_reduce_on_stre
 ENTRY(nvshmemx_float_sum_reduce_on_stream, nvshmemx_float_sum_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_sum_reduce_on_stream, nvshmemx_double_sum_reduce_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_sum_reduce_block
 ENTRY(nvshmemx_char_sum_reduce_block, nvshmemx_char_sum_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_sum_reduce_block, nvshmemx_schar_sum_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_sum_reduce_block, nvshmemx_short_sum_reduce_block, false, NO_FLAG, P4, "comment")
@@ -2040,6 +2134,7 @@ ENTRY(nvshmemx_ptrdiff_sum_reduce_block, nvshmemx_ptrdiff_sum_reduce_block, fals
 ENTRY(nvshmemx_float_sum_reduce_block, nvshmemx_float_sum_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_sum_reduce_block, nvshmemx_double_sum_reduce_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_sum_reduce_warp
 ENTRY(nvshmemx_char_sum_reduce_warp, nvshmemx_char_sum_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_sum_reduce_warp, nvshmemx_schar_sum_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_sum_reduce_warp, nvshmemx_short_sum_reduce_warp, false, NO_FLAG, P4, "comment")
@@ -2064,7 +2159,7 @@ ENTRY(nvshmemx_ptrdiff_sum_reduce_warp, nvshmemx_ptrdiff_sum_reduce_warp, false,
 ENTRY(nvshmemx_float_sum_reduce_warp, nvshmemx_float_sum_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_sum_reduce_warp, nvshmemx_double_sum_reduce_warp, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_prod_reduce
 ENTRY(nvshmem_char_prod_reduce, nvshmem_char_prod_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_schar_prod_reduce, nvshmem_schar_prod_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_short_prod_reduce, nvshmem_short_prod_reduce, false, NO_FLAG, P4, "comment")
@@ -2089,6 +2184,7 @@ ENTRY(nvshmem_ptrdiff_prod_reduce, nvshmem_ptrdiff_prod_reduce, false, NO_FLAG, 
 ENTRY(nvshmem_float_prod_reduce, nvshmem_float_prod_reduce, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_double_prod_reduce, nvshmem_double_prod_reduce, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_prod_reduce_on_stream
 ENTRY(nvshmemx_char_prod_reduce_on_stream, nvshmemx_char_prod_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_prod_reduce_on_stream, nvshmemx_schar_prod_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_prod_reduce_on_stream, nvshmemx_short_prod_reduce_on_stream, false, NO_FLAG, P4, "comment")
@@ -2113,6 +2209,7 @@ ENTRY(nvshmemx_ptrdiff_prod_reduce_on_stream, nvshmemx_ptrdiff_prod_reduce_on_st
 ENTRY(nvshmemx_float_prod_reduce_on_stream, nvshmemx_float_prod_reduce_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_prod_reduce_on_stream, nvshmemx_double_prod_reduce_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_prod_reduce_block
 ENTRY(nvshmemx_char_prod_reduce_block, nvshmemx_char_prod_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_prod_reduce_block, nvshmemx_schar_prod_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_prod_reduce_block, nvshmemx_short_prod_reduce_block, false, NO_FLAG, P4, "comment")
@@ -2137,6 +2234,7 @@ ENTRY(nvshmemx_ptrdiff_prod_reduce_block, nvshmemx_ptrdiff_prod_reduce_block, fa
 ENTRY(nvshmemx_float_prod_reduce_block, nvshmemx_float_prod_reduce_block, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_double_prod_reduce_block, nvshmemx_double_prod_reduce_block, false, NO_FLAG, P4, "comment")
 
+// nvshmemx_TYPENAME_prod_reduce_warp
 ENTRY(nvshmemx_char_prod_reduce_warp, nvshmemx_char_prod_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_schar_prod_reduce_warp, nvshmemx_schar_prod_reduce_warp, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_short_prod_reduce_warp, nvshmemx_short_prod_reduce_warp, false, NO_FLAG, P4, "comment")
@@ -2162,6 +2260,8 @@ ENTRY(nvshmemx_float_prod_reduce_warp, nvshmemx_float_prod_reduce_warp, false, N
 ENTRY(nvshmemx_double_prod_reduce_warp, nvshmemx_double_prod_reduce_warp, false, NO_FLAG, P4, "comment")
 
 
+// Point-To-Point Synchronization
+// nvshmemx_TYPENAME_wait_until_on_stream
 ENTRY(nvshmemx_short_wait_until_on_stream, nvshmemx_short_wait_until_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_int_wait_until_on_stream, nvshmemx_int_wait_until_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_long_wait_until_on_stream, nvshmemx_long_wait_until_on_stream, false, NO_FLAG, P4, "comment")
@@ -2177,6 +2277,7 @@ ENTRY(nvshmemx_uint64_wait_until_on_stream, nvshmemx_uint64_wait_until_on_stream
 ENTRY(nvshmemx_size_wait_until_on_stream, nvshmemx_size_wait_until_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_wait_until_on_stream, nvshmemx_ptrdiff_wait_until_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_wait_until
 ENTRY(nvshmem_short_wait_until, nvshmem_short_wait_until, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait_until, nvshmem_int_wait_until, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait_until, nvshmem_long_wait_until, false, NO_FLAG, P4, "comment")
@@ -2192,7 +2293,7 @@ ENTRY(nvshmem_uint64_wait_until, nvshmem_uint64_wait_until, false, NO_FLAG, P4, 
 ENTRY(nvshmem_size_wait_until, nvshmem_size_wait_until, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait_until, nvshmem_ptrdiff_wait_until, false, NO_FLAG, P4, "comment")
 
-
+// nvshmemx_TYPENAME_wait_on_stream
 ENTRY(nvshmemx_short_wait_on_stream, nvshmemx_short_wait_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_int_wait_on_stream, nvshmemx_int_wait_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_long_wait_on_stream, nvshmemx_long_wait_on_stream, false, NO_FLAG, P4, "comment")
@@ -2208,6 +2309,7 @@ ENTRY(nvshmemx_uint64_wait_on_stream, nvshmemx_uint64_wait_on_stream, false, NO_
 ENTRY(nvshmemx_size_wait_on_stream, nvshmemx_size_wait_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_ptrdiff_wait_on_stream, nvshmemx_ptrdiff_wait_on_stream, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_wait
 ENTRY(nvshmem_short_wait, nvshmem_short_wait, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait, nvshmem_int_wait, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait, nvshmem_long_wait, false, NO_FLAG, P4, "comment")
@@ -2223,7 +2325,7 @@ ENTRY(nvshmem_uint64_wait, nvshmem_uint64_wait, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_wait, nvshmem_size_wait, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait, nvshmem_ptrdiff_wait, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_wait_until_all
 ENTRY(nvshmem_short_wait_until_all, nvshmem_short_wait_until_all, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait_until_all, nvshmem_int_wait_until_all, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait_until_all, nvshmem_long_wait_until_all, false, NO_FLAG, P4, "comment")
@@ -2239,6 +2341,7 @@ ENTRY(nvshmem_uint64_wait_until_all, nvshmem_uint64_wait_until_all, false, NO_FL
 ENTRY(nvshmem_size_wait_until_all, nvshmem_size_wait_until_all, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait_until_all, nvshmem_ptrdiff_wait_until_all, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_wait_until_any
 ENTRY(nvshmem_short_wait_until_any, nvshmem_short_wait_until_any, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait_until_any, nvshmem_int_wait_until_any, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait_until_any, nvshmem_long_wait_until_any, false, NO_FLAG, P4, "comment")
@@ -2254,6 +2357,7 @@ ENTRY(nvshmem_uint64_wait_until_any, nvshmem_uint64_wait_until_any, false, NO_FL
 ENTRY(nvshmem_size_wait_until_any, nvshmem_size_wait_until_any, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait_until_any, nvshmem_ptrdiff_wait_until_any, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_wait_until_some
 ENTRY(nvshmem_short_wait_until_some, nvshmem_short_wait_until_some, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait_until_some, nvshmem_int_wait_until_some, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait_until_some, nvshmem_long_wait_until_some, false, NO_FLAG, P4, "comment")
@@ -2269,6 +2373,7 @@ ENTRY(nvshmem_uint64_wait_until_some, nvshmem_uint64_wait_until_some, false, NO_
 ENTRY(nvshmem_size_wait_until_some, nvshmem_size_wait_until_some, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait_until_some, nvshmem_ptrdiff_wait_until_some, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_wait_until_all_vector
 ENTRY(nvshmem_short_wait_until_all_vector, nvshmem_short_wait_until_all_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait_until_all_vector, nvshmem_int_wait_until_all_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait_until_all_vector, nvshmem_long_wait_until_all_vector, false, NO_FLAG, P4, "comment")
@@ -2284,6 +2389,7 @@ ENTRY(nvshmem_uint64_wait_until_all_vector, nvshmem_uint64_wait_until_all_vector
 ENTRY(nvshmem_size_wait_until_all_vector, nvshmem_size_wait_until_all_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait_until_all_vector, nvshmem_ptrdiff_wait_until_all_vector, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_wait_until_any_vector
 ENTRY(nvshmem_short_wait_until_any_vector, nvshmem_short_wait_until_any_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait_until_any_vector, nvshmem_int_wait_until_any_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait_until_any_vector, nvshmem_long_wait_until_any_vector, false, NO_FLAG, P4, "comment")
@@ -2299,6 +2405,7 @@ ENTRY(nvshmem_uint64_wait_until_any_vector, nvshmem_uint64_wait_until_any_vector
 ENTRY(nvshmem_size_wait_until_any_vector, nvshmem_size_wait_until_any_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait_until_any_vector, nvshmem_ptrdiff_wait_until_any_vector, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_wait_until_some_vector
 ENTRY(nvshmem_short_wait_until_some_vector, nvshmem_short_wait_until_some_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_wait_until_some_vector, nvshmem_int_wait_until_some_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_wait_until_some_vector, nvshmem_long_wait_until_some_vector, false, NO_FLAG, P4, "comment")
@@ -2314,7 +2421,7 @@ ENTRY(nvshmem_uint64_wait_until_some_vector, nvshmem_uint64_wait_until_some_vect
 ENTRY(nvshmem_size_wait_until_some_vector, nvshmem_size_wait_until_some_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_wait_until_some_vector, nvshmem_ptrdiff_wait_until_some_vector, false, NO_FLAG, P4, "comment")
 
-
+// nvshmem_TYPENAME_test
 ENTRY(nvshmem_short_test, nvshmem_short_test, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_test, nvshmem_int_test, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_test, nvshmem_long_test, false, NO_FLAG, P4, "comment")
@@ -2330,6 +2437,7 @@ ENTRY(nvshmem_uint64_test, nvshmem_uint64_test, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_size_test, nvshmem_size_test, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_test, nvshmem_ptrdiff_test, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_test_all
 ENTRY(nvshmem_short_test_all, nvshmem_short_test_all, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_test_all, nvshmem_int_test_all, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_test_all, nvshmem_long_test_all, false, NO_FLAG, P4, "comment")
@@ -2345,6 +2453,7 @@ ENTRY(nvshmem_uint64_test_all, nvshmem_uint64_test_all, false, NO_FLAG, P4, "com
 ENTRY(nvshmem_size_test_all, nvshmem_size_test_all, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_test_all, nvshmem_ptrdiff_test_all, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_test_any
 ENTRY(nvshmem_short_test_any, nvshmem_short_test_any, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_test_any, nvshmem_int_test_any, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_test_any, nvshmem_long_test_any, false, NO_FLAG, P4, "comment")
@@ -2360,6 +2469,7 @@ ENTRY(nvshmem_uint64_test_any, nvshmem_uint64_test_any, false, NO_FLAG, P4, "com
 ENTRY(nvshmem_size_test_any, nvshmem_size_test_any, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_test_any, nvshmem_ptrdiff_test_any, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_test_some
 ENTRY(nvshmem_short_test_some, nvshmem_short_test_some, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_test_some, nvshmem_int_test_some, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_test_some, nvshmem_long_test_some, false, NO_FLAG, P4, "comment")
@@ -2375,6 +2485,7 @@ ENTRY(nvshmem_uint64_test_some, nvshmem_uint64_test_some, false, NO_FLAG, P4, "c
 ENTRY(nvshmem_size_test_some, nvshmem_size_test_some, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_test_some, nvshmem_ptrdiff_test_some, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_test_all_vector
 ENTRY(nvshmem_short_test_all_vector, nvshmem_short_test_all_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_test_all_vector, nvshmem_int_test_all_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_test_all_vector, nvshmem_long_test_all_vector, false, NO_FLAG, P4, "comment")
@@ -2390,6 +2501,7 @@ ENTRY(nvshmem_uint64_test_all_vector, nvshmem_uint64_test_all_vector, false, NO_
 ENTRY(nvshmem_size_test_all_vector, nvshmem_size_test_all_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_test_all_vector, nvshmem_ptrdiff_test_all_vector, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_test_any_vector
 ENTRY(nvshmem_short_test_any_vector, nvshmem_short_test_any_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_test_any_vector, nvshmem_int_test_any_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_test_any_vector, nvshmem_long_test_any_vector, false, NO_FLAG, P4, "comment")
@@ -2405,6 +2517,7 @@ ENTRY(nvshmem_uint64_test_any_vector, nvshmem_uint64_test_any_vector, false, NO_
 ENTRY(nvshmem_size_test_any_vector, nvshmem_size_test_any_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_test_any_vector, nvshmem_ptrdiff_test_any_vector, false, NO_FLAG, P4, "comment")
 
+// nvshmem_TYPENAME_test_some_vector
 ENTRY(nvshmem_short_test_some_vector, nvshmem_short_test_some_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_int_test_some_vector, nvshmem_int_test_some_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_long_test_some_vector, nvshmem_long_test_some_vector, false, NO_FLAG, P4, "comment")
@@ -2420,11 +2533,13 @@ ENTRY(nvshmem_uint64_test_some_vector, nvshmem_uint64_test_some_vector, false, N
 ENTRY(nvshmem_size_test_some_vector, nvshmem_size_test_some_vector, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_ptrdiff_test_some_vector, nvshmem_ptrdiff_test_some_vector, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(nvshmemx_signal_wait_until_on_stream, nvshmemx_signal_wait_until_on_stream, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_signal_wait_until, nvshmem_signal_wait_until, false, NO_FLAG, P4, "comment")
 
 
+// Memory Ordering
 ENTRY(nvshmem_fence, nvshmem_fence, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmem_quiet, nvshmem_quiet, false, NO_FLAG, P4, "comment")
 ENTRY(nvshmemx_quiet_on_stream, nvshmemx_quiet_on_stream, false, NO_FLAG, P4, "comment")
+
+// clang-format on
