@@ -793,6 +793,12 @@ DPCT_ENUM_OPTION(
             "multiple allocations of physical memory.",
             false),
         DPCT_OPTION_ENUM_VALUE(
+            "non-stdandard-sycl-builtins",
+            int(ExperimentalFeatures::Exp_NonStandardSYCLBuiltins),
+            "Experimental extension that allows to use non standard SYCL "
+            "builtin functions.\n",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),
             "Enable all experimental extensions listed in this option.\n",
             false)),

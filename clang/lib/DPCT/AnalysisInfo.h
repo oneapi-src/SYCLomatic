@@ -1293,6 +1293,10 @@ public:
   static bool useExpVirtualMemory() {
     return getUsingExperimental<ExperimentalFeatures::Exp_VirtualMemory>();
   }
+  static bool useExpNonStandardSYCLBuiltins() {
+    return getUsingExperimental<
+        ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
