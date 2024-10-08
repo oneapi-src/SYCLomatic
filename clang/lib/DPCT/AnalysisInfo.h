@@ -1290,6 +1290,10 @@ public:
   static bool useExpDeviceGlobal() {
     return getUsingExperimental<ExperimentalFeatures::Exp_DeviceGlobal>();
   }
+  static bool useExpNonStandardSYCLBuiltins() {
+    return getUsingExperimental<
+        ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }

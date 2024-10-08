@@ -1746,6 +1746,301 @@ IAMAXMIN_EX(cublasIaminEx, false)
 IAMAXMIN_EX(cublasIaminEx_64, false)
 #undef IAMAXMIN_EX
 
+#define TBSV(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::tbsv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),   \
+           BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),    \
+           ARG(4), ARG(5), BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),            \
+           BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+TBSV(cublasStbsv_v2, "float")
+TBSV(cublasDtbsv_v2, "double")
+TBSV(cublasCtbsv_v2, "std::complex<float>")
+TBSV(cublasZtbsv_v2, "std::complex<double>")
+TBSV(cublasStbsv_v2_64, "float")
+TBSV(cublasDtbsv_v2_64, "double")
+TBSV(cublasCtbsv_v2_64, "std::complex<float>")
+TBSV(cublasZtbsv_v2_64, "std::complex<double>")
+#undef TBSV
+
+#define SYMV(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::symv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),                            \
+           SCALAR_INPUT(ARG(8), TYPE), BUFFER_OR_USM_PTR(ARG(9), TYPE),        \
+           ARG(10))))
+SYMV(cublasSsymv_v2, "float")
+SYMV(cublasDsymv_v2, "double")
+SYMV(cublasCsymv_v2, "std::complex<float>")
+SYMV(cublasZsymv_v2, "std::complex<double>")
+SYMV(cublasSsymv_v2_64, "float")
+SYMV(cublasDsymv_v2_64, "double")
+SYMV(cublasCsymv_v2_64, "std::complex<float>")
+SYMV(cublasZsymv_v2_64, "std::complex<double>")
+#undef SYMV
+
+#define HEMV(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::hemv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),                            \
+           SCALAR_INPUT(ARG(8), TYPE), BUFFER_OR_USM_PTR(ARG(9), TYPE),        \
+           ARG(10))))
+HEMV(cublasChemv_v2, "std::complex<float>")
+HEMV(cublasZhemv_v2, "std::complex<double>")
+HEMV(cublasChemv_v2_64, "std::complex<float>")
+HEMV(cublasZhemv_v2_64, "std::complex<double>")
+#undef HEMV
+
+#define SBMV(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::sbmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), ARG(3), SCALAR_INPUT(ARG(4), TYPE),                         \
+           BUFFER_OR_USM_PTR(ARG(5), TYPE), ARG(6),                            \
+           BUFFER_OR_USM_PTR(ARG(7), TYPE), ARG(8),                            \
+           SCALAR_INPUT(ARG(9), TYPE), BUFFER_OR_USM_PTR(ARG(10), TYPE),       \
+           ARG(11))))
+SBMV(cublasSsbmv_v2, "float")
+SBMV(cublasDsbmv_v2, "double")
+SBMV(cublasSsbmv_v2_64, "float")
+SBMV(cublasDsbmv_v2_64, "double")
+#undef SBMV
+
+#define HBMV(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::hbmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), ARG(3), SCALAR_INPUT(ARG(4), TYPE),                         \
+           BUFFER_OR_USM_PTR(ARG(5), TYPE), ARG(6),                            \
+           BUFFER_OR_USM_PTR(ARG(7), TYPE), ARG(8),                            \
+           SCALAR_INPUT(ARG(9), TYPE), BUFFER_OR_USM_PTR(ARG(10), TYPE),       \
+           ARG(11))))
+HBMV(cublasChbmv_v2, "std::complex<float>")
+HBMV(cublasZhbmv_v2, "std::complex<double>")
+HBMV(cublasChbmv_v2_64, "std::complex<float>")
+HBMV(cublasZhbmv_v2_64, "std::complex<double>")
+#undef HBMV
+
+#define SPMV(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::spmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), BUFFER_OR_USM_PTR(ARG(5), TYPE),   \
+           ARG(6), SCALAR_INPUT(ARG(7), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+SPMV(cublasSspmv_v2, "float")
+SPMV(cublasDspmv_v2, "double")
+SPMV(cublasSspmv_v2_64, "float")
+SPMV(cublasDspmv_v2_64, "double")
+#undef SPMV
+
+#define HPMV(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::hpmv",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), BUFFER_OR_USM_PTR(ARG(5), TYPE),   \
+           ARG(6), SCALAR_INPUT(ARG(7), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+HPMV(cublasChpmv_v2, "std::complex<float>")
+HPMV(cublasZhpmv_v2, "std::complex<double>")
+HPMV(cublasChpmv_v2_64, "std::complex<float>")
+HPMV(cublasZhpmv_v2_64, "std::complex<double>")
+#undef HPMV
+
+#define GER(NAME, TYPE)                                                        \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL("oneapi::mkl::blas::column_major::ger",                      \
+                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2),      \
+                  SCALAR_INPUT(ARG(3), TYPE), BUFFER_OR_USM_PTR(ARG(4), TYPE), \
+                  ARG(5), BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),             \
+                  BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+GER(cublasSger_v2, "float")
+GER(cublasDger_v2, "double")
+GER(cublasSger_v2_64, "float")
+GER(cublasDger_v2_64, "double")
+#undef GER
+
+#define GERU(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL("oneapi::mkl::blas::column_major::geru",                     \
+                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2),      \
+                  SCALAR_INPUT(ARG(3), TYPE), BUFFER_OR_USM_PTR(ARG(4), TYPE), \
+                  ARG(5), BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),             \
+                  BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+GERU(cublasCgeru_v2, "std::complex<float>")
+GERU(cublasZgeru_v2, "std::complex<double>")
+GERU(cublasCgeru_v2_64, "std::complex<float>")
+GERU(cublasZgeru_v2_64, "std::complex<double>")
+#undef GERU
+
+#define GERC(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL("oneapi::mkl::blas::column_major::gerc",                     \
+                  MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2),      \
+                  SCALAR_INPUT(ARG(3), TYPE), BUFFER_OR_USM_PTR(ARG(4), TYPE), \
+                  ARG(5), BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),             \
+                  BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+GERC(cublasCgerc_v2, "std::complex<float>")
+GERC(cublasZgerc_v2, "std::complex<double>")
+GERC(cublasCgerc_v2_64, "std::complex<float>")
+GERC(cublasZgerc_v2_64, "std::complex<double>")
+#undef GERC
+
+#define SYR(NAME, TYPE)                                                        \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::syr",                             \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7))))
+SYR(cublasSsyr_v2, "float")
+SYR(cublasDsyr_v2, "double")
+SYR(cublasCsyr_v2, "std::complex<float>")
+SYR(cublasZsyr_v2, "std::complex<double>")
+SYR(cublasSsyr_v2_64, "float")
+SYR(cublasDsyr_v2_64, "double")
+SYR(cublasCsyr_v2_64, "std::complex<float>")
+SYR(cublasZsyr_v2_64, "std::complex<double>")
+#undef SYR
+
+#define HER(NAME, TYPE1, TYPE2)                                                \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::her",                             \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE1),                                \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE2), ARG(5),                           \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE2), ARG(7))))
+HER(cublasCher_v2, "float", "std::complex<float>")
+HER(cublasZher_v2, "double", "std::complex<double>")
+HER(cublasCher_v2_64, "float", "std::complex<float>")
+HER(cublasZher_v2_64, "double", "std::complex<double>")
+#undef HER
+
+#define SPR(NAME, TYPE)                                                        \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::spr",                             \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE))))
+SPR(cublasSspr_v2, "float")
+SPR(cublasDspr_v2, "double")
+SPR(cublasSspr_v2_64, "float")
+SPR(cublasDspr_v2_64, "double")
+#undef SPR
+
+#define HPR(NAME, TYPE1, TYPE2)                                                \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::hpr",                             \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE1),                                \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE2), ARG(5),                           \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE2))))
+HPR(cublasChpr_v2, "float", "std::complex<float>")
+HPR(cublasZhpr_v2, "double", "std::complex<double>")
+HPR(cublasChpr_v2_64, "float", "std::complex<float>")
+HPR(cublasZhpr_v2_64, "double", "std::complex<double>")
+#undef HPR
+
+#define SYR2(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::syr2",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),                            \
+           BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+SYR2(cublasSsyr2_v2, "float")
+SYR2(cublasDsyr2_v2, "double")
+SYR2(cublasCsyr2_v2, "std::complex<float>")
+SYR2(cublasZsyr2_v2, "std::complex<double>")
+SYR2(cublasSsyr2_v2_64, "float")
+SYR2(cublasDsyr2_v2_64, "double")
+SYR2(cublasCsyr2_v2_64, "std::complex<float>")
+SYR2(cublasZsyr2_v2_64, "std::complex<double>")
+#undef SYR2
+
+#define HER2(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::her2",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),                            \
+           BUFFER_OR_USM_PTR(ARG(8), TYPE), ARG(9))))
+HER2(cublasCher2_v2, "std::complex<float>")
+HER2(cublasZher2_v2, "std::complex<double>")
+HER2(cublasCher2_v2_64, "std::complex<float>")
+HER2(cublasZher2_v2_64, "std::complex<double>")
+#undef HER2
+
+#define SPR2(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::spr2",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),                            \
+           BUFFER_OR_USM_PTR(ARG(8), TYPE))))
+SPR2(cublasSspr2_v2, "float")
+SPR2(cublasDspr2_v2, "double")
+SPR2(cublasSspr2_v2_64, "float")
+SPR2(cublasDspr2_v2_64, "double")
+#undef SPR2
+
+#define HPR2(NAME, TYPE)                                                       \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL("oneapi::mkl::blas::column_major::hpr2",                            \
+           MEMBER_CALL(ARG(0), true, "get_queue"),                             \
+           BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),    \
+           ARG(2), SCALAR_INPUT(ARG(3), TYPE),                                 \
+           BUFFER_OR_USM_PTR(ARG(4), TYPE), ARG(5),                            \
+           BUFFER_OR_USM_PTR(ARG(6), TYPE), ARG(7),                            \
+           BUFFER_OR_USM_PTR(ARG(8), TYPE))))
+HPR2(cublasChpr2_v2, "std::complex<float>")
+HPR2(cublasZhpr2_v2, "std::complex<double>")
+HPR2(cublasChpr2_v2_64, "std::complex<float>")
+HPR2(cublasZhpr2_v2_64, "std::complex<double>")
+#undef HPR2
+
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cublasLtCreate", DEREF(0),
     NEW(MapNames::getLibraryHelperNamespace() + "blas_gemm::experimental::descriptor")))
