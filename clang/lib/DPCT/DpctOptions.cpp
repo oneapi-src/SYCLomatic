@@ -125,22 +125,23 @@ void DpctOptionBase::setExclusiveByAction() {
   }
 }
 
+void DpctOptionBase::reportAsIgnored(DpctOptionBase *ConflictBy,
+                                     llvm::raw_ostream &OutStream) {
+  reset();
+  OutStream << "Warning: Option ";
+  printName(OutStream);
+  OutStream << " is ignored because it conflicts with option ";
+  ConflictBy->printName(OutStream);
+  OutStream << ".\n";
+}
+
 void DpctOptionBase::setOccurrenced() {
-  static llvm::raw_ostream &ErrorStream = getErrorStream();
-  static auto ReportIgnoredOption = [&](DpctOptionBase *Ignored,
-                                        DpctOptionBase *Conflict) {
-    ErrorStream << "Warning: Option ";
-    Ignored->printName(ErrorStream);
-    ErrorStream << " is ignored because it conflicts with option ";
-    Conflict->printName(ErrorStream);
-    ErrorStream << ".\n";
-  };
+  static auto &ErrorStream = getErrorStream();
   if (auto Conflicts = ExplicitOptions & Exclusive) {
     if (Class == DpctOptionClass::OC_Attribute) {
-      reset();
       auto ConflictOptions = getOptions(Conflicts);
       for (auto Option : ConflictOptions) {
-        ReportIgnoredOption(this, Option);
+        reportAsIgnored(Option, ErrorStream);
       }
       return;
     } else if (auto ConflictActions = Conflicts & ActionOptions) {
@@ -156,8 +157,7 @@ void DpctOptionBase::setOccurrenced() {
     } else {
       auto Options = getOptions(Conflicts);
       for (auto Option : Options) {
-        Option->reset();
-        ReportIgnoredOption(Option, this);
+        Option->reportAsIgnored(this, ErrorStream);
       }
     }
   }
@@ -171,8 +171,6 @@ void DpctOptionBase::init() {
       continue;
     Option->setExclusiveByAction();
   }
-  setExclusive(DpctOptionNameKind::OPT_UseSYCLCompat,
-               DpctOptionNameKind::OPT_GenHelperFunction);
   setDependency(DpctOptionNameKind::OPT_ProcessAll,
                 DpctOptionNameKind::OPT_InRoot);
   setDependency(DpctOptionNameKind::OPT_BuildScriptFile,
@@ -204,6 +202,14 @@ void DpctOptionBase::check() {
     for (auto Option : LackOptions)
       ReportErrMsg(Option);
     fatalError();
+  }
+
+  if ((ExplicitOptions & getFlagBit(DpctOptionNameKind::OPT_UseSYCLCompat)) &&
+      (ExplicitOptions &
+       getFlagBit(DpctOptionNameKind::OPT_GenHelperFunction))) {
+    getOption(DpctOptionNameKind::OPT_GenHelperFunction)
+        ->reportAsIgnored(getOption(DpctOptionNameKind::OPT_UseSYCLCompat),
+                          ErrorStream);
   }
 }
 

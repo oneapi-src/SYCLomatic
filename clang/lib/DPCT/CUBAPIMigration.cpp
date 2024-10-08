@@ -714,6 +714,7 @@ void CubDeviceLevelRule::removeRedundantTempVar(const CallExpr *CE) {
 }
 
 void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(usingDirectiveDecl().bind("CubUsingNamespace"), this);
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
                   "WarpScan", "WarpReduce", "BlockScan", "BlockReduce"))))))
@@ -1619,6 +1620,17 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processCubTypeDef(TD);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
     processTypeLoc(TL);
+  } else if (auto *UDD = getNodeAsType<UsingDirectiveDecl>(
+                 Result, "CubUsingNamespace")) {
+    llvm::StringRef NamespaceName = UDD->getNominatedNamespace()->getName();
+    if (NamespaceName == "cub") {
+      if (const auto *NSD =
+              dyn_cast<NamespaceDecl>(UDD->getNominatedNamespace())) {
+        if (DpctGlobalInfo::isInCudaPath(NSD->getLocation())) {
+          emplaceTransformation(new ReplaceDecl(UDD, ""));
+        }
+      }
+    }
   }
 }
 

@@ -2693,42 +2693,47 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     // qualifier and emit a warning.
     if (!NeedRemoveVolatile)
       return;
-    const ValueDecl *VD = DpctGlobalInfo::findAncestor<ValueDecl>(TL);
-    if (VD) {
-      bool isPointerToVolatile = false;
-      if (const auto PT = dyn_cast<PointerType>(VD->getType())) {
-        isPointerToVolatile = PT->getPointeeType().isVolatileQualified();
-      }
-      if (isPointerToVolatile || VD->getType().isVolatileQualified()) {
-        SourceLocation Loc = SM->getExpansionLoc(VD->getBeginLoc());
-        report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
 
-        // remove the volatile qualifier and trailing spaces
-        Token Tok;
-        SourceLocation SpellingBeg = SM->getSpellingLoc(VD->getBeginLoc());
-        SourceLocation SpellingEnd = SM->getSpellingLoc(VD->getEndLoc());
-        Loc = SpellingBeg;
-        Lexer::getRawToken(Loc, Tok, *SM,
-                           DpctGlobalInfo::getContext().getLangOpts(), true);
-        unsigned int EndLocOffset =
-            SM->getDecomposedExpansionLoc(SpellingEnd).second;
-        while (
-            SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
-                .second <= EndLocOffset) {
-          SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
-          SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
-          if (Tok.is(tok::TokenKind::raw_identifier) &&
-              Tok.getRawIdentifier().str() == "volatile") {
-            emplaceTransformation(
-                new ReplaceText(TokBegLoc,
-                                getLenIncludingTrailingSpaces(
-                                    SourceRange(TokBegLoc, TokEndLoc), *SM),
-                                ""));
-            break;
-          }
-          Lexer::getRawToken(TokEndLoc, Tok, *SM,
-                             DpctGlobalInfo::getContext().getLangOpts(), true);
+    const ValueDecl *VD = DpctGlobalInfo::findAncestor<ValueDecl>(TL);
+    if (!VD)
+      return;
+
+    bool isPointerToVolatile = false;
+    if (const auto PT = dyn_cast<PointerType>(VD->getType())) {
+      isPointerToVolatile = PT->getPointeeType().isVolatileQualified();
+    }
+
+    if (isPointerToVolatile || VD->getType().isVolatileQualified()) {
+      SourceLocation Loc = SM->getExpansionLoc(VD->getBeginLoc());
+      report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
+
+      // remove the volatile qualifier and trailing spaces
+      Token Tok;
+      // Get the range of variable declaration
+      SourceRange SpellingRange =
+          getDefinitionRange(VD->getBeginLoc(), VD->getEndLoc());
+      Lexer::getRawToken(SpellingRange.getBegin(), Tok, *SM,
+                         DpctGlobalInfo::getContext().getLangOpts(), true);
+      unsigned int EndLocOffset =
+          SM->getDecomposedExpansionLoc(SpellingRange.getEnd()).second;
+      // Look for volatile in the above found range of declaration
+      while (SM->getDecomposedExpansionLoc(SM->getSpellingLoc(Tok.getEndLoc()))
+                     .second <= EndLocOffset &&
+             !Tok.is(tok::TokenKind::eof)) {
+        SourceLocation TokBegLoc = SM->getSpellingLoc(Tok.getLocation());
+        SourceLocation TokEndLoc = SM->getSpellingLoc(Tok.getEndLoc());
+
+        if (Tok.is(tok::TokenKind::raw_identifier) &&
+            Tok.getRawIdentifier().str() == "volatile") {
+          emplaceTransformation(
+              new ReplaceText(TokBegLoc,
+                              getLenIncludingTrailingSpaces(
+                                  SourceRange(TokBegLoc, TokEndLoc), *SM),
+                              ""));
+          break;
         }
+        Lexer::getRawToken(Tok.getEndLoc(), Tok, *SM,
+                           DpctGlobalInfo::getContext().getLangOpts(), true);
       }
     }
   }
@@ -4369,7 +4374,21 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCtpmv_v2_64", "cublasZtpmv_v2_64", "cublasStrsv_v2_64",
         "cublasDtrsv_v2_64", "cublasCtrsv_v2_64", "cublasZtrsv_v2_64",
         "cublasStpsv_v2_64", "cublasDtpsv_v2_64", "cublasCtpsv_v2_64",
-        "cublasZtpsv_v2_64",
+        "cublasZtpsv_v2_64", "cublasStbsv_v2_64", "cublasDtbsv_v2_64",
+        "cublasCtbsv_v2_64", "cublasZtbsv_v2_64", "cublasSsymv_v2_64",
+        "cublasDsymv_v2_64", "cublasCsymv_v2_64", "cublasZsymv_v2_64",
+        "cublasChemv_v2_64", "cublasZhemv_v2_64", "cublasSsbmv_v2_64",
+        "cublasDsbmv_v2_64", "cublasChbmv_v2_64", "cublasZhbmv_v2_64",
+        "cublasSspmv_v2_64", "cublasDspmv_v2_64", "cublasChpmv_v2_64",
+        "cublasZhpmv_v2_64", "cublasSger_v2_64", "cublasDger_v2_64",
+        "cublasCgeru_v2_64", "cublasCgerc_v2_64", "cublasZgeru_v2_64",
+        "cublasZgerc_v2_64", "cublasSsyr_v2_64", "cublasDsyr_v2_64",
+        "cublasCsyr_v2_64", "cublasZsyr_v2_64", "cublasCher_v2_64",
+        "cublasZher_v2_64", "cublasSspr_v2_64", "cublasDspr_v2_64",
+        "cublasChpr_v2_64", "cublasZhpr_v2_64", "cublasSsyr2_v2_64",
+        "cublasDsyr2_v2_64", "cublasCsyr2_v2_64", "cublasZsyr2_v2_64",
+        "cublasCher2_v2_64", "cublasZher2_v2_64", "cublasSspr2_v2_64",
+        "cublasDspr2_v2_64", "cublasChpr2_v2_64", "cublasZhpr2_v2_64",
         /*level 3*/
         "cublasSgemm_v2_64", "cublasDgemm_v2_64", "cublasCgemm_v2_64",
         "cublasZgemm_v2_64", "cublasSsyrk_v2_64", "cublasDsyrk_v2_64",
@@ -4564,12 +4583,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   // PrefixInsertStr: stmt + NL + indent
   // SuffixInsertStr: NL + indent + stmt
   std::string PrefixInsertStr, SuffixInsertStr;
-  // Clean below five member variables before starting migration
-  CallExprArguReplVec.clear();
+  // Clean it before starting migration
   CallExprReplStr = "";
-  NeedWaitAPICall = false;
-  SyncAPIBufferAssignmentInThenBlock.clear();
-  SyncAPIBufferAssignmentInElseBlock.clear();
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
 
@@ -4585,282 +4600,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (MapNames::BLASFuncReplInfoMap.find(FuncName) !=
-             MapNames::BLASFuncReplInfoMap.end()) {
-    auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
-    MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
-    std::string Replacement = ReplInfo.ReplName;
-    BLASEnumInfo EnumInfo(
-        ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
-        ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
-    if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), Replacement);
-      return;
-    }
-    int ArgNum = CE->getNumArgs();
-    for (int i = 0; i < ArgNum; ++i) {
-      int IndexTemp = -1;
-      std::string CurrentArgumentRepl;
-      const CStyleCastExpr *CSCE = nullptr;
-      if (i == 0) {
-        CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(0));
-        if (needExtraParensInMemberExpr(CE->getArg(0)))
-          CurrentArgumentRepl = "(" + CurrentArgumentRepl + ")";
-        CurrentArgumentRepl += "->get_queue()";
-      } else if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
-          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            requestFeature(HelperFeatureEnum::device_ext);
-            auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE->getArg(i));
-            std::string ResultTempPtr =
-                "res_temp_ptr_ct" +
-                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            std::string ResultTempHost =
-                "res_temp_host_ct" +
-                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            PrefixInsertStr = PrefixInsertStr + "int64_t* " + ResultTempPtr +
-                              " = " + MapNames::getClNamespace() +
-                              "malloc_shared<int64_t>(" + "1, " + DefaultQueue +
-                              ");" + getNL() + IndentStr;
-            SuffixInsertStr =
-                SuffixInsertStr + getNL() + IndentStr + "int " +
-                ResultTempHost + " = (int)*" + ResultTempPtr + ";" + getNL() +
-                IndentStr +
-                MemoryMigrationRule::getMemoryHelperFunctionName("memcpy") +
-                "(" + ExprAnalysis::ref(CE->getArg(i)) + ", &" +
-                ResultTempHost + ", sizeof(int));" + getNL() + IndentStr +
-                MapNames::getClNamespace() + "free(" + ResultTempPtr + ", " +
-                DefaultQueue + ");";
-            CurrentArgumentRepl = ResultTempPtr;
-          } else {
-            CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
-          }
-        } else {
-          std::string BufferDecl = "";
-          std::string BufferName = "";
-          auto MaySyncAPIIWithMultiArgsIter =
-              MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
-          if (MaySyncAPIIWithMultiArgsIter !=
-                  MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
-              MaySyncAPIIWithMultiArgsIter->second.find(i) !=
-                  MaySyncAPIIWithMultiArgsIter->second.end()) {
-            auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
-            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
-                                                 IndentStr, ArgIter->second, i);
-          } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
-                                                 IndentStr, "int", i);
-          } else {
-            requestFeature(HelperFeatureEnum::device_ext);
-            BufferName = getBufferNameAndDeclStr(
-                CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
-                BufferDecl);
-            PrefixInsertStr = PrefixInsertStr + BufferDecl;
-          }
-
-          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            std::string ResultTempBuf =
-                "res_temp_buf_ct" +
-                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            PrefixInsertStr = PrefixInsertStr + MapNames::getClNamespace() +
-                              "buffer<int64_t> " + ResultTempBuf + "(" +
-                              MapNames::getClNamespace() + "range<1>(1));" +
-                              getNL() + IndentStr;
-            SuffixInsertStr =
-                SuffixInsertStr + getNL() + IndentStr + BufferName +
-                ".get_access<" + MapNames::getClNamespace() +
-                "access_mode::" + "write>()[0] = (int)" + ResultTempBuf + "." +
-                "get_access<" + MapNames::getClNamespace() +
-                "access_mode::read>()[0];";
-            CurrentArgumentRepl = ResultTempBuf;
-          } else {
-            CurrentArgumentRepl = BufferName;
-          }
-        }
-      } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
-        ExprAnalysis EA(CE->getArg(i));
-        CurrentArgumentRepl = getValueStr(CE->getArg(i), EA.getReplacedString(),
-                                          CallExprArguReplVec[0]);
-      } else if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
-        processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
-                                      EnumInfo, PrefixInsertStr,
-                                      CurrentArgumentRepl);
-      } else {
-        ExprAnalysis EA;
-        EA.analyze(CE->getArg(i));
-        CurrentArgumentRepl = EA.getReplacedString();
-      }
-      CallExprArguReplVec.push_back(CurrentArgumentRepl);
-    }
-
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
-      if (FuncName == "cublasSrotm_v2") {
-        CallExprArguReplVec[6] =
-            "const_cast<float*>(" + CallExprArguReplVec[6] + ")";
-      } else if (FuncName == "cublasDrotm_v2") {
-        CallExprArguReplVec[6] =
-            "const_cast<double*>(" + CallExprArguReplVec[6] + ")";
-      }
-      addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-    } else {
-      printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
-    }
-    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        // If there is one API call in the migrated code, it is unnecessary to
-        // use a lambda expression
-        NeedUseLambda = false;
-      }
-    }
-
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
-                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
-                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
-                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
-                       PrefixInsertStr, SuffixInsertStr);
-  } else if (MapNames::BLASFuncComplexReplInfoMap.find(FuncName) !=
-             MapNames::BLASFuncComplexReplInfoMap.end()) {
-    auto ReplInfoPair = MapNames::BLASFuncComplexReplInfoMap.find(FuncName);
-    MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
-    std::string Replacement = ReplInfo.ReplName;
-    BLASEnumInfo EnumInfo(
-        ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
-        ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
-    if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), Replacement);
-      return;
-    }
-
-    int ArgNum = CE->getNumArgs();
-
-    for (int i = 0; i < ArgNum; ++i) {
-      int IndexTemp = -1;
-      std::string CurrentArgumentRepl;
-      const CStyleCastExpr *CSCE = nullptr;
-      if (i == 0) {
-        CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(0));
-        if (needExtraParensInMemberExpr(CE->getArg(0)))
-          CurrentArgumentRepl = "(" + CurrentArgumentRepl + ")";
-        CurrentArgumentRepl += "->get_queue()";
-      } else if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
-          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE->getArg(i));
-            requestFeature(HelperFeatureEnum::device_ext);
-            std::string ResultTempPtr =
-                "res_temp_ptr_ct" +
-                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            std::string ResultTempHost =
-                "res_temp_host_ct" +
-                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            PrefixInsertStr = PrefixInsertStr + "int64_t* " + ResultTempPtr +
-                              " = " + MapNames::getClNamespace() +
-                              "malloc_shared<int64_t>(" + "1, " + DefaultQueue +
-                              ");" + getNL() + IndentStr;
-            SuffixInsertStr =
-                SuffixInsertStr + getNL() + IndentStr + "int " +
-                ResultTempHost + " = (int)*" + ResultTempPtr + ";" + getNL() +
-                IndentStr +
-                MemoryMigrationRule::getMemoryHelperFunctionName("memcpy") +
-                "(" + ExprAnalysis::ref(CE->getArg(i)) + ", &" +
-                ResultTempHost + ", sizeof(int));" + getNL() + IndentStr +
-                MapNames::getClNamespace() + "free(" + ResultTempPtr + ", " +
-                DefaultQueue + ");";
-            CurrentArgumentRepl = ResultTempPtr;
-          } else if (ReplInfo.BufferTypeInfo[IndexTemp] ==
-                         "std::complex<float>" ||
-                     ReplInfo.BufferTypeInfo[IndexTemp] ==
-                         "std::complex<double>") {
-            CurrentArgumentRepl = getArgWithTypeCast(
-                CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp] + "*");
-          } else {
-            CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
-          }
-        } else {
-          std::string BufferDecl = "";
-          std::string BufferName = "";
-          auto MaySyncAPIIWithMultiArgsIter =
-              MapNames::MaySyncBLASFuncWithMultiArgs.find(FuncName);
-          if (MaySyncAPIIWithMultiArgsIter !=
-                  MapNames::MaySyncBLASFuncWithMultiArgs.end() &&
-              MaySyncAPIIWithMultiArgsIter->second.find(i) !=
-                  MaySyncAPIIWithMultiArgsIter->second.end()) {
-            auto ArgIter = MaySyncAPIIWithMultiArgsIter->second.find(i);
-            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
-                                                 IndentStr, ArgIter->second, i);
-          } else if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            BufferName = processSyncAPIBufferArg(FuncName, CE, PrefixInsertStr,
-                                                 IndentStr, "int", i);
-          } else {
-            requestFeature(HelperFeatureEnum::device_ext);
-            BufferName = getBufferNameAndDeclStr(
-                CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp], IndentStr,
-                BufferDecl);
-            PrefixInsertStr = PrefixInsertStr + BufferDecl;
-          }
-
-          if (ReplInfo.BufferTypeInfo[IndexTemp] == "int") {
-            std::string ResultTempBuf =
-                "res_temp_buf_ct" +
-                std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-            PrefixInsertStr = PrefixInsertStr + MapNames::getClNamespace() +
-                              "buffer<int64_t> " + ResultTempBuf + "(" +
-                              MapNames::getClNamespace() + "range<1>(1));" +
-                              getNL() + IndentStr;
-            SuffixInsertStr =
-                SuffixInsertStr + getNL() + IndentStr + BufferName +
-                ".get_access<" + MapNames::getClNamespace() +
-                "access_mode::" + "write>()[0] = (int)" + ResultTempBuf + "." +
-                "get_access<" + MapNames::getClNamespace() +
-                "access_mode::read>()[0];";
-            CurrentArgumentRepl = ResultTempBuf;
-          } else {
-            CurrentArgumentRepl = BufferName;
-          }
-        }
-      } else if (isReplIndex(i, ReplInfo.PointerIndexInfo, IndexTemp)) {
-        ExprAnalysis EA(CE->getArg(i));
-        CurrentArgumentRepl = getValueStr(CE->getArg(i), EA.getReplacedString(),
-                                          CallExprArguReplVec[0],
-                                          ReplInfo.PointerTypeInfo[IndexTemp]);
-      } else if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
-        processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
-                                      EnumInfo, PrefixInsertStr,
-                                      CurrentArgumentRepl);
-      } else {
-        ExprAnalysis EA;
-        EA.analyze(CE->getArg(i));
-        CurrentArgumentRepl = EA.getReplacedString();
-      }
-
-      CallExprArguReplVec.push_back(CurrentArgumentRepl);
-    }
-
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
-      addWait(FuncName, CE, PrefixInsertStr, SuffixInsertStr, IndentStr);
-    } else {
-      printIfStmt(FuncName, CE, PrefixInsertStr, IndentStr);
-    }
-
-    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        // If there is one API call in the migrated code, it is unnecessary to
-        // use a lambda expression
-        NeedUseLambda = false;
-      }
-    }
-
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
-                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
-                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
-                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
-                       PrefixInsertStr, SuffixInsertStr);
   } else if (MapNames::LegacyBLASFuncReplInfoMap.find(FuncName) !=
              MapNames::LegacyBLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
@@ -5060,13 +4799,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
       }
-    }
-
-    if (FuncName == "cublasIsamax" || FuncName == "cublasIdamax" ||
-        FuncName == "cublasIcamax" || FuncName == "cublasIzamax" ||
-        FuncName == "cublasIsamin" || FuncName == "cublasIdamin" ||
-        FuncName == "cublasIcamin" || FuncName == "cublasIzamin") {
-      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
     }
 
     // All legacy APIs are synchronous
@@ -5415,22 +5147,6 @@ bool BLASFunctionCallRule::isCEOrUETTEOrAnIdentifierOrLiteral(const Expr *E) {
   return false;
 }
 
-// Get the replacement string of the input expression.
-// If the AddparenthesisIfNecessary is true, the output string will add "(...)"
-// if it is necessary.
-std::string
-BLASFunctionCallRule::getExprString(const Expr *E,
-                                    bool AddparenthesisIfNecessary) {
-  ExprAnalysis EA;
-  EA.analyze(E);
-  std::string Res = EA.getReplacedString();
-  if (AddparenthesisIfNecessary && !isCEOrUETTEOrAnIdentifierOrLiteral(E)) {
-    return "(" + Res + ")";
-  } else {
-    return Res;
-  }
-}
-
 bool BLASFunctionCallRule::isReplIndex(int Input,
                                        const std::vector<int> &IndexInfo,
                                        int &IndexTemp) {
@@ -5489,106 +5205,6 @@ BLASFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
     }
   }
   return nullptr;
-}
-
-std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
-    const Expr *E, const CStyleCastExpr *CSCE, const int DistinctionID,
-    const std::string IndentStr, const BLASEnumInfo &EnumInfo,
-    std::string &PrefixInsertStr, std::string &CurrentArgumentRepl) {
-  std::string DpctTempVarName;
-  auto &Context = DpctGlobalInfo::getContext();
-  const Expr *SubExpr = CSCE->getSubExpr();
-  std::string SubExprStr;
-  if (SubExpr->getBeginLoc().isMacroID() && isOuterMostMacro(CSCE)) {
-    // when type casting syntax is in a macro,
-    // analyze the entire CSCE by ExprAnalysis
-    ExprAnalysis SEA;
-    SEA.analyze(CSCE);
-    SubExprStr = SEA.getReplacedString();
-
-    // Since the type cast in the macro definition need be kept (it may be used
-    // in more than one places), so we need add the type cast to int for the
-    // current argument.
-    CurrentArgumentRepl = "(int)";
-  } else {
-    // To eliminate the redundant cast of non-macro cases
-    SubExprStr = ExprAnalysis::ref(SubExpr);
-  }
-
-  int IndexTemp = -1;
-  if (isReplIndex(DistinctionID, EnumInfo.OperationIndexInfo, IndexTemp)) {
-    Expr::EvalResult ER;
-    if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        CurrentArgumentRepl += "oneapi::mkl::transpose::nontrans";
-      } else if (Value == 1) {
-        CurrentArgumentRepl += "oneapi::mkl::transpose::trans";
-      } else {
-        CurrentArgumentRepl += "oneapi::mkl::transpose::conjtrans";
-      }
-    } else {
-      if (E->HasSideEffects(DpctGlobalInfo::getContext())) {
-        DpctTempVarName =
-            "transpose_ct" +
-            std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-        PrefixInsertStr = PrefixInsertStr + "auto " + DpctTempVarName + " = " +
-                          SubExprStr + ";" + getNL() + IndentStr;
-        CurrentArgumentRepl += "(int)" + DpctTempVarName +
-                               "==2 ? oneapi::mkl::transpose::conjtrans : "
-                               "(oneapi::mkl::transpose)" +
-                               DpctTempVarName;
-      } else {
-        CurrentArgumentRepl += SubExprStr +
-                               "==2 ? oneapi::mkl::transpose::conjtrans : "
-                               "(oneapi::mkl::transpose)" +
-                               SubExprStr;
-      }
-    }
-  }
-  if (EnumInfo.FillModeIndexInfo == DistinctionID) {
-    Expr::EvalResult ER;
-    if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        CurrentArgumentRepl += "oneapi::mkl::uplo::lower";
-      } else {
-        CurrentArgumentRepl += "oneapi::mkl::uplo::upper";
-      }
-    } else {
-      CurrentArgumentRepl +=
-          SubExprStr +
-          "==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper";
-    }
-  }
-  if (EnumInfo.SideModeIndexInfo == DistinctionID) {
-    Expr::EvalResult ER;
-    if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        CurrentArgumentRepl += "oneapi::mkl::side::left";
-      } else {
-        CurrentArgumentRepl += "oneapi::mkl::side::right";
-      }
-    } else {
-      CurrentArgumentRepl += "(oneapi::mkl::side)" + SubExprStr;
-    }
-  }
-  if (EnumInfo.DiagTypeIndexInfo == DistinctionID) {
-    Expr::EvalResult ER;
-    if (E->EvaluateAsInt(ER, Context) && !E->getBeginLoc().isMacroID()) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        CurrentArgumentRepl += "oneapi::mkl::diag::nonunit";
-      } else {
-        CurrentArgumentRepl += "oneapi::mkl::diag::unit";
-      }
-    } else {
-      CurrentArgumentRepl += "(oneapi::mkl::diag)" + SubExprStr;
-    }
-  }
-
-  return DpctTempVarName;
 }
 
 REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,
@@ -8953,15 +8569,27 @@ void DeviceFunctionDeclRule::runRule(
     }
     std::string ReplacedStmt;
     llvm::raw_string_ostream OS(ReplacedStmt);
-    OS << DpctGlobalInfo::getStreamName() << " << ";
-    CE->getArg(0)->printPretty(OS, nullptr,
-                               Result.Context->getPrintingPolicy());
+    if (DpctGlobalInfo::useExpNonStandardSYCLBuiltins()) {
+      OS << MapNames::getClNamespace() << "ext::oneapi::experimental::printf";
+      std::vector<std::string> ArgsSpelling;
+      for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
+        ExprAnalysis ArgEA;
+        ArgEA.analyze(CE->getArg(I));
+        ArgsSpelling.push_back(ArgEA.getReplacedString());
+      }
+      OS << '(' << llvm::join(ArgsSpelling, ", ") << ')';
+    } else {
+      OS << DpctGlobalInfo::getStreamName() << " << ";
+      CE->getArg(0)->printPretty(OS, nullptr,
+                                 Result.Context->getPrintingPolicy());
+      if (CE->getNumArgs() > 1 ||
+          CE->getArg(0)->IgnoreImplicitAsWritten()->getStmtClass() !=
+              Stmt::StringLiteralClass)
+        report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING,
+               false);
+      FuncInfo->setStream();
+    }
     emplaceTransformation(new ReplaceStmt(CE, std::move(OS.str())));
-    if (CE->getNumArgs() > 1 ||
-        CE->getArg(0)->IgnoreImplicitAsWritten()->getStmtClass() !=
-            Stmt::StringLiteralClass)
-      report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_MIGRATION_WARNING, false);
-    FuncInfo->setStream();
   } else if (auto Ctor =
                  getAssistNodeAsType<CXXConstructExpr>(Result, "CtorExpr")) {
     FuncInfo->addCallee(Ctor);

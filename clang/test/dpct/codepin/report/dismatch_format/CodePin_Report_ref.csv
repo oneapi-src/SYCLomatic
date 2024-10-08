@@ -1,9 +1,9 @@
 // CHECK: CodePin Summary
-// CHECK: Totally APIs count, 2
+// CHECK: Total API count, 2
 // CHECK: CodePin Random Seed, N/A
 // CHECK: CodePin Sampling Threshold, N/A
 // CHECK: CodePin Sampling Percent, N/A
-// CHECK: Consistently APIs count, 0
+// CHECK: Consistent API count, 0
 // CHECK: Most Time-consuming Kernel(CUDA), example.cu:27:3:epilog, time:0.21312
 // CHECK: Most Time-consuming Kernel(SYCL), example.cu:27:3:epilog, time:1.61086
 // CHECK: Peak Device Memory Used(CUDA), 508231680
