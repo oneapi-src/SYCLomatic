@@ -93,6 +93,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_Graph,
   Exp_NonUniformGroups,
   Exp_DeviceGlobal,
+  Exp_VirtualMemory,
   Exp_ExperimentalFeaturesEnumSize,
   Exp_All
 };

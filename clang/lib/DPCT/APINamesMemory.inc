@@ -699,6 +699,107 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                             DEREF(makeCallArgCreatorWithCall(5))))))
 
 CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemCreate",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::mem_create",
+                                ARG(0), ARG(1), ARG(2), ARG(3))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemCreate",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemCreate"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemAddressReserve",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::mem_address_reserve",
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemAddressReserve",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemAddressReserve"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemAddressFree",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::mem_address_free",
+                                ARG(0), ARG(1))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemAddressFree",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemAddressFree"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cuMemGetAllocationGranularity",
+            CALL(MapNames::getDpctNamespace() +
+                     "experimental::mem_get_allocation_granularity",
+                 ARG(0), ARG(1), ARG(2))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemGetAllocationGranularity",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemGetAllocationGranularity"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemRelease", CALL(MapNames::getDpctNamespace() +
+                                                    "experimental::mem_release",
+                                                ARG(0))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemRelease",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemRelease"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemMap",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::mem_map",
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemMap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemMap"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemUnmap", CALL(MapNames::getDpctNamespace() +
+                                                  "experimental::mem_unmap",
+                                              ARG(0), ARG(1))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemUnmap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemUnmap"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY("cuMemSetAccess",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "experimental::mem_set_access",
+                                ARG(0), ARG(1), ARG(2), ARG(3))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemSetAccess",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemSetAccess"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cuDeviceCanAccessPeer", DEREF(ARG_WC(0)),

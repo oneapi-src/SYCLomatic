@@ -788,6 +788,11 @@ DPCT_ENUM_OPTION(
             "variables.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
+            "virtual_memory", int(ExperimentalFeatures::Exp_VirtualMemory),
+            "Experimental extension that allows map an address range onto "
+            "multiple allocations of physical memory.",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),
             "Enable all experimental extensions listed in this option.\n",
             false)),
