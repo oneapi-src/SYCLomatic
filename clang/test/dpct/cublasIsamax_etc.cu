@@ -398,244 +398,92 @@ int main() {
   cublasDgemv(handle, CUBLAS_OP_N, m, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
 
   //cublas<t>ger
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), lda));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), lda);
   status = cublasSger(handle, m, n, &alpha_S, x_S, incx, y_S, incy, result_S, lda);
   cublasSger(handle, m, n, &alpha_S, x_S, incx, y_S, incy, result_S, lda);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), lda));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::ger(handle->get_queue(), m, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), lda);
   status = cublasDger(handle, m, n, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
   cublasDger(handle, m, n, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
 
   int fill0 = 0;
   int fill1 = 1;
   //cublas<t>sbmv
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), oneapi::mkl::uplo::upper, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incx, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), oneapi::mkl::uplo::upper, m, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incx, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy);
   status = cublasSsbmv(handle, (cublasFillMode_t)fill0, m, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
   cublasSsbmv(handle, CUBLAS_FILL_MODE_UPPER, m, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), fill1==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), oneapi::mkl::uplo::upper, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), fill1 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incx, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::sbmv(handle->get_queue(), oneapi::mkl::uplo::upper, m, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incx, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy);
   status = cublasDsbmv(handle, (cublasFillMode_t)fill1, m, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
   cublasDsbmv(handle, CUBLAS_FILL_MODE_UPPER, m, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
 
   //cublas<t>spmv
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::lower, n, alpha_S, x_S_buf_ct{{[0-9]+}}, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::lower, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incx, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incx, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy);
   status = cublasSspmv(handle, (cublasFillMode_t)0, n, &alpha_S, x_S, y_S, incx, &beta_S, result_S, incy);
   cublasSspmv(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_S, x_S, y_S, incx, &beta_S, result_S, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incx, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::spmv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incx, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy);
   status = cublasDspmv(handle, (cublasFillMode_t)1, n, &alpha_D, x_D, y_D, incx, &beta_D, result_D, incy);
   cublasDspmv(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_D, x_D, y_D, incx, &beta_D, result_D, incy);
 
   //cublas<t>spr
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S))));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)));
   status = cublasSspr(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, result_S);
   cublasSspr(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_S, x_S, incx, result_S);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D))));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)));
   status = cublasDspr(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, result_D);
   cublasDspr(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_D, x_D, incx, result_D);
 
   //cublas<t>spr2
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr2(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr2(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S))));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)));
   status = cublasSspr2(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, y_S, incy, result_S);
   cublasSspr2(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_S, x_S, incx, y_S, incy, result_S);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr2(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}});
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr2(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D))));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::spr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)));
   status = cublasDspr2(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, y_D, incy, result_D);
   cublasDspr2(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_D, x_D, incx, y_D, incy, result_D);
 
   //cublas<t>symv
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::symv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incx, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::symv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incx, beta_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy);
   status = cublasSsymv(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
   cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_S, x_S, lda, y_S, incx, &beta_S, result_S, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::symv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incx, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::symv(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incx, beta_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy);
   status = cublasDsymv(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
   cublasDsymv(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_D, x_D, lda, y_D, incx, &beta_D, result_D, incy);
 
   //cublas<t>syr
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, lda));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, lda);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), lda));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), lda);
   status = cublasSsyr(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, result_S, lda);
   cublasSsyr(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_S, x_S, incx, result_S, lda);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, lda));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, lda);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), lda));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), lda);
   status = cublasDsyr(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, result_D, lda);
   cublasDsyr(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_D, x_D, incx, result_D, lda);
 
   //cublas<t>syr2
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), lda));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_S, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(y_S)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), lda);
   status = cublasSsyr2(handle, (cublasFillMode_t)fill0, n, &alpha_S, x_S, incx, y_S, incy, result_S, lda);
   cublasSsyr2(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_S, x_S, incx, y_S, incy, result_S, lda);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), lda));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::syr2(handle->get_queue(), oneapi::mkl::uplo::upper, n, alpha_D, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), incx, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(y_D)), incy, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), lda);
   status = cublasDsyr2(handle, (cublasFillMode_t)fill0, n, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
   cublasDsyr2(handle, CUBLAS_FILL_MODE_UPPER, n, &alpha_D, x_D, incx, y_D, incy, result_D, lda);
 
@@ -653,29 +501,13 @@ int main() {
   cublasDtbmv(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, n, n, x_D, lda, result_D, incy);
 
   //cublas<t>tbsv
-  // CHECK: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, oneapi::mkl::diag::nonunit, n, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, n, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), oneapi::mkl::diag::nonunit, n, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, n, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(x_S)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(result_S)), incy);
   status = cublasStbsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)0, n, n, x_S, lda, result_S, incy);
   cublasStbsv(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, n, n, x_S, lda, result_S, incy);
 
-  // CHECK: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, oneapi::mkl::diag::unit, n, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, n, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy);
-  // CHECK-NEXT: }
+  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), oneapi::mkl::diag::unit, n, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy));
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, n, n, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(x_D)), lda, dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<double>(result_D)), incy);
   status = cublasDtbsv(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)1, n, n, x_D, lda, result_D, incy);
   cublasDtbsv(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, n, n, x_D, lda, result_D, incy);
 

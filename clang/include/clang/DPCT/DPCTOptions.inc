@@ -788,6 +788,12 @@ DPCT_ENUM_OPTION(
             "variables.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
+            "non-stdandard-sycl-builtins",
+            int(ExperimentalFeatures::Exp_NonStandardSYCLBuiltins),
+            "Experimental extension that allows to use non standard SYCL "
+            "builtin functions.\n",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "all", int(ExperimentalFeatures::Exp_All),
             "Enable all experimental extensions listed in this option.\n",
             false)),
@@ -955,6 +961,7 @@ DPCT_FLAG_OPTION(
     UseSYCLCompat, clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
                         clang::dpct::DpctActionKind::DAK_Migration,
+                        clang::dpct::DpctActionKind::DAK_Help,
                         clang::dpct::DpctActionKind::DAK_Query),
     "use-syclcompat",
     llvm::cl::desc(

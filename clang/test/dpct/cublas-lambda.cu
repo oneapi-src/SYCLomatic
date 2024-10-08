@@ -22,34 +22,20 @@ float alpha_H = 1.0f;
 float beta_H = 0.0f;
 
 int main() {
-  // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
-  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
-  // CHECK-NEXT: codes. 0 is used instead of an error code in an if statement. You may need to
-  // CHECK-NEXT: rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: if (0) {
-  // CHECK-NEXT: }
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the
-  // CHECK-NEXT: lambda. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: else if ([&]() {
-  // CHECK-NEXT:            auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:            auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:            auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:            oneapi::mkl::blas::column_major::symv(
+  // CHECK: if (DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:         handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N,
+  // CHECK-NEXT:         beta_H,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)), N))) {
+  // CHECK-NEXT: } else if (DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
   // CHECK-NEXT:                handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:                d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT:            return 0;
-  // CHECK-NEXT:          }()) {
+  // CHECK-NEXT:                dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)),
+  // CHECK-NEXT:                N,
+  // CHECK-NEXT:                dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)),
+  // CHECK-NEXT:                N, beta_H,
+  // CHECK-NEXT:                dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)),
+  // CHECK-NEXT:                N))) {
   // CHECK-NEXT: }
   if (cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)) {
   }
@@ -57,73 +43,46 @@ int main() {
   }
 
 
-  // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
-  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
-  // CHECK-NEXT: codes. 0 is used instead of an error code in an if statement. You may need to
-  // CHECK-NEXT: rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: if (int stat = 0) {
+  // CHECK: if (int stat = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:         handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N,
+  // CHECK-NEXT:         beta_H,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)), N))) {
   // CHECK-NEXT: }
   if(int stat = cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)){
   }
 
 
-  // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
-  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
-  // CHECK-NEXT: codes. 0 is used instead of an error code in a for statement. You may need to
-  // CHECK-NEXT: rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: for (0;;) {
+  // CHECK: for (oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:          handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:          dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+  // CHECK-NEXT:          dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N,
+  // CHECK-NEXT:          beta_H,
+  // CHECK-NEXT:          dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)), N);
+  // CHECK-NEXT:      ;) {
   // CHECK-NEXT: }
   for(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);;){
   }
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the
-  // CHECK-NEXT: lambda. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: for (; [&]() {
-  // CHECK-NEXT:        auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:        auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:        auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:        oneapi::mkl::blas::column_major::symv(
-  // CHECK-NEXT:            handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:            d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT:        return 0;
-  // CHECK-NEXT:      }();) {
+  // CHECK: for (; DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:          handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:          dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+  // CHECK-NEXT:          dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N,
+  // CHECK-NEXT:          beta_H,
+  // CHECK-NEXT:          dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)),
+  // CHECK-NEXT:          N));) {
   // CHECK-NEXT: }
   for(;cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);){
   }
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the
-  // CHECK-NEXT: lambda. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: while ([&]() {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
-  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT:   return 0;
-  // CHECK-NEXT: }() != 0) {
+  // CHECK: while (DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:            handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:            dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+  // CHECK-NEXT:            dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N,
+  // CHECK-NEXT:            beta_H,
+  // CHECK-NEXT:            dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)),
+  // CHECK-NEXT:            N)) != 0) {
   // CHECK-NEXT: }
   while(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)!=0){
   }
@@ -131,37 +90,22 @@ int main() {
 
 
   // CHECK: do{
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the
-  // CHECK-NEXT: lambda. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: } while ([&]() {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
-  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT:   return 0;
-  // CHECK-NEXT: }());
+  // CHECK-NEXT: } while (DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:     handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:     dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+  // CHECK-NEXT:     dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N, beta_H,
+  // CHECK-NEXT:     dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)), N)));
   do{
   }while(cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N));
 
 
-  // CHECK: {
-  // CHECK-NEXT:   auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-  // CHECK-NEXT:   auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-  // CHECK-NEXT:   auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-  // CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
-  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
-  // CHECK-NEXT:       d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
-  // CHECK-NEXT: codes. 0 is used instead of an error code in a switch statement. You may need
-  // CHECK-NEXT: to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: switch (int stat = 0) {
+  // CHECK: switch (
+  // CHECK-NEXT:     int stat = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
+  // CHECK-NEXT:         handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N,
+  // CHECK-NEXT:         beta_H,
+  // CHECK-NEXT:         dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)), N))) {
   // CHECK-NEXT: }
   switch (int stat = cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N)){
   }
@@ -170,32 +114,24 @@ int main() {
   return 0;
 }
 
-// CHECK:int foo() try {
-// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-// CHECK-NEXT:  oneapi::mkl::blas::column_major::symv(
-// CHECK-NEXT:      handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H, d_A_H_buf_ct{{[0-9]+}},
-// CHECK-NEXT:      N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-// CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error
-// CHECK-NEXT:  codes. 0 is used instead of an error code in a return statement. You may need
-// CHECK-NEXT:  to rewrite this code.
-// CHECK-NEXT:  */
-// CHECK-NEXT:  return 0;
-// CHECK-NEXT:}
+// CHECK: int foo() try {
+// CHECK-NEXT:   return DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(
+// CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+// CHECK-NEXT:       dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+// CHECK-NEXT:       dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N, beta_H,
+// CHECK-NEXT:       dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)), N));
+// CHECK-NEXT: }
 int foo() {
   return cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 }
 
-// CHECK:void foo2() {
-// CHECK-NEXT:  auto d_A_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_H);
-// CHECK-NEXT:  auto d_B_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_H);
-// CHECK-NEXT:  auto d_C_H_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_H);
-// CHECK-NEXT:  oneapi::mkl::blas::column_major::symv(
-// CHECK-NEXT:      handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H, d_A_H_buf_ct{{[0-9]+}},
-// CHECK-NEXT:      N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
-// CHECK-NEXT:}
+// CHECK: void foo2() {
+// CHECK-NEXT:   oneapi::mkl::blas::column_major::symv(
+// CHECK-NEXT:       handle->get_queue(), oneapi::mkl::uplo::upper, N, alpha_H,
+// CHECK-NEXT:       dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_A_H)), N,
+// CHECK-NEXT:       dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_B_H)), N, beta_H,
+// CHECK-NEXT:       dpct::rvalue_ref_to_lvalue_ref(dpct::get_buffer<float>(d_C_H)), N);
+// CHECK-NEXT: }
 void foo2() {
   cublasSsymv(handle, CUBLAS_FILL_MODE_UPPER, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 }
