@@ -312,3 +312,30 @@ void run_foo13(float* a_host[]) {
   my_kernel5<<<1, 1>>>(a_host);
 }
 #endif
+
+template<class T>
+__global__ void kernel6(const T* a);
+
+template<class T>
+struct S {
+  T* getT() { return nullptr; }
+};
+
+// CHECK: void run_foo14(S<int> s) {
+// CHECK-NEXT:   dpct::get_in_order_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       auto s_getT_ct0 = s.getT();
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel6_{{[0-9a-z]+}}, int>>(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           kernel6(s_getT_ct0);
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+// CHECK-NEXT: }
+void run_foo14(S<int> s) {
+  kernel6<<<1, 1>>>(s.getT());
+}
+
+template<class T>
+__global__ void kernel6(const T* a) {}
