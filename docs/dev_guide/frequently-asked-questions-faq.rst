@@ -45,7 +45,7 @@ command line. The supported values are:
 On Windows, the default C++ standard for |tool_name|'s
 parser is C++17. If you want to enable C20 features 
 in |tool_name|, you need to add
-the option ``--extra-arg="-std=c++17"`` to the command line.
+the option ``--extra-arg="-std=c++20"`` to the command line.
 
 How do I migrate files on Windows when using a CMake project?
 *************************************************************
