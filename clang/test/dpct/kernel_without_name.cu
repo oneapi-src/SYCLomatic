@@ -468,3 +468,48 @@ void func() {
   // CHECK-NEXT:   });
   kfunc<<<128, 32>>>(der, 1, a2);
 }
+
+template <class T> __global__ void foo_kernel13(const T *a);
+
+enum FLOATING_TYPE { FT_FLOAT, FT_DOUBLE };
+
+struct Mat {
+  template <class U> U *data() { return (U *)_data; }
+  FLOATING_TYPE getType() { return _ft; }
+
+  void *_data;
+  FLOATING_TYPE _ft;
+};
+
+#define DISPATCH(type, functor)                                                \
+  {                                                                            \
+    switch (type) {                                                            \
+    case FT_FLOAT: {                                                           \
+      using scalar_t = float;                                                  \
+      functor();                                                               \
+      break;                                                                   \
+    }                                                                          \
+    case FT_DOUBLE: {                                                          \
+      using scalar_t = double;                                                 \
+      functor();                                                               \
+      break;                                                                   \
+    }                                                                          \
+    }                                                                          \
+  }
+
+void run_foo13(Mat mat) {
+  // CHECK: DISPATCH(mat.getType(), ([&] { dpct::get_out_of_order_queue().submit(
+  // CHECK-NEXT: [&](sycl::handler &cgh) {
+  // CHECK-NEXT:   dpct::access_wrapper<decltype(mat.data<scalar_t>())> mat_data_scalar_t_acc_ct0(mat.data<scalar_t>(), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:   cgh.parallel_for(
+  // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:       foo_kernel13(mat_data_scalar_t_acc_ct0.get_raw_pointer());
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }); }));
+  DISPATCH(mat.getType(), ([&] { foo_kernel13<<<1, 1>>>(mat.data<scalar_t>()); }));
+}
+
+template <class T> __global__ void foo_kernel13(const T *a) {}
+#undef DISPATCH

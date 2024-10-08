@@ -6199,6 +6199,9 @@ void KernelCallExpr::buildKernelArgsStmt() {
       if (Arg.IsDeviceRandomGeneratorType) {
         TypeStr = TypeStr + " *";
       }
+      if (Arg.IsDependentType) {
+        TypeStr = "decltype(" + Arg.getArgString() + ")";
+      }
 
       if (DpctGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
           !(getFuncInfo()->isParameterReferenced(ArgCounter))) {
@@ -6230,9 +6233,11 @@ void KernelCallExpr::buildKernelArgsStmt() {
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
       std::string TypeStr = "auto";
-      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty() &&
-          !Arg.IsDependentType) {
+      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty()) {
         TypeStr = Arg.getTypeString();
+      }
+      if (Arg.IsDependentType) {
+        TypeStr = "decltype(" + Arg.getArgString() + ")";
       }
       SubmitStmts.CommandGroupList.emplace_back(
           buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
