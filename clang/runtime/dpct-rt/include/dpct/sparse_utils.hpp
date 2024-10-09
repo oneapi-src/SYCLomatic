@@ -49,11 +49,14 @@ struct csrgemm_args_info {
       const void *val_a, const int *row_ptr_a, const int *col_ind_a,
       const std::shared_ptr<matrix_info> info_b, const void *val_b,
       const int *row_ptr_b, const int *col_ind_b,
+      const std::shared_ptr<matrix_info> info_d, const void *val_d,
+      const int *row_ptr_d, const int *col_ind_d,
       const std::shared_ptr<matrix_info> info_c, const int *row_ptr_c)
       : trans_a(trans_a), trans_b(trans_b), m(m), n(n), k(k), info_a(info_a),
         val_a(val_a), row_ptr_a(row_ptr_a), col_ind_a(col_ind_a),
         info_b(info_b), val_b(val_b), row_ptr_b(row_ptr_b),
-        col_ind_b(col_ind_b), info_c(info_c), row_ptr_c(row_ptr_c) {}
+        col_ind_b(col_ind_b), info_d(info_d), val_d(val_d), row_ptr_d(row_ptr_d),
+        col_ind_d(col_ind_d), info_c(info_c), row_ptr_c(row_ptr_c) {}
   oneapi::mkl::transpose trans_a;
   oneapi::mkl::transpose trans_b;
   int m;
@@ -67,6 +70,10 @@ struct csrgemm_args_info {
   const void *val_b;
   const int *row_ptr_b;
   const int *col_ind_b;
+  std::shared_ptr<matrix_info> info_d;
+  const void *val_d;
+  const int *row_ptr_d;
+  const int *col_ind_d;
   std::shared_ptr<matrix_info> info_c;
   const int *row_ptr_c;
 
@@ -76,7 +83,9 @@ struct csrgemm_args_info {
         val_a == other.val_a && row_ptr_a == other.row_ptr_a &&
         col_ind_a == other.col_ind_a && info_b.get() == other.info_b.get() &&
         val_b == other.val_b && row_ptr_b == other.row_ptr_b &&
-        col_ind_b == other.col_ind_b && info_c.get() == other.info_c.get() &&
+        col_ind_b == other.col_ind_b && info_d.get() == other.info_d.get() &&
+        val_d == other.val_d && row_ptr_d == other.row_ptr_d &&
+        col_ind_d == other.col_ind_d && info_c.get() == other.info_c.get() &&
         row_ptr_c == other.row_ptr_c)
       return true;
     return false;
@@ -99,6 +108,10 @@ struct csrgemm_args_info {
         ss << args.val_b << ":";
         ss << args.row_ptr_b << ":";
         ss << args.col_ind_b << ":";
+        ss << args.info_d.get() << ":";
+        ss << args.val_d << ":";
+        ss << args.row_ptr_d << ":";
+        ss << args.col_ind_d << ":";
         ss << args.info_c.get() << ":";
         ss << args.row_ptr_c << ":";
       }
@@ -117,12 +130,15 @@ public:
   struct matmat_info {
     matmat_info(oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a,
                 oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b,
+                oneapi::mkl::sparse::matrix_handle_t *matrix_handle_d,
                 oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c,
                 oneapi::mkl::sparse::matmat_descr_t *matmat_desc)
         : matrix_handle_a(matrix_handle_a), matrix_handle_b(matrix_handle_b),
-          matrix_handle_c(matrix_handle_c), matmat_desc(matmat_desc) {}
+          matrix_handle_d(matrix_handle_d), matrix_handle_c(matrix_handle_c),
+          matmat_desc(matmat_desc) {}
     oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a;
     oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b;
+    oneapi::mkl::sparse::matrix_handle_t *matrix_handle_d;
     oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c;
     oneapi::mkl::sparse::matmat_descr_t *matmat_desc;
   };
@@ -1551,7 +1567,7 @@ inline void csr2csc(sycl::queue queue, int m, int n, int nnz,
 
 /// Calculate the non-zero elements number of the result of a
 /// sparse matrix (CSR format)-sparse matrix (CSR format) product:
-/// C = op(A) * op(B)
+/// C = alpha * op(A) * op(B) + beta * D
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
 /// \param [in] trans_a The operation applied to the matrix A.
@@ -1571,6 +1587,12 @@ inline void csr2csc(sycl::queue queue, int m, int n, int nnz,
 /// \param [in] row_ptr_b An array of length row number + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
+/// \param [in] info_d Matrix info of the matrix D.
+/// \param [in] nnz_d Non-zero elements number of matrix D.
+/// \param [in] val_d An array containing the non-zero elements of the matrix D.
+/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] col_ind_d An array containing the column indices in index-based
+/// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] nnz_host_ptr Non-zero elements number of matrix C.
@@ -1581,6 +1603,8 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
                  const T *val_a, const int *row_ptr_a, const int *col_ind_a,
                  const std::shared_ptr<matrix_info> info_b, int nnz_b,
                  const T *val_b, const int *row_ptr_b, const int *col_ind_b,
+                 const std::shared_ptr<matrix_info> info_d, int nnz_d,
+                 const T *val_d, const int *row_ptr_d, const int *col_ind_d,
                  const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
                  int *nnz_host_ptr) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
@@ -1747,7 +1771,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 }
 
 /// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
-/// C = op(A) * op(B)
+/// C = alpha * op(A) * op(B) + beta * D
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
 /// \param [in] trans_a The operation applied to the matrix A.
@@ -1765,6 +1789,11 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 /// \param [in] row_ptr_b An array of length row number + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
+/// \param [in] info_d Matrix info of the matrix D.
+/// \param [in] val_d An array containing the non-zero elements of the matrix D.
+/// \param [in] row_ptr_d An array of length row number + 1.
+/// \param [in] col_ind_d An array containing the column indices in index-based
+/// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [out] val_c An array containing the non-zero elements of the matrix
 /// C.
@@ -1778,6 +1807,8 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
              const int *row_ptr_a, const int *col_ind_a,
              const std::shared_ptr<matrix_info> info_b, const T *val_b,
              const int *row_ptr_b, const int *col_ind_b,
+             const std::shared_ptr<matrix_info> info_d, const T *val_d,
+             const int *row_ptr_d, const int *col_ind_d,
              const std::shared_ptr<matrix_info> info_c, T *val_c,
              const int *row_ptr_c, int *col_ind_c) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;

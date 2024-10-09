@@ -3870,11 +3870,14 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
+    const constexpr int Placeholder = -1;
+    const constexpr int FourNullptrs = -2;
     std::map<int /*CE*/, int /*MatchedCE*/> InsertBeforeIdxMap;
     if (CorrectCall) {
       InsertBeforeIdxMap = {
           {8, 8},
           {12, 13},
+          {14, FourNullptrs},
       };
     } else {
       report(
@@ -3882,16 +3885,19 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           Diagnostics::SPARSE_NNZ, true,
           MapNames::getLibraryHelperNamespace() + "sparse::csrgemm");
       InsertBeforeIdxMap = {
-          {8, -1},
-          {12, -1},
+          {8, Placeholder},
+          {12, Placeholder},
+          {14, FourNullptrs},
       };
     }
     std::string MigratedCall;
     MigratedCall = MapNames::getDpctNamespace() + "sparse::csrgemm_nnz(";
     for (unsigned i = 0; i < MigratedArgs.size(); i++) {
       if (InsertBeforeIdxMap.count(i)) {
-        if (InsertBeforeIdxMap.at(i) == -1) {
+        if (InsertBeforeIdxMap.at(i) == Placeholder) {
           MigratedCall += ("dpct_placeholder, ");
+        } else if (InsertBeforeIdxMap.at(i) == FourNullptrs) {
+          MigratedCall += ("nullptr, nullptr, nullptr, nullptr, ");
         } else {
           MigratedCall += (ExprAnalysis::ref(
                                CorrectCall->getArg(InsertBeforeIdxMap.at(i))) +
