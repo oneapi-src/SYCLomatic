@@ -449,14 +449,16 @@ void MapNames::setExplicitNamespaceMap(
                                           getLibraryHelperNamespace() +
                                           "sparse::optimize_info>",
                                       HelperFeatureEnum::device_ext)},
-      {"thrust::device_ptr",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_pointer",
-                                      HelperFeatureEnum::device_ext)},
+      {"thrust::device_ptr", std::make_shared<TypeNameRule>(
+                                 getLibraryHelperNamespace() + "device_pointer",
+                                 HelperFeatureEnum::device_ext)},
       {"thrust::device_reference",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_reference",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_reference",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_vector",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_vector",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_vector",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_malloc_allocator",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
