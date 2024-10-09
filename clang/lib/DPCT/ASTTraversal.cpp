@@ -3871,13 +3871,13 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
     const constexpr int Placeholder = -1;
-    const constexpr int FourNullptrs = -2;
+    const constexpr int NullMatD = -2;
     std::map<int /*CE*/, int /*MatchedCE*/> InsertBeforeIdxMap;
     if (CorrectCall) {
       InsertBeforeIdxMap = {
           {8, 8},
           {12, 13},
-          {14, FourNullptrs},
+          {14, NullMatD},
       };
     } else {
       report(
@@ -3887,7 +3887,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       InsertBeforeIdxMap = {
           {8, Placeholder},
           {12, Placeholder},
-          {14, FourNullptrs},
+          {14, NullMatD},
       };
     }
     std::string MigratedCall;
@@ -3896,8 +3896,8 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (InsertBeforeIdxMap.count(i)) {
         if (InsertBeforeIdxMap.at(i) == Placeholder) {
           MigratedCall += ("dpct_placeholder, ");
-        } else if (InsertBeforeIdxMap.at(i) == FourNullptrs) {
-          MigratedCall += ("nullptr, nullptr, nullptr, nullptr, ");
+        } else if (InsertBeforeIdxMap.at(i) == NullMatD) {
+          MigratedCall += ("nullptr, 0, nullptr, nullptr, nullptr, ");
         } else {
           MigratedCall += (ExprAnalysis::ref(
                                CorrectCall->getArg(InsertBeforeIdxMap.at(i))) +

@@ -1604,14 +1604,15 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
                  const std::shared_ptr<matrix_info> info_b, int nnz_b,
                  const T *val_b, const int *row_ptr_b, const int *col_ind_b,
                  const std::shared_ptr<matrix_info> info_d, int nnz_d,
-                 const T *val_d, const int *row_ptr_d, const int *col_ind_d,
+                 const void *val_d, const int *row_ptr_d, const int *col_ind_d,
                  const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
                  int *nnz_host_ptr) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
   sycl::queue queue = desc->get_queue();
   detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
                                  row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
-                                 col_ind_b, info_c, row_ptr_c);
+                                 col_ind_b, nullptr, nullptr, nullptr, nullptr,
+                                 info_c, row_ptr_c);
   const auto &Iter = desc->get_csrgemm_info_map().find(args);
 
   oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a;
@@ -1655,8 +1656,8 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
         *row_ptr_a_buf_ptr, *col_ind_a_buf_ptr, *val_a_buf_ptr);
 #else
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_a, rows_a, cols_a,
-                                      info_a->get_index_base(), row_ptr_a,
-                                      col_ind_a, val_a);
+                                      info_a->get_index_base(), (int *)row_ptr_a,
+                                      (int *)col_ind_a, (Ty *)val_a);
 #endif
 
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1671,8 +1672,8 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
         *row_ptr_b_buf_ptr, *col_ind_b_buf_ptr, *val_b_buf_ptr);
 #else
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_b, rows_b, cols_b,
-                                      info_b->get_index_base(), row_ptr_b,
-                                      col_ind_b, val_b);
+                                      info_b->get_index_base(), (int *)row_ptr_b,
+                                      (int *)col_ind_b, (Ty *)val_b);
 #endif
 
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1699,7 +1700,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matrix_view_descr::general);
     desc->get_csrgemm_info_map().insert(std::make_pair(
         args, descriptor::matmat_info(matrix_handle_a, matrix_handle_b,
-                                      matrix_handle_c, matmat_desc)));
+                                      nullptr, matrix_handle_c, matmat_desc)));
   } else {
     matrix_handle_a = Iter->second.matrix_handle_a;
     matrix_handle_b = Iter->second.matrix_handle_b;
@@ -1807,7 +1808,7 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
              const int *row_ptr_a, const int *col_ind_a,
              const std::shared_ptr<matrix_info> info_b, const T *val_b,
              const int *row_ptr_b, const int *col_ind_b,
-             const std::shared_ptr<matrix_info> info_d, const T *val_d,
+             const std::shared_ptr<matrix_info> info_d, const void *val_d,
              const int *row_ptr_d, const int *col_ind_d,
              const std::shared_ptr<matrix_info> info_c, T *val_c,
              const int *row_ptr_c, int *col_ind_c) {
@@ -1815,7 +1816,8 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   sycl::queue queue = desc->get_queue();
   detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
                                  row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
-                                 col_ind_b, info_c, row_ptr_c);
+                                 col_ind_b, nullptr, nullptr, nullptr, nullptr,
+                                 info_c, row_ptr_c);
   const auto &Iter = desc->get_csrgemm_info_map().find(args);
   if (Iter == desc->get_csrgemm_info_map().end()) {
     throw std::runtime_error("csrgemm_nnz is not invoked previously.");
