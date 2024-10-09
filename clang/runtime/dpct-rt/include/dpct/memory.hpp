@@ -918,7 +918,7 @@ static buffer_t get_buffer(const void *ptr) {
 template <typename dataT,
           sycl::access_mode accessMode = sycl::access_mode::read_write>
 class access_wrapper {
-  static_assert(!std::is_same_v<std::remove_reference_t<T>, void>,
+  static_assert(!std::is_same_v<std::remove_reference_t<dataT>, void>,
                 "dataT cannot be void");
   sycl::accessor<byte_t, 1, accessMode> accessor;
   size_t offset;
@@ -954,7 +954,8 @@ static auto get_access(const T *ptr, sycl::handler &cgh) {
     if (std::is_same_v<std::remove_reference_t<T>, void>)
       return alloc.buffer.get_access<accessMode>(cgh);
     else
-      return alloc.buffer.reinterpret<T>(sycl::range<1>(alloc.size / sizeof(T)))
+      return alloc.buffer
+          .template reinterpret<T>(sycl::range<1>(alloc.size / sizeof(T)))
           .get_access<accessMode>(cgh);
   } else {
     throw std::runtime_error(
