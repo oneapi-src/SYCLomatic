@@ -98,8 +98,8 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<const T *> karg1_acc_ct0((const T *)karg1, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<const T *> karg2_acc_ct1(karg2, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg1_acc_ct0((const T *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, TestName, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -114,8 +114,8 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<const T *> karg1_acc_ct0((const T *)karg1, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<T *> karg3_acc_ct1(karg3, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg1_acc_ct0((const T *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg3_acc_ct1(karg3, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestTemplate<T>, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -130,8 +130,8 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<const TestTemplate<T> *> karg4_acc_ct0(karg4, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<TT *> karg5_acc_ct1(karg5, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg4_acc_ct0(karg4, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg5_acc_ct1(karg5, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, T, dpct_kernel_scalar<ktarg>, TestTemplate<T>>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -210,8 +210,8 @@ int main() {
   // CHECK-NEXT:*/
   // CHECK-NEXT: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<decltype((const LA *)karg1)> karg1_acc_ct0((const LA *)karg1, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<decltype(karg2)> karg2_acc_ct1(karg2, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg1_acc_ct0((const LA *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, TestName, dpct_kernel_scalar<ktarg>, LA>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),

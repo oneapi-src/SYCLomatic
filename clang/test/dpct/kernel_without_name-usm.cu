@@ -33,7 +33,7 @@ struct Mat {
 void run_foo1(Mat mat) {
   // CHECK: DISPATCH(mat.getType(), ([&] { dpct::get_in_order_queue().submit(
   // CHECK-NEXT: [&](sycl::handler &cgh) {
-  // CHECK-NEXT:   decltype(mat.data<scalar_t>()) mat_data_scalar_t_ct0 = mat.data<scalar_t>();
+  // CHECK-NEXT:   auto mat_data_scalar_t_ct0 = mat.data<scalar_t>();
   // CHECK-EMPTY:
   // CHECK-NEXT:   cgh.parallel_for(
   // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 

@@ -80,7 +80,7 @@ void testTemplate() {
 
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<T *> d_d_acc_ct0(d_d, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper d_d_acc_ct0(d_d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
@@ -114,7 +114,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1);
+  // CHECK-NEXT:         staticReverse(&d_d_acc_ct0[0], n, item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n>>>(d_d, n);
@@ -127,7 +127,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class templateReverse_{{[a-f0-9]+}}, int>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         templateReverse<int>((decltype(d_d))(&d_d_acc_ct0[0]), n, item_ct1);
+  // CHECK-NEXT:         templateReverse<int>(&d_d_acc_ct0[0], n, item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   templateReverse<int><<<1, n>>>(d_d, n);
@@ -139,7 +139,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>((int *)(&d_d_acc_ct0[0]), n, item_ct1);
+  // CHECK-NEXT:         nonTypeTemplateReverse<SIZE>(&d_d_acc_ct0[0], n, item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   nonTypeTemplateReverse<SIZE><<<1, n>>>(d_d, n);
@@ -155,7 +155,7 @@ __global__ void foo(int *pd, int len) { smem[threadIdx.x] = 0; }
 // CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
 // CHECK-NEXT:       sycl::local_accessor<int, 1> smem_acc_ct1(sycl::range<1>(shareSz), cgh);
-// CHECK-NEXT:       dpct::access_wrapper<int *> pd_acc_ct0(pd, cgh);
+// CHECK-NEXT:       dpct::access_wrapper pd_acc_ct0(pd, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 32) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)), 

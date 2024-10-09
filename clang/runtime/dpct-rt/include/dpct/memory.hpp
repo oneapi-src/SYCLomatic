@@ -918,6 +918,8 @@ static buffer_t get_buffer(const void *ptr) {
 template <typename dataT,
           sycl::access_mode accessMode = sycl::access_mode::read_write>
 class access_wrapper {
+  static_assert(!std::is_same_v<std::remove_reference_t<T>, void>,
+                "dataT cannot be void");
   sycl::accessor<byte_t, 1, accessMode> accessor;
   size_t offset;
 
@@ -926,7 +928,7 @@ public:
   ///
   /// \param ptr Pointer to memory.
   /// \param cgh The command group handler.
-  access_wrapper(const void *ptr, sycl::handler &cgh)
+  access_wrapper(const dataT *ptr, sycl::handler &cgh)
       : accessor(get_buffer(ptr).get_access<accessMode>(cgh)), offset(0) {
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
     offset = (byte_t *)ptr - alloc.alloc_ptr;
@@ -944,12 +946,16 @@ public:
 /// If NULL is passed as an argument, an exception will be thrown.
 /// \param cgh The command group handler.
 /// \returns an accessor.
-template <sycl::access_mode accessMode = sycl::access_mode::read_write>
-static sycl::accessor<byte_t, 1, accessMode>
-get_access(const void *ptr, sycl::handler &cgh) {
+template <typename T,
+          sycl::access_mode accessMode = sycl::access_mode::read_write>
+static auto get_access(const T *ptr, sycl::handler &cgh) {
   if (ptr) {
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
-    return alloc.buffer.get_access<accessMode>(cgh);
+    if (std::is_same_v<std::remove_reference_t<T>, void>)
+      return alloc.buffer.get_access<accessMode>(cgh);
+    else
+      return alloc.buffer.reinterpret<T>(sycl::range<1>(alloc.size / sizeof(T)))
+          .get_access<accessMode>(cgh);
   } else {
     throw std::runtime_error(
         "NULL pointer argument in get_access function is invalid");
