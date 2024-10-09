@@ -1744,12 +1744,12 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
 
   emit_cmake_warning(argv, argc);
 
-  int is_tool_existence = 0;
+  int is_tool_available = 0;
   if (file_exists(argv[0])) {
-    is_tool_existence = 1;
+    is_tool_available = 1;
   }
 
-  if (is_tool_existence) {
+  if (is_tool_available) {
     for (size_t it = 0; it < argc; ++it) {
       fprintf(fd, "%s%c", argv[it], US);
     }
@@ -2014,7 +2014,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   free((void *)cwd);
   pthread_mutex_unlock(&mutex);
 #ifdef SYCLomatic_CUSTOMIZATION
-  if(is_tool_existence) {
+  if(is_tool_available) {
     return 0;
   }
 #endif // SYCLomatic_CUSTOMIZATION
