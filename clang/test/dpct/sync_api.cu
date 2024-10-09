@@ -106,12 +106,15 @@ __global__ void kernel() {
 }
 
 int main() {
-  // CHECK:    auto exp_props = sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::use_root_sync};
+  // CHECK: {
+  // CHECK-NEXT:  auto exp_props = sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::use_root_sync};
+  // CHECK-EMPTY:
   // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
   // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   // CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:      kernel(item_ct1);
   // CHECK-NEXT:    });
+  // CHECK-NEXT: }
   // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   kernel<<<2, 2>>>();
   cudaDeviceSynchronize();
@@ -193,12 +196,16 @@ __global__ void foo_tile32() {
 }
 
 int foo3() {
-//CHECK:    auto exp_props = sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::use_root_sync};
-//CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
-//CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
-//CHECK-NEXT:       foo2(item_ct1);
-//CHECK-NEXT:     });
+  // CHECK: {
+  // CHECK-NEXT:  auto exp_props = sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::experimental::use_root_sync};
+  // CHECK-NEXT:  dpct::get_device(dpct::get_device_id(dpct::get_in_order_queue().get_device())).has_capability_or_fail({sycl::aspect::fp64});
+  // CHECK-EMPTY:
+  // CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
+  // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:  exp_props,     [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:       foo2(item_ct1);
+  // CHECK-NEXT:     });
+  //  CHECK-NEXT: }
   foo2<<<1,1>>>();
   return 0;
 }
