@@ -291,7 +291,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 
     // The "__noinline__" macro is re-defined by CUDA compiler.
     // When it is used in "__attribute__()", we cannot replace it.
-    if (II->hasMacroDefinition() && (II->getName().str() == "__noinline__")) {
+    if (II->hasMacroDefinition() && (II->getName() == "__noinline__")) {
       continue;
     }
 
