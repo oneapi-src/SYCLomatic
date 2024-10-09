@@ -32,6 +32,8 @@
 *
 ****************************************************************************/
 
+// clang-format off
+
 // API Names refer to "v12.2"
 // CUDA runtime API
 // Device management functions of runtime API
@@ -2307,3 +2309,5 @@ ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
 ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
 
 ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Partial")
+
+// clang-format on

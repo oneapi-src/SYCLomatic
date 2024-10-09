@@ -4,13 +4,11 @@
 #include <iostream>
 
 #define SIZE 100
-int main() {
-    // Initialize CUDA driver API
-    cuInit(0);
 
+int main() {
+    cuInit(0);
     CUdevice device;
     cuDeviceGet(&device, 0);
-
     CUcontext context;
     cuCtxCreate(&context, 0, device);
 
