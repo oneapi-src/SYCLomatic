@@ -1452,51 +1452,51 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_MEM_ALLOCATION_TYPE_PINNED",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::mem_allocation_type::MEM_ALLOCATION_TYPE_DEFAULT")},
+           "experimental::mem_allocation_type::mem_allocation_type_default")},
       {"CU_MEM_ALLOCATION_TYPE_INVALID",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::mem_allocation_type::MEM_ALLOCATION_TYPE_INVALID")},
+           "experimental::mem_allocation_type::mem_allocation_type_invalid")},
       {"CU_MEM_ALLOCATION_TYPE_MAX",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::mem_allocation_type::MEM_ALLOCATION_TYPE_MAX")},
+           "experimental::mem_allocation_type::mem_allocation_type_max")},
       {"CU_MEM_LOCATION_TYPE_DEVICE",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::mem_location_type::MEM_LOCATION_TYPE_DEVICE")},
+           "experimental::mem_location_type::mem_location_type_device")},
       {"CU_MEM_LOCATION_TYPE_INVALID",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::mem_location_type::MEM_LOCATION_TYPE_INVALID")},
+           "experimental::mem_location_type::mem_location_type_invalid")},
       {"CU_MEM_LOCATION_TYPE_MAX",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::mem_location_type::MEM_LOCATION_TYPE_MAX")},
+           "experimental::mem_location_type::mem_location_type_max")},
       {"CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "experimental::address_access_flags::"
-                                      "ADDRESS_ACCESS_FLAGS_READ_WRITE")},
+                                      "address_access_flags_read_write")},
       {"CU_MEM_ACCESS_FLAGS_PROT_NONE",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::address_access_flags::ADDRESS_ACCESS_FLAGS_NONE")},
+           "experimental::address_access_flags::address_access_flags_none")},
       {"CU_MEM_ACCESS_FLAGS_PROT_MAX",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::address_access_flags::ADDRESS_ACCESS_FLAGS_MAX")},
+           "experimental::address_access_flags::address_access_flags_max")},
       {"CU_MEM_ACCESS_FLAGS_PROT_READ",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::address_access_flags::ADDRESS_ACCESS_FLAGS_READ")},
+           "experimental::address_access_flags::address_access_flags_read")},
       {"CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::granularity_flags::GRANULARITY_FLAGS_RECOMMENDED")},
+           "experimental::granularity_flags::granularity_flags_recommended")},
       {"CU_MEM_ALLOC_GRANULARITY_MINIMUM",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() +
-           "experimental::granularity_flags::GRANULARITY_FLAGS_MINIMUM")},
+           "experimental::granularity_flags::granularity_flags_minimum")},
       // enum Driver Device Attribute
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
        std::make_shared<EnumNameRule>("get_major_version",

@@ -1421,27 +1421,27 @@ namespace experimental {
 typedef sycl::ext::oneapi::experimental::physical_mem *mem_handle;
 
 enum mem_location_type {
-  MEM_LOCATION_TYPE_INVALID = 0x0,
-  MEM_LOCATION_TYPE_DEVICE = 0x1,
-  MEM_LOCATION_TYPE_MAX = 0xFFFFFFFF
+  mem_location_type_invalid = 0x0,
+  mem_location_type_device = 0x1,
+  mem_location_type_max = 0xFFFFFFFF
 };
 
 enum mem_allocation_type {
-  MEM_ALLOCATION_TYPE_INVALID = 0x0,
-  MEM_ALLOCATION_TYPE_DEFAULT = 0x1,
-  MEM_ALLOCATION_TYPE_MAX = 0xFFFFFFFF
+  mem_allocation_type_invalid = 0x0,
+  mem_allocation_type_default = 0x1,
+  mem_allocation_type_max = 0xFFFFFFFF
 };
 
 enum granularity_flags {
-  GRANULARITY_FLAGS_MINIMUM = 0x0,
-  GRANULARITY_FLAGS_RECOMMENDED = 0x1
+  granularity_flags_minimum = 0x0,
+  granularity_flags_recommended = 0x1
 };
 
 enum address_access_flags {
-  ADDRESS_ACCESS_FLAGS_NONE = 0x0,
-  ADDRESS_ACCESS_FLAGS_READ = 0x1,
-  ADDRESS_ACCESS_FLAGS_READ_WRITE = 0x3,
-  ADDRESS_ACCESS_FLAGS_MAX = 0xFFFFFFFF
+  address_access_flags_none = 0x0,
+  address_access_flags_read = 0x1,
+  address_access_flags_read_write = 0x3,
+  address_access_flags_max = 0xFFFFFFFF
 };
 
 struct mem_location {
@@ -1556,18 +1556,17 @@ void mem_set_access(device_ptr ptr, size_t size, const mem_access_desc *desc,
   for (size_t index = 0; index < count; index++) {
     sycl::ext::oneapi::experimental::address_access_mode mode;
     switch (desc[index].flags) {
-    case address_access_flags::ADDRESS_ACCESS_FLAGS_NONE:
+    case address_access_flags::address_access_flags_none:
       mode = sycl::ext::oneapi::experimental::address_access_mode::none;
       break;
-    case address_access_flags::ADDRESS_ACCESS_FLAGS_READ:
+    case address_access_flags::address_access_flags_read:
       mode = sycl::ext::oneapi::experimental::address_access_mode::read;
       break;
-    case address_access_flags::ADDRESS_ACCESS_FLAGS_READ_WRITE:
+    case address_access_flags::address_access_flags_read_write:
       mode = sycl::ext::oneapi::experimental::address_access_mode::read_write;
       break;
     default:
-      mode = sycl::ext::oneapi::experimental::address_access_mode::none;
-      break;
+      throw std::runtime_error("mem_set_access: invalid address access flags.");
     }
     sycl::ext::oneapi::experimental::set_access_mode(
         ptr, size, mode,
@@ -1586,7 +1585,7 @@ void mem_get_allocation_granularity(size_t *granularity, const mem_prop *prop,
   auto &device = dpct::get_device(prop->location.id);
   *granularity = sycl::ext::oneapi::experimental::get_mem_granularity(
       device, device.get_context(),
-      option == granularity_flags::GRANULARITY_FLAGS_MINIMUM
+      option == granularity_flags::granularity_flags_minimum
           ? sycl::ext::oneapi::experimental::granularity_mode::minimum
           : sycl::ext::oneapi::experimental::granularity_mode::recommended);
 }
@@ -1602,7 +1601,7 @@ void mem_get_reserve_granularity(size_t *granularity, const mem_prop *prop,
   auto &device = dpct::get_device(prop->location.id);
   *granularity = sycl::ext::oneapi::experimental::get_mem_granularity(
       device.get_context(),
-      option == granularity_flags::GRANULARITY_FLAGS_MINIMUM
+      option == granularity_flags::granularity_flags_minimum
           ? sycl::ext::oneapi::experimental::granularity_mode::minimum
           : sycl::ext::oneapi::experimental::granularity_mode::recommended);
 }

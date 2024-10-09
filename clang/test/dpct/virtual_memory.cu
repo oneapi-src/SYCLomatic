@@ -13,15 +13,15 @@ int main() {
     cuCtxCreate(&context, 0, device);
 
 // CHECK:    dpct::experimental::mem_prop prop = {};
-// CHECK:    prop.type = dpct::experimental::mem_allocation_type::MEM_ALLOCATION_TYPE_DEFAULT;
-// CHECK:    prop.location.type = dpct::experimental::mem_location_type::MEM_LOCATION_TYPE_DEVICE;
+// CHECK:    prop.type = dpct::experimental::mem_allocation_type::mem_allocation_type_default;
+// CHECK:    prop.location.type = dpct::experimental::mem_location_type::mem_location_type_device;
 // CHECK:    prop.location.id = device;
     CUmemAllocationProp prop = {};
     prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-    prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+    prop.location.type = CU_mem_location_type_device;
     prop.location.id = device;
     size_t granularity;
-// CHECK:    dpct::experimental::mem_get_allocation_granularity(&granularity, &prop, dpct::experimental::granularity_flags::GRANULARITY_FLAGS_MINIMUM);
+// CHECK:    dpct::experimental::mem_get_allocation_granularity(&granularity, &prop, dpct::experimental::granularity_flags::granularity_flags_minimum);
     cuMemGetAllocationGranularity(&granularity, &prop, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
     size_t POOL_SIZE =  granularity;
 
@@ -37,12 +37,12 @@ int main() {
     cuMemMap(reserved_addr, POOL_SIZE, 0, allocHandle, 0);
 
 // CHECK:    dpct::experimental::mem_access_desc accessDesc = {};
-// CHECK:    accessDesc.location.type = dpct::experimental::mem_location_type::MEM_LOCATION_TYPE_DEVICE;
+// CHECK:    accessDesc.location.type = dpct::experimental::mem_location_type::mem_location_type_device;
 // CHECK:    accessDesc.location.id = device;
-// CHECK:    accessDesc.flags = dpct::experimental::address_access_flags::ADDRESS_ACCESS_FLAGS_READ_WRITE;
+// CHECK:    accessDesc.flags = dpct::experimental::address_access_flags::address_access_flags_read_write;
 // CHECK:    dpct::experimental::mem_set_access(reserved_addr, POOL_SIZE, &accessDesc, 1);
     CUmemAccessDesc accessDesc = {};
-    accessDesc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+    accessDesc.location.type = CU_mem_location_type_device;
     accessDesc.location.id = device;
     accessDesc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
     cuMemSetAccess(reserved_addr, POOL_SIZE, &accessDesc, 1);
