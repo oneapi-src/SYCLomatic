@@ -21,6 +21,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TokenKinds.h"
 #include "clang/Lex/Lexer.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
@@ -2305,6 +2306,8 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
                 SourceLocation SearchRangeEnd, bool IncludeLastToken) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Context = dpct::DpctGlobalInfo::getContext();
+  Token Tok;
+  Lexer::getRawToken(SM.getSpellingLoc(Range.getEnd()), Tok, SM, Context.getLangOpts(), true);
   SourceLocation ResultBegin = SourceLocation();
   SourceLocation ResultEnd = SourceLocation();
   traversePossibleLocations(Range.getBegin(), SearchRangeBegin, SearchRangeEnd,
@@ -2359,8 +2362,14 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     }
     ResultBegin = SM.getExpansionLoc(ResultBegin);
     ResultEnd = SM.getExpansionLoc(ResultEnd);
+    // The if the original end token is in scratch space,
+    // the behavior of immediateExpansion is different:
+    // 1. string_literal created with "#" does not include the last token
+    // 2. greatergreatergreater of template does include the last token
+    // We need to process the last token according to the token kind.
     if (IncludeLastToken &&
-        !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
+        (!SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd())) ||
+         Tok.getKind() == tok::TokenKind::string_literal)) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
