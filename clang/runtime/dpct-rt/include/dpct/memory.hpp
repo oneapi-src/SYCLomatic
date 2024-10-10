@@ -951,8 +951,8 @@ template <typename T,
 static auto get_access(const T *ptr, sycl::handler &cgh) {
   if (ptr) {
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
-    if (std::is_same_v<std::remove_reference_t<T>, void>)
-      return alloc.buffer.get_access<accessMode>(cgh);
+    if constexpr (std::is_same_v<std::remove_reference_t<T>, void>)
+      return alloc.buffer.template get_access<accessMode>(cgh);
     else
       return alloc.buffer
           .template reinterpret<T>(sycl::range<1>(alloc.size / sizeof(T)))
