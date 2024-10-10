@@ -1567,7 +1567,7 @@ inline void csr2csc(sycl::queue queue, int m, int n, int nnz,
 
 /// Calculate the non-zero elements number of the result of a
 /// sparse matrix (CSR format)-sparse matrix (CSR format) product:
-/// C = alpha * op(A) * op(B) + beta * D
+/// C = op(A) * op(B)
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
 /// \param [in] trans_a The operation applied to the matrix A.
@@ -1587,12 +1587,6 @@ inline void csr2csc(sycl::queue queue, int m, int n, int nnz,
 /// \param [in] row_ptr_b An array of length row number + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
-/// \param [in] info_d Matrix info of the matrix D.
-/// \param [in] nnz_d Non-zero elements number of matrix D.
-/// \param [in] val_d An array containing the non-zero elements of the matrix D.
-/// \param [in] row_ptr_d An array of length row number + 1.
-/// \param [in] col_ind_d An array containing the column indices in index-based
-/// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [in] row_ptr_c An array of length row number + 1.
 /// \param [out] nnz_host_ptr Non-zero elements number of matrix C.
@@ -1603,8 +1597,6 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
                  const T *val_a, const int *row_ptr_a, const int *col_ind_a,
                  const std::shared_ptr<matrix_info> info_b, int nnz_b,
                  const T *val_b, const int *row_ptr_b, const int *col_ind_b,
-                 const std::shared_ptr<matrix_info> info_d, int nnz_d,
-                 const void *val_d, const int *row_ptr_d, const int *col_ind_d,
                  const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
                  int *nnz_host_ptr) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
@@ -1620,6 +1612,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c;
   oneapi::mkl::sparse::matmat_descr_t *matmat_desc;
 
+#ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<int>* row_ptr_a_buf_ptr;
   sycl::buffer<int>* col_ind_a_buf_ptr;
   sycl::buffer<Ty>* val_a_buf_ptr;
@@ -1629,6 +1622,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   sycl::buffer<int>* row_ptr_c_buf_ptr;
   sycl::buffer<int>* col_ind_c_buf_ptr;
   sycl::buffer<Ty>* val_c_buf_ptr;
+#endif
 
   if (Iter == desc->get_csrgemm_info_map().end()) {
     matrix_handle_a = new oneapi::mkl::sparse::matrix_handle_t();
@@ -1772,7 +1766,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 }
 
 /// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
-/// C = alpha * op(A) * op(B) + beta * D
+/// C = op(A) * op(B)
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
 /// \param [in] trans_a The operation applied to the matrix A.
@@ -1790,11 +1784,6 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 /// \param [in] row_ptr_b An array of length row number + 1.
 /// \param [in] col_ind_b An array containing the column indices in index-based
 /// numbering.
-/// \param [in] info_d Matrix info of the matrix D.
-/// \param [in] val_d An array containing the non-zero elements of the matrix D.
-/// \param [in] row_ptr_d An array of length row number + 1.
-/// \param [in] col_ind_d An array containing the column indices in index-based
-/// numbering.
 /// \param [in] info_c Matrix info of the matrix C.
 /// \param [out] val_c An array containing the non-zero elements of the matrix
 /// C.
@@ -1808,8 +1797,6 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
              const int *row_ptr_a, const int *col_ind_a,
              const std::shared_ptr<matrix_info> info_b, const T *val_b,
              const int *row_ptr_b, const int *col_ind_b,
-             const std::shared_ptr<matrix_info> info_d, const void *val_d,
-             const int *row_ptr_d, const int *col_ind_d,
              const std::shared_ptr<matrix_info> info_c, T *val_c,
              const int *row_ptr_c, int *col_ind_c) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
