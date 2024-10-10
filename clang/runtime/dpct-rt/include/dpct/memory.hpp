@@ -956,7 +956,7 @@ static auto get_access(const T *ptr, sycl::handler &cgh) {
     else
       return alloc.buffer
           .template reinterpret<T>(sycl::range<1>(alloc.size / sizeof(T)))
-          .get_access<accessMode>(cgh);
+          .template get_access<accessMode>(cgh);
   } else {
     throw std::runtime_error(
         "NULL pointer argument in get_access function is invalid");
