@@ -929,7 +929,8 @@ public:
   /// \param ptr Pointer to memory.
   /// \param cgh The command group handler.
   access_wrapper(const dataT *ptr, sycl::handler &cgh)
-      : accessor(get_buffer(ptr).get_access<accessMode>(cgh)), offset(0) {
+      : accessor(get_buffer(ptr).template get_access<accessMode>(cgh)),
+        offset(0) {
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
     offset = (byte_t *)ptr - alloc.alloc_ptr;
   }
@@ -937,7 +938,7 @@ public:
   /// Get the device pointer.
   ///
   /// \returns a device pointer with offset.
-  dataT get_raw_pointer() const { return (dataT)(&accessor[0] + offset); }
+  dataT *get_raw_pointer() const { return (dataT *)(&accessor[0] + offset); }
 };
 
 /// Get the accessor for memory pointed by \p ptr.
