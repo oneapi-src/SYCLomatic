@@ -5224,10 +5224,11 @@ void DeviceFunctionInfo::mergeTextureObjectList(
 KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelArgumentAnalysis &Analysis,
                                  const Expr *Arg, bool Used, int Index,
-                                 KernelCallExpr *BASE, const ParmVarDecl *TPVD)
+                                 KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
-  if (TPVD && TPVD->getType()->isDependentType())
+  if (PVD &&
+      PVD->getType()->getTypeClass() == Type::TypeClass::SubstTemplateTypeParm)
     IsDependentType = true;
   if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
@@ -5868,6 +5869,8 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
   Analysis.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
   auto &TexList = getTextureObjectList();
 
+  const auto *FD = CE->getDirectCallee();
+  const auto *FTD = FD ? FD->getPrimaryTemplate() : nullptr;
   for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
     if (auto Obj = TexList[Idx]) {
       ArgsInfo.emplace_back(Obj, this);
@@ -5876,11 +5879,13 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
       bool Used = true;
       if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
         Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
-      const auto FD = CE->getDirectCallee();
-      const FunctionTemplateDecl *FTD = FD ? FD->getPrimaryTemplate() : nullptr;
-      ArgsInfo.emplace_back(
-          FD ? FD->parameters()[Idx] : nullptr, Analysis, Arg, Used, Idx, this,
-          FTD ? FTD->getTemplatedDecl()->parameters()[Idx] : nullptr);
+      ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis, Arg,
+                            Used, Idx, this);
+      if (FTD && FTD->getTemplatedDecl()
+                     ->parameters()[Idx]
+                     ->getType()
+                     ->isDependentType())
+        ArgsInfo.back().IsDependentType = true;
     }
   }
 }
