@@ -18,7 +18,7 @@ int main() {
 // CHECK:    prop.location.id = device;
     CUmemAllocationProp prop = {};
     prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-    prop.location.type = CU_mem_location_type_device;
+    prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
     prop.location.id = device;
     size_t granularity;
 // CHECK:    dpct::experimental::mem_get_allocation_granularity(&granularity, &prop, dpct::experimental::granularity_flags::granularity_flags_minimum);
@@ -42,7 +42,7 @@ int main() {
 // CHECK:    accessDesc.flags = dpct::experimental::address_access_flags::address_access_flags_read_write;
 // CHECK:    dpct::experimental::mem_set_access(reserved_addr, POOL_SIZE, &accessDesc, 1);
     CUmemAccessDesc accessDesc = {};
-    accessDesc.location.type = CU_mem_location_type_device;
+    accessDesc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
     accessDesc.location.id = device;
     accessDesc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
     cuMemSetAccess(reserved_addr, POOL_SIZE, &accessDesc, 1);
