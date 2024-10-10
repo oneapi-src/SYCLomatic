@@ -1390,6 +1390,12 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class VirtualMemoryRule : public NamedMigrationRule<VirtualMemoryRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 class DriverDeviceAPIRule : public NamedMigrationRule<DriverDeviceAPIRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
