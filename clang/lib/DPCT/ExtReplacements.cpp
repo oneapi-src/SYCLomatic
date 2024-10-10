@@ -326,7 +326,7 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
     // If Repl is insert replacement, check whether it is alive or dead.
-  } else if (checkLiveness(Repl)) {
+  } else if (checkLiveness(Repl) && !Repl->getReplacementText().empty()) {
     if (Repl->IsSYCLHeaderNeeded()) {
       FileInfo->insertHeader(HT_SYCL);
     }
