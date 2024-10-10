@@ -1473,8 +1473,9 @@ struct mem_access_desc {
  * @param [in] addr Base address of the memory to be reserved.
  * @param [in] flags Reserved for future use.
  */
-void mem_address_reserve(device_ptr *ptr, size_t size, size_t alignment,
-                         device_ptr addr, unsigned long long flags) {
+static inline void mem_address_reserve(device_ptr *ptr, size_t size,
+                                       size_t alignment, device_ptr addr,
+                                       unsigned long long flags) {
   *ptr = (device_ptr)sycl::ext::oneapi::experimental::reserve_virtual_mem(
       (uintptr_t)addr, size, dpct::get_current_device().get_context());
 }
@@ -1484,7 +1485,7 @@ void mem_address_reserve(device_ptr *ptr, size_t size, size_t alignment,
  * @param [in] ptr Pointer to the device memory region to free.
  * @param [in] size Size of the memory region in bytes.
  */
-void mem_address_free(device_ptr ptr, size_t size) {
+static inline void mem_address_free(device_ptr ptr, size_t size) {
   sycl::ext::oneapi::experimental::free_virtual_mem(
       (uintptr_t)ptr, size, dpct::get_current_device().get_context());
 }
@@ -1499,8 +1500,8 @@ void mem_address_free(device_ptr ptr, size_t size) {
  * @param [in] prop Properties for the memory allocation.
  * @param [in] flags Reserved for future use.
  */
-void mem_create(mem_handle *handle, size_t size, const mem_prop *prop,
-                unsigned long long flags) {
+static inline void mem_create(mem_handle *handle, size_t size,
+                              const mem_prop *prop, unsigned long long flags) {
   auto &device = dpct::get_device(prop->location.id);
   *handle = new sycl::ext::oneapi::experimental::physical_mem(
       device, device.get_context(), size);
@@ -1510,7 +1511,7 @@ void mem_create(mem_handle *handle, size_t size, const mem_prop *prop,
  * @brief Releases the physical memory object.
  * @param [in] handle Handle to the memory object to release.
  */
-void mem_release(mem_handle handle) {
+static inline void mem_release(mem_handle handle) {
   if (handle) {
     delete handle;
   }
@@ -1527,8 +1528,8 @@ void mem_release(mem_handle handle) {
  * @param [in] handle Handle to the physical memory.
  * @param [in] flags Reserved for future use.
  */
-void mem_map(device_ptr ptr, size_t size, size_t offset, mem_handle handle,
-             unsigned long long flags) {
+static inline void mem_map(device_ptr ptr, size_t size, size_t offset,
+                           mem_handle handle, unsigned long long flags) {
   handle->map((uintptr_t)ptr, size,
               sycl::ext::oneapi::experimental::address_access_mode::read_write,
               offset);
@@ -1539,7 +1540,7 @@ void mem_map(device_ptr ptr, size_t size, size_t offset, mem_handle handle,
  * @param [in] ptr Pointer to the virtual memory region to unmap.
  * @param [in] size Size of the memory region in bytes.
  */
-void mem_unmap(device_ptr ptr, size_t size) {
+static inline void mem_unmap(device_ptr ptr, size_t size) {
   sycl::ext::oneapi::experimental::unmap(
       ptr, size, dpct::get_current_device().get_context());
 }
@@ -1551,8 +1552,8 @@ void mem_unmap(device_ptr ptr, size_t size) {
  * @param [in] desc Array of access descriptors.
  * @param [in] count Number of access descriptors.
  */
-void mem_set_access(device_ptr ptr, size_t size, const mem_access_desc *desc,
-                    size_t count) {
+static inline void mem_set_access(device_ptr ptr, size_t size,
+                                  const mem_access_desc *desc, size_t count) {
   for (size_t index = 0; index < count; index++) {
     sycl::ext::oneapi::experimental::address_access_mode mode;
     switch (desc[index].flags) {
@@ -1580,8 +1581,9 @@ void mem_set_access(device_ptr ptr, size_t size, const mem_access_desc *desc,
  * @param [in] prop Properties for the memory allocation.
  * @param [in] option Granularity option, either minimum or recommended.
  */
-void mem_get_allocation_granularity(size_t *granularity, const mem_prop *prop,
-                                    granularity_flags option) {
+static inline void mem_get_allocation_granularity(size_t *granularity,
+                                                  const mem_prop *prop,
+                                                  granularity_flags option) {
   auto &device = dpct::get_device(prop->location.id);
   *granularity = sycl::ext::oneapi::experimental::get_mem_granularity(
       device, device.get_context(),
@@ -1596,8 +1598,9 @@ void mem_get_allocation_granularity(size_t *granularity, const mem_prop *prop,
  * @param [in] prop Properties for the virtual memory region reserve.
  * @param [in] option Granularity option, either minimum or recommended.
  */
-void mem_get_reserve_granularity(size_t *granularity, const mem_prop *prop,
-                                 granularity_flags option) {
+static inline void mem_get_reserve_granularity(size_t *granularity,
+                                               const mem_prop *prop,
+                                               granularity_flags option) {
   auto &device = dpct::get_device(prop->location.id);
   *granularity = sycl::ext::oneapi::experimental::get_mem_granularity(
       device.get_context(),
