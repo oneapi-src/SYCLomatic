@@ -1,4 +1,3 @@
-
 /* -*- coding: utf-8 -*-
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -1684,10 +1683,8 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
 
 #endif // SYCLomatic_CUSTOMIZATION
 
-/* this method is to write log about the process creation. */
-
 #ifdef SYCLomatic_CUSTOMIZATION
-int file_exists(const char *pathname) {
+int is_tool_available(const char *pathname) {
 
   int len = strlen(pathname);
   int is_nvcc = 0;
@@ -1709,9 +1706,9 @@ int file_exists(const char *pathname) {
     for (; idx > 0 && !isspace(pathname[idx]); idx--)
       ;
     struct stat buffer;
-    if (stat(pathname + idx, &buffer) == 0){
+    if (stat(pathname + idx, &buffer) == 0) {
       return 1;
-    } 
+    }
     return 0;
   }
 
@@ -1732,7 +1729,7 @@ int file_exists(const char *pathname) {
     for (; idx > 0 && !isspace(pathname[idx]); idx--)
       ;
     struct stat buffer;
-    if (stat(pathname + idx, &buffer) == 0){
+    if (stat(pathname + idx, &buffer) == 0) {
       return 1;
     }
     return 0;
@@ -1741,6 +1738,7 @@ int file_exists(const char *pathname) {
   return 1;
 }
 
+/* this method is to write log about the process creation. */
 // This method parses the command execution issued by the build tool make to
 // write log for the compile options and fake the expecting outcome for the
 // command. It returns whether intercept-stub is used to take over the command
@@ -1794,12 +1792,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
 
   emit_cmake_warning(argv, argc);
 
-  int is_tool_available = 0;
-  if (file_exists(argv[0])) {
-    is_tool_available = 1;
-  }
-
-  if(is_tool_available) {
+  if (is_tool_available(argv[0])) {
     for (size_t it = 0; it < argc; ++it) {
       fprintf(fd, "%s%c", argv[it], US);
     }
@@ -1812,7 +1805,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     free((void *)cwd);
     pthread_mutex_unlock(&mutex);
     return 0;
-  } 
+  }
 
   // compiler list should be intercepted.
   const char *const compiler_array[] = {"nvcc", "clang++"};
