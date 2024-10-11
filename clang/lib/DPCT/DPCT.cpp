@@ -576,15 +576,35 @@ int runDPCT(int argc, const char **argv) {
   AnalysisScope = AnalysisScopeOpt;
 
   if (PathToHelperFunction) {
-    SmallString<512> HelperFunctionPathStr(DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(HelperFunctionPathStr, "include");
-    if (!llvm::sys::fs::exists(HelperFunctionPathStr)) {
-      ShowStatus(MigrationErrorInvalidInstallPath, "Helper functions");
-      dpctExit(MigrationErrorInvalidInstallPath);
+    auto FindHelperPath = [&](const char *Cmd) {
+      SmallString<512> Path;
+      Path = getInstallPath(Cmd).getCanonicalPath();
+      llvm::sys::path::append(Path, "include");
+      if (!llvm::sys::fs::exists(Path))
+        return false;
+      else if (UseSYCLCompat) {
+        auto CompatPath = Path;
+        llvm::sys::path::append(CompatPath, "syclcompat");
+        if (!llvm::sys::fs::exists(CompatPath))
+          return false;
+      }
+      DpctLog() << Path << '\n';
+      return true;
+    };
+    auto Ret = MigrationSucceeded;
+    if (UseSYCLCompat) {
+      auto Success = FindHelperPath("clang");
+      Success |= FindHelperPath("icpx");
+      if (!Success) {
+        DpctLog() << "SYCLcompat is usually installed in include folder of "
+                     "SYCL compiler.\n";
+        Ret = MigrationErrorInvalidInstallPath;
+      }
+    } else if (!FindHelperPath(argv[0])) {
+      Ret = MigrationErrorInvalidInstallPath;
     }
-    std::cout << HelperFunctionPathStr.c_str() << "\n";
-    ShowStatus(MigrationSucceeded);
-    dpctExit(MigrationSucceeded);
+    ShowStatus(Ret, "Helper functions");
+    dpctExit(Ret);
   }
 
   if (!OutputFile.empty()) {
@@ -917,12 +937,6 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
-#ifdef _WIN32 // Avoid some error on windows platform.
-    if (DpctGlobalInfo::getSDKVersion() <= CudaVersion::CUDA_100) {
-      Tool.appendArgumentsAdjuster(
-          getInsertArgumentAdjuster("-D_MSC_VER=1900"));
-    }
-#endif
     NoIncrementalMigration.setValue(true);
     StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);
@@ -1218,6 +1232,12 @@ int runDPCT(int argc, const char **argv) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
           std::string Err = getDpctTermStr();
           StringRef ErrStr = Err;
+          // Avoid the "Visual Studio version" error on windows platform.
+          if (ErrStr.find_first_of("error") == ErrStr.find_last_of("error") &&
+              ErrStr.contains(
+                  "error -- unsupported Microsoft Visual Studio version")) {
+            continue;
+          }
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);

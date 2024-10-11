@@ -69,6 +69,9 @@ private:
   void setExclusiveByAction();
   void printName(llvm::raw_ostream &OS);
 
+  void reportAsIgnored(DpctOptionBase *ConflictedBy,
+                       llvm::raw_ostream &OutStream);
+
   virtual void reset() = 0;
   virtual llvm::StringRef getName() const noexcept = 0;
 

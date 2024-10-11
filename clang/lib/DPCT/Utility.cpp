@@ -21,6 +21,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TokenKinds.h"
 #include "clang/Lex/Lexer.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
@@ -2266,11 +2267,14 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin,
 void traversePossibleLocations(const SourceLocation &SL,
                                const SourceLocation &RangeBegin,
                                const SourceLocation &RangeEnd,
-                               SourceLocation &Result, bool IsBegin) {
+                               SourceLocation &Result, bool IsBegin,
+                               std::unordered_set<unsigned> &Cache) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (!SL.isValid())
     return;
-
+  if (Cache.find(SL.getHashValue()) != Cache.end())
+    return;
+  Cache.insert(SL.getHashValue());
   if (!SL.isMacroID()) {
     if (isInRange(RangeBegin, RangeEnd, SL)) {
       if (Result.isValid()) {
@@ -2291,13 +2295,13 @@ void traversePossibleLocations(const SourceLocation &SL,
 
   if (IsBegin) {
     traversePossibleLocations(SM.getImmediateExpansionRange(SL).getBegin(),
-                              RangeBegin, RangeEnd, Result, IsBegin);
+                              RangeBegin, RangeEnd, Result, IsBegin, Cache);
   } else {
     traversePossibleLocations(SM.getImmediateExpansionRange(SL).getEnd(),
-                              RangeBegin, RangeEnd, Result, IsBegin);
+                              RangeBegin, RangeEnd, Result, IsBegin, Cache);
   }
   traversePossibleLocations(SM.getImmediateSpellingLoc(SL), RangeBegin,
-                            RangeEnd, Result, IsBegin);
+                            RangeEnd, Result, IsBegin, Cache);
 }
 
 std::pair<SourceLocation, SourceLocation>
@@ -2305,12 +2309,16 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
                 SourceLocation SearchRangeEnd, bool IncludeLastToken) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Context = dpct::DpctGlobalInfo::getContext();
+  Token Tok;
+  Lexer::getRawToken(SM.getSpellingLoc(Range.getEnd()), Tok, SM, Context.getLangOpts(), true);
   SourceLocation ResultBegin = SourceLocation();
   SourceLocation ResultEnd = SourceLocation();
+  std::unordered_set<unsigned> Cache;
   traversePossibleLocations(Range.getBegin(), SearchRangeBegin, SearchRangeEnd,
-                            ResultBegin, true);
+                            ResultBegin, true, Cache);
+  Cache.clear();
   traversePossibleLocations(Range.getEnd(), SearchRangeBegin, SearchRangeEnd,
-                            ResultEnd, false);
+                            ResultEnd, false, Cache);
   if (ResultBegin.isValid() && ResultEnd.isValid()) {
     if (isSameLocation(ResultBegin, ResultEnd)) {
       auto It = dpct::DpctGlobalInfo::getExpansionRangeBeginMap().find(
@@ -2359,8 +2367,14 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     }
     ResultBegin = SM.getExpansionLoc(ResultBegin);
     ResultEnd = SM.getExpansionLoc(ResultEnd);
+    // The if the original end token is in scratch space,
+    // the behavior of immediateExpansion is different:
+    // 1. string_literal created with "#" does not include the last token
+    // 2. greatergreatergreater of template does include the last token
+    // We need to process the last token according to the token kind.
     if (IncludeLastToken &&
-        !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
+        (!SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd())) ||
+         Tok.getKind() == tok::TokenKind::string_literal)) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
