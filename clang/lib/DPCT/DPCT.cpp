@@ -937,12 +937,6 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
-#ifdef _WIN32 // Avoid some error on windows platform.
-    if (DpctGlobalInfo::getSDKVersion() <= CudaVersion::CUDA_100) {
-      Tool.appendArgumentsAdjuster(
-          getInsertArgumentAdjuster("-D_MSC_VER=1900"));
-    }
-#endif
     NoIncrementalMigration.setValue(true);
     StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);
@@ -1238,6 +1232,12 @@ int runDPCT(int argc, const char **argv) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
           std::string Err = getDpctTermStr();
           StringRef ErrStr = Err;
+          // Avoid the "Visual Studio version" error on windows platform.
+          if (ErrStr.find_first_of("error") == ErrStr.find_last_of("error") &&
+              ErrStr.contains(
+                  "error -- unsupported Microsoft Visual Studio version")) {
+            continue;
+          }
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);
