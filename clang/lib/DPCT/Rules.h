@@ -25,7 +25,7 @@ enum RuleKind {
   DisableAPIMigration,
   PatternRewriter,
   CMakeRule,
-  PySetupRule
+  PythonSetupRule
 };
 
 enum RulePriority { Takeover, Default, Fallback };
@@ -210,7 +210,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "DisableAPIMigration", RuleKind::DisableAPIMigration);
     Io.enumCase(Value, "PatternRewriter", RuleKind::PatternRewriter);
     Io.enumCase(Value, "CMakeRule", RuleKind::CMakeRule);
-    Io.enumCase(Value, "PySetupRule", RuleKind::PySetupRule);
+    Io.enumCase(Value, "PythonSetupRule", RuleKind::PythonSetupRule);
   }
 };
 

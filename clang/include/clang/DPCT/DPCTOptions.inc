@@ -470,7 +470,8 @@ DPCT_ENUM_OPTION(
         DPCT_OPTION_ENUM_VALUE("CMake", int(BuildScriptKind::BS_Cmake),
                                "Migrate the CMake file(s).", false),
         DPCT_OPTION_ENUM_VALUE("Python_Setup", int(BuildScriptKind::BS_PySetup),
-                               "Migrate the python setup build file(s).",
+                               "Migrate the python setup build file(s) of "
+                               "PyTorch based project",
                                false)),
     llvm::cl::desc("EXPERIMENTAL: Migrate build script(s).\n"),
     llvm::cl::init(BuildScriptKind::BS_None), llvm::cl::value_desc("value"),

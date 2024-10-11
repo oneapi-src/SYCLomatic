@@ -1106,9 +1106,10 @@ int runDPCT(int argc, const char **argv) {
       DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_PySetup) {
     SmallString<128> PythonSetupRuleFilePath(
         DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(PythonSetupRuleFilePath,
-                            Twine("extensions/python_setup_rules/"
-                                  "python_setup_script_migration_rule.yaml"));
+    llvm::sys::path::append(
+        PythonSetupRuleFilePath,
+        Twine("extensions/python_setup_rules/"
+              "python_setup_script_migration_rule_ipex.yaml"));
     if (llvm::sys::fs::exists(PythonSetupRuleFilePath)) {
       std::vector<clang::tooling::UnifiedPath> PythonSetupRuleFiles{
           PythonSetupRuleFilePath};

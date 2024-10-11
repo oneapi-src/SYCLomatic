@@ -366,7 +366,7 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
         break;
-      case (RuleKind::PySetupRule):
+      case (RuleKind::PythonSetupRule):
         registerPythonSetupMigrationRule(*r);
         break;
       default:

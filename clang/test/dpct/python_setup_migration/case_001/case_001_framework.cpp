@@ -18,7 +18,7 @@
 // CHECK: begin
 // CHECK-NEXT: end
 
-// RUN: dpct -in-root ./ -out-root out --cuda-include-path="%cuda-path/include" -migrate-build-script=Python_Setup -p ./
+// RUN: dpct -in-root ./ -out-root out --cuda-include-path="%cuda-path/include" -migrate-build-script=Python_Setup --rule-file=%T/../../../../../../../extensions/python_setup_rules/python_setup_script_migration_rule_ipex.yaml -p ./
 // RUN: echo "begin" > %T/diff_3.txt
 // RUN: diff --strip-trailing-cr %S/src/expected.cpp.txt %T/out/input.dp.cpp >> %T/diff_3.txt
 // RUN: echo "end" >> %T/diff_3.txt

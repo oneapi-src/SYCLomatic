@@ -10,7 +10,7 @@ set(dpct_cmake_rule_files
 )
 
 set(dpct_python_setup_rule_files
-  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/python_setup_script_migration_rule.yaml
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/python_setup_script_migration_rule_ipex.yaml
 )
 
 install(
