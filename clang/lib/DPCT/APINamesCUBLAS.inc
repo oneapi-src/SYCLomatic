@@ -1735,16 +1735,20 @@ ROTM_EX(cublasRotmEx)
 ROTM_EX(cublasRotmEx_64)
 #undef ROTM_EX
 
-#define IAMAXMIN_EX(NAME, IS_MAX)                                              \
+#define IAMAX_EX(NAME)                                                         \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
-      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::iamaxmin<" +  \
-                      #IS_MAX + ">",                                           \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::iamax",       \
                   ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
-IAMAXMIN_EX(cublasIamaxEx, true)
-IAMAXMIN_EX(cublasIamaxEx_64, true)
-IAMAXMIN_EX(cublasIaminEx, false)
-IAMAXMIN_EX(cublasIaminEx_64, false)
-#undef IAMAXMIN_EX
+IAMAX_EX(cublasIamaxEx)
+IAMAX_EX(cublasIamaxEx_64)
+
+#define IAMIN_EX(NAME)                                                         \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::iamin",       \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
+IAMIN_EX(cublasIaminEx)
+IAMIN_EX(cublasIaminEx_64)
+#undef IAMIN_EX
 
 #define TBSV(NAME, TYPE)                                                       \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \

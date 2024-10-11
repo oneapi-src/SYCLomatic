@@ -602,21 +602,29 @@ inline void asum_impl(sycl::queue &q, std::int64_t n, const void *x,
 #endif
 }
 
-template <class T, bool is_max>
-inline void iamaxmin_impl(sycl::queue &q, std::int64_t n, const void *x,
-                          std::int64_t incx, std::int64_t *res) {
+inline void iamax_impl(sycl::queue &q, std::int64_t n, const void *x,
+                       std::int64_t incx, std::int64_t *res) {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
 #else
   auto data_x = get_memory<T>(x);
   auto data_res = get_memory<std::int64_t>(res);
-  if constexpr (is_max)
-    oneapi::mkl::blas::column_major::iamax(q, n, data_x, incx, data_res,
-                                           oneapi::mkl::index_base::one);
-  else
-    oneapi::mkl::blas::column_major::iamin(q, n, data_x, incx, data_res,
-                                           oneapi::mkl::index_base::one);
+  oneapi::mkl::blas::column_major::iamax(q, n, data_x, incx, data_res,
+                                         oneapi::mkl::index_base::one);
+#endif
+}
+
+inline void iamin_impl(sycl::queue &q, std::int64_t n, const void *x,
+                       std::int64_t incx, std::int64_t *res) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
+  auto data_x = get_memory<T>(x);
+  auto data_res = get_memory<std::int64_t>(res);
+  oneapi::mkl::blas::column_major::iamin(q, n, data_x, incx, data_res,
+                                         oneapi::mkl::index_base::one);
 #endif
 }
 
@@ -2636,39 +2644,34 @@ inline void asum(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
   }
 }
 
-/// Finds the index of the element with the largest/smallest absolute value in a
-/// vector.
-/// \tparam is_max True means finding the the largest absolute value index.
+/// Finds the index of the element with the largest absolute value in a vector.
 /// \param [in] desc_ptr Descriptor.
 /// \param [in] n Number of elements in vector x.
 /// \param [in] x Input vector x.
 /// \param [in] x_type Data type of the vector x.
 /// \param [in] incx Stride of vector x.
-/// \param [out] result The index of the maximal/minimum element.
-template <bool is_max>
-inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
-                     library_data_t x_type, std::int64_t incx,
-                     std::int64_t *result) {
+/// \param [out] result The index of the maximal element.
+inline void iamax(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
+                  library_data_t x_type, std::int64_t incx,
+                  std::int64_t *result) {
   sycl::queue q = desc_ptr->get_queue();
   std::uint64_t key = ::dpct::detail::get_type_combination_id(x_type);
   switch (key) {
   case ::dpct::detail::get_type_combination_id(library_data_t::real_float): {
-    ::dpct::detail::iamaxmin_impl<float, is_max>(q, n, x, incx, result);
+    ::dpct::detail::iamax_impl<float>(q, n, x, incx, result);
     break;
   }
   case ::dpct::detail::get_type_combination_id(library_data_t::real_double): {
-    ::dpct::detail::iamaxmin_impl<double, is_max>(q, n, x, incx, result);
+    ::dpct::detail::iamax_impl<double>(q, n, x, incx, result);
     break;
   }
   case ::dpct::detail::get_type_combination_id(library_data_t::complex_float): {
-    ::dpct::detail::iamaxmin_impl<std::complex<float>, is_max>(q, n, x, incx,
-                                                               result);
+    ::dpct::detail::iamax_impl<std::complex<float>>(q, n, x, incx, result);
     break;
   }
   case ::dpct::detail::get_type_combination_id(
       library_data_t::complex_double): {
-    ::dpct::detail::iamaxmin_impl<std::complex<double>, is_max>(q, n, x, incx,
-                                                                result);
+    ::dpct::detail::iamax_impl<std::complex<double>>(q, n, x, incx, result);
     break;
   }
   default:
@@ -2676,20 +2679,65 @@ inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
   }
 }
 
-/// Finds the index of the element with the largest/smallest absolute value in a
-/// vector.
-/// \tparam is_max True means finding the the largest absolute value index.
+/// Finds the index of the element with the smallest absolute value in a vector.
 /// \param [in] desc_ptr Descriptor.
 /// \param [in] n Number of elements in vector x.
 /// \param [in] x Input vector x.
 /// \param [in] x_type Data type of the vector x.
 /// \param [in] incx Stride of vector x.
-/// \param [out] result The index of the maximal/minimum element.
-template <bool is_max>
-inline void iamaxmin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
-                     library_data_t x_type, std::int64_t incx, int *result) {
+/// \param [out] result The index of the minimum element.
+inline void iamin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
+                  library_data_t x_type, std::int64_t incx,
+                  std::int64_t *result) {
+  sycl::queue q = desc_ptr->get_queue();
+  std::uint64_t key = ::dpct::detail::get_type_combination_id(x_type);
+  switch (key) {
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_float): {
+    ::dpct::detail::iamin_impl<float>(q, n, x, incx, result);
+    break;
+  }
+  case ::dpct::detail::get_type_combination_id(library_data_t::real_double): {
+    ::dpct::detail::iamin_impl<double>(q, n, x, incx, result);
+    break;
+  }
+  case ::dpct::detail::get_type_combination_id(library_data_t::complex_float): {
+    ::dpct::detail::iamin_impl<std::complex<float>>(q, n, x, incx, result);
+    break;
+  }
+  case ::dpct::detail::get_type_combination_id(
+      library_data_t::complex_double): {
+    ::dpct::detail::iamin_impl<std::complex<double>>(q, n, x, incx, result);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+}
+
+/// Finds the index of the element with the largest absolute value in a vector.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] result The index of the maximal element.
+inline void iamax(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
+                  library_data_t x_type, std::int64_t incx, int *result) {
   dpct::blas::wrapper_int_to_int64_out wrapper(desc_ptr->get_queue(), result);
-  iamaxmin<is_max>(desc_ptr, n, x, x_type, incx, wrapper.get_ptr());
+  iamax(desc_ptr, n, x, x_type, incx, wrapper.get_ptr());
+}
+
+/// Finds the index of the element with the smallest absolute value in a vector.
+/// \param [in] desc_ptr Descriptor.
+/// \param [in] n Number of elements in vector x.
+/// \param [in] x Input vector x.
+/// \param [in] x_type Data type of the vector x.
+/// \param [in] incx Stride of vector x.
+/// \param [out] result The index of the minimum element.
+inline void iamin(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
+                  library_data_t x_type, std::int64_t incx, int *result) {
+  dpct::blas::wrapper_int_to_int64_out wrapper(desc_ptr->get_queue(), result);
+  iamin(desc_ptr, n, x, x_type, incx, wrapper.get_ptr());
 }
 
 /// Finds the least squares solutions for a batch of overdetermined linear
