@@ -602,6 +602,7 @@ inline void asum_impl(sycl::queue &q, std::int64_t n, const void *x,
 #endif
 }
 
+template <class T>
 inline void iamax_impl(sycl::queue &q, std::int64_t n, const void *x,
                        std::int64_t incx, std::int64_t *res) {
 #ifndef __INTEL_MKL__
@@ -615,6 +616,7 @@ inline void iamax_impl(sycl::queue &q, std::int64_t n, const void *x,
 #endif
 }
 
+template <class T>
 inline void iamin_impl(sycl::queue &q, std::int64_t n, const void *x,
                        std::int64_t incx, std::int64_t *res) {
 #ifndef __INTEL_MKL__
