@@ -1,3 +1,4 @@
+
 /* -*- coding: utf-8 -*-
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -1686,9 +1687,58 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
 /* this method is to write log about the process creation. */
 
 #ifdef SYCLomatic_CUSTOMIZATION
-int file_exists(const char *filename) {
-  struct stat buffer;
-  return (stat(filename, &buffer) == 0);
+int file_exists(const char *pathname) {
+
+  int len = strlen(pathname);
+  int is_nvcc = 0;
+  if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
+      pathname[1] == 'v' && pathname[0] == 'n') {
+    // To handle case like "nvcc"
+    is_nvcc = 1;
+  }
+
+  if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
+      pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
+      pathname[len - 5] == '/') {
+    // To handle case like "/path/to/nvcc"
+    is_nvcc = 0;
+  }
+
+  if (is_nvcc) {
+    int idx = len - 4;
+    for (; idx > 0 && !isspace(pathname[idx]); idx--)
+      ;
+    struct stat buffer;
+    if (stat(pathname + idx, &buffer) == 0){
+      return 1;
+    } 
+    return 0;
+  }
+
+  int is_ld = 0;
+  if (len == 2 && pathname[1] == 'd' && pathname[0] == 'l') {
+    // To handle case like "ld"
+    is_ld = 1;
+  }
+
+  if (len > 2 && pathname[len - 1] == 'd' && pathname[len - 2] == 'l' &&
+      pathname[len - 3] == '/') {
+    // To handle case like "/path/to/ld"
+    is_ld = 0;
+  }
+
+  if (is_ld) {
+    int idx = len - 2;
+    for (; idx > 0 && !isspace(pathname[idx]); idx--)
+      ;
+    struct stat buffer;
+    if (stat(pathname + idx, &buffer) == 0){
+      return 1;
+    }
+    return 0;
+  }
+
+  return 1;
 }
 
 // This method parses the command execution issued by the build tool make to
@@ -1749,164 +1799,10 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     is_tool_available = 1;
   }
 
-  if (is_tool_available) {
+  if(is_tool_available) {
     for (size_t it = 0; it < argc; ++it) {
       fprintf(fd, "%s%c", argv[it], US);
     }
-  } else {
-
-    // compiler list should be intercepted.
-    const char *const compiler_array[] = {"nvcc", "clang++"};
-    // Current compiler index intercepted.
-    int compiler_idx = 0;
-
-    // To indicate whether the captured argv[i] is a compiler or ld command,
-    // value: 1 yes, value 0 no.
-    int is_nvcc_or_ld = 0;
-
-    // To indicate whether the object file has been fake generated,
-    // value: 1 obj file generated, value: 0 not generated.
-    int flag_object = 0;
-
-    // flag_optval is use for case: for options "-o xxx.o", "-o" and "xxx.o" is
-    // in argv[i] and argv[i+1], if "-o" is found in argv[i], then flag_optval
-    // is set to show argv[i+1] contains the xxx.o
-    int flag_optval = 0;
-
-    // value 1: means current command line is a compiler command, and the fake
-    // obj file has been created, else ret is set to 0.
-    int ret = 0;
-
-    // To indicate whether the captured cmd is an ar static library command.
-    int is_ar_staticlib_cmd = 0;
-
-    const char *command_cp = NULL;
-    size_t it_cp = 0;
-    // (CPATH=;command  args), need remove () around the command
-    int has_parenthesis = 0;
-
-    // try to parse out compiler intercepted and generate obj_file.
-    for (size_t it = 0; it < argc; ++it) {
-      const char *tail = argv[it];
-      int len = strlen(tail);
-      const char *command = NULL;
-      if (it <= 3 /*eg. /bin/bash -c [CPATH=xxx;]command*/ &&
-          is_nvcc_or_ld == 0 &&
-          ((command = find_compiler(tail, &compiler_idx, compiler_array)) !=
-           NULL)) {
-        command_cp = command;
-        it_cp = it;
-        is_nvcc_or_ld = 1;
-        const char *tmpp = tail;
-        while (tmpp != command) {
-          if (*tmpp == '(') {
-            has_parenthesis = 1;
-            break;
-          }
-          tmpp++;
-        }
-        if (it == 0)
-          fprintf(fd, "%s%c", "nvcc", US);
-      } else if ((len == 2 && tail[0] == 'l' && tail[1] == 'd') ||
-                 (len > 2 && tail[len - 3] == '/' && tail[len - 2] == 'l' &&
-                  tail[len - 1] == 'd')) {
-        is_nvcc_or_ld = 1;
-        for (size_t i = it; i < argc; i++) {
-          if (strcmp(argv[i], "-o") == 0) {
-            char ofilename[PATH_MAX];
-            int olen = strlen(argv[i + 1]);
-            memset(ofilename, '\0', PATH_MAX);
-            if (olen >= PATH_MAX) {
-              perror("bear: filename length too long.");
-              pthread_mutex_unlock(&mutex);
-              exit(EXIT_FAILURE);
-            }
-            strncpy(ofilename, argv[i + 1], olen);
-            if (generate_file(ofilename, 0) != 0) {
-              pthread_mutex_unlock(&mutex);
-              exit(EXIT_FAILURE);
-            }
-            flag_object = 1;
-          }
-        }
-      } else if ((len == 2 && tail[0] == 'a' && tail[1] == 'r') ||
-                 (len > 2 && tail[len - 3] == '/' && tail[len - 2] == 'a' &&
-                  tail[len - 1] == 'r')) {
-        is_nvcc_or_ld = 1;
-        char ofilename[PATH_MAX];
-
-        // The logic below to extract an archive name from an ar command, like:
-        // 1. "/usr/bin/ar --plugin plugin.so -qc foo.a bar.o"
-        // 2. "/usr/bin/ar qc foo.a bar.o "
-        int is_option_plugin = 0;
-        size_t idx = it + 1;
-        for (; idx < argc; idx++) {
-          if (strcmp(argv[idx], "--plugin") == 0) {
-            is_option_plugin = 1;
-          } else if (is_option_plugin) {
-            is_option_plugin = 0;
-            continue;
-          } else {
-            idx += 1;
-            break; // To break the loop when idx points the archive name of ar
-                   // command.
-          }
-        }
-        int olen = strlen(argv[idx]);
-        memset(ofilename, '\0', PATH_MAX);
-        if (olen >= PATH_MAX) {
-          perror("bear: filename length too long.");
-          pthread_mutex_unlock(&mutex);
-          exit(EXIT_FAILURE);
-        }
-        strncpy(ofilename, argv[idx], olen);
-        if (generate_file(ofilename, 1) != 0) {
-          pthread_mutex_unlock(&mutex);
-          exit(EXIT_FAILURE);
-        }
-        flag_object = 1;
-        is_ar_staticlib_cmd = 1;
-      }
-
-      if (flag_optval == 1) {
-        char ofilename[PATH_MAX];
-        int olen = strlen(argv[it]);
-        memset(ofilename, '\0', PATH_MAX);
-        if (olen >= PATH_MAX) {
-          perror("bear: filename length too long.");
-          pthread_mutex_unlock(&mutex);
-          exit(EXIT_FAILURE);
-        }
-        strncpy(ofilename, argv[it], olen);
-        if (generate_file(ofilename, 0) != 0) {
-          pthread_mutex_unlock(&mutex);
-          exit(EXIT_FAILURE);
-        }
-        flag_optval = 0;
-        flag_object = 1;
-      }
-      if (flag_object == 0) {
-        // here we need parse out the object file if -o option is used.
-        // find xxx in the -o xxx of the command, generate it.
-        int r = find_create_object(tail);
-        if (r == 0) {
-          flag_object = 1;
-        }
-        if (r == 1) {
-          flag_optval = 1;
-        }
-      }
-    }
-    for (size_t it = it_cp; it < argc; ++it) {
-      if (it == it_cp && command_cp != NULL) {
-        dump_US_field(command_cp +
-                          strlen(get_compiler(compiler_idx, compiler_array)),
-                      fd, US, has_parenthesis);
-      } else {
-        dump_US_field(argv[it], fd, US, has_parenthesis);
-      }
-    }
-
     fprintf(fd, "%c", GS);
     if (fclose(fd)) {
       perror("bear: fclose");
@@ -1915,90 +1811,159 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     }
     free((void *)cwd);
     pthread_mutex_unlock(&mutex);
+    return 0;
+  } 
 
-    if (is_nvcc_or_ld == 1 && flag_object == 1) {
-      ret = 1;
-    } else if (is_nvcc_or_ld == 1) {
-      // object is not given by -o. Need figure out the default output for cmd
-      // "gcc -c xx.c"
-      char *tmp = malloc(PATH_MAX);
-      if (tmp == NULL) {
-        perror("bear: malloc memory fail.");
+  // compiler list should be intercepted.
+  const char *const compiler_array[] = {"nvcc", "clang++"};
+  // Current compiler index intercepted.
+  int compiler_idx = 0;
+
+  // To indicate whether the captured argv[i] is a compiler or ld command,
+  // value: 1 yes, value 0 no.
+  int is_nvcc_or_ld = 0;
+
+  // To indicate whether the object file has been fake generated,
+  // value: 1 obj file generated, value: 0 not generated.
+  int flag_object = 0;
+
+  // flag_optval is use for case: for options "-o xxx.o", "-o" and "xxx.o" is in
+  // argv[i] and argv[i+1], if "-o" is found in argv[i], then flag_optval
+  // is set to show argv[i+1] contains the xxx.o
+  int flag_optval = 0;
+
+  // value 1: means current command line is a compiler command, and the fake obj
+  // file has been created, else ret is set to 0.
+  int ret = 0;
+
+  // To indicate whether the captured cmd is an ar static library command.
+  int is_ar_staticlib_cmd = 0;
+
+  const char *command_cp = NULL;
+  size_t it_cp = 0;
+  // (CPATH=;command  args), need remove () around the command
+  int has_parenthesis = 0;
+
+  // try to parse out compiler intercepted and generate obj_file.
+  for (size_t it = 0; it < argc; ++it) {
+    const char *tail = argv[it];
+    int len = strlen(tail);
+    const char *command = NULL;
+    if (it <= 3 /*eg. /bin/bash -c [CPATH=xxx;]command*/ &&
+        is_nvcc_or_ld == 0 &&
+        ((command = find_compiler(tail, &compiler_idx, compiler_array)) !=
+         NULL)) {
+      command_cp = command;
+      it_cp = it;
+      is_nvcc_or_ld = 1;
+      const char *tmpp = tail;
+      while (tmpp != command) {
+        if (*tmpp == '(') {
+          has_parenthesis = 1;
+          break;
+        }
+        tmpp++;
+      }
+      if (it == 0)
+        fprintf(fd, "%s%c", "nvcc", US);
+    } else if ((len == 2 && tail[0] == 'l' && tail[1] == 'd') ||
+               (len > 2 && tail[len - 3] == '/' && tail[len - 2] == 'l' &&
+                tail[len - 1] == 'd')) {
+      is_nvcc_or_ld = 1;
+      for (size_t i = it; i < argc; i++) {
+        if (strcmp(argv[i], "-o") == 0) {
+          char ofilename[PATH_MAX];
+          int olen = strlen(argv[i + 1]);
+          memset(ofilename, '\0', PATH_MAX);
+          if (olen >= PATH_MAX) {
+            perror("bear: filename length too long.");
+            pthread_mutex_unlock(&mutex);
+            exit(EXIT_FAILURE);
+          }
+          strncpy(ofilename, argv[i + 1], olen);
+          if (generate_file(ofilename, 0) != 0) {
+            pthread_mutex_unlock(&mutex);
+            exit(EXIT_FAILURE);
+          }
+          flag_object = 1;
+        }
+      }
+    } else if ((len == 2 && tail[0] == 'a' && tail[1] == 'r') ||
+               (len > 2 && tail[len - 3] == '/' && tail[len - 2] == 'a' &&
+                tail[len - 1] == 'r')) {
+      is_nvcc_or_ld = 1;
+      char ofilename[PATH_MAX];
+
+      // The logic below to extract an archive name from an ar command, like:
+      // 1. "/usr/bin/ar --plugin plugin.so -qc foo.a bar.o"
+      // 2. "/usr/bin/ar qc foo.a bar.o "
+      int is_option_plugin = 0;
+      size_t idx = it + 1;
+      for (; idx < argc; idx++) {
+        if (strcmp(argv[idx], "--plugin") == 0) {
+          is_option_plugin = 1;
+        } else if (is_option_plugin) {
+          is_option_plugin = 0;
+          continue;
+        } else {
+          idx += 1;
+          break; // To break the loop when idx points the archive name of ar
+                 // command.
+        }
+      }
+      int olen = strlen(argv[idx]);
+      memset(ofilename, '\0', PATH_MAX);
+      if (olen >= PATH_MAX) {
+        perror("bear: filename length too long.");
+        pthread_mutex_unlock(&mutex);
         exit(EXIT_FAILURE);
       }
-      memset(tmp, '\0', PATH_MAX);
-      int idx = 0;
-      int c_option;
-      char ofilename[PATH_MAX];
-      memset(ofilename, '\0', PATH_MAX);
-      int parse_ret = 0;
-      for (size_t it = it_cp; it < argc; ++it) {
-        memcpy(tmp + idx, argv[it], strlen(argv[it]));
-        idx += strlen(argv[it]);
-        tmp[idx] = ' ';
-        idx++;
-      }
-      parse_ret = parse_input_file(tmp, &c_option, ofilename);
-      if (parse_ret == 1 && c_option == 1) {
-        // change the suffix of the ofilename from .c .cpp => .o)
-        int olen = strlen(ofilename);
-        while (olen >= 0 && ofilename[olen] != '.') {
-          olen--;
-        }
-        if (olen == -1) {
-          olen = strlen(ofilename);
-          if (olen >= PATH_MAX - 3) {
-            perror("bear: filename length too long.");
-            exit(EXIT_FAILURE);
-          }
-          ofilename[olen] = '.';
-          ofilename[olen + 1] = 'o';
-          ofilename[olen + 2] = '\0';
-        } else {
-          if (olen > PATH_MAX - 3) {
-            perror("bear: filename length too long.");
-            exit(EXIT_FAILURE);
-          }
-          ofilename[olen + 1] = 'o';
-          ofilename[olen + 2] = '\0';
-        }
-
-        pthread_mutex_lock(&mutex);
-        if (generate_file(ofilename, 0) != 0) {
-          pthread_mutex_unlock(&mutex);
-          exit(EXIT_FAILURE);
-        }
+      strncpy(ofilename, argv[idx], olen);
+      if (generate_file(ofilename, 1) != 0) {
         pthread_mutex_unlock(&mutex);
+        exit(EXIT_FAILURE);
       }
-      free(tmp);
-      ret = 1;
+      flag_object = 1;
+      is_ar_staticlib_cmd = 1;
     }
 
-    // try to replace nvcc or clang++ with intercept-stub,
-    // e.g: "/path/to/clang++ -ccbin ... ",
-    //      "/bin/sh -c "/path/to"/bin/clang++ -ccbin ..."
-    const char *pos = find_intercept_compiler(argv[it_cp], compiler_idx);
-
-    int is_stub_need = 0;
-    is_stub_need = (pos != NULL);
-    if (is_stub_need) {
-      ret = 0; // intercept-stub should continue to run.
-
-      // intercept-stub is used to handle the compiler command like
-      // "/bin/sh -c clang++ -c `echo ./`hello.c", it changes the compiler
-      // command intercepted to
-      // "/bin/sh -c /path/to/libear/intercept-stub -c `echo ./`hello.c", then
-      // the coming command "/path/to/libear/intercept-stub -c ./hello.c" will
-      // be run, and the source file name "hello.c" will be captured by
-      // intercept.py.
-      argv[it_cp] =
-          replace_binary_name(argv[it_cp], pos, compiler_idx, compiler_array);
+    if (flag_optval == 1) {
+      char ofilename[PATH_MAX];
+      int olen = strlen(argv[it]);
+      memset(ofilename, '\0', PATH_MAX);
+      if (olen >= PATH_MAX) {
+        perror("bear: filename length too long.");
+        pthread_mutex_unlock(&mutex);
+        exit(EXIT_FAILURE);
+      }
+      strncpy(ofilename, argv[it], olen);
+      if (generate_file(ofilename, 0) != 0) {
+        pthread_mutex_unlock(&mutex);
+        exit(EXIT_FAILURE);
+      }
+      flag_optval = 0;
+      flag_object = 1;
     }
-
-    if (ret == 1 && it_cp == 0 && !is_ar_staticlib_cmd) {
-      exit(0);
+    if (flag_object == 0) {
+      // here we need parse out the object file if -o option is used.
+      // find xxx in the -o xxx of the command, generate it.
+      int r = find_create_object(tail);
+      if (r == 0) {
+        flag_object = 1;
+      }
+      if (r == 1) {
+        flag_optval = 1;
+      }
     }
-    return is_stub_need;
+  }
+  for (size_t it = it_cp; it < argc; ++it) {
+    if (it == it_cp && command_cp != NULL) {
+      dump_US_field(command_cp +
+                        strlen(get_compiler(compiler_idx, compiler_array)),
+                    fd, US, has_parenthesis);
+    } else {
+      dump_US_field(argv[it], fd, US, has_parenthesis);
+    }
   }
 #else
   for (size_t it = 0; it < argc; ++it) {
@@ -2014,9 +1979,88 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   free((void *)cwd);
   pthread_mutex_unlock(&mutex);
 #ifdef SYCLomatic_CUSTOMIZATION
-  if(is_tool_available) {
-    return 0;
+  if (is_nvcc_or_ld == 1 && flag_object == 1) {
+    ret = 1;
+  } else if (is_nvcc_or_ld == 1) {
+    // object is not given by -o. Need figure out the default output for cmd "gcc
+    // -c xx.c"
+    char *tmp = malloc(PATH_MAX);
+    if (tmp == NULL) {
+      perror("bear: malloc memory fail.");
+      exit(EXIT_FAILURE);
+    }
+    memset(tmp, '\0', PATH_MAX);
+    int idx = 0;
+    int c_option;
+    char ofilename[PATH_MAX];
+    memset(ofilename, '\0', PATH_MAX);
+    int parse_ret = 0;
+    for (size_t it = it_cp; it < argc; ++it) {
+      memcpy(tmp + idx, argv[it], strlen(argv[it]));
+      idx += strlen(argv[it]);
+      tmp[idx] = ' ';
+      idx++;
+    }
+    parse_ret = parse_input_file(tmp, &c_option, ofilename);
+    if (parse_ret == 1 && c_option == 1) {
+      // change the suffix of the ofilename from .c .cpp => .o)
+      int olen = strlen(ofilename);
+      while (olen >= 0 && ofilename[olen] != '.') {
+        olen--;
+      }
+      if (olen == -1) {
+        olen = strlen(ofilename);
+        if (olen >= PATH_MAX - 3) {
+          perror("bear: filename length too long.");
+          exit(EXIT_FAILURE);
+        }
+        ofilename[olen] = '.';
+        ofilename[olen + 1] = 'o';
+        ofilename[olen + 2] = '\0';
+      } else {
+        if (olen > PATH_MAX - 3) {
+          perror("bear: filename length too long.");
+          exit(EXIT_FAILURE);
+        }
+        ofilename[olen + 1] = 'o';
+        ofilename[olen + 2] = '\0';
+      }
+
+      pthread_mutex_lock(&mutex);
+      if (generate_file(ofilename, 0) != 0) {
+        pthread_mutex_unlock(&mutex);
+        exit(EXIT_FAILURE);
+      }
+      pthread_mutex_unlock(&mutex);
+    }
+    free(tmp);
+    ret = 1;
   }
+
+  // try to replace nvcc or clang++ with intercept-stub,
+  // e.g: "/path/to/clang++ -ccbin ... ",
+  //      "/bin/sh -c "/path/to"/bin/clang++ -ccbin ..."
+  const char *pos = find_intercept_compiler(argv[it_cp], compiler_idx);
+
+  int is_stub_need = 0;
+  is_stub_need = (pos != NULL);
+  if (is_stub_need) {
+    ret = 0; // intercept-stub should continue to run.
+
+    // intercept-stub is used to handle the compiler command like
+    // "/bin/sh -c clang++ -c `echo ./`hello.c", it changes the compiler command
+    // intercepted to
+    // "/bin/sh -c /path/to/libear/intercept-stub -c `echo ./`hello.c", then the
+    // coming command "/path/to/libear/intercept-stub -c ./hello.c" will be run,
+    // and the source file name "hello.c" will be captured by intercept.py.
+    argv[it_cp] =
+        replace_binary_name(argv[it_cp], pos, compiler_idx, compiler_array);
+  }
+
+  if (ret == 1 && it_cp == 0 && !is_ar_staticlib_cmd) {
+    exit(0);
+  }
+  return is_stub_need;
 #endif // SYCLomatic_CUSTOMIZATION
 }
 
