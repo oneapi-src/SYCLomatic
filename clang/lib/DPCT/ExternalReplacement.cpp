@@ -12,6 +12,7 @@
 
 #include "AnalysisInfo.h"
 #include "Utility.h"
+#include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
@@ -37,7 +38,7 @@ using clang::tooling::Replacements;
 int save2Yaml(
     clang::tooling::UnifiedPath& YamlFile, clang::tooling::UnifiedPath& SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest,
+    const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
     const std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets) {
   std::string YamlContent;
@@ -50,15 +51,17 @@ int save2Yaml(
   TUR.Replacements.insert(TUR.Replacements.end(), Replaces.begin(),
                           Replaces.end());
 
-  std::transform(
-      MainSrcFilesDigest.begin(), MainSrcFilesDigest.end(),
-      std::back_insert_iterator<
-          std::vector<std::pair<std::string, std::string>>>(
-          TUR.MainSourceFilesDigest),
-      [](const std::pair<clang::tooling::UnifiedPath, std::string> &P) {
-        return std::pair<std::string, std::string>(P.first.getCanonicalPath(),
-                                                   P.second);
-      });
+  // std::transform(
+  //     MainSrcFilesDigest.begin(), MainSrcFilesDigest.end(),
+  //     std::back_insert_iterator<
+  //         std::vector<clang::tooling::MainSourceFileInfo>(
+  //         TUR.MainSourceFilesDigest),
+  //     [](const clang::tooling::MainSourceFileInfo &P) {
+  //       return clang::tooling::MainSourceFileInfo(P.MainSourceFile,
+  //                                                  P.Digest, P.HasCUDASyntax);
+  //     });
+
+  TUR.MainSourceFilesDigest = MainSrcFilesDigest;
 
   for (const auto &Entry : CompileTargets) {
     TUR.CompileTargets[Entry.first.getCanonicalPath().str()] = Entry.second;
@@ -88,9 +91,9 @@ int loadFromYaml(const clang::tooling::UnifiedPath& Input,
 
   bool IsSrcFileChanged = false;
   for (const auto &digest: TU.MainSourceFilesDigest) {
-    auto Hash = llvm::sys::fs::md5_contents(digest.first);
-    if (Hash && Hash->digest().c_str() != digest.second) {
-      llvm::errs() << "Warning: The file '" << digest.first
+    auto Hash = llvm::sys::fs::md5_contents(digest.MainSourceFile);
+    if (Hash && Hash->digest().c_str() != digest.Digest) {
+      llvm::errs() << "Warning: The file '" << digest.MainSourceFile
                    << "' has been changed during incremental migration.\n";
       IsSrcFileChanged = true;
     }
@@ -157,8 +160,15 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
                                                  Replaces.end());
 
   auto Hash = llvm::sys::fs::md5_contents(InRootSrcFilePath.getCanonicalPath());
-  std::pair<clang::tooling::UnifiedPath, std::string> FileDigest = {InRootSrcFilePath,
-                                                    Hash->digest().c_str()};
+
+  bool HasCUDASyntax = false;
+  if (auto FileInfo = dpct::DpctGlobalInfo::getInstance().findFile(InRootSrcFilePath.getCanonicalPath())) {
+    if (FileInfo->hasCUDASyntax()) {
+      HasCUDASyntax = true;
+    }
+  }
+  clang::tooling::MainSourceFileInfo FileDigest(InRootSrcFilePath.getPath().str(),
+                                                    Hash->digest().c_str(), HasCUDASyntax);
   std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
       CompileTargets;
   save2Yaml(YamlFile, OutRootSrcFilePath, Repls,

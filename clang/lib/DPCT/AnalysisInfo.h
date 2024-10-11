@@ -1216,7 +1216,7 @@ public:
   getFileRelpsMap() {
     return FileRelpsMap;
   }
-  static std::unordered_map<std::string, std::string> &getDigestMap() {
+  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> &getDigestMap() {
     return DigestMap;
   }
   static std::string getYamlFileName() { return YamlFileName; }
@@ -1565,7 +1565,7 @@ private:
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>>
       FileRelpsMap;
-  static std::unordered_map<std::string, std::string> DigestMap;
+  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> DigestMap;
   static const std::string YamlFileName;
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;

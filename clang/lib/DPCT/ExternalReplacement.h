@@ -33,7 +33,7 @@ int loadFromYaml(const clang::tooling::UnifiedPath& Input,
 int save2Yaml(
     clang::tooling::UnifiedPath& YamlFile, clang::tooling::UnifiedPath& SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest,
+    const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
     const std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets);
 

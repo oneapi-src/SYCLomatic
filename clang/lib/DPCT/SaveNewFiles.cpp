@@ -430,16 +430,16 @@ static void getMainSrcFilesRepls(
       MainSrcFilesRepls.push_back(Repl);
 }
 static void getMainSrcFilesDigest(
-    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+    std::vector<clang::tooling::MainSourceFileInfo>
         &MainSrcFilesDigest) {
   auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap)
-    MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
+    MainSrcFilesDigest.push_back(Entry.second);
 }
 
 static void saveUpdatedMigrationDataIntoYAML(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
-    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+    std::vector<clang::tooling::MainSourceFileInfo>
         &MainSrcFilesDigest,
     clang::tooling::UnifiedPath YamlFile, clang::tooling::UnifiedPath SrcFile,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
@@ -457,7 +457,7 @@ static void saveUpdatedMigrationDataIntoYAML(
   auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap) {
     if (!MainSrcFileMap[Entry.first]) {
-      MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
+      MainSrcFilesDigest.push_back(Entry.second);
     }
   }
 
@@ -493,7 +493,7 @@ void applyPatternRewriter(const std::string &InputString,
 int writeReplacementsToFiles(
     ReplTy &Replset, Rewriter &Rewrite, const std::string &Folder,
     clang::tooling::UnifiedPath &InRoot,
-    std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
+    std::vector<clang::tooling::MainSourceFileInfo>
         &MainSrcFilesDigest,
     std::unordered_map<std::string, bool> &MainSrcFileMap,
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls,
@@ -558,8 +558,15 @@ int writeReplacementsToFiles(
         mergeExternalReps(Entry.first, OutPath, Entry.second);
       } else {
         auto Hash = llvm::sys::fs::md5_contents(Entry.first);
+        bool HasCUDASyntax = false;
+        if (auto FileInfo = dpct::DpctGlobalInfo::getInstance().findFile(Entry.first)) {
+          if (FileInfo->hasCUDASyntax()) {
+            HasCUDASyntax = true;
+          }
+        }
+
         MainSrcFilesDigest.push_back(
-            std::make_pair(Entry.first, Hash->digest().c_str()));
+            clang::tooling::MainSourceFileInfo(Entry.first, Hash->digest().c_str(), HasCUDASyntax));
 
         bool IsMainSrcFileChanged = false;
         std::string FilePath = Entry.first;
@@ -568,7 +575,7 @@ int writeReplacementsToFiles(
         auto DigestIter = DigestMap.find(Entry.first);
         if (DigestIter != DigestMap.end()) {
           auto Digest = llvm::sys::fs::md5_contents(Entry.first);
-          if (DigestIter->second != Digest->digest().c_str())
+          if (DigestIter->second.Digest != Digest->digest().c_str())
             IsMainSrcFileChanged = true;
         }
 
@@ -927,11 +934,11 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
     }
     for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
       auto &DigestMap = DpctGlobalInfo::getDigestMap();
-      DigestMap[FileDigest.first] = FileDigest.second;
+      DigestMap[FileDigest.MainSourceFile] = FileDigest;
 
       // Mark all the main src files loaded from yaml file are not processed
       // in current migration.
-      MainSrcFileMap[FileDigest.first] = false;
+      MainSrcFileMap[FileDigest.MainSourceFile] = false;
     }
 
     for (const auto &Entry : PreTU->CompileTargets)
@@ -939,8 +946,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   }
 
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
-  std::vector<std::pair<clang::tooling::UnifiedPath, std::string>>
-      MainSrcFilesDigest;
+  std::vector<clang::tooling::MainSourceFileInfo> MainSrcFilesDigest;
 
   if (ReplSYCL.empty()) {
     // There are no rules applying on the *.cpp files,

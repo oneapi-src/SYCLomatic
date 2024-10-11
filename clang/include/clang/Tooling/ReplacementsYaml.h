@@ -15,6 +15,7 @@
 #ifndef LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
 #define LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
 
+#include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <string>
@@ -28,6 +29,8 @@ LLVM_YAML_IS_STRING_MAP(FeatureOfFileMapTy)
 // Keep here only for backward compatibility - end
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::CompilationInfo)
 LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::CompilationInfo>)
+LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::MainSourceFileInfo)
+LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::MainSourceFileInfo>)
 LLVM_YAML_IS_STRING_MAP(clang::tooling::OptionInfo)
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -127,30 +130,32 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
 };
 
 #ifdef SYCLomatic_CUSTOMIZATION
-template <> struct MappingTraits<std::pair<std::string, std::string>> {
+template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
   struct NormalizedMainSourceFilesDigest {
 
     NormalizedMainSourceFilesDigest(const IO &)
         : MainSourceFile(""), Digest("") {}
 
     NormalizedMainSourceFilesDigest(const IO &,
-                                    std::pair<std::string, std::string> &R)
-        : MainSourceFile(R.first), Digest(R.second) {}
+                                    clang::tooling::MainSourceFileInfo &R)
+        : MainSourceFile(R.MainSourceFile), Digest(R.Digest) {}
 
-    std::pair<std::string, std::string> denormalize(const IO &) {
-      return std::pair<std::string, std::string>(MainSourceFile, Digest);
+    clang::tooling::MainSourceFileInfo denormalize(const IO &) {
+      return clang::tooling::MainSourceFileInfo(MainSourceFile, Digest, HasCUDASyntax);
     }
 
     std::string MainSourceFile = "";
     std::string Digest = "";
+    bool HasCUDASyntax = false;
   };
 
-  static void mapping(IO &Io, std::pair<std::string, std::string> &R) {
+  static void mapping(IO &Io, clang::tooling::MainSourceFileInfo &R) {
     MappingNormalization<NormalizedMainSourceFilesDigest,
-                         std::pair<std::string, std::string>>
+                         clang::tooling::MainSourceFileInfo>
         Keys(Io, R);
     Io.mapOptional("MainSourceFile", Keys->MainSourceFile);
     Io.mapOptional("Digest", Keys->Digest);
+    Io.mapOptional("HasCUDASyntax", Keys->Digest);
   }
 };
 
