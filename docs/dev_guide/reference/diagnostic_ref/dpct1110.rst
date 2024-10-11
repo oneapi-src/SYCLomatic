@@ -26,7 +26,7 @@ local variable size in a device function exceeds 128 bytes, some variables may b
 stored in local or global memory, potentially leading to reduced performance when
 frequently accessed. To address this issue, you can either decrease the sub-group
 size to make more registers available for each work-item, or follow the recommendations
-in the `Optimizing Register Spills <https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-1/optimizing-register-spills.html>`_ section of the oneAPI GPU
+in the `Optimizing Register Spills <https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-2/optimizing-register-spills.html>`_ section of the oneAPI GPU
 Optimization Guide. For other hardware, please consult with your hardware vendor
 to get configuration information.
 
