@@ -184,14 +184,15 @@ class data_ser<T*, void> {
 public:
   static void dump(detail::json_stringstream &ss, T* value,
                    queue_t queue) {
+    using PointeeType =
+        std::remove_cv_t<std::remove_pointer_t<T>>;
+    PointeeType* value = const_cast<PointeeType*>(value);
     if (ptr_unique.find(value) != ptr_unique.end()) {
       return;
     }
     ptr_unique.insert(value);
     int size = get_ptr_size_in_bytes(value);
     size = size == 0 ? 1 : size / sizeof(*value);
-    using PointeeType =
-        std::remove_cv_t<std::remove_pointer_t<T>>;
     PointeeType *dump_addr = value;
     bool is_dev = is_dev_ptr(value);
     if (is_dev) {
