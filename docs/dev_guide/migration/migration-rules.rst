@@ -62,8 +62,10 @@ Migration rules are specified in YAML files. A single rule file may contain mult
      - String value
      - Required. Specify the CMake syntax name that will be migrated. Use the unique name for the CMake syntax.
    * - MatchMode
-     - ``Partial`` | ``Full``
-     - Required. Specify the match mode with full word match or partial word match. If not specified, partial match mode will be used.
+     - ``Partial`` | ``Full`` | ``StrictFull``
+     - Optional. Specify the match mode with full word match, strict full word match,
+     or partial word match. If not specified, partial match mode will be used. The
+     partial matching mode means the matched string can be surrounded by arbitrary characters including whitespace. The full matching mode means the matched string should not be surrounded by identifier characters (letters, numbers, and underscore). The strict matching mode means the matched string should only be surrounded by whitespace characters.
    * - In
      - String value
      - Required. Specifies the target name in the input source code.
