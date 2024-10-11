@@ -386,10 +386,6 @@ public:
 template <typename Tx, typename Tr>
 inline void nrm2_impl(sycl::queue &q, std::int64_t n, const void *x,
                       std::int64_t incx, void *result) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
 #ifdef DPCT_USM_LEVEL_NONE
   auto x_buffer = dpct::get_buffer<Tx>(x);
   auto r_buffer =
@@ -402,17 +398,12 @@ inline void nrm2_impl(sycl::queue &q, std::int64_t n, const void *x,
   oneapi::mkl::blas::column_major::nrm2(q, n, reinterpret_cast<const Tx *>(x),
                                         incx, res_mem.get_ptr());
 #endif
-#endif
 }
 
 template <bool is_conjugate, class Txy, class Tr>
 inline void dotuc_impl(sycl::queue &q, std::int64_t n, const Txy *x,
                        std::int64_t incx, const Txy *y, std::int64_t incy,
                        Tr *result) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
 #ifdef DPCT_USM_LEVEL_NONE
   auto x_buffer = dpct::get_buffer<Txy>(x);
   auto y_buffer = dpct::get_buffer<Txy>(y);
@@ -443,7 +434,6 @@ inline void dotuc_impl(sycl::queue &q, std::int64_t n, const Txy *x,
   } else
     oneapi::mkl::blas::column_major::dot(q, n, x, incx, y, incy,
                                          res_mem.get_ptr());
-#endif
 #endif
 }
 
@@ -506,128 +496,83 @@ inline void dotuc(sycl::queue &q, std::int64_t n, const void *x,
 template <class Tx, class Te>
 inline void scal_impl(sycl::queue &q, std::int64_t n, const void *alpha,
                       void *x, std::int64_t incx) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory<Tx>(x);
   oneapi::mkl::blas::column_major::scal(q, n, alpha_val, data_x, incx);
-#endif
 }
 
 template <class Txy, class Te>
 inline void axpy_impl(sycl::queue &q, std::int64_t n, const void *alpha,
                       const void *x, std::int64_t incx, void *y,
                       std::int64_t incy) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory<const Txy>(x);
   auto data_y = get_memory<Txy>(y);
   oneapi::mkl::blas::column_major::axpy(q, n, alpha_val, data_x, incx, data_y,
                                         incy);
-#endif
 }
 
 template <class Txy, class Tc, class Ts>
 inline void rot_impl(sycl::queue &q, std::int64_t n, void *x, std::int64_t incx,
                      void *y, std::int64_t incy, const void *c, const void *s) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   Tc c_value = dpct::get_value(reinterpret_cast<const Tc *>(c), q);
   Ts s_value = dpct::get_value(reinterpret_cast<const Ts *>(s), q);
   auto data_x = get_memory<Txy>(x);
   auto data_y = get_memory<Txy>(y);
   oneapi::mkl::blas::column_major::rot(q, n, data_x, incx, data_y, incy,
                                        c_value, s_value);
-#endif
 }
 
 template <class Tx, class Ty, class Tparam>
 inline void rotm_impl(sycl::queue &q, std::int64_t n, void *x, int64_t incx,
                       void *y, int64_t incy, const void *param) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   auto data_x = get_memory<Tx>(x);
   auto data_y = get_memory<Ty>(y);
   auto data_param = get_memory<const Tparam>(param);
   oneapi::mkl::blas::column_major::rotm(q, n, data_x, incx, data_y, incy,
                                         data_param);
-#endif
 }
 
 template <class Tx, class Ty>
 inline void copy_impl(sycl::queue &q, std::int64_t n, const void *x,
                       std::int64_t incx, void *y, std::int64_t incy) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   auto data_x = get_memory<const Tx>(x);
   auto data_y = get_memory<Ty>(y);
   oneapi::mkl::blas::column_major::copy(q, n, data_x, incx, data_y, incy);
-#endif
 }
 
 template <class Tx, class Ty>
 inline void swap_impl(sycl::queue &q, std::int64_t n, void *x,
                       std::int64_t incx, void *y, std::int64_t incy) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   auto data_x = get_memory<Tx>(x);
   auto data_y = get_memory<Ty>(y);
   oneapi::mkl::blas::column_major::swap(q, n, data_x, incx, data_y, incy);
-#endif
 }
 
 template <class Tx, class Tres>
 inline void asum_impl(sycl::queue &q, std::int64_t n, const void *x,
                       std::int64_t incx, void *res) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   auto data_x = get_memory<Tx>(x);
   auto data_res = get_memory<Tres>(res);
   oneapi::mkl::blas::column_major::asum(q, n, data_x, incx, data_res);
-#endif
 }
 
 template <class T>
 inline void iamax_impl(sycl::queue &q, std::int64_t n, const void *x,
                        std::int64_t incx, std::int64_t *res) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   auto data_x = get_memory<T>(x);
   auto data_res = get_memory<std::int64_t>(res);
   oneapi::mkl::blas::column_major::iamax(q, n, data_x, incx, data_res,
                                          oneapi::mkl::index_base::one);
-#endif
 }
 
 template <class T>
 inline void iamin_impl(sycl::queue &q, std::int64_t n, const void *x,
                        std::int64_t incx, std::int64_t *res) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   auto data_x = get_memory<T>(x);
   auto data_res = get_memory<std::int64_t>(res);
   oneapi::mkl::blas::column_major::iamin(q, n, data_x, incx, data_res,
                                          oneapi::mkl::index_base::one);
-#endif
 }
 
 #ifdef __INTEL_MKL__
