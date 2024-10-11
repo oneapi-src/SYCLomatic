@@ -2359,7 +2359,8 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     }
     ResultBegin = SM.getExpansionLoc(ResultBegin);
     ResultEnd = SM.getExpansionLoc(ResultEnd);
-    if (IncludeLastToken && !SM.isWrittenInScratchSpace(ResultEnd)) {
+    if (IncludeLastToken &&
+        !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
