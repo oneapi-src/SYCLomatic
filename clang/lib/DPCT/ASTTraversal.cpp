@@ -192,8 +192,8 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok,
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   auto Iter = MapNames::MacroRuleMap.find(MacroName);
   if (Iter != MapNames::MacroRuleMap.end()) {
-    // The "__noinline__" macro is re-defined by CUDA compiler.
-    // When it is used in "__attribute__()", we cannot replace it.
+    // The "__noinline__" macro is re-defined and it is used in
+    // "__attribute__()", do not migrate it.
     if (MacroName == "__noinline__") {
       auto Range = getDefinitionRange(MacroNameTok.getLocation(),
                                       MacroNameTok.getEndLoc());
@@ -289,8 +289,8 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     if (!II)
       continue;
 
-    // The "__noinline__" macro is re-defined by CUDA compiler.
-    // When it is used in "__attribute__()", we cannot replace it.
+    // The "__noinline__" macro is re-defined and it is used in
+    // "__attribute__()", do not migrate it.
     if (II->hasMacroDefinition() && (II->getName() == "__noinline__")) {
       continue;
     }
