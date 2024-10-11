@@ -149,17 +149,17 @@ After migration, there will be two files: ``dpct_output_codepin_sycl/example.dp.
         q_ct1.memcpy(d_a, h_a, vectorSize * 12);
 
         // Launch the CUDA kernel
-        dpct::experimental::gen_prolog_API_CP(
-            "example.cu:38:3(SYCL)", &q_ct1,
-            VAR_SCHEMA_0, (long *)&d_a, VAR_SCHEMA_1, (long *)&d_result);
+        dpctexp::codepin::gen_prolog_API_CP(
+            "vectorAdd:example.cu:24:9",
+            &q_ct1, "d_a", d_a, "d_result", d_result);
         q_ct1.parallel_for(
             sycl::nd_range<3>(sycl::range<3>(1, 1, 4), sycl::range<3>(1, 1, 4)),
             [=](sycl::nd_item<3> item_ct1) { vectorAdd(d_a, d_result, item_ct1); });
 
         // Copy result from device to host
-        dpct::experimental::gen_epilog_API_CP(
-            "example.cu:38:3(SYCL)", &q_ct1,
-            VAR_SCHEMA_0, (long *)&d_a, VAR_SCHEMA_1, (long *)&d_result);
+        dpctexp::codepin::gen_epilog_API_CP(
+            "vectorAdd:example.cu:24:9",
+            &q_ct1, "d_a", d_a, "d_result", d_result);
 
         q_ct1.memcpy(h_result, d_result, vectorSize * sizeof(sycl::int3)).wait();
 
@@ -212,15 +212,15 @@ After migration, there will be two files: ``dpct_output_codepin_sycl/example.dp.
         cudaMemcpy(d_a, h_a, vectorSize * 12, cudaMemcpyHostToDevice);
 
         // Launch the CUDA kernel
-        dpct::experimental::gen_prolog_API_CP(
-            "example.cu:38:3", 0, VAR_SCHEMA_0,
-            (long *)&d_a, VAR_SCHEMA_1, (long *)&d_result);
+        dpctexp::codepin::gen_prolog_API_CP(
+            "vectorAdd:example.cu:24:9", 0,
+            "d_a", d_a, "d_result", d_result);
         vectorAdd<<<1, 4>>>(d_a, d_result);
 
         // Copy result from device to host
-        dpct::experimental::gen_epilog_API_CP(
-            "example.cu:38:3", 0, VAR_SCHEMA_0,
-            (long *)&d_a, VAR_SCHEMA_1, (long *)&d_result);
+        dpctexp::codepin::gen_epilog_API_CP(
+            "vectorAdd:example.cu:24:9", 0,
+            "d_a", d_a, "d_result", d_result);
         cudaMemcpy(h_result, d_result, vectorSize * sizeof(int3),
                     cudaMemcpyDeviceToHost);
 
@@ -254,6 +254,9 @@ the following execution log files will be generated.
           [
               {
                   "ID": "example.cu:26:3:prolog",
+                  "Device Name": "GPU",
+                  "Device ID": "0",
+                  "Stream Address": "0xe4bb30",
                   "Free Device Memory": "16374562816",
                   "Total Device Memory": "16882663424",
                   "Elapse Time(ms)": "0",
@@ -288,6 +291,9 @@ the following execution log files will be generated.
           [
               {
                   "ID": "example.cu:26:3:prolog",
+                  "Device Name": "GPU",
+                  "Device ID": "0",
+                  "Stream Address": "0x3fea40",
                   "Free Device Memory": "0",
                   "Total Device Memory": "31023112192",
                   "Elapse Time(ms)": "0",
@@ -322,6 +328,9 @@ programs start to diverge from one another.
 Analyse the CodePin Result
 --------------------------
 
+CodePin Report
+~~~~~~~~~~~~~~
+
 codepin-report.py (also can be triggered by dpct/c2s --codepin-report) is a functionality of
 the compatibility tool that consumes the execution log files from both CUDA and SYCL code and performs auto analysis.
 codepin-report.py can identify the inconsistent data value and report the stats data of the execution.
@@ -349,12 +358,30 @@ Following is an example of the analysis report.
 .. code-block::
 
     CodePin Summary
-    Totally APIs count, 2
-    Consistently APIs count, 2
-    Most Time-consuming Kernel(CUDA), example.cu:26:3:epilog, time:8.2316
-    Most Time-consuming Kernel(SYCL), example.cu:26:3:epilog, time:10.2575
-    Peak Device Memory Used(CUDA), 508100608
-    Peak Device Memory Used(SYCL), 31023112192
+    Total API count, 2
+    Consistent API count, 0
+    Most Time-consuming Kernel(CUDA), vectorAdd:example.cu:24:5:epilog, time:16.8069
+    Most Time-consuming Kernel(SYCL), vectorAdd:example.cu:24:5:prolog, time:18.3240
+    Peak Device Memory Used(CUDA), 445644800
+    Peak Device Memory Used(SYCL), 540689534976
     CUDA Meta Data ID, SYCL Meta Data ID, Type, Detail
-    example.cu:26:3:prolog,example.cu:26:3:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data example.cu:26:3:prolog are mismatched,
-    and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API example.cu.
+    vectorAdd:example.cu:24:5:epilog,vectorAdd:example.cu:24:5:epilog,Data value,The location of failed ID Errors occurred during comparison: d_a->"Data"->[3]->"Data"->[0]->"x"->"Data"->[0] and [ERROR: DATA VALUE MISMATCH] the CUDA value 1 differs from the SYCL value 26518016.; d_result->"Data"->[3]->"Data"->[0]->"x"->"Data"->[0] and [ERROR: DATA VALUE MISMATCH] the CUDA value 2 differs from the SYCL value 26518017.
+    vectorAdd:example.cu:24:5:prolog,vectorAdd:example.cu:24:5:prolog,Data value,[WARNING: METADATA MISMATCH] The pair of prolog data vectorAdd:example.cu:24:5:prolog are mismatched, and the corresponding pair of epilog data matches. This mismatch may be caused by the initialized memory or argument used in the API vectorAdd.
+
+Data Flow Graph  
+~~~~~~~~~~~~~~~
+
+codepin-report.py can generate a data   flow graph for 
+kernels with option ``--generate-data-flow-graph``.  The data flow graph presents visualizations of kernel execution and compares results between CUDA and SYCL, highlighting the execution mismatch between CUDA and SYCL code.
+In the data flow graph, each kernel execution and its input and output arguments are grouped into a layer, presenting a run status of the kernel execution. The value   of input and output arguments are tagged with version information in the form of “V<num>”. For example,   the initial version is tagged as V0, and once the value of the argument is updated, the version number will be increased. For a specific kernel execution, if there’s a mismatch between CUDA and SYCL results, the mismatched argument node will be colored red.
+
+.. figure:: DataFlowGraph.png
+   :alt: DataFlowGraph
+   :align: center
+   DataFlowGraph
+
+The above picture shows the data flow graph of the vectorAdd example, which is constructed by a title and execution layer. The execution layer presents a kernel execution and its inputs and outputs. The kernel node shows that kernel ``vectorAdd`` is executed on the stream of the device named GPU0, and also shows the kernel's execution time and source location. All input arguments (``d_a`` node and top ``d_result`` node) are tagged with V0, indicating initial values. The output argument (bottom ``d_result`` node) is tagged with V1 because ``d_result`` is both input and output arguments, and its value changes in the kernel. 
+
+The nodes ``d_a:V0 ``,  ``d_result:V0``, and ``d_result:V1`` are colored red, indicating a value mismatch between the CUDA and SYCL runs. In this case, the result value mismatch is caused by the mismatch of the input argument values, and the mismatch between input argument values may be caused by the different behavior of memory initialization between CUDA and SYCL, as the report states.
+
+This data flow graph target provides a clear view of the execution process, making it easy to identify discrepancies and track variable changes across executions.
