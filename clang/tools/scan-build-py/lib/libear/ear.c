@@ -53,6 +53,7 @@ extern char **environ;
 
 #ifdef SYCLomatic_CUSTOMIZATION
 #include <ctype.h>
+#include <sys/stat.h>
 #define PATH_MAX 4096
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -492,35 +493,14 @@ int eaccess(const char *pathname, int mode) {
       pathname[1] == 'v' && pathname[0] == 'n') {
     // To handle case like "nvcc foo.cu ..."
     return 0;
-  } else if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
-             pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
-             pathname[len - 5] == '/') {
+  }
+  if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
+      pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
+      pathname[len - 5] == '/') {
     // To handle case like "/path/to/nvcc foo.cu ..."
     return 0;
   }
   return call_eaccess(pathname, mode);
-}
-
-static int call_stat(const char *pathname, struct stat *statbuf) {
-  typedef int (*func)(const char *, struct statbuf *);
-  DLSYM(func, fp, "stat");
-  int const result = (*fp)(pathname, statbuf);
-  return result;
-}
-
-int stat(const char *pathname, struct stat *statbuf) {
-  int len = strlen(pathname);
-  if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
-      pathname[1] == 'v' && pathname[0] == 'n') {
-    // To handle case like "nvcc foo.cu ..."
-    return 0;
-  } else if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
-             pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
-             pathname[len - 5] == '/') {
-    // To handle case like "/path/to/nvcc foo.cu ..."
-    return 0;
-  }
-  return call_stat(pathname, statbuf);
 }
 
 /*
@@ -1703,9 +1683,62 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
 
 #endif // SYCLomatic_CUSTOMIZATION
 
-/* this method is to write log about the process creation. */
-
 #ifdef SYCLomatic_CUSTOMIZATION
+int is_tool_available(const char *pathname) {
+
+  int len = strlen(pathname);
+  int is_nvcc = 0;
+  if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
+      pathname[1] == 'v' && pathname[0] == 'n') {
+    // To handle case like "nvcc"
+    is_nvcc = 1;
+  }
+
+  if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
+      pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
+      pathname[len - 5] == '/') {
+    // To handle case like "/path/to/nvcc"
+    is_nvcc = 0;
+  }
+
+  if (is_nvcc) {
+    int idx = len - 4;
+    for (; idx > 0 && !isspace(pathname[idx]); idx--)
+      ;
+    struct stat buffer;
+    if (stat(pathname + idx, &buffer) == 0) {
+      return 1;
+    }
+    return 0;
+  }
+
+  int is_ld = 0;
+  if (len == 2 && pathname[1] == 'd' && pathname[0] == 'l') {
+    // To handle case like "ld"
+    is_ld = 1;
+  }
+
+  if (len > 2 && pathname[len - 1] == 'd' && pathname[len - 2] == 'l' &&
+      pathname[len - 3] == '/') {
+    // To handle case like "/path/to/ld"
+    is_ld = 0;
+  }
+
+  if (is_ld) {
+    int idx = len - 2;
+    for (; idx > 0 && !isspace(pathname[idx]); idx--)
+      ;
+    struct stat buffer;
+    if (stat(pathname + idx, &buffer) == 0) {
+      return 1;
+    }
+    return 0;
+  }
+
+  return 1;
+}
+
+/* this method is to write log about the process creation. */
 // This method parses the command execution issued by the build tool make to
 // write log for the compile options and fake the expecting outcome for the
 // command. It returns whether intercept-stub is used to take over the command
@@ -1758,6 +1791,21 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
 #ifdef SYCLomatic_CUSTOMIZATION
 
   emit_cmake_warning(argv, argc);
+
+  if (is_tool_available(argv[0])) {
+    for (size_t it = 0; it < argc; ++it) {
+      fprintf(fd, "%s%c", argv[it], US);
+    }
+    fprintf(fd, "%c", GS);
+    if (fclose(fd)) {
+      perror("bear: fclose");
+      pthread_mutex_unlock(&mutex);
+      exit(EXIT_FAILURE);
+    }
+    free((void *)cwd);
+    pthread_mutex_unlock(&mutex);
+    return 0;
+  }
 
   // compiler list should be intercepted.
   const char *const compiler_array[] = {"nvcc", "clang++"};
