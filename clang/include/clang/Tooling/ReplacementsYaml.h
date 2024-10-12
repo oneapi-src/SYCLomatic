@@ -134,14 +134,16 @@ template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
   struct NormalizedMainSourceFilesDigest {
 
     NormalizedMainSourceFilesDigest(const IO &)
-        : MainSourceFile(""), Digest("") {}
+        : MainSourceFile(""), Digest(""), HasCUDASyntax(false) {}
 
     NormalizedMainSourceFilesDigest(const IO &,
                                     clang::tooling::MainSourceFileInfo &R)
-        : MainSourceFile(R.MainSourceFile), Digest(R.Digest) {}
+        : MainSourceFile(R.MainSourceFile), Digest(R.Digest),
+          HasCUDASyntax(R.HasCUDASyntax) {}
 
     clang::tooling::MainSourceFileInfo denormalize(const IO &) {
-      return clang::tooling::MainSourceFileInfo(MainSourceFile, Digest, HasCUDASyntax);
+      return clang::tooling::MainSourceFileInfo(MainSourceFile, Digest,
+                                                HasCUDASyntax);
     }
 
     std::string MainSourceFile = "";
@@ -155,7 +157,8 @@ template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
         Keys(Io, R);
     Io.mapOptional("MainSourceFile", Keys->MainSourceFile);
     Io.mapOptional("Digest", Keys->Digest);
-    Io.mapOptional("HasCUDASyntax", Keys->Digest);
+    printf("#########Keys->HasCUDASyntax [%d]\n", Keys->HasCUDASyntax);
+    Io.mapOptional("HasCUDASyntax", Keys->HasCUDASyntax);
   }
 };
 

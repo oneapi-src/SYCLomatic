@@ -23,18 +23,25 @@ Replacements:
 MainSourceFilesDigest:
   - MainSourceFile:  '/path/to/src/foo.cpp'
     Digest:          e2636fb8d174ac319083b0306294d3bd
+    HasCUDASyntax:   true
   - MainSourceFile:  '/path/to/src/baz.cpp'
     Digest:          991d7e4825fc597205bf68f2eda27acd
+    HasCUDASyntax:   true
   - MainSourceFile:  '/path/to/src/layer.cudnn.cpp'
     Digest:          991d7e4825fc597205bf68f2eda27ace
+    HasCUDASyntax:   true
   - MainSourceFile:  '/path/to/chash/chash.c'
     Digest:          9f681b5a2cafa7dff67d7e4ac13d1302
+    HasCUDASyntax:   true
   - MainSourceFile:  '/path/to/cchash/cchash.cc'
     Digest:          9f681b5a2cafa7dff67d7e4ac13d1303
+    HasCUDASyntax:   true
   - MainSourceFile:  '/path/to/cxxhash/cxxhash.cxx'
     Digest:          9f681b5a2cafa7dff67d7e4ac13d1304
+    HasCUDASyntax:   true
   - MainSourceFile:  '/path/to/cxxhash/cpphash.cpp'
     Digest:          9f681b5a2cafa7dff67d7e4ac13d1305
+    HasCUDASyntax:   true
 DpctVersion:     19.0.0
 MainHelperFileName: ''
 USMLevel:        ''

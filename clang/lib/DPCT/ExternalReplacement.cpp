@@ -61,7 +61,14 @@ int save2Yaml(
   //                                                  P.Digest, P.HasCUDASyntax);
   //     });
 
-  TUR.MainSourceFilesDigest = MainSrcFilesDigest;
+  //TUR.MainSourceFilesDigest = MainSrcFilesDigest;
+  for (auto &Entry : MainSrcFilesDigest) {
+    printf("1 %s\n", Entry.MainSourceFile.c_str());
+    printf("2 %s\n", Entry.Digest.c_str());
+    printf("3 %d\n", Entry.HasCUDASyntax);
+    TUR.MainSourceFilesDigest.push_back(clang::tooling::MainSourceFileInfo(
+        Entry.MainSourceFile, Entry.Digest, Entry.HasCUDASyntax));
+  }
 
   for (const auto &Entry : CompileTargets) {
     TUR.CompileTargets[Entry.first.getCanonicalPath().str()] = Entry.second;
@@ -169,6 +176,10 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
   }
   clang::tooling::MainSourceFileInfo FileDigest(InRootSrcFilePath.getPath().str(),
                                                     Hash->digest().c_str(), HasCUDASyntax);
+
+  printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): %s\n", FileDigest.MainSourceFile.c_str());
+  printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): %s\n", FileDigest.Digest.c_str());
+  printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): %d\n", FileDigest.HasCUDASyntax);
   std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
       CompileTargets;
   save2Yaml(YamlFile, OutRootSrcFilePath, Repls,

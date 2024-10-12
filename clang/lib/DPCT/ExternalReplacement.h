@@ -34,7 +34,8 @@ int save2Yaml(
     clang::tooling::UnifiedPath& YamlFile, clang::tooling::UnifiedPath& SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
     const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
-    const std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
+    const std::map<clang::tooling::UnifiedPath,
+                   std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets);
 
 void mergeAndUniqueReps(

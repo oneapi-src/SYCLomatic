@@ -479,10 +479,7 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
     }
   }
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
-    printf("####################0 [%s]\n", Entry.MainSourceFile.c_str());
-    printf("####################1 [%s]\n", Entry.Digest.c_str());
-    printf("####################2 [%d]\n", Entry.HasCUDASyntax);
-    if(Entry.HasCUDASyntax)
+    if (Entry.HasCUDASyntax)
       MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
   }
 
