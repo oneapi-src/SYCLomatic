@@ -42,6 +42,9 @@ MainSourceFilesDigest:
   - MainSourceFile:  '/path/to/cxxhash/cpphash.cpp'
     Digest:          9f681b5a2cafa7dff67d7e4ac13d1305
     HasCUDASyntax:   true
+  - MainSourceFile:  '/path/to/chash/chash.c'
+    Digest:          9f681b5a2cafa7dff67d7e4ac13d1302
+    HasCUDASyntax:   false
 DpctVersion:     19.0.0
 MainHelperFileName: ''
 USMLevel:        ''

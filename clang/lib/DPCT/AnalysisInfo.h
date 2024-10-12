@@ -1183,8 +1183,9 @@ public:
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
   }
-  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
-      &getMacroTokenToMacroDefineLoc() {
+  static std::map<std::string,
+                  std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
+  getMacroTokenToMacroDefineLoc() {
     return MacroTokenToMacroDefineLoc;
   }
   static std::map<std::string, std::string> &
@@ -1216,7 +1217,8 @@ public:
   getFileRelpsMap() {
     return FileRelpsMap;
   }
-  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> &getDigestMap() {
+  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> &
+  getDigestMap() {
     return DigestMap;
   }
   static std::string getYamlFileName() { return YamlFileName; }
@@ -1565,7 +1567,8 @@ private:
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>>
       FileRelpsMap;
-  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> DigestMap;
+  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
+      DigestMap;
   static const std::string YamlFileName;
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;
@@ -1904,13 +1907,7 @@ private:
   // Constant scalar variables are passed by value while other 0/1D variables
   // defined on device memory are passed by pointer in device function calls.
   // The rest are passed by accessor.
-  enum DpctAccessMode {
-    Value,
-    Pointer,
-    Accessor,
-    Reference,
-    PointerToArray
-  };
+  enum DpctAccessMode { Value, Pointer, Accessor, Reference, PointerToArray };
 
 private:
   VarAttrKind Attr;

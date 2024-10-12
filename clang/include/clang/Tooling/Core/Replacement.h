@@ -434,7 +434,7 @@ struct TranslationUnitReplacements {
   /// Name of the main source for the translation unit.
   std::string MainSourceFile;
 #ifdef SYCLomatic_CUSTOMIZATION
-  std::vector<MainSourceFileInfo>  MainSourceFilesDigest;
+  std::vector<MainSourceFileInfo> MainSourceFilesDigest;
   std::string DpctVersion = "";
   std::string MainHelperFileName = "";
   std::string USMLevel = ""; // deprecated
