@@ -463,18 +463,6 @@ static void saveUpdatedMigrationDataIntoYAML(
 
   if (!MainSrcFilesRepls.empty() || !MainSrcFilesDigest.empty() ||
       !CompileCmdsPerTarget.empty()) {
-    for (auto &Entry : MainSrcFilesDigest) {
-      printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): "
-             "%s\n",
-             Entry.MainSourceFile.c_str());
-      printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): "
-             "%s\n",
-             Entry.Digest.c_str());
-      printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): "
-             "%d\n",
-             Entry.HasCUDASyntax);
-    }
-
     save2Yaml(YamlFile, SrcFile, MainSrcFilesRepls, MainSrcFilesDigest,
               CompileCmdsPerTarget);
   }

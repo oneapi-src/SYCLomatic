@@ -157,7 +157,6 @@ template <> struct MappingTraits<clang::tooling::MainSourceFileInfo> {
         Keys(Io, R);
     Io.mapOptional("MainSourceFile", Keys->MainSourceFile);
     Io.mapOptional("Digest", Keys->Digest);
-    printf("#########Keys->HasCUDASyntax [%d]\n", Keys->HasCUDASyntax);
     Io.mapOptional("HasCUDASyntax", Keys->HasCUDASyntax);
   }
 };

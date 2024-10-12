@@ -36,10 +36,12 @@ namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
 int save2Yaml(
-    clang::tooling::UnifiedPath& YamlFile, clang::tooling::UnifiedPath& SrcFileName,
+    clang::tooling::UnifiedPath &YamlFile,
+    clang::tooling::UnifiedPath &SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
     const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
-    const std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
+    const std::map<clang::tooling::UnifiedPath,
+                   std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets) {
   std::string YamlContent;
   llvm::raw_string_ostream YamlContentStream(YamlContent);
@@ -51,24 +53,7 @@ int save2Yaml(
   TUR.Replacements.insert(TUR.Replacements.end(), Replaces.begin(),
                           Replaces.end());
 
-  // std::transform(
-  //     MainSrcFilesDigest.begin(), MainSrcFilesDigest.end(),
-  //     std::back_insert_iterator<
-  //         std::vector<clang::tooling::MainSourceFileInfo>(
-  //         TUR.MainSourceFilesDigest),
-  //     [](const clang::tooling::MainSourceFileInfo &P) {
-  //       return clang::tooling::MainSourceFileInfo(P.MainSourceFile,
-  //                                                  P.Digest, P.HasCUDASyntax);
-  //     });
-
-  //TUR.MainSourceFilesDigest = MainSrcFilesDigest;
-  for (auto &Entry : MainSrcFilesDigest) {
-    printf("1 %s\n", Entry.MainSourceFile.c_str());
-    printf("2 %s\n", Entry.Digest.c_str());
-    printf("3 %d\n", Entry.HasCUDASyntax);
-    TUR.MainSourceFilesDigest.push_back(clang::tooling::MainSourceFileInfo(
-        Entry.MainSourceFile, Entry.Digest, Entry.HasCUDASyntax));
-  }
+  TUR.MainSourceFilesDigest = MainSrcFilesDigest;
 
   for (const auto &Entry : CompileTargets) {
     TUR.CompileTargets[Entry.first.getCanonicalPath().str()] = Entry.second;
@@ -83,7 +68,7 @@ int save2Yaml(
   return 0;
 }
 
-int loadFromYaml(const clang::tooling::UnifiedPath& Input,
+int loadFromYaml(const clang::tooling::UnifiedPath &Input,
                  clang::tooling::TranslationUnitReplacements &TU) {
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
       llvm::MemoryBuffer::getFile(Input.getCanonicalPath());
@@ -97,7 +82,7 @@ int loadFromYaml(const clang::tooling::UnifiedPath& Input,
   YAMLIn >> TU;
 
   bool IsSrcFileChanged = false;
-  for (const auto &digest: TU.MainSourceFilesDigest) {
+  for (const auto &digest : TU.MainSourceFilesDigest) {
     auto Hash = llvm::sys::fs::md5_contents(digest.MainSourceFile);
     if (Hash && Hash->digest().c_str() != digest.Digest) {
       llvm::errs() << "Warning: The file '" << digest.MainSourceFile
@@ -149,8 +134,10 @@ void mergeAndUniqueReps(
 }
 
 int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
-                      clang::tooling::UnifiedPath OutRootSrcFilePath, Replacements &Replaces) {
-  clang::tooling::UnifiedPath YamlFile = OutRootSrcFilePath.getCanonicalPath() + ".yaml";
+                      clang::tooling::UnifiedPath OutRootSrcFilePath,
+                      Replacements &Replaces) {
+  clang::tooling::UnifiedPath YamlFile =
+      OutRootSrcFilePath.getCanonicalPath() + ".yaml";
 
   auto PreTU = clang::dpct::DpctGlobalInfo::getInstance()
                    .getReplInfoFromYAMLSavedInFileInfo(InRootSrcFilePath);
@@ -169,20 +156,17 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
   auto Hash = llvm::sys::fs::md5_contents(InRootSrcFilePath.getCanonicalPath());
 
   bool HasCUDASyntax = false;
-  if (auto FileInfo = dpct::DpctGlobalInfo::getInstance().findFile(InRootSrcFilePath.getCanonicalPath())) {
+  if (auto FileInfo = dpct::DpctGlobalInfo::getInstance().findFile(
+          InRootSrcFilePath.getCanonicalPath())) {
     if (FileInfo->hasCUDASyntax()) {
       HasCUDASyntax = true;
     }
   }
-  clang::tooling::MainSourceFileInfo FileDigest(InRootSrcFilePath.getPath().str(),
-                                                    Hash->digest().c_str(), HasCUDASyntax);
-
-  printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): %s\n", FileDigest.MainSourceFile.c_str());
-  printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): %s\n", FileDigest.Digest.c_str());
-  printf("###mergeExternalReps######## InRootSrcFilePath.getPath().str(): %d\n", FileDigest.HasCUDASyntax);
-  std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
+  clang::tooling::MainSourceFileInfo FileDigest(
+      InRootSrcFilePath.getPath().str(), Hash->digest().c_str(), HasCUDASyntax);
+  std::map<clang::tooling::UnifiedPath,
+           std::vector<clang::tooling::CompilationInfo>>
       CompileTargets;
-  save2Yaml(YamlFile, OutRootSrcFilePath, Repls,
-            {FileDigest}, CompileTargets);
+  save2Yaml(YamlFile, OutRootSrcFilePath, Repls, {FileDigest}, CompileTargets);
   return 0;
 }
