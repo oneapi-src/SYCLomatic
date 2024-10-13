@@ -58,16 +58,16 @@ results in the following migrated SYCL code:
      childKernel<<<4, 4>>>();
      ...
    }
-  void foo() {
-    ...
-    dpct::get_in_order_queue().parallel_for(
-        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, 8),
-                          sycl::range<3>(1, 1, 8)),
-        [=](sycl::nd_item<3> item_ct1) {
-          parentKernel();
-        });
-    ...
-  }
+   void foo() {
+     ...
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, 8),
+                           sycl::range<3>(1, 1, 8)),
+         [=](sycl::nd_item<3> item_ct1) {
+           parentKernel();
+         });
+     ...
+   }
 
 which is rewritten to:
 
