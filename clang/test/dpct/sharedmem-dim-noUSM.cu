@@ -6,7 +6,7 @@
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: dpct::global_memory<int, 4> dev_mem(10, 10, 10, 10);
+// CHECK-NEXT: static dpct::global_memory<int, 4> dev_mem(10, 10, 10, 10);
 __device__ int dev_mem[10][10][10][10];
 
 __shared__ int sha1_mem[10][10][10][10];

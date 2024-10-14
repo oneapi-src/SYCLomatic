@@ -220,7 +220,7 @@ __shared__ uint32_t share_v;
   atomicAdd(p_4, 1);
 }
 
-// CHECK:dpct::global_memory<uint32_t, 1> dmem(100);
+// CHECK:static dpct::global_memory<uint32_t, 1> dmem(100);
 // CHECK-NEXT:void foo_4(uint8_t *dpct_local, uint32_t *dmem) {
 // CHECK-NEXT:auto share = (uint32_t *)dpct_local;
 // CHECK-NEXT:  uint32_t *p_1 = NULL;
@@ -540,7 +540,7 @@ __shared__ unsigned int s_Hist[100];
   addByte(s_WarpHist, 1000);
 }
 
-//CHECK:dpct::global_memory<volatile int, 0> g_mutex(0);
+//CHECK:static dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex = 0;
 
 //CHECK:void __gpu_sync(int blocks_to_synch, volatile int &g_mutex) {
