@@ -6018,6 +6018,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
       requestHelperFeatureForEnumNames(AttributeName);
 
+      if (AttributeName == "cudaDevAttrMaxSharedMemoryPerBlockOptin") {
+        report(CE->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false,
+               AttributeName);
+      }
+
       ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
       ReplStr += StmtStrArg2;
       ReplStr += ").";
