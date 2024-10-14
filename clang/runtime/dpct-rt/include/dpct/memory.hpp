@@ -258,14 +258,12 @@ public:
       (Memory == constant) ? sycl::access_mode::read
                            : sycl::access_mode::read_write;
   static constexpr size_t type_size = sizeof(T);
-  using element_t =
-      typename std::conditional<Memory == constant, const T, T>::type;
   using value_t = typename std::remove_cv<T>::type;
   template <size_t Dimension = 1>
   using accessor_t = typename std::conditional<
       Memory == local, sycl::local_accessor<value_t, Dimension>,
       sycl::accessor<T, Dimension, mode, target>>::type;
-  using pointer_t = element_t *;
+  using pointer_t = T *;
 };
 
 static inline void *dpct_malloc(size_t size, sycl::queue &q) {
@@ -1422,7 +1420,6 @@ template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <class T, memory_region Memory> class accessor<T, Memory, 3> {
 public:
   using memory_t = detail::memory_traits<Memory, T>;
-  using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<3>;
   accessor(pointer_t data, const sycl::range<3> &in_range)
@@ -1448,7 +1445,6 @@ private:
 template <class T, memory_region Memory> class accessor<T, Memory, 2> {
 public:
   using memory_t = detail::memory_traits<Memory, T>;
-  using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<2>;
   accessor(pointer_t data, const sycl::range<2> &in_range)
