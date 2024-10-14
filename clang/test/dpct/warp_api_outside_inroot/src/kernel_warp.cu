@@ -31,7 +31,7 @@ void foo() {
   //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    sycl::local_accessor<float, 1> smem_acc_ct1(sycl::range<1>(128), cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<float *> input_acc_ct0(input, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper input_acc_ct0(input, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
@@ -70,7 +70,7 @@ __global__ void compute_mode(float *input) {
 void foo_2(float *ptr) {
   //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<float *> ptr_acc_ct0(ptr, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper ptr_acc_ct0(ptr, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
