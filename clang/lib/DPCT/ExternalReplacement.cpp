@@ -153,20 +153,13 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
   std::vector<clang::tooling::Replacement> Repls(Replaces.begin(),
                                                  Replaces.end());
 
-  auto Hash = llvm::sys::fs::md5_contents(InRootSrcFilePath.getCanonicalPath());
+  // For header file, its hash content digest and HasCUDASytax field is not
+  // registed.
+  clang::tooling::MainSourceFileInfo MsfInfo;
 
-  bool HasCUDASyntax = false;
-  if (auto FileInfo = dpct::DpctGlobalInfo::getInstance().findFile(
-          InRootSrcFilePath.getCanonicalPath())) {
-    if (FileInfo->hasCUDASyntax()) {
-      HasCUDASyntax = true;
-    }
-  }
-  clang::tooling::MainSourceFileInfo FileDigest(
-      InRootSrcFilePath.getPath().str(), Hash->digest().c_str(), HasCUDASyntax);
   std::map<clang::tooling::UnifiedPath,
            std::vector<clang::tooling::CompilationInfo>>
       CompileTargets;
-  save2Yaml(YamlFile, OutRootSrcFilePath, Repls, {FileDigest}, CompileTargets);
+  save2Yaml(YamlFile, OutRootSrcFilePath, Repls, {MsfInfo}, CompileTargets);
   return 0;
 }

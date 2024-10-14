@@ -1,2 +1,1 @@
-// CHECK: Warning: The file '{{(.+)}}test.cuh' has been changed during incremental migration.
-// CHECK: Warning: Failed to load {{(.+)}}.yaml. Migration continues with incremental migration disabled. See https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/current/overview.html for more details.
+// CHECK: File '{{(.+)}}/test.dp.hpp' already exists; skipping it.
