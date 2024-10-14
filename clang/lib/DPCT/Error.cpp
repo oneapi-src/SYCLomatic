@@ -197,13 +197,13 @@ void ShowStatus(int Status, std::string Message) {
   case MigrateCmakeScriptOnlyNotSpecifed:
     StatusString =
         "Error: option '-migrate-build-script-only' is not specified "
-        "for CMake script migartion.";
+        "for CMake script migration.";
     break;
-  case MigarteBuildScriptIncorrectUse:
+  case MigrateBuildScriptIncorrectUse:
     StatusString = "Error: option '-migrate-build-script' is only used for "
                    "whole project code migration.";
     break;
-  case MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse:
+  case MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse:
     StatusString = "Error: option '-migrate-build-script' and "
                    "'-migrate-build-script-only' cannot be used together.";
     break;

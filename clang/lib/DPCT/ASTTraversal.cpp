@@ -2246,7 +2246,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           TypePtr = ET->getNamedType().getTypePtr();
 
         // The definition of the type is in current files for analysis and
-        // neither they are typedefed. We donot want to migarte such types.
+        // neither they are typedefed. We donot want to migrate such types.
         if (TypePtr->getTypeClass() != clang::Type::Typedef)
           return;
 
