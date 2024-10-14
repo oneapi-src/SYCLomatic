@@ -11,7 +11,7 @@
 #include "Error.h"
 #include "MapNames.h"
 #include "MigrateCmakeScript.h"
-#include "MigratePythonSetupScript.h"
+#include "MigratePythonBuildScript.h"
 #include "MigrationRuleManager.h"
 #include "NCCLAPIMigration.h"
 #include "TypeLocRewriters.h"
@@ -366,8 +366,8 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
         break;
-      case (RuleKind::PythonSetupRule):
-        registerPythonSetupMigrationRule(*r);
+      case (RuleKind::PythonRule):
+        registerPythonMigrationRule(*r);
         break;
       default:
         break;

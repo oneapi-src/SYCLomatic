@@ -95,8 +95,8 @@ enum class CMakeScriptMigrationMsgs {
 };
 
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
-enum class PythonSetupScriptMigrationMsgs {
-#include "DiagnosticsPythonSetupScriptMigration.inc"
+enum class PythonBuildScriptMigrationMsgs {
+#include "DiagnosticsPythonBuildScriptMigration.inc"
 #undef DEF_COMMENT
 };
 

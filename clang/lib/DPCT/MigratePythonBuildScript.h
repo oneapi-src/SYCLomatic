@@ -6,21 +6,21 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_MIGRATE_PYTHON_SETUP_SCRIPT_H
-#define DPCT_MIGRATE_PYTHON_SETUP_SCRIPT_H
+#ifndef DPCT_MIGRATE_PYTHON_BUILD_SCRIPT_H
+#define DPCT_MIGRATE_PYTHON_BUILD_SCRIPT_H
 #include "MigrateBuildScript.h"
 #include "Rules.h"
 
-void collectPythonSetupScripts(const clang::tooling::UnifiedPath &InRoot,
+void collectPythonBuildScripts(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot);
-void collectPythonSetupScriptsSpecified(
+void collectPythonBuildScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot);
-void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
+void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot);
-void registerPythonSetupMigrationRule(MetaRuleObject &R);
-bool pythonSetupScriptNotFound();
-void addPythonSetupWarningMsg(const std::string &WarningMsg,
+void registerPythonMigrationRule(MetaRuleObject &R);
+bool pythonBuildScriptNotFound();
+void addPythonWarningMsg(const std::string &WarningMsg,
                               const std::string FileName);
 #endif

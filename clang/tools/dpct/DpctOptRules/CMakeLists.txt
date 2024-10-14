@@ -9,8 +9,8 @@ set(dpct_cmake_rule_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/cmake_script_migration_rule_optional.yaml
 )
 
-set(dpct_python_setup_rule_files
-  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/python_setup_script_migration_rule_ipex.yaml
+set(dpct_python_rule_files
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/python_build_script_migration_rule_ipex.yaml
 )
 
 install(
@@ -32,16 +32,16 @@ install(
   DESTINATION ${CMAKE_BINARY_DIR}/extensions/cmake_rules)
 
 install(
-  FILES ${dpct_python_setup_rule_files}
+  FILES ${dpct_python_rule_files}
   COMPONENT dpct-python-setup-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  DESTINATION ./extensions/python_setup_rules)
+  DESTINATION ./extensions/python_rules)
 
 install(
-  FILES ${dpct_python_setup_rule_files}
+  FILES ${dpct_python_rule_files}
   COMPONENT dpct-python-setup-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-  DESTINATION ${CMAKE_BINARY_DIR}/extensions/python_setup_rules)
+  DESTINATION ${CMAKE_BINARY_DIR}/extensions/python_rules)
 
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-opt-rules

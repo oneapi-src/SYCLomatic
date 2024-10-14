@@ -182,8 +182,8 @@ int validateBuildScriptPaths(const clang::tooling::UnifiedPath &InRoot,
           !Name.ends_with(".py")) {
         Ok = -5;
         llvm::errs() << "Error: File '" << Canonical.getCanonicalPath()
-                     << "' is not a valid CMake or Python setup script file. "
-                     << "CMakeLists.txt/package.cmake or setup.py files are "
+                     << "' is not a valid CMake or Python build script file. "
+                     << "CMakeLists.txt/package.cmake or Python files are "
                      << "expected\n";
       }
     }

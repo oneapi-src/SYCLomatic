@@ -1,11 +1,11 @@
-//===-------------------- MigratePythonSetupScript.cpp --------------------===//
+//===-------------------- MigratePythonBuildScript.cpp --------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "MigratePythonSetupScript.h"
+#include "MigratePythonBuildScript.h"
 #include "Diagnostics.h"
 #include "Error.h"
 #include "PatternRewriter.h"
@@ -29,48 +29,48 @@ namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
 static std::vector<clang::tooling::UnifiedPath /*file path*/>
-    PythonSetupScriptFilesSet;
+    PythonBuildScriptFilesSet;
 static std::map<clang::tooling::UnifiedPath /*file path*/,
                 std::string /*content*/>
-    PythonSetupScriptFileBufferMap;
+    PythonBuildScriptFileBufferMap;
 static std::map<clang::tooling::UnifiedPath /*file name*/, bool /*is crlf*/>
     ScriptFileCRLFMap;
 
-static std::map<std::string /*Python setup syntax*/,
-                MetaRuleObject::PatternRewriter /*Python setup migraiton rule*/>
-    PythonSetupBuildInRules;
+static std::map<std::string /*Python syntax*/,
+                MetaRuleObject::PatternRewriter /*Python migration rule*/>
+    PythonBuildInRules;
 
 static std::map<std::string /*file path*/,
                 std::vector<std::string> /*warning msg*/>
     FileWarningsMap;
 
-void collectPythonSetupScripts(const clang::tooling::UnifiedPath &InRoot,
+void collectPythonBuildScripts(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot) {
-  collectBuildScripts(InRoot, OutRoot, PythonSetupScriptFilesSet,
-                      BuildScriptKind::BS_PySetup);
+  collectBuildScripts(InRoot, OutRoot, PythonBuildScriptFilesSet,
+                      BuildScriptKind::BS_Python);
 }
 
-void collectPythonSetupScriptsSpecified(
+void collectPythonBuildScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot) {
   collectBuildScriptsSpecified(OptParser, InRoot, OutRoot,
-                               PythonSetupScriptFilesSet,
-                               BuildScriptKind::BS_PySetup);
+                               PythonBuildScriptFilesSet,
+                               BuildScriptKind::BS_Python);
 }
 
-void addPythonSetupWarningMsg(const std::string &WarningMsg,
+void addPythonWarningMsg(const std::string &WarningMsg,
                               const std::string FileName) {
   FileWarningsMap[FileName].push_back(WarningMsg);
 }
 
 static void
-applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
+applyPythonMigrationRules(const clang::tooling::UnifiedPath InRoot,
                                const clang::tooling::UnifiedPath OutRoot) {
 
   setFileTypeProcessed(SourceFileType::SFT_PySetupScript);
 
-  for (auto &Entry : PythonSetupScriptFileBufferMap) {
+  for (auto &Entry : PythonBuildScriptFileBufferMap) {
     llvm::outs() << "Processing: " + Entry.first.getPath() + "\n";
 
     auto &Buffer = Entry.second;
@@ -85,8 +85,8 @@ applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
     }
 
     // Apply user define migration rules
-    for (const auto &PythonSetupSyntaxEntry : PythonSetupBuildInRules) {
-      const auto &PR = PythonSetupSyntaxEntry.second;
+    for (const auto &PythonSyntaxEntry : PythonBuildInRules) {
+      const auto &PR = PythonSyntaxEntry.second;
       if (!PR.In.empty() || !PR.Out.empty()) {
         Buffer = applyPatternRewriter(PR, Buffer);
       }
@@ -94,27 +94,27 @@ applyPythonSetupMigrationRules(const clang::tooling::UnifiedPath InRoot,
   }
 }
 
-bool pythonSetupScriptNotFound() { return PythonSetupScriptFilesSet.empty(); }
+bool PythonBuildScriptNotFound() { return PythonBuildScriptFilesSet.empty(); }
 
-void doPythonSetupScriptMigration(const clang::tooling::UnifiedPath &InRoot,
+void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot) {
-  loadBufferFromFile(InRoot, OutRoot, PythonSetupScriptFilesSet,
-                     PythonSetupScriptFileBufferMap);
-  unifyInputFileFormat(PythonSetupScriptFileBufferMap, ScriptFileCRLFMap);
-  applyPythonSetupMigrationRules(InRoot, OutRoot);
-  storeBufferToFile(PythonSetupScriptFileBufferMap, ScriptFileCRLFMap);
+  loadBufferFromFile(InRoot, OutRoot, PythonBuildScriptFilesSet,
+                     PythonBuildScriptFileBufferMap);
+  unifyInputFileFormat(PythonBuildScriptFileBufferMap, ScriptFileCRLFMap);
+  applyPythonMigrationRules(InRoot, OutRoot);
+  storeBufferToFile(PythonBuildScriptFileBufferMap, ScriptFileCRLFMap);
 }
 
-void registerPythonSetupMigrationRule(MetaRuleObject &R) {
+void registerPythonMigrationRule(MetaRuleObject &R) {
   auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
                                             R.MatchMode, R.Warning, R.RuleId,
                                             R.BuildScriptSyntax, R.Priority);
 
-  auto Iter = PythonSetupBuildInRules.find(PR.BuildScriptSyntax);
-  if (Iter != PythonSetupBuildInRules.end()) {
+  auto Iter = PythonBuildInRules.find(PR.BuildScriptSyntax);
+  if (Iter != PythonBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover &&
         Iter->second.Priority > PR.Priority) {
-      PythonSetupBuildInRules[PR.BuildScriptSyntax] = PR;
+      PythonBuildInRules[PR.BuildScriptSyntax] = PR;
     } else {
       llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
                    << ", Rule:" << Iter->second.RuleId
@@ -122,6 +122,6 @@ void registerPythonSetupMigrationRule(MetaRuleObject &R) {
                    << ") is ignored.\n";
     }
   } else {
-    PythonSetupBuildInRules[PR.BuildScriptSyntax] = PR;
+    PythonBuildInRules[PR.BuildScriptSyntax] = PR;
   }
 }

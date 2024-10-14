@@ -176,7 +176,7 @@ void collectBuildScripts(
 #endif
           BuildScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
         }
-      } else if (BuildScript == BuildScriptKind::BS_PySetup) {
+      } else if (BuildScript == BuildScriptKind::BS_Python) {
         if (Name.ends_with(".py")) {
           BuildScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
         }
@@ -231,7 +231,7 @@ void collectBuildScriptsSpecified(
               llvm::sys::path::filename(FilePath).ends_with(".txt")) {
             BuildScriptFilesSet.push_back(FilePath);
           }
-        } else if (BuildScript == BuildScriptKind::BS_PySetup) {
+        } else if (BuildScript == BuildScriptKind::BS_Python) {
           if (llvm::sys::path::filename(FilePath).ends_with(".py")) {
             BuildScriptFilesSet.push_back(FilePath);
           }

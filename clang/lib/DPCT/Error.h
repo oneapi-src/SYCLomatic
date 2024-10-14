@@ -60,13 +60,13 @@ enum ProcessStatus {
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
   CallIndependentToolError = -47,
-  MigrationErrorCMakeAndPythonSetupScriptPathInvalid = -48,
+  MigrationErrorBuildScriptPathInvalid = -48,
   MigrateBuildScriptOnlyNotSpecifed = -49,
   MigrateBuildScriptIncorrectUse = -50,
   MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse = -51,
-  MigrationErrorNoExplicitInRootAndCMakeOrPythonSetupScript = -52,
+  MigrationErrorNoExplicitInRootAndBuildScript = -52,
   MigrationErrorCannotWrite = -53,
-  MigratePythonSetupScriptOnlyNotSpecifed = -54,
+  MigratePythonBuildScriptOnlyNotSpecifed = -54,
 };
 
 namespace clang {

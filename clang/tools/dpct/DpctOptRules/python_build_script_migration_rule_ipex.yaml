@@ -5,10 +5,10 @@
 # This file will be installed to folder:
 # {dpct_install_folder}/extensions/opt_rules.
 # The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/opt_rules/setup_rules/python_setup_script_migration_rule_ipex.yaml
+# --rule-file={dpct_install_folder}/extensions/opt_rules/setup_rules/python_build_script_migration_rule_ipex.yaml
 
 - Rule: rule_import_torch
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: import_torch
@@ -20,7 +20,7 @@
     SYCL_HOME = os.environ.get('CMPLR_ROOT')
 
 - Rule: rule_from_torch_utils_import_cpp_extension_only
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: from_torch_utils_import_cpp_extension_only
@@ -28,7 +28,7 @@
   Out: from intel_extension_for_pytorch.xpu import cpp_extension
 
 - Rule: rule_torch_utils_cpp_extension
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: torch_utils_cpp_extension
@@ -36,7 +36,7 @@
   Out: intel_extension_for_pytorch.xpu.cpp_extension
 
 - Rule: rule_utils_cpp_extension
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: utils_cpp_extension
@@ -44,7 +44,7 @@
   Out: intel_extension_for_pytorch.xpu.cpp_extension
 
 - Rule: rule_cpp_extension_import_CppExtension
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: cpp_extension_import_CppExtension
@@ -54,7 +54,7 @@
     from torch.utils.cpp_extension import CppExtension
 
 - Rule: rule_CUDA_HOME
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: CUDA_HOME
@@ -62,7 +62,7 @@
   Out: SYCL_HOME
 
 - Rule: rule_cpp_extension_import_SYCL_HOME
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: cpp_extension_import_SYCL_HOME
@@ -70,7 +70,7 @@
   Out: from ${mod_prefix}cpp_extension import${ws}(${class_prefix}${class_suffix})
 
 - Rule: rule_CUDAExtension
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: CUDAExtension
@@ -78,7 +78,7 @@
   Out: DPCPPExtension
 
 - Rule: rule_cuda_is_available
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: cuda_is_available
@@ -86,7 +86,7 @@
   Out: xpu.is_available
 
 - Rule: rule_include_dirs
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: include_dirs
@@ -94,7 +94,7 @@
   Out: DPCPPExtension(${args}, include_dirs=cpp_extension.include_paths(),)
 
 - Rule: rule_BuildExtension
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: BuildExtension
@@ -102,7 +102,7 @@
   Out: DpcppBuildExtension
 
 - Rule: rule_cu_file
-  Kind: PythonSetupRule
+  Kind: PythonRule
   Priority: Fallback
   MatchMode: Partial
   PythonSyntax: cu_file

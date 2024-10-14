@@ -10,7 +10,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
 #include "MigrateCmakeScript.h"
-#include "MigratePythonSetupScript.h"
+#include "MigratePythonBuildScript.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 
@@ -787,15 +787,15 @@ static void constructWaringMsg(const std::string &Input, size_t index,
         "\n" + OutStr;
   } else if (llvm::StringRef(FileName).ends_with(".py")) {
     WarningMsg += clang::dpct::DiagnosticsUtils::getMsgText(
-        clang::dpct::PythonSetupScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
+        clang::dpct::PythonBuildScriptMigrationMsgs::WARNING_FOR_SYNTAX_REMOVED,
         Warning);
     WarningMsg += "\n";
 
-    addPythonSetupWarningMsg(WarningMsg, FileName);
+    addPythonWarningMsg(WarningMsg, FileName);
 
     OutStr = "\n# " +
              clang::dpct::DiagnosticsUtils::getMsgText(
-                 clang::dpct::PythonSetupScriptMigrationMsgs::
+                 clang::dpct::PythonBuildScriptMigrationMsgs::
                      WARNING_FOR_SYNTAX_REMOVED,
                  Warning) +
              "\n" + OutStr;
