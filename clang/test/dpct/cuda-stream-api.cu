@@ -211,8 +211,8 @@ static void func()
   MY_ERROR_CHECKER(cudaStreamAttachMemAsync(s0, nullptr));
 
   cudaEvent_t e;
-  // CHECK:  s0->ext_oneapi_submit_barrier({*e});
-  cudaStreamWaitEvent(s0, e, 0);
+  // CHECK:  s0->ext_oneapi_submit_barrier({*(dpct::event_ptr)e});
+  cudaStreamWaitEvent(s0, (cudaEvent_t)e, 0);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaStreamQuery was removed because SYCL currently does not support query operations on queues.

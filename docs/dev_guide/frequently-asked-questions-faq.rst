@@ -333,26 +333,28 @@ Based on these language standards |tool_name| emits the parsing error.
 You may need to adjust the source code.
 
 How do I resolve migration failure with "fatal error: 'cmath' file not found" in Linux?
-*********************************************************************************
+***************************************************************************************
  
 The problem stems from an absent include path for the new standard C++ library. 
 The |tool_name| is designed to automatically detect the appropriate version of the C++ header file by checking the compiler package at ``/usr/lib/gcc/x86_64-linux-gnu``and C++ header at ``/usr/include/c++``.
 In the following example, it tries to use C++ header version 12 based on the knowledge of the compiler package, but it fails because C++ header version 12 does not exist."
 
 .. code-block:: 
-  :linenos:
-  $ ls /usr/lib/gcc/x86_64-linux-gnu
-  11 12
-  $ ls /usr/include/c++
-  11
+   :linenos:
+   
+   ls /usr/lib/gcc/x86_64-linux-gnu
+   11 12
+   ls /usr/include/c++
+   11
 
 To fix this issue, please install the version 12 g++ package or libstdc++ package.
 
 .. code-block:: 
-  :linenos:
-  $ sudo apt install g++-12 
-  or
-  $ sudo apt install libstdc++-12-dev 
+   :linenos:
+   
+   sudo apt install g++-12 
+   or
+   sudo apt install libstdc++-12-dev 
 
 If your installation differs, install the missing version of ``g++-XX`` or ``libstdc++-XX-dev`` based on what you see missing from the results of "ls /usr/lib/gcc/x86_64-linux-gnu" and "ls /usr/include/c++".
 

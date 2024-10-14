@@ -1487,7 +1487,7 @@ private:
     return FD->getLocation();
   }
   static SourceLocation getLocation(const CallExpr *CE) {
-    return CE->getEndLoc();
+    return getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc()).getEnd();
   }
   // The result will be also stored in KernelCallExpr.BeginLoc
   static SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {

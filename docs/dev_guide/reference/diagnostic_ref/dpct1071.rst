@@ -34,4 +34,4 @@ If the placement is incorrect, you may need to manually add the necessary ``set_
 statements before the call to ``commit()``.
 
 Refer to the
-`descriptor<precision, domain>::set_value function <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/descriptor-precision-domain-set-value.html>`_ for more information.
+`descriptor<precision, domain>::set_value function <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/2024-2/descriptor-precision-domain-set-value.html>`_ for more information.
