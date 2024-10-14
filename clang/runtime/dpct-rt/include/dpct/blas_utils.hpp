@@ -479,6 +479,7 @@ inline void dotuc(sycl::queue &q, std::int64_t n, const void *x,
         reinterpret_cast<std::complex<double> *>(result));
     break;
   }
+#ifdef __INTEL_MKL__
   case detail::get_type_combination_id(library_data_t::real_half,
                                        library_data_t::real_half,
                                        library_data_t::real_half): {
@@ -488,6 +489,7 @@ inline void dotuc(sycl::queue &q, std::int64_t n, const void *x,
         reinterpret_cast<sycl::half *>(result));
     break;
   }
+#endif
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -528,7 +530,7 @@ inline void rotm_impl(sycl::queue &q, std::int64_t n, void *x, int64_t incx,
                       void *y, int64_t incy, const void *param) {
   auto data_x = get_memory<Tx>(x);
   auto data_y = get_memory<Ty>(y);
-  auto data_param = get_memory<const Tparam>(param);
+  auto data_param = get_memory<Tparam>(const_cast<void *>(param));
   oneapi::mkl::blas::column_major::rotm(q, n, data_x, incx, data_y, incy,
                                         data_param);
 }
@@ -2213,11 +2215,13 @@ inline void nrm2(descriptor_ptr desc_ptr, std::int64_t n, const void *x,
                                                             result);
     break;
   }
+#ifdef __INTEL_MKL__
   case ::dpct::detail::get_type_combination_id(library_data_t::real_half,
                                                library_data_t::real_half): {
     ::dpct::detail::nrm2_impl<sycl::half, sycl::half>(q, n, x, incx, result);
     break;
   }
+#endif
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -2296,6 +2300,7 @@ inline void scal(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
         q, n, alpha, x, incx);
     break;
   }
+#ifdef __INTEL_MKL__
   case ::dpct::detail::get_type_combination_id(library_data_t::real_half): {
     float alpha_value =
         dpct::get_value(reinterpret_cast<const float *>(alpha), q);
@@ -2304,6 +2309,7 @@ inline void scal(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
                                                       incx);
     break;
   }
+#endif
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -2350,8 +2356,9 @@ inline void axpy(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
         q, n, alpha, x, incx, y, incy);
     break;
   }
+#ifdef __INTEL_MKL__
   case ::dpct::detail::get_type_combination_id(library_data_t::real_half,
-                                               library_data_t::real_float): {
+                                               library_data_t::real_half): {
     float alpha_value =
         dpct::get_value(reinterpret_cast<const float *>(alpha), q);
     sycl::half alaph_half(alpha_value);
@@ -2359,6 +2366,7 @@ inline void axpy(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
                                                       incx, y, incy);
     break;
   }
+#endif
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -2406,6 +2414,7 @@ inline void rot(descriptor_ptr desc_ptr, std::int64_t n, void *x,
         q, n, x, incx, y, incy, c, s);
     break;
   }
+#ifdef __INTEL_MKL__
   case ::dpct::detail::get_type_combination_id(library_data_t::complex_float,
                                                library_data_t::complex_float): {
     ::dpct::detail::rot_impl<std::complex<float>, float, std::complex<float>>(
@@ -2432,6 +2441,7 @@ inline void rot(descriptor_ptr desc_ptr, std::int64_t n, void *x,
                                                     s);
     break;
   }
+#endif
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
