@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct --format-range=none --use-experimental-features=virtual_memory -out-root %T/virtual_memory %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --use-experimental-features=virtual_mem -out-root %T/virtual_memory %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/virtual_memory/virtual_memory.dp.cpp
 #include <cuda.h>
 #include <iostream>
@@ -14,35 +14,35 @@ int main() {
     CUcontext context;
     cuCtxCreate(&context, 0, device);
 
-// CHECK:    dpct::experimental::mem_prop prop = {};
-// CHECK:    prop.type = dpct::experimental::mem_allocation_type::mem_allocation_type_default;
-// CHECK:    prop.location.type = dpct::experimental::mem_location_type::mem_location_type_device;
-// CHECK:    prop.location.id = device;
+// CHECK:  dpct::experimental::mem_prop prop = {};
+// CHECK:  prop.type = 0;
+// CHECK:  prop.location.type = 1;
+// CHECK:  prop.location.id = device;
     CUmemAllocationProp prop = {};
     prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
     prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
     prop.location.id = device;
     size_t granularity;
-// CHECK:    dpct::experimental::mem_get_allocation_granularity(&granularity, &prop, dpct::experimental::granularity_flags::granularity_flags_minimum);
-    cuMemGetAllocationGranularity(&granularity, &prop, CU_MEM_ALLOC_GRANULARITY_MINIMUM);
+// CHECK:    granularity = sycl::ext::oneapi::experimental::get_mem_granularity(dpct::get_device(prop.location.id), dpct::get_device(prop.location.id).get_context(), sycl::ext::oneapi::experimental::granularity_mode::minimum);
+    cuMemGetAllocationGranularity(&granularity, &prop, CU_MEM_ALLOC_GRANULARITY_MINIMUM);   
     size_t POOL_SIZE =  granularity;
 
 // CHECK:    dpct::device_ptr reserved_addr;
 // CHECK:    dpct::experimental::mem_handle allocHandle;
-// CHECK:    dpct::experimental::mem_address_reserve(&reserved_addr, POOL_SIZE, 0, 0, 0);
-// CHECK:    dpct::experimental::mem_create(&allocHandle, POOL_SIZE, &prop, 0);
-// CHECK:    dpct::experimental::mem_map(reserved_addr, POOL_SIZE, 0, allocHandle, 0);
+// CHECK:    reserved_addr = (dpct::device_ptr)sycl::ext::oneapi::experimental::reserve_virtual_mem((uintptr_t)0, POOL_SIZE, dpct::get_current_device().get_context());
+// CHECK:    allocHandle = new sycl::ext::oneapi::experimental::physical_mem(dpct::get_device(prop.location.id), dpct::get_device(prop.location.id).get_context(), POOL_SIZE);
+// CHECK:    allocHandle->map((uintptr_t)reserved_addr, POOL_SIZE, sycl::ext::oneapi::experimental::address_access_mode::read_write, 0);
     CUdeviceptr reserved_addr;
     CUmemGenericAllocationHandle allocHandle;
     cuMemAddressReserve(&reserved_addr, POOL_SIZE, 0, 0, 0);
     cuMemCreate(&allocHandle, POOL_SIZE, &prop, 0);
     cuMemMap(reserved_addr, POOL_SIZE, 0, allocHandle, 0);
 
-// CHECK:    dpct::experimental::mem_access_desc accessDesc = {};
-// CHECK:    accessDesc.location.type = dpct::experimental::mem_location_type::mem_location_type_device;
-// CHECK:    accessDesc.location.id = device;
-// CHECK:    accessDesc.flags = dpct::experimental::address_access_flags::address_access_flags_read_write;
-// CHECK:    dpct::experimental::mem_set_access(reserved_addr, POOL_SIZE, &accessDesc, 1);
+// CHECK:  dpct::experimental::mem_access_desc accessDesc = {};
+// CHECK:  accessDesc.location.type = 1;
+// CHECK:  accessDesc.location.id = device;
+// CHECK:  accessDesc.flags = sycl::ext::oneapi::experimental::address_access_mode::read_write;
+// CHECK:  sycl::ext::oneapi::experimental::set_access_mode(reserved_addr, POOL_SIZE, accessDesc.flags, dpct::get_device(accessDesc.location.id).get_context());
     CUmemAccessDesc accessDesc = {};
     accessDesc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
     accessDesc.location.id = device;
@@ -66,9 +66,9 @@ int main() {
     }
     std::cout << "test passed" << std::endl;
 
-// CHECK:    dpct::experimental::mem_unmap(reserved_addr, POOL_SIZE);
-// CHECK:    dpct::experimental::mem_release(allocHandle);
-// CHECK:    dpct::experimental::mem_address_free(reserved_addr, POOL_SIZE);
+    // CHECK:  sycl::ext::oneapi::experimental::unmap(reserved_addr, POOL_SIZE, dpct::get_current_device().get_context());
+    // CHECK:  delete (allocHandle);
+    // CHECK:  sycl::ext::oneapi::experimental::free_virtual_mem((uintptr_t)reserved_addr, POOL_SIZE, dpct::get_current_device().get_context());
     cuMemUnmap(reserved_addr, POOL_SIZE);
     cuMemRelease(allocHandle);
     cuMemAddressFree(reserved_addr, POOL_SIZE);

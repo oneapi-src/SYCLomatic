@@ -13946,7 +13946,7 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,
               RuleGroupKind::RK_FFT)
 
-void VirtualMemoryRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto virtualmemoryAPI = [&]() {
     return hasAnyName("cuMemCreate", "cuMemAddressReserve", "cuMemMap",
                       "cuMemUnmap", "cuMemAddressFree", "cuMemRelease",
@@ -13954,13 +13954,19 @@ void VirtualMemoryRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   };
   auto virtualmemoryType = [&]() {
     return hasAnyName("CUmemAllocationProp", "CUmemGenericAllocationHandle",
-                      "CUmemAccessDesc");
+                      "CUmemAccessDesc", "CUmemLocationType",
+                      "CUmemAllocationType", "CUmemAllocationGranularity_flags",
+                      "CUmemAccess_flags");
   };
   auto virtualmemoryEnum = [&]() {
-    return hasAnyName("CU_MEM_ALLOCATION_TYPE_PINNED",
-                      "CU_MEM_LOCATION_TYPE_DEVICE",
-                      "CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
-                      "CU_MEM_ALLOC_GRANULARITY_RECOMMENDED");
+    return hasAnyName(
+        "CU_MEM_ALLOCATION_TYPE_PINNED", "CU_MEM_ALLOCATION_TYPE_INVALID",
+        "CU_MEM_ALLOCATION_TYPE_MAX", "CU_MEM_LOCATION_TYPE_DEVICE",
+        "CU_MEM_LOCATION_TYPE_INVALID", "CU_MEM_LOCATION_TYPE_MAX",
+        "CU_MEM_ACCESS_FLAGS_PROT_NONE", "CU_MEM_ACCESS_FLAGS_PROT_READ",
+        "CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
+        "CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
+        "CU_MEM_ALLOC_GRANULARITY_MINIMUM");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(virtualmemoryAPI()))).bind("vmCall"), this);
@@ -13973,7 +13979,7 @@ void VirtualMemoryRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
-void VirtualMemoryRule::runRule(
+void VirtualMemRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "vmCall")) {
@@ -14028,7 +14034,7 @@ void VirtualMemoryRule::runRule(
   }
 }
 
-REGISTER_RULE(VirtualMemoryRule, PassKind::PK_Migration)
+REGISTER_RULE(VirtualMemRule, PassKind::PK_Migration)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {

@@ -1420,194 +1420,20 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
 namespace experimental {
 typedef sycl::ext::oneapi::experimental::physical_mem *mem_handle;
 
-enum mem_location_type {
-  mem_location_type_invalid = 0x0,
-  mem_location_type_device = 0x1,
-  mem_location_type_max = 0xFFFFFFFF
-};
-
-enum mem_allocation_type {
-  mem_allocation_type_invalid = 0x0,
-  mem_allocation_type_default = 0x1,
-  mem_allocation_type_max = 0xFFFFFFFF
-};
-
-enum granularity_flags {
-  granularity_flags_minimum = 0x0,
-  granularity_flags_recommended = 0x1
-};
-
-enum address_access_flags {
-  address_access_flags_none = 0x0,
-  address_access_flags_read = 0x1,
-  address_access_flags_read_write = 0x3,
-  address_access_flags_max = 0xFFFFFFFF
-};
-
 struct mem_location {
   int id;
-  mem_location_type type;
+  int type;
 };
 
 struct mem_prop {
   mem_location location;
-  mem_allocation_type type;
+  int type;
 };
 
 struct mem_access_desc {
-  address_access_flags flags;
+  sycl::ext::oneapi::experimental::address_access_mode flags;
   mem_location location;
 };
-
-/**
- * @brief Reserves a virtual memory region of \p size bytes. The \p addr
- * specifies the requested start of the new virtual memory range reservation. If
- * the implementation is unable to reserve the virtual memory range at the
- * specified address, the implementation will pick another suitable address. The
- * \p size must be a multiple of the reserve granularity. The \p alignment
- * parameter must be set to 0, which means the default alignment will be used.
- * The \p addr must be aligned in accordance with the reserve granularity.
- * @param [out] ptr Pointer to the reserved virtual memory.
- * @param [in] size Size of the virtual memory region in bytes.
- * @param [in] alignment Alignment of the virtual memory (must be 0).
- * @param [in] addr Base address of the memory to be reserved.
- * @param [in] flags Reserved for future use.
- */
-static inline void mem_address_reserve(device_ptr *ptr, size_t size,
-                                       size_t alignment, device_ptr addr,
-                                       unsigned long long flags) {
-  *ptr = (device_ptr)sycl::ext::oneapi::experimental::reserve_virtual_mem(
-      (uintptr_t)addr, size, dpct::get_current_device().get_context());
-}
-
-/**
- * @brief Frees a previously reserved virtual memory region pointed by \p ptr.
- * @param [in] ptr Pointer to the device memory region to free.
- * @param [in] size Size of the memory region in bytes.
- */
-static inline void mem_address_free(device_ptr ptr, size_t size) {
-  sycl::ext::oneapi::experimental::free_virtual_mem(
-      (uintptr_t)ptr, size, dpct::get_current_device().get_context());
-}
-
-/**
- * @brief Creates a physical memory object for allocation.
- * This will allocate \p size of physical memory on the device. The \p size must
- * be a multiple of the allocation granularity, as returned by a call to
- * get_mem_allocation_granularity.
- * @param [out] handle Handle to the created memory object.
- * @param [in] size Size of the physical memory in bytes.
- * @param [in] prop Properties for the memory allocation.
- * @param [in] flags Reserved for future use.
- */
-static inline void mem_create(mem_handle *handle, size_t size,
-                              const mem_prop *prop, unsigned long long flags) {
-  auto &device = dpct::get_device(prop->location.id);
-  *handle = new sycl::ext::oneapi::experimental::physical_mem(
-      device, device.get_context(), size);
-}
-
-/**
- * @brief Releases the physical memory object.
- * @param [in] handle Handle to the memory object to release.
- */
-static inline void mem_release(mem_handle handle) {
-  if (handle) {
-    delete handle;
-  }
-}
-
-/**
- * @brief Maps a virtual memory range, specified by \p ptr and \p size, to the
- * physical memory specified by \p handle, starting at an offset of \p offset
- * bytes. The \p ptr, \p size and \p offset are all need to be multiples of the
- * allocation granularity.
- * @param [in] ptr Pointer to the virtual memory region.
- * @param [in] size Size of the memory region in bytes.
- * @param [in] offset Offset into the physical memory.
- * @param [in] handle Handle to the physical memory.
- * @param [in] flags Reserved for future use.
- */
-static inline void mem_map(device_ptr ptr, size_t size, size_t offset,
-                           mem_handle handle, unsigned long long flags) {
-  handle->map((uintptr_t)ptr, size,
-              sycl::ext::oneapi::experimental::address_access_mode::read_write,
-              offset);
-}
-
-/**
- * @brief Unmaps a previously mapped virtual memory region.
- * @param [in] ptr Pointer to the virtual memory region to unmap.
- * @param [in] size Size of the memory region in bytes.
- */
-static inline void mem_unmap(device_ptr ptr, size_t size) {
-  sycl::ext::oneapi::experimental::unmap(
-      ptr, size, dpct::get_current_device().get_context());
-}
-
-/**
- * @brief Sets the access mode of a virtual memory region pointed by \p ptr.
- * @param [in] ptr Pointer to the virtual memory region.
- * @param [in] size Size of the memory region in bytes.
- * @param [in] desc Array of access descriptors.
- * @param [in] count Number of access descriptors.
- */
-static inline void mem_set_access(device_ptr ptr, size_t size,
-                                  const mem_access_desc *desc, size_t count) {
-  for (size_t index = 0; index < count; index++) {
-    sycl::ext::oneapi::experimental::address_access_mode mode;
-    switch (desc[index].flags) {
-    case address_access_flags::address_access_flags_none:
-      mode = sycl::ext::oneapi::experimental::address_access_mode::none;
-      break;
-    case address_access_flags::address_access_flags_read:
-      mode = sycl::ext::oneapi::experimental::address_access_mode::read;
-      break;
-    case address_access_flags::address_access_flags_read_write:
-      mode = sycl::ext::oneapi::experimental::address_access_mode::read_write;
-      break;
-    default:
-      throw std::runtime_error("mem_set_access: invalid address access flags.");
-    }
-    sycl::ext::oneapi::experimental::set_access_mode(
-        ptr, size, mode,
-        dpct::get_device(desc[index].location.id).get_context());
-  }
-}
-
-/**
- * @brief Retrieves the granularity of the memory allocation.
- * @param [out] granularity Pointer to store the retrieved granularity.
- * @param [in] prop Properties for the memory allocation.
- * @param [in] option Granularity option, either minimum or recommended.
- */
-static inline void mem_get_allocation_granularity(size_t *granularity,
-                                                  const mem_prop *prop,
-                                                  granularity_flags option) {
-  auto &device = dpct::get_device(prop->location.id);
-  *granularity = sycl::ext::oneapi::experimental::get_mem_granularity(
-      device, device.get_context(),
-      option == granularity_flags::granularity_flags_minimum
-          ? sycl::ext::oneapi::experimental::granularity_mode::minimum
-          : sycl::ext::oneapi::experimental::granularity_mode::recommended);
-}
-
-/**
- * @brief Retrieves the granularity of the virtual memory region reserve.
- * @param [out] granularity Pointer to store the retrieved granularity.
- * @param [in] prop Properties for the virtual memory region reserve.
- * @param [in] option Granularity option, either minimum or recommended.
- */
-static inline void mem_get_reserve_granularity(size_t *granularity,
-                                               const mem_prop *prop,
-                                               granularity_flags option) {
-  auto &device = dpct::get_device(prop->location.id);
-  *granularity = sycl::ext::oneapi::experimental::get_mem_granularity(
-      device.get_context(),
-      option == granularity_flags::granularity_flags_minimum
-          ? sycl::ext::oneapi::experimental::granularity_mode::minimum
-          : sycl::ext::oneapi::experimental::granularity_mode::recommended);
-}
 } // namespace experimental
 
 /// dpct accessor used as device function parameter.

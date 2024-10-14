@@ -1390,7 +1390,7 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-class VirtualMemoryRule : public NamedMigrationRule<VirtualMemoryRule> {
+class VirtualMemRule : public NamedMigrationRule<VirtualMemRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
