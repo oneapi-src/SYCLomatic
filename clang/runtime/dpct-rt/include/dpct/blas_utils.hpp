@@ -560,19 +560,29 @@ inline void asum_impl(sycl::queue &q, std::int64_t n, const void *x,
 template <class T>
 inline void iamax_impl(sycl::queue &q, std::int64_t n, const void *x,
                        std::int64_t incx, std::int64_t *res) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   auto data_x = get_memory<T>(x);
   auto data_res = get_memory<std::int64_t>(res);
   oneapi::mkl::blas::column_major::iamax(q, n, data_x, incx, data_res,
                                          oneapi::mkl::index_base::one);
+#endif
 }
 
 template <class T>
 inline void iamin_impl(sycl::queue &q, std::int64_t n, const void *x,
                        std::int64_t incx, std::int64_t *res) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   auto data_x = get_memory<T>(x);
   auto data_res = get_memory<std::int64_t>(res);
   oneapi::mkl::blas::column_major::iamin(q, n, data_x, incx, data_res,
                                          oneapi::mkl::index_base::one);
+#endif
 }
 
 #ifdef __INTEL_MKL__
