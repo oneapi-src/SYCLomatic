@@ -5227,6 +5227,9 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
                                  KernelCallExpr *BASE)
     : IsPointer(false), IsRedeclareRequired(false),
       IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
+  if (PVD &&
+      PVD->getType()->getTypeClass() == Type::TypeClass::SubstTemplateTypeParm)
+    IsDependentType = true;
   if (isa<InitListExpr>(Arg)) {
     HasImplicitConversion = true;
   } else if (const auto *CCE = dyn_cast<CXXConstructExpr>(Arg)) {
@@ -5866,6 +5869,8 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
   Analysis.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
   auto &TexList = getTextureObjectList();
 
+  const auto *FD = CE->getDirectCallee();
+  const auto *FTD = FD ? FD->getPrimaryTemplate() : nullptr;
   for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
     if (auto Obj = TexList[Idx]) {
       ArgsInfo.emplace_back(Obj, this);
@@ -5874,9 +5879,13 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
       bool Used = true;
       if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
         Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
-      const auto FD = CE->getDirectCallee();
       ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis, Arg,
                             Used, Idx, this);
+      if (FTD && FTD->getTemplatedDecl()
+                     ->parameters()[Idx]
+                     ->getType()
+                     ->isDependentType())
+        ArgsInfo.back().IsDependentType = true;
     }
   }
 }
@@ -6195,6 +6204,9 @@ void KernelCallExpr::buildKernelArgsStmt() {
       if (Arg.IsDeviceRandomGeneratorType) {
         TypeStr = TypeStr + " *";
       }
+      if (Arg.IsDependentType) {
+        TypeStr = "decltype(" + Arg.getArgString() + ")";
+      }
 
       if (DpctGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
           !(getFuncInfo()->isParameterReferenced(ArgCounter))) {
@@ -6208,7 +6220,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         if (Arg.IsUsedAsLvalueAfterMalloc) {
           requestFeature(HelperFeatureEnum::device_ext);
           SubmitStmts.AccessorList.emplace_back(buildString(
-              MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
+              MapNames::getDpctNamespace() + "access_wrapper ",
               Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
               Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
           KernelArgs += buildString(Arg.getIdStringWithSuffix("acc"),
@@ -6220,13 +6232,14 @@ void KernelCallExpr::buildKernelArgsStmt() {
               " = " + MapNames::getDpctNamespace() + "get_access(",
               Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr()" : "",
               ", cgh);"));
-          KernelArgs += buildString("(", TypeStr, ")(&",
-                                    Arg.getIdStringWithSuffix("acc"), "[0])");
+          KernelArgs +=
+              buildString("&", Arg.getIdStringWithSuffix("acc"), "[0]");
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
       std::string TypeStr = "auto";
-      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty()) {
+      if (Arg.HasImplicitConversion && !Arg.getTypeString().empty() &&
+          !Arg.IsDependentType) {
         TypeStr = Arg.getTypeString();
       }
       SubmitStmts.CommandGroupList.emplace_back(

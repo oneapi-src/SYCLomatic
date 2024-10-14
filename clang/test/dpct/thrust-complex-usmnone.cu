@@ -106,8 +106,8 @@ int main() {
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
-  // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> cdp_acc_ct0(reinterpret_cast<std::complex<double> *>(cdp), cgh);
-  // CHECK-NEXT:       dpct::access_wrapper<std::complex<double> *> thrust_raw_pointer_cast_dc_ptr_acc_ct2(dpct::get_raw_pointer(dc_ptr), cgh);
+  // CHECK-NEXT:       dpct::access_wrapper cdp_acc_ct0(reinterpret_cast<std::complex<double> *>(cdp), cgh);
+  // CHECK-NEXT:       dpct::access_wrapper thrust_raw_pointer_cast_dc_ptr_acc_ct2(dpct::get_raw_pointer(dc_ptr), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       std::complex<double> static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
   // CHECK-EMPTY:

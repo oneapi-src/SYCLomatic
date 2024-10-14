@@ -103,7 +103,7 @@ void InvokeKernel() {
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper dev_ptr_acc_ct0(dev_ptr, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),

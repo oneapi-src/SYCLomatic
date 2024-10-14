@@ -135,8 +135,8 @@ int main() {
   // CHECK-NEXT:  */
   // CHECK-NEXT:  q_ct1.submit(
   // CHECK-NEXT:    [&](sycl::handler &cgh) {
-  // CHECK-NEXT:      dpct::access_wrapper<const int *> karg1_acc_ct0((const int *)karg1, cgh);
-  // CHECK-NEXT:      dpct::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);
+  // CHECK-NEXT:      dpct::access_wrapper karg1_acc_ct0((const int *)karg1, cgh);
+  // CHECK-NEXT:      dpct::access_wrapper karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:        sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -172,8 +172,8 @@ int main() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> args_arg1_acc_ct0(args.arg1, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> args_arg2_acc_ct1(args.arg2, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper args_arg1_acc_ct0(args.arg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper args_arg2_acc_ct1(args.arg2, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 2, 1), sycl::range<3>(1, 2, 1)),
@@ -297,7 +297,7 @@ __global__ void foo_kernel3(int *d) {
 //CHECK-NEXT:  if (1)
 //CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:      [&](sycl::handler &cgh) {
-//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(&g_a[0], cgh);
+//CHECK-NEXT:        dpct::access_wrapper g_a_acc_ct0(&g_a[0], cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
 //CHECK-NEXT:          sycl::nd_range<3>(c, sycl::range<3>(1, 1, 1)),
@@ -319,7 +319,7 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:    */
 //CHECK-NEXT:    q_ct1.submit(
 //CHECK-NEXT:      [&](sycl::handler &cgh) {
-//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:        dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
 //CHECK-NEXT:          sycl::nd_range<3>(c * d, d),
@@ -330,7 +330,7 @@ void run_foo(dim3 c, dim3 d) {
 //CHECK-NEXT:  else
 //CHECK-NEXT:    q_ct1.submit(
 //CHECK-NEXT:      [&](sycl::handler &cgh) {
-//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:        dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
 //CHECK-NEXT:          sycl::nd_range<3>(c, sycl::range<3>(1, 1, 1)),
@@ -352,7 +352,7 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK-NEXT:    */
 //CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:      [&](sycl::handler &cgh) {
-//CHECK-NEXT:        dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:        dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
 //CHECK-NEXT:          sycl::nd_range<3>(c * d, d),
@@ -369,7 +369,7 @@ void run_foo3(dim3 c, dim3 d) {
 //CHECK-NEXT: while (1)
 //CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:       dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_kernel3_{{[a-f0-9]+}}>>(
 //CHECK-NEXT:         sycl::nd_range<3>(c, sycl::range<3>(1, 1, 1)),
@@ -394,7 +394,7 @@ void run_foo4(dim3 c, dim3 d) {
 //CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      sycl::local_accessor<float, 1> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
-//CHECK-NEXT:      dpct::access_wrapper<float *> result_acc_ct0(result.get_ptr(), cgh);
+//CHECK-NEXT:      dpct::access_wrapper result_acc_ct0(result.get_ptr(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
@@ -420,7 +420,7 @@ int run_foo5 () {
 //CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      sycl::local_accessor<float, 1> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
-//CHECK-NEXT:      dpct::access_wrapper<float *> result2_acc_ct0(result2.get_ptr(), cgh);
+//CHECK-NEXT:      dpct::access_wrapper result2_acc_ct0(result2.get_ptr(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
@@ -441,7 +441,7 @@ int run_foo6 () {
 //CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      sycl::local_accessor<float, 1> resultInGroup_acc_ct1(sycl::range<1>(8), cgh);
-//CHECK-NEXT:      dpct::access_wrapper<float *> result3_acc_ct0(result3.get_ptr(), cgh);
+//CHECK-NEXT:      dpct::access_wrapper result3_acc_ct0(result3.get_ptr(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 4) * sycl::range<3>(1, 1, 8), sycl::range<3>(1, 1, 8)),
@@ -468,7 +468,7 @@ int run_foo7 () {
 //CHECK-NEXT:  in[0] = 42;
 //CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      dpct::access_wrapper<float *> out_acc_ct1(out.get_ptr(), cgh);
+//CHECK-NEXT:      dpct::access_wrapper out_acc_ct1(out.get_ptr(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      auto in_ct0 = in[0];
 //CHECK-EMPTY:
@@ -544,7 +544,7 @@ __global__ void k(int *p){
 //CHECK-NEXT:  A aa;
 //CHECK-NEXT:  q_ct1.submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      dpct::access_wrapper<int *> aa_get_pointer_acc_ct0(aa.get_pointer(), cgh);
+//CHECK-NEXT:      dpct::access_wrapper aa_get_pointer_acc_ct0(aa.get_pointer(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -554,7 +554,7 @@ __global__ void k(int *p){
 //CHECK-NEXT:    });
 //CHECK-NEXT:  q_ct1.submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      dpct::access_wrapper<int *> vec_get_pointer_acc_ct0(vec[2].get_pointer(), cgh);
+//CHECK-NEXT:      dpct::access_wrapper vec_get_pointer_acc_ct0(vec[2].get_pointer(), cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k_{{[0-9a-z]+}}>>(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -770,7 +770,7 @@ int run_foo12() {
   static const int gg = i;
   //CHECK:  dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<int *> bb_acc_ct1(bb, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper bb_acc_ct1(bb, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    auto aa_ct0 = aa;
   //CHECK-NEXT:    auto gg_ct6 = gg;
@@ -797,7 +797,7 @@ void run_foo13(float* a_host[]) {
   //CHECK-NEXT:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    sycl::local_accessor<float *, 0> aa_acc_ct1(cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<float **> a_host_acc_ct0(a_host, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper a_host_acc_ct0(a_host, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel5_{{[0-9a-z]+}}, float>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -834,8 +834,8 @@ void run_foo15() {
   double *d;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<const float *> f_acc_ct0(f, cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<float *> f_acc_ct1(f, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper f_acc_ct0(f, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper f_acc_ct1(f, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel7_{{[0-9a-z]+}}, float>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -846,8 +846,8 @@ void run_foo15() {
   my_kernel7<<<1,1>>>(f, f);
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<const double *> d_acc_ct0(d, cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<double *> d_acc_ct1(d, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper d_acc_ct0(d, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper d_acc_ct1(d, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel7_{{[0-9a-z]+}}, double>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -867,7 +867,7 @@ void run_foo16() {
   float *fa, *fb;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<float *> fb_acc_ct1(fb, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper fb_acc_ct1(fb, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel8_{{[0-9a-z]+}}, float>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -878,12 +878,12 @@ void run_foo16() {
   my_kernel8<float><<<1,1>>>(fa, fb);
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<float *> fb_acc_ct1(fb, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper fb_acc_ct1(fb, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel8_{{[0-9a-z]+}}, float>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:        my_kernel8((float *)nullptr, fb_acc_ct1.get_raw_pointer());
+  //CHECK-NEXT:        my_kernel8((decltype(fa))nullptr, fb_acc_ct1.get_raw_pointer());
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   my_kernel8<<<1,1>>>(fa, fb);

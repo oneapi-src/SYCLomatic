@@ -2769,6 +2769,7 @@ private:
     bool IsDeviceRandomGeneratorType = false;
     bool HasImplicitConversion = false;
     bool IsDoublePointer = false;
+    bool IsDependentType = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
   };
