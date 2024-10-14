@@ -1218,8 +1218,8 @@ public:
     return FileRelpsMap;
   }
   static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> &
-  getDigestMap() {
-    return DigestMap;
+  getMsfInfoMap() {
+    return MsfInfoMap;
   }
   static std::string getYamlFileName() { return YamlFileName; }
   static std::set<std::string> &getGlobalVarNameSet() {
@@ -1568,7 +1568,7 @@ private:
                             std::vector<clang::tooling::Replacement>>
       FileRelpsMap;
   static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
-      DigestMap;
+      MsfInfoMap;
   static const std::string YamlFileName;
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;

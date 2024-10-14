@@ -431,8 +431,8 @@ static void getMainSrcFilesRepls(
 }
 static void getMainSrcFilesInfo(
     std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesInfo) {
-  auto &DigestMap = DpctGlobalInfo::getDigestMap();
-  for (const auto &Entry : DigestMap)
+  auto &MsfInfoMap = DpctGlobalInfo::getMsfInfoMap();
+  for (const auto &Entry : MsfInfoMap)
     MainSrcFilesInfo.push_back(Entry.second);
 }
 
@@ -452,8 +452,8 @@ static void saveUpdatedMigrationDataIntoYAML(
   }
 
   // Save history main src file and its content md5 hash to yaml file.
-  auto &DigestMap = DpctGlobalInfo::getDigestMap();
-  for (const auto &Entry : DigestMap) {
+  auto &MsfInfoMap = DpctGlobalInfo::getMsfInfoMap();
+  for (const auto &Entry : MsfInfoMap) {
     if (!MainSrcFileMap[Entry.first]) {
       MainSrcFilesInfo.push_back(Entry.second);
     }
@@ -567,9 +567,9 @@ int writeReplacementsToFiles(
         bool IsMainSrcFileChanged = false;
         std::string FilePath = Entry.first;
 
-        auto &DigestMap = DpctGlobalInfo::getDigestMap();
-        auto DigestIter = DigestMap.find(Entry.first);
-        if (DigestIter != DigestMap.end()) {
+        auto &MsfInfoMap = DpctGlobalInfo::getMsfInfoMap();
+        auto DigestIter = MsfInfoMap.find(Entry.first);
+        if (DigestIter != MsfInfoMap.end()) {
           auto Digest = llvm::sys::fs::md5_contents(Entry.first);
           if (DigestIter->second.Digest != Digest->digest().c_str())
             IsMainSrcFileChanged = true;
@@ -934,8 +934,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
       FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
     }
     for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
-      auto &DigestMap = DpctGlobalInfo::getDigestMap();
-      DigestMap[FileDigest.MainSourceFile] = FileDigest;
+      auto &MsfInfoMap = DpctGlobalInfo::getMsfInfoMap();
+      MsfInfoMap[FileDigest.MainSourceFile] = FileDigest;
 
       // Mark all the main src files loaded from yaml file are not processed
       // in current migration.
@@ -969,9 +969,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
         Rewrite.getSourceMgr().getFileManager(), ReplSYCL);
     if (auto RewriteStatus = writeReplacementsToFiles(
             ReplSYCL, Rewrite, OutRoot.getCanonicalPath().str(), InRoot,
-            MainSrcFilesInfo, MainSrcFileMap, MainSrcFilesRepls,
-            FileRangesMap, FileBlockLevelFormatRangesMap,
-            clang::dpct::RT_ForSYCLMigration))
+            MainSrcFilesInfo, MainSrcFileMap, MainSrcFilesRepls, FileRangesMap,
+            FileBlockLevelFormatRangesMap, clang::dpct::RT_ForSYCLMigration))
       return RewriteStatus;
     if (DpctGlobalInfo::isCodePinEnabled()) {
       if (auto RewriteStatus = writeReplacementsToFiles(

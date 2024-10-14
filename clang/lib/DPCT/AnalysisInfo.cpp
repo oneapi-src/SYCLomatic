@@ -2219,7 +2219,7 @@ void DpctGlobalInfo::resetInfo() {
   EndOfEmptyMacros.clear();
   BeginOfEmptyMacros.clear();
   FileRelpsMap.clear();
-  DigestMap.clear();
+  MsfInfoMap.clear();
   MacroDefines.clear();
   CAPPInfoMap.clear();
   CurrentMaxIndex = 0;
@@ -2380,7 +2380,7 @@ std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
 std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
     DpctGlobalInfo::FileRelpsMap;
 std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
-    DpctGlobalInfo::DigestMap;
+    DpctGlobalInfo::MsfInfoMap;
 const std::string DpctGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 int DpctGlobalInfo::CurrentMaxIndex = 0;

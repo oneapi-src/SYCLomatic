@@ -15,7 +15,6 @@
 #ifndef LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
 #define LLVM_CLANG_TOOLING_REPLACEMENTSYAML_H
 
-#include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <string>
