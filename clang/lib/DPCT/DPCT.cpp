@@ -752,12 +752,12 @@ int runDPCT(int argc, const char **argv) {
 
   if (BuildScript == BuildScriptKind::BS_Cmake &&
       !OptParser->getSourcePathList().empty()) {
-    ShowStatus(MigarteBuildScriptIncorrectUse);
-    dpctExit(MigarteBuildScriptIncorrectUse);
+    ShowStatus(MigrateBuildScriptIncorrectUse);
+    dpctExit(MigrateBuildScriptIncorrectUse);
   }
   if (BuildScript == BuildScriptKind::BS_Cmake && MigrateBuildScriptOnly) {
-    ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
-    dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
+    ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
+    dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
   }
 
   int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
