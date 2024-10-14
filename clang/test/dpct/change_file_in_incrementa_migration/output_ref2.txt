@@ -1,1 +1,1 @@
-// CHECK: File '{{(.+)}}/test.dp.hpp' already exists; skipping it.
+// CHECK: File '{{(.+)}}test.dp.hpp' already exists; skipping it.
