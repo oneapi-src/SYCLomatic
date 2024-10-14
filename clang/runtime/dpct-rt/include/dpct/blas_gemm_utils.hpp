@@ -389,8 +389,8 @@ template <typename T> struct matrix_transform_impl {
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
-      access_wrapper a_acc(static_cast<const T *>(a), cgh);
-      access_wrapper c_acc(static_cast<T *>(c), cgh);
+      access_wrapper<const T *> a_acc(a, cgh);
+      access_wrapper<T *> c_acc(c, cgh);
 #endif
       cgh.parallel_for<
           ::dpct::cs::kernel_name<class matrix_transform_col_to_row, T>>(
@@ -431,7 +431,7 @@ inline sycl::event int2float(::dpct::cs::queue_ptr q_ptr, void *int_ptr,
     });
   } else {
     return q_ptr->submit([&](sycl::handler &cgh) {
-      access_wrapper int_acc(static_cast<int *>(int_ptr), cgh);
+      access_wrapper<int *> int_acc(int_ptr, cgh);
       sycl::accessor float_acc(float_buffer, cgh, sycl::write_only,
                                sycl::no_init);
       cgh.single_task<::dpct::cs::kernel_name<class intdevice2float>>([=]() {
@@ -450,8 +450,8 @@ inline sycl::event multiply_impl(::dpct::cs::queue_ptr q_ptr,
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
       sycl::accessor result_acc(result, cgh);
-      access_wrapper a_acc(static_cast<const float *>(a), cgh);
-      access_wrapper b_acc(static_cast<const float *>(b), cgh);
+      access_wrapper<const float *> a_acc(a, cgh);
+      access_wrapper<const float *> b_acc(b, cgh);
       cgh.single_task<::dpct::cs::kernel_name<class multiply_a_b>>([=]() {
         auto a_ptr = a_acc.get_raw_pointer();
         auto b_ptr = b_acc.get_raw_pointer();
@@ -462,7 +462,7 @@ inline sycl::event multiply_impl(::dpct::cs::queue_ptr q_ptr,
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
       sycl::accessor result_acc(result, cgh);
-      access_wrapper a_acc(static_cast<const float *>(a), cgh);
+      access_wrapper<const float *> a_acc(a, cgh);
       cgh.single_task<::dpct::cs::kernel_name<class multiply_a>>([=]() {
         auto a_ptr = a_acc.get_raw_pointer();
         result_acc[0] = result_acc[0] * a_ptr[0];
@@ -472,7 +472,7 @@ inline sycl::event multiply_impl(::dpct::cs::queue_ptr q_ptr,
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
       sycl::accessor result_acc(result, cgh);
-      access_wrapper b_acc(static_cast<const float *>(b), cgh);
+      access_wrapper<const float *> b_acc(b, cgh);
       cgh.single_task<::dpct::cs::kernel_name<class multiply_b>>([=]() {
         auto b_ptr = b_acc.get_raw_pointer();
         result_acc[0] = result_acc[0] * b_ptr[0];
@@ -492,7 +492,7 @@ template <typename T> struct scale_d_impl {
         cgh.depends_on(deps);
         access_wrapper<const float *> d_scale_acc(
             static_cast<const float *>(d_scale_ptr), cgh);
-        access_wrapper d_acc(static_cast<T *>(d), cgh);
+        access_wrapper<T *> d_acc(d, cgh);
         cgh.parallel_for<::dpct::cs::kernel_name<class scale_d_float, T>>(
             sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
               float scale_factor = d_scale_acc.get_raw_pointer()[0];
@@ -511,7 +511,7 @@ template <typename T> struct scale_d_impl {
         cgh.depends_on(deps);
         access_wrapper<const int *> d_scale_acc(
             static_cast<const int *>(d_scale_ptr), cgh);
-        access_wrapper d_acc(static_cast<T *>(d), cgh);
+        access_wrapper<T *> d_acc(d, cgh);
         cgh.parallel_for<::dpct::cs::kernel_name<class scale_d_int, T>>(
             sycl::range<2>(ld, cols), [=](sycl::id<2> idx) {
               float scale_factor =
@@ -640,7 +640,7 @@ template <typename T> struct absmax_impl {
       auto absmax_reduction = sycl::reduction(
           get_buffer<T>(absmax_ptr), cgh, T(0), abs_max_op<T>(),
           {sycl::property::reduction::initialize_to_identity()});
-      access_wrapper new_d_acc(static_cast<const T *>(new_d), cgh);
+      access_wrapper<const T *> new_d_acc(new_d, cgh);
 #else
       auto absmax_reduction = sycl::reduction(
           (T *)(absmax_ptr), T(0), abs_max_op<T>(),
@@ -969,7 +969,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       auto buf = ::dnnl::sycl_interop::get_buffer<float, 1>(*scales_alpha);
       if (dpct::is_device_ptr(alpha)) {
         scalar_alpha_e = q_ptr->submit([&](sycl::handler &cgh) {
-          access_wrapper alpha_acc(static_cast<const float *>(alpha), cgh);
+          access_wrapper<const float *> alpha_acc(alpha, cgh);
           sycl::accessor acc(buf, cgh, sycl::write_only, sycl::no_init);
           cgh.single_task<::dpct::cs::kernel_name<class copy_alpha_dev_ptr>>(
               [=]() { acc[0] = alpha_acc.get_raw_pointer()[0]; });

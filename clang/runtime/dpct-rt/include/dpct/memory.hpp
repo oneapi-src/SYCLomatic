@@ -926,12 +926,17 @@ public:
   ///
   /// \param ptr Pointer to memory.
   /// \param cgh The command group handler.
-  access_wrapper(PtrT ptr, sycl::handler &cgh)
-      : accessor(get_buffer(ptr).template get_access<accessMode>(cgh)),
-        offset(0) {
+  access_wrapper(const void *ptr, sycl::handler &cgh)
+      : accessor(get_buffer(ptr).get_access<accessMode>(cgh)), offset(0) {
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
     offset = (byte_t *)ptr - alloc.alloc_ptr;
   }
+  template <typename U = PtrT>
+  access_wrapper(
+      PtrT ptr, sycl::handler &cgh,
+      typename std::enable_if_t<!std::is_same_v<
+          std::remove_cv_t<std::remove_reference_t<U>>, void *>> * = 0)
+      : access_wrapper((const void *)ptr, cgh) {}
 
   /// Get the device pointer.
   ///
