@@ -183,6 +183,7 @@ void foo3() {
   // CHECK: dpct::blas_gemm::experimental::matmul_desc_t::attribute d;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::compute_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::scale_type;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::bias_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::pointer_mode;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::trans_a;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::trans_b;
@@ -201,6 +202,7 @@ void foo3() {
   cublasLtMatmulDescAttributes_t d;
   d = CUBLASLT_MATMUL_DESC_COMPUTE_TYPE;
   d = CUBLASLT_MATMUL_DESC_SCALE_TYPE;
+  d = CUBLASLT_MATMUL_DESC_BIAS_DATA_TYPE;
   d = CUBLASLT_MATMUL_DESC_POINTER_MODE;
   d = CUBLASLT_MATMUL_DESC_TRANSA;
   d = CUBLASLT_MATMUL_DESC_TRANSB;
