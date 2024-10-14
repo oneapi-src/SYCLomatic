@@ -60,13 +60,13 @@ void collectPythonBuildScriptsSpecified(
 }
 
 void addPythonWarningMsg(const std::string &WarningMsg,
-                              const std::string FileName) {
+                         const std::string FileName) {
   FileWarningsMap[FileName].push_back(WarningMsg);
 }
 
 static void
 applyPythonMigrationRules(const clang::tooling::UnifiedPath InRoot,
-                               const clang::tooling::UnifiedPath OutRoot) {
+                          const clang::tooling::UnifiedPath OutRoot) {
 
   setFileTypeProcessed(SourceFileType::SFT_PySetupScript);
 
@@ -94,7 +94,7 @@ applyPythonMigrationRules(const clang::tooling::UnifiedPath InRoot,
   }
 }
 
-bool PythonBuildScriptNotFound() { return PythonBuildScriptFilesSet.empty(); }
+bool pythonBuildScriptNotFound() { return PythonBuildScriptFilesSet.empty(); }
 
 void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                                   const clang::tooling::UnifiedPath &OutRoot) {

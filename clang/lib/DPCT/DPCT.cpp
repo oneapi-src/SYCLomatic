@@ -952,10 +952,9 @@ int runDPCT(int argc, const char **argv) {
     Tool.setPrintErrorMessage(false);
   } else {
     IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
-    bool NeedCheckOutRootEmpty =
-        !(BuildScript == BuildScriptKind::BS_Cmake ||
-          BuildScript == BuildScriptKind::BS_Python) &&
-        !MigrateBuildScriptOnly;
+    bool NeedCheckOutRootEmpty = !(BuildScript == BuildScriptKind::BS_Cmake ||
+                                   BuildScript == BuildScriptKind::BS_Python) &&
+                                 !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
         !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -1104,8 +1103,7 @@ int runDPCT(int argc, const char **argv) {
 
   if (MigrateBuildScriptOnly ||
       DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
-    SmallString<128> PythonRuleFilePath(
-        DpctInstallPath.getCanonicalPath());
+    SmallString<128> PythonRuleFilePath(DpctInstallPath.getCanonicalPath());
     llvm::sys::path::append(
         PythonRuleFilePath,
         Twine("extensions/python_rules/"

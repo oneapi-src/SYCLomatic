@@ -29,7 +29,7 @@ enum ProcessStatus {
   MigrationErrorInvalidFilePath = -8,
   MigrationErrorInvalidReportArgs = -9,
   VcxprojPaserFileNotExist = -11,
-  VcxprojPaserCreateCompilationDBFail = -12, /*eg. hav no write permission*/
+  VcxprojPaserCreateCompilationDBFail = -12, /*eg. have no write permission*/
   MigrationErrorInvalidInstallPath = -13,
   MigrationErrorPathTooLong = -14,
   MigrationErrorInvalidWarningID = -15,

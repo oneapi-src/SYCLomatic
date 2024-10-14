@@ -22,5 +22,5 @@ void doPythonBuildScriptMigration(const clang::tooling::UnifiedPath &InRoot,
 void registerPythonMigrationRule(MetaRuleObject &R);
 bool pythonBuildScriptNotFound();
 void addPythonWarningMsg(const std::string &WarningMsg,
-                              const std::string FileName);
+                         const std::string FileName);
 #endif
