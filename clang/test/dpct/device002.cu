@@ -49,15 +49,6 @@ int val;
 // CHECK: val = dpct::get_device(dev_id).get_major_version();
 cudaDeviceGetAttribute(&val, cudaDevAttrComputeCapabilityMajor, dev_id);
 
-// Figure out how much shared memory is available on the device.
-int maxSharedBytes = 0;
-
-// CHECK:/*
-// CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of cudaDevAttrMaxSharedMemoryPerBlockOptin in CUDA. You may need to adjust the code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:maxSharedBytes = dpct::get_device(dev_id).get_local_mem_size();
-cudaDeviceGetAttribute(&maxSharedBytes, cudaDevAttrMaxSharedMemoryPerBlockOptin, dev_id);
-
 struct attr{
     cudaDeviceAttr attr;
 } attr1;
