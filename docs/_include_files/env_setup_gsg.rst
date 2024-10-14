@@ -19,4 +19,4 @@ To configure the |tool_name| environment, set the following environment variable
 
 
 If you use the |dpcpp_compiler|, make sure to `set environment variables using
-the setvars script <https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/current/oneapi-development-environment-setup.html#SETVARS-AND-VARS-FILES>`_.
+the setvars script <https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2024-2/oneapi-development-environment-setup.html#SETVARS-AND-VARS-FILES>`_.
