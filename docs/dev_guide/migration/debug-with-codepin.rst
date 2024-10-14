@@ -375,10 +375,9 @@ codepin-report.py can generate a data   flow graph for
 kernels with option ``--generate-data-flow-graph``.  The data flow graph presents visualizations of kernel execution and compares results between CUDA and SYCL, highlighting the execution mismatch between CUDA and SYCL code.
 In the data flow graph, each kernel execution and its input and output arguments are grouped into a layer, presenting a run status of the kernel execution. The value   of input and output arguments are tagged with version information in the form of “V<num>”. For example,   the initial version is tagged as V0, and once the value of the argument is updated, the version number will be increased. For a specific kernel execution, if there’s a mismatch between CUDA and SYCL results, the mismatched argument node will be colored red.
 
-.. figure:: ../../_images/DataFlowGraph.png
+.. figure:: DataFlowGraph.png
    :alt: DataFlowGraph
    :align: center
-   DataFlowGraph
 
 The above picture shows the data flow graph of the vectorAdd example, which is constructed by a title and execution layer. The execution layer presents a kernel execution and its inputs and outputs. The kernel node shows that kernel ``vectorAdd`` is executed on the stream of the device named GPU0, and also shows the kernel's execution time and source location. All input arguments (``d_a`` node and top ``d_result`` node) are tagged with V0, indicating initial values. The output argument (bottom ``d_result`` node) is tagged with V1 because ``d_result`` is both input and output arguments, and its value changes in the kernel. 
 
