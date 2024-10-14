@@ -192,16 +192,6 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok,
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   auto Iter = MapNames::MacroRuleMap.find(MacroName);
   if (Iter != MapNames::MacroRuleMap.end()) {
-    // The "__noinline__" macro is re-defined and it is used in
-    // "__attribute__()", do not migrate it.
-    if (MacroName == "__noinline__") {
-      auto Range = getDefinitionRange(MacroNameTok.getLocation(),
-                                      MacroNameTok.getEndLoc());
-      const auto next = Lexer::findNextToken(Range.getEnd(), SM, LangOptions());
-      if (next.has_value() && next->is(tok::TokenKind::r_paren)) {
-        return false;
-      }
-    }
     auto Repl = generateReplacement(MacroNameTok.getLocation(), Iter->second);
     if (MacroName == "__CUDA_ARCH__") {
       if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {

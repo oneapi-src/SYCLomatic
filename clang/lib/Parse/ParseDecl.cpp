@@ -194,6 +194,8 @@ void Parser::ParseGNUAttributes(ParsedAttributes &Attrs,
   SourceLocation StartLoc = Tok.getLocation();
   SourceLocation EndLoc = StartLoc;
 
+  llvm::SaveAndRestore<bool> SART(PP.IsInAttr, true);
+
   while (Tok.is(tok::kw___attribute)) {
     SourceLocation AttrTokLoc = ConsumeToken();
     unsigned OldNumAttrs = Attrs.size();

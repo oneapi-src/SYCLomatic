@@ -1013,6 +1013,15 @@ Corrected:
           QualifiedDiag = diag::err_unknown_nested_typename_suggest;
         }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+        // The "__noinline__" macro is re-defined and it is used in
+        // "__attribute__()", do not handle it.
+        if (SS.isEmpty() && LangOpts.CUDA && Name->getName() == "noinline" &&
+            PP.IsInAttr) {
+          return NameClassification::UndeclaredNonType();
+        }
+#endif // SYCLomatic_CUSTOMIZATION
+
         if (SS.isEmpty()) {
           diagnoseTypo(Corrected, PDiag(UnqualifiedDiag) << Name);
         } else {// FIXME: is this even reachable? Test it.
