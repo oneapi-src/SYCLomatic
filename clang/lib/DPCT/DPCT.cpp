@@ -479,7 +479,8 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
     }
   }
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
-    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+    if (Entry.HasCUDASyntax)
+      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
   }
 
   // Currently, when "--use-experimental-features=device_global" and
