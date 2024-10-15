@@ -33,13 +33,13 @@ install(
 
 install(
   FILES ${dpct_python_rule_files}
-  COMPONENT dpct-python-setup-rules
+  COMPONENT dpct-python-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/python_rules)
 
 install(
   FILES ${dpct_python_rule_files}
-  COMPONENT dpct-python-setup-rules
+  COMPONENT dpct-python-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ${CMAKE_BINARY_DIR}/extensions/python_rules)
 
@@ -48,6 +48,6 @@ if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
                            COMPONENT dpct-opt-rules)
   add_llvm_install_targets(install-dpct-cmake-rules
                            COMPONENT dpct-cmake-rules)
-  add_llvm_install_targets(install-dpct-python-setup-rules
-                           COMPONENT dpct-python-setup-rules)
+  add_llvm_install_targets(install-dpct-python-rules
+                           COMPONENT dpct-python-rules)
 endif()

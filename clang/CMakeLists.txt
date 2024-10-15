@@ -955,7 +955,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-binary
       install-dpct-opt-rules
       install-dpct-cmake-rules
-      install-dpct-python-setup-rules
+      install-dpct-python-rules
       install-dpct-cmake-file
       install-dpct-codepin-report
       )
@@ -970,7 +970,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-setvars
       install-dpct-opt-rules
       install-dpct-cmake-rules
-      install-dpct-python-setup-rules
+      install-dpct-python-rules
       install-dpct-cmake-file
       install-dpct-codepin-report
       )
