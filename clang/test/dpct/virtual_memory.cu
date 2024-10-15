@@ -28,7 +28,7 @@ int main() {
     size_t POOL_SIZE =  granularity;
 
 // CHECK:    dpct::device_ptr reserved_addr;
-// CHECK:    dpct::experimental::mem_handle allocHandle;
+// CHECK:    dpct::experimental::physical_mem_ptr allocHandle;
 // CHECK:    reserved_addr = (dpct::device_ptr)sycl::ext::oneapi::experimental::reserve_virtual_mem((uintptr_t)0, POOL_SIZE, dpct::get_current_device().get_context());
 // CHECK:    allocHandle = new sycl::ext::oneapi::experimental::physical_mem(dpct::get_device(prop.location.id), dpct::get_device(prop.location.id).get_context(), POOL_SIZE);
 // CHECK:    allocHandle->map((uintptr_t)reserved_addr, POOL_SIZE, sycl::ext::oneapi::experimental::address_access_mode::read_write, 0);

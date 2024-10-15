@@ -838,7 +838,7 @@ void MapNames::setExplicitNamespaceMap(
                                       "experimental::mem_prop")},
       {"CUmemGenericAllocationHandle",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                      "experimental::mem_handle")},
+                                      "experimental::physical_mem_ptr")},
       {"CUmemAccessDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
                                       "experimental::mem_access_desc")},

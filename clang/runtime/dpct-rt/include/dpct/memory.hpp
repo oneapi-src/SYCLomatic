@@ -1429,16 +1429,18 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
 }
 
 namespace experimental {
-typedef sycl::ext::oneapi::experimental::physical_mem *mem_handle;
+typedef sycl::ext::oneapi::experimental::physical_mem *physical_mem_ptr;
 
 struct mem_location {
   int id;
-  int type;
+  int type; // Location type. Value 1 means device location, and thus, id is a
+            // device id. Other values are reserved for future use.
 };
 
 struct mem_prop {
   mem_location location;
-  int type;
+  int type; // Memory type. Value 1 means default device memory. Other values
+            // are reserved for future use.
 };
 
 struct mem_access_desc {
