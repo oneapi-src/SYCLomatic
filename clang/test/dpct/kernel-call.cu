@@ -383,7 +383,7 @@ void run_foo4(dim3 c, dim3 d) {
    foo_kernel3<<<c, 1>>>(g_a);
 }
 
-//CHECK:dpct::shared_memory<float, 1> result(32);
+//CHECK:static dpct::shared_memory<float, 1> result(32);
 //CHECK-NEXT:__dpct_inline__ void my_kernel(float* result, const sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT:               float *resultInGroup) {
 //CHECK-NEXT:  // __shared__ variable
@@ -415,7 +415,7 @@ int run_foo5 () {
   printf("%f ", result[10]);
 }
 
-//CHECK:dpct::shared_memory<float, 1> result2(32);
+//CHECK:static dpct::shared_memory<float, 1> result2(32);
 //CHECK-NEXT:int run_foo6 () {
 //CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
@@ -436,7 +436,7 @@ int run_foo6 () {
   printf("%f ", result2[10]);
 }
 
-//CHECK:dpct::shared_memory<float, 0> result3;
+//CHECK:static dpct::shared_memory<float, 0> result3;
 //CHECK-NEXT:int run_foo7 () {
 //CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
@@ -457,8 +457,8 @@ int run_foo7 () {
   printf("%f ", result3);
 }
 
-//CHECK:dpct::shared_memory<float, 0> in;
-//CHECK-NEXT:dpct::shared_memory<float, 0> out;
+//CHECK:static dpct::shared_memory<float, 0> in;
+//CHECK-NEXT:static dpct::shared_memory<float, 0> out;
 //CHECK-NEXT:__dpct_inline__ void my_kernel2(float in, float *out, const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 //CHECK-NEXT:    memcpy(out, &in, sizeof(float));
