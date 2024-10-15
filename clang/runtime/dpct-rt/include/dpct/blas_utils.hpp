@@ -2358,7 +2358,7 @@ inline void axpy(descriptor_ptr desc_ptr, std::int64_t n, const void *alpha,
   }
 #ifdef __INTEL_MKL__
   case ::dpct::detail::get_type_combination_id(library_data_t::real_half,
-                                               library_data_t::real_half): {
+                                               library_data_t::real_float): {
     float alpha_value =
         dpct::get_value(reinterpret_cast<const float *>(alpha), q);
     sycl::half alaph_half(alpha_value);
