@@ -36,10 +36,7 @@ int main(){
        // CHECK: case int(oneapi::ccl::datatype::int32): std::cout << "Int32" << std::endl; break;
       case ncclInt32: std::cout << "Int32" << std::endl; break;
   }
-  // CHECK:     /*
-  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: "<Placeholder string>";
+  // CHECK: dpct::get_error_dummy(res);
   ncclGetErrorString(res);
   // CHECK:     /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this functionality is redundant in SYCL.

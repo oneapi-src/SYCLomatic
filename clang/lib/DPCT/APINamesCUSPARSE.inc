@@ -335,18 +335,12 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseSpMV", CALL(MapNames::getLibraryHelperNamespace() + "sparse::spmv",
                          MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2),
                          ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
-WARNING_FACTORY_ENTRY(
-    "cusparseGetErrorString",
-    TOSTRING_FACTORY_ENTRY("cusparseGetErrorString",
-                           LITERAL("\"<Placeholder string>\"")),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The call was replaced by a placeholder string"))
-WARNING_FACTORY_ENTRY(
-    "cusparseGetErrorName",
-    TOSTRING_FACTORY_ENTRY("cusparseGetErrorName",
-                           LITERAL("\"<Placeholder string>\"")),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The call was replaced by a placeholder string"))
+CALL_FACTORY_ENTRY("cusparseGetErrorString",
+                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                        ARG_WC(0)))
+CALL_FACTORY_ENTRY("cusparseGetErrorName",
+                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                        ARG_WC(0)))
 
 ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cusparseSpGEMM_createDescr",

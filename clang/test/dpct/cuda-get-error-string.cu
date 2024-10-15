@@ -4,62 +4,41 @@
 
 int printf(const char *format, ...);
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", "<Placeholder string>")
+// CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_STR(X) printf("%s\n", cudaGetErrorString(X))
 
-// CHECK:  /*
-// CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT:  */
-// CHECK-NEXT: #define PRINT_ERROR_STR2(X)\
-// CHECK-NEXT:  printf("%s\n", "<Placeholder string>")
+// CHECK: #define PRINT_ERROR_STR2(X)\
+// CHECK-NEXT:  printf("%s\n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_STR2(X)\
   printf("%s\n", cudaGetErrorString(X))
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_STR3(X)\
+// CHECK: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", "<Placeholder string>")
+// CHECK-NEXT:          \n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_STR3(X)\
   printf("%s\
          \n", cudaGetErrorString(X))
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_NAME(X) printf("%s\n", "<Placeholder string>")
+// CHECK: #define PRINT_ERROR_NAME(X) printf("%s\n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_NAME(X) printf("%s\n", cudaGetErrorName(X))
 
-// CHECK:   /*
-// CHECK-NEXT:   DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT:   */
-// CHECK-NEXT: #define PRINT_ERROR_NAME2(X)\
-// CHECK-NEXT:   printf("%s\n", "<Placeholder string>")
+// CHECK: #define PRINT_ERROR_NAME2(X)\
+// CHECK-NEXT:   printf("%s\n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_NAME2(X)\
   printf("%s\n", cudaGetErrorName(X))
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_NAME3(X)\
+// CHECK: #define PRINT_ERROR_NAME3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", "<Placeholder string>")
+// CHECK-NEXT:          \n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_NAME3(X)\
   printf("%s\
          \n", cudaGetErrorName(X))
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_STR_NAME(X)\
+// CHECK: #define PRINT_ERROR_STR_NAME(X)\
 // CHECK-NEXT:   printf("%s\
 // CHECK-NEXT:          %s\
-// CHECK-NEXT:          \n", "<Placeholder string>",\
-// CHECK-NEXT:          "<Placeholder string>")
+// CHECK-NEXT:          \n", dpct::get_error_dummy(X),\
+// CHECK-NEXT:          dpct::get_error_dummy(X))
 #define PRINT_ERROR_STR_NAME(X)\
   printf("%s\
          %s\
@@ -107,39 +86,24 @@ const char *test_function() {
   PRINT_ERROR_STR_NAME(cudaSuccess);
 
 //CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "<Placeholder string>");
+//CHECK-NEXT:  printf("%s\n", dpct::get_error_dummy(0));
   printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
 
-//CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "<Placeholder string>");
+//CHECK:  printf("%s\n", dpct::get_error_dummy(0));
   printf("%s\n", cudaGetErrorString(cudaSuccess));
 
-//CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:printf("%s\n", "<Placeholder string>");
+//CHECK:printf("%s\n", dpct::get_error_dummy(0));
   printf("%s\n", cudaGetErrorName(cudaSuccess));
   CUresult e;
   const char *err_s;
 
-//CHECK:  /*
-//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  err_s = "<Placeholder string>";
+//CHECK:  err_s = dpct::get_error_dummy(e);
   cuGetErrorString(e, &err_s);
 
-//CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:  return "<Placeholder string>";
+//CHECK:  return dpct::get_error_dummy(0);
   return cudaGetErrorName(cudaSuccess);
 }
 

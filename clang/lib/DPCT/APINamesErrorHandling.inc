@@ -6,26 +6,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-WARNING_FACTORY_ENTRY(
-    "cudnnGetErrorString",
-    TOSTRING_FACTORY_ENTRY("cudnnGetErrorString",
-                           LITERAL("\"<Placeholder string>\"")),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The call was replaced by a placeholder string"))
+CALL_FACTORY_ENTRY("cudnnGetErrorString",
+                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                        ARG_WC(0)))
 
-WARNING_FACTORY_ENTRY(
-    "cudaGetErrorString",
-    TOSTRING_FACTORY_ENTRY("cudaGetErrorString",
-                           LITERAL("\"<Placeholder string>\"")),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The call was replaced by a placeholder string"))
+CALL_FACTORY_ENTRY("cudaGetErrorString",
+                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                        ARG_WC(0)))
 
-WARNING_FACTORY_ENTRY(
-    "cudaGetErrorName",
-    TOSTRING_FACTORY_ENTRY("cudaGetErrorName",
-                           LITERAL("\"<Placeholder string>\"")),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The call was replaced by a placeholder string"))
+CALL_FACTORY_ENTRY("cudaGetErrorName",
+                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                        ARG_WC(0)))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),
@@ -51,12 +42,9 @@ CONDITIONAL_FACTORY_ENTRY(
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("0")),
         Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
 
-WARNING_FACTORY_ENTRY(
-    "ncclGetErrorString",
-    TOSTRING_FACTORY_ENTRY("cublasGetStatusString",
-                           LITERAL("\"<Placeholder string>\"")),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The call was replaced by a placeholder string"))
+CALL_FACTORY_ENTRY("ncclGetErrorString",
+                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                        ARG_WC(0)))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),

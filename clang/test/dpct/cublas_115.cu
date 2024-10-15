@@ -8,10 +8,7 @@
 #include <cublas_v2.h>
 
 void foo1(cublasStatus_t s) {
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error string: %s", "<Placeholder string>");
+  //CHECK:printf("Error string: %s", dpct::get_error_dummy(s));
   printf("Error string: %s", cublasGetStatusString(s));
   cublasHandle_t handle;
   void *workspace;

@@ -14,14 +14,8 @@ int main() {
   cusparseStatus_t a6;
   a6 = CUSPARSE_STATUS_NOT_SUPPORTED;
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error string: %s", "<Placeholder string>");
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error name: %s", "<Placeholder string>");
+  //CHECK:printf("Error string: %s", dpct::get_error_dummy(a6));
+  //CHECK-NEXT:printf("Error name: %s", dpct::get_error_dummy(a6));
   printf("Error string: %s", cusparseGetErrorString(a6));
   printf("Error name: %s", cusparseGetErrorName(a6));
 

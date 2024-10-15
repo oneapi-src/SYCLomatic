@@ -10,10 +10,7 @@
 // NCCLGETERRORSTRING: CUDA API:
 // NCCLGETERRORSTRING-NEXT:   ncclGetErrorString(r /*ncclResult_t*/);
 // NCCLGETERRORSTRING-NEXT: Is migrated to:
-// NCCLGETERRORSTRING-NEXT:   /*
-// NCCLGETERRORSTRING-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// NCCLGETERRORSTRING-NEXT:   */
-// NCCLGETERRORSTRING-NEXT:   "<Placeholder string>";
+// NCCLGETERRORSTRING-NEXT:   dpct::get_error_dummy(r);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetVersion | FileCheck %s -check-prefix=ncclGetVersion
 // ncclGetVersion: CUDA API:

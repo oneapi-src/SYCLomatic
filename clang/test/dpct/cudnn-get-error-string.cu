@@ -6,26 +6,17 @@
 
 int printf(const char *format, ...);
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", "<Placeholder string>")
+// CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_STR(X) printf("%s\n", cudnnGetErrorString(X))
 
-// CHECK:  /*
-// CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT:  */
-// CHECK-NEXT: #define PRINT_ERROR_STR2(X)\
-// CHECK-NEXT:  printf("%s\n", "<Placeholder string>")
+// CHECK: #define PRINT_ERROR_STR2(X)\
+// CHECK-NEXT:  printf("%s\n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_STR2(X)\
   printf("%s\n", cudnnGetErrorString(X))
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_STR3(X)\
+// CHECK: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", "<Placeholder string>")
+// CHECK-NEXT:          \n", dpct::get_error_dummy(X))
 #define PRINT_ERROR_STR3(X)\
   printf("%s\
          \n", cudnnGetErrorString(X))
@@ -33,16 +24,10 @@ int printf(const char *format, ...);
 
 const char *test_function(cudnnStatus_t status) {
 
-//CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "<Placeholder string>");
+//CHECK:  printf("%s\n", dpct::get_error_dummy(status));
   printf("%s\n", cudnnGetErrorString(status));
 
-//CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "<Placeholder string>");
+//CHECK:  printf("%s\n", dpct::get_error_dummy(0));
   printf("%s\n", cudnnGetErrorString(CUDNN_STATUS_SUCCESS));
 
   PRINT_ERROR_STR(status);

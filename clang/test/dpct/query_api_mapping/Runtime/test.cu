@@ -164,19 +164,13 @@
 // CUDAGETERRORNAME: CUDA API:
 // CUDAGETERRORNAME-NEXT:   cudaGetErrorName(e /*cudaError_t*/);
 // CUDAGETERRORNAME-NEXT: Is migrated to:
-// CUDAGETERRORNAME-NEXT:   /*
-// CUDAGETERRORNAME-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CUDAGETERRORNAME-NEXT:   */
-// CUDAGETERRORNAME-NEXT:   "<Placeholder string>";
+// CUDAGETERRORNAME-NEXT:   dpct::get_error_dummy(e);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetErrorString | FileCheck %s -check-prefix=CUDAGETERRORSTRING
 // CUDAGETERRORSTRING: CUDA API:
 // CUDAGETERRORSTRING-NEXT:   cudaGetErrorString(e /*cudaError_t*/);
 // CUDAGETERRORSTRING-NEXT: Is migrated to:
-// CUDAGETERRORSTRING-NEXT:   /*
-// CUDAGETERRORSTRING-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CUDAGETERRORSTRING-NEXT:   */
-// CUDAGETERRORSTRING-NEXT:   "<Placeholder string>";
+// CUDAGETERRORSTRING-NEXT:   dpct::get_error_dummy(e);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetLastError | FileCheck %s -check-prefix=CUDAGETLASTERROR
 // CUDAGETLASTERROR: CUDA API:

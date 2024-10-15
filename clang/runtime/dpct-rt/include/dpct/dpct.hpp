@@ -46,9 +46,15 @@ template <int Arg> class dpct_kernel_scalar;
 
 #define DPCT_COMPATIBILITY_TEMP (900)
 
-namespace dpct{
+namespace dpct {
 enum error_code { success = 0, default_error = 999 };
+inline const char *get_error_dummy(int ec) {
+  static const std::string Msg =
+      "SYCL uses exceptions to report errors and does not use the error codes. "
+      "You need to rewrite this code.";
+  return Msg.c_str();
 }
+} // namespace dpct
 
 #define DPCT_CHECK_ERROR(expr)                                                 \
   [&]() {                                                                      \
