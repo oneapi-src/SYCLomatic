@@ -2823,7 +2823,7 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
   if (Var->hasInit())
     setInitList(Var->getInit(), Var);
-  if (Var->getStorageClass() == SC_Static || getAddressAttr(Var) == Constant) {
+  if (Var->getStorageClass() == SC_Static || getScope() == Global) {
     IsStatic = true;
   }
 
