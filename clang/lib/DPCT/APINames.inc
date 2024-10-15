@@ -32,6 +32,8 @@
 *
 ****************************************************************************/
 
+// clang-format off
+
 // API Names refer to "v12.2"
 // CUDA runtime API
 // Device management functions of runtime API
@@ -1717,20 +1719,20 @@ ENTRY(cuMipmappedArrayGetMemoryRequirements, cuMipmappedArrayGetMemoryRequiremen
 ENTRY(cuMipmappedArrayGetSparseProperties, cuMipmappedArrayGetSparseProperties, false, NO_FLAG, P7, "comment")
 
 // Virtual Memory Management
-ENTRY(cuMemAddressFree, cuMemAddressFree, false, NO_FLAG, P4, "comment")
-ENTRY(cuMemAddressReserve, cuMemAddressReserve, false, NO_FLAG, P4, "comment")
-ENTRY(cuMemCreate, cuMemCreate, false, NO_FLAG, P4, "comment")
+ENTRY(cuMemAddressFree, cuMemAddressFree, true, NO_FLAG, P4, "comment")
+ENTRY(cuMemAddressReserve, cuMemAddressReserve, true, NO_FLAG, P4, "comment")
+ENTRY(cuMemCreate, cuMemCreate, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemExportToShareableHandle, cuMemExportToShareableHandle, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemGetAccess, cuMemGetAccess, false, NO_FLAG, P4, "comment")
-ENTRY(cuMemGetAllocationGranularity, cuMemGetAllocationGranularity, false, NO_FLAG, P4, "comment")
+ENTRY(cuMemGetAllocationGranularity, cuMemGetAllocationGranularity, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemGetAllocationPropertiesFromHandle, cuMemGetAllocationPropertiesFromHandle, false, NO_FLAG, P4, "comment")
 ENTRY(cuMemImportFromShareableHandle, cuMemImportFromShareableHandle, false, NO_FLAG, P4, "comment")
-ENTRY(cuMemMap, cuMemMap, false, NO_FLAG, P4, "comment")
+ENTRY(cuMemMap, cuMemMap, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemMapArrayAsync, cuMemMapArrayAsync, false, NO_FLAG, P7, "comment")
-ENTRY(cuMemRelease, cuMemRelease, false, NO_FLAG, P4, "comment")
+ENTRY(cuMemRelease, cuMemRelease, true, NO_FLAG, P4, "comment")
 ENTRY(cuMemRetainAllocationHandle, cuMemRetainAllocationHandle, false, NO_FLAG, P7, "comment")
-ENTRY(cuMemSetAccess, cuMemSetAccess, false, NO_FLAG, P4, "comment")
-ENTRY(cuMemUnmap, cuMemUnmap, false, NO_FLAG, P4, "comment")
+ENTRY(cuMemSetAccess, cuMemSetAccess, true, NO_FLAG, P4, "comment")
+ENTRY(cuMemUnmap, cuMemUnmap, true, NO_FLAG, P4, "comment")
 
 // Stream Ordered Memory Allocator
 ENTRY(cuMemAllocAsync, cuMemAllocAsync, false, NO_FLAG, P7, "comment")
@@ -2307,3 +2309,5 @@ ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
 ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
 
 ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Partial")
+
+// clang-format on

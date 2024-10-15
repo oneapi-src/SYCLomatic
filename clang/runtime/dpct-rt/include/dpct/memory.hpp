@@ -1428,6 +1428,27 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
   detail::dpct_memset<unsigned char>(q, pitch, val, size);
 }
 
+namespace experimental {
+typedef sycl::ext::oneapi::experimental::physical_mem *physical_mem_ptr;
+
+struct mem_location {
+  int id;
+  int type; // Location type. Value 1 means device location, and thus, id is a
+            // device id. Other values are reserved for future use.
+};
+
+struct mem_prop {
+  mem_location location;
+  int type; // Memory type. Value 1 means default device memory. Other values
+            // are reserved for future use.
+};
+
+struct mem_access_desc {
+  sycl::ext::oneapi::experimental::address_access_mode flags;
+  mem_location location;
+};
+} // namespace experimental
+
 /// dpct accessor used as device function parameter.
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <class T, memory_region Memory> class accessor<T, Memory, 3> {

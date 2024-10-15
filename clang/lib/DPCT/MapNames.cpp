@@ -449,14 +449,16 @@ void MapNames::setExplicitNamespaceMap(
                                           getLibraryHelperNamespace() +
                                           "sparse::optimize_info>",
                                       HelperFeatureEnum::device_ext)},
-      {"thrust::device_ptr",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_pointer",
-                                      HelperFeatureEnum::device_ext)},
+      {"thrust::device_ptr", std::make_shared<TypeNameRule>(
+                                 getLibraryHelperNamespace() + "device_pointer",
+                                 HelperFeatureEnum::device_ext)},
       {"thrust::device_reference",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_reference",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_reference",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_vector",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_vector",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_vector",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_malloc_allocator",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
@@ -831,6 +833,24 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_ptr")},
+      {"CUmemAllocationProp",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::mem_prop")},
+      {"CUmemGenericAllocationHandle",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::physical_mem_ptr")},
+      {"CUmemAccessDesc",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::mem_access_desc")},
+      {"CUmemLocationType", std::make_shared<TypeNameRule>("int")},
+      {"CUmemAllocationType", std::make_shared<TypeNameRule>("int")},
+      {"CUmemAllocationGranularity_flags",
+       std::make_shared<TypeNameRule>(
+           getClNamespace() + "ext::oneapi::experimental::granularity_mode")},
+      {"CUmemAccess_flags",
+       std::make_shared<TypeNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode")},
       {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
       {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
@@ -1438,6 +1458,38 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_SET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_TYPE_PINNED", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_ALLOCATION_TYPE_MAX",
+       std::make_shared<EnumNameRule>("0xFFFFFFFF")},
+      {"CU_MEM_LOCATION_TYPE_DEVICE", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_LOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_LOCATION_TYPE_MAX",
+       std::make_shared<EnumNameRule>("0xFFFFFFFF")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::read_write")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_NONE",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::none")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_MAX",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::none")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_READ",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::read")},
+      {"CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::granularity_mode::recommended")},
+      {"CU_MEM_ALLOC_GRANULARITY_MINIMUM",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::granularity_mode::minimum")},
       // enum Driver Device Attribute
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
        std::make_shared<EnumNameRule>("get_major_version",

@@ -13946,6 +13946,96 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,
               RuleGroupKind::RK_FFT)
 
+void VirtualMemRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto virtualmemoryAPI = [&]() {
+    return hasAnyName("cuMemCreate", "cuMemAddressReserve", "cuMemMap",
+                      "cuMemUnmap", "cuMemAddressFree", "cuMemRelease",
+                      "cuMemSetAccess", "cuMemGetAllocationGranularity");
+  };
+  auto virtualmemoryType = [&]() {
+    return hasAnyName("CUmemAllocationProp", "CUmemGenericAllocationHandle",
+                      "CUmemAccessDesc", "CUmemLocationType",
+                      "CUmemAllocationType", "CUmemAllocationGranularity_flags",
+                      "CUmemAccess_flags");
+  };
+  auto virtualmemoryEnum = [&]() {
+    return hasAnyName(
+        "CU_MEM_ALLOCATION_TYPE_PINNED", "CU_MEM_ALLOCATION_TYPE_INVALID",
+        "CU_MEM_ALLOCATION_TYPE_MAX", "CU_MEM_LOCATION_TYPE_DEVICE",
+        "CU_MEM_LOCATION_TYPE_INVALID", "CU_MEM_LOCATION_TYPE_MAX",
+        "CU_MEM_ACCESS_FLAGS_PROT_NONE", "CU_MEM_ACCESS_FLAGS_PROT_READ",
+        "CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
+        "CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
+        "CU_MEM_ALLOC_GRANULARITY_MINIMUM");
+  };
+  MF.addMatcher(
+      callExpr(callee(functionDecl(virtualmemoryAPI()))).bind("vmCall"), this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(virtualmemoryType())))))
+          .bind("vmType"),
+      this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(virtualmemoryEnum()))).bind("vmEnum"),
+      this);
+}
+
+void VirtualMemRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "vmCall")) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "vmType")) {
+    auto TypeStr =
+        DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
+    if (!DpctGlobalInfo::useExpVirtualMemory()) {
+      report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+             TypeStr, "--use-experimental-features=virtual_memory");
+      return;
+    }
+    if (!DpctGlobalInfo::isInAnalysisScope(
+            SM.getSpellingLoc(TL->getBeginLoc()))) {
+      return;
+    }
+    auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
+    auto BeginLoc = Range.getBegin();
+    auto EndLoc = Range.getEnd();
+
+    if (SM.isWrittenInScratchSpace(SM.getSpellingLoc(TL->getBeginLoc()))) {
+      BeginLoc = SM.getExpansionRange(TL->getBeginLoc()).getBegin();
+      EndLoc = SM.getExpansionRange(TL->getBeginLoc()).getEnd();
+    }
+    std::string Str =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
+    if (!Str.empty()) {
+      auto Len = Lexer::MeasureTokenLength(
+          EndLoc, SM, DpctGlobalInfo::getContext().getLangOpts());
+      Len += SM.getDecomposedLoc(EndLoc).second -
+             SM.getDecomposedLoc(BeginLoc).second;
+      emplaceTransformation(new ReplaceText(BeginLoc, Len, std::move(Str)));
+      return;
+    }
+  }
+  if (auto *E = getNodeAsType<DeclRefExpr>(Result, "vmEnum")) {
+    std::string EnumName = E->getNameInfo().getName().getAsString();
+    if (!DpctGlobalInfo::useExpVirtualMemory()) {
+      report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
+             EnumName, "--use-experimental-features=virtual_memory");
+      return;
+    }
+    auto Search = EnumConstantRule::EnumNamesMap.find(EnumName);
+    if (Search == EnumConstantRule::EnumNamesMap.end()) {
+      report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
+      return;
+    }
+    emplaceTransformation(new ReplaceStmt(E, Search->second->NewName));
+  }
+}
+
+REGISTER_RULE(VirtualMemRule, PassKind::PK_Migration)
+
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
     return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleLoadDataEx",

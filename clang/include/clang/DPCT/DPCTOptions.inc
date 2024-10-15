@@ -788,6 +788,11 @@ DPCT_ENUM_OPTION(
             "variables.\n",
             false),
         DPCT_OPTION_ENUM_VALUE(
+            "virtual_mem", int(ExperimentalFeatures::Exp_VirtualMemory),
+            "Experimental extension that allows map an address range onto "
+            "multiple allocations of physical memory.",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
             "non-stdandard-sycl-builtins",
             int(ExperimentalFeatures::Exp_NonStandardSYCLBuiltins),
             "Experimental extension that allows to use non standard SYCL "
