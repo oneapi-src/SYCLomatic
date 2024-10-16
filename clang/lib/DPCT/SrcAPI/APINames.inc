@@ -379,9 +379,9 @@ ENTRY(cudaGetTextureObjectResourceViewDesc, cudaGetTextureObjectResourceViewDesc
 ENTRY(cudaGetTextureObjectTextureDesc, cudaGetTextureObjectTextureDesc, true, NO_FLAG, P4, "Successful")
 
 // low level texture surface management functions of runtime API
-ENTRY(cudaCreateSurfaceObject, cudaCreateSurfaceObject, false, NO_FLAG, P0, "comment")
-ENTRY(cudaDestroySurfaceObject, cudaDestroySurfaceObject, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGetSurfaceObjectResourceDesc, cudaGetSurfaceObjectResourceDesc, false, NO_FLAG, P4, "comment")
+ENTRY(cudaCreateSurfaceObject, cudaCreateSurfaceObject, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaDestroySurfaceObject, cudaDestroySurfaceObject, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaGetSurfaceObjectResourceDesc, cudaGetSurfaceObjectResourceDesc, true, NO_FLAG, P4, "Successful")
 
 // Version Management
 ENTRY(cudaDriverGetVersion, cudaDriverGetVersion, true, NO_FLAG, P0, "DPCT1043")
