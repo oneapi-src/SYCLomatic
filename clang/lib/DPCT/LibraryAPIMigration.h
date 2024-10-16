@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_LIBRARY_API_MIGRAION_H
-#define DPCT_LIBRARY_API_MIGRAION_H
+#ifndef DPCT_LIBRARY_API_MIGRATION_H
+#define DPCT_LIBRARY_API_MIGRATION_H
 
 #include "ExprAnalysis.h"
 #include "MapNames.h"
@@ -98,4 +98,4 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
 } // namespace dpct
 } // namespace clang
 
-#endif // !DPCT_LIBRARY_API_MIGRAION_H
+#endif // !DPCT_LIBRARY_API_MIGRATION_H

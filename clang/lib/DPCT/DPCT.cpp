@@ -479,7 +479,8 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
     }
   }
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
-    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+    if (Entry.HasCUDASyntax)
+      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
   }
 
   // Currently, when "--use-experimental-features=device_global" and
@@ -752,12 +753,12 @@ int runDPCT(int argc, const char **argv) {
 
   if (BuildScript == BuildScriptKind::BS_Cmake &&
       !OptParser->getSourcePathList().empty()) {
-    ShowStatus(MigarteBuildScriptIncorrectUse);
-    dpctExit(MigarteBuildScriptIncorrectUse);
+    ShowStatus(MigrateBuildScriptIncorrectUse);
+    dpctExit(MigrateBuildScriptIncorrectUse);
   }
   if (BuildScript == BuildScriptKind::BS_Cmake && MigrateBuildScriptOnly) {
-    ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
-    dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
+    ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
+    dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
   }
 
   int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
@@ -937,12 +938,6 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
-#ifdef _WIN32 // Avoid some error on windows platform.
-    if (DpctGlobalInfo::getSDKVersion() <= CudaVersion::CUDA_100) {
-      Tool.appendArgumentsAdjuster(
-          getInsertArgumentAdjuster("-D_MSC_VER=1900"));
-    }
-#endif
     NoIncrementalMigration.setValue(true);
     StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);
@@ -1238,6 +1233,12 @@ int runDPCT(int argc, const char **argv) {
         if (DpctGlobalInfo::isQueryAPIMapping()) {
           std::string Err = getDpctTermStr();
           StringRef ErrStr = Err;
+          // Avoid the "Visual Studio version" error on windows platform.
+          if (ErrStr.find_first_of("error") == ErrStr.find_last_of("error") &&
+              ErrStr.contains(
+                  "error -- unsupported Microsoft Visual Studio version")) {
+            continue;
+          }
           if (ErrStr.contains("use of undeclared identifier")) {
             ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
                        QueryAPIMapping);

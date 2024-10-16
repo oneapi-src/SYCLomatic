@@ -522,8 +522,8 @@ void RunTest()
         {
 // CHECK:          q_ct1.submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
-// CHECK-NEXT:              dpct::access_wrapper<T *> d_idata_acc_ct0(d_idata, cgh);
-// CHECK-NEXT:              dpct::access_wrapper<T *> d_block_sums_acc_ct1(d_block_sums, cgh);
+// CHECK-NEXT:              dpct::access_wrapper d_idata_acc_ct0(d_idata, cgh);
+// CHECK-NEXT:              dpct::access_wrapper d_block_sums_acc_ct1(d_block_sums, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:              cgh.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
 // CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
@@ -588,9 +588,9 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_cur_image_acc_ct1(d_cur_image, cgh);
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> imgRef_acc_ct4(imgRef, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_cur_image_acc_ct1(d_cur_image, cgh);
+// CHECK-NEXT:        dpct::access_wrapper imgRef_acc_ct4(imgRef, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_1_blocks_in_grid * foo_kernel_1_threads_in_block, foo_kernel_1_threads_in_block),
@@ -623,7 +623,7 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_2_blocks_in_grid * foo_kernel_2_threads_in_block, foo_kernel_2_threads_in_block),
@@ -655,7 +655,7 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_3_blocks_in_grid * foo_kernel_3_threads_in_block, foo_kernel_3_threads_in_block),

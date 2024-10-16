@@ -1384,4 +1384,14 @@ int foo39() {
   CALL(0, 1)
   return 0;
 }
+
+//CHECK: void foo40_kernel(const sycl::stream &stream_ct1) {
+//CHECK-NEXT:   FOO40_MACRO;
+//CHECK-NEXT: }
+__global__ void foo40_kernel() {
+  FOO40_MACRO;
+}
+void foo40() {
+  foo40_kernel<<<1, 1>>>();
+}
 #endif

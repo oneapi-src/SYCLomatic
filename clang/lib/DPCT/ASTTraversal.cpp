@@ -2246,7 +2246,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           TypePtr = ET->getNamedType().getTypePtr();
 
         // The definition of the type is in current files for analysis and
-        // neither they are typedefed. We donot want to migarte such types.
+        // neither they are typedefed. We donot want to migrate such types.
         if (TypePtr->getTypeClass() != clang::Type::Typedef)
           return;
 
@@ -8091,7 +8091,8 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaStreamWaitEvent" ||
              FuncName == "cuStreamWaitEvent") {
     std::string ReplStr;
-    auto StmtStr1 = getStmtSpelling(CE->getArg(1));
+    ExprAnalysis EA(CE->getArg(1));
+    std::string StmtStr1 = EA.getReplacedString();
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
       // ext_oneapi_submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
