@@ -276,6 +276,19 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
       R.Priority));
 }
 
+void registerHelperFunctionRule(MetaRuleObject &R) {
+  if (R.In == "DefaultQueue" && R.Priority == RulePriority::Takeover) {
+    MapNames::CustomHelperFunctionMap.insert(
+        {dpct::HelperFuncCatalog::DefaultQueue, R.Out});
+    dpct::DpctGlobalInfo::setUsingDRYPattern(false);
+  } else if (R.In == "HasCapabilityOrFail" &&
+             R.Priority == RulePriority::Takeover) {
+    MapNames::CustomHelperFunctionMap.insert(
+        {dpct::HelperFuncCatalog::HasCapabilityOrFail, R.Out});
+    dpct::DpctGlobalInfo::setUsingDRYPattern(false);
+  }
+}
+
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     const MetaRuleObject::PatternRewriter &PR) {
   if (this != &PR) {
@@ -364,6 +377,9 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
         break;
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
+        break;
+      case (RuleKind::HelperFunction):
+        registerHelperFunctionRule(*r);
         break;
       default:
         break;
