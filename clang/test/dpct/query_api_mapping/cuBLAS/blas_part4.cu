@@ -236,4 +236,4 @@
 // cublasNrm2Ex-NEXT:                xtype /*cudaDataType*/, incx /*int*/, res /*void **/,
 // cublasNrm2Ex-NEXT:                restype /*cudaDataType*/, computetype /*cudaDataType*/);
 // cublasNrm2Ex-NEXT: Is migrated to:
-// cublasNrm2Ex-NEXT:   dpct::nrm2(handle->get_queue(), n, x, xtype, incx, res, restype);
+// cublasNrm2Ex-NEXT:   dpct::blas::nrm2(handle, n, x, xtype, incx, res, restype);
