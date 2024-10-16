@@ -844,7 +844,7 @@ inline void unmap_resources(int count, external_mem_wrapper **handles,
 /// \param [in] q The queue where the image creation be executed.
 /// \returns The sampled image handle of created bindless image.
 static inline sycl::ext::oneapi::experimental::sampled_image_handle
-create_bindless_image(image_data data, sampling_info info,
+create_bindless_image(image_data data, sampling_info info = {},
                       sycl::queue q = get_default_queue()) {
   auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
       info.get_addressing_mode(), info.get_coordinate_normalization_mode(),
