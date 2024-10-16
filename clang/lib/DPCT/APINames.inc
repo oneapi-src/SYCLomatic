@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+// clang-format off
 /****************************************************************************
 *
 * ENTRY(Interface APIName, APINAME, ProcessedOrNot, Flag, Priority, MigrationDesc)
@@ -377,9 +378,9 @@ ENTRY(cudaGetTextureObjectResourceViewDesc, cudaGetTextureObjectResourceViewDesc
 ENTRY(cudaGetTextureObjectTextureDesc, cudaGetTextureObjectTextureDesc, true, NO_FLAG, P4, "Successful")
 
 // low level texture surface management functions of runtime API
-ENTRY(cudaCreateSurfaceObject, cudaCreateSurfaceObject, false, NO_FLAG, P0, "comment")
-ENTRY(cudaDestroySurfaceObject, cudaDestroySurfaceObject, false, NO_FLAG, P0, "comment")
-ENTRY(cudaGetSurfaceObjectResourceDesc, cudaGetSurfaceObjectResourceDesc, false, NO_FLAG, P4, "comment")
+ENTRY(cudaCreateSurfaceObject, cudaCreateSurfaceObject, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaDestroySurfaceObject, cudaDestroySurfaceObject, true, NO_FLAG, P0, "Successful")
+ENTRY(cudaGetSurfaceObjectResourceDesc, cudaGetSurfaceObjectResourceDesc, true, NO_FLAG, P4, "Successful")
 
 // Version Management
 ENTRY(cudaDriverGetVersion, cudaDriverGetVersion, true, NO_FLAG, P0, "DPCT1043")
@@ -2307,3 +2308,4 @@ ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
 ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
 
 ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Partial")
+// clang-format on
