@@ -103,7 +103,7 @@ void InvokeKernel() {
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper dev_ptr_acc_ct0(dev_ptr, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),
@@ -220,7 +220,7 @@ __shared__ uint32_t share_v;
   atomicAdd(p_4, 1);
 }
 
-// CHECK:dpct::global_memory<uint32_t, 1> dmem(100);
+// CHECK:static dpct::global_memory<uint32_t, 1> dmem(100);
 // CHECK-NEXT:void foo_4(uint8_t *dpct_local, uint32_t *dmem) {
 // CHECK-NEXT:auto share = (uint32_t *)dpct_local;
 // CHECK-NEXT:  uint32_t *p_1 = NULL;
@@ -540,7 +540,7 @@ __shared__ unsigned int s_Hist[100];
   addByte(s_WarpHist, 1000);
 }
 
-//CHECK:dpct::global_memory<volatile int, 0> g_mutex(0);
+//CHECK:static dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex = 0;
 
 //CHECK:void __gpu_sync(int blocks_to_synch, volatile int &g_mutex) {

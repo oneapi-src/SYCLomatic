@@ -62,8 +62,8 @@ enum ProcessStatus {
   CallIndependentToolError = -47,
   MigrationErrorCMakeScriptPathInvalid = -48,
   MigrateCmakeScriptOnlyNotSpecifed = -49,
-  MigarteBuildScriptIncorrectUse = -50,
-  MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse = -51,
+  MigrateBuildScriptIncorrectUse = -50,
+  MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse = -51,
   MigrationErrorNoExplicitInRootAndCMakeScript = -52,
   MigrationErrorCannotWrite = -53,
 };

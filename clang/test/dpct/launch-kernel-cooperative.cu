@@ -48,7 +48,7 @@ int main() {
   // CHECK:  static_cast<dpct::image_wrapper<int, 1> *>(tex)->create_image();
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<int *> d_acc_ct0(*(int **)args[0], cgh);
+  // CHECK-NEXT:     dpct::access_wrapper d_acc_ct0(*(int **)args[0], cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     auto tex_acc = static_cast<dpct::image_wrapper<int, 1> *>(*(dpct::image_wrapper_base_p *)args[1])->get_access(cgh);
   // CHECK-EMPTY:
@@ -69,7 +69,7 @@ int main() {
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
   // CHECK-NEXT:     sycl::local_accessor<int, 1> s_acc_ct1(sycl::range<1>(16), cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<int *> d_acc_ct0(*(int **)args[0], cgh);
+  // CHECK-NEXT:     dpct::access_wrapper d_acc_ct0(*(int **)args[0], cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),

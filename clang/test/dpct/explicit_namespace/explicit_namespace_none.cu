@@ -42,10 +42,10 @@ void foo() {
   kernel1<<< ceil(2.3), 1 >>>();
 #endif
 }
-// CHECK: global_memory<int, 0> al;
+// CHECK: static global_memory<int, 0> al;
 __device__ int al;
 const int num_elements = 16;
-// CHECK: global_memory<float, 2> fy(num_elements, 4 * num_elements);
+// CHECK: static global_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 const int size = 64;
 __device__ float tmp[size];
