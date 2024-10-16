@@ -4,7 +4,7 @@
 // CUGETERRORSTRING: CUDA API:
 // CUGETERRORSTRING-NEXT:   cuGetErrorString(r /*CUresult*/, ppc /*const char ***/);
 // CUGETERRORSTRING-NEXT: Is migrated to:
-// CUGETERRORSTRING-NEXT:   *ppc = dpct::get_error_dummy(r);
+// CUGETERRORSTRING-NEXT:   *ppc = dpct::get_error_string_dummy(r);
 
 /// Initialization
 

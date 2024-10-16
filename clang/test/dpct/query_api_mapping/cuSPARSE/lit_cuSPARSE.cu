@@ -209,13 +209,13 @@
 // cusparseGetErrorName: CUDA API:
 // cusparseGetErrorName-NEXT:   const char *Name = cusparseGetErrorName(status /*cusparseStatus_t*/);
 // cusparseGetErrorName-NEXT: Is migrated to:
-// cusparseGetErrorName-NEXT:   const char *Name = dpct::get_error_dummy(status);
+// cusparseGetErrorName-NEXT:   const char *Name = dpct::get_error_string_dummy(status);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetErrorString | FileCheck %s -check-prefix=cusparseGetErrorString
 // cusparseGetErrorString: CUDA API:
 // cusparseGetErrorString-NEXT:   const char *Str = cusparseGetErrorString(status /*cusparseStatus_t*/);
 // cusparseGetErrorString-NEXT: Is migrated to:
-// cusparseGetErrorString-NEXT:   const char *Str = dpct::get_error_dummy(status);
+// cusparseGetErrorString-NEXT:   const char *Str = dpct::get_error_string_dummy(status);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetProperty | FileCheck %s -check-prefix=cusparseGetProperty
 // cusparseGetProperty: CUDA API:

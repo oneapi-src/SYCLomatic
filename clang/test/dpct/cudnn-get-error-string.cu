@@ -6,17 +6,17 @@
 
 int printf(const char *format, ...);
 
-// CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_dummy(X))
+// CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR(X) printf("%s\n", cudnnGetErrorString(X))
 
 // CHECK: #define PRINT_ERROR_STR2(X)\
-// CHECK-NEXT:  printf("%s\n", dpct::get_error_dummy(X))
+// CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR2(X)\
   printf("%s\n", cudnnGetErrorString(X))
 
 // CHECK: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", dpct::get_error_dummy(X))
+// CHECK-NEXT:          \n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR3(X)\
   printf("%s\
          \n", cudnnGetErrorString(X))
@@ -24,10 +24,10 @@ int printf(const char *format, ...);
 
 const char *test_function(cudnnStatus_t status) {
 
-//CHECK:  printf("%s\n", dpct::get_error_dummy(status));
+//CHECK:  printf("%s\n", dpct::get_error_string_dummy(status));
   printf("%s\n", cudnnGetErrorString(status));
 
-//CHECK:  printf("%s\n", dpct::get_error_dummy(0));
+//CHECK:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudnnGetErrorString(CUDNN_STATUS_SUCCESS));
 
   PRINT_ERROR_STR(status);

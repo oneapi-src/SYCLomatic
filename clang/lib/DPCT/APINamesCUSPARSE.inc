@@ -336,10 +336,10 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                          MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2),
                          ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
 CALL_FACTORY_ENTRY("cusparseGetErrorString",
-                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                   CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                         ARG_WC(0)))
 CALL_FACTORY_ENTRY("cusparseGetErrorName",
-                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                   CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                         ARG_WC(0)))
 
 ASSIGNABLE_FACTORY(

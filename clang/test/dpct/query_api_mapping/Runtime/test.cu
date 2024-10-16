@@ -164,13 +164,13 @@
 // CUDAGETERRORNAME: CUDA API:
 // CUDAGETERRORNAME-NEXT:   cudaGetErrorName(e /*cudaError_t*/);
 // CUDAGETERRORNAME-NEXT: Is migrated to:
-// CUDAGETERRORNAME-NEXT:   dpct::get_error_dummy(e);
+// CUDAGETERRORNAME-NEXT:   dpct::get_error_string_dummy(e);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetErrorString | FileCheck %s -check-prefix=CUDAGETERRORSTRING
 // CUDAGETERRORSTRING: CUDA API:
 // CUDAGETERRORSTRING-NEXT:   cudaGetErrorString(e /*cudaError_t*/);
 // CUDAGETERRORSTRING-NEXT: Is migrated to:
-// CUDAGETERRORSTRING-NEXT:   dpct::get_error_dummy(e);
+// CUDAGETERRORSTRING-NEXT:   dpct::get_error_string_dummy(e);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetLastError | FileCheck %s -check-prefix=CUDAGETLASTERROR
 // CUDAGETLASTERROR: CUDA API:

@@ -36,7 +36,7 @@ int main(){
        // CHECK: case int(oneapi::ccl::datatype::int32): std::cout << "Int32" << std::endl; break;
       case ncclInt32: std::cout << "Int32" << std::endl; break;
   }
-  // CHECK: dpct::get_error_dummy(res);
+  // CHECK: dpct::get_error_string_dummy(res);
   ncclGetErrorString(res);
   // CHECK:     /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this functionality is redundant in SYCL.

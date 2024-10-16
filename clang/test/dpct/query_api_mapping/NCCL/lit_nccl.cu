@@ -10,7 +10,7 @@
 // NCCLGETERRORSTRING: CUDA API:
 // NCCLGETERRORSTRING-NEXT:   ncclGetErrorString(r /*ncclResult_t*/);
 // NCCLGETERRORSTRING-NEXT: Is migrated to:
-// NCCLGETERRORSTRING-NEXT:   dpct::get_error_dummy(r);
+// NCCLGETERRORSTRING-NEXT:   dpct::get_error_string_dummy(r);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetVersion | FileCheck %s -check-prefix=ncclGetVersion
 // ncclGetVersion: CUDA API:

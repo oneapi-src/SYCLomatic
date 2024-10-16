@@ -14,8 +14,8 @@ int main() {
   cusparseStatus_t a6;
   a6 = CUSPARSE_STATUS_NOT_SUPPORTED;
 
-  //CHECK:printf("Error string: %s", dpct::get_error_dummy(a6));
-  //CHECK-NEXT:printf("Error name: %s", dpct::get_error_dummy(a6));
+  //CHECK:printf("Error string: %s", dpct::get_error_string_dummy(a6));
+  //CHECK-NEXT:printf("Error name: %s", dpct::get_error_string_dummy(a6));
   printf("Error string: %s", cusparseGetErrorString(a6));
   printf("Error name: %s", cusparseGetErrorName(a6));
 

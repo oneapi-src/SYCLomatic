@@ -4,32 +4,32 @@
 
 int printf(const char *format, ...);
 
-// CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_dummy(X))
+// CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR(X) printf("%s\n", cudaGetErrorString(X))
 
 // CHECK: #define PRINT_ERROR_STR2(X)\
-// CHECK-NEXT:  printf("%s\n", dpct::get_error_dummy(X))
+// CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR2(X)\
   printf("%s\n", cudaGetErrorString(X))
 
 // CHECK: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", dpct::get_error_dummy(X))
+// CHECK-NEXT:          \n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR3(X)\
   printf("%s\
          \n", cudaGetErrorString(X))
 
-// CHECK: #define PRINT_ERROR_NAME(X) printf("%s\n", dpct::get_error_dummy(X))
+// CHECK: #define PRINT_ERROR_NAME(X) printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_NAME(X) printf("%s\n", cudaGetErrorName(X))
 
 // CHECK: #define PRINT_ERROR_NAME2(X)\
-// CHECK-NEXT:   printf("%s\n", dpct::get_error_dummy(X))
+// CHECK-NEXT:   printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_NAME2(X)\
   printf("%s\n", cudaGetErrorName(X))
 
 // CHECK: #define PRINT_ERROR_NAME3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", dpct::get_error_dummy(X))
+// CHECK-NEXT:          \n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_NAME3(X)\
   printf("%s\
          \n", cudaGetErrorName(X))
@@ -37,8 +37,8 @@ int printf(const char *format, ...);
 // CHECK: #define PRINT_ERROR_STR_NAME(X)\
 // CHECK-NEXT:   printf("%s\
 // CHECK-NEXT:          %s\
-// CHECK-NEXT:          \n", dpct::get_error_dummy(X),\
-// CHECK-NEXT:          dpct::get_error_dummy(X))
+// CHECK-NEXT:          \n", dpct::get_error_string_dummy(X),\
+// CHECK-NEXT:          dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR_NAME(X)\
   printf("%s\
          %s\
@@ -88,22 +88,22 @@ const char *test_function() {
 //CHECK:/*
 //CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", dpct::get_error_dummy(0));
+//CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
 
-//CHECK:  printf("%s\n", dpct::get_error_dummy(0));
+//CHECK:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudaGetErrorString(cudaSuccess));
 
-//CHECK:printf("%s\n", dpct::get_error_dummy(0));
+//CHECK:printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudaGetErrorName(cudaSuccess));
   CUresult e;
   const char *err_s;
 
-//CHECK:  err_s = dpct::get_error_dummy(e);
+//CHECK:  err_s = dpct::get_error_string_dummy(e);
   cuGetErrorString(e, &err_s);
 
-//CHECK:  return dpct::get_error_dummy(0);
+//CHECK:  return dpct::get_error_string_dummy(0);
   return cudaGetErrorName(cudaSuccess);
 }
 

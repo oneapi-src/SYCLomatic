@@ -7,15 +7,15 @@
 //===----------------------------------------------------------------------===//
 
 CALL_FACTORY_ENTRY("cudnnGetErrorString",
-                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                   CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                         ARG_WC(0)))
 
 CALL_FACTORY_ENTRY("cudaGetErrorString",
-                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                   CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                         ARG_WC(0)))
 
 CALL_FACTORY_ENTRY("cudaGetErrorName",
-                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                   CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                         ARG_WC(0)))
 
 CONDITIONAL_FACTORY_ENTRY(
@@ -43,7 +43,7 @@ CONDITIONAL_FACTORY_ENTRY(
         Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
 
 CALL_FACTORY_ENTRY("ncclGetErrorString",
-                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                   CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                         ARG_WC(0)))
 
 CONDITIONAL_FACTORY_ENTRY(

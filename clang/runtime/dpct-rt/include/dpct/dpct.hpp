@@ -48,11 +48,13 @@ template <int Arg> class dpct_kernel_scalar;
 
 namespace dpct {
 enum error_code { success = 0, default_error = 999 };
-inline const char *get_error_dummy(int ec) {
-  static const std::string Msg =
-      "SYCL uses exceptions to report errors and does not use the error codes. "
-      "You need to rewrite this code.";
-  return Msg.c_str();
+/// A dummy function introduced to assist auto migration.
+/// It needs to be replaced with a real error-handling function. SYCL reports
+/// errors using exceptions and does not use error codes.
+inline const char *get_error_string_dummy(int ec) {
+  (void)ec;
+  return "<FIXME: Placeholder>"; // Return the error string for the error code
+                                 // ec.
 }
 } // namespace dpct
 

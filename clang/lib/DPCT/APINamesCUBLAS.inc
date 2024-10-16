@@ -652,7 +652,7 @@ GELS_BATCHED(cublasZgelsBatched)
 #undef GELS_BATCHED
 
 CALL_FACTORY_ENTRY("cublasGetStatusString",
-                   CALL(MapNames::getDpctNamespace() + "get_error_dummy",
+                   CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                         ARG_WC(0)))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(

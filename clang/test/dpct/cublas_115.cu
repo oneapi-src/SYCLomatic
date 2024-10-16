@@ -8,7 +8,7 @@
 #include <cublas_v2.h>
 
 void foo1(cublasStatus_t s) {
-  //CHECK:printf("Error string: %s", dpct::get_error_dummy(s));
+  //CHECK:printf("Error string: %s", dpct::get_error_string_dummy(s));
   printf("Error string: %s", cublasGetStatusString(s));
   cublasHandle_t handle;
   void *workspace;
