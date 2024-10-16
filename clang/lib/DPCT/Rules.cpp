@@ -281,11 +281,6 @@ void registerHelperFunctionRule(MetaRuleObject &R) {
     MapNames::CustomHelperFunctionMap.insert(
         {dpct::HelperFuncCatalog::DefaultQueue, R.Out});
     dpct::DpctGlobalInfo::setUsingDRYPattern(false);
-  } else if (R.In == "HasCapabilityOrFail" &&
-             R.Priority == RulePriority::Takeover) {
-    MapNames::CustomHelperFunctionMap.insert(
-        {dpct::HelperFuncCatalog::HasCapabilityOrFail, R.Out});
-    dpct::DpctGlobalInfo::setUsingDRYPattern(false);
   }
 }
 

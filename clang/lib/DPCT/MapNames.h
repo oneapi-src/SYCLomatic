@@ -21,8 +21,7 @@ enum class KernelArgType;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
 enum class HelperFuncCatalog {
-  DefaultQueue,
-  HasCapabilityOrFail
+  DefaultQueue
 };
 } // namespace dpct
 } // namespace clang

@@ -5,9 +5,3 @@
   In: DefaultQueue
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
   Includes: [""]
-- Rule: rule1
-  Kind: HelperFunction
-  Priority: Takeover
-  In: HasCapabilityOrFail
-  Out: dpct::has_capability_or_fail(static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()).get_device(), $1)
-  Includes: [""]

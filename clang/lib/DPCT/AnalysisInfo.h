@@ -662,16 +662,14 @@ public:
         : DefaultQueueCounter(DefaultQueueCounter),
           CurrentDeviceCounter(CurrentDeviceCounter),
           PlaceholderStr{
-              "",
-              buildString(MapNames::getDpctNamespace(),
-                          DpctGlobalInfo::getDefaultQueueFreeFuncCall()),
+              "", DpctGlobalInfo::getDefaultQueueFreeFuncCall(),
               MapNames::getDpctNamespace() + "get_current_device()",
               (DpctGlobalInfo::useSYCLCompat()
                    ? buildString(MapNames::getDpctNamespace() +
                                  "get_current_device().default_queue()")
                    : buildString(
-                         "&" + MapNames::getDpctNamespace() +
-                         DpctGlobalInfo::getDefaultQueueFreeFuncCall()))} {}
+                         "&", DpctGlobalInfo::getDefaultQueueFreeFuncCall()))} {
+    }
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
     std::string PlaceholderStr[4];

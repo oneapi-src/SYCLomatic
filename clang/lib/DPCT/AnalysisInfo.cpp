@@ -63,8 +63,7 @@ const std::string &getDefaultString(HelperFuncType HFT) {
     const static std::string DefaultQueue =
         DpctGlobalInfo::useNoQueueDevice()
             ? DpctGlobalInfo::getGlobalQueueName()
-            : buildString(MapNames::getDpctNamespace() +
-                          DpctGlobalInfo::getDefaultQueueFreeFuncCall());
+            : DpctGlobalInfo::getDefaultQueueFreeFuncCall();
     return DefaultQueue;
   }
   case clang::dpct::HelperFuncType::HFT_DefaultQueuePtr: {
@@ -75,8 +74,7 @@ const std::string &getDefaultString(HelperFuncType HFT) {
                    ? buildString(MapNames::getDpctNamespace() +
                                  "get_current_device().default_queue()")
                    : buildString(
-                         "&" + MapNames::getDpctNamespace() +
-                         DpctGlobalInfo::getDefaultQueueFreeFuncCall()));
+                         "&", DpctGlobalInfo::getDefaultQueueFreeFuncCall()));
     return DefaultQueue;
   }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
@@ -1227,29 +1225,26 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
   return buildString(RegexPrefix, 'Q', Idx, RegexSuffix);
 }
 const std::string &DpctGlobalInfo::getDefaultQueueFreeFuncCall() {
-  static const std::string DefaultQueueFreeFunc = "get_default_queue()";
-  static const std::string OutOfOrderQueueFreeFunc = "get_out_of_order_queue()";
-  static const std::string InOrderQueueFreeFunc = "get_in_order_queue()";
-  auto Iter =
-      MapNames::CustomHelperFunctionMap.find(HelperFuncCatalog::DefaultQueue);
-  if (Iter != MapNames::CustomHelperFunctionMap.end()) {
-    return Iter->second;
-  }
-  if (DpctGlobalInfo::useSYCLCompat())
-    return DefaultQueueFreeFunc;
-  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
-    return OutOfOrderQueueFreeFunc;
-  return InOrderQueueFreeFunc;
+  static const std::string DefaultQueueFreeFuncCall = [&]() {
+    auto Iter =
+        MapNames::CustomHelperFunctionMap.find(HelperFuncCatalog::DefaultQueue);
+    if (Iter != MapNames::CustomHelperFunctionMap.end()) {
+      return Iter->second;
+    }
+    return MapNames::getDpctNamespace() + "get_" +
+           getDefaultQueueMemFuncName() + "()";
+  }();
+  return DefaultQueueFreeFuncCall;
 }
 const std::string &DpctGlobalInfo::getDefaultQueueMemFuncName() {
-  static const std::string DefaultQueueMemFunc = "default_queue";
-  static const std::string OutOfOrderQueueMemFunc = "out_of_order_queue";
-  static const std::string InOrderQueueMemFunc = "in_order_queue";
-  if (DpctGlobalInfo::useSYCLCompat())
-    return DefaultQueueMemFunc;
-  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
-    return OutOfOrderQueueMemFunc;
-  return InOrderQueueMemFunc;
+  static const std::string DefaultQueueMemFuncName = [&]() {
+    if (DpctGlobalInfo::useSYCLCompat())
+      return "default_queue";
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+      return "out_of_order_queue";
+    return "in_order_queue";
+  }();
+  return DefaultQueueMemFuncName;
 }
 void DpctGlobalInfo::setContext(ASTContext &C) {
   Context = &C;
@@ -6130,19 +6125,16 @@ void KernelCallExpr::addDevCapCheckStmt() {
   if (!AspectList.empty()) {
     std::string Str;
     llvm::raw_string_ostream OS(Str);
-    auto Iter = MapNames::CustomHelperFunctionMap.find(
-        HelperFuncCatalog::HasCapabilityOrFail);
-    if (Iter != MapNames::CustomHelperFunctionMap.end()) {
-      OutputBuilder OB;
-      OB.parse(Iter->second);
-      OB.Kind = OutputBuilder::Kind::Top;
-      std::string Aspects = "{" + AspectList.front();
+    if (auto Iter = MapNames::CustomHelperFunctionMap.find(
+            HelperFuncCatalog::DefaultQueue);
+        Iter != MapNames::CustomHelperFunctionMap.end()) {
+      OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+      OS << Iter->second << ".get_device(), ";
+      OS << "{" << AspectList.front();
       for (size_t i = 1; i < AspectList.size(); ++i) {
-        Aspects += AspectList[i];
+        OS << ", " << AspectList[i];
       }
-      Aspects += "}";
-      buildHasCapabilityOrFailStr(Aspects, OS, OB);
-      OS << ";";
+      OS << "});";
     } else {
       requestFeature(HelperFeatureEnum::device_ext);
       OS << MapNames::getDpctNamespace() << "get_device(";
@@ -6203,9 +6195,7 @@ void KernelCallExpr::addStreamDecl() {
         buildString(MapNames::getClNamespace() + "stream ",
                     DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
   if (getVarMap().hasSync()) {
-    auto DefaultQueue =
-        buildString(MapNames::getDpctNamespace(),
-                    DpctGlobalInfo::getDefaultQueueFreeFuncCall());
+    auto DefaultQueue = DpctGlobalInfo::getDefaultQueueFreeFuncCall();
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       OuterStmts.OthersList.emplace_back(
           buildString(MapNames::getDpctNamespace(), "global_memory<",

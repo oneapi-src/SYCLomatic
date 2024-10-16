@@ -6,7 +6,7 @@
 
 __global__ void foo1_kernel() {}
 void foo1() {
-  // CHECK: dpct::static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()).parallel_for(
+  // CHECK: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()).parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
   // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:     foo1_kernel();
@@ -18,17 +18,17 @@ __global__ void foo2_kernel(double *d) {}
 
 void foo2() {
   double *d;
-  // CHECK: d = sycl::malloc_device<double>(1, dpct::static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()));
+  // CHECK: d = sycl::malloc_device<double>(1, static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()));
   // CHECK-NEXT: {
   // CHECK-NEXT:   dpct::has_capability_or_fail(static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()).get_device(), {sycl::aspect::fp64});
   // CHECK-EMPTY:
-  // CHECK-NEXT:   dpct::static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()).parallel_for(
+  // CHECK-NEXT:   static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()).parallel_for(
   // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
   // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:       foo2_kernel(d);
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
-  // CHECK-NEXT: dpct::dpct_free(d, dpct::static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()));
+  // CHECK-NEXT: dpct::dpct_free(d, static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream()));
   cudaMalloc(&d, sizeof(double));
   foo2_kernel<<<1, 1>>>(d);
   cudaFree(d);
