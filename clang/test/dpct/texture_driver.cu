@@ -24,6 +24,7 @@ int main() {
   // CHECK-NEXT: p3DDesc.height = 2;
   // CHECK-NEXT: p3DDesc.depth = 3;
   // CHECK-NEXT: p3DDesc.channel_type = sycl::image_channel_type::signed_int8;
+  // CHECK-NEXT: ;
   // CHECK-NEXT: p3DDesc.num_channels = 4;
   CUDA_ARRAY3D_DESCRIPTOR p3DDesc;
   p3DDesc.Width = 1;

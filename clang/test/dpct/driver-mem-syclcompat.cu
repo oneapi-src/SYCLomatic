@@ -130,11 +130,13 @@ int main(){
     cuMemsetD2D8Async(f_D, 1, v8, 4 * 4, 6, stream);
 
     // CHECK: syclcompat::experimental::memcpy_parameter cpy;
+    // CHECK-NEXT: ;
     // CHECK-NEXT: cpy.to.pitched.set_data_ptr(f_A);
     // CHECK-NEXT: cpy.to.pitched.set_pitch(20);
     // CHECK-NEXT: cpy.to.pos[1] = 10;
     // CHECK-NEXT: cpy.to.pos[0] = 15;
     // CHECK-EMPTY:
+    // CHECK-NEXT: ;
     // CHECK-NEXT: cpy.from.pitched.set_data_ptr(f_D);
     // CHECK-NEXT: cpy.from.pitched.set_pitch(20);
     // CHECK-NEXT: cpy.from.pos[1] = 10;
@@ -262,6 +264,7 @@ int main(){
     // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "CUarray" is not currently supported with SYCLcompat. Please adjust the code manually.
     // CHECK-NEXT: */
     // CHECK-NEXT: CUarray ca;
+    // CHECK-NEXT: ;
     // CHECK-NEXT: cpy2.to.image = ca;
     // CHECK-NEXT: cpy2.to.pitched.set_pitch(5);
     // CHECK-NEXT: cpy2.to.pitched.set_y(4);
@@ -274,6 +277,7 @@ int main(){
     // CHECK-NEXT: cpy2.from.pos[1] = 3;
     // CHECK-NEXT: cpy2.from.pos[2] = 2;
     // CHECK-NEXT: cpy2.from.pos[0] = 1;
+    // CHECK-NEXT: ;
     // CHECK-EMPTY:
     // CHECK-NEXT: cpy2.size[0] = 3;
     // CHECK-NEXT: cpy2.size[1] = 2;

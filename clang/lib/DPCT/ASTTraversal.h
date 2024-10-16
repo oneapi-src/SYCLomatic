@@ -1156,14 +1156,14 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
                                       std::forward<RestNamesT>(Rest)...);
   }
 
+  const static std::vector<std::string> RemoveMember;
+
+public:
   const static MapNames::MapTy DirectReplMemberNames;
   const static MapNames::MapTy GetSetReplMemberNames;
   const static MapNames::MapTy ExtentMemberNames;
   const static MapNames::MapTy PitchMemberNames;
   const static MapNames::MapTy ArrayDescMemberNames;
-  const static std::vector<std::string> RemoveMember;
-
-public:
   static std::string getArrayDescMemberName(StringRef BaseName,
                                             const std::string &Member) {
     auto Itr = ArrayDescMemberNames.find(Member);
