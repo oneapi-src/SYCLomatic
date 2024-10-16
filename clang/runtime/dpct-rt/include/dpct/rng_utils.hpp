@@ -614,4 +614,8 @@ create_host_rng(const random_engine_type type,
 } // namespace rng
 } // namespace dpct
 
+template <class engine_t>
+struct sycl::is_device_copyable<dpct::rng::device::rng_generator<engine_t>>
+    : std::true_type {};
+
 #endif // __DPCT_RNG_UTILS_HPP__

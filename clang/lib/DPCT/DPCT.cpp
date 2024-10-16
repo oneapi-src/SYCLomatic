@@ -479,7 +479,8 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
     }
   }
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
-    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+    if (Entry.HasCUDASyntax)
+      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
   }
 
   // Currently, when "--use-experimental-features=device_global" and
@@ -752,12 +753,12 @@ int runDPCT(int argc, const char **argv) {
 
   if (BuildScript == BuildScriptKind::BS_Cmake &&
       !OptParser->getSourcePathList().empty()) {
-    ShowStatus(MigarteBuildScriptIncorrectUse);
-    dpctExit(MigarteBuildScriptIncorrectUse);
+    ShowStatus(MigrateBuildScriptIncorrectUse);
+    dpctExit(MigrateBuildScriptIncorrectUse);
   }
   if (BuildScript == BuildScriptKind::BS_Cmake && MigrateBuildScriptOnly) {
-    ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
-    dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
+    ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
+    dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
   }
 
   int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);

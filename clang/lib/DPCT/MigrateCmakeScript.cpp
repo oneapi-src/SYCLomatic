@@ -48,7 +48,7 @@ static std::map<std::string /*variable name*/, std::string /*value*/>
     CmakeVarMap;
 
 static std::map<std::string /*cmake syntax*/,
-                MetaRuleObject::PatternRewriter /*cmake migraiton rule*/>
+                MetaRuleObject::PatternRewriter /*cmake migration rule*/>
     CmakeBuildInRules;
 
 static std::map<std::string /*file path*/,
@@ -764,7 +764,7 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
     } else {
       llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
                    << ", Rule:" << Iter->second.RuleId
-                   << ") are duplicated, the migrtion rule (Rule:" << R.RuleId
+                   << ") are duplicated, the migration rule (Rule:" << R.RuleId
                    << ") is ignored.\n";
     }
   } else {

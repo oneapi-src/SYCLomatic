@@ -68,8 +68,8 @@ int main() {
   // CHECK-NEXT:  karg2, karg3);*/
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg1_acc_ct0((const int *)karg1, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg1_acc_ct0((const int *)karg1, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
