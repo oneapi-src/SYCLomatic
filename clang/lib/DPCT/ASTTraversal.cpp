@@ -3851,20 +3851,21 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         for (const auto &Arg : MatchedCE->arguments()) {
           MatchedCEMigratedArgs.push_back(ExprAnalysis::ref(Arg));
         }
-        const static std::map<unsigned /*CE*/, unsigned /*MatchedCE*/> IdxMap =
-            {
-                {0, 0},   {1, 1},   {2, 2},   {3, 3},   {4, 4},   {5, 5},
-                {6, 6},   {7, 7},   {8, 9},   {9, 10},  {10, 11}, {11, 12},
-                {12, 14}, {13, 15}, {14, 16}, {15, 18},
-            };
-        bool IsSame = true;
-        for (const auto &P : IdxMap) {
-          if (MigratedArgs[P.first] != MatchedCEMigratedArgs[P.second]) {
-            IsSame = false;
-            break;
-          }
-        }
-        if (IsSame) {
+        if ([&]() -> bool {
+              const static std::map<unsigned /*CE*/, unsigned /*MatchedCE*/>
+                  IdxMap = {
+                      {0, 0},   {1, 1},   {2, 2},   {3, 3},
+                      {4, 4},   {5, 5},   {6, 6},   {7, 7},
+                      {8, 9},   {9, 10},  {10, 11}, {11, 12},
+                      {12, 14}, {13, 15}, {14, 16}, {15, 18},
+                  };
+              for (const auto &P : IdxMap) {
+                if (MigratedArgs[P.first] != MatchedCEMigratedArgs[P.second]) {
+                  return false;
+                }
+              }
+              return true;
+            }()) {
           CorrectCall = MatchedCE;
           break;
         }
@@ -3890,8 +3891,9 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string MigratedCall;
     MigratedCall = MapNames::getDpctNamespace() + "sparse::csrgemm_nnz(";
     for (unsigned i = 0; i < MigratedArgs.size(); i++) {
-      if (InsertBeforeIdxMap.count(i)) {
-        if (InsertBeforeIdxMap.at(i) == Placeholder) {
+      if (auto Iter = InsertBeforeIdxMap.find(i);
+          Iter != InsertBeforeIdxMap.end()) {
+        if (Iter->second == Placeholder) {
           MigratedCall += ("dpct_placeholder, ");
         } else {
           MigratedCall += (ExprAnalysis::ref(
