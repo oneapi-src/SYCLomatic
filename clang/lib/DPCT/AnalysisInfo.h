@@ -1296,6 +1296,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
+  static bool useExtVirtualMem() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_VirtualMem>();
+  }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
