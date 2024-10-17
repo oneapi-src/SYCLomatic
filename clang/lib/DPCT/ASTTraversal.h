@@ -912,6 +912,12 @@ public:
                                       SourceLocation &EpilogLocation);
 };
 
+class KernelLauncherRule : public NamedMigrationRule<KernelLauncherRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for device function calls
 class DeviceFunctionDeclRule
     : public NamedMigrationRule<DeviceFunctionDeclRule> {
