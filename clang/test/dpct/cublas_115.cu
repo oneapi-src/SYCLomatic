@@ -19,6 +19,15 @@ void foo1(cublasStatus_t s) {
   cublasSetWorkspace(handle, workspace, size);
 }
 
+//CHECK:void foo11(int err) {
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo11(cublasStatus_t err) {
+  cublasGetStatusString(err);
+  cublasGetStatusString(CUBLAS_STATUS_NOT_INITIALIZED);
+}
+
 //CHECK:void foo2(dpct::compute_type &a) {
 //CHECK-NEXT:  a = dpct::compute_type::f16;
 //CHECK-NEXT:  a = dpct::compute_type::f16_standard;

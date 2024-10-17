@@ -32,3 +32,12 @@ int main() {
 
   return 0;
 }
+
+//CHECK:void foo(int err) {
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo(cusparseStatus_t err) {
+  cusparseGetErrorString(err);
+  cusparseGetErrorString(CUSPARSE_STATUS_NOT_INITIALIZED);
+}

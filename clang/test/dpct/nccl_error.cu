@@ -51,3 +51,12 @@ int main(){
     return 0;
   }
 }
+
+//CHECK:void foo(int err) {
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo(ncclResult_t err) {
+  ncclGetErrorString(err);
+  ncclGetErrorString(ncclUnhandledCudaError);
+}

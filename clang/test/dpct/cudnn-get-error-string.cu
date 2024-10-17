@@ -35,3 +35,11 @@ const char *test_function(cudnnStatus_t status) {
   PRINT_ERROR_STR3(status);  
 }
 
+//CHECK:void foo(dpct::err1 err) {
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo(cudnnStatus_t err) {
+  cudnnGetErrorString(err);
+  cudnnGetErrorString(CUDNN_STATUS_NOT_INITIALIZED);
+}

@@ -2,6 +2,12 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda-get-error-string/cuda-get-error-string.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/cuda-get-error-string/cuda-get-error-string.dp.cpp -o %T/cuda-get-error-string/cuda-get-error-string.dp.o %}
 
+#include "cublas_v2.h"
+#include "cusparse_v2.h"
+#include "cuda.h"
+#include "cudnn.h"
+#include "nccl.h"
+
 int printf(const char *format, ...);
 
 // CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_string_dummy(X))
@@ -107,3 +113,20 @@ const char *test_function() {
   return cudaGetErrorName(cudaSuccess);
 }
 
+//CHECK:void foo1(int err, const char *c) {
+//CHECK-NEXT:  c = dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  c = dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo1(CUresult err, const char *c) {
+  cuGetErrorString(err, &c);
+  cuGetErrorString(CUDA_ERROR_UNKNOWN, &c);
+}
+
+//CHECK:void foo2(dpct::err0 err) {
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo2(cudaError_t err) {
+  cudaGetErrorString(err);
+  cudaGetErrorString(cudaErrorInvalidValue);
+}
