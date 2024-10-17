@@ -9,3 +9,6 @@ from torch.utils.cpp_extension import (
     BuildExtension,
     CUDA_HOME,
 )
+
+if CUDA_HOME:
+    var = cuda_specific_op()
