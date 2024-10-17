@@ -102,7 +102,6 @@ void driverMemoryManagement() {
   p2d.srcXInBytes = s;
   // CHECK: p2d.from.pos[1] = s;
   p2d.srcY = s;
-  // CHECK: ;
   p2d.srcMemoryType;
   // CHECK: p2d.from.pitched.set_data_ptr(pV);
   p2d.srcHost = pV;
@@ -116,7 +115,6 @@ void driverMemoryManagement() {
   p2d.dstXInBytes = s;
   // CHECK: p2d.to.pos[1] = s;
   p2d.dstY = s;
-  // CHECK: ;
   p2d.dstMemoryType;
   // CHECK: p2d.to.pitched.set_data_ptr(pV);
   p2d.dstHost = pV;
@@ -138,9 +136,7 @@ void driverMemoryManagement() {
   p3d.srcY = s;
   // CHECK: p3d.from.pos[2] = s;
   p3d.srcZ = s;
-  // CHECK: ;
   p3d.srcLOD;
-  // CHECK: ;
   p3d.srcMemoryType;
   // CHECK: p3d.from.pitched.set_data_ptr(pV);
   p3d.srcHost = pV;
@@ -158,9 +154,7 @@ void driverMemoryManagement() {
   p3d.dstY = s;
   // CHECK: p3d.to.pos[2] = s;
   p3d.dstZ = s;
-  // CHECK: ;
   p3d.dstLOD;
-  // CHECK: ;
   p3d.dstMemoryType;
   // CHECK: p3d.to.pitched.set_data_ptr(pV);
   p3d.dstHost = pV;
@@ -652,5 +646,13 @@ int main() {
   cudaFreeArray(pArr);
   // CHECK: delete pMipMapArr;
   cudaFreeMipmappedArray(pMipMapArr);
+
+  // corner cases.
+  // CHECK: p3d.to.image_bindless = pMipMapArr->get_mip_level(e[0]);
+  cudaGetMipmappedArrayLevel(&p3d.dstArray, pMipMapArr, e.width);
+  // CHECK: p3dp.from.image_bindless = pMipMapArr->get_mip_level(pos[0]);
+  cudaGetMipmappedArrayLevel(&p3dp.srcArray, pMipMapArr, pos.x);
+  // CHECK: resDesc1.aaa = pMipMapArr->get_mip_level(pp[0]);
+  cudaGetMipmappedArrayLevel(&p3d.srcArray, pMipMapArr, pp.pitch);
   return 0;
 }

@@ -11262,20 +11262,9 @@ void MemoryDataTypeRule::registerMatcher(MatchFinder &MF) {
 
 void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "arrayMember")) {
-    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(ME);
-    if (BO && BO->getOpcode() != BO_Assign) {
-      BO = nullptr;
-    }
-    if (isRemove(ME->getMemberDecl()->getName().str())) {
-      if (BO)
-        return emplaceTransformation(new ReplaceStmt(BO, ""));
-      return emplaceTransformation(new ReplaceStmt(ME, ""));
-    }
-    const auto &Replace = MapNames::findReplacedName(
-        ArrayDescMemberNames, ME->getMemberDecl()->getName().str());
-    if (!Replace.empty())
-      emplaceTransformation(new ReplaceToken(
-          ME->getMemberLoc(), ME->getEndLoc(), std::string(Replace)));
+    ExprAnalysis EA(ME);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   } else if (auto CE = getNodeAsType<CallExpr>(Result, "makeData")) {
     if (auto FD = CE->getDirectCallee()) {
       auto Name = FD->getName();
@@ -11291,92 +11280,13 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "otherMember")) {
-    auto BaseName =
-        DpctGlobalInfo::getUnqualifiedTypeName(M->getBase()->getType());
-    auto MemberName = M->getMemberDecl()->getName();
-    if (BaseName == "cudaPos") {
-      auto &Replace = MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
-                                                 MemberName.str());
-      if (!Replace.empty())
-        emplaceTransformation(new ReplaceToken(
-            M->getOperatorLoc(), M->getEndLoc(), std::string(Replace)));
-    } else if (BaseName == "cudaExtent") {
-      auto &Replace =
-          MapNames::findReplacedName(ExtentMemberNames, MemberName.str());
-      if (!Replace.empty())
-        emplaceTransformation(new ReplaceToken(
-            M->getOperatorLoc(), M->getEndLoc(), std::string(Replace)));
-    } else if (BaseName == "cudaPitchedPtr") {
-      auto &Replace =
-          MapNames::findReplacedName(PitchMemberNames, MemberName.str());
-      if (Replace.empty())
-        return;
-      static const std::unordered_map<std::string, HelperFeatureEnum>
-          PitchMemberNameToSetFeatureMap = {
-              {"pitch", HelperFeatureEnum::device_ext},
-              {"ptr", HelperFeatureEnum::device_ext},
-              {"xsize", HelperFeatureEnum::device_ext},
-              {"ysize", HelperFeatureEnum::device_ext}};
-      static const std::unordered_map<std::string, HelperFeatureEnum>
-          PitchMemberNameToGetFeatureMap = {
-              {"pitch", HelperFeatureEnum::device_ext},
-              {"ptr", HelperFeatureEnum::device_ext},
-              {"xsize", HelperFeatureEnum::device_ext},
-              {"ysize", HelperFeatureEnum::device_ext}};
-      if (auto BO = DpctGlobalInfo::findParent<BinaryOperator>(M)) {
-        if (BO->getOpcode() == BO_Assign) {
-          requestFeature(PitchMemberNameToSetFeatureMap.at(MemberName.str()));
-          emplaceTransformation(ReplaceMemberAssignAsSetMethod(BO, M, Replace));
-          return;
-        }
-      }
-      emplaceTransformation(new ReplaceToken(
-          M->getMemberLoc(), buildString("get_", Replace, "()")));
-      requestFeature(PitchMemberNameToGetFeatureMap.at(MemberName.str()));
-    }
+    ExprAnalysis EA(M);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   } else if (auto M = getNodeAsType<MemberExpr>(Result, "parmsMember")) {
-    auto MemberName = M->getMemberDecl()->getName();
-    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(M);
-    if (BO && BO->getOpcode() != BO_Assign) {
-      BO = nullptr;
-    }
-    if (isRemove(MemberName.str())) {
-      if (BO)
-        return emplaceTransformation(new ReplaceStmt(BO, ""));
-      return emplaceTransformation(new ReplaceStmt(M, ""));
-    }
-    auto Replace =
-        MapNames::findReplacedName(DirectReplMemberNames, MemberName.str());
-    if (DpctGlobalInfo::useExtBindlessImages() &&
-        Replace.find("image") != std::string::npos)
-      Replace += "_bindless";
-    // TODO: Need remove these code when sycl compat updated.
-    if (DpctGlobalInfo::useSYCLCompat()) {
-      if (MemberName == "WidthInBytes")
-        Replace = "size[0]";
-      else if (MemberName == "dstXInBytes")
-        Replace = "to.pos[0]";
-      else if (MemberName == "srcXInBytes")
-        Replace = "from.pos[0]";
-    }
-    if (MemberName.contains("Device") && M->getType().getAsString() != "int") {
-      // The field srcDevice/dstDevice has different meaning in different struct
-      // type.
-      Replace.clear();
-    }
-    if (!Replace.empty())
-      return emplaceTransformation(new ReplaceToken(
-          M->getMemberLoc(), M->getEndLoc(), std::string(Replace)));
-    Replace =
-        MapNames::findReplacedName(GetSetReplMemberNames, MemberName.str());
-    const std::string ExtraFeild =
-        MemberName.starts_with("src") ? "from.pitched." : "to.pitched.";
-    if (BO) {
-      return emplaceTransformation(
-          ReplaceMemberAssignAsSetMethod(BO, M, Replace, "", "", ExtraFeild));
-    }
-    emplaceTransformation(new ReplaceToken(
-        M->getMemberLoc(), buildString(ExtraFeild + "get_", Replace, "()")));
+    ExprAnalysis EA(M);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 
