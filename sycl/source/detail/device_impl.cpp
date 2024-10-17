@@ -409,32 +409,32 @@ bool device_impl::has(aspect Aspect) const {
     return getPlugin()->call_nocheck(urDeviceGetInfo, MDevice,
                                      UR_DEVICE_INFO_DEVICE_ID, 0, nullptr,
                                      &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_pci_address:
+  case aspect::pci_address:
     return getPlugin()->call_nocheck(urDeviceGetInfo, MDevice,
                                      UR_DEVICE_INFO_PCI_ADDRESS, 0, nullptr,
                                      &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_gpu_eu_count:
+  case aspect::gpu_eu_count:
     return getPlugin()->call_nocheck(urDeviceGetInfo, MDevice,
                                      UR_DEVICE_INFO_GPU_EU_COUNT, 0, nullptr,
                                      &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_gpu_eu_simd_width:
+  case aspect::gpu_eu_simd_width:
     return getPlugin()->call_nocheck(
                urDeviceGetInfo, MDevice, UR_DEVICE_INFO_GPU_EU_SIMD_WIDTH, 0,
                nullptr, &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_gpu_slices:
+  case aspect::gpu_slices:
     return getPlugin()->call_nocheck(urDeviceGetInfo, MDevice,
                                      UR_DEVICE_INFO_GPU_EU_SLICES, 0, nullptr,
                                      &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_gpu_subslices_per_slice:
+  case aspect:gpu_subslices_per_slice:
     return getPlugin()->call_nocheck(
                urDeviceGetInfo, MDevice, UR_DEVICE_INFO_GPU_SUBSLICES_PER_SLICE,
                0, nullptr, &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_gpu_eu_count_per_subslice:
+  case aspect::gpu_eu_count_per_subslice:
     return getPlugin()->call_nocheck(urDeviceGetInfo, MDevice,
                                      UR_DEVICE_INFO_GPU_EU_COUNT_PER_SUBSLICE,
                                      0, nullptr,
                                      &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_gpu_hw_threads_per_eu:
+  case aspect::gpu_hw_threads_per_eu:
     return getPlugin()->call_nocheck(
                urDeviceGetInfo, MDevice, UR_DEVICE_INFO_GPU_HW_THREADS_PER_EU,
                0, nullptr, &return_size) == UR_RESULT_SUCCESS;
@@ -450,7 +450,7 @@ bool device_impl::has(aspect Aspect) const {
     return getPlugin()->call_nocheck(
                urDeviceGetInfo, MDevice, UR_DEVICE_INFO_MEMORY_BUS_WIDTH, 0,
                nullptr, &return_size) == UR_RESULT_SUCCESS;
-  case aspect::ext_intel_device_info_uuid: {
+  case aspect::uuid: {
     auto Result =
         getPlugin()->call_nocheck(urDeviceGetInfo, MDevice, UR_DEVICE_INFO_UUID,
                                   0, nullptr, &return_size);
@@ -465,7 +465,7 @@ bool device_impl::has(aspect Aspect) const {
                urDeviceGetInfo, MDevice, UR_DEVICE_INFO_UUID,
                16 * sizeof(unsigned char), UUID, nullptr) == UR_RESULT_SUCCESS;
   }
-  case aspect::ext_intel_max_mem_bandwidth:
+  case aspect::max_mem_bandwidth:
     // currently not supported
     return false;
   case aspect::ext_oneapi_srgb:
