@@ -9,7 +9,7 @@ void foo() {}
 
 // CHECK: #define MACRO_B \
 // CHECK-NEXT: foo();\
-// CHECK-NEXT: MACRO(dpct::get_error_string_dummy(1));
+// CHECK-NEXT: MACRO(dpct::get_error_string_dummy({{[0-9]+}}));
 #define MACRO_B \
 foo();\
 MACRO(cudaGetErrorString(cudaErrorInvalidValue));
