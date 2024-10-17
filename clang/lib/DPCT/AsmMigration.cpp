@@ -2101,6 +2101,16 @@ protected:
     return SYCLGenSuccess();
   }
 
+  bool handle_fence(const InlineAsmInstruction *Inst) override { 
+    if (Inst->getNumInputOperands() != 0)
+      return SYCLGenError();
+    OS() << MapNames::getClNamespace() << "atomic_fence("
+         << MapNames::getClNamespace() << "memory_order::acq_rel,"
+         << MapNames::getClNamespace() << "memory_scope::device)";  
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
   bool handle_ret(const InlineAsmInstruction *) override {
     OS() << "return";
     endstmt();
