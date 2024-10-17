@@ -214,13 +214,18 @@ RewriterMap dpct::createClassMethodsRewriterMap() {
       // cub::BlockLoad.Load
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
-          CONDITIONAL_FACTORY_ENTRY(
-              makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
-              MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load", MemberExprBase(),
-                                        false, "load", NDITEM, ARG(0), ARG(1)),
-              UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
-                                      Diagnostics::API_NOT_MIGRATED,
-                                      printCallExprPretty())))
+          CASE_FACTORY_ENTRY(
+              CASE(makeCheckAnd(CheckArgCount(2), CheckCUBEnumTemplateArg(3)),
+                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load",
+                                             MemberExprBase(), false, "load",
+                                             NDITEM, ARG(0), ARG(1))),
+              CASE(makeCheckAnd(CheckArgCount(3), CheckCUBEnumTemplateArg(3)),
+                   MEMBER_CALL_FACTORY_ENTRY("cub::BlockLoad.Load",
+                                             MemberExprBase(), false, "load",
+                                             NDITEM, ARG(0), ARG(1), ARG(2))),
+              OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cub::BlockLoad.Load",
+                                                Diagnostics::API_NOT_MIGRATED,
+                                                printCallExprPretty()))))
       // cub::BlockStore.Store
       HEADER_INSERT_FACTORY(
           HeaderType::HT_DPCT_GROUP_Utils,
