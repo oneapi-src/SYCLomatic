@@ -3020,6 +3020,10 @@ public:
   bool setDeserializedSafeBufferOptOutMap(
       const SmallVectorImpl<SourceLocation> &SrcLocSeqs);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool IsInAttr = false;
+#endif // SYCLomatic_CUSTOMIZATION
+
 private:
   /// Helper functions to forward lexing to the actual lexer. They all share the
   /// same signature.

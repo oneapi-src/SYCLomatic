@@ -193,6 +193,11 @@ void Parser::ParseGNUAttributes(ParsedAttributes &Attrs,
 
   SourceLocation StartLoc = Tok.getLocation();
   SourceLocation EndLoc = StartLoc;
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Set the 'IsInAttr' to true before parse the arguments of __attribute__(()).
+  // Then we can handle the macro in __attribute__ arguments specially.
+  llvm::SaveAndRestore<bool> SART(PP.IsInAttr, true);
+#endif // SYCLomatic_CUSTOMIZATION
 
   while (Tok.is(tok::kw___attribute)) {
     SourceLocation AttrTokLoc = ConsumeToken();
