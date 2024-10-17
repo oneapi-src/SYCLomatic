@@ -1,9 +1,9 @@
-// RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/namesapce_alias_all_public_dump %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
-// RUN: FileCheck %S/codepin_autogen_util.hpp.ref --match-full-lines --input-file %T/debug_test/namesapce_alias_all_public_dump_codepin_sycl/codepin_autogen_util.hpp
-// RUN: FileCheck %S/codepin_autogen_util.hpp.cuda.ref --match-full-lines --input-file %T/debug_test/namesapce_alias_all_public_dump_codepin_cuda/codepin_autogen_util.hpp
-// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/namesapce_alias_all_public_dump_codepin_sycl/test.dp.cpp
-// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/namesapce_alias_all_public_dump_codepin_cuda/test.cu
-// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/namesapce_alias_all_public_dump_codepin_sycl/test.dp.cpp -o %T/debug_test/namesapce_alias_all_public_dump_codepin_sycl/test.dp.o %}
+// RUN: dpct --format-range=none --enable-codepin -out-root %T/debug_test/struct_kernel_call_in_same_namespace %s --cuda-include-path="%cuda-path/include" -- -std=c++17  -x cuda --cuda-host-only
+// RUN: FileCheck %S/codepin_autogen_util.hpp.ref --match-full-lines --input-file %T/debug_test/struct_kernel_call_in_same_namespace_codepin_sycl/codepin_autogen_util.hpp
+// RUN: FileCheck %S/codepin_autogen_util.hpp.cuda.ref --match-full-lines --input-file %T/debug_test/struct_kernel_call_in_same_namespace_codepin_cuda/codepin_autogen_util.hpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/struct_kernel_call_in_same_namespace_codepin_sycl/test.dp.cpp
+// RUN: FileCheck %s --match-full-lines --input-file %T/debug_test/struct_kernel_call_in_same_namespace_codepin_cuda/test.cu
+// RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/struct_kernel_call_in_same_namespace_codepin_sycl/test.dp.cpp -o %T/debug_test/struct_kernel_call_in_same_namespace_codepin_sycl/test.dp.o %}
 #include <cuda.h>
 #include <iostream>
 namespace test_codepin {
