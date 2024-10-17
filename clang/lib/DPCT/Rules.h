@@ -24,7 +24,8 @@ enum RuleKind {
   Enum,
   DisableAPIMigration,
   PatternRewriter,
-  CMakeRule
+  CMakeRule,
+  HelperFunction
 };
 
 enum RulePriority { Takeover, Default, Fallback };
@@ -209,6 +210,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "DisableAPIMigration", RuleKind::DisableAPIMigration);
     Io.enumCase(Value, "PatternRewriter", RuleKind::PatternRewriter);
     Io.enumCase(Value, "CMakeRule", RuleKind::CMakeRule);
+    Io.enumCase(Value, "HelperFunction", RuleKind::HelperFunction);
   }
 };
 
