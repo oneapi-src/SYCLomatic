@@ -86,6 +86,10 @@ ENTRY(cudaGetErrorString, cudaGetErrorString, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaGetLastError, cudaGetLastError, true, NO_FLAG, P0, "DPCT1010")
 ENTRY(cudaPeekAtLastError, cudaPeekAtLastError, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 
+// error handling functions of driver API
+ENTRY(cuGetErrorName, cuGetErrorName, true, NO_FLAG, P0, "Successful")
+ENTRY(cuGetErrorString, cuGetErrorString, true, NO_FLAG, P0, "Successful")
+
 // stream management functions of API
 ENTRY(cudaCtxResetPersistingL2Cache, cudaCtxResetPersistingL2Cache, true, NO_FLAG, P7, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamAddCallback, cudaStreamAddCallback, true, NO_FLAG, P0, "Successful")
