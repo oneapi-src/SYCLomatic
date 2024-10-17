@@ -844,6 +844,60 @@ __dpct_inline__ void store_direct_striped(const ItemT &item,
     work_item_iter[i * work_group_size] = data[i];
 }
 
+/// Store a blocked arrangement of items across a work-group into a linear
+/// segment of items, guarded by range.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param data Data to store.
+/// \param valid_items Number of valid items to load
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+store_direct_blocked(const ItemT &item, OutputIteratorT output_iter,
+                     T (&data)[ElementsPerWorkItem], size_t valid_items) {
+  size_t work_item_id = item.get_local_linear_id();
+  OutputIteratorT work_item_iter =
+      output_iter + (work_item_id * ElementsPerWorkItem);
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if (i + (work_item_id * ElementsPerWorkItem) < valid_items)
+      work_item_iter[i] = data[i];
+}
+
+/// Store a striped arrangement of items across a work-group into a linear
+/// segment of items, guarded by range.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param items Data to store.
+/// \param valid_items Number of valid items to load
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+store_direct_striped(const ItemT &item, OutputIteratorT output_iter,
+                     T (&data)[ElementsPerWorkItem], size_t valid_items) {
+  size_t work_group_size = item.get_group().get_local_linear_range();
+  size_t work_item_id = item.get_local_linear_id();
+  OutputIteratorT work_item_iter = output_iter + work_item_id;
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if ((i * work_group_size) + work_item_id < valid_items)
+      work_item_iter[i * work_group_size] = data[i];
+}
+
 // loads a linear segment of workgroup items into a subgroup striped
 // arrangement. Created as free function until exchange mechanism is
 // implemented.
@@ -1018,6 +1072,42 @@ public:
     } else if constexpr (StoreAlgorithm == group_store_algorithm::striped) {
       store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
           item, output_iter, data);
+    }
+  }
+
+  /// Store items into a linear segment of memory, guarded by range.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and
+  /// \p valid_items is 5, the \p output across the work-group is:
+  ///
+  ///   {[0,0,0,0], [0,0,0,0], ..., [0,0,0,0]}.
+  ///
+  /// The blocked order \p output will be:
+  ///
+  ///   0, 1, 2, 3, 4, 5, 0, 0, ..., 0, 0, 0, 0.
+  ///
+  /// The striped order \p output will be:
+  ///
+  ///   0, 4, 8, 12, 16, 0, 0, 0, ..., 0, 0, 0, 0.
+  ///
+  /// \tparam ItemT The sycl::nd_item index space class.
+  /// \tparam OutputIteratorT The random-access iterator type for \p output
+  /// iterator.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param data The data to store.
+  /// \param valid_items Number of valid items to load
+  template <typename ItemT, typename OutputIteratorT>
+  __dpct_inline__ void store(const ItemT &item, OutputIteratorT output_iter,
+                             T (&data)[ElementsPerWorkItem],
+                             size_t valid_items) {
+    if constexpr (StoreAlgorithm == group_store_algorithm::blocked) {
+      store_direct_blocked<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data, valid_items);
+    } else if constexpr (StoreAlgorithm == group_store_algorithm::striped) {
+      store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data, valid_items);
     }
   }
 };
