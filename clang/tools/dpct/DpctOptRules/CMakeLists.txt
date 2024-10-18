@@ -6,6 +6,7 @@ set(dpct_opt_rule_files
 
 set(dpct_cmake_rule_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/cmake_script_migration_rule.yaml
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/cmake_script_migration_rule_optional.yaml
 )
 
 install(

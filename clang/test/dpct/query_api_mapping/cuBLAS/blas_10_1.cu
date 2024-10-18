@@ -9,4 +9,4 @@
 // cublasRotEx-NEXT:               s /*const void **/, cstype /*cudaDataType*/,
 // cublasRotEx-NEXT:               computetype /*cudaDataType*/);
 // cublasRotEx-NEXT: Is migrated to:
-// cublasRotEx-NEXT:   dpct::rot(handle->get_queue(), n, x, xtype, incx, y, ytype, incy, c, s, cstype);
+// cublasRotEx-NEXT:   dpct::blas::rot(handle, n, x, xtype, incx, y, ytype, incy, c, s, cstype);
