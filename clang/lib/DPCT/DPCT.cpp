@@ -119,7 +119,7 @@ const char *const SetupScriptMigrationHelpHint =
     "Warning: No Python file is found, so no Python build script file will be migrated.";
 
 const char *const BuildScriptMigrationHelpHint =
-    "Warning: CMake build script file like CMakeLists.txt/package.cmake or Python file is not found, so no CMake or Python build script file will be migrated.";
+    "Warning: No CMake build script file (e.g., CMakeLists.txt or files with a .cmake suffix) or Python file was found, so no CMake or Python build script file will be migrated.";
 
 static extrahelp CommonHelp(CtHelpMessage);
 
