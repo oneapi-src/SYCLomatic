@@ -176,7 +176,7 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
-  bias_type _bias_type;
+  library_data_t _bias_type;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
