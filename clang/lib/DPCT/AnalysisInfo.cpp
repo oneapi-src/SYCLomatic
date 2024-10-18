@@ -929,6 +929,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                                 << CCLVerValue << getNL();
     insertHeader(MigratedMacroDefinitionOS.str(), FileBeginOffset,
                  InsertPosition::IP_AlwaysLeft);
+    for (const auto &File :
+         DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes()) {
+      insertHeader("#include \"" + File + +"\"" + getNL(), FirstIncludeOffset,
+                   InsertPosition::IP_Right);
+    }
     return;
 
   // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
@@ -2466,6 +2471,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>>
 std::vector<std::pair<std::string, std::vector<std::string>>>
     DpctGlobalInfo::CodePinDumpFuncDepsVec;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
+std::unordered_set<std::string>
+    DpctGlobalInfo::CustomHelperFunctionAddtionalIncludes = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {

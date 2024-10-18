@@ -1327,6 +1327,10 @@ public:
   static bool useBFloat16() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
   }
+  static std::unordered_set<std::string> &
+  getCustomHelperFunctionAddtionalIncludes() {
+    return CustomHelperFunctionAddtionalIncludes;
+  }
   std::shared_ptr<DpctFileInfo>
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
@@ -1642,6 +1646,7 @@ private:
   static std::vector<std::pair<std::string, std::vector<std::string>>>
       CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
+  static std::unordered_set<std::string> CustomHelperFunctionAddtionalIncludes;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

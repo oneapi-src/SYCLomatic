@@ -4,4 +4,4 @@
   Priority: Takeover
   In: DefaultQueue
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
-  Includes: [""]
+  Includes: ["xpu_helper.h"]

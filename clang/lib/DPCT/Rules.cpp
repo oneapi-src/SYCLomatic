@@ -281,6 +281,8 @@ void registerHelperFunctionRule(MetaRuleObject &R) {
     MapNames::CustomHelperFunctionMap.insert(
         {dpct::HelperFuncCatalog::DefaultQueue, R.Out});
     dpct::DpctGlobalInfo::setUsingDRYPattern(false);
+    dpct::DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes().insert(
+        R.Includes.begin(), R.Includes.end());
   }
 }
 
