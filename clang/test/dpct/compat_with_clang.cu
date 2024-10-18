@@ -30,3 +30,31 @@ template <class T1, class T2> struct AAAAA {
 template <typename T4, typename T5>
 template <typename T6>
 void AAAAA<T4, T5>::foo<T6>(T6 x) {}
+
+class test1 {
+  public:
+    __host__ __device__ test1();
+  private:
+    int state;
+};
+
+inline test1::test1() : state(0) {
+  printf("hello1\n");
+}
+
+__host__ __device__ int test2();
+
+int test2() {
+  printf("hello2\n");
+  return 0;
+}
+
+__global__ void kernel() {
+  test1 t1;
+  test2();
+}
+
+void foo3() {
+  kernel<<<1, 1>>>();
+  cudaDeviceSynchronize();
+}
