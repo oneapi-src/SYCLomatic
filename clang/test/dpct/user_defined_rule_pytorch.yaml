@@ -1,0 +1,34 @@
+---
+- Rule: rule_c10_cuda_CUDAStream_h
+  Kind: Header
+  Priority: Takeover
+  In: c10/cuda/CUDAStream.h
+  Out: "<c10/xpu/XPUStream.h>"
+
+- Rule: rule_c10_cuda_CUDAGuard_h
+  Kind: Header
+  Priority: Takeover
+  In: c10/cuda/CUDAGuard.h
+  Out: "<c10/core/DeviceGuard.h>"
+
+- Rule: rule_c10_cuda_OptionalCUDAGuard
+  Kind: Type
+  Priority: Takeover
+  In: c10::cuda::OptionalCUDAGuard
+  Out: c10::OptionalDeviceGuard
+  Includes: ["<c10/core/DeviceGuard.h>"]
+
+- Rule: rule_c10_cuda_getCurrentCUDAStream
+  Kind: API
+  Priority: Takeover
+  In: c10::cuda::getCurrentCUDAStream
+  Out: c10::xpu::getCurrentXPUStream($1)
+  Includes: ["<c10/xpu/XPUStream.h>"]
+
+- Rule: rule_c10_cuda_CUDAStream_stream
+  Kind: PatternRewriter
+  Priority: Takeover
+  In: ${prefix}.stream()
+  Out: ${prefix}.queue()
+  Includes: []
+
