@@ -5,9 +5,9 @@
 // RUN: mkdir %T/pytorch_c10_cuda_ns_output
 // RUN: dpct -out-root %T/pytorch_c10_cuda_ns_output pytorch_c10_cuda_ns.cu --cuda-include-path="%cuda-path/include" --usm-level=none --rule-file=user_defined_rule_pytorch.yaml  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/pytorch_c10_cuda_ns_output/pytorch_c10_cuda_ns.dp.cpp --match-full-lines pytorch_c10_cuda_ns.cu
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/pytorch_c10_cuda_ns_output/pytorch_c10_cuda_ns.dp.cpp -o %T/pytorch_c10_cuda_ns_output/pytorch_c10_cuda_ns.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/pytorch_c10_cuda_ns_output/pytorch_c10_cuda_ns.dp.cpp -o %T/pytorch_c10_cuda_ns_output/pytorch_c10_cuda_ns.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <iostream>
 // CHECK: #include <c10/xpu/XPUStream.h>
 #include <c10/cuda/CUDAStream.h>
