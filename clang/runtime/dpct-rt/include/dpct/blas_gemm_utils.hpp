@@ -120,6 +120,7 @@ public:
   enum class attribute {
     compute_type,
     scale_type,
+    bias_type,
     pointer_mode,
     trans_a,
     trans_b,
@@ -133,7 +134,7 @@ public:
   };
 
   matmul_desc_t(compute_type compute_type, library_data_t scale_type)
-      : _compute_type(compute_type), _scale_type(scale_type) {}
+      : _compute_type(compute_type), _scale_type(scale_type), _bias_type(bias_type) {}
 
   void set_attribute(attribute attr, const void *mem) {
     if (attr != attribute::unsupport)
@@ -157,6 +158,7 @@ private:
     switch (attr) {
       CASE(compute_type)
       CASE(scale_type)
+      CASE(bias_type)
       CASE(pointer_mode)
       CASE(trans_a)
       CASE(trans_b)
@@ -174,6 +176,7 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
+  library_data_t _bias_type;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
