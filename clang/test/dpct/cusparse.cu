@@ -2,7 +2,7 @@
 // UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4, cuda-12.5, cuda-12.6
 // RUN: dpct --format-range=none --usm-level=none --out-root %T/cusparse %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cusparse/cusparse.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse/cusparse.dp.cpp -o %T/cusparse/cusparse.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/cusparse/cusparse.dp.cpp -o %T/cusparse/cusparse.dp.o %}
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
@@ -462,10 +462,12 @@ void foo7_1(int c_nnz,
             float* val_c_s,
             int* row_ptr_c,
             int* col_ind_c) {
+#ifndef BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1134:{{[0-9]+}}: Tool cannot deduce the successive "dpct::sparse::csrgemm" call which using the result of this API. Replace "dpct_placeholder" with corresponding value pointer.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, 4, dpct_placeholder, row_ptr_a, col_ind_a, descrB, 5, dpct_placeholder, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
   cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, row_ptr_a,col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
+#endif
   foo7_2(c_nnz, descrB, descrC, val_a_s, row_ptr_a, col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_c_s, row_ptr_c, col_ind_c);
 }
