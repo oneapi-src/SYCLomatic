@@ -62,11 +62,11 @@ private:
 
 class matrix_layout_t {
 public:
-  enum class attribute { type, order, rows, cols, ld };
+  enum class attribute { type, order, rows, cols, ld, batch_count};
 
   matrix_layout_t(library_data_t type, std::uint64_t rows, std::uint64_t cols,
-                  std::int64_t ld)
-      : _type(type), _rows(rows), _cols(cols), _ld(ld) {}
+                  std::int64_t ld, std::uint64_t batch_count=1)
+      : _type(type), _rows(rows), _cols(cols), _ld(ld), _batch_count(batch_count) {}
 
   void set_attribute(attribute attr, const void *mem) {
     get_set_attr<true>(attr, const_cast<void *>(mem));
