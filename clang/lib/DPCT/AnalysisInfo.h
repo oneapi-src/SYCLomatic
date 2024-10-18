@@ -189,6 +189,7 @@ struct MemberOrBaseInfoForCodePin {
   std::string TypeNameInCuda;
   std::string TypeNameInSycl;
   std::string MemberName;
+  std::string CodePinMemberName;
 };
 
 struct VarInfoForCodePin {
