@@ -127,53 +127,85 @@ GEMM(cublasZgemm_v2_64, "std::complex<double>", true)
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasNrm2Ex",
-                       CALL(MapNames::getLibraryHelperNamespace() + "nrm2", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+    CALL_FACTORY_ENTRY(
+        "cublasNrm2Ex",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::nrm2", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasNrm2Ex_64",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::nrm2", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasDotEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "dot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9)))))
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::dot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasDotEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::dot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasDotcEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "dotc", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9)))))
-
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::dotc",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasScalEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "scal", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasAxpyEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "axpy", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9)))))
-
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY("cublasRotEx",
-                       CALL(MapNames::getLibraryHelperNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9), ARG(10)))))
+    CALL_FACTORY_ENTRY("cublasDotcEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::dotc",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
-        "cublasGemmEx",
-        CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17)))))
+        "cublasScalEx",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::scal", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasScalEx_64",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::scal", ARG(0),
+             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasAxpyEx",
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::axpy",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasAxpyEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() +
+                                "blas::axpy",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasRotEx",
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::rot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9), ARG(10)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cublasRotEx_64",
+                       CALL(MapNames::getLibraryHelperNamespace() + "blas::rot",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                            ARG(6), ARG(7), ARG(8), ARG(9), ARG(10)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -192,11 +224,38 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(14),
                                        BOOL(false), BOOL(false)),
              ARG(15), ARG(16), ARG(17), ARG(18)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasGemmBatchedEx_64",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm_batch", ARG(0),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(3), ARG(4), ARG(5), ARG(6),
+             DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(7), BOOL(true),
+                                       BOOL(false)),
+             ARG(8), ARG(9),
+             DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(10), BOOL(true),
+                                       BOOL(false)),
+             ARG(11), ARG(12), ARG(13),
+             DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(14),
+                                       BOOL(false), BOOL(false)),
+             ARG(15), ARG(16), ARG(17), ARG(18)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasGemmStridedBatchedEx",
+        CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm_batch", ARG(0),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+             ARG(18), ARG(19), ARG(20), ARG(21)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasGemmStridedBatchedEx_64",
         CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm_batch", ARG(0),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -658,29 +717,65 @@ WARNING_FACTORY_ENTRY(
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
     ARG("The call was replaced by a placeholder string"))
 
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasSgemmEx",
-        CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
-             ARG(MapNames::getLibraryHelperNamespace() +
-                 "library_data_t::real_float")))))
+#define GEMM_EX(NAME, COMPUTE_TYPE)                                            \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME,                                                               \
+          CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm", ARG(0),   \
+               BLAS_ENUM_ARG(1,                                                \
+                             clang::dpct::BLASEnumExpr::BLASEnumType::Trans),  \
+               BLAS_ENUM_ARG(2,                                                \
+                             clang::dpct::BLASEnumExpr::BLASEnumType::Trans),  \
+               ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),         \
+               ARG(10), ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),  \
+               ARG(COMPUTE_TYPE)))))
+GEMM_EX(cublasSgemmEx,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::real_float")
+GEMM_EX(cublasCgemmEx,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+GEMM_EX(cublasCgemm3mEx,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+GEMM_EX(cublasGemmEx, 17)
+GEMM_EX(cublasSgemmEx_64,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::real_float")
+GEMM_EX(cublasCgemmEx_64,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+GEMM_EX(cublasCgemm3mEx_64,
+        MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+GEMM_EX(cublasGemmEx_64, 17)
+#undef GEMM_EX
 
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CALL_FACTORY_ENTRY(
-        "cublasCgemmEx",
-        CALL(MapNames::getLibraryHelperNamespace() + "blas::gemm", ARG(0),
-             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
-             ARG(MapNames::getLibraryHelperNamespace() +
-                 "library_data_t::complex_float")))))
+#define SYHERK(NAME, IS_HERMITIAN, COMPUTE_TYPE)                               \
+  ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \
+      HelperFeatureEnum::device_ext,                                           \
+      CALL_FACTORY_ENTRY(                                                      \
+          #NAME, CALL(MapNames::getLibraryHelperNamespace() +                  \
+                          "blas::syherk<" + #IS_HERMITIAN + ">",               \
+                      ARG(0),                                                  \
+                      BLAS_ENUM_ARG(                                           \
+                          1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),   \
+                      BLAS_ENUM_ARG(                                           \
+                          2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),  \
+                      ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),  \
+                      ARG(10), ARG(11), ARG(12), ARG(COMPUTE_TYPE)))))
+SYHERK(cublasCsyrkEx, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCsyrk3mEx, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCherkEx, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCherk3mEx, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCsyrkEx_64, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCsyrk3mEx_64, false,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCherkEx_64, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+SYHERK(cublasCherk3mEx_64, true,
+       MapNames::getLibraryHelperNamespace() + "library_data_t::complex_float")
+#undef SYHERK
 
 #define SYRK(NAME, TYPE, IS_COMPLEX)                                           \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
@@ -1604,6 +1699,56 @@ GEMM_BATCH(cublasDgemmStridedBatched, "double", false)
 GEMM_BATCH(cublasCgemmStridedBatched, "std::complex<float>", true)
 GEMM_BATCH(cublasZgemmStridedBatched, "std::complex<double>", true)
 #undef GEMM_BATCH
+
+#define COPY_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL(MapNames::getLibraryHelperNamespace() + "blas::copy", ARG(0),       \
+           ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
+COPY_EX(cublasCopyEx)
+COPY_EX(cublasCopyEx_64)
+#undef COPY_EX
+
+#define SWAP_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME,                                                                   \
+      CALL(MapNames::getLibraryHelperNamespace() + "blas::swap", ARG(0),       \
+           ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
+SWAP_EX(cublasSwapEx)
+SWAP_EX(cublasSwapEx_64)
+#undef SWAP_EX
+
+#define ASUM_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::asum",        \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
+ASUM_EX(cublasAsumEx)
+ASUM_EX(cublasAsumEx_64)
+#undef ASUM_EX
+
+#define ROTM_EX(NAME)                                                          \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::rotm",        \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),      \
+                  ARG(7), ARG(8), ARG(9))))
+ROTM_EX(cublasRotmEx)
+ROTM_EX(cublasRotmEx_64)
+#undef ROTM_EX
+
+#define IAMAX_EX(NAME)                                                         \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::iamax",       \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
+IAMAX_EX(cublasIamaxEx)
+IAMAX_EX(cublasIamaxEx_64)
+
+#define IAMIN_EX(NAME)                                                         \
+  ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
+      #NAME, CALL(MapNames::getLibraryHelperNamespace() + "blas::iamin",       \
+                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
+IAMIN_EX(cublasIaminEx)
+IAMIN_EX(cublasIaminEx_64)
+#undef IAMIN_EX
 
 #define TBSV(NAME, TYPE)                                                       \
   ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(                                       \
