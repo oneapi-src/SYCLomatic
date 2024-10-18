@@ -38,7 +38,15 @@ __device__ void foo() {
   atile32.meta_group_rank();
   ctile32.meta_group_rank();
   tile32.meta_group_rank();
-
+  
+  // X.meta_group_size()
+  // CHECK-COUNT-5: item_ct1.get_sub_group().get_local_linear_range();
+  cg::tiled_partition<32>(block).meta_group_size();
+  catile32.meta_group_size();
+  atile32.meta_group_size();
+  ctile32.meta_group_size();
+  tile32.meta_group_size();
+  
   // CHECK: const auto catile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
   const auto catile16 = cg::tiled_partition<16>(block);
   // CHECK: auto atile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
@@ -53,6 +61,12 @@ __device__ void foo() {
   catile16.meta_group_rank();
   // CHECK: atile16.get_group_linear_id();
   atile16.meta_group_rank();
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16).get_local_linear_range();
+  cg::tiled_partition<16>(block).meta_group_size();
+  // CHECK: catile16.get_local_linear_range();
+  catile16.meta_group_size();
+  // CHECK: atile16.get_local_linear_range();
+  atile16.meta_group_size();
 
   // CHECK: const auto catile8 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 8);
   const auto catile8 = cg::tiled_partition<8>(block);
@@ -68,6 +82,12 @@ __device__ void foo() {
   catile8.meta_group_rank();
   // CHECK: atile8.get_group_linear_id();
   atile8.meta_group_rank();
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 8).get_local_linear_range();
+  cg::tiled_partition<8>(block).meta_group_size();
+  // CHECK: catile8.get_local_linear_range();
+  catile8.meta_group_size();
+  // CHECK: atile8.get_local_linear_range();
+  atile8.meta_group_size();
 
   // CHECK: const auto catile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
   const auto catile4 = cg::tiled_partition<4>(block);
@@ -83,6 +103,12 @@ __device__ void foo() {
   catile4.meta_group_rank();
   // CHECK: atile4.get_group_linear_id();
   atile4.meta_group_rank();
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4).get_local_linear_range();
+  cg::tiled_partition<4>(block).meta_group_size();
+  // CHECK: catile4.get_local_linear_range();
+  catile4.meta_group_size();
+  // CHECK: atile4.get_local_linear_range();
+  atile4.meta_group_size();
 
   // CHECK: const auto catile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
   const auto catile2 = cg::tiled_partition<2>(block);
@@ -98,6 +124,12 @@ __device__ void foo() {
   catile2.meta_group_rank();
   // CHECK: atile2.get_group_linear_id();
   atile2.meta_group_rank();
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2).get_local_linear_range();
+  cg::tiled_partition<2>(block).meta_group_size();
+  // CHECK: catile2.get_local_linear_range();
+  catile2.meta_group_size();
+  // CHECK: atile2.get_local_linear_range();
+  atile2.meta_group_size();
 
   // CHECK: const auto catile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
   const auto catile1 = cg::tiled_partition<1>(block);
@@ -113,7 +145,13 @@ __device__ void foo() {
   catile1.meta_group_rank();
   // CHECK: atile1.get_group_linear_id();
   atile1.meta_group_rank();
-
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1).get_local_linear_range();
+  cg::tiled_partition<1>(block).meta_group_size();
+  // CHECK: catile1.get_local_linear_range();
+  catile1.meta_group_size();
+  // CHECK: atile1.get_local_linear_range();
+  atile1.meta_group_size();
+  
   // CHECK: item_ct1.get_group().get_local_linear_range();
   cg::thread_block::size();
   // CHECK: item_ct1.get_group().get_local_linear_range();
