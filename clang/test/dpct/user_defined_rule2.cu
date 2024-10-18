@@ -1,8 +1,8 @@
 // RUN: dpct --out-root %T/user_defined_rule2 %s --cuda-include-path="%cuda-path/include" --rule-file %S/xpu.yaml --format-range=none
 // RUN: FileCheck --input-file %T/user_defined_rule2/user_defined_rule2.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/user_defined_rule2/user_defined_rule2.dp.cpp -o %T/user_defined_rule2/user_defined_rule2.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/user_defined_rule2/user_defined_rule2.dp.cpp -o %T/user_defined_rule2/user_defined_rule2.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
