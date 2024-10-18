@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_without_name/kernel_without_name.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/kernel_without_name/kernel_without_name.dp.cpp -o %T/kernel_without_name/kernel_without_name.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/kernel_without_name/kernel_without_name.dp.cpp -o %T/kernel_without_name/kernel_without_name.dp.o %}
 
 #include "cuda_fp16.h"
 
@@ -87,8 +87,8 @@ int main() {
   } args;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<const int *> args_arg1_acc_ct0(args.arg1, cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<const int *> args_arg2_acc_ct1(args.arg2, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper args_arg1_acc_ct0(args.arg1, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper args_arg2_acc_ct1(args.arg2, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   testKernelPtr<<<dim3(1), dim3(1, 2)>>>(args.arg1, args.arg2, karg3int);
@@ -152,7 +152,7 @@ __global__ void foo_kernel3(int *d) {
 }
 //CHECK:dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 void run_foo(dim3 c, dim3 d) {
@@ -165,12 +165,12 @@ void run_foo2(dim3 c, dim3 d) {
 //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
 //CHECK:q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 //CHECK:  q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
   if (1)
@@ -180,7 +180,7 @@ void run_foo2(dim3 c, dim3 d) {
 }
 //CHECK:dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 void run_foo3(dim3 c, dim3 d) {
@@ -189,7 +189,7 @@ void run_foo3(dim3 c, dim3 d) {
 }
 //CHECK:dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
-//CHECK-NEXT:         dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:         dpct::access_wrapper g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:         cgh.parallel_for(
 void run_foo4(dim3 c, dim3 d) {
@@ -280,7 +280,7 @@ void run_foo7(T *a, const T *b, const T *c, const T *d, const T *e, const int f,
   }
 }
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 template <typename T> struct kernel_type_t {
   using Type = T;
 };
@@ -468,3 +468,48 @@ void func() {
   // CHECK-NEXT:   });
   kfunc<<<128, 32>>>(der, 1, a2);
 }
+
+template <class T> __global__ void foo_kernel13(const T *a);
+
+enum FLOATING_TYPE { FT_FLOAT, FT_DOUBLE };
+
+struct Mat {
+  template <class U> U *data() { return (U *)_data; }
+  FLOATING_TYPE getType() { return _ft; }
+
+  void *_data;
+  FLOATING_TYPE _ft;
+};
+
+#define DISPATCH(type, functor)                                                \
+  {                                                                            \
+    switch (type) {                                                            \
+    case FT_FLOAT: {                                                           \
+      using scalar_t = float;                                                  \
+      functor();                                                               \
+      break;                                                                   \
+    }                                                                          \
+    case FT_DOUBLE: {                                                          \
+      using scalar_t = double;                                                 \
+      functor();                                                               \
+      break;                                                                   \
+    }                                                                          \
+    }                                                                          \
+  }
+
+void run_foo13(Mat mat) {
+  // CHECK: DISPATCH(mat.getType(), ([&] { dpct::get_out_of_order_queue().submit(
+  // CHECK-NEXT: [&](sycl::handler &cgh) {
+  // CHECK-NEXT:   dpct::access_wrapper mat_data_scalar_t_acc_ct0(mat.data<scalar_t>(), cgh);
+  // CHECK-EMPTY:
+  // CHECK-NEXT:   cgh.parallel_for(
+  // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:       foo_kernel13(mat_data_scalar_t_acc_ct0.get_raw_pointer());
+  // CHECK-NEXT:     });
+  // CHECK-NEXT: }); }));
+  DISPATCH(mat.getType(), ([&] { foo_kernel13<<<1, 1>>>(mat.data<scalar_t>()); }));
+}
+
+template <class T> __global__ void foo_kernel13(const T *a) {}
+#undef DISPATCH

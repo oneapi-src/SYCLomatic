@@ -1,0 +1,98 @@
+.. _DPCT1130:
+
+DPCT1130
+========
+
+Message
+-------
+
+.. _msg-1130-start:
+
+SYCL 2020 standard does not support dynamic parallelism (launching kernel in device
+code). Please rewrite the code.
+
+.. _msg-1130-end:
+
+Detailed Help
+-------------
+
+SYCL\* does not support launching kernel in device code. The user needs to merge the
+parent kernel and child kernel together.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void childKernel() {
+	 ...
+   }
+   __global__ void parentKernel() {
+	 ...
+	 childKernel<<<4, 4>>>();
+	 ...
+   }
+   void foo() {
+	 ...
+	 parentKernel<<<8, 8>>>();
+	 ...
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void childKernel() {
+     ...
+   }
+   void parentKernel() {
+     ...
+     /*
+     DPCT1130:0: SYCL 2020 standard does not support dynamic parallelism (launching
+     kernel in device code). Please rewrite the code.
+     */
+     childKernel<<<4, 4>>>();
+     ...
+   }
+   void foo() {
+     ...
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, 8),
+                           sycl::range<3>(1, 1, 8)),
+         [=](sycl::nd_item<3> item_ct1) {
+           parentKernel();
+         });
+     ...
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void childKernel() {
+     ...
+   }
+   void parentKernel() {
+     ...
+     childKernel(); // call childKernel() as a device function, need to adjust the work
+     for each work item.
+     ...
+   }
+   void foo() {
+     ...
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, placeholder /*Adjust the global range
+         based on the thread model between parentKernel and childKernel*/),
+                           sycl::range<3>(1, 1, placeholder /*Adjust the local range
+                           based on the thread model between parentKernel and
+                           childKernel */)),
+         [=](sycl::nd_item<3> item_ct1) {
+           parentKernel();
+         });
+     ...
+   }

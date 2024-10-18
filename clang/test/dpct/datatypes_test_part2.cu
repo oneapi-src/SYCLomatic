@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/datatypes_test_part2 %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test_part2/datatypes_test_part2.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/datatypes_test_part2/datatypes_test_part2.dp.cpp -o %T/datatypes_test_part2/datatypes_test_part2.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/datatypes_test_part2/datatypes_test_part2.dp.cpp -o %T/datatypes_test_part2/datatypes_test_part2.dp.o %}
 
 #include <iostream>
 #include <cuda.h>
@@ -628,7 +628,7 @@ template <> struct S<cublasOperation_t *> {};
 template <> struct S<cublasOperation_t &> {};
 template <> struct S<cublasOperation_t &&> {};
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK: template <> struct S<int> {};
 // CHECK-NEXT: template <> struct S<int *> {};
 // CHECK-NEXT: template <> struct S<int &> {};
@@ -1387,7 +1387,7 @@ __device__ void foo_t(){
     T8_18 a3=a1;
     T8_19 a4=std::move(a1);
 }
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 {
 // CHECK: /*
 // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
@@ -1807,7 +1807,7 @@ template <> void foo2(cublasOperation_t){}
 template <> void foo3(cublasOperation_t){}
 template <> void foo4(cublasOperation_t){}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK: template <> void foo1(int){}
 // CHECK-NEXT: template <> void foo2(int){}
 // CHECK-NEXT: template <> void foo3(int){}

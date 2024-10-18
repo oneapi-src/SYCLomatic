@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --usm-level=none -out-root %T/thrust-algo-raw-ptr-noneusm-part2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-algo-raw-ptr-noneusm-part2/thrust-algo-raw-ptr-noneusm-part2.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-algo-raw-ptr-noneusm-part2/thrust-algo-raw-ptr-noneusm-part2.dp.cpp -o %T/thrust-algo-raw-ptr-noneusm-part2/thrust-algo-raw-ptr-noneusm-part2.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-algo-raw-ptr-noneusm-part2/thrust-algo-raw-ptr-noneusm-part2.dp.cpp -o %T/thrust-algo-raw-ptr-noneusm-part2/thrust-algo-raw-ptr-noneusm-part2.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>

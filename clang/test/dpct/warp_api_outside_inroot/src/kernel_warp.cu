@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none --in-root=%S --out-root=%T/out --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/kernel_warp.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out/kernel_warp.dp.cpp -o %T/out/kernel_warp.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/out/kernel_warp.dp.cpp -o %T/out/kernel_warp.dp.o %}
 // out/
 // ├── kernel_warp.dp.cpp
 // └── MainSourceFiles.yaml
@@ -14,7 +14,7 @@
 // RUN: bash %S/../check_script.sh %T/out/src %T
 // RUN: FileCheck --input-file %T/exist_check --match-full-lines %S/../ref
 // RUN: rm -rf %T/out
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include "../inc/utils.cuh"
 #include "../inc/empty.h"
 
@@ -31,7 +31,7 @@ void foo() {
   //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    sycl::local_accessor<float, 1> smem_acc_ct1(sycl::range<1>(128), cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<float *> input_acc_ct0(input, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper input_acc_ct0(input, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
@@ -70,7 +70,7 @@ __global__ void compute_mode(float *input) {
 void foo_2(float *ptr) {
   //CHECK:dpct::get_out_of_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<float *> ptr_acc_ct0(ptr, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper ptr_acc_ct0(ptr, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),

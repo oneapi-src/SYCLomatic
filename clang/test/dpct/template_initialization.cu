@@ -52,13 +52,13 @@ void run_test() {
 
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<T *> d_in_acc_ct0(d_in, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper d_in_acc_ct0(d_in, cgh);
   // CHECK-NEXT:     auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel<T>(d_in_acc_ct0.get_raw_pointer(), (T *)(&d_out_acc_ct1[0]), item_ct1);
+  // CHECK-NEXT:         kernel<T>(d_in_acc_ct0.get_raw_pointer(), &d_out_acc_ct1[0], item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel<T><<<1, num_threads>>>(d_in, d_out);

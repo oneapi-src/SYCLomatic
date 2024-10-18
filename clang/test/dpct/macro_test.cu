@@ -7,9 +7,9 @@
 // RUN: mkdir %T/macro_test_output
 // RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include "cuda.h"
 #include <math.h>
 #include <iostream>
@@ -1383,5 +1383,15 @@ __global__ void kernel2(){
 int foo39() {
   CALL(0, 1)
   return 0;
+}
+
+//CHECK: void foo40_kernel(const sycl::stream &stream_ct1) {
+//CHECK-NEXT:   FOO40_MACRO;
+//CHECK-NEXT: }
+__global__ void foo40_kernel() {
+  FOO40_MACRO;
+}
+void foo40() {
+  foo40_kernel<<<1, 1>>>();
 }
 #endif

@@ -1,7 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --use-syclcompat --usm-level=restricted -out-root %T/usm-syclcompat %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/usm-syclcompat/usm-syclcompat.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/usm-syclcompat/usm-syclcompat.dp.cpp -o %T/usm-syclcompat/usm-syclcompat.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/usm-syclcompat/usm-syclcompat.dp.cpp -o %T/usm-syclcompat/usm-syclcompat.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <syclcompat/syclcompat.hpp>
@@ -655,7 +655,7 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy3DAsync(&parms, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy3DAsync(&parms, cudaStreamPerThread));
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   cudaArray_t a1;
   // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cudaMemcpy2DFromArrayAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
