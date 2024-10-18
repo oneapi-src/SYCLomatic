@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/sleep %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sleep/sleep.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/sleep/sleep.dp.cpp -o %T/sleep/sleep.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/sleep/sleep.dp.cpp -o %T/sleep/sleep.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 
 __global__ static void sleep_kernel() {
   // CHECK: /*

@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none --assume-nd-range-dim=1  -out-root %T/kernel_1d_range %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_1d_range/kernel_1d_range.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/kernel_1d_range/kernel_1d_range.dp.cpp -o %T/kernel_1d_range/kernel_1d_range.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/kernel_1d_range/kernel_1d_range.dp.cpp -o %T/kernel_1d_range/kernel_1d_range.dp.o %}
 
 // k1(1D) -> d1 -> d2
 // k2(3D) -> d3 -> d4
@@ -501,7 +501,7 @@ __device__ void device1() {
   device2();
 }
 
-#ifndef BUILD_TEST // SYCL kernel cannot call a recursive function
+#ifndef NO_BUILD_TEST // SYCL kernel cannot call a recursive function
 //CHECK:void device2(const sycl::nd_item<1> &item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
 //CHECK-NEXT:  device1(item_ct1);

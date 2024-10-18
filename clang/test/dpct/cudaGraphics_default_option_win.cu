@@ -3,9 +3,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none -out-root %T/cudaGraphics_default_option_win %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaGraphics_default_option_win/cudaGraphics_default_option_win.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics_default_option_win/cudaGraphics_default_option_win.dp.cpp -o %T/cudaGraphics_default_option_win/cudaGraphicsResource_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraphics_default_option_win/cudaGraphics_default_option_win.dp.cpp -o %T/cudaGraphics_default_option_win/cudaGraphicsResource_test.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <cuda.h>
 #include <cuda_d3d11_interop.h>
 

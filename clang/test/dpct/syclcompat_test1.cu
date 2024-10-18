@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --helper-function-preference=no-queue-device --optimize-migration --enable-profiling --use-syclcompat --format-range=none --out-root %T/syclcompat_test1 %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/syclcompat_test1/syclcompat_test1.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -DBUILD_TEST -c -fsycl %T/syclcompat_test1/syclcompat_test1.dp.cpp -o %T/syclcompat_test1/syclcompat_test1.dp.o %}
+// RUN: %if build_lit %{icpx -DNO_BUILD_TEST -c -fsycl %T/syclcompat_test1/syclcompat_test1.dp.cpp -o %T/syclcompat_test1/syclcompat_test1.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
@@ -25,14 +25,14 @@ void f1() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventRecord" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   cudaEventRecord(start, 0);
 #endif
   cudaDeviceProp deviceProp;
   // CHECK: /*
   // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "{{cudaGetDeviceProperties(_v2)?}}" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   cudaGetDeviceProperties(&deviceProp, 0);
 #endif
   // CHECK: syclcompat::dim3 block(8, 1, 1);

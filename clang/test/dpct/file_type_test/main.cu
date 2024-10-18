@@ -19,20 +19,20 @@
 
 // RUN: dpct --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T -p=%T %s %S/bar/util.gpu %S/bar/util_bar.cc --sycl-named-lambda -extra-arg="-I%S/bar" -extra-arg="--std=c++11"
 // RUN: FileCheck %s --match-full-lines --input-file %T/main.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/main.dp.cpp -o %T/main.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/main.dp.cpp -o %T/main.dp.o %}
 // RUN: FileCheck %S/bar/util.gpu --match-full-lines --input-file %T/bar/util.gpu.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/bar/util.gpu.dp.cpp -o %T/bar/util.gpu.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/bar/util.gpu.dp.cpp -o %T/bar/util.gpu.dp.o %}
 // RUN: FileCheck %S/bar/util.gpuhead --match-full-lines --input-file %T/bar/util.gpuhead
 // RUN: FileCheck %S/bar/util_bar.hh --match-full-lines --input-file %T/bar/util_bar.hh
 // RUN: FileCheck %S/bar/macro_def.hh --match-full-lines --input-file %T/bar/macro_def.hh
 // RUN: FileCheck %S/bar/util_bar.cc --match-full-lines --input-file %T/bar/util_bar.cc.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/bar/util_bar.cc.dp.cpp -o %T/bar/util_bar.cc.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/bar/util_bar.cc.dp.cpp -o %T/bar/util_bar.cc.dp.o %}
 
 // RUN: dpct --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T  -p=%T %S/main.gpu   --sycl-named-lambda
 // RUN: FileCheck %S/main.gpu --match-full-lines --input-file %T/main.gpu.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/main.gpu.dp.cpp -o %T/main.gpu.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/main.gpu.dp.cpp -o %T/main.gpu.dp.o %}
 
-#ifndef  BUILD_TEST
+#ifndef  NO_BUILD_TEST
 #include <stdio.h>
 #include <cuda_runtime.h>
 

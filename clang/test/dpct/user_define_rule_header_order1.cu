@@ -8,7 +8,7 @@
 // RUN: mkdir %T/user_define_rule_header_order1_output
 // RUN: dpct -format-range=none -out-root %T/user_define_rule_header_order1_output user_define_rule_header_order1.cu --cuda-include-path="%cuda-path/include" --usm-level=none --rule-file=user_define_rule_header_order1.yaml -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/user_define_rule_header_order1_output/user_define_rule_header_order1.dp.cpp --match-full-lines user_define_rule_header_order1.cu
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/user_define_rule_header_order1_output/user_define_rule_header_order1.dp.cpp -o %T/user_define_rule_header_order1_output/user_define_rule_header_orde1r.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/user_define_rule_header_order1_output/user_define_rule_header_order1.dp.cpp -o %T/user_define_rule_header_order1_output/user_define_rule_header_orde1r.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK: #include <oneapi/dpl/algorithm>
