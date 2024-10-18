@@ -6090,37 +6090,6 @@ void KernelCallExpr::removeExtraIndent() {
       LocInfo.Indent.length(), "", nullptr));
 }
 
-namespace {
-void buildHasCapabilityOrFailStr(const std::string &Aspects,
-                                 llvm::raw_string_ostream &OS,
-                                 const OutputBuilder &OB) {
-  switch (OB.Kind) {
-  case (OutputBuilder::Kind::Top):
-    for (auto &ob : OB.SubBuilders) {
-      buildHasCapabilityOrFailStr(Aspects, OS, *ob);
-    }
-    return;
-  case (OutputBuilder::Kind::String):
-    OS << OB.Str;
-    return;
-  case (OutputBuilder::Kind::Arg): {
-    if (OB.ArgIndex > 1) {
-      OS << "";
-      return;
-    }
-    OS << Aspects;
-    return;
-  }
-  default: {
-    DpctDebugs() << "[buildHasCapabilityOrFailStr OutputBuilder::Kind] "
-                    "Unexpected value: "
-                 << OB.Kind << "\n";
-    assert(0);
-  }
-  }
-}
-} // namespace
-
 void KernelCallExpr::addDevCapCheckStmt() {
   llvm::SmallVector<std::string> AspectList;
   if (getVarMap().hasBF64()) {
@@ -6132,27 +6101,21 @@ void KernelCallExpr::addDevCapCheckStmt() {
   if (!AspectList.empty()) {
     std::string Str;
     llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
     if (auto Iter = MapNames::CustomHelperFunctionMap.find(
             HelperFuncCatalog::DefaultQueue);
         Iter != MapNames::CustomHelperFunctionMap.end()) {
-      OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
       OS << Iter->second << ".get_device(), ";
-      OS << "{" << AspectList.front();
-      for (size_t i = 1; i < AspectList.size(); ++i) {
-        OS << ", " << AspectList[i];
-      }
-      OS << "});";
     } else {
       requestFeature(HelperFeatureEnum::device_ext);
-      OS << MapNames::getDpctNamespace() << "get_device(";
-      OS << MapNames::getDpctNamespace() << "get_device_id(";
       printStreamBase(OS);
-      OS << "get_device())).has_capability_or_fail({" << AspectList.front();
-      for (size_t i = 1; i < AspectList.size(); ++i) {
-        OS << ", " << AspectList[i];
-      }
-      OS << "});";
+      OS << "get_device(), ";
     }
+    OS << "{" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      OS << ", " << AspectList[i];
+    }
+    OS << "});";
     OuterStmts.OthersList.emplace_back(OS.str());
   }
 }
