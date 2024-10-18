@@ -3737,8 +3737,9 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCsrsv_solveEx",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
-        "cusparseScsrmm2", "cusparseDcsrmm2", "cusparseCcsrmm2",
-        "cusparseZcsrmm2",
+        "cusparseScsrgemm", "cusparseDcsrgemm", "cusparseCcsrgemm",
+        "cusparseZcsrgemm", "cusparseXcsrgemmNnz", "cusparseScsrmm2",
+        "cusparseDcsrmm2", "cusparseCcsrmm2", "cusparseZcsrmm2",
         /*Generic*/
         "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
         "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
@@ -3804,6 +3805,115 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
+    return;
+  }
+  if (FuncName == "cusparseXcsrgemmNnz") {
+    std::vector<std::string> MigratedArgs;
+    for (const auto &Arg : CE->arguments()) {
+      MigratedArgs.push_back(ExprAnalysis::ref(Arg));
+    }
+    // We need find the next cusparse<T>csrgemm API call which is using the
+    // result of this API call, otherwise a warning will be emitted.
+    auto findOuterCS = [](const Stmt *Input) {
+      const CompoundStmt *CS = nullptr;
+      DpctGlobalInfo::findAncestor<Stmt>(
+          Input, [&](const DynTypedNode &Cur) -> bool {
+            if (Cur.get<DoStmt>() || Cur.get<ForStmt>() ||
+                Cur.get<WhileStmt>() || Cur.get<SwitchStmt>() ||
+                Cur.get<IfStmt>())
+              return true;
+            if (const CompoundStmt *S = Cur.get<CompoundStmt>())
+              CS = S;
+            return false;
+          });
+      return CS;
+    };
+    const CompoundStmt *CS1 = findOuterCS(CE);
+    // Find all the cusparse<T>csrgemm calls in this range.
+    using namespace clang::ast_matchers;
+    auto Matcher =
+        findAll(callExpr(callee(functionDecl(hasAnyName(
+                             "cusparseScsrgemm", "cusparseDcsrgemm",
+                             "cusparseCcsrgemm", "cusparseZcsrgemm"))))
+                    .bind("CallExpr"));
+    auto CEResults = match(Matcher, *CS1, DpctGlobalInfo::getContext());
+    // Find the correct call
+    const CallExpr* CorrectCall = nullptr;
+    for (auto &Result : CEResults) {
+      const CallExpr *MatchedCE = Result.getNodeAs<CallExpr>("CallExpr");
+      if (MatchedCE) {
+        // 1. The context should be the same
+        const CompoundStmt *CS2 = findOuterCS(MatchedCE);
+        if (CS1 != CS2)
+          continue;
+        // 2. The args should be the same
+        std::vector<std::string> MatchedCEMigratedArgs;
+        for (const auto &Arg : MatchedCE->arguments()) {
+          MatchedCEMigratedArgs.push_back(ExprAnalysis::ref(Arg));
+        }
+        if ([&]() -> bool {
+              const static std::map<unsigned /*CE*/, unsigned /*MatchedCE*/>
+                  IdxMap = {
+                      {0, 0},   {1, 1},   {2, 2},   {3, 3},
+                      {4, 4},   {5, 5},   {6, 6},   {7, 7},
+                      {8, 9},   {9, 10},  {10, 11}, {11, 12},
+                      {12, 14}, {13, 15}, {14, 16}, {15, 18},
+                  };
+              for (const auto &P : IdxMap) {
+                if (MigratedArgs[P.first] != MatchedCEMigratedArgs[P.second]) {
+                  return false;
+                }
+              }
+              return true;
+            }()) {
+          CorrectCall = MatchedCE;
+          break;
+        }
+      }
+    }
+    const constexpr int Placeholder = -1;
+    std::map<int /*CE*/, int /*MatchedCE*/> InsertBeforeIdxMap;
+    if (CorrectCall) {
+      InsertBeforeIdxMap = {
+          {8, 8},
+          {12, 13},
+      };
+    } else {
+      report(
+          DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
+          Diagnostics::SPARSE_NNZ, true,
+          MapNames::getLibraryHelperNamespace() + "sparse::csrgemm");
+      InsertBeforeIdxMap = {
+          {8, Placeholder},
+          {12, Placeholder},
+      };
+    }
+    std::string MigratedCall;
+    MigratedCall = MapNames::getDpctNamespace() + "sparse::csrgemm_nnz(";
+    for (unsigned i = 0; i < MigratedArgs.size(); i++) {
+      if (auto Iter = InsertBeforeIdxMap.find(i);
+          Iter != InsertBeforeIdxMap.end()) {
+        if (Iter->second == Placeholder) {
+          MigratedCall += ("dpct_placeholder, ");
+        } else {
+          MigratedCall += (ExprAnalysis::ref(
+                               CorrectCall->getArg(InsertBeforeIdxMap.at(i))) +
+                           ", ");
+        }
+      }
+      MigratedCall += MigratedArgs[i];
+      if (i != MigratedArgs.size() - 1)
+        MigratedCall += ", ";
+    }
+    MigratedCall += ")";
+    auto DefRange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+    SourceLocation Begin = DefRange.getBegin();
+    SourceLocation End = DefRange.getEnd();
+    End = End.getLocWithOffset(
+        Lexer::MeasureTokenLength(End, DpctGlobalInfo::getSourceManager(),
+                                  DpctGlobalInfo::getContext().getLangOpts()));
+    emplaceTransformation(replaceText(Begin, End, std::move(MigratedCall),
+                                      DpctGlobalInfo::getSourceManager()));
     return;
   }
 }
