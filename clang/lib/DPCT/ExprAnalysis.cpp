@@ -834,6 +834,92 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
                        RepStr + MemberName);
       }
     }
+  } else if (BaseType == "CUDA_ARRAY_DESCRIPTOR_st" ||
+             BaseType == "CUDA_ARRAY3D_DESCRIPTOR_st") {
+    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(ME);
+    if (BO && BO->getOpcode() != BO_Assign) {
+      BO = nullptr;
+    }
+    if (MemoryDataTypeRule::isRemove(FieldName)) {
+      if (BO)
+        addReplacement(BO->getBeginLoc(), BO->getEndLoc(), "");
+      addReplacement(ME->getBeginLoc(), ME->getEndLoc(), "");
+    }
+    const auto &Replace = MapNames::findReplacedName(
+        MemoryDataTypeRule::ArrayDescMemberNames, FieldName);
+    if (!Replace.empty())
+      addReplacement(ME->getMemberLoc(), Replace);
+  } else if (BaseType == "cudaExtent") {
+    const auto &Replace = MapNames::findReplacedName(
+        MemoryDataTypeRule::ExtentMemberNames, FieldName);
+    if (!Replace.empty())
+      addReplacement(ME->getOperatorLoc(), ME->getMemberLoc(), Replace);
+  } else if (BaseType == "cudaPitchedPtr") {
+    const auto &Replace = MapNames::findReplacedName(
+        MemoryDataTypeRule::PitchMemberNames, FieldName);
+    if (!Replace.empty()) {
+      const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(ME);
+      if (BO && BO->getOpcode() == BO_Assign)
+        addReplacement(ME->getMemberLoc(), BO->getEndLoc(),
+                       "set_" + Replace + "(" +
+                           ExprAnalysis::ref(BO->getRHS()) + ")");
+      else
+        addReplacement(ME->getMemberLoc(), "get_" + Replace + "()");
+    }
+  } else if (BaseType == "cudaPos") {
+    const auto &Replace =
+        MapNames::findReplacedName(MapNames::Dim3MemberNamesMap, FieldName);
+    if (!Replace.empty())
+      addReplacement(ME->getOperatorLoc(), ME->getMemberLoc(), Replace);
+  } else if (BaseType == "cudaMemcpy3DParms" ||
+             BaseType == "cudaMemcpy3DPeerParms" ||
+             BaseType == "CUDA_MEMCPY2D_st" || BaseType == "CUDA_MEMCPY3D_st" ||
+             BaseType == "CUDA_MEMCPY3D_PEER_st") {
+    const auto *BO = DpctGlobalInfo::findParent<BinaryOperator>(ME);
+    if (BO && BO->getOpcode() != BO_Assign) {
+      BO = nullptr;
+    }
+    if (MemoryDataTypeRule::isRemove(FieldName)) {
+      if (BO)
+        addReplacement(BO->getBeginLoc(), BO->getEndLoc(), "");
+      addReplacement(ME->getBeginLoc(), ME->getEndLoc(), "");
+    } else {
+      auto Replace = MapNames::findReplacedName(
+          MemoryDataTypeRule::DirectReplMemberNames, FieldName);
+      if (DpctGlobalInfo::useExtBindlessImages() &&
+          Replace.find("image") != std::string::npos)
+        Replace += "_bindless";
+      // TODO: Need remove these code when sycl compat updated.
+      if (DpctGlobalInfo::useSYCLCompat()) {
+        if (FieldName == "WidthInBytes")
+          Replace = "size[0]";
+        else if (FieldName == "dstXInBytes")
+          Replace = "to.pos[0]";
+        else if (FieldName == "srcXInBytes")
+          Replace = "from.pos[0]";
+      }
+      if (FieldName.find("Device") != std::string::npos &&
+          ME->getType().getAsString() != "int") {
+        // The field srcDevice/dstDevice has different meaning in different
+        // struct type.
+        Replace.clear();
+      }
+      if (!Replace.empty())
+        addReplacement(ME->getMemberLoc(), ME->getMemberLoc(), Replace);
+      else {
+        Replace = MapNames::findReplacedName(
+            MemoryDataTypeRule::GetSetReplMemberNames, FieldName);
+        const std::string ExtraFeild =
+            FieldName.find("src") == 0 ? "from.pitched." : "to.pitched.";
+        if (BO)
+          addReplacement(ME->getMemberLoc(), BO->getEndLoc(),
+                         ExtraFeild + "set_" + Replace + "(" +
+                             ExprAnalysis::ref(BO->getRHS()) + ")");
+        else
+          addReplacement(ME->getMemberLoc(),
+                         ExtraFeild + "get_" + Replace + "()");
+      }
+    }
   }
   dispatch(ME->getBase());
   RefString.clear();
