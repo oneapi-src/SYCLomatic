@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --use-experimental-features=bindless_images --format-range=none -out-root %T/cudaGraphics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaGraphics/cudaGraphics.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraphics/cudaGraphics.dp.cpp -o %T/cudaGraphics/cudaGraphics.dp.o %}
+// RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraphics/cudaGraphics.dp.cpp -o %T/cudaGraphics/cudaGraphics.dp.o %}
 
 #include <cuda.h>
 #ifdef _WIN32

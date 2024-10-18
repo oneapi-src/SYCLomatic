@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust/thrust_testing %s --cuda-include-path="%cuda-path/include" -extra-arg-before="-I%S" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T//thrust/thrust_testing/foo.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T//thrust/thrust_testing/foo.dp.cpp -o %T//thrust/thrust_testing/foo.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T//thrust/thrust_testing/foo.dp.cpp -o %T//thrust/thrust_testing/foo.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <algorithm>
 #include <thrust/complex.h> // here complex.h is user defined head file
 #include <thrust/copy.h>

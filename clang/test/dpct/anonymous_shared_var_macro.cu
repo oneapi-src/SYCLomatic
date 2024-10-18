@@ -1,8 +1,8 @@
 // RUN: dpct -out-root %T/anonymous_shared_var_macro %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/anonymous_shared_var_macro/anonymous_shared_var_macro.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/anonymous_shared_var_macro/anonymous_shared_var_macro.dp.cpp -o %T/anonymous_shared_var_macro/anonymous_shared_var_macro.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/anonymous_shared_var_macro/anonymous_shared_var_macro.dp.cpp -o %T/anonymous_shared_var_macro/anonymous_shared_var_macro.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include<cuda_runtime.h>
 
 // CHECK: #define BSPLINE_DEFS                                                           \

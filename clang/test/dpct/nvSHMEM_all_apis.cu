@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6, v11.7, v11.8, v12.0, v12.1, v12.2, v12.3, v12.4, v12.5, v12.6
 // RUN: dpct --format-range=none -out-root %T/nvSHMEM %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/nvSHMEM/nvSHMEM_all_apis.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/nvSHMEM_all_apis/nvSHMEM_all_apis.dp.cpp -o %T/nvSHMEM_all_apis/nvSHMEM_all_apis.dp.o %}
+// RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/nvSHMEM_all_apis/nvSHMEM_all_apis.dp.cpp -o %T/nvSHMEM_all_apis/nvSHMEM_all_apis.dp.o %}
 
 #include <iostream>
 #include <nvshmem.h>
