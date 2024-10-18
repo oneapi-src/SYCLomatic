@@ -1,1 +1,1 @@
-// CHECK: Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.
+// CHECK: Warning: No CMake build script file (e.g., CMakeLists.txt or files with a .cmake suffix) or Python file was found, so no CMake or Python build script file will be migrated.
