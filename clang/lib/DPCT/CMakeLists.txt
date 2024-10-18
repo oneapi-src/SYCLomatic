@@ -191,7 +191,9 @@ add_clang_library(DPCT
   IncrementalMigrationUtility.cpp
   Rules.cpp
   PatternRewriter.cpp
+  MigrateBuildScript.cpp
   MigrateCmakeScript.cpp
+  MigratePythonBuildScript.cpp
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp
