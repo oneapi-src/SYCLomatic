@@ -2,7 +2,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/USM-restricted %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/USM-restricted/USM-restricted.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/USM-restricted/USM-restricted.dp.cpp -o %T/USM-restricted/USM-restricted.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/USM-restricted/USM-restricted.dp.cpp -o %T/USM-restricted/USM-restricted.dp.o %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
@@ -185,7 +185,7 @@ void foo() {
 
   // CHECK: dpct::dpct_memcpy(parms);
   cudaMemcpy3D(&parms);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   struct cudaMemcpy3DParms *parms_pointer;
   // Followed call can't be processed.
   cudaMemcpy3D(parms_pointer);
