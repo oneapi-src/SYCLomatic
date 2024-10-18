@@ -847,6 +847,652 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
                            MapNames::getClNamespace() + "uchar4>",
                        ARG(0), ARG(1),
                        LITERAL(MapNames::getDpctNamespace() + "hadd()")))))
+      // __viaddmax_s16x2
+      MATH_API_REWRITERS_V2(
+          "__viaddmax_s16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_s16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmax_s16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_s16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2), LITERAL("std::plus<>()"),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()")))))
+      // __viaddmax_s16x2_relu
+      MATH_API_REWRITERS_V2(
+          "__viaddmax_s16x2_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_s16x2_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmax_s16x2_relu<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_s16x2_relu",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2), LITERAL("std::plus<>()"),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       LITERAL("true")))))
+      // __viaddmax_s32
+      MATH_API_REWRITERS_V2(
+          "__viaddmax_s32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("__viaddmax_s32",
+                                 CALL(MapNames::getClNamespace() +
+                                          "ext::intel::math::viaddmax_s32<int>",
+                                      ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_s32",
+                  CALL(MapNames::getClNamespace() + "max<int>",
+                       BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                       ARG(2)))))
+      // __viaddmax_s32_relu
+      MATH_API_REWRITERS_V2(
+          "__viaddmax_s32_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_s32_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmax_s32_relu<int>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_s32_relu",
+                  CALL(MapNames::getDpctNamespace() + "relu<int>",
+                       CALL(MapNames::getClNamespace() + "max<int>",
+                            BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                            ARG(2))))))
+      // __viaddmax_u16x2
+      MATH_API_REWRITERS_V2(
+          "__viaddmax_u16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_u16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmax_u16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_u16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "ushort2>",
+                       ARG(0), ARG(1), ARG(2), LITERAL("std::plus<>()"),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()")))))
+      // __viaddmax_u32
+      MATH_API_REWRITERS_V2(
+          "__viaddmax_u32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_u32",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmax_u32<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmax_u32",
+                  CALL(MapNames::getClNamespace() + "max<unsigned>",
+                       BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                       ARG(2)))))
+      // __viaddmin_s16x2
+      MATH_API_REWRITERS_V2(
+          "__viaddmin_s16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_s16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmin_s16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_s16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2), LITERAL("std::plus<>()"),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()")))))
+      // __viaddmin_s16x2_relu
+      MATH_API_REWRITERS_V2(
+          "__viaddmin_s16x2_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_s16x2_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmin_s16x2_relu<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_s16x2_relu",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2), LITERAL("std::plus<>()"),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       LITERAL("true")))))
+      // __viaddmin_s32
+      MATH_API_REWRITERS_V2(
+          "__viaddmin_s32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("__viaddmin_s32",
+                                 CALL(MapNames::getClNamespace() +
+                                          "ext::intel::math::viaddmin_s32<int>",
+                                      ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_s32",
+                  CALL(MapNames::getClNamespace() + "min<int>",
+                       BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                       ARG(2)))))
+      // __viaddmin_s32_relu
+      MATH_API_REWRITERS_V2(
+          "__viaddmin_s32_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_s32_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmin_s32_relu<int>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_s32_relu",
+                  CALL(MapNames::getDpctNamespace() + "relu<int>",
+                       CALL(MapNames::getClNamespace() + "min<int>",
+                            BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                            ARG(2))))))
+      // __viaddmin_u16x2
+      MATH_API_REWRITERS_V2(
+          "__viaddmin_u16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_u16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmin_u16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_u16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "ushort2>",
+                       ARG(0), ARG(1), ARG(2), LITERAL("std::plus<>()"),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()")))))
+      // __viaddmin_u32
+      MATH_API_REWRITERS_V2(
+          "__viaddmin_u32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_u32",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::viaddmin_u32<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__viaddmin_u32",
+                  CALL(MapNames::getClNamespace() + "min<unsigned>",
+                       BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                       ARG(2)))))
+      // __vibmax_s16x2
+      MATH_API_REWRITERS_V2(
+          "__vibmax_s16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vibmax_s16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vibmax_s16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2), ARG(3)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmax_s16x2",
+                  CALL(MapNames::getDpctNamespace() +
+                           "vectorized_with_pred<short>",
+                       ARG(0), ARG(1),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       ARG(2), ARG(3)))))
+      // __vibmax_s32
+      MATH_API_REWRITERS_V2(
+          "__vibmax_s32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("__vibmax_s32",
+                                 CALL(MapNames::getClNamespace() +
+                                          "ext::intel::math::vibmax_s32<int>",
+                                      ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmax_s32",
+                  CALL(MapNames::getDpctNamespace() + "maximum()", ARG(0),
+                       ARG(1), ARG(2)))))
+      // __vibmax_u16x2
+      MATH_API_REWRITERS_V2(
+          "__vibmax_u16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vibmax_u16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vibmax_u16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2), ARG(3)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmax_u16x2",
+                  CALL(MapNames::getDpctNamespace() +
+                           "vectorized_with_pred<unsigned short>",
+                       ARG(0), ARG(1),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       ARG(2), ARG(3)))))
+      // __vibmax_u32
+      MATH_API_REWRITERS_V2(
+          "__vibmax_u32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vibmax_u32",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vibmax_u32<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmax_u32",
+                  CALL(MapNames::getDpctNamespace() + "maximum()", ARG(0),
+                       ARG(1), ARG(2)))))
+      // __vibmin_s16x2
+      MATH_API_REWRITERS_V2(
+          "__vibmin_s16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vibmin_s16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vibmin_s16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2), ARG(3)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmin_s16x2",
+                  CALL(MapNames::getDpctNamespace() +
+                           "vectorized_with_pred<short>",
+                       ARG(0), ARG(1),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       ARG(2), ARG(3)))))
+      // __vibmin_s32
+      MATH_API_REWRITERS_V2(
+          "__vibmin_s32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("__vibmin_s32",
+                                 CALL(MapNames::getClNamespace() +
+                                          "ext::intel::math::vibmin_s32<int>",
+                                      ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmin_s32",
+                  CALL(MapNames::getDpctNamespace() + "minimum()", ARG(0),
+                       ARG(1), ARG(2)))))
+      // __vibmin_u16x2
+      MATH_API_REWRITERS_V2(
+          "__vibmin_u16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vibmin_u16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vibmin_u16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2), ARG(3)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmin_u16x2",
+                  CALL(MapNames::getDpctNamespace() +
+                           "vectorized_with_pred<unsigned short>",
+                       ARG(0), ARG(1),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       ARG(2), ARG(3)))))
+      // __vibmin_u32
+      MATH_API_REWRITERS_V2(
+          "__vibmin_u32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vibmin_u32",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vibmin_u32<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vibmin_u32",
+                  CALL(MapNames::getDpctNamespace() + "minimum()", ARG(0),
+                       ARG(1), ARG(2)))))
+      // __vimax3_s16x2
+      MATH_API_REWRITERS_V2(
+          "__vimax3_s16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_s16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimax3_s16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_s16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()")))))
+      // __vimax3_s16x2_relu
+      MATH_API_REWRITERS_V2(
+          "__vimax3_s16x2_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_s16x2_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimax3_s16x2_relu<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_s16x2_relu",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       LITERAL("true")))))
+      // __vimax3_s32
+      MATH_API_REWRITERS_V2(
+          "__vimax3_s32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("__vimax3_s32",
+                                 CALL(MapNames::getClNamespace() +
+                                          "ext::intel::math::vimax3_s32<int>",
+                                      ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_s32",
+                  CALL(MapNames::getClNamespace() + "max<int>",
+                       CALL(MapNames::getClNamespace() + "max<int>", ARG(0),
+                            ARG(1)),
+                       ARG(2)))))
+      // __vimax3_s32_relu
+      MATH_API_REWRITERS_V2(
+          "__vimax3_s32_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_s32_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimax3_s32_relu<int>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_s32_relu",
+                  CALL(MapNames::getDpctNamespace() + "relu<int>",
+                       CALL(MapNames::getClNamespace() + "max<int>",
+                            CALL(MapNames::getClNamespace() + "max<int>",
+                                 ARG(0), ARG(1)),
+                            ARG(2))))))
+      // __vimax3_u16x2
+      MATH_API_REWRITERS_V2(
+          "__vimax3_u16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_u16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimax3_u16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_u16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "ushort2>",
+                       ARG(0), ARG(1), ARG(2),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()")))))
+      // __vimax3_u32
+      MATH_API_REWRITERS_V2(
+          "__vimax3_u32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_u32",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimax3_u32<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax3_u32",
+                  CALL(MapNames::getClNamespace() + "max<unsigned>",
+                       CALL(MapNames::getClNamespace() + "max<unsigned>",
+                            ARG(0), ARG(1)),
+                       ARG(2)))))
+      // __vimax_s16x2_relu
+      MATH_API_REWRITERS_V2(
+          "__vimax_s16x2_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimax_s16x2_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimax_s16x2_relu<unsigned>",
+                       ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax_s16x2_relu",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1),
+                       LITERAL(MapNames::getDpctNamespace() + "maximum()"),
+                       LITERAL("true")))))
+      // __vimax_s32_relu
+      MATH_API_REWRITERS_V2(
+          "__vimax_s32_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimax_s32_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimax_s32_relu<int>",
+                       ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimax_s32_relu",
+                  CALL(MapNames::getDpctNamespace() + "relu<int>",
+                       CALL(MapNames::getClNamespace() + "max<int>", ARG(0),
+                            ARG(1))))))
+      // __vimin3_s16x2
+      MATH_API_REWRITERS_V2(
+          "__vimin3_s16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_s16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimin3_s16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_s16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()")))))
+      // __vimin3_s16x2_relu
+      MATH_API_REWRITERS_V2(
+          "__vimin3_s16x2_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_s16x2_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimin3_s16x2_relu<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_s16x2_relu",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1), ARG(2),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       LITERAL("true")))))
+      // __vimin3_s32
+      MATH_API_REWRITERS_V2(
+          "__vimin3_s32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY("__vimin3_s32",
+                                 CALL(MapNames::getClNamespace() +
+                                          "ext::intel::math::vimin3_s32<int>",
+                                      ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_s32",
+                  CALL(MapNames::getClNamespace() + "min<int>",
+                       CALL(MapNames::getClNamespace() + "min<int>", ARG(0),
+                            ARG(1)),
+                       ARG(2)))))
+      // __vimin3_s32_relu
+      MATH_API_REWRITERS_V2(
+          "__vimin3_s32_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_s32_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimin3_s32_relu<int>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_s32_relu",
+                  CALL(MapNames::getDpctNamespace() + "relu<int>",
+                       CALL(MapNames::getClNamespace() + "min<int>",
+                            CALL(MapNames::getClNamespace() + "min<int>",
+                                 ARG(0), ARG(1)),
+                            ARG(2))))))
+      // __vimin3_u16x2
+      MATH_API_REWRITERS_V2(
+          "__vimin3_u16x2",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_u16x2",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimin3_u16x2<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_u16x2",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_ternary<" +
+                           MapNames::getClNamespace() + "ushort2>",
+                       ARG(0), ARG(1), ARG(2),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()")))))
+      // __vimin3_u32
+      MATH_API_REWRITERS_V2(
+          "__vimin3_u32",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_u32",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimin3_u32<unsigned>",
+                       ARG(0), ARG(1), ARG(2)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin3_u32",
+                  CALL(MapNames::getClNamespace() + "min<unsigned>",
+                       CALL(MapNames::getClNamespace() + "min<unsigned>",
+                            ARG(0), ARG(1)),
+                       ARG(2)))))
+      // __vimin_s16x2_relu
+      MATH_API_REWRITERS_V2(
+          "__vimin_s16x2_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimin_s16x2_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimin_s16x2_relu<unsigned>",
+                       ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin_s16x2_relu",
+                  CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
+                           MapNames::getClNamespace() + "short2>",
+                       ARG(0), ARG(1),
+                       LITERAL(MapNames::getDpctNamespace() + "minimum()"),
+                       LITERAL("true")))))
+      // __vimin_s32_relu
+      MATH_API_REWRITERS_V2(
+          "__vimin_s32_relu",
+          MATH_API_REWRITER_PAIR(
+              math::Tag::math_libdevice,
+              CALL_FACTORY_ENTRY(
+                  "__vimin_s32_relu",
+                  CALL(MapNames::getClNamespace() +
+                           "ext::intel::math::vimin_s32_relu<int>",
+                       ARG(0), ARG(1)))),
+          MATH_API_REWRITER_PAIR(
+              math::Tag::emulation,
+              CALL_FACTORY_ENTRY(
+                  "__vimin_s32_relu",
+                  CALL(MapNames::getDpctNamespace() + "relu<int>",
+                       CALL(MapNames::getClNamespace() + "min<int>", ARG(0),
+                            ARG(1))))))
       // __vmaxs2
       MATH_API_REWRITERS_V2(
           "__vmaxs2",
