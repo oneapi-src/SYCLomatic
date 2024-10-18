@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --use-syclcompat --format-range=none --out-root %T/syclcompat_test3 %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/syclcompat_test3/syclcompat_test3.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -DBUILD_TEST -c -fsycl %T/syclcompat_test3/syclcompat_test3.dp.cpp -o %T/syclcompat_test3/syclcompat_test3.dp.o %}
+// RUN: %if build_lit %{icpx -DNO_BUILD_TEST -c -fsycl %T/syclcompat_test3/syclcompat_test3.dp.cpp -o %T/syclcompat_test3/syclcompat_test3.dp.o %}
 
 #include <cudnn.h>
 #include <cuda.h>

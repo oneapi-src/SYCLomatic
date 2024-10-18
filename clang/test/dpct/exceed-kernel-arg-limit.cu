@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/exceed-kernel-arg-limit %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/exceed-kernel-arg-limit/exceed-kernel-arg-limit.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/exceed-kernel-arg-limit/exceed-kernel-arg-limit.dp.cpp -o %T/exceed-kernel-arg-limit/exceed-kernel-arg-limit.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/exceed-kernel-arg-limit/exceed-kernel-arg-limit.dp.cpp -o %T/exceed-kernel-arg-limit/exceed-kernel-arg-limit.dp.o %}
+#ifndef NO_BUILD_TEST
 #include <stdio.h>
 #include <cuda_runtime.h>
 const int array_size = 2;

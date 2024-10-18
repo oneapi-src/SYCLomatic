@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -extra-arg-before=-std=c++14 -out-root %T/curand-device-different-vec-size %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp -o %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp -o %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.o %}
 
 #include <cuda.h>
 #include <curand_kernel.h>
@@ -17,7 +17,7 @@ __global__ void picount(int *totals) {
 
   // CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng;
   curandState_t rng;
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), 1234);
   curand_init(clock64(), tid, 1234, &rng);
 #endif
