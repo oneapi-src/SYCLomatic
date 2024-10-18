@@ -815,6 +815,15 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
     HandlePoisonedIdentifier(Identifier);
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  // The "__noinline__" macro is re-defined and it is used in "__attribute__()",
+  // do not handle it.
+  if (LangOpts.CUDA && Identifier.is(tok::TokenKind::kw___noinline__) &&
+      IsInAnalysisScopeFunc(Identifier.getLocation()) && IsInAttr) {
+    return true;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
+
   // If this is a macro to be expanded, do it.
   if (const MacroDefinition MD = getMacroDefinition(&II)) {
     const auto *MI = MD.getMacroInfo();
