@@ -605,6 +605,12 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
       REPLACE_ENUM(MapNames::CUBEnumsMap);
 #undef REPLACE_ENUM
+      std::string TypeName = DpctGlobalInfo::getTypeName(ECD->getType());
+      if (TypeName == "cublasStatus_t" || TypeName == "cusparseStatus_t" ||
+          TypeName == "cudaError_enum" || TypeName == "cudnnStatus_t" ||
+          TypeName == "cudaError" || TypeName == "ncclResult_t") {
+        addReplacement(DRE, toString(ECD->getInitVal(), 10));
+      }
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
