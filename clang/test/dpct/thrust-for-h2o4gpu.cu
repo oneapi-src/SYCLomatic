@@ -2,8 +2,8 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp -o %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp -o %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.o %}
+#ifndef NO_BUILD_TEST
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>

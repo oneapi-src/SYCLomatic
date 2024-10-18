@@ -1,9 +1,9 @@
 // RUN: dpct --optimize-migration --format-range=none --usm-level=none --out-root %T/kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-call/kernel-call.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/kernel-call/kernel-call.dp.cpp -o %T/kernel-call/kernel-call.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/kernel-call/kernel-call.dp.cpp -o %T/kernel-call/kernel-call.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <stdio.h>
 #include <vector>
 

@@ -1,8 +1,8 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/template-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce/template-deduce.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/template-deduce/template-deduce.dp.cpp -o %T/template-deduce/template-deduce.dp.o %}
-#ifndef  BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/template-deduce/template-deduce.dp.cpp -o %T/template-deduce/template-deduce.dp.o %}
+#ifndef  NO_BUILD_TEST
 #include <complex>
 
 template<class T1, class T2> class TemplateClass { using type = T1; };

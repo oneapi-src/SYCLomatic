@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/driver_device %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/driver_device/driver_device.dp.cpp
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/driver_device/driver_device.dp.cpp -o %T/driver_device/driver_device.dp.o %}
+// RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/driver_device/driver_device.dp.cpp -o %T/driver_device/driver_device.dp.o %}
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -82,7 +82,7 @@ int main(){
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(device = 0));
   MY_SAFE_CALL(cuDeviceGet(&device, 0));
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
   // CHECK-NEXT: */
@@ -145,7 +145,7 @@ int main(){
 
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::get_device(device).get_max_compute_units()));
   MY_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetAttribute was not migrated because parameter CU_DEVICE_ATTRIBUTE_GPU_OVERLAP is unsupported.
   // CHECK-NEXT: */

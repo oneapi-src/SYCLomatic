@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/thrust-copy -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-copy/thrust-copy.cpp.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-copy/thrust-copy.cpp.dp.cpp -o %T/thrust-copy/thrust-copy.o.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-copy/thrust-copy.cpp.dp.cpp -o %T/thrust-copy/thrust-copy.o.dp.o %}
 
-#ifndef  BUILD_TEST
+#ifndef  NO_BUILD_TEST
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE

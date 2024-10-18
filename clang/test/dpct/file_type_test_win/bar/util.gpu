@@ -1,4 +1,4 @@
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <cuda_runtime.h>
 #include "util_bar.hh"
 

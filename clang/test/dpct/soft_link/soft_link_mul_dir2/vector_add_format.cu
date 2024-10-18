@@ -2,7 +2,7 @@
 // RUN: cp -r %S %T && cd %T/soft_link_mul_dir2/link/hello && rm -rf target_soft_link && ln -nfs  ../../target target_soft_link && cd %T/soft_link_mul_dir2/link && rm -rf link && ln -nfs  hello link
 // RUN: dpct  --in-root=%T/soft_link_mul_dir2 --out-root=%T/out  --cuda-include-path="%cuda-path/include" --process-all -- -I %T/soft_link_mul_dir2/link/link/target_soft_link -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/link/link/target_soft_link/test/test.hpp --match-full-lines %T/soft_link_mul_dir2/target/test/test.hpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out/vector_add_format.dp.cpp -o %T/out/vector_add_format.dp.o -I %T/out/link/hello/target_soft_link %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/out/vector_add_format.dp.cpp -o %T/out/vector_add_format.dp.o -I %T/out/link/hello/target_soft_link %}
 
 #include <cuda.h>
 #include <stdio.h>

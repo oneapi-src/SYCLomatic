@@ -2,8 +2,8 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none --optimize-migration -out-root %T/thrust-complex-usmnone %s --cuda-include-path="%cuda-path/include" -usm-level=none -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp -o %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp -o %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.o %}
+#ifndef NO_BUILD_TEST
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE

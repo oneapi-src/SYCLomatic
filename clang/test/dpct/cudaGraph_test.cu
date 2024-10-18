@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --use-experimental-features=graph --format-range=none -out-root %T/cudaGraph_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaGraph_test/cudaGraph_test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraph_test/cudaGraph_test.dp.cpp -o %T/cudaGraph_test/cudaGraph_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraph_test/cudaGraph_test.dp.cpp -o %T/cudaGraph_test/cudaGraph_test.dp.o %}
 
 #include <cuda.h>
 #define CUDA_CHECK_THROW(x)  \
@@ -99,7 +99,7 @@ int main() {
   CUDA_CHECK_THROW(cudaGraphLaunch(execGraph, stream));
   cudaGraphLaunch(*execGraph2, *stream2);
 
-#ifndef DBUILD_TEST
+#ifndef DNO_BUILD_TEST
   // CHECK: execGraph->update(*graph);
   cudaGraphExecUpdate(execGraph, graph, nullptr, nullptr);
 

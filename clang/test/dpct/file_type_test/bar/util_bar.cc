@@ -1,4 +1,4 @@
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include "macro_def.hh"
 #include "util_bar.hh"
 #include <iostream>

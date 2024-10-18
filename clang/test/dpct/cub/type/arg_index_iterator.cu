@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/type/arg_index_iterator %S/arg_index_iterator.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/type/arg_index_iterator/arg_index_iterator.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/type/arg_index_iterator/arg_index_iterator.dp.cpp -o %T/type/arg_index_iterator/arg_index_iterator.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/type/arg_index_iterator/arg_index_iterator.dp.cpp -o %T/type/arg_index_iterator/arg_index_iterator.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK: #include <dpct/dpl_utils.hpp>
 #include <cub/cub.cuh>
 #include <iostream>

@@ -3,7 +3,7 @@
 // RUN: dpct  --in-root=%T/soft_link_dir --out-root=%T/out  --cuda-include-path="%cuda-path/include"  --process-all -- -I %T/soft_link_dir/link/test -x cuda --cuda-host-only 
 // RUN: FileCheck --input-file %T/out/vector_add_format.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/out/link/test/test/test.hpp --match-full-lines %T/soft_link_dir/link/test/test/test.hpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/out/vector_add_format.dp.cpp -o %T/out/vector_add_format.dp.o -I %T/out/link/test %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/out/vector_add_format.dp.cpp -o %T/out/vector_add_format.dp.o -I %T/out/link/test %}
 
 #include <cuda.h>
 #include <stdio.h>

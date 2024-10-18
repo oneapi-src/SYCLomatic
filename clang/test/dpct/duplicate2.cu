@@ -1,5 +1,5 @@
 // RUN: echo duplicate2
-#ifndef  BUILD_TEST
+#ifndef  NO_BUILD_TEST
 __constant__ int ca[32];
 
 // CHECK: void kernel(int *i, int const *ca) {

@@ -10,7 +10,7 @@ __device__ int global_id();
 // CHECK: void simple_kernel(unsigned *i_array, const sycl::nd_item<3> &item_ct1) {
 __global__ void simple_kernel(unsigned *i_array) {
   int index;
-#ifndef  BUILD_TEST
+#ifndef  NO_BUILD_TEST
   index = global_id();
 #endif
 

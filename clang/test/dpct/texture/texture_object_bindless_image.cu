@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none --use-experimental-features=bindless_images -out-root %T/texture/texture_object_bindless_image %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp -o %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.cpp -o %T/texture/texture_object_bindless_image/texture_object_bindless_image.dp.o %}
 
 #include "cuda.h"
 
@@ -42,7 +42,7 @@ template <typename T> __global__ void kernel(cudaTextureObject_t tex) {
   tex2DLayered<T>(tex, j, k, i);
   // CHECK: l = sycl::ext::oneapi::experimental::sample_image_array<float>(tex, sycl::float2(j, k), i);
   tex2DLayered(&l, tex, j, k, i);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   T t;
   // CHECK: t = sycl::ext::oneapi::experimental::sample_image<dpct_placeholder/*Fix the type mannually*/>(tex, float(i));
   tex1Dfetch(&t, tex, i);
