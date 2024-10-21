@@ -18,7 +18,7 @@ enum ProcessStatus {
   MigrationNoCodeChangeHappen = 1,
   MigrationSkipped = 2,
   CallIndependentToolSucceeded = 3,
-  MigrationCmakeScriptCompleted = 4,
+  MigrationBuildScriptCompleted = 4,
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
@@ -29,7 +29,7 @@ enum ProcessStatus {
   MigrationErrorInvalidFilePath = -8,
   MigrationErrorInvalidReportArgs = -9,
   VcxprojPaserFileNotExist = -11,
-  VcxprojPaserCreateCompilationDBFail = -12, /*eg. hav no write permission*/
+  VcxprojPaserCreateCompilationDBFail = -12, /*eg. have no write permission*/
   MigrationErrorInvalidInstallPath = -13,
   MigrationErrorPathTooLong = -14,
   MigrationErrorInvalidWarningID = -15,
@@ -60,12 +60,13 @@ enum ProcessStatus {
   MigrationErrorAPIMappingNoCUDAHeader = -45,
   MigrationErrorCannotDetectCudaPath = -46,
   CallIndependentToolError = -47,
-  MigrationErrorCMakeScriptPathInvalid = -48,
-  MigrateCmakeScriptOnlyNotSpecifed = -49,
+  MigrationErrorBuildScriptPathInvalid = -48,
+  MigrateBuildScriptOnlyNotSpecifed = -49,
   MigrateBuildScriptIncorrectUse = -50,
   MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse = -51,
-  MigrationErrorNoExplicitInRootAndCMakeScript = -52,
+  MigrationErrorNoExplicitInRootAndBuildScript = -52,
   MigrationErrorCannotWrite = -53,
+  MigratePythonBuildScriptOnlyNotSpecifed = -54,
 };
 
 namespace clang {
