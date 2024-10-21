@@ -57,9 +57,6 @@ int printf(const char *format, ...);
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 // CHECK-NEXT: */
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-// CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR_NAME(X)\
 // CHECK-NEXT:   printf("%s\
 // CHECK-NEXT:          %s\
