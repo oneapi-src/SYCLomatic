@@ -12,9 +12,9 @@ int printf(const char *format, ...);
 // CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR(X) printf("%s\n", cudaGetErrorString(X))
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-// CHECK-NEXT: */
+// CHECK:  /*
+// CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CHECK-NEXT:  */
 // CHECK-NEXT: #define PRINT_ERROR_STR2(X)\
 // CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR2(X)\
@@ -36,9 +36,9 @@ int printf(const char *format, ...);
 // CHECK-NEXT: #define PRINT_ERROR_NAME(X) printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_NAME(X) printf("%s\n", cudaGetErrorName(X))
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-// CHECK-NEXT: */
+// CHECK:   /*
+// CHECK-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CHECK-NEXT:   */
 // CHECK-NEXT: #define PRINT_ERROR_NAME2(X)\
 // CHECK-NEXT:   printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_NAME2(X)\
@@ -111,12 +111,12 @@ const char *test_function() {
   PRINT_ERROR_STR_NAME(cudaGetLastError());
   PRINT_ERROR_STR_NAME(cudaSuccess);
 
-//CHECK:  /*
-//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
-//CHECK-NEXT:  */
+//CHECK:/*
+//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:*/
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
+//CHECK-NEXT:*/
 //CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
@@ -140,9 +140,9 @@ const char *test_function() {
 //CHECK-NEXT:  err_s = dpct::get_error_string_dummy(e);
   cuGetErrorString(e, &err_s);
 
-//CHECK:  /*
-//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-//CHECK-NEXT:  */
+//CHECK:/*
+//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:*/
 //CHECK-NEXT:  return dpct::get_error_string_dummy(0);
   return cudaGetErrorName(cudaSuccess);
 }

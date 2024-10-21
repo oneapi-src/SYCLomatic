@@ -36,7 +36,7 @@ int main(){
        // CHECK: case int(oneapi::ccl::datatype::int32): std::cout << "Int32" << std::endl; break;
       case ncclInt32: std::cout << "Int32" << std::endl; break;
   }
-  // CHECK: /*
+  // CHECK:     /*
   // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::get_error_string_dummy(res);

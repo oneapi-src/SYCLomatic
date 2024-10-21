@@ -33,15 +33,15 @@ int printf(const char *format, ...);
 
 const char *test_function(cudnnStatus_t status) {
 
-//CHECK: /*
-//CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-//CHECK-NEXT: */
+//CHECK:/*
+//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:*/
 //CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(status));
   printf("%s\n", cudnnGetErrorString(status));
 
-//CHECK: /*
-//CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
-//CHECK-NEXT: */
+//CHECK:/*
+//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:*/
 //CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudnnGetErrorString(CUDNN_STATUS_SUCCESS));
 
