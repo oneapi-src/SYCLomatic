@@ -1,3 +1,4 @@
+// RUN: echo "test"
 #define test_x 0
 
 #include <cuda.h>
