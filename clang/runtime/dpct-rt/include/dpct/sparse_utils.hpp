@@ -1638,7 +1638,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
                               *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
                               nullptr, {})
 #else
-#define __MATMAT                                                               \
+#define __MATMAT(STEP, NNZ_C)                                                  \
   oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,       \
                               *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
                               nullptr)
