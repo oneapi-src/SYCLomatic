@@ -953,6 +953,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-headers
       install-clang-resource-headers
       install-dpct-binary
+      install-dpct-setvars
       install-dpct-rules
       install-dpct-cmake-file
       install-dpct-codepin-report
