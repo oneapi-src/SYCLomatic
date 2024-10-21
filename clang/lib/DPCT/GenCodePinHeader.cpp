@@ -296,7 +296,33 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
           !isTypeInAnalysisScope(QT.getTypePtrOrNull())) {
         continue;
       }
+      std::string Scope = "";
       std::string TypeName = QT.getAsString(PrintPolicy);
+      std::string TypeNameWithoutScope = "";
+      // For typedef type, use the alias name as the TypeName.
+      if (QT->isTypedefNameType()) {
+        TypeNameWithoutScope =
+            QT->getAs<TypedefType>()->getDecl()->getName().str();
+      } else {
+        PrintPolicy.SuppressScope = true;
+        TypeNameWithoutScope = QT.getAsString(PrintPolicy);
+        PrintPolicy.SuppressScope = false;
+      }
+
+      // When type definition and type usage are both in the namespace, the
+      // namespace scope can omit. Call the desugared type to get the namespace
+      // scope.
+      if (QT->getAsRecordDecl()->getDeclContext()->isNamespace()) {
+        TypeName = TypeNameWithoutScope;
+        std::string DesuagerType =
+            QT.getDesugaredType(Ctx).getAsString(PrintPolicy);
+        size_t Pos = DesuagerType.rfind("::");
+        if (Pos != std::string::npos) {
+          Scope = DesuagerType.substr(0, Pos + 2);
+        }
+      }
+      TypeName = Scope + TypeName;
+
       auto &Vec = DpctGlobalInfo::getCodePinTypeInfoVec();
       auto Iter =
           std::find_if(Vec.begin(), Vec.end(), [&TypeName](const auto &pair) {
@@ -312,18 +338,12 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
       }
       VarInfo.VarName = TypeName;
       collectMemberInfo(QT, VarInfo, NextTypeQueue, false, PrintPolicy);
-      PrintPolicy.SuppressScope = 1;
-      std::string TypenameWithoutScope = QT.getAsString(PrintPolicy);
-      if (QT->isTypedefNameType())
-        TypenameWithoutScope =
-            QT->getAs<TypedefType>()->getDecl()->getName().str();
-      auto Pos = TypenameWithoutScope.find('<');
+      auto Pos = TypeNameWithoutScope.find('<');
       VarInfo.VarNameWithoutScopeAndTemplateArgs =
-          TypenameWithoutScope.substr(0, Pos);
+          TypeNameWithoutScope.substr(0, Pos);
       if (Pos != std::string::npos) {
-        VarInfo.TemplateInstArgs = TypenameWithoutScope.substr(Pos);
+        VarInfo.TemplateInstArgs = TypeNameWithoutScope.substr(Pos);
       }
-      PrintPolicy.SuppressScope = 0;
       Vec.push_back({TypeName, VarInfo});
     }
     CurrentTypeQueue = NextTypeQueue;
