@@ -1636,12 +1636,12 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 #define __MATMAT(STEP, NNZ_C)                                                  \
   oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,       \
                               *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
-                              nullptr, {})
+                              nullptr)
 #else
 #define __MATMAT(STEP, NNZ_C)                                                  \
   oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,       \
                               *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
-                              nullptr)
+                              nullptr, {})
 #endif
 
   __MATMAT(oneapi::mkl::sparse::matmat_request::work_estimation, nullptr);
@@ -1653,7 +1653,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<std::int64_t, 1> nnz_buf_c(1);
   __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, &nnz_buf_c);
-  auto nnz_acc_c = nnz_buf_c.get_host_access(sycl::read_only)[0];
+  nnz_c_int = nnz_buf_c.get_host_access(sycl::read_only)[0];
 #else
   std::int64_t *nnz_c = sycl::malloc_host<std::int64_t>(1, queue);
   __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, nnz_c);
