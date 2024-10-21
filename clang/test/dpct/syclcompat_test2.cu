@@ -55,7 +55,10 @@ __global__ void k3() {
 }
 
 void f3() {
+// TODO: The SYCLCompat PR has been merged https://github.com/intel/llvm/pull/15717. Enable the build test after the test complier upgrade.
+#ifndef NO_BUILD_TEST
   k3<<<1, 1>>>();
+#endif
 }
 
 void f4() {

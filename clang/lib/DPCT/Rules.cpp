@@ -277,6 +277,16 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
       R.BuildScriptSyntax, R.Priority));
 }
 
+void registerHelperFunctionRule(MetaRuleObject &R) {
+  if (R.In == "DefaultQueue" && R.Priority == RulePriority::Takeover) {
+    MapNames::CustomHelperFunctionMap.insert(
+        {dpct::HelperFuncCatalog::DefaultQueue, R.Out});
+    dpct::DpctGlobalInfo::setUsingDRYPattern(false);
+    dpct::DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes().insert(
+        R.Includes.begin(), R.Includes.end());
+  }
+}
+
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     const MetaRuleObject::PatternRewriter &PR) {
   if (this != &PR) {
@@ -366,6 +376,8 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
         break;
+      case (RuleKind::HelperFunction):
+        registerHelperFunctionRule(*r);
       case (RuleKind::PythonRule):
         registerPythonMigrationRule(*r);
         break;
