@@ -57,163 +57,18 @@ static std::map<std::string /*file path*/,
 
 void cmakeSyntaxProcessed(std::string &Input);
 
-static std::string readFile(const clang::tooling::UnifiedPath &Name) {
-  std::ifstream Stream(Name.getCanonicalPath().str(),
-                       std::ios::in | std::ios::binary);
-  std::string Contents((std::istreambuf_iterator<char>(Stream)),
-                       (std::istreambuf_iterator<char>()));
-  return Contents;
-}
-
-clang::tooling::UnifiedPath
-getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
-                            const clang::tooling::UnifiedPath &OutRoot) {
-  std::error_code EC;
-
-  clang::tooling::UnifiedPath CmakeBuildDirectory;
-  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
-       End;
-       Iter != End; Iter.increment(EC)) {
-    if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Access : " + std::string(InRoot.getCanonicalPath()) +
-          " fail: " + EC.message() + "\n";
-      PrintMsg(ErrMsg);
-    }
-
-    clang::tooling::UnifiedPath FilePath(Iter->path());
-
-    // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot, FilePath))
-      continue;
-
-    bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
-                              PE = path::end(FilePath.getCanonicalPath());
-         PI != PE; ++PI) {
-      StringRef Comp = *PI;
-      if (Comp.starts_with(".")) {
-        IsHidden = true;
-        break;
-      }
-    }
-    // Skip hidden folder or file whose name begins with ".".
-    if (IsHidden) {
-      continue;
-    }
-
-    if (Iter->type() == fs::file_type::directory_file) {
-      const clang::tooling::UnifiedPath Path = Iter->path();
-      if (fs::exists(appendPath(Path.getCanonicalPath().str(), "CMakeFiles")) &&
-          fs::exists(
-              appendPath(Path.getCanonicalPath().str(), "CMakeCache.txt"))) {
-        CmakeBuildDirectory = Path;
-        break;
-      }
-    }
-  }
-  return CmakeBuildDirectory;
-}
-
 void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
                          const clang::tooling::UnifiedPath &OutRoot) {
-  std::error_code EC;
-
-  clang::tooling::UnifiedPath CmakeBuildDirectory =
-      getCmakeBuildPathFromInRoot(InRoot, OutRoot);
-  for (fs::recursive_directory_iterator Iter(InRoot.getCanonicalPath(), EC),
-       End;
-       Iter != End; Iter.increment(EC)) {
-    if ((bool)EC) {
-      std::string ErrMsg =
-          "[ERROR] Access : " + std::string(InRoot.getCanonicalPath()) +
-          " fail: " + EC.message() + "\n";
-      PrintMsg(ErrMsg);
-    }
-
-    clang::tooling::UnifiedPath FilePath(Iter->path());
-
-    // Skip output directory if it is in the in-root directory.
-    if (isChildOrSamePath(OutRoot, FilePath))
-      continue;
-
-    // Skip cmake build directory if it is in the in-root directory.
-    if (!CmakeBuildDirectory.getPath().empty() &&
-        isChildOrSamePath(CmakeBuildDirectory, FilePath))
-      continue;
-
-    bool IsHidden = false;
-    for (path::const_iterator PI = path::begin(FilePath.getCanonicalPath()),
-                              PE = path::end(FilePath.getCanonicalPath());
-         PI != PE; ++PI) {
-      StringRef Comp = *PI;
-      if (Comp.starts_with(".")) {
-        IsHidden = true;
-        break;
-      }
-    }
-    // Skip hidden folder or file whose name begins with ".".
-    if (IsHidden) {
-      continue;
-    }
-
-    if (Iter->type() == fs::file_type::regular_file) {
-      llvm::StringRef Name =
-          llvm::sys::path::filename(FilePath.getCanonicalPath());
-#ifdef _WIN32
-      if (Name.lower() == "cmakelists.txt" ||
-          llvm::StringRef(Name.lower()).ends_with(".cmake")) {
-#else
-      if (Name == "CMakeLists.txt" || Name.ends_with(".cmake")) {
-#endif
-        CmakeScriptFilesSet.push_back(FilePath.getCanonicalPath().str());
-      }
-    }
-  }
-}
-
-bool loadBufferFromScriptFile(const clang::tooling::UnifiedPath InRoot,
-                              const clang::tooling::UnifiedPath OutRoot,
-                              clang::tooling::UnifiedPath InFileName) {
-  clang::tooling::UnifiedPath OutFileName(InFileName);
-  if (!rewriteCanonicalDir(OutFileName, InRoot, OutRoot)) {
-    return false;
-  }
-  createDirectories(path::parent_path(OutFileName.getCanonicalPath()));
-  CmakeScriptFileBufferMap[OutFileName] = readFile(InFileName);
-  return true;
-}
-
-bool cmakeScriptFileSpecified(const std::vector<std::string> &SourceFiles) {
-  bool IsCmakeScript = false;
-  for (const auto &FilePath : SourceFiles) {
-    if (!llvm::sys::path::has_extension(FilePath) ||
-        llvm::sys::path::filename(FilePath).ends_with(".cmake") ||
-        llvm::sys::path::filename(FilePath).ends_with(".txt")) {
-      IsCmakeScript = true;
-      break;
-    }
-  }
-  return IsCmakeScript;
+  collectBuildScripts(InRoot, OutRoot, CmakeScriptFilesSet,
+                      BuildScriptKind::BS_Cmake);
 }
 
 void collectCmakeScriptsSpecified(
     const llvm::Expected<clang::tooling::CommonOptionsParser> &OptParser,
     const clang::tooling::UnifiedPath &InRoot,
     const clang::tooling::UnifiedPath &OutRoot) {
-  auto CmakeScriptLists = OptParser->getSourcePathList();
-  if (!CmakeScriptLists.empty()) {
-    for (auto &FilePath : CmakeScriptLists) {
-      if (fs::is_directory(FilePath)) {
-
-        collectCmakeScripts(FilePath, OutRoot);
-      } else {
-        CmakeScriptFilesSet.push_back(FilePath);
-      }
-    }
-  } else {
-    collectCmakeScripts(InRoot, OutRoot);
-  }
+  collectBuildScriptsSpecified(OptParser, InRoot, OutRoot, CmakeScriptFilesSet,
+                               BuildScriptKind::BS_Cmake);
 }
 
 static size_t skipWhiteSpaces(const std::string Input, size_t Index) {
@@ -248,25 +103,6 @@ static size_t gotoEndOfCmakeCommandStmt(const std::string Input, size_t Index) {
   for (; Index < Size && Input[Index] != ')'; Index++) {
   }
   return Index;
-}
-
-static std::vector<std::string> split(const std::string &Input,
-                                      const std::string &Delimiter) {
-  std::vector<std::string> Vec;
-  if (!Input.empty()) {
-
-    size_t Index = 0;
-    size_t Pos = Input.find(Delimiter, Index);
-    while (Index < Input.size() && Pos != std::string::npos) {
-      Vec.push_back(Input.substr(Index, Pos - Index));
-
-      Index = Pos + Delimiter.size();
-      Pos = Input.find(Delimiter, Index);
-    }
-    // Append the remaining part
-    Vec.push_back(Input.substr(Index));
-  }
-  return Vec;
 }
 
 std::string getVarName(const std::string &Variable) {
@@ -488,7 +324,7 @@ void processExecuteProcess(std::string &Input, size_t &Size, size_t &Index) {
 // described with yaml based rule syntax. Currently only migration of
 // cmake_minimum_required() is implemented by implicit migration rule.
 void applyImplicitMigrationRule(std::string &Input,
-                                const std::string &CmakeSyntax,
+                                const std::string &BuildScriptSyntax,
                                 void (*Func)(std::string &, size_t &,
                                              size_t &)) {
 
@@ -517,7 +353,7 @@ void applyImplicitMigrationRule(std::string &Input,
       std::string Command = Input.substr(Begin, End - Begin);
 
       // Process implict cmake syntax
-      if (Command == CmakeSyntax) {
+      if (Command == BuildScriptSyntax) {
         (*Func)(Input, Size, Index);
       }
 
@@ -598,7 +434,8 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
   return OutputStream.str();
 }
 
-void addWarningMsg(const std::string &WarningMsg, const std::string FileName) {
+void addCmakeWarningMsg(const std::string &WarningMsg,
+                        const std::string FileName) {
   FileWarningsMap[FileName].push_back(WarningMsg);
 }
 
@@ -612,14 +449,10 @@ static void doCmakeScriptAnalysis() {
   }
 }
 
-static void unifyInputFileFormat() {
+static void convertAllCmakeCommandsToLowerCase() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &Buffer = Entry.second;
     const std::string FileName = Entry.first.getPath().str();
-
-    // Convert input file to be LF
-    bool IsCRLF = fixLineEndings(Buffer, Buffer);
-    ScriptFileCRLFMap[Entry.first] = IsCRLF;
 
     // Convert cmake command to lower case in cmake script files
     Buffer = convertCmakeCommandsToLower(Buffer, FileName);
@@ -653,8 +486,8 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
         // to be described with yaml based rule syntax. Currently only migration
         // of cmake_minimum_required() is implemented by implicit migration
         // rule.
-        applyImplicitMigrationRule(Buffer, PR.CmakeSyntax,
-                                   DispatchTable.at(PR.CmakeSyntax));
+        applyImplicitMigrationRule(Buffer, PR.BuildScriptSyntax,
+                                   DispatchTable.at(PR.BuildScriptSyntax));
 
       } else {
         if (PR.RuleId == "rule_project") {
@@ -697,37 +530,7 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
   }
 }
 
-static void loadBufferFromFile(const clang::tooling::UnifiedPath &InRoot,
-                               const clang::tooling::UnifiedPath &OutRoot) {
-  for (const auto &ScriptFile : CmakeScriptFilesSet) {
-    if (!loadBufferFromScriptFile(InRoot, OutRoot, ScriptFile))
-      continue;
-  }
-}
-
 bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
-
-static void storeBufferToFile() {
-  for (auto &Entry : CmakeScriptFileBufferMap) {
-    auto &FileName = Entry.first;
-    auto &Buffer = Entry.second;
-
-    dpct::RawFDOStream Stream(FileName.getCanonicalPath().str());
-    // Restore original endline format
-    auto IsCRLF = ScriptFileCRLFMap[FileName];
-    if (IsCRLF) {
-      std::stringstream ResultStream;
-      std::vector<std::string> SplitedStr = split(Buffer, '\n');
-      for (auto &SS : SplitedStr) {
-        ResultStream << SS << "\r\n";
-      }
-      Stream << llvm::StringRef(ResultStream.str().c_str());
-    } else {
-      Stream << llvm::StringRef(Buffer.c_str());
-    }
-    Stream.flush();
-  }
-}
 
 // cmake systaxes need to be processed by implicit migration rules, as they are
 // difficult to be described with yaml based rule syntax.
@@ -737,30 +540,32 @@ static const std::vector<std::string> ImplicitMigrationRules = {
 static void reserveImplicitMigrationRules() {
   for (const auto &Rule : ImplicitMigrationRules) {
     MetaRuleObject::PatternRewriter PrePR;
-    PrePR.CmakeSyntax = Rule;
-    CmakeBuildInRules[PrePR.CmakeSyntax] = PrePR;
+    PrePR.BuildScriptSyntax = Rule;
+    CmakeBuildInRules[PrePR.BuildScriptSyntax] = PrePR;
   }
 }
 
 void doCmakeScriptMigration(const clang::tooling::UnifiedPath &InRoot,
                             const clang::tooling::UnifiedPath &OutRoot) {
-  loadBufferFromFile(InRoot, OutRoot);
-  unifyInputFileFormat();
+  loadBufferFromFile(InRoot, OutRoot, CmakeScriptFilesSet,
+                     CmakeScriptFileBufferMap);
+  unifyInputFileFormat(CmakeScriptFileBufferMap, ScriptFileCRLFMap);
+  convertAllCmakeCommandsToLowerCase();
   reserveImplicitMigrationRules();
   doCmakeScriptAnalysis();
   applyCmakeMigrationRules(InRoot, OutRoot);
-  storeBufferToFile();
+  storeBufferToFile(CmakeScriptFileBufferMap, ScriptFileCRLFMap);
 }
 
 void registerCmakeMigrationRule(MetaRuleObject &R) {
   auto PR = MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules,
                                             R.MatchMode, R.Warning, R.RuleId,
-                                            R.CmakeSyntax, R.Priority);
-  auto Iter = CmakeBuildInRules.find(PR.CmakeSyntax);
+                                            R.BuildScriptSyntax, R.Priority);
+  auto Iter = CmakeBuildInRules.find(PR.BuildScriptSyntax);
   if (Iter != CmakeBuildInRules.end()) {
     if (PR.Priority == RulePriority::Takeover &&
         Iter->second.Priority > PR.Priority) {
-      CmakeBuildInRules[PR.CmakeSyntax] = PR;
+      CmakeBuildInRules[PR.BuildScriptSyntax] = PR;
     } else {
       llvm::outs() << "[Warnning]: Two migration rules (Rule:" << R.RuleId
                    << ", Rule:" << Iter->second.RuleId
@@ -768,6 +573,6 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
                    << ") is ignored.\n";
     }
   } else {
-    CmakeBuildInRules[PR.CmakeSyntax] = PR;
+    CmakeBuildInRules[PR.BuildScriptSyntax] = PR;
   }
 }
