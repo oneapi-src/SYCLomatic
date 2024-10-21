@@ -14,7 +14,13 @@ int main() {
   cusparseStatus_t a6;
   a6 = CUSPARSE_STATUS_NOT_SUPPORTED;
 
-  //CHECK:printf("Error string: %s", dpct::get_error_string_dummy(a6));
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:printf("Error string: %s", dpct::get_error_string_dummy(a6));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:printf("Error name: %s", dpct::get_error_string_dummy(a6));
   printf("Error string: %s", cusparseGetErrorString(a6));
   printf("Error name: %s", cusparseGetErrorName(a6));
@@ -34,7 +40,13 @@ int main() {
 }
 
 //CHECK:void foo(int err) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
 //CHECK-NEXT:}
 void foo(cusparseStatus_t err) {

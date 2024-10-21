@@ -9,6 +9,9 @@ int printf(const char *format, ...);
 const char *test_function() {
 
 //CHECK:/*
+//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:*/
+//CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(0));

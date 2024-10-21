@@ -4,6 +4,9 @@
 // CUGETERRORSTRING: CUDA API:
 // CUGETERRORSTRING-NEXT:   cuGetErrorString(r /*CUresult*/, ppc /*const char ***/);
 // CUGETERRORSTRING-NEXT: Is migrated to:
+// CUGETERRORSTRING-NEXT:   /*
+// CUGETERRORSTRING-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CUGETERRORSTRING-NEXT:   */
 // CUGETERRORSTRING-NEXT:   *ppc = dpct::get_error_string_dummy(r);
 
 /// Initialization

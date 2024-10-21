@@ -164,12 +164,18 @@
 // CUDAGETERRORNAME: CUDA API:
 // CUDAGETERRORNAME-NEXT:   cudaGetErrorName(e /*cudaError_t*/);
 // CUDAGETERRORNAME-NEXT: Is migrated to:
+// CUDAGETERRORNAME-NEXT:   /*
+// CUDAGETERRORNAME-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CUDAGETERRORNAME-NEXT:   */
 // CUDAGETERRORNAME-NEXT:   dpct::get_error_string_dummy(e);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetErrorString | FileCheck %s -check-prefix=CUDAGETERRORSTRING
 // CUDAGETERRORSTRING: CUDA API:
 // CUDAGETERRORSTRING-NEXT:   cudaGetErrorString(e /*cudaError_t*/);
 // CUDAGETERRORSTRING-NEXT: Is migrated to:
+// CUDAGETERRORSTRING-NEXT:   /*
+// CUDAGETERRORSTRING-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CUDAGETERRORSTRING-NEXT:   */
 // CUDAGETERRORSTRING-NEXT:   dpct::get_error_string_dummy(e);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetLastError | FileCheck %s -check-prefix=CUDAGETLASTERROR

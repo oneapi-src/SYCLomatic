@@ -8,7 +8,10 @@
 #include <cublas_v2.h>
 
 void foo1(cublasStatus_t s) {
-  //CHECK:printf("Error string: %s", dpct::get_error_string_dummy(s));
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:printf("Error string: %s", dpct::get_error_string_dummy(s));
   printf("Error string: %s", cublasGetStatusString(s));
   cublasHandle_t handle;
   void *workspace;
@@ -20,7 +23,13 @@ void foo1(cublasStatus_t s) {
 }
 
 //CHECK:void foo11(int err) {
+//CHECK:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
 //CHECK-NEXT:}
 void foo11(cublasStatus_t err) {

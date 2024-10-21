@@ -209,12 +209,18 @@
 // cusparseGetErrorName: CUDA API:
 // cusparseGetErrorName-NEXT:   const char *Name = cusparseGetErrorName(status /*cusparseStatus_t*/);
 // cusparseGetErrorName-NEXT: Is migrated to:
+// cusparseGetErrorName-NEXT:   /*
+// cusparseGetErrorName-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// cusparseGetErrorName-NEXT:   */
 // cusparseGetErrorName-NEXT:   const char *Name = dpct::get_error_string_dummy(status);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetErrorString | FileCheck %s -check-prefix=cusparseGetErrorString
 // cusparseGetErrorString: CUDA API:
 // cusparseGetErrorString-NEXT:   const char *Str = cusparseGetErrorString(status /*cusparseStatus_t*/);
 // cusparseGetErrorString-NEXT: Is migrated to:
+// cusparseGetErrorString-NEXT:   /*
+// cusparseGetErrorString-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// cusparseGetErrorString-NEXT:   */
 // cusparseGetErrorString-NEXT:   const char *Str = dpct::get_error_string_dummy(status);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseGetProperty | FileCheck %s -check-prefix=cusparseGetProperty

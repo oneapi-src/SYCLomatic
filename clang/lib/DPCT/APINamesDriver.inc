@@ -8,9 +8,12 @@
 
 // clang-format off
 
-ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuGetErrorString", DEREF(1),
-                         CALL(MapNames::getDpctNamespace() + "get_error_string_dummy", ARG_WC(0))))
+WARNING_FACTORY_ENTRY(
+    "cuGetErrorString",
+    ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY("cuGetErrorString", DEREF(1),
+                             CALL(MapNames::getDpctNamespace() + "get_error_string_dummy", ARG_WC(0)))),
+        Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

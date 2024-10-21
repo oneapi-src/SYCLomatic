@@ -36,7 +36,10 @@ int main(){
        // CHECK: case int(oneapi::ccl::datatype::int32): std::cout << "Int32" << std::endl; break;
       case ncclInt32: std::cout << "Int32" << std::endl; break;
   }
-  // CHECK: dpct::get_error_string_dummy(res);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::get_error_string_dummy(res);
   ncclGetErrorString(res);
   // CHECK:     /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this functionality is redundant in SYCL.
@@ -53,7 +56,13 @@ int main(){
 }
 
 //CHECK:void foo(int err) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
 //CHECK-NEXT:}
 void foo(ncclResult_t err) {

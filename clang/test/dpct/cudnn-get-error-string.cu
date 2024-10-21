@@ -6,15 +6,24 @@
 
 int printf(const char *format, ...);
 
-// CHECK: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_string_dummy(X))
+// CHECK: /*
+// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CHECK-NEXT: */
+// CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR(X) printf("%s\n", cudnnGetErrorString(X))
 
-// CHECK: #define PRINT_ERROR_STR2(X)\
+// CHECK: /*
+// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CHECK-NEXT: */
+// CHECK-NEXT: #define PRINT_ERROR_STR2(X)\
 // CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR2(X)\
   printf("%s\n", cudnnGetErrorString(X))
 
-// CHECK: #define PRINT_ERROR_STR3(X)\
+// CHECK: /*
+// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CHECK-NEXT: */
+// CHECK-NEXT: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
 // CHECK-NEXT:          \n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR3(X)\
@@ -24,10 +33,16 @@ int printf(const char *format, ...);
 
 const char *test_function(cudnnStatus_t status) {
 
-//CHECK:  printf("%s\n", dpct::get_error_string_dummy(status));
+//CHECK: /*
+//CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT: */
+//CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(status));
   printf("%s\n", cudnnGetErrorString(status));
 
-//CHECK:  printf("%s\n", dpct::get_error_string_dummy(0));
+//CHECK: /*
+//CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT: */
+//CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudnnGetErrorString(CUDNN_STATUS_SUCCESS));
 
   PRINT_ERROR_STR(status);
@@ -36,7 +51,13 @@ const char *test_function(cudnnStatus_t status) {
 }
 
 //CHECK:void foo(dpct::err1 err) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
 //CHECK-NEXT:}
 void foo(cudnnStatus_t err) {
