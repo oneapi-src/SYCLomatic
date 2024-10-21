@@ -50,30 +50,27 @@ using csrgemm_args_info =
                const std::shared_ptr<matrix_info>, const int *>;
 struct csrgemm_args_info_hash {
   size_t operator()(const csrgemm_args_info &args) const {
-    std::string data;
-    {
-      std::stringstream ss(data);
-      ss << (char)std::get<0>(args) << ":";
-      ss << (char)std::get<1>(args) << ":";
-      ss << std::get<2>(args) << ":";
-      ss << std::get<3>(args) << ":";
-      ss << std::get<4>(args) << ":";
-      ss << std::get<5>(args).get() << ":";
-      ss << std::get<6>(args) << ":";
-      ss << std::get<7>(args) << ":";
-      ss << std::get<8>(args) << ":";
-      ss << std::get<9>(args).get() << ":";
-      ss << std::get<10>(args) << ":";
-      ss << std::get<11>(args) << ":";
-      ss << std::get<12>(args) << ":";
-      ss << std::get<13>(args).get() << ":";
-      ss << std::get<14>(args) << ":";
-      ss << std::get<15>(args) << ":";
-      ss << std::get<16>(args) << ":";
-      ss << std::get<17>(args).get() << ":";
-      ss << std::get<18>(args) << ":";
-    }
-    return std::hash<std::string>{}(data);
+    std::stringstream ss;
+    ss << (char)std::get<0>(args) << ":";
+    ss << (char)std::get<1>(args) << ":";
+    ss << std::get<2>(args) << ":";
+    ss << std::get<3>(args) << ":";
+    ss << std::get<4>(args) << ":";
+    ss << std::get<5>(args).get() << ":";
+    ss << std::get<6>(args) << ":";
+    ss << std::get<7>(args) << ":";
+    ss << std::get<8>(args) << ":";
+    ss << std::get<9>(args).get() << ":";
+    ss << std::get<10>(args) << ":";
+    ss << std::get<11>(args) << ":";
+    ss << std::get<12>(args) << ":";
+    ss << std::get<13>(args).get() << ":";
+    ss << std::get<14>(args) << ":";
+    ss << std::get<15>(args) << ":";
+    ss << std::get<16>(args) << ":";
+    ss << std::get<17>(args).get() << ":";
+    ss << std::get<18>(args) << ":";
+    return std::hash<std::string>{}(ss.str());
   }
 };
 } // namespace detail
@@ -104,8 +101,10 @@ public:
   get_csrgemm_info_map() {
     return _csrgemm_info_map;
   }
+#endif
 
 private:
+#ifdef __INTEL_MKL__
   std::unordered_map<detail::csrgemm_args_info, matmat_info,
                      detail::csrgemm_args_info_hash>
       _csrgemm_info_map;
@@ -1633,44 +1632,31 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
     matmat_desc = Iter->second.matmat_desc;
   }
 
-  oneapi::mkl::sparse::matmat(
-      queue, *matrix_handle_a, *matrix_handle_b, *matrix_handle_c,
-      oneapi::mkl::sparse::matmat_request::work_estimation, *matmat_desc,
-      nullptr, nullptr
-#ifndef DPCT_USM_LEVEL_NONE
-      ,
-      {}
+#ifdef DPCT_USM_LEVEL_NONE
+#define __MATMAT(STEP, NNZ_C)                                                  \
+  oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,       \
+                              *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
+                              nullptr, {})
+#else
+#define __MATMAT                                                               \
+  oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,       \
+                              *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
+                              nullptr)
 #endif
-  );
+
+  __MATMAT(oneapi::mkl::sparse::matmat_request::work_estimation, nullptr);
   queue.wait();
 
-  oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,
-                              *matrix_handle_c,
-                              oneapi::mkl::sparse::matmat_request::compute,
-                              *matmat_desc, nullptr, nullptr
-#ifndef DPCT_USM_LEVEL_NONE
-                              ,
-                              {}
-#endif
-  );
+  __MATMAT(oneapi::mkl::sparse::matmat_request::compute, nullptr);
 
   int nnz_c_int = 0;
 #ifdef DPCT_USM_LEVEL_NONE
   sycl::buffer<std::int64_t, 1> nnz_buf_c(1);
-  oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,
-                              *matrix_handle_c,
-                              oneapi::mkl::sparse::matmat_request::get_nnz,
-                              *matmat_desc, &nnz_buf_c, nullptr);
-  {
-    auto nnz_acc_c = nnz_buf_c.get_host_access(sycl::read_only);
-    nnz_c_int = nnz_acc_c[0];
-  }
+  __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, &nnz_buf_c);
+  auto nnz_acc_c = nnz_buf_c.get_host_access(sycl::read_only)[0];
 #else
   std::int64_t *nnz_c = sycl::malloc_host<std::int64_t>(1, queue);
-  oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,
-                              *matrix_handle_c,
-                              oneapi::mkl::sparse::matmat_request::get_nnz,
-                              *matmat_desc, nnz_c, nullptr, {});
+  __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, nnz_c);
   queue.wait();
   nnz_c_int = *nnz_c;
 #endif
@@ -1748,15 +1734,8 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
 #ifndef DPCT_USM_LEVEL_NONE
   e =
 #endif
-      oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,
-                                  *matrix_handle_c,
-                                  oneapi::mkl::sparse::matmat_request::finalize,
-                                  *matmat_desc, nullptr, nullptr
-#ifndef DPCT_USM_LEVEL_NONE
-                                  ,
-                                  {}
-#endif
-      );
+      __MATMAT(oneapi::mkl::sparse::matmat_request::finalize, nullptr);
+#undef __MATMAT
 
   std::vector<sycl::event> e_s;
   e_s.push_back(
