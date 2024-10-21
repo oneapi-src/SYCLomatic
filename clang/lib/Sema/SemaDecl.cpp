@@ -30,6 +30,7 @@
 #include "clang/AST/Type.h"
 #include "clang/Basic/Builtins.h"
 #include "clang/Basic/HLSLRuntime.h"
+#include "clang/Basic/LangOptions.h"
 #include "clang/Basic/PartialDiagnostic.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/TargetInfo.h"
@@ -9296,6 +9297,22 @@ static NamedDecl *DiagnoseInvalidRedeclaration(
     for (LookupResult::iterator Func = Prev.begin(), FuncEnd = Prev.end();
          Func != FuncEnd; ++Func) {
       FunctionDecl *FD = dyn_cast<FunctionDecl>(*Func);
+
+      if (FD && SemaRef.getLangOpts().CUDA && [&]() {
+            if (FD->param_size() != NewFD->param_size())
+              return false;
+            for (unsigned Idx = 0; Idx < FD->param_size(); ++Idx) {
+              QualType DeclParamTy = FD->getParamDecl(Idx)->getType();
+              QualType DefParamTy = NewFD->getParamDecl(Idx)->getType();
+              if (!SemaRef.Context.hasSameUnqualifiedType(DefParamTy,
+                                                          DeclParamTy))
+                return false;
+            }
+            return true;
+          }()) {
+        return NewFD;
+      }
+
       if (FD &&
           hasSimilarParameters(SemaRef.Context, FD, NewFD, MismatchedParams)) {
         // Add 1 to the index so that 0 can mean the mismatch didn't
