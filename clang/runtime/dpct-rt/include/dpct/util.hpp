@@ -921,10 +921,10 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
 
   int num_threads_ss = 56;
   int max_num_wg = 56;
-  if (dev.has(sycl::aspect::ext_intel_gpu_eu_count_per_subslice) &&
-      dev.has(sycl::aspect::ext_intel_gpu_hw_threads_per_eu)) {
+  if (dev.has(sycl::aspect::gpu_eu_count_per_subslice) &&
+      dev.has(sycl::aspect::gpu_hw_threads_per_eu)) {
     auto eu_count =
-        dev.get_info<sycl::info::device::ext_intel_gpu_eu_count_per_subslice>();
+        dev.get_info<sycl::ext::intel::info::device::gpu_eu_count_per_subslice>();
     auto threads_count =
         dev.get_info<sycl::ext::intel::info::device::gpu_hw_threads_per_eu>();
     num_threads_ss = eu_count * threads_count;
@@ -983,8 +983,8 @@ inline int calculate_max_potential_wg(int *num_wg, int *wg_size,
   calculate_max_active_wg_per_xecore(num_wg, *wg_size, slm_size, sg_size,
                                      used_barrier, used_large_grf);
   std::uint32_t num_ss = 1;
-  if (dev.has(sycl::aspect::ext_intel_gpu_slices) &&
-      dev.has(sycl::aspect::ext_intel_gpu_subslices_per_slice)) {
+  if (dev.has(sycl::aspect::gpu_slices) &&
+      dev.has(sycl::aspect::gpu_subslices_per_slice)) {
     num_ss =
         dev.get_info<sycl::ext::intel::info::device::gpu_slices>() *
         dev.get_info<sycl::ext::intel::info::device::gpu_subslices_per_slice>();

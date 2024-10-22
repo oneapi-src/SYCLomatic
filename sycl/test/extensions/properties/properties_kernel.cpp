@@ -13,16 +13,16 @@ using device_has_all =
              aspect::online_linker, aspect::queue_profiling,
              aspect::usm_device_allocations, aspect::usm_host_allocations,
              aspect::usm_shared_allocations, aspect::usm_system_allocations,
-             aspect::ext_intel_pci_address, aspect::ext_intel_gpu_eu_count,
-             aspect::ext_intel_gpu_eu_simd_width, aspect::ext_intel_gpu_slices,
-             aspect::ext_intel_gpu_subslices_per_slice,
-             aspect::ext_intel_gpu_eu_count_per_subslice,
-             aspect::ext_intel_max_mem_bandwidth, aspect::ext_intel_mem_channel,
+             aspect::pci_address, aspect::gpu_eu_count,
+             aspect::gpu_eu_simd_width, aspect::gpu_slices,
+             aspect::gpu_subslices_per_slice,
+             aspect::gpu_eu_count_per_subslice,
+             aspect::max_mem_bandwidth, aspect::ext_intel_mem_channel,
              aspect::usm_atomic_host_allocations,
              aspect::usm_atomic_shared_allocations, aspect::atomic64,
-             aspect::ext_intel_device_info_uuid, aspect::ext_oneapi_srgb,
+             aspect::uuid, aspect::ext_oneapi_srgb,
              aspect::ext_oneapi_native_assert, aspect::host_debuggable,
-             aspect::ext_intel_gpu_hw_threads_per_eu,
+             aspect::gpu_hw_threads_per_eu,
              aspect::ext_oneapi_cuda_async_barrier,
              aspect::ext_intel_free_memory, aspect::ext_intel_device_id,
              aspect::ext_intel_memory_clock_rate,
@@ -107,22 +107,22 @@ int main() {
   singleAspectDeviceHasChecks<aspect::usm_host_allocations>();
   singleAspectDeviceHasChecks<aspect::usm_shared_allocations>();
   singleAspectDeviceHasChecks<aspect::usm_system_allocations>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_pci_address>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_gpu_eu_count>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_gpu_eu_simd_width>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_gpu_slices>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_gpu_subslices_per_slice>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_gpu_eu_count_per_subslice>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_max_mem_bandwidth>();
+  singleAspectDeviceHasChecks<aspect::pci_address>();
+  singleAspectDeviceHasChecks<aspect::gpu_eu_count>();
+  singleAspectDeviceHasChecks<aspect::gpu_eu_simd_width>();
+  singleAspectDeviceHasChecks<aspect::gpu_slices>();
+  singleAspectDeviceHasChecks<aspect::gpu_subslices_per_slice>();
+  singleAspectDeviceHasChecks<aspect::gpu_eu_count_per_subslice>();
+  singleAspectDeviceHasChecks<aspect::max_mem_bandwidth>();
   singleAspectDeviceHasChecks<aspect::ext_intel_mem_channel>();
   singleAspectDeviceHasChecks<aspect::usm_atomic_host_allocations>();
   singleAspectDeviceHasChecks<aspect::usm_atomic_shared_allocations>();
   singleAspectDeviceHasChecks<aspect::atomic64>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_device_info_uuid>();
+  singleAspectDeviceHasChecks<aspect::uuid>();
   singleAspectDeviceHasChecks<aspect::ext_oneapi_srgb>();
   singleAspectDeviceHasChecks<aspect::ext_oneapi_native_assert>();
   singleAspectDeviceHasChecks<aspect::host_debuggable>();
-  singleAspectDeviceHasChecks<aspect::ext_intel_gpu_hw_threads_per_eu>();
+  singleAspectDeviceHasChecks<aspect::gpu_hw_threads_per_eu>();
   singleAspectDeviceHasChecks<aspect::ext_oneapi_cuda_async_barrier>();
   singleAspectDeviceHasChecks<aspect::ext_intel_free_memory>();
   singleAspectDeviceHasChecks<aspect::ext_intel_device_id>();
@@ -150,17 +150,17 @@ int main() {
   static_assert(device_has_all::value[11] == aspect::usm_host_allocations);
   static_assert(device_has_all::value[12] == aspect::usm_shared_allocations);
   static_assert(device_has_all::value[13] == aspect::usm_system_allocations);
-  static_assert(device_has_all::value[14] == aspect::ext_intel_pci_address);
-  static_assert(device_has_all::value[15] == aspect::ext_intel_gpu_eu_count);
+  static_assert(device_has_all::value[14] == aspect::pci_address);
+  static_assert(device_has_all::value[15] == aspect::gpu_eu_count);
   static_assert(device_has_all::value[16] ==
-                aspect::ext_intel_gpu_eu_simd_width);
-  static_assert(device_has_all::value[17] == aspect::ext_intel_gpu_slices);
+                aspect::gpu_eu_simd_width);
+  static_assert(device_has_all::value[17] == aspect::gpu_slices);
   static_assert(device_has_all::value[18] ==
-                aspect::ext_intel_gpu_subslices_per_slice);
+                aspect::gpu_subslices_per_slice);
   static_assert(device_has_all::value[19] ==
-                aspect::ext_intel_gpu_eu_count_per_subslice);
+                aspect::gpu_eu_count_per_subslice);
   static_assert(device_has_all::value[20] ==
-                aspect::ext_intel_max_mem_bandwidth);
+                aspect::max_mem_bandwidth);
   static_assert(device_has_all::value[21] == aspect::ext_intel_mem_channel);
   static_assert(device_has_all::value[22] ==
                 aspect::usm_atomic_host_allocations);
@@ -168,12 +168,12 @@ int main() {
                 aspect::usm_atomic_shared_allocations);
   static_assert(device_has_all::value[24] == aspect::atomic64);
   static_assert(device_has_all::value[25] ==
-                aspect::ext_intel_device_info_uuid);
+                aspect::uuid);
   static_assert(device_has_all::value[26] == aspect::ext_oneapi_srgb);
   static_assert(device_has_all::value[27] == aspect::ext_oneapi_native_assert);
   static_assert(device_has_all::value[28] == aspect::host_debuggable);
   static_assert(device_has_all::value[29] ==
-                aspect::ext_intel_gpu_hw_threads_per_eu);
+                aspect::gpu_hw_threads_per_eu);
   static_assert(device_has_all::value[30] ==
                 aspect::ext_oneapi_cuda_async_barrier);
   static_assert(device_has_all::value[31] == aspect::ext_intel_free_memory);

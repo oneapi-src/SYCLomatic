@@ -54,43 +54,43 @@ int main(int argc, char **argv) {
       // Use Feature Test macro to see if extensions are supported.
       if (SYCL_EXT_INTEL_DEVICE_INFO >= 1) {
 
-        if (dev.has(aspect::ext_intel_pci_address)) {
+        if (dev.has(aspect::pci_address)) {
           std::cout << "PCI address = "
                     << dev.get_info<ext::intel::info::device::pci_address>()
                     << std::endl;
         }
-        if (dev.has(aspect::ext_intel_gpu_eu_count)) {
+        if (dev.has(aspect::gpu_eu_count)) {
           totalEUs = dev.get_info<ext::intel::info::device::gpu_eu_count>();
           std::cout << "Number of EUs = " << totalEUs << std::endl;
         }
-        if (dev.has(aspect::ext_intel_gpu_eu_simd_width)) {
+        if (dev.has(aspect::gpu_eu_simd_width)) {
           int w = dev.get_info<ext::intel::info::device::gpu_eu_simd_width>();
           std::cout << "EU SIMD width = " << w << std::endl;
         }
-        if (dev.has(aspect::ext_intel_gpu_slices)) {
+        if (dev.has(aspect::gpu_slices)) {
           numSlices = dev.get_info<ext::intel::info::device::gpu_slices>();
           std::cout << "Number of slices = " << numSlices << std::endl;
         }
-        if (dev.has(aspect::ext_intel_gpu_subslices_per_slice)) {
+        if (dev.has(aspect::gpu_subslices_per_slice)) {
           numSubslices =
               dev.get_info<ext::intel::info::device::gpu_subslices_per_slice>();
           std::cout << "Number of subslices per slice = " << numSubslices
                     << std::endl;
         }
-        if (dev.has(aspect::ext_intel_gpu_eu_count_per_subslice)) {
+        if (dev.has(aspect::gpu_eu_count_per_subslice)) {
           numEUsPerSubslice = dev.get_info<
               ext::intel::info::device::gpu_eu_count_per_subslice>();
           std::cout << "Number of EUs per subslice = " << numEUsPerSubslice
                     << std::endl;
         }
         if (SYCL_EXT_INTEL_DEVICE_INFO >= 3 &&
-            dev.has(aspect::ext_intel_gpu_hw_threads_per_eu)) {
+            dev.has(aspect::gpu_hw_threads_per_eu)) {
           numHWThreadsPerEU =
               dev.get_info<ext::intel::info::device::gpu_hw_threads_per_eu>();
           std::cout << "Number of HW threads per EU = " << numHWThreadsPerEU
                     << std::endl;
         }
-        if (dev.has(aspect::ext_intel_max_mem_bandwidth)) {
+        if (dev.has(aspect::max_mem_bandwidth)) {
           // not supported yet
           long m = dev.get_info<ext::intel::info::device::max_mem_bandwidth>();
           std::cout << "Maximum memory bandwidth = " << m << std::endl;
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
                  "Expect total_memory >= free_memory");
         }
         if (SYCL_EXT_INTEL_DEVICE_INFO >= 2 &&
-            dev.has(aspect::ext_intel_device_info_uuid)) {
+            dev.has(aspect::uuid)) {
           auto UUID = dev.get_info<ext::intel::info::device::uuid>();
           std::cout << "Device UUID = ";
           for (int i = 0; i < 16; i++) {

@@ -98,39 +98,39 @@
 #define __SYCL_ALL_DEVICES_HAVE_usm_system_allocations__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_pci_address__
-// __SYCL_ASPECT(ext_intel_pci_address, 18)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_pci_address__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_pci_address__
+// __SYCL_ASPECT(pci_address, 18)
+#define __SYCL_ALL_DEVICES_HAVE_pci_address__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_eu_count__
-// __SYCL_ASPECT(ext_intel_gpu_eu_count, 19)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_eu_count__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_gpu_eu_count__
+// __SYCL_ASPECT(gpu_eu_count, 19)
+#define __SYCL_ALL_DEVICES_HAVE_gpu_eu_count__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_eu_simd_width__
-// __SYCL_ASPECT(ext_intel_gpu_eu_simd_width, 20)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_eu_simd_width__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_gpu_eu_simd_width__
+// __SYCL_ASPECT(_gpu_eu_simd_width, 20)
+#define __SYCL_ALL_DEVICES_HAVE_gpu_eu_simd_width__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_slices__
-// __SYCL_ASPECT(ext_intel_gpu_slices, 21)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_slices__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_gpu_slices__
+// __SYCL_ASPECT(_gpu_slices, 21)
+#define __SYCL_ALL_DEVICES_HAVE_gpu_slices__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_subslices_per_slice__
-// __SYCL_ASPECT(ext_intel_gpu_subslices_per_slice, 22)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_subslices_per_slice__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_gpu_subslices_per_slice__
+// __SYCL_ASPECT(_gpu_subslices_per_slice, 22)
+#define __SYCL_ALL_DEVICES_HAVE_gpu_subslices_per_slice__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_eu_count_per_subslice__
-// __SYCL_ASPECT(ext_intel_gpu_eu_count_per_subslice, 23)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_eu_count_per_subslice__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_gpu_eu_count_per_subslice__
+// __SYCL_ASPECT(gpu_eu_count_per_subslice, 23)
+#define __SYCL_ALL_DEVICES_HAVE_gpu_eu_count_per_subslice__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_max_mem_bandwidth__
-// __SYCL_ASPECT(ext_intel_max_mem_bandwidth, 24)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_max_mem_bandwidth__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_max_mem_bandwidth__
+// __SYCL_ASPECT(max_mem_bandwidth, 24)
+#define __SYCL_ALL_DEVICES_HAVE_max_mem_bandwidth__ 0
 #endif
 
 #ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_mem_channel__
@@ -153,9 +153,9 @@
 #define __SYCL_ALL_DEVICES_HAVE_atomic64__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_device_info_uuid__
-// __SYCL_ASPECT(ext_intel_device_info_uuid, 29)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_device_info_uuid__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_uuid__
+// __SYCL_ASPECT(uuid, 29)
+#define __SYCL_ALL_DEVICES_HAVE_uuid__ 0
 #endif
 
 #ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_srgb__
@@ -173,9 +173,9 @@
 #define __SYCL_ALL_DEVICES_HAVE_host_debuggable__ 0
 #endif
 
-#ifndef __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_hw_threads_per_eu__
-// __SYCL_ASPECT(ext_intel_gpu_hw_threads_per_eu, 33)
-#define __SYCL_ALL_DEVICES_HAVE_ext_intel_gpu_hw_threads_per_eu__ 0
+#ifndef __SYCL_ALL_DEVICES_HAVE_gpu_hw_threads_per_eu__
+// __SYCL_ASPECT(gpu_hw_threads_per_eu, 33)
+#define __SYCL_ALL_DEVICES_HAVE_gpu_hw_threads_per_eu__ 0
 #endif
 
 #ifndef __SYCL_ALL_DEVICES_HAVE_ext_oneapi_cuda_async_barrier__
