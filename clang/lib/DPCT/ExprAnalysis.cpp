@@ -853,15 +853,7 @@ void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
 }
 
 inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
-  RefString.clear();
-  llvm::raw_string_ostream OS(RefString);
-  if (auto NNS = ULE->getQualifier()) {
-    if (NNS->getKind() != clang::NestedNameSpecifier::SpecifierKind::Global) {
-      NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
-    }
-  }
-  ULE->getName().print(OS,
-                       dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+  RefString = ULE->decls().begin().getDecl()->getQualifiedNameAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
