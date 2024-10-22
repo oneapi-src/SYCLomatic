@@ -46,8 +46,7 @@ using csrgemm_args_info =
                const std::shared_ptr<matrix_info>, const void *, const int *,
                const int *, const std::shared_ptr<matrix_info>, const void *,
                const int *, const int *, const std::shared_ptr<matrix_info>,
-               const void *, const int *, const int *,
-               const std::shared_ptr<matrix_info>, const int *>;
+               const int *>;
 struct csrgemm_args_info_hash {
   size_t operator()(const csrgemm_args_info &args) const {
     std::stringstream ss;
@@ -66,10 +65,6 @@ struct csrgemm_args_info_hash {
     ss << std::get<12>(args) << ":";
     ss << std::get<13>(args).get() << ":";
     ss << std::get<14>(args) << ":";
-    ss << std::get<15>(args) << ":";
-    ss << std::get<16>(args) << ":";
-    ss << std::get<17>(args).get() << ":";
-    ss << std::get<18>(args) << ":";
     return std::hash<std::string>{}(ss.str());
   }
 };
@@ -84,15 +79,12 @@ public:
   struct matmat_info {
     matmat_info(oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a,
                 oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b,
-                oneapi::mkl::sparse::matrix_handle_t *matrix_handle_d,
                 oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c,
                 oneapi::mkl::sparse::matmat_descr_t *matmat_desc)
         : matrix_handle_a(matrix_handle_a), matrix_handle_b(matrix_handle_b),
-          matrix_handle_d(matrix_handle_d), matrix_handle_c(matrix_handle_c),
-          matmat_desc(matmat_desc) {}
+          matrix_handle_c(matrix_handle_c), matmat_desc(matmat_desc) {}
     oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a;
     oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b;
-    oneapi::mkl::sparse::matrix_handle_t *matrix_handle_d;
     oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c;
     oneapi::mkl::sparse::matmat_descr_t *matmat_desc;
   };
@@ -1559,8 +1551,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   sycl::queue queue = desc->get_queue();
   detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
                                  row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
-                                 col_ind_b, nullptr, nullptr, nullptr, nullptr,
-                                 info_c, row_ptr_c);
+                                 col_ind_b, info_c, row_ptr_c);
   const auto Iter = desc->get_csrgemm_info_map().find(args);
 
   oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a;
@@ -1601,6 +1592,9 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_b, rows_b, cols_b,
                                       info_b->get_index_base(), row_ptr_b_buf,
                                       col_ind_b_buf, val_b_buf);
+    // In the future, oneMKL will allow (int *)nullptr to be passed in for
+    // row_ptr_c in the initial calls before matmat. But currently, it needs an
+    // array of length row_number + 1.
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_c, rows_c, cols_c,
                                       info_c->get_index_base(), row_ptr_c_buf,
                                       col_ind_c_buf, val_c_buf);
@@ -1611,6 +1605,9 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
     oneapi::mkl::sparse::set_csr_data(
         queue, *matrix_handle_b, rows_b, cols_b, info_b->get_index_base(),
         (int *)row_ptr_b, (int *)col_ind_b, (Ty *)val_b);
+    // In the future, oneMKL will allow (int *)nullptr to be passed in for
+    // row_ptr_c in the initial calls before matmat. But currently, it needs an
+    // array of length row_number + 1.
     oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_c, rows_c, cols_c,
                                       info_c->get_index_base(), row_ptr_c,
                                       (int *)nullptr, (Ty *)nullptr);
@@ -1624,7 +1621,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matrix_view_descr::general);
     desc->get_csrgemm_info_map().insert(std::make_pair(
         args, descriptor::matmat_info(matrix_handle_a, matrix_handle_b,
-                                      nullptr, matrix_handle_c, matmat_desc)));
+                                      matrix_handle_c, matmat_desc)));
   } else {
     matrix_handle_a = Iter->second.matrix_handle_a;
     matrix_handle_b = Iter->second.matrix_handle_b;
@@ -1664,10 +1661,6 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   if (nnz_host_ptr) {
     *nnz_host_ptr = nnz_c_int;
   }
-  int last_element_of_row_ptr =
-      info_c->get_index_base() == oneapi::mkl::index_base::zero ? 0 : 1;
-  dpct::dpct_memcpy(row_ptr_c + m, &nnz_c_int, sizeof(int), host_to_device);
-  queue.wait();
 }
 
 /// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
@@ -1708,8 +1701,7 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   sycl::queue queue = desc->get_queue();
   detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
                                  row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
-                                 col_ind_b, nullptr, nullptr, nullptr, nullptr,
-                                 info_c, row_ptr_c);
+                                 col_ind_b, info_c, row_ptr_c);
   const auto Iter = desc->get_csrgemm_info_map().find(args);
   if (Iter == desc->get_csrgemm_info_map().end()) {
     throw std::runtime_error("csrgemm_nnz is not invoked previously.");
