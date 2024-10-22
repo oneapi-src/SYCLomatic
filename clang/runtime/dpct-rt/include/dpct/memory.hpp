@@ -1449,12 +1449,12 @@ public:
   using accessor_t = typename memory_t::template accessor_t<2>;
   accessor(pointer_t data, const sycl::range<2> &in_range)
       : _data(data), _range(in_range) {}
-  [[deprecated]]
+
   template <memory_region M = Memory>
-  accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
+  [[deprecated]] accessor(
+      typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
-  [[deprecated]]
-  accessor(const accessor_t &acc, const sycl::range<2> &in_range)
+  [[deprecated]] accessor(const accessor_t &acc, const sycl::range<2> &in_range)
       : accessor(const_cast<pointer_t>(
                      acc.template get_multi_ptr<sycl::access::decorated::no>()
                          .get()),
