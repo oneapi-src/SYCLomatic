@@ -1102,7 +1102,8 @@ template<class T1, class T2, int N> __global__ void foo31();
 #define FOO31(DIMS) foo31<unsigned int, float, DIMS><<<1,1>>>();
 
 //CHECK: {
-//CHECK-NEXT:   dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+//CHECK-NEXT:   dpct::get_device(dpct::get_device_id(q_ct1.get_device()))
+//CHECK-NEXT:       .has_capability_or_fail({sycl::aspect::fp64});
 //CHECK-EMPTY:
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*

@@ -6101,21 +6101,27 @@ void KernelCallExpr::addDevCapCheckStmt() {
   if (!AspectList.empty()) {
     std::string Str;
     llvm::raw_string_ostream OS(Str);
-    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
     if (auto Iter = MapNames::CustomHelperFunctionMap.find(
             HelperFuncCatalog::DefaultQueue);
         Iter != MapNames::CustomHelperFunctionMap.end()) {
+      OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
       OS << Iter->second << ".get_device(), ";
+      OS << "{" << AspectList.front();
+      for (size_t i = 1; i < AspectList.size(); ++i) {
+        OS << ", " << AspectList[i];
+      }
+      OS << "});";
     } else {
       requestFeature(HelperFeatureEnum::device_ext);
+      OS << MapNames::getDpctNamespace() << "get_device(";
+      OS << MapNames::getDpctNamespace() << "get_device_id(";
       printStreamBase(OS);
-      OS << "get_device(), ";
+      OS << "get_device())).has_capability_or_fail({" << AspectList.front();
+      for (size_t i = 1; i < AspectList.size(); ++i) {
+        OS << ", " << AspectList[i];
+      }
+      OS << "});";
     }
-    OS << "{" << AspectList.front();
-    for (size_t i = 1; i < AspectList.size(); ++i) {
-      OS << ", " << AspectList[i];
-    }
-    OS << "});";
     OuterStmts.OthersList.emplace_back(OS.str());
   }
 }
