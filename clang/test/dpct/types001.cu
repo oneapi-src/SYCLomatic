@@ -318,8 +318,8 @@ int main(int argc, char **argv) {
   a = sizeof(fftresult);
   a = sizeof fftresult;
 
-  //CHECK:cudaError_enum error_enum;
-  //CHECK-NEXT:a = sizeof(cudaError_enum);
+  //CHECK:dpct::error_code error_enum;
+  //CHECK-NEXT:a = sizeof(dpct::error_code);
   //CHECK-NEXT:a = sizeof(error_enum);
   //CHECK-NEXT:a = sizeof error_enum;
   cudaError_enum error_enum;

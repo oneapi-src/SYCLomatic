@@ -19,11 +19,27 @@ WARNING_FACTORY_ENTRY(
                            ARG_WC(0))),
     Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 WARNING_FACTORY_ENTRY(
+    "cuGetErrorString",
+    INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cuGetErrorString",
+                                             CALL("cuGetErrorString",
+                                                  ARG_WC(0), ARG_WC(1))),
+                          "\"cuGetErrorString is not supported\"/*", "*/"),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+
+WARNING_FACTORY_ENTRY(
     "cudaGetErrorName",
     CALL_FACTORY_ENTRY("cudaGetErrorName",
                        CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                             ARG_WC(0))),
     Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
+
+WARNING_FACTORY_ENTRY(
+    "cuGetErrorName",
+    INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cuGetErrorName",
+                                             CALL("cuGetErrorName",
+                                                  ARG_WC(0), ARG_WC(1))),
+                          "\"cuGetErrorName is not supported\"/*", "*/"),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),

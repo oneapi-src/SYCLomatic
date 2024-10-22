@@ -307,6 +307,9 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaError",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
                                       HelperFeatureEnum::device_ext)},
+      {"cudaError_enum",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "error_code",
+                                      HelperFeatureEnum::device_ext)},
       {"CUjit_option", std::make_shared<TypeNameRule>("int")},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
@@ -1319,6 +1322,11 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaDevAttrTextureAlignment",
        std::make_shared<EnumNameRule>("get_mem_base_addr_align_in_bytes",
                                       HelperFeatureEnum::device_ext)},
+      // enum cudaError_enum Type
+      {"cudaErrorInvalidConfiguration",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "default_error",
+           HelperFeatureEnum::device_ext)},
       // enum Memcpy Kind
       {"cudaMemcpyHostToHost",
        std::make_shared<EnumNameRule>(
