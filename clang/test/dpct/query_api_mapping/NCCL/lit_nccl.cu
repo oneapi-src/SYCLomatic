@@ -11,9 +11,9 @@
 // NCCLGETERRORSTRING-NEXT:   ncclGetErrorString(r /*ncclResult_t*/);
 // NCCLGETERRORSTRING-NEXT: Is migrated to:
 // NCCLGETERRORSTRING-NEXT:   /*
-// NCCLGETERRORSTRING-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// NCCLGETERRORSTRING-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 // NCCLGETERRORSTRING-NEXT:   */
-// NCCLGETERRORSTRING-NEXT:   "<Placeholder string>";
+// NCCLGETERRORSTRING-NEXT:   dpct::get_error_string_dummy(r);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=ncclGetVersion | FileCheck %s -check-prefix=ncclGetVersion
 // ncclGetVersion: CUDA API:
