@@ -1114,23 +1114,23 @@ void SemaCUDA::checkTargetOverload(FunctionDecl *NewFD,
     if (NewTarget != OldTarget &&
         !SemaRef.IsOverload(NewFD, OldFD, /* UseMemberUsingDeclRules = */ false,
                             /* ConsiderCudaAttrs = */ false)) {
-      if ((NewTarget == CUDAFunctionTarget::HostDevice &&
-           !(getLangOpts().OffloadImplicitHostDeviceTemplates &&
-             isImplicitHostDeviceFunction(NewFD) &&
-             OldTarget == CUDAFunctionTarget::Device)) ||
-          (OldTarget == CUDAFunctionTarget::HostDevice &&
-           !(getLangOpts().OffloadImplicitHostDeviceTemplates &&
-             isImplicitHostDeviceFunction(OldFD) &&
-             NewTarget == CUDAFunctionTarget::Device)) ||
-          (NewTarget == CUDAFunctionTarget::Global) ||
-          (OldTarget == CUDAFunctionTarget::Global)) {
-        Diag(NewFD->getLocation(), diag::err_cuda_ovl_target)
-            << llvm::to_underlying(NewTarget) << NewFD->getDeclName()
-            << llvm::to_underlying(OldTarget) << OldFD;
-        Diag(OldFD->getLocation(), diag::note_previous_declaration);
-        NewFD->setInvalidDecl();
-        break;
-      }
+//      if ((NewTarget == CUDAFunctionTarget::HostDevice &&
+//           !(getLangOpts().OffloadImplicitHostDeviceTemplates &&
+//             isImplicitHostDeviceFunction(NewFD) &&
+//             OldTarget == CUDAFunctionTarget::Device)) ||
+//          (OldTarget == CUDAFunctionTarget::HostDevice &&
+//           !(getLangOpts().OffloadImplicitHostDeviceTemplates &&
+//             isImplicitHostDeviceFunction(OldFD) &&
+//             NewTarget == CUDAFunctionTarget::Device)) ||
+//          (NewTarget == CUDAFunctionTarget::Global) ||
+//          (OldTarget == CUDAFunctionTarget::Global)) {
+//        Diag(NewFD->getLocation(), diag::err_cuda_ovl_target)
+//            << llvm::to_underlying(NewTarget) << NewFD->getDeclName()
+//            << llvm::to_underlying(OldTarget) << OldFD;
+//        Diag(OldFD->getLocation(), diag::note_previous_declaration);
+//        NewFD->setInvalidDecl();
+//        break;
+//      }
       if ((NewTarget == CUDAFunctionTarget::Host &&
            OldTarget == CUDAFunctionTarget::Device) ||
           (NewTarget == CUDAFunctionTarget::Device &&
