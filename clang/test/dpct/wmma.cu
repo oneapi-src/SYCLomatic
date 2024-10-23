@@ -3,8 +3,8 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none --use-experimental-features=matrix -out-root %T/wmma %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/wmma/wmma.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/wmma/wmma.dp.cpp -o %T/wmma/wmma.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/wmma/wmma.dp.cpp -o %T/wmma/wmma.dp.o %}
+#ifndef NO_BUILD_TEST
 #include <assert.h>
 #include <cuda.h>
 #include <iostream>
@@ -201,5 +201,19 @@ int main() {
 
   return 0;
 }
+
+using namespace nvcuda;
+template<typename T>
+__global__ void simple_wmma_gemm(T *d) {
+  wmma::fragment<wmma::accumulator, 16, 16, 16, T> c_frag;
+  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, T>(d), 1, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+  wmma::store_matrix_sync(d, c_frag, 1, wmma::mem_row_major);
+}
+int main() {
+  simple_wmma_gemm<half><<<1, 1>>>(nullptr);
+  simple_wmma_gemm<float><<<1, 1>>>(nullptr);
+  return 0;
+}
+
 // clang-format on
 #endif

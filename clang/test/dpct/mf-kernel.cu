@@ -2,7 +2,7 @@
 #include "mf-kernel.cuh"
 // RUN: echo pass
 
-// CHECK: dpct::global_memory<volatile int, 0> g_mutex(0);
+// CHECK: static dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex=0;
 // CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int &g_mutex)
 __global__ void Reset_kernel_parameters(void)

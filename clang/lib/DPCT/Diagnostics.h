@@ -94,6 +94,12 @@ enum class CMakeScriptMigrationMsgs {
 #undef DEF_COMMENT
 };
 
+#define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
+enum class PythonBuildScriptMigrationMsgs {
+#include "DiagnosticsPythonBuildScriptMigration.inc"
+#undef DEF_COMMENT
+};
+
 namespace DiagnosticsUtils {
 
 extern unsigned int UniqueID;

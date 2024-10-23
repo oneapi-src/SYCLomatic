@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_FFT_API_MIGRAION_H
-#define DPCT_FFT_API_MIGRAION_H
+#ifndef DPCT_FFT_API_MIGRATION_H
+#define DPCT_FFT_API_MIGRATION_H
 
 #include "MapNames.h"
 #include "TextModification.h"
@@ -20,4 +20,4 @@ TextModification *processFunctionPointer(const UnaryOperator *UO);
 } // namespace dpct
 } // namespace clang
 
-#endif // !DPCT_FFT_API_MIGRAION_H
+#endif // !DPCT_FFT_API_MIGRATION_H

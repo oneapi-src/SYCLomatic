@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --use-experimental-features=graph --format-range=none -out-root %T/cudaStreamCaptureStatus_enum_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaStreamCaptureStatus_enum_test/cudaStreamCaptureStatus_enum_test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/cudaStreamCaptureStatus_enum_test/cudaStreamCaptureStatus_enum_test.dp.cpp -o %T/cudaStreamCaptureStatus_enum_test/cudaStreamCaptureStatus_enum_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/cudaStreamCaptureStatus_enum_test/cudaStreamCaptureStatus_enum_test.dp.cpp -o %T/cudaStreamCaptureStatus_enum_test/cudaStreamCaptureStatus_enum_test.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <cuda.h>
 
 int main() {

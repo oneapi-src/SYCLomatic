@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/kernel_without_name-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_without_name-usm/kernel_without_name-usm.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/kernel_without_name-usm/kernel_without_name-usm.dp.cpp -o %T/kernel_without_name-usm/kernel_without_name-usm.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/kernel_without_name-usm/kernel_without_name-usm.dp.cpp -o %T/kernel_without_name-usm/kernel_without_name-usm.dp.o %}
 
 template <class T> __global__ void foo_kernel1(const T *a);
 

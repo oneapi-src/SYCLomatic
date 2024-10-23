@@ -2224,7 +2224,7 @@ void DpctGlobalInfo::resetInfo() {
   EndOfEmptyMacros.clear();
   BeginOfEmptyMacros.clear();
   FileRelpsMap.clear();
-  DigestMap.clear();
+  MsfInfoMap.clear();
   MacroDefines.clear();
   CAPPInfoMap.clear();
   CurrentMaxIndex = 0;
@@ -2384,7 +2384,8 @@ std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
 std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
 std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
     DpctGlobalInfo::FileRelpsMap;
-std::unordered_map<std::string, std::string> DpctGlobalInfo::DigestMap;
+std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
+    DpctGlobalInfo::MsfInfoMap;
 const std::string DpctGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 int DpctGlobalInfo::CurrentMaxIndex = 0;
@@ -2827,7 +2828,7 @@ MemVarInfo::MemVarInfo(unsigned Offset,
   }
   if (Var->hasInit())
     setInitList(Var->getInit(), Var);
-  if (Var->getStorageClass() == SC_Static || getAddressAttr(Var) == Constant) {
+  if (Var->getStorageClass() == SC_Static || getScope() == Global) {
     IsStatic = true;
   }
 

@@ -2246,7 +2246,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           TypePtr = ET->getNamedType().getTypePtr();
 
         // The definition of the type is in current files for analysis and
-        // neither they are typedefed. We donot want to migarte such types.
+        // neither they are typedefed. We donot want to migrate such types.
         if (TypePtr->getTypeClass() != clang::Type::Typedef)
           return;
 
@@ -4186,11 +4186,14 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSgeqrfBatched", "cublasDgeqrfBatched", "cublasCgeqrfBatched",
         "cublasZgeqrfBatched", "cublasSgelsBatched", "cublasDgelsBatched",
         "cublasCgelsBatched", "cublasZgelsBatched", "cublasGemmEx",
-        "cublasSgemmEx", "cublasCgemmEx", "cublasNrm2Ex", "cublasDotEx",
-        "cublasDotcEx", "cublasScalEx", "cublasAxpyEx", "cublasRotEx",
-        "cublasGemmBatchedEx", "cublasGemmStridedBatchedEx", "cublasSdgmm",
-        "cublasDdgmm", "cublasCdgmm", "cublasZdgmm", "cublasSgeam",
-        "cublasDgeam", "cublasCgeam", "cublasZgeam",
+        "cublasSgemmEx", "cublasCgemmEx", "cublasCgemm3mEx", "cublasNrm2Ex",
+        "cublasDotEx", "cublasDotcEx", "cublasScalEx", "cublasAxpyEx",
+        "cublasRotEx", "cublasGemmBatchedEx", "cublasGemmStridedBatchedEx",
+        "cublasSdgmm", "cublasDdgmm", "cublasCdgmm", "cublasZdgmm",
+        "cublasSgeam", "cublasDgeam", "cublasCgeam", "cublasZgeam",
+        "cublasCopyEx", "cublasSwapEx", "cublasIamaxEx", "cublasIaminEx",
+        "cublasAsumEx", "cublasRotmEx", "cublasCsyrkEx", "cublasCsyrk3mEx",
+        "cublasCherkEx", "cublasCherk3mEx",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         "cublasSetKernelStream", "cublasGetVersion",
@@ -4299,6 +4302,15 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasCsyrkx_64", "cublasZsyrkx_64", "cublasCherkx_64",
         "cublasZherkx_64", "cublasHgemm_64", "cublasCgemm3m_64",
         "cublasZgemm3m_64",
+        /*extension*/
+        "cublasNrm2Ex_64", "cublasDotEx_64", "cublasDotcEx_64",
+        "cublasScalEx_64", "cublasAxpyEx_64", "cublasRotEx_64",
+        "cublasGemmBatchedEx_64", "cublasGemmStridedBatchedEx_64",
+        "cublasCopyEx_64", "cublasSwapEx_64", "cublasIamaxEx_64",
+        "cublasIaminEx_64", "cublasAsumEx_64", "cublasRotmEx_64",
+        "cublasSgemmEx_64", "cublasCgemmEx_64", "cublasCgemm3mEx_64",
+        "cublasGemmEx_64", "cublasCsyrkEx_64", "cublasCsyrk3mEx_64",
+        "cublasCherkEx_64", "cublasCherk3mEx_64",
         /*cublasLt*/
         "cublasLtCreate", "cublasLtDestroy", "cublasLtMatmulDescCreate",
         "cublasLtMatmulDescDestroy", "cublasLtMatmulDescSetAttribute",
@@ -4467,7 +4479,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
        FuncName == "cublasDgemmBatched" || FuncName == "cublasCgemmBatched" ||
        FuncName == "cublasZgemmBatched" || FuncName == "cublasStrsmBatched" ||
        FuncName == "cublasDtrsmBatched" || FuncName == "cublasCtrsmBatched" ||
-       FuncName == "cublasZtrsmBatched" || FuncName == "cublasGemmBatchedEx")) {
+       FuncName == "cublasZtrsmBatched" || FuncName == "cublasGemmBatchedEx" ||
+       FuncName == "cublasGemmBatchedEx_64")) {
     report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
     return;
   }
@@ -6017,6 +6030,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
       requestHelperFeatureForEnumNames(AttributeName);
+
+      if (AttributeName == "cudaDevAttrMaxSharedMemoryPerBlockOptin") {
+        report(CE->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false,
+               AttributeName);
+      }
 
       ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
       ReplStr += StmtStrArg2;

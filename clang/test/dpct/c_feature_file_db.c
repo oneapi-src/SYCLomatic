@@ -12,11 +12,11 @@
 // RUN: echo "]" >> compile_commands.json
 // RUN: dpct -p=. --out-root=./out --cuda-include-path="%cuda-path/include"  --stop-on-parse-err --extra-arg="-xc"  --extra-arg="-I%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/c_feature_file_db/out/c_feature_file_db.c.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/c_feature_file_db/out/c_feature_file_db.c.dp.cpp -o %T/c_feature_file_db/out/c_feature_file_db.c.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/c_feature_file_db/out/c_feature_file_db.c.dp.cpp -o %T/c_feature_file_db/out/c_feature_file_db.c.dp.o %}
 // RUN: cd ..
 // RUN: rm -rf ./c_feature_file_db
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 #include "cuda_runtime.h"
