@@ -16,8 +16,6 @@ auto UseOccupancyCalculation = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useOccupancyCalculation();
 };
 
-#define REWRITER_FACTORY_ENTRY(FuncName, RewriterFactory, ...)                 \
-  {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName,                                             \
                          UnsupportFunctionRewriterFactory<std::string>, MsgID, \

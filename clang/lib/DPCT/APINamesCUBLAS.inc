@@ -711,10 +711,9 @@ GELS_BATCHED(cublasZgelsBatched)
 #undef GELS_BATCHED
 
 WARNING_FACTORY_ENTRY("cublasGetStatusString",
-                      CALL_FACTORY_ENTRY("cublasGetStatusString",
-                                         CALL(MapNames::getDpctNamespace() +
-                                                  "get_error_string_dummy",
-                                              ARG_WC(0))),
+                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY("cublasGetStatusString",
+                                    MapNames::getDpctNamespace() +
+                                        "get_error_string_dummy"),
                       Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 
 #define GEMM_EX(NAME, COMPUTE_TYPE)                                            \

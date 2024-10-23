@@ -141,8 +141,6 @@ static inline bool isTargetMathFunction(const FunctionDecl *FD) {
   return true;
 }
 
-#define REWRITER_FACTORY_ENTRY(FuncName, RewriterFactory, ...)                 \
-  {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \

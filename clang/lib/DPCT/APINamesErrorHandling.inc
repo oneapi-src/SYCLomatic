@@ -6,24 +6,21 @@
 //
 //===----------------------------------------------------------------------===//
 
-WARNING_FACTORY_ENTRY(
-    "cudnnGetErrorString",
-   CALL_FACTORY_ENTRY("cudnnGetErrorString",
-                      CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
-                           ARG_WC(0))),
-    Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
-WARNING_FACTORY_ENTRY(
-    "cudaGetErrorString",
-   CALL_FACTORY_ENTRY("cudaGetErrorString",
-                      CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
-                           ARG_WC(0))),
-    Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
-WARNING_FACTORY_ENTRY(
-    "cudaGetErrorName",
-    CALL_FACTORY_ENTRY("cudaGetErrorName",
-                       CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
-                            ARG_WC(0))),
-    Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
+WARNING_FACTORY_ENTRY("cudnnGetErrorString",
+                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY("cudnnGetErrorString",
+                                    MapNames::getDpctNamespace() +
+                                        "get_error_string_dummy"),
+                      Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
+WARNING_FACTORY_ENTRY("cudaGetErrorString",
+                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY("cudaGetErrorString",
+                                    MapNames::getDpctNamespace() +
+                                        "get_error_string_dummy"),
+                      Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
+WARNING_FACTORY_ENTRY("cudaGetErrorName",
+                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY("cudaGetErrorName",
+                                    MapNames::getDpctNamespace() +
+                                        "get_error_string_dummy"),
+                      Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),
@@ -49,12 +46,11 @@ CONDITIONAL_FACTORY_ENTRY(
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("0")),
         Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0))
 
-WARNING_FACTORY_ENTRY(
-    "ncclGetErrorString",
-    CALL_FACTORY_ENTRY("ncclGetErrorString",
-                       CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
-                            ARG_WC(0))),
-    Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
+WARNING_FACTORY_ENTRY("ncclGetErrorString",
+                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY("ncclGetErrorString",
+                                    MapNames::getDpctNamespace() +
+                                        "get_error_string_dummy"),
+                      Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),

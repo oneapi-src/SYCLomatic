@@ -389,8 +389,6 @@ thrustFactory(const std::string &thrustFunc,
 }
 
 #define THRUST_FUNCTOR(x) makeThrustFunctorArgCreator(x)
-#define REWRITER_FACTORY_ENTRY(FuncName, RewriterFactory, ...)                 \
-  {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 // clang-format off
