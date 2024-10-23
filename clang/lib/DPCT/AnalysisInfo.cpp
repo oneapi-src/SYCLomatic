@@ -268,6 +268,15 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
   }
   EA.applyAllSubExprRepl();
 }
+HelperFuncCatalog getQueueKind() {
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    return HelperFuncCatalog::GetDefaultQueue;
+  }
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
+    return HelperFuncCatalog::GetInOrderQueue;
+  }
+  return HelperFuncCatalog::GetOutOfOrderQueue;
+}
 
 ///// class FreeQueriesInfo /////
 class FreeQueriesInfo {
@@ -1231,9 +1240,8 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
 }
 const std::string &DpctGlobalInfo::getDefaultQueueFreeFuncCall() {
   static const std::string DefaultQueueFreeFuncCall = [&]() {
-    auto Iter =
-        MapNames::CustomHelperFunctionMap.find(HelperFuncCatalog::DefaultQueue);
-    if (Iter != MapNames::CustomHelperFunctionMap.end()) {
+    if (auto Iter = MapNames::CustomHelperFunctionMap.find(getQueueKind());
+        Iter != MapNames::CustomHelperFunctionMap.end()) {
       return Iter->second;
     }
     return MapNames::getDpctNamespace() + "get_" +
@@ -6101,8 +6109,7 @@ void KernelCallExpr::addDevCapCheckStmt() {
   if (!AspectList.empty()) {
     std::string Str;
     llvm::raw_string_ostream OS(Str);
-    if (auto Iter = MapNames::CustomHelperFunctionMap.find(
-            HelperFuncCatalog::DefaultQueue);
+    if (auto Iter = MapNames::CustomHelperFunctionMap.find(getQueueKind());
         Iter != MapNames::CustomHelperFunctionMap.end()) {
       OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
       OS << Iter->second << ".get_device(), ";

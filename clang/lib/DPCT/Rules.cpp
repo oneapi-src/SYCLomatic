@@ -278,9 +278,18 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
 }
 
 void registerHelperFunctionRule(MetaRuleObject &R) {
-  if (R.In == "DefaultQueue" && R.Priority == RulePriority::Takeover) {
-    MapNames::CustomHelperFunctionMap.insert(
-        {dpct::HelperFuncCatalog::DefaultQueue, R.Out});
+  if ((R.In == "get_default_queue" || R.In == "get_in_order_queue" ||
+       R.In == "get_out_of_order_queue") &&
+      R.Priority == RulePriority::Takeover) {
+    if (R.In == "get_default_queue")
+      MapNames::CustomHelperFunctionMap.insert(
+          {dpct::HelperFuncCatalog::GetDefaultQueue, R.Out});
+    else if (R.In == "get_in_order_queue")
+      MapNames::CustomHelperFunctionMap.insert(
+          {dpct::HelperFuncCatalog::GetInOrderQueue, R.Out});
+    else
+      MapNames::CustomHelperFunctionMap.insert(
+          {dpct::HelperFuncCatalog::GetOutOfOrderQueue, R.Out});
     dpct::DpctGlobalInfo::setUsingDRYPattern(false);
     dpct::DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes().insert(
         R.Includes.begin(), R.Includes.end());
