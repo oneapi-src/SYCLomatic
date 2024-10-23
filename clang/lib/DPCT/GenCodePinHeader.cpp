@@ -102,13 +102,14 @@ void GenCodePinHeaderRule::processTemplateTypeForCodePin(
       for (const auto &Base : CRD->bases()) {
         QualType BaseType = Base.getType();
         processCodePinTypeMemberOrBase(BaseType, "", TemplateVI, MembersType,
-                                       true, false, IsBaseMember, PrintPolicy);
+                                       CodePinVarInfoType::Base, false,
+                                       IsBaseMember, PrintPolicy);
       }
 
       for (auto F : CRD->fields()) {
-        processCodePinTypeMemberOrBase(F->getType(), F->getName().str(),
-                                       TemplateVI, MembersType, false, false,
-                                       IsBaseMember, PrintPolicy);
+        processCodePinTypeMemberOrBase(
+            F->getType(), F->getName().str(), TemplateVI, MembersType,
+            CodePinVarInfoType::Field, false, IsBaseMember, PrintPolicy);
       }
       TemplateVec.push_back({HashKey, TemplateVI});
     }
@@ -146,7 +147,7 @@ void GenCodePinHeaderRule::saveCodePinTypeDeps(
 
 void GenCodePinHeaderRule::processCodePinTypeMemberOrBase(
     QualType MT, std::string Name, VarInfoForCodePin &VarInfo,
-    std::vector<QualType> &MembersType, bool IsBase, bool IsBFS,
+    std::vector<QualType> &MembersType, CodePinVarInfoType InfoType, bool IsBFS,
     bool IsBaseMember, clang::PrintingPolicy &PrintPolicy) {
   MemberOrBaseInfoForCodePin MemberOrBaseInfo;
   MT = MT.getUnqualifiedType();
@@ -179,9 +180,9 @@ void GenCodePinHeaderRule::processCodePinTypeMemberOrBase(
     }
   }
 
-  PrintPolicy.SuppressScope = 1;
+  PrintPolicy.SuppressScope = true;
   std::string MemberOrBaseTypeName = NextMT.getAsString(PrintPolicy);
-  PrintPolicy.SuppressScope = 0;
+  PrintPolicy.SuppressScope = false;
   MemberOrBaseInfo.UserDefinedTypeFlag =
       isTypeInAnalysisScope(NextMT.getTypePtrOrNull());
   MemberOrBaseInfo.TypeNameInCuda = MemberOrBaseTypeName;
@@ -189,9 +190,9 @@ void GenCodePinHeaderRule::processCodePinTypeMemberOrBase(
       NextMT, DpctGlobalInfo::getContext(), true);
   MemberOrBaseInfo.MemberName = Name;
   MemberOrBaseInfo.IsBaseMember = IsBaseMember;
-  if (IsBase) {
+  if (CodePinVarInfoType::Base == InfoType) {
     VarInfo.Bases.push_back(MemberOrBaseInfo);
-  } else {
+  } else if (CodePinVarInfoType::Field == InfoType) {
     VarInfo.Members.push_back(MemberOrBaseInfo);
   }
 }
@@ -209,14 +210,24 @@ void GenCodePinHeaderRule::collectMemberInfo(
     return;
   }
   if (const TypedefType *TT = T->getAs<TypedefType>()) {
+    if (const NamespaceDecl *ND =
+            dyn_cast<NamespaceDecl>(TT->getDecl()->getDeclContext())) {
+      getNameSpace(ND, VI.Namespaces);
+      VI.HashKey = getStrFromLoc(ND->getBeginLoc());
+    }
     VI.IsTypeDef = true;
     llvm::StringRef TypeName =
         TT->getCanonicalTypeInternal()->getAsRecordDecl()->getName();
-    if (TypeName.empty())
+    if (TypeName.empty()) {
       VI.OrgTypeName =
           "dpct_type_" + getHashStrFromLoc(RD->getBeginLoc()).substr(0, 6);
-    else
-      VI.OrgTypeName = TypeName.str();
+    } else {
+      VI.OrgTypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+          TT->getCanonicalTypeInternal());
+      processCodePinTypeMemberOrBase(TT->getCanonicalTypeInternal(), "", VI,
+                                     MembersType, CodePinVarInfoType::Alias,
+                                     true, IsBaseMember, PrintPolicy);
+    }
   }
   VI.IsValid = true;
   if (VI.VarRecordType.empty()) {
@@ -228,14 +239,13 @@ void GenCodePinHeaderRule::collectMemberInfo(
       getNameSpace(ND, VI.Namespaces);
     }
   }
-
   if (const ClassTemplateSpecializationDecl *SD =
           dyn_cast<ClassTemplateSpecializationDecl>(RD)) {
     processTemplateTypeForCodePin(SD, VI, MembersType, IsBaseMember,
                                   PrintPolicy);
   }
 
-  if (VI.HashKey.empty()) {
+  if (VI.HashKey.empty() && !VI.IsTypeDef) {
     VI.HashKey = getStrFromLoc(RD->getBeginLoc());
   }
 
@@ -256,8 +266,9 @@ void GenCodePinHeaderRule::collectMemberInfo(
 
   for (const auto &Base : RD->bases()) {
     QualType BaseType = Base.getType();
-    processCodePinTypeMemberOrBase(BaseType, "", VI, MembersType, true, true,
-                                   IsBaseMember, PrintPolicy);
+    processCodePinTypeMemberOrBase(BaseType, "", VI, MembersType,
+                                   CodePinVarInfoType::Base, true, IsBaseMember,
+                                   PrintPolicy);
     if (isTypeInAnalysisScope(BaseType.getTypePtrOrNull())) {
       collectMemberInfo(BaseType, VI, MembersType, true, PrintPolicy);
     }
@@ -265,8 +276,8 @@ void GenCodePinHeaderRule::collectMemberInfo(
 
   for (auto F : RD->fields()) {
     processCodePinTypeMemberOrBase(F->getType(), F->getName().str(), VI,
-                                   MembersType, false, true, IsBaseMember,
-                                   PrintPolicy);
+                                   MembersType, CodePinVarInfoType::Field, true,
+                                   IsBaseMember, PrintPolicy);
   }
 }
 
@@ -296,33 +307,11 @@ void GenCodePinHeaderRule::collectInfoForCodePinDumpFunction(QualType T) {
           !isTypeInAnalysisScope(QT.getTypePtrOrNull())) {
         continue;
       }
-      std::string Scope = "";
-      std::string TypeName = QT.getAsString(PrintPolicy);
+      std::string TypeName = "";
       std::string TypeNameWithoutScope = "";
-      // For typedef type, use the alias name as the TypeName.
-      if (QT->isTypedefNameType()) {
-        TypeNameWithoutScope =
-            QT->getAs<TypedefType>()->getDecl()->getName().str();
-      } else {
-        PrintPolicy.SuppressScope = true;
-        TypeNameWithoutScope = QT.getAsString(PrintPolicy);
-        PrintPolicy.SuppressScope = false;
-      }
-
-      // When type definition and type usage are both in the namespace, the
-      // namespace scope can omit. Call the desugared type to get the namespace
-      // scope.
-      if (QT->getAsRecordDecl()->getDeclContext()->isNamespace()) {
-        TypeName = TypeNameWithoutScope;
-        std::string DesuagerType =
-            QT.getDesugaredType(Ctx).getAsString(PrintPolicy);
-        size_t Pos = DesuagerType.rfind("::");
-        if (Pos != std::string::npos) {
-          Scope = DesuagerType.substr(0, Pos + 2);
-        }
-      }
-      TypeName = Scope + TypeName;
-
+      TypeName = DpctGlobalInfo::getUnqualifiedTypeName(QT);
+      TypeNameWithoutScope =
+          DpctGlobalInfo::getUnqualifiedAndUnScopeTypeName(QT);
       auto &Vec = DpctGlobalInfo::getCodePinTypeInfoVec();
       auto Iter =
           std::find_if(Vec.begin(), Vec.end(), [&TypeName](const auto &pair) {

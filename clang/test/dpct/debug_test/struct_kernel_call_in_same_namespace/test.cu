@@ -6,24 +6,39 @@
 // RUN: %if build_lit %{icpx -c -fsycl %T/debug_test/struct_kernel_call_in_same_namespace_codepin_sycl/test.dp.cpp -o %T/debug_test/struct_kernel_call_in_same_namespace_codepin_sycl/test.dp.o %}
 #include <cuda.h>
 #include <iostream>
-namespace test_codepin {
+namespace test {
 struct P2 {
   int x;
   int y;
 };
-using Point2D = P2;
+} // namespace test
+
+
+struct CCC2 {
+  int x;
+  int y;
+};
+
+namespace test_codepin {
+using Point2D = test::P2;
 };
 
 //CHECK:  namespace nnn {
 namespace nnn {
- struct PP2{
+struct PP2 {
   int x;
   int y;
-} ;
+};
 
 using INT = int;
 
 __global__ void kernel2d(test_codepin::Point2D *a, test_codepin::Point2D *b, test_codepin::Point2D *c) {
+  int i = threadIdx.x;
+  c[i].x = a[i].x + b[i].x;
+  c[i].y = a[i].y + b[i].y;
+}
+
+__global__ void kernel2d_org(test::P2 *a, test::P2 *b, test::P2 *c) {
   int i = threadIdx.x;
   c[i].x = a[i].x + b[i].x;
   c[i].y = a[i].y + b[i].y;
@@ -55,6 +70,7 @@ void test() {
   cudaMemcpy(d_b2d, h_2d, sizeof(test_codepin::Point2D) * NUM, cudaMemcpyHostToDevice);
   cudaMemcpy(d_c2d, h_2d, sizeof(test_codepin::Point2D) * NUM, cudaMemcpyHostToDevice);
   kernel2d<<<1, NUM>>>(d_a2d, d_b2d, d_c2d);
+  kernel2d_org<<<1, NUM>>>(d_a2d, d_b2d, d_c2d);
   cudaDeviceSynchronize();
 
   PP2 h_pp2_2d[NUM];
@@ -86,10 +102,9 @@ void test() {
   kerneel_int<<<1, NUM>>>(d_int_a2d, d_int_b2d, d_int_c2d);
   cudaDeviceSynchronize();
 }
-}; // namespace test_codepin
+}; // namespace nnn
 
 int main() {
-  
 
   return 0;
 }

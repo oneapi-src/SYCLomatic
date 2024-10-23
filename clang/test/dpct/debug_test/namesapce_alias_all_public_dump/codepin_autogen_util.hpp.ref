@@ -1,21 +1,23 @@
 //CHECK: #ifndef __DPCT_CODEPIN_AUTOGEN_UTIL__
 //CHECK: #define __DPCT_CODEPIN_AUTOGEN_UTIL__
 
-//CHECK: struct dpct_type_{{[0-9]+}};
-//CHECK: using PP2 = dpct_type_{{[0-9]+}};
-
 //CHECK: namespace test_codepin{
 //CHECK: struct P2;
-//CHECK: using Point2D = P2;
 //CHECK: }
 
+//CHECK: namespace test_codepin{
+//CHECK: using Point2D = test_codepin::P2;
+//CHECK: }
+
+//CHECK: struct dpct_type_{{[0-9]+}};
+//CHECK: using PP2 = dpct_type_{{[0-9]+}};
 
 //CHECK: namespace dpct {
 //CHECK: namespace experimental {
 //CHECK: namespace codepin {
 //CHECK: namespace detail {
 
-//CHECK: struct PP2_codepin {
+//CHECK: struct P2_codepin {
 //CHECK: public:
 //CHECK:   int x;
 //CHECK:   int y;

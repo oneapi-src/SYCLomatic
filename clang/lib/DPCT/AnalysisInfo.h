@@ -180,7 +180,7 @@ struct CudaArchPPInfo {
   std::unordered_map<unsigned, DirectiveInfo> ElInfo;
   bool isInHDFunc = false;
 };
-
+enum class CodePinVarInfoType { Field, Base, Alias };
 struct MemberOrBaseInfoForCodePin {
   bool UserDefinedTypeFlag = false;
   int PointerDepth = 0;
@@ -1050,16 +1050,21 @@ public:
   getAbsolutePath(FileEntryRef File);
   static std::pair<clang::tooling::UnifiedPath, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */);
-  static std::string getTypeName(QualType QT, const ASTContext &Context);
-  static std::string getTypeName(QualType QT) {
-    return getTypeName(QT, DpctGlobalInfo::getContext());
+  static std::string getTypeName(QualType QT, const ASTContext &Context,
+                                 bool SuppressScope = false);
+  static std::string getTypeName(QualType QT, bool SuppressScope = false) {
+    return getTypeName(QT, DpctGlobalInfo::getContext(), SuppressScope);
   }
   static std::string getUnqualifiedTypeName(QualType QT,
                                             const ASTContext &Context) {
-    return getTypeName(QT.getUnqualifiedType(), Context);
+    return getTypeName(QT.getUnqualifiedType(), Context, false);
   }
   static std::string getUnqualifiedTypeName(QualType QT) {
     return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
+  }
+  static std::string getUnqualifiedAndUnScopeTypeName(QualType QT) {
+    return getTypeName(QT.getUnqualifiedType(), DpctGlobalInfo::getContext(),
+                       true);
   }
   /// This function will return the replaced type name with qualifiers.
   /// Currently, since clang do not support get the order of original
