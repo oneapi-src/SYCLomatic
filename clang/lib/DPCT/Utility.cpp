@@ -2385,6 +2385,17 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
                                                    Range.getEnd());
 }
 
+std::string getStringInRange(clang::SourceRange Range,
+                             clang::SourceLocation RangeBegin,
+                             clang::SourceLocation RangeEnd,
+                             bool IncludeLastToken) {
+  auto ResultRange =
+      getRangeInRange(Range, RangeBegin, RangeEnd, IncludeLastToken);
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  return std::string(SM.getCharacterData(ResultRange.first),
+              SM.getCharacterData(ResultRange.second));
+}
+
 unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag) {
   Flag = true;
