@@ -13,6 +13,10 @@ using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 void clang::dpct::WMMARule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto FuncName = []() {
+    return hasAnyName("fill_fragment", "load_matrix_sync", "mma_sync",
+                      "store_matrix_sync");
+  };
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(allOf(
                   hasAnyName("fragment", "matrix_a", "matrix_b", "row_major",
@@ -20,10 +24,11 @@ void clang::dpct::WMMARule::registerMatcher(ast_matchers::MatchFinder &MF) {
                   hasDeclContext(namespaceDecl(hasName("wmma")))))))))
           .bind("type"),
       this);
-  MF.addMatcher(callExpr(callee(functionDecl(allOf(
-                             hasAnyName("fill_fragment", "load_matrix_sync",
-                                        "mma_sync", "store_matrix_sync"),
-                             hasDeclContext(namespaceDecl(hasName("wmma")))))))
+  MF.addMatcher(callExpr(anyOf(callee(functionDecl(allOf(
+                                   FuncName(), hasDeclContext(namespaceDecl(
+                                                   hasName("wmma")))))),
+                               callee(unresolvedLookupExpr(
+                                   hasAnyDeclaration(namedDecl(FuncName()))))))
                     .bind("call"),
                 this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(allOf(
