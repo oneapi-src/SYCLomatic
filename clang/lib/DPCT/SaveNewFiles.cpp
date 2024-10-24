@@ -785,7 +785,7 @@ void genCodePinDecl(dpct::RawFDOStream &RS, std::vector<std::string> &SortedVec,
           continue;
         }
         RS << "  " << getCodePinPostfixName(Info.Members[i], IsForCUDADebug)
-           << " " << Info.Members[i].MemberName;
+           << " " << Info.Members[i].CodePinMemberName;
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
         }
@@ -849,8 +849,8 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
         }
-        RS << ">::dump(ss, value." << Info.Members[i].MemberName << ", queue);"
-           << getNL() << "    }" << getNL();
+        RS << ">::dump(ss, value." << Info.Members[i].CodePinMemberName
+           << ", queue);" << getNL() << "    }" << getNL();
       }
     }
     RS << getNL() << "  }" << getNL();
