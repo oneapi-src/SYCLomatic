@@ -19,6 +19,7 @@
 #include "GroupFunctionAnalyzer.h"
 #include "Homoglyph.h"
 #include "LIBCUAPIMigration.h"
+#include "MapNames.h"
 #include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
@@ -1703,35 +1704,36 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
               "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
               "cudaDeviceProp", "cudaStreamCaptureStatus",
-              "cudaGraphExecUpdateResult", "cudaPitchedPtr",
-              "thrust::counting_iterator", "thrust::transform_iterator",
-              "thrust::permutation_iterator", "thrust::iterator_difference",
-              "cusolverDnHandle_t", "cusolverDnParams_t", "gesvdjInfo_t",
-              "syevjInfo_t", "thrust::device_malloc_allocator",
-              "thrust::divides", "thrust::tuple", "thrust::maximum",
-              "thrust::multiplies", "thrust::plus", "cudaDataType_t",
-              "cudaError_t", "CUresult", "CUdevice", "cudaEvent_t",
-              "cublasStatus_t", "cuComplex", "cuFloatComplex",
-              "cuDoubleComplex", "CUevent", "cublasFillMode_t",
-              "cublasDiagType_t", "cublasSideMode_t", "cublasOperation_t",
-              "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
-              "curandStatus_t", "cudaStream_t", "cusparseStatus_t",
-              "cusparseDiagType_t", "cusparseFillMode_t", "cusparseIndexBase_t",
-              "cusparseMatrixType_t", "cusparseAlgMode_t",
-              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
-              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
-              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
-              "cublasDataType_t", "curandState_t", "curandState",
-              "curandStateXORWOW_t", "curandStateXORWOW",
-              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
-              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
-              "curandRngType_t", "curandOrdering_t", "cufftHandle", "cufftReal",
-              "cufftDoubleReal", "cufftComplex", "cufftDoubleComplex",
-              "cufftResult_t", "cufftResult", "cufftType_t", "cufftType",
-              "thrust::pair", "CUdeviceptr", "cudaDeviceAttr", "CUmodule",
-              "CUjit_option", "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
+              "cudaGraphExecUpdateResult", "cudaKernelNodeParams",
+              "cudaPitchedPtr", "thrust::counting_iterator",
+              "thrust::transform_iterator", "thrust::permutation_iterator",
+              "thrust::iterator_difference", "cusolverDnHandle_t",
+              "cusolverDnParams_t", "gesvdjInfo_t", "syevjInfo_t",
+              "thrust::device_malloc_allocator", "thrust::divides",
+              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
+              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
+              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
+              "cuFloatComplex", "cuDoubleComplex", "CUevent",
+              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
+              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
+              "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
+              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseAlgMode_t", "cusparseOperation_t", "cusparseMatDescr_t",
+              "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
+              "cusparsePointerMode_t", "cublasGemmAlgo_t",
+              "cusparseSolveAnalysisInfo_t", "cudaDataType", "cublasDataType_t",
+              "curandState_t", "curandState", "curandStateXORWOW_t",
+              "curandStateXORWOW", "curandStatePhilox4_32_10_t",
+              "curandStatePhilox4_32_10", "curandStateMRG32k3a_t",
+              "curandStateMRG32k3a", "thrust::minus", "thrust::negate",
+              "thrust::logical_or", "thrust::equal_to", "thrust::less",
+              "cudaSharedMemConfig", "curandGenerator_t", "curandRngType_t",
+              "curandOrdering_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
+              "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
+              "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
+              "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
+              "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
               "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
@@ -2313,10 +2315,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string CanonicalTypeStr = DpctGlobalInfo::getUnqualifiedTypeName(
         TL->getType().getCanonicalType());
 
-    if (CanonicalTypeStr == "cudaStreamCaptureStatus") {
+    if (CanonicalTypeStr == "cudaStreamCaptureStatus" || "cudaKernelNodeParams") {
       if (!DpctGlobalInfo::useExtGraph()) {
         report(TL->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
-               "cudaStreamCaptureStatus", "--use-experimental-features=graph");
+               CanonicalTypeStr, "--use-experimental-features=graph");
       }
     }
 
@@ -8305,6 +8307,31 @@ static void checkCallGroupFunctionInControlFlow(FunctionDecl *FD) {
   (void)A.checkCallGroupFunctionInControlFlow(FD);
 }
 
+void KernelLauncherRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(declRefExpr(to(functionDecl(hasAttr(attr::CUDAGlobal))))
+                    .bind("functionPointer"),
+                this);
+}
+
+void KernelLauncherRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto *DRE = getNodeAsType<DeclRefExpr>(Result, "functionPointer")) {
+    const FunctionDecl *FuncDecl = dyn_cast<FunctionDecl>(DRE->getDecl());
+    if (!FuncDecl)
+      return;
+
+    std::string oldName = FuncDecl->getNameInfo().getName().getAsString();
+    std::string newName = oldName + "_launcher";
+
+    // Perform the replacement
+    SourceLocation startLoc = DRE->getBeginLoc();
+    emplaceTransformation(
+        new ReplaceText(startLoc, oldName.length(), std::move(newName)));
+  }
+}
+
+REGISTER_RULE(KernelLauncherRule, PassKind::PK_Analysis)
+
 // __device__ function call information collection
 void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeviceFunctionMatcher =
@@ -8389,6 +8416,81 @@ void DeviceFunctionDeclRule::runRule(
     } else {
       Iter->second.push_back(
           std::make_pair(BeginLocInfo.second, EndLocInfo.second));
+    }
+    if (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>()) {
+      bool isSharedMemoryKernel = false;
+      std::string LauncherKernelName = FD->getNameAsString() + "_launcher";
+      std::string LauncherFuncStr;
+
+      std::vector<std::string> LauncherParamList = {
+          MapNames::getClNamespace() + "range<3> blockSize",
+          MapNames::getClNamespace() + "range<3> gridSize",
+          "std::size_t sharedMemory",
+          MapNames::getDpctNamespace() + "queue_ptr queue", "void* args[]"};
+
+      for (const Stmt *Child : FD->getBody()->children()) {
+        if (const DeclStmt *Decl = dyn_cast<DeclStmt>(Child)) {
+          for (const auto *D : Decl->decls()) {
+            if (const VarDecl *Var = dyn_cast<VarDecl>(D)) {
+              if (Var->hasAttr<CUDASharedAttr>()) {
+                isSharedMemoryKernel = true;
+              }
+            }
+          }
+        }
+      }
+
+      std::string LauncherParamStr = llvm::join(LauncherParamList, ", ");
+
+      std::string LauncherFuncPrototype =
+          "void " + LauncherKernelName + "(" + LauncherParamStr + ")";
+
+      std::string LauncherFuncArgs;
+      std::vector<std::string> LauncherFuncArgNames;
+      for (unsigned i = 0; i < FD->getNumParams(); i++) {
+        auto Param = FD->getParamDecl(i);
+        LauncherFuncArgNames.push_back(Param->getNameAsString());
+        LauncherFuncArgs += Param->getType().getAsString() + " " +
+                            Param->getNameAsString() + "=" + "*(" +
+                            Param->getType().getAsString() + "*)" + "args[" +
+                            std::to_string(i) + "];\n";
+      }
+
+      std::string LauncherFuncSubmit = "queue->submit([&](" +
+                                       MapNames::getClNamespace() +
+                                       "handler& cgh) {\n";
+      if (isSharedMemoryKernel) {
+        LauncherFuncSubmit += MapNames::getClNamespace() +
+                              "local_accessor<uint8_t,1> dpct_local_acc_ct1(" +
+                              MapNames::getClNamespace() +
+                              "range<1>(sharedMemBytes), cgh);";
+      }
+      LauncherFuncSubmit += "cgh.parallel_for(\n" + MapNames::getClNamespace() +
+                            "nd_range<3>(gridSize, blockSize),\n[=](" +
+                            MapNames::getClNamespace() +
+                            "nd_item<3> item_ct1) {" + FD->getNameAsString() +
+                            "(" + llvm::join(LauncherFuncArgNames, ", ") +
+                            ",item_ct1";
+
+      if (isSharedMemoryKernel) {
+        LauncherFuncSubmit += ",dpct_local_acc_ct1.get_multi_ptr<sycl::access::"
+                              "decorated::no>().get()";
+      }
+      LauncherFuncSubmit += ");});\n});";
+
+      LauncherFuncStr += LauncherFuncPrototype + "{\n" + "" + LauncherFuncArgs +
+                         LauncherFuncSubmit + "\n}";
+
+      auto EndLoc = FD->getEndLoc();
+
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto &LO = DpctGlobalInfo::getContext().getLangOpts();
+
+      EndLoc = clang::Lexer::getLocForEndOfToken(EndLoc, 0, SM, LO);
+
+      auto Repl = new InsertText(EndLoc, "\n\n" + LauncherFuncStr);
+      Repl->setBlockLevelFormatFlag();
+      emplaceTransformation(Repl);
     }
   }
 
@@ -14918,7 +15020,7 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
                       "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
-                      "cudaGraphAddDependencies", "cudaGraphExecUpdate");
+                      "cudaGraphAddDependencies", "cudaGraphExecUpdate", "cudaGraphAddKernelNode");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),

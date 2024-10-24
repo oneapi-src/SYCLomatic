@@ -24,6 +24,19 @@ typedef sycl::ext::oneapi::experimental::command_graph<
 
 typedef sycl::ext::oneapi::experimental::node *node_ptr;
 
+typedef void (*kernel_launcher_func_ptr)(sycl::range<3>, sycl::range<3>,
+                                         std::size_t, sycl::queue *, void **);
+
+struct node_params {
+  void *func;
+  sycl::range<3> gridDim;
+  sycl::range<3> blockDim;
+  std::size_t sharedMemBytes;
+  std::optional<sycl::queue *> queue;
+  void **kernelParams;
+  void *extra;
+};
+
 namespace detail {
 class graph_mgr {
 public:
@@ -131,6 +144,39 @@ static void add_dependencies(dpct::experimental::command_graph_ptr graph,
   for (std::size_t i = 0; i < numberOfDependencies; i++) {
     graph->make_edge(*fromNodes[i], *toNodes[i]);
   }
+}
+
+static void add_kernel_node(dpct::experimental::node_ptr *newNode,
+                            dpct::experimental::command_graph_ptr graph,
+                            dpct::experimental::node_ptr *dependecies,
+                            std::size_t numberOfDependencies,
+                            dpct::experimental::node_params *params) {
+  if (!params->queue) {
+    std::cout << "No queue assigned\n";
+    params->queue = &dpct::get_default_queue();
+  }
+  if (numberOfDependencies == 0) {
+    *newNode = new sycl::ext::oneapi::experimental::node(
+        graph->add([&](sycl::handler &h) {
+          params->func(params->gridDim, params->blockDim,
+                       params->sharedMemBytes, params->queue.value(),
+                       params->kernelParams);
+        }));
+    return;
+  }
+  std::vector<sycl::ext::oneapi::experimental::node> dependencies;
+  for (std::size_t i = 0; i < numberOfDependencies; i++) {
+    dependencies.push_back(*dependecies[i]);
+  }
+  *newNode = new sycl::ext::oneapi::experimental::node(graph->add(
+      [&](sycl::handler &h) {
+        kernel_launcher_func_ptr func = (kernel_launcher_func_ptr)params->func;
+        func(params->gridDim, params->blockDim, params->sharedMemBytes,
+             params->queue.value(), params->kernelParams);
+      },
+      sycl::property_list{
+          sycl::ext::oneapi::experimental::property::node::depends_on(
+              dependencies)}));
 }
 
 } // namespace experimental

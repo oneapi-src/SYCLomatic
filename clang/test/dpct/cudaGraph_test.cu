@@ -5,6 +5,7 @@
 // RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraph_test/cudaGraph_test.dp.cpp -o %T/cudaGraph_test/cudaGraph_test.dp.o %}
 
 #include <cuda.h>
+
 #define CUDA_CHECK_THROW(x)  \
   do {                       \
     cudaError_t _result = x; \
