@@ -9,9 +9,9 @@
 
 void foo1(cublasStatus_t s) {
   //CHECK:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error string: %s", "<Placeholder string>");
+  //CHECK-NEXT:printf("Error string: %s", dpct::get_error_string_dummy(s));
   printf("Error string: %s", cublasGetStatusString(s));
   cublasHandle_t handle;
   void *workspace;
@@ -20,6 +20,21 @@ void foo1(cublasStatus_t s) {
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cublasSetWorkspace was removed because this functionality is redundant in SYCL.
   //CHECK-NEXT:*/
   cublasSetWorkspace(handle, workspace, size);
+}
+
+//CHECK:void foo11(int err) {
+//CHECK:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo11(cublasStatus_t err) {
+  cublasGetStatusString(err);
+  cublasGetStatusString(CUBLAS_STATUS_NOT_INITIALIZED);
 }
 
 //CHECK:void foo2(dpct::compute_type &a) {

@@ -7,25 +7,25 @@
 int printf(const char *format, ...);
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 // CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", "<Placeholder string>")
+// CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR(X) printf("%s\n", cudnnGetErrorString(X))
 
-// CHECK:  /*
-// CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
-// CHECK-NEXT:  */
+// CHECK: /*
+// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+// CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR2(X)\
-// CHECK-NEXT:  printf("%s\n", "<Placeholder string>")
+// CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR2(X)\
   printf("%s\n", cudnnGetErrorString(X))
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", "<Placeholder string>")
+// CHECK-NEXT:          \n", dpct::get_error_string_dummy(X))
 #define PRINT_ERROR_STR3(X)\
   printf("%s\
          \n", cudnnGetErrorString(X))
@@ -34,15 +34,15 @@ int printf(const char *format, ...);
 const char *test_function(cudnnStatus_t status) {
 
 //CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "<Placeholder string>");
+//CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(status));
   printf("%s\n", cudnnGetErrorString(status));
 
 //CHECK:/*
-//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+//CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "<Placeholder string>");
+//CHECK-NEXT:  printf("%s\n", dpct::get_error_string_dummy(0));
   printf("%s\n", cudnnGetErrorString(CUDNN_STATUS_SUCCESS));
 
   PRINT_ERROR_STR(status);
@@ -50,3 +50,17 @@ const char *test_function(cudnnStatus_t status) {
   PRINT_ERROR_STR3(status);  
 }
 
+//CHECK:void foo(dpct::err1 err) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo(cudnnStatus_t err) {
+  cudnnGetErrorString(err);
+  cudnnGetErrorString(CUDNN_STATUS_NOT_INITIALIZED);
+}
