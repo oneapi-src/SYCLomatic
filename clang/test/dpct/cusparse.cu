@@ -464,7 +464,7 @@ void foo7_1(int c_nnz,
             int* col_ind_c) {
 #ifndef NO_BUILD_TEST
   // CHECK: /*
-  // CHECK-NEXT: DPCT1134:{{[0-9]+}}: Tool cannot deduce the successive "dpct::sparse::csrgemm" call which using the result of this API. Replace "dpct_placeholder" with corresponding value pointer.
+  // CHECK-NEXT: DPCT1134:{{[0-9]+}}: The tool cannot deduce the consumer API ("dpct::sparse::csrgemm") of this API, and this API has 2 arguments depending on the parameter of the consumer API. Please replace the 2 arguments tagged as "dpct_placeholder" with the corresponding value.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, 4, dpct_placeholder, row_ptr_a, col_ind_a, descrB, 5, dpct_placeholder, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
   cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, row_ptr_a,col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);

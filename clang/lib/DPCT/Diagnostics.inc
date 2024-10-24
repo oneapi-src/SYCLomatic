@@ -292,8 +292,8 @@ DEF_WARNING(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"%0\" i
 DEF_COMMENT(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"{0}\" is not currently supported with SYCLcompat. Please adjust the code manually.")
 DEF_WARNING(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not support accessing the %0 for the kernel. The API is replaced with member variable \"%1\". Please set the appropriate value for \"%1\".")
 DEF_COMMENT(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not support accessing the {0} for the kernel. The API is replaced with member variable \"{1}\". Please set the appropriate value for \"{1}\".")
-DEF_WARNING(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "Tool cannot deduce the successive \"%0\" call which using the result of this API. Replace \"dpct_placeholder\" with corresponding value pointer.")
-DEF_COMMENT(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "Tool cannot deduce the successive \"{0}\" call which using the result of this API. Replace \"dpct_placeholder\" with corresponding value pointer.")
+DEF_WARNING(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer API (\"%0\") of this API, and this API has 2 arguments depending on the parameter of the consumer API. Please replace the 2 arguments tagged as \"dpct_placeholder\" with the corresponding value.")
+DEF_COMMENT(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer API (\"{0}\") of this API, and this API has 2 arguments depending on the parameter of the consumer API. Please replace the 2 arguments tagged as \"dpct_placeholder\" with the corresponding value.")
 // clang-format on
 
 #undef DEF_COMMENT
