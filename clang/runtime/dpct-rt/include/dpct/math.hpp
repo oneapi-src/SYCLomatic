@@ -481,8 +481,12 @@ template <typename T> inline T relu(T a) {
   else
     return a < zero ? zero : a;
 }
-template <class T> inline sycl::vec<T, 2> relu(const sycl::vec<T, 2> a) {
-  return {relu(a[0]), relu(a[1])};
+template <typename T, int N>
+inline sycl::vec<T, N> relu(const sycl::vec<T, N> a) {
+  sycl::vec<T, N> ret;
+  for (int i = 0; i < N; ++i)
+    ret[i] = relu(a[i]);
+  return ret;
 }
 template <class T> inline sycl::marray<T, 2> relu(const sycl::marray<T, 2> a) {
   return {relu(a[0]), relu(a[1])};
@@ -610,12 +614,20 @@ struct maximum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::max(x, y);
   }
+  template <typename T>
+  auto operator()(const T x, const T y, bool *pred) const {
+    return (x >= y) ? ((*pred = true), x) : ((*pred = false), y);
+  }
 };
 
 /// A sycl::min wrapper functors.
 struct minimum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::min(x, y);
+  }
+  template <typename T>
+  auto operator()(const T x, const T y, bool *pred) const {
+    return (x <= y) ? ((*pred = true), x) : ((*pred = false), y);
   }
 };
 
@@ -655,17 +667,45 @@ struct average {
 /// \tparam [in] BinaryOperation The binary operation class
 /// \param [in] a The first value
 /// \param [in] b The second value
+/// \param [in] binary_op The operation to do with the two values
+/// \param [in] need_relu Whether the result need relu saturation
 /// \returns The vectorized binary operation value of the two values
 template <typename VecT, class BinaryOperation>
 inline unsigned vectorized_binary(unsigned a, unsigned b,
-                                  const BinaryOperation binary_op) {
+                                  const BinaryOperation binary_op,
+                                  bool need_relu = false) {
   sycl::vec<unsigned, 1> v0{a}, v1{b};
   auto v2 = v0.as<VecT>();
   auto v3 = v1.as<VecT>();
   auto v4 =
       detail::vectorized_binary<VecT, BinaryOperation>()(v2, v3, binary_op);
+  if (need_relu)
+    v4 = relu(v4);
   v0 = v4.template as<sycl::vec<unsigned, 1>>();
   return v0;
+}
+
+/// Compute vectorized binary operation value with pred for two values, with
+/// each value treated as a 2 \p T type elements vector type.
+///
+/// \tparam [in] T The type of elements type of the vector
+/// \tparam [in] BinaryOperation The binary operation class
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] binary_op The operation with pred to do with the two values
+/// \param [in] pred_hi The pred pointer that pass into high halfword operation
+/// \param [in] pred_lo The pred pointer that pass into low halfword operation
+/// \returns The vectorized binary operation value of the two values
+template <typename T, typename BinaryOperation>
+inline unsigned vectorized_with_pred(unsigned a, unsigned b,
+                                     const BinaryOperation binary_op,
+                                     bool *pred_hi, bool *pred_lo) {
+  auto v1 = sycl::vec<unsigned, 1>(a).as<sycl::vec<T, 2>>();
+  auto v2 = sycl::vec<unsigned, 1>(b).as<sycl::vec<T, 2>>();
+  sycl::vec<T, 2> ret;
+  ret[0] = binary_op(v1[0], v2[0], pred_lo);
+  ret[1] = binary_op(v1[1], v2[1], pred_hi);
+  return ret.template as<sycl::vec<unsigned, 1>>();
 }
 
 /// Compute vectorized isgreater for two values, with each value treated as a
@@ -749,6 +789,36 @@ inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
     sum += v4[i];
   }
   return sum;
+}
+
+/// Compute two vectorized binary operation value with pred for three values,
+/// with each value treated as a 2 \p T type elements vector type.
+///
+/// \tparam [in] VecT The type of the vector
+/// \tparam [in] BinaryOperation1 The first binary operation class
+/// \tparam [in] BinaryOperation2 The second binary operation class
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] binary_op1 The first operation to do with the first two values
+/// \param [in] binary_op2 The second operation to do with the third values
+/// \param [in] need_relu Whether the result need relu saturation
+/// \returns The two vectorized binary operation value of the three values
+template <typename VecT, typename BinaryOperation1, typename BinaryOperation2>
+inline unsigned vectorized_ternary(unsigned a, unsigned b, unsigned c,
+                                   const BinaryOperation1 binary_op1,
+                                   const BinaryOperation2 binary_op2,
+                                   bool need_relu = false) {
+  const auto v1 = sycl::vec<unsigned, 1>(a).as<VecT>();
+  const auto v2 = sycl::vec<unsigned, 1>(b).as<VecT>();
+  const auto v3 = sycl::vec<unsigned, 1>(c).as<VecT>();
+  auto temp =
+      detail::vectorized_binary<VecT, BinaryOperation1>()(v1, v2, binary_op1);
+  temp =
+      detail::vectorized_binary<VecT, BinaryOperation2>()(temp, v3, binary_op2);
+  if (need_relu)
+    temp = relu(temp);
+  return temp.template as<sycl::vec<unsigned, 1>>();
 }
 
 namespace detail {
