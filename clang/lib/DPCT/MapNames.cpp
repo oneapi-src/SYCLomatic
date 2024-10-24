@@ -449,14 +449,16 @@ void MapNames::setExplicitNamespaceMap(
                                           getLibraryHelperNamespace() +
                                           "sparse::optimize_info>",
                                       HelperFeatureEnum::device_ext)},
-      {"thrust::device_ptr",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_pointer",
-                                      HelperFeatureEnum::device_ext)},
+      {"thrust::device_ptr", std::make_shared<TypeNameRule>(
+                                 getLibraryHelperNamespace() + "device_pointer",
+                                 HelperFeatureEnum::device_ext)},
       {"thrust::device_reference",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_reference",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_reference",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_vector",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_vector",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_vector",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_malloc_allocator",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
@@ -544,6 +546,13 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data",
                                       HelperFeatureEnum::device_ext)},
       {"cudaTextureObject_t",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::sampled_image_handle"
+               : getDpctNamespace() + "image_wrapper_base_p",
+           HelperFeatureEnum::device_ext)},
+      {"cudaSurfaceObject_t",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
                ? getClNamespace() +
@@ -846,6 +855,7 @@ void MapNames::setExplicitNamespaceMap(
       "cudaTextureDesc",
       "cudaResourceDesc",
       "cudaTextureObject_t",
+      "cudaSurfaceObject_t",
       "textureReference",
       "cudaTextureAddressMode",
       "cudaTextureFilterMode",
