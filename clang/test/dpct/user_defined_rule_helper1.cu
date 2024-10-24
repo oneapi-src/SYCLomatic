@@ -1,6 +1,9 @@
-// RUN: dpct --out-root %T/user_defined_rule_helper1 %s --cuda-include-path="%cuda-path/include" --rule-file %S/xpu_1.yaml --format-range=none
+// RUN: mkdir %T/user_defined_rule_helper1
+// RUN: dpct --out-root %T/user_defined_rule_helper1 %s --cuda-include-path="%cuda-path/include" --rule-file %S/xpu_1.yaml --format-range=none > %T/user_defined_rule_helper1/warning.txt 2>&1
 // RUN: FileCheck --input-file %T/user_defined_rule_helper1/user_defined_rule_helper1.dp.cpp --match-full-lines %s
+// RUN: FileCheck --input-file  %T/user_defined_rule_helper1/warning.txt --match-full-lines %s -check-prefix=WARNING
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/user_defined_rule_helper1/user_defined_rule_helper1.dp.cpp -o %T/user_defined_rule_helper1/user_defined_rule_helper1.dp.o %}
+// RUN: rm -rf %T/user_defined_rule_helper1
 
 #ifndef NO_BUILD_TEST
 
@@ -40,3 +43,5 @@ void foo2() {
 }
 
 #endif
+
+// WARNING: Warning: The rule named rule2 (Kind: HelperFunction) is ignored, as the API specified in the "In" field is not supported for customization.

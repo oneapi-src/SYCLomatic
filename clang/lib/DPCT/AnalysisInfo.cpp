@@ -2262,6 +2262,7 @@ void DpctGlobalInfo::resetInfo() {
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
   FreeQueriesInfo::reset();
+  CustomHelperFunctionAddtionalIncludes.clear();
 }
 void DpctGlobalInfo::updateSpellingLocDFIMaps(
     SourceLocation SL, std::shared_ptr<DeviceFunctionInfo> DFI) {

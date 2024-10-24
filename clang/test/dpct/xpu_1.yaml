@@ -5,3 +5,8 @@
   In: get_in_order_queue
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream1())
   Includes: ["xpu_helper1.h"]
+- Rule: rule2
+  Kind: HelperFunction
+  Priority: Takeover
+  In: unknown_function
+  Out: unknown_function_2
