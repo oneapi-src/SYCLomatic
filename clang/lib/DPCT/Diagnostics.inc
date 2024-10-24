@@ -286,6 +286,8 @@ DEF_WARNING(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"%0\" is not dev
 DEF_COMMENT(NOT_DEVICE_COPYABLE, 1128, MEDIUM_LEVEL, "The type \"{0}\" is not device copyable for {1}. It is used in the SYCL kernel, please rewrite the code.")
 DEF_WARNING(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"%0\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
 DEF_COMMENT(NOT_DEVICE_COPYABLE_ADD_SPECIALIZATION, 1129, MEDIUM_LEVEL, "The type \"{0}\" is used in the SYCL kernel, but it is not device copyable. The sycl::is_device_copyable specialization has been added for this type. Please review the code.")
+DEF_WARNING(GRAPH_DEVICE_MATCH, 1130, MEDIUM_LEVEL, "Verify that the device used to create the graph matches the device used to launch the graph.")
+DEF_COMMENT(GRAPH_DEVICE_MATCH, 1130, MEDIUM_LEVEL, "Verify that the device used to create the graph matches the device used to launch the graph.")
 DEF_WARNING(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
 DEF_COMMENT(NOT_SUPPORT_DYN_PARALLEL, 1130, HIGH_LEVEL, "SYCL 2020 standard does not support dynamic parallelism (launching kernel in device code). Please rewrite the code.")
 DEF_WARNING(UNSUPPORT_SYCLCOMPAT, 1131, MEDIUM_LEVEL, "The migration of \"%0\" is not currently supported with SYCLcompat. Please adjust the code manually.")

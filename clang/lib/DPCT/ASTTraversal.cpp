@@ -14918,7 +14918,8 @@ void GraphRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaGraphInstantiate", "cudaGraphLaunch",
                       "cudaGraphExecDestroy", "cudaGraphAddEmptyNode",
-                      "cudaGraphAddDependencies", "cudaGraphExecUpdate");
+                      "cudaGraphAddDependencies", "cudaGraphExecUpdate",
+                      "cudaGraphCreate", "cudaGraphDestroy");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -14929,6 +14930,11 @@ void GraphRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
     return;
+  }
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  if (FuncName == "cudaGraphCreate") {
+    report(CE->getBeginLoc(), Diagnostics::GRAPH_DEVICE_MATCH, false);
   }
   ExprAnalysis EA(CE);
   emplaceTransformation(EA.getReplacement());

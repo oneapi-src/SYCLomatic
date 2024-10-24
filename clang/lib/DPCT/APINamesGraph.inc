@@ -66,3 +66,26 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                             Diagnostics::TRY_EXPERIMENTAL_FEATURE,
                             ARG("cudaGraphExecUpdate"),
                             ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY(
+        "cudaGraphCreate",
+        CALL(MapNames::getDpctNamespace() + "experimental::create_graph",
+             ARG(0), CALL(MapNames::getDpctNamespace() + "get_default_context"),
+             CALL(MapNames::getDpctNamespace() + "get_current_device"))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphCreate",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphCreate"),
+                            ARG("--use-experimental-features=graph"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    UseExtGraph,
+    CALL_FACTORY_ENTRY("cudaGraphDestroy",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::destroy_graph",
+                            ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("cudaGraphDestroy",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cudaGraphDestroy"),
+                            ARG("--use-experimental-features=graph"))))

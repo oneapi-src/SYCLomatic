@@ -24,6 +24,17 @@ int main() {
   // CHECK: dpct::experimental::command_graph_ptr graph5, *graph6, **graph7;
   cudaGraph_t graph5, *graph6, **graph7;
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1130:{{[0-9]+}}: Verify that the device used to create the graph matches the device used to launch the graph.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::experimental::create_graph(&graph, dpct::get_default_context(), dpct::get_current_device());
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1130:{{[0-9]+}}: Verify that the device used to create the graph matches the device used to launch the graph.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::experimental::create_graph(graph2, dpct::get_default_context(), dpct::get_current_device());
+  cudaGraphCreate(&graph, 0);
+  cudaGraphCreate(graph2, 0);
+
   // CHECK: dpct::experimental::command_graph_exec_ptr execGraph;
   // CHECK-NEXT: dpct::experimental::command_graph_exec_ptr *execGraph2;
   // CHECK-NEXT: dpct::experimental::command_graph_exec_ptr **execGraph3;
@@ -115,6 +126,11 @@ int main() {
   cudaGraphExecDestroy(*execGraph2);
   cudaGraphExecDestroy(**execGraph3);
   CUDA_CHECK_THROW(cudaGraphExecDestroy(**execGraph3));
+
+  // CHECK: dpct::experimental::destroy_graph(graph);
+  // CHECK-NEXT: dpct::experimental::destroy_graph(*graph2);
+  cudaGraphDestroy(graph);
+  cudaGraphDestroy(*graph2);
 
   return 0;
 }
