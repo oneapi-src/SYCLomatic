@@ -8,6 +8,7 @@
 
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
+#include "Utility.h"
 
 namespace clang {
 namespace dpct {
@@ -198,6 +199,11 @@ public:
             return createRewriter(Call, RetAssign, SourceName);
           }
         } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
+          auto CallDefRange =
+              getDefinitionRange(Call->getBeginLoc(), Call->getEndLoc());
+          auto DREString =
+              getStringInRange(DRE->getSourceRange(), CallDefRange.getBegin(),
+                               CallDefRange.getEnd());
           auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
           if (TexInfo) {
             TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),

@@ -5351,7 +5351,7 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel)
   IsRedeclareRequired = false;
 }
 KernelCallExpr::ArgInfo::ArgInfo(std::shared_ptr<TextureObjectInfo> Obj,
-                                 KernelCallExpr *BASE)
+                                 KernelCallExpr *BASE, std::string ArgStr)
     : IsUsedAsLvalueAfterMalloc(false), Texture(Obj) {
   IsPointer = false;
   IsRedeclareRequired = false;
@@ -5360,7 +5360,7 @@ KernelCallExpr::ArgInfo::ArgInfo(std::shared_ptr<TextureObjectInfo> Obj,
   if (auto S = std::dynamic_pointer_cast<StructureTextureObjectInfo>(Obj)) {
     IsDoublePointer = S->containsVirtualPointer();
   }
-  ArgString = Obj->getName();
+  ArgString = ArgStr;
   IdString = ArgString + "_";
   ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
 }
@@ -5869,14 +5869,16 @@ void KernelCallExpr::buildArgsInfo(const CallExpr *CE) {
       getTheLastCompleteImmediateRange(CE->getBeginLoc(), CE->getEndLoc());
   Analysis.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
   auto &TexList = getTextureObjectList();
-
   const auto *FD = CE->getDirectCallee();
   const auto *FTD = FD ? FD->getPrimaryTemplate() : nullptr;
   for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
+    auto Arg = CE->getArg(Idx);
+    auto CallDefRange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+    auto ArgString = getStringInRange(
+        Arg->getSourceRange(), CallDefRange.getBegin(), CallDefRange.getEnd());
     if (auto Obj = TexList[Idx]) {
-      ArgsInfo.emplace_back(Obj, this);
+      ArgsInfo.emplace_back(Obj, this, ArgString);
     } else {
-      auto Arg = CE->getArg(Idx);
       bool Used = true;
       if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
         Used = isArgUsedAsLvalueUntil(ArgDRE, CE);

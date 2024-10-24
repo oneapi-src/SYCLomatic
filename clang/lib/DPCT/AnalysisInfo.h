@@ -2741,7 +2741,8 @@ private:
     ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
             KernelCallExpr *Kernel);
     ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel);
-    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE);
+    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE,
+            std::string ArgStr);
     inline const std::string &getArgString() const;
     inline const std::string &getTypeString() const;
     inline std::string getIdStringWithIndex() const {
