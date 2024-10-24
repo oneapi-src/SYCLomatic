@@ -2,7 +2,7 @@
 // UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6, cuda-11.7, cuda-11.8, cuda-12.0, cuda-12.1, cuda-12.2, cuda-12.3, cuda-12.4, cuda-12.5, cuda-12.6
 // RUN: dpct --format-range=none --usm-level=none --out-root %T/cusparse %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cusparse/cusparse.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/cusparse/cusparse.dp.cpp -o %T/cusparse/cusparse.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/cusparse/cusparse.dp.cpp -o %T/cusparse/cusparse.dp.o %}
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
@@ -393,4 +393,81 @@ void foo5() {
   cusparseDcsr2csc(handle, 3, 4, 7, a_d_val, a_row_ptr, a_col_ind, b_d_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
   cusparseCcsr2csc(handle, 3, 4, 7, a_c_val, a_row_ptr, a_col_ind, b_c_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
   cusparseZcsr2csc(handle, 3, 4, 7, a_z_val, a_row_ptr, a_col_ind, b_z_val, b_col_ptr, b_row_ind, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO);
+}
+
+void foo6(){
+  int c_nnz;
+  cusparseMatDescr_t descrB;
+  cusparseMatDescr_t descrC;
+
+  const float* val_a_s;
+  const double* val_a_d;
+  const float2* val_a_c;
+  const double2* val_a_z;
+  const int* row_ptr_a;
+  const int* col_ind_a;
+
+  const float* val_b_s;
+  const double* val_b_d;
+  const float2* val_b_c;
+  const double2* val_b_z;
+  const int* row_ptr_b;
+  const int* col_ind_b;
+
+  float* val_c_s;
+  double* val_c_d;
+  float2* val_c_c;
+  double2* val_c_z;
+  int* row_ptr_c;
+  int* col_ind_c;
+
+  // CHECK: dpct::sparse::csrgemm_nnz(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, 4, val_a_s, row_ptr_a, col_ind_a, descrB, 5, val_b_s, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
+  // CHECK-NEXT: dpct::sparse::csrgemm(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, val_a_s, row_ptr_a, col_ind_a, descrB, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, val_a_d, row_ptr_a, col_ind_a, descrB, val_b_d, row_ptr_b, col_ind_b, descrC, val_c_d, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, val_a_c, row_ptr_a, col_ind_a, descrB, val_b_c, row_ptr_b, col_ind_b, descrC, val_c_c, row_ptr_c, col_ind_c);
+  // CHECK-NEXT: dpct::sparse::csrgemm(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, val_a_z, row_ptr_a, col_ind_a, descrB, val_b_z, row_ptr_b, col_ind_b, descrC, val_c_z, row_ptr_c, col_ind_c);
+  cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, row_ptr_a,col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
+  cusparseScsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, val_a_s, row_ptr_a, col_ind_a, descrB, 5, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
+  cusparseDcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, val_a_d, row_ptr_a, col_ind_a, descrB, 5, val_b_d, row_ptr_b, col_ind_b, descrC, val_c_d, row_ptr_c, col_ind_c);
+  cusparseCcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, val_a_c, row_ptr_a, col_ind_a, descrB, 5, val_b_c, row_ptr_b, col_ind_b, descrC, val_c_c, row_ptr_c, col_ind_c);
+  cusparseZcsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, val_a_z, row_ptr_a, col_ind_a, descrB, 5, val_b_z, row_ptr_b, col_ind_b, descrC, val_c_z, row_ptr_c, col_ind_c);
+}
+
+void foo7_2(int c_nnz,
+            cusparseMatDescr_t descrB,
+            cusparseMatDescr_t descrC,
+            const float* val_a_s,
+            const int* row_ptr_a,
+            const int* col_ind_a,
+            const float* val_b_s,
+            const int* row_ptr_b,
+            const int* col_ind_b,
+            float* val_c_s,
+            int* row_ptr_c,
+            int* col_ind_c) {
+  // CHECK: dpct::sparse::csrgemm(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, val_a_s, row_ptr_a, col_ind_a, descrB, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
+  cusparseScsrgemm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, val_a_s, row_ptr_a, col_ind_a, descrB, 5, val_b_s, row_ptr_b, col_ind_b, descrC, val_c_s, row_ptr_c, col_ind_c);
+}
+
+
+void foo7_1(int c_nnz,
+            cusparseMatDescr_t descrB,
+            cusparseMatDescr_t descrC,
+            const float* val_a_s,
+            const int* row_ptr_a,
+            const int* col_ind_a,
+            const float* val_b_s,
+            const int* row_ptr_b,
+            const int* col_ind_b,
+            float* val_c_s,
+            int* row_ptr_c,
+            int* col_ind_c) {
+#ifndef NO_BUILD_TEST
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1134:{{[0-9]+}}: The tool cannot deduce the consumer API ("dpct::sparse::csrgemm") of this API, and this API has 2 arguments depending on the parameter of the consumer API. Please replace the 2 arguments tagged as "dpct_placeholder" with the corresponding value.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::sparse::csrgemm_nnz(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 3, 4, 3, descrA, 4, dpct_placeholder, row_ptr_a, col_ind_a, descrB, 5, dpct_placeholder, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
+  cusparseXcsrgemmNnz(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, 3, 4, 3, descrA, 4, row_ptr_a,col_ind_a, descrB, 5, row_ptr_b, col_ind_b, descrC, row_ptr_c, &c_nnz);
+#endif
+  foo7_2(c_nnz, descrB, descrC, val_a_s, row_ptr_a, col_ind_a, val_b_s, row_ptr_b, col_ind_b, val_c_s, row_ptr_c, col_ind_c);
 }

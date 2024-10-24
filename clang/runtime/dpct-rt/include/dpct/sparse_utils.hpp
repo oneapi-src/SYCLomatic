@@ -40,13 +40,67 @@ private:
   oneapi::mkl::uplo _uplo = oneapi::mkl::uplo::upper;
   oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
 };
+namespace detail {
+using csrgemm_args_info =
+    std::tuple<oneapi::mkl::transpose, oneapi::mkl::transpose, int, int, int,
+               const std::shared_ptr<matrix_info>, const void *, const int *,
+               const int *, const std::shared_ptr<matrix_info>, const void *,
+               const int *, const int *, const std::shared_ptr<matrix_info>,
+               const int *>;
+struct csrgemm_args_info_hash {
+  size_t operator()(const csrgemm_args_info &args) const {
+    std::stringstream ss;
+    ss << (char)std::get<0>(args) << ":";
+    ss << (char)std::get<1>(args) << ":";
+    ss << std::get<2>(args) << ":";
+    ss << std::get<3>(args) << ":";
+    ss << std::get<4>(args) << ":";
+    ss << std::get<5>(args).get() << ":";
+    ss << std::get<6>(args) << ":";
+    ss << std::get<7>(args) << ":";
+    ss << std::get<8>(args) << ":";
+    ss << std::get<9>(args).get() << ":";
+    ss << std::get<10>(args) << ":";
+    ss << std::get<11>(args) << ":";
+    ss << std::get<12>(args) << ":";
+    ss << std::get<13>(args).get() << ":";
+    ss << std::get<14>(args) << ":";
+    return std::hash<std::string>{}(ss.str());
+  }
+};
+} // namespace detail
+
 class descriptor {
 public:
   descriptor() {}
   void set_queue(::dpct::cs::queue_ptr q_ptr) noexcept { _queue_ptr = q_ptr; }
-  sycl::queue &get_queue() noexcept { return *_queue_ptr; }
+  sycl::queue &get_queue() const noexcept { return *_queue_ptr; }
+#ifdef __INTEL_MKL__
+  struct matmat_info {
+    matmat_info(oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a,
+                oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b,
+                oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c,
+                oneapi::mkl::sparse::matmat_descr_t *matmat_desc)
+        : matrix_handle_a(matrix_handle_a), matrix_handle_b(matrix_handle_b),
+          matrix_handle_c(matrix_handle_c), matmat_desc(matmat_desc) {}
+    oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a;
+    oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b;
+    oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c;
+    oneapi::mkl::sparse::matmat_descr_t *matmat_desc;
+  };
+  std::unordered_map<detail::csrgemm_args_info, matmat_info,
+                     detail::csrgemm_args_info_hash> &
+  get_csrgemm_info_map() {
+    return _csrgemm_info_map;
+  }
+#endif
 
 private:
+#ifdef __INTEL_MKL__
+  std::unordered_map<detail::csrgemm_args_info, matmat_info,
+                     detail::csrgemm_args_info_hash>
+      _csrgemm_info_map;
+#endif
   ::dpct::cs::queue_ptr _queue_ptr = &::dpct::cs::get_default_queue();
 };
 
@@ -1457,6 +1511,243 @@ inline void csr2csc(sycl::queue queue, int m, int n, int nnz,
   detail::spblas_shim<detail::csr2csc_impl>(
       value_type, queue, m, n, nnz, from_val, from_row_ptr, from_col_ind,
       to_val, to_col_ptr, to_row_ind, range, base);
+}
+
+/// Calculate the non-zero elements number of the result of a
+/// sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// C = op(A) * op(B)
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] trans_b The operation applied to the matrix B.
+/// \param [in] m The rows number of op(A) and C.
+/// \param [in] n The columns number of op(B) and C.
+/// \param [in] k The columns number of op(A) and rows number of op(B).
+/// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] nnz_a Non-zero elements number of matrix A.
+/// \param [in] val_a An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] col_ind_a An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_b Matrix info of the matrix B.
+/// \param [in] nnz_b Non-zero elements number of matrix B.
+/// \param [in] val_b An array containing the non-zero elements of the matrix B.
+/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] col_ind_b An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_c Matrix info of the matrix C.
+/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [out] nnz_host_ptr Non-zero elements number of matrix C.
+template <typename T>
+void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
+                 oneapi::mkl::transpose trans_b, int m, int n, int k,
+                 const std::shared_ptr<matrix_info> info_a, int nnz_a,
+                 const T *val_a, const int *row_ptr_a, const int *col_ind_a,
+                 const std::shared_ptr<matrix_info> info_b, int nnz_b,
+                 const T *val_b, const int *row_ptr_b, const int *col_ind_b,
+                 const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
+                 int *nnz_host_ptr) {
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
+  sycl::queue queue = desc->get_queue();
+  detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
+                                 row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
+                                 col_ind_b, info_c, row_ptr_c);
+  const auto Iter = desc->get_csrgemm_info_map().find(args);
+
+  oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a;
+  oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b;
+  oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c;
+  oneapi::mkl::sparse::matmat_descr_t *matmat_desc;
+
+#ifdef DPCT_USM_LEVEL_NONE
+  auto row_ptr_a_buf = dpct::detail::get_memory<int>(row_ptr_a);
+  auto col_ind_a_buf = dpct::detail::get_memory<int>(col_ind_a);
+  auto val_a_buf = dpct::detail::get_memory<Ty>(val_a);
+  auto row_ptr_b_buf = dpct::detail::get_memory<int>(row_ptr_b);
+  auto col_ind_b_buf = dpct::detail::get_memory<int>(col_ind_b);
+  auto val_b_buf = dpct::detail::get_memory<Ty>(val_b);
+  auto row_ptr_c_buf = dpct::detail::get_memory<int>(row_ptr_c);
+  auto col_ind_c_buf = dpct::detail::get_memory<int>(nullptr);
+  auto val_c_buf = dpct::detail::get_memory<Ty>(nullptr);
+#endif
+
+  if (Iter == desc->get_csrgemm_info_map().end()) {
+    matrix_handle_a = new oneapi::mkl::sparse::matrix_handle_t();
+    matrix_handle_b = new oneapi::mkl::sparse::matrix_handle_t();
+    matrix_handle_c = new oneapi::mkl::sparse::matrix_handle_t();
+    oneapi::mkl::sparse::init_matrix_handle(matrix_handle_a);
+    oneapi::mkl::sparse::init_matrix_handle(matrix_handle_b);
+    oneapi::mkl::sparse::init_matrix_handle(matrix_handle_c);
+    int rows_c = m;
+    int cols_c = n;
+    int rows_a = (trans_a == oneapi::mkl::transpose::nontrans) ? m : k;
+    int cols_a = (trans_a == oneapi::mkl::transpose::nontrans) ? k : m;
+    int rows_b = (trans_b == oneapi::mkl::transpose::nontrans) ? k : n;
+    int cols_b = (trans_b == oneapi::mkl::transpose::nontrans) ? n : k;
+
+#ifdef DPCT_USM_LEVEL_NONE
+    oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_a, rows_a, cols_a,
+                                      info_a->get_index_base(), row_ptr_a_buf,
+                                      col_ind_a_buf, val_a_buf);
+    oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_b, rows_b, cols_b,
+                                      info_b->get_index_base(), row_ptr_b_buf,
+                                      col_ind_b_buf, val_b_buf);
+    // In the future, oneMKL will allow (int *)nullptr to be passed in for
+    // row_ptr_c in the initial calls before matmat. But currently, it needs an
+    // array of length row_number + 1.
+    oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_c, rows_c, cols_c,
+                                      info_c->get_index_base(), row_ptr_c_buf,
+                                      col_ind_c_buf, val_c_buf);
+#else
+    oneapi::mkl::sparse::set_csr_data(
+        queue, *matrix_handle_a, rows_a, cols_a, info_a->get_index_base(),
+        (int *)row_ptr_a, (int *)col_ind_a, (Ty *)val_a);
+    oneapi::mkl::sparse::set_csr_data(
+        queue, *matrix_handle_b, rows_b, cols_b, info_b->get_index_base(),
+        (int *)row_ptr_b, (int *)col_ind_b, (Ty *)val_b);
+    // In the future, oneMKL will allow (int *)nullptr to be passed in for
+    // row_ptr_c in the initial calls before matmat. But currently, it needs an
+    // array of length row_number + 1.
+    oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_c, rows_c, cols_c,
+                                      info_c->get_index_base(), row_ptr_c,
+                                      (int *)nullptr, (Ty *)nullptr);
+#endif
+
+    matmat_desc = new oneapi::mkl::sparse::matmat_descr_t();
+    oneapi::mkl::sparse::init_matmat_descr(matmat_desc);
+    oneapi::mkl::sparse::set_matmat_data(
+        *matmat_desc, oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
+        oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
+        oneapi::mkl::sparse::matrix_view_descr::general);
+    desc->get_csrgemm_info_map().insert(std::make_pair(
+        args, descriptor::matmat_info(matrix_handle_a, matrix_handle_b,
+                                      matrix_handle_c, matmat_desc)));
+  } else {
+    matrix_handle_a = Iter->second.matrix_handle_a;
+    matrix_handle_b = Iter->second.matrix_handle_b;
+    matrix_handle_c = Iter->second.matrix_handle_c;
+    matmat_desc = Iter->second.matmat_desc;
+  }
+
+#ifdef DPCT_USM_LEVEL_NONE
+#define __MATMAT(STEP, NNZ_C)                                                  \
+  oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,       \
+                              *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
+                              nullptr)
+#else
+#define __MATMAT(STEP, NNZ_C)                                                  \
+  oneapi::mkl::sparse::matmat(queue, *matrix_handle_a, *matrix_handle_b,       \
+                              *matrix_handle_c, STEP, *matmat_desc, NNZ_C,     \
+                              nullptr, {})
+#endif
+
+  __MATMAT(oneapi::mkl::sparse::matmat_request::work_estimation, nullptr);
+  queue.wait();
+
+  __MATMAT(oneapi::mkl::sparse::matmat_request::compute, nullptr);
+
+  int nnz_c_int = 0;
+#ifdef DPCT_USM_LEVEL_NONE
+  sycl::buffer<std::int64_t, 1> nnz_buf_c(1);
+  __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, &nnz_buf_c);
+  nnz_c_int = nnz_buf_c.get_host_access(sycl::read_only)[0];
+#else
+  std::int64_t *nnz_c = sycl::malloc_host<std::int64_t>(1, queue);
+  __MATMAT(oneapi::mkl::sparse::matmat_request::get_nnz, nnz_c);
+  queue.wait();
+  nnz_c_int = *nnz_c;
+#endif
+
+  if (nnz_host_ptr) {
+    *nnz_host_ptr = nnz_c_int;
+  }
+}
+
+/// Computes a sparse matrix (CSR format)-sparse matrix (CSR format) product:
+/// C = op(A) * op(B)
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a The operation applied to the matrix A.
+/// \param [in] trans_b The operation applied to the matrix B.
+/// \param [in] m The rows number of op(A) and C.
+/// \param [in] n The columns number of op(B) and C.
+/// \param [in] k The columns number of op(A) and rows number of op(B).
+/// \param [in] info_a Matrix info of the matrix A.
+/// \param [in] val_a An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr_a An array of length row number + 1.
+/// \param [in] col_ind_a An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_b Matrix info of the matrix B.
+/// \param [in] val_b An array containing the non-zero elements of the matrix B.
+/// \param [in] row_ptr_b An array of length row number + 1.
+/// \param [in] col_ind_b An array containing the column indices in index-based
+/// numbering.
+/// \param [in] info_c Matrix info of the matrix C.
+/// \param [out] val_c An array containing the non-zero elements of the matrix
+/// C.
+/// \param [in] row_ptr_c An array of length row number + 1.
+/// \param [out] col_ind_c An array containing the column indices in index-based
+/// numbering.
+template <typename T>
+void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
+             oneapi::mkl::transpose trans_b, int m, int n, int k,
+             const std::shared_ptr<matrix_info> info_a, const T *val_a,
+             const int *row_ptr_a, const int *col_ind_a,
+             const std::shared_ptr<matrix_info> info_b, const T *val_b,
+             const int *row_ptr_b, const int *col_ind_b,
+             const std::shared_ptr<matrix_info> info_c, T *val_c,
+             const int *row_ptr_c, int *col_ind_c) {
+  using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
+  sycl::queue queue = desc->get_queue();
+  detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
+                                 row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
+                                 col_ind_b, info_c, row_ptr_c);
+  const auto Iter = desc->get_csrgemm_info_map().find(args);
+  if (Iter == desc->get_csrgemm_info_map().end()) {
+    throw std::runtime_error("csrgemm_nnz is not invoked previously.");
+  }
+  oneapi::mkl::sparse::matrix_handle_t *matrix_handle_a =
+      Iter->second.matrix_handle_a;
+  oneapi::mkl::sparse::matrix_handle_t *matrix_handle_b =
+      Iter->second.matrix_handle_b;
+  oneapi::mkl::sparse::matrix_handle_t *matrix_handle_c =
+      Iter->second.matrix_handle_c;
+  oneapi::mkl::sparse::matmat_descr_t *matmat_desc = Iter->second.matmat_desc;
+
+  auto data_col_ind_c = dpct::detail::get_memory<int>(col_ind_c);
+  auto data_val_c = dpct::detail::get_memory<Ty>(val_c);
+  auto data_row_ptr_c = dpct::detail::get_memory<int>(row_ptr_c);
+  int rows_c = m;
+  int cols_c = n;
+  oneapi::mkl::sparse::set_csr_data(queue, *matrix_handle_c, rows_c, cols_c,
+                                    info_c->get_index_base(), data_row_ptr_c,
+                                    data_col_ind_c, data_val_c);
+  sycl::event e;
+#ifndef DPCT_USM_LEVEL_NONE
+  e =
+#endif
+      __MATMAT(oneapi::mkl::sparse::matmat_request::finalize, nullptr);
+#undef __MATMAT
+
+  std::vector<sycl::event> e_s;
+  e_s.push_back(
+      oneapi::mkl::sparse::release_matrix_handle(queue, matrix_handle_a, {e}));
+  e_s.push_back(
+      oneapi::mkl::sparse::release_matrix_handle(queue, matrix_handle_b, {e}));
+  e_s.push_back(
+      oneapi::mkl::sparse::release_matrix_handle(queue, matrix_handle_c, {e}));
+
+  desc->get_csrgemm_info_map().erase(Iter);
+  queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e_s);
+    cgh.host_task([=] {
+      oneapi::mkl::sparse::release_matmat_descr(matmat_desc);
+      delete matrix_handle_a;
+      delete matrix_handle_b;
+      delete matrix_handle_c;
+      delete matmat_desc;
+    });
+  });
 }
 #endif
 } // namespace sparse
