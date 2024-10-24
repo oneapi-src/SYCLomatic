@@ -59,6 +59,7 @@
 #include <fstream>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "clang/Basic/DiagnosticOptions.h"
@@ -1336,6 +1337,21 @@ int runDPCT(int argc, const char **argv) {
         MigratedStr += I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
+
+    // For some cuda error handling APIs (currently only cudaGetErrorString), we
+    // use NoRewriteRewriter to do migration. So the comment in the argument
+    // part is kept in the migrated code. We remove those comments here.
+    // ATTENTION: There is A SPACE at the beginning of each comment.
+    static const std::unordered_set<std::string> CommentsNeedBeRemoved = {
+        " /*cudaError_t*/"};
+    for (const auto &Comment : CommentsNeedBeRemoved) {
+      size_t RemoveStartPos = MigratedStr.find(Comment);
+      if (RemoveStartPos != std::string::npos) {
+        MigratedStr.erase(RemoveStartPos, Comment.length());
+        break;
+      }
+    }
+
     if (MigratedStr.find_first_not_of(" \n") == std::string::npos) {
       llvm::outs() << "The API is Removed.\n";
     } else {
