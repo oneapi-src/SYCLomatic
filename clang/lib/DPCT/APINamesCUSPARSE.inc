@@ -336,14 +336,16 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                          MEMBER_CALL(ARG(0), true, "get_queue"), ARG(1), ARG(2),
                          ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
 WARNING_FACTORY_ENTRY("cusparseGetErrorString",
-                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY("cusparseGetErrorString",
-                                    MapNames::getDpctNamespace() +
-                                        "get_error_string_dummy"),
+                      CALL_FACTORY_ENTRY("cusparseGetErrorString",
+                                         CALL(MapNames::getDpctNamespace() +
+                                                  "get_error_string_dummy",
+                                              ARG_WC(0))),
                       Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 WARNING_FACTORY_ENTRY("cusparseGetErrorName",
-                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY("cusparseGetErrorName",
-                                    MapNames::getDpctNamespace() +
-                                        "get_error_string_dummy"),
+                      CALL_FACTORY_ENTRY("cusparseGetErrorName",
+                                         CALL(MapNames::getDpctNamespace() +
+                                                  "get_error_string_dummy",
+                                              ARG_WC(0))),
                       Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 
 ASSIGNABLE_FACTORY(

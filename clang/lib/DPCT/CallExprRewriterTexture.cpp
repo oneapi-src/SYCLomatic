@@ -232,6 +232,8 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 #define BIND_TEXTURE_FACTORY_ENTRY(FuncName, ...)                              \
   {FuncName, createBindTextureRewriterFactory<__VA_ARGS__>(FuncName)},
 
+#define REWRITER_FACTORY_ENTRY(FuncName, RewriterFactory, ...)                 \
+  {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \

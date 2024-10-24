@@ -40,6 +40,8 @@ void CallExprRewriterFactoryBase::initRewriterMapWmma() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
+#define REWRITER_FACTORY_ENTRY(FuncName, RewriterFactory, ...)                 \
+  {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName,                                             \
                          UnsupportFunctionRewriterFactory<std::string>, MsgID, \

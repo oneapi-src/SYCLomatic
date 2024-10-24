@@ -1338,13 +1338,12 @@ int runDPCT(int argc, const char **argv) {
       }
     }
 
-    // For some cuda error handling APIs, we use NoRewriteRewriter to do
-    // migration. So the comment in the argument part is kept in the migrated
-    // code. We remove those comments here.
+    // For some cuda error handling APIs (currently only cudaGetErrorString), we
+    // use NoRewriteRewriter to do migration. So the comment in the argument
+    // part is kept in the migrated code. We remove those comments here.
     // ATTENTION: There is A SPACE at the beginning of each comment.
     static const std::unordered_set<std::string> CommentsNeedBeRemoved = {
-        " /*cublasStatus_t*/", " /*cusparseStatus_t*/", " /*cudnnStatus_t*/",
-        " /*cudaError_t*/", " /*ncclResult_t*/"};
+        " /*cudaError_t*/"};
     for (const auto &Comment : CommentsNeedBeRemoved) {
       size_t RemoveStartPos = MigratedStr.find(Comment);
       if (RemoveStartPos != std::string::npos) {
