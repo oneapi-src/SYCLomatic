@@ -95,6 +95,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_DeviceGlobal,
   Exp_ExperimentalFeaturesEnumSize,
   Exp_NonStandardSYCLBuiltins,
+  Exp_VirtualMem,
   Exp_All
 };
 enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };

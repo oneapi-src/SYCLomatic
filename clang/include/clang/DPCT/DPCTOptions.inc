@@ -792,6 +792,11 @@ DPCT_ENUM_OPTION(
             "be accessed within a kernel using syntax similar to C++ global "
             "variables.\n",
             false),
+        DPCT_OPTION_ENUM_VALUE("virtual_mem",
+                               int(ExperimentalFeatures::Exp_VirtualMem),
+                               "Experimental extension that allows use of "
+                               "virtual memory ranges APIs.\n",
+                               false),
         DPCT_OPTION_ENUM_VALUE(
             "non-stdandard-sycl-builtins",
             int(ExperimentalFeatures::Exp_NonStandardSYCLBuiltins),
