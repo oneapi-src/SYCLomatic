@@ -20,6 +20,11 @@ namespace dpct {
 enum class KernelArgType;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
+enum class HelperFuncCatalog {
+  GetDefaultQueue,
+  GetOutOfOrderQueue,
+  GetInOrderQueue,
+};
 } // namespace dpct
 } // namespace clang
 
@@ -420,6 +425,9 @@ public:
   /// {Original API, {ToType, FromType}}
   static std::unordered_map<std::string, std::pair<std::string, std::string>>
       MathTypeCastingMap;
+
+  static std::map<clang::dpct::HelperFuncCatalog, std::string>
+      CustomHelperFunctionMap;
 };
 
 class MigrationStatistics {

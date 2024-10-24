@@ -4600,6 +4600,8 @@ MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"numChannels", "channel_num"}};
 
 std::vector<MetaRuleObject::PatternRewriter> MapNames::PatternRewriters;
+std::map<clang::dpct::HelperFuncCatalog, std::string>
+    MapNames::CustomHelperFunctionMap;
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};

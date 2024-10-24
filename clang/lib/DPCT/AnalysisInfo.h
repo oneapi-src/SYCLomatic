@@ -663,16 +663,14 @@ public:
         : DefaultQueueCounter(DefaultQueueCounter),
           CurrentDeviceCounter(CurrentDeviceCounter),
           PlaceholderStr{
-              "",
-              buildString(MapNames::getDpctNamespace(), "get_",
-                          DpctGlobalInfo::getDeviceQueueName(), "()"),
+              "", DpctGlobalInfo::getDefaultQueueFreeFuncCall(),
               MapNames::getDpctNamespace() + "get_current_device()",
               (DpctGlobalInfo::useSYCLCompat()
                    ? buildString(MapNames::getDpctNamespace() +
                                  "get_current_device().default_queue()")
-                   : buildString("&" + MapNames::getDpctNamespace() + "get_" +
-                                 DpctGlobalInfo::getDeviceQueueName() +
-                                 "()"))} {}
+                   : buildString(
+                         "&", DpctGlobalInfo::getDefaultQueueFreeFuncCall()))} {
+    }
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
     std::string PlaceholderStr[4];
@@ -750,7 +748,8 @@ public:
   static std::string getSubGroup(const Stmt *,
                                  const FunctionDecl *FD = nullptr);
   static std::string getDefaultQueue(const Stmt *);
-  static const std::string &getDeviceQueueName();
+  static const std::string &getDefaultQueueFreeFuncCall();
+  static const std::string &getDefaultQueueMemFuncName();
   static const std::string &getStreamName() {
     const static std::string StreamName = "stream" + getCTFixedSuffix();
     return StreamName;
@@ -1329,6 +1328,10 @@ public:
   static bool useBFloat16() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
   }
+  static std::unordered_set<std::string> &
+  getCustomHelperFunctionAddtionalIncludes() {
+    return CustomHelperFunctionAddtionalIncludes;
+  }
   std::shared_ptr<DpctFileInfo>
   insertFile(const clang::tooling::UnifiedPath &FilePath) {
     return insertObject(FileMap, FilePath);
@@ -1644,6 +1647,7 @@ private:
   static std::vector<std::pair<std::string, std::vector<std::string>>>
       CodePinDumpFuncDepsVec;
   static std::unordered_set<std::string> NeedParenAPISet;
+  static std::unordered_set<std::string> CustomHelperFunctionAddtionalIncludes;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

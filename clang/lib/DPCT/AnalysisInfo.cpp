@@ -63,8 +63,7 @@ const std::string &getDefaultString(HelperFuncType HFT) {
     const static std::string DefaultQueue =
         DpctGlobalInfo::useNoQueueDevice()
             ? DpctGlobalInfo::getGlobalQueueName()
-            : buildString(MapNames::getDpctNamespace() + "get_" +
-                          DpctGlobalInfo::getDeviceQueueName() + "()");
+            : DpctGlobalInfo::getDefaultQueueFreeFuncCall();
     return DefaultQueue;
   }
   case clang::dpct::HelperFuncType::HFT_DefaultQueuePtr: {
@@ -74,8 +73,8 @@ const std::string &getDefaultString(HelperFuncType HFT) {
             : (DpctGlobalInfo::useSYCLCompat()
                    ? buildString(MapNames::getDpctNamespace() +
                                  "get_current_device().default_queue()")
-                   : buildString("&" + MapNames::getDpctNamespace() + "get_" +
-                                 DpctGlobalInfo::getDeviceQueueName() + "()"));
+                   : buildString(
+                         "&", DpctGlobalInfo::getDefaultQueueFreeFuncCall()));
     return DefaultQueue;
   }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
@@ -268,6 +267,15 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
                                          nullptr));
   }
   EA.applyAllSubExprRepl();
+}
+HelperFuncCatalog getQueueKind() {
+  if (DpctGlobalInfo::useSYCLCompat()) {
+    return HelperFuncCatalog::GetDefaultQueue;
+  }
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
+    return HelperFuncCatalog::GetInOrderQueue;
+  }
+  return HelperFuncCatalog::GetOutOfOrderQueue;
 }
 
 ///// class FreeQueriesInfo /////
@@ -930,6 +938,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                                 << CCLVerValue << getNL();
     insertHeader(MigratedMacroDefinitionOS.str(), FileBeginOffset,
                  InsertPosition::IP_AlwaysLeft);
+    for (const auto &File :
+         DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes()) {
+      insertHeader("#include \"" + File + +"\"" + getNL(), FirstIncludeOffset,
+                   InsertPosition::IP_Right);
+    }
     return;
 
   // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
@@ -1225,15 +1238,26 @@ std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
 
   return buildString(RegexPrefix, 'Q', Idx, RegexSuffix);
 }
-const std::string &DpctGlobalInfo::getDeviceQueueName() {
-  static const std::string DeviceQueue = [&]() {
+const std::string &DpctGlobalInfo::getDefaultQueueFreeFuncCall() {
+  static const std::string DefaultQueueFreeFuncCall = [&]() {
+    if (auto Iter = MapNames::CustomHelperFunctionMap.find(getQueueKind());
+        Iter != MapNames::CustomHelperFunctionMap.end()) {
+      return Iter->second;
+    }
+    return MapNames::getDpctNamespace() + "get_" +
+           getDefaultQueueMemFuncName() + "()";
+  }();
+  return DefaultQueueFreeFuncCall;
+}
+const std::string &DpctGlobalInfo::getDefaultQueueMemFuncName() {
+  static const std::string DefaultQueueMemFuncName = [&]() {
     if (DpctGlobalInfo::useSYCLCompat())
       return "default_queue";
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       return "out_of_order_queue";
     return "in_order_queue";
   }();
-  return DeviceQueue;
+  return DefaultQueueMemFuncName;
 }
 void DpctGlobalInfo::setContext(ASTContext &C) {
   Context = &C;
@@ -1588,7 +1612,8 @@ void DpctGlobalInfo::buildReplacements() {
     QDecl << "&q_ct1 = ";
     if (DpctGlobalInfo::useSYCLCompat())
       QDecl << '*';
-    QDecl << "dev_ct1." << DpctGlobalInfo::getDeviceQueueName() << "();";
+    QDecl << "dev_ct1." << DpctGlobalInfo::getDefaultQueueMemFuncName()
+          << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.
@@ -2237,6 +2262,7 @@ void DpctGlobalInfo::resetInfo() {
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
   FreeQueriesInfo::reset();
+  CustomHelperFunctionAddtionalIncludes.clear();
 }
 void DpctGlobalInfo::updateSpellingLocDFIMaps(
     SourceLocation SL, std::shared_ptr<DeviceFunctionInfo> DFI) {
@@ -2454,6 +2480,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>>
 std::vector<std::pair<std::string, std::vector<std::string>>>
     DpctGlobalInfo::CodePinDumpFuncDepsVec;
 std::unordered_set<std::string> DpctGlobalInfo::NeedParenAPISet = {};
+std::unordered_set<std::string>
+    DpctGlobalInfo::CustomHelperFunctionAddtionalIncludes = {};
 ///// class DpctNameGenerator /////
 void DpctNameGenerator::printName(const FunctionDecl *FD,
                                   llvm::raw_ostream &OS) {
@@ -6070,6 +6098,7 @@ void KernelCallExpr::removeExtraIndent() {
       getFilePath(), getOffset() - LocInfo.Indent.length(),
       LocInfo.Indent.length(), "", nullptr));
 }
+
 void KernelCallExpr::addDevCapCheckStmt() {
   llvm::SmallVector<std::string> AspectList;
   if (getVarMap().hasBF64()) {
@@ -6079,17 +6108,28 @@ void KernelCallExpr::addDevCapCheckStmt() {
     AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
   }
   if (!AspectList.empty()) {
-    requestFeature(HelperFeatureEnum::device_ext);
     std::string Str;
     llvm::raw_string_ostream OS(Str);
-    OS << MapNames::getDpctNamespace() << "get_device(";
-    OS << MapNames::getDpctNamespace() << "get_device_id(";
-    printStreamBase(OS);
-    OS << "get_device())).has_capability_or_fail({" << AspectList.front();
-    for (size_t i = 1; i < AspectList.size(); ++i) {
-      OS << ", " << AspectList[i];
+    if (auto Iter = MapNames::CustomHelperFunctionMap.find(getQueueKind());
+        Iter != MapNames::CustomHelperFunctionMap.end()) {
+      OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+      OS << Iter->second << ".get_device(), ";
+      OS << "{" << AspectList.front();
+      for (size_t i = 1; i < AspectList.size(); ++i) {
+        OS << ", " << AspectList[i];
+      }
+      OS << "});";
+    } else {
+      requestFeature(HelperFeatureEnum::device_ext);
+      OS << MapNames::getDpctNamespace() << "get_device(";
+      OS << MapNames::getDpctNamespace() << "get_device_id(";
+      printStreamBase(OS);
+      OS << "get_device())).has_capability_or_fail({" << AspectList.front();
+      for (size_t i = 1; i < AspectList.size(); ++i) {
+        OS << ", " << AspectList[i];
+      }
+      OS << "});";
     }
-    OS << "});";
     OuterStmts.OthersList.emplace_back(OS.str());
   }
 }
@@ -6139,8 +6179,7 @@ void KernelCallExpr::addStreamDecl() {
         buildString(MapNames::getClNamespace() + "stream ",
                     DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
   if (getVarMap().hasSync()) {
-    auto DefaultQueue = buildString(MapNames::getDpctNamespace(), "get_",
-                                    DpctGlobalInfo::getDeviceQueueName(), "()");
+    auto DefaultQueue = DpctGlobalInfo::getDefaultQueueFreeFuncCall();
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       OuterStmts.OthersList.emplace_back(
           buildString(MapNames::getDpctNamespace(), "global_memory<",

@@ -277,6 +277,32 @@ void registerPatternRewriterRule(MetaRuleObject &R) {
       R.BuildScriptSyntax, R.Priority));
 }
 
+void registerHelperFunctionRule(MetaRuleObject &R) {
+  static const std::unordered_map<std::string, dpct::HelperFuncCatalog>
+      String2HelperFuncCatalogMap{
+          {"get_default_queue", dpct::HelperFuncCatalog::GetDefaultQueue},
+          {"get_in_order_queue", dpct::HelperFuncCatalog::GetInOrderQueue},
+          {"get_out_of_order_queue",
+           dpct::HelperFuncCatalog::GetOutOfOrderQueue}};
+  if (R.Priority == RulePriority::Takeover) {
+    if (auto Iter = String2HelperFuncCatalogMap.find(R.In);
+        Iter != String2HelperFuncCatalogMap.end()) {
+      // This map is inited here.
+      // It saves the customized string which used for each kind of helper
+      // function call in the migrated code.
+      MapNames::CustomHelperFunctionMap.insert({Iter->second, R.Out});
+      dpct::DpctGlobalInfo::setUsingDRYPattern(false);
+      dpct::DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes().insert(
+          R.Includes.begin(), R.Includes.end());
+    } else {
+      llvm::outs()
+          << "Warning: The rule named " << R.RuleId
+          << " (Kind: HelperFunction) is ignored, as the API specified "
+             "in the \"In\" field is not supported for customization.\n";
+    }
+  }
+}
+
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     const MetaRuleObject::PatternRewriter &PR) {
   if (this != &PR) {
@@ -365,6 +391,9 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
         break;
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
+        break;
+      case (RuleKind::HelperFunction):
+        registerHelperFunctionRule(*r);
         break;
       case (RuleKind::PythonRule):
         registerPythonMigrationRule(*r);
