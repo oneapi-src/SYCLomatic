@@ -1271,7 +1271,7 @@ int runDPCT(int argc, const char **argv) {
           std::string Err = getDpctTermStr();
           StringRef ErrStr = Err;
           // Avoid the "Visual Studio version" error on windows platform.
-          if (ErrStr.find_first_of("error") == ErrStr.find_last_of("error") &&
+          if (ErrStr.find("error:") == ErrStr.rfind("error:") &&
               ErrStr.contains(
                   "error -- unsupported Microsoft Visual Studio version")) {
             continue;
