@@ -19,13 +19,15 @@ void foo1 () {
   // CHECK-NEXT: uint64_t rows;
   // CHECK-NEXT: uint64_t cols;
   // CHECK-NEXT: int64_t ld;
+  // CHECK-NEXT: uint64_t batch_count;
   // CHECK-NEXT: matLayout = new dpct::blas_gemm::experimental::matrix_layout_t(type, rows, cols, ld);
   cublasLtMatrixLayout_t matLayout;
   cudaDataType type;
   uint64_t rows;
   uint64_t cols;
   int64_t ld;
-  cublasLtMatrixLayoutCreate(&matLayout, type, rows, cols, ld);
+  uint64_t batch_count;
+  cublasLtMatrixLayoutCreate(&matLayout, type, rows, cols, ld, batch_count);
 
   // CHECK: dpct::blas_gemm::experimental::matrix_layout_t::attribute attr1;
   // CHECK-NEXT: void *buf1;
@@ -174,12 +176,14 @@ void foo3() {
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::rows;
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::cols;
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::ld;
+  // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::batch_count;
   cublasLtMatrixLayoutAttribute_t c;
   c = CUBLASLT_MATRIX_LAYOUT_TYPE;
   c = CUBLASLT_MATRIX_LAYOUT_ORDER;
   c = CUBLASLT_MATRIX_LAYOUT_ROWS;
   c = CUBLASLT_MATRIX_LAYOUT_COLS;
   c = CUBLASLT_MATRIX_LAYOUT_LD;
+  c = CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT;
   // CHECK: dpct::blas_gemm::experimental::matmul_desc_t::attribute d;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::compute_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::scale_type;
