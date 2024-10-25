@@ -10940,6 +10940,7 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaHostGetFlags") && Name.compare("cuMemHostGetFlags") &&
         Name.compare("cuMemcpy") && Name.compare("cuMemcpyAsync") &&
         Name.compare("cuMemAllocPitch_v2") &&
+        Name.compare("cuMemAlloc_v2") &&
         Name.compare("cudaMallocMipmappedArray") &&
         Name.compare("cudaGetMipmappedArrayLevel") &&
         Name.compare("cudaFreeMipmappedArray")) {

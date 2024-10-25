@@ -41,7 +41,8 @@ int main(){
     CUcontext c1, c2;
     // CHECK: f_D = (dpct::device_ptr)sycl::malloc_device(size, q_ct1);
     cuMemAlloc(&f_D, size);
-
+    // CHECK: r = DPCT_CHECK_ERROR(f_D = (dpct::device_ptr)sycl::malloc_device(size, q_ct1));
+    r = cuMemAlloc(&f_D, size);
     // CHECK: dpct::queue_ptr stream;
     CUstream stream;
     // CHECK: stream->memcpy(f_D, f_A, size);
