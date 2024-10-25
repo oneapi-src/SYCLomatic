@@ -279,6 +279,12 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     if (!II)
       continue;
 
+    // The "__noinline__" macro is re-defined and it is used in
+    // "__attribute__()", do not migrate it.
+    if (II->hasMacroDefinition() && (II->getName() == "__noinline__")) {
+      continue;
+    }
+
     auto ItRule = MapNames::MacroRuleMap.find(II->getName().str());
     if (ItRule != MapNames::MacroRuleMap.end()) {
       TransformSet.emplace_back(
@@ -6030,6 +6036,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
       requestHelperFeatureForEnumNames(AttributeName);
+
+      if (AttributeName == "cudaDevAttrMaxSharedMemoryPerBlockOptin") {
+        report(CE->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false,
+               AttributeName);
+      }
 
       ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
       ReplStr += StmtStrArg2;
