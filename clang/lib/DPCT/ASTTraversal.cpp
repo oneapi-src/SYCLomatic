@@ -10939,15 +10939,14 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") && Name.compare("cuMemHostGetFlags") &&
         Name.compare("cuMemcpy") && Name.compare("cuMemcpyAsync") &&
-        Name.compare("cuMemAllocPitch_v2") &&
-        Name.compare("cuMemAlloc_v2") &&
+        Name.compare("cuMemAllocPitch_v2") && Name.compare("cuMemAlloc_v2") &&
         Name.compare("cudaMallocMipmappedArray") &&
         Name.compare("cudaGetMipmappedArrayLevel") &&
         Name.compare("cudaFreeMipmappedArray")) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
-               DpctGlobalInfo::getUsmLevel() !=  UsmLevel::UL_None) {
+               DpctGlobalInfo::getUsmLevel() != UsmLevel::UL_None) {
       requestFeature(HelperFeatureEnum::device_ext);
       insertAroundStmt(C, MapNames::getCheckErrorMacroName() + "(", ")");
     } else if (IsAssigned && !Name.compare("cudaArrayGetInfo")) {
