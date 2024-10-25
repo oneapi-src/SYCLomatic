@@ -1,18 +1,18 @@
-//CHECK: // This file is auto-generated to support the instrument API of CodePin.
+// This file is auto-generated to support the instrument API of CodePin.
 //CHECK: #ifndef __DPCT_CODEPIN_AUTOGEN_UTIL__
 //CHECK: #define __DPCT_CODEPIN_AUTOGEN_UTIL__
 
-//CHECK: namespace test_codepin{
+//CHECK: namespace test{
 //CHECK: struct P2;
 //CHECK: }
 
-//CHECK: namespace test_codepin{
-//CHECK: using Point2D = test_codepin::P2;
+//CHECK: namespace nnn{
+//CHECK: struct PP2;
 //CHECK: }
 
-//CHECK: struct dpct_type_{{[0-9]+}};
-//CHECK: using PP2 = dpct_type_{{[0-9]+}};
-
+//CHECK: namespace test_codepin{
+//CHECK: using Point2D = test::P2;
+//CHECK: }
 
 //CHECK: namespace dpct {
 //CHECK: namespace experimental {
@@ -20,20 +20,49 @@
 //CHECK: namespace detail {
 //CHECK: struct P2_codepin {
 //CHECK: public:
-//CHECK:   int test_x_codepin;
+//CHECK:   int x_codepin;
+//CHECK:   int y_codepin;
+//CHECK: };
+
+//CHECK: struct PP2_codepin {
+//CHECK: public:
+//CHECK:   int x_codepin;
 //CHECK:   int y_codepin;
 //CHECK: };
 
 //CHECK: struct Point2D_codepin {
 //CHECK: public:
-//CHECK:  int test_x_codepin;
-//CHECK:  int y_codepin;
+//CHECK:   int x_codepin;
+//CHECK:   int y_codepin;
 //CHECK: };
 
-//CHECK: struct PP2_codepin {
+//CHECK: template <> class data_ser<P2_codepin> {
 //CHECK: public:
-//CHECK:  int test_x_codepin;
-//CHECK:  int y_codepin;
+//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, P2_codepin &value,
+//CHECK:                    dpctexp::codepin::queue_t queue) {
+//CHECK:     auto arr = ss.array();
+//CHECK:     {
+//CHECK:       auto obj0 = arr.object();
+//CHECK:       obj0.key("x");
+//CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
+//CHECK:       obj0.key("Data");
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x_codepin, queue);
+//CHECK:     }
+//CHECK:     {
+//CHECK:       auto obj1 = arr.object();
+//CHECK:       obj1.key("y");
+//CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
+//CHECK:       obj1.key("Data");
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y_codepin, queue);
+//CHECK:     }
+
+//CHECK:   }
+//CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
+//CHECK:     obj.key("Type");
+//CHECK:     obj.value("P2_codepin");
+//CHECK:   }
 //CHECK: };
 
 //CHECK: template <> class data_ser<Point2D_codepin> {
@@ -43,11 +72,11 @@
 //CHECK:     auto arr = ss.array();
 //CHECK:     {
 //CHECK:       auto obj0 = arr.object();
-//CHECK:       obj0.key("test_x");
+//CHECK:       obj0.key("x");
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.test_x_codepin, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj1 = arr.object();
@@ -85,11 +114,11 @@
 //CHECK:     auto arr = ss.array();
 //CHECK:     {
 //CHECK:       auto obj0 = arr.object();
-//CHECK:       obj0.key("test_x");
+//CHECK:       obj0.key("x");
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.test_x_codepin, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj1 = arr.object();
@@ -107,16 +136,16 @@
 //CHECK:   }
 //CHECK: };
 
-//CHECK: template <> class data_ser<PP2> {
+//CHECK: template <> class data_ser<nnn::PP2> {
 //CHECK: public:
-//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, PP2 &value,
+//CHECK:   static void dump(dpctexp::codepin::detail::json_stringstream &ss, nnn::PP2 &value,
 //CHECK:                    dpctexp::codepin::queue_t queue) {
 //CHECK:     PP2_codepin& temp = reinterpret_cast<PP2_codepin&>(value);
 //CHECK:     dpctexp::codepin::detail::data_ser<PP2_codepin>::dump(ss, temp, queue);
 //CHECK:   }
 //CHECK:   static void print_type_name(json_stringstream::json_obj &obj) {
 //CHECK:     obj.key("Type");
-//CHECK:     obj.value("PP2");
+//CHECK:     obj.value("nnn::PP2");
 //CHECK:   }
 //CHECK: };
 

@@ -32,7 +32,7 @@ private:
   void processCodePinTypeMemberOrBase(QualType MT, std::string Name,
                                       VarInfoForCodePin &VarInfo,
                                       std::vector<QualType> &MembersType,
-                                      bool IsBase, bool IsBFS,
+                                      CodePinVarInfoType InfoType, bool IsBFS,
                                       bool IsBaseMember,
                                       clang::PrintingPolicy &PrintPolicy);
   void saveCodePinTypeDeps(
