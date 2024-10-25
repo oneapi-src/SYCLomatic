@@ -1264,38 +1264,40 @@ int runDPCT(int argc, const char **argv) {
       return MigrationErrorInconsistentFileInDatabase;
     }
 
-    if (RunResult && StopOnParseErr) {
-      DumpOutputFile();
-      if (RunResult == 1) {
-        if (DpctGlobalInfo::isQueryAPIMapping()) {
-          std::string Err = getDpctTermStr();
-          StringRef ErrStr = Err;
-          // Avoid the "Visual Studio version" error on windows platform.
-          if (ErrStr.find_first_of("error") == ErrStr.find_last_of("error") &&
-              ErrStr.contains(
-                  "error -- unsupported Microsoft Visual Studio version")) {
-            continue;
+    do {
+      if (RunResult && StopOnParseErr) {
+        DumpOutputFile();
+        if (RunResult == 1) {
+          if (DpctGlobalInfo::isQueryAPIMapping()) {
+            std::string Err = getDpctTermStr();
+            StringRef ErrStr = Err;
+            // Avoid the "Visual Studio version" error on windows platform.
+            if (ErrStr.find("error:") == ErrStr.rfind("error:") &&
+                ErrStr.contains(
+                    "error -- unsupported Microsoft Visual Studio version")) {
+              break;
+            }
+            if (ErrStr.contains("use of undeclared identifier")) {
+              ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
+                         QueryAPIMapping);
+              return MigrationErrorAPIMappingWrongCUDAHeader;
+            } else if (ErrStr.contains("file not found")) {
+              ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
+              return MigrationErrorAPIMappingNoCUDAHeader;
+            }
+            ShowStatus(MigrationErrorNoAPIMapping);
+            dpctExit(MigrationErrorNoAPIMapping);
           }
-          if (ErrStr.contains("use of undeclared identifier")) {
-            ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
-                       QueryAPIMapping);
-            return MigrationErrorAPIMappingWrongCUDAHeader;
-          } else if (ErrStr.contains("file not found")) {
-            ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
-            return MigrationErrorAPIMappingNoCUDAHeader;
-          }
-          ShowStatus(MigrationErrorNoAPIMapping);
-          dpctExit(MigrationErrorNoAPIMapping);
+          ShowStatus(MigrationErrorFileParseError);
+          return MigrationErrorFileParseError;
+        } else {
+          // When RunResult equals to 2, it means no error, but some files are
+          // skipped due to missing compile commands.
+          // And clang::tooling::ReFactoryTool will emit error message.
+          return MigrationSKIPForMissingCompileCommand;
         }
-        ShowStatus(MigrationErrorFileParseError);
-        return MigrationErrorFileParseError;
-      } else {
-        // When RunResult equals to 2, it means no error, but some files are
-        // skipped due to missing compile commands.
-        // And clang::tooling::ReFactoryTool will emit error message.
-        return MigrationSKIPForMissingCompileCommand;
       }
-    }
+    } while (0);
 
     Action.runPasses();
   } while (DpctGlobalInfo::isNeedRunAgain());
