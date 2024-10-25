@@ -62,11 +62,11 @@ private:
 
 class matrix_layout_t {
 public:
-  enum class attribute { type, order, rows, cols, ld, batch_count};
+  enum class attribute { type, order, rows, cols, ld, batch_count };
 
   matrix_layout_t(library_data_t type, std::uint64_t rows, std::uint64_t cols,
-                  std::int64_t ld, std::uint64_t batch_count=1)
-      : _type(type), _rows(rows), _cols(cols), _ld(ld), _batch_count(batch_count) {}
+                  std::int64_t ld)
+      : _type(type), _rows(rows), _cols(cols), _ld(ld) {}
 
   void set_attribute(attribute attr, const void *mem) {
     get_set_attr<true>(attr, const_cast<void *>(mem));
@@ -94,12 +94,17 @@ private:
     }
 #undef CASE
   }
-
+  
+  std::uint64_t get_batch_count() const{
+    return _batch_count;
+  }
+  
   library_data_t _type;
   order_t _order = order_t::col;
   std::uint64_t _rows;
   std::uint64_t _cols;
   std::int64_t _ld;
+  std::uint64_t _batch_count;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,

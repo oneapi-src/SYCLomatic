@@ -19,15 +19,13 @@ void foo1 () {
   // CHECK-NEXT: uint64_t rows;
   // CHECK-NEXT: uint64_t cols;
   // CHECK-NEXT: int64_t ld;
-  // CHECK-NEXT: uint64_t batch_count;
   // CHECK-NEXT: matLayout = new dpct::blas_gemm::experimental::matrix_layout_t(type, rows, cols, ld);
   cublasLtMatrixLayout_t matLayout;
   cudaDataType type;
   uint64_t rows;
   uint64_t cols;
   int64_t ld;
-  uint64_t batch_count;
-  cublasLtMatrixLayoutCreate(&matLayout, type, rows, cols, ld, batch_count);
+  cublasLtMatrixLayoutCreate(&matLayout, type, rows, cols, ld);
 
   // CHECK: dpct::blas_gemm::experimental::matrix_layout_t::attribute attr1;
   // CHECK-NEXT: void *buf1;

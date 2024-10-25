@@ -1916,7 +1916,7 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_MATRIX_LAYOUT_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::type"},
-      {"CUBLASLT_MATRIX_LAYOUT_BATCH_COUT",
+      {"CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT",
        getLibraryHelperNamespace() + 
            "blas_gemm::experimental::matrix_layout_t::attribute::batch_count"},
       {"CUBLASLT_MATRIX_LAYOUT_ORDER",
