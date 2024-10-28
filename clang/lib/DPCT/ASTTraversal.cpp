@@ -8651,7 +8651,26 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
           Info->setInitForDeviceGlobal(InitStr);
         }
       }
-      if (!Info->getType()->isArray()) {
+      auto VarType = Info->getType();
+      if (VarType->isArray()) {
+        if (const auto *const ICE =
+                dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
+          if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
+            if (!dyn_cast_or_null<ArraySubscriptExpr>(getParentStmt(ICE))) {
+              std::string Dims;
+              for (auto &D : VarType->getRange()) {
+                Dims = Dims + "[" + D.getSize() + "]";
+              }
+              emplaceTransformation(new InsertBeforeStmt(
+                  MemVarRef, buildString("(std::decay_t<",
+                                         VarType->getBaseName(), Dims, ">)")));
+              emplaceTransformation(new InsertAfterStmt(
+                  MemVarRef,
+                  ".get_multi_ptr<sycl::access::decorated::no>().get()"));
+            }
+          }
+        }
+      } else {
         emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get()"));
       }
       return;

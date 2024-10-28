@@ -62,6 +62,7 @@ __device__ B arr_f[10];
 
 
 // CHECK: int device_func() {
+// CHECK:   float *p = (std::decay_t<float[10]>)arra_a.get_multi_ptr<sycl::access::decorated::no>().get();
 // CHECK:   arr_a[0] = 1;
 // CHECK:   return arr_a[0] + arr_b[0] + arr_c[0] + arr_d[0] + arr_e[0].data + arr_f[0].data;
 // CHECK: }
@@ -72,6 +73,7 @@ __device__ B arr_f[10];
 // CHECK:   *ptr = var_a.get() + var_b.get() + var_c.get() + var_d.get() + var_e.get().data + var_f.get().data + device_func();
 // CHECK: }
 __device__ int device_func() {
+  float *p = arra_a;
   arr_a[0] = 1;
   return arr_a[0] + arr_b[0] + arr_c[0] + arr_d[0] + arr_e[0].data + arr_f[0].data;
 }
