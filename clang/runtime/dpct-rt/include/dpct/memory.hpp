@@ -1432,13 +1432,12 @@ typedef sycl::ext::oneapi::experimental::physical_mem *physical_mem_ptr;
 struct mem_location {
   int id;
   int type; // Location type. Value 1 means device location, and thus, id is a
-            // device id. Other values are reserved for future use.
+            // device id.
 };
 
 struct mem_prop {
   mem_location location;
-  int type; // Memory type. Value 1 means default device memory. Other values
-            // are reserved for future use.
+  int type; // Memory type. Value 1 means default device memory.
 };
 
 struct mem_access_desc {
