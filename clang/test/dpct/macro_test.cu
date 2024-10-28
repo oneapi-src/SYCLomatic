@@ -1394,4 +1394,24 @@ __global__ void foo40_kernel() {
 void foo40() {
   foo40_kernel<<<1, 1>>>();
 }
+
+
+template <class T> class MyClass {};
+
+__global__ void foo41(MyClass<float> m) {}
+
+void foo42(MyClass<float> &vecs) {
+#define RUN_APPEND2(DATA) foo41<<<1, 1, 0>>>(DATA);
+//CHECK: #define RUN_APPEND2(DATA)                                                      \
+//CHECK-NEXT:   dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {                  \
+//CHECK-NEXT:     auto DATA_ct0 = DATA;                                                      \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo41(DATA_ct0); });                  \
+//CHECK-NEXT:   });
+  RUN_APPEND2(vecs);
+}
+
+
 #endif

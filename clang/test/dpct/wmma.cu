@@ -201,5 +201,19 @@ int main() {
 
   return 0;
 }
+
+using namespace nvcuda;
+template<typename T>
+__global__ void simple_wmma_gemm(T *d) {
+  wmma::fragment<wmma::accumulator, 16, 16, 16, T> c_frag;
+  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag.get(), sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, T>(d), 1, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+  wmma::store_matrix_sync(d, c_frag, 1, wmma::mem_row_major);
+}
+int main() {
+  simple_wmma_gemm<half><<<1, 1>>>(nullptr);
+  simple_wmma_gemm<float><<<1, 1>>>(nullptr);
+  return 0;
+}
+
 // clang-format on
 #endif
