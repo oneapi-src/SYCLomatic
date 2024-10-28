@@ -95,7 +95,7 @@ private:
     }
 #undef CASE
   }
-  
+
   library_data_t _type;
   order_t _order = order_t::col;
   std::uint64_t _rows;
