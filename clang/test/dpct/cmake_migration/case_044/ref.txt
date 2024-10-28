@@ -1,2 +1,2 @@
-// CHECK: [Warnning]: Two migration rules (Rule:rule_gen_codes_add_link_options_test_dup, Rule:rule_gen_codes_add_link_options) are duplicated, the migrtion rule (Rule:rule_gen_codes_add_link_options_test_dup) is ignored.
-// CHECK: [Warnning]: Two migration rules (Rule:rule_a_new, Rule:rule_a_old) are duplicated, the migrtion rule (Rule:rule_a_new) is ignored.
+// CHECK: [Warnning]: Two migration rules (Rule:rule_gen_codes_add_link_options_test_dup, Rule:rule_gen_codes_add_link_options) are duplicated, the migration rule (Rule:rule_gen_codes_add_link_options_test_dup) is ignored.
+// CHECK: [Warnning]: Two migration rules (Rule:rule_a_new, Rule:rule_a_old) are duplicated, the migration rule (Rule:rule_a_new) is ignored.

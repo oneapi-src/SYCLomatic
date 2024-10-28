@@ -2,8 +2,8 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-algo %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust-algo/thrust-algo.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-algo/thrust-algo.dp.cpp -o %T/thrust-algo/thrust-algo.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-algo/thrust-algo.dp.cpp -o %T/thrust-algo/thrust-algo.dp.o %}
+#ifndef NO_BUILD_TEST
 #include <vector>
 
 #include <thrust/binary_search.h>

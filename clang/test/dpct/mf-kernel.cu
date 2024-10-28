@@ -2,7 +2,7 @@
 #include "mf-kernel.cuh"
 // RUN: echo pass
 
-// CHECK: dpct::global_memory<volatile int, 0> g_mutex(0);
+// CHECK: static dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex=0;
 // CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int &g_mutex)
 __global__ void Reset_kernel_parameters(void)
@@ -75,7 +75,7 @@ __global__ void constAdd(float *C) {
 // CHECK-NEXT:    dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
 // CHECK-NEXT:        auto A_acc_ct1 = A_ct.get_access(cgh);
-// CHECK-NEXT:        dpct::access_wrapper<float *> d_C_acc_ct0(d_C, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_C_acc_ct0(d_C, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)),

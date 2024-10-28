@@ -77,7 +77,7 @@ int main() {
   // CHECK: sycl::double2* data;
   // CHECK-NEXT: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::double2 *> data_acc_ct0(data, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper data_acc_ct0(data, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

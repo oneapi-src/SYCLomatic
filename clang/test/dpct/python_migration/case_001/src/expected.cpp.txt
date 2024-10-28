@@ -1,0 +1,9 @@
+#include <sycl/sycl.hpp>
+#include <dpct/dpct.hpp>
+
+int main() {
+    int *dP;
+    dP = (int *)sycl::malloc_device(1024, dpct::get_in_order_queue());
+
+    return 0;
+}

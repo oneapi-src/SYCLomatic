@@ -28,13 +28,15 @@ class Replacements;
 int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
                       clang::tooling::UnifiedPath OutRootSrcFilePath,
                       clang::tooling::Replacements &Replaces);
-int loadFromYaml(const clang::tooling::UnifiedPath& Input,
+int loadFromYaml(const clang::tooling::UnifiedPath &Input,
                  clang::tooling::TranslationUnitReplacements &TU);
 int save2Yaml(
-    clang::tooling::UnifiedPath& YamlFile, clang::tooling::UnifiedPath& SrcFileName,
+    clang::tooling::UnifiedPath &YamlFile,
+    clang::tooling::UnifiedPath &SrcFileName,
     const std::vector<clang::tooling::Replacement> &Replaces,
-    const std::vector<std::pair<clang::tooling::UnifiedPath, std::string>> &MainSrcFilesDigest,
-    const std::map<clang::tooling::UnifiedPath, std::vector<clang::tooling::CompilationInfo>>
+    const std::vector<clang::tooling::MainSourceFileInfo> &MainSrcFilesDigest,
+    const std::map<clang::tooling::UnifiedPath,
+                   std::vector<clang::tooling::CompilationInfo>>
         &CompileTargets);
 
 void mergeAndUniqueReps(

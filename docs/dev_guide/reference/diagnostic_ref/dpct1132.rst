@@ -1,0 +1,125 @@
+.. _DPCT1132:
+
+DPCT1132
+========
+
+Message
+-------
+
+.. _msg-1132-start:
+
+SYCL 2020 does not support accessing the *<property name>* for the kernel. The API is
+replaced with member variable "*<variable name>*". Please set the appropriate value for
+"*<variable name>*".
+
+.. _msg-1132-end:
+
+Detailed Help
+-------------
+
+There is limited support for querying the kernel attribute such as shared memory or
+number of registers used by a kernel in SYCL\* 2020. The tool migrates the following
+attributes to member variables of a class defined in the DPCT namespace helper function,
+in order to ensure the compilability of migrated code.
+
+* Shared-memory size per-block required by the kernel
+* Local memory size used by each thread in the kernel
+* Constant memory size required by the kernel
+* Number of registers used by each thread in the kernel
+
+It is recommend to use an appropriate value to replace the member variable access,
+provided it is statically available. Otherwise, consider removing the code along with
+the part that depends on it.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(CUfunction f) {
+     int smsize;
+     int lcsize;
+     int cnsize;
+     int nreg;
+
+     cuFuncGetAttribute(&smsize, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, f);
+
+     cuFuncGetAttribute(&lcsize, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, f);
+
+     cuFuncGetAttribute(&cnsize, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, f);
+
+     cuFuncGetAttribute(&nreg, CU_FUNC_ATTRIBUTE_NUM_REGS, f);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(dpct::kernel_function f) {
+     int smsize;
+     int lcsize;
+     int cnsize;
+     int nreg;
+     /*
+     DPCT1132:0: SYCL 2020 does not support accessing the statically allocated
+     shared memory for the kernel. The API is replaced with member variable
+     "shared_size_bytes". Please set the appropriate value for "shared_size_bytes".
+     */
+     smsize = dpct::get_kernel_function_info(f)
+                  .shared_size_bytes /* statically allocated shared memory per
+                                        work-group in bytes */
+         ;
+
+     /*
+     DPCT1132:1: SYCL 2020 does not support accessing the local memory for the
+     kernel. The API is replaced with member variable "local_size_bytes". Please
+     set the appropriate value for "local_size_bytes".
+     */
+     lcsize = dpct::get_kernel_function_info(f)
+                  .local_size_bytes /* local memory per work-item in bytes */;
+
+     /*
+     DPCT1132:2: SYCL 2020 does not support accessing the memory size of
+     user-defined constants for the kernel. The API is replaced with member
+     variable "const_size_bytes". Please set the appropriate value for
+     "const_size_bytes".
+     */
+     cnsize =
+         dpct::get_kernel_function_info(f)
+             .const_size_bytes /* user-defined constant kernel memory in bytes */;
+
+     /*
+     DPCT1132:3: SYCL 2020 does not support accessing the required number of
+     registers for the kernel. The API is replaced with member variable
+     "num_regs". Please set the appropriate value for "num_regs".
+     */
+     nreg = dpct::get_kernel_function_info(f)
+                .num_regs /* number of registers for each thread */;
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(dpct::kernel_function f) {
+     int smsize;
+     int lcsize;
+     int cnsize;
+     int nreg;
+
+     smsize = 1024 /* statically allocated shared memory per-group in bytes according
+     to kernel function f */;
+
+     lcsize = 1024 /* local memory per work-item in bytes according to kernel function
+     f */;
+
+     cnsize = 1024 /* user-defined constant kernel memory in bytes according to kernel
+     function f */;
+
+     nreg = 4 /* number of registers for each thread according to kernel function f */;
+   }

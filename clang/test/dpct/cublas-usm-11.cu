@@ -13,12 +13,12 @@ void foo1() {
   const void **a_array;
   const void **b_array;
   void **c_array;
-  //CHECK:dpct::nrm2(handle->get_queue(), 4, x, dpct::library_data_t::real_float, 1, res, dpct::library_data_t::real_float);
-  //CHECK-NEXT:dpct::dot(handle->get_queue(), 4, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1, res, dpct::library_data_t::real_float);
-  //CHECK-NEXT:dpct::dotc(handle->get_queue(), 4, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1, res, dpct::library_data_t::real_float);
-  //CHECK-NEXT:dpct::scal(handle->get_queue(), 4, alpha, dpct::library_data_t::real_float, x, dpct::library_data_t::real_float, 1);
-  //CHECK-NEXT:dpct::axpy(handle->get_queue(), 4, alpha, dpct::library_data_t::real_float, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1);
-  //CHECK-NEXT:dpct::rot(handle->get_queue(), 4, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1, cos, sin, dpct::library_data_t::real_float);
+  //CHECK:dpct::blas::nrm2(handle, 4, x, dpct::library_data_t::real_float, 1, res, dpct::library_data_t::real_float);
+  //CHECK-NEXT:dpct::blas::dot(handle, 4, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1, res, dpct::library_data_t::real_float);
+  //CHECK-NEXT:dpct::blas::dotc(handle, 4, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1, res, dpct::library_data_t::real_float);
+  //CHECK-NEXT:dpct::blas::scal(handle, 4, alpha, dpct::library_data_t::real_float, x, dpct::library_data_t::real_float, 1);
+  //CHECK-NEXT:dpct::blas::axpy(handle, 4, alpha, dpct::library_data_t::real_float, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1);
+  //CHECK-NEXT:dpct::blas::rot(handle, 4, x, dpct::library_data_t::real_float, 1, y, dpct::library_data_t::real_float, 1, cos, sin, dpct::library_data_t::real_float);
   //CHECK-NEXT:dpct::blas::gemm(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a, dpct::library_data_t::real_half, 4, b, dpct::library_data_t::real_half, 4, beta, c, dpct::library_data_t::real_half, 4, dpct::compute_type::f16);
   //CHECK-NEXT:dpct::blas::gemm_batch(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a_array, dpct::library_data_t::real_half, 4, b_array, dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::compute_type::f16);
   //CHECK-NEXT:dpct::blas::gemm_batch(handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, a, dpct::library_data_t::real_half, 4, 16, b, dpct::library_data_t::real_half, 4, 16, beta, c, dpct::library_data_t::real_half, 4, 16, 2, dpct::compute_type::f16);
@@ -52,4 +52,47 @@ void foo3() {
   cublasMath_t Mathmode;
   cublasGetMathMode(handle, &Mathmode);
   cublasSetMathMode(handle, Mathmode);
+}
+
+void foo4() {
+  cublasHandle_t handle;
+  int m, n, k;
+  void *x, *y;
+  int incx, incy;
+  void *res;
+  int *idx;
+  void *param;
+  // CHECK: dpct::blas::copy(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::swap(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::iamax(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::iamin(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::asum(handle, n, x, dpct::library_data_t::real_float, incx, res, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::blas::rotm(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy, param, dpct::library_data_t::real_float);
+  cublasCopyEx(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasSwapEx(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasIamaxEx(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasIaminEx(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasAsumEx(handle, n, x, CUDA_R_32F, incx, res, CUDA_R_32F, CUDA_R_32F);
+  cublasRotmEx(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy, param, CUDA_R_32F, CUDA_R_32F);
+
+  cublasOperation_t transa;
+  cublasOperation_t transb;
+  cuComplex *alpha, *beta;
+  void *A, *B, *C;
+  int lda, ldb, ldc;
+  cudaDataType_t a_type, b_type, c_type;
+  // CHECK: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha, A, a_type, lda, B, b_type, ldb, beta, C, c_type, ldc, dpct::library_data_t::complex_float);
+  cublasCgemm3mEx(handle, transa, transb, m, n, k, alpha, A, a_type, lda, B, b_type, ldb, beta, C, c_type, ldc);
+
+  cublasFillMode_t uplo;
+  cublasOperation_t trans;
+  float *alpha_s, *beta_s;
+  // CHECK: dpct::blas::syherk<false>(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::syherk<false>(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::syherk<true>(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::syherk<true>(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc, dpct::library_data_t::complex_float);
+  cublasCsyrkEx(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc);
+  cublasCsyrk3mEx(handle, uplo, trans, n, k, alpha, A, a_type, lda, beta, C, c_type, ldc);
+  cublasCherkEx(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc);
+  cublasCherk3mEx(handle, uplo, trans, n, k, alpha_s, A, a_type, lda, beta_s, C, c_type, ldc);
 }

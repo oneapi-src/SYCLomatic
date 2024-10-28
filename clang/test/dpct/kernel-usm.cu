@@ -1,8 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/kernel-usm %s --usm-level=restricted --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/kernel-usm/kernel-usm.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/kernel-usm/kernel-usm.dp.cpp -o %T/kernel-usm/kernel-usm.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/kernel-usm/kernel-usm.dp.cpp -o %T/kernel-usm/kernel-usm.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <cassert>
@@ -45,7 +45,7 @@ int main() {
   testKernelPtr<<<griddim, threaddim>>>((const int *)karg1, karg2, karg3);
 }
 
-// CHECK:dpct::shared_memory<float, 1> result(32);
+// CHECK:static dpct::shared_memory<float, 1> result(32);
 // CHECK-NEXT:void my_kernel(float* result, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT: float *resultInGroup) {
 // CHECK-NEXT:  // __shared__ variable
@@ -78,7 +78,7 @@ int run_foo5 () {
   printf("%f ", result[10]);
 }
 
-// CHECK:dpct::shared_memory<float, 1> result2(32);
+// CHECK:static dpct::shared_memory<float, 1> result2(32);
 // CHECK-NEXT:int run_foo6 () {
 // CHECK-NEXT:  dpct::get_in_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
@@ -100,7 +100,7 @@ int run_foo6 () {
   printf("%f ", result2[10]);
 }
 
-// CHECK:dpct::shared_memory<float, 0> result3;
+// CHECK:static dpct::shared_memory<float, 0> result3;
 // CHECK-NEXT:int run_foo7 () {
 // CHECK-NEXT:  dpct::get_in_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
@@ -122,8 +122,8 @@ int run_foo7 () {
   printf("%f ", result3);
 }
 
-// CHECK:dpct::shared_memory<float, 0> in;
-// CHECK-NEXT:dpct::shared_memory<float, 0> out;
+// CHECK:static dpct::shared_memory<float, 0> in;
+// CHECK-NEXT:static dpct::shared_memory<float, 0> out;
 // CHECK-NEXT:void my_kernel2(float in, float *out, const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 // CHECK-NEXT:    memcpy(out, &in, sizeof(float));

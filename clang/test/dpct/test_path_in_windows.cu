@@ -20,8 +20,8 @@ int main() {
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     // accessors to device memory
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg2_acc_ct0((const int *)karg2, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg2_acc_ct0((const int *)karg2, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),

@@ -7,9 +7,9 @@
 // RUN: mkdir %T/macro_test_output
 // RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/macro_test_output/macro_test.dp.cpp -o %T/macro_test_output/macro_test.dp.o %}
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include "cuda.h"
 #include <math.h>
 #include <iostream>
@@ -1384,4 +1384,34 @@ int foo39() {
   CALL(0, 1)
   return 0;
 }
+
+//CHECK: void foo40_kernel(const sycl::stream &stream_ct1) {
+//CHECK-NEXT:   FOO40_MACRO;
+//CHECK-NEXT: }
+__global__ void foo40_kernel() {
+  FOO40_MACRO;
+}
+void foo40() {
+  foo40_kernel<<<1, 1>>>();
+}
+
+
+template <class T> class MyClass {};
+
+__global__ void foo41(MyClass<float> m) {}
+
+void foo42(MyClass<float> &vecs) {
+#define RUN_APPEND2(DATA) foo41<<<1, 1, 0>>>(DATA);
+//CHECK: #define RUN_APPEND2(DATA)                                                      \
+//CHECK-NEXT:   dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {                  \
+//CHECK-NEXT:     auto DATA_ct0 = DATA;                                                      \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo41(DATA_ct0); });                  \
+//CHECK-NEXT:   });
+  RUN_APPEND2(vecs);
+}
+
+
 #endif

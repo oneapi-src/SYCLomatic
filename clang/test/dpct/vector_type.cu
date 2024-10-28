@@ -59,8 +59,8 @@ int main_char1() {
   int *char1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<int8_t *> char1_e_acc_ct0(char1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<int8_t *> char1_cast_acc_ct1((int8_t *)char1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char1_e_acc_ct0(char1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char1_cast_acc_ct1((int8_t *)char1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_char1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -131,8 +131,8 @@ int main_char2() {
   int *char2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::char2 *> char2_e_acc_ct0(char2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::char2 *> char2_cast_acc_ct1((sycl::char2 *)char2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char2_e_acc_ct0(char2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char2_cast_acc_ct1((sycl::char2 *)char2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_char2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -203,8 +203,8 @@ int main_char3() {
   int *char3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::char3 *> char3_e_acc_ct0(char3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::char3 *> char3_cast_acc_ct1((sycl::char3 *)char3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char3_e_acc_ct0(char3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char3_cast_acc_ct1((sycl::char3 *)char3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_char3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -275,8 +275,8 @@ int main_char4() {
   int *char4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::char4 *> char4_e_acc_ct0(char4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::char4 *> char4_cast_acc_ct1((sycl::char4 *)char4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char4_e_acc_ct0(char4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper char4_cast_acc_ct1((sycl::char4 *)char4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_char4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -347,8 +347,8 @@ int main_double1() {
   int *double1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<double *> double1_e_acc_ct0(double1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<double *> double1_cast_acc_ct1((double *)double1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double1_e_acc_ct0(double1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double1_cast_acc_ct1((double *)double1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_double1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -419,8 +419,8 @@ int main_double2() {
   int *double2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::double2 *> double2_e_acc_ct0(double2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::double2 *> double2_cast_acc_ct1((sycl::double2 *)double2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double2_e_acc_ct0(double2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double2_cast_acc_ct1((sycl::double2 *)double2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_double2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -491,8 +491,8 @@ int main_double3() {
   int *double3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::double3 *> double3_e_acc_ct0(double3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::double3 *> double3_cast_acc_ct1((sycl::double3 *)double3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double3_e_acc_ct0(double3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double3_cast_acc_ct1((sycl::double3 *)double3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_double3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -563,8 +563,8 @@ int main_double4() {
   int *double4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::double4 *> double4_e_acc_ct0(double4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::double4 *> double4_cast_acc_ct1((sycl::double4 *)double4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double4_e_acc_ct0(double4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper double4_cast_acc_ct1((sycl::double4 *)double4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_double4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -635,8 +635,8 @@ int main_float1() {
   int *float1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<float *> float1_e_acc_ct0(float1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<float *> float1_cast_acc_ct1((float *)float1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float1_e_acc_ct0(float1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float1_cast_acc_ct1((float *)float1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_float1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -707,8 +707,8 @@ int main_float2() {
   int *float2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::float2 *> float2_e_acc_ct0(float2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::float2 *> float2_cast_acc_ct1((sycl::float2 *)float2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float2_e_acc_ct0(float2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float2_cast_acc_ct1((sycl::float2 *)float2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_float2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -779,8 +779,8 @@ int main_float3() {
   int *float3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::float3 *> float3_e_acc_ct0(float3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::float3 *> float3_cast_acc_ct1((sycl::float3 *)float3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float3_e_acc_ct0(float3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float3_cast_acc_ct1((sycl::float3 *)float3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_float3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -851,8 +851,8 @@ int main_float4() {
   int *float4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::float4 *> float4_e_acc_ct0(float4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::float4 *> float4_cast_acc_ct1((sycl::float4 *)float4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float4_e_acc_ct0(float4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper float4_cast_acc_ct1((sycl::float4 *)float4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_float4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -923,8 +923,8 @@ int main_int1() {
   int *int1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<int32_t *> int1_e_acc_ct0(int1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<int32_t *> int1_cast_acc_ct1((int32_t *)int1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int1_e_acc_ct0(int1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int1_cast_acc_ct1((int32_t *)int1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_int1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -995,8 +995,8 @@ int main_int2() {
   int *int2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::int2 *> int2_e_acc_ct0(int2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::int2 *> int2_cast_acc_ct1((sycl::int2 *)int2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int2_e_acc_ct0(int2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int2_cast_acc_ct1((sycl::int2 *)int2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_int2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1067,8 +1067,8 @@ int main_int3() {
   int *int3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::int3 *> int3_e_acc_ct0(int3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::int3 *> int3_cast_acc_ct1((sycl::int3 *)int3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int3_e_acc_ct0(int3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int3_cast_acc_ct1((sycl::int3 *)int3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_int3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1141,8 +1141,8 @@ int main_int4() {
   int *int4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::int4 *> int4_e_acc_ct0(int4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::int4 *> int4_cast_acc_ct1((sycl::int4 *)int4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int4_e_acc_ct0(int4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper int4_cast_acc_ct1((sycl::int4 *)int4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_int4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1213,8 +1213,8 @@ int main_long1() {
   int *long1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<int64_t *> long1_e_acc_ct0(long1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<int64_t *> long1_cast_acc_ct1((int64_t *)long1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long1_e_acc_ct0(long1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long1_cast_acc_ct1((int64_t *)long1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_long1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1285,8 +1285,8 @@ int main_long2() {
   int *long2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long2 *> long2_e_acc_ct0(long2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long2 *> long2_cast_acc_ct1((sycl::long2 *)long2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long2_e_acc_ct0(long2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long2_cast_acc_ct1((sycl::long2 *)long2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_long2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1357,8 +1357,8 @@ int main_long3() {
   int *long3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long3 *> long3_e_acc_ct0(long3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long3 *> long3_cast_acc_ct1((sycl::long3 *)long3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long3_e_acc_ct0(long3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long3_cast_acc_ct1((sycl::long3 *)long3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_long3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1429,8 +1429,8 @@ int main_long4() {
   int *long4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long4 *> long4_e_acc_ct0(long4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long4 *> long4_cast_acc_ct1((sycl::long4 *)long4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long4_e_acc_ct0(long4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper long4_cast_acc_ct1((sycl::long4 *)long4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_long4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1501,8 +1501,8 @@ int main_longlong1() {
   int *longlong1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<int64_t *> longlong1_e_acc_ct0(longlong1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<int64_t *> longlong1_cast_acc_ct1((int64_t *)longlong1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong1_e_acc_ct0(longlong1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong1_cast_acc_ct1((int64_t *)longlong1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1573,8 +1573,8 @@ int main_longlong2() {
   int *longlong2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long2 *> longlong2_e_acc_ct0(longlong2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long2 *> longlong2_cast_acc_ct1((sycl::long2 *)longlong2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong2_e_acc_ct0(longlong2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong2_cast_acc_ct1((sycl::long2 *)longlong2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1645,8 +1645,8 @@ int main_longlong3() {
   int *longlong3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long3 *> longlong3_e_acc_ct0(longlong3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long3 *> longlong3_cast_acc_ct1((sycl::long3 *)longlong3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong3_e_acc_ct0(longlong3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong3_cast_acc_ct1((sycl::long3 *)longlong3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1717,8 +1717,8 @@ int main_longlong4() {
   int *longlong4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long4 *> longlong4_e_acc_ct0(longlong4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::long4 *> longlong4_cast_acc_ct1((sycl::long4 *)longlong4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong4_e_acc_ct0(longlong4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper longlong4_cast_acc_ct1((sycl::long4 *)longlong4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1789,8 +1789,8 @@ int main_short1() {
   int *short1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<int16_t *> short1_e_acc_ct0(short1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<int16_t *> short1_cast_acc_ct1((int16_t *)short1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short1_e_acc_ct0(short1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short1_cast_acc_ct1((int16_t *)short1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_short1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1861,8 +1861,8 @@ int main_short2() {
   int *short2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::short2 *> short2_e_acc_ct0(short2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::short2 *> short2_cast_acc_ct1((sycl::short2 *)short2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short2_e_acc_ct0(short2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short2_cast_acc_ct1((sycl::short2 *)short2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_short2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1933,8 +1933,8 @@ int main_short3() {
   int *short3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::short3 *> short3_e_acc_ct0(short3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::short3 *> short3_cast_acc_ct1((sycl::short3 *)short3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short3_e_acc_ct0(short3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short3_cast_acc_ct1((sycl::short3 *)short3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_short3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2005,8 +2005,8 @@ int main_short4() {
   int *short4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::short4 *> short4_e_acc_ct0(short4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::short4 *> short4_cast_acc_ct1((sycl::short4 *)short4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short4_e_acc_ct0(short4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper short4_cast_acc_ct1((sycl::short4 *)short4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_short4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2077,8 +2077,8 @@ int main_uchar1() {
   int *uchar1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<uint8_t *> uchar1_e_acc_ct0(uchar1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<uint8_t *> uchar1_cast_acc_ct1((uint8_t *)uchar1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar1_e_acc_ct0(uchar1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar1_cast_acc_ct1((uint8_t *)uchar1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uchar1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2149,8 +2149,8 @@ int main_uchar2() {
   int *uchar2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uchar2 *> uchar2_e_acc_ct0(uchar2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uchar2 *> uchar2_cast_acc_ct1((sycl::uchar2 *)uchar2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar2_e_acc_ct0(uchar2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar2_cast_acc_ct1((sycl::uchar2 *)uchar2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uchar2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2221,8 +2221,8 @@ int main_uchar3() {
   int *uchar3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uchar3 *> uchar3_e_acc_ct0(uchar3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uchar3 *> uchar3_cast_acc_ct1((sycl::uchar3 *)uchar3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar3_e_acc_ct0(uchar3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar3_cast_acc_ct1((sycl::uchar3 *)uchar3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uchar3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2293,8 +2293,8 @@ int main_uchar4() {
   int *uchar4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uchar4 *> uchar4_e_acc_ct0(uchar4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uchar4 *> uchar4_cast_acc_ct1((sycl::uchar4 *)uchar4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar4_e_acc_ct0(uchar4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uchar4_cast_acc_ct1((sycl::uchar4 *)uchar4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uchar4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2365,8 +2365,8 @@ int main_uint1() {
   int *uint1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<uint32_t *> uint1_e_acc_ct0(uint1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<uint32_t *> uint1_cast_acc_ct1((uint32_t *)uint1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint1_e_acc_ct0(uint1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint1_cast_acc_ct1((uint32_t *)uint1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uint1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2437,8 +2437,8 @@ int main_uint2() {
   int *uint2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uint2 *> uint2_e_acc_ct0(uint2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uint2 *> uint2_cast_acc_ct1((sycl::uint2 *)uint2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint2_e_acc_ct0(uint2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint2_cast_acc_ct1((sycl::uint2 *)uint2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uint2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2509,8 +2509,8 @@ int main_uint3() {
   int *uint3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uint3 *> uint3_e_acc_ct0(uint3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uint3 *> uint3_cast_acc_ct1((sycl::uint3 *)uint3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint3_e_acc_ct0(uint3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint3_cast_acc_ct1((sycl::uint3 *)uint3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uint3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2581,8 +2581,8 @@ int main_uint4() {
   int *uint4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uint4 *> uint4_e_acc_ct0(uint4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::uint4 *> uint4_cast_acc_ct1((sycl::uint4 *)uint4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint4_e_acc_ct0(uint4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper uint4_cast_acc_ct1((sycl::uint4 *)uint4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uint4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2653,8 +2653,8 @@ int main_ulong1() {
   int *ulong1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulong1_e_acc_ct0(ulong1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulong1_cast_acc_ct1((uint64_t *)ulong1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong1_e_acc_ct0(ulong1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong1_cast_acc_ct1((uint64_t *)ulong1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2725,8 +2725,8 @@ int main_ulong2() {
   int *ulong2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong2 *> ulong2_e_acc_ct0(ulong2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong2 *> ulong2_cast_acc_ct1((sycl::ulong2 *)ulong2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong2_e_acc_ct0(ulong2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong2_cast_acc_ct1((sycl::ulong2 *)ulong2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2797,8 +2797,8 @@ int main_ulong3() {
   int *ulong3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong3 *> ulong3_e_acc_ct0(ulong3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong3 *> ulong3_cast_acc_ct1((sycl::ulong3 *)ulong3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong3_e_acc_ct0(ulong3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong3_cast_acc_ct1((sycl::ulong3 *)ulong3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2869,8 +2869,8 @@ int main_ulong4() {
   int *ulong4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong4 *> ulong4_e_acc_ct0(ulong4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong4 *> ulong4_cast_acc_ct1((sycl::ulong4 *)ulong4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong4_e_acc_ct0(ulong4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulong4_cast_acc_ct1((sycl::ulong4 *)ulong4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2941,8 +2941,8 @@ int main_ulonglong1() {
   int *ulonglong1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulonglong1_e_acc_ct0(ulonglong1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulonglong1_cast_acc_ct1((uint64_t *)ulonglong1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong1_e_acc_ct0(ulonglong1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong1_cast_acc_ct1((uint64_t *)ulonglong1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3013,8 +3013,8 @@ int main_ulonglong2() {
   int *ulonglong2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong2 *> ulonglong2_e_acc_ct0(ulonglong2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong2 *> ulonglong2_cast_acc_ct1((sycl::ulong2 *)ulonglong2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong2_e_acc_ct0(ulonglong2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong2_cast_acc_ct1((sycl::ulong2 *)ulonglong2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3085,8 +3085,8 @@ int main_ulonglong3() {
   int *ulonglong3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong3 *> ulonglong3_e_acc_ct0(ulonglong3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong3 *> ulonglong3_cast_acc_ct1((sycl::ulong3 *)ulonglong3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong3_e_acc_ct0(ulonglong3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong3_cast_acc_ct1((sycl::ulong3 *)ulonglong3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3157,8 +3157,8 @@ int main_ulonglong4() {
   int *ulonglong4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong4 *> ulonglong4_e_acc_ct0(ulonglong4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong4 *> ulonglong4_cast_acc_ct1((sycl::ulong4 *)ulonglong4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong4_e_acc_ct0(ulonglong4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ulonglong4_cast_acc_ct1((sycl::ulong4 *)ulonglong4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3229,8 +3229,8 @@ int main_ushort1() {
   int *ushort1_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<uint16_t *> ushort1_e_acc_ct0(ushort1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<uint16_t *> ushort1_cast_acc_ct1((uint16_t *)ushort1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort1_e_acc_ct0(ushort1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort1_cast_acc_ct1((uint16_t *)ushort1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ushort1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3301,8 +3301,8 @@ int main_ushort2() {
   int *ushort2_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ushort2 *> ushort2_e_acc_ct0(ushort2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ushort2 *> ushort2_cast_acc_ct1((sycl::ushort2 *)ushort2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort2_e_acc_ct0(ushort2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort2_cast_acc_ct1((sycl::ushort2 *)ushort2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ushort2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3373,8 +3373,8 @@ int main_ushort3() {
   int *ushort3_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ushort3 *> ushort3_e_acc_ct0(ushort3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ushort3 *> ushort3_cast_acc_ct1((sycl::ushort3 *)ushort3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort3_e_acc_ct0(ushort3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort3_cast_acc_ct1((sycl::ushort3 *)ushort3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ushort3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3445,8 +3445,8 @@ int main_ushort4() {
   int *ushort4_cast;
   // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ushort4 *> ushort4_e_acc_ct0(ushort4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ushort4 *> ushort4_cast_acc_ct1((sycl::ushort4 *)ushort4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort4_e_acc_ct0(ushort4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper ushort4_cast_acc_ct1((sycl::ushort4 *)ushort4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ushort4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 

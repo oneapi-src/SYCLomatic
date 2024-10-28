@@ -405,6 +405,18 @@ struct CompilationInfo {
     std::string CompileOptions;
     std::string Compiler;
 };
+
+struct MainSourceFileInfo {
+  MainSourceFileInfo(std::string MainSourceFile, std::string Digest,
+                     bool HasCUDASyntax)
+      : MainSourceFile(MainSourceFile), Digest(Digest),
+        HasCUDASyntax(HasCUDASyntax) {}
+  MainSourceFileInfo() {}
+  std::string MainSourceFile;
+  std::string Digest;
+  bool HasCUDASyntax = false;
+};
+
 struct OptionInfo {
   OptionInfo() {}
   OptionInfo(std::string Value, bool Specified)
@@ -422,7 +434,7 @@ struct TranslationUnitReplacements {
   /// Name of the main source for the translation unit.
   std::string MainSourceFile;
 #ifdef SYCLomatic_CUSTOMIZATION
-  std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
+  std::vector<MainSourceFileInfo> MainSourceFilesDigest;
   std::string DpctVersion = "";
   std::string MainHelperFileName = "";
   std::string USMLevel = ""; // deprecated

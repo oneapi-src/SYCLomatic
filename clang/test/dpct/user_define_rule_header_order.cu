@@ -7,7 +7,7 @@
 // RUN: mkdir %T/user_define_rule_header_order_output
 // RUN: dpct -format-range=none -out-root %T/user_define_rule_header_order_output user_define_rule_header_order.cu --cuda-include-path="%cuda-path/include" --usm-level=none --rule-file=user_define_rule_header_order.yaml -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/user_define_rule_header_order_output/user_define_rule_header_order.dp.cpp --match-full-lines user_define_rule_header_order.cu
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/user_define_rule_header_order_output/user_define_rule_header_order.dp.cpp -o %T/user_define_rule_header_order_output/user_define_rule_header_order.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/user_define_rule_header_order_output/user_define_rule_header_order.dp.cpp -o %T/user_define_rule_header_order_output/user_define_rule_header_order.dp.o %}
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK: #include <oneapi/dpl/algorithm>
@@ -15,13 +15,13 @@
 #include <cub/cub.cuh>
 #include <stddef.h>
 
-#ifdef BUILD_TEST
+#ifdef NO_BUILD_TEST
 namespace cub {
 struct DeviceScan {
 static void InclusiveSum(void *, size_t &, int *, int *, int) {}
 };
 } // namespace cub
-#endif // BUILD_TEST
+#endif // NO_BUILD_TEST
 
 int n, *d_in, *d_out;
 void *tmp;

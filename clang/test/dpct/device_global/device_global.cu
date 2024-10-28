@@ -15,11 +15,11 @@ struct B{
 };
 
 
-// CHECK: sycl::ext::oneapi::experimental::device_global<int> var_a;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<int> var_a;
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: sycl::ext::oneapi::experimental::device_global<int> var_b{0};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<int> var_b{0};
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
@@ -28,9 +28,9 @@ struct B{
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
 // CHECK: static sycl::ext::oneapi::experimental::device_global<const float> var_d{1.f};
-// CHECK: sycl::ext::oneapi::experimental::device_global<A> var_e;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<A> var_e;
 // CHECK: static sycl::ext::oneapi::experimental::device_global<const B> var_f;
-// CHECK: dpct::global_memory<int, 0> var_g;
+// CHECK: static dpct::global_memory<int, 0> var_g;
 __device__ int var_a;
 __device__ int var_b = 0;
 __constant__ float var_c = 2.f;
@@ -38,11 +38,11 @@ __constant__ float var_d = 1.f;
 __device__ A var_e;
 __constant__ B var_f;
 __device__ int var_g;
-// CHECK: sycl::ext::oneapi::experimental::device_global<float[10]> arr_a;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<float[10]> arr_a;
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: sycl::ext::oneapi::experimental::device_global<float[10]> arr_b{1, 2, 3};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<float[10]> arr_b{1, 2, 3};
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
@@ -52,7 +52,7 @@ __device__ int var_g;
 // CHECK: */
 // CHECK: static sycl::ext::oneapi::experimental::device_global<const int[10]> arr_d{2};
 // CHECK: static sycl::ext::oneapi::experimental::device_global<const A[10]> arr_e;
-// CHECK: sycl::ext::oneapi::experimental::device_global<B[10]> arr_f;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<B[10]> arr_f;
 __device__ float arr_a[10];
 __device__ float arr_b[10] = {1, 2, 3};
 __constant__ int arr_c[10] = {3, 2, 1};

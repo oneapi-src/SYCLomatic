@@ -2,7 +2,7 @@
 // RUN: cd %T
 // RUN: dpct --usm-level=none -out-root %T/error-handling error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling/error-handling.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/error-handling/error-handling.dp.cpp -o %T/error-handling/error-handling.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/error-handling/error-handling.dp.cpp -o %T/error-handling/error-handling.dp.o %}
 
 #include "cuda.h"
 #include <cublas.h>
@@ -144,7 +144,7 @@ void test_other_enum() {
   }
 }
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK:void test_assignment() try {
 // CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:  if (err = DPCT_CHECK_ERROR(* 0 = dpct::dpct_malloc(0))) {
@@ -217,7 +217,7 @@ void test_14(cudaError_t err, int arg) {
   }
 }
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK:void test_15(dpct::err0 err, int arg) try {
 // CHECK-NEXT:  if (DPCT_CHECK_ERROR(* 0 = dpct::dpct_malloc(0))) {
 // CHECK-NEXT:  }
@@ -250,7 +250,7 @@ void test_16(cudaError_t err, int arg) {
   }
 }
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK:void test_17(dpct::err0 err, int arg)  try {
 // CHECK-NEXT:  if (!DPCT_CHECK_ERROR(* 0 = dpct::dpct_malloc(0))) {
 // CHECK-NEXT:  } else {
@@ -471,7 +471,7 @@ void specialize_ifs_negative() {
   }
 }
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK: void foo1() try {
 // CHECK-NEXT:   if (DPCT_CHECK_ERROR(* 0 = dpct::dpct_malloc(0))) {
 // CHECK-NEXT:     printf("efef");
