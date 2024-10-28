@@ -45,6 +45,7 @@
 // CHECK-NEXT: __byte_perm
 // CHECK-NEXT: __clz
 // CHECK-NEXT: __clzll
+// CHECK-NEXT: __constant__
 // CHECK-NEXT: __cosf
 // CHECK-NEXT: __dadd_rd
 // CHECK-NEXT: __dadd_rn
@@ -54,6 +55,7 @@
 // CHECK-NEXT: __ddiv_rn
 // CHECK-NEXT: __ddiv_ru
 // CHECK-NEXT: __ddiv_rz
+// CHECK-NEXT: __device__
 // CHECK-NEXT: __dmul_rd
 // CHECK-NEXT: __dmul_rn
 // CHECK-NEXT: __dmul_ru
@@ -167,6 +169,7 @@
 // CHECK-NEXT: __fsub_rn
 // CHECK-NEXT: __fsub_ru
 // CHECK-NEXT: __fsub_rz
+// CHECK-NEXT: __global__
 // CHECK-NEXT: __h2div
 // CHECK-NEXT: __habs
 // CHECK-NEXT: __habs2
@@ -290,6 +293,7 @@
 // CHECK-NEXT: __hneu
 // CHECK-NEXT: __hneu2
 // CHECK-NEXT: __hneu2_mask
+// CHECK-NEXT: __host__
 // CHECK-NEXT: __hsub
 // CHECK-NEXT: __hsub2
 // CHECK-NEXT: __hsub2_rn
@@ -344,6 +348,7 @@
 // CHECK-NEXT: __lowhigh2highlow
 // CHECK-NEXT: __lows2bfloat162
 // CHECK-NEXT: __lows2half2
+// CHECK-NEXT: __managed__
 // CHECK-NEXT: __match_all_sync
 // CHECK-NEXT: __match_any_sync
 // CHECK-NEXT: __mul24
@@ -362,6 +367,7 @@
 // CHECK-NEXT: __rhadd
 // CHECK-NEXT: __sad
 // CHECK-NEXT: __saturatef
+// CHECK-NEXT: __shared__
 // CHECK-NEXT: __shfl
 // CHECK-NEXT: __shfl_down
 // CHECK-NEXT: __shfl_down_sync
@@ -1832,6 +1838,7 @@
 // CHECK-NEXT: j1f
 // CHECK-NEXT: jn
 // CHECK-NEXT: jnf
+// CHECK-NEXT: kernel
 // CHECK-NEXT: ldexp
 // CHECK-NEXT: ldexpf
 // CHECK-NEXT: lgamma

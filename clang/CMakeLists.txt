@@ -957,6 +957,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-syscheck
       install-dpct-opt-rules
       install-dpct-cmake-rules
+      install-dpct-python-rules
       install-dpct-cmake-file
       install-dpct-codepin-report
       )
@@ -973,6 +974,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-autocomplete
       install-dpct-opt-rules
       install-dpct-cmake-rules
+      install-dpct-python-rules
       install-dpct-cmake-file
       install-dpct-codepin-report
       )

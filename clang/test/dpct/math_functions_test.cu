@@ -1,7 +1,7 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/math_functions_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/math_functions_test/math_functions_test.dp.cpp -o %T/math_functions_test/math_functions_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/math_functions_test/math_functions_test.dp.cpp -o %T/math_functions_test/math_functions_test.dp.o %}
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -262,7 +262,7 @@ float test_j0(float a) { return j0(a); }
 // CHECK: float test_j1(float a) { return j1(a); }
 float test_j1(float a) { return j1(a); }
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK: /*
 // CHECK: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
 // CHECK: */
@@ -275,7 +275,7 @@ float test_y0(float a) { return y0(a); }
 // CHECK: float test_y1(float a) { return y1(a); }
 float test_y1(float a) { return y1(a); }
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK: /*
 // CHECK: DPCT1007:{{[0-9]+}}: Migration of yn is not supported.
 // CHECK: */

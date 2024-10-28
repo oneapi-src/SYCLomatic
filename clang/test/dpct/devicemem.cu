@@ -13,7 +13,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: dpct::global_memory<TestStruct, 0> t1;
+// CHECK: static dpct::global_memory<TestStruct, 0> t1;
 __device__ TestStruct t1;
 
 // CHECK: void member_acc(TestStruct &t1) {
@@ -22,9 +22,9 @@ __device__ TestStruct t1;
 __global__ void member_acc() {
   t1.test();
 }
-// CHECK: dpct::global_memory<float, 1> in(NUM_ELEMENTS);
+// CHECK: static dpct::global_memory<float, 1> in(NUM_ELEMENTS);
 __device__ float in[NUM_ELEMENTS];
-// CHECK: dpct::global_memory<int, 1> init(sycl::range<1>(4), {1, 2, 3, 4});
+// CHECK: static dpct::global_memory<int, 1> init(sycl::range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
 
 // CHECK: void kernel1(float *out, const sycl::nd_item<3> &[[ITEM:item_ct1]], float *in) {
@@ -34,17 +34,17 @@ __global__ void kernel1(float *out) {
   out[threadIdx.x] = in[threadIdx.x];
 }
 
-// CHECK: dpct::global_memory<int, 0> al;
+// CHECK: static dpct::global_memory<int, 0> al;
 __device__ int al;
-// CHECK: dpct::global_memory<int, 0> ainit(NUM_ELEMENTS);
+// CHECK: static dpct::global_memory<int, 0> ainit(NUM_ELEMENTS);
 __device__ int ainit = NUM_ELEMENTS;
 
 const int num_elements = 16;
-// CHECK: dpct::global_memory<float, 1> fx(2);
-// CHECK: dpct::global_memory<float, 2> fy(num_elements, 4 * num_elements);
+// CHECK: static dpct::global_memory<float, 1> fx(2);
+// CHECK: static dpct::global_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
-// CHECK: dpct::global_memory<float, 1> tmp(size);
+// CHECK: static dpct::global_memory<float, 1> tmp(size);
 const int size = 64;
 __device__ float tmp[size];
 // CHECK: void kernel2(float *out, const sycl::nd_item<3> &[[ITEM:item_ct1]], int &al, float *fx,
@@ -109,7 +109,7 @@ int main() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel1((float *)(&d_out_acc_ct0[0]), item_ct1, in_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:         kernel1(&d_out_acc_ct0[0], item_ct1, in_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   // CHECK-NEXT: }
@@ -132,7 +132,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel2((float *)(&d_out_acc_ct0[0]), item_ct1, al_acc_ct1, fx_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), fy_acc_ct1, tmp_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
+  // CHECK-NEXT:           kernel2(&d_out_acc_ct0[0], item_ct1, al_acc_ct1, fx_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get(), fy_acc_ct1, tmp_acc_ct1.get_multi_ptr<sycl::access::decorated::no>().get());
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }

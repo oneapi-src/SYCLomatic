@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/math/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp -o %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp -o %T/math/cuda-math-intrinsics/cuda-math-intrinsics.dp.o %}
 
 #include <cmath>
 #include <iomanip>
@@ -1874,7 +1874,7 @@ __global__ void testUnsupported() {
   half2 h2;
   bool b;
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0f is not supported.
   // CHECK-NEXT: */
@@ -1890,7 +1890,7 @@ __global__ void testUnsupported() {
 #endif
   // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinvf is not supported.
   // CHECK-NEXT: */
@@ -1915,7 +1915,7 @@ __global__ void testUnsupported() {
   f = norm4df(f, f, f, f);
   // CHECK: f = sycl::erfc(f / -sycl::sqrt(2.0)) / 2;
   f = normcdff(f);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinvf is not supported.
   // CHECK-NEXT: */
@@ -1944,7 +1944,7 @@ __global__ void testUnsupported() {
   f = scalblnf(f, l);
   // CHECK: f = f*(2<<i);
   f = scalbnf(f, i);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0f is not supported.
   // CHECK-NEXT: */
@@ -1973,7 +1973,7 @@ __global__ void testUnsupported() {
 #endif
   // CHECK: d = sycl::exp(d * d) * sycl::erfc(d);
   d = erfcx(d);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported.
   // CHECK-NEXT: */
@@ -2002,7 +2002,7 @@ __global__ void testUnsupported() {
   d = norm4d(d, d, d, d);
   // CHECK:  d = sycl::erfc(d / -sycl::sqrt(2.0)) / 2;
   d = normcdf(d);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
   // CHECK-NEXT: */
@@ -2026,7 +2026,7 @@ __global__ void testUnsupported() {
   d = scalbln(d, l);
   // CHECK: d = d*(2<<i);
   d = scalbn(d, i);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0 is not supported.
   // CHECK-NEXT: */

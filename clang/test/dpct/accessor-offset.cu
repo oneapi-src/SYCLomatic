@@ -39,7 +39,7 @@ void foo() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
+  // CHECK-NEXT:           hello(&d_a_acc_ct0[0], 23);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -54,7 +54,7 @@ void foo() {
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -75,7 +75,7 @@ void foo() {
   // CHECK-NEXT:   d_a -= 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -96,7 +96,7 @@ void foo() {
   // CHECK-NEXT:   d_a = d_a + 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -117,7 +117,7 @@ void foo() {
   // CHECK-NEXT:   d_a = d_a - 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -138,7 +138,7 @@ void foo() {
   // CHECK-NEXT:   *(&d_a + 1) = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -158,7 +158,7 @@ void foo() {
   // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a + 1, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a + 1, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -178,7 +178,7 @@ void foo() {
   // CHECK-NEXT:   *p = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -203,7 +203,7 @@ void foo() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
+  // CHECK-NEXT:           hello(&d_a_acc_ct0[0], 23);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -227,7 +227,7 @@ void foo() {
   // CHECK-NEXT:               cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:                 [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:                   hello((int *)(&d_a_acc_ct0[0]), 23);
+  // CHECK-NEXT:                   hello(&d_a_acc_ct0[0], 23);
   // CHECK-NEXT:                 });
   // CHECK-NEXT:             });
   // CHECK-NEXT:         }
@@ -251,7 +251,7 @@ void foo() {
   // CHECK-NEXT:   mod(&d_a);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -272,7 +272,7 @@ void foo() {
   // CHECK-NEXT:   mod2(d_a);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -298,7 +298,7 @@ void foo() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
+  // CHECK-NEXT:           hello(&d_a_acc_ct0[0], 23);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -319,7 +319,7 @@ void foo() {
   // CHECK-NEXT:   d_a = d_a - 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),  
@@ -356,7 +356,7 @@ void foo() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
+  // CHECK-NEXT:           hello(&d_a_acc_ct0[0], 23);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   // CHECK-NEXT: }
@@ -383,7 +383,7 @@ void foo() {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             hello((int *)(&d_a_acc_ct0[0]));
+  // CHECK-NEXT:             hello(&d_a_acc_ct0[0]);
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   // CHECK-NEXT:     if (n > 45) {
@@ -394,7 +394,7 @@ void foo() {
   // CHECK-NEXT:             cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:               [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:                 hello((int *)(&d_a_acc_ct0[0]));
+  // CHECK-NEXT:                 hello(&d_a_acc_ct0[0]);
   // CHECK-NEXT:               });
   // CHECK-NEXT:           });
   // CHECK-NEXT:     }
@@ -402,7 +402,7 @@ void foo() {
   // CHECK-NEXT:       d_a += 2;
   // CHECK-NEXT:       q_ct1.submit(
   // CHECK-NEXT:         [&](sycl::handler &cgh) {
-  // CHECK-NEXT:           dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:           dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:           cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -438,13 +438,13 @@ void foo() {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             hello((int *)(&d_a_acc_ct0[0]));
+  // CHECK-NEXT:             hello(&d_a_acc_ct0[0]);
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   // CHECK-NEXT:   }
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -472,13 +472,13 @@ void foo() {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:             hello((int *)(&d_a_acc_ct0[0]), 23);
+  // CHECK-NEXT:             hello(&d_a_acc_ct0[0], 23);
   // CHECK-NEXT:           });
   // CHECK-NEXT:       });
   // CHECK-NEXT:   }
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -501,7 +501,7 @@ void foo() {
   // CHECK-NEXT:   d_a_global = (int *)dpct::dpct_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_global_acc_ct0(d_a_global, cgh);
+  // CHECK-NEXT:       dpct::access_wrapper d_a_global_acc_ct0(d_a_global, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -557,7 +557,7 @@ int testVectorAdd(void)
     // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class vectorAdd_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, blocksPerGrid) * sycl::range<3>(1, 1, threadsPerBlock), sycl::range<3>(1, 1, threadsPerBlock)), 
     // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:         vectorAdd((const float *)(&d_A_acc_ct0[0]), (const float *)(&d_B_acc_ct1[0]), (float *)(&d_C_acc_ct2[0]), numElements);
+    // CHECK-NEXT:         vectorAdd(&d_A_acc_ct0[0], &d_B_acc_ct1[0], &d_C_acc_ct2[0], numElements);
     // CHECK-NEXT:       });
     // CHECK-NEXT:   });
     vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);

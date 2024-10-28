@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   //CHECK-NEXT:    DPCT1101:{{[0-9]+}}: 'WARP_SIZE' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   //CHECK-NEXT:    */
   //CHECK-NEXT:    sycl::local_accessor<int, 1> counter_acc_ct1(sycl::range<1>(32/*WARP_SIZE*/), cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<int *> dOut_acc_ct0(dOut, cgh);
+  //CHECK-NEXT:    dpct::access_wrapper dOut_acc_ct0(dOut, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, NBLOCKS) * sycl::range<3>(1, 1, WARP_SIZE), sycl::range<3>(1, 1, WARP_SIZE)),
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 
   //CHECK: q_ct1.submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
-  //CHECK-NEXT:     dpct::access_wrapper<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *> RandomStates_acc_ct1(RandomStates, cgh);
+  //CHECK-NEXT:     dpct::access_wrapper RandomStates_acc_ct1(RandomStates, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -110,8 +110,8 @@ int main(int argc, char **argv) {
   //CHECK-NEXT:   });
   //CHECK-NEXT: q_ct1.submit(
   //CHECK-NEXT:   [&](sycl::handler &cgh) {
-  //CHECK-NEXT:     dpct::access_wrapper<sycl::double2 *> Image_acc_ct0(Image, cgh);
-  //CHECK-NEXT:     dpct::access_wrapper<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *> RandomStates_acc_ct1(RandomStates, cgh);
+  //CHECK-NEXT:     dpct::access_wrapper Image_acc_ct0(Image, cgh);
+  //CHECK-NEXT:     dpct::access_wrapper RandomStates_acc_ct1(RandomStates, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -144,7 +144,7 @@ int foo() {
   //CHECK-NEXT:     cgh.parallel_for(
   //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:         cuda_kernel_initRND(1234, (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *)(&RandomStates_acc_ct1[0]), item_ct1);
+  //CHECK-NEXT:         cuda_kernel_initRND(1234, &RandomStates_acc_ct1[0], item_ct1);
   //CHECK-NEXT:       });
   //CHECK-NEXT:   });
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);

@@ -6,8 +6,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_DNN_API_MIGRAION_H
-#define DPCT_DNN_API_MIGRAION_H
+#ifndef DPCT_DNN_API_MIGRATION_H
+#define DPCT_DNN_API_MIGRATION_H
 
 #include "ASTTraversal.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -34,4 +34,4 @@ public:
 } // namespace dpct
 } // namespace clang
 
-#endif // !DPCT_DNN_API_MIGRAION_H
+#endif // !DPCT_DNN_API_MIGRATION_H

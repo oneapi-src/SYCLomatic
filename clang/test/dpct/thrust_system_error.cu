@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0, v9.2, v10.1, v10.2
 // RUN: dpct --format-range=none -out-root %T/thrust_system_error %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust_system_error/thrust_system_error.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust_system_error/thrust_system_error.dp.cpp -o %T/thrust_system_error/thrust_system_error.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust_system_error/thrust_system_error.dp.cpp -o %T/thrust_system_error/thrust_system_error.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <cuda_runtime_api.h>
 #include <thrust/system/cuda/error.h>
 #include <thrust/system_error.h>

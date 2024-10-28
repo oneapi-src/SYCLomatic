@@ -2,8 +2,8 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct -out-root %T/thrust_stable_sort_by_key %s --cuda-include-path="%cuda-path/include" --usm-level=none
 // RUN: FileCheck --input-file %T/thrust_stable_sort_by_key/thrust_stable_sort_by_key.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust_stable_sort_by_key/thrust_stable_sort_by_key.dp.cpp -o %T/thrust_stable_sort_by_key/thrust_stable_sort_by_key.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust_stable_sort_by_key/thrust_stable_sort_by_key.dp.cpp -o %T/thrust_stable_sort_by_key/thrust_stable_sort_by_key.dp.o %}
+#ifndef NO_BUILD_TEST
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>

@@ -28,8 +28,8 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationSkipped:
     StatusString = "Some migration rules were skipped.";
     break;
-  case MigrationCmakeScriptCompleted:
-    StatusString = "Migration of CMake script completed.";
+  case MigrationBuildScriptCompleted:
+    StatusString = "Migration of build script(s) completed.";
     break;
   case MigrationError:
     StatusString = "An error has occurred during migration.";
@@ -191,26 +191,27 @@ void ShowStatus(int Status, std::string Message) {
   case CallIndependentToolError:
     StatusString = "Error: Call to " + Message + " failed.";
     break;
-  case MigrationErrorCMakeScriptPathInvalid:
-    StatusString = "Error: Path of CMake Script is invalid.";
+  case MigrationErrorBuildScriptPathInvalid:
+    StatusString = "Error: Path of build script is invalid.";
     break;
-  case MigrateCmakeScriptOnlyNotSpecifed:
+  case MigrateBuildScriptOnlyNotSpecifed:
     StatusString =
         "Error: option '-migrate-build-script-only' is not specified "
-        "for CMake script migartion.";
+        "for build script migration.";
     break;
-  case MigarteBuildScriptIncorrectUse:
+  case MigrateBuildScriptIncorrectUse:
     StatusString = "Error: option '-migrate-build-script' is only used for "
                    "whole project code migration.";
     break;
-  case MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse:
+  case MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse:
     StatusString = "Error: option '-migrate-build-script' and "
                    "'-migrate-build-script-only' cannot be used together.";
     break;
-  case MigrationErrorNoExplicitInRootAndCMakeScript:
+  case MigrationErrorNoExplicitInRootAndBuildScript:
     StatusString =
         "Error: The option -migrate-build-script-only requires that either "
-        "the option '--in-root' or the CMake file(s) be specified explicitly.";
+        "the option '--in-root' or the CMake or Python build file(s) be "
+        "specified explicitly.";
     break;
   case MigrationErrorInvalidInstallPath:
     StatusString = "Error: " + Message + " not found.";

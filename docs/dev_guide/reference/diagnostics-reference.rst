@@ -519,3 +519,47 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1121.rst
           :start-after: msg-1121-start:
           :end-before: msg-1121-end:
+   * - :ref:`DPCT1122`
+     - .. include:: diagnostic_ref/dpct1122.rst
+          :start-after: msg-1122-start:
+          :end-before: msg-1122-end:
+   * - :ref:`DPCT1123`
+     - .. include:: diagnostic_ref/dpct1123.rst
+          :start-after: msg-1123-start:
+          :end-before: msg-1123-end:
+   * - :ref:`DPCT1124`
+     - .. include:: diagnostic_ref/dpct1124.rst
+          :start-after: msg-1124-start:
+          :end-before: msg-1124-end:
+   * - :ref:`DPCT1125`
+     - .. include:: diagnostic_ref/dpct1125.rst
+          :start-after: msg-1125-start:
+          :end-before: msg-1125-end:
+   * - :ref:`DPCT1126`
+     - .. include:: diagnostic_ref/dpct1126.rst
+          :start-after: msg-1126-start:
+          :end-before: msg-1126-end:
+   * - :ref:`DPCT1127`
+     - .. include:: diagnostic_ref/dpct1127.rst
+          :start-after: msg-1127-start:
+          :end-before: msg-1127-end:
+   * - :ref:`DPCT1128`
+     - .. include:: diagnostic_ref/dpct1128.rst
+          :start-after: msg-1128-start:
+          :end-before: msg-1128-end:
+   * - :ref:`DPCT1129`
+     - .. include:: diagnostic_ref/dpct1129.rst
+          :start-after: msg-1129-start:
+          :end-before: msg-1129-end:
+   * - :ref:`DPCT1130`
+     - .. include:: diagnostic_ref/dpct1130.rst
+          :start-after: msg-1130-start:
+          :end-before: msg-1130-end:
+   * - :ref:`DPCT1131`
+     - .. include:: diagnostic_ref/dpct1131.rst
+          :start-after: msg-1131-start:
+          :end-before: msg-1131-end:
+   * - :ref:`DPCT1132`
+     - .. include:: diagnostic_ref/dpct1132.rst
+          :start-after: msg-1132-start:
+          :end-before: msg-1132-end:

@@ -1,6 +1,6 @@
 // RUN: dpct --use-syclcompat --format-range=none --out-root %T/syclcompat_test2 %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/syclcompat_test2/syclcompat_test2.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -DBUILD_TEST -c -fsycl %T/syclcompat_test2/syclcompat_test2.dp.cpp -o %T/syclcompat_test2/syclcompat_test2.dp.o %}
+// RUN: %if build_lit %{icpx -DNO_BUILD_TEST -c -fsycl %T/syclcompat_test2/syclcompat_test2.dp.cpp -o %T/syclcompat_test2/syclcompat_test2.dp.o %}
 
 #include <cufft.h>
 #include <curand.h>
@@ -95,7 +95,7 @@ void f7() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1131:{{[0-9]+}}: The migration of "cudaEventQuery" is not currently supported with SYCLcompat. Please adjust the code manually.
   // CHECK-NEXT: */
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   cudaEventQuery(e);
 #endif
 }

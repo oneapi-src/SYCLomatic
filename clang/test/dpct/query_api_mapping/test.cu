@@ -24,6 +24,18 @@
 // CHECK-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
 // CHECK-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --use-syclcompat --query-api-mapping=cudaMallocPitch | FileCheck %s -check-prefix=SYCLCOMPAT
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocPitch --use-syclcompat | FileCheck %s -check-prefix=SYCLCOMPAT
+
+// RUN: dpct --query-api-mapping=cudaMallocPitch --use-syclcompat --cuda-include-path="%cuda-path/include" | FileCheck %s -check-prefix=SYCLCOMPAT
+
+// SYCLCOMPAT: CUDA API:
+// SYCLCOMPAT-NEXT:   cudaMallocPitch(pDev /*void ***/, pz /*size_t **/, s1 /*size_t*/,
+// SYCLCOMPAT-NEXT:                   s2 /*size_t*/);
+// SYCLCOMPAT-NEXT: Is migrated to:
+// SYCLCOMPAT-NEXT:   *pDev = syclcompat::malloc(*pz, s1, s2);
+
 // RUN: not dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=aaa 2>&1 | FileCheck %s -check-prefix=NO_MAPPING
 // NO_MAPPING: dpct exited with code: -43 (Error: The API mapping query for this API is not available yet. You may get the API mapping by migrating sample code from this CUDA API to the SYCL API with the tool.)
 

@@ -184,16 +184,16 @@ class data_ser<T*, void> {
 public:
   static void dump(detail::json_stringstream &ss, T* value,
                    queue_t queue) {
-    if (ptr_unique.find(value) != ptr_unique.end()) {
+    using PointeeType = std::remove_cv_t<std::remove_pointer_t<T>>;
+    PointeeType *non_const_value = const_cast<PointeeType *>(value);
+    if (ptr_unique.find(non_const_value) != ptr_unique.end()) {
       return;
     }
-    ptr_unique.insert(value);
-    int size = get_ptr_size_in_bytes(value);
+    ptr_unique.insert(non_const_value);
+    int size = get_ptr_size_in_bytes(non_const_value);
     size = size == 0 ? 1 : size / sizeof(*value);
-    using PointeeType =
-        std::remove_cv_t<std::remove_pointer_t<T>>;
-    PointeeType *dump_addr = value;
-    bool is_dev = is_dev_ptr(value);
+    PointeeType *dump_addr = non_const_value;
+    bool is_dev = is_dev_ptr(non_const_value);
     if (is_dev) {
       PointeeType *h_data = new PointeeType[size];
 #ifdef __NVCC__
@@ -204,7 +204,7 @@ public:
       queue->memcpy((void *)h_data, (void *)value, size * sizeof(PointeeType))
           .wait();
 #endif
-      dump_addr = h_data;    
+      dump_addr = h_data;
     }
     auto arr = ss.array();
     for (int i = 0; i < size; ++i) {

@@ -189,6 +189,7 @@ struct MemberOrBaseInfoForCodePin {
   std::string TypeNameInCuda;
   std::string TypeNameInSycl;
   std::string MemberName;
+  std::string CodePinMemberName;
 };
 
 struct VarInfoForCodePin {
@@ -1183,8 +1184,9 @@ public:
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
   }
-  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
-      &getMacroTokenToMacroDefineLoc() {
+  static std::map<std::string,
+                  std::shared_ptr<DpctGlobalInfo::MacroDefRecord>> &
+  getMacroTokenToMacroDefineLoc() {
     return MacroTokenToMacroDefineLoc;
   }
   static std::map<std::string, std::string> &
@@ -1216,8 +1218,9 @@ public:
   getFileRelpsMap() {
     return FileRelpsMap;
   }
-  static std::unordered_map<std::string, std::string> &getDigestMap() {
-    return DigestMap;
+  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo> &
+  getMsfInfoMap() {
+    return MsfInfoMap;
   }
   static std::string getYamlFileName() { return YamlFileName; }
   static std::set<std::string> &getGlobalVarNameSet() {
@@ -1289,6 +1292,10 @@ public:
   }
   static bool useExpDeviceGlobal() {
     return getUsingExperimental<ExperimentalFeatures::Exp_DeviceGlobal>();
+  }
+  static bool useExpNonStandardSYCLBuiltins() {
+    return getUsingExperimental<
+        ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();
   }
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
@@ -1483,7 +1490,7 @@ private:
     return FD->getLocation();
   }
   static SourceLocation getLocation(const CallExpr *CE) {
-    return CE->getEndLoc();
+    return getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc()).getEnd();
   }
   // The result will be also stored in KernelCallExpr.BeginLoc
   static SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
@@ -1564,7 +1571,8 @@ private:
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>>
       FileRelpsMap;
-  static std::unordered_map<std::string, std::string> DigestMap;
+  static std::unordered_map<std::string, clang::tooling::MainSourceFileInfo>
+      MsfInfoMap;
   static const std::string YamlFileName;
   static std::map<std::string, bool> MacroDefines;
   static int CurrentMaxIndex;
@@ -1908,13 +1916,7 @@ private:
   // Constant scalar variables are passed by value while other 0/1D variables
   // defined on device memory are passed by pointer in device function calls.
   // The rest are passed by accessor.
-  enum DpctAccessMode {
-    Value,
-    Pointer,
-    Accessor,
-    Reference,
-    PointerToArray
-  };
+  enum DpctAccessMode { Value, Pointer, Accessor, Reference, PointerToArray };
 
 private:
   VarAttrKind Attr;
@@ -2747,7 +2749,8 @@ private:
     ArgInfo(const ParmVarDecl *PVD, const std::string &ArgsArrayName,
             KernelCallExpr *Kernel);
     ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel);
-    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE);
+    ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE,
+            std::string ArgStr);
     inline const std::string &getArgString() const;
     inline const std::string &getTypeString() const;
     inline std::string getIdStringWithIndex() const {
@@ -2770,6 +2773,7 @@ private:
     bool IsDeviceRandomGeneratorType = false;
     bool HasImplicitConversion = false;
     bool IsDoublePointer = false;
+    bool IsDependentType = false;
 
     std::shared_ptr<TextureObjectInfo> Texture;
   };

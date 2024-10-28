@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_BLAS_API_MIGRAION_H
-#define DPCT_BLAS_API_MIGRAION_H
+#ifndef DPCT_BLAS_API_MIGRATION_H
+#define DPCT_BLAS_API_MIGRATION_H
 
 #include "CallExprRewriter.h"
 
@@ -117,4 +117,4 @@ bool checkConstQualifierInDoublePointerType(
 } // namespace dpct
 } // namespace clang
 
-#endif // !DPCT_BLAS_API_MIGRAION_H
+#endif // !DPCT_BLAS_API_MIGRATION_H

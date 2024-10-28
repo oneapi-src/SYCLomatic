@@ -116,7 +116,7 @@ int main() {
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:               kernel((sycl::float4 *)(&d_acc_ct0[0]), dpct::image_accessor_ext<sycl::float4, 2, true>(tex42_smpl, tex42_acc), dpct::image_accessor_ext<sycl::uint2, 1, true>(tex21_smpl, tex21_acc));
+  // CHECK-NEXT:               kernel(&d_acc_ct0[0], dpct::image_accessor_ext<sycl::float4, 2, true>(tex42_smpl, tex42_acc), dpct::image_accessor_ext<sycl::uint2, 1, true>(tex21_smpl, tex21_acc));
   // CHECK-NEXT:             });
   // CHECK-NEXT:       });
   kernel<<<1, 1>>>(d);
