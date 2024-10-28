@@ -180,6 +180,11 @@ struct CudaArchPPInfo {
   std::unordered_map<unsigned, DirectiveInfo> ElInfo;
   bool isInHDFunc = false;
 };
+// Field: The member field of user defined class type.
+// Base: The base class of user defined class type.
+// Alias: The alias name of user defined class type.
+// The enum is using to clarify the different user defined type when
+// migrate the codepin with user defined class.
 enum class CodePinVarInfoType { Field, Base, Alias };
 struct MemberOrBaseInfoForCodePin {
   bool UserDefinedTypeFlag = false;
