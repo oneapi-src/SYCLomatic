@@ -3,13 +3,8 @@
 // RUN: cat %T/cuda_arch_lang/output
 // RUN: python3 -c "assert 'no CUDA code detected' in input()" < %T/cuda_arch_lang/output
 // RUN: dpct --format-range=none --out-root=%T/cuda_arch_lang --cuda-include-path="%cuda-path/include" %s -- -x cuda
-<<<<<<< HEAD
-// RUN: FileCheck --input-file=%T/cuda_arch_lang/cuda_arch_lang.cpp.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda_arch_lang/cuda_arch_lang.cpp.dp.cpp -o %T/cuda_arch_lang/cuda_arch_lang.o.dp.o %}
-=======
 // RUN: FileCheck --input-file=%T/cuda_arch_lang/cuda_arch_lang.cpp.dp.cpp %s 
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/cuda_arch_lang/cuda_arch_lang.cpp.dp.cpp -o %T/cuda_arch_lang/cuda_arch_lang.o.dp.o %}
->>>>>>> SYCLomatic/SYCLomatic
 
 // CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
 #ifdef __CUDA_ARCH__

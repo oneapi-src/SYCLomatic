@@ -7,7 +7,7 @@
 
 // CHECK: inline void foo(unsigned int p){}
 __device__ void foo(unsigned int p){}
-// CHECK: dpct::global_memory<unsigned int, 0> a1(4 * 2);
+// CHECK: static dpct::global_memory<unsigned int, 0> a1(4 * 2);
 // CHECK: __dpct_inline__ void kernel0(unsigned int &a1){
 // CHECK:   /*
 // CHECK:   DPCT1133:{{[0-9]+}}: The function atomicInc is migrated to atomic_fetch_compare_inc, which is a slow code path for the atomic operation. Please try to replace it with atomic_fetch_add, which is a fast code path. To do so, adjust the second parameter and corresponding logic. This also refers to DPCT1116.
@@ -40,7 +40,7 @@ __global__ void kernel1(){
   foo(a1);
 
 }
-// CHECK: dpct::global_memory<unsigned int, 1> b1(sycl::range<1>(10), {0 * 2});
+// CHECK: static dpct::global_memory<unsigned int, 1> b1(sycl::range<1>(10), {0 * 2});
 // CHECK: __dpct_inline__ void kernel2(unsigned int *b1){
 // CHECK:   /*
 // CHECK:   DPCT1116:{{[0-9]+}}: The atomicInc was migrated to dpct::atomic_fetch_add(b1, 2) / 2 for performance, and 2 is computed by (UINT_MAX + 1) / ('0x7fffffff' + 1). This migration requires the initial value of 'b1[index]' to be scaled by multiplying 2, and any usage of value of 'b1[index]' outside atomic function to be scaled by dividing 2.
@@ -57,7 +57,7 @@ __global__ void kernel2(){
   foo(b1[0]);
 
 }
-// CHECK: dpct::global_memory<unsigned int, 0> a2(10);
+// CHECK: static dpct::global_memory<unsigned int, 0> a2(10);
 // CHECK: __dpct_inline__ void kernel3(unsigned int &a2){
 // CHECK:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a2, 1);
 // CHECK: }
@@ -68,7 +68,7 @@ __global__ void kernel3(){
     atomicInc(&a2, 0xffffffff);
 
 }
-// CHECK: dpct::global_memory<unsigned int, 1> b2(sycl::range<1>(10), {0 * 2});
+// CHECK: static dpct::global_memory<unsigned int, 1> b2(sycl::range<1>(10), {0 * 2});
 // CHECK: __dpct_inline__ void kernel4(unsigned int *b2){
 // CHECK:     /*
 // CHECK:     DPCT1116:{{[0-9]+}}: The atomicInc was migrated to dpct::atomic_fetch_add(&b2[0], 2) / 2 for performance, and 2 is computed by (UINT_MAX + 1) / ('0x7fffffff' + 1). This migration requires the initial value of 'b2[index]' to be scaled by multiplying 2, and any usage of value of 'b2[index]' outside atomic function to be scaled by dividing 2.
@@ -85,7 +85,7 @@ __global__ void kernel4(){
     atomicMax(&b2[1], b2[2]);
 
 }
-// CHECK: dpct::global_memory<unsigned int, 0> a3(10 * 2);
+// CHECK: static dpct::global_memory<unsigned int, 0> a3(10 * 2);
 // CHECK: __dpct_inline__ void kernel5(unsigned int &a3){
 // CHECK:     /*
 // CHECK:     DPCT1116:{{[0-9]+}}: The atomicInc was migrated to dpct::atomic_fetch_add(&a3, 2) / 2 for performance, and 2 is computed by (UINT_MAX + 1) / ('0x7fffffff' + 1). This migration requires the initial value of 'a3' to be scaled by multiplying 2, and any usage of value of 'a3' outside atomic function to be scaled by dividing 2.
@@ -108,7 +108,7 @@ __global__ void kernel5(){
     foo(a3);
 
 }
-// CHECK: dpct::global_memory<unsigned int, 1> b3(10);
+// CHECK: static dpct::global_memory<unsigned int, 1> b3(10);
 // CHECK: void kernel6(unsigned int *b3){
 // CHECK:     /*
 // CHECK:     DPCT1116:{{[0-9]+}}: The atomicInc was migrated to dpct::atomic_fetch_add(&b3[0], 2) / 2 for performance, and 2 is computed by (UINT_MAX + 1) / ('0x7fffffff' + 1). This migration requires the initial value of 'b3[index]' to be scaled by multiplying 2, and any usage of value of 'b3[index]' outside atomic function to be scaled by dividing 2.
