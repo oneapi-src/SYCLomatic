@@ -91,12 +91,9 @@ private:
       CASE(rows)
       CASE(cols)
       CASE(ld)
+      CASE(batch_count)
     }
 #undef CASE
-  }
-  
-  std::uint64_t get_batch_count() const{
-    return _batch_count;
   }
   
   library_data_t _type;
