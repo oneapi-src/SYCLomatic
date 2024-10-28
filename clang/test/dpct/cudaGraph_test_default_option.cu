@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
 // RUN: dpct --format-range=none -out-root %T/cudaGraph_test_default_option %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cudaGraph_test_default_option/cudaGraph_test_default_option.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -DBUILD_TEST -fsycl %T/cudaGraph_test_default_option/cudaGraph_test_default_option.dp.cpp -o %T/cudaGraph_test_default_option/cudaGraph_test.dp.o %}
+// RUN: %if build_lit %{icpx -c -DNO_BUILD_TEST -fsycl %T/cudaGraph_test_default_option/cudaGraph_test_default_option.dp.cpp -o %T/cudaGraph_test_default_option/cudaGraph_test.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <cuda.h>
 
 int main() {

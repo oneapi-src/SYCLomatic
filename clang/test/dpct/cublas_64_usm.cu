@@ -475,6 +475,69 @@ void foo() {
   status = cublasCherkx_64(handle, uplo, transa, n, k, alpha_c, A_c, lda, B_c, ldb, beta_s, C_c, ldc);
   status = cublasZherkx_64(handle, uplo, transa, n, k, alpha_z, A_z, lda, B_z, ldb, beta_d, C_z, ldc);
 
+  cudaDataType type_x;
+  cudaDataType type_y;
+  cudaDataType type_res;
+  cudaDataType type_exec;
+  cudaDataType type_alpha;
+  cudaDataType type_cs;
+  void *res;
+  void *x;
+  void *y;
+  void *alpha;
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::nrm2(handle, n, x, type_x, incx, res, type_res));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::dot(handle, n, x, type_x, incx, y, type_y, incy, res, type_res));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::dotc(handle, n, x, type_x, incx, y, type_y, incy, res, type_res));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::scal(handle, n, alpha, type_alpha, x, type_x, incx));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::axpy(handle, n, alpha, type_alpha, x, type_x, incx, y, type_y, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::rot(handle, n, x, type_x, incx, y, type_y, incy, c, s, type_cs));
+  status = cublasNrm2Ex_64(handle, n, x, type_x, incx, res, type_res, type_exec);
+  status = cublasDotEx_64(handle, n, x, type_x, incx, y, type_y, incy, res, type_res, type_exec);
+  status = cublasDotcEx_64(handle, n, x, type_x, incx, y, type_y, incy, res, type_res, type_exec);
+  status = cublasScalEx_64(handle, n, alpha, type_alpha, x, type_x, incx, type_exec);
+  status = cublasAxpyEx_64(handle, n, alpha, type_alpha, x, type_x, incx, y, type_y, incy, type_exec);
+  status = cublasRotEx_64(handle, n, x, type_x, incx, y, type_y, incy, c, s, type_cs, type_exec);
+
+  void **a_array;
+  void **b_array;
+  void **c_array;
+  void *aa;
+  void *bb;
+  void *cc;
+  cudaDataType type_a;
+  cudaDataType type_b;
+  cudaDataType type_c;
+  void *beta;
+  cublasGemmAlgo_t algo;
+  int64_t batch;
+  int64_t stride_a;
+  int64_t stride_b;
+  int64_t stride_c;
+  cublasComputeType_t type_compute;
+  //      CHECK: status = DPCT_CHECK_ERROR(dpct::blas::gemm_batch(handle, transa, transb, m, n, k, alpha, const_cast<void const **>(a_array), type_a, lda, const_cast<void const **>(b_array), type_b, ldb, beta, c_array, type_c, ldc, batch, type_compute));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::blas::gemm_batch(handle, transa, transb, m, n, k, alpha, aa, type_a, lda, stride_a, bb, type_b, ldb, stride_b, beta, cc, type_c, ldc, stride_c, batch, type_compute));
+  status = cublasGemmBatchedEx_64(handle, transa, transb, m, n, k, alpha, a_array, type_a, lda, b_array, type_b, ldb, beta, c_array, type_c, ldc, batch, type_compute, algo);
+  status = cublasGemmStridedBatchedEx_64(handle, transa, transb, m, n, k, alpha, aa, type_a, lda, stride_a, bb, type_b, ldb, stride_b, beta, cc, type_c, ldc, stride_c, batch, type_compute, algo);
+
+  // CHECK: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha_s, A_s, type_a, lda, B_s, type_b, ldb, beta_s, C_s, type_c, ldc, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha_c, A_c, type_a, lda, B_c, type_b, ldb, beta_c, C_c, type_c, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha_c, A_c, type_a, lda, B_c, type_b, ldb, beta_c, C_c, type_c, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::gemm(handle, transa, transb, m, n, k, alpha_c, A_c, type_a, lda, B_c, type_b, ldb, beta_c, C_c, type_c, ldc, type_compute);
+  cublasSgemmEx_64(handle, transa, transb, m, n, k, alpha_s, A_s, type_a, lda, B_s, type_b, ldb, beta_s, C_s, type_c, ldc);
+  cublasCgemmEx_64(handle, transa, transb, m, n, k, alpha_c, A_c, type_a, lda, B_c, type_b, ldb, beta_c, C_c, type_c, ldc);
+  cublasCgemm3mEx_64(handle, transa, transb, m, n, k, alpha_c, A_c, type_a, lda, B_c, type_b, ldb, beta_c, C_c, type_c, ldc);
+  cublasGemmEx_64(handle, transa, transb, m, n, k, alpha_c, A_c, type_a, lda, B_c, type_b, ldb, beta_c, C_c, type_c, ldc, type_compute, algo);
+
+  cublasOperation_t trans;
+  // CHECK: dpct::blas::syherk<false>(handle, uplo, trans, n, k, alpha_c, A_c, type_a, lda, beta_c, C_c, type_c, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::syherk<false>(handle, uplo, trans, n, k, alpha_c, A_c, type_a, lda, beta_c, C_c, type_c, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::syherk<true>(handle, uplo, trans, n, k, alpha_s, A_c, type_a, lda, beta_s, C_c, type_c, ldc, dpct::library_data_t::complex_float);
+  // CHECK-NEXT: dpct::blas::syherk<true>(handle, uplo, trans, n, k, alpha_s, A_c, type_a, lda, beta_s, C_c, type_c, ldc, dpct::library_data_t::complex_float);
+  cublasCsyrkEx_64(handle, uplo, trans, n, k, alpha_c, A_c, type_a, lda, beta_c, C_c, type_c, ldc);
+  cublasCsyrk3mEx_64(handle, uplo, trans, n, k, alpha_c, A_c, type_a, lda, beta_c, C_c, type_c, ldc);
+  cublasCherkEx_64(handle, uplo, trans, n, k, alpha_s, A_c, type_a, lda, beta_s, C_c, type_c, ldc);
+  cublasCherk3mEx_64(handle, uplo, trans, n, k, alpha_s, A_c, type_a, lda, beta_s, C_c, type_c, ldc);
+
   //      CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), uplo, transa, diag, n, k, A_s, lda, y_s, incx));
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), uplo, transa, diag, n, k, A_d, lda, y_d, incx));
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(handle->get_queue(), uplo, transa, diag, n, k, (std::complex<float>*)A_c, lda, (std::complex<float>*)y_c, incx));
@@ -578,4 +641,26 @@ void foo() {
   // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::hpr2(handle->get_queue(), uplo, n, dpct::get_value(alpha_z, handle->get_queue()), (std::complex<double>*)x_z, incx, (std::complex<double>*)y_z, incy, (std::complex<double>*)C_z));
   status = cublasChpr2_64(handle, uplo, n, alpha_c, x_c, incx, y_c, incy, C_c);
   status = cublasZhpr2_64(handle, uplo, n, alpha_z, x_z, incx, y_z, incy, C_z);
+}
+
+void foo2() {
+  cublasHandle_t handle;
+  int n;
+  void *x, *y;
+  int incx, incy;
+  void *res;
+  int64_t *idx;
+  void *param;
+  // CHECK: dpct::blas::copy(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::swap(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy);
+  // CHECK-NEXT: dpct::blas::iamax(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::iamin(handle, n, x, dpct::library_data_t::real_float, incx, idx);
+  // CHECK-NEXT: dpct::blas::asum(handle, n, x, dpct::library_data_t::real_float, incx, res, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::blas::rotm(handle, n, x, dpct::library_data_t::real_float, incx, y, dpct::library_data_t::real_float, incy, param, dpct::library_data_t::real_float);
+  cublasCopyEx_64(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasSwapEx_64(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy);
+  cublasIamaxEx_64(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasIaminEx_64(handle, n, x, CUDA_R_32F, incx, idx);
+  cublasAsumEx_64(handle, n, x, CUDA_R_32F, incx, res, CUDA_R_32F, CUDA_R_32F);
+  cublasRotmEx_64(handle, n, x, CUDA_R_32F, incx, y, CUDA_R_32F, incy, param, CUDA_R_32F, CUDA_R_32F);
 }

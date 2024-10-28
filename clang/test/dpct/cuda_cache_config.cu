@@ -1,8 +1,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_cache_config %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_cache_config/cuda_cache_config.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda_cache_config/cuda_cache_config.dp.cpp -o %T/cuda_cache_config/cuda_cache_config.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/cuda_cache_config/cuda_cache_config.dp.cpp -o %T/cuda_cache_config/cuda_cache_config.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <stdio.h>
 
 __global__ void simple_kernel(float *d_array) {

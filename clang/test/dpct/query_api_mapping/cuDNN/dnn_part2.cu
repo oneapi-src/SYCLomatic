@@ -237,9 +237,9 @@
 // cudnnGetErrorString-NEXT:   r = cudnnGetErrorString(s /*cudnnStatus_t*/);
 // cudnnGetErrorString-NEXT: Is migrated to:
 // cudnnGetErrorString-NEXT:   /*
-// cudnnGetErrorString-NEXT:   DPCT1009:0: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+// cudnnGetErrorString-NEXT:   DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
 // cudnnGetErrorString-NEXT:   */
-// cudnnGetErrorString-NEXT:   r = "<Placeholder string>";
+// cudnnGetErrorString-NEXT:   r = dpct::get_error_string_dummy(s);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnGetFilter4dDescriptor | FileCheck %s -check-prefix=cudnnGetFilter4dDescriptor
 // cudnnGetFilter4dDescriptor: CUDA API:
