@@ -3887,8 +3887,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       report(
           DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
-          Diagnostics::SPARSE_NNZ, true,
-          MapNames::getLibraryHelperNamespace() + "sparse::csrgemm");
+          Diagnostics::SPARSE_NNZ, true);
       InsertBeforeIdxMap = {
           {8, Placeholder},
           {12, Placeholder},
