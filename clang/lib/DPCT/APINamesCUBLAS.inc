@@ -710,12 +710,12 @@ GELS_BATCHED(cublasCgelsBatched)
 GELS_BATCHED(cublasZgelsBatched)
 #undef GELS_BATCHED
 
-WARNING_FACTORY_ENTRY(
-    "cublasGetStatusString",
-    TOSTRING_FACTORY_ENTRY("cublasGetStatusString",
-                           LITERAL("\"<Placeholder string>\"")),
-    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED,
-    ARG("The call was replaced by a placeholder string"))
+WARNING_FACTORY_ENTRY("cublasGetStatusString",
+                      CALL_FACTORY_ENTRY("cublasGetStatusString",
+                                         CALL(MapNames::getDpctNamespace() +
+                                                  "get_error_string_dummy",
+                                              ARG_WC(0))),
+                      Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 
 #define GEMM_EX(NAME, COMPUTE_TYPE)                                            \
   ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(                                  \

@@ -19,33 +19,33 @@
 //CHECK: namespace detail {
 //CHECK: struct Color_codepin {
 //CHECK: public:
-//CHECK:   int r;
-//CHECK:   int g;
-//CHECK:   int b;
+//CHECK:   int r_codepin;
+//CHECK:   int g_codepin;
+//CHECK:   int b_codepin;
 //CHECK: };
 
 //CHECK: template<typename T>
 //CHECK: class Point3D_codepin {
 //CHECK: public:
-//CHECK:   T x;
-//CHECK:   T y;
-//CHECK:   T z;
+//CHECK:   T x_codepin;
+//CHECK:   T y_codepin;
+//CHECK:   T z_codepin;
 //CHECK: };
 
 //CHECK: struct PointCloud_codepin {
 //CHECK: public:
-//CHECK:   float3 pc[3];
+//CHECK:   float3 pc_codepin[3];
 //CHECK: };
 
 //CHECK: class Point3DExt_codepin : public Point3D_codepin<int> {
 //CHECK: public:
-//CHECK:   Color_codepin col;
+//CHECK:   Color_codepin col_codepin;
 //CHECK: };
 
 //CHECK: struct Point2D_codepin {
 //CHECK: public:
-//CHECK:   int x;
-//CHECK:   int y;
+//CHECK:   int x_codepin;
+//CHECK:   int y_codepin;
 //CHECK: };
 
 //CHECK: template <> class data_ser<Color_codepin> {
@@ -59,7 +59,7 @@
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.r, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.r_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj1 = arr.object();
@@ -67,7 +67,7 @@
 //CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
 //CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.g, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.g_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj2 = arr.object();
@@ -75,7 +75,7 @@
 //CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value2);
 //CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.b, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.b_codepin, queue);
 //CHECK:     }
 
 //CHECK:   }
@@ -96,7 +96,7 @@
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj1 = arr.object();
@@ -104,7 +104,7 @@
 //CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
 //CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj2 = arr.object();
@@ -112,7 +112,7 @@
 //CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value2);
 //CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.z, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.z_codepin, queue);
 //CHECK:     }
 
 //CHECK:   }
@@ -133,7 +133,7 @@
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<float3[3]>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<float3[3]>::dump(ss, value.pc, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<float3[3]>::dump(ss, value.pc_codepin, queue);
 //CHECK:     }
 
 //CHECK:   }
@@ -167,7 +167,7 @@
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj1 = arr.object();
@@ -175,7 +175,7 @@
 //CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
 //CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj2 = arr.object();
@@ -183,7 +183,7 @@
 //CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value2);
 //CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.z, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.z_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj3 = arr.object();
@@ -191,7 +191,7 @@
 //CHECK:       auto value3 = obj3.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<Color_codepin>::print_type_name(value3);
 //CHECK:       obj3.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<Color_codepin>::dump(ss, value.col, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<Color_codepin>::dump(ss, value.col_codepin, queue);
 //CHECK:     }
 
 //CHECK:   }
@@ -225,7 +225,7 @@
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<float>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.x, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.x_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj1 = arr.object();
@@ -233,7 +233,7 @@
 //CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<float>::print_type_name(value1);
 //CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.y, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.y_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj2 = arr.object();
@@ -241,7 +241,7 @@
 //CHECK:       auto value2 = obj2.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<float>::print_type_name(value2);
 //CHECK:       obj2.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.z, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<float>::dump(ss, value.z_codepin, queue);
 //CHECK:     }
 
 //CHECK:   }
@@ -275,7 +275,7 @@
 //CHECK:       auto value0 = obj0.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value0);
 //CHECK:       obj0.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.x_codepin, queue);
 //CHECK:     }
 //CHECK:     {
 //CHECK:       auto obj1 = arr.object();
@@ -283,7 +283,7 @@
 //CHECK:       auto value1 = obj1.value<dpctexp::codepin::detail::json_stringstream::json_obj>();
 //CHECK:       dpctexp::codepin::detail::data_ser<int>::print_type_name(value1);
 //CHECK:       obj1.key("Data");
-//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y, queue);
+//CHECK:       dpctexp::codepin::detail::data_ser<int>::dump(ss, value.y_codepin, queue);
 //CHECK:     }
 
 //CHECK:   }

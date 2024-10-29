@@ -1698,7 +1698,7 @@ int is_tool_available(const char *pathname) {
       pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
       pathname[len - 5] == '/') {
     // To handle case like "/path/to/nvcc"
-    is_nvcc = 0;
+    is_nvcc = 1;
   }
 
   if (is_nvcc) {
@@ -1721,7 +1721,7 @@ int is_tool_available(const char *pathname) {
   if (len > 2 && pathname[len - 1] == 'd' && pathname[len - 2] == 'l' &&
       pathname[len - 3] == '/') {
     // To handle case like "/path/to/ld"
-    is_ld = 0;
+    is_ld = 1;
   }
 
   if (is_ld) {

@@ -279,6 +279,12 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
     if (!II)
       continue;
 
+    // The "__noinline__" macro is re-defined and it is used in
+    // "__attribute__()", do not migrate it.
+    if (II->hasMacroDefinition() && (II->getName() == "__noinline__")) {
+      continue;
+    }
+
     auto ItRule = MapNames::MacroRuleMap.find(II->getName().str());
     if (ItRule != MapNames::MacroRuleMap.end()) {
       TransformSet.emplace_back(
@@ -6031,6 +6037,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
       requestHelperFeatureForEnumNames(AttributeName);
 
+      if (AttributeName == "cudaDevAttrMaxSharedMemoryPerBlockOptin") {
+        report(CE->getBeginLoc(), Diagnostics::LOCAL_MEM_SIZE, false,
+               AttributeName);
+      }
+
       ReplStr += " = " + MapNames::getDpctNamespace() + "get_device(";
       ReplStr += StmtStrArg2;
       ReplStr += ").";
@@ -10584,7 +10595,8 @@ void MemoryMigrationRule::prefetchMigration(
                                ? "cpu_device()"
                                : "get_device(" + StmtStrArg2 + ")");
       requestFeature(HelperFeatureEnum::device_ext);
-      Replacement = Prefix + "." + DpctGlobalInfo::getDeviceQueueName() + "()" +
+      Replacement = Prefix + "." +
+                    DpctGlobalInfo::getDefaultQueueMemFuncName() + "()" +
                     (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") +
                     "prefetch(" + StmtStrArg0 + "," + StmtStrArg1 + ")";
     } else {
@@ -10786,7 +10798,7 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
     OS << MapNames::getDpctNamespace() + "cpu_device()." +
-              DpctGlobalInfo::getDeviceQueueName() + "()";
+              DpctGlobalInfo::getDefaultQueueMemFuncName() + "()";
     OS << (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") << "mem_advise("
        << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
@@ -10794,7 +10806,7 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
     return;
   }
   OS << MapNames::getDpctNamespace() + "get_device(" << Arg3Str
-     << ")." + DpctGlobalInfo::getDeviceQueueName() + "()";
+     << ")." + DpctGlobalInfo::getDefaultQueueMemFuncName() + "()";
   OS << (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") << "mem_advise("
      << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
   emplaceTransformation(new ReplaceStmt(C, OS.str()));

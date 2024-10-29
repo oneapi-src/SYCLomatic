@@ -1295,6 +1295,9 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaDevAttrComputeCapabilityMajor",
        std::make_shared<EnumNameRule>("get_major_version",
                                       HelperFeatureEnum::device_ext)},
+      {"cudaDevAttrMaxSharedMemoryPerBlockOptin",
+       std::make_shared<EnumNameRule>("get_local_mem_size",
+                                      HelperFeatureEnum::device_ext)},
       {"cudaDevAttrComputeCapabilityMinor",
        std::make_shared<EnumNameRule>("get_minor_version",
                                       HelperFeatureEnum::device_ext)},
@@ -4603,6 +4606,8 @@ MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"numChannels", "channel_num"}};
 
 std::vector<MetaRuleObject::PatternRewriter> MapNames::PatternRewriters;
+std::map<clang::dpct::HelperFuncCatalog, std::string>
+    MapNames::CustomHelperFunctionMap;
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};

@@ -756,16 +756,19 @@ void genCodePinDecl(dpct::RawFDOStream &RS, std::vector<std::string> &SortedVec,
       }
       RS << ">" << getNL();
     }
-    RS << Info.VarRecordType;
     if (IsForwardDecl) {
       if (Info.IsTypeDef) {
-        RS << " " << Info.OrgTypeName << ";" << getNL();
+        if (Info.OrgTypeName.find("dpct_type_") != std::string::npos) {
+          RS << Info.VarRecordType << " " << Info.OrgTypeName << ";" << getNL();
+        }
         RS << "using " << Info.VarNameWithoutScopeAndTemplateArgs << " = "
            << Info.OrgTypeName << ";" << getNL();
       } else {
+        RS << Info.VarRecordType;
         RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << ";" << getNL();
       }
     } else {
+      RS << Info.VarRecordType;
       RS << " " << Info.VarNameWithoutScopeAndTemplateArgs << "_codepin";
       if (!Info.Bases.empty()) {
         RS << " : ";
@@ -781,11 +784,8 @@ void genCodePinDecl(dpct::RawFDOStream &RS, std::vector<std::string> &SortedVec,
       RS << " {" << getNL() << "public:" << getNL();
       int MemberSize = Info.Members.size();
       for (int i = 0; i < MemberSize; ++i) {
-        if (Info.Members[i].IsBaseMember) {
-          continue;
-        }
         RS << "  " << getCodePinPostfixName(Info.Members[i], IsForCUDADebug)
-           << " " << Info.Members[i].MemberName;
+           << " " << Info.Members[i].CodePinMemberName;
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
         }
@@ -849,8 +849,8 @@ void genCodePinDumpFunc(dpct::RawFDOStream &RS, bool IsForCUDADebug) {
         for (auto &D : Info.Members[i].Dims) {
           RS << "[" << std::to_string(D) << "]";
         }
-        RS << ">::dump(ss, value." << Info.Members[i].MemberName << ", queue);"
-           << getNL() << "    }" << getNL();
+        RS << ">::dump(ss, value." << Info.Members[i].CodePinMemberName
+           << ", queue);" << getNL() << "    }" << getNL();
       }
     }
     RS << getNL() << "  }" << getNL();
