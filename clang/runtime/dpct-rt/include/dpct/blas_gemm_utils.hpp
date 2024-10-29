@@ -121,6 +121,7 @@ public:
     compute_type,
     scale_type,
     bias_type,
+    bias_pointer,
     pointer_mode,
     trans_a,
     trans_b,
@@ -159,6 +160,7 @@ private:
       CASE(compute_type)
       CASE(scale_type)
       CASE(bias_type)
+      CASE(bias_pointer)
       CASE(pointer_mode)
       CASE(trans_a)
       CASE(trans_b)
@@ -176,7 +178,7 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
-  library_data_t _bias_type = library_data_t::real_float;
+  library_data_t bias_type = library_data_t::real_float;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
@@ -186,6 +188,7 @@ private:
   void *_b_scale_pointer = nullptr;
   void *_d_scale_pointer = nullptr;
   void *_absmax_d_pointer = nullptr;
+  void *bias_pointer = nullptr;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
