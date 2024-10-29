@@ -8657,16 +8657,7 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
                 dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
           if (ICE->getCastKind() == CK_ArrayToPointerDecay) {
             if (!dyn_cast_or_null<ArraySubscriptExpr>(getParentStmt(ICE))) {
-              std::string Dims;
-              for (auto &D : VarType->getRange()) {
-                Dims = Dims + "[" + D.getSize() + "]";
-              }
-              emplaceTransformation(new InsertBeforeStmt(
-                  MemVarRef, buildString("(std::decay_t<",
-                                         VarType->getBaseName(), Dims, ">)")));
-              emplaceTransformation(new InsertAfterStmt(
-                  MemVarRef,
-                  ".get_multi_ptr<sycl::access::decorated::no>().get()"));
+              emplaceTransformation(new InsertAfterStmt(MemVarRef, ".get()"));
             }
           }
         }
