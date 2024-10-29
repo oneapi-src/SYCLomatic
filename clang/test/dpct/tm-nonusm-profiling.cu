@@ -1,8 +1,8 @@
 // RUN: dpct --enable-profiling  --format-range=none -usm-level=none -out-root %T/tm-nonusm-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.cpp -o %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.cpp -o %T/tm-nonusm-profiling/tm-nonusm-profiling.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT:#include <sycl/sycl.hpp>
@@ -331,7 +331,7 @@ void foo()
 // CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexels_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize),
 // CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                          readTexels(kernelRepFactor, (float *)(&d_out_acc_ct1[0]), width);
+// CHECK-NEXT:                          readTexels(kernelRepFactor, &d_out_acc_ct1[0], width);
 // CHECK-NEXT:                        });
 // CHECK-NEXT:                    });
                 readTexels<<<gridSize, blockSize>>>(kernelRepFactor, d_out,
@@ -364,7 +364,7 @@ void foo()
 // CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize),
 // CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                          readTexelsFoo1(kernelRepFactor, (float *)(&d_out_acc_ct1[0]));
+// CHECK-NEXT:                          readTexelsFoo1(kernelRepFactor, &d_out_acc_ct1[0]);
 // CHECK-NEXT:                        });
 // CHECK-NEXT:                    });
                 readTexelsFoo1<<<gridSize, blockSize>>>
@@ -398,7 +398,7 @@ void foo()
 // CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize),
 // CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                          readTexelsFoo2(kernelRepFactor, (float *)(&d_out_acc_ct1[0]), width, height);
+// CHECK-NEXT:                          readTexelsFoo2(kernelRepFactor, &d_out_acc_ct1[0], width, height);
 // CHECK-NEXT:                        });
 // CHECK-NEXT:                    });
                 readTexelsFoo2<<<gridSize, blockSize>>>
@@ -536,8 +536,8 @@ void RunTest()
         {
 // CHECK:          q_ct1.submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
-// CHECK-NEXT:              dpct::access_wrapper<T *> d_idata_acc_ct0(d_idata, cgh);
-// CHECK-NEXT:              dpct::access_wrapper<T *> d_block_sums_acc_ct1(d_block_sums, cgh);
+// CHECK-NEXT:              dpct::access_wrapper d_idata_acc_ct0(d_idata, cgh);
+// CHECK-NEXT:              dpct::access_wrapper d_block_sums_acc_ct1(d_block_sums, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:              cgh.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
 // CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
@@ -600,9 +600,9 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_cur_image_acc_ct1(d_cur_image, cgh);
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> imgRef_acc_ct4(imgRef, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_cur_image_acc_ct1(d_cur_image, cgh);
+// CHECK-NEXT:        dpct::access_wrapper imgRef_acc_ct4(imgRef, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_1_blocks_in_grid * foo_kernel_1_threads_in_block, foo_kernel_1_threads_in_block),
@@ -631,7 +631,7 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_2_blocks_in_grid * foo_kernel_2_threads_in_block, foo_kernel_2_threads_in_block),
@@ -658,7 +658,7 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_3_blocks_in_grid * foo_kernel_3_threads_in_block, foo_kernel_3_threads_in_block),

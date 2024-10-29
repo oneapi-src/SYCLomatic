@@ -113,7 +113,7 @@ This signature will be used later for validation after migration.
 Enable CodePin with the ``–enable-codepin`` option.
 
 For detailed information about debugging using the CodePin tool, refer to
-`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html>`_.
+`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-2/debug-with-codepin.html>`_.
 
 Configure the Tool
 ******************
@@ -425,7 +425,7 @@ project signature will be logged during the execution time.
 The signature contains the data value of each execution checkpoint, which can be verified manually or with an auto-analysis tool.
 
 For detailed information about debugging using the CodePin tool, refer to
-`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-1/debug-with-codepin.html>`_.
+`Debug Migrated Code Runtime Behavior <https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2024-2/debug-with-codepin.html>`_.
 
 Optimize Your Code
 ------------------
@@ -437,7 +437,7 @@ code to improve for optimizing your application performance.
 Additional hardware- or library-specific optimization information is available:
 
 * For detailed information about optimizing your code for Intel GPUs, refer to
-  the `oneAPI GPU Optimization Guide <https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/current/overview.html>`_.
+  the `oneAPI GPU Optimization Guide <https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-2/overview.html>`_.
 * For detailed information about optimizing your code for AMD GPUs, refer to the
   `Codeplay AMD GPU Performance Guide <https://developer.codeplay.com/products/oneapi/amd/2024.0.2/guides/performance/introduction>`_.
 * For detailed information about optimizing your code for NVIDIA GPUS, refer to

@@ -612,7 +612,7 @@ Stop migration and generation of reports if parsing errors happened. Default: ``
 .. _desc-suppress-warnings:
 
 A comma-separated list of migration warnings to suppress. Valid warning IDs
-range from 1000 to 1127. Hyphen-separated ranges are also allowed. For
+range from 1000 to 1132. Hyphen-separated ranges are also allowed. For
 example: ``-suppress-warnings=1000-1010,1011``.
 
 .. _end-suppress-warnings:
@@ -690,7 +690,9 @@ The values are:
 - ``=masked-sub-group-operation``: Experimental helper function used to execute
   sub-group operation with mask. See more details in ``dpct::experimental::select_from_sub_group``, ``dpct::experimental::shift_sub_group_left``, ``dpct::experimental::shift_sub_group_right`` and ``dpct::experimental::shift_sub_group_right`` in header file ``util.hpp``.
 - ``=matrix``: Experimental extension that allows use of matrix extension like class ``joint_matrix``. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_matrix/sycl_ext_oneapi_matrix.asciidoc>`__.
-- ``=nd_range_barrier``: Experimental helper function used to help cross-group synchronization during migration. See more details in ``dpct::experimental::nd_range_barrier`` in header file ``util.hpp``.
+- ``=nd_range_barrier``: DEPRECATED. Experimental helper function used to help cross-group synchronization during migration. Please use the following option instead: ``--use-experimental-features=root-group``
+- ``=root-group``: Experimental extension that allows use of root group class and relative API.
+- ``=graph``: Experimental extension that allows use of SYCL Graph APIs.
 - ``=occupancy-calculation``: Experimental helper function used to calculate occupancy. See more details in ``dpct::experimental::calculate_max_active_wg_per_xecore`` and ``dpct::experimental::calculate_max_potential_wg`` in header file ``util.hpp``.
 - ``=user-defined-reductions``: Experimental extension that allows user-defined
   reductions. `See more details <https://github.com/intel/llvm/blob/sycl/sycl/doc/extensions/experimental/sycl_ext_oneapi_user_defined_reductions.asciidoc>`__.
@@ -710,11 +712,12 @@ The values are:
 .. _desc-use-explicit-namespace:
 
 Define the namespaces to use explicitly in generated code. The value is
-a comma-separated list. Default: ``dpct, sycl``.
+a comma-separated list. Default: ``dpct/syclcompat, sycl``.
 
 Possible values are:
 
 - ``=dpct``: Generate code with ``dpct::`` namespace.
+- ``=syclcompat``: Generate code with ``syclcompat::`` namespace.
 - ``=none``: Generate code without any namespaces. Cannot be used with other values.
 - ``=sycl``: Generate code with ``sycl::`` namespace. Cannot be used with ``cl``
   or ``sycl-math`` values.
@@ -722,6 +725,18 @@ Possible values are:
   math functions. Cannot be used with ``cl`` or ``sycl`` values.
 
 .. _end-use-explicit-namespace:
+
+
+
+.. _opt-use-syclcompat:
+
+``--use-syclcompat``
+
+.. _desc-use-syclcompat:
+
+Use SYCLcompat header-only library (``syclcompat::`` namespace) to assist the migration of input source code. Default: ``off``.
+
+.. _end-use-syclcompat:
 
 
 
@@ -738,6 +753,8 @@ Set the Unified Shared Memory (USM) level to use in source code generation:
 - ``=restricted``: Uses USM API for memory management migration. (default).
 
 .. _end-usm-level:
+
+
 
 .. _opt-vcxprojfile:
 
@@ -783,6 +800,7 @@ Same as -p.
 .. _end-compilation-db:
 
 
+
 .. _opt-gen-helper-func:
 
 ``--gen-helper-function``
@@ -792,6 +810,7 @@ Same as -p.
 Generate helper function files in the ``--out-root`` directory. Default: ``off``.
 
 .. _end-gen-helper-func:
+
 
 
 .. _opt-analysis-mode:
@@ -805,6 +824,7 @@ Only generate a report for porting effort. Default: ``off``.
 .. _end-analysis-mode:
 
 
+
 .. _opt-analysis-mode-output-file:
 
 ``--analysis-mode-output-file``
@@ -814,6 +834,7 @@ Only generate a report for porting effort. Default: ``off``.
 Specify the file where the analysis mode report is saved. Default: Output to ``stdout``.
 
 .. _end-analysis-mode-output-file:
+
 
 
 .. _opt-codepin-report:
@@ -826,6 +847,8 @@ Call ``codepin-report.py`` to generate CodePin report by parsing execution log f
 
 .. _end-codepin-report:
 
+
+
 .. _opt-enable-codepin:
 
 ``--enable-codepin``
@@ -837,6 +860,7 @@ EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verificatio
 .. _end-enable-codepin:
 
 
+
 .. _opt-intercept-build:
 
 ``--intercept-build``
@@ -846,6 +870,7 @@ EXPERIMENTAL: Generate instrumented CUDA and SYCL code for debug and verificatio
 Intercept build tool to generate a compilation database.
 
 .. _end-intercept-build:
+
 
 
 .. _opt-migrate-build-script:
@@ -861,6 +886,7 @@ EXPERIMENTAL: Migrate build script(s).
 .. _end-migrate-build-script:
 
 
+
 .. _opt-migrate-build-script-only:
 
 ``--migrate-build-script-only``
@@ -870,6 +896,7 @@ EXPERIMENTAL: Migrate build script(s).
 EXPERIMENTAL: Only migrate the build script(s). Default: ``off``.
 
 .. _end-migrate-build-script-only:
+
 
 
 .. _opt-sycl-file-extension:
@@ -886,6 +913,7 @@ The values are:
 - ``=cpp``: Use extension '.cpp' and '.hpp'.
 
 .. _end-sycl-file-extension:
+
 
 
 .. _opt-intercept-build-block:

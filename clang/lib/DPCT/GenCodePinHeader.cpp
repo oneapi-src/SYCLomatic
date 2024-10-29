@@ -188,6 +188,7 @@ void GenCodePinHeaderRule::processCodePinTypeMemberOrBase(
   MemberOrBaseInfo.TypeNameInSycl = DpctGlobalInfo::getReplacedTypeName(
       NextMT, DpctGlobalInfo::getContext(), true);
   MemberOrBaseInfo.MemberName = Name;
+  MemberOrBaseInfo.CodePinMemberName = Name + "_codepin";
   MemberOrBaseInfo.IsBaseMember = IsBaseMember;
   if (IsBase) {
     VarInfo.Bases.push_back(MemberOrBaseInfo);

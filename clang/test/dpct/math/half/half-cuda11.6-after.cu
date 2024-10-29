@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2, v11.0, v11.1, v11.2, v11.3, v11.4, v11.5
 // RUN: dpct --format-range=none -out-root %T/math/half/half-cuda11.6-after %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/math/half/half-cuda11.6-after/half-cuda11.6-after.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/math/half/half-cuda11.6-after/half-cuda11.6-after.dp.cpp -o %T/math/half/half-cuda11.6-after/half-cuda11.6-after.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/math/half/half-cuda11.6-after/half-cuda11.6-after.dp.cpp -o %T/math/half/half-cuda11.6-after/half-cuda11.6-after.dp.o %}
 
 #include "cuda_fp16.h"
 
@@ -23,7 +23,7 @@ __global__ void kernelFuncHalf(__half *deviceArrayHalf) {
   h_2 = __hmul_rn(h, h_1);
   // CHECK: h_2 = h - h_1;
   h_2 = __hsub_rn(h, h_1);
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of half version of atomicAdd is not supported.
   // CHECK-NEXT: */

@@ -64,7 +64,7 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](sycl::handler &cgh) {
-  //CHECK-NEXT:      dpct::access_wrapper<AAA *> b1_acc_ct0(b1, cgh);
+  //CHECK-NEXT:      dpct::access_wrapper b1_acc_ct0(b1, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k2_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -84,7 +84,7 @@ int main() {
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k2_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:          k2((AAA *)(&b2_acc_ct0[0]));
+  //CHECK-NEXT:          k2(&b2_acc_ct0[0]);
   //CHECK-NEXT:        });
   //CHECK-NEXT:    });
   k2<<<1,1>>>(b2);
@@ -94,7 +94,7 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](sycl::handler &cgh) {
-  //CHECK-NEXT:      dpct::access_wrapper<int **> a1_acc_ct0(a1, cgh);
+  //CHECK-NEXT:      dpct::access_wrapper a1_acc_ct0(a1, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k3_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -109,7 +109,7 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](sycl::handler &cgh) {
-  //CHECK-NEXT:      dpct::access_wrapper<int **> a2_acc_ct0(a2, cgh);
+  //CHECK-NEXT:      dpct::access_wrapper a2_acc_ct0(a2, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k3_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

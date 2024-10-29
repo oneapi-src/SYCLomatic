@@ -30,7 +30,7 @@ Use a supported data type to rewrite the code.
 Suggestions to Fix
 ------------------
 
-Please refer to the `gemm topic <https://www.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/blas-routines/blas-level-3-routines/gemm.html>`_
+Please refer to the `gemm topic <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/2024-2/gemm.html>`_
 of the Intel® oneAPI Math Kernel Library (oneMKL) - Data Parallel C++ Developer
 Reference for supported data types to fix the code manually.
 

@@ -11,10 +11,11 @@
 #include "Error.h"
 #include "MapNames.h"
 #include "MigrateCmakeScript.h"
+#include "MigratePythonBuildScript.h"
 #include "MigrationRuleManager.h"
 #include "NCCLAPIMigration.h"
-#include "Utility.h"
 #include "TypeLocRewriters.h"
+#include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
 
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
@@ -272,8 +273,8 @@ void deregisterAPIRule(MetaRuleObject &R) {
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
   MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
-      R.In, R.Out, R.Subrules, R.MatchMode, R.Warning, R.RuleId, R.CmakeSyntax,
-      R.Priority));
+      R.In, R.Out, R.Subrules, R.MatchMode, R.Warning, R.RuleId,
+      R.BuildScriptSyntax, R.Priority));
 }
 
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
@@ -286,7 +287,7 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     Warning = PR.Warning;
     Subrules = PR.Subrules;
     Priority = PR.Priority;
-    CmakeSyntax = PR.CmakeSyntax;
+    BuildScriptSyntax = PR.BuildScriptSyntax;
   }
   return *this;
 }
@@ -294,16 +295,16 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const MetaRuleObject::PatternRewriter &PR)
     : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), Warning(PR.Warning),
-      CmakeSyntax(PR.CmakeSyntax), RuleId(PR.RuleId), Priority(PR.Priority),
-      Subrules(PR.Subrules) {}
+      BuildScriptSyntax(PR.BuildScriptSyntax), RuleId(PR.RuleId),
+      Priority(PR.Priority), Subrules(PR.Subrules) {}
 
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const std::string &I, const std::string &O,
     const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
-    std::string Warning, std::string RuleId, std::string CmakeSyntax,
+    std::string Warning, std::string RuleId, std::string BuildScriptSyntax,
     RulePriority Priority)
     : In(I), Out(O), MatchMode(MatchMode), Warning(Warning),
-      CmakeSyntax(CmakeSyntax), RuleId(RuleId), Priority(Priority) {
+      BuildScriptSyntax(BuildScriptSyntax), RuleId(RuleId), Priority(Priority) {
   Subrules = S;
 }
 
@@ -364,6 +365,9 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
         break;
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
+        break;
+      case (RuleKind::PythonRule):
+        registerPythonMigrationRule(*r);
         break;
       default:
         break;

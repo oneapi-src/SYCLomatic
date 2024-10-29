@@ -27,7 +27,7 @@ Suggestions to Fix
 Set user-defined direction numbers to the basic Sobol generator and use it as
 Scrambled Sobol generator.
 
-See the `Random Number Generators <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/engines-basic-random-number-generators.html>`_ topic for more information.
+See the `Random Number Generators <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/2024-2/engines-basic-random-number-generators.html>`_ topic for more information.
 
 For example, this original CUDA\* code:
 

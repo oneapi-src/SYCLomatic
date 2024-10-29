@@ -16,7 +16,7 @@ __global__ void foo_kernel(T** R)
 //CHECK-NEXT:   */
 //CHECK-NEXT:   dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:     [&](sycl::handler &cgh) {
-//CHECK-NEXT:       dpct::access_wrapper<float **> R_acc_ct0(R, cgh);
+//CHECK-NEXT:       dpct::access_wrapper R_acc_ct0(R, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}, float>>(
 //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

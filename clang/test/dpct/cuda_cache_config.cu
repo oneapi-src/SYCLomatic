@@ -1,8 +1,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_cache_config %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_cache_config/cuda_cache_config.dp.cpp
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/cuda_cache_config/cuda_cache_config.dp.cpp -o %T/cuda_cache_config/cuda_cache_config.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/cuda_cache_config/cuda_cache_config.dp.cpp -o %T/cuda_cache_config/cuda_cache_config.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <stdio.h>
 
 __global__ void simple_kernel(float *d_array) {
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         simple_kernel((float *)(&d_array_acc_ct0[0]));
+  // CHECK-NEXT:         simple_kernel(&d_array_acc_ct0[0]);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   simple_kernel<<<size / 64, 64>>>(d_array);

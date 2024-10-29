@@ -1,7 +1,7 @@
 // RUN: dpct --enable-profiling  --format-range=none -out-root %T/tm-usm-restricted-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/tm-usm-restricted-profiling/tm-usm-restricted-profiling.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/tm-usm-restricted-profiling/tm-usm-restricted-profiling.dp.cpp -o %T/tm-usm-restricted-profiling/tm-usm-restricted-profiling.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/tm-usm-restricted-profiling/tm-usm-restricted-profiling.dp.cpp -o %T/tm-usm-restricted-profiling/tm-usm-restricted-profiling.dp.o %}
+#ifndef NO_BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#include <sycl/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>

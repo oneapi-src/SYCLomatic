@@ -993,8 +993,11 @@ inline std::function<bool(const CallExpr *C)>
 checkIsMigratedToHasAspect(size_t index) {
   return [=](const CallExpr *C) -> bool {
     if (getStmtSpelling(C->getArg(index))
-            .find("CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY") !=
-        std::string::npos) {
+                .find("CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY") !=
+            std::string::npos ||
+        getStmtSpelling(C->getArg(index))
+                .find("CU_DEVICE_ATTRIBUTE_VIRTUAL_MEMORY_MANAGEMENT_"
+                      "SUPPORTED") != std::string::npos) {
       return true;
     }
     return false;
