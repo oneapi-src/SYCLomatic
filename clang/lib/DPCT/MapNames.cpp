@@ -1951,6 +1951,12 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_MATMUL_DESC_EPILOGUE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::epilogue"},
+      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_ld"},
+      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_pointer"},
       {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
