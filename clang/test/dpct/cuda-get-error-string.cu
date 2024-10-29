@@ -173,3 +173,31 @@ void foo2(cudaError_t err) {
   cudaGetErrorString(err);
   cudaGetErrorString(cudaErrorInvalidValue);
 }
+
+void report_cuda_error(const char *stmt, const char *func, const char *file,
+                       int line, const char *msg) {}
+
+#define __CUDA_CHECK__(err, success, error_fn)                                 \
+  do {                                                                         \
+    auto err_ = (err);                                                         \
+    if (err_ != (success)) {                                                   \
+      report_cuda_error(#err, __func__, __FILE__, __LINE__, error_fn(err_));   \
+    }                                                                          \
+  } while (0)
+// CHECK: #define CUDA_CHECK(err) __CUDA_CHECK__(err, 0, dpct::get_error_string_dummy)
+#define CUDA_CHECK(err) __CUDA_CHECK__(err, cudaSuccess, cudaGetErrorString)
+
+int main() {
+  float *f;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: CUDA_CHECK(DPCT_CHECK_ERROR(f = sycl::malloc_device<float>(1, q_ct1)));
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: CUDA_CHECK(DPCT_CHECK_ERROR(dpct::dpct_free(f, q_ct1)));
+  CUDA_CHECK(cudaMalloc(&f, sizeof(float)));
+  CUDA_CHECK(cudaFree(f));
+  return 0;
+}

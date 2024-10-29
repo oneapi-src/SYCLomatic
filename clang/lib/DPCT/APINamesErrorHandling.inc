@@ -12,12 +12,11 @@ WARNING_FACTORY_ENTRY(
                       CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
                            ARG_WC(0))),
     Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
-WARNING_FACTORY_ENTRY(
-    "cudaGetErrorString",
-   CALL_FACTORY_ENTRY("cudaGetErrorString",
-                      CALL(MapNames::getDpctNamespace() + "get_error_string_dummy",
-                           ARG_WC(0))),
-    Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
+WARNING_FACTORY_ENTRY("cudaGetErrorString",
+                      NO_REWRITER_FUNC_NAME_REWRITER_FACTORY_ENTRY(
+                          "cudaGetErrorString", MapNames::getDpctNamespace() +
+                                                    "get_error_string_dummy"),
+                      Diagnostics::ERROR_HANDLING_API_REPLACED_BY_DUMMY)
 WARNING_FACTORY_ENTRY(
     "cudaGetErrorName",
     CALL_FACTORY_ENTRY("cudaGetErrorName",
