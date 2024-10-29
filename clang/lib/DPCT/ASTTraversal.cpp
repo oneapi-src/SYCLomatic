@@ -10705,7 +10705,8 @@ void MemoryMigrationRule::prefetchMigration(
                                ? "cpu_device()"
                                : "get_device(" + StmtStrArg2 + ")");
       requestFeature(HelperFeatureEnum::device_ext);
-      Replacement = Prefix + "." + DpctGlobalInfo::getDeviceQueueName() + "()" +
+      Replacement = Prefix + "." +
+                    DpctGlobalInfo::getDefaultQueueMemFuncName() + "()" +
                     (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") +
                     "prefetch(" + StmtStrArg0 + "," + StmtStrArg1 + ")";
     } else {
@@ -10907,7 +10908,7 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
   std::ostringstream OS;
   if (getStmtSpelling(C->getArg(3)) == "cudaCpuDeviceId") {
     OS << MapNames::getDpctNamespace() + "cpu_device()." +
-              DpctGlobalInfo::getDeviceQueueName() + "()";
+              DpctGlobalInfo::getDefaultQueueMemFuncName() + "()";
     OS << (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") << "mem_advise("
        << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
@@ -10915,7 +10916,7 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
     return;
   }
   OS << MapNames::getDpctNamespace() + "get_device(" << Arg3Str
-     << ")." + DpctGlobalInfo::getDeviceQueueName() + "()";
+     << ")." + DpctGlobalInfo::getDefaultQueueMemFuncName() + "()";
   OS << (DpctGlobalInfo::useSYCLCompat() ? "->" : ".") << "mem_advise("
      << Arg0Str << ", " << Arg1Str << ", " << Arg2Str << ")";
   emplaceTransformation(new ReplaceStmt(C, OS.str()));

@@ -1,0 +1,7 @@
+---
+- Rule: rule1
+  Kind: HelperFunction
+  Priority: Takeover
+  In: get_default_queue
+  Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream3())
+  Includes: ["xpu_helper3.h"]
