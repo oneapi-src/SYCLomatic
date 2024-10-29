@@ -175,6 +175,7 @@ void foo3() {
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::cols;
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::ld;
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::batch_count;
+  // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::strided_batch_offset;
   cublasLtMatrixLayoutAttribute_t c;
   c = CUBLASLT_MATRIX_LAYOUT_TYPE;
   c = CUBLASLT_MATRIX_LAYOUT_ORDER;
@@ -182,6 +183,7 @@ void foo3() {
   c = CUBLASLT_MATRIX_LAYOUT_COLS;
   c = CUBLASLT_MATRIX_LAYOUT_LD;
   c = CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT;
+  c = CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET;
   // CHECK: dpct::blas_gemm::experimental::matmul_desc_t::attribute d;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::compute_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::scale_type;

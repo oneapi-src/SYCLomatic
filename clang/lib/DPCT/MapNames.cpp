@@ -1922,8 +1922,11 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::type"},
       {"CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT",
-       getLibraryHelperNamespace() + 
+       getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::batch_count"},
+      {"CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matrix_layout_t::attribute::strided_batch_offset"},
       {"CUBLASLT_MATRIX_LAYOUT_ORDER",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::order"},
