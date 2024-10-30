@@ -102,8 +102,8 @@ private:
   std::uint64_t _rows;
   std::uint64_t _cols;
   std::int64_t _ld;
-  std::uint64_t batch_count = 1;
-  std::uint64_t strided_batch_offset = 0;
+  std::uint64_t _batch_count = 1;
+  std::uint64_t _strided_batch_offset = 0;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
