@@ -178,7 +178,7 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
-  library_data_t bias_type = library_data_t::real_float;
+  library_data_t _bias_type = library_data_t::real_float;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
@@ -188,7 +188,7 @@ private:
   void *_b_scale_pointer = nullptr;
   void *_d_scale_pointer = nullptr;
   void *_absmax_d_pointer = nullptr;
-  void *bias_pointer = nullptr;
+  void *_bias_pointer = nullptr;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
