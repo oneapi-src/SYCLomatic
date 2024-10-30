@@ -1302,6 +1302,9 @@ public:
   static bool useExpDeviceGlobal() {
     return getUsingExperimental<ExperimentalFeatures::Exp_DeviceGlobal>();
   }
+  static bool useExpVirtualMemory() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_VirtualMemory>();
+  }
   static bool useExpNonStandardSYCLBuiltins() {
     return getUsingExperimental<
         ExperimentalFeatures::Exp_NonStandardSYCLBuiltins>();

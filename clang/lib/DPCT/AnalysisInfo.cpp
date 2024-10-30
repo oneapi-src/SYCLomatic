@@ -3283,15 +3283,10 @@ std::string MemVarInfo::getMemoryType(const std::string &MemoryType,
                        VarType->getDimension(), ">");
   } else if (isUseDeviceGlobal()) {
     std::string Dims;
-    std::string Specifier;
     for (auto &D : VarType->getRange()) {
       Dims = Dims + "[" + D.getSize() + "]";
     }
-    if (isConstant()) {
-      Specifier = "const ";
-    }
-    return buildString(MemoryType, "<", Specifier, VarType->getBaseName(), Dims,
-                       ">");
+    return buildString(MemoryType, "<", VarType->getBaseName(), Dims, ">");
   } else {
     return buildString(MemoryType, VarType->getBaseNameWithoutQualifiers());
   }
