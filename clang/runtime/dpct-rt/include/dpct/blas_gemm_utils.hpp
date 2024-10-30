@@ -33,7 +33,7 @@ enum class pointer_mode_t {
   alpha_device_vector_beta_zero,
   alpha_device_vector_beta_host
 };
-enum class epilogue_t { nop = 1, relu };
+enum class epilogue_t { nop = 1, relu, gelu };
 
 class descriptor;
 using descriptor_ptr = descriptor *;
@@ -690,7 +690,7 @@ template <typename T> struct absmax_impl {
 ///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int32;
 ///   scale_type==float && a_type==float && b_type==float && c_type==float.
 /// Currently, this function only supports beta==0 or beta==1.
-/// Currently, this function only supports the relu epilogue.
+/// Currently, this function only supports the relu and gelu epilogue.
 /// NOTE: Non-col-major matrix will be converted to col-major matrix before.
 /// TODO: Impl row-major matmul without layout conversion.
 /// multiplication and converted back after multiplication.
@@ -753,9 +753,10 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   }
 
   if (compute_desc->_epilogue != epilogue_t::nop &&
-      compute_desc->_epilogue != epilogue_t::relu) {
+      compute_desc->_epilogue != epilogue_t::relu &&
+      compute_desc->epilogue != epilogue_t::gelu) {
     throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-                             "supports relu epilogue currently.");
+                             "supports relu and gelu epilogue currently.");
   }
 
   if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
@@ -999,8 +1000,14 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   }
 
   if (compute_desc->_epilogue != epilogue_t::nop) {
+    
     ::dnnl::post_ops matmul_ops;
+    if(compute_desc->_epilogue == epilogue_t::relu){
     matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
+    }
+    else if(compute_desc->_epilogue == epilogue_t::gelu){
+    matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_erf, 0.f, 0.f);
+    }
     matmul_attr.set_post_ops(matmul_ops);
   }
 

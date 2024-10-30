@@ -1985,6 +1985,10 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
       {"CUBLASLT_EPILOGUE_RELU",
        getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
+      {"CUBLASLT_EPILOGUE_GELU",
+       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::gelu"},
+      {"CUBLASLT_EPILOGUE_GELU_AUX",
+       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::gelu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
