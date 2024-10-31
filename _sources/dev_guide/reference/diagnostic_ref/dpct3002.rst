@@ -1,0 +1,63 @@
+.. _DPCT3002:
+
+DPCT3002
+========
+
+Message
+-------
+
+.. _msg-3002-start:
+
+"<Library specific to CUDA>" is removed because it is not supported for use alongside
+option "-fsycl" of SYCL compiler. You may need to check the build options.
+
+.. _msg-3002-end:
+
+Detailed Help
+-------------
+
+"<Library specific to CUDA>" is removed because it is not supported for use alongside
+option "-fsycl" of SYCL compiler. You may need to check the build options.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   target_link_options(nvcv_util_compat
+   PUBLIC
+       -static-libstdc++
+       -static-libgcc
+       -Wl,--wrap=__libc_start_main
+       -Wl,-u__cxa_thread_atexit_impl
+   )
+
+results in the following migrated CMake script:
+
+.. code-block:: cpp
+   :linenos:
+
+   target_link_options(nvcv_util_compat
+   PUBLIC
+       # DPCT3002:1: "-static-libstdc++" is removed because it is not supported for use
+       alongside option "-fsycl" of SYCL compiler. You may need to check the build
+       options.
+       -static-libgcc
+       -Wl,--wrap=__libc_start_main
+       -Wl,-u__cxa_thread_atexit_impl
+   )
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   target_link_options(nvcv_util_compat
+   PUBLIC
+       -static-libgcc
+       -Wl,--wrap=__libc_start_main
+       -Wl,-u__cxa_thread_atexit_impl
+   )
