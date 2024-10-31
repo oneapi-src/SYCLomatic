@@ -4811,16 +4811,6 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
   return NameSpace;
 }
 
-std::string getInitForDeviceGlobal(const VarDecl *VD) {
-  auto Init = VD->getInit()->IgnoreImplicitAsWritten();
-  if (auto IL = dyn_cast<InitListExpr>(Init)) {
-    return dpct::ExprAnalysis::ref(IL);
-  } else if (dyn_cast<CXXConstructExpr>(Init)) {
-    return "";
-  }
-  return "{" + dpct::ExprAnalysis::ref(Init) + "}";
-}
-
 void getNameSpace(const NamespaceDecl *NSD,
                   std::vector<std::string> &Namespaces) {
   if (!NSD)

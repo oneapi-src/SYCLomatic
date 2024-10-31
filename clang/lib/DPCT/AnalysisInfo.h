@@ -632,6 +632,8 @@ public:
   class MacroExpansionRecord {
   public:
     std::string Name;
+    std::string ArgName;
+    SourceLocation ArgLoc;
     int NumTokens;
     clang::tooling::UnifiedPath FilePath;
     unsigned ReplaceTokenBeginOffset;
@@ -640,9 +642,10 @@ public:
     bool IsInAnalysisScope;
     bool IsFunctionLike;
     int TokenIndex;
+    int ArgIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
                          SourceRange Range, bool IsInAnalysisScope,
-                         int TokenIndex);
+                         int TokenIndex, int ArgIndex);
   };
 
   struct HelperFuncReplInfo {
@@ -1877,7 +1880,7 @@ public:
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
   void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
   bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
-  void setInitForDeviceGlobal(std::string Init) { InitList = Init; }
+  void migrateWithDeviceGlobal(const VarDecl *MemVar);
 
 private:
   bool isTreatPointerAsArray() {
