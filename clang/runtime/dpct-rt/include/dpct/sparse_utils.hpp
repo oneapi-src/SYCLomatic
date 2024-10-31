@@ -1603,7 +1603,7 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
                  const std::shared_ptr<matrix_info> info_c, int *row_ptr_c,
                  int *nnz_host_ptr) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
-  sycl::queue queue = desc->get_queue();
+  sycl::queue &queue = desc->get_queue();
   detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
                                  row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
                                  col_ind_b, info_c, row_ptr_c);
@@ -1755,7 +1755,7 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
              const std::shared_ptr<matrix_info> info_c, T *val_c,
              const int *row_ptr_c, int *col_ind_c) {
   using Ty = typename ::dpct::detail::lib_data_traits_t<T>;
-  sycl::queue queue = desc->get_queue();
+  sycl::queue &queue = desc->get_queue();
   detail::csrgemm_args_info args(trans_a, trans_b, m, n, k, info_a, val_a,
                                  row_ptr_a, col_ind_a, info_b, val_b, row_ptr_b,
                                  col_ind_b, info_c, row_ptr_c);
