@@ -68,6 +68,7 @@ struct csrgemm_args_info_hash {
     return std::hash<std::string>{}(ss.str());
   }
 };
+#ifdef __INTEL_MKL__
 template <typename handle_t, typename init_func_t, typename rel_func_t>
 class handle_manager {
 public:
@@ -109,6 +110,7 @@ using matmat_descr_manager_t =
     handle_manager<oneapi::mkl::sparse::matmat_descr_t,
                    std::function<void(oneapi::mkl::sparse::matmat_descr_t *)>,
                    std::function<void(oneapi::mkl::sparse::matmat_descr_t *)>>;
+#endif
 } // namespace detail
 
 class descriptor {
