@@ -137,11 +137,6 @@ ENTRY_TYPE(cooperative_groups::__v1::multi_grid_group, false, NO_FLAG, P4, "comm
 ENTRY_TYPE(cooperative_groups::__v1::thread_block_tile, true, NO_FLAG, P4, "Successful")
 ENTRY_TYPE(cooperative_groups::__v1::coalesced_group, true, NO_FLAG, P4, "Successful/DPCT1119")
 
-//CUmem
-ENTRY_TYPE(CUmemGenericAllocationHandle, false, NO_FLAG, P4, "comment")
-ENTRY_TYPE(CUmemAllocationProp, false, NO_FLAG, P4, "comment")
-ENTRY_TYPE(CUmemAccessDesc, false, NO_FLAG, P4, "comment")
-
 // cuRand
 ENTRY_TYPE(curandStateScrambledSobol64_t, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(curandStateSobol64_t, false, NO_FLAG, P4, "comment")

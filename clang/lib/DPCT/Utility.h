@@ -221,9 +221,6 @@ llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
 clang::SourceRange getStmtExpansionSourceRange(const clang::Stmt *S);
-clang::SourceRange getStmtSpellingSourceRange(const clang::Stmt *S);
-clang::SourceRange getSpellingSourceRange(clang::SourceLocation L1,
-                                          clang::SourceLocation L2);
 size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
