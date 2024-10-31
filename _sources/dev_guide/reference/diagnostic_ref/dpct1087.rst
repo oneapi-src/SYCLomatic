@@ -1,33 +1,31 @@
 .. _DPCT1087:
 
-DPCT1087
-========
+DPCT1087 [UPDATE]
+=================
 
 Message
 -------
 
 .. _msg-1087-start:
 
-SYCL currently does not support cross group synchronization. You can specify
-``--use-experimental-features=nd_range_barrier`` to use the dpct helper function
-``nd_range_barrier`` to migrate *<synchronization API call>*.
+SYCL currently does not support cross group synchronization. You can
+specify ``--use-experimental-features=root-group`` to use the root-group to migrate
+*<synchronization API call>*.
 
 .. _msg-1087-end:
 
 Detailed Help
 -------------
 
-By default, the dpct helper function ``nd_range_barrier`` is not used to migrate
-CUDA\* grid level synchronization. To use ``nd_range_barrier`` to migrate CUDA
-grid level synchronization, specify ``--use-experimental-features=nd_range_barrier``
-in the migration command.
+By default, the SYCL root group extension is not used to migrate CUDA\* grid level
+synchronization. To use ``root-group`` to migrate CUDA grid level synchronization,
+specify ``--use-experimental-features=root-group`` in the migration command.
 
 Suggestions to Fix
 ------------------
 
-Specify ``--use-experimental-features=nd_range_barrier`` in the migration command
-to use dpct helper function ``nd_range_barrier`` to migrate CUDA grid level
-synchronization.
+Specify ``--use-experimental-features= root-group`` in the migration command to use
+the root-group to migrate CUDA grid level synchronization.
 
 For example, this original CUDA\* code:
 
@@ -52,14 +50,19 @@ results in the following migrated SYCL code:
    void kernel() {
    
      /*
-     DPCT1087:1: SYCL currently does not support cross group synchronization. You
-     can specify "--use-experimental-features=nd_range_barrier" to use the dpct
-     helper function nd_range_barrier to migrate this_grid().
+     DPCT1119:1: Migration of cooperative_groups::__v1::grid_group::this_grid is not
+     supported, please try to remigrate with option:
+     --use-experimental-features=root-group.
+     */
+     /*
+     DPCT1119:2: Migration of cooperative_groups::__v1::grid_group is not
+     supported, please try to remigrate with option:
+     --use-experimental-features=root-group.
      */
      cg::grid_group grid = cg::this_grid();
      /*
      DPCT1087:0: SYCL currently does not support cross group synchronization. You
-     can specify "--use-experimental-features=nd_range_barrier" to use the dpct
+     can specify "--use-experimental-features=root-group" to use the dpct
      helper function nd_range_barrier to migrate grid.sync().
      */
      grid.sync();
@@ -79,25 +82,18 @@ which is rewritten to:
    :linenos:
 
    void kernel(const sycl::nd_item<3> &item_ct1,
-               sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
-   
-     dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
+     sycl::ext::oneapi::experimental::root_group grid =
+         item_ct1.ext_oneapi_get_root_group();
+     sycl::group_barrier(grid);
    }
    
    void foo() {
-     dpct::global_memory<unsigned int, 0> d_sync_ct1(0);
-     unsigned *sync_ct1 = d_sync_ct1.get_ptr(dpct::get_in_order_queue());
-     dpct::get_in_order_queue().memset(sync_ct1, 0, sizeof(int)).wait();
-     dpct::get_in_order_queue()
-         .parallel_for(
-             sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
+     auto exp_props = sycl::ext::oneapi::experimental::properties{
+         sycl::ext::oneapi::experimental::use_root_sync};
+     dpct::get_in_order_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
+         exp_props, [=](sycl::nd_item<3> item_ct1) {
+           kernel(item_ct1);
              [=](sycl::nd_item<3> item_ct1) {
-               auto atm_sync_ct1 =
-                   sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst,
-                                    sycl::memory_scope::device,
-                                    sycl::access::address_space::global_space>(
-                       sync_ct1[0]);
-               kernel(item_ct1, atm_sync_ct1);
-             })
-         .wait();
+         });
    }

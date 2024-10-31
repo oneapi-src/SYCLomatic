@@ -1,0 +1,125 @@
+.. _DPCT3001:
+
+DPCT3001
+========
+
+Message
+-------
+
+.. _msg-3001-start:
+
+"<CMake common command>” is used to generate an output file by performing transformation
+on input file. You may need to update the name of the input and output file, as well as
+migrate the input file if the input file contains CUDA syntax.
+
+.. _msg-3001-end:
+
+Detailed Help
+-------------
+
+"<CMake common command>” is used to generate an output file by performing transformation
+on input file. You may need to update the name of the input and output file, as well as
+migrate the input file if the input file contains CUDA syntax.
+
+Suggestions to Fix
+------------------
+
+For example, the CMake command configure_file(<input> <output> options) with the “@ONLY”
+option replaces variables in <input> file that are explicitly marked with “@VAR@” format
+(see “@FOO_VERSION@” in the example code) with the value of VAR defined in CMake script(see “FOO_VERSION” in the CMake script), and then save out as <output> file.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // src/bar.in.cu 
+   __global__ void hello_kernel() {}
+
+   int main() {
+       std::cout << "FOO version: @FOO_VERSION@" << std::endl;
+       hello_kernel<<<1, 1>>>();
+       cudaDeviceSynchronize();
+       return 0;
+   }
+
+And the CMake script for the original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   # src/CMakeLists.txt
+   set(FOO_VERSION 1.00)
+
+   configure_file(
+       ${CMAKE_SOURCE_DIR}/bar.in.cu
+       ${CMAKE_BINARY_DIR}/bar.cu
+       @ONLY
+   )
+
+result in the following migrated SYCL codes:
+
+.. code-block:: cpp
+   :linenos:
+
+   // build/bar.dp.cpp 
+   void hello_kernel() {
+   }
+
+   int main() {
+       std::cout << "FOO version: 1.00" << std::endl;  // Example replacement
+       dpct::get_in_order_queue().parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+               hello_kernel();
+           });
+       dpct::get_current_device().queues_wait_and_throw();
+       return 0;
+   }
+
+.. code-block:: cpp
+   :linenos:
+
+   # CMakeLists.txt
+   set(FOO_VERSION 1.00)
+   DPCT3001:1: "configure_file" is used to generate an output file by performing
+   transformation on input file. You may need to update the name of the input and
+   output file, as well as migrate the input file if the input file contains CUDA syntax
+   configure_file(
+       ${CMAKE_SOURCE_DIR}/bar.in.dp.cpp
+       ${CMAKE_BINARY_DIR}/bar.dp.cpp
+       @ONLY
+   )
+
+which need to be rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // src/bar.in.dp.cpp
+   void hello_kernel() {
+   }
+
+   int main() {
+       std::cout << "FOO version: @FOO_VERSION@" << std::endl;
+       dpct::get_in_order_queue().parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+               hello_kernel();
+           });
+       dpct::get_current_device().queues_wait_and_throw();
+       return 0;
+   }
+
+and:
+
+.. code-block:: cpp
+   :linenos:
+
+   # src/CMakeLists.txt
+   set(FOO_VERSION 1.00)
+   configure_file(
+       ${CMAKE_SOURCE_DIR}/bar.in.dp.cpp
+       ${CMAKE_BINARY_DIR}/bar.dp.cpp
+       @ONLY
+   )

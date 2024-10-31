@@ -261,7 +261,7 @@
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1084.html">DPCT1084</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1085.html">DPCT1085</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1086.html">DPCT1086</a></li>
-<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1087.html">DPCT1087</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1087.html">DPCT1087 [UPDATE]</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1088.html">DPCT1088</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1089.html">DPCT1089</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1090.html">DPCT1090</a></li>
@@ -302,8 +302,13 @@
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1127.html">DPCT1127</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1128.html">DPCT1128</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1129.html">DPCT1129</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1130.html">DPCT1130</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1131.html">DPCT1131</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct1132.html">DPCT1132</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct2001.html">DPCT2001</a></li>
 <li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct3000.html">DPCT3000</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct3001.html">DPCT3001</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reference/diagnostic_ref/dpct3002.html">DPCT3002</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="reference/dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
@@ -507,7 +512,7 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#general-information">General Information</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-migrate-source-files-that-use-c-20-or-newer-standard-features-on-linux-and-windows">How do I migrate source files that use C++20 or newer standard features on Linux* and Windows*?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project">How do I migrate files on Windows when using a CMake project?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-is-the-migrated-code-formatted">How is the migrated code formatted?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-does-the-compilation-database-not-contain-all-source-files-in-the-project">Why does the compilation database not contain all source files in the project?</a></li>
@@ -523,6 +528,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-fix-a-compilation-error-such-as-error-dlopen-not-declared-when-i-compile-code-on-a-windows-machine-that-was-originally-migrated-on-linux">How do I fix a compilation error such as “error: dlopen not declared” when I compile code on a Windows machine, that was originally migrated on Linux?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-didn-t-the-atomic-apis-get-migrated">Why didn’t the “atomic*” APIs get migrated?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-did-my-migration-fail-with-error-restrict-requires-a-pointer-or-reference">Why did my migration fail with “error: restrict requires a pointer or reference”?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-resolve-migration-failure-with-fatal-error-cmath-file-not-found-in-linux">How do I resolve migration failure with “fatal error: ‘cmath’ file not found” in Linux?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application">How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-do-i-get-warning-shift-count-width-of-type-when-i-compile-migrated-code-with-the-intel-oneapi-dpc-c-compiler">Why do I get “warning: shift count &gt;= width of type” when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-resolve-missing-include-errors-that-occur-when-migrating-my-code">How do I resolve missing include errors that occur when migrating my code?</a></li>
@@ -543,7 +549,7 @@ document.write(`
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">#</a></h1>
 <p><strong>General Information</strong></p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-migrate-source-files-that-use-c-20-or-newer-standard-features-on-linux-and-windows">How do I migrate source files that use C++20 or newer standard features on Linux* and Windows*?</a></p></li>
 <li><p><a class="reference internal" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project">How do I migrate files on Windows when using a CMake project?</a></p></li>
 <li><p><a class="reference internal" href="#how-is-the-migrated-code-formatted">How is the migrated code formatted?</a></p></li>
 <li><p><a class="reference internal" href="#why-does-the-compilation-database-not-contain-all-source-files-in-the-project">Why does the compilation database not contain all source files in the project?</a></p></li>
@@ -565,23 +571,24 @@ document.write(`
 </ul>
 <section id="general-information">
 <h2>General Information<a class="headerlink" href="#general-information" title="Permalink to this headline">#</a></h2>
-<section id="how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">
-<h3>How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?<a class="headerlink" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows" title="Permalink to this headline">#</a></h3>
+<section id="how-do-i-migrate-source-files-that-use-c-20-or-newer-standard-features-on-linux-and-windows">
+<h3>How do I migrate source files that use C++20 or newer standard features on Linux* and Windows*?<a class="headerlink" href="#how-do-i-migrate-source-files-that-use-c-20-or-newer-standard-features-on-linux-and-windows" title="Permalink to this headline">#</a></h3>
 <p>On Linux, the default C++ standard for SYCLomatic’s
-parser is C++98, with some C++11 features
-accepted. If you want to enable other C++11 or newer standard
-features in SYCLomatic, you need to add
+parser is C++17. If you want to enable newer standard features
+in SYCLomatic, you need to add
 the <code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-std=&lt;value&gt;&quot;</span></code> option to the
 command line. The supported values are:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">c++11</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">c++14</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">c++17</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c++20</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c++23</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c++26</span></code></p></li>
 </ul>
 <p>On Windows, the default C++ standard for SYCLomatic’s
-parser is C++14. If you want to enable C++17
-features in SYCLomatic, you need to add
-the option <code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-std=c++17&quot;</span></code> to the command line.</p>
+parser is C++17. If you want to enable C20 features
+in SYCLomatic, you need to add
+the option <code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-std=c++20&quot;</span></code> to the command line.</p>
 </section>
 <section id="how-do-i-migrate-files-on-windows-when-using-a-cmake-project">
 <h3>How do I migrate files on Windows when using a CMake project?<a class="headerlink" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project" title="Permalink to this headline">#</a></h3>
@@ -823,6 +830,25 @@ supports the restrict qualifier only on pointers to an object type.</p>
 <p>Based on these language standards SYCLomatic emits the parsing error.</p>
 <p>You may need to adjust the source code.</p>
 </section>
+<section id="how-do-i-resolve-migration-failure-with-fatal-error-cmath-file-not-found-in-linux">
+<h3>How do I resolve migration failure with “fatal error: ‘cmath’ file not found” in Linux?<a class="headerlink" href="#how-do-i-resolve-migration-failure-with-fatal-error-cmath-file-not-found-in-linux" title="Permalink to this headline">#</a></h3>
+<p>The problem stems from an absent include path for the new standard C++ library.
+The SYCLomatic is designed to automatically detect the appropriate version of the C++ header file by checking the compiler package at <code class="docutils literal notranslate"><span class="pre">/usr/lib/gcc/x86_64-linux-gnu``and</span> <span class="pre">C++</span> <span class="pre">header</span> <span class="pre">at</span> <span class="pre">``/usr/include/c++</span></code>.
+In the following example, it tries to use C++ header version 12 based on the knowledge of the compiler package, but it fails because C++ header version 12 does not exist.”</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">ls</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">gcc</span><span class="o">/</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">gnu</span>
+<span class="linenos">2</span><span class="mi">11</span> <span class="mi">12</span>
+<span class="linenos">3</span><span class="n">ls</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">c</span><span class="o">++</span>
+<span class="linenos">4</span><span class="mi">11</span>
+</pre></div>
+</div>
+<p>To fix this issue, please install the version 12 g++ package or libstdc++ package.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">g</span><span class="o">++-</span><span class="mi">12</span>
+<span class="linenos">2</span><span class="ow">or</span>
+<span class="linenos">3</span><span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">libstdc</span><span class="o">++-</span><span class="mi">12</span><span class="o">-</span><span class="n">dev</span>
+</pre></div>
+</div>
+<p>If your installation differs, install the missing version of <code class="docutils literal notranslate"><span class="pre">g++-XX</span></code> or <code class="docutils literal notranslate"><span class="pre">libstdc++-XX-dev</span></code> based on what you see missing from the results of “ls /usr/lib/gcc/x86_64-linux-gnu” and “ls /usr/include/c++”.</p>
+</section>
 <section id="how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application">
 <h3>How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?<a class="headerlink" href="#how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application" title="Permalink to this headline">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">dpct::dev_mgr</span></code> and <code class="docutils literal notranslate"><span class="pre">dpct::mem_mgr</span></code> are singleton classes in the
@@ -992,7 +1018,7 @@ specify the include path.</p></li>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#general-information">General Information</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-migrate-source-files-that-use-c-20-or-newer-standard-features-on-linux-and-windows">How do I migrate source files that use C++20 or newer standard features on Linux* and Windows*?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project">How do I migrate files on Windows when using a CMake project?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-is-the-migrated-code-formatted">How is the migrated code formatted?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-does-the-compilation-database-not-contain-all-source-files-in-the-project">Why does the compilation database not contain all source files in the project?</a></li>
@@ -1008,6 +1034,7 @@ specify the include path.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-fix-a-compilation-error-such-as-error-dlopen-not-declared-when-i-compile-code-on-a-windows-machine-that-was-originally-migrated-on-linux">How do I fix a compilation error such as “error: dlopen not declared” when I compile code on a Windows machine, that was originally migrated on Linux?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-didn-t-the-atomic-apis-get-migrated">Why didn’t the “atomic*” APIs get migrated?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-did-my-migration-fail-with-error-restrict-requires-a-pointer-or-reference">Why did my migration fail with “error: restrict requires a pointer or reference”?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-resolve-migration-failure-with-fatal-error-cmath-file-not-found-in-linux">How do I resolve migration failure with “fatal error: ‘cmath’ file not found” in Linux?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application">How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-do-i-get-warning-shift-count-width-of-type-when-i-compile-migrated-code-with-the-intel-oneapi-dpc-c-compiler">Why do I get “warning: shift count &gt;= width of type” when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-do-i-resolve-missing-include-errors-that-occur-when-migrating-my-code">How do I resolve missing include errors that occur when migrating my code?</a></li>
@@ -1039,7 +1066,7 @@ specify the include path.</p></li>
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 24 June, 2024</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 30 October, 2024</div>
 </div>
   </div>
   

@@ -262,7 +262,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1084.html">DPCT1084</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1085.html">DPCT1085</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1086.html">DPCT1086</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1087.html">DPCT1087</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1087.html">DPCT1087 [UPDATE]</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1088.html">DPCT1088</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1089.html">DPCT1089</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1090.html">DPCT1090</a></li>
@@ -303,8 +303,13 @@
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1127.html">DPCT1127</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1128.html">DPCT1128</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1129.html">DPCT1129</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1130.html">DPCT1130</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1131.html">DPCT1131</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct1132.html">DPCT1132</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct2001.html">DPCT2001</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct3000.html">DPCT3000</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct3001.html">DPCT3001</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dev_guide/reference/diagnostic_ref/dpct3002.html">DPCT3002</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../dev_guide/reference/dpct-namespace-reference.html">DPCT Namespace Reference</a></li>
@@ -532,7 +537,7 @@ The tool ports CUDA language kernels and library API calls, migrating 90%-95% of
 CUDA code to SYCL code. The tool additionally inserts inline warnings to help you
 complete the migration and tune your code.</p>
 <p>SYCLomatic supports migrating programs implemented with CUDA versions
-8.0, 9.x, 10.x, 11.x, 12.0-12.3. The list of supported languages and versions may be extended in
+8.0, 9.x, 10.x, 11.x, 12.0-12.6. The list of supported languages and versions may be extended in
 the future.</p>
 <p>For additional information about the tool, refer to the <a class="reference internal" href="../dev_guide/index.html#dev-guide"><span class="std std-ref">SYCLomatic Developer Guide and Reference</span></a>.</p>
 <p>For detailed information about migration workflow, refer to <a class="reference internal" href="../dev_guide/migration/migration-workflow.html#mig-workflow"><span class="std std-ref">Migration Workflow Guidelines</span></a>.</p>
@@ -549,7 +554,7 @@ default locations:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">/usr/local/cuda/include</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">/usr/local/cuda-x.y/include</span></code>, where <em>x.y</em> is one of these values:
-8.0, 9.x, 10.x, 11.x, 12.0-12.3.</p></li>
+8.0, 9.x, 10.x, 11.x, 12.0-12.6.</p></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -581,7 +586,7 @@ export CPATH=$PATH_TO_C2S_INSTALL_FOLDER/include:$CPATH
 <span class="n">SET</span> <span class="n">CPATH</span><span class="o">=%</span><span class="n">PATH_TO_C2S_INSTALL_FOLDER</span><span class="o">%</span>\<span class="n">include</span><span class="p">;</span><span class="o">%</span><span class="n">CPATH</span><span class="o">%</span>
 </pre></div>
 </div>
-<p>If you use the Intel® oneAPI DPC++/C++ Compiler, make sure to <a class="reference external" href="https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/current/oneapi-development-environment-setup.html#SETVARS-AND-VARS-FILES">set environment variables using
+<p>If you use the Intel® oneAPI DPC++/C++ Compiler, make sure to <a class="reference external" href="https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2024-2/oneapi-development-environment-setup.html#SETVARS-AND-VARS-FILES">set environment variables using
 the setvars script</a>.</p>
 </li>
 <li><p>Optional: If your program targets GPUs, install the appropriate GPU drivers or
@@ -883,7 +888,7 @@ needed.</p>
   <div class="footer-item">
     
 <div class="extra_footer">
-  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 24 June, 2024</div>
+  <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div><br><div>Last updated: 30 October, 2024</div>
 </div>
   </div>
   
