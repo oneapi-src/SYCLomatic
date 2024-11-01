@@ -1716,6 +1716,10 @@ inline auto UseSYCLCompat = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useSYCLCompat();
 };
 
+inline auto UseExpVirtualMemory = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExpVirtualMemory();
+};
+
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
   std::string TypeName;
