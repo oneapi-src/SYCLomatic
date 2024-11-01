@@ -62,7 +62,15 @@ private:
 
 class matrix_layout_t {
 public:
-  enum class attribute { type, order, rows, cols, ld, batch_count, strided_batch_offset };
+  enum class attribute {
+    type,
+    order,
+    rows,
+    cols,
+    ld,
+    batch_count,
+    strided_batch_offset
+  };
 
   matrix_layout_t(library_data_t type, std::uint64_t rows, std::uint64_t cols,
                   std::int64_t ld)
