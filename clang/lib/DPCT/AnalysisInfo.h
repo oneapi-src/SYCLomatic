@@ -634,11 +634,17 @@ public:
     MacroDefRecord(SourceLocation NTL, bool IIAS);
   };
 
+  class MacroArgRecord {
+  public:
+    std::string ArgName;
+    SourceLocation ArgLoc;
+    int ArgIndex;
+    MacroArgRecord(const MacroInfo *MI, int ArgIndex);
+  };
+
   class MacroExpansionRecord {
   public:
     std::string Name;
-    std::string ArgName;
-    SourceLocation ArgLoc;
     int NumTokens;
     clang::tooling::UnifiedPath FilePath;
     unsigned ReplaceTokenBeginOffset;
@@ -647,10 +653,9 @@ public:
     bool IsInAnalysisScope;
     bool IsFunctionLike;
     int TokenIndex;
-    int ArgIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
                          SourceRange Range, bool IsInAnalysisScope,
-                         int TokenIndex, int ArgIndex);
+                         int TokenIndex);
   };
 
   struct HelperFuncReplInfo {
@@ -1192,6 +1197,10 @@ public:
   getExpansionRangeBeginMap() {
     return ExpansionRangeBeginMap;
   }
+  static std::unordered_map<std::string, std::shared_ptr<MacroArgRecord>> &
+  getMacroArgRecordMap() {
+    return MacroArgRecordMap;
+  }
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
@@ -1571,6 +1580,9 @@ private:
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
+  static std::unordered_map<std::string,
+                            std::shared_ptr<DpctGlobalInfo::MacroArgRecord>>
+      MacroArgRecordMap;
   static std::map<std::string, SourceLocation> EndifLocationOfIfdef;
   static std::vector<std::pair<clang::tooling::UnifiedPath, size_t>>
       ConditionalCompilationLoc;

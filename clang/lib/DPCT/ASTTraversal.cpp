@@ -362,26 +362,23 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
         std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
             std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
                 MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope,
-                i, -1);
+                i);
         dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
             [getCombinedStrFromLoc(MI->getReplacementToken(i).getLocation())] =
                 R;
       }
       if (Args) {
         for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
-          std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
-              std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
-                  MacroNameTok.getIdentifierInfo(), MI, Range,
-                  IsInAnalysisScope, -1, i);
-          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
-              [getCombinedStrFromLoc(
-                  Args->getUnexpArgument(i)->getLocation())] = R;
+          std::shared_ptr<dpct::DpctGlobalInfo::MacroArgRecord> R =
+              std::make_shared<dpct::DpctGlobalInfo::MacroArgRecord>(MI, i);
+          dpct::DpctGlobalInfo::getMacroArgRecordMap()[getCombinedStrFromLoc(
+              Args->getUnexpArgument(i)->getLocation())] = R;
         }
       }
       std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
           std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
               MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope,
-              MI->getNumTokens(), -1);
+              MI->getNumTokens());
       auto EndOfLastToken = Lexer::getLocForEndOfToken(
           MI->getReplacementToken(MI->getNumTokens() - 1).getLocation(), 0, SM,
           DpctGlobalInfo::getContext().getLangOpts());
@@ -8656,10 +8653,6 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     auto Info = Global.findMemVarInfo(Decl);
 
     if (Info && Info->isUseDeviceGlobal()) {
-      if (Decl->hasInit() &&
-          (Decl->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
-        report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-      }
       auto VarType = Info->getType();
       if (VarType->isArray()) {
         if (const auto *const ICE =
@@ -8805,10 +8798,6 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      if (MemVar->hasInit() &&
-          (MemVar->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
-        report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-      }
       Info->migrateWithDeviceGlobal(MemVar);
       return;
     }
@@ -9260,10 +9249,6 @@ void MemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      if (MemVar->hasInit() &&
-          (MemVar->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
-        report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-      }
       Info->migrateWithDeviceGlobal(MemVar);
       return;
     }

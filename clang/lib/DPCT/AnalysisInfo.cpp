@@ -619,7 +619,8 @@ void DpctFileInfo::buildReplacements() {
   // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (const auto &Entry : MemVarMap) {
-    if (Entry.second->isIgnore() || !Entry.second->isConstant())
+    if (Entry.second->isIgnore() || !Entry.second->isConstant() ||
+        Entry.second->isUseDeviceGlobal())
       continue;
 
     auto Name = Entry.second->getName();
@@ -1122,9 +1123,22 @@ DpctGlobalInfo::MacroDefRecord::MacroDefRecord(SourceLocation NTL, bool IIAS)
   FilePath = LocInfo.first;
   Offset = LocInfo.second;
 }
+
+DpctGlobalInfo::MacroArgRecord::MacroArgRecord(const MacroInfo *MI,
+                                               int ArgIndex)
+    : ArgIndex(ArgIndex) {
+  ArgName = MI->params()[ArgIndex]->getName().str();
+  for (auto Tok : MI->tokens()) {
+    if (Tok.getIdentifierInfo() == MI->params()[ArgIndex]) {
+      ArgLoc = Tok.getLocation();
+      break;
+    }
+  }
+}
+
 DpctGlobalInfo::MacroExpansionRecord::MacroExpansionRecord(
     IdentifierInfo *ID, const MacroInfo *MI, SourceRange Range,
-    bool IsInAnalysisScope, int TokenIndex, int ArgIndex) {
+    bool IsInAnalysisScope, int TokenIndex) {
   auto LocInfoBegin =
       DpctGlobalInfo::getLocInfo(MI->getReplacementToken(0).getLocation());
   auto LocInfoEnd = DpctGlobalInfo::getLocInfo(
@@ -1138,16 +1152,6 @@ DpctGlobalInfo::MacroExpansionRecord::MacroExpansionRecord(
   this->IsInAnalysisScope = IsInAnalysisScope;
   this->IsFunctionLike = MI->getNumParams() > 0;
   this->TokenIndex = TokenIndex;
-  ArgIndex = ArgIndex;
-  if (ArgIndex >= 0) {
-    ArgName = MI->params()[ArgIndex]->getName().str();
-    for (auto Tok : MI->tokens()) {
-      if (Tok.getIdentifierInfo() == MI->params()[ArgIndex]) {
-        ArgLoc = Tok.getLocation();
-        break;
-      }
-    }
-  }
 }
 std::string DpctGlobalInfo::removeSymlinks(clang::FileManager &FM,
                                            std::string FilePathStr) {
@@ -2409,6 +2413,8 @@ bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
 bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
+std::unordered_map<std::string, std::shared_ptr<DpctGlobalInfo::MacroArgRecord>>
+    DpctGlobalInfo::MacroArgRecordMap;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<clang::tooling::UnifiedPath, size_t>>
     DpctGlobalInfo::ConditionalCompilationLoc;
@@ -2845,10 +2851,15 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &Ctx = DpctGlobalInfo::getContext();
-  auto &MacroMap = DpctGlobalInfo::getExpansionRangeToMacroRecord();
+  auto &MacroArgMap = DpctGlobalInfo::getMacroArgRecordMap();
   auto TSI = MemVar->getTypeSourceInfo();
   auto OriginTL = TSI->getTypeLoc();
   auto TL = OriginTL;
+  auto BegLoc = MemVar->getBeginLoc();
+  if (BegLoc.isMacroID()) {
+    BegLoc = SM.getExpansionLoc(BegLoc);
+  }
+  auto LocInfo = DpctGlobalInfo::getLocInfo(BegLoc);
   std::string Dims;
   bool IsArray = OriginTL.getType()->isArrayType();
   // 1.Remove bracket after var name
@@ -2864,8 +2875,8 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
       auto SizeLoc = SE->getBeginLoc();
       if (SM.isMacroArgExpansion(SizeLoc)) {
         auto Iter =
-            MacroMap.find(getCombinedStrFromLoc(SM.getSpellingLoc(SizeLoc)));
-        if (Iter != MacroMap.end()) {
+            MacroArgMap.find(getCombinedStrFromLoc(SM.getSpellingLoc(SizeLoc)));
+        if (Iter != MacroArgMap.end()) {
           SizeStr = Iter->second->ArgName;
         }
       }
@@ -2876,14 +2887,36 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
     Dims += SizeStr + "]";
     TL = ATL.getElementLoc();
   }
-  // 2.Replace var type
+  // 2.Process init expression
+  if (MemVar->hasInit()) {
+    if ((MemVar->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
+      DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                               Diagnostics::DEVICE_GLOBAL_INIT, true, false);
+      if (!dyn_cast<InitListExpr>(
+              MemVar->getInit()->IgnoreImplicitAsWritten())) {
+        auto IBS = InsertBeforeStmt(MemVar->getInit(), "{");
+        auto IAS = InsertAfterStmt(MemVar->getInit(), "}");
+        DpctGlobalInfo::getInstance().addReplacement(IBS.getReplacement(Ctx));
+        DpctGlobalInfo::getInstance().addReplacement(IAS.getReplacement(Ctx));
+      }
+      auto NextTok = Lexer::findNextToken(
+          IsArray ? SM.getSpellingLoc(OriginTL.getEndLoc())
+                  : SM.getSpellingLoc(MemVar->getLocation()),
+          SM, DpctGlobalInfo::getContext().getLangOpts());
+      if (NextTok.has_value() && NextTok.value().is(tok::equal)) {
+        auto RTok = ReplaceToken(NextTok.value().getLocation(), "");
+        DpctGlobalInfo::getInstance().addReplacement(RTok.getReplacement(Ctx));
+      }
+    }
+  }
+  // 3.Replace var type
   std::string BaseTypeStr;
   SourceLocation TypeReplLoc;
   size_t TypeReplLen = 0;
   if (SM.isMacroArgExpansion(OriginTL.getBeginLoc())) {
-    auto Iter = MacroMap.find(
+    auto Iter = MacroArgMap.find(
         getCombinedStrFromLoc(SM.getSpellingLoc(OriginTL.getBeginLoc())));
-    if (Iter != MacroMap.end()) {
+    if (Iter != MacroArgMap.end()) {
       BaseTypeStr = Iter->second->ArgName;
       TypeReplLoc = Iter->second->ArgLoc;
       TypeReplLen = BaseTypeStr.size();
@@ -2902,25 +2935,10 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
                         BaseTypeStr + Dims + ">";
   auto RT = ReplaceText(TypeReplLoc, TypeReplLen, std::move(TypeStr));
   DpctGlobalInfo::getInstance().addReplacement(RT.getReplacement(Ctx));
-  // 3.Process init expression
-  if (MemVar->hasInit()) {
-    if ((MemVar->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
-      if (!dyn_cast<InitListExpr>(
-              MemVar->getInit()->IgnoreImplicitAsWritten())) {
-        auto IBS = InsertBeforeStmt(MemVar->getInit(), "{");
-        auto IAS = InsertAfterStmt(MemVar->getInit(), "}");
-        DpctGlobalInfo::getInstance().addReplacement(IBS.getReplacement(Ctx));
-        DpctGlobalInfo::getInstance().addReplacement(IAS.getReplacement(Ctx));
-      }
-      auto NextTok = Lexer::findNextToken(
-          IsArray ? SM.getSpellingLoc(OriginTL.getEndLoc())
-                  : SM.getSpellingLoc(MemVar->getLocation()),
-          SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (NextTok.has_value() && NextTok.value().is(tok::equal)) {
-        auto RTok = ReplaceToken(NextTok.value().getLocation(), "");
-        DpctGlobalInfo::getInstance().addReplacement(RTok.getReplacement(Ctx));
-      }
-    }
+  if (MemVar->getStorageClass() != SC_Static && getScope() == Global) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(LocInfo.first, LocInfo.second, 0,
+                                         "static ", nullptr));
   }
 }
 
