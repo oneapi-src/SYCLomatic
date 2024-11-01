@@ -7,6 +7,7 @@ set(dpct_rule_template_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/RuleTemplates/macro_rule.yaml
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/RuleTemplates/pattern_rewrite_rule.yaml
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/RuleTemplates/type_rule.yaml
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/RuleTemplates/helper_function_rule.yaml
 )
 
 install(

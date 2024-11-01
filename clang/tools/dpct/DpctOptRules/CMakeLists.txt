@@ -2,6 +2,7 @@ set(dpct_opt_rule_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/forceinline.yaml
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/intel_specific_math.yaml
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/macro_checks.yaml
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/pytorch_extension_migration.yaml
 )
 
 set(dpct_cmake_rule_files
