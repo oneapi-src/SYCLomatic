@@ -1000,13 +1000,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   }
 
   if (compute_desc->_epilogue != epilogue_t::nop) {
-    
     ::dnnl::post_ops matmul_ops;
-    if(compute_desc->_epilogue == epilogue_t::relu){
-    matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
-    }
-    else if(compute_desc->_epilogue == epilogue_t::gelu){
-    matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_erf, 0.f, 0.f);
+    if (compute_desc->_epilogue == epilogue_t::relu) {
+      matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
+    } else if (compute_desc->_epilogue == epilogue_t::gelu) {
+      matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_erf, 0.f, 0.f);
     }
     matmul_attr.set_post_ops(matmul_ops);
   }
