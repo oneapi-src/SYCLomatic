@@ -2865,6 +2865,7 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
   // 1.Remove bracket after var name
   while (auto ATL = TL.getAs<clang::ArrayTypeLoc>()) {
     auto BRange = ATL.getBracketsRange();
+    BRange = getDefinitionRange(BRange.getBegin(), BRange.getEnd());
     auto RT =
         ReplaceText(SM.getSpellingLoc(BRange.getBegin()),
                     SM.getSpellingLoc(BRange.getEnd()).getLocWithOffset(1), "");
