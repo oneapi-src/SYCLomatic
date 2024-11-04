@@ -1929,7 +1929,8 @@ void MapNames::setExplicitNamespaceMap(
            "blas_gemm::experimental::matrix_layout_t::attribute::type"},
       {"CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT",
        getLibraryHelperNamespace() +
-           "blas_gemm::experimental::matrix_layout_t::attribute::batch_count"},
+           "blas_gemm::experimental::matrix_layout_t::"
+           "attribute::batch_count"},
       {"CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET",
        getLibraryHelperNamespace() + "blas_gemm::experimental::matrix_layout_t::"
                                      "attribute::strided_batch_offset"},
@@ -2001,15 +2002,18 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_EPILOGUE_DEFAULT",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::nop"},
       {"CUBLASLT_EPILOGUE_RELU",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::relu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_POINTER_MODE",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_t::"
-                                     "attribute::pointer_mode"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::transform_desc_t::"
+           "attribute::pointer_mode"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_a"},
