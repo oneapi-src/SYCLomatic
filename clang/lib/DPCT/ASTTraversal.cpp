@@ -8175,6 +8175,8 @@ void KernelCallRule::runRule(
       report(KCall->getBeginLoc(), Diagnostics::KERNEL_CALLEE_MACRO_ARG, false);
     }
 
+    std::cout << "!!!!!!!!!!!! kernel call rule" << std::endl;
+
     // Remove KCall in the original location
     auto KCallSpellingRange = getTheLastCompleteImmediateRange(
         KCall->getBeginLoc(), KCall->getEndLoc());

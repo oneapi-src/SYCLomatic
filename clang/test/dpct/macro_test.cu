@@ -1156,19 +1156,19 @@ class ArgClass{};
 
 //CHECK: #define SIZE 256
 #define SIZE 256
-//CHECK: #define VACALL4(...) __VA_ARGS__()
-//CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
-//CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
-//CHECK-NEXT: #define VACALL(x)                                                              \
-//CHECK-NEXT:   dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {                   \
-//CHECK-NEXT:     auto i_ct0 = i;                                                            \
-//CHECK-NEXT:     auto ac_ct0 = ac;                                                          \
-//CHECK:     cgh.parallel_for(                                                          \
-//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *                            \
-//CHECK-NEXT:                               sycl::range<3>(1, 1, SIZE),                      \
-//CHECK-NEXT:                           sycl::range<3>(1, 1, SIZE)),                         \
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0, ac_ct0); });             \
-//CHECK-NEXT:   });
+//no-CHECK: #define VACALL4(...) __VA_ARGS__()
+//no-CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
+//no-CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
+//no-CHECK-NEXT: #define VACALL(x)                                                              \
+//no-CHECK-NEXT:   dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {                   \
+//no-CHECK-NEXT:     auto i_ct0 = i;                                                            \
+//no-CHECK-NEXT:     auto ac_ct0 = ac;                                                          \
+//no-CHECK:     cgh.parallel_for(                                                          \
+//no-CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *                            \
+//no-CHECK-NEXT:                               sycl::range<3>(1, 1, SIZE),                      \
+//no-CHECK-NEXT:                           sycl::range<3>(1, 1, SIZE)),                         \
+//no-CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0, ac_ct0); });             \
+//no-CHECK-NEXT:   });
 #define VACALL4(...) __VA_ARGS__()
 #define VACALL3(...) VACALL4(__VA_ARGS__)
 #define VACALL2(...) VACALL3(__VA_ARGS__)
