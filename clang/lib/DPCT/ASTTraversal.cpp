@@ -367,12 +367,17 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
             [getCombinedStrFromLoc(MI->getReplacementToken(i).getLocation())] =
                 R;
       }
-      if (Args) {
+      if (Args && IsInAnalysisScope) {
         for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
           std::shared_ptr<dpct::DpctGlobalInfo::MacroArgRecord> R =
               std::make_shared<dpct::DpctGlobalInfo::MacroArgRecord>(MI, i);
-          dpct::DpctGlobalInfo::getMacroArgRecordMap()[getCombinedStrFromLoc(
-              Args->getUnexpArgument(i)->getLocation())] = R;
+          auto str =
+              getCombinedStrFromLoc(Args->getUnexpArgument(i)->getLocation());
+          auto &Global = DpctGlobalInfo::getInstance();
+          dpct::DpctGlobalInfo::getMacroArgRecordMap()
+              [Global.getMainFile()->getFilePath().getPath().str() +
+               getCombinedStrFromLoc(
+                   Args->getUnexpArgument(i)->getLocation())] = R;
         }
       }
       std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
@@ -6669,7 +6674,12 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuEventSynchronize") {
     if(DpctGlobalInfo::getEnablepProfilingFlag()) {
       // Option '--enable-profiling' is enabled
-      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      std::string ReplStr;
+      ExprAnalysis EA(CE->getArg(0));
+      ReplStr = EA.getReplacedString();
+      if (dyn_cast<CStyleCastExpr>(CE->getArg(0)->IgnoreImplicitAsWritten())) {
+        ReplStr = "(" + ReplStr + ")";
+      }
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
@@ -6679,7 +6689,12 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       // Option '--enable-profiling' is not enabled
       bool NeedReport = false;
-      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      std::string ReplStr;
+      ExprAnalysis EA(CE->getArg(0));
+      ReplStr = EA.getReplacedString();
+      if (dyn_cast<CStyleCastExpr>(CE->getArg(0)->IgnoreImplicitAsWritten())) {
+        ReplStr = "(" + ReplStr + ")";
+      }
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";

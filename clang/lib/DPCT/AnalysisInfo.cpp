@@ -2876,7 +2876,12 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
       auto SizeLoc = SE->getBeginLoc();
       if (SM.isMacroArgExpansion(SizeLoc)) {
         auto Iter =
-            MacroArgMap.find(getCombinedStrFromLoc(SM.getSpellingLoc(SizeLoc)));
+            MacroArgMap.find(DpctGlobalInfo::getInstance()
+                                 .getMainFile()
+                                 ->getFilePath()
+                                 .getPath()
+                                 .str() +
+                             getCombinedStrFromLoc(SM.getSpellingLoc(SizeLoc)));
         if (Iter != MacroArgMap.end()) {
           SizeStr = Iter->second->ArgName;
         }
@@ -2916,6 +2921,11 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
   size_t TypeReplLen = 0;
   if (SM.isMacroArgExpansion(OriginTL.getBeginLoc())) {
     auto Iter = MacroArgMap.find(
+        DpctGlobalInfo::getInstance()
+            .getMainFile()
+            ->getFilePath()
+            .getPath()
+            .str() +
         getCombinedStrFromLoc(SM.getSpellingLoc(OriginTL.getBeginLoc())));
     if (Iter != MacroArgMap.end()) {
       BaseTypeStr = Iter->second->ArgName;
