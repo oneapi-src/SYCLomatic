@@ -818,7 +818,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
 #ifdef SYCLomatic_CUSTOMIZATION
   // The "__noinline__" macro is re-defined and it is used in "__attribute__()",
   // do not handle it.
-  if (Identifier.is(tok::TokenKind::kw___noinline__) &&
+  if (LangOpts.CUDA && Identifier.is(tok::TokenKind::kw___noinline__) &&
       IsInAnalysisScopeFunc(Identifier.getLocation()) && IsInAttr) {
     return true;
   }
