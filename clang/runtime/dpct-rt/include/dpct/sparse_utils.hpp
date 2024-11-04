@@ -69,47 +69,102 @@ struct csrgemm_args_info_hash {
   }
 };
 #ifdef __INTEL_MKL__
-template <typename handle_t, typename init_func_t, typename rel_func_t>
-class handle_manager {
+template <typename handle_t> class handle_manager {
 public:
-  handle_manager(sycl::queue *q, init_func_t init_func, rel_func_t rel_func)
-      : _q(q), _init_func(init_func), _rel_func(rel_func) {
+  handle_manager() {}
+  handle_manager(sycl::queue *q) : _q(q) {
     _h = new handle_t;
     _init_func(_h);
   }
+  handle_manager(const handle_manager &other) = delete;
+  handle_manager operator=(handle_manager other) = delete;
   ~handle_manager() {
-    if constexpr (std::is_same_v<handle_t,
-                                 oneapi::mkl::sparse::matrix_handle_t>) {
-      sycl::event e = _rel_func(*_q, _h, _deps);
-      _q->submit([&](sycl::handler &cgh) {
-        cgh.depends_on(e);
-        cgh.host_task([_hh = _h] { delete _hh; });
-      });
-    } else {
-      _rel_func(_h);
-      delete _h;
-    }
+    if (!_q || !_h)
+      return;
+    sycl::event e = _rel_func(*_q, _h, _deps);
+    _q->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([_hh = _h] { delete _hh; });
+    });
+    _h = nullptr;
+    _q = nullptr;
   }
-  handle_t get_handle() { return *_h; }
+  handle_t &get_handle() { return *_h; }
   void add_dependency(sycl::event e) { _deps.push_back(e); }
 
 private:
-  handle_t *_h;
-  sycl::queue *_q;
-  init_func_t _init_func;
-  rel_func_t _rel_func;
+  using init_func_t = std::function<void(handle_t *)>;
+  using rel_func_t = std::function<sycl::event(
+      sycl::queue &, handle_t *, const std::vector<sycl::event> &dependencies)>;
+  handle_t *_h = nullptr;
+  sycl::queue *_q = nullptr;
+  static inline init_func_t _init_func = nullptr;
+  static inline rel_func_t _rel_func = nullptr;
   std::vector<sycl::event> _deps;
+#ifdef DPCT_USM_LEVEL_NONE
+  static constexpr size_t _max_data_variable_size =
+      (std::max)({sizeof(sycl::buffer<float>), sizeof(sycl::buffer<double>),
+                  sizeof(sycl::buffer<std::complex<float>>),
+                  sizeof(sycl::buffer<std::complex<double>>)});
+  using value_buf_t =
+      std::variant<std::array<std::byte, _max_data_variable_size>,
+                   sycl::buffer<float>, sycl::buffer<double>,
+                   sycl::buffer<std::complex<float>>,
+                   sycl::buffer<std::complex<double>>>;
+  sycl::buffer<int> _row_ptr_buf = sycl::buffer<int>(0);
+  sycl::buffer<int> _col_ind_buf = sycl::buffer<int>(0);
+  value_buf_t _val_buf;
+  template <typename T>
+  friend void make_matrix_handle(
+      handle_manager<oneapi::mkl::sparse::matrix_handle_t> *memory,
+      sycl::queue &queue, const int rows, const int cols,
+      oneapi::mkl::index_base base, int *row_ptr, int *col_ind, T *val);
+#endif
 };
-using matrix_handle_manager_t =
-    handle_manager<oneapi::mkl::sparse::matrix_handle_t,
-                   std::function<void(oneapi::mkl::sparse::matrix_handle_t *)>,
-                   std::function<sycl::event(
-                       sycl::queue &, oneapi::mkl::sparse::matrix_handle_t *,
-                       const std::vector<sycl::event> &dependencies)>>;
-using matmat_descr_manager_t =
-    handle_manager<oneapi::mkl::sparse::matmat_descr_t,
-                   std::function<void(oneapi::mkl::sparse::matmat_descr_t *)>,
-                   std::function<void(oneapi::mkl::sparse::matmat_descr_t *)>>;
+
+template <>
+handle_manager<oneapi::mkl::sparse::matrix_handle_t>::init_func_t
+    handle_manager<oneapi::mkl::sparse::matrix_handle_t>::_init_func =
+        oneapi::mkl::sparse::init_matrix_handle;
+template <>
+handle_manager<oneapi::mkl::sparse::matrix_handle_t>::rel_func_t
+    handle_manager<oneapi::mkl::sparse::matrix_handle_t>::_rel_func =
+        oneapi::mkl::sparse::release_matrix_handle;
+
+template <>
+handle_manager<oneapi::mkl::sparse::matmat_descr_t>::init_func_t
+    handle_manager<oneapi::mkl::sparse::matmat_descr_t>::_init_func =
+        oneapi::mkl::sparse::init_matmat_descr;
+template <>
+handle_manager<oneapi::mkl::sparse::matmat_descr_t>::rel_func_t
+    handle_manager<oneapi::mkl::sparse::matmat_descr_t>::_rel_func =
+        [](sycl::queue &queue, oneapi::mkl::sparse::matmat_descr_t *p_desc,
+           const std::vector<sycl::event> &dependencies) -> sycl::event {
+  oneapi::mkl::sparse::release_matmat_descr(p_desc);
+  return queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(dependencies);
+    cgh.host_task([] {});
+  });
+};
+template <typename Ty>
+void make_matrix_handle(
+    handle_manager<oneapi::mkl::sparse::matrix_handle_t> *memory,
+    sycl::queue &queue, const int rows, const int cols,
+    oneapi::mkl::index_base base, int *row_ptr, int *col_ind, Ty *val) {
+  memory->~handle_manager<oneapi::mkl::sparse::matrix_handle_t>();
+  new (memory) handle_manager<oneapi::mkl::sparse::matrix_handle_t>(&queue);
+#ifdef DPCT_USM_LEVEL_NONE
+  memory->_row_ptr_buf = dpct::detail::get_memory<int>(row_ptr);
+  memory->_col_ind_buf = dpct::detail::get_memory<int>(col_ind);
+  memory->_val_buf = dpct::detail::get_memory<Ty>(val);
+  oneapi::mkl::sparse::set_csr_data(
+      queue, memory->get_handle(), rows, cols, base, memory->_row_ptr_buf,
+      memory->_col_ind_buf, std::get<sycl::buffer<Ty>>(memory->_val_buf));
+#else
+  oneapi::mkl::sparse::set_csr_data(queue, memory->get_handle(), rows, cols,
+                                    base, row_ptr, col_ind, val);
+#endif
+}
 #endif
 } // namespace detail
 
@@ -122,10 +177,13 @@ public:
 private:
 #ifdef __INTEL_MKL__
   struct matmat_info {
-    std::unique_ptr<detail::matrix_handle_manager_t> matrix_handle_a;
-    std::unique_ptr<detail::matrix_handle_manager_t> matrix_handle_b;
-    std::unique_ptr<detail::matrix_handle_manager_t> matrix_handle_c;
-    std::unique_ptr<detail::matmat_descr_manager_t> matmat_desc;
+    detail::handle_manager<oneapi::mkl::sparse::matrix_handle_t>
+        matrix_handle_a;
+    detail::handle_manager<oneapi::mkl::sparse::matrix_handle_t>
+        matrix_handle_b;
+    detail::handle_manager<oneapi::mkl::sparse::matrix_handle_t>
+        matrix_handle_c;
+    detail::handle_manager<oneapi::mkl::sparse::matmat_descr_t> matmat_desc;
     bool is_empty = true;
   };
   std::unordered_map<detail::csrgemm_args_info, matmat_info,
@@ -1611,31 +1669,10 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
                                  col_ind_b, info_c, row_ptr_c);
   auto &info = desc->get_csrgemm_info_map()[args];
 
-#ifdef DPCT_USM_LEVEL_NONE
-  auto row_ptr_a_buf = dpct::detail::get_memory<int>(row_ptr_a);
-  auto col_ind_a_buf = dpct::detail::get_memory<int>(col_ind_a);
-  auto val_a_buf = dpct::detail::get_memory<Ty>(val_a);
-  auto row_ptr_b_buf = dpct::detail::get_memory<int>(row_ptr_b);
-  auto col_ind_b_buf = dpct::detail::get_memory<int>(col_ind_b);
-  auto val_b_buf = dpct::detail::get_memory<Ty>(val_b);
-  auto row_ptr_c_buf = dpct::detail::get_memory<int>(row_ptr_c);
-  auto col_ind_c_buf = dpct::detail::get_memory<int>(nullptr);
-  auto val_c_buf = dpct::detail::get_memory<Ty>(nullptr);
-#endif
-
   if (info.is_empty) {
-    auto matrix_handle_a = std::make_unique<detail::matrix_handle_manager_t>(
-        &queue, oneapi::mkl::sparse::init_matrix_handle,
-        oneapi::mkl::sparse::release_matrix_handle);
-    auto matrix_handle_b = std::make_unique<detail::matrix_handle_manager_t>(
-        &queue, oneapi::mkl::sparse::init_matrix_handle,
-        oneapi::mkl::sparse::release_matrix_handle);
-    auto matrix_handle_c = std::make_unique<detail::matrix_handle_manager_t>(
-        &queue, oneapi::mkl::sparse::init_matrix_handle,
-        oneapi::mkl::sparse::release_matrix_handle);
-    auto matmat_desc = std::make_unique<detail::matmat_descr_manager_t>(
-        &queue, oneapi::mkl::sparse::init_matmat_descr,
-        oneapi::mkl::sparse::release_matmat_descr);
+    info.matmat_desc.~handle_manager<oneapi::mkl::sparse::matmat_descr_t>();
+    new (&(info.matmat_desc))
+        detail::handle_manager<oneapi::mkl::sparse::matmat_descr_t>(&queue);
 
     int rows_c = m;
     int cols_c = n;
@@ -1644,60 +1681,39 @@ void csrgemm_nnz(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
     int rows_b = (trans_b == oneapi::mkl::transpose::nontrans) ? k : n;
     int cols_b = (trans_b == oneapi::mkl::transpose::nontrans) ? n : k;
 
-#ifdef DPCT_USM_LEVEL_NONE
-    oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_a->get_handle(),
-                                      rows_a, cols_a, info_a->get_index_base(),
-                                      row_ptr_a_buf, col_ind_a_buf, val_a_buf);
-    oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_b->get_handle(),
-                                      rows_b, cols_b, info_b->get_index_base(),
-                                      row_ptr_b_buf, col_ind_b_buf, val_b_buf);
+    detail::make_matrix_handle<Ty>(&info.matrix_handle_a, queue, rows_a, cols_a,
+                                   info_a->get_index_base(), (int *)row_ptr_a,
+                                   (int *)col_ind_a, (Ty *)val_a);
+    detail::make_matrix_handle<Ty>(&info.matrix_handle_b, queue, rows_b, cols_b,
+                                   info_b->get_index_base(), (int *)row_ptr_b,
+                                   (int *)col_ind_b, (Ty *)val_b);
     // In the future, oneMKL will allow (int *)nullptr to be passed in for
     // row_ptr_c in the initial calls before matmat. But currently, it needs an
     // array of length row_number + 1.
-    oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_c->get_handle(),
-                                      rows_c, cols_c, info_c->get_index_base(),
-                                      row_ptr_c_buf, col_ind_c_buf, val_c_buf);
-#else
-    oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_a->get_handle(),
-                                      rows_a, cols_a, info_a->get_index_base(),
-                                      (int *)row_ptr_a, (int *)col_ind_a,
-                                      (Ty *)val_a);
-    oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_b->get_handle(),
-                                      rows_b, cols_b, info_b->get_index_base(),
-                                      (int *)row_ptr_b, (int *)col_ind_b,
-                                      (Ty *)val_b);
-    // In the future, oneMKL will allow (int *)nullptr to be passed in for
-    // row_ptr_c in the initial calls before matmat. But currently, it needs an
-    // array of length row_number + 1.
-    oneapi::mkl::sparse::set_csr_data(queue, matrix_handle_c->get_handle(),
-                                      rows_c, cols_c, info_c->get_index_base(),
-                                      row_ptr_c, (int *)nullptr, (Ty *)nullptr);
-#endif
+    detail::make_matrix_handle<Ty>(&info.matrix_handle_c, queue, rows_c, cols_c,
+                                   info_c->get_index_base(), (int *)row_ptr_c,
+                                   (int *)nullptr, (Ty *)nullptr);
 
     oneapi::mkl::sparse::set_matmat_data(
-        matmat_desc->get_handle(),
+        info.matmat_desc.get_handle(),
         oneapi::mkl::sparse::matrix_view_descr::general, trans_a,
         oneapi::mkl::sparse::matrix_view_descr::general, trans_b,
         oneapi::mkl::sparse::matrix_view_descr::general);
-    info.matrix_handle_a = std::move(matrix_handle_a);
-    info.matrix_handle_b = std::move(matrix_handle_b);
-    info.matrix_handle_c = std::move(matrix_handle_c);
-    info.matmat_desc = std::move(matmat_desc);
     info.is_empty = false;
   }
 
 #ifdef DPCT_USM_LEVEL_NONE
 #define __MATMAT(STEP, NNZ_C)                                                  \
-  oneapi::mkl::sparse::matmat(queue, info.matrix_handle_a->get_handle(),       \
-                              info.matrix_handle_b->get_handle(),              \
-                              info.matrix_handle_c->get_handle(), STEP,        \
-                              info.matmat_desc->get_handle(), NNZ_C, nullptr)
+  oneapi::mkl::sparse::matmat(queue, info.matrix_handle_a.get_handle(),        \
+                              info.matrix_handle_b.get_handle(),               \
+                              info.matrix_handle_c.get_handle(), STEP,         \
+                              info.matmat_desc.get_handle(), NNZ_C, nullptr)
 #else
 #define __MATMAT(STEP, NNZ_C)                                                  \
   oneapi::mkl::sparse::matmat(                                                 \
-      queue, info.matrix_handle_a->get_handle(),                               \
-      info.matrix_handle_b->get_handle(), info.matrix_handle_c->get_handle(),  \
-      STEP, info.matmat_desc->get_handle(), NNZ_C, nullptr, {})
+      queue, info.matrix_handle_a.get_handle(),                                \
+      info.matrix_handle_b.get_handle(), info.matrix_handle_c.get_handle(),    \
+      STEP, info.matmat_desc.get_handle(), NNZ_C, nullptr, {})
 #endif
 
   __MATMAT(oneapi::mkl::sparse::matmat_request::work_estimation, nullptr);
@@ -1771,7 +1787,7 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
   auto data_row_ptr_c = dpct::detail::get_memory<int>(row_ptr_c);
   int rows_c = m;
   int cols_c = n;
-  oneapi::mkl::sparse::set_csr_data(queue, info.matrix_handle_c->get_handle(),
+  oneapi::mkl::sparse::set_csr_data(queue, info.matrix_handle_c.get_handle(),
                                     rows_c, cols_c, info_c->get_index_base(),
                                     data_row_ptr_c, data_col_ind_c, data_val_c);
   sycl::event e;
@@ -1781,10 +1797,10 @@ void csrgemm(descriptor_ptr desc, oneapi::mkl::transpose trans_a,
       __MATMAT(oneapi::mkl::sparse::matmat_request::finalize, nullptr);
 #undef __MATMAT
 
-  info.matrix_handle_a->add_dependency(e);
-  info.matrix_handle_b->add_dependency(e);
-  info.matrix_handle_c->add_dependency(e);
-  info.matmat_desc->add_dependency(e);
+  info.matrix_handle_a.add_dependency(e);
+  info.matrix_handle_b.add_dependency(e);
+  info.matrix_handle_c.add_dependency(e);
+  info.matmat_desc.add_dependency(e);
   desc->get_csrgemm_info_map().erase(args);
 }
 #endif
