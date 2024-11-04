@@ -49,3 +49,10 @@ __noinline__ __host__ __device__ scalar_t calc_igammac(scalar_t a, scalar_t b) {
   scalar_t c = a + b;
   return c;
 }
+
+// CHECK: __attribute__((__noinline__)) void macro_with_attr() {}
+__attribute__((__noinline__)) void macro_with_attr() {}
+// CHECK: #define NOINLINE __attribute__((__noinline__))
+#define NOINLINE __attribute__((__noinline__))
+// CHECK: NOINLINE void macro_in_macro_with_attr() {}
+NOINLINE void macro_in_macro_with_attr() {}

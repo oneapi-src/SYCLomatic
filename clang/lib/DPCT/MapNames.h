@@ -20,6 +20,11 @@ namespace dpct {
 enum class KernelArgType;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
+enum class HelperFuncCatalog {
+  GetDefaultQueue,
+  GetOutOfOrderQueue,
+  GetInOrderQueue,
+};
 } // namespace dpct
 } // namespace clang
 
@@ -274,17 +279,6 @@ public:
     std::string ReplName;
   };
 
-  struct BLASFuncReplInfo {
-    std::vector<int> BufferIndexInfo;
-    std::vector<int> PointerIndexInfo;
-    std::vector<std::string> BufferTypeInfo;
-    std::vector<int> OperationIndexInfo;
-    int FillModeIndexInfo;
-    int SideModeIndexInfo;
-    int DiagTypeIndexInfo;
-    std::string ReplName;
-  };
-
   struct BLASFuncComplexReplInfo {
     std::vector<int> BufferIndexInfo;
     std::vector<int> PointerIndexInfo;
@@ -335,9 +329,6 @@ public:
   static MapTy CUBEnumsMap;
   static MapTy BLASEnumsMap;
   static MapTy SPBLASEnumsMap;
-  static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;
-  static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
-      BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
   static ThrustMapTy ThrustFuncNamesMap;
   static std::map<std::string, clang::dpct::HelperFeatureEnum>
@@ -434,6 +425,9 @@ public:
   /// {Original API, {ToType, FromType}}
   static std::unordered_map<std::string, std::pair<std::string, std::string>>
       MathTypeCastingMap;
+
+  static std::map<clang::dpct::HelperFuncCatalog, std::string>
+      CustomHelperFunctionMap;
 };
 
 class MigrationStatistics {

@@ -1,6 +1,6 @@
 // RUN: dpct --format-range=none -use-syclcompat -out-root %T/driver-mem-syclcompat %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-mem-syclcompat/driver-mem-syclcompat.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST %T/driver-mem-syclcompat/driver-mem-syclcompat.dp.cpp -o %T/driver-mem/driver-mem-syclcompat.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST %T/driver-mem-syclcompat/driver-mem-syclcompat.dp.cpp -o %T/driver-mem/driver-mem-syclcompat.dp.o %}
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -94,7 +94,7 @@ int main(){
     // CHECK: r = SYCLCOMPAT_CHECK_ERROR(q_ct1.memcpy(f_D, f_D2, size));
     r = cuMemcpyAsync(f_D, f_D2, size, 0);
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
     // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeer" is not currently supported with SYCLcompat. Please adjust the code manually.
     cuMemcpyPeer(f_D, c1, f_D2, c2, size);
     // CHECK: DPCT1131:{{[0-9]+}}: The migration of "cuMemcpyPeerAsync" is not currently supported with SYCLcompat. Please adjust the code manually.
@@ -279,7 +279,7 @@ int main(){
     // CHECK-NEXT: cpy2.size[1] = 2;
     // CHECK-NEXT: cpy2.size[2] = 1;
     CUDA_MEMCPY3D cpy2;
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
     CUarray ca;
     cpy2.dstMemoryType = CU_MEMORYTYPE_ARRAY;
     cpy2.dstArray = ca;

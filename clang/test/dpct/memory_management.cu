@@ -2,9 +2,9 @@
 // UNSUPPORTED: system-windows
 // RUN: dpct --no-dpcpp-extensions=device_info --format-range=none --usm-level=none -out-root %T/memory_management %s --cuda-include-path="%cuda-path/include" -output-file=memory_management_outputfile.txt -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management/memory_management.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/memory_management/memory_management.dp.cpp -o %T/memory_management/memory_management.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/memory_management/memory_management.dp.cpp -o %T/memory_management/memory_management.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 
 #include <cuda.h>
 #include <cuda_runtime.h>

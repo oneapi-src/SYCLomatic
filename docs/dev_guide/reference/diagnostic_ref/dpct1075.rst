@@ -71,4 +71,4 @@ correctly and are using the correct queue parameter. Fix the code if needed by
 adding missing commit calls and adjusting queue parameters.
 
 Refer to the
-`descriptor<precision, domain>::commit function <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/descriptor-precision-domain-commit.html>`_ for more information.
+`descriptor<precision, domain>::commit function <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/2024-2/descriptor-precision-domain-commit.html>`_ for more information.

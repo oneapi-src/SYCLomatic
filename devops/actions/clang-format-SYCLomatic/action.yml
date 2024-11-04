@@ -23,7 +23,7 @@ runs:
          files_to_be_check=""
          echo "changed files are $CHANGED_FILES"
          
-         for i in "${CHANGED_FILES}"
+         for i in $CHANGED_FILES
          do
             if [[ "$i" =~ ${pattern_to_exclude_from_clang} ]];then
                 echo "${i} will be excluded from format checking"

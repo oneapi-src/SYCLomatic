@@ -51,7 +51,6 @@ std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
-std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
 std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
 std::unordered_map<std::string, std::pair<std::string, std::string>>
@@ -450,14 +449,16 @@ void MapNames::setExplicitNamespaceMap(
                                           getLibraryHelperNamespace() +
                                           "sparse::optimize_info>",
                                       HelperFeatureEnum::device_ext)},
-      {"thrust::device_ptr",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_pointer",
-                                      HelperFeatureEnum::device_ext)},
+      {"thrust::device_ptr", std::make_shared<TypeNameRule>(
+                                 getLibraryHelperNamespace() + "device_pointer",
+                                 HelperFeatureEnum::device_ext)},
       {"thrust::device_reference",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_reference",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_reference",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_vector",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_vector",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_vector",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_malloc_allocator",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
@@ -832,6 +833,24 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_ptr")},
+      {"CUmemAllocationProp",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::mem_prop")},
+      {"CUmemGenericAllocationHandle",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::physical_mem_ptr")},
+      {"CUmemAccessDesc",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::mem_access_desc")},
+      {"CUmemLocationType", std::make_shared<TypeNameRule>("int")},
+      {"CUmemAllocationType", std::make_shared<TypeNameRule>("int")},
+      {"CUmemAllocationGranularity_flags",
+       std::make_shared<TypeNameRule>(
+           getClNamespace() + "ext::oneapi::experimental::granularity_mode")},
+      {"CUmemAccess_flags",
+       std::make_shared<TypeNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode")},
       {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
       {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
@@ -1296,6 +1315,9 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaDevAttrComputeCapabilityMajor",
        std::make_shared<EnumNameRule>("get_major_version",
                                       HelperFeatureEnum::device_ext)},
+      {"cudaDevAttrMaxSharedMemoryPerBlockOptin",
+       std::make_shared<EnumNameRule>("get_local_mem_size",
+                                      HelperFeatureEnum::device_ext)},
       {"cudaDevAttrComputeCapabilityMinor",
        std::make_shared<EnumNameRule>("get_minor_version",
                                       HelperFeatureEnum::device_ext)},
@@ -1439,6 +1461,38 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_SET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_TYPE_PINNED", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_ALLOCATION_TYPE_MAX",
+       std::make_shared<EnumNameRule>("0xFFFFFFFF")},
+      {"CU_MEM_LOCATION_TYPE_DEVICE", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_LOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_LOCATION_TYPE_MAX",
+       std::make_shared<EnumNameRule>("0xFFFFFFFF")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::read_write")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_NONE",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::none")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_MAX",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::none")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_READ",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::read")},
+      {"CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::granularity_mode::recommended")},
+      {"CU_MEM_ALLOC_GRANULARITY_MINIMUM",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::granularity_mode::minimum")},
       // enum Driver Device Attribute
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
        std::make_shared<EnumNameRule>("get_major_version",
@@ -1487,6 +1541,9 @@ void MapNames::setExplicitNamespaceMap(
       {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z",
        std::make_shared<EnumNameRule>("get_max_work_item_sizes",
                                       HelperFeatureEnum::device_ext)},
+      {"CU_DEVICE_ATTRIBUTE_VIRTUAL_MEMORY_MANAGEMENT_SUPPORTED",
+       std::make_shared<EnumNameRule>(
+           "has(sycl::aspect::ext_oneapi_virtual_mem)")},
       {"CU_CTX_MAP_HOST", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
       {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},
@@ -2054,103 +2111,21 @@ void MapNames::setExplicitNamespaceMap(
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_nvGRAPH.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
-#include "APINames_wmma.inc"
+#include "SrcAPI/APINames.inc"
+#include "SrcAPI/APINames_CUB.inc"
+#include "SrcAPI/APINames_NCCL.inc"
+#include "SrcAPI/APINames_cuBLAS.inc"
+#include "SrcAPI/APINames_cuFFT.inc"
+#include "SrcAPI/APINames_cuRAND.inc"
+#include "SrcAPI/APINames_cuSOLVER.inc"
+#include "SrcAPI/APINames_cuSPARSE.inc"
+#include "SrcAPI/APINames_nvGRAPH.inc"
+#include "SrcAPI/APINames_nvJPEG.inc"
+#include "SrcAPI/APINames_thrust.inc"
+#include "SrcAPI/APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
-
-  // BLAS functions names and parameters replacements information mapping
-  BLASFuncReplInfoMap = {
-      /*BLAS level 2*/
-      {"cublasSger_v2",
-       {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-        std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
-        -1, -1, -1, "oneapi::mkl::blas::column_major::ger"}},
-      {"cublasDger_v2",
-       {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::ger"}},
-      {"cublasSsbmv_v2",
-       {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
-        std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
-        1, -1, -1, "oneapi::mkl::blas::column_major::sbmv"}},
-      {"cublasDsbmv_v2",
-       {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1,
-        "oneapi::mkl::blas::column_major::sbmv"}},
-      {"cublasSspmv_v2",
-       {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
-        std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
-        1, -1, -1, "oneapi::mkl::blas::column_major::spmv"}},
-      {"cublasDspmv_v2",
-       {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1,
-        "oneapi::mkl::blas::column_major::spmv"}},
-      {"cublasSspr_v2",
-       {std::vector<int>{4, 6}, std::vector<int>{3},
-        std::vector<std::string>{"float", "float"}, std::vector<int>{}, 1, -1,
-        -1, "oneapi::mkl::blas::column_major::spr"}},
-      {"cublasDspr_v2",
-       {std::vector<int>{4, 6}, std::vector<int>{3},
-        std::vector<std::string>{"double", "double"}, std::vector<int>{}, 1, -1,
-        -1, "oneapi::mkl::blas::column_major::spr"}},
-      {"cublasSspr2_v2",
-       {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-        std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
-        1, -1, -1, "oneapi::mkl::blas::column_major::spr2"}},
-      {"cublasDspr2_v2",
-       {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1,
-        "oneapi::mkl::blas::column_major::spr2"}},
-      {"cublasSsymv_v2",
-       {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
-        std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
-        1, -1, -1, "oneapi::mkl::blas::column_major::symv"}},
-      {"cublasDsymv_v2",
-       {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1,
-        "oneapi::mkl::blas::column_major::symv"}},
-      {"cublasSsyr_v2",
-       {std::vector<int>{4, 6}, std::vector<int>{3},
-        std::vector<std::string>{"float", "float"}, std::vector<int>{}, 1, -1,
-        -1, "oneapi::mkl::blas::column_major::syr"}},
-      {"cublasDsyr_v2",
-       {std::vector<int>{4, 6}, std::vector<int>{3},
-        std::vector<std::string>{"double", "double"}, std::vector<int>{}, 1, -1,
-        -1, "oneapi::mkl::blas::column_major::syr"}},
-      {"cublasSsyr2_v2",
-       {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-        std::vector<std::string>{"float", "float", "float"}, std::vector<int>{},
-        1, -1, -1, "oneapi::mkl::blas::column_major::syr2"}},
-      {"cublasDsyr2_v2",
-       {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{}, 1, -1, -1,
-        "oneapi::mkl::blas::column_major::syr2"}},
-      {"cublasStbsv_v2",
-       {std::vector<int>{6, 8}, std::vector<int>{},
-        std::vector<std::string>{"float", "float"}, std::vector<int>{2}, 1, -1,
-        3, "oneapi::mkl::blas::column_major::tbsv"}},
-      {"cublasDtbsv_v2",
-       {std::vector<int>{6, 8}, std::vector<int>{},
-        std::vector<std::string>{"double", "double"}, std::vector<int>{2}, 1,
-        -1, 3, "oneapi::mkl::blas::column_major::tbsv"}}};
 
   BLASTGemmExTypeInfoMap = {
       {"2:2",
@@ -2240,17 +2215,29 @@ void MapNames::setExplicitNamespaceMap(
        "oneapi::mkl::blas::column_major::gemm_batch"},
       {"cublasZgemmStridedBatched",
        "oneapi::mkl::blas::column_major::gemm_batch"},
-      {"cublasNrm2Ex", getLibraryHelperNamespace() + "nrm2_ex"},
-      {"cublasDotEx", getLibraryHelperNamespace() + "dot_ex"},
-      {"cublasDotcEx", getLibraryHelperNamespace() + "dotc_ex"},
-      {"cublasScalEx", getLibraryHelperNamespace() + "scal_ex"},
-      {"cublasAxpyEx", getLibraryHelperNamespace() + "axpy_ex"},
-      {"cublasRotEx", getLibraryHelperNamespace() + "rot_ex"},
+      {"cublasNrm2Ex", getLibraryHelperNamespace() + "blas::nrm2"},
+      {"cublasNrm2Ex_64", getLibraryHelperNamespace() + "blas::nrm2"},
+      {"cublasDotEx", getLibraryHelperNamespace() + "blas::dot"},
+      {"cublasDotEx_64", getLibraryHelperNamespace() + "blas::dot"},
+      {"cublasDotcEx", getLibraryHelperNamespace() + "blas::dotc"},
+      {"cublasDotcEx_64", getLibraryHelperNamespace() + "blas::dotc"},
+      {"cublasScalEx", getLibraryHelperNamespace() + "blas::scal"},
+      {"cublasScalEx_64", getLibraryHelperNamespace() + "blas::scal"},
+      {"cublasAxpyEx", getLibraryHelperNamespace() + "blas::axpy"},
+      {"cublasAxpyEx_64", getLibraryHelperNamespace() + "blas::axpy"},
+      {"cublasRotEx", getLibraryHelperNamespace() + "blas::rot"},
+      {"cublasRotEx_64", getLibraryHelperNamespace() + "blas::rot"},
       {"cublasGemmEx", getLibraryHelperNamespace() + "blas::gemm"},
       {"cublasSgemmEx", getLibraryHelperNamespace() + "blas::gemm"},
       {"cublasCgemmEx", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasCgemm3mEx", getLibraryHelperNamespace() + "blas::gemm"},
       {"cublasGemmBatchedEx", getLibraryHelperNamespace() + "blas::gemm_batch"},
-      {"cublasGemmStridedBatchedEx", getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasGemmBatchedEx_64",
+       getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasGemmStridedBatchedEx",
+       getLibraryHelperNamespace() + "blas::gemm_batch"},
+      {"cublasGemmStridedBatchedEx_64",
+       getLibraryHelperNamespace() + "blas::gemm_batch"},
       {"cublasSsyrkx", getLibraryHelperNamespace() + "blas::syrk"},
       {"cublasDsyrkx", getLibraryHelperNamespace() + "blas::syrk"},
       {"cublasCsyrkx", getLibraryHelperNamespace() + "blas::syrk"},
@@ -2278,26 +2265,46 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasDtrmm_v2", getLibraryHelperNamespace() + "blas::trmm"},
       {"cublasCtrmm_v2", getLibraryHelperNamespace() + "blas::trmm"},
       {"cublasZtrmm_v2", getLibraryHelperNamespace() + "blas::trmm"},
-      {"cublasSgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
-      {"cublasDgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
-      {"cublasCgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
-      {"cublasZgetrfBatched", getLibraryHelperNamespace() + "getrf_batch_wrapper"},
-      {"cublasSgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
-      {"cublasDgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
-      {"cublasCgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
-      {"cublasZgetrsBatched", getLibraryHelperNamespace() + "getrs_batch_wrapper"},
-      {"cublasSgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
-      {"cublasDgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
-      {"cublasCgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
-      {"cublasZgetriBatched", getLibraryHelperNamespace() + "getri_batch_wrapper"},
-      {"cublasSgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
-      {"cublasDgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
-      {"cublasCgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
-      {"cublasZgeqrfBatched", getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
-      {"cublasSgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
-      {"cublasDgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
-      {"cublasCgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
-      {"cublasZgelsBatched", getLibraryHelperNamespace() + "gels_batch_wrapper"},
+      {"cublasSgetrfBatched",
+       getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasDgetrfBatched",
+       getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasCgetrfBatched",
+       getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasZgetrfBatched",
+       getLibraryHelperNamespace() + "getrf_batch_wrapper"},
+      {"cublasSgetrsBatched",
+       getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasDgetrsBatched",
+       getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasCgetrsBatched",
+       getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasZgetrsBatched",
+       getLibraryHelperNamespace() + "getrs_batch_wrapper"},
+      {"cublasSgetriBatched",
+       getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasDgetriBatched",
+       getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasCgetriBatched",
+       getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasZgetriBatched",
+       getLibraryHelperNamespace() + "getri_batch_wrapper"},
+      {"cublasSgeqrfBatched",
+       getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasDgeqrfBatched",
+       getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasCgeqrfBatched",
+       getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasZgeqrfBatched",
+       getLibraryHelperNamespace() + "geqrf_batch_wrapper"},
+      {"cublasSgelsBatched",
+       getLibraryHelperNamespace() + "gels_batch_wrapper"},
+      {"cublasDgelsBatched",
+       getLibraryHelperNamespace() + "gels_batch_wrapper"},
+      {"cublasCgelsBatched",
+       getLibraryHelperNamespace() + "gels_batch_wrapper"},
+      {"cublasZgelsBatched",
+       getLibraryHelperNamespace() + "gels_batch_wrapper"},
       {"cublasGetStatusString", ""},
       {"cublasCgemm3m", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasZgemm3m", "oneapi::mkl::blas::column_major::gemm"},
@@ -2494,6 +2501,94 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasDtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
       {"cublasCtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
       {"cublasZtpsv_v2_64", "oneapi::mkl::blas::column_major::tpsv"},
+      {"cublasStbsv_v2", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasDtbsv_v2", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasCtbsv_v2", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasZtbsv_v2", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasSsymv_v2", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasDsymv_v2", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasCsymv_v2", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasZsymv_v2", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasChemv_v2", "oneapi::mkl::blas::column_major::hemv"},
+      {"cublasZhemv_v2", "oneapi::mkl::blas::column_major::hemv"},
+      {"cublasSsbmv_v2", "oneapi::mkl::blas::column_major::sbmv"},
+      {"cublasDsbmv_v2", "oneapi::mkl::blas::column_major::sbmv"},
+      {"cublasChbmv_v2", "oneapi::mkl::blas::column_major::hbmv"},
+      {"cublasZhbmv_v2", "oneapi::mkl::blas::column_major::hbmv"},
+      {"cublasSspmv_v2", "oneapi::mkl::blas::column_major::spmv"},
+      {"cublasDspmv_v2", "oneapi::mkl::blas::column_major::spmv"},
+      {"cublasChpmv_v2", "oneapi::mkl::blas::column_major::hpmv"},
+      {"cublasZhpmv_v2", "oneapi::mkl::blas::column_major::hpmv"},
+      {"cublasStbsv_v2_64", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasDtbsv_v2_64", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasCtbsv_v2_64", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasZtbsv_v2_64", "oneapi::mkl::blas::column_major::tbsv"},
+      {"cublasSsymv_v2_64", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasDsymv_v2_64", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasCsymv_v2_64", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasZsymv_v2_64", "oneapi::mkl::blas::column_major::symv"},
+      {"cublasChemv_v2_64", "oneapi::mkl::blas::column_major::hemv"},
+      {"cublasZhemv_v2_64", "oneapi::mkl::blas::column_major::hemv"},
+      {"cublasSsbmv_v2_64", "oneapi::mkl::blas::column_major::sbmv"},
+      {"cublasDsbmv_v2_64", "oneapi::mkl::blas::column_major::sbmv"},
+      {"cublasChbmv_v2_64", "oneapi::mkl::blas::column_major::hbmv"},
+      {"cublasZhbmv_v2_64", "oneapi::mkl::blas::column_major::hbmv"},
+      {"cublasSspmv_v2_64", "oneapi::mkl::blas::column_major::spmv"},
+      {"cublasDspmv_v2_64", "oneapi::mkl::blas::column_major::spmv"},
+      {"cublasChpmv_v2_64", "oneapi::mkl::blas::column_major::hpmv"},
+      {"cublasZhpmv_v2_64", "oneapi::mkl::blas::column_major::hpmv"},
+      {"cublasSger_v2", "oneapi::mkl::blas::column_major::ger"},
+      {"cublasDger_v2", "oneapi::mkl::blas::column_major::ger"},
+      {"cublasCgeru_v2", "oneapi::mkl::blas::column_major::geru"},
+      {"cublasCgerc_v2", "oneapi::mkl::blas::column_major::gerc"},
+      {"cublasZgeru_v2", "oneapi::mkl::blas::column_major::geru"},
+      {"cublasZgerc_v2", "oneapi::mkl::blas::column_major::gerc"},
+      {"cublasSsyr_v2", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasDsyr_v2", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasCsyr_v2", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasZsyr_v2", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasCher_v2", "oneapi::mkl::blas::column_major::her"},
+      {"cublasZher_v2", "oneapi::mkl::blas::column_major::her"},
+      {"cublasSspr_v2", "oneapi::mkl::blas::column_major::spr"},
+      {"cublasDspr_v2", "oneapi::mkl::blas::column_major::spr"},
+      {"cublasChpr_v2", "oneapi::mkl::blas::column_major::hpr"},
+      {"cublasZhpr_v2", "oneapi::mkl::blas::column_major::hpr"},
+      {"cublasSsyr2_v2", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasDsyr2_v2", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasCsyr2_v2", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasZsyr2_v2", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasCher2_v2", "oneapi::mkl::blas::column_major::her2"},
+      {"cublasZher2_v2", "oneapi::mkl::blas::column_major::her2"},
+      {"cublasSspr2_v2", "oneapi::mkl::blas::column_major::spr2"},
+      {"cublasDspr2_v2", "oneapi::mkl::blas::column_major::spr2"},
+      {"cublasChpr2_v2", "oneapi::mkl::blas::column_major::hpr2"},
+      {"cublasZhpr2_v2", "oneapi::mkl::blas::column_major::hpr2"},
+      {"cublasSger_v2_64", "oneapi::mkl::blas::column_major::ger"},
+      {"cublasDger_v2_64", "oneapi::mkl::blas::column_major::ger"},
+      {"cublasCgeru_v2_64", "oneapi::mkl::blas::column_major::geru"},
+      {"cublasCgerc_v2_64", "oneapi::mkl::blas::column_major::gerc"},
+      {"cublasZgeru_v2_64", "oneapi::mkl::blas::column_major::geru"},
+      {"cublasZgerc_v2_64", "oneapi::mkl::blas::column_major::gerc"},
+      {"cublasSsyr_v2_64", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasDsyr_v2_64", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasCsyr_v2_64", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasZsyr_v2_64", "oneapi::mkl::blas::column_major::syr"},
+      {"cublasCher_v2_64", "oneapi::mkl::blas::column_major::her"},
+      {"cublasZher_v2_64", "oneapi::mkl::blas::column_major::her"},
+      {"cublasSspr_v2_64", "oneapi::mkl::blas::column_major::spr"},
+      {"cublasDspr_v2_64", "oneapi::mkl::blas::column_major::spr"},
+      {"cublasChpr_v2_64", "oneapi::mkl::blas::column_major::hpr"},
+      {"cublasZhpr_v2_64", "oneapi::mkl::blas::column_major::hpr"},
+      {"cublasSsyr2_v2_64", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasDsyr2_v2_64", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasCsyr2_v2_64", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasZsyr2_v2_64", "oneapi::mkl::blas::column_major::syr2"},
+      {"cublasCher2_v2_64", "oneapi::mkl::blas::column_major::her2"},
+      {"cublasZher2_v2_64", "oneapi::mkl::blas::column_major::her2"},
+      {"cublasSspr2_v2_64", "oneapi::mkl::blas::column_major::spr2"},
+      {"cublasDspr2_v2_64", "oneapi::mkl::blas::column_major::spr2"},
+      {"cublasChpr2_v2_64", "oneapi::mkl::blas::column_major::hpr2"},
+      {"cublasZhpr2_v2_64", "oneapi::mkl::blas::column_major::hpr2"},
       {"cublasCgemm3m_64", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasZgemm3m_64", "oneapi::mkl::blas::column_major::gemm"},
       {"cublasSsyrkx_64", getLibraryHelperNamespace() + "blas::syrk"},
@@ -2506,13 +2601,40 @@ void MapNames::setExplicitNamespaceMap(
       {"cublasDtrmm_v2_64", getLibraryHelperNamespace() + "blas::trmm"},
       {"cublasCtrmm_v2_64", getLibraryHelperNamespace() + "blas::trmm"},
       {"cublasZtrmm_v2_64", getLibraryHelperNamespace() + "blas::trmm"},
+      {"cublasCopyEx", getLibraryHelperNamespace() + "blas::copy"},
+      {"cublasSwapEx", getLibraryHelperNamespace() + "blas::swap"},
+      {"cublasIamaxEx", getLibraryHelperNamespace() + "blas::iamax"},
+      {"cublasIaminEx", getLibraryHelperNamespace() + "blas::iamin"},
+      {"cublasAsumEx", getLibraryHelperNamespace() + "blas::asum"},
+      {"cublasRotmEx", getLibraryHelperNamespace() + "blas::rotm"},
+      {"cublasCopyEx_64", getLibraryHelperNamespace() + "blas::copy"},
+      {"cublasSwapEx_64", getLibraryHelperNamespace() + "blas::swap"},
+      {"cublasIamaxEx_64", getLibraryHelperNamespace() + "blas::iamax"},
+      {"cublasIaminEx_64", getLibraryHelperNamespace() + "blas::iamin"},
+      {"cublasAsumEx_64", getLibraryHelperNamespace() + "blas::asum"},
+      {"cublasRotmEx_64", getLibraryHelperNamespace() + "blas::rotm"},
+      {"cublasSgemmEx_64", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasCgemmEx_64", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasCgemm3mEx_64", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasGemmEx_64", getLibraryHelperNamespace() + "blas::gemm"},
+      {"cublasCsyrkEx", getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCsyrk3mEx", getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCherkEx", getLibraryHelperNamespace() + "blas::syherk<true>"},
+      {"cublasCherk3mEx", getLibraryHelperNamespace() + "blas::syherk<true>"},
+      {"cublasCsyrkEx_64", getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCsyrk3mEx_64",
+       getLibraryHelperNamespace() + "blas::syherk<false>"},
+      {"cublasCherkEx_64", getLibraryHelperNamespace() + "blas::syherk<true>"},
+      {"cublasCherk3mEx_64",
+       getLibraryHelperNamespace() + "blas::syherk<true>"},
       // cublasLt
-      {"cublasLtCreate",
-       "new " + getLibraryHelperNamespace() + "blas_gemm::experimental::descriptor"},
-      {"cublasLtDestroy",
-       "delete " + getLibraryHelperNamespace() + "blas_gemm::experimental::descriptor"},
+      {"cublasLtCreate", "new " + getLibraryHelperNamespace() +
+                             "blas_gemm::experimental::descriptor"},
+      {"cublasLtDestroy", "delete " + getLibraryHelperNamespace() +
+                              "blas_gemm::experimental::descriptor"},
       {"cublasLtMatmulDescCreate",
-       "new " + getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t"},
+       "new " + getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t"},
       {"cublasLtMatmulDescDestroy",
        "delete " + getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t"},
@@ -2554,7 +2676,8 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::get_attribute"},
       {"cublasLtMatrixTransform",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matrix_transform"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matrix_transform"},
       {"cublasLtGetVersion", getLibraryHelperNamespace() + "dnnl::get_version"},
   };
 
@@ -2740,191 +2863,6 @@ const MapNames::MapTy MapNames::SOLVEREnumsMap{
     {"CUSOLVER_EIG_MODE_NOVECTOR", "oneapi::mkl::job::novec"},
     {"CUSOLVER_EIG_MODE_VECTOR", "oneapi::mkl::job::vec"},
 };
-
-const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
-    MapNames::BLASFuncComplexReplInfoMap{
-        /*BLAS level 2*/
-        {"cublasCgeru_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{},
-          -1, -1, -1, "oneapi::mkl::blas::column_major::geru"}},
-        {"cublasCgerc_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{},
-          -1, -1, -1, "oneapi::mkl::blas::column_major::gerc"}},
-        {"cublasZgeru_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
-          -1, -1, -1, "oneapi::mkl::blas::column_major::geru"}},
-        {"cublasZgerc_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
-          -1, -1, -1, "oneapi::mkl::blas::column_major::gerc"}},
-        {"cublasCsymv_v2",
-         {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::symv"}},
-        {"cublasZsymv_v2",
-         {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::symv"}},
-        {"cublasCsyr_v2",
-         {std::vector<int>{4, 6}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::syr"}},
-        {"cublasZsyr_v2",
-         {std::vector<int>{4, 6}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::syr"}},
-        {"cublasCsyr2_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::syr2"}},
-        {"cublasZsyr2_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::syr2"}},
-        {"cublasCtbsv_v2",
-         {std::vector<int>{6, 8}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{}, std::vector<int>{2}, 1, -1, 3,
-          "oneapi::mkl::blas::column_major::tbsv"}},
-        {"cublasZtbsv_v2",
-         {std::vector<int>{6, 8}, std::vector<int>{},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{}, std::vector<int>{2}, 1, -1, 3,
-          "oneapi::mkl::blas::column_major::tbsv"}},
-        {"cublasChemv_v2",
-         {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hemv"}},
-        {"cublasZhemv_v2",
-         {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hemv"}},
-        {"cublasChbmv_v2",
-         {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hbmv"}},
-        {"cublasZhbmv_v2",
-         {std::vector<int>{5, 7, 10}, std::vector<int>{4, 9},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hbmv"}},
-        {"cublasChpmv_v2",
-         {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hpmv"}},
-        {"cublasZhpmv_v2",
-         {std::vector<int>{4, 5, 8}, std::vector<int>{3, 7},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hpmv"}},
-        {"cublasCher_v2",
-         {std::vector<int>{4, 6}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"float"}, std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::her"}},
-        {"cublasZher_v2",
-         {std::vector<int>{4, 6}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"double"}, std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::her"}},
-        {"cublasCher2_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::her2"}},
-        {"cublasZher2_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::her2"}},
-        {"cublasChpr_v2",
-         {std::vector<int>{4, 6}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"float"}, std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hpr"}},
-        {"cublasZhpr_v2",
-         {std::vector<int>{4, 6}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"double"}, std::vector<int>{}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::hpr"}},
-        {"cublasChpr2_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::hpr2"}},
-        {"cublasZhpr2_v2",
-         {std::vector<int>{4, 6, 8}, std::vector<int>{3},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
-          1, -1, -1, "oneapi::mkl::blas::column_major::hpr2"}}};
 
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
     MapNames::LegacyBLASFuncReplInfoMap{
@@ -4654,29 +4592,29 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, VALUE},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_NVML.inc"
-#include "APINames_NVTX.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuDNN.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_cudnn_frontend.inc"
-#include "APINames_nvGRAPH.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
-#include "APINames_wmma.inc"
+#include "SrcAPI/APINames.inc"
+#include "SrcAPI/APINames_CUB.inc"
+#include "SrcAPI/APINames_NCCL.inc"
+#include "SrcAPI/APINames_NVML.inc"
+#include "SrcAPI/APINames_NVTX.inc"
+#include "SrcAPI/APINames_cuBLAS.inc"
+#include "SrcAPI/APINames_cuDNN.inc"
+#include "SrcAPI/APINames_cuFFT.inc"
+#include "SrcAPI/APINames_cuRAND.inc"
+#include "SrcAPI/APINames_cuSOLVER.inc"
+#include "SrcAPI/APINames_cuSPARSE.inc"
+#include "SrcAPI/APINames_cudnn_frontend.inc"
+#include "SrcAPI/APINames_nvGRAPH.inc"
+#include "SrcAPI/APINames_nvJPEG.inc"
+#include "SrcAPI/APINames_thrust.inc"
+#include "SrcAPI/APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
 
 std::map<std::string, bool> MigrationStatistics::TypeMigrationTable{
 #define ENTRY_TYPE(TYPENAME, VALUE, FLAG, TARGET, COMMENT) {#TYPENAME, VALUE},
-#include "TypeNames.inc"
+#include "SrcAPI/TypeNames.inc"
 #undef ENTRY_TYPE
 };
 
@@ -4720,6 +4658,8 @@ MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"numChannels", "channel_num"}};
 
 std::vector<MetaRuleObject::PatternRewriter> MapNames::PatternRewriters;
+std::map<clang::dpct::HelperFuncCatalog, std::string>
+    MapNames::CustomHelperFunctionMap;
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};

@@ -11,10 +11,11 @@
 #include "Error.h"
 #include "MapNames.h"
 #include "MigrateCmakeScript.h"
+#include "MigratePythonBuildScript.h"
 #include "MigrationRuleManager.h"
 #include "NCCLAPIMigration.h"
-#include "Utility.h"
 #include "TypeLocRewriters.h"
+#include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
 
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
@@ -272,8 +273,34 @@ void deregisterAPIRule(MetaRuleObject &R) {
 
 void registerPatternRewriterRule(MetaRuleObject &R) {
   MapNames::PatternRewriters.emplace_back(MetaRuleObject::PatternRewriter(
-      R.In, R.Out, R.Subrules, R.MatchMode, R.Warning, R.RuleId, R.CmakeSyntax,
-      R.Priority));
+      R.In, R.Out, R.Subrules, R.MatchMode, R.Warning, R.RuleId,
+      R.BuildScriptSyntax, R.Priority));
+}
+
+void registerHelperFunctionRule(MetaRuleObject &R) {
+  static const std::unordered_map<std::string, dpct::HelperFuncCatalog>
+      String2HelperFuncCatalogMap{
+          {"get_default_queue", dpct::HelperFuncCatalog::GetDefaultQueue},
+          {"get_in_order_queue", dpct::HelperFuncCatalog::GetInOrderQueue},
+          {"get_out_of_order_queue",
+           dpct::HelperFuncCatalog::GetOutOfOrderQueue}};
+  if (R.Priority == RulePriority::Takeover) {
+    if (auto Iter = String2HelperFuncCatalogMap.find(R.In);
+        Iter != String2HelperFuncCatalogMap.end()) {
+      // This map is inited here.
+      // It saves the customized string which used for each kind of helper
+      // function call in the migrated code.
+      MapNames::CustomHelperFunctionMap.insert({Iter->second, R.Out});
+      dpct::DpctGlobalInfo::setUsingDRYPattern(false);
+      dpct::DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes().insert(
+          R.Includes.begin(), R.Includes.end());
+    } else {
+      llvm::outs()
+          << "Warning: The rule named " << R.RuleId
+          << " (Kind: HelperFunction) is ignored, as the API specified "
+             "in the \"In\" field is not supported for customization.\n";
+    }
+  }
 }
 
 MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
@@ -286,7 +313,7 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
     Warning = PR.Warning;
     Subrules = PR.Subrules;
     Priority = PR.Priority;
-    CmakeSyntax = PR.CmakeSyntax;
+    BuildScriptSyntax = PR.BuildScriptSyntax;
   }
   return *this;
 }
@@ -294,16 +321,16 @@ MetaRuleObject::PatternRewriter &MetaRuleObject::PatternRewriter::operator=(
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const MetaRuleObject::PatternRewriter &PR)
     : In(PR.In), Out(PR.Out), MatchMode(PR.MatchMode), Warning(PR.Warning),
-      CmakeSyntax(PR.CmakeSyntax), RuleId(PR.RuleId), Priority(PR.Priority),
-      Subrules(PR.Subrules) {}
+      BuildScriptSyntax(PR.BuildScriptSyntax), RuleId(PR.RuleId),
+      Priority(PR.Priority), Subrules(PR.Subrules) {}
 
 MetaRuleObject::PatternRewriter::PatternRewriter(
     const std::string &I, const std::string &O,
     const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
-    std::string Warning, std::string RuleId, std::string CmakeSyntax,
+    std::string Warning, std::string RuleId, std::string BuildScriptSyntax,
     RulePriority Priority)
     : In(I), Out(O), MatchMode(MatchMode), Warning(Warning),
-      CmakeSyntax(CmakeSyntax), RuleId(RuleId), Priority(Priority) {
+      BuildScriptSyntax(BuildScriptSyntax), RuleId(RuleId), Priority(Priority) {
   Subrules = S;
 }
 
@@ -364,6 +391,12 @@ void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles) {
         break;
       case (RuleKind::CMakeRule):
         registerCmakeMigrationRule(*r);
+        break;
+      case (RuleKind::HelperFunction):
+        registerHelperFunctionRule(*r);
+        break;
+      case (RuleKind::PythonRule):
+        registerPythonMigrationRule(*r);
         break;
       default:
         break;

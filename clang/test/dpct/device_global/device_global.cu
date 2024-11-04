@@ -15,22 +15,22 @@ struct B{
 };
 
 
-// CHECK: sycl::ext::oneapi::experimental::device_global<int> var_a;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<int> var_a;
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: sycl::ext::oneapi::experimental::device_global<int> var_b{0};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<int> var_b{0};
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: static sycl::ext::oneapi::experimental::device_global<const float> var_c{2.f};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<float> var_c{2.f};
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: static sycl::ext::oneapi::experimental::device_global<const float> var_d{1.f};
-// CHECK: sycl::ext::oneapi::experimental::device_global<A> var_e;
-// CHECK: static sycl::ext::oneapi::experimental::device_global<const B> var_f;
-// CHECK: dpct::global_memory<int, 0> var_g;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<float> var_d{1.f};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<A> var_e;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<B> var_f;
+// CHECK: static dpct::global_memory<int, 0> var_g;
 __device__ int var_a;
 __device__ int var_b = 0;
 __constant__ float var_c = 2.f;
@@ -38,21 +38,21 @@ __constant__ float var_d = 1.f;
 __device__ A var_e;
 __constant__ B var_f;
 __device__ int var_g;
-// CHECK: sycl::ext::oneapi::experimental::device_global<float[10]> arr_a;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<float[10]> arr_a;
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: sycl::ext::oneapi::experimental::device_global<float[10]> arr_b{1, 2, 3};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<float[10]> arr_b{1, 2, 3};
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: static sycl::ext::oneapi::experimental::device_global<const int[10]> arr_c{3, 2, 1};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<int[10]> arr_c{3, 2, 1};
 // CHECK: /*
 // CHECK: DPCT1127:{{[0-9]+}}: The constant compile-time initialization for device_global is supported when compiling with C++20. You may need to adjust the compile commands.
 // CHECK: */
-// CHECK: static sycl::ext::oneapi::experimental::device_global<const int[10]> arr_d{2};
-// CHECK: static sycl::ext::oneapi::experimental::device_global<const A[10]> arr_e;
-// CHECK: sycl::ext::oneapi::experimental::device_global<B[10]> arr_f;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<int[10]> arr_d{2};
+// CHECK: static sycl::ext::oneapi::experimental::device_global<A[10]> arr_e;
+// CHECK: static sycl::ext::oneapi::experimental::device_global<B[10]> arr_f;
 __device__ float arr_a[10];
 __device__ float arr_b[10] = {1, 2, 3};
 __constant__ int arr_c[10] = {3, 2, 1};
@@ -62,6 +62,7 @@ __device__ B arr_f[10];
 
 
 // CHECK: int device_func() {
+// CHECK:   float *p = arra_a.get();
 // CHECK:   arr_a[0] = 1;
 // CHECK:   return arr_a[0] + arr_b[0] + arr_c[0] + arr_d[0] + arr_e[0].data + arr_f[0].data;
 // CHECK: }
@@ -72,6 +73,7 @@ __device__ B arr_f[10];
 // CHECK:   *ptr = var_a.get() + var_b.get() + var_c.get() + var_d.get() + var_e.get().data + var_f.get().data + device_func();
 // CHECK: }
 __device__ int device_func() {
+  float *p = arra_a;
   arr_a[0] = 1;
   return arr_a[0] + arr_b[0] + arr_c[0] + arr_d[0] + arr_e[0].data + arr_f[0].data;
 }

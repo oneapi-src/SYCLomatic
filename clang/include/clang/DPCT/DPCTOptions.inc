@@ -460,17 +460,22 @@ DPCT_ENUM_OPTION(
     llvm::cl::init(UsmLevel::UL_Restricted), llvm::cl::value_desc("value"),
     llvm::cl::cat(DPCTCat), llvm::cl::cat(DPCTCodeGenCat), llvm::cl::Optional)
 
-DPCT_ENUM_OPTION(clang::dpct::opt, BuildScriptKind, BuildScript,
-                 clang::dpct::DpctOptionClass::OC_Attribute,
-                 DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
-                                     clang::dpct::DpctActionKind::DAK_Analysis),
-                 "migrate-build-script",
-                 DPCT_OPTION_VALUES(DPCT_OPTION_ENUM_VALUE(
-                     "CMake", int(BuildScriptKind::BS_Cmake),
-                     "Migrate the CMake file(s).", false)),
-                 llvm::cl::desc("EXPERIMENTAL: Migrate build script(s).\n"),
-                 llvm::cl::init(BuildScriptKind::BS_None),
-                 llvm::cl::value_desc("value"), llvm::cl::Optional)
+DPCT_ENUM_OPTION(
+    clang::dpct::opt, BuildScriptKind, BuildScript,
+    clang::dpct::DpctOptionClass::OC_Attribute,
+    DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration,
+                        clang::dpct::DpctActionKind::DAK_Analysis),
+    "migrate-build-script",
+    DPCT_OPTION_VALUES(
+        DPCT_OPTION_ENUM_VALUE("CMake", int(BuildScriptKind::BS_Cmake),
+                               "Migrate the CMake file(s).", false),
+        DPCT_OPTION_ENUM_VALUE("Python", int(BuildScriptKind::BS_Python),
+                               "Migrate the python build script file(s) of "
+                               "PyTorch based project.",
+                               false)),
+    llvm::cl::desc("EXPERIMENTAL: Migrate build script(s).\n"),
+    llvm::cl::init(BuildScriptKind::BS_None), llvm::cl::value_desc("value"),
+    llvm::cl::Optional)
 
 DPCT_ENUM_OPTION(
     clang::dpct::opt, format::FormatRange, FormatRng,
@@ -786,6 +791,11 @@ DPCT_ENUM_OPTION(
             "allocations into SYCL that can\n"
             "be accessed within a kernel using syntax similar to C++ global "
             "variables.\n",
+            false),
+        DPCT_OPTION_ENUM_VALUE(
+            "virtual_mem", int(ExperimentalFeatures::Exp_VirtualMemory),
+            "Experimental extension that allows map an address range onto "
+            "multiple allocations of physical memory.",
             false),
         DPCT_OPTION_ENUM_VALUE(
             "non-stdandard-sycl-builtins",

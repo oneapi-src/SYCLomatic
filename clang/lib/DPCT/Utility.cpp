@@ -21,6 +21,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TokenKinds.h"
 #include "clang/Lex/Lexer.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "llvm/ADT/SmallString.h"
@@ -2308,6 +2309,8 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
                 SourceLocation SearchRangeEnd, bool IncludeLastToken) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Context = dpct::DpctGlobalInfo::getContext();
+  Token Tok;
+  Lexer::getRawToken(SM.getSpellingLoc(Range.getEnd()), Tok, SM, Context.getLangOpts(), true);
   SourceLocation ResultBegin = SourceLocation();
   SourceLocation ResultEnd = SourceLocation();
   std::unordered_set<unsigned> Cache;
@@ -2364,8 +2367,14 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
     }
     ResultBegin = SM.getExpansionLoc(ResultBegin);
     ResultEnd = SM.getExpansionLoc(ResultEnd);
+    // The if the original end token is in scratch space,
+    // the behavior of immediateExpansion is different:
+    // 1. string_literal created with "#" does not include the last token
+    // 2. greatergreatergreater of template does include the last token
+    // We need to process the last token according to the token kind.
     if (IncludeLastToken &&
-        !SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd()))) {
+        (!SM.isWrittenInScratchSpace(SM.getSpellingLoc(Range.getEnd())) ||
+         Tok.getKind() == tok::TokenKind::string_literal)) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
@@ -2374,6 +2383,17 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
   }
   return std::pair<SourceLocation, SourceLocation>(Range.getBegin(),
                                                    Range.getEnd());
+}
+
+std::string getStringInRange(clang::SourceRange Range,
+                             clang::SourceLocation RangeBegin,
+                             clang::SourceLocation RangeEnd,
+                             bool IncludeLastToken) {
+  auto ResultRange =
+      getRangeInRange(Range, RangeBegin, RangeEnd, IncludeLastToken);
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  return std::string(SM.getCharacterData(ResultRange.first),
+              SM.getCharacterData(ResultRange.second));
 }
 
 unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,

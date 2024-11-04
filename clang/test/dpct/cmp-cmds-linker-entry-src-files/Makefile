@@ -19,6 +19,7 @@ program = main
 #===============================================================================
 
 # Standard Flags
+EXTRA_CFLAGS = --generate-dependencies-with-compile --generate-nonsystem-dependencies-with-compile --allow-unsupported-compiler -allow-unsupported-compiler
 CFLAGS := $(EXTRA_CFLAGS) -std=c++14 -Xfatbin=-compress-all -Xfatbin -compress-all -Xcompiler -Wall -arch=$(ARCH)
 
 # Linker Flags

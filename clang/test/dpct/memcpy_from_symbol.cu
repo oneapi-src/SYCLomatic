@@ -18,11 +18,11 @@
 
 static const size_t k_num_elements = 16;
 
-// CHECK: dpct::global_memory<int, 0> a;
+// CHECK: static dpct::global_memory<int, 0> a;
 __device__ int a;
 __global__ void kernel1() { a = 10; }
 
-// CHECK: dpct::global_memory<int, 1> b(k_num_elements);
+// CHECK: static dpct::global_memory<int, 1> b(k_num_elements);
 __device__ int b[k_num_elements];
 __global__ void kernel2() { b[threadIdx.x] = threadIdx.x; }
 

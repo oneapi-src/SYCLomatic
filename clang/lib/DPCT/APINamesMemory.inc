@@ -265,7 +265,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
             "cuMemPrefetchAsync",
             MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
                              ARG(2)),
-                        false, DpctGlobalInfo::getDeviceQueueName()),
+                        false, DpctGlobalInfo::getDefaultQueueMemFuncName()),
             DpctGlobalInfo::useSYCLCompat(), "prefetch", ARG(0), ARG(1)))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
@@ -280,7 +280,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                     "cuMemAdvise",
                     MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
                                      "cpu_device"),
-                                false, DpctGlobalInfo::getDeviceQueueName()),
+                                false, DpctGlobalInfo::getDefaultQueueMemFuncName()),
                     DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG("0"))),
             Diagnostics::DEFAULT_MEM_ADVICE, ARG(" and was set to 0")),
 
@@ -289,7 +289,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
             MEMBER_CALL_FACTORY_ENTRY(
                 "cuMemAdvise",
                 MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"),
-                            false, DpctGlobalInfo::getDeviceQueueName()),
+                            false, DpctGlobalInfo::getDefaultQueueMemFuncName()),
                 DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG(2)))),
 
     CONDITIONAL_FACTORY_ENTRY(
@@ -303,7 +303,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                     MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
                                          "get_device",
                                      ARG(3)),
-                                false, DpctGlobalInfo::getDeviceQueueName()),
+                                false, DpctGlobalInfo::getDefaultQueueMemFuncName()),
                     DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG("0"))),
             Diagnostics::DEFAULT_MEM_ADVICE, ARG(" and was set to 0")),
         FEATURE_REQUEST_FACTORY(
@@ -312,7 +312,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 "cuMemAdvise",
                 MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
                                  ARG(3)),
-                            false, DpctGlobalInfo::getDeviceQueueName()),
+                            false, DpctGlobalInfo::getDefaultQueueMemFuncName()),
                 DpctGlobalInfo::useSYCLCompat(), "mem_advise", ARG(0), ARG(1), ARG(2))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
@@ -697,6 +697,137 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                        CALL(getMemoryHelperFunctionName("memset_d32_async"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
                             DEREF(makeCallArgCreatorWithCall(5))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGN_FACTORY_ENTRY(
+            "cuMemCreate", DEREF(0),
+            NEW(MapNames::getClNamespace() +
+                    "ext::oneapi::experimental::physical_mem",
+                CALL(MapNames::getDpctNamespace() + "get_device",
+                     MEMBER_EXPR(DEREF(2), false, LITERAL("location.id"))),
+                MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
+                                 MEMBER_EXPR(DEREF(2), false,
+                                             LITERAL("location.id"))),
+                            false, "get_context"),
+                ARG(1))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemCreate",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemCreate"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGN_FACTORY_ENTRY(
+            "cuMemAddressReserve", DEREF(0),
+            CALL("(" + MapNames::getDpctNamespace() + "device_ptr)" +
+                     MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::reserve_virtual_mem",
+                 CAST(LITERAL("uintptr_t"), ARG(3)), ARG(1),
+                 LITERAL(MapNames::getDpctNamespace() +
+                         "get_current_device().get_context()"))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemAddressReserve",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemAddressReserve"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cuMemAddressFree",
+            CALL(MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::free_virtual_mem",
+                 CAST(LITERAL("uintptr_t"), ARG(0)), ARG(1),
+                 LITERAL(MapNames::getDpctNamespace() +
+                         "get_current_device().get_context()"))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemAddressFree",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemAddressFree"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGN_FACTORY_ENTRY(
+            "cuMemGetAllocationGranularity", DEREF(0),
+            CALL(MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::get_mem_granularity",
+                 CALL(MapNames::getDpctNamespace() + "get_device",
+                      MEMBER_EXPR(DEREF(1), false, LITERAL("location.id"))),
+                 MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
+                                  MEMBER_EXPR(DEREF(1), false,
+                                              LITERAL("location.id"))),
+                             false, "get_context"),
+                 ARG(2))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemGetAllocationGranularity",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemGetAllocationGranularity"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                                DELETE_FACTORY_ENTRY("cuMemRelease", ARG(0)))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemRelease",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemRelease"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemMap", ARG(3), true, "map", CAST(LITERAL("uintptr_t"), ARG(0)),
+            ARG(1),
+            LITERAL(
+                MapNames::getClNamespace() +
+                "ext::oneapi::experimental::address_access_mode::read_write"),
+            ARG(2)))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemMap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemMap"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cuMemUnmap",
+            CALL(MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::unmap",
+                 ARG(0), ARG(1),
+                 LITERAL(MapNames::getDpctNamespace() +
+                         "get_current_device().get_context()"))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemUnmap", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemUnmap"),
+                            ARG("--use-experimental-features=virtual_memory")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExpVirtualMemory,
+    ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        CALL_FACTORY_ENTRY(
+            "cuMemSetAccess",
+            CALL(MapNames::getClNamespace() +
+                     "ext::oneapi::experimental::set_access_mode",
+                 ARG(0), ARG(1), MEMBER_EXPR(DEREF(2), false, LITERAL("flags")),
+                 MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",
+                                  MEMBER_EXPR(DEREF(2), false,
+                                              LITERAL("location.id"))),
+                             false, "get_context"))))),
+    UNSUPPORT_FACTORY_ENTRY("cuMemSetAccess",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cuMemSetAccess"),
+                            ARG("--use-experimental-features=virtual_memory")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UsePeerAccess(),

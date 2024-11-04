@@ -258,8 +258,6 @@ public:
       (Memory == constant) ? sycl::access_mode::read
                            : sycl::access_mode::read_write;
   static constexpr size_t type_size = sizeof(T);
-  using element_t =
-      typename std::conditional<Memory == constant, const T, T>::type;
   using value_t = typename std::remove_cv<T>::type;
   template <size_t Dimension = 1>
   using accessor_t = typename std::conditional<
@@ -915,7 +913,7 @@ static buffer_t get_buffer(const void *ptr) {
 }
 
 /// A wrapper class contains an accessor and an offset.
-template <typename dataT,
+template <typename PtrT,
           sycl::access_mode accessMode = sycl::access_mode::read_write>
 class access_wrapper {
   sycl::accessor<byte_t, 1, accessMode> accessor;
@@ -931,11 +929,17 @@ public:
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
     offset = (byte_t *)ptr - alloc.alloc_ptr;
   }
+  template <typename U = PtrT>
+  access_wrapper(
+      PtrT ptr, sycl::handler &cgh,
+      typename std::enable_if_t<!std::is_same_v<
+          std::remove_cv_t<std::remove_reference_t<U>>, void *>> * = 0)
+      : access_wrapper((const void *)ptr, cgh) {}
 
   /// Get the device pointer.
   ///
   /// \returns a device pointer with offset.
-  dataT get_raw_pointer() const { return (dataT)(&accessor[0] + offset); }
+  PtrT get_raw_pointer() const { return (PtrT)(&accessor[0] + offset); }
 };
 
 /// Get the accessor for memory pointed by \p ptr.
@@ -944,12 +948,17 @@ public:
 /// If NULL is passed as an argument, an exception will be thrown.
 /// \param cgh The command group handler.
 /// \returns an accessor.
-template <sycl::access_mode accessMode = sycl::access_mode::read_write>
-static sycl::accessor<byte_t, 1, accessMode>
-get_access(const void *ptr, sycl::handler &cgh) {
+template <typename T,
+          sycl::access_mode accessMode = sycl::access_mode::read_write>
+static auto get_access(const T *ptr, sycl::handler &cgh) {
   if (ptr) {
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
-    return alloc.buffer.get_access<accessMode>(cgh);
+    if constexpr (std::is_same_v<std::remove_reference_t<T>, void>)
+      return alloc.buffer.template get_access<accessMode>(cgh);
+    else
+      return alloc.buffer
+          .template reinterpret<T>(sycl::range<1>(alloc.size / sizeof(T)))
+          .template get_access<accessMode>(cgh);
   } else {
     throw std::runtime_error(
         "NULL pointer argument in get_access function is invalid");
@@ -1417,12 +1426,31 @@ static inline void async_dpct_memset(pitched_data pitch, int val,
   detail::dpct_memset<unsigned char>(q, pitch, val, size);
 }
 
+namespace experimental {
+typedef sycl::ext::oneapi::experimental::physical_mem *physical_mem_ptr;
+
+struct mem_location {
+  int id;
+  int type; // Location type. Value 1 means device location, and thus, id is a
+            // device id.
+};
+
+struct mem_prop {
+  mem_location location;
+  int type; // Memory type. Value 1 means default device memory.
+};
+
+struct mem_access_desc {
+  sycl::ext::oneapi::experimental::address_access_mode flags;
+  mem_location location;
+};
+} // namespace experimental
+
 /// dpct accessor used as device function parameter.
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <class T, memory_region Memory> class accessor<T, Memory, 3> {
 public:
   using memory_t = detail::memory_traits<Memory, T>;
-  using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<3>;
   accessor(pointer_t data, const sycl::range<3> &in_range)
@@ -1448,18 +1476,20 @@ private:
 template <class T, memory_region Memory> class accessor<T, Memory, 2> {
 public:
   using memory_t = detail::memory_traits<Memory, T>;
-  using element_t = typename memory_t::element_t;
   using pointer_t = typename memory_t::pointer_t;
   using accessor_t = typename memory_t::template accessor_t<2>;
   accessor(pointer_t data, const sycl::range<2> &in_range)
       : _data(data), _range(in_range) {}
+
   template <memory_region M = Memory>
-  accessor(typename std::enable_if<M != local, const accessor_t>::type &acc)
+  [[deprecated]] accessor(
+      typename std::enable_if<M != local, const accessor_t>::type &acc)
       : accessor(acc, acc.get_range()) {}
-  accessor(const accessor_t &acc, const sycl::range<2> &in_range)
-      : accessor(
-            acc.template get_multi_ptr<sycl::access::decorated::no>().get(),
-            in_range) {}
+  [[deprecated]] accessor(const accessor_t &acc, const sycl::range<2> &in_range)
+      : accessor(const_cast<pointer_t>(
+                     acc.template get_multi_ptr<sycl::access::decorated::no>()
+                         .get()),
+                 in_range) {}
 
   pointer_t operator[](size_t index) const {
     return _data + _range.get(1) * index;

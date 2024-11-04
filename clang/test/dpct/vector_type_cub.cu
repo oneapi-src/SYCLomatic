@@ -2,9 +2,9 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/vector_type_cub %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/vector_type_cub/vector_type_cub.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/vector_type_cub/vector_type_cub.dp.cpp -o %T/vector_type_cub/vector_type_cub.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/vector_type_cub/vector_type_cub.dp.cpp -o %T/vector_type_cub/vector_type_cub.dp.o %}
 
-#ifndef BUILD_TEST
+#ifndef NO_BUILD_TEST
 #include <cub/cub.cuh>
 
 __device__ char1 operator+(char1 a, char1 b) {

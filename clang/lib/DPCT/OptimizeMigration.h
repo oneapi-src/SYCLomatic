@@ -6,8 +6,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_OPTIMIZE_MIGRAION_H
-#define DPCT_OPTIMIZE_MIGRAION_H
+#ifndef DPCT_OPTIMIZE_MIGRATION_H
+#define DPCT_OPTIMIZE_MIGRATION_H
 
 #include "ASTTraversal.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -31,4 +31,4 @@ public:
 } // namespace dpct
 } // namespace clang
 
-#endif // !DPCT_OPTIMIZE_MIGRAION_H
+#endif // !DPCT_OPTIMIZE_MIGRATION_H

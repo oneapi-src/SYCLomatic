@@ -37,9 +37,9 @@ int main(){
       case ncclInt32: std::cout << "Int32" << std::endl; break;
   }
   // CHECK:     /*
-  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced by a placeholder string. You need to rewrite this code.
+  // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
   // CHECK-NEXT: */
-  // CHECK-NEXT: "<Placeholder string>";
+  // CHECK-NEXT: dpct::get_error_string_dummy(res);
   ncclGetErrorString(res);
   // CHECK:     /*
   // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to ncclGetLastError was removed because this functionality is redundant in SYCL.
@@ -53,4 +53,19 @@ int main(){
   if (res == ncclSuccess) {
     return 0;
   }
+}
+
+//CHECK:void foo(int err) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::get_error_string_dummy(err);
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL reports errors using exceptions and does not use error codes. Please replace the "get_error_string_dummy(...)" with a real error-handling function.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::get_error_string_dummy({{[0-9]+}});
+//CHECK-NEXT:}
+void foo(ncclResult_t err) {
+  ncclGetErrorString(err);
+  ncclGetErrorString(ncclUnhandledCudaError);
 }

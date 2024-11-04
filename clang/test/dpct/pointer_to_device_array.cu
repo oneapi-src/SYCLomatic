@@ -2,7 +2,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/pointer_to_device_array/pointer_to_device_array.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/pointer_to_device_array/pointer_to_device_array.dp.cpp -o %T/pointer_to_device_array/pointer_to_device_array.dp.o %}
 
-// CHECK: dpct::global_memory<int, 2> arr(sycl::range<2>(200, 4), {0});
+// CHECK: static dpct::global_memory<int, 2> arr(sycl::range<2>(200, 4), {0});
 __device__ int arr[200][4] = {0};
 
 // CHECK: void my_kernel(dpct::accessor<int, dpct::global, 2> arr) {

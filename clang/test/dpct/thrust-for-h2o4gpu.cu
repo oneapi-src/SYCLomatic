@@ -2,8 +2,8 @@
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -ferror-limit=50
 // RUN: FileCheck --input-file %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl -DBUILD_TEST  %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp -o %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.o %}
-#ifndef BUILD_TEST
+// RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp -o %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.o %}
+#ifndef NO_BUILD_TEST
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
@@ -309,16 +309,19 @@ void foo() {
 
  {
   int data[10];
+  cudaStream_t stream;
   //CHECK: dpct::device_pointer<int> begin = dpct::get_device_pointer(&data[0]);
   //CHECK-NEXT: dpct::device_pointer<int> end=begin + 10;
   //CHECK-NEXT: bool h_result = std::transform_reduce(oneapi::dpl::execution::make_device_policy(q_ct1), begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   //CHECK-NEXT: bool h_result_1 = std::transform_reduce(oneapi::dpl::execution::seq, begin, end, 0, std::plus<bool>(), isfoo_test<int>());
+  //CHECK-NEXT: bool h_result_2 = std::transform_reduce(oneapi::dpl::execution::make_device_policy(*stream), begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   //CHECK-NEXT: auto ptrs = std::make_tuple(begin, end);
   //CHECK-NEXT: int num = std::get<1>(ptrs) - std::get<0>(ptrs);
   thrust::device_ptr<int> begin = thrust::device_pointer_cast(&data[0]);
   thrust::device_ptr<int> end=begin + 10;
   bool h_result = thrust::transform_reduce(begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
   bool h_result_1 = thrust::transform_reduce(thrust::seq, begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
+  bool h_result_2 = thrust::transform_reduce(thrust::cuda::par.on(stream), begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
   auto ptrs = thrust::make_tuple(begin, end);
   int num = thrust::get<1>(ptrs) - thrust::get<0>(ptrs);
  }

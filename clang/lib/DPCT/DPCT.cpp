@@ -21,6 +21,7 @@
 #include "IncrementalMigrationUtility.h"
 #include "MemberExprRewriter.h"
 #include "MigrateCmakeScript.h"
+#include "MigratePythonBuildScript.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "PatternRewriter.h"
@@ -58,6 +59,7 @@
 #include <fstream>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "clang/Basic/DiagnosticOptions.h"
@@ -114,6 +116,11 @@ const char *const CtHelpHint =
 const char *const CmakeScriptMigrationHelpHint =
     "Warning: CMake build script file like CMakeLists.txt is not found, so no CMake build script file will be migrated.";
 
+const char *const SetupScriptMigrationHelpHint =
+    "Warning: No Python file is found, so no Python build script file will be migrated.";
+
+const char *const BuildScriptMigrationHelpHint =
+    "Warning: No CMake build script file (e.g., CMakeLists.txt or files with a .cmake suffix) or Python file was found, so no CMake or Python build script file will be migrated.";
 
 static extrahelp CommonHelp(CtHelpMessage);
 
@@ -479,7 +486,8 @@ static void loadMainSrcFileInfo(clang::tooling::UnifiedPath OutRoot) {
     }
   }
   for (auto &Entry : PreTU->MainSourceFilesDigest) {
-    MainSrcFilesHasCudaSyntex.insert(Entry.first);
+    if (Entry.HasCUDASyntax)
+      MainSrcFilesHasCudaSyntex.insert(Entry.MainSourceFile);
   }
 
   // Currently, when "--use-experimental-features=device_global" and
@@ -710,9 +718,9 @@ int runDPCT(int argc, const char **argv) {
 
   if (MigrateBuildScriptOnly) {
     if (InRootPath.getPath().empty() &&
-        !cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
-      ShowStatus(MigrationErrorNoExplicitInRootAndCMakeScript);
-      dpctExit(MigrationErrorNoExplicitInRootAndCMakeScript);
+        !buildScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrationErrorNoExplicitInRootAndBuildScript);
+      dpctExit(MigrationErrorNoExplicitInRootAndBuildScript);
     }
   }
 
@@ -732,32 +740,35 @@ int runDPCT(int argc, const char **argv) {
       dpctExit(MigrationErrorNoFileTypeAvail);
     }
 
-    if (cmakeScriptFileSpecified(OptParser->getSourcePathList())) {
-      ShowStatus(MigrateCmakeScriptOnlyNotSpecifed);
-      dpctExit(MigrateCmakeScriptOnlyNotSpecifed);
+    if (buildScriptFileSpecified(OptParser->getSourcePathList())) {
+      ShowStatus(MigrateBuildScriptOnlyNotSpecifed);
+      dpctExit(MigrateBuildScriptOnlyNotSpecifed);
     }
 
   } else {
-    // To validate the path of cmake file script or directory
+    // To validate the path of CMake or Python build script file or directory
     int ValidPath =
-        validateCmakeScriptPaths(InRootPath, OptParser->getSourcePathList());
+        validateBuildScriptPaths(InRootPath, OptParser->getSourcePathList());
     if (ValidPath == -1) {
       ShowStatus(MigrationErrorInvalidInRootPath);
       dpctExit(MigrationErrorInvalidInRootPath);
     } else if (ValidPath < -1) {
-      ShowStatus(MigrationErrorCMakeScriptPathInvalid);
-      dpctExit(MigrationErrorCMakeScriptPathInvalid);
+      ShowStatus(MigrationErrorBuildScriptPathInvalid);
+      dpctExit(MigrationErrorBuildScriptPathInvalid);
     }
   }
 
-  if (BuildScript == BuildScriptKind::BS_Cmake &&
+  if ((BuildScript == BuildScriptKind::BS_Cmake ||
+       BuildScript == BuildScriptKind::BS_Python) &&
       !OptParser->getSourcePathList().empty()) {
-    ShowStatus(MigarteBuildScriptIncorrectUse);
-    dpctExit(MigarteBuildScriptIncorrectUse);
+    ShowStatus(MigrateBuildScriptIncorrectUse);
+    dpctExit(MigrateBuildScriptIncorrectUse);
   }
-  if (BuildScript == BuildScriptKind::BS_Cmake && MigrateBuildScriptOnly) {
-    ShowStatus(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
-    dpctExit(MigarteBuildScriptAndMigarteBuildScriptOnlyBothUse);
+  if ((BuildScript == BuildScriptKind::BS_Cmake ||
+       BuildScript == BuildScriptKind::BS_Python) &&
+      MigrateBuildScriptOnly) {
+    ShowStatus(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
+    dpctExit(MigrateBuildScriptAndMigrateBuildScriptOnlyBothUse);
   }
 
   int SDKIncPathRes = checkSDKPathOrIncludePath(CudaIncludePath);
@@ -937,19 +948,14 @@ int runDPCT(int argc, const char **argv) {
     }
 
     Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
-#ifdef _WIN32 // Avoid some error on windows platform.
-    if (DpctGlobalInfo::getSDKVersion() <= CudaVersion::CUDA_100) {
-      Tool.appendArgumentsAdjuster(
-          getInsertArgumentAdjuster("-D_MSC_VER=1900"));
-    }
-#endif
     NoIncrementalMigration.setValue(true);
     StopOnParseErr.setValue(true);
     Tool.setPrintErrorMessage(false);
   } else {
     IsUsingDefaultOutRoot = OutRootPath.getPath().empty();
-    bool NeedCheckOutRootEmpty =
-        !(BuildScript == BuildScriptKind::BS_Cmake) && !MigrateBuildScriptOnly;
+    bool NeedCheckOutRootEmpty = !(BuildScript == BuildScriptKind::BS_Cmake ||
+                                   BuildScript == BuildScriptKind::BS_Python) &&
+                                 !MigrateBuildScriptOnly;
     if (!DpctGlobalInfo::isAnalysisModeEnabled() && IsUsingDefaultOutRoot &&
         !getDefaultOutRoot(OutRootPath, NeedCheckOutRootEmpty) && !EnableCodePin) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
@@ -1096,6 +1102,21 @@ int runDPCT(int argc, const char **argv) {
     }
   }
 
+  if (MigrateBuildScriptOnly ||
+      DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
+    SmallString<128> PythonRuleFilePath(DpctInstallPath.getCanonicalPath());
+    llvm::sys::path::append(
+        PythonRuleFilePath,
+        Twine("extensions/python_rules/"
+              "python_build_script_migration_rule_ipex.yaml"));
+    if (llvm::sys::fs::exists(PythonRuleFilePath)) {
+      std::vector<clang::tooling::UnifiedPath> PythonRuleFiles{
+          PythonRuleFilePath};
+      importRules(PythonRuleFiles);
+      // generage helper functions file in the outroot dir here
+    }
+  }
+
   if (!RuleFilePath.empty()) {
     importRules(RuleFilePath);
   }
@@ -1185,16 +1206,28 @@ int runDPCT(int argc, const char **argv) {
   if (MigrateBuildScriptOnly) {
     loadMainSrcFileInfo(OutRootPath);
     collectCmakeScriptsSpecified(OptParser, InRootPath, OutRootPath);
-    runWithCrashGuard(
-        [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
-        "Error: dpct internal error. Migrating CMake scripts in \"" +
-            InRootPath.getCanonicalPath().str() +
-            "\" causing the error skipped. Migration continues.\n");
+    collectPythonBuildScriptsSpecified(OptParser, InRootPath, OutRootPath);
 
-    if (cmakeScriptNotFound()) {
-      std::cout << CmakeScriptMigrationHelpHint << "\n";
+    if (!cmakeScriptNotFound()) {
+      runWithCrashGuard(
+          [&]() { doCmakeScriptMigration(InRootPath, OutRootPath); },
+          "Error: dpct internal error. Migrating CMake scripts in \"" +
+              InRootPath.getCanonicalPath().str() +
+              "\" causing the error skipped. Migration continues.\n");
     }
-    ShowStatus(MigrationCmakeScriptCompleted);
+
+    if (!pythonBuildScriptNotFound()) {
+      runWithCrashGuard(
+          [&]() { doPythonBuildScriptMigration(InRootPath, OutRootPath); },
+          "Error: dpct internal error. Migrating Python build scripts in \"" +
+              InRootPath.getCanonicalPath().str() +
+              "\" causing the error skipped. Migration continues.\n");
+    }
+
+    if (cmakeScriptNotFound() && pythonBuildScriptNotFound()) {
+      std::cout << BuildScriptMigrationHelpHint << "\n";
+    }
+    ShowStatus(MigrationBuildScriptCompleted);
     return MigrationSucceeded;
   }
   ReplTy ReplCUDA, ReplSYCL;
@@ -1232,32 +1265,40 @@ int runDPCT(int argc, const char **argv) {
       return MigrationErrorInconsistentFileInDatabase;
     }
 
-    if (RunResult && StopOnParseErr) {
-      DumpOutputFile();
-      if (RunResult == 1) {
-        if (DpctGlobalInfo::isQueryAPIMapping()) {
-          std::string Err = getDpctTermStr();
-          StringRef ErrStr = Err;
-          if (ErrStr.contains("use of undeclared identifier")) {
-            ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
-                       QueryAPIMapping);
-            return MigrationErrorAPIMappingWrongCUDAHeader;
-          } else if (ErrStr.contains("file not found")) {
-            ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
-            return MigrationErrorAPIMappingNoCUDAHeader;
+    do {
+      if (RunResult && StopOnParseErr) {
+        DumpOutputFile();
+        if (RunResult == 1) {
+          if (DpctGlobalInfo::isQueryAPIMapping()) {
+            std::string Err = getDpctTermStr();
+            StringRef ErrStr = Err;
+            // Avoid the "Visual Studio version" error on windows platform.
+            if (ErrStr.find("error:") == ErrStr.rfind("error:") &&
+                ErrStr.contains(
+                    "error -- unsupported Microsoft Visual Studio version")) {
+              break;
+            }
+            if (ErrStr.contains("use of undeclared identifier")) {
+              ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
+                         QueryAPIMapping);
+              return MigrationErrorAPIMappingWrongCUDAHeader;
+            } else if (ErrStr.contains("file not found")) {
+              ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
+              return MigrationErrorAPIMappingNoCUDAHeader;
+            }
+            ShowStatus(MigrationErrorNoAPIMapping);
+            dpctExit(MigrationErrorNoAPIMapping);
           }
-          ShowStatus(MigrationErrorNoAPIMapping);
-          dpctExit(MigrationErrorNoAPIMapping);
+          ShowStatus(MigrationErrorFileParseError);
+          return MigrationErrorFileParseError;
+        } else {
+          // When RunResult equals to 2, it means no error, but some files are
+          // skipped due to missing compile commands.
+          // And clang::tooling::ReFactoryTool will emit error message.
+          return MigrationSKIPForMissingCompileCommand;
         }
-        ShowStatus(MigrationErrorFileParseError);
-        return MigrationErrorFileParseError;
-      } else {
-        // When RunResult equals to 2, it means no error, but some files are
-        // skipped due to missing compile commands.
-        // And clang::tooling::ReFactoryTool will emit error message.
-        return MigrationSKIPForMissingCompileCommand;
       }
-    }
+    } while (0);
 
     Action.runPasses();
   } while (DpctGlobalInfo::isNeedRunAgain());
@@ -1298,6 +1339,21 @@ int runDPCT(int argc, const char **argv) {
         MigratedStr += I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
+
+    // For some cuda error handling APIs (currently only cudaGetErrorString), we
+    // use NoRewriteRewriter to do migration. So the comment in the argument
+    // part is kept in the migrated code. We remove those comments here.
+    // ATTENTION: There is A SPACE at the beginning of each comment.
+    static const std::unordered_set<std::string> CommentsNeedBeRemoved = {
+        " /*cudaError_t*/"};
+    for (const auto &Comment : CommentsNeedBeRemoved) {
+      size_t RemoveStartPos = MigratedStr.find(Comment);
+      if (RemoveStartPos != std::string::npos) {
+        MigratedStr.erase(RemoveStartPos, Comment.length());
+        break;
+      }
+    }
+
     if (MigratedStr.find_first_not_of(" \n") == std::string::npos) {
       llvm::outs() << "The API is Removed.\n";
     } else {
@@ -1363,6 +1419,16 @@ int runDPCT(int argc, const char **argv) {
 
     if (cmakeScriptNotFound()) {
       std::cout << CmakeScriptMigrationHelpHint << "\n";
+    }
+  }
+
+  if (DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
+    loadMainSrcFileInfo(OutRootPath);
+    collectPythonBuildScripts(InRootPath, OutRootPath);
+    doPythonBuildScriptMigration(InRootPath, OutRootPath);
+
+    if (pythonBuildScriptNotFound()) {
+      std::cout << SetupScriptMigrationHelpHint << "\n";
     }
   }
 
