@@ -178,17 +178,17 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
-  size_t epilogue_aux_ld;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_c = oneapi::mkl::transpose::nontrans;
   epilogue_t _epilogue = epilogue_t::nop;
+  size_t _epilogue_aux_ld = 0;
   void *_a_scale_pointer = nullptr;
   void *_b_scale_pointer = nullptr;
   void *_d_scale_pointer = nullptr;
   void *_absmax_d_pointer = nullptr;
-  void *epilogue_aux_pointer = nullptr;
+  void *_epilogue_aux_pointer = nullptr;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
