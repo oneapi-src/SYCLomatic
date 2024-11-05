@@ -281,7 +281,10 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 
     // The "__noinline__" macro is re-defined and it is used in
     // "__attribute__()", do not migrate it.
-    if (!II->hasMacroDefinition() && (II->getName() == "__noinline__")) {
+    if ((GetSourceFileType(
+             DpctGlobalInfo::getInstance().getMainFile()->getFilePath()) ==
+         SPT_CppSource) &&
+        (II->getName() == "__noinline__")) {
       continue;
     }
 
