@@ -2105,18 +2105,18 @@ void MapNames::setExplicitNamespaceMap(
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_nvGRAPH.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
-#include "APINames_wmma.inc"
+#include "SrcAPI/APINames.inc"
+#include "SrcAPI/APINames_CUB.inc"
+#include "SrcAPI/APINames_NCCL.inc"
+#include "SrcAPI/APINames_cuBLAS.inc"
+#include "SrcAPI/APINames_cuFFT.inc"
+#include "SrcAPI/APINames_cuRAND.inc"
+#include "SrcAPI/APINames_cuSOLVER.inc"
+#include "SrcAPI/APINames_cuSPARSE.inc"
+#include "SrcAPI/APINames_nvGRAPH.inc"
+#include "SrcAPI/APINames_nvJPEG.inc"
+#include "SrcAPI/APINames_thrust.inc"
+#include "SrcAPI/APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -4586,29 +4586,29 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, VALUE},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_NVML.inc"
-#include "APINames_NVTX.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuDNN.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_cudnn_frontend.inc"
-#include "APINames_nvGRAPH.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
-#include "APINames_wmma.inc"
+#include "SrcAPI/APINames.inc"
+#include "SrcAPI/APINames_CUB.inc"
+#include "SrcAPI/APINames_NCCL.inc"
+#include "SrcAPI/APINames_NVML.inc"
+#include "SrcAPI/APINames_NVTX.inc"
+#include "SrcAPI/APINames_cuBLAS.inc"
+#include "SrcAPI/APINames_cuDNN.inc"
+#include "SrcAPI/APINames_cuFFT.inc"
+#include "SrcAPI/APINames_cuRAND.inc"
+#include "SrcAPI/APINames_cuSOLVER.inc"
+#include "SrcAPI/APINames_cuSPARSE.inc"
+#include "SrcAPI/APINames_cudnn_frontend.inc"
+#include "SrcAPI/APINames_nvGRAPH.inc"
+#include "SrcAPI/APINames_nvJPEG.inc"
+#include "SrcAPI/APINames_thrust.inc"
+#include "SrcAPI/APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
 
 std::map<std::string, bool> MigrationStatistics::TypeMigrationTable{
 #define ENTRY_TYPE(TYPENAME, VALUE, FLAG, TARGET, COMMENT) {#TYPENAME, VALUE},
-#include "TypeNames.inc"
+#include "SrcAPI/TypeNames.inc"
 #undef ENTRY_TYPE
 };
 
