@@ -1961,8 +1961,8 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::epilogue"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD",
-       getLibraryHelperNamespace() +
-           "blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_ld"},
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::"
+                                     "attribute::epilogue_aux_ld"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER",
        getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::"
                                      "attribute::epilogue_aux_pointer"},
@@ -2001,15 +2001,18 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_EPILOGUE_DEFAULT",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::nop"},
       {"CUBLASLT_EPILOGUE_RELU",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::relu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_POINTER_MODE",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_t::"
-                                     "attribute::pointer_mode"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::transform_desc_t::"
+           "attribute::pointer_mode"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_a"},
