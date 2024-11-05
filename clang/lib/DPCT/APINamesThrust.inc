@@ -153,18 +153,10 @@ CONDITIONAL_FACTORY_ENTRY(
                            CALL("std::transform_reduce",
                                 ARG("oneapi::dpl::execution::seq"), ARG(0),
                                 ARG(1), ARG(3), ARG(4), ARG(2)))),
-    CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(0, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY(
             "thrust::transform_reduce",
-            CALL("std::transform_reduce",
-                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                 ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))),
-        CALL_FACTORY_ENTRY("thrust::transform_reduce",
-                           CALL("std::transform_reduce",
-                                ARG("oneapi::dpl::execution::seq"), ARG(1),
-                                ARG(2), ARG(4), ARG(5), ARG(3)))))
-
+            CALL("std::transform_reduce", makeMappedThrustPolicyEnum(0),
+            ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))))
 
 // thrust::swap
 CALL_FACTORY_ENTRY("thrust::swap",  CALL("std::swap",  ARG(0), ARG(1)))

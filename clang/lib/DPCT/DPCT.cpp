@@ -59,6 +59,7 @@
 #include <fstream>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "clang/Basic/DiagnosticOptions.h"
@@ -1264,38 +1265,40 @@ int runDPCT(int argc, const char **argv) {
       return MigrationErrorInconsistentFileInDatabase;
     }
 
-    if (RunResult && StopOnParseErr) {
-      DumpOutputFile();
-      if (RunResult == 1) {
-        if (DpctGlobalInfo::isQueryAPIMapping()) {
-          std::string Err = getDpctTermStr();
-          StringRef ErrStr = Err;
-          // Avoid the "Visual Studio version" error on windows platform.
-          if (ErrStr.find_first_of("error") == ErrStr.find_last_of("error") &&
-              ErrStr.contains(
-                  "error -- unsupported Microsoft Visual Studio version")) {
-            continue;
+    do {
+      if (RunResult && StopOnParseErr) {
+        DumpOutputFile();
+        if (RunResult == 1) {
+          if (DpctGlobalInfo::isQueryAPIMapping()) {
+            std::string Err = getDpctTermStr();
+            StringRef ErrStr = Err;
+            // Avoid the "Visual Studio version" error on windows platform.
+            if (ErrStr.find("error:") == ErrStr.rfind("error:") &&
+                ErrStr.contains(
+                    "error -- unsupported Microsoft Visual Studio version")) {
+              break;
+            }
+            if (ErrStr.contains("use of undeclared identifier")) {
+              ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
+                         QueryAPIMapping);
+              return MigrationErrorAPIMappingWrongCUDAHeader;
+            } else if (ErrStr.contains("file not found")) {
+              ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
+              return MigrationErrorAPIMappingNoCUDAHeader;
+            }
+            ShowStatus(MigrationErrorNoAPIMapping);
+            dpctExit(MigrationErrorNoAPIMapping);
           }
-          if (ErrStr.contains("use of undeclared identifier")) {
-            ShowStatus(MigrationErrorAPIMappingWrongCUDAHeader,
-                       QueryAPIMapping);
-            return MigrationErrorAPIMappingWrongCUDAHeader;
-          } else if (ErrStr.contains("file not found")) {
-            ShowStatus(MigrationErrorAPIMappingNoCUDAHeader, QueryAPIMapping);
-            return MigrationErrorAPIMappingNoCUDAHeader;
-          }
-          ShowStatus(MigrationErrorNoAPIMapping);
-          dpctExit(MigrationErrorNoAPIMapping);
+          ShowStatus(MigrationErrorFileParseError);
+          return MigrationErrorFileParseError;
+        } else {
+          // When RunResult equals to 2, it means no error, but some files are
+          // skipped due to missing compile commands.
+          // And clang::tooling::ReFactoryTool will emit error message.
+          return MigrationSKIPForMissingCompileCommand;
         }
-        ShowStatus(MigrationErrorFileParseError);
-        return MigrationErrorFileParseError;
-      } else {
-        // When RunResult equals to 2, it means no error, but some files are
-        // skipped due to missing compile commands.
-        // And clang::tooling::ReFactoryTool will emit error message.
-        return MigrationSKIPForMissingCompileCommand;
       }
-    }
+    } while (0);
 
     Action.runPasses();
   } while (DpctGlobalInfo::isNeedRunAgain());
@@ -1336,6 +1339,21 @@ int runDPCT(int argc, const char **argv) {
         MigratedStr += I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
+
+    // For some cuda error handling APIs (currently only cudaGetErrorString), we
+    // use NoRewriteRewriter to do migration. So the comment in the argument
+    // part is kept in the migrated code. We remove those comments here.
+    // ATTENTION: There is A SPACE at the beginning of each comment.
+    static const std::unordered_set<std::string> CommentsNeedBeRemoved = {
+        " /*cudaError_t*/"};
+    for (const auto &Comment : CommentsNeedBeRemoved) {
+      size_t RemoveStartPos = MigratedStr.find(Comment);
+      if (RemoveStartPos != std::string::npos) {
+        MigratedStr.erase(RemoveStartPos, Comment.length());
+        break;
+      }
+    }
+
     if (MigratedStr.find_first_not_of(" \n") == std::string::npos) {
       llvm::outs() << "The API is Removed.\n";
     } else {
