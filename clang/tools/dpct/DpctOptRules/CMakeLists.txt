@@ -41,6 +41,19 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/pytorch_api_rule_rules)
 
+# Below two install commands are copying those files into some location under
+# the build folder, which need be accessed during the LIT.
+install(
+  FILES ${dpct_cmake_rule_files}
+  COMPONENT dpct-rules
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ${CMAKE_BINARY_DIR}/extensions/cmake_rules)
+install(
+  FILES ${dpct_python_rule_files}
+  COMPONENT dpct-rules
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ${CMAKE_BINARY_DIR}/extensions/python_rules)
+
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
   add_llvm_install_targets(install-dpct-rules
                            COMPONENT dpct-rules)
