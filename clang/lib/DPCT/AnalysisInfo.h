@@ -2380,7 +2380,17 @@ public:
   template <class T>
   CallFunctionExpr(unsigned Offset,
                    const clang::tooling::UnifiedPath &FilePathIn, const T &C)
-      : FilePath(FilePathIn), Offset(Offset), CallFuncExprOffset(Offset) {}
+      : FilePath(FilePathIn), Offset(Offset), CallFuncExprOffset(Offset) {
+    if constexpr (std::is_same_v<T, std::nullptr_t>) {
+      ReplFilePath = FilePathIn;
+      ReplOffset = Offset;
+    } else {
+      auto Range = getDefinitionRange(C->getBeginLoc(), C->getEndLoc());
+      auto LocInfo = DpctGlobalInfo::getLocInfo(Range.getBegin());
+      ReplFilePath = LocInfo.first;
+      ReplOffset = LocInfo.second;
+    }
+  }
 
   void buildCallExprInfo(const CXXConstructExpr *Ctor);
   void buildCallExprInfo(const CallExpr *CE);
@@ -2434,6 +2444,8 @@ protected:
   std::string Name;
   unsigned getOffset() { return Offset; }
   const clang::tooling::UnifiedPath &getFilePath() { return FilePath; }
+  unsigned getReplOffset() { return ReplOffset; }
+  const clang::tooling::UnifiedPath &getReplFilePath() { return ReplFilePath; }
   void buildInfo();
   void buildCalleeInfo(const Expr *Callee, std::optional<unsigned int> NumArgs);
   void resizeTextureObjectList(size_t Size) { TextureObjectList.resize(Size); }
@@ -2470,6 +2482,8 @@ private:
   bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::shared_ptr<StructureTextureObjectInfo> BaseTextureObject;
+  clang::tooling::UnifiedPath ReplFilePath;
+  unsigned ReplOffset = 0;
 };
 
 // device function declaration info includes location, name, and related

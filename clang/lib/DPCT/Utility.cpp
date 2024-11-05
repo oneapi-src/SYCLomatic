@@ -195,7 +195,7 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
                 SM.getExpansionRange(Range.getBegin()).getEnd(),
                 SM.getSpellingLoc(Range.getBegin())) &&
       isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
-                SM.getExpansionRange(Range.getBegin()).getEnd(),
+                SM.getExpansionRange(Range.getEnd()).getEnd(),
                 SM.getSpellingLoc(Range.getEnd()))) {
     // MACRO(callExpr())
     BeginLoc = SM.getSpellingLoc(Range.getBegin());
@@ -1698,12 +1698,20 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
   // Different expansion but same define, e.g. AAA * AAA
   if (BeginLoc.isMacroID() && EndLoc.isMacroID()) {
-    auto ExpansionBegin = SM.getExpansionRange(BeginLoc).getBegin();
-    auto ExpansionEnd = SM.getExpansionRange(EndLoc).getBegin();
-    auto DLExpanBegin = SM.getDecomposedLoc(ExpansionBegin);
-    auto DLExpanEnd = SM.getDecomposedLoc(ExpansionEnd);
-    if (DLExpanBegin.first != DLExpanEnd.first ||
-        DLExpanBegin.second != DLExpanEnd.second) {
+    std::pair<FileID, unsigned> BeginLocInfo = SM.getDecomposedLoc(BeginLoc);
+    std::pair<FileID, unsigned> EndLocInfo = SM.getDecomposedLoc(EndLoc);
+    SrcMgr::ExpansionInfo BeginExpInfo =
+        SM.getSLocEntry(BeginLocInfo.first).getExpansion();
+    SrcMgr::ExpansionInfo EndExpInfo =
+        SM.getSLocEntry(EndLocInfo.first).getExpansion();
+    // Since different expansions should have different ExpansionInfo instances,
+    // we use all the members (except SpellingLoc) in ExpansionInfo to do this
+    // check.
+    if (BeginExpInfo.getExpansionLocStart() !=
+            EndExpInfo.getExpansionLocStart() ||
+        BeginExpInfo.getExpansionLocEnd() != EndExpInfo.getExpansionLocEnd() ||
+        BeginExpInfo.isExpansionTokenRange() !=
+            EndExpInfo.isExpansionTokenRange()) {
       return true;
     }
   }
@@ -2169,7 +2177,7 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
 // Line 3: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
 // Line 4: void templatefoo2() { CALL_KERNEL(8, 9) }
 // There are 3 candidates of the kernel range,
-// 1. Line 4 "CALL_KERNEL2(8, AAA)"
+// 1. Line 4 "CALL_KERNEL(8, 9)"
 // 2. Line 3 "KERNEL(C, D)"
 // 3. Line 2 "templatefoo<A,B>CCC"
 // The 3rd candidate is the best choice.
@@ -2273,7 +2281,7 @@ void traversePossibleLocations(const SourceLocation &SL,
   if (!SL.isValid())
     return;
   if (Cache.find(SL.getHashValue()) != Cache.end())
-    return;
+    return; // If visited, return;
   Cache.insert(SL.getHashValue());
   if (!SL.isMacroID()) {
     if (isInRange(RangeBegin, RangeEnd, SL)) {
@@ -2741,6 +2749,13 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
   // Using PreBegin/PreEnd because they contain the info of the last func-like
   // macro.
   if (!isLocInSameMacroArg(PreBegin, PreEnd)) {
+#if 0
+#else
+    if (isLocationStraddle(PreBegin, PreEnd)) {
+      std::tie(Begin, End) = getTheLastCompleteImmediateRange(Begin, End);
+      return SourceRange(Begin, End);
+    }
+#endif
     return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
   }
 
