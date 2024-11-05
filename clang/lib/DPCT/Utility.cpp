@@ -1682,9 +1682,6 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
 
 bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  std::cout << "isLocationStraddle enter" << std::endl;
-  std::cout << "BeginLoc:" << BeginLoc.printToString(SM) << std::endl;
-  std::cout << "EndLoc:" << EndLoc.printToString(SM) << std::endl;
   auto SpellingBegin = SM.getSpellingLoc(BeginLoc);
   auto SpellingEnd = SM.getSpellingLoc(EndLoc);
   auto ItSpellingBegin =
@@ -1696,30 +1693,25 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
   if ((BeginLoc.isMacroID() && EndLoc.isFileID()) ||
       (BeginLoc.isFileID() && EndLoc.isMacroID())) {
-    std::cout << "isLocationStraddle exit 1" << std::endl;
     return true;
   }
 
   // Different expansion but same define, e.g. AAA * AAA
   if (BeginLoc.isMacroID() && EndLoc.isMacroID()) {
-#if 1
-    auto ExpansionBegin = SM.getExpansionRange(BeginLoc).getBegin();
-    auto ExpansionEnd = SM.getExpansionRange(EndLoc).getBegin();
-    auto DLExpanBegin = SM.getDecomposedLoc(ExpansionBegin);
-    auto DLExpanEnd = SM.getDecomposedLoc(ExpansionEnd);
-    if (DLExpanBegin.first != DLExpanEnd.first ||
-        DLExpanBegin.second != DLExpanEnd.second) {
-#else
     std::pair<FileID, unsigned> BeginLocInfo = SM.getDecomposedLoc(BeginLoc);
     std::pair<FileID, unsigned> EndLocInfo = SM.getDecomposedLoc(EndLoc);
-    SrcMgr::ExpansionInfo BeginExpInfo = SM.getSLocEntry(BeginLocInfo.first).getExpansion();
-    SrcMgr::ExpansionInfo EndExpInfo = SM.getSLocEntry(EndLocInfo.first).getExpansion();
-    if (BeginExpInfo.getSpellingLoc() != EndExpInfo.getSpellingLoc() ||
-        BeginExpInfo.getExpansionLocStart() != EndExpInfo.getExpansionLocStart() ||
+    SrcMgr::ExpansionInfo BeginExpInfo =
+        SM.getSLocEntry(BeginLocInfo.first).getExpansion();
+    SrcMgr::ExpansionInfo EndExpInfo =
+        SM.getSLocEntry(EndLocInfo.first).getExpansion();
+    // Since different expansions should have different ExpansionInfo instances,
+    // we use all the members (except SpellingLoc) in ExpansionInfo to do this
+    // check.
+    if (BeginExpInfo.getExpansionLocStart() !=
+            EndExpInfo.getExpansionLocStart() ||
         BeginExpInfo.getExpansionLocEnd() != EndExpInfo.getExpansionLocEnd() ||
-        BeginExpInfo.isExpansionTokenRange() != EndExpInfo.isExpansionTokenRange()) {
-#endif
-      std::cout << "isLocationStraddle exit 2" << std::endl;
+        BeginExpInfo.isExpansionTokenRange() !=
+            EndExpInfo.isExpansionTokenRange()) {
       return true;
     }
   }
@@ -1729,7 +1721,6 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
           dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       ItSpellingEnd ==
           dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
-    std::cout << "isLocationStraddle exit 3" << std::endl;
     return false;
   }
 
@@ -1738,7 +1729,6 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
           dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
       ItSpellingEnd ==
           dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
-    std::cout << "isLocationStraddle exit 4" << std::endl;
     return true;
   }
 
@@ -1748,11 +1738,9 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
           ItSpellingEnd->second->FilePath) ||
       ItSpellingBegin->second->ReplaceTokenBeginOffset !=
           ItSpellingEnd->second->ReplaceTokenBeginOffset) {
-    std::cout << "isLocationStraddle exit 5" << std::endl;
     return true;
   }
 
-  std::cout << "isLocationStraddle exit 6" << std::endl;
   return false;
 }
 
