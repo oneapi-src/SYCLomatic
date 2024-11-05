@@ -12,6 +12,6 @@ set(dpct_rule_template_files
 
 install(
   FILES ${dpct_rule_template_files}
-  COMPONENT dpct-opt-rules
+  COMPONENT dpct-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/rule_templates)

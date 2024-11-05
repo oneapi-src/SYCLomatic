@@ -19,35 +19,29 @@ set(dpct_pytorch_api_rule_files
 
 install(
   FILES ${dpct_opt_rule_files}
-  COMPONENT dpct-opt-rules
+  COMPONENT dpct-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/opt_rules)
 
 install(
   FILES ${dpct_cmake_rule_files}
-  COMPONENT dpct-cmake-rules
+  COMPONENT dpct-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/cmake_rules)
 
 install(
   FILES ${dpct_python_rule_files}
-  COMPONENT dpct-python-rules
+  COMPONENT dpct-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/python_rules)
 
 install(
   FILES ${dpct_pytorch_api_rule_files}
-  COMPONENT dpct-pytorch-api-rules
+  COMPONENT dpct-rules
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION ./extensions/pytorch_api_rule_rules)
 
 if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
-  add_llvm_install_targets(install-dpct-opt-rules
-                           COMPONENT dpct-opt-rules)
-  add_llvm_install_targets(install-dpct-cmake-rules
-                           COMPONENT dpct-cmake-rules)
-  add_llvm_install_targets(install-dpct-python-rules
-                           COMPONENT dpct-python-rules)
-  add_llvm_install_targets(install-dpct-pytorch-api-rules
-                           COMPONENT dpct-pytorch-api-rules)
+  add_llvm_install_targets(install-dpct-rules
+                           COMPONENT dpct-rules)
 endif()
