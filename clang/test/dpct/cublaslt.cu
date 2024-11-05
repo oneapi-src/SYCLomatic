@@ -174,12 +174,16 @@ void foo3() {
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::rows;
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::cols;
   // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::ld;
+  // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::batch_count;
+  // CHECK-NEXT: c = dpct::blas_gemm::experimental::matrix_layout_t::attribute::strided_batch_offset;
   cublasLtMatrixLayoutAttribute_t c;
   c = CUBLASLT_MATRIX_LAYOUT_TYPE;
   c = CUBLASLT_MATRIX_LAYOUT_ORDER;
   c = CUBLASLT_MATRIX_LAYOUT_ROWS;
   c = CUBLASLT_MATRIX_LAYOUT_COLS;
   c = CUBLASLT_MATRIX_LAYOUT_LD;
+  c = CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT;
+  c = CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET;
   // CHECK: dpct::blas_gemm::experimental::matmul_desc_t::attribute d;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::compute_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::scale_type;
@@ -190,6 +194,8 @@ void foo3() {
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::trans_b;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::trans_c;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_ld;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::a_scale_pointer;
@@ -210,6 +216,8 @@ void foo3() {
   d = CUBLASLT_MATMUL_DESC_TRANSB;
   d = CUBLASLT_MATMUL_DESC_TRANSC;
   d = CUBLASLT_MATMUL_DESC_EPILOGUE;
+  d = CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD;
+  d = CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER;
   d = CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET;
   d = CUBLASLT_MATMUL_DESC_FAST_ACCUM;
   d = CUBLASLT_MATMUL_DESC_A_SCALE_POINTER;
