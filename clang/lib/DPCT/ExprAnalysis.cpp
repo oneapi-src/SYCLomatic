@@ -13,7 +13,7 @@
 #include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "Config.h"
-#include "DNN/DNNAPIMigration.h"
+#include "RulesDNN/DNNAPIMigration.h"
 #include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"

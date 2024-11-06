@@ -159,12 +159,12 @@ add_clang_library(DPCT
   CallExprRewriterGraphicsInterop.cpp
   CallExprRewriterMemory.cpp
   CallExprRewriterMisc.cpp
-  CCL/CallExprRewriterNccl.cpp
+  RulesCCL/CallExprRewriterNccl.cpp
   CallExprRewriterStream.cpp
   CallExprRewriterTexture.cpp
   CallExprRewriterThrust.cpp
   CallExprRewriterWarp.cpp
-  DNN/CallExprRewriterCUDNN.cpp
+  RulesDNN/CallExprRewriterCUDNN.cpp
   CallExprRewriterErrorHandling.cpp
   CallExprRewriterLIBCU.cpp
   CallExprRewriterEvent.cpp
@@ -199,17 +199,17 @@ add_clang_library(DPCT
   BarrierFenceSpaceAnalyzer.cpp
   BLASAPIMigration.cpp
   FFTAPIMigration.cpp
-  DNN/DNNAPIMigration.cpp
-  CCL/NCCLAPIMigration.cpp
+  RulesDNN/DNNAPIMigration.cpp
+  RulesCCL/NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
   AutoComplete.cpp
-  Asm/AsmMigration.cpp
+  RulesAsm/AsmMigration.cpp
   APIMapping/QueryAPIMapping.cpp
-  Asm/Parser/AsmNodes.cpp
-  Asm/Parser/AsmLexer.cpp
-  Asm/Parser/AsmParser.cpp
-  Asm/Parser/AsmIdentifierTable.cpp
-  Asm/Parser/AsmTokenKinds.cpp
+  RulesAsm/Parser/AsmNodes.cpp
+  RulesAsm/Parser/AsmLexer.cpp
+  RulesAsm/Parser/AsmParser.cpp
+  RulesAsm/Parser/AsmIdentifierTable.cpp
+  RulesAsm/Parser/AsmTokenKinds.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
   MemberExprRewriter.cpp

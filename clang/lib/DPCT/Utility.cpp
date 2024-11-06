@@ -10,7 +10,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
-#include "DNN/DNNAPIMigration.h"
+#include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "GenFiles.h"

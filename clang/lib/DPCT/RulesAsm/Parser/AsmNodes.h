@@ -32,7 +32,7 @@ using llvm::SmallVector;
 
 enum class InstAttr {
 #define MODIFIER(X, Y) X,
-#include "Asm/Parser/AsmTokenKinds.def"
+#include "RulesAsm/Parser/AsmTokenKinds.def"
 };
 
 enum class AsmStateSpace {
@@ -268,7 +268,7 @@ public:
 #define STMT_RANGE(BASE, FIRST, LAST)                                          \
   first##BASE##Constant = FIRST##Class, last##BASE##Constant = LAST##Class,
 #define ABSTRACT_STMT(STMT)
-#include "Asm/Parser/AsmNodes.def"
+#include "RulesAsm/Parser/AsmNodes.def"
   };
 
   InlineAsmStmt(const InlineAsmStmt &) = delete;
