@@ -13,10 +13,11 @@
 #include "MigrateCmakeScript.h"
 #include "MigratePythonBuildScript.h"
 #include "MigrationRuleManager.h"
-#include "NCCLAPIMigration.h"
 #include "TypeLocRewriters.h"
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
+
+using namespace clang::ast_matchers;
 
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
