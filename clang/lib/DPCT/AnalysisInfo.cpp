@@ -1129,7 +1129,8 @@ DpctGlobalInfo::MacroArgRecord::MacroArgRecord(const MacroInfo *MI,
     : ArgIndex(ArgIndex) {
   ArgName = MI->params()[ArgIndex]->getName().str();
   for (auto Tok : MI->tokens()) {
-    if (Tok.getIdentifierInfo() == MI->params()[ArgIndex]) {
+    auto II = Tok.getIdentifierInfo();
+    if (II && (II == MI->params()[ArgIndex])) {
       ArgLoc = Tok.getLocation();
       break;
     }
@@ -2848,6 +2849,43 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
 
+// This function, `migrateWithDeviceGlobal`, migrates a CUDA `__device__` or
+// `__constant__` variable declaration to the SYCL device global equivalent. The
+// migration process involves four key steps. The function handles various
+// transformations as follows:
+//
+// 1. Remove any array brackets following the variable name.
+//    - It identifies the array type using TypeLoc and removes the brackets
+//    while preserving the dimensions for later use.
+//    - If the array size comes from a macro argument, it maps the macro
+//    argument correctly using the `MacroArgRecord`.
+// 2. Process the initialization expression.
+//    - If the initialization style is C-style (with an equals sign), it remove
+//    the equals sign and adds braces around scalar initializers to use
+//    initializer list in SYCL.
+// 3. Replace the variable type.
+//    - Replace the origin type with
+//    `sycl::ext::oneapi::experimental::device_global`
+//      and the correct base type and dimensions.
+//    - It manages macro arguments to correctly replace the base type when
+//    required.
+// 4. Insert the `static` specifier if the variable is declared globally and
+//    does not already have the `static` storage class.
+//
+// Example1 (Specifier __device__ will be removed in preprocessor callbacks):
+// __device__ int var_a[3] = {1, 2, 3};
+// 1. int var_a = {1, 2, 3};
+// 2. int var_a {1, 2, 3};
+// 3. sycl::ext::oneapi::experimental::device_global<int[3]> var_a {1, 2, 3};
+// 4. static sycl::ext::oneapi::experimental::device_global<int[3]> var_a {1, 2,
+// 3};
+//
+// Example2 (Specifier __device__ will be removed in preprocessor callbacks):
+// __device__ int var_b = 1;
+// 1. int var = 1;
+// 2. int var {1};
+// 3. sycl::ext::oneapi::experimental::device_global<int> var_b {1};
+// 4. static sycl::ext::oneapi::experimental::device_global<int> var_b {1};
 void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &Ctx = DpctGlobalInfo::getContext();
@@ -2862,7 +2900,7 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
   auto LocInfo = DpctGlobalInfo::getLocInfo(BegLoc);
   std::string Dims;
   bool IsArray = OriginTL.getType()->isArrayType();
-  // 1.Remove bracket after var name
+  // Step 1
   while (auto ATL = TL.getAs<clang::ArrayTypeLoc>()) {
     auto BRange = ATL.getBracketsRange();
     BRange = getDefinitionRange(BRange.getBegin(), BRange.getEnd());
@@ -2893,7 +2931,7 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
     Dims += SizeStr + "]";
     TL = ATL.getElementLoc();
   }
-  // 2.Process init expression
+  // Step 2
   if (MemVar->hasInit()) {
     if ((MemVar->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
       DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
@@ -2915,7 +2953,7 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
       }
     }
   }
-  // 3.Replace var type
+  // Step 3
   std::string BaseTypeStr;
   SourceLocation TypeReplLoc;
   size_t TypeReplLen = 0;
@@ -2946,6 +2984,7 @@ void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
                         BaseTypeStr + Dims + ">";
   auto RT = ReplaceText(TypeReplLoc, TypeReplLen, std::move(TypeStr));
   DpctGlobalInfo::getInstance().addReplacement(RT.getReplacement(Ctx));
+  // Step 4
   if (MemVar->getStorageClass() != SC_Static && getScope() == Global) {
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(LocInfo.first, LocInfo.second, 0,

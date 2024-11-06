@@ -633,7 +633,15 @@ public:
     bool IsInAnalysisScope;
     MacroDefRecord(SourceLocation NTL, bool IIAS);
   };
-
+  // This class is used to store information about macro arguments in a
+  // macro definition. For example, consider the macro definition:
+  // "#define CALL(x, y) x(y)".
+  // - For the first argument "x", the member ArgName will be "x", ArgLoc will
+  // be the source location of the token "x" in the macro definition, and
+  // ArgIndex will be 0.
+  // - For the second argument "y", the member ArgName will be "y", ArgLoc will
+  // be the source location of the token "y" in the macro definition, and
+  // ArgIndex will be 1.
   class MacroArgRecord {
   public:
     std::string ArgName;
@@ -1580,6 +1588,8 @@ private:
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
+  // key: The hash string of the location of function-like macro argument
+  // value: Function-like macro argument information
   static std::unordered_map<std::string,
                             std::shared_ptr<DpctGlobalInfo::MacroArgRecord>>
       MacroArgRecordMap;
