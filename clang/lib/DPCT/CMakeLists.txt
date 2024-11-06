@@ -177,7 +177,7 @@ add_clang_library(DPCT
   ExprAnalysis.cpp
   ExtReplacements.cpp
   MapNames.cpp
-  SaveNewFiles.cpp
+  GenFiles.cpp
   DPCT.cpp
   DpctOptions.cpp
   TextModification.cpp
@@ -203,13 +203,13 @@ add_clang_library(DPCT
   NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
   AutoComplete.cpp
-  AsmMigration.cpp
+  Asm/AsmMigration.cpp
   APIMapping/QueryAPIMapping.cpp
-  Asm/AsmNodes.cpp
-  Asm/AsmLexer.cpp
-  Asm/AsmParser.cpp
-  Asm/AsmIdentifierTable.cpp
-  Asm/AsmTokenKinds.cpp
+  Asm/Parser/AsmNodes.cpp
+  Asm/Parser/AsmLexer.cpp
+  Asm/Parser/AsmParser.cpp
+  Asm/Parser/AsmIdentifierTable.cpp
+  Asm/Parser/AsmTokenKinds.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
   MemberExprRewriter.cpp

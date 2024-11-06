@@ -15,7 +15,7 @@
 #include "InclusionHeaders.h"
 #include "LibraryAPIMigration.h"
 #include "Rules.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"

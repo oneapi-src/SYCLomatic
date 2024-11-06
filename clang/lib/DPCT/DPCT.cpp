@@ -26,7 +26,7 @@
 #include "MisleadingBidirectional.h"
 #include "PatternRewriter.h"
 #include "Rules.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 #include "Statics.h"
 #include "TypeLocRewriters.h"
 #include "Utility.h"

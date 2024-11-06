@@ -10,7 +10,7 @@
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
 #include "DNNAPIMigration.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 #include <map>
 
 using namespace clang;

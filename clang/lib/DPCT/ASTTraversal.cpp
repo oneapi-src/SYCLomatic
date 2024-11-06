@@ -8,7 +8,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "AsmMigration.h"
+#include "Asm/AsmMigration.h"
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
@@ -24,7 +24,7 @@
 #include "MisleadingBidirectional.h"
 #include "NCCLAPIMigration.h"
 #include "OptimizeMigration.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 #include "SpBLASAPIMigration.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"

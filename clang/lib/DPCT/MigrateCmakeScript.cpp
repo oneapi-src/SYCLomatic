@@ -9,7 +9,7 @@
 #include "Diagnostics.h"
 #include "Error.h"
 #include "PatternRewriter.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 #include "Statics.h"
 #include "Utility.h"
 
