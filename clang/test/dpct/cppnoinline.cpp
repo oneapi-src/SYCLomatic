@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/cppnoinline %s --cuda-include-path="%cuda-path/include" -- --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/cppnoinline %s --cuda-include-path="%cuda-path/include" -- -xc++
 // RUN: FileCheck %s --match-full-lines --input-file %T/cppnoinline/cppnoinline.cpp.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/cppnoinline/cppnoinline.cpp.dp.cpp -o %T/cppnoinline/cppnoinline.cpp.dp.o %}
 
