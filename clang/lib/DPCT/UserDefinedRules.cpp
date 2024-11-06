@@ -1,11 +1,11 @@
-//===--------------- Rules.cpp --------------------------------------------===//
+//===--------------- UserDefinedRules.cpp --------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "Rules.h"
+#include "UserDefinedRules.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
 #include "Error.h"
@@ -13,10 +13,11 @@
 #include "MigrateCmakeScript.h"
 #include "MigratePythonBuildScript.h"
 #include "MigrationRuleManager.h"
-#include "NCCLAPIMigration.h"
 #include "TypeLocRewriters.h"
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
+
+using namespace clang::ast_matchers;
 
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;

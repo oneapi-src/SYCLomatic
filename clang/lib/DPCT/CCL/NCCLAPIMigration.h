@@ -22,7 +22,13 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-}
-}
+class ManualMigrateEnumsRule
+    : public NamedMigrationRule<ManualMigrateEnumsRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
 
+}
+};
 #endif

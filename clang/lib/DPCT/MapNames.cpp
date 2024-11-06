@@ -9,8 +9,8 @@
 #include "MapNames.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
-#include "DNNAPIMigration.h"
-#include "SaveNewFiles.h"
+#include "DNN/DNNAPIMigration.h"
+#include "GenFiles.h"
 #include <map>
 
 using namespace clang;
@@ -1954,25 +1954,39 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_ORDER_COL32",
        getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col32"},
       {"CUBLASLT_ORDER_COL4_4R2_8C",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col4_4r2_8c"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::order_t::col4_4r2_8c"},
       {"CUBLASLT_ORDER_COL32_2R_4R4",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col32_2r_4r4"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::order_t::col32_2r_4r4"},
       {"CUBLASLT_POINTER_MODE_HOST",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::host"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::host"},
       {"CUBLASLT_POINTER_MODE_DEVICE",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::device"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::device"},
       {"CUBLASLT_POINTER_MODE_DEVICE_VECTOR",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::pointer_mode_t::device_vector"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_ZERO",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
-                            "device_vector_beta_zero"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::alpha_"
+           "device_vector_beta_zero"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_HOST",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
-                            "device_vector_beta_host"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::alpha_"
+           "device_vector_beta_host"},
       {"CUBLASLT_MATRIX_LAYOUT_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::type"},
+      {"CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matrix_layout_t::"
+           "attribute::batch_count"},
+      {"CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matrix_layout_t::"
+           "attribute::strided_batch_offset"},
       {"CUBLASLT_MATRIX_LAYOUT_ORDER",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::order"},
@@ -1991,6 +2005,12 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_MATMUL_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::scale_type"},
+      {"CUBLASLT_MATMUL_DESC_BIAS_DATA_TYPE",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::bias_type"},
+      {"CUBLASLT_MATMUL_DESC_BIAS_POINTER",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::bias_pointer"},
       {"CUBLASLT_MATMUL_DESC_POINTER_MODE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::pointer_mode"},
@@ -2006,6 +2026,12 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_MATMUL_DESC_EPILOGUE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::epilogue"},
+      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD",
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::"
+                                     "attribute::epilogue_aux_ld"},
+      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER",
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::"
+                                     "attribute::epilogue_aux_pointer"},
       {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
@@ -2013,17 +2039,21 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_MATMUL_DESC_A_SCALE_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":a_scale_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":a_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_B_SCALE_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":b_scale_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":b_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_D_SCALE_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":d_scale_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":d_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_AMAX_D_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":absmax_d_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":absmax_d_pointer"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
@@ -2037,15 +2067,18 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_EPILOGUE_DEFAULT",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::nop"},
       {"CUBLASLT_EPILOGUE_RELU",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::relu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_POINTER_MODE",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_t::"
-                            "attribute::pointer_mode"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::transform_desc_t::"
+           "attribute::pointer_mode"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_a"},
@@ -2059,7 +2092,8 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLAS_COMPUTE_32F", getLibraryHelperNamespace() + "compute_type::f32"},
       {"CUBLAS_COMPUTE_32F_PEDANTIC",
        getLibraryHelperNamespace() + "compute_type::f32_standard"},
-      {"CUBLAS_COMPUTE_32F_FAST_16F", getLibraryHelperNamespace() + "compute_type::f32"},
+      {"CUBLAS_COMPUTE_32F_FAST_16F",
+       getLibraryHelperNamespace() + "compute_type::f32"},
       {"CUBLAS_COMPUTE_32F_FAST_16BF",
        getLibraryHelperNamespace() + "compute_type::f32_fast_bf16"},
       {"CUBLAS_COMPUTE_32F_FAST_TF32",
