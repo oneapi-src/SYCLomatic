@@ -25,7 +25,7 @@
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "PatternRewriter.h"
-#include "Rules.h"
+#include "UserDefinedRules.h"
 #include "GenFiles.h"
 #include "Statics.h"
 #include "TypeLocRewriters.h"

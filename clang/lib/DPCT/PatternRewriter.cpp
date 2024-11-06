@@ -11,7 +11,7 @@
 #include "Diagnostics.h"
 #include "MigrateCmakeScript.h"
 #include "MigratePythonBuildScript.h"
-#include "Rules.h"
+#include "UserDefinedRules.h"
 #include "GenFiles.h"
 
 #include "llvm/ADT/StringRef.h"

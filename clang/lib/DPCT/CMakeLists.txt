@@ -189,7 +189,7 @@ add_clang_library(DPCT
   GenMakefile.cpp
   InclusionHeaders.cpp
   IncrementalMigrationUtility.cpp
-  Rules.cpp
+  UserDefinedRules.cpp
   PatternRewriter.cpp
   MigrateBuildScript.cpp
   MigrateCmakeScript.cpp

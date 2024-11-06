@@ -14,7 +14,7 @@
 #include "ExtReplacements.h"
 #include "InclusionHeaders.h"
 #include "LibraryAPIMigration.h"
-#include "Rules.h"
+#include "UserDefinedRules.h"
 #include "GenFiles.h"
 #include "Statics.h"
 #include "TextModification.h"
