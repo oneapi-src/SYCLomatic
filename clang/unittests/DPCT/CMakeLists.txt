@@ -3,7 +3,7 @@ set(LLVM_LINK_COMPONENTS
   )
 
 add_clang_unittest(DpctTests
-  SaveNewFilesTest.cpp
+  GenFilesTest.cpp
   ValidateArgumentsTest.cpp
   AnalysisInfoTest.cpp
   )
