@@ -2,11 +2,13 @@
 // CHECK: #ifndef CU_FILE
 // CHECK-NEXT: #include <cstdio>
 // CHECK-NEXT: #else
+// CHECK-NEXT: #include <sycl/sycl.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <iostream>
 // CHECK-NEXT: #endif
 // CHECK-EMPTY:
-// CHECK-NEXT: typedef class dpct_type_798840 {
-// CHECK-NEXT:     unsigned i;
+// CHECK-NEXT: typedef struct dpct_type_{{[0-9]+}} {
+// CHECK-NEXT:   unsigned i;
 // CHECK-NEXT: } T1;
 // CHECK-EMPTY:
 // CHECK-NEXT: #ifdef CU_FILE

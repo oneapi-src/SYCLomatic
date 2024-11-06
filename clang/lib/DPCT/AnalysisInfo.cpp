@@ -812,16 +812,18 @@ bool DpctFileInfo::isInAnalysisScope() {
   return DpctGlobalInfo::isInAnalysisScope(FilePath);
 }
 void DpctFileInfo::setFileEnterOffset(unsigned Offset) {
-  if (!HasInclusionDirective) {
-    FirstIncludeOffset[DpctGlobalInfo::getInstance().getMainFile()] = Offset;
+  auto MF = DpctGlobalInfo::getInstance().getMainFile();
+  if (!HasInclusionDirectiveSet.count(MF)) {
+    FirstIncludeOffset[MF] = Offset;
     LastIncludeOffset = Offset;
   }
 }
 void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
-  if (!HasInclusionDirective) {
-    FirstIncludeOffset[DpctGlobalInfo::getInstance().getMainFile()] = Offset;
+  auto MF = DpctGlobalInfo::getInstance().getMainFile();
+  if (!HasInclusionDirectiveSet.count(MF)) {
+    FirstIncludeOffset[MF] = Offset;
     LastIncludeOffset = Offset;
-    HasInclusionDirective = true;
+    HasInclusionDirectiveSet.insert(MF);
   }
 }
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
