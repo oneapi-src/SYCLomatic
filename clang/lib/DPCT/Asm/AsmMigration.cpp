@@ -8,9 +8,9 @@
 
 #include "AsmMigration.h"
 #include "AnalysisInfo.h"
-#include "Asm/AsmNodes.h"
-#include "Asm/AsmParser.h"
-#include "Asm/AsmTokenKinds.h"
+#include "Asm/Parser/AsmNodes.h"
+#include "Asm/Parser/AsmParser.h"
+#include "Asm/Parser/AsmTokenKinds.h"
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
@@ -274,7 +274,7 @@ protected:
   virtual bool handle_##X(const InlineAsmInstruction *I) {                     \
     return SYCLGenError();                                                     \
   }
-#include "Asm/AsmTokenKinds.def"
+#include "Asm/Parser/AsmTokenKinds.def"
 };
 
 bool SYCLGenBase::emitStmt(const InlineAsmStmt *S) {
@@ -283,7 +283,7 @@ bool SYCLGenBase::emitStmt(const InlineAsmStmt *S) {
   case InlineAsmStmt::CLASS##Class:                                            \
     return emit##CLASS(dyn_cast<InlineAsm##CLASS>(S));
 #define ABSTRACT_STMT(STMT)
-#include "Asm/AsmNodes.def"
+#include "Asm/Parser/AsmNodes.def"
   }
   return SYCLGenError();
 }
@@ -329,7 +329,7 @@ bool SYCLGenBase::emitInstruction(const InlineAsmInstruction *I) {
 #define INSTRUCTION(X)                                                         \
   case asmtok::op_##X:                                                         \
     return handle_##X(I);
-#include "Asm/AsmTokenKinds.def"
+#include "Asm/Parser/AsmTokenKinds.def"
   default:
     break;
   }

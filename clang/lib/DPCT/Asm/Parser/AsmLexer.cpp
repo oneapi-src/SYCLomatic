@@ -7,9 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "AsmLexer.h"
-#include "Asm/AsmIdentifierTable.h"
-#include "Asm/AsmToken.h"
-#include "Asm/AsmTokenKinds.h"
+#include "Asm/Parser/AsmIdentifierTable.h"
+#include "Asm/Parser/AsmToken.h"
+#include "Asm/Parser/AsmTokenKinds.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Basic/TokenKinds.h"
