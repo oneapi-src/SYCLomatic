@@ -586,7 +586,7 @@ private:
   clang::tooling::UnifiedPath FilePath;
   std::string FileContentCache;
 
-  unsigned FirstIncludeOffset = 0;
+  std::map<std::shared_ptr<DpctFileInfo> /*Mainfile*/, unsigned> FirstIncludeOffset;
   unsigned LastIncludeOffset = 0;
   const unsigned FileBeginOffset = 0;
   bool HasInclusionDirective = false;

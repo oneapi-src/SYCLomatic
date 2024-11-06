@@ -813,13 +813,13 @@ bool DpctFileInfo::isInAnalysisScope() {
 }
 void DpctFileInfo::setFileEnterOffset(unsigned Offset) {
   if (!HasInclusionDirective) {
-    FirstIncludeOffset = Offset;
+    FirstIncludeOffset[DpctGlobalInfo::getInstance().getMainFile()] = Offset;
     LastIncludeOffset = Offset;
   }
 }
 void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
   if (!HasInclusionDirective) {
-    FirstIncludeOffset = Offset;
+    FirstIncludeOffset[DpctGlobalInfo::getInstance().getMainFile()] = Offset;
     LastIncludeOffset = Offset;
     HasInclusionDirective = true;
   }
@@ -852,9 +852,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                                 ReplacementType IsForCodePin) {
   if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_SYCL) {
     if (auto MF = DpctGlobalInfo::getInstance().getMainFile())
-      if (this != MF.get())
+      if (this != MF.get() && FirstIncludeOffset.count(MF)) {
         DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            Type, FirstIncludeOffset);
+            Type, FirstIncludeOffset.at(MF));
+      }
   }
   if (HeaderInsertedBitMap[Type])
     return;
@@ -876,8 +877,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
     concatHeader(OS, getHeaderSpelling(Type));
-    return insertHeader(OS.str(), FirstIncludeOffset,
-                        InsertPosition::IP_AlwaysLeft);
+    if (auto Iter = FirstIncludeOffset.find(
+            DpctGlobalInfo::getInstance().getMainFile());
+        Iter != FirstIncludeOffset.end())
+      insertHeader(OS.str(), Iter->second, InsertPosition::IP_AlwaysLeft);
+    return;
   case HT_SYCL:
     // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
     // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
@@ -923,7 +927,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
            << DpctGlobalInfo::getGlobalQueueName() << ";" << getNL();
       }
     }
-    insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+    if (auto Iter = FirstIncludeOffset.find(
+            DpctGlobalInfo::getInstance().getMainFile());
+        Iter != FirstIncludeOffset.end())
+      insertHeader(OS.str(), Iter->second, InsertPosition::IP_Left);
     if (!RTVersionValue.empty())
       MigratedMacroDefinitionOS << "#define DPCT_COMPAT_RT_VERSION "
                                 << RTVersionValue << getNL();
@@ -940,8 +947,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                  InsertPosition::IP_AlwaysLeft);
     for (const auto &File :
          DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes()) {
-      insertHeader("#include \"" + File + +"\"" + getNL(), FirstIncludeOffset,
-                   InsertPosition::IP_Right);
+      if (auto Iter = FirstIncludeOffset.find(
+              DpctGlobalInfo::getInstance().getMainFile());
+          Iter != FirstIncludeOffset.end())
+        insertHeader("#include \"" + File + +"\"" + getNL(), Iter->second,
+                     InsertPosition::IP_Right);
     }
     return;
 
@@ -993,14 +1003,20 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     }
     SchemaRelativePath += "codepin_autogen_util.hpp\"";
     concatHeader(OS, SchemaRelativePath);
-    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
-                        IsForCodePin);
+    if (auto Iter = FirstIncludeOffset.find(
+            DpctGlobalInfo::getInstance().getMainFile());
+        Iter != FirstIncludeOffset.end())
+      insertHeader(OS.str(), Iter->second, InsertPosition::IP_Right,
+                   IsForCodePin);
+    return;
   } break;
   default:
     break;
   }
 
-  if (Offset != FirstIncludeOffset)
+  if (FirstIncludeOffset.count(DpctGlobalInfo::getInstance().getMainFile()) &&
+      Offset !=
+          FirstIncludeOffset.at(DpctGlobalInfo::getInstance().getMainFile()))
     OS << getNL();
   concatHeader(OS, getHeaderSpelling(Type));
   return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
