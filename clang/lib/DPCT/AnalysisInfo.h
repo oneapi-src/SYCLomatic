@@ -1919,7 +1919,7 @@ public:
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
   void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
   bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
-  void migrateWithDeviceGlobal(const VarDecl *MemVar);
+  void migrateToDeviceGlobal(const VarDecl *MemVar);
 
 private:
   bool isTreatPointerAsArray() {

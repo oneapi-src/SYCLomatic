@@ -8790,7 +8790,7 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      Info->migrateWithDeviceGlobal(MemVar);
+      Info->migrateToDeviceGlobal(MemVar);
       return;
     }
 
@@ -9241,7 +9241,7 @@ void MemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      Info->migrateWithDeviceGlobal(MemVar);
+      Info->migrateToDeviceGlobal(MemVar);
       return;
     }
 

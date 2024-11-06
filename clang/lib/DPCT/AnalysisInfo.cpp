@@ -2849,7 +2849,7 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
 
-// This function, `migrateWithDeviceGlobal`, migrates a CUDA `__device__` or
+// This function, `migrateToDeviceGlobal`, migrates a CUDA `__device__` or
 // `__constant__` variable declaration to the SYCL device global equivalent. The
 // migration process involves four key steps. The function handles various
 // transformations as follows:
@@ -2886,7 +2886,7 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 // 2. int var {1};
 // 3. sycl::ext::oneapi::experimental::device_global<int> var_b {1};
 // 4. static sycl::ext::oneapi::experimental::device_global<int> var_b {1};
-void MemVarInfo::migrateWithDeviceGlobal(const VarDecl *MemVar) {
+void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &Ctx = DpctGlobalInfo::getContext();
   auto &MacroArgMap = DpctGlobalInfo::getMacroArgRecordMap();
