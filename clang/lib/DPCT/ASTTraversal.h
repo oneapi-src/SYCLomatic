@@ -10,7 +10,7 @@
 #define DPCT_AST_TRAVERSAL_H
 
 #include "AnalysisInfo.h"
-#include "CrashRecovery.h"
+#include "ErrorHandle/CrashRecovery.h"
 #include "Diagnostics.h"
 #include "RulesMathLib/FFTAPIMigration.h"
 #include "RulesInclude/InclusionHeaders.h"

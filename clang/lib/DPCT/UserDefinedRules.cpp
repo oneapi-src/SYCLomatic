@@ -8,7 +8,7 @@
 #include "UserDefinedRules.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
-#include "Error.h"
+#include "ErrorHandle/Error.h"
 #include "MapNames.h"
 #include "MigrateScript/MigrateCmakeScript.h"
 #include "MigrateScript/MigratePythonBuildScript.h"
