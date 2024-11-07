@@ -90,8 +90,3 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
            "Intel(R) oneAPI Collective Communications Library");
   }
 }
-
-REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration,
-              RuleGroupKind::RK_NCCL)
-
-REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)

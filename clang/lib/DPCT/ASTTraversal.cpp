@@ -15058,3 +15058,8 @@ void GraphicsInteropRule::runRule(
 }
 
 REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
+
+REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_NCCL)
+
+REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
