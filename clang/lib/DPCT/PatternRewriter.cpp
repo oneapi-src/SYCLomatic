@@ -9,8 +9,8 @@
 #include "PatternRewriter.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
-#include "MigrateCmakeScript.h"
-#include "MigratePythonBuildScript.h"
+#include "MigrateScript/MigrateCmakeScript.h"
+#include "MigrateScript/MigratePythonBuildScript.h"
 #include "UserDefinedRules.h"
 #include "GenFiles.h"
 

@@ -49,7 +49,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMemory() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesMemory.inc"
+#include "RulesLang/APINamesMemory.inc"
       }));
       // clang-format on
 }

@@ -6,7 +6,7 @@
 //
 //===------------------------------------------------------------------===//
 
-#include "WMMAAPIMigration.h"
+#include "RulesLang/WMMAAPIMigration.h"
 #include "ExprAnalysis.h"
 
 using namespace clang::dpct;

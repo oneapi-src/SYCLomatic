@@ -1,4 +1,4 @@
-//===--------------- CallExprRewriterAtomic.cpp ---------------------------===//
+//===--------------- CallExprRewriterEvent.cpp ----------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -11,14 +11,12 @@
 
 namespace clang {
 namespace dpct {
-// clang-format off
-void CallExprRewriterFactoryBase::initRewriterMapAtomic() {
+void CallExprRewriterFactoryBase::initRewriterMapEvent() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesAtomic.inc"
+#include "RulesLang/APINamesEvent.inc"
       }));
-      // clang-format on
 }
 
 } // namespace dpct

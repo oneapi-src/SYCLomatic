@@ -1,4 +1,4 @@
-//===--------------- CallExprRewriterEvent.cpp ----------------------------===//
+//===--------------- CallExprRewriterGraph.cpp ----------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -11,11 +11,12 @@
 
 namespace clang {
 namespace dpct {
-void CallExprRewriterFactoryBase::initRewriterMapEvent() {
+
+void CallExprRewriterFactoryBase::initRewriterMapGraph() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesEvent.inc"
+#include "RulesLang/APINamesGraph.inc"
       }));
 }
 

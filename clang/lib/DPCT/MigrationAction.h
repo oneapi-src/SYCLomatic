@@ -13,7 +13,7 @@
 #include "clang/Tooling/Tooling.h"
 
 #include "ASTTraversal.h"
-#include "MisleadingBidirectional.h"
+#include "RulesSecurity/MisleadingBidirectional.h"
 
 namespace clang {
 namespace dpct {

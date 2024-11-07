@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "MigrateBuildScript.h"
+#include "MigrateScript/MigrateBuildScript.h"
 #include "PatternRewriter.h"
 #include "Utility.h"
 
