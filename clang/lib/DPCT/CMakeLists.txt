@@ -148,11 +148,11 @@ add_clang_library(DPCT
   Rewriters/RewriterSYCLcompat.cpp
   CallExprRewriter.cpp
   CallExprRewriterAtomic.cpp
-  CallExprRewriterCUFFT.cpp
-  CallExprRewriterCUBLAS.cpp
-  CallExprRewriterCURAND.cpp
-  CallExprRewriterCUSOLVER.cpp
-  CallExprRewriterCUSPARSE.cpp
+  RulesMathLib/CallExprRewriterCUFFT.cpp
+  RulesMathLib/CallExprRewriterCUBLAS.cpp
+  RulesMathLib/CallExprRewriterCURAND.cpp
+  RulesMathLib/CallExprRewriterCUSOLVER.cpp
+  RulesMathLib/CallExprRewriterCUSPARSE.cpp
   CallExprRewriterComplex.cpp
   CallExprRewriterDriver.cpp
   CallExprRewriterGraph.cpp
@@ -166,7 +166,7 @@ add_clang_library(DPCT
   CallExprRewriterWarp.cpp
   RulesDNN/CallExprRewriterCUDNN.cpp
   CallExprRewriterErrorHandling.cpp
-  CallExprRewriterLIBCU.cpp
+  RulesLangLib/CallExprRewriterLIBCU.cpp
   CallExprRewriterEvent.cpp
   CallExprRewriterCG.cpp
   CallExprRewriterWmma.cpp
@@ -197,8 +197,8 @@ add_clang_library(DPCT
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp
-  BLASAPIMigration.cpp
-  FFTAPIMigration.cpp
+  RulesMathLib/BLASAPIMigration.cpp
+  RulesMathLib/FFTAPIMigration.cpp
   RulesDNN/DNNAPIMigration.cpp
   RulesCCL/NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
@@ -210,7 +210,7 @@ add_clang_library(DPCT
   RulesAsm/Parser/AsmParser.cpp
   RulesAsm/Parser/AsmIdentifierTable.cpp
   RulesAsm/Parser/AsmTokenKinds.cpp
-  LIBCUAPIMigration.cpp
+  RulesLangLib/LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
   MemberExprRewriter.cpp
   MigrationRuleManager.cpp
@@ -220,7 +220,7 @@ add_clang_library(DPCT
   WMMAAPIMigration.cpp
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
-  SpBLASAPIMigration.cpp
+  RulesMathLib/SpBLASAPIMigration.cpp
   GenCodePinHeader.cpp
 
   DEPENDS
