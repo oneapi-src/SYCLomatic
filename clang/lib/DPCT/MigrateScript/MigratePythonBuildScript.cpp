@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 #include "MigratePythonBuildScript.h"
 #include "Diagnostics.h"
-#include "Error.h"
+#include "ErrorHandle/Error.h"
 #include "PatternRewriter.h"
 #include "GenFiles.h"
 #include "Statics.h"

@@ -15,7 +15,7 @@
 #include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "RulesMathLib/FFTAPIMigration.h"
-#include "GenCodePinHeader.h"
+#include "CodePin/GenCodePinHeader.h"
 #include "GroupFunctionAnalyzer.h"
 #include "RulesSecurity/Homoglyph.h"
 #include "RulesLangLib/LIBCUAPIMigration.h"

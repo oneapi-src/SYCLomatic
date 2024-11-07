@@ -170,9 +170,9 @@ add_clang_library(DPCT
   RulesLang/CallExprRewriterEvent.cpp
   RulesLang/CallExprRewriterCG.cpp
   RulesLang/CallExprRewriterWmma.cpp
-  CrashRecovery.cpp
+  ErrorHandle/CrashRecovery.cpp
   Diagnostics.cpp
-  Error.cpp
+  ErrorHandle/Error.cpp
   Statics.cpp
   ExprAnalysis.cpp
   ExtReplacements.cpp
@@ -202,7 +202,7 @@ add_clang_library(DPCT
   RulesDNN/DNNAPIMigration.cpp
   RulesCCL/NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
-  AutoComplete.cpp
+  AutoComplete/AutoComplete.cpp
   RulesAsm/AsmMigration.cpp
   APIMapping/QueryAPIMapping.cpp
   RulesAsm/Parser/AsmNodes.cpp
@@ -221,7 +221,7 @@ add_clang_library(DPCT
   OptimizeMigration.cpp
   GroupFunctionAnalyzer.cpp
   RulesMathLib/SpBLASAPIMigration.cpp
-  GenCodePinHeader.cpp
+  CodePin/GenCodePinHeader.cpp
 
   DEPENDS
   ClangDriverOptions

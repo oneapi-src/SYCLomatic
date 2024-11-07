@@ -8,7 +8,7 @@
 
 #include "GenFiles.h"
 #include "AnalysisInfo.h"
-#include "CrashRecovery.h"
+#include "ErrorHandle/CrashRecovery.h"
 #include "Diagnostics.h"
 #include "ExternalReplacement.h"
 #include "MigrateScript/GenMakefile.h"
