@@ -397,6 +397,7 @@ public:
   // Header inclusion directive insertion functions
   void setFileEnterOffset(unsigned Offset);
   void setFirstIncludeOffset(unsigned Offset);
+  unsigned getFirstIncludeOffset();
   void setLastIncludeOffset(unsigned Offset) { LastIncludeOffset = Offset; }
   void setHeaderInserted(HeaderType Header) {
     HeaderInsertedBitMap[Header] = true;
@@ -586,10 +587,11 @@ private:
   clang::tooling::UnifiedPath FilePath;
   std::string FileContentCache;
 
-  unsigned FirstIncludeOffset = 0;
+  std::map<std::shared_ptr<DpctFileInfo> /*Mainfile*/, unsigned>
+      FirstIncludeOffset;
   unsigned LastIncludeOffset = 0;
   const unsigned FileBeginOffset = 0;
-  bool HasInclusionDirective = false;
+  std::set<std::shared_ptr<DpctFileInfo> /*Mainfile*/> HasInclusionDirectiveSet;
   std::vector<std::string> InsertedHeaders;
   std::vector<std::string> InsertedHeadersCUDA;
   std::bitset<32> HeaderInsertedBitMap;
