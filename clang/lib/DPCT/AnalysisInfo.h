@@ -9,7 +9,7 @@
 #ifndef DPCT_ANALYSIS_INFO_H
 #define DPCT_ANALYSIS_INFO_H
 
-#include "Error.h"
+#include "ErrorHandle/Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
 #include "RulesInclude/InclusionHeaders.h"

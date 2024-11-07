@@ -6,9 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CrashRecovery.h"
+#include "ErrorHandle/CrashRecovery.h"
 
-#include "Error.h"
+#include "ErrorHandle/Error.h"
 #include "Utility.h"
 
 #include "clang/Tooling/Tooling.h"

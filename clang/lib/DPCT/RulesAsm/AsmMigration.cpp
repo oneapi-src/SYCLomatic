@@ -11,7 +11,7 @@
 #include "RulesAsm/Parser/AsmNodes.h"
 #include "RulesAsm/Parser/AsmParser.h"
 #include "RulesAsm/Parser/AsmTokenKinds.h"
-#include "CrashRecovery.h"
+#include "ErrorHandle/CrashRecovery.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
 #include "TextModification.h"

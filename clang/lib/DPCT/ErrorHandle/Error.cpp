@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Error.h"
+#include "ErrorHandle/Error.h"
 
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
