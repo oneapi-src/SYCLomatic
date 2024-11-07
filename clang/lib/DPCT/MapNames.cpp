@@ -9,7 +9,7 @@
 #include "MapNames.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
-#include "DNNAPIMigration.h"
+#include "RulesDNN/DNNAPIMigration.h"
 #include "GenFiles.h"
 #include <map>
 
@@ -2005,6 +2005,12 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_MATMUL_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::scale_type"},
+      {"CUBLASLT_MATMUL_DESC_BIAS_DATA_TYPE",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::bias_type"},
+      {"CUBLASLT_MATMUL_DESC_BIAS_POINTER",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::bias_pointer"},
       {"CUBLASLT_MATMUL_DESC_POINTER_MODE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::pointer_mode"},

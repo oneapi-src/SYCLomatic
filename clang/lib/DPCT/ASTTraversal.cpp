@@ -8,11 +8,11 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Asm/AsmMigration.h"
+#include "RulesAsm/AsmMigration.h"
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
-#include "DNNAPIMigration.h"
+#include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
 #include "GenCodePinHeader.h"
@@ -22,7 +22,7 @@
 #include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
-#include "CCL/NCCLAPIMigration.h"
+#include "RulesCCL/NCCLAPIMigration.h"
 #include "OptimizeMigration.h"
 #include "GenFiles.h"
 #include "SpBLASAPIMigration.h"
@@ -6637,7 +6637,12 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuEventSynchronize") {
     if(DpctGlobalInfo::getEnablepProfilingFlag()) {
       // Option '--enable-profiling' is enabled
-      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      std::string ReplStr;
+      ExprAnalysis EA(CE->getArg(0));
+      ReplStr = EA.getReplacedString();
+      if (dyn_cast<CStyleCastExpr>(CE->getArg(0)->IgnoreImplicitAsWritten())) {
+        ReplStr = "(" + ReplStr + ")";
+      }
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
@@ -6647,7 +6652,12 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       // Option '--enable-profiling' is not enabled
       bool NeedReport = false;
-      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      std::string ReplStr;
+      ExprAnalysis EA(CE->getArg(0));
+      ReplStr = EA.getReplacedString();
+      if (dyn_cast<CStyleCastExpr>(CE->getArg(0)->IgnoreImplicitAsWritten())) {
+        ReplStr = "(" + ReplStr + ")";
+      }
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";

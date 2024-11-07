@@ -9,7 +9,7 @@
 #ifndef CLANG_DPCT_ASM_LEXER_H
 #define CLANG_DPCT_ASM_LEXER_H
 
-#include "Asm/Parser/AsmIdentifierTable.h"
+#include "RulesAsm/Parser/AsmIdentifierTable.h"
 #include "AsmToken.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/LLVM.h"
