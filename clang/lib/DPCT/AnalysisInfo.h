@@ -12,7 +12,7 @@
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
-#include "InclusionHeaders.h"
+#include "RulesInclude/InclusionHeaders.h"
 #include "LibraryAPIMigration.h"
 #include "UserDefinedRules.h"
 #include "GenFiles.h"

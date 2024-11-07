@@ -53,7 +53,7 @@ static const std::string RegexPrefix = "{{NEEDREPLACE", RegexSuffix = "}}";
 void initHeaderSpellings() {
   HeaderSpellings = {
 #define HEADER(Name, Spelling) {HT_##Name, Spelling},
-#include "HeaderTypes.inc"
+#include "RulesInclude/HeaderTypes.inc"
   };
 }
 const std::string &getDefaultString(HelperFuncType HFT) {
@@ -1010,7 +1010,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, ReplacementType IsForCodePin) {
 #define HEADER(Name, Spelling)                                                 \
   case HT_##Name:                                                              \
     return insertHeader(HT_##Name, LastIncludeOffset, IsForCodePin);
-#include "HeaderTypes.inc"
+#include "RulesInclude/HeaderTypes.inc"
   default:
     return;
   }

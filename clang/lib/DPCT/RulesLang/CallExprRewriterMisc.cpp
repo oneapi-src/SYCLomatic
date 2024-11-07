@@ -29,7 +29,7 @@ void CallExprRewriterFactoryBase::initRewriterMapMisc() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesMisc.inc"
+#include "RulesLang/APINamesMisc.inc"
       }));
 }
 #undef ENTRY_UNSUPPORTED

@@ -48,7 +48,7 @@ void CallExprRewriterFactoryBase::initRewriterMapWmma() {
                          FuncName)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
-#include "APINamesWmma.inc"
+#include "RulesLang/APINamesWmma.inc"
 #undef ENTRY_UNSUPPORTED
 #undef UNSUPPORTED_FACTORY_ENTRY
 

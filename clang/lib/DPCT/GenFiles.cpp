@@ -11,7 +11,7 @@
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "ExternalReplacement.h"
-#include "GenMakefile.h"
+#include "MigrateScript/GenMakefile.h"
 #include "PatternRewriter.h"
 #include "Statics.h"
 #include "TextModification.h"

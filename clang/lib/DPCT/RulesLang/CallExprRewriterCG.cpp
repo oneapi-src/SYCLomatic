@@ -81,7 +81,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCooperativeGroups() {
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define FUNCTION_CALL
 #define CLASS_METHOD_CALL
-#include "APINamesCooperativeGroups.inc"
+#include "RulesLang/APINamesCooperativeGroups.inc"
 #undef FUNCTION_CALL
 #undef CLASS_METHOD_CALL
       }));
@@ -92,7 +92,7 @@ void CallExprRewriterFactoryBase::initMethodRewriterMapCooperativeGroups() {
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define CLASS_METHOD_CALL
-#include "APINamesCooperativeGroups.inc"
+#include "RulesLang/APINamesCooperativeGroups.inc"
 #undef CLASS_METHOD_CALL
       }));
 }
