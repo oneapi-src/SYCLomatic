@@ -2860,8 +2860,8 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 //    - If the array size comes from a macro argument, it maps the macro
 //    argument correctly using the `MacroArgRecord`.
 // 2. Process the initialization expression.
-//    - If the initialization style is C-style (with an equals sign), it remove
-//    the equals sign and adds braces around scalar initializers to use
+//    - If the initialization style is C-style (with an equal sign), it remove
+//    the equal sign and adds braces around scalar initializers to use
 //    initializer list in SYCL.
 // 3. Replace the variable type.
 //    - Replace the origin type with
@@ -2873,7 +2873,10 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 //    does not already have the `static` storage class.
 //
 // Example1 (Specifier __device__ will be removed in preprocessor callbacks):
+// Origin code:
 // __device__ int var_a[3] = {1, 2, 3};
+//
+// As follow list the result after each key step listed in previous:
 // 1. int var_a = {1, 2, 3};
 // 2. int var_a {1, 2, 3};
 // 3. sycl::ext::oneapi::experimental::device_global<int[3]> var_a {1, 2, 3};
@@ -2881,11 +2884,21 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
 // 3};
 //
 // Example2 (Specifier __device__ will be removed in preprocessor callbacks):
-// __device__ int var_b = 1;
-// 1. int var = 1;
-// 2. int var {1};
-// 3. sycl::ext::oneapi::experimental::device_global<int> var_b {1};
-// 4. static sycl::ext::oneapi::experimental::device_global<int> var_b {1};
+// Origin code:
+// #define VAR(type, name, size) static __device__ type name[size];
+// VAR(int, a, 3)
+//
+// As follow list the result after each key step listed in previous:
+// 1. #define VAR(type, name, size) static type name;
+//    VAR(int, a, 3)
+// 2. #define VAR(type, name, init) static type name;
+//    VAR(int, a, 3)
+// 3. #define VAR(type, name, init) static
+//    sycl::ext::oneapi::experimental::device_global<type[size]> name;
+//    VAR(int, a, 3)
+// 4. #define VAR(type, name, init) static
+//    sycl::ext::oneapi::experimental::device_global<type[size]> name;
+//    VAR(int, a, 3)
 void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto &Ctx = DpctGlobalInfo::getContext();
