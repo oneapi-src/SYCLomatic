@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 #include "Statics.h"
 #include "ASTTraversal.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 
 #include <numeric>
 #include <unordered_set>

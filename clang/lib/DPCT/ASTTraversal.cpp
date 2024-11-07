@@ -8,11 +8,11 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "AsmMigration.h"
+#include "RulesAsm/AsmMigration.h"
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
-#include "DNNAPIMigration.h"
+#include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
 #include "GenCodePinHeader.h"
@@ -22,9 +22,9 @@
 #include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
-#include "NCCLAPIMigration.h"
+#include "RulesCCL/NCCLAPIMigration.h"
 #include "OptimizeMigration.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 #include "SpBLASAPIMigration.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
@@ -3453,29 +3453,6 @@ void LinkageSpecDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(LinkageSpecDeclRule, PassKind::PK_Migration)
 
-void ManualMigrateEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("NCCL_.*"))))
-                    .bind("NCCLConstants"),
-                this);
-}
-
-void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (const DeclRefExpr *DE =
-          getNodeAsType<DeclRefExpr>(Result, "NCCLConstants")) {
-    auto *ECD = cast<EnumConstantDecl>(DE->getDecl());
-    if (DpctGlobalInfo::isInAnalysisScope(ECD->getBeginLoc())) {
-      return;
-    }
-    report(dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
-               DE->getBeginLoc()),
-           Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-           "Intel(R) oneAPI Collective Communications Library");
-  }
-}
-
-REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration,
-              RuleGroupKind::RK_NCCL)
-
 // Rule for FFT enums.
 void FFTEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -6769,7 +6746,12 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuEventSynchronize") {
     if(DpctGlobalInfo::getEnablepProfilingFlag()) {
       // Option '--enable-profiling' is enabled
-      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      std::string ReplStr;
+      ExprAnalysis EA(CE->getArg(0));
+      ReplStr = EA.getReplacedString();
+      if (dyn_cast<CStyleCastExpr>(CE->getArg(0)->IgnoreImplicitAsWritten())) {
+        ReplStr = "(" + ReplStr + ")";
+      }
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
@@ -6779,7 +6761,12 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       // Option '--enable-profiling' is not enabled
       bool NeedReport = false;
-      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      std::string ReplStr;
+      ExprAnalysis EA(CE->getArg(0));
+      ReplStr = EA.getReplacedString();
+      if (dyn_cast<CStyleCastExpr>(CE->getArg(0)->IgnoreImplicitAsWritten())) {
+        ReplStr = "(" + ReplStr + ")";
+      }
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
         ReplStr = MapNames::getCheckErrorMacroName() + "(" + ReplStr + ")";
@@ -14769,8 +14756,6 @@ REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
 REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
-REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
-
 REGISTER_RULE(LIBCURule, PassKind::PK_Migration, RuleGroupKind::RK_Libcu)
 
 REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
@@ -15176,3 +15161,8 @@ void GraphicsInteropRule::runRule(
 }
 
 REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
+
+REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_NCCL)
+
+REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)

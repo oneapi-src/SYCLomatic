@@ -159,12 +159,12 @@ add_clang_library(DPCT
   CallExprRewriterGraphicsInterop.cpp
   CallExprRewriterMemory.cpp
   CallExprRewriterMisc.cpp
-  CallExprRewriterNccl.cpp
+  RulesCCL/CallExprRewriterNccl.cpp
   CallExprRewriterStream.cpp
   CallExprRewriterTexture.cpp
   CallExprRewriterThrust.cpp
   CallExprRewriterWarp.cpp
-  CallExprRewriterCUDNN.cpp
+  RulesDNN/CallExprRewriterCUDNN.cpp
   CallExprRewriterErrorHandling.cpp
   CallExprRewriterLIBCU.cpp
   CallExprRewriterEvent.cpp
@@ -177,7 +177,7 @@ add_clang_library(DPCT
   ExprAnalysis.cpp
   ExtReplacements.cpp
   MapNames.cpp
-  SaveNewFiles.cpp
+  GenFiles.cpp
   DPCT.cpp
   DpctOptions.cpp
   TextModification.cpp
@@ -189,7 +189,7 @@ add_clang_library(DPCT
   GenMakefile.cpp
   InclusionHeaders.cpp
   IncrementalMigrationUtility.cpp
-  Rules.cpp
+  UserDefinedRules.cpp
   PatternRewriter.cpp
   MigrateBuildScript.cpp
   MigrateCmakeScript.cpp
@@ -199,17 +199,17 @@ add_clang_library(DPCT
   BarrierFenceSpaceAnalyzer.cpp
   BLASAPIMigration.cpp
   FFTAPIMigration.cpp
-  DNNAPIMigration.cpp
-  NCCLAPIMigration.cpp
+  RulesDNN/DNNAPIMigration.cpp
+  RulesCCL/NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
   AutoComplete.cpp
-  AsmMigration.cpp
+  RulesAsm/AsmMigration.cpp
   APIMapping/QueryAPIMapping.cpp
-  Asm/AsmNodes.cpp
-  Asm/AsmLexer.cpp
-  Asm/AsmParser.cpp
-  Asm/AsmIdentifierTable.cpp
-  Asm/AsmTokenKinds.cpp
+  RulesAsm/Parser/AsmNodes.cpp
+  RulesAsm/Parser/AsmLexer.cpp
+  RulesAsm/Parser/AsmParser.cpp
+  RulesAsm/Parser/AsmIdentifierTable.cpp
+  RulesAsm/Parser/AsmTokenKinds.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
   MemberExprRewriter.cpp
