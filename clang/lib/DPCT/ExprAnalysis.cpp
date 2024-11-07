@@ -10,7 +10,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "CUBAPIMigration.h"
+#include "RulesLangLib/CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "RulesDNN/DNNAPIMigration.h"

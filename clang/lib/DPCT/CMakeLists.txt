@@ -111,21 +111,21 @@ add_subdirectory(ConfusableTable)
 add_clang_library(DPCT
   ASTTraversal.cpp
   AnalysisInfo.cpp
-  Rewriters/CUB/CallExprRewriterCUB.cpp
-  Rewriters/CUB/RewriterClassMethods.cpp
-  Rewriters/CUB/RewriterDeviceHistgram.cpp
-  Rewriters/CUB/RewriterDeviceMergeSort.cpp
-  Rewriters/CUB/RewriterDeviceRadixSort.cpp
-  Rewriters/CUB/RewriterDeviceReduce.cpp
-  Rewriters/CUB/RewriterDeviceRunLengthEncode.cpp
-  Rewriters/CUB/RewriterDeviceScan.cpp
-  Rewriters/CUB/RewriterDeviceSegmentedRadixSort.cpp
-  Rewriters/CUB/RewriterDeviceSegmentedReduce.cpp
-  Rewriters/CUB/RewriterDeviceSegmentedSort.cpp
-  Rewriters/CUB/RewriterDeviceSelect.cpp
-  Rewriters/CUB/RewriterUtilityFunctions.cpp
-  Rewriters/CUB/RewriterDevicePartition.cpp
-  Rewriters/CUB/RewriterDeviceSpmv.cpp
+  RulesLangLib/CUB/CallExprRewriterCUB.cpp
+  RulesLangLib/CUB/RewriterClassMethods.cpp
+  RulesLangLib/CUB/RewriterDeviceHistgram.cpp
+  RulesLangLib/CUB/RewriterDeviceMergeSort.cpp
+  RulesLangLib/CUB/RewriterDeviceRadixSort.cpp
+  RulesLangLib/CUB/RewriterDeviceReduce.cpp
+  RulesLangLib/CUB/RewriterDeviceRunLengthEncode.cpp
+  RulesLangLib/CUB/RewriterDeviceScan.cpp
+  RulesLangLib/CUB/RewriterDeviceSegmentedRadixSort.cpp
+  RulesLangLib/CUB/RewriterDeviceSegmentedReduce.cpp
+  RulesLangLib/CUB/RewriterDeviceSegmentedSort.cpp
+  RulesLangLib/CUB/RewriterDeviceSelect.cpp
+  RulesLangLib/CUB/RewriterUtilityFunctions.cpp
+  RulesLangLib/CUB/RewriterDevicePartition.cpp
+  RulesLangLib/CUB/RewriterDeviceSpmv.cpp
   Rewriters/Math/CallExprRewriterMath.cpp
   Rewriters/Math/RewriterSTDFunctions.cpp
   Rewriters/Math/RewriterHalfArithmeticFunctions.cpp
@@ -162,7 +162,7 @@ add_clang_library(DPCT
   RulesCCL/CallExprRewriterNccl.cpp
   CallExprRewriterStream.cpp
   CallExprRewriterTexture.cpp
-  CallExprRewriterThrust.cpp
+  RulesLangLib/CallExprRewriterThrust.cpp
   CallExprRewriterWarp.cpp
   RulesDNN/CallExprRewriterCUDNN.cpp
   CallExprRewriterErrorHandling.cpp
@@ -211,11 +211,11 @@ add_clang_library(DPCT
   RulesAsm/Parser/AsmIdentifierTable.cpp
   RulesAsm/Parser/AsmTokenKinds.cpp
   RulesLangLib/LIBCUAPIMigration.cpp
-  CUBAPIMigration.cpp
+  RulesLangLib/CUBAPIMigration.cpp
   MemberExprRewriter.cpp
   MigrationRuleManager.cpp
   MigrationAction.cpp
-  ThrustAPIMigration.cpp
+  RulesLangLib/ThrustAPIMigration.cpp
   GenHelperFunction.cpp
   WMMAAPIMigration.cpp
   OptimizeMigration.cpp

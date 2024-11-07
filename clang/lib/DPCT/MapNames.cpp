@@ -2114,7 +2114,7 @@ void MapNames::setExplicitNamespaceMap(
 #define ENTRY_HOST(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_DEVICE(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_BOTH(from, to, policy) ENTRY(from, to, policy)
-#include "APINamesMapThrust.inc"
+#include "RulesLangLib/APINamesMapThrust.inc"
 #undef ENTRY
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
