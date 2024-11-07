@@ -1,4 +1,4 @@
-//===--------------- Rules.h ----------------------------------------------===//
+//===--------------- UserDefinedRules.h ----------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_RULES_H
-#define DPCT_RULES_H
+#ifndef DPCT_USER_DEFINED_RULES_H
+#define DPCT_USER_DEFINED_RULES_H
 #include "Utility.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/YAMLTraits.h"
@@ -376,4 +376,4 @@ private:
 
 void importRules(std::vector<clang::tooling::UnifiedPath> &RuleFiles);
 
-#endif // DPCT_RULES_H
+#endif // DPCT_USER_DEFINED_RULES_H

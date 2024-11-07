@@ -8,7 +8,7 @@
 #include "GenMakefile.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
-#include "SaveNewFiles.h"
+#include "GenFiles.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 

@@ -62,7 +62,15 @@ private:
 
 class matrix_layout_t {
 public:
-  enum class attribute { type, order, rows, cols, ld };
+  enum class attribute {
+    type,
+    order,
+    rows,
+    cols,
+    ld,
+    batch_count,
+    strided_batch_offset
+  };
 
   matrix_layout_t(library_data_t type, std::uint64_t rows, std::uint64_t cols,
                   std::int64_t ld)
@@ -91,6 +99,8 @@ private:
       CASE(rows)
       CASE(cols)
       CASE(ld)
+      CASE(batch_count)
+      CASE(strided_batch_offset)
     }
 #undef CASE
   }
@@ -100,6 +110,8 @@ private:
   std::uint64_t _rows;
   std::uint64_t _cols;
   std::int64_t _ld;
+  std::uint64_t _batch_count = 1;
+  std::uint64_t _strided_batch_offset = 0;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
@@ -120,11 +132,15 @@ public:
   enum class attribute {
     compute_type,
     scale_type,
+    bias_type,
+    bias_pointer,
     pointer_mode,
     trans_a,
     trans_b,
     trans_c,
     epilogue,
+    epilogue_aux_ld,
+    epilogue_aux_pointer,
     a_scale_pointer,
     b_scale_pointer,
     d_scale_pointer,
@@ -157,6 +173,8 @@ private:
     switch (attr) {
       CASE(compute_type)
       CASE(scale_type)
+      CASE(bias_type)
+      CASE(bias_pointer)
       CASE(pointer_mode)
       CASE(trans_a)
       CASE(trans_b)
@@ -166,6 +184,8 @@ private:
       CASE(b_scale_pointer)
       CASE(d_scale_pointer)
       CASE(absmax_d_pointer)
+      CASE(epilogue_aux_ld)
+      CASE(epilogue_aux_pointer)
     default:
       break;
     }
@@ -174,15 +194,19 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
+  library_data_t _bias_type = library_data_t::real_float;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_c = oneapi::mkl::transpose::nontrans;
   epilogue_t _epilogue = epilogue_t::nop;
+  size_t _epilogue_aux_ld = 0;
   void *_a_scale_pointer = nullptr;
   void *_b_scale_pointer = nullptr;
   void *_d_scale_pointer = nullptr;
   void *_absmax_d_pointer = nullptr;
+  void *_bias_pointer = nullptr;
+  void *_epilogue_aux_pointer = nullptr;
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,

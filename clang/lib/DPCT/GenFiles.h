@@ -1,4 +1,4 @@
-//===--------------- SaveNewFiles.h ---------------------------------------===//
+//===--------------- GenFiles.h ---------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_SAVE_NEW_FILES_H
-#define DPCT_SAVE_NEW_FILES_H
+#ifndef DPCT_GEN_FILES_H
+#define DPCT_GEN_FILES_H
 
 #include "clang/Tooling/Refactoring.h"
 
@@ -79,4 +79,4 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName);
 
 // A mapping from output file path to it's corresponding input file.
 extern std::map<std::string, std::string> OutFilePath2InFilePath;
-#endif // DPCT_SAVE_NEW_FILES_H
+#endif // DPCT_GEN_FILES_H
