@@ -14,18 +14,18 @@
 #include "CallExprRewriterCommon.h"
 #include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
-#include "FFTAPIMigration.h"
+#include "RulesMathLib/FFTAPIMigration.h"
 #include "GenCodePinHeader.h"
 #include "GroupFunctionAnalyzer.h"
 #include "Homoglyph.h"
-#include "LIBCUAPIMigration.h"
+#include "RulesLangLib/LIBCUAPIMigration.h"
 #include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
 #include "RulesCCL/NCCLAPIMigration.h"
 #include "OptimizeMigration.h"
 #include "GenFiles.h"
-#include "SpBLASAPIMigration.h"
+#include "RulesMathLib/SpBLASAPIMigration.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
@@ -281,7 +281,10 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 
     // The "__noinline__" macro is re-defined and it is used in
     // "__attribute__()", do not migrate it.
-    if (II->hasMacroDefinition() && (II->getName() == "__noinline__")) {
+    if ((GetSourceFileType(
+             DpctGlobalInfo::getInstance().getMainFile()->getFilePath()) ==
+         SPT_CppSource) &&
+        (II->getName() == "__noinline__")) {
       continue;
     }
 

@@ -11,7 +11,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "BLASAPIMigration.h"
+#include "RulesMathLib/BLASAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "ExprAnalysis.h"

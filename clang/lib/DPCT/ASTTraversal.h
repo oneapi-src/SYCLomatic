@@ -12,7 +12,7 @@
 #include "AnalysisInfo.h"
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
-#include "FFTAPIMigration.h"
+#include "RulesMathLib/FFTAPIMigration.h"
 #include "InclusionHeaders.h"
 #include "MapNames.h"
 #include "TextModification.h"
