@@ -63,7 +63,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUFFT() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUFFT.inc"
+#include "RulesMathLib/APINamesCUFFT.inc"
       }));
 }
 

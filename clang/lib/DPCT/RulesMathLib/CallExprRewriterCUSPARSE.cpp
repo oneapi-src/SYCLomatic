@@ -55,7 +55,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUSPARSE() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUSPARSE.inc"
+#include "RulesMathLib/APINamesCUSPARSE.inc"
       }));
 }
 

@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CUBAPIMigration.h"
+#include "RulesLangLib/CUBAPIMigration.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"

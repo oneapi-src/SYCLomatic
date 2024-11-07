@@ -15,7 +15,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCURAND() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCURAND.inc"
+#include "RulesMathLib/APINamesCURAND.inc"
       }));
 }
 

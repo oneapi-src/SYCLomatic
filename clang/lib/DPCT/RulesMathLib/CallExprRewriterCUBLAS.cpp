@@ -110,7 +110,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUBLAS() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUBLAS.inc"
+#include "RulesMathLib/APINamesCUBLAS.inc"
       }));
 }
 
