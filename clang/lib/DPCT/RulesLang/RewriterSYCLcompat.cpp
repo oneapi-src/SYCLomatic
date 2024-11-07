@@ -43,10 +43,10 @@ void CallExprRewriterFactoryBase::initRewriterMapSYCLcompat(
         &RewriterMap) {
   // clang-format off
   RewriterMap.insert({
-#include "../APINamesGraph.inc"
-#include "../APINamesTexture.inc"
-#include "../APINamesGraphicsInterop.inc"
-#include "../APINamesWmma.inc"
+#include "../RulesLang/APINamesGraph.inc"
+#include "../RulesLang/APINamesTexture.inc"
+#include "../RulesLang/APINamesGraphicsInterop.inc"
+#include "../RulesLang/APINamesWmma.inc"
 SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DArrayToArray")
 SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DFromArray")
 SYCLCOMPAT_UNSUPPORT("cudaMemcpy2DFromArrayAsync")

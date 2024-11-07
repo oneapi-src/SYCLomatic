@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MisleadingBidirectional.h"
+#include "RulesSecurity/MisleadingBidirectional.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
