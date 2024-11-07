@@ -8,7 +8,7 @@
 
 #include "IncrementalMigrationUtility.h"
 #include "Config.h"
-#include "Error.h"
+#include "ErrorHandle/Error.h"
 #include "ExternalReplacement.h"
 
 namespace clang {

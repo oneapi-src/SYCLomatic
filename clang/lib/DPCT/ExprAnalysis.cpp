@@ -10,10 +10,10 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "CUBAPIMigration.h"
+#include "RulesLangLib/CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "Config.h"
-#include "DNNAPIMigration.h"
+#include "RulesDNN/DNNAPIMigration.h"
 #include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
@@ -605,6 +605,12 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
       REPLACE_ENUM(MapNames::CUBEnumsMap);
 #undef REPLACE_ENUM
+      std::string TypeName = DpctGlobalInfo::getTypeName(ECD->getType());
+      if (TypeName == "cublasStatus_t" || TypeName == "cusparseStatus_t" ||
+          TypeName == "cudaError_enum" || TypeName == "cudnnStatus_t" ||
+          TypeName == "cudaError" || TypeName == "ncclResult_t") {
+        addReplacement(DRE, toString(ECD->getInitVal(), 10));
+      }
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
@@ -853,15 +859,7 @@ void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
 }
 
 inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
-  RefString.clear();
-  llvm::raw_string_ostream OS(RefString);
-  if (auto NNS = ULE->getQualifier()) {
-    if (NNS->getKind() != clang::NestedNameSpecifier::SpecifierKind::Global) {
-      NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
-    }
-  }
-  ULE->getName().print(OS,
-                       dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+  RefString = ULE->decls().begin().getDecl()->getQualifiedNameAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {

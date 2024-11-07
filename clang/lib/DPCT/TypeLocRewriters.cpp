@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "TypeLocRewriters.h"
-#include "Rules.h"
+#include "UserDefinedRules.h"
 #include "clang/AST/TypeLoc.h"
 
 namespace clang {

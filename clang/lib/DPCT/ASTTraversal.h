@@ -10,10 +10,10 @@
 #define DPCT_AST_TRAVERSAL_H
 
 #include "AnalysisInfo.h"
-#include "CrashRecovery.h"
+#include "ErrorHandle/CrashRecovery.h"
 #include "Diagnostics.h"
-#include "FFTAPIMigration.h"
-#include "InclusionHeaders.h"
+#include "RulesMathLib/FFTAPIMigration.h"
+#include "RulesInclude/InclusionHeaders.h"
 #include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -651,13 +651,6 @@ public:
 };
 
 class LinkageSpecDeclRule : public NamedMigrationRule<LinkageSpecDeclRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-class ManualMigrateEnumsRule
-    : public NamedMigrationRule<ManualMigrateEnumsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1385,6 +1378,12 @@ public:
 };
 
 class DriverModuleAPIRule : public NamedMigrationRule<DriverModuleAPIRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class VirtualMemRule : public NamedMigrationRule<VirtualMemRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

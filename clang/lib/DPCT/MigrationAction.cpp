@@ -14,7 +14,7 @@
 
 #include "AnalysisInfo.h"
 #include "MigrationRuleManager.h"
-#include "MisleadingBidirectional.h"
+#include "RulesSecurity/MisleadingBidirectional.h"
 
 #ifdef _WIN32
 #include <Windows.h>

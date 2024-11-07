@@ -11,7 +11,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "BLASAPIMigration.h"
+#include "RulesMathLib/BLASAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "ExprAnalysis.h"
@@ -1714,6 +1714,10 @@ inline auto UseNonUniformGroups = [](const CallExpr *C) -> bool {
 
 inline auto UseSYCLCompat = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useSYCLCompat();
+};
+
+inline auto UseExpVirtualMemory = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useExpVirtualMemory();
 };
 
 class CheckDerefedTypeBeforeCast {

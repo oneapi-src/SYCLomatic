@@ -25,7 +25,7 @@
 #include <utility>
 #include <vector>
 
-#include "Error.h"
+#include "ErrorHandle/Error.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
@@ -221,9 +221,6 @@ llvm::StringRef getIndent(clang::SourceLocation Loc,
                           const clang::SourceManager &SM);
 
 clang::SourceRange getStmtExpansionSourceRange(const clang::Stmt *S);
-clang::SourceRange getStmtSpellingSourceRange(const clang::Stmt *S);
-clang::SourceRange getSpellingSourceRange(clang::SourceLocation L1,
-                                          clang::SourceLocation L2);
 size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
 std::string getStmtSpelling(const clang::Stmt *E,
@@ -446,6 +443,10 @@ getRangeInRange(const clang::Stmt *E, clang::SourceLocation RangeBegin,
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getRangeInRange(clang::SourceRange Range, clang::SourceLocation RangeBegin,
                 clang::SourceLocation RangeEnd, bool IncludeLastToken = true);
+std::string getStringInRange(clang::SourceRange Range,
+                             clang::SourceLocation RangeBegin,
+                             clang::SourceLocation RangeEnd,
+                             bool IncludeLastToken = true);
 unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag);
 bool isIncludedFile(const clang::tooling::UnifiedPath &CurrentFile,

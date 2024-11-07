@@ -9,8 +9,8 @@
 #include "MapNames.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
-#include "DNNAPIMigration.h"
-#include "SaveNewFiles.h"
+#include "RulesDNN/DNNAPIMigration.h"
+#include "GenFiles.h"
 #include <map>
 
 using namespace clang;
@@ -449,14 +449,16 @@ void MapNames::setExplicitNamespaceMap(
                                           getLibraryHelperNamespace() +
                                           "sparse::optimize_info>",
                                       HelperFeatureEnum::device_ext)},
-      {"thrust::device_ptr",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_pointer",
-                                      HelperFeatureEnum::device_ext)},
+      {"thrust::device_ptr", std::make_shared<TypeNameRule>(
+                                 getLibraryHelperNamespace() + "device_pointer",
+                                 HelperFeatureEnum::device_ext)},
       {"thrust::device_reference",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_reference",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_reference",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_vector",
-       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() + "device_vector",
+       std::make_shared<TypeNameRule>(getLibraryHelperNamespace() +
+                                          "device_vector",
                                       HelperFeatureEnum::device_ext)},
       {"thrust::device_malloc_allocator",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
@@ -831,6 +833,24 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(
            getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_ptr")},
+      {"CUmemAllocationProp",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::mem_prop")},
+      {"CUmemGenericAllocationHandle",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::physical_mem_ptr")},
+      {"CUmemAccessDesc",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                      "experimental::mem_access_desc")},
+      {"CUmemLocationType", std::make_shared<TypeNameRule>("int")},
+      {"CUmemAllocationType", std::make_shared<TypeNameRule>("int")},
+      {"CUmemAllocationGranularity_flags",
+       std::make_shared<TypeNameRule>(
+           getClNamespace() + "ext::oneapi::experimental::granularity_mode")},
+      {"CUmemAccess_flags",
+       std::make_shared<TypeNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode")},
       {"cudaGraphicsMapFlags", std::make_shared<TypeNameRule>("int")},
       {"cudaGraphicsRegisterFlags", std::make_shared<TypeNameRule>("int")},
       // ...
@@ -1295,6 +1315,9 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaDevAttrComputeCapabilityMajor",
        std::make_shared<EnumNameRule>("get_major_version",
                                       HelperFeatureEnum::device_ext)},
+      {"cudaDevAttrMaxSharedMemoryPerBlockOptin",
+       std::make_shared<EnumNameRule>("get_local_mem_size",
+                                      HelperFeatureEnum::device_ext)},
       {"cudaDevAttrComputeCapabilityMinor",
        std::make_shared<EnumNameRule>("get_minor_version",
                                       HelperFeatureEnum::device_ext)},
@@ -1438,6 +1461,38 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_SET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
       {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_TYPE_PINNED", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ALLOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_ALLOCATION_TYPE_MAX",
+       std::make_shared<EnumNameRule>("0xFFFFFFFF")},
+      {"CU_MEM_LOCATION_TYPE_DEVICE", std::make_shared<EnumNameRule>("1")},
+      {"CU_MEM_LOCATION_TYPE_INVALID", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_LOCATION_TYPE_MAX",
+       std::make_shared<EnumNameRule>("0xFFFFFFFF")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_READWRITE",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::read_write")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_NONE",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::none")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_MAX",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::none")},
+      {"CU_MEM_ACCESS_FLAGS_PROT_READ",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::address_access_mode::read")},
+      {"CU_MEM_ALLOC_GRANULARITY_RECOMMENDED",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::granularity_mode::recommended")},
+      {"CU_MEM_ALLOC_GRANULARITY_MINIMUM",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() +
+           "ext::oneapi::experimental::granularity_mode::minimum")},
       // enum Driver Device Attribute
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
        std::make_shared<EnumNameRule>("get_major_version",
@@ -1899,25 +1954,39 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_ORDER_COL32",
        getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col32"},
       {"CUBLASLT_ORDER_COL4_4R2_8C",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col4_4r2_8c"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::order_t::col4_4r2_8c"},
       {"CUBLASLT_ORDER_COL32_2R_4R4",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::order_t::col32_2r_4r4"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::order_t::col32_2r_4r4"},
       {"CUBLASLT_POINTER_MODE_HOST",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::host"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::host"},
       {"CUBLASLT_POINTER_MODE_DEVICE",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::device"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::device"},
       {"CUBLASLT_POINTER_MODE_DEVICE_VECTOR",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::pointer_mode_t::device_vector"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_ZERO",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
-                            "device_vector_beta_zero"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::alpha_"
+           "device_vector_beta_zero"},
       {"CUBLASLT_POINTER_MODE_ALPHA_DEVICE_VECTOR_BETA_HOST",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::pointer_mode_t::alpha_"
-                            "device_vector_beta_host"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::pointer_mode_t::alpha_"
+           "device_vector_beta_host"},
       {"CUBLASLT_MATRIX_LAYOUT_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::type"},
+      {"CUBLASLT_MATRIX_LAYOUT_BATCH_COUNT",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matrix_layout_t::"
+           "attribute::batch_count"},
+      {"CUBLASLT_MATRIX_LAYOUT_STRIDED_BATCH_OFFSET",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matrix_layout_t::"
+           "attribute::strided_batch_offset"},
       {"CUBLASLT_MATRIX_LAYOUT_ORDER",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matrix_layout_t::attribute::order"},
@@ -1936,6 +2005,12 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_MATMUL_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::scale_type"},
+      {"CUBLASLT_MATMUL_DESC_BIAS_DATA_TYPE",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::bias_type"},
+      {"CUBLASLT_MATMUL_DESC_BIAS_POINTER",
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute::bias_pointer"},
       {"CUBLASLT_MATMUL_DESC_POINTER_MODE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::pointer_mode"},
@@ -1951,6 +2026,12 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLASLT_MATMUL_DESC_EPILOGUE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::epilogue"},
+      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD",
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::"
+                                     "attribute::epilogue_aux_ld"},
+      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER",
+       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::"
+                                     "attribute::epilogue_aux_pointer"},
       {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
@@ -1958,17 +2039,21 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_MATMUL_DESC_A_SCALE_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":a_scale_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":a_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_B_SCALE_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":b_scale_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":b_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_D_SCALE_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":d_scale_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":d_scale_pointer"},
       {"CUBLASLT_MATMUL_DESC_AMAX_D_POINTER",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::matmul_desc_t::attribute:"
-                            ":absmax_d_pointer"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::attribute:"
+           ":absmax_d_pointer"},
       {"CUBLASLT_MATMUL_DESC_ATOMIC_SYNC_NUM_CHUNKS_D_ROWS",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
@@ -1982,19 +2067,24 @@ void MapNames::setExplicitNamespaceMap(
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},
       {"CUBLASLT_EPILOGUE_DEFAULT",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::nop"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::nop"},
       {"CUBLASLT_EPILOGUE_RELU",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::relu"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::relu"},
       {"CUBLASLT_EPILOGUE_GELU",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::gelu"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::gelu"},
       {"CUBLASLT_EPILOGUE_GELU_AUX",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::epilogue_t::gelu"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::gelu"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_POINTER_MODE",
-       getLibraryHelperNamespace() + "blas_gemm::experimental::transform_desc_t::"
-                            "attribute::pointer_mode"},
+       getLibraryHelperNamespace() +
+           "blas_gemm::experimental::transform_desc_t::"
+           "attribute::pointer_mode"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_TRANSA",
        getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::trans_a"},
@@ -2008,7 +2098,8 @@ void MapNames::setExplicitNamespaceMap(
       {"CUBLAS_COMPUTE_32F", getLibraryHelperNamespace() + "compute_type::f32"},
       {"CUBLAS_COMPUTE_32F_PEDANTIC",
        getLibraryHelperNamespace() + "compute_type::f32_standard"},
-      {"CUBLAS_COMPUTE_32F_FAST_16F", getLibraryHelperNamespace() + "compute_type::f32"},
+      {"CUBLAS_COMPUTE_32F_FAST_16F",
+       getLibraryHelperNamespace() + "compute_type::f32"},
       {"CUBLAS_COMPUTE_32F_FAST_16BF",
        getLibraryHelperNamespace() + "compute_type::f32_fast_bf16"},
       {"CUBLAS_COMPUTE_32F_FAST_TF32",
@@ -2029,7 +2120,7 @@ void MapNames::setExplicitNamespaceMap(
 #define ENTRY_HOST(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_DEVICE(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_BOTH(from, to, policy) ENTRY(from, to, policy)
-#include "APINamesMapThrust.inc"
+#include "RulesLangLib/APINamesMapThrust.inc"
 #undef ENTRY
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
@@ -2054,18 +2145,18 @@ void MapNames::setExplicitNamespaceMap(
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_nvGRAPH.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
-#include "APINames_wmma.inc"
+#include "SrcAPI/APINames.inc"
+#include "SrcAPI/APINames_CUB.inc"
+#include "SrcAPI/APINames_NCCL.inc"
+#include "SrcAPI/APINames_cuBLAS.inc"
+#include "SrcAPI/APINames_cuFFT.inc"
+#include "SrcAPI/APINames_cuRAND.inc"
+#include "SrcAPI/APINames_cuSOLVER.inc"
+#include "SrcAPI/APINames_cuSPARSE.inc"
+#include "SrcAPI/APINames_nvGRAPH.inc"
+#include "SrcAPI/APINames_nvJPEG.inc"
+#include "SrcAPI/APINames_thrust.inc"
+#include "SrcAPI/APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -4535,29 +4626,29 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, VALUE},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_NVML.inc"
-#include "APINames_NVTX.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuDNN.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_cudnn_frontend.inc"
-#include "APINames_nvGRAPH.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
-#include "APINames_wmma.inc"
+#include "SrcAPI/APINames.inc"
+#include "SrcAPI/APINames_CUB.inc"
+#include "SrcAPI/APINames_NCCL.inc"
+#include "SrcAPI/APINames_NVML.inc"
+#include "SrcAPI/APINames_NVTX.inc"
+#include "SrcAPI/APINames_cuBLAS.inc"
+#include "SrcAPI/APINames_cuDNN.inc"
+#include "SrcAPI/APINames_cuFFT.inc"
+#include "SrcAPI/APINames_cuRAND.inc"
+#include "SrcAPI/APINames_cuSOLVER.inc"
+#include "SrcAPI/APINames_cuSPARSE.inc"
+#include "SrcAPI/APINames_cudnn_frontend.inc"
+#include "SrcAPI/APINames_nvGRAPH.inc"
+#include "SrcAPI/APINames_nvJPEG.inc"
+#include "SrcAPI/APINames_thrust.inc"
+#include "SrcAPI/APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
 
 std::map<std::string, bool> MigrationStatistics::TypeMigrationTable{
 #define ENTRY_TYPE(TYPENAME, VALUE, FLAG, TARGET, COMMENT) {#TYPENAME, VALUE},
-#include "TypeNames.inc"
+#include "SrcAPI/TypeNames.inc"
 #undef ENTRY_TYPE
 };
 
@@ -4601,6 +4692,8 @@ MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"numChannels", "channel_num"}};
 
 std::vector<MetaRuleObject::PatternRewriter> MapNames::PatternRewriters;
+std::map<clang::dpct::HelperFuncCatalog, std::string>
+    MapNames::CustomHelperFunctionMap;
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};
