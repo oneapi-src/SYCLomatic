@@ -17,7 +17,7 @@ namespace dpct {
 
 enum HeaderType {
 #define HEADER(Name, Spelling) HT_##Name,
-#include "RulesInclude/HeaderTypes.inc"
+#include "HeaderTypes.inc"
   NUM_HEADERS,
   HT_NULL = -1
 };
