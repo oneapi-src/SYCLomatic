@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "FFTAPIMigration.h"
+#include "RulesMathLib/FFTAPIMigration.h"
 
 namespace clang {
 namespace dpct {

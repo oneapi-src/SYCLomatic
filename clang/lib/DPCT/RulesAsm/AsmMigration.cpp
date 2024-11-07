@@ -1093,6 +1093,132 @@ protected:
     return HandleAddSub(Inst);
   }
 
+  bool HandleShflSync(const InlineAsmInstruction *Inst) {
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string Op[4];
+    if (tryEmitAllInputOperands(Op, Inst))
+      return SYCLGenError();
+
+    OS() << MapNames::getDpctNamespace();
+
+    if (DpctGlobalInfo::useMaskedSubGroupFunction()) {
+      OS() << "experimental::";
+      if (Inst->hasAttr(InstAttr::up)) {
+        // to handle "shfl.up.b32 %0, %1, %2, %3;"
+        OS() << "shift_sub_group_right(" << Op[3] << ", ";
+      } else if (Inst->hasAttr(InstAttr::down)) {
+        // to handle "shfl.down.b32 %0, %1, %2, %3;"
+        OS() << "shift_sub_group_left(" << Op[3] << ", ";
+      } else if (Inst->hasAttr(InstAttr::idx)) {
+        // to handle "shfl.sync.idx.b32 %0, %1, %2, %3, %4;"
+        OS() << "select_from_sub_group(" << Op[3] << ", ";
+      } else if (Inst->hasAttr(InstAttr::bfly)) {
+        // to handle "shfl.bfly.b32 %0, %1, %2, %3;"
+        OS() << "permute_sub_group_by_xor(" << Op[3] << ", ";
+      }
+
+      OS() << DpctGlobalInfo::getItem(GAS) << ".get_sub_group(), " << Op[0]
+           << ", " << Op[1] << ")";
+    } else {
+      llvm::StringRef Str =
+          ". You can specify "
+          "\"--use-experimental-features=masked-sub-group-operation\" to "
+          "use the experimental helper function to migrate inline asm "
+          "instruction ";
+
+      auto CommonStr = llvm::Twine(Str)
+                           .concat("\"")
+                           .concat(GAS->getAsmString()->getString())
+                           .concat("\"")
+                           .str();
+
+      if (Inst->hasAttr(InstAttr::up)) {
+        // to handle "shfl.sync.up.b32 %0, %1, %2, %3, %4;"
+        report(Diagnostics::MASK_UNSUPPORTED, true,
+               llvm::Twine("shift_sub_group_right").concat(CommonStr).str());
+        OS() << "shift_sub_group_right(";
+      } else if (Inst->hasAttr(InstAttr::down)) {
+        // to handle "shfl.sync.down.b32 %0, %1, %2, %3, %4;"
+        report(Diagnostics::MASK_UNSUPPORTED, true,
+               llvm::Twine("shift_sub_group_left").concat(CommonStr).str());
+        OS() << "shift_sub_group_left(";
+      } else if (Inst->hasAttr(InstAttr::idx)) {
+        // to handle "shfl.sync.idx.b32 %0, %1, %2, %3, %4;"
+        report(Diagnostics::MASK_UNSUPPORTED, true,
+               llvm::Twine("select_from_sub_group").concat(CommonStr).str());
+        OS() << "select_from_sub_group(";
+      } else if (Inst->hasAttr(InstAttr::bfly)) {
+        // to handle "shfl.sync.bfly.b32 %0, %1, %2, %3, %4;"
+        report(Diagnostics::MASK_UNSUPPORTED, true,
+               llvm::Twine("permute_sub_group_by_xor").concat(CommonStr).str());
+        OS() << "permute_sub_group_by_xor(";
+      }
+
+      OS() << DpctGlobalInfo::getItem(GAS) << ".get_sub_group(), " << Op[0]
+           << ", " << Op[1] << ")";
+    }
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool HandleShfl(const InlineAsmInstruction *Inst) {
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = ";
+
+    std::string Op[3];
+    if (tryEmitAllInputOperands(Op, Inst))
+      return SYCLGenError();
+
+    OS() << MapNames::getDpctNamespace();
+    if (Inst->hasAttr(InstAttr::up)) {
+      // to handle "shfl.up.b32 %0, %1, %2, %3;"
+      OS() << "shift_sub_group_right(";
+    } else if (Inst->hasAttr(InstAttr::down)) {
+      // to handle "shfl.down.b32 %0, %1, %2, %3;"
+      OS() << "shift_sub_group_left(";
+    } else if (Inst->hasAttr(InstAttr::idx)) {
+      // to handle "shfl.idx.b32 %0, %1, %2, %3;"
+      OS() << "select_from_sub_group(";
+    } else if (Inst->hasAttr(InstAttr::bfly)) {
+      // to handle "shfl.bfly.b32 %0, %1, %2, %3;"
+      OS() << "permute_sub_group_by_xor(";
+    }
+
+    OS() << DpctGlobalInfo::getItem(GAS) << ".get_sub_group(), " << Op[0]
+         << ", " << Op[1] << ")";
+
+    endstmt();
+    return SYCLGenSuccess();
+  }
+
+  bool handle_shfl(const InlineAsmInstruction *Inst) override {
+
+    if (DpctGlobalInfo::useSYCLCompat()) {
+      report(Diagnostics::UNSUPPORT_SYCLCOMPAT, /*UseTextBegin=*/true,
+             GAS->getAsmString()->getString());
+      cutOffMigration();
+      return SYCLGenSuccess();
+    }
+
+    if (Inst->getNumInputOperands() == 4 && Inst->getNumTypes() == 1 &&
+        Inst->hasAttr(InstAttr::sync)) {
+      return HandleShflSync(Inst);
+    }
+
+    if (Inst->getNumInputOperands() == 3 && Inst->getNumTypes() == 1 &&
+        !Inst->hasAttr(InstAttr::sync)) {
+      return HandleShfl(Inst);
+    }
+
+    return SYCLGenError();
+  }
+
   bool handle_sub(const InlineAsmInstruction *Inst) override {
     return HandleAddSub(Inst);
   }

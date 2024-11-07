@@ -398,6 +398,10 @@ MODIFIER(wrap, ".wrap")
 MODIFIER(wide, ".wide")
 MODIFIER(sync, ".sync")
 MODIFIER(warp, ".warp")
+MODIFIER(up, ".up")
+MODIFIER(down, ".down")
+MODIFIER(idx, ".idx")
+MODIFIER(bfly, ".bfly")
 
 #undef LINKAGE
 #undef TARGET

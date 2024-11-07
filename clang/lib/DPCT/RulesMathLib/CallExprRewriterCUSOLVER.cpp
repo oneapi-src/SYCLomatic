@@ -15,7 +15,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUSOLVER() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUSOLVER.inc"
+#include "RulesMathLib/APINamesCUSOLVER.inc"
       }));
 }
 

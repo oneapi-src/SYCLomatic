@@ -9,7 +9,7 @@
 #ifndef CLANG_DPCT_CALL_EXPR_REWRITER_CUB_H
 #define CLANG_DPCT_CALL_EXPR_REWRITER_CUB_H
 
-#include "CUBAPIMigration.h"
+#include "RulesLangLib/CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
 
