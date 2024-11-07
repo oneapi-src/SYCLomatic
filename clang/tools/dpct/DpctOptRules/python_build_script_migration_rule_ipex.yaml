@@ -3,9 +3,9 @@
 # See https://llvm.org/LICENSE.txt for license information.
 
 # This file will be installed to folder:
-# {dpct_install_folder}/extensions/opt_rules.
+# {dpct_install_folder}/extensions/python_rules.
 # The rule specified in this file can be imported with commandline option:
-# --rule-file={dpct_install_folder}/extensions/opt_rules/setup_rules/python_build_script_migration_rule_ipex.yaml
+# --rule-file={dpct_install_folder}/extensions/python_rules/python_build_script_migration_rule_ipex.yaml
 
 - Rule: rule_import_torch
   Kind: PythonRule

@@ -27,7 +27,7 @@
 #include "GenFiles.h"
 #include "RulesMathLib/SpBLASAPIMigration.h"
 #include "TextModification.h"
-#include "ThrustAPIMigration.h"
+#include "RulesLangLib/ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
 #include "clang/AST/Decl.h"

@@ -398,13 +398,13 @@ void CallExprRewriterFactoryBase::initRewriterMapThrust() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesThrust.inc"
+#include "RulesLangLib/APINamesThrust.inc"
 #define ENTRY_HOST(from, to, policy)
 #define ENTRY_DEVICE(SOURCEAPINAME, TARGETAPINAME, EXTR)                       \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_BOTH(SOURCEAPINAME, TARGETAPINAME, EXTR)                         \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#include "APINamesMapThrust.inc"
+#include "RulesLangLib/APINamesMapThrust.inc"
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
 #undef ENTRY_BOTH
