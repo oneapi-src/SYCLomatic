@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "PatternRewriter.h"
+#include "UserDefinedRules/PatternRewriter.h"
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "MigrateScript/MigrateCmakeScript.h"
 #include "MigrateScript/MigratePythonBuildScript.h"
-#include "UserDefinedRules.h"
-#include "GenFiles.h"
+#include "UserDefinedRules/UserDefinedRules.h"
+#include "FileGenerator/GenFiles.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Path.h"

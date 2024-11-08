@@ -9,7 +9,7 @@
 #ifndef DPCT_MIGRATE_BUILD_SCRIPT_H
 #define DPCT_MIGRATE_BUILD_SCRIPT_H
 
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Core/UnifiedPath.h"
 

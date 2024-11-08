@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateCmakeScript.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "ErrorHandle/Error.h"
-#include "PatternRewriter.h"
-#include "GenFiles.h"
+#include "UserDefinedRules/PatternRewriter.h"
+#include "FileGenerator/GenFiles.h"
 #include "Statics.h"
 #include "Utility.h"
 

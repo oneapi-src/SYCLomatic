@@ -171,38 +171,38 @@ add_clang_library(DPCT
   RulesLang/CallExprRewriterCG.cpp
   RulesLang/CallExprRewriterWmma.cpp
   ErrorHandle/CrashRecovery.cpp
-  Diagnostics.cpp
+  Diagnostics/Diagnostics.cpp
   ErrorHandle/Error.cpp
   Statics.cpp
   ExprAnalysis.cpp
   ExtReplacements.cpp
   MapNames.cpp
-  GenFiles.cpp
+  FileGenerator/GenFiles.cpp
   DPCT.cpp
   DpctOptions.cpp
   TextModification.cpp
   Utility.cpp
   ValidateArguments.cpp
   ExternalReplacement.cpp
-  VcxprojParser.cpp
+  Windows/VcxprojParser.cpp
   LibraryAPIMigration.cpp
   MigrateScript/GenMakefile.cpp
   RulesInclude/InclusionHeaders.cpp
   IncrementalMigrationUtility.cpp
-  UserDefinedRules.cpp
-  PatternRewriter.cpp
+  UserDefinedRules/UserDefinedRules.cpp
+  UserDefinedRules/PatternRewriter.cpp
   MigrateScript/MigrateBuildScript.cpp
   MigrateScript/MigrateCmakeScript.cpp
   MigrateScript/MigratePythonBuildScript.cpp
   RulesSecurity/Homoglyph.cpp
   RulesSecurity/MisleadingBidirectional.cpp
-  BarrierFenceSpaceAnalyzer.cpp
+  RulesLang/BarrierFenceSpaceAnalyzer.cpp
   RulesMathLib/BLASAPIMigration.cpp
   RulesMathLib/FFTAPIMigration.cpp
   RulesDNN/DNNAPIMigration.cpp
   RulesCCL/NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
-  AutoComplete/AutoComplete.cpp
+  Linux/AutoComplete.cpp
   RulesAsm/AsmMigration.cpp
   APIMapping/QueryAPIMapping.cpp
   RulesAsm/Parser/AsmNodes.cpp
@@ -216,10 +216,10 @@ add_clang_library(DPCT
   MigrationRuleManager.cpp
   MigrationAction.cpp
   RulesLangLib/ThrustAPIMigration.cpp
-  GenHelperFunction.cpp
+  FileGenerator/GenHelperFunction.cpp
   RulesLang/WMMAAPIMigration.cpp
-  OptimizeMigration.cpp
-  GroupFunctionAnalyzer.cpp
+  RulesLang/OptimizeMigration.cpp
+  RulesLang/GroupFunctionAnalyzer.cpp
   RulesMathLib/SpBLASAPIMigration.cpp
   CodePin/GenCodePinHeader.cpp
 
