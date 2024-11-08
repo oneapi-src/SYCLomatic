@@ -6,16 +6,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ExprAnalysis.h"
+#include "RuleInfra/ExprAnalysis.h"
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "RulesLangLib/CUBAPIMigration.h"
-#include "CallExprRewriter.h"
+#include "RuleInfra/CallExprRewriter.h"
 #include "Config.h"
 #include "RulesDNN/DNNAPIMigration.h"
-#include "MemberExprRewriter.h"
-#include "TypeLocRewriters.h"
+#include "RuleInfra/MemberExprRewriter.h"
+#include "RuleInfra/TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprConcepts.h"

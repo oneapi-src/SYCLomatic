@@ -14,7 +14,7 @@
 #include "Diagnostics/Diagnostics.h"
 #include "RulesMathLib/FFTAPIMigration.h"
 #include "RulesInclude/InclusionHeaders.h"
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
 
@@ -277,103 +277,6 @@ protected:
     } else if (Res == -1) {
       report(Call->getBeginLoc(), Diagnostics::UNINITIALIZED_DEVICE_VAR, false,
              ExprAnalysis::ref(Arg));
-    }
-  }
-
-  void addReplacementForLibraryAPI(LibraryMigrationFlags Flags,
-                                   LibraryMigrationStrings &Strings,
-                                   LibraryMigrationLocations Locations,
-                                   std::string FuncName, const CallExpr *CE) {
-    if (Flags.NeedUseLambda) {
-      if (Strings.PrefixInsertStr.empty() && Strings.SuffixInsertStr.empty()) {
-        // If there is one API call in the migrated code, it is unnecessary to
-        // use a lambda expression
-        Flags.NeedUseLambda = false;
-      }
-    }
-
-    if (Flags.NeedUseLambda) {
-      if ((Flags.MoveOutOfMacro && Flags.IsMacroArg) ||
-          (Flags.CanAvoidUsingLambda && !Flags.IsMacroArg)) {
-        std::string InsertString;
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
-            !Flags.CanAvoidBrace)
-          InsertString = std::string("{") + getNL() + Strings.IndentStr +
-                         Strings.PrefixInsertStr + Strings.Repl + ";" +
-                         Strings.SuffixInsertStr + getNL() + Strings.IndentStr +
-                         "}" + getNL() + Strings.IndentStr;
-        else
-          InsertString = Strings.PrefixInsertStr + Strings.Repl + ";" +
-                         Strings.SuffixInsertStr + getNL() + Strings.IndentStr;
-
-        if (Flags.MoveOutOfMacro && Flags.IsMacroArg) {
-          auto IT = new InsertText(Locations.OutOfMacroInsertLoc,
-                                   std::move(InsertString));
-          IT->setBlockLevelFormatFlag();
-          emplaceTransformation(std::move(IT));
-          report(Locations.OutOfMacroInsertLoc, Diagnostics::CODE_LOGIC_CHANGED,
-                 true, "function-like macro");
-        } else {
-          auto IT =
-              new InsertText(Locations.OuterInsertLoc, std::move(InsertString));
-          IT->setBlockLevelFormatFlag();
-          emplaceTransformation(std::move(IT));
-          report(Locations.OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED,
-                 true,
-                 Flags.OriginStmtType == "if" ? "an " + Flags.OriginStmtType
-                                              : "a " + Flags.OriginStmtType);
-        }
-        emplaceTransformation(
-            new ReplaceText(Locations.PrefixInsertLoc, Locations.Len, "0"));
-      } else {
-        if (Flags.IsAssigned) {
-          report(Locations.PrefixInsertLoc, Diagnostics::NOERROR_RETURN_LAMBDA,
-                 false);
-          insertAroundRange(
-              Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
-              std::string("[&](){") + getNL() + Strings.IndentStr +
-                  Strings.PrefixInsertStr,
-              std::string(";") + Strings.SuffixInsertStr + getNL() +
-                  Strings.IndentStr + "return 0;" + getNL() +
-                  Strings.IndentStr + std::string("}()"),
-              true);
-        } else {
-          insertAroundRange(
-              Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
-              std::string("[&](){") + getNL() + Strings.IndentStr +
-                  Strings.PrefixInsertStr,
-              std::string(";") + Strings.SuffixInsertStr + getNL() +
-                  Strings.IndentStr + std::string("}()"),
-              true);
-        }
-        emplaceTransformation(new ReplaceText(
-            Locations.PrefixInsertLoc, Locations.Len, std::move(Strings.Repl)));
-      }
-    } else {
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
-          !Flags.CanAvoidBrace) {
-        if (!Strings.PrefixInsertStr.empty() ||
-            !Strings.SuffixInsertStr.empty()) {
-          insertAroundRange(
-              Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
-              Strings.PrePrefixInsertStr + std::string("{") + getNL() +
-                  Strings.IndentStr + Strings.PrefixInsertStr,
-              Strings.SuffixInsertStr + getNL() + Strings.IndentStr +
-                  std::string("}"),
-              true);
-        }
-      } else {
-        insertAroundRange(Locations.PrefixInsertLoc, Locations.SuffixInsertLoc,
-                          Strings.PrePrefixInsertStr + Strings.PrefixInsertStr,
-                          std::move(Strings.SuffixInsertStr), true);
-      }
-      if (Flags.IsAssigned) {
-        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd,
-                          MapNames::getCheckErrorMacroName() + "(", ")");
-        requestFeature(HelperFeatureEnum::device_ext);
-      }
-
-      emplaceTransformation(new ReplaceStmt(CE, true, Strings.Repl));
     }
   }
 

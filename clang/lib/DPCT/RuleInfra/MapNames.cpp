@@ -6,9 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 #include "ASTTraversal.h"
-#include "CallExprRewriter.h"
+#include "RuleInfra/CallExprRewriter.h"
 #include "RulesDNN/DNNAPIMigration.h"
 #include "FileGenerator/GenFiles.h"
 #include <map>

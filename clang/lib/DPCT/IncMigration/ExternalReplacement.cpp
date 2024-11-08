@@ -19,7 +19,7 @@
 #include "llvm/Support/Path.h"
 
 #include "ExternalReplacement.h"
-#include "IncrementalMigrationUtility.h"
+#include "IncMigration/IncrementalMigrationUtility.h"
 #include "clang/Tooling/Core/Diagnostic.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/ReplacementsYaml.h"

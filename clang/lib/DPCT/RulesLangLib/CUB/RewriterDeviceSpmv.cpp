@@ -7,8 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriterCUB.h"
-#include "CallExprRewriterCommon.h"
-#include "MapNames.h"
+#include "RuleInfra/CallExprRewriterCommon.h"
+#include "RuleInfra/MapNames.h"
 
 using namespace clang::dpct;
 

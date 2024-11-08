@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "../CallExprRewriter.h"
+#include "RuleInfra/CallExprRewriter.h"
 
 namespace clang {
 namespace dpct {
@@ -121,7 +121,7 @@ SYCLCOMPAT_UNSUPPORT("cub::BlockStore.Store")
 #undef MULTI_STMTS_FACTORY_ENTRY
 #undef WARNING_FACTORY_ENTRY
 
-#include "../CallExprRewriterCommon.h"
+#include "RuleInfra/CallExprRewriterCommon.h"
 
 void dpct::initRewriterMethodMapCooperativeGroupsSYCLcompat(
     std::unordered_map<std::string,
