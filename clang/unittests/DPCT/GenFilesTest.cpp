@@ -1,4 +1,4 @@
-#include "../../lib/DPCT/GenFiles.cpp"
+#include "../../lib/DPCT/FileGenerator/GenFiles.cpp"
 #include "gtest/gtest.h"
 
 TEST(rewriteCanonicalDir, fileUnderInRoot) {

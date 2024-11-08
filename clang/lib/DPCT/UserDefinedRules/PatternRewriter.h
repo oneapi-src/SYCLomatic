@@ -12,7 +12,7 @@
 #include <map>
 #include <string>
 
-#include "UserDefinedRules/UserDefinedRules.h"
+#include "UserDefinedRules.h"
 
 std::string
 applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,

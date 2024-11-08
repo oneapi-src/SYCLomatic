@@ -6,16 +6,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "FileGenerator/GenFiles.h"
-#include "AnalysisInfo.h"
-#include "ErrorHandle/CrashRecovery.h"
-#include "Diagnostics/Diagnostics.h"
-#include "ExternalReplacement.h"
-#include "MigrateScript/GenMakefile.h"
-#include "UserDefinedRules/PatternRewriter.h"
-#include "Statics.h"
-#include "TextModification.h"
-#include "Utility.h"
+#include "GenFiles.h"
+#include "../AnalysisInfo.h"
+#include "../ErrorHandle/CrashRecovery.h"
+#include "../Diagnostics/Diagnostics.h"
+#include "../ExternalReplacement.h"
+#include "../MigrateScript/GenMakefile.h"
+#include "../UserDefinedRules/PatternRewriter.h"
+#include "../Statics.h"
+#include "../TextModification.h"
+#include "../Utility.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"

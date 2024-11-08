@@ -8,7 +8,7 @@
 
 #ifndef DPCT_USER_DEFINED_RULES_H
 #define DPCT_USER_DEFINED_RULES_H
-#include "Utility.h"
+#include "../Utility.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <string>

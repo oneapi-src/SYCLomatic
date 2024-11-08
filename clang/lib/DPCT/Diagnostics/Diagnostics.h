@@ -9,10 +9,10 @@
 #ifndef DPCT_AST_DIAGNOSTICS_H
 #define DPCT_AST_DIAGNOSTICS_H
 
-#include "AnalysisInfo.h"
-#include "FileGenerator/GenFiles.h"
-#include "Statics.h"
-#include "TextModification.h"
+#include "../AnalysisInfo.h"
+#include "../FileGenerator/GenFiles.h"
+#include "../Statics.h"
+#include "../TextModification.h"
 
 #include "clang/Basic/DiagnosticIDs.h"
 #include "clang/DPCT/DpctOptions.h"
