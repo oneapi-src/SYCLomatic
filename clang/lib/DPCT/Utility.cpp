@@ -2749,13 +2749,6 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
   // Using PreBegin/PreEnd because they contain the info of the last func-like
   // macro.
   if (!isLocInSameMacroArg(PreBegin, PreEnd)) {
-#if 0
-#else
-    if (isLocationStraddle(PreBegin, PreEnd)) {
-      std::tie(Begin, End) = getTheLastCompleteImmediateRange(Begin, End);
-      return SourceRange(Begin, End);
-    }
-#endif
     return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
   }
 

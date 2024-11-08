@@ -8180,14 +8180,14 @@ void KernelCallRule::runRule(
     }
 
     // Remove KCall in the original location
-    auto KCallSpellingRange =
-        getDefinitionRange(KCall->getBeginLoc(), KCall->getEndLoc());
-    auto KCallLen = SM.getCharacterData(KCallSpellingRange.getEnd()) -
-                    SM.getCharacterData(KCallSpellingRange.getBegin()) +
-                    Lexer::MeasureTokenLength(KCallSpellingRange.getEnd(), SM,
+    auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+        KCall->getBeginLoc(), KCall->getEndLoc());
+    auto KCallLen = SM.getCharacterData(KCallSpellingRange.second) -
+                    SM.getCharacterData(KCallSpellingRange.first) +
+                    Lexer::MeasureTokenLength(KCallSpellingRange.second, SM,
                                               Result.Context->getLangOpts());
     emplaceTransformation(
-        new ReplaceText(KCallSpellingRange.getBegin(), KCallLen, ""));
+        new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
     auto EpilogLocation = removeTrailingSemicolon(KCall, Result);
     if (DpctGlobalInfo::isCodePinEnabled()) {
       instrumentKernelLogsForCodePin(KCall, EpilogLocation);

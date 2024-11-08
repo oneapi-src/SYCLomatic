@@ -5949,8 +5949,8 @@ void KernelCallExpr::addReplacements() {
     DiagnosticsUtils::report(getFilePath(), getOffset(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
                              false);
-  auto R = std::make_shared<ExtReplacement>(getReplFilePath(), getReplOffset(),
-                                            0, getReplacement(), nullptr);
+  auto R = std::make_shared<ExtReplacement>(getFilePath(), getOffset(), 0,
+                                            getReplacement(), nullptr);
   R->setBlockLevelFormatFlag();
   DpctGlobalInfo::getInstance().addReplacement(R);
 }
@@ -6184,15 +6184,11 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
                                           const CallExpr *KernelCall) {
   bool NeedTypeCast = true;
   int Idx = 0;
-  auto KCallSpellingRange =
-      getDefinitionRange(KernelCall->getBeginLoc(), KernelCall->getEndLoc());
-  KCallSpellingRange.setEnd(KCallSpellingRange.getEnd().getLocWithOffset(
-      Lexer::MeasureTokenLength(KCallSpellingRange.getEnd(),
-                                DpctGlobalInfo::getSourceManager(),
-                                DpctGlobalInfo::getContext().getLangOpts())));
+  auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+      KernelCall->getBeginLoc(), KernelCall->getEndLoc());
   for (auto Arg : ConfigArgs) {
     KernelConfigAnalysis A(IsInMacroDefine);
-    A.setCallSpelling(KCallSpellingRange.getBegin(), KCallSpellingRange.getEnd());
+    A.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
     A.analyze(Arg, Idx, Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
@@ -6211,7 +6207,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs,
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
       KernelConfigAnalysis KFA(false);
-      KFA.setCallSpelling(KCallSpellingRange.getBegin(), KCallSpellingRange.getEnd());
+      KFA.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
         DiagnosticsUtils::report(getFilePath(), getOffset(),
