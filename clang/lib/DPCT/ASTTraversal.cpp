@@ -364,10 +364,24 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       for (i = 0; i < MI->getNumTokens(); i++) {
         std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
             std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
-                MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope, i);
+                MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope,
+                i);
         dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
             [getCombinedStrFromLoc(MI->getReplacementToken(i).getLocation())] =
                 R;
+      }
+      if (Args && IsInAnalysisScope) {
+        for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
+          std::shared_ptr<dpct::DpctGlobalInfo::MacroArgRecord> R =
+              std::make_shared<dpct::DpctGlobalInfo::MacroArgRecord>(MI, i);
+          auto str =
+              getCombinedStrFromLoc(Args->getUnexpArgument(i)->getLocation());
+          auto &Global = DpctGlobalInfo::getInstance();
+          dpct::DpctGlobalInfo::getMacroArgRecordMap()
+              [Global.getMainFile()->getFilePath().getPath().str() +
+               getCombinedStrFromLoc(
+                   Args->getUnexpArgument(i)->getLocation())] = R;
+        }
       }
       std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
           std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
@@ -8634,13 +8648,6 @@ void MemVarRefMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     auto Info = Global.findMemVarInfo(Decl);
 
     if (Info && Info->isUseDeviceGlobal()) {
-      if (Decl->hasInit()) {
-        auto InitStr = getInitForDeviceGlobal(Decl);
-        if (!InitStr.empty()) {
-          report(Decl->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-          Info->setInitForDeviceGlobal(InitStr);
-        }
-      }
       auto VarType = Info->getType();
       if (VarType->isArray()) {
         if (const auto *const ICE =
@@ -8786,13 +8793,8 @@ void ConstantMemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      if (MemVar->hasInit()) {
-        auto InitStr = getInitForDeviceGlobal(MemVar);
-        if (!InitStr.empty()) {
-          report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-          Info->setInitForDeviceGlobal(InitStr);
-        }
-      }
+      Info->migrateToDeviceGlobal(MemVar);
+      return;
     }
 
     Info->setIgnoreFlag(true);
@@ -9242,13 +9244,8 @@ void MemVarMigrationRule::runRule(
     if (!Info)
       return;
     if (Info->isUseDeviceGlobal()) {
-      if (MemVar->hasInit()) {
-        auto InitStr = getInitForDeviceGlobal(MemVar);
-        if (!InitStr.empty()) {
-          report(MemVar->getBeginLoc(), Diagnostics::DEVICE_GLOBAL_INIT, false);
-          Info->setInitForDeviceGlobal(InitStr);
-        }
-      }
+      Info->migrateToDeviceGlobal(MemVar);
+      return;
     }
 
     if (auto VTD = DpctGlobalInfo::findParent<VarTemplateDecl>(MemVar)) {

@@ -619,7 +619,8 @@ void DpctFileInfo::buildReplacements() {
   // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (const auto &Entry : MemVarMap) {
-    if (Entry.second->isIgnore() || !Entry.second->isConstant())
+    if (Entry.second->isIgnore() || !Entry.second->isConstant() ||
+        Entry.second->isUseDeviceGlobal())
       continue;
 
     auto Name = Entry.second->getName();
@@ -1140,6 +1141,20 @@ DpctGlobalInfo::MacroDefRecord::MacroDefRecord(SourceLocation NTL, bool IIAS)
   FilePath = LocInfo.first;
   Offset = LocInfo.second;
 }
+
+DpctGlobalInfo::MacroArgRecord::MacroArgRecord(const MacroInfo *MI,
+                                               int ArgIndex)
+    : ArgIndex(ArgIndex) {
+  ArgName = MI->params()[ArgIndex]->getName().str();
+  for (auto Tok : MI->tokens()) {
+    auto II = Tok.getIdentifierInfo();
+    if (II && (II == MI->params()[ArgIndex])) {
+      ArgLoc = Tok.getLocation();
+      break;
+    }
+  }
+}
+
 DpctGlobalInfo::MacroExpansionRecord::MacroExpansionRecord(
     IdentifierInfo *ID, const MacroInfo *MI, SourceRange Range,
     bool IsInAnalysisScope, int TokenIndex) {
@@ -2417,6 +2432,8 @@ bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
 bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
+std::unordered_map<std::string, std::shared_ptr<DpctGlobalInfo::MacroArgRecord>>
+    DpctGlobalInfo::MacroArgRecordMap;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<clang::tooling::UnifiedPath, size_t>>
     DpctGlobalInfo::ConditionalCompilationLoc;
@@ -2849,6 +2866,163 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   }
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
+
+// This function, `migrateToDeviceGlobal`, migrates a CUDA `__device__` or
+// `__constant__` variable declaration to the SYCL device global equivalent. The
+// migration process involves four key steps. The function handles various
+// transformations as follows:
+//
+// 1. Remove any array brackets following the variable name.
+//    - It identifies the array type using TypeLoc and removes the brackets
+//    while preserving the dimensions for later use.
+//    - If the array size comes from a macro argument, it maps the macro
+//    argument correctly using the `MacroArgRecord`.
+// 2. Process the initialization expression.
+//    - If the initialization style is C-style (with an equal sign), it remove
+//    the equal sign and adds braces around scalar initializers to use
+//    initializer list in SYCL.
+// 3. Replace the variable type.
+//    - Replace the origin type with
+//    `sycl::ext::oneapi::experimental::device_global`
+//      and the correct base type and dimensions.
+//    - It manages macro arguments to correctly replace the base type when
+//    required.
+// 4. Insert the `static` specifier if the variable is declared globally and
+//    does not already have the `static` storage class.
+//
+// Example1 (Specifier __device__ will be removed in preprocessor callbacks):
+// Origin code:
+// __device__ int var_a[3] = {1, 2, 3};
+//
+// As follow list the result after each key step listed in previous:
+// 1. int var_a = {1, 2, 3};
+// 2. int var_a {1, 2, 3};
+// 3. sycl::ext::oneapi::experimental::device_global<int[3]> var_a {1, 2, 3};
+// 4. static sycl::ext::oneapi::experimental::device_global<int[3]> var_a {1, 2,
+// 3};
+//
+// Example2 (Specifier __device__ will be removed in preprocessor callbacks):
+// Origin code:
+// #define VAR(type, name, size) static __device__ type name[size];
+// VAR(int, a, 3)
+//
+// As follow list the result after each key step listed in previous:
+// 1. #define VAR(type, name, size) static type name;
+//    VAR(int, a, 3)
+// 2. #define VAR(type, name, init) static type name;
+//    VAR(int, a, 3)
+// 3. #define VAR(type, name, init) static
+//    sycl::ext::oneapi::experimental::device_global<type[size]> name;
+//    VAR(int, a, 3)
+// 4. #define VAR(type, name, init) static
+//    sycl::ext::oneapi::experimental::device_global<type[size]> name;
+//    VAR(int, a, 3)
+void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &Ctx = DpctGlobalInfo::getContext();
+  auto &MacroArgMap = DpctGlobalInfo::getMacroArgRecordMap();
+  auto TSI = MemVar->getTypeSourceInfo();
+  auto OriginTL = TSI->getTypeLoc();
+  auto TL = OriginTL;
+  auto BegLoc = MemVar->getBeginLoc();
+  if (BegLoc.isMacroID()) {
+    BegLoc = SM.getExpansionLoc(BegLoc);
+  }
+  auto LocInfo = DpctGlobalInfo::getLocInfo(BegLoc);
+  std::string Dims;
+  bool IsArray = OriginTL.getType()->isArrayType();
+  // Step 1
+  while (auto ATL = TL.getAs<clang::ArrayTypeLoc>()) {
+    auto BRange = ATL.getBracketsRange();
+    BRange = getDefinitionRange(BRange.getBegin(), BRange.getEnd());
+    auto RT =
+        ReplaceText(SM.getSpellingLoc(BRange.getBegin()),
+                    SM.getSpellingLoc(BRange.getEnd()).getLocWithOffset(1), "");
+    DpctGlobalInfo::getInstance().addReplacement(RT.getReplacement(Ctx));
+    Dims += "[";
+    std::string SizeStr;
+    if (clang::Expr *SE = ATL.getSizeExpr()) {
+      auto SizeLoc = SE->getBeginLoc();
+      if (SM.isMacroArgExpansion(SizeLoc)) {
+        auto Iter =
+            MacroArgMap.find(DpctGlobalInfo::getInstance()
+                                 .getMainFile()
+                                 ->getFilePath()
+                                 .getPath()
+                                 .str() +
+                             getCombinedStrFromLoc(SM.getSpellingLoc(SizeLoc)));
+        if (Iter != MacroArgMap.end()) {
+          SizeStr = Iter->second->ArgName;
+        }
+      }
+      if (SizeStr.empty()) {
+        SizeStr = ExprAnalysis::ref(SE);
+      }
+    }
+    Dims += SizeStr + "]";
+    TL = ATL.getElementLoc();
+  }
+  // Step 2
+  if (MemVar->hasInit()) {
+    if ((MemVar->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
+      DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                               Diagnostics::DEVICE_GLOBAL_INIT, true, false);
+      if (!dyn_cast<InitListExpr>(
+              MemVar->getInit()->IgnoreImplicitAsWritten())) {
+        auto IBS = InsertBeforeStmt(MemVar->getInit(), "{");
+        auto IAS = InsertAfterStmt(MemVar->getInit(), "}");
+        DpctGlobalInfo::getInstance().addReplacement(IBS.getReplacement(Ctx));
+        DpctGlobalInfo::getInstance().addReplacement(IAS.getReplacement(Ctx));
+      }
+      auto NextTok = Lexer::findNextToken(
+          IsArray ? SM.getSpellingLoc(OriginTL.getEndLoc())
+                  : SM.getSpellingLoc(MemVar->getLocation()),
+          SM, DpctGlobalInfo::getContext().getLangOpts());
+      if (NextTok.has_value() && NextTok.value().is(tok::equal)) {
+        auto RTok = ReplaceToken(NextTok.value().getLocation(), "");
+        DpctGlobalInfo::getInstance().addReplacement(RTok.getReplacement(Ctx));
+      }
+    }
+  }
+  // Step 3
+  std::string BaseTypeStr;
+  SourceLocation TypeReplLoc;
+  size_t TypeReplLen = 0;
+  if (SM.isMacroArgExpansion(OriginTL.getBeginLoc())) {
+    auto Iter = MacroArgMap.find(
+        DpctGlobalInfo::getInstance()
+            .getMainFile()
+            ->getFilePath()
+            .getPath()
+            .str() +
+        getCombinedStrFromLoc(SM.getSpellingLoc(OriginTL.getBeginLoc())));
+    if (Iter != MacroArgMap.end()) {
+      BaseTypeStr = Iter->second->ArgName;
+      TypeReplLoc = Iter->second->ArgLoc;
+      TypeReplLen = BaseTypeStr.size();
+    }
+  }
+  if (BaseTypeStr.empty()) {
+    BaseTypeStr = getType()->getBaseNameWithoutQualifiers();
+    TypeReplLoc = TL.getBeginLoc();
+    TypeReplLen =
+        SM.getFileOffset(TL.getEndLoc()) - SM.getFileOffset(TL.getBeginLoc()) +
+        Lexer::MeasureTokenLength(TL.getEndLoc(), SM,
+                                  DpctGlobalInfo::getContext().getLangOpts());
+  }
+  std::string TypeStr = MapNames::getClNamespace() +
+                        "ext::oneapi::experimental::device_global<" +
+                        BaseTypeStr + Dims + ">";
+  auto RT = ReplaceText(TypeReplLoc, TypeReplLen, std::move(TypeStr));
+  DpctGlobalInfo::getInstance().addReplacement(RT.getReplacement(Ctx));
+  // Step 4
+  if (MemVar->getStorageClass() != SC_Static && getScope() == Global) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(LocInfo.first, LocInfo.second, 0,
+                                         "static ", nullptr));
+  }
+}
+
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const VarDecl *VD) {
   if (VD->hasAttrs())
     return getAddressAttr(VD->getAttrs());
