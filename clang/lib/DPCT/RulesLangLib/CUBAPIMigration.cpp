@@ -603,12 +603,22 @@ void removeVarDecl(const VarDecl *VD) {
                 (new ReplaceStmt(DS, ""))->getReplacement(Context));
             DeclPRInfo->Priority = 1;
             DpctGlobalInfo::addPriorityReplInfo(Key, DeclPRInfo);
+            // Insert header here since PriorityReplInfo delay the replacement
+            // addation to the post process. At that time, the MainFile is
+            // invalid.
+            DpctGlobalInfo::getInstance().insertHeader(DS->getBeginLoc(),
+                                                       HeaderType::HT_SYCL);
           } else {
             auto SubDeclPRInfo = std::make_shared<PriorityReplInfo>();
             SubDeclPRInfo->Repls.emplace_back(
                 replaceText(Beg, End.getLocWithOffset(1), "", SM)
                     ->getReplacement(Context));
             DpctGlobalInfo::addPriorityReplInfo(Key, SubDeclPRInfo);
+            // Insert header here since PriorityReplInfo delay the replacement
+            // addation to the post process. At that time, the MainFile is
+            // invalid.
+            DpctGlobalInfo::getInstance().insertHeader(Beg,
+                                                       HeaderType::HT_SYCL);
           }
           break;
         }
@@ -666,6 +676,11 @@ void CubDeviceLevelRule::removeRedundantTempVar(const CallExpr *CE) {
         auto LocInfo = DpctGlobalInfo::getLocInfo((*Itr)->getBeginLoc());
         auto Info = std::make_shared<PriorityReplInfo>();
         Info->Priority = 1;
+        // Insert header here since PriorityReplInfo delay the replacement
+        // addation to the post process. At that time, the MainFile is
+        // invalid.
+        DpctGlobalInfo::getInstance().insertHeader((*Itr)->getBeginLoc(),
+                                                   HeaderType::HT_SYCL);
         if (IsUsed) {
           Info->Repls.emplace_back(ReplaceStmt(*Itr, "0").getReplacement(
               DpctGlobalInfo::getContext()));

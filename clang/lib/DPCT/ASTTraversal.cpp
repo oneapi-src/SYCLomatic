@@ -9784,6 +9784,10 @@ void MemoryMigrationRule::mallocMigration(
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     }
+    // Insert header here since PriorityReplInfo delay the replacement addation
+    // to the post process. At that time, the MainFile is invalid.
+    DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
+                                               HeaderType::HT_SYCL);
     instrumentAddressToSizeRecordForCodePin(C,0,1);
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
@@ -9804,6 +9808,10 @@ void MemoryMigrationRule::mallocMigration(
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
+      // Insert header here since PriorityReplInfo delay the replacement
+      // addation to the post process. At that time, the MainFile is invalid.
+      DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
+                                                 HeaderType::HT_SYCL);
     } else {
       ManagedPointerAnalysis MPA(C, IsAssigned);
       MPA.RecursiveAnalyze();
@@ -10636,6 +10644,10 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
+      // Insert header here since PriorityReplInfo delay the replacement
+      // addation to the post process. At that time, the MainFile is invalid.
+      DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
+                                                 HeaderType::HT_SYCL);
     } else {
       report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              MapNames::ITFName.at(Name));

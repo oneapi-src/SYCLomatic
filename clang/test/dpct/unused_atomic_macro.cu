@@ -4,9 +4,7 @@
 // RUN: FileCheck --input-file %T/unused_atomic_macro/unused_atomic_macro.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/unused_atomic_macro/unused_atomic_macro.dp.cpp -o %T/unused_atomic_macro/unused_atomic_macro.dp.o %}
 
-// CHECK: #include <sycl/sycl.hpp>
-// CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-NEXT:  /*
+// CHECK: /*
 // CHECK-NEXT: DPCT1058:{{[0-9]+}}: "atomicAdd" is not migrated because it is not called in the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define ATOMIC_ADD(x, v) atomicAdd(&x, v);
