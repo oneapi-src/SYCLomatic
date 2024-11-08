@@ -48,6 +48,11 @@ static void func()
   cudaStream_t s2, *s3 = &s2;
   cudaStream_t s4, s5;
 
+  // CHECK: if(s4 == nullptr) {
+  if(s4 == nullptr) {
+    return;
+  }
+
   // CHECK: if (1)
   // CHECK-NEXT: s0 = dev_ct1.create_queue();
   if (1)

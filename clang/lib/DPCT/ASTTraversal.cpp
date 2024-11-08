@@ -14759,20 +14759,27 @@ void CudaStreamCastRule::runRule(
     if (CE->getCastKind() == clang::CK_LValueToRValue ||
         CE->getCastKind() == clang::CK_NoOp)
       return;
-
-    if (isDefaultStream(CE->getSubExpr())) {
-      if (isPlaceholderIdxDuplicated(CE->getSubExpr()))
+    auto SubExpr = CE->getSubExpr();
+    if (isa<CXXNullPtrLiteralExpr>(SubExpr) || isa<GNUNullExpr>(SubExpr)) {
+      auto P = getParentStmt(CE);
+      if (auto BO = dyn_cast_or_null<BinaryOperator>(P)) {
+        if (BO->getOpcode() == BO_EQ || BO->getOpcode() == BO_NE) {
+          return;
+        }
+      }
+    }
+    if (isDefaultStream(SubExpr)) {
+      if (isPlaceholderIdxDuplicated(SubExpr))
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE->getSubExpr(),
-                           HelperFuncType::HFT_DefaultQueue);
+      buildTempVariableMap(Index, SubExpr, HelperFuncType::HFT_DefaultQueue);
       emplaceTransformation(
           new ReplaceStmt(CE, "{{NEEDREPLACEZ" + std::to_string(Index) + "}}"));
-    } else if (CE->getSubExpr()->getType()->isIntegerType()) {
+    } else if (SubExpr->getType()->isIntegerType()) {
       requestFeature(HelperFeatureEnum::device_ext);
       emplaceTransformation(new ReplaceStmt(
           CE, MapNames::getDpctNamespace() + "int_as_queue_ptr(" +
-                  ExprAnalysis::ref(CE->getSubExpr()) + ")"));
+                  ExprAnalysis::ref(SubExpr) + ")"));
     }
   }
 }
