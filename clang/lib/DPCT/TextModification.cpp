@@ -9,7 +9,7 @@
 #include "TextModification.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "Utility.h"
 
 #include "clang/AST/Attr.h"

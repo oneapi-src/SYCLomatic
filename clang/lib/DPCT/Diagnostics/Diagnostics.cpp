@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "clang/Basic/DiagnosticIDs.h"
 
 namespace clang {

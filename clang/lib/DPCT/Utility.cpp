@@ -13,7 +13,7 @@
 #include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
-#include "GenFiles.h"
+#include "FileGenerator/GenFiles.h"
 #include "Statics.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
@@ -4824,16 +4824,6 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
   else if (NameSpace.empty() && !NSD->isInlineNamespace())
     return NSD->getName().str();
   return NameSpace;
-}
-
-std::string getInitForDeviceGlobal(const VarDecl *VD) {
-  auto Init = VD->getInit()->IgnoreImplicitAsWritten();
-  if (auto IL = dyn_cast<InitListExpr>(Init)) {
-    return dpct::ExprAnalysis::ref(IL);
-  } else if (dyn_cast<CXXConstructExpr>(Init)) {
-    return "";
-  }
-  return "{" + dpct::ExprAnalysis::ref(Init) + "}";
 }
 
 void getNameSpace(const NamespaceDecl *NSD,

@@ -10,7 +10,7 @@
 #define DPCT_AST_DIAGNOSTICS_H
 
 #include "AnalysisInfo.h"
-#include "GenFiles.h"
+#include "FileGenerator/GenFiles.h"
 #include "Statics.h"
 #include "TextModification.h"
 

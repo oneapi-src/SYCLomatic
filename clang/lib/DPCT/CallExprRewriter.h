@@ -9,7 +9,7 @@
 #ifndef CALL_EXPR_REWRITER_H
 #define CALL_EXPR_REWRITER_H
 
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 
 
 namespace clang {

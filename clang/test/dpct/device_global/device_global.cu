@@ -60,9 +60,20 @@ __constant__ int arr_d[10] = {2};
 __constant__ A arr_e[10];
 __device__ B arr_f[10];
 
+// CHECK: #define TABLE_BEGIN(type, name, size) static const sycl::ext::oneapi::experimental::device_global<type[size]> name {
+// CHECK: #define TABLE_END() };
+#define TABLE_BEGIN(type, name, size) static const __device__ type name[size] = {
+#define TABLE_END() };
+
+// CHECK: TABLE_BEGIN(int, arr_g, 10)
+// CHECK: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+// CHECK: TABLE_END()
+TABLE_BEGIN(int, arr_g, 10)
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+TABLE_END()
 
 // CHECK: int device_func() {
-// CHECK:   float *p = arra_a.get();
+// CHECK:   float *p = arr_a.get();
 // CHECK:   arr_a[0] = 1;
 // CHECK:   return arr_a[0] + arr_b[0] + arr_c[0] + arr_d[0] + arr_e[0].data + arr_f[0].data;
 // CHECK: }
@@ -73,8 +84,9 @@ __device__ B arr_f[10];
 // CHECK:   *ptr = var_a.get() + var_b.get() + var_c.get() + var_d.get() + var_e.get().data + var_f.get().data + device_func();
 // CHECK: }
 __device__ int device_func() {
-  float *p = arra_a;
+  float *p = arr_a;
   arr_a[0] = 1;
+  arr_g[0];
   return arr_a[0] + arr_b[0] + arr_c[0] + arr_d[0] + arr_e[0].data + arr_f[0].data;
 }
 

@@ -11,7 +11,7 @@
 
 #include "AnalysisInfo.h"
 #include "ErrorHandle/CrashRecovery.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "RulesMathLib/FFTAPIMigration.h"
 #include "RulesInclude/InclusionHeaders.h"
 #include "MapNames.h"

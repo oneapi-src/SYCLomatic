@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 #include "VcxprojParser.h"
 #include "ErrorHandle/Error.h"
-#include "GenFiles.h"
+#include "FileGenerator/GenFiles.h"
 #include "Statics.h"
 #include "Utility.h"
 

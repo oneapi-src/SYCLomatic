@@ -568,7 +568,6 @@ bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getNameSpace(const NamespaceDecl *NSD);
-std::string getInitForDeviceGlobal(const VarDecl *VD);
 void getNameSpace(const NamespaceDecl *NSD,
                   std::vector<std::string> &Namespaces);
 std::string getTemplateArgumentAsString(const clang::TemplateArgument &Arg,
