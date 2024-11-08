@@ -12,7 +12,7 @@
 #include "RulesAsm/Parser/AsmParser.h"
 #include "RulesAsm/Parser/AsmTokenKinds.h"
 #include "ErrorHandle/CrashRecovery.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"

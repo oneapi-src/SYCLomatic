@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Statics.h"

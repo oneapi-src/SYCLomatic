@@ -8,7 +8,7 @@
 
 #include "LibraryAPIMigration.h"
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "MapNames.h"
 #include "Utility.h"
 

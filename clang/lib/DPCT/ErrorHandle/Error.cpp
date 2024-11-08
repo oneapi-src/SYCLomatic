@@ -9,7 +9,7 @@
 #include "ErrorHandle/Error.h"
 
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "Statics.h"
 
 namespace clang {

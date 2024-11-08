@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "GenFiles.h"
+#include "FileGenerator/GenFiles.h"
 #include "AnalysisInfo.h"
 #include "ErrorHandle/CrashRecovery.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "ExternalReplacement.h"
 #include "MigrateScript/GenMakefile.h"
-#include "PatternRewriter.h"
+#include "UserDefinedRules/PatternRewriter.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"

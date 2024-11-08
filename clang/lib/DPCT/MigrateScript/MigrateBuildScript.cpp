@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "MigrateScript/MigrateBuildScript.h"
-#include "PatternRewriter.h"
+#include "UserDefinedRules/PatternRewriter.h"
 #include "Utility.h"
 
 using namespace clang::dpct;

@@ -32,9 +32,3 @@ WARNING_FACTORY_ENTRY(
                                   "get_global_mem_size")),
     Diagnostics::UNCOMPATIBLE_DEVICE_PROP, std::string("totalConstMem"),
     std::string("get_global_mem_size"))
-
-MEM_EXPR_ENTRY("cub::DoubleBuffer.d_buffers", MEM_BASE, LITERAL("iter"))
-
-MEM_EXPR_ENTRY("cub::DoubleBuffer.Current", MEM_BASE, LITERAL("first"))
-
-MEM_EXPR_ENTRY("cub::DoubleBuffer.Alternate", MEM_BASE, LITERAL("second"))

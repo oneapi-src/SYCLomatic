@@ -13,7 +13,7 @@
 #include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
-#include "GenFiles.h"
+#include "FileGenerator/GenFiles.h"
 #include "Statics.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"

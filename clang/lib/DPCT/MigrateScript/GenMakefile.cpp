@@ -7,8 +7,8 @@
 //===----------------------------------------------------------------------===//
 #include "GenMakefile.h"
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
-#include "GenFiles.h"
+#include "Diagnostics/Diagnostics.h"
+#include "FileGenerator/GenFiles.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 

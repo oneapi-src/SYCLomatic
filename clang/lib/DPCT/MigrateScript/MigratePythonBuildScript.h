@@ -9,7 +9,7 @@
 #ifndef DPCT_MIGRATE_PYTHON_BUILD_SCRIPT_H
 #define DPCT_MIGRATE_PYTHON_BUILD_SCRIPT_H
 #include "MigrateBuildScript.h"
-#include "UserDefinedRules.h"
+#include "UserDefinedRules/UserDefinedRules.h"
 
 void collectPythonBuildScripts(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot);

@@ -9,7 +9,7 @@
 #include "Homoglyph.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Lex/Preprocessor.h"
