@@ -9,22 +9,22 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "RulesAsm/AsmMigration.h"
-#include "BarrierFenceSpaceAnalyzer.h"
+#include "RulesLang/BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
 #include "RulesDNN/DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "RulesMathLib/FFTAPIMigration.h"
 #include "CodePin/GenCodePinHeader.h"
-#include "GroupFunctionAnalyzer.h"
+#include "RulesLang/GroupFunctionAnalyzer.h"
 #include "RulesSecurity/Homoglyph.h"
 #include "RulesLangLib/LIBCUAPIMigration.h"
 #include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "RulesSecurity/MisleadingBidirectional.h"
 #include "RulesCCL/NCCLAPIMigration.h"
-#include "OptimizeMigration.h"
-#include "GenFiles.h"
+#include "RulesLang/OptimizeMigration.h"
+#include "FileGenerator/GenFiles.h"
 #include "RulesMathLib/SpBLASAPIMigration.h"
 #include "TextModification.h"
 #include "RulesLangLib/ThrustAPIMigration.h"
@@ -11615,7 +11615,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
 #define ENTRY_REWRITE(APINAME) APINAME,
-#include "APINamesMath.inc"
+#include "RulesLang/APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
@@ -11637,7 +11637,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
 #define ENTRY_REWRITE(APINAME) APINAME,
-#include "APINamesMath.inc"
+#include "RulesLang/APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE

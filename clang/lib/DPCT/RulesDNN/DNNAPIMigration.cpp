@@ -9,7 +9,7 @@
 #include "DNNAPIMigration.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
+#include "Diagnostics/Diagnostics.h"
 #include "Statics.h"
 #include "MapNames.h"
 #include "clang/AST/Expr.h"

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "UserDefinedRules.h"
+#include "UserDefinedRules/UserDefinedRules.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
 #include "ErrorHandle/Error.h"

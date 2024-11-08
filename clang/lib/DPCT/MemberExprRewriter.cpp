@@ -351,7 +351,8 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
   createCudaMemoryTypeLiteralNumberMigrationFactory(x 0),
 #define WARNING_FACTORY_ENTRY(FuncName, Factory, ...)                          \
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
-#include "APINamesMemberExpr.inc"
+#include "RulesLang/APINamesMemberExpr.inc"
+#include "RulesLangLib/APINamesMemberExprCUB.inc"
 #undef MEMBER_CALL_FACTORY_ENTRY
 #undef MEM_BASE
       }));
