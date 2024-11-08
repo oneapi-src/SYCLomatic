@@ -9787,6 +9787,8 @@ void MemoryMigrationRule::mallocMigration(
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
     }
+    // Insert header here since PriorityReplInfo delay the replacement addation
+    // to the post process. At that time, the MainFile is invalid.
     DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
                                                HeaderType::HT_SYCL);
     instrumentAddressToSizeRecordForCodePin(C,0,1);
@@ -9809,6 +9811,8 @@ void MemoryMigrationRule::mallocMigration(
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
+      // Insert header here since PriorityReplInfo delay the replacement
+      // addation to the post process. At that time, the MainFile is invalid.
       DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
                                                  HeaderType::HT_SYCL);
     } else {
@@ -10643,6 +10647,8 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
                          EA.getSubExprRepl().end());
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first.getCanonicalPath().str() + std::to_string(LocInfo.second), Info);
+      // Insert header here since PriorityReplInfo delay the replacement
+      // addation to the post process. At that time, the MainFile is invalid.
       DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(),
                                                  HeaderType::HT_SYCL);
     } else {

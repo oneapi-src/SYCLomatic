@@ -15,6 +15,10 @@
 // CHECK-NEXT: sycl::float2 ff;
 // CHECK-NEXT: #endif
 
+// This test targets to make sure SYCL header files are inserted into
+// right location (in the code section: CU_FILE is defined)
+// to avoid build fail for code path without CU_FILE.
+
 #ifndef CU_FILE
 #include <cstdio>
 #else

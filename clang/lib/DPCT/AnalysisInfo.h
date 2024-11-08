@@ -586,12 +586,14 @@ private:
   clang::tooling::UnifiedPath FilePath;
   std::string FileContentCache;
 
-  std::map<std::shared_ptr<DpctFileInfo> /*Mainfile*/, unsigned>
+  // Save the FirstIncludeOffset in each MainFile
+  std::map<std::shared_ptr<DpctFileInfo> /*MainFile*/, unsigned>
       FirstIncludeOffset;
   unsigned LastIncludeOffset = 0;
   const unsigned FileBeginOffset = 0;
-  std::set<std::shared_ptr<DpctFileInfo> /*Mainfile*/>
-      HasInclusionDirectiveSet; // File which has inclusion directive
+  // Save the status whether FirstIncludeOffset is set by setFirstIncludeOffset
+  // for each MainFile
+  std::set<std::shared_ptr<DpctFileInfo> /*MainFile*/> HasInclusionDirectiveSet;
   std::vector<std::string> InsertedHeaders;
   std::vector<std::string> InsertedHeadersCUDA;
   std::bitset<32> HeaderInsertedBitMap;
