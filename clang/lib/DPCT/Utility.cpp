@@ -1698,12 +1698,20 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
   // Different expansion but same define, e.g. AAA * AAA
   if (BeginLoc.isMacroID() && EndLoc.isMacroID()) {
-    auto ExpansionBegin = SM.getExpansionRange(BeginLoc).getBegin();
-    auto ExpansionEnd = SM.getExpansionRange(EndLoc).getBegin();
-    auto DLExpanBegin = SM.getDecomposedLoc(ExpansionBegin);
-    auto DLExpanEnd = SM.getDecomposedLoc(ExpansionEnd);
-    if (DLExpanBegin.first != DLExpanEnd.first ||
-        DLExpanBegin.second != DLExpanEnd.second) {
+    std::pair<FileID, unsigned> BeginLocInfo = SM.getDecomposedLoc(BeginLoc);
+    std::pair<FileID, unsigned> EndLocInfo = SM.getDecomposedLoc(EndLoc);
+    SrcMgr::ExpansionInfo BeginExpInfo =
+        SM.getSLocEntry(BeginLocInfo.first).getExpansion();
+    SrcMgr::ExpansionInfo EndExpInfo =
+        SM.getSLocEntry(EndLocInfo.first).getExpansion();
+    // Since different expansions should have different ExpansionInfo instances,
+    // we use all the members (except SpellingLoc) in ExpansionInfo to do this
+    // check.
+    if (BeginExpInfo.getExpansionLocStart() !=
+            EndExpInfo.getExpansionLocStart() ||
+        BeginExpInfo.getExpansionLocEnd() != EndExpInfo.getExpansionLocEnd() ||
+        BeginExpInfo.isExpansionTokenRange() !=
+            EndExpInfo.isExpansionTokenRange()) {
       return true;
     }
   }
