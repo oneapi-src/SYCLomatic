@@ -259,3 +259,25 @@ output source code:
 
    int *ptr, *ptr2;
    int * new_ptr = bar(*ptr, 30);
+
+
+More Examples and Rule Templates
+--------------------------------------------------------
+
+A set of rule examples that can be used as templates to implement new rules are 
+available in the *extensions/rule_templates* folder on the installation path of
+the tool.
+
+.. code-block:: bash
+
+   extensions
+   ├── rule_templates
+       ├── api_rule.yaml
+       ├── class_rule.yaml
+       ├── disable_rule.yaml
+       ├── enum_rule.yaml
+       ├── header_rule.yaml
+       ├── helper_function_rule.yaml
+       ├── macro_rule.yaml
+       ├── pattern_rewrite_rule.yaml
+       └── type_rule.yaml
