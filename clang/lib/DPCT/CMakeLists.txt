@@ -95,7 +95,7 @@ add_custom_target(gen_mapping_register
   COMMAND "${CMAKE_COMMAND}"
     -DTARGET="${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def"
     -DSRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/APIMapping/GenerateRegister.cmake
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/QueryAPIMapping/GenerateRegister.cmake
   DEPENDS ${SRC_FILES})
 include_directories(
   ${API_MAPPING_REGISTER_FOLDER}
@@ -146,7 +146,7 @@ add_clang_library(DPCT
   RulesLang/Math/RewriterCXXAPIRoutines.cpp
   RulesLang/Math/RewriterOverload.cpp
   RulesLang/RewriterSYCLcompat.cpp
-  CallExprRewriter.cpp
+  RuleInfra/CallExprRewriter.cpp
   RulesLang/CallExprRewriterAtomic.cpp
   RulesMathLib/CallExprRewriterCUFFT.cpp
   RulesMathLib/CallExprRewriterCUBLAS.cpp
@@ -174,21 +174,20 @@ add_clang_library(DPCT
   Diagnostics/Diagnostics.cpp
   ErrorHandle/Error.cpp
   Statics.cpp
-  ExprAnalysis.cpp
+  RuleInfra/ExprAnalysis.cpp
   ExtReplacements.cpp
-  MapNames.cpp
+  RuleInfra/MapNames.cpp
   FileGenerator/GenFiles.cpp
   DPCT.cpp
-  DpctOptions.cpp
+  CommandOption/DpctOptions.cpp
   TextModification.cpp
   Utility.cpp
-  ValidateArguments.cpp
-  ExternalReplacement.cpp
+  CommandOption/ValidateArguments.cpp
+  IncMigration/ExternalReplacement.cpp
   Windows/VcxprojParser.cpp
-  LibraryAPIMigration.cpp
   MigrateScript/GenMakefile.cpp
   RulesInclude/InclusionHeaders.cpp
-  IncrementalMigrationUtility.cpp
+  IncMigration/IncrementalMigrationUtility.cpp
   UserDefinedRules/UserDefinedRules.cpp
   UserDefinedRules/PatternRewriter.cpp
   MigrateScript/MigrateBuildScript.cpp
@@ -201,10 +200,10 @@ add_clang_library(DPCT
   RulesMathLib/FFTAPIMigration.cpp
   RulesDNN/DNNAPIMigration.cpp
   RulesCCL/NCCLAPIMigration.cpp
-  TypeLocRewriters.cpp
+  RuleInfra/TypeLocRewriters.cpp
   Linux/AutoComplete.cpp
   RulesAsm/AsmMigration.cpp
-  APIMapping/QueryAPIMapping.cpp
+  QueryAPIMapping/QueryAPIMapping.cpp
   RulesAsm/Parser/AsmNodes.cpp
   RulesAsm/Parser/AsmLexer.cpp
   RulesAsm/Parser/AsmParser.cpp
@@ -212,7 +211,7 @@ add_clang_library(DPCT
   RulesAsm/Parser/AsmTokenKinds.cpp
   RulesLangLib/LIBCUAPIMigration.cpp
   RulesLangLib/CUBAPIMigration.cpp
-  MemberExprRewriter.cpp
+  RuleInfra/MemberExprRewriter.cpp
   MigrationRuleManager.cpp
   MigrationAction.cpp
   RulesLangLib/ThrustAPIMigration.cpp

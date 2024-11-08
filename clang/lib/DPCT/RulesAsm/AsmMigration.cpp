@@ -13,7 +13,7 @@
 #include "RulesAsm/Parser/AsmTokenKinds.h"
 #include "ErrorHandle/CrashRecovery.h"
 #include "Diagnostics/Diagnostics.h"
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
 #include "clang/AST/Expr.h"

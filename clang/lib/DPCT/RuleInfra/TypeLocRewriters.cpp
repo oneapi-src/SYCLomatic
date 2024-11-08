@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "TypeLocRewriters.h"
+#include "RuleInfra/TypeLocRewriters.h"
 #include "UserDefinedRules/UserDefinedRules.h"
 #include "clang/AST/TypeLoc.h"
 

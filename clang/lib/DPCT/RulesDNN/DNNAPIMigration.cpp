@@ -11,7 +11,7 @@
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
 #include "Statics.h"
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Lex/Preprocessor.h"

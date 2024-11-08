@@ -9,7 +9,7 @@
 #ifndef DPCT_FFT_API_MIGRATION_H
 #define DPCT_FFT_API_MIGRATION_H
 
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 #include "TextModification.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Stmt.h"

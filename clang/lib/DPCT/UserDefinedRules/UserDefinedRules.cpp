@@ -7,13 +7,13 @@
 //===----------------------------------------------------------------------===//
 #include "UserDefinedRules/UserDefinedRules.h"
 #include "ASTTraversal.h"
-#include "CallExprRewriter.h"
+#include "RuleInfra/CallExprRewriter.h"
 #include "ErrorHandle/Error.h"
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 #include "MigrateScript/MigrateCmakeScript.h"
 #include "MigrateScript/MigratePythonBuildScript.h"
 #include "MigrationRuleManager.h"
-#include "TypeLocRewriters.h"
+#include "RuleInfra/TypeLocRewriters.h"
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
 

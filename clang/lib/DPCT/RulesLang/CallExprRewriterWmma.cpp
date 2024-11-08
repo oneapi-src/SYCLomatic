@@ -7,9 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "ASTTraversal.h"
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
-#include "MapNames.h"
+#include "RuleInfra/CallExprRewriter.h"
+#include "RuleInfra/CallExprRewriterCommon.h"
+#include "RuleInfra/MapNames.h"
 
 namespace clang {
 namespace dpct {

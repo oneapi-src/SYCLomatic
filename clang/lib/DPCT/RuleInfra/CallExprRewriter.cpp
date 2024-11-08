@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
+#include "RuleInfra/CallExprRewriter.h"
+#include "RuleInfra/CallExprRewriterCommon.h"
 #include <memory>
 
 namespace clang {
