@@ -10,8 +10,8 @@
 #define CLANG_DPCT_CALL_EXPR_REWRITER_CUB_H
 
 #include "RulesLangLib/CUBAPIMigration.h"
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
+#include "RuleInfra/CallExprRewriter.h"
+#include "RuleInfra/CallExprRewriterCommon.h"
 
 namespace clang::dpct {
 

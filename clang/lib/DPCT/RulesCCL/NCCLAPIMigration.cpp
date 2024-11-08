@@ -9,7 +9,7 @@
 #include "NCCLAPIMigration.h"
 
 #include "ASTTraversal.h"
-#include "ExprAnalysis.h"
+#include "RuleInfra/ExprAnalysis.h"
 #include "MigrationRuleManager.h"
 
 using namespace clang::dpct;

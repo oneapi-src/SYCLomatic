@@ -10,7 +10,7 @@
 #include "Diagnostics/Diagnostics.h"
 #include "FileGenerator/GenFiles.h"
 #include "Utility.h"
-#include "ValidateArguments.h"
+#include "CommandOption/ValidateArguments.h"
 
 #include "ToolChains/Cuda.h"
 #include "clang/Driver/Driver.h"

@@ -7,7 +7,7 @@
 //===------------------------------------------------------------------===//
 
 #include "RulesLang/WMMAAPIMigration.h"
-#include "ExprAnalysis.h"
+#include "RuleInfra/ExprAnalysis.h"
 
 using namespace clang::dpct;
 using namespace clang::ast_matchers;

@@ -10,16 +10,15 @@
 #define DPCT_ANALYSIS_INFO_H
 
 #include "ErrorHandle/Error.h"
-#include "ExprAnalysis.h"
+#include "RuleInfra/ExprAnalysis.h"
 #include "ExtReplacements.h"
 #include "RulesInclude/InclusionHeaders.h"
-#include "LibraryAPIMigration.h"
 #include "UserDefinedRules/UserDefinedRules.h"
 #include "FileGenerator/GenFiles.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
-#include "ValidateArguments.h"
+#include "CommandOption/ValidateArguments.h"
 #include <bitset>
 #include <memory>
 #include <optional>

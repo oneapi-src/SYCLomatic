@@ -671,7 +671,7 @@ ReplaceText::getReplacement(const ASTContext &Context) const {
 
 const std::unordered_map<int, std::string> TextModification::TMNameMap = {
 #define TRANSFORMATION(TYPE) {(int)TMID::TYPE, #TYPE},
-#include "Transformations.inc"
+#include "TextModificationKind.inc"
 #undef TRANSFORMATION
 };
 

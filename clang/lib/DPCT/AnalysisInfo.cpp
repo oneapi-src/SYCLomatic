@@ -8,8 +8,8 @@
 
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
-#include "ExprAnalysis.h"
-#include "MapNames.h"
+#include "RuleInfra/ExprAnalysis.h"
+#include "RuleInfra/MapNames.h"
 #include "Statics.h"
 #include "TextModification.h"
 #include "Utility.h"

@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriterCUB.h"
-#include "CallExprRewriterCommon.h"
+#include "RuleInfra/CallExprRewriterCommon.h"
 
 using namespace clang::dpct;
 

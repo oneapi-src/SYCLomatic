@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CallExprRewriterCommon.h"
+#include "RuleInfra/CallExprRewriterCommon.h"
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasGetVersion_v2",

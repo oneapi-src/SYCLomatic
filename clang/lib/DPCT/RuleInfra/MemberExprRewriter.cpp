@@ -6,9 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MemberExprRewriter.h"
+#include "RuleInfra/MemberExprRewriter.h"
 #include "AnalysisInfo.h"
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 
 namespace clang {
 namespace dpct {

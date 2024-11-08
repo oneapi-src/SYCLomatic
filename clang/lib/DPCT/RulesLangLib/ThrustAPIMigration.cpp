@@ -8,7 +8,7 @@
 
 #include "RulesLangLib/ThrustAPIMigration.h"
 #include "ASTTraversal.h"
-#include "ExprAnalysis.h"
+#include "RuleInfra/ExprAnalysis.h"
 #include "TextModification.h"
 
 extern int ThrustVersion;
