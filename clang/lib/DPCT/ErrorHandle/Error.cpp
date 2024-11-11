@@ -10,7 +10,7 @@
 
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 
 namespace clang {
 namespace dpct {

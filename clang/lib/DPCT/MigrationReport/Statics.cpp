@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "ASTTraversal.h"
 #include "FileGenerator/GenFiles.h"
 

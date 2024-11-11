@@ -11,7 +11,7 @@
 
 #include "AnalysisInfo.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 
 #include "clang/Basic/DiagnosticIDs.h"

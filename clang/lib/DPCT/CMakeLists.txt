@@ -175,7 +175,7 @@ add_clang_library(DPCT
   ErrorHandle/CrashRecovery.cpp
   Diagnostics/Diagnostics.cpp
   ErrorHandle/Error.cpp
-  Statics.cpp
+  MigrationReport/Statics.cpp
   RuleInfra/ExprAnalysis.cpp
   ExtReplacements.cpp
   RuleInfra/MapNames.cpp

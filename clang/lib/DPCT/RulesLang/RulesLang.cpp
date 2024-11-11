@@ -67,46 +67,6 @@ using namespace clang::tooling;
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
 extern DpctOption<opt, bool> ProcessAll;
 
-TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation End,
-                              std::string &&Str, const SourceManager &SM) {
-  auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-  if (Length > 0) {
-    return new ReplaceText(Begin, Length, std::move(Str));
-  }
-  return nullptr;
-}
-
-SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
-                                 const SourceManager &SM) {
-  auto SL = getStmtExpansionSourceRange(C->getArg(Idx)).getEnd();
-  return SL.getLocWithOffset(Lexer::MeasureTokenLength(
-      SL, SM, DpctGlobalInfo::getContext().getLangOpts()));
-}
-
-/// Return a TextModication that removes nth argument of the CallExpr,
-/// together with the preceding comma.
-TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
-                            const SourceManager &SM) {
-  if (C->getNumArgs() <= n)
-    return nullptr;
-  if (C->getArg(n)->isDefaultArgument())
-    return nullptr;
-
-  SourceLocation Begin, End;
-  if (n) {
-    Begin = getArgEndLocation(C, n - 1, SM);
-    End = getArgEndLocation(C, n, SM);
-  } else {
-    Begin = getStmtExpansionSourceRange(C->getArg(n)).getBegin();
-    if (C->getNumArgs() > 1) {
-      End = getStmtExpansionSourceRange(C->getArg(n + 1)).getBegin();
-    } else {
-      End = getArgEndLocation(C, n, SM);
-    }
-  }
-  return replaceText(Begin, End, "", SM);
-}
-
 auto parentStmt = []() {
   return anyOf(
       hasParent(compoundStmt()), hasParent(forStmt()), hasParent(whileStmt()),
@@ -2621,32 +2581,6 @@ void LinkageSpecDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       std::make_pair(BeginLocInfo.second, EndLocInfo.second));
 }
 
-
-// Rule for FFT enums.
-void FFTEnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      declRefExpr(
-          to(enumConstantDecl(matchesName(
-              "(CUFFT_SUCCESS|CUFFT_INVALID_PLAN|CUFFT_ALLOC_FAILED|CUFFT_"
-              "INVALID_TYPE|CUFFT_INVALID_VALUE|CUFFT_INTERNAL_ERROR|CUFFT_"
-              "EXEC_FAILED|CUFFT_SETUP_FAILED|CUFFT_INVALID_SIZE|CUFFT_"
-              "UNALIGNED_DATA|CUFFT_INCOMPLETE_PARAMETER_LIST|CUFFT_INVALID_"
-              "DEVICE|CUFFT_PARSE_ERROR|CUFFT_NO_WORKSPACE|CUFFT_NOT_"
-              "IMPLEMENTED|CUFFT_LICENSE_ERROR|CUFFT_NOT_SUPPORTED)"))))
-          .bind("FFTConstants"),
-      this);
-}
-
-void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (const DeclRefExpr *DE =
-          getNodeAsType<DeclRefExpr>(Result, "FFTConstants")) {
-    auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
-    return;
-  }
-}
-
-
 // Rule for CU_JIT enums.
 void CU_JITEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -2884,8 +2818,9 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCsrsv_solveEx",
         /*level 3*/
         "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
-        "cusparseScsrmm2", "cusparseDcsrmm2", "cusparseCcsrmm2",
-        "cusparseZcsrmm2",
+        "cusparseScsrgemm", "cusparseDcsrgemm", "cusparseCcsrgemm",
+        "cusparseZcsrgemm", "cusparseXcsrgemmNnz", "cusparseScsrmm2",
+        "cusparseDcsrmm2", "cusparseCcsrmm2", "cusparseZcsrmm2",
         /*Generic*/
         "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
         "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
@@ -2951,6 +2886,114 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
+    return;
+  }
+  if (FuncName == "cusparseXcsrgemmNnz") {
+    std::vector<std::string> MigratedArgs;
+    for (const auto &Arg : CE->arguments()) {
+      MigratedArgs.push_back(ExprAnalysis::ref(Arg));
+    }
+    // We need find the next cusparse<T>csrgemm API call which is using the
+    // result of this API call, otherwise a warning will be emitted.
+    auto findOuterCS = [](const Stmt *Input) {
+      const CompoundStmt *CS = nullptr;
+      DpctGlobalInfo::findAncestor<Stmt>(
+          Input, [&](const DynTypedNode &Cur) -> bool {
+            if (Cur.get<DoStmt>() || Cur.get<ForStmt>() ||
+                Cur.get<WhileStmt>() || Cur.get<SwitchStmt>() ||
+                Cur.get<IfStmt>())
+              return true;
+            if (const CompoundStmt *S = Cur.get<CompoundStmt>())
+              CS = S;
+            return false;
+          });
+      return CS;
+    };
+    const CompoundStmt *CS1 = findOuterCS(CE);
+    // Find all the cusparse<T>csrgemm calls in this range.
+    using namespace clang::ast_matchers;
+    auto Matcher =
+        findAll(callExpr(callee(functionDecl(hasAnyName(
+                             "cusparseScsrgemm", "cusparseDcsrgemm",
+                             "cusparseCcsrgemm", "cusparseZcsrgemm"))))
+                    .bind("CallExpr"));
+    auto CEResults = match(Matcher, *CS1, DpctGlobalInfo::getContext());
+    // Find the correct call
+    const CallExpr* CorrectCall = nullptr;
+    for (auto &Result : CEResults) {
+      const CallExpr *MatchedCE = Result.getNodeAs<CallExpr>("CallExpr");
+      if (MatchedCE) {
+        // 1. The context should be the same
+        const CompoundStmt *CS2 = findOuterCS(MatchedCE);
+        if (CS1 != CS2)
+          continue;
+        // 2. The args should be the same
+        std::vector<std::string> MatchedCEMigratedArgs;
+        for (const auto &Arg : MatchedCE->arguments()) {
+          MatchedCEMigratedArgs.push_back(ExprAnalysis::ref(Arg));
+        }
+        if ([&]() -> bool {
+              const static std::map<unsigned /*CE*/, unsigned /*MatchedCE*/>
+                  IdxMap = {
+                      {0, 0},   {1, 1},   {2, 2},   {3, 3},
+                      {4, 4},   {5, 5},   {6, 6},   {7, 7},
+                      {8, 9},   {9, 10},  {10, 11}, {11, 12},
+                      {12, 14}, {13, 15}, {14, 16}, {15, 18},
+                  };
+              for (const auto &P : IdxMap) {
+                if (MigratedArgs[P.first] != MatchedCEMigratedArgs[P.second]) {
+                  return false;
+                }
+              }
+              return true;
+            }()) {
+          CorrectCall = MatchedCE;
+          break;
+        }
+      }
+    }
+    const constexpr int Placeholder = -1;
+    std::map<int /*CE*/, int /*MatchedCE*/> InsertBeforeIdxMap;
+    if (CorrectCall) {
+      InsertBeforeIdxMap = {
+          {8, 8},
+          {12, 13},
+      };
+    } else {
+      report(
+          DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
+          Diagnostics::SPARSE_NNZ, true);
+      InsertBeforeIdxMap = {
+          {8, Placeholder},
+          {12, Placeholder},
+      };
+    }
+    std::string MigratedCall;
+    MigratedCall = MapNames::getDpctNamespace() + "sparse::csrgemm_nnz(";
+    for (unsigned i = 0; i < MigratedArgs.size(); i++) {
+      if (auto Iter = InsertBeforeIdxMap.find(i);
+          Iter != InsertBeforeIdxMap.end()) {
+        if (Iter->second == Placeholder) {
+          MigratedCall += ("dpct_placeholder, ");
+        } else {
+          MigratedCall += (ExprAnalysis::ref(
+                               CorrectCall->getArg(InsertBeforeIdxMap.at(i))) +
+                           ", ");
+        }
+      }
+      MigratedCall += MigratedArgs[i];
+      if (i != MigratedArgs.size() - 1)
+        MigratedCall += ", ";
+    }
+    MigratedCall += ")";
+    auto DefRange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+    SourceLocation Begin = DefRange.getBegin();
+    SourceLocation End = DefRange.getEnd();
+    End = End.getLocWithOffset(
+        Lexer::MeasureTokenLength(End, DpctGlobalInfo::getSourceManager(),
+                                  DpctGlobalInfo::getContext().getLangOpts()));
+    emplaceTransformation(replaceText(Begin, End, std::move(MigratedCall),
+                                      DpctGlobalInfo::getSourceManager()));
     return;
   }
 }
@@ -12994,88 +13037,6 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new ReplaceText(ColonLoc, Len, ""));
       }
     }
-  }
-}
-
-
-// Rule for FFT function calls.
-void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
-  auto functionName = [&]() {
-    return hasAnyName("cufftPlan1d", "cufftPlan2d", "cufftPlan3d",
-                      "cufftPlanMany", "cufftMakePlan1d", "cufftMakePlan2d",
-                      "cufftMakePlan3d", "cufftMakePlanMany",
-                      "cufftMakePlanMany64", "cufftExecC2C", "cufftExecR2C",
-                      "cufftExecC2R", "cufftExecZ2Z", "cufftExecZ2D",
-                      "cufftExecD2Z", "cufftCreate", "cufftDestroy",
-                      "cufftSetStream", "cufftGetVersion", "cufftGetProperty",
-                      "cufftXtMakePlanMany", "cufftXtExec", "cufftGetSize1d",
-                      "cufftGetSize2d", "cufftGetSize3d", "cufftGetSizeMany",
-                      "cufftGetSize", "cufftEstimate1d", "cufftEstimate2d",
-                      "cufftEstimate3d", "cufftEstimateMany",
-                      "cufftSetAutoAllocation", "cufftGetSizeMany64",
-                      "cufftSetWorkArea");
-  };
-  MF.addMatcher(callExpr(callee(functionDecl(functionName()))).bind("FuncCall"),
-                this);
-
-  // Currently, only exec functions support function pointer migration
-  auto execFunctionName = [&]() {
-    return hasAnyName("cufftExecC2C", "cufftExecR2C", "cufftExecC2R",
-                      "cufftExecZ2Z", "cufftExecZ2D", "cufftExecD2Z");
-  };
-  MF.addMatcher(unaryOperator(hasOperatorName("&"),
-                              hasUnaryOperand(declRefExpr(hasDeclaration(
-                                  functionDecl(execFunctionName())))))
-                    .bind("FuncPtr"),
-                this);
-}
-
-void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
-  const UnaryOperator *UO = getNodeAsType<UnaryOperator>(Result, "FuncPtr");
-
-  if (!CE) {
-    auto TM = processFunctionPointer(UO);
-    if (TM) {
-      emplaceTransformation(TM);
-    }
-    return;
-  }
-
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  if (!CE->getDirectCallee())
-    return;
-  std::string FuncName =
-      CE->getDirectCallee()->getNameInfo().getName().getAsString();
-
-  if (FuncName == "cufftGetVersion" || FuncName == "cufftGetProperty") {
-    DpctGlobalInfo::getInstance().insertHeader(
-        SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
-  } else if (FuncName == "cufftSetStream" ||
-             FuncName == "cufftCreate" || FuncName == "cufftDestroy" ||
-             FuncName == "cufftPlan1d" || FuncName == "cufftMakePlan1d" ||
-             FuncName == "cufftPlan2d" || FuncName == "cufftMakePlan2d" ||
-             FuncName == "cufftPlan3d" || FuncName == "cufftMakePlan3d" ||
-             FuncName == "cufftPlanMany" || FuncName == "cufftMakePlanMany" ||
-             FuncName == "cufftMakePlanMany64" || FuncName == "cufftXtMakePlanMany" ||
-             FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
-             FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
-             FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z" ||
-             FuncName == "cufftXtExec" || FuncName == "cufftGetSize1d" ||
-             FuncName == "cufftGetSize2d" || FuncName == "cufftGetSize3d" ||
-             FuncName == "cufftGetSizeMany" || FuncName == "cufftGetSize" ||
-             FuncName == "cufftEstimate1d" || FuncName == "cufftEstimate2d" ||
-             FuncName == "cufftEstimate3d" || FuncName == "cufftEstimateMany" ||
-             FuncName == "cufftSetAutoAllocation" || FuncName == "cufftGetSizeMany64" ||
-             FuncName == "cufftSetWorkArea") {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
   }
 }
 

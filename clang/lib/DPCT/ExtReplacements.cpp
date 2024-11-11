@@ -9,7 +9,7 @@
 #include "ExtReplacements.h"
 
 #include "AnalysisInfo.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 
 #include <assert.h>
 #include <optional>

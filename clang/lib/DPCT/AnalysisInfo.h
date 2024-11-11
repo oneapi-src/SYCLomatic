@@ -15,7 +15,7 @@
 #include "RulesInclude/InclusionHeaders.h"
 #include "UserDefinedRules/UserDefinedRules.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
 #include "CommandOption/ValidateArguments.h"

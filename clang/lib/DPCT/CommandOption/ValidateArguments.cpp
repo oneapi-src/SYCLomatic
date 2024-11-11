@@ -8,7 +8,7 @@
 
 #include "CommandOption/ValidateArguments.h"
 #include "ErrorHandle/Error.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "Utility.h"
 
 #include "clang/DPCT/DpctOptions.h"

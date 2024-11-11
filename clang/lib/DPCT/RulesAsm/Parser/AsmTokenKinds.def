@@ -403,6 +403,7 @@ MODIFIER(down, ".down")
 MODIFIER(idx, ".idx")
 MODIFIER(bfly, ".bfly")
 MODIFIER(sc, ".sc")
+MODIFIER(gl, ".gl")
 
 #undef LINKAGE
 #undef TARGET

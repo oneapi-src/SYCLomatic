@@ -9,14 +9,30 @@
 #ifndef DPCT_FFT_API_MIGRATION_H
 #define DPCT_FFT_API_MIGRATION_H
 
-#include "RuleInfra/MapNames.h"
-#include "TextModification.h"
-#include "clang/AST/Decl.h"
-#include "clang/AST/Stmt.h"
+#include "ASTTraversal.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/AST/Expr.h"
 
 namespace clang {
 namespace dpct {
+
 TextModification *processFunctionPointer(const UnaryOperator *UO);
+
+class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+
+/// Migration rule for FFT enums.
+class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+
 } // namespace dpct
 } // namespace clang
 

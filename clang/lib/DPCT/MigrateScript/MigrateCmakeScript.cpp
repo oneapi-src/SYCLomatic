@@ -10,7 +10,7 @@
 #include "ErrorHandle/Error.h"
 #include "UserDefinedRules/PatternRewriter.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "Utility.h"
 
 #include "llvm/Support/FileSystem.h"

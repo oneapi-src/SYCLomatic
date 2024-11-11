@@ -8,7 +8,6 @@
 
 #include "RulesLangLib/ThrustAPIMigration.h"
 #include "ASTTraversal.h"
-#include "RulesLang/RulesLang.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "TextModification.h"
 
