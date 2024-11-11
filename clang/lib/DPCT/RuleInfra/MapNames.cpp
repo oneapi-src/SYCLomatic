@@ -11,7 +11,9 @@
 #include "RuleInfra/CallExprRewriter.h"
 #include "RulesDNN/DNNAPIMigration.h"
 #include "FileGenerator/GenFiles.h"
+#include "RulesLang/RulesLang.h"
 #include <map>
+
 
 using namespace clang;
 using namespace clang::dpct;
@@ -42,7 +44,7 @@ MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap;
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::CuDNNTypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
-    EnumConstantRule::EnumNamesMap;
+    MapNames::EnumNamesMap;
 MapNames::MapTy CuDNNTypeRule::CuDNNEnumNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap;
@@ -1303,7 +1305,7 @@ void MapNames::setExplicitNamespaceMap(
       {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED", HelperFeatureEnum::device_ext},
   };
   // Enum constants name mapping.
-  EnumConstantRule::EnumNamesMap = {
+  MapNames::EnumNamesMap = {
       // ...
       // enum Device Attribute
       // ...
