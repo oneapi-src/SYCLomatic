@@ -8,6 +8,7 @@
 
 #include "Utility.h"
 #include "ASTTraversal.h"
+#include "RuleInfra/MapNames.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
 #include "RulesDNN/DNNAPIMigration.h"
@@ -4932,8 +4933,8 @@ std::string getDpctVersionStr() {
 
 void requestHelperFeatureForEnumNames(const std::string Name) {
   auto HelperFeatureIter =
-      clang::dpct::EnumConstantRule::EnumNamesMap.find(Name);
-  if (HelperFeatureIter != clang::dpct::EnumConstantRule::EnumNamesMap.end()) {
+      MapNames::EnumNamesMap.find(Name);
+  if (HelperFeatureIter != MapNames::EnumNamesMap.end()) {
     requestFeature(HelperFeatureIter->second->RequestFeature);
     return;
   }

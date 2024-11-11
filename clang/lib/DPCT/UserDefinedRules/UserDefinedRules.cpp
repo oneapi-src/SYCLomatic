@@ -6,7 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 #include "UserDefinedRules/UserDefinedRules.h"
-#include "ASTTraversal.h"
+//#include "ASTTraversal.h"
+#include "RulesLang/RulesLang.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "ErrorHandle/Error.h"
 #include "RuleInfra/MapNames.h"
@@ -241,8 +242,8 @@ void registerClassRule(MetaRuleObject &R) {
 }
 
 void registerEnumRule(MetaRuleObject &R) {
-  auto It = clang::dpct::EnumConstantRule::EnumNamesMap.find(R.In);
-  if (It != clang::dpct::EnumConstantRule::EnumNamesMap.end()) {
+  auto It = MapNames::EnumNamesMap.find(R.In);
+  if (It != MapNames::EnumNamesMap.end()) {
     if (It->second->Priority > R.Priority) {
       It->second->Priority = R.Priority;
       It->second->NewName = R.Out;
@@ -262,7 +263,7 @@ void registerEnumRule(MetaRuleObject &R) {
         R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
-    clang::dpct::EnumConstantRule::EnumNamesMap.emplace(
+    MapNames::EnumNamesMap.emplace(
         R.EnumName + "::" + R.In, RulePtr);
   }
 }

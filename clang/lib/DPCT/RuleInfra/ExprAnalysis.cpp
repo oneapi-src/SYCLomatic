@@ -9,6 +9,7 @@
 #include "RuleInfra/ExprAnalysis.h"
 
 #include "ASTTraversal.h"
+#include "RulesLang/RulesLang.h"
 #include "AnalysisInfo.h"
 #include "RulesLangLib/CUBAPIMigration.h"
 #include "RuleInfra/CallExprRewriter.h"
@@ -577,10 +578,10 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       }
 
     auto &ReplEnum =
-        MapNames::findReplacedName(EnumConstantRule::EnumNamesMap, RefString);
+        MapNames::findReplacedName(MapNames::EnumNamesMap, RefString);
     requestHelperFeatureForEnumNames(RefString);
-    auto ItEnum = EnumConstantRule::EnumNamesMap.find(RefString);
-    if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
+    auto ItEnum = MapNames::EnumNamesMap.find(RefString);
+    if (ItEnum != MapNames::EnumNamesMap.end()) {
       for (auto ItHeader = ItEnum->second->Includes.begin();
            ItHeader != ItEnum->second->Includes.end(); ItHeader++) {
         DpctGlobalInfo::getInstance().insertHeader(DRE->getBeginLoc(),

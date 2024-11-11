@@ -26,12 +26,12 @@ void CallExprRewriterFactoryBase::initRewriterMapWmma() {
   // nvcuda::wmma::mem_row_major, this mapping must be protected by option
   // "--use-experimental-features=matrix".
   if (DpctGlobalInfo::useExtJointMatrix() && !DpctGlobalInfo::useSYCLCompat()) {
-    EnumConstantRule::EnumNamesMap.insert(
+    MapNames::EnumNamesMap.insert(
         {"nvcuda::wmma::mem_row_major",
          std::make_shared<EnumNameRule>(
              MapNames::getClNamespace() +
              "ext::oneapi::experimental::matrix::layout::row_major")});
-    EnumConstantRule::EnumNamesMap.insert(
+    MapNames::EnumNamesMap.insert(
         {"nvcuda::wmma::mem_col_major",
          std::make_shared<EnumNameRule>(
              MapNames::getClNamespace() +
