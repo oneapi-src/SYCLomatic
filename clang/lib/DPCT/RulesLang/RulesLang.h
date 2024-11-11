@@ -282,12 +282,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-/// Migration rule for FFT enums.
-class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
 
 /// Migration rule for CU_JIT enums.
 class CU_JITEnumsRule : public NamedMigrationRule<CU_JITEnumsRule> {
@@ -997,11 +991,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
 
 class DriverModuleAPIRule : public NamedMigrationRule<DriverModuleAPIRule> {
 public:

@@ -8,7 +8,7 @@
 #include "VcxprojParser.h"
 #include "ErrorHandle/Error.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "Utility.h"
 
 std::map<std::string, std::vector<std::string>> OptionsMap;

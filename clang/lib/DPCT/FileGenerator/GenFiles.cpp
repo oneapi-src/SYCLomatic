@@ -13,7 +13,7 @@
 #include "IncMigration/ExternalReplacement.h"
 #include "MigrateScript/GenMakefile.h"
 #include "UserDefinedRules/PatternRewriter.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
 

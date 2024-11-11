@@ -28,4 +28,16 @@ __global__ void fence() {
   asm volatile("fence.acq_rel.sys; " : : : "memory");
 }
 
+__global__ void membar() {
+
+  // CHECK: sycl::atomic_fence(sycl::memory_order::seq_cst,sycl::memory_scope::work_group);
+  asm volatile("membar.cta;":::"memory"); 
+
+  // CHECK: sycl::atomic_fence(sycl::memory_order::seq_cst,sycl::memory_scope::device);
+  asm volatile("membar.gl;":::"memory"); 
+
+  // CHECK: sycl::atomic_fence(sycl::memory_order::seq_cst,sycl::memory_scope::system);
+  asm volatile("membar.sys;":::"memory");
+}
+
 // clang-format off

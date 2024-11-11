@@ -9,7 +9,7 @@
 #ifndef DPCT_EXPR_ANALYSIS_H
 #define DPCT_EXPR_ANALYSIS_H
 
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 
 #include "clang/AST/DeclTemplate.h"

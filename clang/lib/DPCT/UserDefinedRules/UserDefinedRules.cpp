@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "UserDefinedRules/UserDefinedRules.h"
-//#include "ASTTraversal.h"
+#include "ASTTraversal.h"
 #include "RulesLang/RulesLang.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "ErrorHandle/Error.h"
@@ -19,6 +19,7 @@
 #include "llvm/Support/YAMLTraits.h"
 
 using namespace clang::ast_matchers;
+using namespace clang::dpct;
 
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;

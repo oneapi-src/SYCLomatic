@@ -15,7 +15,7 @@
 #include "RuleInfra/ExprAnalysis.h"
 #include "RuleInfra/MapNames.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
 #include "clang/AST/Expr.h"

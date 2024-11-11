@@ -12,7 +12,7 @@
 #include "RuleInfra/CallExprRewriter.h"
 #include "Diagnostics/Diagnostics.h"
 #include "RuleInfra/MapNames.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Lex/Preprocessor.h"

@@ -10,7 +10,7 @@
 #include "Diagnostics/Diagnostics.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "RuleInfra/MapNames.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
 

@@ -10,7 +10,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "RuleInfra/MapNames.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"

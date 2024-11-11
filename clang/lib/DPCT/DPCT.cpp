@@ -27,7 +27,7 @@
 #include "UserDefinedRules/PatternRewriter.h"
 #include "UserDefinedRules/UserDefinedRules.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "RuleInfra/TypeLocRewriters.h"
 #include "Utility.h"
 #include "CommandOption/ValidateArguments.h"

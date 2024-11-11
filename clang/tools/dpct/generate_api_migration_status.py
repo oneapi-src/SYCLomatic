@@ -168,7 +168,7 @@ def do_update(args):
     output_path = args.output_path
     SYCLomatic_path = args.SYCLomatic_path
     output_file_suffix = args.output_file_format
-    DPCT_lib_path = os.path.join(SYCLomatic_path, 'clang', 'lib', 'DPCT')
+    DPCT_lib_path = os.path.join(SYCLomatic_path, 'clang', 'lib', 'DPCT', 'SrcAPI')
     if os.path.exists(output_path) is False:
         warnings.warn("output path is not exist")
         return False
