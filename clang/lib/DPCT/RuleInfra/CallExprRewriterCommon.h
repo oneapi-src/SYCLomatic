@@ -563,8 +563,8 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
     auto Arg = CE->getArg(idx)->IgnoreImplicitAsWritten();
     if (auto DRE = dyn_cast<DeclRefExpr>(Arg)) {
       auto ArgName = DRE->getNameInfo().getAsString();
-      auto Search = EnumConstantRule::EnumNamesMap.find(ArgName);
-      if (Search != EnumConstantRule::EnumNamesMap.end()) {
+      auto Search = MapNames::EnumNamesMap.find(ArgName);
+      if (Search != MapNames::EnumNamesMap.end()) {
         requestHelperFeatureForEnumNames(ArgName);
         return Search->second->NewName;
       }

@@ -8,6 +8,7 @@
 
 #include "RulesLangLib/CUBAPIMigration.h"
 #include "ASTTraversal.h"
+#include "RulesLang/RulesLang.h"
 #include "AnalysisInfo.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/ExprAnalysis.h"

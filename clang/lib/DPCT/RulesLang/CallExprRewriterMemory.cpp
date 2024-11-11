@@ -8,6 +8,7 @@
 
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/CallExprRewriterCommon.h"
+#include "RulesLang/RulesLang.h"
 
 namespace clang {
 namespace dpct {

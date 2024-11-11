@@ -309,6 +309,9 @@ public:
   using SetTy = std::set<std::string>;
   using ThrustMapTy = std::map<std::string, ThrustFuncReplInfo>;
 
+  
+  static std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
+      EnumNamesMap;
   static const SetTy SupportedVectorTypes;
   static const SetTy VectorTypes2MArray;
   static const std::map<std::string, int> VectorTypeMigratedTypeSizeMap;
