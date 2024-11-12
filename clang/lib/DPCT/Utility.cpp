@@ -195,7 +195,7 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
       isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
                 SM.getExpansionRange(Range.getBegin()).getEnd(),
                 SM.getSpellingLoc(Range.getBegin())) &&
-      isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
+      isInRange(SM.getExpansionRange(Range.getEnd()).getBegin(),
                 SM.getExpansionRange(Range.getEnd()).getEnd(),
                 SM.getSpellingLoc(Range.getEnd()))) {
     // MACRO(callExpr())
