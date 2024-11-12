@@ -222,6 +222,8 @@ add_clang_library(DPCT
   RulesLang/OptimizeMigration.cpp
   RulesLang/GroupFunctionAnalyzer.cpp
   RulesMathLib/SpBLASAPIMigration.cpp
+  RulesMathLib/RandomAPIMigration.cpp
+  RulesMathLib/SolverAPIMigration.cpp
   CodePin/GenCodePinHeader.cpp
 
   DEPENDS

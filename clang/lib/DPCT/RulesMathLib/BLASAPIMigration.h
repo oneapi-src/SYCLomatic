@@ -10,6 +10,10 @@
 #define DPCT_BLAS_API_MIGRATION_H
 
 #include "RuleInfra/CallExprRewriter.h"
+#include "ASTTraversal.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
+
+using namespace clang::ast_matchers;
 
 namespace clang {
 namespace dpct {
@@ -113,6 +117,25 @@ public:
 bool checkConstQualifierInDoublePointerType(
     const Expr *E, bool IsBaseValueNeedConst /* <T [DoesHereHaveConst] * *> */,
     bool IsFirstLevelPointerNeedConst /* <T * [DoesHereHaveConst] *> */);
+
+/// Migration rule for BLAS enums.
+class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+/// Migration rule for BLAS function calls.
+class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  bool isReplIndex(int i, const std::vector<int> &IndexInfo, int &IndexTemp);
+  std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
+                                           const ASTContext &Context);
+  const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
+  bool isCEOrUETTEOrAnIdentifierOrLiteral(const Expr *E);
+  std::string CallExprReplStr;
+};
 
 } // namespace dpct
 } // namespace clang

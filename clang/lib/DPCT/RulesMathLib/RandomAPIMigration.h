@@ -1,4 +1,4 @@
-//===------------------ SpBLASAPIMigration.h ------------------------------===//
+//===------------------ RandomAPIMigration.h-------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_SPBLAS_API_MIGRATION_H
-#define DPCT_SPBLAS_API_MIGRATION_H
+#ifndef DPCT_RANDOM_API_MIGRATION_H
+#define DPCT_RANDOM_API_MIGRATION_H
 
 #include "ASTTraversal.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -15,29 +15,33 @@
 namespace clang {
 namespace dpct {
 
-class SpBLASTypeLocRule
-    : public clang::dpct::NamedMigrationRule<SpBLASTypeLocRule> {
-public:
-  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
-  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
-};
 
-class SPBLASEnumsRule : public NamedMigrationRule<SPBLASEnumsRule> {
+/// Migration rule for RANDOM enums.
+class RandomEnumsRule : public NamedMigrationRule<RandomEnumsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-/// Migration rule for spBLAS function calls.
-class SPBLASFunctionCallRule
-    : public NamedMigrationRule<SPBLASFunctionCallRule> {
+/// Migration rule for Random function calls.
+class RandomFunctionCallRule
+    : public NamedMigrationRule<RandomFunctionCallRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
+
+/// Migration rule for device Random function calls.
+class DeviceRandomFunctionCallRule
+    : public NamedMigrationRule<DeviceRandomFunctionCallRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 
 
 } // namespace dpct
 } // namespace clang
 
-#endif // DPCT_SPBLAS_API_MIGRATION_H
+#endif // DPCT_RANDOM_API_MIGRATION_H
