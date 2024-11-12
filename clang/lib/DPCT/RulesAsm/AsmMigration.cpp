@@ -1035,10 +1035,12 @@ protected:
           BI->getKind() != InlineAsmBuiltinType::s64 &&
           BI->getKind() != InlineAsmBuiltinType::u64 &&
           BI->getKind() != InlineAsmBuiltinType::s16x2 &&
-          BI->getKind() != InlineAsmBuiltinType::u16x2)
+          BI->getKind() != InlineAsmBuiltinType::u16x2 &&
+          BI->getKind() != InlineAsmBuiltinType::f16x2)
         return false;
       isVec = BI->getKind() == InlineAsmBuiltinType::s16x2 ||
-              BI->getKind() == InlineAsmBuiltinType::u16x2;
+              BI->getKind() == InlineAsmBuiltinType::u16x2 ||
+              BI->getKind() == InlineAsmBuiltinType::f16x2;
     } else {
       return false;
     }
