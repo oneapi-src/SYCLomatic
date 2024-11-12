@@ -2,6 +2,24 @@
 // RUN: FileCheck --input-file %T/texture/surface_object_bindless_image/surface_object_bindless_image.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/texture/surface_object_bindless_image/surface_object_bindless_image.dp.cpp -o %T/texture/surface_object_bindless_image/surface_object_bindless_image.dp.o %}
 
+
+template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
+  int i;
+  float j, k, l, m;
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<T>(surf, float(i));
+  surf1Dread<T>(surf, i);
+  // CHECK: i = sycl::ext::oneapi::experimental::sample_image<T>(surf, float(i));
+  surf1Dread<T>(&i, surf, i);
+  // CHECK: i = sycl::ext::oneapi::experimental::sample_image<T>(surf, sycl::float2(j, i));
+  surf2Dread<T>(surf, j, i);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<T>(surf, sycl::float2(j, i));
+  surf2Dread<T>(&i, surf, j, i);
+  // CHECK: sycl::ext::oneapi::experimental::sample_image<T>(surf, sycl::float3(k, j, i));
+  surf3Dread<T>(surf, k, j, i);
+  // CHECK: i = sycl::ext::oneapi::experimental::sample_image<T>(surf, sycl::float3(k, j, i));
+  surf3Dread<T>(&i, surf, k, j, i);
+}
+
 int main() {
   // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle surf;
   cudaSurfaceObject_t surf;

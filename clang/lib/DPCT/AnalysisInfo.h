@@ -1989,11 +1989,13 @@ private:
 
 class TextureTypeInfo {
   std::string DataType;
+  int TypeLength;
   int Dimension;
   bool IsArray;
 
 public:
   TextureTypeInfo(std::string &&DataType, int TexType);
+  int getTypeLength();
   void setDataTypeAndTexType(std::string &&Type, int TexType);
   void prepareForImage();
   void endForImage();
@@ -2049,10 +2051,8 @@ public:
   bool isUseHelperFunc() { return true; }
 };
 
-// texture handle info
+// texture object info can be used for CUDA texture and suface objects.
 class TextureObjectInfo : public TextureInfo {
-  static const int ReplaceTypeLength;
-
   // If it is a parameter in the function, it is the parameter index, either it
   // is 0.
   unsigned ParamIdx;

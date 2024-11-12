@@ -11963,10 +11963,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "cudaTextureObject_t", "cudaSurfaceObject_t", "CUtexObject"))))))
           .bind("texObj"),
       this);
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(typedefDecl(hasAnyName(
-                            "cudaTextureObject_t", "CUtexObject"))))))
-                    .bind("texObj"),
-                this);
+
   MF.addMatcher(
       memberExpr(hasObjectExpression(hasType(
           type(hasUnqualifiedDesugaredType(recordType(hasDeclaration(
@@ -12021,6 +12018,9 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "tex1Dfetch",
       "tex1DLayered",
       "tex2DLayered",
+      "surf1Dread",
+      "surf2Dread",
+      "surf3Dread",
       "cudaCreateTextureObject",
       "cudaDestroyTextureObject",
       "cudaGetTextureObjectResourceDesc",

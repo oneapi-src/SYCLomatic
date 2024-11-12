@@ -3600,7 +3600,11 @@ const std::string MemVarInfo::ExternVariableName = "dpct_local";
 std::unordered_map<std::string, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 ///// class TextureTypeInfo /////
 TextureTypeInfo::TextureTypeInfo(std::string &&DataType, int TexType) {
+  TypeLength = DataType.length();
   setDataTypeAndTexType(std::move(DataType), TexType);
+}
+int TextureTypeInfo::getTypeLength() {
+  return TypeLength;
 }
 void TextureTypeInfo::setDataTypeAndTexType(std::string &&Type, int TexType) {
   DataType = std::move(Type);
@@ -3791,7 +3795,7 @@ void TextureObjectInfo::merge(std::shared_ptr<TextureObjectInfo> Target) {
 void TextureObjectInfo::addParamDeclReplacement() {
   if (Type) {
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, ReplaceTypeLength,
+        std::make_shared<ExtReplacement>(FilePath, Offset, Type->getTypeLength(),
                                          getParamDeclType(), nullptr));
   }
 }
@@ -4924,7 +4928,7 @@ void DeviceFunctionDecl::emplaceReplacement() {
         DpctGlobalInfo::getInstance().addReplacement(
             std::make_shared<ExtReplacement>(
                 Obj->getFilePath(), Obj->getOffset(),
-                strlen("cudaTextureObject_t"),
+                Obj->getType()->getTypeLength(),
                 MapNames::getClNamespace() +
                     "ext::oneapi::experimental::sampled_image_handle",
                 nullptr));
@@ -5034,9 +5038,12 @@ void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
-    if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
-        "cudaTextureObject_t")
+    std::string ParamName =
+        DpctGlobalInfo::getUnqualifiedTypeName(Param->getType());
+    if (ParamName == "cudaTextureObject_t" ||
+        ParamName == "cudaSurfaceObject_t") {
       TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
+    }
   }
 }
 std::string DeviceFunctionDecl::getExtraParameters(LocInfo LI) {
@@ -6582,8 +6589,6 @@ std::string CudaMallocInfo::getAssignArgs(const std::string &TypeName) {
 
 ///// end /////
 int HostDeviceFuncInfo::MaxId = 0;
-
-const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 
 #define TYPE_CAST(qual_type, type) dyn_cast<type>(qual_type)
 #define ARG_TYPE_CAST(type) TYPE_CAST(ArgType, type)

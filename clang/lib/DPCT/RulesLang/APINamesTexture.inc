@@ -287,3 +287,10 @@ FEATURE_REQUEST_FACTORY(
         "cuTexRefSetFormat", true, false, true, true,
         MEMBER_CALL(ARG(0), true, "set_channel_type", ARG(1)),
         MEMBER_CALL(ARG(0), true, "set_channel_num", ARG(2))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ENTRY_TEXTURE("surf1Dread", 0x01, 1))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ENTRY_TEXTURE("surf2Dread", 0x02, 1, 2))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        ENTRY_TEXTURE("surf3Dread", 0x03, 1, 2, 3))
