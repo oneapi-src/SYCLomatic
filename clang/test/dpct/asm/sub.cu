@@ -18,6 +18,7 @@ __global__ void sub() {
   uint64_t u64;
   short2 s16x2, sa{1, 2}, sb{1, 2};
   ushort2 u16x2, ua{1, 2}, ub{1, 2};
+  half2 f16x2, fa{1.f, 2.f}, fb{1.f, 2.f};
 
   // CHECK: i16 = x - y;
   asm("sub.s16 %0, %1, %2;" : "=r"(i16) : "r"(x), "r"(y));
@@ -42,6 +43,9 @@ __global__ void sub() {
 
   // CHECK: s16x2 = sa - sb;
   asm("sub.s16x2 %0, %1, %2;" : "=r"(s16x2) : "r"(sa), "r"(sb));
+  
+  // CHECK: f16x2 = fa - fb;
+  asm("sub.f16x2 %0, %1, %2;" : "=r"(f16x2) : "r"(fa), "r"(fb));
 
   // CHECK: u16x2 = ua - ub;
   asm("sub.u16x2 %0, %1, %2;" : "=r"(u16x2) : "r"(ua), "r"(ub));
@@ -49,14 +53,23 @@ __global__ void sub() {
   // CHECK: s16x2 = sa - sycl::short2{1, 1};
   asm("sub.s16x2 %0, %1, {1, 1};" : "=r"(s16x2) : "r"(sa));
 
+  // CHECK: f16x2 = fa - sycl::half2{1, 1};
+  asm("sub.f16x2 %0, %1, {1, 1};" : "=r"(f16x2) : "r"(fa));
+  
   // CHECK: u16x2 = ua - sycl::ushort2{1, 1};
   asm("sub.u16x2 %0, %1, {1, 1};" : "=r"(u16x2) : "r"(ua));
 
   // CHECK: s16x2 = sycl::short2{1, 1} - sa;
   asm("sub.s16x2 %0, {1, 1}, %1;" : "=r"(s16x2) : "r"(sa));
 
+  // CHECK: f16x2 = sycl::float2{1, 1} - fa;
+  asm("sub.f16x2 %0, {1, 1}, %1;" : "=r"(f16x2) : "r"(fa));
+
   // CHECK: u16x2 = sycl::ushort2{1, 1} - ua;
   asm("sub.u16x2 %0, {1, 1}, %1;" : "=r"(u16x2) : "r"(ua));
+  
+  // CHECK: f16x2 = sycl::half2{1, 1} - fa;
+  asm("sub.f16x2 %0, {1, 1}, %1;" : "=r"(f16x2) : "r"(fa));
 }
 
 // clang-format on
