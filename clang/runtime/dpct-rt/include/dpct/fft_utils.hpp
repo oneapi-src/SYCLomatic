@@ -1029,8 +1029,15 @@ private:
       std::swap_ranges(_fwd_strides.begin(), _fwd_strides.end(),
                        _bwd_strides.begin());
     }
+#ifdef __INTEL_MKL__
     desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES, _fwd_strides);
     desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES, _bwd_strides);
+#else
+    desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                    _fwd_strides.data());
+    desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                    _bwd_strides.data());
+#endif
   }
 
   template <class Desc_t> void swap_distance(std::shared_ptr<Desc_t> desc) {
@@ -1042,8 +1049,15 @@ private:
   template <class Desc_t> void swap_strides(std::shared_ptr<Desc_t> desc) {
     std::swap_ranges(_fwd_strides.begin(), _fwd_strides.end(),
                      _bwd_strides.begin());
+#ifdef __INTEL_MKL__
     desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES, _fwd_strides);
     desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES, _bwd_strides);
+#else
+    desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                    _fwd_strides.data());
+    desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                    _bwd_strides.data());
+#endif
   }
 
   template <bool Is_inplace, class Desc_t>
@@ -1087,8 +1101,15 @@ private:
         backward_distance = _n[0] * _n[1] * (_n[2] / 2 + 1);
       }
     }
+#ifdef __INTEL_MKL__
     desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES, _fwd_strides);
     desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES, _bwd_strides);
+#else
+    desc->set_value(oneapi::mkl::dft::config_param::FWD_STRIDES,
+                    _fwd_strides.data());
+    desc->set_value(oneapi::mkl::dft::config_param::BWD_STRIDES,
+                    _bwd_strides.data());
+#endif
     desc->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE,
                     forward_distance);
     desc->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE,
