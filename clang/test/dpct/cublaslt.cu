@@ -196,6 +196,7 @@ void foo3() {
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_ld;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_pointer;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::epilogue_aux_data_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::unsupport;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::a_scale_pointer;
@@ -218,6 +219,7 @@ void foo3() {
   d = CUBLASLT_MATMUL_DESC_EPILOGUE;
   d = CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD;
   d = CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER;
+  d = CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_DATA_TYPE;
   d = CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET;
   d = CUBLASLT_MATMUL_DESC_FAST_ACCUM;
   d = CUBLASLT_MATMUL_DESC_A_SCALE_POINTER;
