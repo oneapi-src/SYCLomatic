@@ -958,9 +958,9 @@ inline std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
 
 inline std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
   return [=](const CallExpr *C) -> bool {
-    auto parentStmt = getParentStmt(C);
-    if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
-                          dyn_cast<ExprWithCleanups>(parentStmt)))
+    auto ParentStmt = getParentStmt(C);
+    if (ParentStmt != nullptr && (dyn_cast<CompoundStmt>(ParentStmt) ||
+                          dyn_cast<ExprWithCleanups>(ParentStmt)))
       return true;
     return false;
     };

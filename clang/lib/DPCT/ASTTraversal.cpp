@@ -10,12 +10,11 @@
 #include "RulesLang/RulesLang.h"
 #include "AnalysisInfo.h"
 #include "RulesAsm/AsmMigration.h"
-#include "RulesLang/BarrierFenceSpaceAnalyzer.h"
-#include "RuleInfra/CallExprRewriter.h"
-#include "RuleInfra/CallExprRewriterCommon.h"
 #include "RulesDNN/DNNAPIMigration.h"
-#include "RuleInfra/ExprAnalysis.h"
 #include "RulesMathLib/FFTAPIMigration.h"
+#include "RulesMathLib/RandomAPIMigration.h"
+#include "RulesMathLib/SolverAPIMigration.h"
+#include "RulesMathLib/BLASAPIMigration.h"
 #include "CodePin/GenCodePinHeader.h"
 #include "RulesSecurity/Homoglyph.h"
 #include "RulesLangLib/LIBCUAPIMigration.h"
@@ -28,7 +27,6 @@
 #include "RulesLangLib/ThrustAPIMigration.h"
 #include "Utility.h"
 #include "RulesLang/WMMAAPIMigration.h"
-#include "clang/AST/Decl.h"
 
 #include <string>
 #include <unordered_map>
@@ -36,6 +34,9 @@
 
 using namespace clang;
 using namespace clang::dpct;
+
+namespace clang {
+namespace dpct {
 
 unsigned MigrationRule::PairID = 0;
 
@@ -86,7 +87,7 @@ void MigrationRule::emplaceTransformation(TextModification *TM) {
   TransformSet->emplace_back(T);
 }
 
-
+// RuleLang
 REGISTER_RULE(IterationSpaceBuiltinRule, PassKind::PK_Analysis)
 REGISTER_RULE(ErrorHandlingIfStmtRule, PassKind::PK_Migration)
 REGISTER_RULE(ErrorHandlingHostAPIRule, PassKind::PK_Migration)
@@ -101,17 +102,7 @@ REGISTER_RULE(DeviceInfoVarRule, PassKind::PK_Migration)
 REGISTER_RULE(EnumConstantRule, PassKind::PK_Migration)
 REGISTER_RULE(ErrorConstantsRule, PassKind::PK_Migration)
 REGISTER_RULE(LinkageSpecDeclRule, PassKind::PK_Migration)
-REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_FFT)
 REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
-REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_BLas)
-REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
-REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Sparse)
-REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Sparse)
-REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Rng)
-REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Rng)
-REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_BLas)
-REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Solver)
-REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Solver)
 REGISTER_RULE(FunctionCallRule, PassKind::PK_Migration)
 REGISTER_RULE(EventAPICallRule, PassKind::PK_Migration)
 REGISTER_RULE(ProfilingEnableOnDemandRule, PassKind::PK_Analysis)
@@ -142,7 +133,6 @@ REGISTER_RULE(CXXNewExprRule, PassKind::PK_Migration)
 REGISTER_RULE(NamespaceRule, PassKind::PK_Migration)
 REGISTER_RULE(RemoveBaseClassRule, PassKind::PK_Migration)
 REGISTER_RULE(AsmRule, PassKind::PK_Analysis)
-REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_FFT)
 REGISTER_RULE(VirtualMemRule, PassKind::PK_Migration)
 REGISTER_RULE(DriverModuleAPIRule, PassKind::PK_Migration)
 REGISTER_RULE(DriverDeviceAPIRule, PassKind::PK_Migration)
@@ -150,11 +140,6 @@ REGISTER_RULE(DriverContextAPIRule, PassKind::PK_Migration)
 REGISTER_RULE(CudaArchMacroRule, PassKind::PK_Migration)
 REGISTER_RULE(ConfusableIdentifierDetectionRule, PassKind::PK_Migration)
 REGISTER_RULE(MisleadingBidirectionalRule, PassKind::PK_Migration)
-REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
-REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
-REGISTER_RULE(LIBCURule, PassKind::PK_Migration, RuleGroupKind::RK_Libcu)
-REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
-REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 REGISTER_RULE(SpBLASTypeLocRule, PassKind::PK_Migration)
@@ -170,5 +155,33 @@ REGISTER_RULE(CompatWithClangRule, PassKind::PK_Migration)
 REGISTER_RULE(AssertRule, PassKind::PK_Migration)
 REGISTER_RULE(GraphRule, PassKind::PK_Migration)
 REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
+
+REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_BLas)
+REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_BLas)
+
+REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Sparse)
+REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Sparse)
+
+REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
+REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Rng)
+REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Rng)
+
+REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Solver)
+REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Solver)
+
+REGISTER_RULE(LIBCURule, PassKind::PK_Migration, RuleGroupKind::RK_Libcu)
+
+REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
+REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
+
 REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
 REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
+
+REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_FFT)
+REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_FFT)
+
+REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
+REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
+
+} // namespace dpct
+} // namespace clang

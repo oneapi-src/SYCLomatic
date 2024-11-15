@@ -118,7 +118,7 @@ inline auto CheckForPostfixDeclaratorType(unsigned Idx) {
     if (const auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
       const auto TAT = TSTL.getArgLoc(Idx).getArgument().getAsType();
       const auto CT = TAT.getCanonicalType();
-      return typeIsPostfix(CT);
+      return isTypePostfix(CT);
     }
     return false;
   };

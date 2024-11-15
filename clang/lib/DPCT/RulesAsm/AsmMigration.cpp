@@ -1227,7 +1227,6 @@ protected:
     if (Inst->hasAttr(InstAttr::sc) && Inst->hasAttr(InstAttr::cta)) {
       OS() << MapNames::getClNamespace() << "memory_order::seq_cst,"
            << MapNames::getClNamespace() << "memory_scope::work_group";
-
     } else if (Inst->hasAttr(InstAttr::sc) && Inst->hasAttr(InstAttr::gpu)) {
       OS() << MapNames::getClNamespace() << "memory_order::seq_cst,"
            << MapNames::getClNamespace() << "memory_scope::device";
@@ -1248,7 +1247,7 @@ protected:
       OS() << MapNames::getClNamespace() << "memory_order::acq_rel,"
            << MapNames::getClNamespace() << "memory_scope::system";
     } else {
-      SYCLGenError();
+      return SYCLGenError();
     }
 
     OS() << ')';
@@ -1258,6 +1257,28 @@ protected:
 
   bool handle_sub(const InlineAsmInstruction *Inst) override {
     return HandleAddSub(Inst);
+  }
+
+  bool handle_membar(const InlineAsmInstruction *Inst) override {
+    if (Inst->getNumInputOperands() != 0)
+      return SYCLGenError();
+
+    OS() << MapNames::getClNamespace() << "atomic_fence("
+         << MapNames::getClNamespace() << "memory_order::seq_cst,";
+
+    if (Inst->hasAttr(InstAttr::cta)) {
+      OS() << MapNames::getClNamespace() << "memory_scope::work_group";
+    } else if (Inst->hasAttr(InstAttr::gl)) {
+      OS() << MapNames::getClNamespace() << "memory_scope::device";
+    } else if (Inst->hasAttr(InstAttr::sys)) {
+      OS() << MapNames::getClNamespace() << "memory_scope::system";
+    } else {
+      return SYCLGenError();
+    }
+
+    OS() << ')';
+    endstmt();
+    return SYCLGenSuccess();
   }
 
   StringRef GetWiderTypeAsString(const InlineAsmBuiltinType *Type) const {

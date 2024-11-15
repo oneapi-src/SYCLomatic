@@ -13,6 +13,9 @@ using namespace clang::dpct;
 
 namespace fs = llvm::sys::fs;
 
+namespace clang {
+namespace dpct {
+
 std::string readFile(const clang::tooling::UnifiedPath &Name) {
   std::ifstream Stream(Name.getCanonicalPath().str(),
                        std::ios::in | std::ios::binary);
@@ -269,3 +272,6 @@ void unifyInputFileFormat(
     ScriptFileCRLFMap[Entry.first] = IsCRLF;
   }
 }
+
+} // namespace dpct
+} // namespace clang

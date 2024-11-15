@@ -8,8 +8,11 @@
 #include "VcxprojParser.h"
 #include "ErrorHandle/Error.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "Utility.h"
+
+namespace clang {
+namespace dpct {
 
 std::map<std::string, std::vector<std::string>> OptionsMap;
 std::map<std::string, std::string> VariablesMap;
@@ -313,7 +316,7 @@ void ProcessDirectoriesIncluded(const std::set<std::string> &DirIncludedSet,
       // be replaced.
       std::string Warning =
           "Cannot evaluate variable in  \"" + DirectoryInclude + "\"\n";
-      clang::dpct::PrintMsg(Warning);
+      PrintMsg(Warning);
       continue;
     }
     Output += DirectoryInclude;
@@ -349,7 +352,7 @@ void generateCompilationDatabase(const std::string &BuildDir) {
   if (!OutFile) {
     std::string ErrMsg =
         "Cannot create CompilationDatabase \"" + FilePath + "\"\n";
-    clang::dpct::PrintMsg(ErrMsg);
+    PrintMsg(ErrMsg);
     dpctExit(VcxprojPaserCreateCompilationDBFail);
   }
 
@@ -554,7 +557,7 @@ void parseVaribles(const std::string &VcxprojFile) {
   std::ifstream InFile(VcxprojFile);
   if (!InFile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
-    clang::dpct::PrintMsg(ErrMsg);
+    PrintMsg(ErrMsg);
     dpctExit(VcxprojPaserFileNotExist);
   }
 
@@ -644,7 +647,7 @@ void parseVcxprojFile(const std::string &VcxprojFile) {
 
   if (!Infile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
-    clang::dpct::PrintMsg(ErrMsg);
+    PrintMsg(ErrMsg);
     dpctExit(VcxprojPaserFileNotExist);
   }
 
@@ -666,3 +669,6 @@ void vcxprojParser(std::string &BuildPath, std::string &VcxprojFile) {
   parseVcxprojFile(VcxprojFile);
   generateCompilationDatabase(BuildPath);
 }
+
+} // namespace dpct
+} // namespace clang

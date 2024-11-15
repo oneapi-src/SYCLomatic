@@ -35,6 +35,8 @@ namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
+namespace clang {
+namespace dpct {
 int save2Yaml(
     clang::tooling::UnifiedPath &YamlFile,
     clang::tooling::UnifiedPath &SrcFileName,
@@ -163,3 +165,5 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
   save2Yaml(YamlFile, OutRootSrcFilePath, Repls, {MsfInfo}, CompileTargets);
   return 0;
 }
+} // namespace dpct
+} // namespace clang

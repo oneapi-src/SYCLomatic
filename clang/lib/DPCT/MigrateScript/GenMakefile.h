@@ -25,6 +25,8 @@ class RefactoringTool;
 }
 } // namespace clang
 
+namespace clang {
+namespace dpct {
 /// Generates makefile for migrated file(s) in -out-root directory.
 /// The name of generated makefile is specified by \p BuildScriptName
 void genBuildScript(clang::tooling::RefactoringTool &Tool,
@@ -39,5 +41,6 @@ extern std::vector<
     std::pair<clang::tooling::UnifiedPath /*target*/,
               std::vector<std::string> /*orginal compile command*/>>
     CompileTargetsMap;
-
+} // namespace dpct
+} // namespace clang
 #endif // DPCT_GEN_MAKEFILE_H

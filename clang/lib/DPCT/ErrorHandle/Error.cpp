@@ -10,7 +10,7 @@
 
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 
 namespace clang {
 namespace dpct {
@@ -245,6 +245,29 @@ std::string getCheckVersionFailWarning() {
          "dpcpp-compatibility-tool/developer-guide-reference/current/"
          "overview.html for more "
          "details.\n";
+}
+
+bool IsUsingDefaultOutRoot = false;
+
+void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot) {
+  if (isDirectory(DefaultOutRoot)) {
+    std::error_code EC;
+    llvm::sys::fs::directory_iterator Iter(DefaultOutRoot.getCanonicalPath(), EC);
+    if ((bool)EC)
+      return;
+    llvm::sys::fs::directory_iterator End;
+    if (Iter == End) {
+      // This folder is empty, then remove it.
+      llvm::sys::fs::remove_directories(DefaultOutRoot.getCanonicalPath(), false);
+    }
+  }
+}
+
+void dpctExit(int ExitCode, bool NeedCleanUp) {
+  if (IsUsingDefaultOutRoot && NeedCleanUp) {
+    removeDefaultOutRootFolder(dpct::DpctGlobalInfo::getOutRoot());
+  }
+  std::exit(ExitCode);
 }
 
 } // namespace dpct

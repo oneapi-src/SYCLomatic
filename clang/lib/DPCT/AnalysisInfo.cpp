@@ -10,7 +10,7 @@
 #include "Diagnostics/Diagnostics.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "RuleInfra/MapNames.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
 
@@ -27,9 +27,9 @@
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
-  auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
-  if (Iter != MapNames::TypeNamesMap.end()) {
-    auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
+  auto Iter = clang::dpct::MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
+  if (Iter != clang::dpct::MapNames::TypeNamesMap.end()) {
+    auto Range = clang::dpct::getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
     for (auto ItHeader = Iter->second->Includes.begin();
          ItHeader != Iter->second->Includes.end(); ItHeader++) {
       clang::dpct::DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(),
@@ -6992,7 +6992,7 @@ void CallFunctionExpr::buildInfo() {
 bool isInSameLine(SourceLocation First, SourceLocation Second,
                   const SourceManager &SM) {
   bool Invalid = false;
-  return ::isInSameLine(SM.getExpansionLoc(First), SM.getExpansionLoc(Second),
+  return isInSameLine(SM.getExpansionLoc(First), SM.getExpansionLoc(Second),
                         SM, Invalid) &&
          !Invalid;
 }

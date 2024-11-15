@@ -626,6 +626,14 @@ public:
              const bool PrintDetail = true) const override;
 };
 
+SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
+                                 const SourceManager &SM);
+TextModification *replaceText(SourceLocation Begin, SourceLocation End,
+                              std::string &&Str, const SourceManager &SM);
+
+TextModification *removeArg(const CallExpr *C, unsigned n,
+                            const SourceManager &SM) ;
+
 } // namespace dpct
 } // namespace clang
 

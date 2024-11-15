@@ -25,6 +25,8 @@ namespace llvm {
 class StringRef;
 } // namespace llvm
 
+namespace clang {
+namespace dpct {
 /// Apply all generated replacements, and immediately save the results to
 /// files in output directory.
 ///
@@ -79,4 +81,8 @@ void rewriteFileName(std::string &FileName, const std::string &FullPathName);
 
 // A mapping from output file path to it's corresponding input file.
 extern std::map<std::string, std::string> OutFilePath2InFilePath;
+
+} // namespace dpct
+} // namespace clang
+
 #endif // DPCT_GEN_FILES_H

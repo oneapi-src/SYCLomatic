@@ -13,8 +13,6 @@
 #include <set>
 #include <string>
 
-enum class ExplicitNamespace : unsigned int;
-
 namespace clang {
 namespace dpct {
 

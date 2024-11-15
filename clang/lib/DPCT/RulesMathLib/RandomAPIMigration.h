@@ -1,4 +1,4 @@
-//===--------------- FFTAPIMigration.h ------------------------------------===//
+//===------------------ RandomAPIMigration.h-------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,34 +6,42 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DPCT_FFT_API_MIGRATION_H
-#define DPCT_FFT_API_MIGRATION_H
+#ifndef DPCT_RANDOM_API_MIGRATION_H
+#define DPCT_RANDOM_API_MIGRATION_H
 
 #include "ASTTraversal.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
-#include "clang/AST/Expr.h"
 
 namespace clang {
 namespace dpct {
 
-TextModification *processFunctionPointer(const UnaryOperator *UO);
 
-class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
+/// Migration rule for RANDOM enums.
+class RandomEnumsRule : public NamedMigrationRule<RandomEnumsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-
-/// Migration rule for FFT enums.
-class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
+/// Migration rule for Random function calls.
+class RandomFunctionCallRule
+    : public NamedMigrationRule<RandomFunctionCallRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
+
+/// Migration rule for device Random function calls.
+class DeviceRandomFunctionCallRule
+    : public NamedMigrationRule<DeviceRandomFunctionCallRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 
 
 } // namespace dpct
 } // namespace clang
 
-#endif // !DPCT_FFT_API_MIGRATION_H
+#endif // DPCT_RANDOM_API_MIGRATION_H

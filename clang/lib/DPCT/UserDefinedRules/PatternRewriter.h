@@ -14,6 +14,8 @@
 
 #include "UserDefinedRules/UserDefinedRules.h"
 
+namespace clang {
+namespace dpct {
 std::string
 applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
                      const std::string &Input, std::string FileName = "",
@@ -27,4 +29,8 @@ void setFileTypeProcessed(enum SourceFileType FileType);
 
 extern std::set<std::string> MainSrcFilesHasCudaSyntex;
 extern bool LANG_Cplusplus_20_Used;
+
+} // namespace dpct
+} // namespace clang
+
 #endif // DPCT_PATTERN_REWRITER_H

@@ -19,6 +19,8 @@
 // RUN: FileCheck %S/b.cu  --match-full-lines --input-file %T/out/b.dp.cpp
 // RUN: FileCheck %S/b.cpp --match-full-lines --input-file %T/out/b.cpp
 // RUN: FileCheck %S/b.h   --match-full-lines --input-file %T/out/b.h
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/b.dp.cpp -o %T/out/b.dp.o %}
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/b.cpp -o %T/out/b.o %}
 // RUN: rm -rf ./out
 
 // CHECK: #define CU_FILE

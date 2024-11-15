@@ -6,7 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 #include "UserDefinedRules/UserDefinedRules.h"
-//#include "ASTTraversal.h"
+#include "RuleInfra/ASTmatcherCommon.h"
+#include "ASTTraversal.h"
 #include "RulesLang/RulesLang.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "ErrorHandle/Error.h"
@@ -16,10 +17,14 @@
 #include "MigrationRuleManager.h"
 #include "RuleInfra/TypeLocRewriters.h"
 #include "Utility.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include "llvm/Support/YAMLTraits.h"
 
 using namespace clang::ast_matchers;
+using namespace clang::dpct;
 
+namespace clang {
+namespace dpct {
 std::vector<clang::tooling::UnifiedPath> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
@@ -590,6 +595,9 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
     ResultBuilder->Kind = Kind::TemplateArg;
     ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$template_arg");
     consumeRParen(OutStr, Idx, "$template_arg");
+  } else if (OutStr.substr(Idx, 12) == "$method_base") {
+    Idx += 12;
+    ResultBuilder->Kind = Kind::MethodBase;
   } else {
     ResultBuilder->Kind = Kind::Arg;
     ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$");
@@ -737,12 +745,16 @@ void clang::dpct::UserDefinedClassFieldRule::runRule(
 
 void clang::dpct::UserDefinedClassMethodRule::registerMatcher(
     clang::ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(cxxMemberCallExpr(
-                    allOf(on(hasType(hasCanonicalType(qualType(
-                              hasDeclaration(namedDecl(hasName(BaseName))))))),
-                          callee(cxxMethodDecl(hasName(MethodName)))))
-                    .bind("memberCallExpr"),
-                this);
+  MF.addMatcher(
+      cxxMemberCallExpr(
+          anyOf(allOf(on(hasType(hasCanonicalType(qualType(
+                          hasDeclaration(namedDecl(hasName(BaseName))))))),
+                      callee(cxxMethodDecl(hasName(MethodName)))),
+                allOf(on(hasType(pointerType(pointee(hasCanonicalType(qualType(
+                          hasDeclaration(namedDecl(hasName(BaseName))))))))),
+                      callee(cxxMethodDecl(hasName(MethodName))))))
+          .bind("memberCallExpr"),
+      this);
 }
 
 void clang::dpct::UserDefinedClassMethodRule::runRule(
@@ -773,3 +785,6 @@ void clang::dpct::UserDefinedEnumRule::runRule(
     EA.applyAllSubExprRepl();
   }
 }
+
+} // namespace dpct
+} // namespace clang

@@ -16,11 +16,17 @@
 #include <sstream>
 #include <vector>
 
+namespace clang {
+namespace dpct {
+
 /// Parses \p VcxprojFile file to generate compilation database
 /// "compile_commands.json" in the building directory \p BuildPath.
 ///
 /// \param BuildDir user's building path.
 /// \param VcxprojFile vcxproj file path.
 void vcxprojParser(std::string &BuildPath, std::string &VcxprojFile);
+
+} // namespace dpct
+} // namespace clang
 
 #endif // DPCT_VCXPROJPARSER_H

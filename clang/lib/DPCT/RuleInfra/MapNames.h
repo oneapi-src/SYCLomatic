@@ -18,15 +18,11 @@
 namespace clang {
 namespace dpct {
 enum class KernelArgType;
-enum class HelperFileEnum : unsigned int;
-struct HelperFunc;
 enum class HelperFuncCatalog {
   GetDefaultQueue,
   GetOutOfOrderQueue,
   GetInOrderQueue,
 };
-} // namespace dpct
-} // namespace clang
 
 const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
@@ -446,4 +442,6 @@ public:
   static std::map<std::string, bool> &GetTypeTable(void);
 };
 
+} // namespace dpct
+} // namespace clang
 #endif

@@ -11,10 +11,6 @@
 
 #include "AnalysisInfo.h"
 #include "ASTTraversal.h"
-#include "ErrorHandle/CrashRecovery.h"
-#include "Diagnostics/Diagnostics.h"
-#include "RulesMathLib/FFTAPIMigration.h"
-#include "RulesInclude/InclusionHeaders.h"
 #include "RuleInfra/MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -25,7 +21,6 @@
 #include "clang/Frontend/CompilerInstance.h"
 
 #include <algorithm>
-#include <sstream>
 #include <unordered_set>
 
 namespace clang {
@@ -282,103 +277,12 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-/// Migration rule for FFT enums.
-class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
 
 /// Migration rule for CU_JIT enums.
 class CU_JITEnumsRule : public NamedMigrationRule<CU_JITEnumsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for BLAS enums.
-class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for RANDOM enums.
-class RandomEnumsRule : public NamedMigrationRule<RandomEnumsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for spBLAS enums.
-class SPBLASEnumsRule : public NamedMigrationRule<SPBLASEnumsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for BLAS function calls.
-class BLASFunctionCallRule : public NamedMigrationRule<BLASFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-  bool isReplIndex(int i, const std::vector<int> &IndexInfo, int &IndexTemp);
-  std::vector<std::string> getParamsAsStrs(const CallExpr *CE,
-                                           const ASTContext &Context);
-  const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
-  bool isCEOrUETTEOrAnIdentifierOrLiteral(const Expr *E);
-  std::string CallExprReplStr;
-};
-
-/// Migration rule for Random function calls.
-class RandomFunctionCallRule
-    : public NamedMigrationRule<RandomFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for device Random function calls.
-class DeviceRandomFunctionCallRule
-    : public NamedMigrationRule<DeviceRandomFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for spBLAS function calls.
-class SPBLASFunctionCallRule
-    : public NamedMigrationRule<SPBLASFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for SOLVER enums.
-class SOLVEREnumsRule : public NamedMigrationRule<SOLVEREnumsRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-/// Migration rule for SOLVER function calls.
-class SOLVERFunctionCallRule
-    : public NamedMigrationRule<SOLVERFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-  bool isReplIndex(int i, std::vector<int> &IndexInfo, int &IndexTemp);
-
-  std::string getBufferNameAndDeclStr(const Expr *Arg, const ASTContext &AC,
-                                      const std::string &TypeAsStr,
-                                      SourceLocation SL,
-                                      std::string &BufferDecl,
-                                      int DistinctionID);
-  void getParameterEnd(const SourceLocation &ParameterEnd,
-                       SourceLocation &ParameterEndAfterComma,
-                       const ast_matchers::MatchFinder::MatchResult &Result);
-  const clang::VarDecl *getAncestralVarDecl(const clang::CallExpr *CE);
 };
 
 /// Migration rule for general function calls.
@@ -997,11 +901,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
 
 class DriverModuleAPIRule : public NamedMigrationRule<DriverModuleAPIRule> {
 public:

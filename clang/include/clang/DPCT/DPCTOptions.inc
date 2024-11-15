@@ -87,7 +87,7 @@
 
 #ifndef DPCT_ENUM_OPTION
 #define DPCT_ENUM_OPTION(TEMPLATE, ENUM_TYPE, ...)                             \
-  DPCT_OPTION(TEMPLATE, ENUM_TYPE, __VA_ARGS__)
+  DPCT_OPTION(TEMPLATE, clang::dpct::ENUM_TYPE, __VA_ARGS__)
 #endif
 
 #ifndef DPCT_FLAG_OPTION
@@ -478,7 +478,7 @@ DPCT_ENUM_OPTION(
     llvm::cl::Optional)
 
 DPCT_ENUM_OPTION(
-    clang::dpct::opt, format::FormatRange, FormatRng,
+    clang::dpct::opt, FormatRange, FormatRng,
     clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Migration),
     "format-range",
@@ -599,25 +599,25 @@ DPCT_ENUM_OPTION(
                         clang::dpct::DpctActionKind::DAK_Analysis),
     "use-explicit-namespace",
     DPCT_OPTION_VALUES(
-        DPCT_OPTION_ENUM_VALUE("dpct", int(ExplicitNamespace::EN_DPCT),
+        DPCT_OPTION_ENUM_VALUE("dpct", int(clang::dpct::ExplicitNamespace::EN_DPCT),
                                "Generate code with dpct:: namespace.", false),
-        DPCT_OPTION_ENUM_VALUE("none", int(ExplicitNamespace::EN_None),
+        DPCT_OPTION_ENUM_VALUE("none", int(clang::dpct::ExplicitNamespace::EN_None),
                                "Generate code without any namespaces. Cannot "
                                "be used with other values.",
                                false),
         DPCT_OPTION_ENUM_VALUE(
-            "sycl", int(ExplicitNamespace::EN_SYCL),
+            "sycl", int(clang::dpct::ExplicitNamespace::EN_SYCL),
             "Generate code with sycl:: namespace. Cannot be used with cl or "
             "sycl-math values.",
             false),
         DPCT_OPTION_ENUM_VALUE(
-            "sycl-math", int(ExplicitNamespace::EN_SYCL_Math),
+            "sycl-math", int(clang::dpct::ExplicitNamespace::EN_SYCL_Math),
             "Generate code with sycl:: namespace, applied only for "
             "SYCL math functions.\n"
             "Cannot be used with cl or sycl values.",
             false),
         DPCT_OPTION_ENUM_VALUE("syclcompat",
-                               int(ExplicitNamespace::EN_SYCLCompat),
+                               int(clang::dpct::ExplicitNamespace::EN_SYCLCompat),
                                "Generate code with syclcompat:: namespace.",
                                false)),
     llvm::cl::desc("Define the namespaces to use explicitly in generated "

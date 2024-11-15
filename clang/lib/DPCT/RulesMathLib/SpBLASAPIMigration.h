@@ -22,6 +22,21 @@ public:
   void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class SPBLASEnumsRule : public NamedMigrationRule<SPBLASEnumsRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+/// Migration rule for spBLAS function calls.
+class SPBLASFunctionCallRule
+    : public NamedMigrationRule<SPBLASFunctionCallRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+
 } // namespace dpct
 } // namespace clang
 

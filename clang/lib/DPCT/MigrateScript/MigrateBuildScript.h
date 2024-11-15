@@ -14,6 +14,8 @@
 #include "clang/Tooling/Core/UnifiedPath.h"
 
 #include <map>
+namespace clang {
+namespace dpct {
 
 std::string readFile(const clang::tooling::UnifiedPath &Name);
 std::vector<std::string> split(const std::string &Input,
@@ -49,4 +51,9 @@ void unifyInputFileFormat(
     std::map<clang::tooling::UnifiedPath, std::string>
         &BuildScriptFileBufferMap,
     std::map<clang::tooling::UnifiedPath, bool> &ScriptFileCRLFMap);
-#endif
+
+
+} // namespace dpct
+} // namespace clang
+
+#endif //!DPCT_MIGRATE_BUILD_SCRIPT_H

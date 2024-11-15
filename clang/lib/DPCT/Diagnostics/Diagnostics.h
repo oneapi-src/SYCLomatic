@@ -11,7 +11,7 @@
 
 #include "AnalysisInfo.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 
 #include "clang/Basic/DiagnosticIDs.h"
@@ -27,7 +27,7 @@
 
 extern clang::dpct::DpctOption<clang::dpct::list, std::string> SuppressWarnings;
 extern clang::dpct::DpctOption<clang::dpct::opt, std::string> OutputFile;
-extern clang::dpct::DpctOption<clang::dpct::opt, OutputVerbosityLevel> OutputVerbosity;
+extern clang::dpct::DpctOption<clang::dpct::opt, clang::dpct::OutputVerbosityLevel> OutputVerbosity;
 extern clang::dpct::DpctOption<clang::dpct::opt, bool> SuppressWarningsAll;
 
 namespace clang {

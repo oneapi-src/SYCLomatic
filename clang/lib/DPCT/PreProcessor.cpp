@@ -33,6 +33,10 @@ using namespace clang::dpct;
 using namespace clang::tooling;
 
 extern DpctOption<opt, bool> ProcessAll;
+namespace clang {
+namespace dpct {
+
+
 
 std::shared_ptr<clang::dpct::ReplaceToken>
 generateReplacement(SourceLocation SL, MacroMigrationRule &Rule) {
@@ -816,3 +820,6 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     loadYAMLIntoFileInfo(InFile.getCanonicalPath());
   }
 }
+
+} // namespace dpct
+} // namespace clang

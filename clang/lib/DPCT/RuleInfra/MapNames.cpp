@@ -19,6 +19,10 @@ using namespace clang;
 using namespace clang::dpct;
 // Not use sycl:: namespace explicitly
 // KeepNamespace = false/true --> ""/"sycl::"
+
+namespace clang {
+namespace dpct {
+
 std::vector<std::string> MapNames::ClNamespace;
 // Not use dpct:: namespace explicitly
 // KeepNamespace = false/true --> ""/"dpct::"
@@ -4810,3 +4814,7 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"channel_type", HelperFeatureEnum::device_ext},
         {"sampler", HelperFeatureEnum::device_ext},
 };
+
+
+} // namespace dpct
+} // namespace clang

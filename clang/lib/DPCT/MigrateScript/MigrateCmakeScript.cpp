@@ -10,7 +10,7 @@
 #include "ErrorHandle/Error.h"
 #include "UserDefinedRules/PatternRewriter.h"
 #include "FileGenerator/GenFiles.h"
-#include "Statics.h"
+#include "MigrationReport/Statics.h"
 #include "Utility.h"
 
 #include "llvm/Support/FileSystem.h"
@@ -28,6 +28,8 @@ using namespace llvm::cl;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
+namespace clang {
+namespace dpct {
 std::map<std::string /*CMake command*/,
          std::tuple<bool /*ProcessedOrNot*/, bool /*CUDASpecificOrNot*/>>
     cmake_commands{
@@ -576,3 +578,6 @@ void registerCmakeMigrationRule(MetaRuleObject &R) {
     CmakeBuildInRules[PR.BuildScriptSyntax] = PR;
   }
 }
+
+} // namespace dpct
+} // namespace clang

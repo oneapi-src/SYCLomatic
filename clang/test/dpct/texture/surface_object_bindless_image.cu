@@ -2,7 +2,6 @@
 // RUN: FileCheck --input-file %T/texture/surface_object_bindless_image/surface_object_bindless_image.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl %T/texture/surface_object_bindless_image/surface_object_bindless_image.dp.cpp -o %T/texture/surface_object_bindless_image/surface_object_bindless_image.dp.o %}
 
-
 template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
   int i;
   float j, k, l, m;

@@ -30,6 +30,8 @@
 using namespace clang::dpct;
 using namespace llvm;
 
+namespace clang {
+namespace dpct {
 // Used to identify compilation commands without target
 const std::string EmptyTarget = "NoLinker";
 
@@ -679,3 +681,5 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool,
   genMakefile(Tool, OutRoot, BuildScriptName, CompileCmdsPerTarget,
               ToolPerTarget);
 }
+} // namespace dpct
+} // namespace clang

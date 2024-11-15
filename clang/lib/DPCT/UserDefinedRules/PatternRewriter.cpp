@@ -25,6 +25,10 @@
 #include <variant>
 #include <vector>
 
+
+namespace clang {
+namespace dpct {
+
 std::set<std::string> MainSrcFilesHasCudaSyntex;
 bool LANG_Cplusplus_20_Used = false;
 
@@ -867,3 +871,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   }
   return OutputStream.str();
 }
+
+} // namespace dpct
+} // namespace clang
