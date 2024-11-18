@@ -3600,11 +3600,7 @@ const std::string MemVarInfo::ExternVariableName = "dpct_local";
 std::unordered_map<std::string, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 ///// class TextureTypeInfo /////
 TextureTypeInfo::TextureTypeInfo(std::string &&DataType, int TexType) {
-  TypeLength = DataType.length();
   setDataTypeAndTexType(std::move(DataType), TexType);
-}
-int TextureTypeInfo::getTypeLength() {
-  return TypeLength;
 }
 void TextureTypeInfo::setDataTypeAndTexType(std::string &&Type, int TexType) {
   DataType = std::move(Type);
@@ -3795,7 +3791,7 @@ void TextureObjectInfo::merge(std::shared_ptr<TextureObjectInfo> Target) {
 void TextureObjectInfo::addParamDeclReplacement() {
   if (Type) {
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, Type->getTypeLength(),
+        std::make_shared<ExtReplacement>(FilePath, Offset, ReplaceTypeLength,
                                          getParamDeclType(), nullptr));
   }
 }
@@ -4928,7 +4924,7 @@ void DeviceFunctionDecl::emplaceReplacement() {
         DpctGlobalInfo::getInstance().addReplacement(
             std::make_shared<ExtReplacement>(
                 Obj->getFilePath(), Obj->getOffset(),
-                Obj->getType()->getTypeLength(),
+                strlen("cudaTextureObject_t"),
                 MapNames::getClNamespace() +
                     "ext::oneapi::experimental::sampled_image_handle",
                 nullptr));
@@ -6589,6 +6585,8 @@ std::string CudaMallocInfo::getAssignArgs(const std::string &TypeName) {
 
 ///// end /////
 int HostDeviceFuncInfo::MaxId = 0;
+
+const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
 
 #define TYPE_CAST(qual_type, type) dyn_cast<type>(qual_type)
 #define ARG_TYPE_CAST(type) TYPE_CAST(ArgType, type)
