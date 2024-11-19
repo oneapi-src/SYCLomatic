@@ -47,7 +47,7 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
                                const std::string &VecTypeName) const {
     const static std::string FuncName = [=]() -> std::string {
       if (IsSurfAPI)
-        return "syclcompat::experimental::sample_image";
+        return MapNames::getDpctNamespace() + "experimental::sample_image";
       return MapNames::getClNamespace() +
              "ext::oneapi::experimental::sample_image";
     }();

@@ -19,7 +19,7 @@
 namespace dpct {
 namespace experimental {
 
-#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+#ifndef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
 
 /// The wrapper class of bindless image memory handle.
 class image_mem_wrapper {
@@ -1350,6 +1350,20 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
   dpct_memcpy(temp, src, w_offset_src, h_offset_src, s, q);
   dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, s, q);
   sycl::free(temp, q);
+}
+
+template <typename DataT, typename HintT = DataT, typename CoordT>
+DataT sample_image(
+    const sycl::ext::oneapi::experimental::sampled_image_handle &imageHandle,
+    CoordT &&coords) {
+  if constexpr (std::is_scalar_v<CoordT>) {
+    return sycl::ext::oneapi::experimental::sample_image<DataT, HintT, CoordT>(
+        imageHandle, coords / sizeof(DataT));
+  } else {
+    coords[0] = coords[0] / sizeof(DataT);
+    return sycl::ext::oneapi::experimental::sample_image<DataT, HintT, CoordT>(
+        imageHandle, coords);
+  }
 }
 
 using image_mem_wrapper_ptr = image_mem_wrapper *;
