@@ -12,6 +12,7 @@
 
 #include "llvm/SYCLLowerIR/SYCLCreateNVVMAnnotations.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Support/Debug.h"
 
 using namespace llvm;
@@ -54,7 +55,7 @@ decomposeWGMetadata(const MDNode &Node, const Function &F) {
     NDim = getSingleIntMetadata(*NDimMD).value_or(3);
   assert(NDim >= 1 && NDim <= 3 && "Invalid work-group dimensionality");
 
-  std::array<std::optional<size_t>, 3> Ops;
+  std::array<std::optional<uint64_t>, 3> Ops;
   for (unsigned I = 0, E = std::min(Node.getNumOperands(), NDim); I != E; I++) {
     if (auto *C = mdconst::dyn_extract<ConstantInt>(Node.getOperand(I)))
       Ops[I] = C->getZExtValue();
@@ -96,7 +97,8 @@ SYCLCreateNVVMAnnotationsPass::run(Module &M, ModuleAnalysisManager &MAM) {
 
     constexpr static std::pair<const char *, const char *>
         SingleValAnnotations[] = {{"min_work_groups_per_cu", "minctasm"},
-                                  {"max_work_groups_per_mp", "maxclusterrank"}};
+                                  {"max_work_groups_per_mp", "maxclusterrank"},
+                                  {"max_linear_work_group_size", "maxntidx"}};
 
     for (auto &[MDName, AnnotationName] : SingleValAnnotations) {
       if (MDNode *Node = F.getMetadata(MDName)) {

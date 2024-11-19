@@ -2883,6 +2883,7 @@ private:
 
   void removeExtraIndent();
   void addDevCapCheckStmt();
+  void addPropertiesStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl();

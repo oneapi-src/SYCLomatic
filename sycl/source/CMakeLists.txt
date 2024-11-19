@@ -69,6 +69,13 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
     target_link_libraries(${LIB_NAME} PRIVATE ${ARG_XPTI_LIB})
   endif()
 
+  if (NOT LLVM_ENABLE_ZSTD)
+    target_compile_definitions(${LIB_OBJ_NAME} PRIVATE SYCL_RT_ZSTD_NOT_AVAIABLE)
+  else()
+    target_link_libraries(${LIB_NAME} PRIVATE ${zstd_STATIC_LIBRARY})
+    target_include_directories(${LIB_OBJ_NAME} PRIVATE ${zstd_INCLUDE_DIR})
+  endif()
+
   target_include_directories(${LIB_OBJ_NAME} PRIVATE ${BOOST_UNORDERED_INCLUDE_DIRS})
 
   # ur_win_proxy_loader
@@ -84,12 +91,12 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
     # Embed manifest into the sycl.dll where ur_win_proxy_loader.dll is described as sycl.dll's private dll and will always be loaded from the same directory.
     # 0x2000: LOAD_LIBRARY_SAFE_CURRENT_DIRS flag. Using this flag means that loading dependency DLLs (of sycl.dll)
     # from the current directory is only allowed if it is under a directory in the Safe load list.
-    target_link_options(${LIB_NAME} PRIVATE /DEPENDENTLOADFLAG:0x2000 /MANIFEST:NO /MANIFEST:EMBED /MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/${MANIFEST_FILE_NAME})
+    target_link_options(${LIB_NAME} PRIVATE "LINKER:/DEPENDENTLOADFLAG:0x2000" "LINKER:/MANIFEST:NO" "LINKER:/MANIFEST:EMBED" "LINKER:/MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/${MANIFEST_FILE_NAME}")
   endif()
 
   target_compile_definitions(${LIB_OBJ_NAME} PRIVATE __SYCL_INTERNAL_API )
 
-  if (WIN32) 
+  if (WIN32)
     target_compile_definitions(${LIB_OBJ_NAME} PRIVATE __SYCL_BUILD_SYCL_DLL )
     target_link_libraries(${LIB_NAME} PRIVATE shlwapi)
     if (ARG_IMPLIB_NAME)
@@ -110,7 +117,7 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
   else()
     target_compile_options(${LIB_OBJ_NAME} PUBLIC
                            -fvisibility=hidden -fvisibility-inlines-hidden)
-                           
+
     # Sycl math built-in macros cause a GCC 4.6 'note' to be output repeatedly.
     # => note: the ABI for passing parameters with 32-byte alignment has changed in GCC 4.6
     # Seems to be no way to suppress it except use -Wno-psabi
@@ -140,20 +147,22 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
     PRIVATE OpenCL-Headers
   )
 
-  if(SYCL_ENABLE_KERNEL_FUSION)
-    if(NOT DEFINED LLVM_EXTERNAL_SYCL_FUSION_SOURCE_DIR)
-      message(FATAL_ERROR "Undefined LLVM_EXTERNAL_SYCL_FUSION_SOURCE_DIR variable: Must be set when SYCL fusion is enabled")
+  if(SYCL_ENABLE_EXTENSION_JIT)
+    if(NOT DEFINED LLVM_EXTERNAL_SYCL_JIT_SOURCE_DIR)
+      message(FATAL_ERROR "Undefined LLVM_EXTERNAL_SYCL_JIT_SOURCE_DIR variable: Must be set when extension to JIT SYCL kernels is enabled")
     endif()
-    set(SYCL_FUSION_INCLUDE_DIRS 
-        ${LLVM_EXTERNAL_SYCL_FUSION_SOURCE_DIR}/common/include
-        ${LLVM_EXTERNAL_SYCL_FUSION_SOURCE_DIR}/jit-compiler/include)
-    add_dependencies(${LIB_NAME} sycl-fusion)
-    add_dependencies(${LIB_OBJ_NAME} sycl-fusion)
-    target_include_directories(${LIB_NAME} PRIVATE ${SYCL_FUSION_INCLUDE_DIRS})
-    target_include_directories(${LIB_OBJ_NAME} PRIVATE ${SYCL_FUSION_INCLUDE_DIRS})
+    set(SYCL_JIT_INCLUDE_DIRS
+        ${LLVM_EXTERNAL_SYCL_JIT_SOURCE_DIR}/common/include
+        ${LLVM_EXTERNAL_SYCL_JIT_SOURCE_DIR}/jit-compiler/include)
+    add_dependencies(${LIB_NAME} sycl-jit)
+    add_dependencies(${LIB_OBJ_NAME} sycl-jit)
+    target_include_directories(${LIB_NAME} PRIVATE ${SYCL_JIT_INCLUDE_DIRS})
+    target_include_directories(${LIB_OBJ_NAME} PRIVATE ${SYCL_JIT_INCLUDE_DIRS})
     set_property(GLOBAL APPEND PROPERTY SYCL_TOOLCHAIN_INSTALL_COMPONENTS
-       sycl-fusion)
-  endif(SYCL_ENABLE_KERNEL_FUSION)
+       sycl-jit)
+    target_compile_definitions(${LIB_NAME} PRIVATE SYCL_EXT_JIT_ENABLE)
+    target_compile_definitions(${LIB_OBJ_NAME} PRIVATE SYCL_EXT_JIT_ENABLE)
+  endif(SYCL_ENABLE_EXTENSION_JIT)
 
   find_package(Threads REQUIRED)
 
@@ -166,7 +175,6 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
   # Link and include UR
   target_link_libraries(${LIB_OBJ_NAME}
     PRIVATE
-      UnifiedRuntimeLoader
       UnifiedRuntime-Headers
       UnifiedRuntimeCommon
   )
@@ -181,10 +189,18 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
 
   target_link_libraries(${LIB_NAME}
     PRIVATE
-      UnifiedRuntimeLoader
       UnifiedRuntime-Headers
       UnifiedRuntimeCommon
   )
+
+  if (NOT WIN32)
+    target_link_libraries(${LIB_NAME}
+      PRIVATE
+      UnifiedRuntimeLoader
+    )
+  else()
+    add_dependencies(${LIB_NAME} UnifiedRuntimeLoader)
+  endif()
 
   target_include_directories(${LIB_NAME}
     PRIVATE
@@ -237,7 +253,6 @@ set(SYCL_COMMON_SOURCES
     "detail/event_impl.cpp"
     "detail/filter_selector_impl.cpp"
     "detail/fusion/fusion_wrapper.cpp"
-    "detail/fusion/fusion_wrapper_impl.cpp"
     "detail/global_handler.cpp"
     "detail/graph_impl.cpp"
     "detail/helpers.cpp"

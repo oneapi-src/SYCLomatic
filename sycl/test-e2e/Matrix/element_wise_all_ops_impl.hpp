@@ -40,7 +40,7 @@ void verify_op_ab(const T l, const T r, const float ref, OP op) {
                      {1, 1 * sg_size}),
          [=](nd_item<2> spmd_item)
 #ifdef SG_SZ
-             [[intel::reqd_sub_group_size(SG_SZ)]]
+             [[sycl::reqd_sub_group_size(SG_SZ)]]
 #endif
          {
            const auto global_idx = spmd_item.get_global_id(0);
@@ -80,7 +80,7 @@ void verify_op_c(const T l, const T r, const float ref, OP op) {
                      {1, 1 * sg_size}),
          [=](nd_item<2> spmd_item)
 #ifdef SG_SZ
-             [[intel::reqd_sub_group_size(SG_SZ)]]
+             [[sycl::reqd_sub_group_size(SG_SZ)]]
 #endif
          {
            const auto global_idx = spmd_item.get_global_id(0);
@@ -240,6 +240,9 @@ int main() {
       test_ewops_ab<bfloat16, 8, 16, use::a, layout::row_major, 1>();
       test_ewops_ab<bfloat16, 16, 8, use::b, layout::ext_intel_packed, 2>();
       test_ewops_c<float, 8, 8>();
+      // test_ewops_ab<bfloat16, 32, 16, use::a, layout::row_major, 1>();
+      // test_ewops_ab<bfloat16, 16, 32, use::b, layout::ext_intel_packed, 2>();
+      // test_ewops_c<float, 32, 32>();
       break;
     }
   }

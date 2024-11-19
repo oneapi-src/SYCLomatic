@@ -1919,7 +1919,7 @@ void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
   unsigned int Pos, Len;
   std::string OriginText = Info.FuncContentCache;
   StringRef SR(OriginText);
-  RewriteBuffer RB;
+  llvm::RewriteBuffer RB;
   RB.Initialize(SR.begin(), SR.end());
   for (const auto &R : ProcessedReplList) {
     unsigned ROffset = R.getOffset();
@@ -5710,12 +5710,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*/" << getNL();
     Printer.indent();
   }
-  if (DpctGlobalInfo::useRootGroup()) {
-    Printer << "auto exp_props = "
-               "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
-               "experimental::use_root_sync};\n";
-    ExecutionConfig.Properties = "exp_props";
-  }
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
@@ -5993,6 +5987,7 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 std::string KernelCallExpr::getReplacement() {
+  addPropertiesStmt();
   addDevCapCheckStmt();
   addAccessorDecl();
   addStreamDecl();
@@ -6054,7 +6049,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     Kernel->buildCalleeInfo(CE->getArg(0), std::nullopt);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
-                             true, false, Kernel->getName());
+                             true, false);
   }
   return Kernel;
 }
@@ -6293,6 +6288,17 @@ void KernelCallExpr::removeExtraIndent() {
       LocInfo.Indent.length(), "", nullptr));
 }
 
+void KernelCallExpr::addPropertiesStmt() {
+  if (DpctGlobalInfo::useRootGroup()) {
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << "auto exp_props = "
+          "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
+          "experimental::use_root_sync};";
+    ExecutionConfig.Properties = "exp_props";
+    OuterStmts.OthersList.emplace_back(Str);
+  }
+}
 void KernelCallExpr::addDevCapCheckStmt() {
   llvm::SmallVector<std::string> AspectList;
   if (getVarMap().hasBF64()) {

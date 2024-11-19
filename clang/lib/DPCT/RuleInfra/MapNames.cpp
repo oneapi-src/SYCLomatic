@@ -17,8 +17,6 @@
 
 using namespace clang;
 using namespace clang::dpct;
-// Not use sycl:: namespace explicitly
-// KeepNamespace = false/true --> ""/"sycl::"
 
 namespace clang {
 namespace dpct {
