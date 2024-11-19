@@ -62,7 +62,7 @@ __global__ void sub() {
   // CHECK: s16x2 = sycl::short2{1, 1} - sa;
   asm("sub.s16x2 %0, {1, 1}, %1;" : "=r"(s16x2) : "r"(sa));
 
-  // CHECK: f16x2 = sycl::float2{1, 1} - fa;
+  // CHECK: f16x2 = sycl::half2{1, 1} - fa;
   asm("sub.f16x2 %0, {1, 1}, %1;" : "=r"(f16x2) : "r"(fa));
 
   // CHECK: u16x2 = sycl::ushort2{1, 1} - ua;
