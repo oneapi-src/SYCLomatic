@@ -6,20 +6,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-// The demangler does not pass all these tests with the system dylibs on macOS.
-// XFAIL: stdlib=system && target={{.+}}-apple-macosx10.{{9|10|11|12|13|14|15}}
-
 // This test is too big for most embedded devices.
 // XFAIL: LIBCXX-PICOLIBC-FIXME
 
 // https://llvm.org/PR51407 was not fixed in some previously-released
 // demanglers, which causes them to run into the infinite loop.
-// UNSUPPORTED: stdlib=system && target={{.+}}-apple-macosx10.{{9|10|11|12|13|14|15}}
-// UNSUPPORTED: stdlib=system && target={{.+}}-apple-macosx11.0
+// UNSUPPORTED: using-built-library-before-llvm-14
 
 // Android's long double on x86[-64] is (64/128)-bits instead of Linux's usual
 // 80-bit format, and this demangling test is failing on it.
 // XFAIL: LIBCXX-ANDROID-FIXME && target={{i686|x86_64}}-{{.+}}-android{{.*}}
+
+// XFAIL: win32-broken-printf-a-precision
 
 #include "support/timer.h"
 #include <algorithm>
@@ -30039,7 +30037,32 @@ const char* cases[][2] =
     // FIXME: This is not valid pointer-to-member syntax.
     {"_Z1fIXtl1DmcM7DerivedKiadL_ZN11MoreDerived1zEEn8EEEEvv", "void f<D{(int const Derived::*)(&MoreDerived::z)}>()"},
     {"_Z1fIXtl1Edi1nLi42EEEEvv", "void f<E{.n = 42}>()"},
-    {"_ZTAXtl1StlA32_cLc104ELc101ELc108ELc108ELc111ELc32ELc119ELc111ELc114ELc108ELc100EEEE", "template parameter object for S{char [32]{(char)104, (char)101, (char)108, (char)108, (char)111, (char)32, (char)119, (char)111, (char)114, (char)108, (char)100}}"},
+    // Arrays of char are formatted as string literals. Escape sequences are
+    // used for non-printable ASCII characters.
+    // FIXME: We should do the same for arrays of charN_t and wchar_t.
+    {"_ZTAXtl1StlA32_cLc104ELc101ELc108ELc108ELc111ELc32ELc119ELc111ELc114ELc108ELc100EEEE", "template parameter object for S{\"hello world\"}"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc108ELc108ELc111EEEEEvv", "void f<Hello{\"Hello\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc108ELc111EEEEEvv", "void f<Hello{\"Helo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc0ELc108ELc111EEEEEvv", "void f<Hello{\"He\\0lo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc1ELc108ELc111EEEEEvv", "void f<Hello{\"He\\1lo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc6ELc108ELc111EEEEEvv", "void f<Hello{\"He\\6lo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc7ELc108ELc111EEEEEvv", "void f<Hello{\"He\\alo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc8ELc108ELc111EEEEEvv", "void f<Hello{\"He\\blo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc9ELc108ELc111EEEEEvv", "void f<Hello{\"He\\tlo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc10ELc108ELc111EEEEEvv", "void f<Hello{\"He\\nlo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc11ELc108ELc111EEEEEvv", "void f<Hello{\"He\\vlo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc12ELc108ELc111EEEEEvv", "void f<Hello{\"He\\flo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc13ELc108ELc111EEEEEvv", "void f<Hello{\"He\\rlo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc14ELc108ELc111EEEEEvv", "void f<Hello{\"He\\xElo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc15ELc108ELc111EEEEEvv", "void f<Hello{\"He\\xFlo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc16ELc108ELc111EEEEEvv", "void f<Hello{\"He\\x10lo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc34ELc108ELc111EEEEEvv", "void f<Hello{\"He\\\"lo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc72ELc101ELc92ELc108ELc111EEEEEvv", "void f<Hello{\"He\\\\lo\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc15ELc101ELc108ELc108ELc111EEEEEvv", "void f<Hello{\"\\xF\"\"ello\"}>()"},
+    {"_Z1fIXtl5HellotlA6_cLc240ELc159ELc152ELc138ELc33EEEEEvv", "void f<Hello{\"😊!\"}>()"},
+    // Even non-null-terminated strings get this treatment, even though this
+    // isn't valid C++ syntax to initialize an array of char.
+    {"_Z1fIXtl5HellotlA5_cLc72ELc101ELc108ELc108ELc111EEEEEvv", "void f<Hello{\"Hello\"}>()"},
 
     // FIXME: This is wrong; the S2_ backref should expand to OT_ and then to
     // "double&&". But we can't cope with a substitution that represents a
@@ -30139,6 +30162,7 @@ const char* cases[][2] =
     {"_ZZN5test71fIiEEvvENKUlTyQaa1CIT_E1CITL0__ET0_E0_clIiiEEDaS3_Qaa1CIDtfp_EELb1E", "auto void test7::f<int>()::'lambda0'<typename $T> requires C<T> && C<TL0_> (auto)::operator()<int, int>(auto) const requires C<decltype(fp)> && true"},
     {"_ZZN5test71fIiEEvvENKUlTyQaa1CIT_E1CITL0__ET0_E1_clIiiEEDaS3_Q1CIDtfp_EE", "auto void test7::f<int>()::'lambda1'<typename $T> requires C<T> && C<TL0_> (auto)::operator()<int, int>(auto) const requires C<decltype(fp)>"},
     {"_ZZN5test71fIiEEvvENKUlTyT0_E_clIiiEEDaS1_", "auto void test7::f<int>()::'lambda'<typename $T>(auto)::operator()<int, int>(auto) const"},
+    {"_ZN3FooIiE6methodITk4TrueIT_EiEEvS3_", "void Foo<int>::method<int>(T)"},
 
     // C++20 requires expressions, see https://github.com/itanium-cxx-abi/cxx-abi/issues/24.
     {"_Z1fIiEviQrqXcvT__EXfp_Xeqfp_cvS0__EXplcvS0__ELi1ER5SmallXmicvS0__ELi1ENXmlcvS0__ELi2ENR11SmallerThanILi1234EETS0_T1XIS0_ETNS3_4typeETS2_IiEQ11SmallerThanIS0_Li256EEE", "void f<int>(int) requires requires { (T)(); fp; fp == (T)(); {(T)() + 1} -> Small; {(T)() - 1} noexcept; {(T)() * 2} noexcept -> SmallerThan<1234>; typename T; typename X<T>; typename X<T>::type; typename X<int>; requires SmallerThan<T, 256>; }"},

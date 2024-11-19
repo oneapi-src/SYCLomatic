@@ -78,7 +78,7 @@ static sycl::unittest::UrImage generateDefaultImage() {
   addESIMDFlag(PropSet);
   std::vector<unsigned char> Bin{0, 1, 2, 3, 4, 5}; // Random data
 
-  UrArray<UrOffloadEntry> Entries = makeEmptyKernels({"BuildOptsTestKernel"});
+  std::vector<UrOffloadEntry> Entries = makeEmptyKernels({"BuildOptsTestKernel"});
 
   UrImage Img{SYCL_DEVICE_BINARY_TYPE_SPIRV,       // Format
               __SYCL_DEVICE_BINARY_TARGET_SPIRV64, // DeviceTargetSpec
@@ -118,4 +118,21 @@ TEST(KernelBuildOptions, KernelBundleBasic) {
 
   auto LinkBundle = sycl::link(ObjBundle, ObjBundle.get_devices());
   EXPECT_EQ(BuildOpts, "-link-img");
+}
+
+TEST(KernelBuildOptions, ESIMDParallelForBasic) {
+  sycl::unittest::UrMock<> Mock;
+  sycl::platform Plt = sycl::platform();
+  setupCommonMockAPIs(Mock);
+
+  const sycl::device Dev = Plt.get_devices()[0];
+  sycl::queue Queue{Dev};
+
+  Queue.submit([&](sycl::handler &cgh) {
+    cgh.parallel_for<BuildOptsTestKernel>(
+        sycl::range{1024}, [=](sycl::id<1>) /* SYCL_ESIMD_KERNEL */ {});
+  });
+
+  EXPECT_EQ(BuildOpts,
+            "-compile-img -vc-codegen -disable-finalizer-msg -link-img");
 }

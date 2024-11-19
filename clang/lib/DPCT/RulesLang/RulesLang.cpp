@@ -1628,7 +1628,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (FD &&
         (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())) {
       if (DpctGlobalInfo::getUnqualifiedTypeName(TL->getType()) == "cublasHandle_t") {
-        report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
+        report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false);
         return;
       }
     }
@@ -3107,8 +3107,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaIpcGetMemHandle" ||
              FuncName == "cudaIpcOpenMemHandle" ||
              FuncName == "cudaIpcCloseMemHandle") {
-    report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false,
-           MapNames::ITFName.at(FuncName));
+    report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false);
   } else if (FuncName == "__trap") {
     if (DpctGlobalInfo::useAssert()) {
       emplaceTransformation(new ReplaceStmt(CE, "assert(0)"));
@@ -10386,15 +10385,13 @@ std::string TextureRule::getTextureFlagsSetterInfo(const Expr *Flags,
     if (Flags->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
       auto Val = Result.Val.getInt().getZExtValue();
       if (Val != 1 && Val != 3) {
-        report(Flags, Diagnostics::TEX_FLAG_UNSUPPORT, false,
-               ExprAnalysis::ref(Flags));
+        report(Flags, Diagnostics::TEX_FLAG_UNSUPPORT, false);
       }
       return getCoordinateNormalizationStr(Val & 0x02).str();
     }
   }
   SetterName = "coordinate_normalization_mode";
-  report(Flags, Diagnostics::TEX_FLAG_UNSUPPORT, false,
-         ExprAnalysis::ref(Flags));
+  report(Flags, Diagnostics::TEX_FLAG_UNSUPPORT, false);
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   printWithParens(OS, Flags);
