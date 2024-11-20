@@ -1587,7 +1587,7 @@ void MapNamesBlas::setExplicitNamespaceMap(
            "blas_gemm::experimental::matmul_desc_t::"
            "attribute::epilogue_aux_pointer"},
       {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_DATA_TYPE",
-        MapNames::getLibraryHelperNamespace() +
+       MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::"
            "attribute::epilogue_aux_data_type"},
       {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
