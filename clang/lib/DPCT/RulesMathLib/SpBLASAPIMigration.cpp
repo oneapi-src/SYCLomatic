@@ -7,9 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "SpBLASAPIMigration.h"
+#include "MapNamesBlas.h"
+#include "RuleInfra/ASTmatcherCommon.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/CallExprRewriterCommon.h"
-#include "RuleInfra/ASTmatcherCommon.h"
 
 namespace clang {
 namespace dpct {
@@ -287,8 +288,8 @@ void SPBLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "SPBLASNamedValueConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     std::string Name = EC->getNameAsString();
-    auto Search = MapNames::SPBLASEnumsMap.find(Name);
-    if (Search == MapNames::SPBLASEnumsMap.end()) {
+    auto Search = MapNamesBlas::SPBLASEnumsMap.find(Name);
+    if (Search == MapNamesBlas::SPBLASEnumsMap.end()) {
       llvm::dbgs() << "[" << getName()
                    << "] Unexpected enum variable: " << Name;
       return;

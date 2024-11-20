@@ -9,14 +9,16 @@
 #include "RuleInfra/ExprAnalysis.h"
 
 #include "ASTTraversal.h"
-#include "RulesLang/RulesLang.h"
 #include "AnalysisInfo.h"
-#include "RulesLangLib/CUBAPIMigration.h"
-#include "RuleInfra/CallExprRewriter.h"
 #include "Config.h"
-#include "RulesDNN/DNNAPIMigration.h"
+#include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/MemberExprRewriter.h"
 #include "RuleInfra/TypeLocRewriters.h"
+#include "RulesDNN/DNNAPIMigration.h"
+#include "RulesLang/RulesLang.h"
+#include "RulesLangLib/CUBAPIMigration.h"
+#include "RulesMathLib/MapNamesBlas.h"
+#include "RulesMathLib/MapNamesSolver.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprConcepts.h"
@@ -597,13 +599,13 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     if (!Repl.empty())                                                         \
       addReplacement(DRE, Repl);                                               \
   } while (0)
-      REPLACE_ENUM(MapNames::BLASEnumsMap);
+      REPLACE_ENUM(MapNamesBlas::BLASEnumsMap);
       REPLACE_ENUM(MapNames::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
       REPLACE_ENUM(MapNames::RandomEngineTypeMap);
       REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
-      REPLACE_ENUM(MapNames::SOLVEREnumsMap);
-      REPLACE_ENUM(MapNames::SPBLASEnumsMap);
+      REPLACE_ENUM(MapNamesSolver::SOLVEREnumsMap);
+      REPLACE_ENUM(MapNamesBlas::SPBLASEnumsMap);
       REPLACE_ENUM(MapNames::CUBEnumsMap);
 #undef REPLACE_ENUM
       std::string TypeName = DpctGlobalInfo::getTypeName(ECD->getType());
