@@ -1352,6 +1352,7 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
   sycl::free(temp, q);
 }
 
+// A wrapper for sycl sample_image function for the byte addressing image.
 template <typename DataT, typename HintT = DataT, typename CoordT>
 DataT sample_image(
     const sycl::ext::oneapi::experimental::sampled_image_handle &imageHandle,
