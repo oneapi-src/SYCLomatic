@@ -336,8 +336,9 @@ MetaRuleObject::PatternRewriter::PatternRewriter(
     const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
     std::string Warning, std::string RuleId, std::string BuildScriptSyntax,
     RulePriority Priority)
-    : In(I), Out(O), MatchMode(MatchMode), Warning(Warning),
-      BuildScriptSyntax(BuildScriptSyntax), RuleId(RuleId), Priority(Priority) {
+    : In(I), Out(O), MatchMode(MatchMode), Warning(std::move(Warning)),
+      BuildScriptSyntax(std::move(BuildScriptSyntax)),
+      RuleId(std::move(RuleId)), Priority(Priority) {
   Subrules = S;
 }
 

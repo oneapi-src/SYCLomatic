@@ -409,7 +409,7 @@ struct CompilationInfo {
 struct MainSourceFileInfo {
   MainSourceFileInfo(std::string MainSourceFile, std::string Digest,
                      bool HasCUDASyntax)
-      : MainSourceFile(MainSourceFile), Digest(Digest),
+      : MainSourceFile(std::move(MainSourceFile)), Digest(std::move(Digest)),
         HasCUDASyntax(HasCUDASyntax) {}
   MainSourceFileInfo() {}
   std::string MainSourceFile;
