@@ -9,7 +9,7 @@
 #ifndef DPCT_TEXT_MODIFICATION_H
 #define DPCT_TEXT_MODIFICATION_H
 
-#include "MapNames.h"
+#include "RuleInfra/MapNames.h"
 #include "Utility.h"
 #include "clang/Tooling/Core/Replacement.h"
 #include "clang/Tooling/Tooling.h"
@@ -134,7 +134,7 @@ private:
 
 enum class TextModificationID : int {
 #define TRANSFORMATION(TYPE) TYPE,
-#include "Transformations.inc"
+#include "TextModificationKind.inc"
 #undef TRANSFORMATION
 };
 
@@ -625,6 +625,14 @@ public:
   void print(llvm::raw_ostream &OS, ASTContext &Context,
              const bool PrintDetail = true) const override;
 };
+
+SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
+                                 const SourceManager &SM);
+TextModification *replaceText(SourceLocation Begin, SourceLocation End,
+                              std::string &&Str, const SourceManager &SM);
+
+TextModification *removeArg(const CallExpr *C, unsigned n,
+                            const SourceManager &SM) ;
 
 } // namespace dpct
 } // namespace clang

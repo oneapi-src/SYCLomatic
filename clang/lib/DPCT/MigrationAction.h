@@ -12,8 +12,10 @@
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Tooling/Tooling.h"
 
+#include "PreProcessor.h"
 #include "ASTTraversal.h"
-#include "MisleadingBidirectional.h"
+
+#include "RulesSecurity/MisleadingBidirectional.h"
 
 namespace clang {
 namespace dpct {

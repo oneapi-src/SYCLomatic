@@ -9,17 +9,16 @@
 #ifndef DPCT_ANALYSIS_INFO_H
 #define DPCT_ANALYSIS_INFO_H
 
-#include "Error.h"
-#include "ExprAnalysis.h"
+#include "ErrorHandle/Error.h"
+#include "RuleInfra/ExprAnalysis.h"
 #include "ExtReplacements.h"
-#include "InclusionHeaders.h"
-#include "LibraryAPIMigration.h"
-#include "Rules.h"
-#include "SaveNewFiles.h"
-#include "Statics.h"
+#include "RulesInclude/InclusionHeaders.h"
+#include "UserDefinedRules/UserDefinedRules.h"
+#include "FileGenerator/GenFiles.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
-#include "ValidateArguments.h"
+#include "CommandOption/ValidateArguments.h"
 #include <bitset>
 #include <memory>
 #include <optional>
@@ -44,6 +43,8 @@ void setGetReplacedNamePtr(llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
+
+using format::FormatRange;
 using LocInfo = std::pair<tooling::UnifiedPath, unsigned int>;
 template <class F, class... Ts>
 std::string buildStringFromPrinter(F Func, Ts &&...Args) {
@@ -586,10 +587,14 @@ private:
   clang::tooling::UnifiedPath FilePath;
   std::string FileContentCache;
 
-  unsigned FirstIncludeOffset = 0;
+  // Save the FirstIncludeOffset in each MainFile
+  std::map<std::shared_ptr<DpctFileInfo> /*MainFile*/, unsigned>
+      FirstIncludeOffset;
   unsigned LastIncludeOffset = 0;
   const unsigned FileBeginOffset = 0;
-  bool HasInclusionDirective = false;
+  // Save the status whether FirstIncludeOffset is set by setFirstIncludeOffset
+  // for each MainFile
+  std::set<std::shared_ptr<DpctFileInfo> /*MainFile*/> HasInclusionDirectiveSet;
   std::vector<std::string> InsertedHeaders;
   std::vector<std::string> InsertedHeadersCUDA;
   std::bitset<32> HeaderInsertedBitMap;
@@ -632,6 +637,22 @@ public:
     unsigned Offset;
     bool IsInAnalysisScope;
     MacroDefRecord(SourceLocation NTL, bool IIAS);
+  };
+  // This class is used to store information about macro arguments in a
+  // macro definition. For example, consider the macro definition:
+  // "#define CALL(x, y) x(y)".
+  // - For the first argument "x", the member ArgName will be "x", ArgLoc will
+  // be the source location of the token "x" in the macro definition, and
+  // ArgIndex will be 0.
+  // - For the second argument "y", the member ArgName will be "y", ArgLoc will
+  // be the source location of the token "y" in the macro definition, and
+  // ArgIndex will be 1.
+  class MacroArgRecord {
+  public:
+    std::string ArgName;
+    SourceLocation ArgLoc;
+    int ArgIndex;
+    MacroArgRecord(const MacroInfo *MI, int ArgIndex);
   };
 
   class MacroExpansionRecord {
@@ -1189,6 +1210,10 @@ public:
   getExpansionRangeBeginMap() {
     return ExpansionRangeBeginMap;
   }
+  static std::unordered_map<std::string, std::shared_ptr<MacroArgRecord>> &
+  getMacroArgRecordMap() {
+    return MacroArgRecordMap;
+  }
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
   getExpansionRangeToMacroRecord() {
     return ExpansionRangeToMacroRecord;
@@ -1568,6 +1593,11 @@ private:
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
+  // key: The hash string of the location of function-like macro argument
+  // value: Function-like macro argument information
+  static std::unordered_map<std::string,
+                            std::shared_ptr<DpctGlobalInfo::MacroArgRecord>>
+      MacroArgRecordMap;
   static std::map<std::string, SourceLocation> EndifLocationOfIfdef;
   static std::vector<std::pair<clang::tooling::UnifiedPath, size_t>>
       ConditionalCompilationLoc;
@@ -1894,7 +1924,7 @@ public:
   bool isUseHelperFunc() { return UseHelperFuncFlag; }
   void setUseDeviceGlobalFlag(bool Flag) { UseDeviceGlobalFlag = Flag; }
   bool isUseDeviceGlobal() { return UseDeviceGlobalFlag; }
-  void setInitForDeviceGlobal(std::string Init) { InitList = Init; }
+  void migrateToDeviceGlobal(const VarDecl *MemVar);
 
 private:
   bool isTreatPointerAsArray() {
@@ -2853,6 +2883,7 @@ private:
 
   void removeExtraIndent();
   void addDevCapCheckStmt();
+  void addPropertiesStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl();

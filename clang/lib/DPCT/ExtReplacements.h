@@ -14,7 +14,7 @@
 
 #include "TextModification.h"
 #include "Utility.h"
-#include "clang/Rewrite/Core/RewriteBuffer.h"
+#include "llvm/ADT/RewriteBuffer.h"
 
 #include <unordered_set>
 

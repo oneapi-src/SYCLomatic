@@ -7,10 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "AnalysisInfo.h"
-#include "Diagnostics.h"
-#include "ExprAnalysis.h"
-#include "MapNames.h"
-#include "Statics.h"
+#include "Diagnostics/Diagnostics.h"
+#include "RuleInfra/ExprAnalysis.h"
+#include "RuleInfra/MapNames.h"
+#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
 
@@ -27,9 +27,9 @@
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
-  auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
-  if (Iter != MapNames::TypeNamesMap.end()) {
-    auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
+  auto Iter = clang::dpct::MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
+  if (Iter != clang::dpct::MapNames::TypeNamesMap.end()) {
+    auto Range = clang::dpct::getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
     for (auto ItHeader = Iter->second->Includes.begin();
          ItHeader != Iter->second->Includes.end(); ItHeader++) {
       clang::dpct::DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(),
@@ -53,7 +53,7 @@ static const std::string RegexPrefix = "{{NEEDREPLACE", RegexSuffix = "}}";
 void initHeaderSpellings() {
   HeaderSpellings = {
 #define HEADER(Name, Spelling) {HT_##Name, Spelling},
-#include "HeaderTypes.inc"
+#include "RulesInclude/HeaderTypes.inc"
   };
 }
 const std::string &getDefaultString(HelperFuncType HFT) {
@@ -619,7 +619,8 @@ void DpctFileInfo::buildReplacements() {
   // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (const auto &Entry : MemVarMap) {
-    if (Entry.second->isIgnore() || !Entry.second->isConstant())
+    if (Entry.second->isIgnore() || !Entry.second->isConstant() ||
+        Entry.second->isUseDeviceGlobal())
       continue;
 
     auto Name = Entry.second->getName();
@@ -812,16 +813,18 @@ bool DpctFileInfo::isInAnalysisScope() {
   return DpctGlobalInfo::isInAnalysisScope(FilePath);
 }
 void DpctFileInfo::setFileEnterOffset(unsigned Offset) {
-  if (!HasInclusionDirective) {
-    FirstIncludeOffset = Offset;
+  auto MF = DpctGlobalInfo::getInstance().getMainFile();
+  if (!HasInclusionDirectiveSet.count(MF)) {
+    FirstIncludeOffset[MF] = Offset;
     LastIncludeOffset = Offset;
   }
 }
 void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
-  if (!HasInclusionDirective) {
-    FirstIncludeOffset = Offset;
+  auto MF = DpctGlobalInfo::getInstance().getMainFile();
+  if (!HasInclusionDirectiveSet.count(MF)) {
+    FirstIncludeOffset[MF] = Offset;
     LastIncludeOffset = Offset;
-    HasInclusionDirective = true;
+    HasInclusionDirectiveSet.insert(MF);
   }
 }
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
@@ -852,9 +855,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                                 ReplacementType IsForCodePin) {
   if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_SYCL) {
     if (auto MF = DpctGlobalInfo::getInstance().getMainFile())
-      if (this != MF.get())
+      if (this != MF.get() && FirstIncludeOffset.count(MF)) {
         DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            Type, FirstIncludeOffset);
+            Type, FirstIncludeOffset.at(MF));
+      }
   }
   if (HeaderInsertedBitMap[Type])
     return;
@@ -876,8 +880,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
     concatHeader(OS, getHeaderSpelling(Type));
-    return insertHeader(OS.str(), FirstIncludeOffset,
-                        InsertPosition::IP_AlwaysLeft);
+    if (auto Iter = FirstIncludeOffset.find(
+            DpctGlobalInfo::getInstance().getMainFile());
+        Iter != FirstIncludeOffset.end())
+      insertHeader(OS.str(), Iter->second, InsertPosition::IP_AlwaysLeft);
+    return;
   case HT_SYCL:
     // Add the label for profiling macro "DPCT_PROFILING_ENABLED", which will be
     // replaced by "#define DPCT_PROFILING_ENABLED" or not in the post
@@ -923,7 +930,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
            << DpctGlobalInfo::getGlobalQueueName() << ";" << getNL();
       }
     }
-    insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+    if (auto Iter = FirstIncludeOffset.find(
+            DpctGlobalInfo::getInstance().getMainFile());
+        Iter != FirstIncludeOffset.end())
+      insertHeader(OS.str(), Iter->second, InsertPosition::IP_Left);
     if (!RTVersionValue.empty())
       MigratedMacroDefinitionOS << "#define DPCT_COMPAT_RT_VERSION "
                                 << RTVersionValue << getNL();
@@ -940,8 +950,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
                  InsertPosition::IP_AlwaysLeft);
     for (const auto &File :
          DpctGlobalInfo::getCustomHelperFunctionAddtionalIncludes()) {
-      insertHeader("#include \"" + File + +"\"" + getNL(), FirstIncludeOffset,
-                   InsertPosition::IP_Right);
+      if (auto Iter = FirstIncludeOffset.find(
+              DpctGlobalInfo::getInstance().getMainFile());
+          Iter != FirstIncludeOffset.end())
+        insertHeader("#include \"" + File + +"\"" + getNL(), Iter->second,
+                     InsertPosition::IP_Right);
     }
     return;
 
@@ -993,14 +1006,20 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset,
     }
     SchemaRelativePath += "codepin_autogen_util.hpp\"";
     concatHeader(OS, SchemaRelativePath);
-    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Right,
-                        IsForCodePin);
+    if (auto Iter = FirstIncludeOffset.find(
+            DpctGlobalInfo::getInstance().getMainFile());
+        Iter != FirstIncludeOffset.end())
+      insertHeader(OS.str(), Iter->second, InsertPosition::IP_Right,
+                   IsForCodePin);
+    return;
   } break;
   default:
     break;
   }
 
-  if (Offset != FirstIncludeOffset)
+  if (FirstIncludeOffset.count(DpctGlobalInfo::getInstance().getMainFile()) &&
+      Offset !=
+          FirstIncludeOffset.at(DpctGlobalInfo::getInstance().getMainFile()))
     OS << getNL();
   concatHeader(OS, getHeaderSpelling(Type));
   return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
@@ -1010,7 +1029,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, ReplacementType IsForCodePin) {
 #define HEADER(Name, Spelling)                                                 \
   case HT_##Name:                                                              \
     return insertHeader(HT_##Name, LastIncludeOffset, IsForCodePin);
-#include "HeaderTypes.inc"
+#include "RulesInclude/HeaderTypes.inc"
   default:
     return;
   }
@@ -1122,6 +1141,20 @@ DpctGlobalInfo::MacroDefRecord::MacroDefRecord(SourceLocation NTL, bool IIAS)
   FilePath = LocInfo.first;
   Offset = LocInfo.second;
 }
+
+DpctGlobalInfo::MacroArgRecord::MacroArgRecord(const MacroInfo *MI,
+                                               int ArgIndex)
+    : ArgIndex(ArgIndex) {
+  ArgName = MI->params()[ArgIndex]->getName().str();
+  for (auto Tok : MI->tokens()) {
+    auto II = Tok.getIdentifierInfo();
+    if (II && (II == MI->params()[ArgIndex])) {
+      ArgLoc = Tok.getLocation();
+      break;
+    }
+  }
+}
+
 DpctGlobalInfo::MacroExpansionRecord::MacroExpansionRecord(
     IdentifierInfo *ID, const MacroInfo *MI, SourceRange Range,
     bool IsInAnalysisScope, int TokenIndex) {
@@ -1886,7 +1919,7 @@ void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
   unsigned int Pos, Len;
   std::string OriginText = Info.FuncContentCache;
   StringRef SR(OriginText);
-  RewriteBuffer RB;
+  llvm::RewriteBuffer RB;
   RB.Initialize(SR.begin(), SR.end());
   for (const auto &R : ProcessedReplList) {
     unsigned ROffset = R.getOffset();
@@ -2399,6 +2432,8 @@ bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
 bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
+std::unordered_map<std::string, std::shared_ptr<DpctGlobalInfo::MacroArgRecord>>
+    DpctGlobalInfo::MacroArgRecordMap;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<clang::tooling::UnifiedPath, size_t>>
     DpctGlobalInfo::ConditionalCompilationLoc;
@@ -2831,6 +2866,163 @@ std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
   }
   return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
+
+// This function, `migrateToDeviceGlobal`, migrates a CUDA `__device__` or
+// `__constant__` variable declaration to the SYCL device global equivalent. The
+// migration process involves four key steps. The function handles various
+// transformations as follows:
+//
+// 1. Remove any array brackets following the variable name.
+//    - It identifies the array type using TypeLoc and removes the brackets
+//    while preserving the dimensions for later use.
+//    - If the array size comes from a macro argument, it maps the macro
+//    argument correctly using the `MacroArgRecord`.
+// 2. Process the initialization expression.
+//    - If the initialization style is C-style (with an equal sign), it remove
+//    the equal sign and adds braces around scalar initializers to use
+//    initializer list in SYCL.
+// 3. Replace the variable type.
+//    - Replace the origin type with
+//    `sycl::ext::oneapi::experimental::device_global`
+//      and the correct base type and dimensions.
+//    - It manages macro arguments to correctly replace the base type when
+//    required.
+// 4. Insert the `static` specifier if the variable is declared globally and
+//    does not already have the `static` storage class.
+//
+// Example1 (Specifier __device__ will be removed in preprocessor callbacks):
+// Origin code:
+// __device__ int var_a[3] = {1, 2, 3};
+//
+// As follow list the result after each key step listed in previous:
+// 1. int var_a = {1, 2, 3};
+// 2. int var_a {1, 2, 3};
+// 3. sycl::ext::oneapi::experimental::device_global<int[3]> var_a {1, 2, 3};
+// 4. static sycl::ext::oneapi::experimental::device_global<int[3]> var_a {1, 2,
+// 3};
+//
+// Example2 (Specifier __device__ will be removed in preprocessor callbacks):
+// Origin code:
+// #define VAR(type, name, size) static __device__ type name[size];
+// VAR(int, a, 3)
+//
+// As follow list the result after each key step listed in previous:
+// 1. #define VAR(type, name, size) static type name;
+//    VAR(int, a, 3)
+// 2. #define VAR(type, name, init) static type name;
+//    VAR(int, a, 3)
+// 3. #define VAR(type, name, init) static
+//    sycl::ext::oneapi::experimental::device_global<type[size]> name;
+//    VAR(int, a, 3)
+// 4. #define VAR(type, name, init) static
+//    sycl::ext::oneapi::experimental::device_global<type[size]> name;
+//    VAR(int, a, 3)
+void MemVarInfo::migrateToDeviceGlobal(const VarDecl *MemVar) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &Ctx = DpctGlobalInfo::getContext();
+  auto &MacroArgMap = DpctGlobalInfo::getMacroArgRecordMap();
+  auto TSI = MemVar->getTypeSourceInfo();
+  auto OriginTL = TSI->getTypeLoc();
+  auto TL = OriginTL;
+  auto BegLoc = MemVar->getBeginLoc();
+  if (BegLoc.isMacroID()) {
+    BegLoc = SM.getExpansionLoc(BegLoc);
+  }
+  auto LocInfo = DpctGlobalInfo::getLocInfo(BegLoc);
+  std::string Dims;
+  bool IsArray = OriginTL.getType()->isArrayType();
+  // Step 1
+  while (auto ATL = TL.getAs<clang::ArrayTypeLoc>()) {
+    auto BRange = ATL.getBracketsRange();
+    BRange = getDefinitionRange(BRange.getBegin(), BRange.getEnd());
+    auto RT =
+        ReplaceText(SM.getSpellingLoc(BRange.getBegin()),
+                    SM.getSpellingLoc(BRange.getEnd()).getLocWithOffset(1), "");
+    DpctGlobalInfo::getInstance().addReplacement(RT.getReplacement(Ctx));
+    Dims += "[";
+    std::string SizeStr;
+    if (clang::Expr *SE = ATL.getSizeExpr()) {
+      auto SizeLoc = SE->getBeginLoc();
+      if (SM.isMacroArgExpansion(SizeLoc)) {
+        auto Iter =
+            MacroArgMap.find(DpctGlobalInfo::getInstance()
+                                 .getMainFile()
+                                 ->getFilePath()
+                                 .getPath()
+                                 .str() +
+                             getCombinedStrFromLoc(SM.getSpellingLoc(SizeLoc)));
+        if (Iter != MacroArgMap.end()) {
+          SizeStr = Iter->second->ArgName;
+        }
+      }
+      if (SizeStr.empty()) {
+        SizeStr = ExprAnalysis::ref(SE);
+      }
+    }
+    Dims += SizeStr + "]";
+    TL = ATL.getElementLoc();
+  }
+  // Step 2
+  if (MemVar->hasInit()) {
+    if ((MemVar->getInitStyle() == VarDecl::InitializationStyle::CInit)) {
+      DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                               Diagnostics::DEVICE_GLOBAL_INIT, true, false);
+      if (!dyn_cast<InitListExpr>(
+              MemVar->getInit()->IgnoreImplicitAsWritten())) {
+        auto IBS = InsertBeforeStmt(MemVar->getInit(), "{");
+        auto IAS = InsertAfterStmt(MemVar->getInit(), "}");
+        DpctGlobalInfo::getInstance().addReplacement(IBS.getReplacement(Ctx));
+        DpctGlobalInfo::getInstance().addReplacement(IAS.getReplacement(Ctx));
+      }
+      auto NextTok = Lexer::findNextToken(
+          IsArray ? SM.getSpellingLoc(OriginTL.getEndLoc())
+                  : SM.getSpellingLoc(MemVar->getLocation()),
+          SM, DpctGlobalInfo::getContext().getLangOpts());
+      if (NextTok.has_value() && NextTok.value().is(tok::equal)) {
+        auto RTok = ReplaceToken(NextTok.value().getLocation(), "");
+        DpctGlobalInfo::getInstance().addReplacement(RTok.getReplacement(Ctx));
+      }
+    }
+  }
+  // Step 3
+  std::string BaseTypeStr;
+  SourceLocation TypeReplLoc;
+  size_t TypeReplLen = 0;
+  if (SM.isMacroArgExpansion(OriginTL.getBeginLoc())) {
+    auto Iter = MacroArgMap.find(
+        DpctGlobalInfo::getInstance()
+            .getMainFile()
+            ->getFilePath()
+            .getPath()
+            .str() +
+        getCombinedStrFromLoc(SM.getSpellingLoc(OriginTL.getBeginLoc())));
+    if (Iter != MacroArgMap.end()) {
+      BaseTypeStr = Iter->second->ArgName;
+      TypeReplLoc = Iter->second->ArgLoc;
+      TypeReplLen = BaseTypeStr.size();
+    }
+  }
+  if (BaseTypeStr.empty()) {
+    BaseTypeStr = getType()->getBaseNameWithoutQualifiers();
+    TypeReplLoc = TL.getBeginLoc();
+    TypeReplLen =
+        SM.getFileOffset(TL.getEndLoc()) - SM.getFileOffset(TL.getBeginLoc()) +
+        Lexer::MeasureTokenLength(TL.getEndLoc(), SM,
+                                  DpctGlobalInfo::getContext().getLangOpts());
+  }
+  std::string TypeStr = MapNames::getClNamespace() +
+                        "ext::oneapi::experimental::device_global<" +
+                        BaseTypeStr + Dims + ">";
+  auto RT = ReplaceText(TypeReplLoc, TypeReplLen, std::move(TypeStr));
+  DpctGlobalInfo::getInstance().addReplacement(RT.getReplacement(Ctx));
+  // Step 4
+  if (MemVar->getStorageClass() != SC_Static && getScope() == Global) {
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(LocInfo.first, LocInfo.second, 0,
+                                         "static ", nullptr));
+  }
+}
+
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const VarDecl *VD) {
   if (VD->hasAttrs())
     return getAddressAttr(VD->getAttrs());
@@ -5518,12 +5710,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer << "*/" << getNL();
     Printer.indent();
   }
-  if (DpctGlobalInfo::useRootGroup()) {
-    Printer << "auto exp_props = "
-               "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
-               "experimental::use_root_sync};\n";
-    ExecutionConfig.Properties = "exp_props";
-  }
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
@@ -5801,6 +5987,7 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 std::string KernelCallExpr::getReplacement() {
+  addPropertiesStmt();
   addDevCapCheckStmt();
   addAccessorDecl();
   addStreamDecl();
@@ -5862,7 +6049,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     Kernel->buildCalleeInfo(CE->getArg(0), std::nullopt);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
-                             true, false, Kernel->getName());
+                             true, false);
   }
   return Kernel;
 }
@@ -6101,6 +6288,17 @@ void KernelCallExpr::removeExtraIndent() {
       LocInfo.Indent.length(), "", nullptr));
 }
 
+void KernelCallExpr::addPropertiesStmt() {
+  if (DpctGlobalInfo::useRootGroup()) {
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << "auto exp_props = "
+          "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
+          "experimental::use_root_sync};";
+    ExecutionConfig.Properties = "exp_props";
+    OuterStmts.OthersList.emplace_back(Str);
+  }
+}
 void KernelCallExpr::addDevCapCheckStmt() {
   llvm::SmallVector<std::string> AspectList;
   if (getVarMap().hasBF64()) {
@@ -6795,7 +6993,7 @@ void CallFunctionExpr::buildInfo() {
 bool isInSameLine(SourceLocation First, SourceLocation Second,
                   const SourceManager &SM) {
   bool Invalid = false;
-  return ::isInSameLine(SM.getExpansionLoc(First), SM.getExpansionLoc(Second),
+  return isInSameLine(SM.getExpansionLoc(First), SM.getExpansionLoc(Second),
                         SM, Invalid) &&
          !Invalid;
 }
