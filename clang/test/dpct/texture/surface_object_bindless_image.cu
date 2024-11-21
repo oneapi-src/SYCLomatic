@@ -6,17 +6,17 @@
 template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
   int i;
   float j, k, l, m;
-  // CHECK: syclcompat::experimental::sample_image<T>(surf, float(i));
+  // CHECK: dpct::experimental::sample_image<T>(surf, float(i));
   surf1Dread<T>(surf, i);
-  // CHECK: i = syclcompat::experimental::sample_image<T>(surf, float(i));
+  // CHECK: i = dpct::experimental::sample_image<T>(surf, float(i));
   surf1Dread<T>(&i, surf, i);
-  // CHECK: syclcompat::experimental::sample_image<T>(surf, sycl::float2(j, i));
+  // CHECK: dpct::experimental::sample_image<T>(surf, sycl::float2(j, i));
   surf2Dread<T>(surf, j, i);
-  // CHECK: i = syclcompat::experimental::sample_image<T>(surf, sycl::float2(j, i));
+  // CHECK: i = dpct::experimental::sample_image<T>(surf, sycl::float2(j, i));
   surf2Dread<T>(&i, surf, j, i);
-  // CHECK: syclcompat::experimental::sample_image<T>(surf, sycl::float3(k, j, i));
+  // CHECK: dpct::experimental::sample_image<T>(surf, sycl::float3(k, j, i));
   surf3Dread<T>(surf, k, j, i);
-  // CHECK: i = syclcompat::experimental::sample_image<T>(surf, sycl::float3(k, j, i));
+  // CHECK: i = dpct::experimental::sample_image<T>(surf, sycl::float3(k, j, i));
   surf3Dread<T>(&i, surf, k, j, i);
 }
 
