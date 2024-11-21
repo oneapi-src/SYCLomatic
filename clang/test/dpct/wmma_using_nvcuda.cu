@@ -78,24 +78,24 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
 
   // Declare the fragments
   // CHECK: /*
-  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Different hardware supports different combinations of the data type and the shape of the joint_matrix. Please check if the combination of the data type and the matrix shape of the below type meets the restrictions.
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::a, WMMA_M, WMMA_N, WMMA_K, sycl::half, dpct::experimental::matrix::row_major>
   wmma::fragment<wmma::matrix_a, WMMA_M, WMMA_N, WMMA_K, half, wmma::row_major>
       a_frag;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Different hardware supports different combinations of the data type and the shape of the joint_matrix. Please check if the combination of the data type and the matrix shape of the below type meets the restrictions.
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::b, WMMA_M, WMMA_N, WMMA_K, sycl::half, dpct::experimental::matrix::col_major>
   wmma::fragment<wmma::matrix_b, WMMA_M, WMMA_N, WMMA_K, half, wmma::col_major>
       b_frag;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Different hardware supports different combinations of the data type and the shape of the joint_matrix. Please check if the combination of the data type and the matrix shape of the below type meets the restrictions.
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
   wmma::fragment<wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Different hardware supports different combinations of the data type and the shape of the joint_matrix. Please check if the combination of the data type and the matrix shape of the below type meets the restrictions.
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
   wmma::fragment<wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
