@@ -8,7 +8,7 @@
 #include <cuda_runtime.h>
 
 /*
-.ss =                       { .const, .global, .local, .param, .shared };
+.ss =                       { .const, .global, .local, .param, .shared, .volatile.global };
 .type =                     { .b8, .b16, .b32, .b64, .b128, 
                               .u8, .u16, .u32, .u64,
                               .s8, .s16, .s32, .s64,
@@ -27,6 +27,11 @@ __global__ void ld(int *arr) {
   asm volatile ("ld.global.u32 %0, [%1 + 4];" : "=r"(c) : "l"(arr));
   // CHECK: d = *((uint64_t *)((uintptr_t)arr + 8));
   asm volatile ("ld.global.u64 %0, [%1 + 8];" : "=l"(d) : "l"(arr));
+  // CHECK: a = *arr;
+  asm volatile ("ld.volatile.global.s32 %0, [%1];" : "=r"(a) : "l"(arr));
+  // CHECK: b = *((uint32_t *)(uintptr_t)arr);
+  asm volatile ("ld.volatile.global.u32 %0, [%1];" : "=r"(b) : "l"(arr));
+  // CHECK: c = *((uint32_t *)((uintptr_t)arr + 4));
 }
 
 __device__ void shared_address_load32(uint32_t addr, uint32_t &val) {
