@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "BLASAPIMigration.h"
+#include "MapNamesBlas.h"
 #include "RuleInfra/ASTmatcherCommon.h"
 
 namespace clang {
@@ -92,8 +93,8 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "BLASNamedValueConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     std::string Name = EC->getNameAsString();
-    auto Search = MapNames::BLASEnumsMap.find(Name);
-    if (Search == MapNames::BLASEnumsMap.end()) {
+    auto Search = MapNamesBlas::BLASEnumsMap.find(Name);
+    if (Search == MapNamesBlas::BLASEnumsMap.end()) {
       llvm::dbgs() << "[" << getName()
                    << "] Unexpected enum variable: " << Name;
       return;
@@ -483,8 +484,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
 
-  auto Item = MapNames::BLASAPIWithRewriter.find(FuncName);
-  if (Item != MapNames::BLASAPIWithRewriter.end()) {
+  auto Item = MapNamesBlas::BLASAPIWithRewriter.find(FuncName);
+  if (Item != MapNamesBlas::BLASAPIWithRewriter.end()) {
     std::string NewFunctionName = Item->second;
     if (HasDeviceAttr && !NewFunctionName.empty()) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
@@ -495,10 +496,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (MapNames::LegacyBLASFuncReplInfoMap.find(FuncName) !=
-             MapNames::LegacyBLASFuncReplInfoMap.end()) {
-    auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
-    MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
+  } else if (MapNamesBlas::LegacyBLASFuncReplInfoMap.find(FuncName) !=
+             MapNamesBlas::LegacyBLASFuncReplInfoMap.end()) {
+    auto ReplInfoPair = MapNamesBlas::LegacyBLASFuncReplInfoMap.find(FuncName);
+    MapNamesBlas::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     requestFeature(HelperFeatureEnum::device_ext);
     CallExprReplStr = CallExprReplStr + ReplInfo.ReplName + "(" +
                       MapNames::getLibraryHelperNamespace() +

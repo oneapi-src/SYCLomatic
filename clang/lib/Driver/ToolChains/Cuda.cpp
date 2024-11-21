@@ -1036,6 +1036,7 @@ void NVPTX::getNVPTXTargetFeatures(const Driver &D, const llvm::Triple &Triple,
   case CudaVersion::CUDA_##CUDA_VER:                                           \
     PtxFeature = "+ptx" #PTX_VER;                                              \
     break;
+    CASE_CUDA_VERSION(126, 85);
     CASE_CUDA_VERSION(125, 85);
     CASE_CUDA_VERSION(124, 84);
     CASE_CUDA_VERSION(123, 83);
@@ -1058,6 +1059,10 @@ void NVPTX::getNVPTXTargetFeatures(const Driver &D, const llvm::Triple &Triple,
     CASE_CUDA_VERSION(91, 61);
     CASE_CUDA_VERSION(90, 60);
 #undef CASE_CUDA_VERSION
+  // TODO: Use specific CUDA version once it's public.
+  case clang::CudaVersion::NEW:
+    PtxFeature = "+ptx86";
+    break;
   default:
     PtxFeature = "+ptx42";
   }
@@ -1296,6 +1301,10 @@ void CudaToolChain::addClangTargetOptions(
     CC1Args.push_back(DriverArgs.MakeArgString(LibSpirvFile));
   }
 
+  if (DriverArgs.hasFlag(options::OPT_fcuda_short_ptr,
+                         options::OPT_fno_cuda_short_ptr, false))
+    CC1Args.append({"-mllvm", "--nvptx-short-ptr"});
+
   if (DriverArgs.hasArg(options::OPT_nogpulib))
     return;
 
@@ -1320,10 +1329,6 @@ void CudaToolChain::addClangTargetOptions(
     return;
 
   clang::CudaVersion CudaInstallationVersion = CudaInstallation.version();
-
-  if (DriverArgs.hasFlag(options::OPT_fcuda_short_ptr,
-                         options::OPT_fno_cuda_short_ptr, false))
-    CC1Args.append({"-mllvm", "--nvptx-short-ptr"});
 
   if (CudaInstallationVersion >= CudaVersion::UNKNOWN)
     CC1Args.push_back(

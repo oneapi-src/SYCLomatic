@@ -8,9 +8,11 @@
 
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
+#include "MigrationReport/Statics.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "RuleInfra/MapNames.h"
-#include "MigrationReport/Statics.h"
+#include "RulesLang/MapNamesLang.h"
+#include "RulesMathLib/MapNamesRandom.h"
 #include "TextModification.h"
 #include "Utility.h"
 
@@ -2724,7 +2726,8 @@ std::string CtTypeInfo::getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     if (UETT->isArgumentType()) {
       const auto *const RD =
           UETT->getArgumentType().getCanonicalType()->getAsRecordDecl();
-      if (MapNames::SupportedVectorTypes.count(RD->getNameAsString()) == 0) {
+      if (MapNamesLang::SupportedVectorTypes.count(RD->getNameAsString()) ==
+          0) {
         IsContainSizeOfUserDefinedType = true;
         break;
       }
@@ -4055,12 +4058,12 @@ void MemVarMap::merge(const MemVarMap &VarMap,
 int MemVarMap::calculateExtraArgsSize() const {
   int Size = 0;
   if (hasStream())
-    Size += MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Stream);
+    Size += MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Stream);
 
   Size = Size + calculateExtraArgsSize(LocalVarMap) +
          calculateExtraArgsSize(GlobalVarMap) +
          calculateExtraArgsSize(ExternVarMap);
-  Size = Size + TextureMap.size() * MapNames::KernelArgTypeSizeMap.at(
+  Size = Size + TextureMap.size() * MapNamesLang::KernelArgTypeSizeMap.at(
                                         KernelArgType::KAT_Texture);
 
   return Size;
@@ -4255,7 +4258,7 @@ int MemVarMap::calculateExtraArgsSize(const MemVarInfoMap &Map) const {
   int Size = 0;
   for (auto &VarInfoPair : Map) {
     auto D = VarInfoPair.second->getType()->getDimension();
-    Size += MapNames::getArrayTypeSize(D);
+    Size += MapNamesLang::getArrayTypeSize(D);
   }
   return Size;
 }
@@ -5494,15 +5497,16 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
       PointerType = Arg->getType();
     }
     TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
-    ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+    ArgSize = MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
 
     // Currently, all the device RNG state structs are passed to kernel by
     // pointer. So we check the pointee type, if it is in the type map, we
     // replace the TypeString with the MKL generator type.
     std::string PointeeTypeStr =
         Arg->getType()->getPointeeType().getUnqualifiedType().getAsString();
-    auto Iter = MapNames::DeviceRandomGeneratorTypeMap.find(PointeeTypeStr);
-    if (Iter != MapNames::DeviceRandomGeneratorTypeMap.end()) {
+    auto Iter =
+        MapNamesRandom::DeviceRandomGeneratorTypeMap.find(PointeeTypeStr);
+    if (Iter != MapNamesRandom::DeviceRandomGeneratorTypeMap.end()) {
       // Here the "*" is not added in the TypeString, the "*" will be added
       // in function buildKernelArgsStmt
       TypeString = Iter->second;
@@ -5511,11 +5515,13 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
   } else {
     auto QT = Arg->getType();
     QT = QT.getUnqualifiedType();
-    auto Iter = MapNames::VectorTypeMigratedTypeSizeMap.find(QT.getAsString());
-    if (Iter != MapNames::VectorTypeMigratedTypeSizeMap.end())
+    auto Iter =
+        MapNamesLang::VectorTypeMigratedTypeSizeMap.find(QT.getAsString());
+    if (Iter != MapNamesLang::VectorTypeMigratedTypeSizeMap.end())
       ArgSize = Iter->second;
     else
-      ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+      ArgSize =
+          MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
     if (PVD) {
       TypeString = DpctGlobalInfo::getReplacedTypeName(PVD->getType());
     }
@@ -5582,7 +5588,7 @@ KernelCallExpr::ArgInfo::ArgInfo(std::shared_ptr<TextureObjectInfo> Obj,
   }
   ArgString = ArgStr;
   IdString = ArgString + "_";
-  ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
+  ArgSize = MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
 }
 const std::string &KernelCallExpr::ArgInfo::getArgString() const {
   return ArgString;
@@ -5956,8 +5962,8 @@ void KernelCallExpr::buildUnionFindSet() {
   }
 }
 void KernelCallExpr::addReplacements() {
-  if (TotalArgsSize >
-      MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_MaxParameterSize))
+  if (TotalArgsSize > MapNamesLang::KernelArgTypeSizeMap.at(
+                          KernelArgType::KAT_MaxParameterSize))
     DiagnosticsUtils::report(getFilePath(), getOffset(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
                              false);

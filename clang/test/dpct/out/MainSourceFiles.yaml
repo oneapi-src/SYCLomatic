@@ -1,0 +1,1868 @@
+---
+MainSourceFile:  '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/MainSrcFiles_placehold'
+Replacements:
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          373
+    Length:          0
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          707
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          745
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          827
+    Length:          34
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, float(i * sizeof(T)))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          879
+    Length:          5
+    ReplacementText: ret
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          930
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          968
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1093
+    Length:          37
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, sycl::float2(j * sizeof(T), i))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1158
+    Length:          5
+    ReplacementText: ret
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1215
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1253
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1447
+    Length:          40
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, sycl::float3(k * sizeof(T), j, i))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1529
+    Length:          5
+    ReplacementText: ret
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1594
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1632
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1714
+    Length:          34
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, float(i * sizeof(T)))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1770
+    Length:          5
+    ReplacementText: 'ret.x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1801
+    Length:          5
+    ReplacementText: 'ret.y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1852
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          1890
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2015
+    Length:          37
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, sycl::float2(j * sizeof(T), i))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2086
+    Length:          5
+    ReplacementText: 'ret.x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2129
+    Length:          5
+    ReplacementText: 'ret.y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2186
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2224
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2418
+    Length:          40
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, sycl::float3(k * sizeof(T), j, i))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2506
+    Length:          5
+    ReplacementText: 'ret.x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2563
+    Length:          5
+    ReplacementText: 'ret.y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2628
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2666
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2748
+    Length:          34
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, float(i * sizeof(T)))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2804
+    Length:          5
+    ReplacementText: 'ret.x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2835
+    Length:          5
+    ReplacementText: 'ret.y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2866
+    Length:          5
+    ReplacementText: 'ret.z()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2897
+    Length:          5
+    ReplacementText: 'ret.w()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2948
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          2986
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3111
+    Length:          37
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, sycl::float2(j * sizeof(T), i))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3182
+    Length:          5
+    ReplacementText: 'ret.x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3225
+    Length:          5
+    ReplacementText: 'ret.y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3268
+    Length:          5
+    ReplacementText: 'ret.z()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3311
+    Length:          5
+    ReplacementText: 'ret.w()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3368
+    Length:          11
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3406
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3600
+    Length:          40
+    ReplacementText: 'syclcompat::experimental::sample_image<T>(surf, sycl::float3(k * sizeof(T), j, i))'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3688
+    Length:          5
+    ReplacementText: 'ret.x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3745
+    Length:          5
+    ReplacementText: 'ret.y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3802
+    Length:          5
+    ReplacementText: 'ret.z()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3859
+    Length:          5
+    ReplacementText: 'ret.w()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3924
+    Length:          9
+    ReplacementText: 'dpct::experimental::image_mem_wrapper'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          3974
+    Length:          21
+    ReplacementText: 'dpct::image_channel'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4007
+    Length:          9
+    ReplacementText: 'dpct::experimental::image_mem_wrapper'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4027
+    Length:          36
+    ReplacementText: 'input = new dpct::experimental::image_mem_wrapper(desc, w, 0)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4067
+    Length:          19
+    ReplacementText: 'dpct::experimental::dpct_memcpy'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4161
+    Length:          84
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4304
+    Length:          9
+    ReplacementText: 'dpct::experimental::image_mem_wrapper'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4384
+    Length:          21
+    ReplacementText: 'dpct::image_channel'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4417
+    Length:          9
+    ReplacementText: 'dpct::experimental::image_mem_wrapper'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4437
+    Length:          36
+    ReplacementText: 'input = new dpct::experimental::image_mem_wrapper(desc, w, h)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4477
+    Length:          19
+    ReplacementText: 'dpct::experimental::dpct_memcpy'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4549
+    Length:          46
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4654
+    Length:          9
+    ReplacementText: 'dpct::experimental::image_mem_wrapper'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4744
+    Length:          21
+    ReplacementText: 'dpct::image_channel'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4777
+    Length:          9
+    ReplacementText: 'dpct::experimental::image_mem_wrapper'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4797
+    Length:          43
+    ReplacementText: 'input = new dpct::experimental::image_mem_wrapper(desc, {w, h, d}, sycl::ext::oneapi::experimental::image_type::standard)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4844
+    Length:          17
+    ReplacementText: 'dpct::memcpy_parameter'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4874
+    Length:          6
+    ReplacementText: from.pitched
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4883
+    Length:          48
+    ReplacementText: 'dpct::pitched_data(expect, w * sizeof(T), w, h)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4937
+    Length:          8
+    ReplacementText: to.image_bindless
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4959
+    Length:          6
+    ReplacementText: size
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4968
+    Length:          24
+    ReplacementText: 'sycl::range<3>(w, h, d)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          4998
+    Length:          4
+    ReplacementText: direction
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5005
+    Length:          22
+    ReplacementText: 'dpct::host_to_device'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5031
+    Length:          12
+    ReplacementText: 'dpct::dpct_memcpy'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5044
+    Length:          2
+    ReplacementText: p
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5068
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5096
+    Length:          11
+    ReplacementText: 'dpct::experimental::image_mem_wrapper_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5119
+    Length:          16
+    ReplacementText: 'dpct::image_data'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5187
+    Length:          40
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5230
+    Length:          32
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5262
+    Length:          0
+    ReplacementText: "\n  resDesc.set_data(input);"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5266
+    Length:          19
+    ReplacementText: 'sycl::ext::oneapi::experimental::sampled_image_handle'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5294
+    Length:          40
+    ReplacementText: 'surf = dpct::experimental::create_bindless_image(resDesc)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5367
+    Length:          0
+    ReplacementText: "\n  dpct::device_ext &dev_ct1 = dpct::get_current_device();\n  sycl::queue &q_ct1 = dev_ct1.in_order_queue();"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5446
+    Length:          5
+    ReplacementText: uint32_t
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5548
+    Length:          5
+    ReplacementText: uint32_t
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5566
+    Length:          30
+    ReplacementText: 'dpct::image_channel::create<uint32_t>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5629
+    Length:          42
+    ReplacementText: 'output = (unsigned int *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5709
+    Length:          41
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel1<uint32_t>(output, surf, w);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5750
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5756
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5785
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5821
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          5900
+    Length:          11
+    ReplacementText: 'expect[i]'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6139
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6256
+    Length:          4
+    ReplacementText: int32_t
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6382
+    Length:          4
+    ReplacementText: int32_t
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6402
+    Length:          29
+    ReplacementText: 'dpct::image_channel::create<int32_t>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6455
+    Length:          42
+    ReplacementText: 'output = (int *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6535
+    Length:          43
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel1<int32_t>(output, surf, w, h);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6578
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6584
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6613
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6649
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          6732
+    Length:          11
+    ReplacementText: 'expect[i]'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7025
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7165
+    Length:          6
+    ReplacementText: int16_t
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7396
+    Length:          6
+    ReplacementText: int16_t
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7421
+    Length:          31
+    ReplacementText: 'dpct::image_channel::create<int16_t>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7478
+    Length:          42
+    ReplacementText: 'output = (short *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7558
+    Length:          48
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel1<int16_t>(output, surf, w, h, d);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7606
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7612
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7641
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7677
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          7764
+    Length:          11
+    ReplacementText: 'expect[i]'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8142
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8239
+    Length:          5
+    ReplacementText: 'sycl::char2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8357
+    Length:          5
+    ReplacementText: 'sycl::char2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8375
+    Length:          30
+    ReplacementText: 'dpct::image_channel::create<sycl::char2>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8430
+    Length:          42
+    ReplacementText: 'output = (char *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8510
+    Length:          41
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel2<sycl::char2>(output, surf, w);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8551
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8557
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8586
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8622
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8705
+    Length:          11
+    ReplacementText: 'expect[i].x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          8741
+    Length:          11
+    ReplacementText: 'expect[i].y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9026
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9145
+    Length:          6
+    ReplacementText: 'sycl::uchar2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9308
+    Length:          6
+    ReplacementText: 'sycl::uchar2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9330
+    Length:          31
+    ReplacementText: 'dpct::image_channel::create<sycl::uchar2>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9395
+    Length:          42
+    ReplacementText: 'output = (unsigned char *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9475
+    Length:          45
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel2<sycl::uchar2>(output, surf, w, h);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9520
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9526
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9555
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9591
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9678
+    Length:          11
+    ReplacementText: 'expect[i].x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          9714
+    Length:          11
+    ReplacementText: 'expect[i].y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10074
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10215
+    Length:          7
+    ReplacementText: 'sycl::ushort2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10498
+    Length:          7
+    ReplacementText: 'sycl::ushort2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10524
+    Length:          32
+    ReplacementText: 'dpct::image_channel::create<sycl::ushort2>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10591
+    Length:          42
+    ReplacementText: 'output = (unsigned short *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10671
+    Length:          49
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel2<sycl::ushort2>(output, surf, w, h, d);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10720
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10726
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10755
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10791
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10882
+    Length:          11
+    ReplacementText: 'expect[i].x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          10918
+    Length:          11
+    ReplacementText: 'expect[i].y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11371
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11469
+    Length:          6
+    ReplacementText: 'sycl::float4'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11619
+    Length:          6
+    ReplacementText: 'sycl::float4'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11638
+    Length:          31
+    ReplacementText: 'dpct::image_channel::create<sycl::float4>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11695
+    Length:          42
+    ReplacementText: 'output = (float *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11775
+    Length:          42
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel4<sycl::float4>(output, surf, w);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11817
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11823
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11852
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          11888
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12000
+    Length:          11
+    ReplacementText: 'expect[i].x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12054
+    Length:          11
+    ReplacementText: 'expect[i].x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12113
+    Length:          11
+    ReplacementText: 'expect[i].y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12171
+    Length:          11
+    ReplacementText: 'expect[i].y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12230
+    Length:          11
+    ReplacementText: 'expect[i].z()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12288
+    Length:          11
+    ReplacementText: 'expect[i].z()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12347
+    Length:          11
+    ReplacementText: 'expect[i].w()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12405
+    Length:          11
+    ReplacementText: 'expect[i].w()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12752
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          12869
+    Length:          4
+    ReplacementText: 'sycl::int4'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13073
+    Length:          4
+    ReplacementText: 'sycl::int4'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13093
+    Length:          29
+    ReplacementText: 'dpct::image_channel::create<sycl::int4>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13146
+    Length:          42
+    ReplacementText: 'output = (int *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13226
+    Length:          43
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel4<sycl::int4>(output, surf, w, h);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13269
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13275
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13304
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13340
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13427
+    Length:          11
+    ReplacementText: 'expect[i].x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13463
+    Length:          11
+    ReplacementText: 'expect[i].y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13509
+    Length:          11
+    ReplacementText: 'expect[i].z()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          13555
+    Length:          11
+    ReplacementText: 'expect[i].w()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14011
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14150
+    Length:          5
+    ReplacementText: 'sycl::uint4'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14527
+    Length:          5
+    ReplacementText: 'sycl::uint4'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14551
+    Length:          30
+    ReplacementText: 'dpct::image_channel::create<sycl::uint4>()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14614
+    Length:          42
+    ReplacementText: 'output = (unsigned int *)sycl::malloc_shared(sizeof(expect), q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14694
+    Length:          47
+    ReplacementText: "q_ct1.parallel_for(\n      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), \n      [=](sycl::nd_item<3> item_ct1) {\n        kernel4<sycl::uint4>(output, surf, w, h, d);\n      });"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: true
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14741
+    Length:          1
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14747
+    Length:          23
+    ReplacementText: 'dev_ct1.queues_wait_and_throw()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14776
+    Length:          30
+    ReplacementText: 'dpct::experimental::destroy_bindless_image(surf, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14812
+    Length:          20
+    ReplacementText: delete input
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14903
+    Length:          11
+    ReplacementText: 'expect[i].x()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14939
+    Length:          11
+    ReplacementText: 'expect[i].y()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          14985
+    Length:          11
+    ReplacementText: 'expect[i].z()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          15031
+    Length:          11
+    ReplacementText: 'expect[i].w()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Offset:          15618
+    Length:          16
+    ReplacementText: 'dpct::dpct_free(output, q_ct1)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+MainSourceFilesDigest:
+  - MainSourceFile:  '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/end.cu'
+    Digest:          9fb8a3f09e8409f998309782eee2eb4a
+    HasCUDASyntax:   true
+DpctVersion:     19.0.0
+MainHelperFileName: ''
+USMLevel:        ''
+FeatureMap:      {}
+CompileTargets:  {}
+OptionMap:
+  AnalysisScopePath:
+    Value:           '/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct'
+    Specified:       false
+  AsyncHandler:
+    Value:           'false'
+    Specified:       false
+  BuildScript:
+    Value:           '0'
+    Specified:       false
+  CodePinEnabled:
+    Value:           'false'
+    Specified:       false
+  CommentsEnabled:
+    Value:           'false'
+    Specified:       false
+  CompilationsDir:
+    Value:           '/home/chenshe1/sandbox/SYCLomatic'
+    Specified:       false
+  CtadEnabled:
+    Value:           'false'
+    Specified:       false
+  EnablepProfiling:
+    Value:           'false'
+    Specified:       false
+  ExperimentalFlag:
+    Value:           '2048'
+    Specified:       true
+  ExplicitNamespace:
+    Value:           '20'
+    Specified:       false
+  ExtensionDDFlag:
+    Value:           '0'
+    Specified:       false
+  ExtensionDEFlag:
+    Value:           '4294967295'
+    Specified:       false
+  HelperFuncPreferenceFlag:
+    Value:           '0'
+    Specified:       false
+  NDRangeDim:
+    Value:           '3'
+    Specified:       false
+  NoDRYPattern:
+    Value:           'false'
+    Specified:       false
+  OptimizeMigration:
+    Value:           'false'
+    Specified:       false
+  ProcessAll:
+    Value:           'false'
+    Specified:       false
+  RuleFile:
+    Value:           ''
+    Specified:       false
+  SyclNamedLambda:
+    Value:           'false'
+    Specified:       false
+  UseSYCLCompat:
+    Value:           'false'
+    Specified:       false
+  UsmLevel:
+    Value:           '1'
+    Specified:       false
+...

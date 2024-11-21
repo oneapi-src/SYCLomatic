@@ -86,6 +86,7 @@ enum class OffloadArch {
   SM_89,
   SM_90,
   SM_90a,
+  SM_100,
   GFX600,
   GFX601,
   GFX602,
