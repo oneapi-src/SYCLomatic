@@ -7,6 +7,7 @@
 // clang-format off
 #include <cuda_runtime.h>
 #include <cstdint>
+#include <cuda_fp16.h>
 
 __global__ void sub() {
   int x = 1, y = 2;
@@ -18,7 +19,7 @@ __global__ void sub() {
   uint64_t u64;
   short2 s16x2, sa{1, 2}, sb{1, 2};
   ushort2 u16x2, ua{1, 2}, ub{1, 2};
-  sycl::half2 f16x2, fa{1.f, 2.f}, fb{1.f, 2.f};
+  half2 f16x2, fa{1.f, 2.f}, fb{1.f, 2.f};
 
   // CHECK: i16 = x - y;
   asm("sub.s16 %0, %1, %2;" : "=r"(i16) : "r"(x), "r"(y));
