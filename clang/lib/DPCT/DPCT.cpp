@@ -7,29 +7,34 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
-#include "QueryAPIMapping/QueryAPIMapping.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Linux/AutoComplete.h"
-#include "RuleInfra/CallExprRewriter.h"
+#include "CommandOption/ValidateArguments.h"
 #include "Config.h"
 #include "ErrorHandle/CrashRecovery.h"
 #include "ErrorHandle/Error.h"
-#include "IncMigration/ExternalReplacement.h"
+#include "FileGenerator/GenFiles.h"
 #include "FileGenerator/GenHelperFunction.h"
-#include "MigrateScript/GenMakefile.h"
+#include "IncMigration/ExternalReplacement.h"
 #include "IncMigration/IncrementalMigrationUtility.h"
-#include "RuleInfra/MemberExprRewriter.h"
+#include "Linux/AutoComplete.h"
+#include "MigrateScript/GenMakefile.h"
 #include "MigrateScript/MigrateCmakeScript.h"
 #include "MigrateScript/MigratePythonBuildScript.h"
 #include "MigrationAction.h"
+#include "MigrationReport/Statics.h"
+#include "QueryAPIMapping/QueryAPIMapping.h"
+#include "RuleInfra/CallExprRewriter.h"
+#include "RuleInfra/MemberExprRewriter.h"
+#include "RuleInfra/TypeLocRewriters.h"
+#include "RulesDNN/MapNamesDNN.h"
+#include "RulesLang/MapNamesLang.h"
+#include "RulesLangLib/MapNamesLangLib.h"
+#include "RulesMathLib/MapNamesBlas.h"
+#include "RulesMathLib/MapNamesRandom.h"
 #include "UserDefinedRules/PatternRewriter.h"
 #include "UserDefinedRules/UserDefinedRules.h"
-#include "FileGenerator/GenFiles.h"
-#include "MigrationReport/Statics.h"
-#include "RuleInfra/TypeLocRewriters.h"
 #include "Utility.h"
-#include "CommandOption/ValidateArguments.h"
 #include "Windows/VcxprojParser.h"
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -1142,6 +1147,11 @@ int runDPCT(int argc, const char **argv) {
                                ExplicitNamespace::EN_SYCL});
   }
   MapNames::setExplicitNamespaceMap(ExplicitNamespaces);
+  MapNamesLang::setExplicitNamespaceMap(ExplicitNamespaces);
+  MapNamesBlas::setExplicitNamespaceMap(ExplicitNamespaces);
+  MapNamesDNN::setExplicitNamespaceMap(ExplicitNamespaces);
+  MapNamesLangLib::setExplicitNamespaceMap(ExplicitNamespaces);
+  MapNamesRandom::setExplicitNamespaceMap(ExplicitNamespaces);
 
   // Init migration rules infrasturecture.
   CallExprRewriterFactoryBase::initRewriterMap();

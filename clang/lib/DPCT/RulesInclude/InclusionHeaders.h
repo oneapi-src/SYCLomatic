@@ -38,6 +38,12 @@ enum class RuleGroupKind : uint8_t {
   NUM
 };
 
+enum class LibraryDependencies : uint8_t {
+#define LIBRARY(LIBNAME, ...) LD_##LIBNAME,
+#include "MigrationReport/Libraries.inc"
+  NUMS
+};
+
 struct DpctInclusionInfo {
   enum InclusionFlag {
     IF_MarkInserted,
@@ -54,21 +60,33 @@ struct DpctInclusionInfo {
 class RuleGroups {
   using FlagsType = uint64_t;
 
-  FlagsType Flags = flag(RuleGroupKind::RK_Common);
-
-  static constexpr FlagsType flag(RuleGroupKind K) {
+  template <class... Args>
+  static constexpr FlagsType flag(RuleGroupKind First, Args... Rest) noexcept {
+    return flag(First) | flag(Rest...);
+  }
+  static constexpr FlagsType flag(RuleGroupKind K) noexcept {
     return 1 << static_cast<uint8_t>(K);
   }
 
+  FlagsType Flags = flag(RuleGroupKind::RK_Common);
+
 public:
-  void enableRuleGroup(RuleGroupKind K) { Flags |= flag(K); }
-  bool isEnabled(RuleGroupKind K) const { return Flags & flag(K); }
-  bool isMKLEnabled() const {
-    static constexpr FlagsType MKLFlag =
-        flag(RuleGroupKind::RK_BLas) | flag(RuleGroupKind::RK_Sparse) |
-        flag(RuleGroupKind::RK_Solver) | flag(RuleGroupKind::RK_FFT) |
-        flag(RuleGroupKind::RK_Rng);
-    return Flags & MKLFlag;
+  void enableRuleGroup(RuleGroupKind K) noexcept { Flags |= flag(K); }
+  bool isEnabled(RuleGroupKind K) const noexcept { return Flags & flag(K); }
+  bool isDependsOn(LibraryDependencies LD) const noexcept {
+    static struct LibraryMasks {
+      FlagsType BitMasks[static_cast<uint8_t>(LibraryDependencies::NUMS)];
+      LibraryMasks() noexcept {
+#define LIBRARY(LIBNAME, LIBDESC, ...)                                         \
+  BitMasks[static_cast<uint8_t>(LibraryDependencies::LD_##LIBNAME)] =          \
+      flag(__VA_ARGS__);
+#include "MigrationReport/Libraries.inc"
+      }
+    } Masks;
+    return Flags & Masks.BitMasks[static_cast<uint8_t>(LD)];
+  }
+  bool isMKLEnabled() const noexcept {
+    return isDependsOn(LibraryDependencies::LD_MKL);
   }
 };
 

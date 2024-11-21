@@ -9,6 +9,7 @@
 #include "RulesLangLib/ThrustAPIMigration.h"
 #include "ASTTraversal.h"
 #include "RuleInfra/ExprAnalysis.h"
+#include "RulesLangLib/MapNamesLangLib.h"
 #include "TextModification.h"
 
 extern int ThrustVersion;
@@ -172,9 +173,9 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   std::string ThrustFuncNameWithNamespace = "thrust::" + ThrustFuncName;
 
   auto ReplInfo =
-      MapNames::ThrustFuncNamesMap.find(ThrustFuncNameWithNamespace);
+      MapNamesLangLib::ThrustFuncNamesMap.find(ThrustFuncNameWithNamespace);
   // For the API migration defined in APINamesThrust.inc
-  if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
+  if (ReplInfo == MapNamesLangLib::ThrustFuncNamesMap.end()) {
     dpct::ExprAnalysis EA;
     EA.analyze(CE);
     emplaceTransformation(EA.getReplacement());
@@ -187,9 +188,11 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   std::string ArgT = QT.getAsString(PrintingPolicy(LO));
 
   // For the API migration defined in APINamesMapThrust.inc
-  auto HelperFeatureIter = MapNames::ThrustFuncNamesHelperFeaturesMap.find(
-      ThrustFuncNameWithNamespace);
-  if (HelperFeatureIter != MapNames::ThrustFuncNamesHelperFeaturesMap.end()) {
+  auto HelperFeatureIter =
+      MapNamesLangLib::ThrustFuncNamesHelperFeaturesMap.find(
+          ThrustFuncNameWithNamespace);
+  if (HelperFeatureIter !=
+      MapNamesLangLib::ThrustFuncNamesHelperFeaturesMap.end()) {
     requestFeature(HelperFeatureIter->second);
   }
 
@@ -459,8 +462,8 @@ void ThrustTypeRule::thrustCtorMigration(const CXXConstructExpr *CE) {
   }
   auto P = ExprStr.find('<');
   if (P != std::string::npos) {
-    auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ExprStr);
-    if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
+    auto ReplInfo = MapNamesLangLib::ThrustFuncNamesMap.find(ExprStr);
+    if (ReplInfo == MapNamesLangLib::ThrustFuncNamesMap.end()) {
       return;
     }
     std::string ReplName = ReplInfo->second.ReplName;

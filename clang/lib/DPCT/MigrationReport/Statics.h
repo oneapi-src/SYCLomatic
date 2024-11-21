@@ -66,6 +66,9 @@ void recordAnalysisModeEffort(const clang::tooling::UnifiedPath &Filename, unsig
 void recordRecognizedAPI(const CallExpr *CE);
 void recordRecognizedType(TypeLoc TL);
 
+class RuleGroups;
+void setDependenciesInfo(const RuleGroups &) noexcept;
+
 } // namespace dpct
 } // namespace clang
 #endif // DPCT_DEBUG_H

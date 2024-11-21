@@ -12,6 +12,7 @@
 #include "Diagnostics/Diagnostics.h"
 #include "MigrationReport/Statics.h"
 #include "RuleInfra/MapNames.h"
+#include "RulesDNN/MapNamesDNN.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Lex/Preprocessor.h"
@@ -89,7 +90,7 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     std::string Str =
-        MapNames::findReplacedName(MapNames::CuDNNTypeNamesMap, TypeStr);
+        MapNames::findReplacedName(MapNamesDNN::CuDNNTypeNamesMap, TypeStr);
     if (!Str.empty()) {
       requestHelperFeatureForTypeNames(TypeStr);
       SrcAPIStaticsMap[TypeStr]++;

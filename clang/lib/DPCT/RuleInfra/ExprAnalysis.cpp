@@ -9,14 +9,20 @@
 #include "RuleInfra/ExprAnalysis.h"
 
 #include "ASTTraversal.h"
-#include "RulesLang/RulesLang.h"
 #include "AnalysisInfo.h"
-#include "RulesLangLib/CUBAPIMigration.h"
-#include "RuleInfra/CallExprRewriter.h"
 #include "Config.h"
-#include "RulesDNN/DNNAPIMigration.h"
+#include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/MemberExprRewriter.h"
 #include "RuleInfra/TypeLocRewriters.h"
+#include "RulesDNN/DNNAPIMigration.h"
+#include "RulesDNN/MapNamesDNN.h"
+#include "RulesLang/MapNamesLang.h"
+#include "RulesLang/RulesLang.h"
+#include "RulesLangLib/CUBAPIMigration.h"
+#include "RulesLangLib/MapNamesLangLib.h"
+#include "RulesMathLib/MapNamesBlas.h"
+#include "RulesMathLib/MapNamesRandom.h"
+#include "RulesMathLib/MapNamesSolver.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprConcepts.h"
@@ -495,7 +501,7 @@ bool isMathFunction(std::string Name) {
 }
 
 bool isCGAPI(std::string Name) {
-  return MapNames::CooperativeGroupsAPISet.count(Name);
+  return MapNamesLang::CooperativeGroupsAPISet.count(Name);
 }
 
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
@@ -597,14 +603,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     if (!Repl.empty())                                                         \
       addReplacement(DRE, Repl);                                               \
   } while (0)
-      REPLACE_ENUM(MapNames::BLASEnumsMap);
-      REPLACE_ENUM(MapNames::FunctionAttrMap);
+      REPLACE_ENUM(MapNamesBlas::BLASEnumsMap);
+      REPLACE_ENUM(MapNamesLang::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
-      REPLACE_ENUM(MapNames::RandomEngineTypeMap);
-      REPLACE_ENUM(MapNames::RandomOrderingTypeMap);
-      REPLACE_ENUM(MapNames::SOLVEREnumsMap);
-      REPLACE_ENUM(MapNames::SPBLASEnumsMap);
-      REPLACE_ENUM(MapNames::CUBEnumsMap);
+      REPLACE_ENUM(MapNamesRandom::RandomEngineTypeMap);
+      REPLACE_ENUM(MapNamesRandom::RandomOrderingTypeMap);
+      REPLACE_ENUM(MapNamesSolver::SOLVEREnumsMap);
+      REPLACE_ENUM(MapNamesBlas::SPBLASEnumsMap);
+      REPLACE_ENUM(MapNamesLangLib::CUBEnumsMap);
 #undef REPLACE_ENUM
       std::string TypeName = DpctGlobalInfo::getTypeName(ECD->getType());
       if (TypeName == "cublasStatus_t" || TypeName == "cusparseStatus_t" ||
@@ -767,10 +773,11 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
       addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
-      requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(FieldName));
+      requestFeature(
+          MapNamesLang::ImageWrapperBaseToGetFeatureMap.at(FieldName));
     }
-  } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
-             MapNames::SupportedVectorTypes.end()) {
+  } else if (MapNamesLang::SupportedVectorTypes.find(BaseType) !=
+             MapNamesLang::SupportedVectorTypes.end()) {
     // Skip user-defined type.
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
@@ -794,9 +801,10 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
-      const auto &MArrayIdx = MapNames::MArrayMemberNamesMap.find(MemberName);
-      if (MapNames::VectorTypes2MArray.count(BaseType) &&
-          MArrayIdx != MapNames::MArrayMemberNamesMap.end()) {
+      const auto &MArrayIdx =
+          MapNamesLang::MArrayMemberNamesMap.find(MemberName);
+      if (MapNamesLang::VectorTypes2MArray.count(BaseType) &&
+          MArrayIdx != MapNamesLang::MArrayMemberNamesMap.end()) {
         std::string RepStr = "";
         if (isImplicit) {
           RepStr = "(*this)";
@@ -805,7 +813,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
           RepStr = ")";
         }
         addReplacement(Begin, ME->getEndLoc(), RepStr + MArrayIdx->second);
-      } else if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
+      } else if (MapNames::replaceName(MapNamesLang::MemberNamesMap,
+                                       MemberName)) {
         std::string RepStr = "";
         const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
         if (MD && MD->isVolatile()) {
@@ -1210,8 +1219,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
     HelperFeatureSet.insert(Iter->second->RequestFeature);
     requestHelperFeatureForTypeNames(TyName);
   } else {
-    Iter = MapNames::CuDNNTypeNamesMap.find(TyName);
-    if (Iter != MapNames::CuDNNTypeNamesMap.end()) {
+    Iter = MapNamesDNN::CuDNNTypeNamesMap.find(TyName);
+    if (Iter != MapNamesDNN::CuDNNTypeNamesMap.end()) {
       HelperFeatureSet.insert(Iter->second->RequestFeature);
       requestHelperFeatureForTypeNames(TyName);
     }
@@ -1220,7 +1229,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
     addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
-  } else if (MapNames::replaceName(MapNames::CuDNNTypeNamesMap, TyName)) {
+  } else if (MapNames::replaceName(MapNamesDNN::CuDNNTypeNamesMap, TyName)) {
     addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
   } else if (getFinalCastTypeNameStr(TyName) != TyName) {
     addReplacement(Range.getBegin(), Range.getEnd(), CSCE,
@@ -1238,7 +1247,7 @@ void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
     auto Name = getNestedNameSpecifierString(Qualifier);
     auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
     Name.resize(Name.length() - 2); // Remove the "::".
-    if (MapNames::SupportedVectorTypes.count(Name)) {
+    if (MapNamesLang::SupportedVectorTypes.count(Name)) {
       auto ReplacedStr =
           MapNames::findReplacedName(MapNames::TypeNamesMap, Name);
       if (Name.back() != '1') {
