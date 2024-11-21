@@ -712,7 +712,10 @@ public:
     return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
   static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath) {
-    return isChildPath(AnalysisScope, FilePath);
+    return std::any_of(AnalysisScope.begin(), AnalysisScope.end(),
+                       [FP = FilePath](const clang::tooling::UnifiedPath &P) {
+                         return isChildPath(P, FP);
+                       });
   }
   static bool isExcluded(const clang::tooling::UnifiedPath &FilePath);
   // TODO: implement one of this for each source language.
@@ -730,11 +733,11 @@ public:
     OutRoot = OutRootPath;
   }
   static const clang::tooling::UnifiedPath &getOutRoot() { return OutRoot; }
-  static void
-  setAnalysisScope(const clang::tooling::UnifiedPath &InputAnalysisScope) {
+  static void setAnalysisScope(
+      const std::vector<clang::tooling::UnifiedPath> &InputAnalysisScope) {
     AnalysisScope = InputAnalysisScope;
   }
-  static const clang::tooling::UnifiedPath &getAnalysisScope() {
+  static const std::vector<clang::tooling::UnifiedPath> &getAnalysisScope() {
     return AnalysisScope;
   }
   static void addChangeExtensions(const std::string &Extension) {
@@ -1544,7 +1547,7 @@ private:
       MainSourceYamlTUR;
   static clang::tooling::UnifiedPath InRoot;
   static clang::tooling::UnifiedPath OutRoot;
-  static clang::tooling::UnifiedPath AnalysisScope;
+  static std::vector<clang::tooling::UnifiedPath> AnalysisScope;
   static std::unordered_set<std::string> ChangeExtensions;
   static std::string SYCLSourceExtension;
   static std::string SYCLHeaderExtension;

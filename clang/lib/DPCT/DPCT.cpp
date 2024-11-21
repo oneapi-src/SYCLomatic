@@ -152,7 +152,7 @@ clang::tooling::UnifiedPath OutRootPath;
 clang::tooling::UnifiedPath CudaIncludePath;
 clang::tooling::UnifiedPath SDKPath;
 std::vector<clang::tooling::UnifiedPath> RuleFilePath;
-clang::tooling::UnifiedPath AnalysisScope;
+std::vector<clang::tooling::UnifiedPath> AnalysisScope;
 
 UnifiedPath getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
@@ -736,7 +736,11 @@ int runDPCT(int argc, const char **argv) {
       std::back_insert_iterator<std::vector<clang::tooling::UnifiedPath>>(
           RuleFilePath),
       [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
-  AnalysisScope = AnalysisScopeOpt;
+  std::transform(
+      AnalysisScopeOpt.begin(), AnalysisScopeOpt.end(),
+      std::back_insert_iterator<std::vector<clang::tooling::UnifiedPath>>(
+          AnalysisScope),
+      [](const std::string &Str) { return clang::tooling::UnifiedPath(Str); });
 
   // Action: just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
@@ -768,7 +772,11 @@ int runDPCT(int argc, const char **argv) {
   // Check Option Values...
   validateInputDirectoryLengthOrExit("--in-root", InRootPath);
   validateInputDirectoryLengthOrExit("--out-root", OutRootPath);
-  validateInputDirectoryLengthOrExit("--analysis-scope-path", AnalysisScope);
+  std::for_each(AnalysisScope.begin(), AnalysisScope.end(),
+                [](const clang::tooling::UnifiedPath &P) {
+                  validateInputDirectoryLengthOrExit("--analysis-scope-path",
+                                                     P);
+                });
   validateInputDirectoryLengthOrExit("--cuda-include-path", CudaIncludePath);
   validateInputDirectoryLengthOrExit("--output-file", OutputFile);
   // Report file prefix is limited to 128, so that <report-type> and
@@ -1039,14 +1047,25 @@ int runDPCT(int argc, const char **argv) {
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
-  if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRootPath) ||
-      (!InRootPath.getPath().empty() && !isChildOrSamePath(AnalysisScope, InRootPath))) {
+  if (AnalysisScope.empty())
+    AnalysisScope.push_back(InRootPath);
+  if (!std::all_of(AnalysisScope.begin(), AnalysisScope.end(),
+                   [](clang::tooling::UnifiedPath &P) {
+                     return makeAnalysisScopeCanonicalOrSetDefaults(P,
+                                                                    InRootPath);
+                   }) ||
+      (!InRootPath.getPath().empty() &&
+       !std::any_of(AnalysisScope.begin(), AnalysisScope.end(),
+                    [](const clang::tooling::UnifiedPath &P) {
+                      return isChildOrSamePath(P, InRootPath);
+                    }))) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
 
   if (isCUDAHeaderRequired())
-    validateInputDirectory(AnalysisScope);
+    std::for_each(AnalysisScope.begin(), AnalysisScope.end(),
+                  validateInputDirectory);
 
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());

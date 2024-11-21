@@ -2388,7 +2388,7 @@ std::shared_ptr<clang::tooling::TranslationUnitReplacements>
         std::make_shared<clang::tooling::TranslationUnitReplacements>();
 clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
-clang::tooling::UnifiedPath DpctGlobalInfo::AnalysisScope;
+std::vector<clang::tooling::UnifiedPath> DpctGlobalInfo::AnalysisScope;
 std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::SYCLSourceExtension = std::string();
 std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();

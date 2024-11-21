@@ -136,7 +136,11 @@ static inline bool isTargetMathFunction(const FunctionDecl *FD) {
   if (!FD)
     return false;
   auto FilePath = DpctGlobalInfo::getLocInfo(FD).first;
-  if (isChildOrSamePath(DpctGlobalInfo::getAnalysisScope(), FilePath))
+  if (auto S = DpctGlobalInfo::getAnalysisScope();
+      std::any_of(S.begin(), S.end(),
+                  [FP = FilePath](const clang::tooling::UnifiedPath &P) {
+                    return isChildOrSamePath(P, FP);
+                  }))
     return false;
   return true;
 }
