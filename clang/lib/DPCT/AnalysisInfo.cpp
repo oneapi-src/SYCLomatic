@@ -825,7 +825,7 @@ void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
   if (!HasInclusionDirectiveSet.count(MF)) {
     FirstIncludeOffset[MF] = Offset;
     LastIncludeOffset = Offset;
-    HasInclusionDirectiveSet.insert(MF);
+    HasInclusionDirectiveSet.insert(std::move(MF));
   }
 }
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}

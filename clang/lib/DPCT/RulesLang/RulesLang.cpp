@@ -66,7 +66,8 @@ static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
 static internal::Matcher<NamedDecl> vectorTypeName() {
   std::vector<std::string> TypeNames(MapNamesLang::SupportedVectorTypes.begin(),
                                      MapNamesLang::SupportedVectorTypes.end());
-  return internal::Matcher<NamedDecl>(new internal::HasNameMatcher(TypeNames));
+  return internal::Matcher<NamedDecl>(
+      new internal::HasNameMatcher(std::move(TypeNames)));
 }
 
 void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {

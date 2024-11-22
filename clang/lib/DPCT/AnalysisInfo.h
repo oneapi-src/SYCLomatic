@@ -711,10 +711,10 @@ public:
   static bool isInAnalysisScope(SourceLocation SL) {
     return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
-  static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath) {
+  static bool isInAnalysisScope(const clang::tooling::UnifiedPath &FilePath) {
     return std::any_of(AnalysisScope.begin(), AnalysisScope.end(),
-                       [FP = FilePath](const clang::tooling::UnifiedPath &P) {
-                         return isChildPath(P, FP);
+                       [&](const clang::tooling::UnifiedPath &P) {
+                         return isChildPath(P, FilePath);
                        });
   }
   static bool isExcluded(const clang::tooling::UnifiedPath &FilePath);

@@ -100,6 +100,9 @@ void CooperativeGroupsFunctionRule::runRule(
                               FunctionName);
       }
     }
+    ReportUnsupportedWarning(const ReportUnsupportedWarning &) = delete;
+    ReportUnsupportedWarning &
+    operator=(const ReportUnsupportedWarning &) = delete;
     bool NeedReport = true;
 
   private:

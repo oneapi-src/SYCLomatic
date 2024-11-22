@@ -543,7 +543,7 @@ void callIndependentToolAndExit(const std::string IndependentTool, int argc, con
   }
   int ProcessExitCode = system(SystemCallCommand.c_str());
   if (ProcessExitCode) {
-    ShowStatus(CallIndependentToolError, IndependentTool);
+    ShowStatus(CallIndependentToolError, std::move(IndependentTool));
     dpctExit(CallIndependentToolError);
   }
   dpctExit(CallIndependentToolSucceeded);

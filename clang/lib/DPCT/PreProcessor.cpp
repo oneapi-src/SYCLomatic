@@ -451,24 +451,26 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                 ? (arg1)*1000 + (arg2)*100 + (arg3)
                                 : (arg1)*10000 + (arg2)*100 + (arg3));
     };
-    for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
-      MA[i] =
-          Lexer::getSourceText(CharSourceRange::getCharRange(
-                                   Args->getUnexpArgument(i)->getLocation(),
-                                   Lexer::getLocForEndOfToken(
-                                       Args->getUnexpArgument(i)->getLocation(),
-                                       0, SM, LangOptions())),
-                               SM, LangOptions())
-              .str();
+    if (Args) {
+      for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
+        MA[i] = Lexer::getSourceText(
+                    CharSourceRange::getCharRange(
+                        Args->getUnexpArgument(i)->getLocation(),
+                        Lexer::getLocForEndOfToken(
+                            Args->getUnexpArgument(i)->getLocation(), 0, SM,
+                            LangOptions())),
+                    SM, LangOptions())
+                    .str();
+      }
+      auto Length = Lexer::MeasureTokenLength(
+          Range.getEnd(), SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+      Length += SM.getDecomposedLoc(Range.getEnd()).second -
+                SM.getDecomposedLoc(Range.getBegin()).second;
+      TransformSet.emplace_back(new ReplaceText(
+          Range.getBegin(), Length,
+          std::move(calCclCompatVersion(std::stoi(MA[0]), std::stoi(MA[1]),
+                                        std::stoi(MA[2])))));
     }
-    auto Length = Lexer::MeasureTokenLength(
-        Range.getEnd(), SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-    Length += SM.getDecomposedLoc(Range.getEnd()).second -
-              SM.getDecomposedLoc(Range.getBegin()).second;
-    TransformSet.emplace_back(new ReplaceText(
-        Range.getBegin(), Length,
-        std::move(calCclCompatVersion(std::stoi(MA[0]), std::stoi(MA[1]),
-                                      std::stoi(MA[2])))));
   }
 
   if (Name == "NCCL_MAJOR" || Name == "NCCL_MINOR") {
