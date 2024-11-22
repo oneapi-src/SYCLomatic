@@ -380,14 +380,18 @@ TYPE_REWRITE_ENTRY(
         checkEnableJointMatrixForType(),
         TYPE_CONDITIONAL_FACTORY(
             CheckTemplateArgCount(5),
-            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                             "experimental::matrix::joint_matrix"),
-                         TEMPLATE_ARG(0), TEMPLATE_ARG(1), TEMPLATE_ARG(2),
-                         TEMPLATE_ARG(3), TEMPLATE_ARG(4)),
-            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                             "experimental::matrix::joint_matrix"),
-                         TEMPLATE_ARG(0), TEMPLATE_ARG(1), TEMPLATE_ARG(2),
-                         TEMPLATE_ARG(3), TEMPLATE_ARG(4), TEMPLATE_ARG(5))),
+            EMIT_WARNING_FACTORY(
+                TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                 "experimental::matrix::joint_matrix"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(1), TEMPLATE_ARG(2),
+                             TEMPLATE_ARG(3), TEMPLATE_ARG(4)),
+                Diagnostics::JOINT_MATRIX_SHAPE),
+            EMIT_WARNING_FACTORY(
+                TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                 "experimental::matrix::joint_matrix"),
+                             TEMPLATE_ARG(0), TEMPLATE_ARG(1), TEMPLATE_ARG(2),
+                             TEMPLATE_ARG(3), TEMPLATE_ARG(4), TEMPLATE_ARG(5)),
+                Diagnostics::JOINT_MATRIX_SHAPE)),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR)))
 
 TYPE_REWRITE_ENTRY(

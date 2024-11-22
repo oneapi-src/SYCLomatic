@@ -409,7 +409,7 @@ static bool isIdentifiedChar(char Char) {
 static void applyExtenstionNameChange(
     const std::string &Input, size_t Next,
     std::unordered_map<std::string, std::string> &Bindings,
-    std::string FileName, const clang::tooling::UnifiedPath OutRoot,
+    const std::string &FileName, const clang::tooling::UnifiedPath &OutRoot,
     std::string ExtensionType) {
   size_t Pos = Next - 1;
   for (; Pos > 0 && !isWhitespace(Input[Pos]); Pos--) {
@@ -490,7 +490,7 @@ static void applyExtenstionNameChange(
     Bindings["rewrite_extention_name"] =
         ExtensionType + clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   else
-    Bindings["rewrite_extention_name"] = ExtensionType;
+    Bindings["rewrite_extention_name"] = std::move(ExtensionType);
 }
 
 static void

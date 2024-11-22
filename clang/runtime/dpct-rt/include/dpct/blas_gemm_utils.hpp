@@ -141,6 +141,7 @@ public:
     epilogue,
     epilogue_aux_ld,
     epilogue_aux_pointer,
+    epilogue_aux_data_type,
     a_scale_pointer,
     b_scale_pointer,
     d_scale_pointer,
@@ -186,6 +187,7 @@ private:
       CASE(absmax_d_pointer)
       CASE(epilogue_aux_ld)
       CASE(epilogue_aux_pointer)
+      CASE(epilogue_aux_data_type)
     default:
       break;
     }
@@ -200,6 +202,7 @@ private:
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_c = oneapi::mkl::transpose::nontrans;
   epilogue_t _epilogue = epilogue_t::nop;
+  library_data_t _epilogue_aux_data_type = library_data_t::real_float;
   size_t _epilogue_aux_ld = 0;
   void *_a_scale_pointer = nullptr;
   void *_b_scale_pointer = nullptr;
