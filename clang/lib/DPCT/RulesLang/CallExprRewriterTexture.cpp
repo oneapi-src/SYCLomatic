@@ -19,10 +19,9 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
 
   inline int getDim() const { return TexType & 0x0f; }
 
-  template <class BaseT>
+  template <bool IsSurfAPI, class BaseT>
   std::shared_ptr<CallExprRewriter>
-  createRewriter(const CallExpr *C, bool RetAssign, bool IsSurfAPI,
-                 BaseT Base) const {
+  createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
     const static std::string MemberName = IsSurfAPI ? "read_byte" : "read";
 
     using ReaderPrinter = decltype(makeMemberCallCreator<false>(
@@ -40,10 +39,10 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
         std::make_pair(C, C->getArg(Idx))...);
   }
 
-  template <typename VecType>
+  template <bool IsSurfAPI, typename VecType>
   std::shared_ptr<CallExprRewriter>
   createbindlessRewriterNormal(const CallExpr *C, bool RetAssign,
-                               bool IsSurfAPI, const TemplateArgumentInfo &TAI,
+                               const TemplateArgumentInfo &TAI,
                                const std::string &VecTypeName) const {
     const static std::string FuncName = [=]() -> std::string {
       if (IsSurfAPI)
@@ -70,9 +69,9 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...));
   }
 
-  template <typename VecType>
+  template <bool IsSurfAPI, typename VecType>
   std::shared_ptr<CallExprRewriter>
-  createbindlessRewriterLod(const CallExpr *C, bool RetAssign, bool IsSurfAPI,
+  createbindlessRewriterLod(const CallExpr *C, bool RetAssign,
                             const TemplateArgumentInfo &TAI,
                             const std::string &VecTypeName) const {
     const static std::string FuncName =
@@ -99,10 +98,10 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
   }
 
-  template <typename VecType>
+  template <bool IsSurfAPI, typename VecType>
   std::shared_ptr<CallExprRewriter>
   createbindlessRewriterLayered(const CallExpr *C, bool RetAssign,
-                                bool IsSurfAPI, const TemplateArgumentInfo &TAI,
+                                const TemplateArgumentInfo &TAI,
                                 const std::string &VecTypeName) const {
     const static std::string FuncName =
         MapNames::getClNamespace() +
@@ -128,9 +127,9 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
   }
-
+  template <bool IsSurfAPI>
   std::shared_ptr<CallExprRewriter>
-  createbindlessRewriter(const CallExpr *C, bool RetAssign, bool IsSurfAPI,
+  createbindlessRewriter(const CallExpr *C, bool RetAssign,
                          QualType TargetType) const {
     TemplateArgumentInfo TAI;
     auto TAL = getTemplateArgsList(C);
@@ -157,12 +156,12 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
         CallExprPrinter<std::string,
                         decltype(std::make_pair(C, C->getArg(Idx)))...>;
     if ((TexType & 0xf0) == 0x10)
-      return createbindlessRewriterLod<VecType>(C, RetAssign, IsSurfAPI, TAI,
+      return createbindlessRewriterLod<IsSurfAPI, VecType>(C, RetAssign, TAI,
                                                 VecTypeName);
     if ((TexType & 0xf0) == 0xf0)
-      return createbindlessRewriterLayered<VecType>(C, RetAssign, IsSurfAPI,
+      return createbindlessRewriterLayered<IsSurfAPI, VecType>(C, RetAssign,
                                                     TAI, VecTypeName);
-    return createbindlessRewriterNormal<VecType>(C, RetAssign, IsSurfAPI, TAI,
+    return createbindlessRewriterNormal<IsSurfAPI, VecType>(C, RetAssign, TAI,
                                                  VecTypeName);
   }
 
@@ -191,7 +190,7 @@ public:
       }
     }
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      return createbindlessRewriter(Call, RetAssign, IsSurfAPI, TargetType);
+      return createbindlessRewriter<IsSurfAPI>(Call, RetAssign, TargetType);
     }
     SourceExpr = SourceExpr->IgnoreImpCasts();
     if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
@@ -206,7 +205,7 @@ public:
             MemberInfo->setType(
                 DpctGlobalInfo::getUnqualifiedTypeName(TargetType), TexType);
             SourceName = MemberInfo->getName();
-            return createRewriter(Call, RetAssign, IsSurfAPI, SourceName);
+            return createRewriter<IsSurfAPI>(Call, RetAssign, SourceName);
           }
         } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
           auto CallDefRange =
@@ -223,8 +222,8 @@ public:
       }
     }
 
-    return createRewriter(Call, RetAssign, IsSurfAPI,
-                          std::make_pair(Call, Call->getArg(RetAssign & 0x01)));
+    return createRewriter<IsSurfAPI>(
+        Call, RetAssign, std::make_pair(Call, Call->getArg(RetAssign & 0x01)));
   }
 };
 

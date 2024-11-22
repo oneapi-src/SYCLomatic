@@ -895,13 +895,6 @@ public:
   }
 
   /// Read data from accessor.
-  template <bool Available = dimensions == 3>
-  typename std::enable_if<Available, data_t>::type read_byte(float x, float y,
-                                                        float z) {
-    return detail::fetch_data<T>()(
-        _img_acc.read(sycl::float4(x / sizeof(T), y, z, 0), _sampler));
-  }
-  /// Read data from accessor.
   template <class Coord0, class Coord1, class Coord2,
             bool Available = dimensions == 3 &&
                              std::is_integral<Coord0>::value
@@ -912,12 +905,7 @@ public:
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::int4(x / sizeof(T), y, z, 0), _sampler));
   }
-  /// Read data from accessor.
-  template <bool Available = dimensions == 2>
-  typename std::enable_if<Available, data_t>::type read_byte(float x, float y) {
-    return detail::fetch_data<T>()(
-        _img_acc.read(sycl::float2(x / sizeof(T), y), _sampler));
-  }
+
   /// Read data from accessor.
   template <class Coord0, class Coord1,
             bool Available = dimensions == 2 &&
@@ -927,11 +915,7 @@ public:
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::int2(x / sizeof(T), y), _sampler));
   }
-  /// Read data from accessor.
-  template <bool Available = dimensions == 1>
-  typename std::enable_if<Available, data_t>::type read_byte(float x) {
-    return detail::fetch_data<T>()(_img_acc.read(x / sizeof(T), _sampler));
-  }
+
   /// Read data from accessor.
   template <class CoordT,
             bool Available = dimensions == 1 && std::is_integral<CoordT>::value>
