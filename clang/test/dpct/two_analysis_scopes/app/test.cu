@@ -1,6 +1,7 @@
 // RUN: dpct --format-range=none --out-root %T/out %s --analysis-scope-path %S --analysis-scope-path %S/../deps --cuda-include-path="%cuda-path/include" --extra-arg="-I%S/../deps"
 // RUN: FileCheck --match-full-lines --input-file %T/out/test.dp.cpp %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/out/test.dp.cpp -o %T/out/test.dp.o %}
+// RUN: echo "// empty" > %T/out/dep.h
+// RUN: %if build_lit %{icpx -c -fsycl %T/out/test.dp.cpp -o %T/out/test.dp.o -I%T/out %}
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
