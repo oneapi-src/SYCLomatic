@@ -784,22 +784,21 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
     return MapNames::getClNamespace() + "plus<>()";
   }
 
-  auto processCXXTemporaryObjectExpr =
-      [&](const CXXTemporaryObjectExpr *CXXTempObj) {
-        std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
-            CXXTempObj->getType().getCanonicalType());
-        if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
-          OpRepl = MapNames::getClNamespace() + "plus<>()";
-        } else if (OpType == "cub::Max") {
-          OpRepl = MapNames::getClNamespace() + "maximum<>()";
-        } else if (OpType == "cub::Min") {
-          OpRepl = MapNames::getClNamespace() + "minimum<>()";
-        }
-      };
+  auto processOperatorExpr = [&](const Expr *Obj) {
+    std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+        Obj->getType().getCanonicalType());
+    if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
+      OpRepl = MapNames::getClNamespace() + "plus<>()";
+    } else if (OpType == "cub::Max") {
+      OpRepl = MapNames::getClNamespace() + "maximum<>()";
+    } else if (OpType == "cub::Min") {
+      OpRepl = MapNames::getClNamespace() + "minimum<>()";
+    }
+  };
 
   if (auto Op = dyn_cast<CXXConstructExpr>(Operator)) {
     if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(Op)) {
-      processCXXTemporaryObjectExpr(CXXTempObj);
+      processOperatorExpr(CXXTempObj);
     } else {
       auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
       if (auto DRE = dyn_cast<DeclRefExpr>(CtorArg)) {
@@ -814,9 +813,16 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
           OpRepl = EA.getReplacedString();
         }
       } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
-        processCXXTemporaryObjectExpr(CXXTempObj);
+        processOperatorExpr(CXXTempObj);
+      } else if (const Expr *Inner = CtorArg->IgnoreCasts();
+                 isa<CXXFunctionalCastExpr>(CtorArg) &&
+                 isa<InitListExpr>(Inner)) {
+        processOperatorExpr(Inner);
       }
     }
+  } else if (const Expr *Inner = Operator->IgnoreCasts();
+             isa<CXXFunctionalCastExpr>(Operator) && isa<InitListExpr>(Inner)) {
+    processOperatorExpr(Inner);
   }
   return OpRepl;
 }
