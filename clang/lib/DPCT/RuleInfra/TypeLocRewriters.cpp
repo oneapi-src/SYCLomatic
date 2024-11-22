@@ -239,6 +239,14 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocConditionalFactory(
                                                              Second);
 }
 
+template <typename... ArgsT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocEmitWarningFactory(
+    std::shared_ptr<TypeLocRewriterFactoryBase> &&Inner, Diagnostics MsgID,
+    ArgsT... Args) {
+  return std::make_shared<TypeLocEmitWarningRewriterFactory<ArgsT...>>(
+      Inner, MsgID, Args...);
+}
+
 template <typename... Args> 
 std::shared_ptr<TypeLocRewriterFactoryBase>
 createReportWarningTypeLocRewriterFactory(Diagnostics MsgId,
@@ -304,6 +312,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #define TYPESTR makeTypeStrCreator()
 #define WARNING_FACTORY(MSGID, ...)                                            \
   createReportWarningTypeLocRewriterFactory(MSGID, __VA_ARGS__)
+#define EMIT_WARNING_FACTORY(...) createTypeLocEmitWarningFactory(__VA_ARGS__)
 #define ADD_POINTER(CREATOR) makeAddPointerCreator(CREATOR)
 #include "APINamesTemplateType.inc"
 #undef WARNING_FACTORY

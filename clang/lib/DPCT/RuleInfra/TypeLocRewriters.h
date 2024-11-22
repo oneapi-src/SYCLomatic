@@ -77,37 +77,35 @@ struct TypeNameTypeLocRewriter
                                                         TypeNameCreator(TL)) {}
 };
 
+template <class F> static std::string getMsgArg(F &&f, const TypeLoc TL) {
+  std::string Result;
+  llvm::raw_string_ostream OS(Result);
+  print(OS, f(TL));
+  return OS.str();
+}
+
+template <typename... Ts>
+static void report(TypeLoc TL, Diagnostics MsgID, bool UseTextBegin,
+                   Ts &&...Vals) {
+  TransformSetTy TS;
+  auto SL = TL.getBeginLoc();
+  DiagnosticsUtils::report(SL, MsgID, &TS, UseTextBegin,
+                           std::forward<Ts>(Vals)...);
+  for (auto &T : TS)
+    DpctGlobalInfo::getInstance().addReplacement(
+        T->getReplacement(DpctGlobalInfo::getContext()));
+}
+
 class ReportWarningTypeLocRewriter : public TypeLocRewriter {
 public:
-  template <class F>
-  static std::string getMsgArg(F&& f, const TypeLoc TL) {
-    std::string Result;
-    llvm::raw_string_ostream OS(Result);
-    print(OS, f(TL));
-    return OS.str();
-  }
-
-  template <typename IDTy, typename... Ts>
-  inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    TransformSetTy TS;
-    auto SL = TL.getBeginLoc();
-    DiagnosticsUtils::report(
-        SL, MsgID, &TS, UseTextBegin, std::forward<Ts>(Vals)...);
-    for (auto &T : TS)
-      DpctGlobalInfo::getInstance().addReplacement(
-          T->getReplacement(DpctGlobalInfo::getContext()));
-  }
-
   template <class... MsgArgs>
-  ReportWarningTypeLocRewriter(const TypeLoc TL,
-                               Diagnostics MsgID, MsgArgs&&...Args)
-    : TypeLocRewriter(TL) {
-    report(MsgID, false, getMsgArg(std::forward<MsgArgs>(Args), TL)...);
+  ReportWarningTypeLocRewriter(const TypeLoc TL, Diagnostics MsgID,
+                               MsgArgs &&...Args)
+      : TypeLocRewriter(TL) {
+    report(TL, MsgID, false, getMsgArg(std::forward<MsgArgs>(Args), TL)...);
   }
 
-  std::optional<std::string> rewrite() override {
-    return {};
-  }
+  std::optional<std::string> rewrite() override { return {}; }
 };
 
 class TypeMatchingDesc {
@@ -226,6 +224,43 @@ public:
       return First->create(TL);
     else
       return Second->create(TL);
+  }
+};
+
+template <class... MsgArgsT>
+class TypeLocEmitWarningRewriterFactory : public TypeLocRewriterFactoryBase {
+  std::shared_ptr<TypeLocRewriterFactoryBase> Inner;
+  Diagnostics MsgID;
+  std::tuple<MsgArgsT...> MsgArgs;
+
+public:
+  TypeLocEmitWarningRewriterFactory(
+      std::shared_ptr<TypeLocRewriterFactoryBase> InnerFactory, Diagnostics ID,
+      MsgArgsT... Args)
+      : Inner(InnerFactory), MsgID(ID), MsgArgs(std::make_tuple(Args...)) {}
+  std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
+    std::apply(
+        [&](auto... Args) {
+          report(TL, MsgID, false,
+                 getMsgArg(std::forward<MsgArgs>(Args), TL)...);
+        },
+        MsgArgs);
+    return Inner->create(TL);
+  }
+};
+
+template <>
+class TypeLocEmitWarningRewriterFactory<> : public TypeLocRewriterFactoryBase {
+  std::shared_ptr<TypeLocRewriterFactoryBase> Inner;
+  Diagnostics MsgID;
+
+public:
+  TypeLocEmitWarningRewriterFactory(
+      std::shared_ptr<TypeLocRewriterFactoryBase> InnerFactory, Diagnostics ID)
+      : Inner(InnerFactory), MsgID(ID) {}
+  std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
+    report(TL, MsgID, false);
+    return Inner->create(TL);
   }
 };
 

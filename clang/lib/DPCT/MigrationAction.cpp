@@ -15,6 +15,7 @@
 #include "AnalysisInfo.h"
 #include "MigrationRuleManager.h"
 #include "RulesSecurity/MisleadingBidirectional.h"
+#include "MigrationReport/Statics.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -127,6 +128,7 @@ DpctFrontEndAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
 
 void DpctFrontEndAction::EndSourceFileAction() {
   getCompilerInstance().getASTContext().getParentMapContext().clear();
+  setDependenciesInfo(Info->Groups);
   if (Info->Groups.isMKLEnabled())
     DpctGlobalInfo::setMKLHeaderUsed();
 }

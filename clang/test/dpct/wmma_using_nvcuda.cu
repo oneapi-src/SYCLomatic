@@ -72,19 +72,32 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int ldc = n_ld;
 
   // Tile using a 2D grid
+  // CHECK: int warpM = (item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2)) / item_ct1.get_sub_group().get_local_range().get(0);
   int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / warpSize;
   int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
 
   // Declare the fragments
-  // CHECK: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::a, WMMA_M, WMMA_N, WMMA_K, sycl::half, dpct::experimental::matrix::row_major>
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::a, WMMA_M, WMMA_N, WMMA_K, sycl::half, dpct::experimental::matrix::row_major>
   wmma::fragment<wmma::matrix_a, WMMA_M, WMMA_N, WMMA_K, half, wmma::row_major>
       a_frag;
-  // CHECK: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::b, WMMA_M, WMMA_N, WMMA_K, sycl::half, dpct::experimental::matrix::col_major>
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::b, WMMA_M, WMMA_N, WMMA_K, sycl::half, dpct::experimental::matrix::col_major>
   wmma::fragment<wmma::matrix_b, WMMA_M, WMMA_N, WMMA_K, half, wmma::col_major>
       b_frag;
-  // CHECK: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
   wmma::fragment<wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
-  // CHECK: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1135:{{[0-9]+}}: Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::experimental::matrix::joint_matrix<dpct::experimental::matrix::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
   wmma::fragment<wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
   // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_fill(item_ct1.get_sub_group(), acc_frag.get(), 0.0f);
   wmma::fill_fragment(acc_frag, 0.0f);

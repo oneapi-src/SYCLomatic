@@ -4,15 +4,12 @@
 // RUN: %if preview-breaking-changes-supported %{ %{build} -fpreview-breaking-changes -o %t2.out %}
 // RUN: %if preview-breaking-changes-supported %{ %{run} %t2.out %}
 
-// TODO: Reenable, see https://github.com/intel/llvm/issues/14749
-// UNSUPPORTED: windows, linux
-
 // Tests load and store on sycl::vec.
 
 #include <sycl/detail/core.hpp>
 #include <sycl/ext/oneapi/bfloat16.hpp>
 #include <sycl/ext/oneapi/experimental/bfloat16_math.hpp>
-#include <sycl/types.hpp>
+#include <sycl/vector.hpp>
 
 namespace syclex = sycl::ext::oneapi;
 

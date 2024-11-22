@@ -9,6 +9,7 @@
 #pragma once
 
 #include "sycl/exception.hpp"
+#include <detail/config.hpp>
 #include <detail/kernel_arg_mask.hpp>
 #include <detail/platform_impl.hpp>
 #include <sycl/detail/common.hpp>
@@ -19,7 +20,10 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <iomanip>
 #include <mutex>
+#include <set>
+#include <thread>
 #include <type_traits>
 
 #include <boost/unordered/unordered_flat_map.hpp>
@@ -90,20 +94,21 @@ public:
   };
 
   struct ProgramBuildResult : public BuildResult<ur_program_handle_t> {
-    PluginPtr Plugin;
-    ProgramBuildResult(const PluginPtr &Plugin) : Plugin(Plugin) {
+    AdapterPtr Adapter;
+    ProgramBuildResult(const AdapterPtr &Adapter) : Adapter(Adapter) {
       Val = nullptr;
     }
-    ProgramBuildResult(const PluginPtr &Plugin, BuildState InitialState)
-        : Plugin(Plugin) {
+    ProgramBuildResult(const AdapterPtr &Adapter, BuildState InitialState)
+        : Adapter(Adapter) {
       Val = nullptr;
       this->State.store(InitialState);
     }
     ~ProgramBuildResult() {
       try {
         if (Val) {
-          ur_result_t Err = Plugin->call_nocheck(urProgramRelease, Val);
-          __SYCL_CHECK_OCL_CODE_NO_EXC(Err);
+          ur_result_t Err =
+              Adapter->call_nocheck<UrApiKind::urProgramRelease>(Val);
+          __SYCL_CHECK_UR_CODE_NO_EXC(Err);
         }
       } catch (std::exception &e) {
         __SYCL_REPORT_EXCEPTION_TO_STREAM("exception in ~ProgramBuildResult",
@@ -117,9 +122,10 @@ public:
    * when debugging environment variables are set and we can just ignore them
    * since all kernels will have their build options overridden with the same
    * string*/
-  using ProgramCacheKeyT =
-      std::pair<std::pair<SerializedObj, std::uintptr_t>, ur_device_handle_t>;
-  using CommonProgramKeyT = std::pair<std::uintptr_t, ur_device_handle_t>;
+  using ProgramCacheKeyT = std::pair<std::pair<SerializedObj, std::uintptr_t>,
+                                     std::set<ur_device_handle_t>>;
+  using CommonProgramKeyT =
+      std::pair<std::uintptr_t, std::set<ur_device_handle_t>>;
 
   struct ProgramCache {
     ::boost::unordered_map<ProgramCacheKeyT, ProgramBuildResultPtr> Cache;
@@ -133,15 +139,16 @@ public:
   using KernelArgMaskPairT =
       std::pair<ur_kernel_handle_t, const KernelArgMask *>;
   struct KernelBuildResult : public BuildResult<KernelArgMaskPairT> {
-    PluginPtr Plugin;
-    KernelBuildResult(const PluginPtr &Plugin) : Plugin(Plugin) {
+    AdapterPtr Adapter;
+    KernelBuildResult(const AdapterPtr &Adapter) : Adapter(Adapter) {
       Val.first = nullptr;
     }
     ~KernelBuildResult() {
       try {
         if (Val.first) {
-          ur_result_t Err = Plugin->call_nocheck(urKernelRelease, Val.first);
-          __SYCL_CHECK_OCL_CODE_NO_EXC(Err);
+          ur_result_t Err =
+              Adapter->call_nocheck<UrApiKind::urKernelRelease>(Val.first);
+          __SYCL_CHECK_UR_CODE_NO_EXC(Err);
         }
       } catch (std::exception &e) {
         __SYCL_REPORT_EXCEPTION_TO_STREAM("exception in ~KernelBuildResult", e);
@@ -172,6 +179,42 @@ public:
 
   void setContextPtr(const ContextPtr &AContext) { MParentContext = AContext; }
 
+  // Sends message to std:cerr stream when SYCL_CACHE_TRACE environemnt is
+  // set.
+  static inline void traceProgram(const std::string &Msg,
+                                  const ProgramCacheKeyT &CacheKey) {
+    if (!SYCLConfig<SYCL_CACHE_TRACE>::isTraceInMemCache())
+      return;
+
+    int ImageId = CacheKey.first.second;
+    std::stringstream DeviceList;
+    for (const auto &Device : CacheKey.second)
+      DeviceList << "0x" << std::setbase(16)
+                 << reinterpret_cast<uintptr_t>(Device) << ",";
+
+    std::string Identifier = "[Key:{imageId = " + std::to_string(ImageId) +
+                             ",urDevice = " + DeviceList.str() + "}]: ";
+
+    std::cerr << "[In-Memory Cache][Thread Id:" << std::this_thread::get_id()
+              << "][Program Cache]" << Identifier << Msg << std::endl;
+  }
+
+  // Sends message to std:cerr stream when SYCL_CACHE_TRACE environemnt is
+  // set.
+  static inline void traceKernel(const std::string &Msg,
+                                 const std::string &KernelName,
+                                 bool IsKernelFastCache = false) {
+    if (!SYCLConfig<SYCL_CACHE_TRACE>::isTraceInMemCache())
+      return;
+
+    std::string Identifier =
+        "[IsFastCache: " + std::to_string(IsKernelFastCache) +
+        "][Key:{Name = " + KernelName + "}]: ";
+
+    std::cerr << "[In-Memory Cache][Thread Id:" << std::this_thread::get_id()
+              << "][Kernel Cache]" << Identifier << Msg << std::endl;
+  }
+
   Locked<ProgramCache> acquireCachedPrograms() {
     return {MCachedPrograms, MProgramCacheMutex};
   }
@@ -186,12 +229,14 @@ public:
     auto &ProgCache = LockedCache.get();
     auto [It, DidInsert] = ProgCache.Cache.try_emplace(CacheKey, nullptr);
     if (DidInsert) {
-      It->second = std::make_shared<ProgramBuildResult>(getPlugin());
+      It->second = std::make_shared<ProgramBuildResult>(getAdapter());
       // Save reference between the common key and the full key.
       CommonProgramKeyT CommonKey =
           std::make_pair(CacheKey.first.second, CacheKey.second);
       ProgCache.KeyMap.emplace(CommonKey, CacheKey);
-    }
+      traceProgram("Program inserted.", CacheKey);
+    } else
+      traceProgram("Program fetched.", CacheKey);
     return std::make_pair(It->second, DidInsert);
   }
 
@@ -206,14 +251,16 @@ public:
     auto &ProgCache = LockedCache.get();
     auto [It, DidInsert] = ProgCache.Cache.try_emplace(CacheKey, nullptr);
     if (DidInsert) {
-      It->second = std::make_shared<ProgramBuildResult>(getPlugin(),
+      It->second = std::make_shared<ProgramBuildResult>(getAdapter(),
                                                         BuildState::BS_Done);
       It->second->Val = Program;
       // Save reference between the common key and the full key.
       CommonProgramKeyT CommonKey =
           std::make_pair(CacheKey.first.second, CacheKey.second);
       ProgCache.KeyMap.emplace(CommonKey, CacheKey);
-    }
+      traceProgram("Program inserted.", CacheKey);
+    } else
+      traceProgram("Program fetched.", CacheKey);
     return DidInsert;
   }
 
@@ -223,8 +270,11 @@ public:
     auto LockedCache = acquireKernelsPerProgramCache();
     auto &Cache = LockedCache.get()[Program];
     auto [It, DidInsert] = Cache.try_emplace(KernelName, nullptr);
-    if (DidInsert)
-      It->second = std::make_shared<KernelBuildResult>(getPlugin());
+    if (DidInsert) {
+      It->second = std::make_shared<KernelBuildResult>(getAdapter());
+      traceKernel("Kernel inserted.", KernelName);
+    } else
+      traceKernel("Kernel fetched.", KernelName);
     return std::make_pair(It->second, DidInsert);
   }
 
@@ -233,6 +283,7 @@ public:
     std::unique_lock<std::mutex> Lock(MKernelFastCacheMutex);
     auto It = MKernelFastCache.find(CacheKey);
     if (It != MKernelFastCache.end()) {
+      traceKernel("Kernel fetched.", std::get<3>(CacheKey), true);
       return It->second;
     }
     return std::make_tuple(nullptr, nullptr, nullptr, nullptr);
@@ -243,6 +294,7 @@ public:
     std::unique_lock<std::mutex> Lock(MKernelFastCacheMutex);
     // if no insertion took place, thus some other thread has already inserted
     // smth in the cache
+    traceKernel("Kernel inserted.", std::get<3>(CacheKey), true);
     MKernelFastCache.emplace(CacheKey, CacheVal);
   }
 
@@ -327,7 +379,8 @@ public:
         BuildResult->Error.Code = detail::get_ur_error(Ex);
         if (Ex.code() == errc::memory_allocation ||
             BuildResult->Error.Code == UR_RESULT_ERROR_OUT_OF_RESOURCES ||
-            BuildResult->Error.Code == UR_RESULT_ERROR_OUT_OF_HOST_MEMORY) {
+            BuildResult->Error.Code == UR_RESULT_ERROR_OUT_OF_HOST_MEMORY ||
+            BuildResult->Error.Code == UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY) {
           reset();
           BuildResult->updateAndNotify(BuildState::BS_Initial);
           continue;
@@ -354,7 +407,7 @@ private:
   KernelFastCacheT MKernelFastCache;
   friend class ::MockKernelProgramCache;
 
-  const PluginPtr &getPlugin();
+  const AdapterPtr &getAdapter();
 };
 } // namespace detail
 } // namespace _V1

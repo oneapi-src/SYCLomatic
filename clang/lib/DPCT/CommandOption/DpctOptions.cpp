@@ -9,7 +9,6 @@
 #include "clang/DPCT/DpctOptions.h"
 
 #include "ErrorHandle/Error.h"
-#include "Utility.h"
 
 namespace clang {
 namespace dpct {
