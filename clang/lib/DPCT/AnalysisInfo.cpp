@@ -8,9 +8,9 @@
 
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
+#include "MigrationReport/Statics.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "RuleInfra/MapNames.h"
-#include "MigrationReport/Statics.h"
 #include "TextModification.h"
 #include "Utility.h"
 
