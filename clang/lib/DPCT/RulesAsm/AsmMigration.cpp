@@ -2671,6 +2671,39 @@ protected:
     insertHeader(HeaderType::HT_DPCT_Atomic);
     return SYCLGenSuccess();
   }
+  
+  bool handle_cp(const InlineAsmInstruction *Inst) override {
+    
+    //FIX-ME: Does not handle {.sem}{.scope} yet
+    if (Inst->getNumInputOperands() > 3)
+      return SYCLGenError();
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Store(CurrInst);
+    CurrInst = Inst;
+    const auto *Src =
+        dyn_cast_or_null<InlineAsmAddressExpr>(Inst->getInputOperand(0));
+    const auto *Dst = Inst->getOutputOperand();
+
+    if (!Src)
+      return false;
+    std::string Type;
+    if (tryEmitType(Type, Inst->getType(0)))
+      return SYCLGenError();
+    if (emitStmt(Dst))
+      return SYCLGenError();
+    
+    OS() << MapNames::getDpctNamespace() << "get_current_device().in_order_queue().memcpy(";
+    for (const auto &[I, Op] : llvm::enumerate(Inst->input_operands())) {
+      if (emitStmt(Op))
+        return SYCLGenError();
+      if (I != Inst->getNumInputOperands() - 1)
+        OS() << ", ";
+    }
+    OS() << ')';
+    endstmt();
+    return SYCLGenSuccess();
+  }
+  
+  
 };
 
 /// Clean the special character in identifier.
