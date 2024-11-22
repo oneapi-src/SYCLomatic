@@ -45,8 +45,7 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterNormal(const CallExpr *C, bool RetAssign,
                                bool IsSurfAPI, const TemplateArgumentInfo &TAI,
                                const std::string &VecTypeName) const {
-    static std::string FuncName = "";
-    FuncName = [=]() -> std::string {
+    const std::string FuncName = [=]() -> std::string {
       if (IsSurfAPI)
         return MapNames::getLibraryHelperNamespace() +
                "experimental::sample_image_by_byte";
@@ -54,7 +53,7 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
              "ext::oneapi::experimental::sample_image";
     }();
     using FuncNamePrinter =
-        TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
+        TemplatedNamePrinter<std::string, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
         CallExprPrinter<FuncNamePrinter,
                         std::pair<const CallExpr *, const Expr *>, VecType>;
@@ -77,10 +76,10 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterLod(const CallExpr *C, bool RetAssign,
                             const TemplateArgumentInfo &TAI,
                             const std::string &VecTypeName) const {
-    const static std::string FuncName =
+    const std::string FuncName =
         MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
     using FuncNamePrinter =
-        TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
+        TemplatedNamePrinter<std::string, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
         CallExprPrinter<FuncNamePrinter,
                         std::pair<const CallExpr *, const Expr *>, VecType,
@@ -106,11 +105,11 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterLayered(const CallExpr *C, bool RetAssign,
                                 const TemplateArgumentInfo &TAI,
                                 const std::string &VecTypeName) const {
-    const static std::string FuncName =
+    const std::string FuncName =
         MapNames::getClNamespace() +
         "ext::oneapi::experimental::sample_image_array";
     using FuncNamePrinter =
-        TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
+        TemplatedNamePrinter<std::string, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
         CallExprPrinter<FuncNamePrinter,
                         std::pair<const CallExpr *, const Expr *>, VecType,
