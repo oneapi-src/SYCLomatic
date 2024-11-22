@@ -2641,7 +2641,143 @@ protected:
     endstmt();
     return SYCLGenSuccess();
   }
+  
+  bool handle_red(const InlineAsmInstruction *Inst) override {
+    // FIXME: inc, dec operation not supported now.
+    if (Inst->getNumInputOperands() > 1)
+      return SYCLGenError();
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+    OS() << " = " << MapNames::getDpctNamespace() << "atomic_fetch_";
+    if (Inst->hasAttr(InstAttr::add))
+      OS() << "add";
+    else if (Inst->hasAttr(InstAttr::min))
+      OS() << "min";
+    else if (Inst->hasAttr(InstAttr::max))
+      OS() << "max";
+    else if (Inst->hasAttr(InstAttr::or))
+      OS() << "or";
+    else if (Inst->hasAttr(InstAttr::xor))
+      OS() << "xor";
+    else if (Inst->hasAttr(InstAttr::and))
+      OS() << "and";
+    else
+      return SYCLGenError();
+    OS()<< '<';
+    if (Inst->hasAttr(InstAttr::global)) {
+       if(Inst->hasAttr(InstAttr::relaxed)){
+         if(Inst->hasAttr(InstAttr::cta)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::global_space,"
+                 << MapNames::getClNamespace() << "memory_order::relaxed,"
+                 << MapNames::getClNamespace() << "memory_scope::work_group";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::gpu)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::global_space,"
+                 << MapNames::getClNamespace() << "memory_order::relaxed,"
+                 << MapNames::getClNamespace() << "memory_scope::device";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::sys)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::global_space,"
+                 << MapNames::getClNamespace() << "memory_order::relaxed,"
+                 << MapNames::getClNamespace() << "memory_scope::system";
+            }
+        
+      }
+      else if(Inst->hasAttr(InstAttr::release)){
+            if(Inst->hasAttr(InstAttr::cta)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::global_space,"
+                 << MapNames::getClNamespace() << "memory_order::release,"
+                 << MapNames::getClNamespace() << "memory_scope::work_group";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::gpu)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::global_space,"
+                 << MapNames::getClNamespace() << "memory_order::release,"
+                 << MapNames::getClNamespace() << "memory_scope::device";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::sys)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::global_space,"
+                 << MapNames::getClNamespace() << "memory_order::release,"
+                 << MapNames::getClNamespace() << "memory_scope::system";
+            } 
+      
+      }         
+  }
+    else if (Inst->hasAttr(InstAttr::shared)) {
+       if(Inst->hasAttr(InstAttr::relaxed)){
+         if(Inst->hasAttr(InstAttr::cta)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::local_space,"
+                 << MapNames::getClNamespace() << "memory_order::relaxed,"
+                 << MapNames::getClNamespace() << "memory_scope::work_group";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::gpu)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::local_space,"
+                 << MapNames::getClNamespace() << "memory_order::relaxed,"
+                 << MapNames::getClNamespace() << "memory_scope::device";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::sys)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::local_space,"
+                 << MapNames::getClNamespace() << "memory_order::relaxed,"
+                 << MapNames::getClNamespace() << "memory_scope::system";
+            }
+        
+      }
+      else if(Inst->hasAttr(InstAttr::release)){
+            if(Inst->hasAttr(InstAttr::cta)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::local_space,"
+                 << MapNames::getClNamespace() << "memory_order::release,"
+                 << MapNames::getClNamespace() << "memory_scope::work_group";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::gpu)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::local_space,"
+                 << MapNames::getClNamespace() << "memory_order::release,"
+                 << MapNames::getClNamespace() << "memory_scope::device";
+            }
+            
+         else if(Inst->hasAttr(InstAttr::sys)){
+      
+            OS() << MapNames::getClNamespace() << "access::address_space::local_space,"
+                 << MapNames::getClNamespace() << "memory_order::release,"
+                 << MapNames::getClNamespace() << "memory_scope::system";
+            } 
+      
+      }  
+         
+    }
+    OS() << '>';
+    OS() << '(';
+    llvm::SaveAndRestore<const InlineAsmInstruction *> Save(CurrInst);
+    CurrInst = Inst;
+    for (const auto &[I, Op] : llvm::enumerate(Inst->input_operands())) {
+      if (emitStmt(Op))
+        return SYCLGenError();
+      if (I != Inst->getNumInputOperands() - 1)
+        OS() << ", ";
+    }
 
+    OS() << ')';
+    endstmt();
+    insertHeader(HeaderType::HT_DPCT_Atomic);
+    return SYCLGenSuccess();
+  }
+  
   bool handle_atom(const InlineAsmInstruction *Inst) override {
     // FIXME: CAS operation was not supported now.
     if (Inst->getNumInputOperands() > 2)
