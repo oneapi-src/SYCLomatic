@@ -11,7 +11,6 @@
   In: ATen/cuda/CUDAContext.h
   Out: "<ATen/xpu/XPUContext.h>"
 
----
 - Rule: rule_c10_cuda_CUDAStream_h
   Kind: Header
   Priority: Takeover
