@@ -133,7 +133,7 @@ void CooperativeGroupsFunctionRule::runRule(
     // shfl_xor      1/1   0/0   0/0
     // meta_group_rank 1/1   0/0   0/0
     // meta_group_size 1/1   0/0   0/0
-    
+
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
