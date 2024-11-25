@@ -1,8 +1,7 @@
 // RUN: rm -rf %T/src
 // RUN: mkdir %T/src
 // RUN: cp %S/pytorch_ATen_cuda_ns.cu %T/src/
-// RUN: cat %s > %T/src/pytorch_ATen_cuda_ns.cu
-// RUN: cat %S/user_defined_rule_pytorch.yaml > %T/user_defined_rule_pytorch.yaml
+// RUN: cp %S/user_defined_rule_pytorch.yaml %T/
 // RUN: cp -r %S/pytorch_cuda_inc %T/
 // RUN: cd %T
 // RUN: rm -rf %T/pytorch_ATen_cuda_ns_output
@@ -17,4 +16,9 @@
 #include <ATen/cuda/CUDAContext.h>
 // CHECK: #include <ATen/core/Tensor.h>
 #include <ATen/core/Tensor.h>
+
+int main(){
+   
+  return 0;
+}
 #endif
