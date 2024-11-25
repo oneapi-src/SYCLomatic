@@ -7,13 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "MapNamesBlas.h"
-#include "ASTTraversal.h"
-#include "FileGenerator/GenFiles.h"
-#include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/MapNames.h"
-#include "RulesDNN/DNNAPIMigration.h"
-#include "RulesLang/RulesLang.h"
-#include <map>
 
 using namespace clang;
 using namespace clang::dpct;
@@ -1586,6 +1580,10 @@ void MapNamesBlas::setExplicitNamespaceMap(
        MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::"
            "attribute::epilogue_aux_pointer"},
+      {"CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_DATA_TYPE",
+       MapNames::getLibraryHelperNamespace() +
+           "blas_gemm::experimental::matmul_desc_t::"
+           "attribute::epilogue_aux_data_type"},
       {"CUBLASLT_MATMUL_DESC_SM_COUNT_TARGET",
        MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::unsupport"},

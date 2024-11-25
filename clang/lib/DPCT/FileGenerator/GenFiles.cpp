@@ -146,7 +146,7 @@ std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 bool rewriteDir(std::string &FilePath,
                 const clang::tooling::UnifiedPath &InRoot,
                 const clang::tooling::UnifiedPath &OutRoot) {
-#if defined(_WIN64)
+#if defined(_WIN32)
   std::string Filename = sys::path::filename(FilePath).str();
 #endif
 
@@ -163,7 +163,7 @@ bool rewriteDir(std::string &FilePath,
                                 path::begin(InRoot.getCanonicalPath()));
   SmallString<512> NewFilePath = OutRoot.getCanonicalPath();
   path::append(NewFilePath, PathDiff.first, path::end(FilePath));
-#if defined(_WIN64)
+#if defined(_WIN32)
   sys::path::remove_filename(NewFilePath);
   sys::path::append(NewFilePath, Filename);
 #endif

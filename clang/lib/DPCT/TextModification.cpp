@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "TextModification.h"
-#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
 #include "Utility.h"
@@ -18,8 +17,6 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/FileEntry.h"
 #include "llvm/Support/Path.h"
-
-#include <sstream>
 
 using namespace clang;
 using namespace clang::dpct;

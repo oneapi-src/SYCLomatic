@@ -8,11 +8,10 @@
 
 #ifndef DPCT_RULESMATHLIB_MAPNAMES_SOLVER_H
 #define DPCT_RULESMATHLIB_MAPNAMES_SOLVER_H
-#include "CommandOption/ValidateArguments.h"
-#include "UserDefinedRules/UserDefinedRules.h"
-#include "Utility.h"
 #include <map>
-#include <set>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace clang {
 namespace dpct {

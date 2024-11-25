@@ -7,14 +7,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "RulesSecurity/MisleadingBidirectional.h"
-#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Lex/Preprocessor.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ConvertUTF.h"
 
 using namespace clang;

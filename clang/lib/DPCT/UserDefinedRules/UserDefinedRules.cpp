@@ -6,16 +6,15 @@
 //
 //===----------------------------------------------------------------------===//
 #include "UserDefinedRules/UserDefinedRules.h"
-#include "RuleInfra/ASTmatcherCommon.h"
 #include "ASTTraversal.h"
-#include "RulesLang/RulesLang.h"
-#include "RuleInfra/CallExprRewriter.h"
 #include "ErrorHandle/Error.h"
-#include "RuleInfra/MapNames.h"
 #include "MigrateScript/MigrateCmakeScript.h"
 #include "MigrateScript/MigratePythonBuildScript.h"
 #include "MigrationRuleManager.h"
+#include "RuleInfra/CallExprRewriter.h"
+#include "RuleInfra/MapNames.h"
 #include "RuleInfra/TypeLocRewriters.h"
+#include "RulesLang/RulesLang.h"
 #include "Utility.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "llvm/Support/YAMLTraits.h"
@@ -336,8 +335,9 @@ MetaRuleObject::PatternRewriter::PatternRewriter(
     const std::map<std::string, PatternRewriter> &S, RuleMatchMode MatchMode,
     std::string Warning, std::string RuleId, std::string BuildScriptSyntax,
     RulePriority Priority)
-    : In(I), Out(O), MatchMode(MatchMode), Warning(Warning),
-      BuildScriptSyntax(BuildScriptSyntax), RuleId(RuleId), Priority(Priority) {
+    : In(I), Out(O), MatchMode(MatchMode), Warning(std::move(Warning)),
+      BuildScriptSyntax(std::move(BuildScriptSyntax)),
+      RuleId(std::move(RuleId)), Priority(Priority) {
   Subrules = S;
 }
 

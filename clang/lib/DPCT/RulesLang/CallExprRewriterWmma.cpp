@@ -6,7 +6,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ASTTraversal.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/CallExprRewriterCommon.h"
 #include "RuleInfra/MapNames.h"

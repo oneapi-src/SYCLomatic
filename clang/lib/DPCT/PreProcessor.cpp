@@ -5,13 +5,14 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "AnalysisInfo.h"
 #include "PreProcessor.h"
+#include "AnalysisInfo.h"
+#include "Diagnostics/Diagnostics.h"
 #include "FileGenerator/GenFiles.h"
+#include "RulesLang/MapNamesLang.h"
+#include "RulesLangLib/MapNamesLangLib.h"
 #include "TextModification.h"
 #include "Utility.h"
-#include "Diagnostics/Diagnostics.h"
-#include "clang/DPCT/DpctOptions.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
@@ -22,6 +23,7 @@
 #include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/Cuda.h"
 #include "clang/Basic/SourceLocation.h"
+#include "clang/DPCT/DpctOptions.h"
 #include "clang/Lex/MacroArgs.h"
 #include <string>
 #include <tuple>
@@ -218,17 +220,17 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 #endif
     }
 
-    if (MapNames::AtomicFuncNamesMap.find(II->getName().str()) !=
-        MapNames::AtomicFuncNamesMap.end()) {
+    if (MapNamesLang::AtomicFuncNamesMap.find(II->getName().str()) !=
+        MapNamesLang::AtomicFuncNamesMap.end()) {
       std::string HashStr =
           getHashStrFromLoc(MI->getReplacementToken(0).getLocation());
       DpctGlobalInfo::getInstance().insertAtomicInfo(
           HashStr, MacroNameTok.getLocation(), II->getName().str());
     } else if (MacroNameTok.getLocation().isValid() &&
                MacroNameTok.getIdentifierInfo() &&
-               MapNames::VectorTypeMigratedTypeSizeMap.find(
+               MapNamesLang::VectorTypeMigratedTypeSizeMap.find(
                    MacroNameTok.getIdentifierInfo()->getName().str()) !=
-                   MapNames::VectorTypeMigratedTypeSizeMap.end()) {
+                   MapNamesLang::VectorTypeMigratedTypeSizeMap.end()) {
       DiagnosticsUtils::report(
           MacroNameTok.getLocation(), Diagnostics::MACRO_SAME_AS_SYCL_TYPE,
           &TransformSet, false,
@@ -491,8 +493,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 #endif
   }
 
-  auto Iter = MapNames::HostAllocSet.find(Name.str());
-  if (TKind == tok::identifier && Iter != MapNames::HostAllocSet.end()) {
+  auto Iter = MapNamesLang::HostAllocSet.find(Name.str());
+  if (TKind == tok::identifier && Iter != MapNamesLang::HostAllocSet.end()) {
     if (MI->getNumTokens() == 1) {
       auto ReplToken = MI->getReplacementToken(0);
       if (ReplToken.getKind() == tok::numeric_constant) {
@@ -788,7 +790,8 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
 bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #ifdef _WIN32
   std::string Name = FileName.str();
-  return !IsAngled || !MapNames::isInSet(MapNames::ThrustFileExcludeSet, Name);
+  return !IsAngled ||
+         !MapNames::isInSet(MapNamesLangLib::ThrustFileExcludeSet, Name);
 #else
   return true;
 #endif

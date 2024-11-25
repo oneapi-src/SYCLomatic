@@ -454,10 +454,9 @@ static void doCmakeScriptAnalysis() {
 static void convertAllCmakeCommandsToLowerCase() {
   for (auto &Entry : CmakeScriptFileBufferMap) {
     auto &Buffer = Entry.second;
-    const std::string FileName = Entry.first.getPath().str();
 
     // Convert cmake command to lower case in cmake script files
-    Buffer = convertCmakeCommandsToLower(Buffer, FileName);
+    Buffer = convertCmakeCommandsToLower(Buffer, Entry.first.getPath().str());
   }
 }
 
