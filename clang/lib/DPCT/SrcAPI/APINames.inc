@@ -2226,7 +2226,7 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::multi_grid_group, cooperative_groups::
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, sync, sync, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, num_threads, num_threads, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_size, meta_group_size, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_size, meta_group_size, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_rank, meta_group_rank, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, shfl, shfl, true, NO_FLAG, P4, "DPCT1119")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, shfl_up, shfl_up, true, NO_FLAG, P4, "Comment")
