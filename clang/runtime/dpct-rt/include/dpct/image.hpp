@@ -901,7 +901,7 @@ public:
                                  &&std::is_integral<Coord1>::value
                                      &&std::is_integral<Coord2>::value>
   typename std::enable_if<Available, data_t>::type read_byte(Coord0 x, Coord1 y,
-                                                        Coord2 z) {
+                                                             Coord2 z) {
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::int4(x / sizeof(T), y, z, 0), _sampler));
   }
@@ -911,7 +911,8 @@ public:
             bool Available = dimensions == 2 &&
                              std::is_integral<Coord0>::value
                                  &&std::is_integral<Coord1>::value>
-  typename std::enable_if<Available, data_t>::type read_byte(Coord0 x, Coord1 y) {
+  typename std::enable_if<Available, data_t>::type read_byte(Coord0 x,
+                                                             Coord1 y) {
     return detail::fetch_data<T>()(
         _img_acc.read(sycl::int2(x / sizeof(T), y), _sampler));
   }

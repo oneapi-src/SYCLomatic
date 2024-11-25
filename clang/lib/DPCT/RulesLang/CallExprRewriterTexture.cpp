@@ -23,8 +23,7 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriter>
   createRewriter(const CallExpr *C, bool RetAssign, bool IsSurfAPI,
                  BaseT Base) const {
-    static std::string MemberName = "read";
-    MemberName = IsSurfAPI ? "read_byte" : "read";
+    const std::string MemberName = IsSurfAPI ? "read_byte" : "read";
     using ReaderPrinter = decltype(makeMemberCallCreator<false>(
         std::declval<std::function<BaseT(const CallExpr *)>>(), false,
         MemberName, makeCallArgCreatorWithCall(Idx)...)(C));

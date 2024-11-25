@@ -19,7 +19,7 @@
 namespace dpct {
 namespace experimental {
 
-#ifndef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
+#ifdef SYCL_EXT_ONEAPI_BINDLESS_IMAGES
 
 /// The wrapper class of bindless image memory handle.
 class image_mem_wrapper {

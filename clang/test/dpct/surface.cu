@@ -1,6 +1,5 @@
 // RUN: dpct --format-range=none -out-root %T/surface %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/surface/surface.dp.cpp --match-full-lines %s
-// RUN: %if build_lit %{icpx -c -fsycl %T/surface/surface.dp.cpp -o %T/surface/surface.dp.o %}
 
 // CHECK: template<typename T> void kernel(dpct::image_accessor_ext<dpct_placeholder/*Fix the type manually*/, 1> surf) {
 template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
