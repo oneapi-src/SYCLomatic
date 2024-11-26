@@ -7,10 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "RuleInfra/ExprAnalysis.h"
-
-#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Config.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/MemberExprRewriter.h"
 #include "RuleInfra/TypeLocRewriters.h"
@@ -18,20 +15,14 @@
 #include "RulesDNN/MapNamesDNN.h"
 #include "RulesLang/MapNamesLang.h"
 #include "RulesLang/RulesLang.h"
-#include "RulesLangLib/CUBAPIMigration.h"
 #include "RulesLangLib/MapNamesLangLib.h"
 #include "RulesMathLib/MapNamesBlas.h"
 #include "RulesMathLib/MapNamesRandom.h"
 #include "RulesMathLib/MapNamesSolver.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
-#include "clang/AST/ExprConcepts.h"
 #include "clang/AST/ExprObjC.h"
-#include "clang/AST/ExprOpenMP.h"
 #include "clang/AST/StmtCXX.h"
-#include "clang/AST/StmtGraphTraits.h"
-#include "clang/AST/StmtObjC.h"
-#include "clang/AST/StmtOpenMP.h"
 #include "clang/AST/TypeLoc.h"
 #include "llvm/Support/raw_ostream.h"
 

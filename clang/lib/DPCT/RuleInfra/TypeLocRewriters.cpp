@@ -70,7 +70,7 @@ makeTemplateArgCreator(unsigned Idx) {
 std::function<std::string(const TypeLoc)>
 makeUserDefinedTypeStrCreator(MetaRuleObject &R,
                               std::shared_ptr<TypeOutputBuilder> TOB) {
-  return [&R, TOB](const TypeLoc TL) {
+  return [&R, Builder = std::move(TOB)](const TypeLoc TL) {
     if (!TL)
       return std::string();
     auto Range = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
@@ -80,7 +80,7 @@ makeUserDefinedTypeStrCreator(MetaRuleObject &R,
 
     std::string ResultStr;
     llvm::raw_string_ostream OS(ResultStr);
-    for (auto &tob : TOB->SubBuilders) {
+    for (auto &tob : Builder->SubBuilders) {
       switch (tob->Kind) {
       case (OutputBuilder::Kind::String):
         OS << tob->Str;

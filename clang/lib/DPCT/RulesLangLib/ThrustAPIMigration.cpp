@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "RulesLangLib/ThrustAPIMigration.h"
-#include "ASTTraversal.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "RulesLangLib/MapNamesLangLib.h"
 #include "TextModification.h"

@@ -871,8 +871,9 @@ DPCT_FLAG_OPTION(
     llvm::cl::desc("Tell the tool to not perform an incremental migration.\n"
                    "Default: off (incremental migration happens)."))
 
-DPCT_PATH_OPTION(
-    AnalysisScopeOpt, clang::dpct::DpctOptionClass::OC_Attribute,
+DPCT_OPTION(
+    clang::dpct::list, std::string, AnalysisScopeOpt,
+    clang::dpct::DpctOptionClass::OC_Attribute,
     DPCT_OPTION_ACTIONS(clang::dpct::DpctActionKind::DAK_Analysis,
                         clang::dpct::DpctActionKind::DAK_Migration),
     "analysis-scope-path",
@@ -880,7 +881,8 @@ DPCT_PATH_OPTION(
         "The directory path for the analysis scope of the source tree that "
         "needs to be migrated.\n"
         "Default: the value of --in-root."),
-    llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTBasicCat))
+    llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTBasicCat),
+    llvm::cl::ZeroOrMore)
 
 DPCT_FLAG_OPTION(
     LimitChangeExtension, clang::dpct::DpctOptionClass::OC_Attribute,

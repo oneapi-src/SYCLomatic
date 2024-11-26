@@ -23,7 +23,6 @@
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
 #include <deque>
-#include <fstream>
 #include <optional>
 #include <string>
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
@@ -826,7 +825,7 @@ void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
   if (!HasInclusionDirectiveSet.count(MF)) {
     FirstIncludeOffset[MF] = Offset;
     LastIncludeOffset = Offset;
-    HasInclusionDirectiveSet.insert(MF);
+    HasInclusionDirectiveSet.insert(std::move(MF));
   }
 }
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
@@ -2390,7 +2389,7 @@ std::shared_ptr<clang::tooling::TranslationUnitReplacements>
         std::make_shared<clang::tooling::TranslationUnitReplacements>();
 clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
-clang::tooling::UnifiedPath DpctGlobalInfo::AnalysisScope;
+std::vector<clang::tooling::UnifiedPath> DpctGlobalInfo::AnalysisScope;
 std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::SYCLSourceExtension = std::string();
 std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();

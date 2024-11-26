@@ -43,7 +43,7 @@ void validateInputDirectory(UnifiedPath InRootPath) {
     dpctExit(MigrationErrorInputDirContainSDKFolder);
   }
 
-  if (isChildOrSamePath(InRootPath, DpctInstallPath)) {
+  if (isChildOrSamePath(std::move(InRootPath), DpctInstallPath)) {
     ShowStatus(MigrationErrorInputDirContainCTTool);
     dpctExit(MigrationErrorInputDirContainCTTool);
   }

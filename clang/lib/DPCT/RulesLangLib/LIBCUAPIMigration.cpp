@@ -7,16 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "LIBCUAPIMigration.h"
-#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "RuleInfra/CallExprRewriter.h"
-#include "Diagnostics/Diagnostics.h"
-#include "RuleInfra/MapNames.h"
-#include "MigrationReport/Statics.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
-#include "clang/Lex/Preprocessor.h"
-#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ConvertUTF.h"
 
