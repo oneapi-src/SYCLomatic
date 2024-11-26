@@ -14,6 +14,10 @@ namespace clang {
 namespace dpct {
 template <size_t... Idx>
 class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
+  std::string ReadFuncName;
+  std::string SampleFuncName;
+  std::string SampleMMFuncName;
+  std::string SampleArrayFuncName;
   std::string Source;
   int TexType;
 
@@ -21,38 +25,29 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
 
   template <class BaseT>
   std::shared_ptr<CallExprRewriter>
-  createRewriter(const CallExpr *C, bool RetAssign, bool IsSurfAPI,
-                 BaseT Base) const {
-    const std::string MemberName = IsSurfAPI ? "read_byte" : "read";
+  createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
     using ReaderPrinter = decltype(makeMemberCallCreator<false>(
         std::declval<std::function<BaseT(const CallExpr *)>>(), false,
-        MemberName, makeCallArgCreatorWithCall(Idx)...)(C));
+        ReadFuncName, makeCallArgCreatorWithCall(Idx)...)(C));
     if (RetAssign) {
       return std::make_shared<PrinterRewriter<
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
-          ReaderPrinter(std::move(Base), false, MemberName,
+          ReaderPrinter(std::move(Base), false, ReadFuncName,
                         std::make_pair(C, C->getArg(Idx + 1))...));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, Base, false, MemberName,
+        C, Source, Base, false, ReadFuncName,
         std::make_pair(C, C->getArg(Idx))...);
   }
 
   template <typename VecType>
   std::shared_ptr<CallExprRewriter>
   createbindlessRewriterNormal(const CallExpr *C, bool RetAssign,
-                               bool IsSurfAPI, const TemplateArgumentInfo &TAI,
+                               const TemplateArgumentInfo &TAI,
                                const std::string &VecTypeName) const {
-    const std::string FuncName = [=]() -> std::string {
-      if (IsSurfAPI)
-        return MapNames::getLibraryHelperNamespace() +
-               "experimental::sample_image_by_byte";
-      return MapNames::getClNamespace() +
-             "ext::oneapi::experimental::sample_image";
-    }();
     using FuncNamePrinter =
-        TemplatedNamePrinter<std::string, std::vector<TemplateArgumentInfo>>;
+        TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
         CallExprPrinter<FuncNamePrinter,
                         std::pair<const CallExpr *, const Expr *>, VecType>;
@@ -61,11 +56,12 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
+              FuncNamePrinter(SampleFuncName, {TAI}),
+              std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...)));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(FuncName, {TAI}),
+        C, Source, FuncNamePrinter(SampleFuncName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...));
   }
@@ -75,10 +71,8 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterLod(const CallExpr *C, bool RetAssign,
                             const TemplateArgumentInfo &TAI,
                             const std::string &VecTypeName) const {
-    const std::string FuncName =
-        MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
     using FuncNamePrinter =
-        TemplatedNamePrinter<std::string, std::vector<TemplateArgumentInfo>>;
+        TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
         CallExprPrinter<FuncNamePrinter,
                         std::pair<const CallExpr *, const Expr *>, VecType,
@@ -88,12 +82,13 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
+              FuncNamePrinter(SampleMMFuncName, {TAI}),
+              std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
               std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(FuncName, {TAI}),
+        C, Source, FuncNamePrinter(SampleMMFuncName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
@@ -104,11 +99,8 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterLayered(const CallExpr *C, bool RetAssign,
                                 const TemplateArgumentInfo &TAI,
                                 const std::string &VecTypeName) const {
-    const std::string FuncName =
-        MapNames::getClNamespace() +
-        "ext::oneapi::experimental::sample_image_array";
     using FuncNamePrinter =
-        TemplatedNamePrinter<std::string, std::vector<TemplateArgumentInfo>>;
+        TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
         CallExprPrinter<FuncNamePrinter,
                         std::pair<const CallExpr *, const Expr *>, VecType,
@@ -118,18 +110,19 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
+              FuncNamePrinter(SampleArrayFuncName, {TAI}),
+              std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
               std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(FuncName, {TAI}),
+        C, Source, FuncNamePrinter(SampleArrayFuncName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
   }
   std::shared_ptr<CallExprRewriter>
-  createbindlessRewriter(const CallExpr *C, bool RetAssign, bool IsSurfAPI,
+  createbindlessRewriter(const CallExpr *C, bool RetAssign,
                          QualType TargetType) const {
     TemplateArgumentInfo TAI;
     auto TAL = getTemplateArgsList(C);
@@ -160,13 +153,27 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
     if ((TexType & 0xf0) == 0xf0)
       return createbindlessRewriterLayered<VecType>(C, RetAssign, TAI,
                                                     VecTypeName);
-    return createbindlessRewriterNormal<VecType>(C, RetAssign, IsSurfAPI, TAI,
+    return createbindlessRewriterNormal<VecType>(C, RetAssign, TAI,
                                                  VecTypeName);
   }
 
 public:
   TextureReadRewriterFactory(std::string Name, int Tex)
-      : Source(std::move(Name)), TexType(Tex) {}
+      : Source(std::move(Name)), TexType(Tex) {
+    if (Source.find("surf") != std::string::npos) {
+      ReadFuncName = "read_byte";
+      SampleFuncName = MapNames::getLibraryHelperNamespace() +
+                       "experimental::sample_image_by_byte";
+    } else {
+      ReadFuncName = "read";
+      SampleFuncName = MapNames::getClNamespace() +
+                       "ext::oneapi::experimental::sample_image";
+    }
+    SampleMMFuncName =
+        MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
+    SampleArrayFuncName = MapNames::getClNamespace() +
+                          "ext::oneapi::experimental::sample_image_array";
+  }
   std::shared_ptr<CallExprRewriter>
   create(const CallExpr *Call) const override {
     const Expr *SourceExpr = Call->getArg(0);
@@ -174,9 +181,6 @@ public:
     QualType TargetType = Call->getType();
     StringRef SourceName;
     bool RetAssign = false;
-    bool IsSurfAPI = false;
-    if (Source.find("surf") != std::string::npos)
-      IsSurfAPI = true;
     if (SourceExpr->getType()->isPointerType()) {
       TargetType = SourceExpr->getType()->getPointeeType();
       SourceExpr = Call->getArg(1);
@@ -189,7 +193,7 @@ public:
       }
     }
     if (DpctGlobalInfo::useExtBindlessImages()) {
-      return createbindlessRewriter(Call, RetAssign, IsSurfAPI, TargetType);
+      return createbindlessRewriter(Call, RetAssign, TargetType);
     }
     SourceExpr = SourceExpr->IgnoreImpCasts();
     if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
@@ -204,7 +208,7 @@ public:
             MemberInfo->setType(
                 DpctGlobalInfo::getUnqualifiedTypeName(TargetType), TexType);
             SourceName = MemberInfo->getName();
-            return createRewriter(Call, RetAssign, IsSurfAPI, SourceName);
+            return createRewriter(Call, RetAssign, SourceName);
           }
         } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
           auto CallDefRange =
@@ -221,7 +225,7 @@ public:
       }
     }
 
-    return createRewriter(Call, RetAssign, IsSurfAPI,
+    return createRewriter(Call, RetAssign,
                           std::make_pair(Call, Call->getArg(RetAssign & 0x01)));
   }
 };
