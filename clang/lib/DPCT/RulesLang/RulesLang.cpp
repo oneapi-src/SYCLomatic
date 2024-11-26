@@ -2435,15 +2435,17 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit" ||
              FuncName == "cudaCtxResetPersistingL2Cache" ||
              FuncName == "cuCtxResetPersistingL2Cache") {
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(new ReplaceStmt(CE, ""));
+    if (auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+        Msg != MapNames::RemovedAPIWarningMessage.end()) {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
     }
   } else if(FuncName == "cudaStreamSetAttribute" ||
              FuncName == "cudaStreamGetAttribute" ){
@@ -4323,15 +4325,17 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(new ReplaceStmt(CE, ""));
+    if (auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+        Msg != MapNames::RemovedAPIWarningMessage.end()) {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName), Msg->second);
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
     }
   } else if (FuncName == "cudaStreamWaitEvent" ||
              FuncName == "cuStreamWaitEvent") {
@@ -7500,15 +7504,16 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
                  getNodeAsType<CallExpr>(Result, "cuFuncSetAttribute")) {
     std::string FuncName =
         CallNode->getDirectCallee()->getNameInfo().getName().getAsString();
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-
-    std::string CallReplacement{""};
-    if (isAssigned(CallNode)) {
-      CallReplacement = "0";
+    if (auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+        Msg != MapNames::RemovedAPIWarningMessage.end()) {
+      std::string CallReplacement{""};
+      if (isAssigned(CallNode)) {
+        CallReplacement = "0";
+      }
+      report(CallNode->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             MapNames::ITFName.at(FuncName), Msg->second);
+      emplaceTransformation(new ReplaceStmt(CallNode, CallReplacement));
     }
-    report(CallNode->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-           MapNames::ITFName.at(FuncName), Msg->second);
-    emplaceTransformation(new ReplaceStmt(CallNode, CallReplacement));
   }
 }
 
@@ -8254,15 +8259,15 @@ void DriverContextAPIRule::runRule(
       if (Search != MapNames::EnumNamesMap.end()) {
         printDerefOp(OS, CE->getArg(0));
         OS << " = " << Search->second->NewName;
-      } else {
-        auto Msg = MapNames::RemovedAPIWarningMessage.find(APIName);
+      } else if (auto Msg = MapNames::RemovedAPIWarningMessage.find(APIName);
+                 Msg != MapNames::RemovedAPIWarningMessage.end()) {
         if (IsAssigned) {
           report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-                MapNames::ITFName.at(APIName), Msg->second);
+                 MapNames::ITFName.at(APIName), Msg->second);
           emplaceTransformation(new ReplaceStmt(CE, "0"));
         } else {
           report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-                MapNames::ITFName.at(APIName), Msg->second);
+                 MapNames::ITFName.at(APIName), Msg->second);
           emplaceTransformation(new ReplaceStmt(CE, ""));
         }
         return;
