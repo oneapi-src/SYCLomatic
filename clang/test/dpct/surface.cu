@@ -22,8 +22,8 @@ template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
 static texture<uint2, 1> tex21;
 
 __device__ void device01() {
-  // CHECK: sycl::uint2 u21 = (tex21).read(1.0f);
-  uint2 u21 = tex1D(tex21, 1.0f);
+  // CHECK: tex21.read(1.0f);
+  tex1D(tex21, 1.0f);
 }
 int main() {
   // CHECK: dpct::image_wrapper_base_p surf;
