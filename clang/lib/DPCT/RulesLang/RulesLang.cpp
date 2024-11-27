@@ -4659,8 +4659,13 @@ void DeviceFunctionDeclRule::runRule(
     if (FD->isTemplateInstantiation())
       return;
 
-    if (FD->hasAttr<CUDADeviceAttr>() &&
-        FD->getAttr<CUDADeviceAttr>()->isImplicit())
+    // We need skip lambda in host code, but cannot skip lambda in device code.
+    if (const FunctionDecl *OuterMostFD = findTheOuterMostFunctionDecl(FD);
+        OuterMostFD &&
+        ((OuterMostFD->hasAttr<CUDADeviceAttr>() &&
+          OuterMostFD->getAttr<CUDADeviceAttr>()->isImplicit()) ||
+         (!OuterMostFD->hasAttr<CUDADeviceAttr>() &&
+          !OuterMostFD->hasAttr<CUDAGlobalAttr>())))
       return;
 
     const auto &FTL = FD->getFunctionTypeLoc();
@@ -4695,8 +4700,12 @@ void DeviceFunctionDeclRule::runRule(
               DpctGlobalInfo::getRunRound() == 1))
     return;
 
-  if (FD->hasAttr<CUDADeviceAttr>() &&
-      FD->getAttr<CUDADeviceAttr>()->isImplicit())
+  // We need skip lambda in host code, but cannot skip lambda in device code.
+  if (const FunctionDecl *OuterMostFD = findTheOuterMostFunctionDecl(FD);
+      OuterMostFD && ((OuterMostFD->hasAttr<CUDADeviceAttr>() &&
+                       OuterMostFD->getAttr<CUDADeviceAttr>()->isImplicit()) ||
+                      (!OuterMostFD->hasAttr<CUDADeviceAttr>() &&
+                       !OuterMostFD->hasAttr<CUDAGlobalAttr>())))
     return;
 
   if (FD->isVariadic()) {

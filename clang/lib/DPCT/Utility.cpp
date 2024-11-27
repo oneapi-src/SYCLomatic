@@ -2708,6 +2708,20 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   return LatestCS;
 }
 
+const FunctionDecl *findTheOuterMostFunctionDecl(const clang::Decl *N) {
+  if (!N)
+    return nullptr;
+  const FunctionDecl *FD = nullptr;
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*N);
+  while (Parents.size() > 0) {
+    if (auto *Parent = Parents[0].get<FunctionDecl>())
+      FD = Parent;
+    Parents = Context.getParents(Parents[0]);
+  }
+  return FD;
+}
+
 bool isInMacroDefinition(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto Range = getDefinitionRange(BeginLoc, EndLoc);
   auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
