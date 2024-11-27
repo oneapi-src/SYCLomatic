@@ -1352,6 +1352,21 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
   sycl::free(temp, q);
 }
 
+// A wrapper for sycl write_image function for the byte addressing image.
+template <typename DataT, typename CoordT>
+void write_image_by_byte(
+    const sycl::ext::oneapi::experimental::sampled_image_handle &imageHandle,
+    const CoordT &coords, const DataT &color) {
+  if constexpr (std::is_scalar_v<CoordT>) {
+    return sycl::ext::oneapi::experimental::write_image<DataT, CoordT>(
+        imageHandle, coords / sizeof(DataT), color);
+  } else {
+    coords[0] = coords[0] / sizeof(DataT);
+    return sycl::ext::oneapi::experimental::write_image<DataT, CoordT>(
+        imageHandle, coords, color);
+  }
+}
+
 using image_mem_wrapper_ptr = image_mem_wrapper *;
 #ifdef _WIN32
 using external_mem_wrapper_ptr = external_mem_wrapper *;

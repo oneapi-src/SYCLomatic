@@ -287,3 +287,41 @@ FEATURE_REQUEST_FACTORY(
         "cuTexRefSetFormat", true, false, true, true,
         MEMBER_CALL(ARG(0), true, "set_channel_type", ARG(1)),
         MEMBER_CALL(ARG(0), true, "set_channel_num", ARG(2))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("surf1Dwrite",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::write_image_by_byte",
+                            ARG(1), CALL("float", ARG(2)), ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("surf1Dwrite",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("surf1Dwrite"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY(
+        "surf2Dwrite",
+        CALL(MapNames::getDpctNamespace() + "experimental::write_image_by_byte",
+             ARG(1),
+             CALL(MapNames::getClNamespace() + "float2", ARG(2), ARG(3)),
+             ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("surf2Dwrite",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("surf2Dwrite"),
+                            ARG("--use-experimental-features=bindless_images")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseExtBindlessImages,
+    CALL_FACTORY_ENTRY("surf3Dwrite",
+                       CALL(MapNames::getDpctNamespace() +
+                                "experimental::write_image_by_byte",
+                            ARG(1),
+                            CALL(MapNames::getClNamespace() + "float3", ARG(2),
+                                 ARG(3), ARG(4)),
+                            ARG(0))),
+    UNSUPPORT_FACTORY_ENTRY("surf3Dwrite",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("surf3Dwrite"),
+                            ARG("--use-experimental-features=bindless_images")))
