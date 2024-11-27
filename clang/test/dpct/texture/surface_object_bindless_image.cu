@@ -19,7 +19,6 @@ template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
   // CHECK: i = dpct::experimental::sample_image_by_byte<T>(surf, sycl::float3(k, j, i));
   surf3Dread<T>(&i, surf, k, j, i);
 }
-
 int main() {
   // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle surf;
   cudaSurfaceObject_t surf;
