@@ -235,7 +235,7 @@ void foo3() {
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::nop;
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::relu;
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::bias;
-  // CHECK-NEXT: e = dpct::bias_gemm::experimental::epilogue_t::gelu_aux_bias;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu_aux_bias;
   cublasLtEpilogue_t e;
   e = CUBLASLT_EPILOGUE_DEFAULT;
   e = CUBLASLT_EPILOGUE_RELU;
