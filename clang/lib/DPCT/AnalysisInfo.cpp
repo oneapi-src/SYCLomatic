@@ -6943,12 +6943,13 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
         if (const auto *SubstType =
                 PointeeType->getAs<SubstTemplateTypeParmType>()) {
           const auto Index = SubstType->getIndex();
-          const auto *Callee = dyn_cast<MemberExpr>(CMCE->getCallee());
-          if (Index < Callee->getNumTemplateArgs())
-            ArgType = DpctGlobalInfo::getContext().getPointerType(
-                Callee->getTemplateArgs()[Index]
-                    .getTypeSourceInfo()
-                    ->getType());
+          if (const auto *Callee = dyn_cast<MemberExpr>(CMCE->getCallee())) {
+            if (Index < Callee->getNumTemplateArgs())
+              ArgType = DpctGlobalInfo::getContext().getPointerType(
+                  Callee->getTemplateArgs()[Index]
+                      .getTypeSourceInfo()
+                      ->getType());
+          }
         }
       }
     }
