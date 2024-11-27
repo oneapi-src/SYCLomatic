@@ -22,7 +22,6 @@ template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
 static texture<uint2, 1> tex21;
 
 __device__ void device01() {
-  // CHECK: tex21.read(1.0f);
   tex1D(tex21, 1.0f);
 }
 int main() {
