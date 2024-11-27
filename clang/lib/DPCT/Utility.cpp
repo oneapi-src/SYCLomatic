@@ -614,7 +614,7 @@ getNonImplicitCastParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
-  auto P = getParentNode(N);
+  auto P = getParentNode(std::move(N));
   while (P) {
     if (!P->get<ImplicitCastExpr>()) {
       return P;
@@ -1366,7 +1366,7 @@ calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
     else
       FormatFlags.push_back(true);
   }
-  return calculateRangesWithFlag(Repls, FormatFlags);
+  return calculateRangesWithFlag(Repls, std::move(FormatFlags));
 }
 
 /// Calculate the ranges of the input \p Repls which has set
@@ -1383,7 +1383,7 @@ std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
       BlockLevelFormatFlags.push_back(false);
   }
 
-  return calculateRangesWithFlag(Repls, BlockLevelFormatFlags);
+  return calculateRangesWithFlag(Repls, std::move(BlockLevelFormatFlags));
 }
 
 /// Determine if \param S is assigned or not
@@ -1494,7 +1494,8 @@ bool isOuterMostMacro(const Stmt *E) {
     StreamP.flush();
   } while (!ExpandedParent.compare(ExpandedExpr));
 
-  return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(), P);
+  return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(),
+                                    std::move(P));
 }
 
 bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
@@ -2789,7 +2790,7 @@ void constructUnionFindSetRecursively(
     auto FuncInfoPtr = Item.second->getFuncInfo();
     if (!FuncInfoPtr)
       continue;
-    RelatedDFI.push_back(FuncInfoPtr);
+    RelatedDFI.push_back(std::move(FuncInfoPtr));
   }
   auto RelatedDFIFromSpellingLoc =
       dpct::DpctGlobalInfo::getDFIVecRelatedFromSpellingLoc(DFIPtr);

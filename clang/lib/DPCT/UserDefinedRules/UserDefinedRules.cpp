@@ -30,12 +30,12 @@ std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 OutputBuilder::~OutputBuilder() {}
 
 template <class Functor>
-void reisterMigrationRule(const std::string &Name, Functor F) {
+void registerMigrationRule(const std::string &Name, Functor &&F) {
   class UserDefinedRuleFactory : public clang::dpct::MigrationRuleFactoryBase {
     Functor F;
 
   public:
-    UserDefinedRuleFactory(Functor Func) : F(std::move(Func)) {}
+    UserDefinedRuleFactory(Functor &&Func) : F(std::move(Func)) {}
     std::unique_ptr<clang::dpct::MigrationRule>
     createMigrationRule() const override {
       return F();
@@ -70,10 +70,10 @@ void registerMacroRule(MetaRuleObject &R) {
 void registerAPIRule(MetaRuleObject &R) {
   using namespace clang::dpct;
   // register rule
-  reisterMigrationRule(R.RuleId, [=] {
-    return std::make_unique<clang::dpct::UserDefinedAPIRule>(
-        R.In, R.RuleAttributes.HasExplicitTemplateArgs);
-  });
+  registerMigrationRule(
+      R.RuleId, [In = R.In, HET = R.RuleAttributes.HasExplicitTemplateArgs] {
+        return std::make_unique<clang::dpct::UserDefinedAPIRule>(In, HET);
+      });
 
   if (R.RuleAPIRestrictCondition.ArgCount < -1) {
     llvm::outs() << "warning: In Rule " << R.RuleId
@@ -81,13 +81,14 @@ void registerAPIRule(MetaRuleObject &R) {
                  << "value, and thus the ArgCount restriction is ignored.";
   }
 
-  auto FilterChecker = [=](const CallExpr *C) {
-    if (R.RuleAPIRestrictCondition.ArgCount < 0)
-      return true;
-    if ((size_t)R.RuleAPIRestrictCondition.ArgCount == C->getNumArgs())
-      return true;
-    return false;
-  };
+  auto FilterChecker =
+      [ArgCount = R.RuleAPIRestrictCondition.ArgCount](const CallExpr *C) {
+        if (ArgCount < 0)
+          return true;
+        if ((size_t)ArgCount == C->getNumArgs())
+          return true;
+        return false;
+      };
 
   // create and register rewriter
   // RewriterMap contains entries like {"FunctionName", RewriterFactory}
@@ -137,16 +138,16 @@ void registerTypeRule(MetaRuleObject &R) {
   if (R.RuleAttributes.NumOfTemplateArgs != -1) {
     dpct::TypeMatchingDesc TMD =
         dpct::TypeMatchingDesc(R.In, R.RuleAttributes.NumOfTemplateArgs);
-    auto Value = clang::dpct::makeUserDefinedTypeStrCreator(R, TOB);
+    auto Value = clang::dpct::makeUserDefinedTypeStrCreator(R, std::move(TOB));
     auto &Entry =
         (*clang::dpct::TypeLocRewriterFactoryBase::TypeLocRewriterMap)[TMD];
     if (!Entry) {
-      Entry = clang::dpct::createTypeLocRewriterFactory(Value);
-      reisterMigrationRule(R.RuleId, [=] {
-        return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
+      Entry = clang::dpct::createTypeLocRewriterFactory(std::move(Value));
+      registerMigrationRule(R.RuleId, [In = R.In] {
+        return std::make_unique<clang::dpct::UserDefinedTypeRule>(In);
       });
     } else if (Entry->Priority > R.Priority) {
-      Entry = clang::dpct::createTypeLocRewriterFactory(Value);
+      Entry = clang::dpct::createTypeLocRewriterFactory(std::move(Value));
     }
   }
 
@@ -161,8 +162,8 @@ void registerTypeRule(MetaRuleObject &R) {
                                   R.Includes.begin(), R.Includes.end());
     }
   } else {
-    reisterMigrationRule(R.RuleId, [&R] {
-      return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
+    registerMigrationRule(R.RuleId, [In = R.In] {
+      return std::make_unique<clang::dpct::UserDefinedTypeRule>(In);
     });
     auto RulePtr = std::make_shared<TypeNameRule>(
         R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
@@ -199,10 +200,11 @@ void registerClassRule(MetaRuleObject &R) {
             R.Includes.end());
       }
     } else {
-      reisterMigrationRule(BaseAndFieldName, [=] {
-        return std::make_unique<clang::dpct::UserDefinedClassFieldRule>(
-            R.In, (*ItField)->In);
-      });
+      registerMigrationRule(
+          BaseAndFieldName, [In = R.In, FieldIn = (*ItField)->In] {
+            return std::make_unique<clang::dpct::UserDefinedClassFieldRule>(
+                In, FieldIn);
+          });
       std::shared_ptr<ClassFieldRule> RulePtr;
       if ((*ItField)->OutGetter != "") {
         RulePtr = std::make_shared<ClassFieldRule>(
@@ -222,10 +224,11 @@ void registerClassRule(MetaRuleObject &R) {
   for (auto ItMethod = R.Methods.begin(); ItMethod != R.Methods.end();
        ItMethod++) {
     std::string BaseAndMethodName = R.In + "." + (*ItMethod)->In;
-    reisterMigrationRule(BaseAndMethodName, [=] {
-      return std::make_unique<clang::dpct::UserDefinedClassMethodRule>(R.In,
-                                                             (*ItMethod)->In);
-    });
+    registerMigrationRule(
+        BaseAndMethodName, [In = R.In, MethodIn = (*ItMethod)->In] {
+          return std::make_unique<clang::dpct::UserDefinedClassMethodRule>(
+              In, MethodIn);
+        });
 
     auto ItMethodRule =
         clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->find(
@@ -260,8 +263,8 @@ void registerEnumRule(MetaRuleObject &R) {
     if(R.EnumName == ""){
       return;
     }
-    reisterMigrationRule(R.RuleId, [=] {
-      return std::make_unique<clang::dpct::UserDefinedEnumRule>(R.EnumName);
+    registerMigrationRule(R.RuleId, [Enum = R.EnumName] {
+      return std::make_unique<clang::dpct::UserDefinedEnumRule>(Enum);
     });
     auto RulePtr = std::make_shared<EnumNameRule>(
         R.Out, clang::dpct::HelperFeatureEnum::none, R.Priority);
@@ -448,7 +451,7 @@ void OutputBuilder::parse(std::string &RuleOutputString) {
     auto StringBuilder = std::make_shared<OutputBuilder>();
     StringBuilder->Kind = Kind::String;
     StringBuilder->Str = RuleOutputString.substr(StrStartIdx, i - StrStartIdx);
-    SubBuilders.push_back(StringBuilder);
+    SubBuilders.push_back(std::move(StringBuilder));
   }
 }
 

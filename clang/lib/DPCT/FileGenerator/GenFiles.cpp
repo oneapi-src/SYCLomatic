@@ -382,7 +382,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
                            " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
-    auto FilePath = Iter->path();
+    auto &FilePath = Iter->path();
 
     // Skip output directory if it is in the in-root directory.
     if (isChildOrSamePath(OutRoot.str(), FilePath))
@@ -419,16 +419,16 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         }
         if (GetSourceFileType(FilePath) & SPT_CudaSource) {
           // Only migrates isolated CUDA source files.
-          FilesNotProcessed.push_back(FilePath);
+          FilesNotProcessed.push_back(std::move(FilePath));
         } else {
           // Collect the rest files which are not in the compilation database or
           // included by main source file in the compilation database.
-          FilesNotInCompilationDB.push_back(FilePath);
+          FilesNotInCompilationDB.push_back(std::move(FilePath));
         }
       }
 
     } else if (Iter->type() == fs::file_type::directory_file) {
-      const auto Path = Iter->path();
+      const auto &Path = Iter->path();
       clang::tooling::UnifiedPath OutDirectory = Path;
       if (!rewriteCanonicalDir(OutDirectory, InRoot, OutRoot)) {
         continue;
@@ -529,10 +529,10 @@ int writeReplacementsToFiles(
     OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
         Rewrite.getSourceMgr().getFileManager(), Entry.first));
     bool HasRealReplacements = true;
-    auto Repls = Entry.second;
+    const auto &Repls = Entry.second;
 
     if (Repls.size() == 1) {
-      auto Repl = *Repls.begin();
+      const auto &Repl = *Repls.begin();
       if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
         HasRealReplacements = false;
     }
@@ -1226,7 +1226,7 @@ void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
-            OriginPath, PreTU);
+            OriginPath, std::move(PreTU));
       } else {
         llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
       }

@@ -1250,6 +1250,8 @@ bool TextureRule::SettersMerger::applyResult() {
         ResultMap[S] = false;
       }
     }
+    ResultMapInserter(const ResultMapInserter &) = delete;
+    ResultMapInserter &operator=(const ResultMapInserter &) = delete;
     void update(size_t Index, const Stmt *S) {
       auto &Latest = LatestStmts[Index];
       if (Latest)

@@ -173,7 +173,7 @@ static void getCompileInfo(
       for (auto &Obj : ObjsInLKOrARCmd) {
         ObjsInLinkerCmdPerTarget[TargetName].push_back(Obj);
       }
-      ToolPerTarget[TargetName] = Tool;
+      ToolPerTarget[TargetName] = std::move(Tool);
     } else {
       continue;
     }
@@ -342,7 +342,7 @@ static void getCompileInfo(
         IsObjSpecified = true;
       } else if (IsObjName) {
         clang::tooling::UnifiedPath FilePathAbs(Option, Directory);
-        Orig2ObjMap[FileName] = FilePathAbs;
+        Orig2ObjMap[FileName] = std::move(FilePathAbs);
         IsObjName = false;
       } else if (llvm::StringRef(Option).starts_with("-O")) {
         // Keep optimization level same as original compile command.
@@ -377,7 +377,8 @@ static void getCompileInfo(
     // needs to be a existing file path passed to DpctFileInfo referred in
     // rewriteFileName() to avoid potential crash issue.
     rewriteFileName(FileName);
-    rewriteCanonicalDir(FileName, InRoot, OutRoot);
+    if (!rewriteCanonicalDir(FileName, InRoot, OutRoot))
+      continue;
 
     if (llvm::sys::fs::exists(FileName.getCanonicalPath())) {
       SmallString<512> OutDirectory(FileName.getCanonicalPath());
@@ -385,18 +386,18 @@ static void getCompileInfo(
                                            OutRoot.getCanonicalPath(), ".");
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = OutDirectory.c_str();
-      CmpInfo.CompileOptions = NewOptions;
+      CmpInfo.CompileOptions = std::move(NewOptions);
       CmpInfo.Compiler = Entry.second[1];
-      CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
+      CmdsMap[Orig2ObjMap[OrigFileName]] = std::move(CmpInfo);
     } else {
       SmallString<512> OutDirectory(OrigFileName.getCanonicalPath());
       llvm::sys::path::replace_path_prefix(OutDirectory,
                                            InRoot.getCanonicalPath(), ".");
       clang::tooling::CompilationInfo CmpInfo;
       CmpInfo.MigratedFileName = OutDirectory.c_str();
-      CmpInfo.CompileOptions = NewOptions;
+      CmpInfo.CompileOptions = std::move(NewOptions);
       CmpInfo.Compiler = Entry.second[1];
-      CmdsMap[Orig2ObjMap[OrigFileName]] = CmpInfo;
+      CmdsMap[Orig2ObjMap[OrigFileName]] = std::move(CmpInfo);
     }
   }
 
@@ -593,7 +594,7 @@ static void genMakefile(
 
         SmallString<512> Source = StringRef(Entry.second[Idx].MigratedFileName);
 
-        auto Option = Entry.second[Idx].CompileOptions;
+        auto &Option = Entry.second[Idx].CompileOptions;
         SmallString<512> Obj = StringRef(Source);
         path::replace_extension(Obj, "o");
 
@@ -676,7 +677,7 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool,
   }
 
   if (!NeedMergetYaml)
-    CompileCmdsPerTarget = NewCompileCmdsMap;
+    CompileCmdsPerTarget = std::move(NewCompileCmdsMap);
 
   genMakefile(Tool, OutRoot, BuildScriptName, CompileCmdsPerTarget,
               ToolPerTarget);

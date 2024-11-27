@@ -43,37 +43,38 @@ struct TypeNameRule {
   std::string BuildScriptSyntax;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
-      : NewName(Name), RequestFeature(clang::dpct::HelperFeatureEnum::none),
+      : NewName(std::move(Name)),
+        RequestFeature(clang::dpct::HelperFeatureEnum::none),
         Priority(RulePriority::Fallback), MatchMode(RuleMatchMode::Partial) {}
   TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
                RulePriority Priority = RulePriority::Fallback,
                RuleMatchMode MatchMode = RuleMatchMode::Partial)
-      : NewName(Name), RequestFeature(Feature), Priority(Priority),
+      : NewName(std::move(Name)), RequestFeature(Feature), Priority(Priority),
         MatchMode(MatchMode) {}
 };
 
 struct ClassFieldRule : public TypeNameRule {
   std::string SetterName;
   std::string GetterName;
-  ClassFieldRule(std::string Name) : TypeNameRule(Name) {}
+  ClassFieldRule(std::string Name) : TypeNameRule(std::move(Name)) {}
   ClassFieldRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
                  RulePriority Priority = RulePriority::Fallback,
                  RuleMatchMode MatchMode = RuleMatchMode::Partial)
-      : TypeNameRule(Name, Feature) {}
+      : TypeNameRule(std::move(Name), Feature) {}
   ClassFieldRule(std::string SetterName, std::string GetterName,
                  clang::dpct::HelperFeatureEnum Feature,
                  RulePriority Priority = RulePriority::Fallback,
                  RuleMatchMode MatchMode = RuleMatchMode::Partial)
-      : TypeNameRule(SetterName, Feature), SetterName(SetterName),
-        GetterName(GetterName) {}
+      : TypeNameRule(std::move(SetterName), Feature), SetterName(NewName),
+        GetterName(std::move(GetterName)) {}
 };
 
 struct EnumNameRule : public TypeNameRule {
-  EnumNameRule(std::string Name) : TypeNameRule(Name) {}
+  EnumNameRule(std::string Name) : TypeNameRule(std::move(Name)) {}
   EnumNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
-                 RulePriority Priority = RulePriority::Fallback,
-                 RuleMatchMode MatchMode = RuleMatchMode::Partial)
-      : TypeNameRule(Name, Feature) {}
+               RulePriority Priority = RulePriority::Fallback,
+               RuleMatchMode MatchMode = RuleMatchMode::Partial)
+      : TypeNameRule(std::move(Name), Feature) {}
 };
 
 // Record all information of imported rules
@@ -166,9 +167,9 @@ public:
       std::string Id, RulePriority Priority, RuleKind Kind, std::string In,
       std::string Out, clang::dpct::HelperFeatureEnum HelperFeature,
       const std::vector<std::string> &Includes = std::vector<std::string>())
-      : Id(Id), Priority(Priority), MatchMode(RuleMatchMode::Partial),
-        Kind(Kind), In(In), Out(Out), HelperFeature(HelperFeature),
-        Includes(Includes) {}
+      : Id(std::move(Id)), Priority(Priority),
+        MatchMode(RuleMatchMode::Partial), Kind(Kind), In(std::move(In)),
+        Out(std::move(Out)), HelperFeature(HelperFeature), Includes(Includes) {}
 };
 
 class MacroMigrationRule : public RuleBase {
@@ -179,8 +180,8 @@ public:
       clang::dpct::HelperFeatureEnum Helper =
           clang::dpct::HelperFeatureEnum::none,
       const std::vector<std::string> &Includes = std::vector<std::string>())
-      : RuleBase(Id, Priority, RuleKind::Macro, InStr, OutStr, Helper,
-                 Includes) {}
+      : RuleBase(std::move(Id), Priority, RuleKind::Macro, std::move(InStr),
+                 std::move(OutStr), Helper, Includes) {}
 };
 
 // The parsing result of the "Out" attribute of a API rule
