@@ -31,7 +31,7 @@ struct Mat {
   }
 
 void run_foo1(Mat mat) {
-  // CHECK: DISPATCH(mat.getType(), ([&] {   dpct::get_device(dpct::get_device_id(dpct::get_in_order_queue().get_device())).has_capability_or_fail({sycl::aspect::fp64});
+  // CHECK: DISPATCH(mat.getType(), ([&] {   dpct::has_capability_or_fail(dpct::get_in_order_queue().get_device(), {sycl::aspect::fp64});
   // CHECK-EMPTY:
   // CHECK-NEXT: dpct::get_in_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
