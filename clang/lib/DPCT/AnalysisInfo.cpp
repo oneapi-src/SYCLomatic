@@ -6934,6 +6934,25 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
   if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImplicitAsWritten())) {
     if (auto DD = dyn_cast<DeclaratorDecl>(DRE->getDecl()))
       TL = DD->getTypeSourceInfo()->getTypeLoc();
+  } else if (const auto *CMCE =
+                 dyn_cast<CXXMemberCallExpr>(Arg->IgnoreImplicitAsWritten())) {
+    if (const auto *MD = CMCE->getMethodDecl()) {
+      QualType ReturnType = MD->getReturnType();
+      if (const auto *PtrType = ReturnType->getAs<PointerType>()) {
+        QualType PointeeType = PtrType->getPointeeType();
+        if (const auto *SubstType =
+                PointeeType->getAs<SubstTemplateTypeParmType>()) {
+          const auto Index = SubstType->getIndex();
+          if (const auto *Callee = dyn_cast<MemberExpr>(CMCE->getCallee())) {
+            if (Index < Callee->getNumTemplateArgs())
+              ArgType = DpctGlobalInfo::getContext().getPointerType(
+                  Callee->getTemplateArgs()[Index]
+                      .getTypeSourceInfo()
+                      ->getType());
+          }
+        }
+      }
+    }
   }
   deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
 }
