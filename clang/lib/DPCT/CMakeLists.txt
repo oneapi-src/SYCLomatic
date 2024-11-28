@@ -119,6 +119,7 @@ add_clang_library(DPCT
   RulesLang/RulesLangAtomic.cpp
   RulesLang/RulesLangCooperativeGroups.cpp
   RulesLang/RulesLangTexture.cpp
+  RulesLang/RulesLangAddrSpaceConv.cpp
   RulesLangLib/CUB/CallExprRewriterCUB.cpp
   RulesLangLib/CUB/RewriterClassMethods.cpp
   RulesLangLib/CUB/RewriterDeviceHistgram.cpp

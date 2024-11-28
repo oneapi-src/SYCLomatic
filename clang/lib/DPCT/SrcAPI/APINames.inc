@@ -2308,6 +2308,16 @@ ENTRY(make_cuFloatComplex, make_cuFloatComplex, true, NO_FLAG, P4, "comment")
 ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
 ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
 
+// Address Space Conversion Functions
+ENTRY(__cvta_generic_to_global, __cvta_generic_to_global, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_generic_to_shared, __cvta_generic_to_shared, true, NO_FLAG, P7, "comment")
+ENTRY(__cvta_generic_to_constant, __cvta_generic_to_constant, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_generic_to_local, __cvta_generic_to_local, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_global_to_generic, __cvta_global_to_generic, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_shared_to_generic, __cvta_shared_to_generic, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_constant_to_generic, __cvta_constant_to_generic, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_local_to_generic, __cvta_local_to_generic, false, NO_FLAG, P7, "comment")
+
 ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Partial")
 
 // clang-format on
