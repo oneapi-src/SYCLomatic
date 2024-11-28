@@ -19,6 +19,7 @@
 #include "RulesMathLib/MapNamesRandom.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
+#include "clang/AST/DeclBase.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
@@ -2708,16 +2709,15 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   return LatestCS;
 }
 
-const FunctionDecl *findTheOuterMostFunctionDecl(const clang::Decl *N) {
-  if (!N)
+const FunctionDecl *findTheOuterMostFunctionDecl(const clang::Decl *D) {
+  if (!D)
     return nullptr;
   const FunctionDecl *FD = nullptr;
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto Parents = Context.getParents(*N);
-  while (Parents.size() > 0) {
-    if (auto *Parent = Parents[0].get<FunctionDecl>())
-      FD = Parent;
-    Parents = Context.getParents(Parents[0]);
+  const DeclContext *Ctx = D->getDeclContext();
+  while (Ctx) {
+    if (Ctx->getDeclKind() == Decl::Function)
+      FD = dyn_cast<FunctionDecl>(Ctx);
+    Ctx = Ctx->getParent();
   }
   return FD;
 }
