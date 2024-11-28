@@ -113,7 +113,7 @@ std::string getVarName(const std::string &Variable) {
     auto Name = Variable.substr(2, Variable.size() - 3);
 
     auto Iter = CmakeVarMap.find(Name);
-    if (CmakeVarMap.find(Name) != CmakeVarMap.end()) {
+    if (Iter != CmakeVarMap.end()) {
       Value = Iter->second;
     }
   } else {
@@ -153,7 +153,6 @@ static void parseVariable(const std::string &Input) {
       if (Command == "set") {
         Index++; // Skip '('
         std::string VarName;
-        std::string Value;
 
         // Get the begin of first argument of set
         Index = skipWhiteSpaces(Input, Index);
@@ -176,16 +175,14 @@ static void parseVariable(const std::string &Input) {
         Index = gotoEndOfCmakeWord(Input, Begin + 1, ')');
         End = Index;
 
-        // Get the name of the second argument
-        Value = Input.substr(Begin, End - Begin);
-
         // Only check the set commands which has two arguments.
         // And skip cmake reserves identifiers that begins with "CMAKE_" and
         // "_CMAKE_".
         if (Input[Index] == ')' &&
             !llvm::StringRef(VarName).starts_with("CMAKE_") &&
             !llvm::StringRef(VarName).starts_with("_CMAKE_ ")) {
-          CmakeVarMap[VarName] = Value;
+          // Get the name of the second argument
+          CmakeVarMap[VarName] = Input.substr(Begin, End - Begin);
         }
       }
 
@@ -216,15 +213,15 @@ static std::string processArgOfCmakeVersionRequired(
                std::atof(MaxVer.c_str()) > std::atof(CmakeMinVerion.c_str())) {
       ReplArg = CmakeMinVerion + "..." + MaxVer;
     } else {
-      ReplArg = CmakeMinVerion;
+      ReplArg = std::move(CmakeMinVerion);
     }
 
   } else {
     std::string Ver = getVarName(Arg);
     if (std::atof(Ver.c_str()) < std::atof(CmakeMinVerion.c_str())) {
-      ReplArg = CmakeMinVerion;
+      ReplArg = std::move(CmakeMinVerion);
     } else {
-      ReplArg = Ver;
+      ReplArg = std::move(Ver);
     }
   }
   return ReplArg;
@@ -403,7 +400,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
           WarningMsg += DiagnosticsUtils::getMsgText(
               CMakeScriptMigrationMsgs::CMAKE_CONFIG_FILE_WARNING, Str);
           WarningMsg += "\n";
-          FileWarningsMap[FileName].push_back(WarningMsg);
+          FileWarningsMap[FileName].push_back(std::move(WarningMsg));
 
           OutputStream
               << "# "
@@ -418,7 +415,7 @@ static std::string convertCmakeCommandsToLower(const std::string &InputString,
           WarningMsg += DiagnosticsUtils::getMsgText(
               CMakeScriptMigrationMsgs::CMAKE_NOT_SUPPORT_WARNING, Str);
           WarningMsg += "\n";
-          FileWarningsMap[FileName].push_back(WarningMsg);
+          FileWarningsMap[FileName].push_back(std::move(WarningMsg));
 
           OutputStream
               << "# "

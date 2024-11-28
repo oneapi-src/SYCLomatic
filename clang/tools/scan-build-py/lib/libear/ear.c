@@ -488,6 +488,11 @@ static int call_eaccess(const char *pathname, int mode) {
 }
 
 int eaccess(const char *pathname, int mode) {
+  int ret = call_eaccess(pathname, mode);
+  if (ret == 0) {
+    return 0;
+  }
+
   int len = strlen(pathname);
   if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
       pathname[1] == 'v' && pathname[0] == 'n') {
@@ -500,7 +505,65 @@ int eaccess(const char *pathname, int mode) {
     // To handle case like "/path/to/nvcc foo.cu ..."
     return 0;
   }
-  return call_eaccess(pathname, mode);
+  return ret;
+}
+
+const char *get_intercept_stub_path(void) {
+
+  const char *intercept_stub_path = getenv("INTERCEPT_STUB_PATH");
+  if (intercept_stub_path) {
+    return intercept_stub_path;
+  }
+
+  perror("bear: failed to get value of environment variable "
+         "'INTERCEPT_STUB_PATH'\n");
+  exit(EXIT_FAILURE);
+}
+
+static int call_stat(const char *pathname, struct stat *statbuf) {
+  typedef int (*func)(const char *, struct statbuf *);
+  DLSYM(func, fp, "stat");
+  int const result = (*fp)(pathname, statbuf);
+  return result;
+}
+
+int stat(const char *pathname, struct stat *statbuf) {
+  int ret = call_stat(pathname, statbuf);
+  if (ret == 0) {
+    return 0;
+  }
+  int len = strlen(pathname);
+  if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
+      pathname[1] == 'v' && pathname[0] == 'n') {
+    // To handle case like "nvcc foo.cu ..."
+
+    const char *nvcc_path = getenv("INTERCEPT_COMPILE_PATH");
+    if (nvcc_path) {
+      call_stat(nvcc_path, statbuf);
+      return 0;
+    }
+
+    pathname = get_intercept_stub_path();
+    call_stat(pathname, statbuf);
+    return 0;
+  }
+
+  if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
+      pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
+      pathname[len - 5] == '/') {
+    // To handle case like "/path/to/nvcc foo.cu ..."
+
+    const char *nvcc_path = getenv("INTERCEPT_COMPILE_PATH");
+    if (nvcc_path) {
+      call_stat(nvcc_path, statbuf);
+      return 0;
+    }
+
+    pathname = get_intercept_stub_path();
+    call_stat(pathname, statbuf);
+    return 0;
+  }
+  return ret;
 }
 
 /*
@@ -1616,39 +1679,7 @@ void emit_cmake_warning(char const *argv[], int argc) {
 // returns no return value.
 char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
                           const char *const compiler_array[]) {
-  FILE *fp;
-  char replacement[PATH_MAX];
-  char file_path[PATH_MAX];
-
-  fp = popen("which dpct", "r");
-  if (fp == NULL) {
-    perror("bear: failed to run command 'which dpct'\n");
-    exit(EXIT_FAILURE);
-  }
-
-  if (fgets(replacement, PATH_MAX, fp) == NULL) {
-    perror("bear: fgets\n");
-    exit(EXIT_FAILURE);
-  }
-  pclose(fp);
-  replacement[strlen(replacement) - 1] =
-      '\0'; // to remove extra '\n' added by "which dpct"
-
-  char *res = realpath(
-      replacement,
-      file_path); // to get the canonicalized absolute pathname in file_path
-
-  if (!res) {
-    perror("bear: realpath\n");
-    exit(EXIT_FAILURE);
-  }
-  if ((strlen(file_path) + strlen("lib/libear/intercept-stub") -
-       strlen("bin/dpct")) >= PATH_MAX) {
-    perror("bear: strcpy overflow, path to dpct is too long.\n");
-    exit(EXIT_FAILURE);
-  }
-  strcpy(file_path + strlen(file_path) - strlen("bin/dpct"),
-         "lib/libear/intercept-stub");
+  const char *file_path = get_intercept_stub_path();
 
   // To malloc required size of physical memory it really needs may fail in
   // some case, so malloc 4K bytes (one physical page) instead.
@@ -1688,53 +1719,31 @@ int is_tool_available(const char *pathname) {
 
   int len = strlen(pathname);
   int is_nvcc = 0;
+  int is_nvcc_available = 0;
+
+  const char *env_var = "INTERCEPT_COMPILE_PATH";
+  char *value = getenv(env_var);
+  if (value) {
+    is_nvcc_available = 1;
+  }
+
   if (len == 4 && pathname[3] == 'c' && pathname[2] == 'c' &&
       pathname[1] == 'v' && pathname[0] == 'n') {
     // To handle case like "nvcc"
     is_nvcc = 1;
   }
-
   if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
       pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&
       pathname[len - 5] == '/') {
     // To handle case like "/path/to/nvcc"
     is_nvcc = 1;
   }
-
   if (is_nvcc) {
-    int idx = len - 4;
-    for (; idx > 0 && !isspace(pathname[idx]); idx--)
-      ;
-    struct stat buffer;
-    if (stat(pathname + idx, &buffer) == 0) {
+    if (is_nvcc_available) {
       return 1;
     }
     return 0;
   }
-
-  int is_ld = 0;
-  if (len == 2 && pathname[1] == 'd' && pathname[0] == 'l') {
-    // To handle case like "ld"
-    is_ld = 1;
-  }
-
-  if (len > 2 && pathname[len - 1] == 'd' && pathname[len - 2] == 'l' &&
-      pathname[len - 3] == '/') {
-    // To handle case like "/path/to/ld"
-    is_ld = 1;
-  }
-
-  if (is_ld) {
-    int idx = len - 2;
-    for (; idx > 0 && !isspace(pathname[idx]); idx--)
-      ;
-    struct stat buffer;
-    if (stat(pathname + idx, &buffer) == 0) {
-      return 1;
-    }
-    return 0;
-  }
-
   return 1;
 }
 

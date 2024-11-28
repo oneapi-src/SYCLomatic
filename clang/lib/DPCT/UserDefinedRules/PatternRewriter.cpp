@@ -118,7 +118,7 @@ static std::string indent(const std::string &Input, int Indentation) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
     Output.push_back(ContainsNonWhitespace ? (Indent + trim(Line)) : "");
   }
-  std::string Str = trim(join(Output, "\n"));
+  std::string Str = trim(join(std::move(Output), "\n"));
   return Str;
 }
 
@@ -217,10 +217,9 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
       if (RightCurly == std::string::npos) {
         throw std::runtime_error("Invalid match pattern expression");
       }
-      std::string Name = Pattern.substr(Index, RightCurly - Index);
-      Index = RightCurly + 1;
 
-      Result.push_back(CodeElement{Name});
+      Result.push_back(CodeElement{Pattern.substr(Index, RightCurly - Index)});
+      Index = RightCurly + 1;
       continue;
     }
 

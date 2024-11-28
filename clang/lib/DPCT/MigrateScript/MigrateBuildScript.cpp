@@ -110,7 +110,7 @@ getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
       if (fs::exists(appendPath(Path.getCanonicalPath().str(), "CMakeFiles")) &&
           fs::exists(
               appendPath(Path.getCanonicalPath().str(), "CMakeCache.txt"))) {
-        CmakeBuildDirectory = Path;
+        CmakeBuildDirectory = std::move(Path);
         break;
       }
     }

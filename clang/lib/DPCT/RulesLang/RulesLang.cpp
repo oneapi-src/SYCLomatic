@@ -66,7 +66,8 @@ static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
 static internal::Matcher<NamedDecl> vectorTypeName() {
   std::vector<std::string> TypeNames(MapNamesLang::SupportedVectorTypes.begin(),
                                      MapNamesLang::SupportedVectorTypes.end());
-  return internal::Matcher<NamedDecl>(new internal::HasNameMatcher(TypeNames));
+  return internal::Matcher<NamedDecl>(
+      new internal::HasNameMatcher(std::move(TypeNames)));
 }
 
 void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
@@ -847,6 +848,13 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         if (!isRedeclInCUDAHeader(TT))
           return;
       }
+      if (const auto *RecDeclRepr =
+              TL->getType().getCanonicalType()->getAsRecordDecl()) {
+        // Skip types whose names are matching with CUDA types and defined in
+        // includes outside of in-root
+        if (!DpctGlobalInfo::isInCudaPath(RecDeclRepr->getBeginLoc()))
+          return;
+      }
     }
 
     // if TL is the T in
@@ -1203,10 +1211,19 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TL->getBeginLoc().isInvalid())
       return;
 
-    // To skip user-defined type.
+    // To skip user-defined type (found in in-root and from third party includes
+    // outside of in-root)
     if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
       auto Loc = ND->getBeginLoc();
       if (DpctGlobalInfo::isInAnalysisScope(Loc))
+        return;
+    }
+
+    if (const auto *RecDeclRepr =
+            TL->getType().getCanonicalType()->getAsRecordDecl()) {
+      // Skip types whose names are matching with CUDA types and defined in
+      // includes outside of in-root
+      if (!DpctGlobalInfo::isInCudaPath(RecDeclRepr->getBeginLoc()))
         return;
     }
 

@@ -26,9 +26,9 @@ public:
                                             std::vector<std::string> bt,
                                             std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -36,10 +36,10 @@ public:
     migrateBufferAndRedundant(std::vector<int> bi, std::vector<std::string> bt,
                               std::vector<int> ri, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.RedundantIndexInfo = ri;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -48,15 +48,15 @@ public:
         std::vector<int> mfi, std::vector<int> mti, std::vector<int> wssid,
         std::vector<int> wssi, std::string wssfn, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.RedundantIndexInfo = ri;
-      repl.MoveFrom = mfi;
-      repl.MoveTo = mti;
-      repl.WSSizeInsertAfter = wssid;
-      repl.WSSizeInfo = wssi;
-      repl.WSSFuncName = wssfn;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.MoveFrom = std::move(mfi);
+      repl.MoveTo = std::move(mti);
+      repl.WSSizeInsertAfter = std::move(wssid);
+      repl.WSSizeInfo = std::move(wssi);
+      repl.WSSFuncName = std::move(wssfn);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -64,8 +64,8 @@ public:
     migrateReturnAndRedundant(bool q2d, std::vector<int> ri, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
       repl.ReturnValue = true;
-      repl.RedundantIndexInfo = ri;
-      repl.ReplName = s;
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -75,9 +75,9 @@ public:
                                                    std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
       repl.ReturnValue = q2d;
-      repl.CopyFrom = cfi;
-      repl.CopyTo = cti;
-      repl.ReplName = s;
+      repl.CopyFrom = std::move(cfi);
+      repl.CopyTo = std::move(cti);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -87,14 +87,14 @@ public:
                            std::vector<bool> mab, std::vector<std::string> mat,
                            std::vector<std::string> man, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.MissedArgumentFinalLocation = mafl;
-      repl.MissedArgumentInsertBefore = mai;
-      repl.MissedArgumentIsBuffer = mab;
-      repl.MissedArgumentType = mat;
-      repl.MissedArgumentName = man;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.MissedArgumentFinalLocation = std::move(mafl);
+      repl.MissedArgumentInsertBefore = std::move(mai);
+      repl.MissedArgumentIsBuffer = std::move(mab);
+      repl.MissedArgumentType = std::move(mat);
+      repl.MissedArgumentName = std::move(man);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -105,14 +105,14 @@ public:
         std::vector<std::string> man, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
       repl.ReturnValue = q2d;
-      repl.RedundantIndexInfo = ri;
-      repl.CopyFrom = cfi;
-      repl.CopyTo = cti;
-      repl.MissedArgumentFinalLocation = mafl;
-      repl.MissedArgumentInsertBefore = mai;
-      repl.MissedArgumentIsBuffer = mab;
-      repl.MissedArgumentType = mat;
-      repl.MissedArgumentName = man;
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.CopyFrom = std::move(cfi);
+      repl.CopyTo = std::move(cti);
+      repl.MissedArgumentFinalLocation = std::move(mafl);
+      repl.MissedArgumentInsertBefore = std::move(mai);
+      repl.MissedArgumentIsBuffer = std::move(mab);
+      repl.MissedArgumentType = std::move(mat);
+      repl.MissedArgumentName = std::move(man);
       repl.ReplName = s;
       return repl;
     };
@@ -124,13 +124,13 @@ public:
         std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
       repl.ReturnValue = q2d;
-      repl.RedundantIndexInfo = ri;
-      repl.MissedArgumentFinalLocation = mafl;
-      repl.MissedArgumentInsertBefore = mai;
-      repl.MissedArgumentIsBuffer = mab;
-      repl.MissedArgumentType = mat;
-      repl.MissedArgumentName = man;
-      repl.ReplName = s;
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.MissedArgumentFinalLocation = std::move(mafl);
+      repl.MissedArgumentInsertBefore = std::move(mai);
+      repl.MissedArgumentIsBuffer = std::move(mab);
+      repl.MissedArgumentType = std::move(mat);
+      repl.MissedArgumentName = std::move(man);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -140,11 +140,11 @@ public:
                                                    std::vector<std::string> ct,
                                                    std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.CastIndexInfo = ci;
-      repl.CastTypeInfo = ct;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.CastIndexInfo = std::move(ci);
+      repl.CastTypeInfo = std::move(ct);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -152,12 +152,12 @@ public:
         std::vector<int> bi, std::vector<std::string> bt, std::vector<int> ri,
         std::vector<int> ci, std::vector<std::string> ct, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.RedundantIndexInfo = ri;
-      repl.CastIndexInfo = ci;
-      repl.CastTypeInfo = ct;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.CastIndexInfo = std::move(ci);
+      repl.CastTypeInfo = std::move(ct);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -166,13 +166,13 @@ public:
         std::vector<int> wsi, std::vector<int> wss, std::string wsn,
         std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.RedundantIndexInfo = ri;
-      repl.WorkspaceIndexInfo = wsi;
-      repl.WorkspaceSizeInfo = wss;
-      repl.WorkspaceSizeFuncName = wsn;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.WorkspaceIndexInfo = std::move(wsi);
+      repl.WorkspaceSizeInfo = std::move(wss);
+      repl.WorkspaceSizeFuncName = std::move(wsn);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -182,16 +182,16 @@ public:
         std::vector<std::string> mat, std::vector<std::string> man,
         std::vector<int> ci, std::vector<std::string> ct, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
-      repl.BufferIndexInfo = bi;
-      repl.BufferTypeInfo = bt;
-      repl.MissedArgumentFinalLocation = mafl;
-      repl.MissedArgumentInsertBefore = mai;
-      repl.MissedArgumentIsBuffer = mab;
-      repl.MissedArgumentType = mat;
-      repl.MissedArgumentName = man;
-      repl.CastIndexInfo = ci;
-      repl.CastTypeInfo = ct;
-      repl.ReplName = s;
+      repl.BufferIndexInfo = std::move(bi);
+      repl.BufferTypeInfo = std::move(bt);
+      repl.MissedArgumentFinalLocation = std::move(mafl);
+      repl.MissedArgumentInsertBefore = std::move(mai);
+      repl.MissedArgumentIsBuffer = std::move(mab);
+      repl.MissedArgumentType = std::move(mat);
+      repl.MissedArgumentName = std::move(man);
+      repl.CastIndexInfo = std::move(ci);
+      repl.CastTypeInfo = std::move(ct);
+      repl.ReplName = std::move(s);
       return repl;
     };
 
@@ -201,10 +201,10 @@ public:
                                   std::vector<std::string> ct, std::string s) {
       MapNamesSolver::SOLVERFuncReplInfo repl;
       repl.ReturnValue = q2d;
-      repl.RedundantIndexInfo = ri;
-      repl.CastIndexInfo = ci;
-      repl.CastTypeInfo = ct;
-      repl.ReplName = s;
+      repl.RedundantIndexInfo = std::move(ri);
+      repl.CastIndexInfo = std::move(ci);
+      repl.CastTypeInfo = std::move(ct);
+      repl.ReplName = std::move(s);
       return repl;
     };
 

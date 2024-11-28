@@ -564,27 +564,27 @@ void parseVaribles(const std::string &VcxprojFile) {
   std::string Line;
 
   while (std::getline(InFile, Line)) {
-    if (Line.find("<") != std::string::npos) {
-      const size_t BeginNodeStart = Line.find("<");
-      const size_t BeginNodeEnd = Line.find(">", BeginNodeStart + 1);
-      const size_t EndNodeStart = Line.find("</", BeginNodeEnd + 1);
-      const size_t EndNodeEnd = Line.find(">", EndNodeStart + 1);
+    const size_t BeginNodeStart = Line.find("<");
+    if (BeginNodeStart == std::string::npos)
+      continue;
+    const size_t BeginNodeEnd = Line.find(">", BeginNodeStart + 1);
+    if (BeginNodeEnd == std::string::npos)
+      continue;
+    const size_t EndNodeStart = Line.find("</", BeginNodeEnd + 1);
+    if (EndNodeStart == std::string::npos)
+      continue;
+    const size_t EndNodeEnd = Line.find(">", EndNodeStart + 1);
+    if (EndNodeEnd == std::string::npos)
+      continue;
 
-      if (BeginNodeStart != std::string::npos &&
-          BeginNodeEnd != std::string::npos &&
-          EndNodeStart != std::string::npos &&
-          EndNodeEnd != std::string::npos) {
-        const std::string BeginVariableName =
-            Line.substr(BeginNodeStart + 1, BeginNodeEnd - BeginNodeStart - 1);
-        const std::string EndVariableName =
-            Line.substr(EndNodeStart + 2, EndNodeEnd - EndNodeStart - 2);
-        if (BeginVariableName == EndVariableName) {
-          std::string Value =
-              Line.substr(BeginNodeEnd + 1, EndNodeStart - BeginNodeEnd - 1);
-          if (VariablesMap.find(BeginVariableName) == VariablesMap.end()) {
-            VariablesMap[BeginVariableName] = Value;
-          }
-        }
+    const std::string BeginVariableName =
+        Line.substr(BeginNodeStart + 1, BeginNodeEnd - BeginNodeStart - 1);
+    const std::string EndVariableName =
+        Line.substr(EndNodeStart + 2, EndNodeEnd - EndNodeStart - 2);
+    if (BeginVariableName == EndVariableName) {
+      if (VariablesMap.find(BeginVariableName) == VariablesMap.end()) {
+        VariablesMap[BeginVariableName] =
+            Line.substr(BeginNodeEnd + 1, EndNodeStart - BeginNodeEnd - 1);
       }
     }
   }
