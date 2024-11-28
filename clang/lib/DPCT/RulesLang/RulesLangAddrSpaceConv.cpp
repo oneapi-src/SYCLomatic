@@ -49,14 +49,14 @@ void RulesLangAddrSpaceConvRule::runRule(
   const auto *Init = VD->getInit();
   if (Init->IgnoreCasts() != CE)
     return;
-  
+
   // Check (2)
   const auto *CS = llvm::dyn_cast_or_null<CompoundStmt>(getParentStmt(DS));
   if (!CS)
     return;
   bool FoundDecl = false;
   const AsmStmt *AS = nullptr;
-  for (const auto & Stmt : CS->body()) {
+  for (const auto &Stmt : CS->body()) {
     if (Stmt == DS) {
       FoundDecl = true;
       continue;
