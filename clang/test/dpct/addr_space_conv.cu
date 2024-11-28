@@ -7,7 +7,7 @@
 __global__ void kernel1(const void* ptr) {
   // In PTX, addresses of the local and shared memory spaces are always 32 bits in size.
   __shared__ float shared_array[1024];
-  // CHECK: std::uint64_t smem = reinterpret_cast<std::uint64_t>(shared_array);
+  // CHECK: auto smem = shared_array;
   uint32_t smem = static_cast<uint32_t>(__cvta_generic_to_shared(shared_array));
 #ifndef NO_BUILD_TEST
   asm volatile(

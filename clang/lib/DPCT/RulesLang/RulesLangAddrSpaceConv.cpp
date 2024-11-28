@@ -35,8 +35,7 @@ void RulesLangAddrSpaceConvRule::runRule(
     return;
   // Check if meets below conditions:
   // (1) A vardecl's init value is the "call" (or after type cast).
-  // (2) The next stmt of the vardecl is an asm stmt.
-  // (3) The var is only used as the asm stmt parameter.
+  // (2) The var is only used as the asm stmt parameter.
 
   // Check (1)
   const auto *DS = DpctGlobalInfo::findAncestor<DeclStmt>(CE);
@@ -47,40 +46,30 @@ void RulesLangAddrSpaceConvRule::runRule(
   if (!VD)
     return;
   const auto *Init = VD->getInit();
+  if (!Init)
+    return;
   if (Init->IgnoreCasts() != CE)
     return;
 
   // Check (2)
-  const auto *CS = llvm::dyn_cast_or_null<CompoundStmt>(getParentStmt(DS));
-  if (!CS)
+  const auto *Ctx = VD->getDeclContext();
+  const auto *FD = dyn_cast<FunctionDecl>(Ctx);
+  if (!FD)
     return;
-  bool FoundDecl = false;
-  const AsmStmt *AS = nullptr;
-  for (const auto &Stmt : CS->body()) {
-    if (Stmt == DS) {
-      FoundDecl = true;
-      continue;
-    }
-    if (FoundDecl) {
-      AS = dyn_cast<AsmStmt>(Stmt);
-      break;
-    }
-  }
-  if (!AS)
+  if (!FD->hasBody())
     return;
-
-  // Check (3)
-  std::set<const clang::DeclRefExpr *> DREs = matchTargetDREInScope(VD, CS);
+  std::set<const clang::DeclRefExpr *> DREs =
+      matchTargetDREInScope(VD, FD->getBody());
   if (DREs.size() != 1)
     return;
   const auto *DRE = *DREs.begin();
-  if (!DpctGlobalInfo::isAncestor(AS, DRE))
+  const auto *AS = DpctGlobalInfo::findAncestor<AsmStmt>(DRE);
+  if (!AS)
     return;
 
   // Generate replacement
-  std::string ReplacementStr = "std::uint64_t " + VD->getNameAsString() +
-                               " = reinterpret_cast<std::uint64_t>(" +
-                               ExprAnalysis::ref(CE->getArg(0)) + ");";
+  std::string ReplacementStr = "auto " + VD->getNameAsString() + " = " +
+                               ExprAnalysis::ref(CE->getArg(0)) + ";";
   emplaceTransformation(new ReplaceDecl(VD, std::move(ReplacementStr)));
 }
 
