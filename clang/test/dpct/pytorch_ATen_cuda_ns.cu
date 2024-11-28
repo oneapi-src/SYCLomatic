@@ -17,8 +17,8 @@
 // CHECK: #include <ATen/core/Tensor.h>
 #include <ATen/core/Tensor.h>
 
-int main(){
-   
+int main() {
+
   return 0;
 }
 #endif
