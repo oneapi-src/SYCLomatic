@@ -27,6 +27,9 @@ import itertools
 import json
 import glob
 import logging
+# SYCLomatic_CUSTOMIZATION begin
+import subprocess
+# SYCLomatic_CUSTOMIZATION end
 from libear import build_libear, TemporaryDirectory
 from libscanbuild import (
     command_entry_point,
@@ -119,6 +122,9 @@ def capture(args):
         entries_post = []
         occur_set = set()
         for entry in entries:
+            # filter out the commmands that use /tmp/ directory
+            if " /tmp/" in entry["command"]:
+                continue
             if not ("file" in entry):
                 key = entry["directory"] + entry["command"]
                 if key not in occur_set:
@@ -162,8 +168,49 @@ def capture(args):
         # dump the compilation database
         with open(args.cdb, "w+") as handle:
             json.dump(entries, handle, sort_keys=True, indent=4)
+
         return exit_code
 
+# SYCLomatic_CUSTOMIZATION begin
+def set_sys_env_var(variable_name, value):
+    """Set an environment variable and ensure it is available to other processes."""
+    try:
+        os.environ[variable_name] = value
+        export_command = f'export {variable_name}="{value}"'
+        subprocess.run(export_command, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.debug(f"Error while exporting the environment variable: {e}")
+    except Exception as e:
+        logging.debug(f"An error occurred: {e}")
+
+def find_nvcc_and_set_env_variable():
+    """Check if nvcc is available and set environment variable."""
+    # Check if nvcc exists in the path of environment PATH
+    nvcc_path = None
+    for path in os.environ.get("PATH", "").split(os.pathsep):
+        possible_path = os.path.join(path, "nvcc")
+        if os.path.isfile(possible_path) and os.access(possible_path, os.X_OK):
+            nvcc_path = possible_path
+            break
+
+    if nvcc_path:
+        set_sys_env_var("INTERCEPT_COMPILE_PATH", nvcc_path)
+        return
+
+    # Search for nvcc in CUDA SDK default installation directories.
+    # Look for directories like /usr/local/cuda-*
+    cuda_dirs = glob.glob("/usr/local/cuda-*")
+    for cuda_dir in cuda_dirs:
+        possible_path = os.path.join(cuda_dir, "bin", "nvcc")
+        if os.path.isfile(possible_path) and os.access(possible_path, os.X_OK):
+            nvcc_path = possible_path
+            break
+
+    if nvcc_path:
+        set_system_environment_variable("INTERCEPT_COMPILE_PATH", nvcc_path)
+        return
+
+# SYCLomatic_CUSTOMIZATION end
 
 def setup_environment(args, destination):
     """Sets up the environment for the build command.
@@ -171,6 +218,18 @@ def setup_environment(args, destination):
     It sets the required environment variables and execute the given command.
     The exec calls will be logged by the 'libear' preloaded library or by the
     'wrapper' programs."""
+
+    # SYCLomatic_CUSTOMIZATION begin
+    # if nvcc is available in the PATH environment variable or in default
+    # CUDA installation directories, set envrionment INTERCEPT_COMPILE_PATH used in 'libear'.
+    find_nvcc_and_set_env_variable()
+
+    cur_dir = os.path.dirname(sys.argv[0])
+    file_path_1 = os.path.join(cur_dir, "..", "lib", "libear","intercept-stub")
+    file_path_2 = os.path.join(cur_dir, "..", "opt", "dpct", "lib", "libear","intercept-stub")
+    intercept_stub_path = file_path_1 if os.access(file_path_1, os.X_OK) else file_path_2
+    set_sys_env_var("INTERCEPT_STUB_PATH", intercept_stub_path)
+    # SYCLomatic_CUSTOMIZATION end
 
     c_compiler = args.cc if "cc" in args else "cc"
     cxx_compiler = args.cxx if "cxx" in args else "c++"
