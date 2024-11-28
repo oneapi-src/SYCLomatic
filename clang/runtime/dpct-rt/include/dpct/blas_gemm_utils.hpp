@@ -1036,9 +1036,9 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     } else if (compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_erf, 0.f, 0.f);
       matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
-      //dpct::blas::matrix_mem_copy(matmul_desc_t::attribute::epilogue_aux_pointer, bias_mem,
-      //                            matmul_desc_t::attribute::epilogue_aux_ld, new_ldc, m, n,
-      //                            sizeof(size_t) , q_ptr);
+      dpct::blas::matrix_mem_copy(matmul_desc_t::attribute::epilogue_aux_pointer, bias_mem,
+                                  matmul_desc_t::attribute::epilogue_aux_ld, new_ldc, m, n,
+                                  sizeof(size_t) , q_ptr);
     }
     matmul_attr.set_post_ops(matmul_ops);
   }
