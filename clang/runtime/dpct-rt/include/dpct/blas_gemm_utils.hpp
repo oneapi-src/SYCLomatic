@@ -15,6 +15,7 @@
 
 #include "compat_service.hpp"
 #include "dnnl_utils.hpp"
+#include "blas_utils.hpp"
 
 namespace dpct {
 namespace blas_gemm {
