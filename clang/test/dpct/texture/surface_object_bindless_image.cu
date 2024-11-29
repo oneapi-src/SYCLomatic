@@ -4,6 +4,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+// CHECK: template<typename T> void kernel(sycl::ext::oneapi::experimental::unsampled_image_handle surf, T data) {
 template<typename T> __global__ void kernel(cudaSurfaceObject_t surf, T data) {
   int i;
   float j, k, l, z, m;
@@ -16,8 +17,20 @@ template<typename T> __global__ void kernel(cudaSurfaceObject_t surf, T data) {
 
 }
 
+__global__ void kernelWriteToLayeredSurface(cudaSurfaceObject_t surface, int width, int height, int layers) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int layer = blockIdx.z;
+
+    if (x < width && y < height && layer < layers) {
+        uchar4 value = make_uchar4(255, 0, 0, 255);
+        // CHECK: dpct::experimental::write_image_array_by_byte(surface, sycl::float2(x * sizeof(sycl::uchar4), y), layer, value);
+        surf2DLayeredwrite(value, surface, x * sizeof(uchar4), y, layer);
+    }
+}
+
 int main() {
-  // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle surf;
+  // CHECK: sycl::ext::oneapi::experimental::unsampled_image_handle surf;
   cudaSurfaceObject_t surf;
   // CHECK: dpct::image_data resDesc;
   cudaResourceDesc resDesc;

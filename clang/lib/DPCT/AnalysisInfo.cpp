@@ -4923,13 +4923,6 @@ void DeviceFunctionDecl::emplaceReplacement() {
     if (Obj) {
       Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
       if (DpctGlobalInfo::useExtBindlessImages()) {
-        DpctGlobalInfo::getInstance().addReplacement(
-            std::make_shared<ExtReplacement>(
-                Obj->getFilePath(), Obj->getOffset(),
-                strlen("cudaTextureObject_t"),
-                MapNames::getClNamespace() +
-                    "ext::oneapi::experimental::sampled_image_handle",
-                nullptr));
         continue;
       }
       if (!Obj->getType()) {
@@ -5036,8 +5029,10 @@ void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
-    if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
-        "cudaTextureObject_t")
+    std::string ParamName =
+        DpctGlobalInfo::getUnqualifiedTypeName(Param->getType());
+    if (ParamName == "cudaTextureObject_t" ||
+        ParamName == "cudaSurfaceObject_t")
       TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
   }
 }

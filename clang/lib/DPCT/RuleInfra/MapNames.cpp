@@ -519,7 +519,7 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
                ? getClNamespace() +
-                     "ext::oneapi::experimental::sampled_image_handle"
+                     "ext::oneapi::experimental::unsampled_image_handle"
                : getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
       {"textureReference",
@@ -650,9 +650,13 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
       {"CUarray_format_enum",
        std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
-      {"CUtexObject", std::make_shared<TypeNameRule>(
-                          getDpctNamespace() + "image_wrapper_base_p",
-                          HelperFeatureEnum::device_ext)},
+      {"CUtexObject",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::sampled_image_handle"
+               : getDpctNamespace() + "image_wrapper_base_p",
+           HelperFeatureEnum::device_ext)},
       {"CUDA_RESOURCE_DESC",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data",
                                       HelperFeatureEnum::device_ext)},

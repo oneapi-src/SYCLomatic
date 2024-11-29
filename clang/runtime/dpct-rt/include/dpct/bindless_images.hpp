@@ -528,9 +528,7 @@ private:
 
 namespace detail {
 struct sampled_image_handle_compare {
-  bool
-  operator()(sycl::ext::oneapi::experimental::sampled_image_handle L,
-             sycl::ext::oneapi::experimental::sampled_image_handle R) const {
+  template <class T> bool operator()(T L, T R) const {
     return L.raw_handle < R.raw_handle;
   }
 };
@@ -544,6 +542,14 @@ inline std::pair<image_data, sampling_info> &get_img_info_map(
   return img_info_map[handle];
 }
 
+inline std::pair<image_data, sampling_info> &get_img_info_map(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
+  static std::map<sycl::ext::oneapi::experimental::unsampled_image_handle,
+                  std::pair<image_data, sampling_info>,
+                  sampled_image_handle_compare>
+      img_info_map;
+  return img_info_map[handle];
+}
 inline image_mem_wrapper *&get_img_mem_map(
     const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
   static std::map<sycl::ext::oneapi::experimental::sampled_image_handle,
@@ -552,6 +558,13 @@ inline image_mem_wrapper *&get_img_mem_map(
   return img_mem_map[handle];
 }
 
+inline image_mem_wrapper *&get_img_mem_map(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle handle) {
+  static std::map<sycl::ext::oneapi::experimental::unsampled_image_handle,
+                  image_mem_wrapper *, sampled_image_handle_compare>
+      img_mem_map;
+  return img_mem_map[handle];
+}
 static inline size_t
 get_ele_size(const sycl::ext::oneapi::experimental::image_descriptor &decs) {
   size_t channel_size;
@@ -844,7 +857,7 @@ inline void unmap_resources(int count, external_mem_wrapper **handles,
 /// \param [in] q The queue where the image creation be executed.
 /// \returns The sampled image handle of created bindless image.
 static inline sycl::ext::oneapi::experimental::sampled_image_handle
-create_bindless_image(image_data data, sampling_info info = {},
+create_bindless_image(image_data data, sampling_info info,
                       sycl::queue q = get_default_queue()) {
   auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
       info.get_addressing_mode(), info.get_coordinate_normalization_mode(),
@@ -910,12 +923,69 @@ create_bindless_image(image_data data, sampling_info info = {},
   return sycl::ext::oneapi::experimental::sampled_image_handle();
 }
 
+/// Create bindless image according to image data.
+/// \param [in] data The image data used to create bindless image.
+/// \param [in] q The queue where the image creation be executed.
+/// \returns The sampled image handle of created bindless image.
+static inline sycl::ext::oneapi::experimental::unsampled_image_handle
+create_bindless_image(image_data data, sycl::queue q = get_default_queue()) {
+  switch (data.get_data_type()) {
+  case image_data_type::linear: {
+    // TODO: Use pointer to create image when bindless image support.
+    auto mem = new image_mem_wrapper(
+        data.get_channel(), data.get_x() / data.get_channel().get_total_size());
+    auto img = sycl::ext::oneapi::experimental::create_image(
+        mem->get_handle(), mem->get_desc(), q);
+    detail::get_img_mem_map(img) = mem;
+    auto ptr = data.get_data_ptr();
+#ifdef DPCT_USM_LEVEL_NONE
+    q.ext_oneapi_copy(get_buffer(ptr).get_host_access().get_pointer(),
+                      mem->get_handle(), mem->get_desc())
+        .wait();
+#else
+    q.ext_oneapi_copy(ptr, mem->get_handle(), mem->get_desc()).wait();
+#endif
+    return img;
+  }
+  case image_data_type::pitch: {
+    auto mem =
+        new image_mem_wrapper(data.get_channel(), data.get_x(), data.get_y());
+    auto img = sycl::ext::oneapi::experimental::create_image(
+        mem->get_handle(), mem->get_desc(), q);
+    detail::get_img_mem_map(img) = mem;
+#ifdef DPCT_USM_LEVEL_NONE
+    q.ext_oneapi_copy(
+         get_buffer(data.get_data_ptr()).get_host_access().get_pointer(),
+         mem->get_handle(), mem->get_desc())
+        .wait();
+#else
+    q.ext_oneapi_copy(data.get_data_ptr(), mem->get_handle(), mem->get_desc())
+        .wait();
+
+#endif
+    return img;
+  }
+  case image_data_type::matrix: {
+    const auto mem = static_cast<image_mem_wrapper *>(data.get_data_ptr());
+    auto img = sycl::ext::oneapi::experimental::create_image(
+        mem->get_handle(), mem->get_desc(), q);
+    return img;
+  }
+  default:
+    throw std::runtime_error(
+        "Unsupported image_data_type in create_bindless_image!");
+    break;
+  }
+  // Must not reach here.
+  return sycl::ext::oneapi::experimental::unsampled_image_handle();
+}
+
 /// Destroy bindless image.
 /// \param [in] handle The bindless image should be destroyed.
 /// \param [in] q The queue where the image destruction be executed.
-static inline void destroy_bindless_image(
-    sycl::ext::oneapi::experimental::sampled_image_handle handle,
-    sycl::queue q = get_default_queue()) {
+template <class T>
+static inline void destroy_bindless_image(T handle,
+                                          sycl::queue q = get_default_queue()) {
   auto &mem = detail::get_img_mem_map(handle);
   if (mem) {
     delete mem;
@@ -924,11 +994,14 @@ static inline void destroy_bindless_image(
   sycl::ext::oneapi::experimental::destroy_image_handle(handle, q);
 }
 
+
+
 /// Get the image data according to sampled image handle.
 /// \param [in] handle The bindless image handle.
 /// \returns The image data of sampled image.
+template <class T>
 static inline image_data
-get_data(const sycl::ext::oneapi::experimental::sampled_image_handle handle) {
+get_data(const T handle) {
   return detail::get_img_info_map(handle).first;
 }
 
@@ -1355,8 +1428,8 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
 // A wrapper for sycl write_image function for the byte addressing image.
 template <typename DataT, typename CoordT>
 void write_image_by_byte(
-    const sycl::ext::oneapi::experimental::sampled_image_handle &imageHandle,
-    const CoordT &coords, const DataT &color) {
+    const sycl::ext::oneapi::experimental::unsampled_image_handle &imageHandle,
+    CoordT &&coords, const DataT &color) {
   if constexpr (std::is_scalar_v<CoordT>) {
     return sycl::ext::oneapi::experimental::write_image<DataT, CoordT>(
         imageHandle, coords / sizeof(DataT), color);
@@ -1367,6 +1440,20 @@ void write_image_by_byte(
   }
 }
 
+// A wrapper for sycl write_image_array function for the byte addressing image.
+template <typename DataT, typename CoordT>
+void write_image_array_by_byte(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle &imageHandle,
+    CoordT &&coords, unsigned int ArrayLayer, const DataT &color) {
+  if constexpr (std::is_scalar_v<CoordT>) {
+    return sycl::ext::oneapi::experimental::write_image_array<DataT, CoordT>(
+        imageHandle, coords / sizeof(DataT), ArrayLayer, color);
+  } else {
+    coords[0] = coords[0] / sizeof(DataT);
+    return sycl::ext::oneapi::experimental::write_image_array<DataT, CoordT>(
+        imageHandle, coords, ArrayLayer, color);
+  }
+}
 using image_mem_wrapper_ptr = image_mem_wrapper *;
 #ifdef _WIN32
 using external_mem_wrapper_ptr = external_mem_wrapper *;
