@@ -14,12 +14,9 @@ namespace clang {
 namespace dpct {
 template <size_t... Idx>
 class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
-  std::string ReadFuncName;
-  std::string SampleFuncName;
-  std::string SampleMMFuncName;
-  std::string SampleArrayFuncName;
   std::string Source;
   int TexType;
+  std::string TargetName;
 
   inline int getDim() const { return TexType & 0x0f; }
 
@@ -28,16 +25,16 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
     using ReaderPrinter = decltype(makeMemberCallCreator<false>(
         std::declval<std::function<BaseT(const CallExpr *)>>(), false,
-        ReadFuncName, makeCallArgCreatorWithCall(Idx)...)(C));
+        TargetName, makeCallArgCreatorWithCall(Idx)...)(C));
     if (RetAssign) {
       return std::make_shared<PrinterRewriter<
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
-          ReaderPrinter(std::move(Base), false, ReadFuncName,
+          ReaderPrinter(std::move(Base), false, TargetName,
                         std::make_pair(C, C->getArg(Idx + 1))...));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, Base, false, ReadFuncName,
+        C, Source, Base, false, TargetName,
         std::make_pair(C, C->getArg(Idx))...);
   }
 
@@ -56,12 +53,12 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(SampleFuncName, {TAI}),
+              FuncNamePrinter(TargetName, {TAI}),
               std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...)));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(SampleFuncName, {TAI}),
+        C, Source, FuncNamePrinter(TargetName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...));
   }
@@ -82,13 +79,13 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(SampleMMFuncName, {TAI}),
+              FuncNamePrinter(TargetName, {TAI}),
               std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
               std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(SampleMMFuncName, {TAI}),
+        C, Source, FuncNamePrinter(TargetName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
@@ -110,13 +107,13 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(SampleArrayFuncName, {TAI}),
+              FuncNamePrinter(TargetName, {TAI}),
               std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
               std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(SampleArrayFuncName, {TAI}),
+        C, Source, FuncNamePrinter(TargetName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
@@ -158,21 +155,21 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   }
 
 public:
-  TextureReadRewriterFactory(std::string Name, int Tex)
-      : Source(std::move(Name)), TexType(Tex) {
-    if (Source.find("surf") != std::string::npos) {
-      ReadFuncName = "read_byte";
-      SampleFuncName = MapNames::getLibraryHelperNamespace() +
-                       "experimental::sample_image_by_byte";
-    } else {
-      ReadFuncName = "read";
-      SampleFuncName = MapNames::getClNamespace() +
-                       "ext::oneapi::experimental::sample_image";
-    }
-    SampleMMFuncName =
-        MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
-    SampleArrayFuncName = MapNames::getClNamespace() +
-                          "ext::oneapi::experimental::sample_image_array";
+  TextureReadRewriterFactory(std::string Name, int Tex, std::string TargetName)
+      : Source(std::move(Name)), TexType(Tex), TargetName(TargetName) {
+    // if (Source.find("surf") != std::string::npos) {
+    //   ReadFuncName = "read_byte";
+    //   SampleFuncName = MapNames::getLibraryHelperNamespace() +
+    //                    "experimental::sample_image_by_byte";
+    // } else {
+    //   ReadFuncName = "read";
+    //   SampleFuncName = MapNames::getClNamespace() +
+    //                    "ext::oneapi::experimental::sample_image";
+    // }
+    // SampleMMFuncName =
+    //     MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
+    // SampleArrayFuncName = MapNames::getClNamespace() +
+    //                       "ext::oneapi::experimental::sample_image_array";
   }
   std::shared_ptr<CallExprRewriter>
   create(const CallExpr *Call) const override {
@@ -239,14 +236,15 @@ public:
 /// original call expr.
 template <size_t... Idx>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
-createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
-  return std::make_shared<TextureReadRewriterFactory<Idx...>>(Source,
-                                                              TextureType);
+createTextureReaderRewriterFactory(const std::string &Source, int TextureType,
+                                   const std::string &TargetName) {
+  return std::make_shared<TextureReadRewriterFactory<Idx...>>(
+      Source, TextureType, TargetName);
 }
 
-#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, TexType, ...)                     \
-  {FuncName,                                                                   \
-   createTextureReaderRewriterFactory<__VA_ARGS__>(FuncName, TexType)},
+#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, TexType, TargetName, ...)         \
+  {FuncName, createTextureReaderRewriterFactory<__VA_ARGS__>(                  \
+                 FuncName, TexType, TargetName)},
 #define BIND_TEXTURE_FACTORY_ENTRY(FuncName, ...)                              \
   {FuncName, createBindTextureRewriterFactory<__VA_ARGS__>(FuncName)},
 
@@ -256,7 +254,8 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName,                                             \
-      UnsupportFunctionRewriterFactory<std::string>, MsgID, FuncName)
+                         UnsupportFunctionRewriterFactory<std::string>, MsgID, \
+                         FuncName)
 
 void CallExprRewriterFactoryBase::initRewriterMapTexture() {
   RewriterMap->merge(
@@ -264,8 +263,8 @@ void CallExprRewriterFactoryBase::initRewriterMapTexture() {
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_TEXTURE(SOURCEAPINAME, TEXTYPE, ...)                             \
-  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TEXTYPE, __VA_ARGS__)
+#define ENTRY_TEXTURE(SOURCEAPINAME, TEXTYPE, TARGETAPINAME, ...)              \
+  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TEXTYPE, TARGETAPINAME, __VA_ARGS__)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
 #define ENTRY_BIND(SOURCEAPINAME, ...)                                         \
