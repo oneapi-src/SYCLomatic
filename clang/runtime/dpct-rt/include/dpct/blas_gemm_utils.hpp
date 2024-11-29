@@ -1029,18 +1029,18 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
-
+  sycl::queue &queue = ::dpct::cs::get_default_queue()
   if (compute_desc->_epilogue != epilogue_t::nop) {
     ::dnnl::post_ops matmul_ops;
      if (compute_desc->_epilogue == epilogue_t::relu) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
     }  else if (compute_desc->_epilogue == epilogue_t::gelu) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_erf, 0.f, 0.f);
-    }  else if (compute_desc->_epilogue == epilogu_t::gelu_aux) {
+    }  else if (compute_desc->_epilogue == epilogue_t::gelu_aux) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_erf, 0.f, 0.f);
       dpct::blas::matrix_mem_copy(compute_desc->_epilogue_aux_pointer, new_c,
                                   compute_desc->_epilogue_aux_ld, new_ldc, m, n,
-                                  sizeof(size_t) , dpct::device_to_device, q_ptr);
+                                  sizeof(size_t) , dpct::device_to_device, queue);
     } else if (compute_desc->_epilogue == epilogue_t::bias) {
       matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
     } else if (compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
@@ -1048,7 +1048,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
       dpct::blas::matrix_mem_copy(compute_desc->_epilogue_aux_pointer, new_c,
                                   compute_desc->_epilogue_aux_ld, new_ldc, m, n,
-                                  sizeof(size_t) , dpct::device_to_device, q_ptr);
+                                  sizeof(size_t) , dpct::device_to_device, queue);
     }
     matmul_attr.set_post_ops(matmul_ops);
   }
