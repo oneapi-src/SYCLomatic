@@ -1627,6 +1627,9 @@ void MapNamesBlas::setExplicitNamespaceMap(
       {"CUBLASLT_EPILOGUE_GELU",
        MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::epilogue_t::gelu"},
+      {"CUBLASLT_EPILOGUE_GELU_AUX",
+       MapNames::getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::gelu_aux"},
       {"CUBLASLT_EPILOGUE_BIAS",
        MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::epilogue_t::bias"},
