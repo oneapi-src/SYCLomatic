@@ -1037,7 +1037,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     } else if (compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_erf, 0.f, 0.f);
       matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
-      dpct::blas::matrix_mem_copy(matmul_desc_t::attribute::epilogue_aux_pointer, bias_mem,
+      dpct::blas::matrix_mem_copy(compute_desc->_epilogue_aux_pointer, new_c,
                                   matmul_desc_t::attribute::epilogue_aux_ld, new_ldc, m, n,
                                   sizeof(size_t) , q_ptr);
     }
