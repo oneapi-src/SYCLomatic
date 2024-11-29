@@ -146,6 +146,8 @@ public:
     b_scale_pointer,
     d_scale_pointer,
     absmax_d_pointer,
+    dgelu_epilogue,
+    bgradb_epilogue,
     unsupport
   };
 
@@ -188,6 +190,8 @@ private:
       CASE(epilogue_aux_ld)
       CASE(epilogue_aux_pointer)
       CASE(epilogue_aux_data_type)
+      CASE(dgelu_epilogue)
+      CASE(bgradb_epilogue)
     default:
       break;
     }
@@ -210,6 +214,9 @@ private:
   void *_absmax_d_pointer = nullptr;
   void *_bias_pointer = nullptr;
   void *_epilogue_aux_pointer = nullptr;
+  auto *_dgelu_epilogue = detail::sync_gelu_backward<::dnnl::eltwise_backward>(0.f, 0.f, new memory_desc_ext(), new memory_desc_ext());
+  auto *_bgradb_epilogue = detail::sync_gelu_backward<::dnnl::reduction>(0.f, 0.f, new memory_desc_ext(), new memory_desc_ext());
+
 
   friend sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr computeDesc,
                             const void *alpha, const void *a,
@@ -222,6 +229,31 @@ private:
 
 namespace detail {
 /// Sacling each row of matrix D with the corresponding element of vector alpha.
+
+template <typename primitive_type, typename... args_type>
+inline
+typename primitive_type::primitive_desc sync_gelu_backward(
+    float alpha, float beta, const memory_desc_ext &src_desc,
+    const memory_desc_ext &dest_desc) {
+
+  auto alg = ::dnnl::algorithm::eltwise_gelu_erf;
+  return create_primitive_desc<primitive_type>(
+                    ::dnnl::prop_kind::backward, alg, src_desc.get_desc(),
+                    dst_desc.get_desc(), alpha, beta);
+}
+
+template <typename primitive_type, typename... args_type>
+inline
+typename primitive_type::primitive_desc bias_backward(
+    float alpha, float beta, const memory_desc_ext &src_desc,
+    const memory_desc_ext &dest_desc) {
+
+  auto alg = ::dnnl::algorithm::reduction_sum;
+  return create_primitive_desc<primitive_type>(
+                    ::dnnl::prop_kind::backward, alg, src_desc.get_desc(),
+                    dst_desc.get_desc(), alpha, beta);
+}
+
 template <class T, class Talpha>
 sycl::event scale_d_with_vector_alpha_impl(::dpct::cs::queue_ptr q_ptr,
                                            int rows, int cols, T *d,
