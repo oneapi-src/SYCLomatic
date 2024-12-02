@@ -129,7 +129,7 @@ CONDITIONAL_FACTORY_ENTRY(
                           "ext::oneapi::experimental::sample_image",
                       1)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                            ENTRY_TEXTURE("tex1D", 0x02, "read", 1)))
+                            ENTRY_TEXTURE("tex1D", 0x01, "read", 1)))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
@@ -197,16 +197,15 @@ CONDITIONAL_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
-    ENTRY_TEXTURE("tex1DLayered", 0xF1,
-                  MapNames::getClNamespace() +
-                      "ext::oneapi::experimental::sample_image_array",
-                  1),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
         ENTRY_TEXTURE("tex1DLayered", 0xF1,
                       MapNames::getClNamespace() +
                           "ext::oneapi::experimental::sample_image_array",
-                      2, 1)))
+                      1)),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ENTRY_TEXTURE("tex1DLayered", 0xF1, "read", 2, 1)))
+
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     ENTRY_TEXTURE("tex2DLayered", 0xF2,
