@@ -115,11 +115,12 @@ void CooperativeGroupsFunctionRule::runRule(
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
       FuncName == "shfl_down" || FuncName == "shfl_up" || FuncName == "shfl" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
-      FuncName == "reduce" || FuncName == "thread_index" ||
-      FuncName == "group_index" || FuncName == "num_threads" ||
-      FuncName == "inclusive_scan" || FuncName == "exclusive_scan" ||
-      FuncName == "coalesced_threads" || FuncName == "this_grid" ||
-      FuncName == "num_blocks" || FuncName == "block_rank") {
+      FuncName == "meta_group_size" || FuncName == "reduce" ||
+      FuncName == "thread_index" || FuncName == "group_index" ||
+      FuncName == "num_threads" || FuncName == "inclusive_scan" ||
+      FuncName == "exclusive_scan" || FuncName == "coalesced_threads" ||
+      FuncName == "this_grid" || FuncName == "num_blocks" ||
+      FuncName == "block_rank") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
@@ -134,6 +135,7 @@ void CooperativeGroupsFunctionRule::runRule(
     // shfl_up       1/1   0/0   0/0
     // shfl_xor      1/1   0/0   0/0
     // meta_group_rank 1/1   0/0   0/0
+    // meta_group_size 1/1   0/0   0/0
 
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());

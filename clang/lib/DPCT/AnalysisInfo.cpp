@@ -6315,26 +6315,20 @@ void KernelCallExpr::addDevCapCheckStmt() {
   if (!AspectList.empty()) {
     std::string Str;
     llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
     if (auto Iter = MapNames::CustomHelperFunctionMap.find(getQueueKind());
         Iter != MapNames::CustomHelperFunctionMap.end()) {
-      OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
-      OS << Iter->second << ".get_device(), ";
-      OS << "{" << AspectList.front();
-      for (size_t i = 1; i < AspectList.size(); ++i) {
-        OS << ", " << AspectList[i];
-      }
-      OS << "});";
+      OS << Iter->second << ".";
     } else {
       requestFeature(HelperFeatureEnum::device_ext);
-      OS << MapNames::getDpctNamespace() << "get_device(";
-      OS << MapNames::getDpctNamespace() << "get_device_id(";
       printStreamBase(OS);
-      OS << "get_device())).has_capability_or_fail({" << AspectList.front();
-      for (size_t i = 1; i < AspectList.size(); ++i) {
-        OS << ", " << AspectList[i];
-      }
-      OS << "});";
     }
+    OS << "get_device(), ";
+    OS << "{" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      OS << ", " << AspectList[i];
+    }
+    OS << "});";
     OuterStmts.OthersList.emplace_back(OS.str());
   }
 }
@@ -6934,6 +6928,25 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
   if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImplicitAsWritten())) {
     if (auto DD = dyn_cast<DeclaratorDecl>(DRE->getDecl()))
       TL = DD->getTypeSourceInfo()->getTypeLoc();
+  } else if (const auto *CMCE =
+                 dyn_cast<CXXMemberCallExpr>(Arg->IgnoreImplicitAsWritten())) {
+    if (const auto *MD = CMCE->getMethodDecl()) {
+      QualType ReturnType = MD->getReturnType();
+      if (const auto *PtrType = ReturnType->getAs<PointerType>()) {
+        QualType PointeeType = PtrType->getPointeeType();
+        if (const auto *SubstType =
+                PointeeType->getAs<SubstTemplateTypeParmType>()) {
+          const auto Index = SubstType->getIndex();
+          if (const auto *Callee = dyn_cast<MemberExpr>(CMCE->getCallee())) {
+            if (Index < Callee->getNumTemplateArgs())
+              ArgType = DpctGlobalInfo::getContext().getPointerType(
+                  Callee->getTemplateArgs()[Index]
+                      .getTypeSourceInfo()
+                      ->getType());
+          }
+        }
+      }
+    }
   }
   deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
 }

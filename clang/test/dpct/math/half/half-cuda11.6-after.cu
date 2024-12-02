@@ -23,13 +23,8 @@ __global__ void kernelFuncHalf(__half *deviceArrayHalf) {
   h_2 = __hmul_rn(h, h_1);
   // CHECK: h_2 = h - h_1;
   h_2 = __hsub_rn(h, h_1);
-#ifndef NO_BUILD_TEST
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of half version of atomicAdd is not supported.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: atomicAdd(&h, h_1);
+  // CHECK: dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&h, h_1);
   atomicAdd(&h, h_1);
-#endif
 
   // Half2 Arithmetic Functions
 

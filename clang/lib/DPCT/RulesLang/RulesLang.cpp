@@ -848,6 +848,13 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         if (!isRedeclInCUDAHeader(TT))
           return;
       }
+      if (const auto *RecDeclRepr =
+              TL->getType().getCanonicalType()->getAsRecordDecl()) {
+        // Skip types whose names are matching with CUDA types and defined in
+        // includes outside of in-root
+        if (!DpctGlobalInfo::isInCudaPath(RecDeclRepr->getBeginLoc()))
+          return;
+      }
     }
 
     // if TL is the T in
@@ -1204,10 +1211,19 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TL->getBeginLoc().isInvalid())
       return;
 
-    // To skip user-defined type.
+    // To skip user-defined type (found in in-root and from third party includes
+    // outside of in-root)
     if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
       auto Loc = ND->getBeginLoc();
       if (DpctGlobalInfo::isInAnalysisScope(Loc))
+        return;
+    }
+
+    if (const auto *RecDeclRepr =
+            TL->getType().getCanonicalType()->getAsRecordDecl()) {
+      // Skip types whose names are matching with CUDA types and defined in
+      // includes outside of in-root
+      if (!DpctGlobalInfo::isInCudaPath(RecDeclRepr->getBeginLoc()))
         return;
     }
 
@@ -2569,6 +2585,10 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
                                unless(parentStmt())))
                     .bind("eventAPICallUsed"),
                 this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(
+                                enumDecl(hasName("CUevent_flags_enum"))))))
+                    .bind("eventEnum"),
+                this);
 }
 
 bool isEqualOperator(const Stmt *S) {
@@ -2879,6 +2899,16 @@ bool EventAPICallRule::isEventElapsedTimeFollowed(const CallExpr *Expr) {
 }
 
 void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (auto *DRE = getNodeAsType<DeclRefExpr>(Result, "eventEnum")) {
+    if (auto *EC = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+      std::string EName = EC->getName().str();
+      report(DRE->getBeginLoc(), Diagnostics::UNSUPPORTED_FEATURE_IN_SYCL,
+             false, EName, "is", "event");
+      emplaceTransformation(new ReplaceStmt(DRE, "0"));
+    }
+    return;
+  }
+
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "eventAPICall");
   if (!CE) {
@@ -4247,8 +4277,8 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
   } else if (FuncName == "cudaStreamGetFlags" ||
              FuncName == "cudaStreamGetPriority") {
-    report(CE->getBeginLoc(), Diagnostics::STREAM_FLAG_PRIORITY_NOT_SUPPORTED,
-           false);
+    report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_FEATURE_IN_SYCL, false,
+           "flag and priority options", "are", "queues");
     auto StmtStr1 = getStmtSpelling(CE->getArg(1));
     std::string ReplStr{"*("};
     ReplStr += StmtStr1;
@@ -4659,8 +4689,10 @@ void DeviceFunctionDeclRule::runRule(
     if (FD->isTemplateInstantiation())
       return;
 
-    if (FD->hasAttr<CUDADeviceAttr>() &&
-        FD->getAttr<CUDADeviceAttr>()->isImplicit())
+    // We need skip lambda in host code, but cannot skip lambda in device code.
+    if (const FunctionDecl *OuterMostFD = findTheOuterMostFunctionDecl(FD);
+        OuterMostFD && (!OuterMostFD->hasAttr<CUDADeviceAttr>() &&
+                        !OuterMostFD->hasAttr<CUDAGlobalAttr>()))
       return;
 
     const auto &FTL = FD->getFunctionTypeLoc();
@@ -4695,8 +4727,10 @@ void DeviceFunctionDeclRule::runRule(
               DpctGlobalInfo::getRunRound() == 1))
     return;
 
-  if (FD->hasAttr<CUDADeviceAttr>() &&
-      FD->getAttr<CUDADeviceAttr>()->isImplicit())
+  // We need skip lambda in host code, but cannot skip lambda in device code.
+  if (const FunctionDecl *OuterMostFD = findTheOuterMostFunctionDecl(FD);
+      OuterMostFD && (!OuterMostFD->hasAttr<CUDADeviceAttr>() &&
+                      !OuterMostFD->hasAttr<CUDAGlobalAttr>()))
     return;
 
   if (FD->isVariadic()) {

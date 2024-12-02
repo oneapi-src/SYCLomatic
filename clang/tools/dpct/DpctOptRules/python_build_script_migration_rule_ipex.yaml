@@ -101,6 +101,14 @@
   In: CUDAExtension
   Out: DPCPPExtension
 
+- Rule: rule_from_torch_import_cuda
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: from_torch_import_cuda
+  In: from torch import cuda
+  Out: from torch import xpu
+
 - Rule: rule_cuda_is_available
   Kind: PythonRule
   Priority: Fallback
@@ -137,3 +145,40 @@
       MatchMode: Full
       In: ${arg}.cu
       Out: ${arg}.cpp
+
+- Rule: rule_cuda_device_count
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_device_count
+  In: cuda.device_count
+  Out: xpu.device_count
+
+- Rule: rule_cuda_get_device_capability
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_get_device_capability
+  In: cuda.get_device_capability
+  Out: xpu.get_device_capability
+
+- Rule: rule_cuda_get_arch_list
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cuda_get_arch_list
+  In: ${torch_prefix}cuda.get_arch_list()
+  Out: ${torch_prefix}['']
+  Subrules:
+    torch_prefix:
+      MatchMode: Full
+      In: torch.
+      Out: ""
+
+- Rule: rule_version_cuda
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: version_cuda
+  In: version.cuda
+  Out: version.xpu

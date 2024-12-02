@@ -22,6 +22,11 @@ set(dpct_rt_files
   include/dpct/graph.hpp
   include/dpct/compat_service.hpp
 )
+set(dpct_detail_files
+include/dpct/detail/group_utils_detail.hpp
+include/dpct/detail/math_detail.hpp
+include/dpct/detail/memory_detail.hpp
+)
 
 set(dpct_rt_dpstd_files
   include/dpct/dpl_extras/functional.h
@@ -45,6 +50,16 @@ set(output_codepin_dir ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION}/incl
 
 set(out_files)
 foreach( f ${dpct_rt_files})
+  set( src ${CMAKE_CURRENT_SOURCE_DIR}/${f} )
+  set( dst ${output_dir}/${f} )
+  add_custom_command(OUTPUT ${dst}
+    DEPENDS ${src}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dst}
+    COMMENT "Copying clang's ${f}...")
+  list(APPEND out_files ${dst})
+endforeach( f )
+
+foreach( f ${dpct_detail_files})
   set( src ${CMAKE_CURRENT_SOURCE_DIR}/${f} )
   set( dst ${output_dir}/${f} )
   add_custom_command(OUTPUT ${dst}
@@ -80,6 +95,12 @@ install(
   COMPONENT dpct-headers
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION include/dpct)
+
+install(
+  FILES ${dpct_detail_files}
+  COMPONENT dpct-headers
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION include/dpct/detail)
 
 install(
   FILES ${dpct_rt_dpstd_files}

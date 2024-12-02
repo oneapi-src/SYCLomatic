@@ -2226,7 +2226,7 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::multi_grid_group, cooperative_groups::
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, sync, sync, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, num_threads, num_threads, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_size, meta_group_size, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_size, meta_group_size, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, meta_group_rank, meta_group_rank, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, shfl, shfl, true, NO_FLAG, P4, "DPCT1119")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block_tile, cooperative_groups::__v1::thread_block_tile, shfl_up, shfl_up, true, NO_FLAG, P4, "Comment")
@@ -2307,6 +2307,16 @@ ENTRY(make_cuDoubleComplex, make_cuDoubleComplex, true, NO_FLAG, P4, "comment")
 ENTRY(make_cuFloatComplex, make_cuFloatComplex, true, NO_FLAG, P4, "comment")
 ENTRY(__assert_fail, __assert_fail, true, NO_FLAG, P4, "Successful")
 ENTRY(__assertfail, __assertfail, true, NO_FLAG, P4, "Successful")
+
+// Address Space Conversion Functions
+ENTRY(__cvta_generic_to_global, __cvta_generic_to_global, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_generic_to_shared, __cvta_generic_to_shared, true, NO_FLAG, P7, "comment")
+ENTRY(__cvta_generic_to_constant, __cvta_generic_to_constant, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_generic_to_local, __cvta_generic_to_local, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_global_to_generic, __cvta_global_to_generic, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_shared_to_generic, __cvta_shared_to_generic, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_constant_to_generic, __cvta_constant_to_generic, false, NO_FLAG, P7, "comment")
+ENTRY(__cvta_local_to_generic, __cvta_local_to_generic, false, NO_FLAG, P7, "comment")
 
 ENTRY(cuGetExportTable, cuGetExportTable, true, NO_FLAG, P7, "Partial")
 
