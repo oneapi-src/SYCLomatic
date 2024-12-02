@@ -156,21 +156,7 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
 
 public:
   TextureReadRewriterFactory(std::string Name, int Tex, std::string TargetName)
-      : Source(std::move(Name)), TexType(Tex), TargetName(TargetName) {
-    // if (Source.find("surf") != std::string::npos) {
-    //   ReadFuncName = "read_byte";
-    //   SampleFuncName = MapNames::getLibraryHelperNamespace() +
-    //                    "experimental::sample_image_by_byte";
-    // } else {
-    //   ReadFuncName = "read";
-    //   SampleFuncName = MapNames::getClNamespace() +
-    //                    "ext::oneapi::experimental::sample_image";
-    // }
-    // SampleMMFuncName =
-    //     MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
-    // SampleArrayFuncName = MapNames::getClNamespace() +
-    //                       "ext::oneapi::experimental::sample_image_array";
-  }
+      : Source(std::move(Name)), TexType(Tex), TargetName(TargetName) {}
   std::shared_ptr<CallExprRewriter>
   create(const CallExpr *Call) const override {
     const Expr *SourceExpr = Call->getArg(0);
