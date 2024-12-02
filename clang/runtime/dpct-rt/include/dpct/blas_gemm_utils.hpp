@@ -1029,7 +1029,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     matmul_args.insert(
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
-  sycl::queue &queue = ::dpct::cs::get_default_queue()
+  sycl::queue &queue = ::dpct::cs::get_default_queue();
   if (compute_desc->_epilogue != epilogue_t::nop) {
     ::dnnl::post_ops matmul_ops;
      if (compute_desc->_epilogue == epilogue_t::relu) {
