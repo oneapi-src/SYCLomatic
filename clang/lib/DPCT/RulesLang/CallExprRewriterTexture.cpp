@@ -16,25 +16,25 @@ template <size_t... Idx>
 class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   std::string Source;
   int TexType;
+  std::string TargetName;
 
   inline int getDim() const { return TexType & 0x0f; }
 
   template <class BaseT>
   std::shared_ptr<CallExprRewriter>
   createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
-    const static std::string MemberName = "read";
     using ReaderPrinter = decltype(makeMemberCallCreator<false>(
         std::declval<std::function<BaseT(const CallExpr *)>>(), false,
-        MemberName, makeCallArgCreatorWithCall(Idx)...)(C));
+        TargetName, makeCallArgCreatorWithCall(Idx)...)(C));
     if (RetAssign) {
       return std::make_shared<PrinterRewriter<
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
-          ReaderPrinter(std::move(Base), false, MemberName,
+          ReaderPrinter(std::move(Base), false, TargetName,
                         std::make_pair(C, C->getArg(Idx + 1))...));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, Base, false, MemberName,
+        C, Source, Base, false, TargetName,
         std::make_pair(C, C->getArg(Idx))...);
   }
 
@@ -43,8 +43,6 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterNormal(const CallExpr *C, bool RetAssign,
                                const TemplateArgumentInfo &TAI,
                                const std::string &VecTypeName) const {
-    const static std::string FuncName =
-        MapNames::getClNamespace() + "ext::oneapi::experimental::sample_image";
     using FuncNamePrinter =
         TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
@@ -55,11 +53,12 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
+              FuncNamePrinter(TargetName, {TAI}),
+              std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...)));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(FuncName, {TAI}),
+        C, Source, FuncNamePrinter(TargetName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...));
   }
@@ -69,8 +68,6 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterLod(const CallExpr *C, bool RetAssign,
                             const TemplateArgumentInfo &TAI,
                             const std::string &VecTypeName) const {
-    const static std::string FuncName =
-        MapNames::getClNamespace() + "ext::oneapi::experimental::sample_mipmap";
     using FuncNamePrinter =
         TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
@@ -82,12 +79,13 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
+              FuncNamePrinter(TargetName, {TAI}),
+              std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
               std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(FuncName, {TAI}),
+        C, Source, FuncNamePrinter(TargetName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
@@ -98,9 +96,6 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   createbindlessRewriterLayered(const CallExpr *C, bool RetAssign,
                                 const TemplateArgumentInfo &TAI,
                                 const std::string &VecTypeName) const {
-    const static std::string FuncName =
-        MapNames::getClNamespace() +
-        "ext::oneapi::experimental::sample_image_array";
     using FuncNamePrinter =
         TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>;
     using ReaderPrinter =
@@ -112,17 +107,17 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(
-              FuncNamePrinter(FuncName, {TAI}), std::make_pair(C, C->getArg(1)),
+              FuncNamePrinter(TargetName, {TAI}),
+              std::make_pair(C, C->getArg(1)),
               VecType(VecTypeName, std::make_pair(C, C->getArg(Idx + 1))...),
               std::make_pair(C, C->getArg(C->getNumArgs() - 1))));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, FuncNamePrinter(FuncName, {TAI}),
+        C, Source, FuncNamePrinter(TargetName, {TAI}),
         std::make_pair(C, C->getArg(0)),
         VecType(VecTypeName, std::make_pair(C, C->getArg(Idx))...),
         std::make_pair(C, C->getArg(C->getNumArgs() - 1)));
   }
-
   std::shared_ptr<CallExprRewriter>
   createbindlessRewriter(const CallExpr *C, bool RetAssign,
                          QualType TargetType) const {
@@ -160,8 +155,8 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   }
 
 public:
-  TextureReadRewriterFactory(std::string Name, int Tex)
-      : Source(std::move(Name)), TexType(Tex) {}
+  TextureReadRewriterFactory(std::string Name, int Tex, std::string TargetName)
+      : Source(std::move(Name)), TexType(Tex), TargetName(TargetName) {}
   std::shared_ptr<CallExprRewriter>
   create(const CallExpr *Call) const override {
     const Expr *SourceExpr = Call->getArg(0);
@@ -227,14 +222,15 @@ public:
 /// original call expr.
 template <size_t... Idx>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
-createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
-  return std::make_shared<TextureReadRewriterFactory<Idx...>>(Source,
-                                                              TextureType);
+createTextureReaderRewriterFactory(const std::string &Source, int TextureType,
+                                   const std::string &TargetName) {
+  return std::make_shared<TextureReadRewriterFactory<Idx...>>(
+      Source, TextureType, TargetName);
 }
 
-#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, TexType, ...)                     \
-  {FuncName,                                                                   \
-   createTextureReaderRewriterFactory<__VA_ARGS__>(FuncName, TexType)},
+#define TEX_FUNCTION_FACTORY_ENTRY(FuncName, TexType, TargetName, ...)         \
+  {FuncName, createTextureReaderRewriterFactory<__VA_ARGS__>(                  \
+                 FuncName, TexType, TargetName)},
 #define BIND_TEXTURE_FACTORY_ENTRY(FuncName, ...)                              \
   {FuncName, createBindTextureRewriterFactory<__VA_ARGS__>(FuncName)},
 
@@ -244,7 +240,8 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName,                                             \
-      UnsupportFunctionRewriterFactory<std::string>, MsgID, FuncName)
+                         UnsupportFunctionRewriterFactory<std::string>, MsgID, \
+                         FuncName)
 
 void CallExprRewriterFactoryBase::initRewriterMapTexture() {
   RewriterMap->merge(
@@ -252,8 +249,8 @@ void CallExprRewriterFactoryBase::initRewriterMapTexture() {
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_TEXTURE(SOURCEAPINAME, TEXTYPE, ...)                             \
-  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TEXTYPE, __VA_ARGS__)
+#define ENTRY_TEXTURE(SOURCEAPINAME, TEXTYPE, TARGETAPINAME, ...)              \
+  TEX_FUNCTION_FACTORY_ENTRY(SOURCEAPINAME, TEXTYPE, TARGETAPINAME, __VA_ARGS__)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
 #define ENTRY_BIND(SOURCEAPINAME, ...)                                         \

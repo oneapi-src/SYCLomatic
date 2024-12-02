@@ -5036,9 +5036,12 @@ void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
-    if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
-        "cudaTextureObject_t")
+    std::string ParamName =
+        DpctGlobalInfo::getUnqualifiedTypeName(Param->getType());
+    if (ParamName == "cudaTextureObject_t" ||
+        ParamName == "cudaSurfaceObject_t") {
       TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
+    }
   }
 }
 std::string DeviceFunctionDecl::getExtraParameters(LocInfo LI) {
