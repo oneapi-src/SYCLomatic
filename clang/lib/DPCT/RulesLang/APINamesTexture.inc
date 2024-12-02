@@ -212,12 +212,9 @@ CONDITIONAL_FACTORY_ENTRY(
                   MapNames::getClNamespace() +
                       "ext::oneapi::experimental::sample_image_array",
                   1, 2),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::device_ext,
-        ENTRY_TEXTURE("tex2DLayered", 0xF2,
-                      MapNames::getClNamespace() +
-                          "ext::oneapi::experimental::sample_image_array",
-                      3, 1, 2)))
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ENTRY_TEXTURE("tex2DLayered", 0xF2, "read", 3, 1,
+                                          2)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture",
