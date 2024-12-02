@@ -271,7 +271,8 @@ static int parseCodeElement(const MatchPattern &Suffix,
   const int Size = Input.size();
   while (Index >= 0 && Index < Size) {
 
-    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript ||
+        SrcFileType == SourceFileType::SFT_PySetupScript) {
       if (Input[Index] == '#') {
         for (; Index < Size && Input[Index] != '\n'; Index++) {
         }
@@ -280,8 +281,10 @@ static int parseCodeElement(const MatchPattern &Suffix,
     }
 
     const auto Character = Input[Index];
-    if(Suffix.size() == 0 && Character =='"') {
-      return Index;
+    if (SrcFileType != SourceFileType::SFT_PySetupScript) {
+      if (Suffix.size() == 0 && Character == '"') {
+        return Index;
+      }
     }
     if (Suffix.size() > 0) {
       std::optional<MatchResult> SuffixMatch;
@@ -322,7 +325,8 @@ static int parseCodeElement(const MatchPattern &Suffix,
     delimiters.
     */
 
-    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript ||
+        SrcFileType == SourceFileType::SFT_PySetupScript) {
       if (Index - 1 >= 0 && Character == '"' && Input[Index - 1] == '\\') {
         Index++;
         while (Index < Size &&
@@ -414,6 +418,8 @@ static void applyExtenstionNameChange(
   for (; Pos > 0 && !isWhitespace(Input[Pos]); Pos--) {
   }
   Pos = Pos == 0 ? 0 : Pos + 1;
+  if (Input[Pos] == '"' || Input[Pos] == '\'')
+    Pos += 1;
   std::string SrcFile = Input.substr(Pos, Next + ExtensionType.length() +
                                               1 /*strlen of "."*/ - Pos);
   bool HasCudaSyntax = false;
@@ -563,7 +569,8 @@ findMatch(const MatchPattern &Pattern, const std::string &Input,
   const int Size = Input.size();
   while (PatternIndex < PatternSize && Index < Size) {
 
-    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript ||
+        SrcFileType == SourceFileType::SFT_PySetupScript) {
       if (Input[Index] == '#') {
         for (; Index < Size && Input[Index] != '\n'; Index++) {
         }
@@ -620,7 +627,8 @@ findMatch(const MatchPattern &Pattern, const std::string &Input,
       }
       std::string ElementContents = Input.substr(Index, Next - Index);
 
-      if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+      if (SrcFileType == SourceFileType::SFT_CMakeScript ||
+          SrcFileType == SourceFileType::SFT_PySetupScript) {
         if (Code.Name == "empty" && !ElementContents.empty() &&
             ElementContents.find_first_not_of(' ') != std::string::npos) {
           // For reversed variable ${empty}, it should be empty string or string
@@ -723,8 +731,8 @@ bool fixLineEndings(const std::string &Input, std::string &Output) {
   return isCRLF;
 }
 
-bool skipCmakeComments(std::ostream &OutputStream, const std::string &Input,
-                       int &Index) {
+bool skipBuildScriptComments(std::ostream &OutputStream,
+                             const std::string &Input, int &Index) {
   const int Size = Input.size();
   bool CommentFound = false;
   if (Input[Index] == '#') {
@@ -820,8 +828,9 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   int Index = 0;
   while (Index < Size) {
 
-    if (SrcFileType == SourceFileType::SFT_CMakeScript) {
-      if (skipCmakeComments(OutputStream, Input, Index)) {
+    if (SrcFileType == SourceFileType::SFT_CMakeScript ||
+        SrcFileType == SourceFileType::SFT_PySetupScript) {
+      if (skipBuildScriptComments(OutputStream, Input, Index)) {
         continue;
       }
     }
@@ -835,7 +844,8 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
         const auto &SubruleIterator = PP.Subrules.find(Name);
         if (SubruleIterator != PP.Subrules.end()) {
 
-          if (SrcFileType == SourceFileType::SFT_CMakeScript) {
+          if (SrcFileType == SourceFileType::SFT_CMakeScript ||
+              SrcFileType == SourceFileType::SFT_PySetupScript) {
             auto Pos = Input.find(Value);
             if (Pos != std::string::npos) {
               FrontPart = Input.substr(0, Pos);
@@ -849,7 +859,8 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
 
       std::string OutStr = PP.Out;
 
-      if (SrcFileType == SourceFileType::SFT_CMakeScript &&
+      if ((SrcFileType == SourceFileType::SFT_CMakeScript ||
+           SrcFileType == SourceFileType::SFT_PySetupScript) &&
           !PP.Warning.empty() && Result->FullMatchFound) {
         constructWaringMsg(Input, Match.End, FileName, FrontPart, PP.Warning,
                            OutStr);
