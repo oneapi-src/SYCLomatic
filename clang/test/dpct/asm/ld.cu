@@ -8,7 +8,7 @@
 #include <cuda_runtime.h>
 
 /*
-.ss =                       { .const, .global, .local, .param, .shared, .volatile.global };
+.ss =                       { .const, .global, .local, .param, .shared };
 .type =                     { .b8, .b16, .b32, .b64, .b128, 
                               .u8, .u16, .u32, .u64,
                               .s8, .s16, .s32, .s64,
