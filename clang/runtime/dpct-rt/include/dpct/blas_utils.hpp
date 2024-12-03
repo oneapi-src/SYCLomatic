@@ -273,7 +273,6 @@ matrix_mem_copy_sync(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
         elem_size * rows, cols, direction, deps));
   }
 }
-
 /// Copy matrix data asynchronously. The default leading dimension is column.
 /// \return Output event to wait on to ensure copy is complete.
 /// \param [out] to_ptr A pointer points to the destination location.
