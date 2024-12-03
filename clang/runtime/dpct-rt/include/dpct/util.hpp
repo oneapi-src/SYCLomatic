@@ -1191,13 +1191,6 @@ public:
 #define DPCT_EXPORT
 #endif
 
-inline sycl::event fold_events(sycl::queue q,
-                               const std::vector<sycl::event> &events) {
-  return q.submit([&](sycl::handler &cgh) {
-    cgh.depends_on(events);
-    cgh.host_task([] {});
-  });
-}
 } // namespace dpct
 
 #endif // __DPCT_UTIL_HPP__

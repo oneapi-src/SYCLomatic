@@ -242,6 +242,17 @@ using wrapper_float_in =
 using wrapper_double_in =
     parameter_wrapper_t<double, double, parameter_inout_prop::in>;
 
+/// Copy matrix data synchronously. The default leading dimension is column.
+/// \param [out] to_ptr A pointer points to the destination location.
+/// \param [in] from_ptr A pointer points to the source location.
+/// \param [in] to_ld The leading dimension the destination matrix.
+/// \param [in] from_ld The leading dimension the source matrix.
+/// \param [in] rows The number of rows of the source matrix.
+/// \param [in] cols The number of columns of the source matrix.
+/// \param [in] elem_size The element size in bytes.
+/// \param [in] direction The direction of the data copy.
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] deps A list of events to wait for before starting copy.
 inline void
 matrix_mem_copy_sync(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
                      std::int64_t from_ld, std::int64_t rows, std::int64_t cols,
@@ -262,6 +273,19 @@ matrix_mem_copy_sync(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
         elem_size * rows, cols, direction, deps));
   }
 }
+
+/// Copy matrix data asynchronously. The default leading dimension is column.
+/// \return Output event to wait on to ensure copy is complete.
+/// \param [out] to_ptr A pointer points to the destination location.
+/// \param [in] from_ptr A pointer points to the source location.
+/// \param [in] to_ld The leading dimension the destination matrix.
+/// \param [in] from_ld The leading dimension the source matrix.
+/// \param [in] rows The number of rows of the source matrix.
+/// \param [in] cols The number of columns of the source matrix.
+/// \param [in] elem_size The element size in bytes.
+/// \param [in] direction The direction of the data copy.
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] deps A list of events to wait for before starting copy.
 inline sycl::event
 matrix_mem_copy_async(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
                       std::int64_t from_ld, std::int64_t rows,
@@ -274,13 +298,13 @@ matrix_mem_copy_async(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
     return sycl::event();
   if (to_ld == from_ld) {
     size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
-    ::dpct::cs::memcpy(queue, to_ptr, from_ptr, copy_size, direction, deps);
-  } else {
-    dpct::fold_events(
-        queue, ::dpct::cs::memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
-                                  elem_size * from_ld, elem_size * rows, cols,
-                                  direction, deps));
+    return ::dpct::cs::memcpy(queue, to_ptr, from_ptr, copy_size, direction,
+                              deps);
   }
+  auto events = ::dpct::cs::memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+                                   elem_size * from_ld, elem_size * rows, cols,
+                                   direction, deps);
+  return queue.single_task(events, [] {});
 }
 
 /// Copy matrix data. The default leading dimension is column.
