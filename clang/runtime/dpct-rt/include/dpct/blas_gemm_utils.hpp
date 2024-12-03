@@ -966,8 +966,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   std::unordered_map<int, ::dnnl::memory> matmul_args;
   matmul_args.insert({DNNL_ARG_SRC, *src_mem});
   matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
-  if (!beta_is_zero)
-    matmul_args.insert({DNNL_ARG_BIAS, *bias_mem});
+//  if (!beta_is_zero)
+//    matmul_args.insert({DNNL_ARG_BIAS, *bias_mem});
   matmul_args.insert({DNNL_ARG_DST, *dst_mem});
   ::dnnl::primitive_attr matmul_attr;
   ::dnnl::memory *scales_alpha = nullptr;
@@ -1025,11 +1025,15 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         {DNNL_ARG_ATTR_SCALES | DNNL_ARG_WEIGHTS, *scales_alpha});
   }
 
-  if (compute_desc->_epilogue != epilogue_t::nop) {
-    ::dnnl::post_ops matmul_ops;
+  ::dnnl::post_ops matmul_ops;
+  if (!beta_is_zero) {
+    matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
+    matmul_args.insert(
+        {DNNL_ARG_ATTR_MULTIPLE_POST_OP(0) | DNNL_ARG_SRC_1, *bias_mem});
+  } else if (compute_desc->_epilogue != epilogue_t::nop) {
     matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
-    matmul_attr.set_post_ops(matmul_ops);
   }
+  matmul_attr.set_post_ops(matmul_ops);
 
   auto matmul_pd =
       beta_is_zero
