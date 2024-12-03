@@ -71,12 +71,12 @@ memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t to_pitch,
   return ::dpct::detail::dpct_memcpy(
       q, to_ptr, from_ptr, sycl::range<3>(to_pitch, y, 1),
       sycl::range<3>(from_pitch, y, 1), sycl::id<3>(0, 0, 0),
-      sycl::id<3>(0, 0, 0), sycl::range<3>(x, y, 1), dep_events);
+      sycl::id<3>(0, 0, 0), sycl::range<3>(x, y, 1), direction, dep_events);
 #else
   return ::syclcompat::detail::memcpy(
       q, to_ptr, from_ptr, sycl::range<3>(to_pitch, y, 1),
       sycl::range<3>(from_pitch, y, 1), sycl::id<3>(0, 0, 0),
-      sycl::id<3>(0, 0, 0), sycl::range<3>(x, y, 1), dep_events);
+      sycl::id<3>(0, 0, 0), sycl::range<3>(x, y, 1), direction, dep_events);
 #endif
 }
 

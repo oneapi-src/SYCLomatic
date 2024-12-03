@@ -332,7 +332,7 @@ matrix_mem_copy(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
                           elem_size, direction, queue);
   else
     matrix_mem_copy_sync(to_ptr, from_ptr, to_ld, from_ld, rows, cols,
-                         elem_size, direction, queue)
+                         elem_size, direction, queue);
 }
 
 enum class math_mode : int {
