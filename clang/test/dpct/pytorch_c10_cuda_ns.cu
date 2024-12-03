@@ -1,7 +1,7 @@
 // RUN: rm -rf %T/src
 // RUN: mkdir %T/src
 // RUN: cp %S/pytorch_c10_cuda_ns.cu %T/src/
-// RUN: cp %S/user_defined_rule_pytorch.yaml %T/
+// RUN: cp -f %S/user_defined_rule_pytorch.yaml %T/
 // RUN: cp -r %S/pytorch_cuda_inc %T/
 // RUN: cd %T
 // RUN: rm -rf %T/pytorch_c10_cuda_ns_output

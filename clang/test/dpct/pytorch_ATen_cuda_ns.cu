@@ -1,7 +1,7 @@
 // RUN: rm -rf %T/pytorch_ATen_cuda_ns
 // RUN: mkdir %T/pytorch_ATen_cuda_ns
 // RUN: cp %S/pytorch_ATen_cuda_ns.cu %T/pytorch_ATen_cuda_ns/
-// RUN: cp %S/user_defined_rule_pytorch.yaml %T/
+// RUN: cp -f %S/user_defined_rule_pytorch.yaml %T/
 // RUN: cp -r %S/pytorch_cuda_inc %T/
 // RUN: cd %T
 // RUN: rm -rf %T/pytorch_ATen_cuda_ns_output
