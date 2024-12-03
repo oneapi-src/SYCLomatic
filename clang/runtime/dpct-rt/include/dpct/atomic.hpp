@@ -742,7 +742,6 @@ public:
   static constexpr sycl::memory_scope default_scope = DefaultScope;
   static constexpr sycl::memory_order default_read_modify_write_order =
       DefaultOrder;
-  
 
   /// Default constructor.
   constexpr atomic() noexcept = default;

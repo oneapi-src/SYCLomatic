@@ -1,21 +1,21 @@
-# ===------------------------ vars.bat_SYCLomatic -------------------------=== #
-#
-# Copyright (C) Intel Corporation
-#
-# Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-# See https://llvm.org/LICENSE.txt for license information.
-# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-#
-# ===----------------------------------------------------------------------=== #
+:: ===------------------------ vars.bat_SYCLomatic -------------------------=== ::
+::
+:: Copyright (C) Intel Corporation
+::
+:: Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+:: See https://llvm.org/LICENSE.txt for license information.
+:: SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+::
+:: ===----------------------------------------------------------------------=== ::
 
-# run this file to export SYCLomatic env
+:: run this file to export SYCLomatic env
 
 @echo off
 
-# determine the installtion directory of SYCLomatic
+:: determine the installtion directory of SYCLomatic
 set SYCLomatic_ROOT=%~dp0
 
-# export the env vars for bin and include paths
+:: export the env vars for bin and include paths
 IF EXIST "%SYCLomatic_ROOT%bin\dpct.exe" (
     set "PATH=%SYCLomatic_ROOT%bin;%PATH%"
     set "INCLUDE=%SYCLomatic_ROOT%include;%INCLUDE%"

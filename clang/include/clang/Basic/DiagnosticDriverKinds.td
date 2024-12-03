@@ -314,7 +314,9 @@ def err_arch_unsupported_isa
 
 def err_drv_I_dash_not_supported : Error<
   "'%0' not supported, please use -iquote instead">;
-def err_drv_unknown_argument : Error<"unknown argument: '%0'">;
+// SYCLomatic_CUSTOMIZATION begin
+def err_drv_unknown_argument : Error<"dpct/c2s ignoring argument: '%0'">;
+// SYCLomatic_CUSTOMIZATION end
 def err_drv_unknown_argument_with_suggestion : Error<
   "unknown argument '%0'; did you mean '%1'?">;
 def warn_drv_unknown_argument_clang_cl : Warning<

@@ -7,3 +7,5 @@ dpct_helper_sycl_compile(obj3 f1.dp.cpp f2.dp.cpp f3.dp.cpp)
 dpct_helper_sycl_compile(obj4 a.dp.cpp b.dp.cpp)
 
 dpct_helper_sycl_compile(obj5 a.dp.cpp b.dp.cpp)
+
+dpct_helper_sycl_compile(obj6 a.dp.cpp b.dp.cpp)

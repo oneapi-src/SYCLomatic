@@ -50,12 +50,12 @@ void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
         new internal::HasNameMatcher(AtomicFuncNames));
   };
 
-  // Support all integer type, float, double and half2
-  // Type half is not supported
+  // Support all integer type, float, double, half and half2.
   auto supportedTypes = [&]() {
     return anyOf(hasType(pointsTo(isInteger())),
                  hasType(pointsTo(asString("float"))),
                  hasType(pointsTo(asString("double"))),
+                 hasType(pointsTo(asString("__half"))),
                  hasType(pointsTo(asString("__half2"))));
   };
 

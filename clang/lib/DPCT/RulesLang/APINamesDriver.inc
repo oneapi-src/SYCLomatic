@@ -26,14 +26,14 @@ FEATURE_REQUEST_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
                                             CALL(MapNames::getDpctNamespace() +
                                                      "load_kernel_library_mem",
-                                                 ARG(1)))))
+                                                 CAST_IF_NOT_SAME(makeLiteral("const char *"), ARG(1))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuModuleLoadDataEx", DEREF(0),
                                             CALL(MapNames::getDpctNamespace() +
                                                      "load_kernel_library_mem",
-                                                 ARG(1)))))
+                                                 CAST_IF_NOT_SAME(makeLiteral("const char *"), ARG(1))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

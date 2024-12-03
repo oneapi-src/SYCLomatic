@@ -109,7 +109,15 @@ const std::string DplExtrasDpcppExtensionsAllContentStr =
 const std::string DplExtrasIteratorAdaptorAllContentStr =
 #include "clang/DPCT/dpl_extras/iterator_adaptor.h.inc"
     ;
-
+const std::string GroupUtilsDetailAllContentStr =
+#include "clang/DPCT/detail/group_utils_detail.hpp.inc"
+    ;
+const std::string MathDetailAllContentStr =
+#include "clang/DPCT/detail/math_detail.hpp.inc"
+    ;
+const std::string MemoryDetailAllContentStr =
+#include "clang/DPCT/detail/memory_detail.hpp.inc"
+    ;
 const std::string CodePinAllContentStr =
 #include "clang/DPCT/codepin/codepin.hpp.inc"
     ;
@@ -139,6 +147,9 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   if (!llvm::sys::fs::is_directory(
           appendPath(ToPath.getCanonicalPath().str(), "codepin")))
     createDirectories(appendPath(ToPath.getCanonicalPath().str(), "codepin"));
+  if (!llvm::sys::fs::is_directory(
+          appendPath(ToPath.getCanonicalPath().str(), "detail")))
+    createDirectories(appendPath(ToPath.getCanonicalPath().str(), "detail"));
   if (!llvm::sys::fs::is_directory(
           appendPath(appendPath(ToPath.getCanonicalPath().str(), "codepin"),
                      "serialization")))
@@ -178,6 +189,9 @@ void genHelperFunction(const clang::tooling::UnifiedPath &OutRoot) {
   GENERATE_ALL_FILE_CONTENT(GroupUtils, ".", group_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(BlasGemmUtils, ".", blas_gemm_utils.hpp)
   GENERATE_ALL_FILE_CONTENT(CompatService, ".", compat_service.hpp)
+  GENERATE_ALL_FILE_CONTENT(GroupUtilsDetail, "detail", group_utils_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(MathDetail, "detail", math_detail.hpp)
+  GENERATE_ALL_FILE_CONTENT(MemoryDetail, "detail", memory_detail.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePin, "codepin", codepin.hpp)
   GENERATE_ALL_FILE_CONTENT(CodePinSerializationBasic, "codepin/serialization",
                             basic.hpp)

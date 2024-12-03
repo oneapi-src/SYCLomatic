@@ -29,6 +29,23 @@ __global__ void kernelWriteToLayeredSurface(cudaSurfaceObject_t surface, int wid
     }
 }
 
+// CHECK: template<typename T> void kernel2(sycl::ext::oneapi::experimental::unsampled_image_handle surf) {
+template<typename T> __global__ void kernel2(cudaSurfaceObject_t surf) {
+  int i;
+  float j, k, l, m;
+  // CHECK: dpct::experimental::sample_image_by_byte<T>(surf, float(i));
+  surf1Dread<T>(surf, i);
+  // CHECK: i = dpct::experimental::sample_image_by_byte<T>(surf, float(i));
+  surf1Dread<T>(&i, surf, i);
+  // CHECK: dpct::experimental::sample_image_by_byte<T>(surf, sycl::float2(j, i));
+  surf2Dread<T>(surf, j, i);
+  // CHECK: i = dpct::experimental::sample_image_by_byte<T>(surf, sycl::float2(j, i));
+  surf2Dread<T>(&i, surf, j, i);
+  // CHECK: dpct::experimental::sample_image_by_byte<T>(surf, sycl::float3(k, j, i));
+  surf3Dread<T>(surf, k, j, i);
+  // CHECK: i = dpct::experimental::sample_image_by_byte<T>(surf, sycl::float3(k, j, i));
+  surf3Dread<T>(&i, surf, k, j, i);
+}
 int main() {
   // CHECK: sycl::ext::oneapi::experimental::unsampled_image_handle surf;
   cudaSurfaceObject_t surf;

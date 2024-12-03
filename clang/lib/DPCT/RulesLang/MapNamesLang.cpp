@@ -306,6 +306,7 @@ const std::unordered_set<std::string> MapNamesLang::CooperativeGroupsAPISet{
     "shfl",
     "shfl_xor",
     "meta_group_rank",
+    "meta_group_size",
     "block_tile_memory",
     "thread_index",
     "group_index",

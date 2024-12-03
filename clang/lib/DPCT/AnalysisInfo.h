@@ -2054,7 +2054,7 @@ public:
   bool isUseHelperFunc() { return true; }
 };
 
-// texture handle info
+// texture object info can be used for CUDA texture and surface objects.
 class TextureObjectInfo : public TextureInfo {
   static const int ReplaceTypeLength;
 
