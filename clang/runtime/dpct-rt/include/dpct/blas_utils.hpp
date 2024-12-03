@@ -242,6 +242,47 @@ using wrapper_float_in =
 using wrapper_double_in =
     parameter_wrapper_t<double, double, parameter_inout_prop::in>;
 
+inline void
+matrix_mem_copy_sync(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
+                     std::int64_t from_ld, std::int64_t rows, std::int64_t cols,
+                     std::int64_t elem_size,
+                     ::dpct::cs::memcpy_direction direction =
+                         ::dpct::cs::memcpy_direction::automatic,
+                     sycl::queue &queue = ::dpct::cs::get_default_queue(),
+                     const std::vector<sycl::event> &deps = {}) {
+  if (to_ptr == from_ptr && to_ld == from_ld)
+    return;
+  if (to_ld == from_ld) {
+    size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
+    ::dpct::cs::memcpy(queue, to_ptr, from_ptr, copy_size, direction, deps)
+        .wait();
+  } else {
+    sycl::event::wait(::dpct::cs::memcpy(
+        queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
+        elem_size * rows, cols, direction, deps));
+  }
+}
+inline sycl::event
+matrix_mem_copy_async(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
+                      std::int64_t from_ld, std::int64_t rows,
+                      std::int64_t cols, std::int64_t elem_size,
+                      ::dpct::cs::memcpy_direction direction =
+                          ::dpct::cs::memcpy_direction::automatic,
+                      sycl::queue &queue = ::dpct::cs::get_default_queue(),
+                      const std::vector<sycl::event> &deps = {}) {
+  if (to_ptr == from_ptr && to_ld == from_ld)
+    return sycl::event();
+  if (to_ld == from_ld) {
+    size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
+    ::dpct::cs::memcpy(queue, to_ptr, from_ptr, copy_size, direction, deps);
+  } else {
+    dpct::fold_events(
+        queue, ::dpct::cs::memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+                                  elem_size * from_ld, elem_size * rows, cols,
+                                  direction, deps));
+  }
+}
+
 /// Copy matrix data. The default leading dimension is column.
 /// \param [out] to_ptr A pointer points to the destination location.
 /// \param [in] from_ptr A pointer points to the source location.
@@ -262,29 +303,12 @@ matrix_mem_copy(void *to_ptr, const void *from_ptr, std::int64_t to_ld,
                     ::dpct::cs::memcpy_direction::automatic,
                 sycl::queue &queue = ::dpct::cs::get_default_queue(),
                 bool async = false) {
-  if (to_ptr == from_ptr && to_ld == from_ld) {
-    return;
-  }
-
-  if (to_ld == from_ld) {
-    size_t copy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
-    if (async)
-      ::dpct::cs::memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
-                         direction);
-    else
-      ::dpct::cs::memcpy(queue, (void *)to_ptr, (void *)from_ptr, copy_size,
-                         direction)
-          .wait();
-  } else {
-    if (async)
-      ::dpct::cs::memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
-                         elem_size * from_ld, elem_size * rows, cols,
-                         direction);
-    else
-      sycl::event::wait(::dpct::cs::memcpy(
-          queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
-          elem_size * rows, cols, direction));
-  }
+  if (async)
+    matrix_mem_copy_async(to_ptr, from_ptr, to_ld, from_ld, rows, cols,
+                          elem_size, direction, queue);
+  else
+    matrix_mem_copy_sync(to_ptr, from_ptr, to_ld, from_ld, rows, cols,
+                         elem_size, direction, queue)
 }
 
 enum class math_mode : int {
