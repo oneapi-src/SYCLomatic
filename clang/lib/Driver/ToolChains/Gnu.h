@@ -14,7 +14,6 @@
 #include "ROCm.h"
 #include "clang/Driver/Tool.h"
 #include "clang/Driver/ToolChain.h"
-#include <functional>
 #include <set>
 
 namespace clang {
