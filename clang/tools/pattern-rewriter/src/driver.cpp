@@ -113,18 +113,37 @@ static std::string fixLineEndings(const std::string &Input) {
   return OutputStream.str();
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+llvm::cl::OptionCategory &getPatReCategory() {
+  static llvm::cl::OptionCategory PatReCategory("Pattern Rewriter options");
+  return PatReCategory;
+}
+#endif
+
 int main(int argc, char *argv[]) {
-  llvm::cl::opt<std::string> InputFilename(
-      llvm::cl::Positional, llvm::cl::desc("<input file>"),
-      llvm::cl::value_desc("filename"), llvm::cl::Required);
+  llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional,
+                                           llvm::cl::desc("<input file>"),
+                                           llvm::cl::value_desc("filename"),
+#ifdef SYCLomatic_CUSTOMIZATION
+                                           llvm::cl::cat(getPatReCategory()),
+#endif
+                                           llvm::cl::Required);
 
   llvm::cl::opt<std::string> OutputFilename(
       "o", llvm::cl::desc("[required] Specify output filename"),
-      llvm::cl::value_desc("filename"), llvm::cl::Required);
+      llvm::cl::value_desc("filename"),
+#ifdef SYCLomatic_CUSTOMIZATION
+      llvm::cl::cat(getPatReCategory()),
+#endif
+      llvm::cl::Required);
 
   llvm::cl::opt<std::string> RulesFilename(
       "r", llvm::cl::desc("[required] Specify rules filename"),
-      llvm::cl::value_desc("filename"), llvm::cl::Required);
+      llvm::cl::value_desc("filename"),
+#ifdef SYCLomatic_CUSTOMIZATION
+      llvm::cl::cat(getPatReCategory()),
+#endif
+      llvm::cl::Required);
 
   llvm::cl::extrahelp MoreHelp(Examples);
 
