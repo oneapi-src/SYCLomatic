@@ -966,8 +966,6 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   std::unordered_map<int, ::dnnl::memory> matmul_args;
   matmul_args.insert({DNNL_ARG_SRC, *src_mem});
   matmul_args.insert({DNNL_ARG_WEIGHTS, *weights_mem});
-//  if (!beta_is_zero)
-//    matmul_args.insert({DNNL_ARG_BIAS, *bias_mem});
   matmul_args.insert({DNNL_ARG_DST, *dst_mem});
   ::dnnl::primitive_attr matmul_attr;
   ::dnnl::memory *scales_alpha = nullptr;
@@ -1030,18 +1028,14 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
     matmul_args.insert(
         {DNNL_ARG_ATTR_MULTIPLE_POST_OP(0) | DNNL_ARG_SRC_1, *bias_mem});
-  } else if (compute_desc->_epilogue != epilogue_t::nop) {
+  }
+  if (compute_desc->_epilogue != epilogue_t::nop) {
     matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
   }
   matmul_attr.set_post_ops(matmul_ops);
 
-  auto matmul_pd =
-      beta_is_zero
-          ? ::dnnl::matmul::primitive_desc(handle->get_engine(), src_md,
-                                           weights_md, dst_md, matmul_attr)
-          : ::dnnl::matmul::primitive_desc(handle->get_engine(), src_md,
-                                           weights_md, bias_md, dst_md,
-                                           matmul_attr);
+  auto matmul_pd = ::dnnl::matmul::primitive_desc(
+      handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
   auto matmul_prim = ::dnnl::matmul(matmul_pd);
   sycl::event matmul_prim_event = ::dnnl::sycl_interop::execute(
       matmul_prim, handle->get_engine_stream(), matmul_args, transform_events);
