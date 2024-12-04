@@ -14,6 +14,7 @@
 #include "ROCm.h"
 #include "clang/Driver/Tool.h"
 #include "clang/Driver/ToolChain.h"
+#include <functional>
 #include <set>
 
 namespace clang {
@@ -212,7 +213,7 @@ public:
 
     GCCVersion Version;
 #ifdef SYCLomatic_CUSTOMIZATION
-    std::vector<GCCVersion> CandidateVersion;
+    std::set<GCCVersion, std::greater<GCCVersion>> CandidateVersion;
 #endif // SYCLomatic_CUSTOMIZATION
     // We retain the list of install paths that were considered and rejected in
     // order to print out detailed information in verbose mode.
@@ -253,9 +254,12 @@ public:
     /// Get the detected GCC version string.
     const GCCVersion &getVersion() const { return Version; }
 
-    #ifdef SYCLomatic_CUSTOMIZATION
-    const std::vector<GCCVersion> &GetCandidateVersion() const { return CandidateVersion; }
-    #endif // SYCLomatic_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
+    const std::set<GCCVersion, std::greater<GCCVersion>> &
+    GetCandidateVersion() const {
+      return CandidateVersion;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
 
     /// Print information about the detected GCC installation.
     void print(raw_ostream &OS) const;
