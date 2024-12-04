@@ -70,7 +70,7 @@ makeTemplateArgCreator(unsigned Idx) {
 std::function<std::string(const TypeLoc)>
 makeUserDefinedTypeStrCreator(MetaRuleObject &R,
                               std::shared_ptr<TypeOutputBuilder> TOB) {
-  return [&R, TOB](const TypeLoc TL) {
+  return [&R, Builder = std::move(TOB)](const TypeLoc TL) {
     if (!TL)
       return std::string();
     auto Range = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
@@ -80,7 +80,7 @@ makeUserDefinedTypeStrCreator(MetaRuleObject &R,
 
     std::string ResultStr;
     llvm::raw_string_ostream OS(ResultStr);
-    for (auto &tob : TOB->SubBuilders) {
+    for (auto &tob : Builder->SubBuilders) {
       switch (tob->Kind) {
       case (OutputBuilder::Kind::String):
         OS << tob->Str;
@@ -118,7 +118,7 @@ inline auto CheckForPostfixDeclaratorType(unsigned Idx) {
     if (const auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
       const auto TAT = TSTL.getArgLoc(Idx).getArgument().getAsType();
       const auto CT = TAT.getCanonicalType();
-      return typeIsPostfix(CT);
+      return isTypePostfix(CT);
     }
     return false;
   };
@@ -239,6 +239,14 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocConditionalFactory(
                                                              Second);
 }
 
+template <typename... ArgsT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocEmitWarningFactory(
+    std::shared_ptr<TypeLocRewriterFactoryBase> &&Inner, Diagnostics MsgID,
+    ArgsT... Args) {
+  return std::make_shared<TypeLocEmitWarningRewriterFactory<ArgsT...>>(
+      Inner, MsgID, Args...);
+}
+
 template <typename... Args> 
 std::shared_ptr<TypeLocRewriterFactoryBase>
 createReportWarningTypeLocRewriterFactory(Diagnostics MsgId,
@@ -304,6 +312,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #define TYPESTR makeTypeStrCreator()
 #define WARNING_FACTORY(MSGID, ...)                                            \
   createReportWarningTypeLocRewriterFactory(MSGID, __VA_ARGS__)
+#define EMIT_WARNING_FACTORY(...) createTypeLocEmitWarningFactory(__VA_ARGS__)
 #define ADD_POINTER(CREATOR) makeAddPointerCreator(CREATOR)
 #include "APINamesTemplateType.inc"
 #undef WARNING_FACTORY

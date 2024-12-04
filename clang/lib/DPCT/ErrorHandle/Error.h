@@ -67,7 +67,7 @@ enum ProcessStatus {
   MigrationErrorNoExplicitInRootAndBuildScript = -52,
   MigrationErrorCannotWrite = -53,
   MigratePythonBuildScriptOnlyNotSpecifed = -54,
-};
+  };
 
 namespace clang {
 namespace dpct {
@@ -75,6 +75,12 @@ namespace dpct {
 void ShowStatus(int Status, std::string Message = "");
 std::string getLoadYamlFailWarning(const clang::tooling::UnifiedPath& YamlPath);
 std::string getCheckVersionFailWarning();
+
+extern bool IsUsingDefaultOutRoot;
+void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot);
+void dpctExit(int ExitCode, bool NeedCleanUp = true);
+
+
 } // namespace dpct
 } // namespace clang
 

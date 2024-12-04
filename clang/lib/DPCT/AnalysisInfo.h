@@ -43,6 +43,8 @@ void setGetReplacedNamePtr(llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
+
+using format::FormatRange;
 using LocInfo = std::pair<tooling::UnifiedPath, unsigned int>;
 template <class F, class... Ts>
 std::string buildStringFromPrinter(F Func, Ts &&...Args) {
@@ -709,8 +711,11 @@ public:
   static bool isInAnalysisScope(SourceLocation SL) {
     return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
-  static bool isInAnalysisScope(clang::tooling::UnifiedPath FilePath) {
-    return isChildPath(AnalysisScope, FilePath);
+  static bool isInAnalysisScope(const clang::tooling::UnifiedPath &FilePath) {
+    return std::any_of(AnalysisScope.begin(), AnalysisScope.end(),
+                       [&](const clang::tooling::UnifiedPath &P) {
+                         return isChildPath(P, FilePath);
+                       });
   }
   static bool isExcluded(const clang::tooling::UnifiedPath &FilePath);
   // TODO: implement one of this for each source language.
@@ -728,11 +733,11 @@ public:
     OutRoot = OutRootPath;
   }
   static const clang::tooling::UnifiedPath &getOutRoot() { return OutRoot; }
-  static void
-  setAnalysisScope(const clang::tooling::UnifiedPath &InputAnalysisScope) {
+  static void setAnalysisScope(
+      const std::vector<clang::tooling::UnifiedPath> &InputAnalysisScope) {
     AnalysisScope = InputAnalysisScope;
   }
-  static const clang::tooling::UnifiedPath &getAnalysisScope() {
+  static const std::vector<clang::tooling::UnifiedPath> &getAnalysisScope() {
     return AnalysisScope;
   }
   static void addChangeExtensions(const std::string &Extension) {
@@ -1542,7 +1547,7 @@ private:
       MainSourceYamlTUR;
   static clang::tooling::UnifiedPath InRoot;
   static clang::tooling::UnifiedPath OutRoot;
-  static clang::tooling::UnifiedPath AnalysisScope;
+  static std::vector<clang::tooling::UnifiedPath> AnalysisScope;
   static std::unordered_set<std::string> ChangeExtensions;
   static std::string SYCLSourceExtension;
   static std::string SYCLHeaderExtension;
@@ -2049,7 +2054,7 @@ public:
   bool isUseHelperFunc() { return true; }
 };
 
-// texture handle info
+// texture object info can be used for CUDA texture and surface objects.
 class TextureObjectInfo : public TextureInfo {
   static const int ReplaceTypeLength;
 
@@ -2881,6 +2886,7 @@ private:
 
   void removeExtraIndent();
   void addDevCapCheckStmt();
+  void addPropertiesStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl();
@@ -3112,20 +3118,15 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
   std::string KeyForDeclCounter = HFInfo.DeclLocFile.getCanonicalPath().str() +
                                   ":" + std::to_string(HFInfo.DeclLocOffset);
 
-  if (DpctGlobalInfo::getTempVariableDeclCounterMap().count(
-          KeyForDeclCounter) == 0) {
-    DpctGlobalInfo::getTempVariableDeclCounterMap().insert(
-        {KeyForDeclCounter, {}});
-  }
-  auto Iter =
-      DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
+  auto &Counter =
+      DpctGlobalInfo::getTempVariableDeclCounterMap()[KeyForDeclCounter];
   switch (HFT) {
   case HelperFuncType::HFT_DefaultQueue:
   case HelperFuncType::HFT_DefaultQueuePtr:
-    ++Iter->second.DefaultQueueCounter;
+    ++Counter.DefaultQueueCounter;
     break;
   case HelperFuncType::HFT_CurrentDevice:
-    ++Iter->second.CurrentDeviceCounter;
+    ++Counter.CurrentDeviceCounter;
     break;
   default:
     break;

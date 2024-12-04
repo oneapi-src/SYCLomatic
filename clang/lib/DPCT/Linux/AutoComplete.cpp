@@ -42,7 +42,8 @@ static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
 void AutoCompletePrinter::process() {
   llvm::StringRef InputRef(Input);
   LastSharpPos = InputRef.find_last_of('#');
-  if (LastSharpPos == (InputRef.size() - 1)) {
+  if (LastSharpPos == llvm::StringRef::npos ||
+      LastSharpPos == (InputRef.size() - 1)) {
     // No char after last '#', it means user press tab after a space,
     // return empty line to show files/folders
     printAndExit();

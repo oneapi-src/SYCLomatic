@@ -7,10 +7,7 @@
 //===-----------------------------------------------------------------------===//
 
 #include "NCCLAPIMigration.h"
-
-#include "ASTTraversal.h"
 #include "RuleInfra/ExprAnalysis.h"
-#include "MigrationRuleManager.h"
 
 using namespace clang::dpct;
 using namespace clang::ast_matchers;

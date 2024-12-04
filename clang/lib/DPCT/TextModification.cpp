@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "TextModification.h"
-#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
 #include "Utility.h"
@@ -18,12 +17,14 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/FileEntry.h"
 #include "llvm/Support/Path.h"
-
-#include <sstream>
+#include <cctype>
 
 using namespace clang;
 using namespace clang::dpct;
 using namespace clang::tooling;
+
+namespace clang {
+namespace dpct {
 
 bool ReplaceStmt::inCompoundStmt(const Stmt *E) {
   auto &context = DpctGlobalInfo::getContext();
@@ -100,7 +101,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }
-    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto &Context = DpctGlobalInfo::getContext();
     auto LastTokenLength =
         Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
     auto CallExprLength = SM.getDecomposedLoc(End).second -
@@ -340,7 +341,7 @@ ReplaceVarDecl::getReplacement(const ASTContext &Context) const {
   SourceLocation Loc = D->getEndLoc();
   while (true) {
     auto Tok = Lexer::findNextToken(
-        Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+        Loc, SM, DpctGlobalInfo::getContext().getLangOpts());
     if (Tok.has_value()) {
       auto Val = Tok.value();
       Loc = Tok.value().getLocation();
@@ -642,9 +643,8 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
   while ((Data != ':') && (Data != '{'))
     Data = DataBegin[++i];
 
-  Data = DataBegin[--i];
-  while ((Data == ' ') || (Data == '\t') || (Data == '\n') || (Data == '\r'))
-    Data = DataBegin[--i];
+  while (i && std::isspace(DataBegin[--i]))
+    ;
   auto Repl = std::make_shared<ExtReplacement>(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " dpct_type_" + getHashStrFromLoc(BeginLoc).substr(0, 6), this);
@@ -867,7 +867,7 @@ void ReplaceText::print(llvm::raw_ostream &OS, ASTContext &Context,
   printInsertion(OS, T);
 }
 
-TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation End,
+TextModification * replaceText(SourceLocation Begin, SourceLocation End,
                               std::string &&Str, const SourceManager &SM) {
   auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
   if (Length > 0) {
@@ -875,7 +875,7 @@ TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation 
   }
   return nullptr;
 }
-SourceLocation clang::dpct::getArgEndLocation(const CallExpr *C, unsigned Idx,
+SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
                                  const SourceManager &SM) {
   auto SL = getStmtExpansionSourceRange(C->getArg(Idx)).getEnd();
   return SL.getLocWithOffset(Lexer::MeasureTokenLength(
@@ -884,7 +884,7 @@ SourceLocation clang::dpct::getArgEndLocation(const CallExpr *C, unsigned Idx,
 
 /// Return a TextModication that removes nth argument of the CallExpr,
 /// together with the preceding comma.
-TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
+TextModification * removeArg(const CallExpr *C, unsigned n,
                             const SourceManager &SM) {
   if (C->getNumArgs() <= n)
     return nullptr;
@@ -905,3 +905,5 @@ TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
   }
   return replaceText(Begin, End, "", SM);
 }
+} // namespace dpct
+} // namespace clang

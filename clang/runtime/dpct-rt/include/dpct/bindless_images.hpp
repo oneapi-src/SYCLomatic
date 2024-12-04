@@ -844,7 +844,7 @@ inline void unmap_resources(int count, external_mem_wrapper **handles,
 /// \param [in] q The queue where the image creation be executed.
 /// \returns The sampled image handle of created bindless image.
 static inline sycl::ext::oneapi::experimental::sampled_image_handle
-create_bindless_image(image_data data, sampling_info info,
+create_bindless_image(image_data data, sampling_info info = {},
                       sycl::queue q = get_default_queue()) {
   auto samp = sycl::ext::oneapi::experimental::bindless_image_sampler(
       info.get_addressing_mode(), info.get_coordinate_normalization_mode(),
@@ -1350,6 +1350,21 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
   dpct_memcpy(temp, src, w_offset_src, h_offset_src, s, q);
   dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, s, q);
   sycl::free(temp, q);
+}
+
+// A wrapper for sycl sample_image function for the byte addressing image.
+template <typename DataT, typename HintT = DataT, typename CoordT>
+DataT sample_image_by_byte(
+    const sycl::ext::oneapi::experimental::sampled_image_handle &imageHandle,
+    CoordT &&coords) {
+  if constexpr (std::is_scalar_v<CoordT>) {
+    return sycl::ext::oneapi::experimental::sample_image<DataT, HintT, CoordT>(
+        imageHandle, coords / sizeof(DataT));
+  } else {
+    coords[0] = coords[0] / sizeof(DataT);
+    return sycl::ext::oneapi::experimental::sample_image<DataT, HintT, CoordT>(
+        imageHandle, coords);
+  }
 }
 
 using image_mem_wrapper_ptr = image_mem_wrapper *;

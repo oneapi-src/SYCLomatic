@@ -11,6 +11,8 @@
 #include "MigrateBuildScript.h"
 #include "UserDefinedRules/UserDefinedRules.h"
 
+namespace clang {
+namespace dpct {
 void collectPythonBuildScripts(const clang::tooling::UnifiedPath &InRoot,
                                const clang::tooling::UnifiedPath &OutRoot);
 void collectPythonBuildScriptsSpecified(
@@ -23,4 +25,6 @@ void registerPythonMigrationRule(MetaRuleObject &R);
 bool pythonBuildScriptNotFound();
 void addPythonWarningMsg(const std::string &WarningMsg,
                          const std::string FileName);
-#endif
+} // namespace dpct
+} // namespace clang
+#endif //DPCT_MIGRATE_PYTHON_BUILD_SCRIPT_H

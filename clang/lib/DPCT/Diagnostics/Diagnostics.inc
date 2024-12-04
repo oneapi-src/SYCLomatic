@@ -58,8 +58,8 @@ DEF_WARNING(TIME_MEASUREMENT_FOUND, 1012, MEDIUM_LEVEL, "Detected kernel executi
 DEF_COMMENT(TIME_MEASUREMENT_FOUND, 1012, MEDIUM_LEVEL, "Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.")
 DEF_WARNING(ROUNDING_MODE_UNSUPPORTED, 1013, MEDIUM_LEVEL, "The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.")
 DEF_COMMENT(ROUNDING_MODE_UNSUPPORTED, 1013, MEDIUM_LEVEL, "The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.")
-DEF_WARNING(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, MEDIUM_LEVEL, "The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.")
-DEF_COMMENT(STREAM_FLAG_PRIORITY_NOT_SUPPORTED, 1014, MEDIUM_LEVEL, "The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.")
+DEF_WARNING(UNSUPPORTED_FEATURE_IN_SYCL, 1014, MEDIUM_LEVEL, "The %0 %1 not supported for SYCL %2. The output parameter(s) %1 set to 0.")
+DEF_COMMENT(UNSUPPORTED_FEATURE_IN_SYCL, 1014, MEDIUM_LEVEL, "The {0} {1} not supported for SYCL {2}. The output parameter(s) {1} set to 0.")
 DEF_WARNING(PRINTF_FUNC_MIGRATION_WARNING, 1015, LOW_LEVEL, "Output needs adjustment.")
 DEF_COMMENT(PRINTF_FUNC_MIGRATION_WARNING, 1015, LOW_LEVEL, "Output needs adjustment.")
 DEF_WARNING(NOT_SUPPORTED_PARAMETERS_VALUE, 1016, LOW_LEVEL, "deprecated")
@@ -294,6 +294,8 @@ DEF_WARNING(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not 
 DEF_COMMENT(UNSUPPORTED_KERNEL_ATTRIBUTE, 1132, HIGH_LEVEL, "SYCL 2020 does not support accessing the {0} for the kernel. The API is replaced with member variable \"{1}\". Please set the appropriate value for \"{1}\".")
 DEF_WARNING(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer API (\"dpct::sparse::csrgemm\") of this API, and this API has 2 arguments depending on the 8th and the 12th parameters of the consumer API. Please replace the 2 arguments tagged as \"dpct_placeholder\" with the corresponding value.")
 DEF_COMMENT(SPARSE_NNZ, 1134, MEDIUM_LEVEL, "The tool cannot deduce the consumer API (\"dpct::sparse::csrgemm\") of this API, and this API has 2 arguments depending on the 8th and the 12th parameters of the consumer API. Please replace the 2 arguments tagged as \"dpct_placeholder\" with the corresponding value.")
+DEF_WARNING(JOINT_MATRIX_SHAPE, 1135, HIGH_LEVEL, "Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.")
+DEF_COMMENT(JOINT_MATRIX_SHAPE, 1135, HIGH_LEVEL, "Please check if joint_matrix implementations support the combination of data type and matrix shape type in the target hardware.")
 // clang-format on
 
 #undef DEF_COMMENT

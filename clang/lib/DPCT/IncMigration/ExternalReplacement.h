@@ -25,6 +25,9 @@ class Replacements;
 } // namespace tooling
 } // namespace clang
 
+namespace clang {
+namespace dpct {
+
 int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
                       clang::tooling::UnifiedPath OutRootSrcFilePath,
                       clang::tooling::Replacements &Replaces);
@@ -43,4 +46,7 @@ void mergeAndUniqueReps(
     clang::tooling::Replacements &Replaces,
     const std::vector<clang::tooling::Replacement> &PreRepls);
 
-#endif
+} // namespace dpct
+} // namespace clang
+
+#endif  // __EXTERNAL_REPLACEMENT_H__

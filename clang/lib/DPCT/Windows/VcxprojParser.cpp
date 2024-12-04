@@ -11,6 +11,9 @@
 #include "MigrationReport/Statics.h"
 #include "Utility.h"
 
+namespace clang {
+namespace dpct {
+
 std::map<std::string, std::vector<std::string>> OptionsMap;
 std::map<std::string, std::string> VariablesMap;
 
@@ -313,7 +316,7 @@ void ProcessDirectoriesIncluded(const std::set<std::string> &DirIncludedSet,
       // be replaced.
       std::string Warning =
           "Cannot evaluate variable in  \"" + DirectoryInclude + "\"\n";
-      clang::dpct::PrintMsg(Warning);
+      PrintMsg(Warning);
       continue;
     }
     Output += DirectoryInclude;
@@ -349,7 +352,7 @@ void generateCompilationDatabase(const std::string &BuildDir) {
   if (!OutFile) {
     std::string ErrMsg =
         "Cannot create CompilationDatabase \"" + FilePath + "\"\n";
-    clang::dpct::PrintMsg(ErrMsg);
+    PrintMsg(ErrMsg);
     dpctExit(VcxprojPaserCreateCompilationDBFail);
   }
 
@@ -554,34 +557,34 @@ void parseVaribles(const std::string &VcxprojFile) {
   std::ifstream InFile(VcxprojFile);
   if (!InFile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
-    clang::dpct::PrintMsg(ErrMsg);
+    PrintMsg(ErrMsg);
     dpctExit(VcxprojPaserFileNotExist);
   }
 
   std::string Line;
 
   while (std::getline(InFile, Line)) {
-    if (Line.find("<") != std::string::npos) {
-      const size_t BeginNodeStart = Line.find("<");
-      const size_t BeginNodeEnd = Line.find(">", BeginNodeStart + 1);
-      const size_t EndNodeStart = Line.find("</", BeginNodeEnd + 1);
-      const size_t EndNodeEnd = Line.find(">", EndNodeStart + 1);
+    const size_t BeginNodeStart = Line.find("<");
+    if (BeginNodeStart == std::string::npos)
+      continue;
+    const size_t BeginNodeEnd = Line.find(">", BeginNodeStart + 1);
+    if (BeginNodeEnd == std::string::npos)
+      continue;
+    const size_t EndNodeStart = Line.find("</", BeginNodeEnd + 1);
+    if (EndNodeStart == std::string::npos)
+      continue;
+    const size_t EndNodeEnd = Line.find(">", EndNodeStart + 1);
+    if (EndNodeEnd == std::string::npos)
+      continue;
 
-      if (BeginNodeStart != std::string::npos &&
-          BeginNodeEnd != std::string::npos &&
-          EndNodeStart != std::string::npos &&
-          EndNodeEnd != std::string::npos) {
-        const std::string BeginVariableName =
-            Line.substr(BeginNodeStart + 1, BeginNodeEnd - BeginNodeStart - 1);
-        const std::string EndVariableName =
-            Line.substr(EndNodeStart + 2, EndNodeEnd - EndNodeStart - 2);
-        if (BeginVariableName == EndVariableName) {
-          std::string Value =
-              Line.substr(BeginNodeEnd + 1, EndNodeStart - BeginNodeEnd - 1);
-          if (VariablesMap.find(BeginVariableName) == VariablesMap.end()) {
-            VariablesMap[BeginVariableName] = Value;
-          }
-        }
+    const std::string BeginVariableName =
+        Line.substr(BeginNodeStart + 1, BeginNodeEnd - BeginNodeStart - 1);
+    const std::string EndVariableName =
+        Line.substr(EndNodeStart + 2, EndNodeEnd - EndNodeStart - 2);
+    if (BeginVariableName == EndVariableName) {
+      if (VariablesMap.find(BeginVariableName) == VariablesMap.end()) {
+        VariablesMap[BeginVariableName] =
+            Line.substr(BeginNodeEnd + 1, EndNodeStart - BeginNodeEnd - 1);
       }
     }
   }
@@ -644,7 +647,7 @@ void parseVcxprojFile(const std::string &VcxprojFile) {
 
   if (!Infile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
-    clang::dpct::PrintMsg(ErrMsg);
+    PrintMsg(ErrMsg);
     dpctExit(VcxprojPaserFileNotExist);
   }
 
@@ -666,3 +669,6 @@ void vcxprojParser(std::string &BuildPath, std::string &VcxprojFile) {
   parseVcxprojFile(VcxprojFile);
   generateCompilationDatabase(BuildPath);
 }
+
+} // namespace dpct
+} // namespace clang

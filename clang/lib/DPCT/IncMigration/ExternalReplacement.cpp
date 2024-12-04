@@ -35,6 +35,8 @@ namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 using clang::tooling::Replacements;
 
+namespace clang {
+namespace dpct {
 int save2Yaml(
     clang::tooling::UnifiedPath &YamlFile,
     clang::tooling::UnifiedPath &SrcFileName,
@@ -139,8 +141,9 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
   clang::tooling::UnifiedPath YamlFile =
       OutRootSrcFilePath.getCanonicalPath() + ".yaml";
 
-  auto PreTU = clang::dpct::DpctGlobalInfo::getInstance()
-                   .getReplInfoFromYAMLSavedInFileInfo(InRootSrcFilePath);
+  auto PreTU =
+      clang::dpct::DpctGlobalInfo::getInstance()
+          .getReplInfoFromYAMLSavedInFileInfo(std::move(InRootSrcFilePath));
 
   if (PreTU) {
     llvm::errs() << YamlFile << " exist, try to merge it.\n";
@@ -155,11 +158,13 @@ int mergeExternalReps(clang::tooling::UnifiedPath InRootSrcFilePath,
 
   // For header file, its hash content digest and HasCUDASytax field is not
   // registed.
-  clang::tooling::MainSourceFileInfo MsfInfo;
+  std::vector<clang::tooling::MainSourceFileInfo> MsfInfo(1);
 
   std::map<clang::tooling::UnifiedPath,
            std::vector<clang::tooling::CompilationInfo>>
       CompileTargets;
-  save2Yaml(YamlFile, OutRootSrcFilePath, Repls, {MsfInfo}, CompileTargets);
+  save2Yaml(YamlFile, OutRootSrcFilePath, Repls, MsfInfo, CompileTargets);
   return 0;
 }
+} // namespace dpct
+} // namespace clang

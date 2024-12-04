@@ -5,13 +5,14 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-#include "AnalysisInfo.h"
 #include "PreProcessor.h"
+#include "AnalysisInfo.h"
+#include "Diagnostics/Diagnostics.h"
 #include "FileGenerator/GenFiles.h"
+#include "RulesLang/MapNamesLang.h"
+#include "RulesLangLib/MapNamesLangLib.h"
 #include "TextModification.h"
 #include "Utility.h"
-#include "Diagnostics/Diagnostics.h"
-#include "clang/DPCT/DpctOptions.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
@@ -22,6 +23,7 @@
 #include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/Cuda.h"
 #include "clang/Basic/SourceLocation.h"
+#include "clang/DPCT/DpctOptions.h"
 #include "clang/Lex/MacroArgs.h"
 #include <string>
 #include <tuple>
@@ -33,6 +35,10 @@ using namespace clang::dpct;
 using namespace clang::tooling;
 
 extern DpctOption<opt, bool> ProcessAll;
+namespace clang {
+namespace dpct {
+
+
 
 std::shared_ptr<clang::dpct::ReplaceToken>
 generateReplacement(SourceLocation SL, MacroMigrationRule &Rule) {
@@ -214,17 +220,17 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 #endif
     }
 
-    if (MapNames::AtomicFuncNamesMap.find(II->getName().str()) !=
-        MapNames::AtomicFuncNamesMap.end()) {
+    if (MapNamesLang::AtomicFuncNamesMap.find(II->getName().str()) !=
+        MapNamesLang::AtomicFuncNamesMap.end()) {
       std::string HashStr =
           getHashStrFromLoc(MI->getReplacementToken(0).getLocation());
       DpctGlobalInfo::getInstance().insertAtomicInfo(
           HashStr, MacroNameTok.getLocation(), II->getName().str());
     } else if (MacroNameTok.getLocation().isValid() &&
                MacroNameTok.getIdentifierInfo() &&
-               MapNames::VectorTypeMigratedTypeSizeMap.find(
+               MapNamesLang::VectorTypeMigratedTypeSizeMap.find(
                    MacroNameTok.getIdentifierInfo()->getName().str()) !=
-                   MapNames::VectorTypeMigratedTypeSizeMap.end()) {
+                   MapNamesLang::VectorTypeMigratedTypeSizeMap.end()) {
       DiagnosticsUtils::report(
           MacroNameTok.getLocation(), Diagnostics::MACRO_SAME_AS_SYCL_TYPE,
           &TransformSet, false,
@@ -445,24 +451,26 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                 ? (arg1)*1000 + (arg2)*100 + (arg3)
                                 : (arg1)*10000 + (arg2)*100 + (arg3));
     };
-    for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
-      MA[i] =
-          Lexer::getSourceText(CharSourceRange::getCharRange(
-                                   Args->getUnexpArgument(i)->getLocation(),
-                                   Lexer::getLocForEndOfToken(
-                                       Args->getUnexpArgument(i)->getLocation(),
-                                       0, SM, LangOptions())),
-                               SM, LangOptions())
-              .str();
+    if (Args) {
+      for (unsigned int i = 0; i < Args->getNumMacroArguments(); ++i) {
+        MA[i] = Lexer::getSourceText(
+                    CharSourceRange::getCharRange(
+                        Args->getUnexpArgument(i)->getLocation(),
+                        Lexer::getLocForEndOfToken(
+                            Args->getUnexpArgument(i)->getLocation(), 0, SM,
+                            LangOptions())),
+                    SM, LangOptions())
+                    .str();
+      }
+      auto Length = Lexer::MeasureTokenLength(
+          Range.getEnd(), SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+      Length += SM.getDecomposedLoc(Range.getEnd()).second -
+                SM.getDecomposedLoc(Range.getBegin()).second;
+      TransformSet.emplace_back(new ReplaceText(
+          Range.getBegin(), Length,
+          std::move(calCclCompatVersion(std::stoi(MA[0]), std::stoi(MA[1]),
+                                        std::stoi(MA[2])))));
     }
-    auto Length = Lexer::MeasureTokenLength(
-        Range.getEnd(), SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-    Length += SM.getDecomposedLoc(Range.getEnd()).second -
-              SM.getDecomposedLoc(Range.getBegin()).second;
-    TransformSet.emplace_back(new ReplaceText(
-        Range.getBegin(), Length,
-        std::move(calCclCompatVersion(std::stoi(MA[0]), std::stoi(MA[1]),
-                                      std::stoi(MA[2])))));
   }
 
   if (Name == "NCCL_MAJOR" || Name == "NCCL_MINOR") {
@@ -487,8 +495,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 #endif
   }
 
-  auto Iter = MapNames::HostAllocSet.find(Name.str());
-  if (TKind == tok::identifier && Iter != MapNames::HostAllocSet.end()) {
+  auto Iter = MapNamesLang::HostAllocSet.find(Name.str());
+  if (TKind == tok::identifier && Iter != MapNamesLang::HostAllocSet.end()) {
     if (MI->getNumTokens() == 1) {
       auto ReplToken = MI->getReplacementToken(0);
       if (ReplToken.getKind() == tok::numeric_constant) {
@@ -784,7 +792,8 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
 bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #ifdef _WIN32
   std::string Name = FileName.str();
-  return !IsAngled || !MapNames::isInSet(MapNames::ThrustFileExcludeSet, Name);
+  return !IsAngled ||
+         !MapNames::isInSet(MapNamesLangLib::ThrustFileExcludeSet, Name);
 #else
   return true;
 #endif
@@ -816,3 +825,6 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     loadYAMLIntoFileInfo(InFile.getCanonicalPath());
   }
 }
+
+} // namespace dpct
+} // namespace clang

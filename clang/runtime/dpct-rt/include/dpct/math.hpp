@@ -14,36 +14,9 @@
 #include <sycl/sycl.hpp>
 #include <type_traits>
 
-namespace dpct {
-namespace detail {
-template <typename VecT, class BinaryOperation, class = void>
-class vectorized_binary {
-public:
-  inline VecT operator()(VecT a, VecT b, const BinaryOperation binary_op) {
-    VecT v4;
-    for (size_t i = 0; i < v4.size(); ++i) {
-      v4[i] = binary_op(a[i], b[i]);
-    }
-    return v4;
-  }
-};
-template <typename VecT, class BinaryOperation>
-class vectorized_binary<
-    VecT, BinaryOperation,
-    std::void_t<std::invoke_result_t<BinaryOperation, VecT, VecT>>> {
-public:
-  inline VecT operator()(VecT a, VecT b, const BinaryOperation binary_op) {
-    return binary_op(a, b).template as<VecT>();
-  }
-};
+#include "detail/math_detail.hpp"
 
-template <typename T> inline bool isnan(const T a) { return sycl::isnan(a); }
-#ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
-inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
-  return sycl::ext::oneapi::experimental::isnan(a);
-}
-#endif
-} // namespace detail
+namespace dpct {
 
 /// Compute fast_length for variable-length array
 /// \param [in] a The array
@@ -460,17 +433,6 @@ pow(const T a, const U b) {
   return sycl::pow(static_cast<double>(a), static_cast<double>(b));
 }
 
-namespace detail {
-template <typename T>
-constexpr bool is_floating_point =
-    std::disjunction_v<std::is_floating_point<T>, std::is_same<T, sycl::half>
-#ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
-                       ,
-                       std::is_same<T, sycl::ext::oneapi::bfloat16>
-#endif
-                       >;
-} // namespace detail
-
 /// Performs relu saturation.
 /// \param [in] a The input value
 /// \returns the relu saturation result
@@ -481,8 +443,12 @@ template <typename T> inline T relu(T a) {
   else
     return a < zero ? zero : a;
 }
-template <class T> inline sycl::vec<T, 2> relu(const sycl::vec<T, 2> a) {
-  return {relu(a[0]), relu(a[1])};
+template <typename T, int N>
+inline sycl::vec<T, N> relu(const sycl::vec<T, N> a) {
+  sycl::vec<T, N> ret;
+  for (int i = 0; i < N; ++i)
+    ret[i] = relu(a[i]);
+  return ret;
 }
 template <class T> inline sycl::marray<T, 2> relu(const sycl::marray<T, 2> a) {
   return {relu(a[0]), relu(a[1])};
@@ -610,12 +576,20 @@ struct maximum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::max(x, y);
   }
+  template <typename T>
+  auto operator()(const T x, const T y, bool *pred) const {
+    return (x >= y) ? ((*pred = true), x) : ((*pred = false), y);
+  }
 };
 
 /// A sycl::min wrapper functors.
 struct minimum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::min(x, y);
+  }
+  template <typename T>
+  auto operator()(const T x, const T y, bool *pred) const {
+    return (x <= y) ? ((*pred = true), x) : ((*pred = false), y);
   }
 };
 
@@ -626,46 +600,51 @@ struct sub_sat {
   }
 };
 
-namespace detail {
-struct shift_left {
-  template <typename T>
-  auto operator()(const T x, const uint32_t offset) const {
-    return x << offset;
-  }
-};
-
-struct shift_right {
-  template <typename T>
-  auto operator()(const T x, const uint32_t offset) const {
-    return x >> offset;
-  }
-};
-
-struct average {
-  template <typename T>
-  auto operator()(const T x, const T y) const {
-    return (x + y + (x + y >= 0)) >> 1;
-  }
-};
-} // namespace detail
-
 /// Compute vectorized binary operation value for two values, with each value
 /// treated as a vector type \p VecT.
 /// \tparam [in] VecT The type of the vector
 /// \tparam [in] BinaryOperation The binary operation class
 /// \param [in] a The first value
 /// \param [in] b The second value
+/// \param [in] binary_op The operation to do with the two values
+/// \param [in] need_relu Whether the result need relu saturation
 /// \returns The vectorized binary operation value of the two values
 template <typename VecT, class BinaryOperation>
 inline unsigned vectorized_binary(unsigned a, unsigned b,
-                                  const BinaryOperation binary_op) {
+                                  const BinaryOperation binary_op,
+                                  bool need_relu = false) {
   sycl::vec<unsigned, 1> v0{a}, v1{b};
   auto v2 = v0.as<VecT>();
   auto v3 = v1.as<VecT>();
   auto v4 =
       detail::vectorized_binary<VecT, BinaryOperation>()(v2, v3, binary_op);
+  if (need_relu)
+    v4 = relu(v4);
   v0 = v4.template as<sycl::vec<unsigned, 1>>();
   return v0;
+}
+
+/// Compute vectorized binary operation value with pred for two values, with
+/// each value treated as a 2 \p T type elements vector type.
+///
+/// \tparam [in] T The type of elements type of the vector
+/// \tparam [in] BinaryOperation The binary operation class
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] binary_op The operation with pred to do with the two values
+/// \param [out] pred_hi The pred pointer that pass into high halfword operation
+/// \param [out] pred_lo The pred pointer that pass into low halfword operation
+/// \returns The vectorized binary operation value of the two values
+template <typename T, typename BinaryOperation>
+inline unsigned vectorized_binary_with_pred(unsigned a, unsigned b,
+                                            const BinaryOperation binary_op,
+                                            bool *pred_hi, bool *pred_lo) {
+  auto v1 = sycl::vec<unsigned, 1>(a).as<sycl::vec<T, 2>>();
+  auto v2 = sycl::vec<unsigned, 1>(b).as<sycl::vec<T, 2>>();
+  sycl::vec<T, 2> ret;
+  ret[0] = binary_op(v1[0], v2[0], pred_lo);
+  ret[1] = binary_op(v1[1], v2[1], pred_hi);
+  return ret.template as<sycl::vec<unsigned, 1>>();
 }
 
 /// Compute vectorized isgreater for two values, with each value treated as a
@@ -751,192 +730,34 @@ inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
   return sum;
 }
 
-namespace detail {
-/// Extend the 'val' to 'bit' size, zero extend for unsigned int and signed
-/// extend for signed int.
-template <typename T> inline auto zero_or_signed_extent(T val, unsigned bit) {
-  if constexpr (std::is_signed_v<T>) {
-    if constexpr (std::is_same_v<T, int32_t>) {
-      assert(bit < 64 &&
-             "When extend int32 value, bit must be smaller than 64.");
-      return int64_t(val) << (64 - bit) >> (64 - bit);
-    } else if constexpr (std::is_same_v<T, int16_t>) {
-      assert(bit < 32 &&
-             "When extend int16 value, bit must be smaller than 32.");
-      return int32_t(val) << (32 - bit) >> (32 - bit);
-    } else if constexpr (std::is_same_v<T, int8_t>) {
-      assert(bit < 16 &&
-             "When extend int8 value, bit must be smaller than 16.");
-      return int16_t(val) << (16 - bit) >> (16 - bit);
-    } else {
-      assert(bit < 64 && "Cannot extend int64 value.");
-      return val;
-    }
-  } else
-    return val;
+/// Compute two vectorized binary operation value with pred for three values,
+/// with each value treated as a 2 \p T type elements vector type.
+///
+/// \tparam [in] VecT The type of the vector
+/// \tparam [in] BinaryOperation1 The first binary operation class
+/// \tparam [in] BinaryOperation2 The second binary operation class
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] binary_op1 The first operation to do with the first two values
+/// \param [in] binary_op2 The second operation to do with the third values
+/// \param [in] need_relu Whether the result need relu saturation
+/// \returns The two vectorized binary operation value of the three values
+template <typename VecT, typename BinaryOperation1, typename BinaryOperation2>
+inline unsigned vectorized_ternary(unsigned a, unsigned b, unsigned c,
+                                   const BinaryOperation1 binary_op1,
+                                   const BinaryOperation2 binary_op2,
+                                   bool need_relu = false) {
+  const auto v1 = sycl::vec<unsigned, 1>(a).as<VecT>();
+  const auto v2 = sycl::vec<unsigned, 1>(b).as<VecT>();
+  const auto v3 = sycl::vec<unsigned, 1>(c).as<VecT>();
+  auto v4 =
+      detail::vectorized_binary<VecT, BinaryOperation1>()(v1, v2, binary_op1);
+  v4 = detail::vectorized_binary<VecT, BinaryOperation2>()(v4, v3, binary_op2);
+  if (need_relu)
+    v4 = relu(v4);
+  return v4.template as<sycl::vec<unsigned, 1>>();
 }
-
-template <typename RetT, bool NeedSat, typename AT, typename BT,
-          typename BinaryOperation>
-inline constexpr std::enable_if_t<
-    std::is_integral_v<AT> && std::is_integral_v<BT> &&
-        std::is_integral_v<RetT> && sizeof(AT) == 4 && sizeof(BT) == 4 &&
-        sizeof(RetT) == 4,
-    RetT>
-extend_binary(AT a, BT b, BinaryOperation binary_op) {
-  int64_t extend_a = zero_or_signed_extent(a, 33);
-  int64_t extend_b = zero_or_signed_extent(b, 33);
-  int64_t ret = binary_op(extend_a, extend_b);
-  if constexpr (NeedSat)
-    return dpct::clamp<int64_t>(ret, std::numeric_limits<RetT>::min(),
-                                std::numeric_limits<RetT>::max());
-  return ret;
-}
-
-template <typename RetT, bool NeedSat, typename AT, typename BT, typename CT,
-          typename BinaryOperation1, typename BinaryOperation2>
-inline constexpr std::enable_if_t<
-    std::is_integral_v<AT> && std::is_integral_v<BT> &&
-        std::is_integral_v<CT> && std::is_integral_v<RetT> && sizeof(AT) == 4 &&
-        sizeof(BT) == 4 && sizeof(CT) == 4 && sizeof(RetT) == 4,
-    RetT>
-extend_binary(AT a, BT b, CT c, BinaryOperation1 binary_op,
-              BinaryOperation2 second_op) {
-  int64_t extend_a = zero_or_signed_extent(a, 33);
-  int64_t extend_b = zero_or_signed_extent(b, 33);
-  int64_t extend_temp =
-      zero_or_signed_extent(binary_op(extend_a, extend_b), 34);
-  if constexpr (NeedSat)
-    extend_temp =
-        dpct::clamp<int64_t>(extend_temp, std::numeric_limits<RetT>::min(),
-                             std::numeric_limits<RetT>::max());
-  int64_t extend_c = zero_or_signed_extent(c, 33);
-  return second_op(extend_temp, extend_c);
-}
-
-template <typename T> sycl::vec<int32_t, 2> extractAndExtend2(T a) {
-  sycl::vec<int32_t, 2> ret;
-  sycl::vec<T, 1> va{a};
-  if constexpr (std::is_signed_v<T>) {
-    auto v = va.template as<sycl::vec<int16_t, 2>>();
-    ret[0] = zero_or_signed_extent(v[0], 17);
-    ret[1] = zero_or_signed_extent(v[1], 17);
-  } else {
-    auto v = va.template as<sycl::vec<uint16_t, 2>>();
-    ret[0] = zero_or_signed_extent(v[0], 17);
-    ret[1] = zero_or_signed_extent(v[1], 17);
-  }
-  return ret;
-}
-
-template <typename T> sycl::vec<int16_t, 4> extractAndExtend4(T a) {
-  sycl::vec<int16_t, 4> ret;
-  sycl::vec<T, 1> va{a};
-  if constexpr (std::is_signed_v<T>) {
-    auto v = va.template as<sycl::vec<int8_t, 4>>();
-    ret[0] = zero_or_signed_extent(v[0], 9);
-    ret[1] = zero_or_signed_extent(v[1], 9);
-    ret[2] = zero_or_signed_extent(v[2], 9);
-    ret[3] = zero_or_signed_extent(v[3], 9);
-  } else {
-    auto v = va.template as<sycl::vec<uint8_t, 4>>();
-    ret[0] = zero_or_signed_extent(v[0], 9);
-    ret[1] = zero_or_signed_extent(v[1], 9);
-    ret[2] = zero_or_signed_extent(v[2], 9);
-    ret[3] = zero_or_signed_extent(v[3], 9);
-  }
-  return ret;
-}
-
-template <typename RetT, bool NeedSat, bool NeedAdd, typename AT, typename BT,
-          typename BinaryOperation>
-inline constexpr std::enable_if_t<
-    std::is_integral_v<AT> && std::is_integral_v<BT> &&
-        std::is_integral_v<RetT> && sizeof(AT) == 4 && sizeof(BT) == 4 &&
-        sizeof(RetT) == 4,
-    RetT>
-extend_vbinary2(AT a, BT b, RetT c, BinaryOperation binary_op) {
-  sycl::vec<int32_t, 2> extend_a = extractAndExtend2(a);
-  sycl::vec<int32_t, 2> extend_b = extractAndExtend2(b);
-  sycl::vec<int32_t, 2> temp{binary_op(extend_a[0], extend_b[0]),
-                             binary_op(extend_a[1], extend_b[1])};
-  if constexpr (NeedSat) {
-    int32_t min_val = 0, max_val = 0;
-    if constexpr (std::is_signed_v<RetT>) {
-      min_val = std::numeric_limits<int16_t>::min();
-      max_val = std::numeric_limits<int16_t>::max();
-    } else {
-      min_val = std::numeric_limits<uint16_t>::min();
-      max_val = std::numeric_limits<uint16_t>::max();
-    }
-    temp = dpct::clamp(temp, {min_val, min_val}, {max_val, max_val});
-  }
-  if constexpr (NeedAdd) {
-    return temp[0] + temp[1] + c;
-  }
-  if constexpr (std::is_signed_v<RetT>) {
-    return sycl::vec<int16_t, 2>{temp[0], temp[1]}.as<sycl::vec<RetT, 1>>();
-  } else {
-    return sycl::vec<uint16_t, 2>{temp[0], temp[1]}.as<sycl::vec<RetT, 1>>();
-  }
-}
-
-template <typename RetT, bool NeedSat, bool NeedAdd, typename AT, typename BT,
-          typename BinaryOperation>
-inline constexpr std::enable_if_t<
-    std::is_integral_v<AT> && std::is_integral_v<BT> &&
-        std::is_integral_v<RetT> && sizeof(AT) == 4 && sizeof(BT) == 4 &&
-        sizeof(RetT) == 4,
-    RetT>
-extend_vbinary4(AT a, BT b, RetT c, BinaryOperation binary_op) {
-  sycl::vec<int16_t, 4> extend_a = extractAndExtend4(a);
-  sycl::vec<int16_t, 4> extend_b = extractAndExtend4(b);
-  sycl::vec<int16_t, 4> temp{
-      binary_op(extend_a[0], extend_b[0]), binary_op(extend_a[1], extend_b[1]),
-      binary_op(extend_a[2], extend_b[2]), binary_op(extend_a[3], extend_b[3])};
-  if constexpr (NeedSat) {
-    int16_t min_val = 0, max_val = 0;
-    if constexpr (std::is_signed_v<RetT>) {
-      min_val = std::numeric_limits<int8_t>::min();
-      max_val = std::numeric_limits<int8_t>::max();
-    } else {
-      min_val = std::numeric_limits<uint8_t>::min();
-      max_val = std::numeric_limits<uint8_t>::max();
-    }
-    temp = dpct::clamp(temp, {min_val, min_val, min_val, min_val},
-                       {max_val, max_val, max_val, max_val});
-  }
-  if constexpr (NeedAdd) {
-    return temp[0] + temp[1] + temp[2] + temp[3] + c;
-  }
-  if constexpr (std::is_signed_v<RetT>) {
-    return sycl::vec<int8_t, 4>{temp[0], temp[1], temp[2], temp[3]}
-        .as<sycl::vec<RetT, 1>>();
-  } else {
-    return sycl::vec<uint8_t, 4>{temp[0], temp[1], temp[2], temp[3]}
-        .as<sycl::vec<RetT, 1>>();
-  }
-}
-
-template <typename T1, typename T2>
-using dot_product_acc_t =
-    std::conditional_t<std::is_unsigned_v<T1> && std::is_unsigned_v<T2>,
-                       uint32_t, int32_t>;
-
-template <typename T> sycl::vec<T, 4> extract_and_sign_or_zero_extend4(T val) {
-  return sycl::vec<T, 1>(val)
-      .template as<sycl::vec<
-          std::conditional_t<std::is_signed_v<T>, int8_t, uint8_t>, 4>>()
-      .template convert<T>();
-}
-
-template <typename T> sycl::vec<T, 2> extract_and_sign_or_zero_extend2(T val) {
-  return sycl::vec<T, 1>(val)
-      .template as<sycl::vec<
-          std::conditional_t<std::is_signed_v<T>, int16_t, uint16_t>, 2>>()
-      .template convert<T>();
-}
-} // namespace detail
 
 /// Two-way dot product-accumulate. Calculate and return interger_vector2(
 /// \param a) dot product interger_vector2(low16_bit( \param b))  + \param c

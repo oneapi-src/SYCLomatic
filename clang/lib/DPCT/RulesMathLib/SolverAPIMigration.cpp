@@ -7,6 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "SolverAPIMigration.h"
+#include "MapNamesSolver.h"
+#include "RuleInfra/ASTmatcherCommon.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/CallExprRewriterCommon.h"
 #include "RulesLang/RulesLang.h"
@@ -43,8 +45,8 @@ void SOLVEREnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "SLOVERNamedValueConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     std::string Name = EC->getNameAsString();
-    auto Search = MapNames::SOLVEREnumsMap.find(Name);
-    if (Search == MapNames::SOLVEREnumsMap.end()) {
+    auto Search = MapNamesSolver::SOLVEREnumsMap.find(Name);
+    if (Search == MapNamesSolver::SOLVEREnumsMap.end()) {
       llvm::dbgs() << "[" << getName()
                    << "] Unexpected enum variable: " << Name;
       return;
@@ -56,14 +58,7 @@ void SOLVEREnumsRule::runRule(const MatchFinder::MatchResult &Result) {
 
 
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
-  auto parentStmt = []() {
-    return anyOf(
-        hasParent(compoundStmt()), hasParent(forStmt()), hasParent(whileStmt()),
-        hasParent(doStmt()), hasParent(ifStmt()),
-        hasParent(exprWithCleanups(anyOf(
-            hasParent(compoundStmt()), hasParent(forStmt()),
-            hasParent(whileStmt()), hasParent(doStmt()), hasParent(ifStmt())))));
-    };
+  
   auto functionName = [&]() {
     return hasAnyName(
         "cusolverDnSetAdvOptions", "cusolverDnGetStream", "cusolverDnSetStream",
@@ -296,17 +291,17 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  if (MapNames::SOLVERAPIWithRewriter.find(FuncName) !=
-      MapNames::SOLVERAPIWithRewriter.end()) {
+  if (MapNamesSolver::SOLVERAPIWithRewriter.find(FuncName) !=
+      MapNamesSolver::SOLVERAPIWithRewriter.end()) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (MapNames::SOLVERFuncReplInfoMap.find(FuncName) !=
-      MapNames::SOLVERFuncReplInfoMap.end()) {
+  } else if (MapNamesSolver::SOLVERFuncReplInfoMap.find(FuncName) !=
+             MapNamesSolver::SOLVERFuncReplInfoMap.end()) {
     // Find replacement string
-    auto ReplInfoPair = MapNames::SOLVERFuncReplInfoMap.find(FuncName);
-    MapNames::SOLVERFuncReplInfo ReplInfo = ReplInfoPair->second;
+    auto ReplInfoPair = MapNamesSolver::SOLVERFuncReplInfoMap.find(FuncName);
+    MapNamesSolver::SOLVERFuncReplInfo ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
 
     // Migrate arguments one by one

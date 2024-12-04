@@ -6,7 +6,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ASTTraversal.h"
 #include "FFTAPIMigration.h"
 #include "RuleInfra/ExprAnalysis.h"
 

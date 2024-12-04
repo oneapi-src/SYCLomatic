@@ -34,6 +34,9 @@ set(RUNTIME_HEADERS
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/numeric.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/vector.h
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/dpl_extras/dpcpp_extensions.h
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/group_utils_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/math_detail.hpp
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpct/detail/memory_detail.hpp
   )
 
 set(PROCESS_FILES_OUTPUT
@@ -66,6 +69,9 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/group_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_gemm_utils.hpp.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/compat_service.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/group_utils_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/math_detail.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/detail/memory_detail.hpp.inc
 )
 
 add_custom_command(
@@ -113,6 +119,13 @@ add_clang_library(DPCT
   PreProcessor.cpp
   AnalysisInfo.cpp
   RulesLang/RulesLang.cpp
+  RulesLang/RulesLangGraph.cpp
+  RulesLang/RulesLangGraphInterop.cpp
+  RulesLang/RulesLangNoneAPIAndType.cpp
+  RulesLang/RulesLangAtomic.cpp
+  RulesLang/RulesLangCooperativeGroups.cpp
+  RulesLang/RulesLangTexture.cpp
+  RulesLang/RulesLangAddrSpaceConv.cpp
   RulesLangLib/CUB/CallExprRewriterCUB.cpp
   RulesLangLib/CUB/RewriterClassMethods.cpp
   RulesLangLib/CUB/RewriterDeviceHistgram.cpp
@@ -179,6 +192,13 @@ add_clang_library(DPCT
   RuleInfra/ExprAnalysis.cpp
   ExtReplacements.cpp
   RuleInfra/MapNames.cpp
+  RuleInfra/MigrationStatistics.cpp
+  RulesMathLib/MapNamesSolver.cpp
+  RulesMathLib/MapNamesBlas.cpp
+  RulesMathLib/MapNamesRandom.cpp
+  RulesLang/MapNamesLang.cpp
+  RulesDNN/MapNamesDNN.cpp
+  RulesLangLib/MapNamesLangLib.cpp
   FileGenerator/GenFiles.cpp
   DPCT.cpp
   CommandOption/DpctOptions.cpp

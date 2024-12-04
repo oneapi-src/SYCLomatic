@@ -65,7 +65,7 @@
       Out: fieldD
   Methods:
     - In: methodA
-      Out: a.methodB($2)
+      Out: $method_base methodB($2)
     - In: methodC
       Out: methodD
 - Rule: rule_Fruit

@@ -91,16 +91,26 @@ int checkDpctOptionSet(
     const std::map<std::string, clang::tooling::OptionInfo> &CurrentOpts,
     const std::map<std::string, clang::tooling::OptionInfo> &PreviousOpts) {
   for (const auto &CurrentOpt : CurrentOpts) {
-    if (PreviousOpts.count(CurrentOpt.first)) {
-      if (CurrentOpt.first == OPTION_RuleFile) {
-        if (PreviousOpts.at(OPTION_RuleFile).ValueVec.size() !=
+    auto checkListOptions = [&](const std::string &Option) -> int {
+      if (CurrentOpt.first == Option) {
+        if (PreviousOpts.at(Option).ValueVec.size() !=
             CurrentOpt.second.ValueVec.size())
           return -1;
         for (size_t Idx = 0; Idx < CurrentOpt.second.ValueVec.size(); Idx++) {
-          if (PreviousOpts.at(OPTION_RuleFile).ValueVec[Idx] !=
+          if (PreviousOpts.at(Option).ValueVec[Idx] !=
               CurrentOpt.second.ValueVec[Idx])
             return -1;
         }
+      }
+      return 0;
+    };
+    if (PreviousOpts.count(CurrentOpt.first)) {
+      if (CurrentOpt.first == OPTION_RuleFile) {
+        if (checkListOptions(OPTION_RuleFile))
+          return -1;
+      } else if (CurrentOpt.first == OPTION_AnalysisScopePath) {
+        if (checkListOptions(OPTION_AnalysisScopePath))
+          return -1;
       }
 #ifdef _WIN32
       else if (CurrentOpt.first == OPTION_VcxprojFile) {
@@ -334,7 +344,8 @@ bool printOptions(
         Opts.emplace_back("--rule-file=\"" + Item + "\"");
     }
     if (Key == clang::dpct::OPTION_AnalysisScopePath) {
-      Opts.emplace_back("--analysis-scope-path=\"" + Value + "\"");
+      for (const auto &Item : ValueVec)
+        Opts.emplace_back("--analysis-scope-path=\"" + Item + "\"");
     }
     if (Key == clang::dpct::OPTION_HelperFuncPreferenceFlag && Specified) {
       if (std::to_string(static_cast<unsigned int>(

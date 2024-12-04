@@ -1,0 +1,12 @@
+[
+  {
+    "directory": "./",
+    "command": "nvcc -c -I./include ./src/non-cuda-half.cu",
+    "file": "./src/non-cuda-half.cu"
+  },
+  {
+    "directory": "./",
+    "command": "nvcc -c ./src/cuda-half.cu",
+    "file": "./src/cuda-half.cu"
+  }
+]

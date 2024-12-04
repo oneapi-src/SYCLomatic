@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 #include "MigrationReport/Statics.h"
 #include "ASTTraversal.h"
-#include "FileGenerator/GenFiles.h"
+#include "RulesInclude/InclusionHeaders.h"
 
 #include <numeric>
 #include <unordered_set>
@@ -193,16 +193,15 @@ enum {
 
 class LineStream {
   const static StringRef NL;
-  llvm::raw_ostream& OS;
+  llvm::raw_ostream &OS;
 
 public:
-  LineStream(llvm::raw_ostream &OS, unsigned Indent)
-      : OS(OS) {
+  LineStream(llvm::raw_ostream &OS, unsigned Indent) : OS(OS) {
     OS.indent(Indent);
   }
   ~LineStream() { OS << NL; }
 
-  template<class T> LineStream &operator<<(T &&Input) {
+  template <class T> LineStream &operator<<(T &&Input) {
     OS << std::forward<T>(Input);
     return *this;
   }
@@ -215,7 +214,7 @@ struct AnalysisModeSummary {
 
   StringRef Name;
   unsigned Total = 0;
-  unsigned Counter[CounterNum] = { 0 };
+  unsigned Counter[CounterNum] = {0};
 
   AnalysisModeSummary(StringRef Name) : Name(Name) {}
 
@@ -281,6 +280,11 @@ class AnalysisModeStats {
   static const std::string LastMsg;
   static llvm::StringMap<AnalysisModeStats> AnalysisModeStaticsMap;
 
+  static struct {
+    uint8_t Flag = 0;
+    bool operator[](uint8_t Idx) { return Flag & (1 << Idx); }
+  } DependencyBits;
+
   struct EffortLevelWrap {
     unsigned EL;
     EffortLevelWrap() : EL(NoEffort) {}
@@ -319,6 +323,25 @@ public:
       Total += Summary;
     }
     Total.dump(OS, Indent);
+    if (DependencyBits.Flag) {
+      LineStream(OS, Indent) << llvm::raw_ostream::Colors::BLUE
+                             << "Library Dependencies of SYCL Project:"
+                             << llvm::raw_ostream::Colors::RESET;
+      struct DependenceNames {
+        llvm::StringRef Strs[static_cast<uint8_t>(LibraryDependencies::NUMS)];
+        DependenceNames() noexcept {
+#define LIBRARY(LIBNAME, LIBDESC, ...)                                         \
+  Strs[static_cast<uint8_t>(LibraryDependencies::LD_##LIBNAME)] = LIBDESC;
+#include "Libraries.inc"
+        }
+      } Names;
+      auto EntryIndent = Indent + AnalysisModeSummary::IndentIncremental;
+      for (unsigned i = 0; i < static_cast<uint8_t>(LibraryDependencies::NUMS);
+           ++i) {
+        if (DependencyBits[i])
+          LineStream(OS, EntryIndent) << "- The Intel " << Names.Strs[i];
+      }
+    }
     LineStream(OS, Indent) << LastMsg;
   }
 
@@ -335,7 +358,16 @@ public:
                            unsigned Offset, EffortLevel EL) {
     AnalysisModeStaticsMap[Filename.getPath()].recordEffort(Offset, EL);
   }
+  static void setDependencies(const RuleGroups &Group) noexcept {
+    for (unsigned i = 0; i < static_cast<uint8_t>(LibraryDependencies::NUMS);
+         ++i) {
+      DependencyBits.Flag |=
+          Group.isDependsOn(static_cast<LibraryDependencies>(i)) << i;
+    }
+  }
 };
+
+decltype(AnalysisModeStats::DependencyBits) AnalysisModeStats::DependencyBits;
 
 const std::string AnalysisModeStats::LastMsg =
     "See "
@@ -365,6 +397,9 @@ void recordRecognizedAPI(const CallExpr *CE) {
 void recordRecognizedType(TypeLoc TL) {
   if (DpctGlobalInfo::isAnalysisModeEnabled())
     AnalysisModeStats::recordApisOrTypes(TL.getBeginLoc());
+}
+void setDependenciesInfo(const RuleGroups &Group) noexcept {
+  AnalysisModeStats::setDependencies(Group);
 }
 
 } // namespace dpct

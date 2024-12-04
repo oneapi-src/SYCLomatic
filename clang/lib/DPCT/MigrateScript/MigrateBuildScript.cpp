@@ -13,6 +13,9 @@ using namespace clang::dpct;
 
 namespace fs = llvm::sys::fs;
 
+namespace clang {
+namespace dpct {
+
 std::string readFile(const clang::tooling::UnifiedPath &Name) {
   std::ifstream Stream(Name.getCanonicalPath().str(),
                        std::ios::in | std::ios::binary);
@@ -107,7 +110,7 @@ getCmakeBuildPathFromInRoot(const clang::tooling::UnifiedPath &InRoot,
       if (fs::exists(appendPath(Path.getCanonicalPath().str(), "CMakeFiles")) &&
           fs::exists(
               appendPath(Path.getCanonicalPath().str(), "CMakeCache.txt"))) {
-        CmakeBuildDirectory = Path;
+        CmakeBuildDirectory = std::move(Path);
         break;
       }
     }
@@ -269,3 +272,6 @@ void unifyInputFileFormat(
     ScriptFileCRLFMap[Entry.first] = IsCRLF;
   }
 }
+
+} // namespace dpct
+} // namespace clang

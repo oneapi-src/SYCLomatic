@@ -11,7 +11,6 @@
 
 #include "Diagnostics/Diagnostics.h"
 
-
 namespace clang {
 namespace dpct {
 
@@ -1127,12 +1126,11 @@ class BinaryOperatorPrinter {
   LValueT LVal;
   RValueT RVal;
 
-  static std::string OpStr;
-
 public:
   BinaryOperatorPrinter(LValueT &&L, RValueT &&R)
       : LVal(std::forward<LValueT>(L)), RVal(std::forward<RValueT>(R)) {}
   template <class StreamT> void print(StreamT &Stream) const {
+    static std::string OpStr = BinaryOperator::getOpcodeStr(Op).str();
     dpct::print(Stream, LVal);
     Stream << " " << OpStr << " ";
     dpct::print(Stream, RVal);
@@ -1154,23 +1152,15 @@ template <UnaryOperatorKind UO, class ArgValueT>
 class UnaryOperatorPrinter {
   ArgValueT ArgValue;
 
-  static std::string UOStr;
-
 public:
   UnaryOperatorPrinter(ArgValueT &&Arg)
       : ArgValue(std::forward<ArgValueT>(Arg)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    Stream << UOStr;
+    static std::string OpStr = UnaryOperator::getOpcodeStr(UO).str();
+    Stream << OpStr;
     dpct::print(Stream, ArgValue);
   }
 };
-template <UnaryOperatorKind UO, class ArgValueT>
-std::string UnaryOperatorPrinter<UO, ArgValueT>::UOStr =
-    UnaryOperator::getOpcodeStr(UO).str();
-
-template <BinaryOperatorKind Op, class LValueT, class RValueT>
-std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
-    BinaryOperator::getOpcodeStr(Op).str();
 
 template <class LValueT, class RValueT>
 using AssignExprPrinter =
@@ -1681,6 +1671,34 @@ public:
     }
     case (OutputBuilder::Kind::TemplateArg): {
       OS << getTemplateArg(OB.ArgIndex)(Call);
+      return;
+    }
+    case (OutputBuilder::Kind::MethodBase): {
+      if (auto *MCE = llvm::dyn_cast<CXXMemberCallExpr>(Call)) {
+        if (auto *Callee = llvm::dyn_cast<MemberExpr>(MCE->getCallee())) {
+          auto &SM = DpctGlobalInfo::getSourceManager();
+          auto &Context = DpctGlobalInfo::getContext();
+          auto CallRange =
+              getDefinitionRange(Call->getBeginLoc(), Call->getEndLoc());
+          auto LastTokenLength = Lexer::MeasureTokenLength(
+              CallRange.getEnd(), SM, Context.getLangOpts());
+          auto Base = Callee->getBase();
+          std::string BaseStr;
+          if (isa<CXXThisExpr>(Callee->getBase())) {
+            BaseStr = "this";
+          } else {
+            BaseStr = getStringInRange(
+                Base->getSourceRange(), CallRange.getBegin(),
+                CallRange.getEnd().getLocWithOffset(LastTokenLength));
+          }
+          OS << BaseStr;
+          if (Callee->isArrow()) {
+            OS << "->";
+          } else {
+            OS << ".";
+          }
+        }
+      }
       return;
     }
     }

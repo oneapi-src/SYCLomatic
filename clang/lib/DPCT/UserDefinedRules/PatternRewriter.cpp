@@ -25,6 +25,10 @@
 #include <variant>
 #include <vector>
 
+
+namespace clang {
+namespace dpct {
+
 std::set<std::string> MainSrcFilesHasCudaSyntex;
 bool LANG_Cplusplus_20_Used = false;
 
@@ -114,7 +118,7 @@ static std::string indent(const std::string &Input, int Indentation) {
     const bool ContainsNonWhitespace = (trim(Line).size() > 0);
     Output.push_back(ContainsNonWhitespace ? (Indent + trim(Line)) : "");
   }
-  std::string Str = trim(join(Output, "\n"));
+  std::string Str = trim(join(std::move(Output), "\n"));
   return Str;
 }
 
@@ -213,10 +217,9 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
       if (RightCurly == std::string::npos) {
         throw std::runtime_error("Invalid match pattern expression");
       }
-      std::string Name = Pattern.substr(Index, RightCurly - Index);
-      Index = RightCurly + 1;
 
-      Result.push_back(CodeElement{Name});
+      Result.push_back(CodeElement{Pattern.substr(Index, RightCurly - Index)});
+      Index = RightCurly + 1;
       continue;
     }
 
@@ -405,7 +408,7 @@ static bool isIdentifiedChar(char Char) {
 static void applyExtenstionNameChange(
     const std::string &Input, size_t Next,
     std::unordered_map<std::string, std::string> &Bindings,
-    std::string FileName, const clang::tooling::UnifiedPath OutRoot,
+    const std::string &FileName, const clang::tooling::UnifiedPath &OutRoot,
     std::string ExtensionType) {
   size_t Pos = Next - 1;
   for (; Pos > 0 && !isWhitespace(Input[Pos]); Pos--) {
@@ -486,7 +489,7 @@ static void applyExtenstionNameChange(
     Bindings["rewrite_extention_name"] =
         ExtensionType + clang::dpct::DpctGlobalInfo::getSYCLSourceExtension();
   else
-    Bindings["rewrite_extention_name"] = ExtensionType;
+    Bindings["rewrite_extention_name"] = std::move(ExtensionType);
 }
 
 static void
@@ -867,3 +870,6 @@ std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
   }
   return OutputStream.str();
 }
+
+} // namespace dpct
+} // namespace clang

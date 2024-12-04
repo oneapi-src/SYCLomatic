@@ -785,8 +785,6 @@ protected:
   // constructor and no migration for it. Start analyzing its argument.
   // Replace total string when it is default argument expression.
   void initArgumentExpr(const Expr *Expression) {
-    if (!Expression)
-      initExpression(Expression);
     if (auto Ctor = dyn_cast<CXXConstructExpr>(Expression)) {
       if (Ctor->getParenOrBraceRange().isInvalid() && Ctor->getNumArgs() == 1)
         Expression = Ctor->getArg(0);

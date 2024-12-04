@@ -8,9 +8,11 @@
 
 #include "AnalysisInfo.h"
 #include "Diagnostics/Diagnostics.h"
+#include "MigrationReport/Statics.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "RuleInfra/MapNames.h"
-#include "MigrationReport/Statics.h"
+#include "RulesLang/MapNamesLang.h"
+#include "RulesMathLib/MapNamesRandom.h"
 #include "TextModification.h"
 #include "Utility.h"
 
@@ -21,15 +23,14 @@
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
 #include <deque>
-#include <fstream>
 #include <optional>
 #include <string>
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
 llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
-  auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
-  if (Iter != MapNames::TypeNamesMap.end()) {
-    auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
+  auto Iter = clang::dpct::MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
+  if (Iter != clang::dpct::MapNames::TypeNamesMap.end()) {
+    auto Range = clang::dpct::getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
     for (auto ItHeader = Iter->second->Includes.begin();
          ItHeader != Iter->second->Includes.end(); ItHeader++) {
       clang::dpct::DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(),
@@ -824,7 +825,7 @@ void DpctFileInfo::setFirstIncludeOffset(unsigned Offset) {
   if (!HasInclusionDirectiveSet.count(MF)) {
     FirstIncludeOffset[MF] = Offset;
     LastIncludeOffset = Offset;
-    HasInclusionDirectiveSet.insert(MF);
+    HasInclusionDirectiveSet.insert(std::move(MF));
   }
 }
 void DpctFileInfo::concatHeader(llvm::raw_string_ostream &OS) {}
@@ -1919,7 +1920,7 @@ void DpctGlobalInfo::generateHostCode(tooling::Replacements &ProcessedReplList,
   unsigned int Pos, Len;
   std::string OriginText = Info.FuncContentCache;
   StringRef SR(OriginText);
-  RewriteBuffer RB;
+  llvm::RewriteBuffer RB;
   RB.Initialize(SR.begin(), SR.end());
   for (const auto &R : ProcessedReplList) {
     unsigned ROffset = R.getOffset();
@@ -2388,7 +2389,7 @@ std::shared_ptr<clang::tooling::TranslationUnitReplacements>
         std::make_shared<clang::tooling::TranslationUnitReplacements>();
 clang::tooling::UnifiedPath DpctGlobalInfo::InRoot;
 clang::tooling::UnifiedPath DpctGlobalInfo::OutRoot;
-clang::tooling::UnifiedPath DpctGlobalInfo::AnalysisScope;
+std::vector<clang::tooling::UnifiedPath> DpctGlobalInfo::AnalysisScope;
 std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::SYCLSourceExtension = std::string();
 std::string DpctGlobalInfo::SYCLHeaderExtension = std::string();
@@ -2724,7 +2725,8 @@ std::string CtTypeInfo::getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     if (UETT->isArgumentType()) {
       const auto *const RD =
           UETT->getArgumentType().getCanonicalType()->getAsRecordDecl();
-      if (MapNames::SupportedVectorTypes.count(RD->getNameAsString()) == 0) {
+      if (MapNamesLang::SupportedVectorTypes.count(RD->getNameAsString()) ==
+          0) {
         IsContainSizeOfUserDefinedType = true;
         break;
       }
@@ -4055,12 +4057,12 @@ void MemVarMap::merge(const MemVarMap &VarMap,
 int MemVarMap::calculateExtraArgsSize() const {
   int Size = 0;
   if (hasStream())
-    Size += MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Stream);
+    Size += MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Stream);
 
   Size = Size + calculateExtraArgsSize(LocalVarMap) +
          calculateExtraArgsSize(GlobalVarMap) +
          calculateExtraArgsSize(ExternVarMap);
-  Size = Size + TextureMap.size() * MapNames::KernelArgTypeSizeMap.at(
+  Size = Size + TextureMap.size() * MapNamesLang::KernelArgTypeSizeMap.at(
                                         KernelArgType::KAT_Texture);
 
   return Size;
@@ -4255,7 +4257,7 @@ int MemVarMap::calculateExtraArgsSize(const MemVarInfoMap &Map) const {
   int Size = 0;
   for (auto &VarInfoPair : Map) {
     auto D = VarInfoPair.second->getType()->getDimension();
-    Size += MapNames::getArrayTypeSize(D);
+    Size += MapNamesLang::getArrayTypeSize(D);
   }
   return Size;
 }
@@ -5034,9 +5036,12 @@ void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     return;
   for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
     auto Param = Parms[Idx];
-    if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
-        "cudaTextureObject_t")
+    std::string ParamName =
+        DpctGlobalInfo::getUnqualifiedTypeName(Param->getType());
+    if (ParamName == "cudaTextureObject_t" ||
+        ParamName == "cudaSurfaceObject_t") {
       TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
+    }
   }
 }
 std::string DeviceFunctionDecl::getExtraParameters(LocInfo LI) {
@@ -5494,15 +5499,16 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
       PointerType = Arg->getType();
     }
     TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
-    ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+    ArgSize = MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
 
     // Currently, all the device RNG state structs are passed to kernel by
     // pointer. So we check the pointee type, if it is in the type map, we
     // replace the TypeString with the MKL generator type.
     std::string PointeeTypeStr =
         Arg->getType()->getPointeeType().getUnqualifiedType().getAsString();
-    auto Iter = MapNames::DeviceRandomGeneratorTypeMap.find(PointeeTypeStr);
-    if (Iter != MapNames::DeviceRandomGeneratorTypeMap.end()) {
+    auto Iter =
+        MapNamesRandom::DeviceRandomGeneratorTypeMap.find(PointeeTypeStr);
+    if (Iter != MapNamesRandom::DeviceRandomGeneratorTypeMap.end()) {
       // Here the "*" is not added in the TypeString, the "*" will be added
       // in function buildKernelArgsStmt
       TypeString = Iter->second;
@@ -5511,11 +5517,13 @@ KernelCallExpr::ArgInfo::ArgInfo(const ParmVarDecl *PVD,
   } else {
     auto QT = Arg->getType();
     QT = QT.getUnqualifiedType();
-    auto Iter = MapNames::VectorTypeMigratedTypeSizeMap.find(QT.getAsString());
-    if (Iter != MapNames::VectorTypeMigratedTypeSizeMap.end())
+    auto Iter =
+        MapNamesLang::VectorTypeMigratedTypeSizeMap.find(QT.getAsString());
+    if (Iter != MapNamesLang::VectorTypeMigratedTypeSizeMap.end())
       ArgSize = Iter->second;
     else
-      ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+      ArgSize =
+          MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
     if (PVD) {
       TypeString = DpctGlobalInfo::getReplacedTypeName(PVD->getType());
     }
@@ -5580,9 +5588,9 @@ KernelCallExpr::ArgInfo::ArgInfo(std::shared_ptr<TextureObjectInfo> Obj,
   if (auto S = std::dynamic_pointer_cast<StructureTextureObjectInfo>(Obj)) {
     IsDoublePointer = S->containsVirtualPointer();
   }
-  ArgString = ArgStr;
+  ArgString = std::move(ArgStr);
   IdString = ArgString + "_";
-  ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
+  ArgSize = MapNamesLang::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
 }
 const std::string &KernelCallExpr::ArgInfo::getArgString() const {
   return ArgString;
@@ -5709,12 +5717,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer.indent();
     Printer << "*/" << getNL();
     Printer.indent();
-  }
-  if (DpctGlobalInfo::useRootGroup()) {
-    Printer << "auto exp_props = "
-               "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
-               "experimental::use_root_sync};\n";
-    ExecutionConfig.Properties = "exp_props";
   }
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
@@ -5962,8 +5964,8 @@ void KernelCallExpr::buildUnionFindSet() {
   }
 }
 void KernelCallExpr::addReplacements() {
-  if (TotalArgsSize >
-      MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_MaxParameterSize))
+  if (TotalArgsSize > MapNamesLang::KernelArgTypeSizeMap.at(
+                          KernelArgType::KAT_MaxParameterSize))
     DiagnosticsUtils::report(getFilePath(), getOffset(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
                              false);
@@ -5993,6 +5995,7 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 std::string KernelCallExpr::getReplacement() {
+  addPropertiesStmt();
   addDevCapCheckStmt();
   addAccessorDecl();
   addStreamDecl();
@@ -6054,7 +6057,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     Kernel->buildCalleeInfo(CE->getArg(0), std::nullopt);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::UNDEDUCED_KERNEL_FUNCTION_POINTER,
-                             true, false, Kernel->getName());
+                             true, false);
   }
   return Kernel;
 }
@@ -6293,6 +6296,17 @@ void KernelCallExpr::removeExtraIndent() {
       LocInfo.Indent.length(), "", nullptr));
 }
 
+void KernelCallExpr::addPropertiesStmt() {
+  if (DpctGlobalInfo::useRootGroup()) {
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << "auto exp_props = "
+          "sycl::ext::oneapi::experimental::properties{sycl::ext::oneapi::"
+          "experimental::use_root_sync};";
+    ExecutionConfig.Properties = "exp_props";
+    OuterStmts.OthersList.emplace_back(Str);
+  }
+}
 void KernelCallExpr::addDevCapCheckStmt() {
   llvm::SmallVector<std::string> AspectList;
   if (getVarMap().hasBF64()) {
@@ -6304,26 +6318,20 @@ void KernelCallExpr::addDevCapCheckStmt() {
   if (!AspectList.empty()) {
     std::string Str;
     llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
     if (auto Iter = MapNames::CustomHelperFunctionMap.find(getQueueKind());
         Iter != MapNames::CustomHelperFunctionMap.end()) {
-      OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
-      OS << Iter->second << ".get_device(), ";
-      OS << "{" << AspectList.front();
-      for (size_t i = 1; i < AspectList.size(); ++i) {
-        OS << ", " << AspectList[i];
-      }
-      OS << "});";
+      OS << Iter->second << ".";
     } else {
       requestFeature(HelperFeatureEnum::device_ext);
-      OS << MapNames::getDpctNamespace() << "get_device(";
-      OS << MapNames::getDpctNamespace() << "get_device_id(";
       printStreamBase(OS);
-      OS << "get_device())).has_capability_or_fail({" << AspectList.front();
-      for (size_t i = 1; i < AspectList.size(); ++i) {
-        OS << ", " << AspectList[i];
-      }
-      OS << "});";
     }
+    OS << "get_device(), ";
+    OS << "{" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      OS << ", " << AspectList[i];
+    }
+    OS << "});";
     OuterStmts.OthersList.emplace_back(OS.str());
   }
 }
@@ -6923,6 +6931,25 @@ void deduceTemplateArgument(std::vector<TemplateArgumentInfo> &TAIList,
   if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImplicitAsWritten())) {
     if (auto DD = dyn_cast<DeclaratorDecl>(DRE->getDecl()))
       TL = DD->getTypeSourceInfo()->getTypeLoc();
+  } else if (const auto *CMCE =
+                 dyn_cast<CXXMemberCallExpr>(Arg->IgnoreImplicitAsWritten())) {
+    if (const auto *MD = CMCE->getMethodDecl()) {
+      QualType ReturnType = MD->getReturnType();
+      if (const auto *PtrType = ReturnType->getAs<PointerType>()) {
+        QualType PointeeType = PtrType->getPointeeType();
+        if (const auto *SubstType =
+                PointeeType->getAs<SubstTemplateTypeParmType>()) {
+          const auto Index = SubstType->getIndex();
+          if (const auto *Callee = dyn_cast<MemberExpr>(CMCE->getCallee())) {
+            if (Index < Callee->getNumTemplateArgs())
+              ArgType = DpctGlobalInfo::getContext().getPointerType(
+                  Callee->getTemplateArgs()[Index]
+                      .getTypeSourceInfo()
+                      ->getType());
+          }
+        }
+      }
+    }
   }
   deduceTemplateArgumentFromType(TAIList, ParmType, ArgType, TL);
 }
@@ -6987,7 +7014,7 @@ void CallFunctionExpr::buildInfo() {
 bool isInSameLine(SourceLocation First, SourceLocation Second,
                   const SourceManager &SM) {
   bool Invalid = false;
-  return ::isInSameLine(SM.getExpansionLoc(First), SM.getExpansionLoc(Second),
+  return isInSameLine(SM.getExpansionLoc(First), SM.getExpansionLoc(Second),
                         SM, Invalid) &&
          !Invalid;
 }

@@ -7,6 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "SpBLASAPIMigration.h"
+#include "MapNamesBlas.h"
+#include "RuleInfra/ASTmatcherCommon.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/CallExprRewriterCommon.h"
 
@@ -39,14 +41,7 @@ void SpBLASTypeLocRule::runRule(
 
 // Rule for spBLAS function calls.
 void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
-  auto parentStmt = []() {
-  return anyOf(
-      hasParent(compoundStmt()), hasParent(forStmt()), hasParent(whileStmt()),
-      hasParent(doStmt()), hasParent(ifStmt()),
-      hasParent(exprWithCleanups(anyOf(
-          hasParent(compoundStmt()), hasParent(forStmt()),
-          hasParent(whileStmt()), hasParent(doStmt()), hasParent(ifStmt())))));
-  };
+
 
   auto functionName = [&]() {
     return hasAnyName(
@@ -293,8 +288,8 @@ void SPBLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "SPBLASNamedValueConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     std::string Name = EC->getNameAsString();
-    auto Search = MapNames::SPBLASEnumsMap.find(Name);
-    if (Search == MapNames::SPBLASEnumsMap.end()) {
+    auto Search = MapNamesBlas::SPBLASEnumsMap.find(Name);
+    if (Search == MapNamesBlas::SPBLASEnumsMap.end()) {
       llvm::dbgs() << "[" << getName()
                    << "] Unexpected enum variable: " << Name;
       return;

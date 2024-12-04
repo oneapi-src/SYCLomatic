@@ -8,7 +8,6 @@
 
 #ifdef FUNCTION_CALL
 
-
 /*
    --- cg::sync(X) ---
    cg::sync(cg::thread_block)
@@ -146,30 +145,31 @@ CASE_FACTORY_ENTRY(
      ARG(0).get_local_linear_id()
 */
 CONDITIONAL_FACTORY_ENTRY(
-        CheckParamType(0, "const class cooperative_groups::__v1::thread_block &"),
-        MEMBER_CALL_FACTORY_ENTRY("thread_rank", NDITEM,
-                                  false, "get_local_linear_id"),
+    CheckParamType(0, "const class cooperative_groups::__v1::thread_block &"),
+    MEMBER_CALL_FACTORY_ENTRY("thread_rank", NDITEM, false,
+                              "get_local_linear_id"),
+    CONDITIONAL_FACTORY_ENTRY(
+        argHasThreadBlockTileType(0, 32),
+        MEMBER_CALL_FACTORY_ENTRY("thread_rank", SUBGROUP, false,
+                                  "get_local_linear_id"),
         CONDITIONAL_FACTORY_ENTRY(
-            argHasThreadBlockTileType(0, 32),
-            MEMBER_CALL_FACTORY_ENTRY("thread_rank", SUBGROUP,
-                                      false, "get_local_linear_id"),
+            UseLogicalGroup,
             CONDITIONAL_FACTORY_ENTRY(
-                UseLogicalGroup,
-                CONDITIONAL_FACTORY_ENTRY(
-                    makeCheckOr(
-                        argHasThreadBlockTileType(0, 16),
-                        argHasThreadBlockTileType(0, 8),
-                        argHasThreadBlockTileType(0, 4),
-                        argHasThreadBlockTileType(0, 2),
-                        argHasThreadBlockTileType(0, 1)),
-                    FEATURE_REQUEST_FACTORY(
-                        HelperFeatureEnum::device_ext,
-                        MEMBER_CALL_FACTORY_ENTRY("thread_rank",
-                                                  ARG(0), false, "get_local_linear_id")),
-                    UNSUPPORT_FACTORY_ENTRY("thread_rank",
-                                            Diagnostics::API_NOT_MIGRATED, ARG("thread_rank"))),
+                makeCheckOr(argHasThreadBlockTileType(0, 16),
+                            argHasThreadBlockTileType(0, 8),
+                            argHasThreadBlockTileType(0, 4),
+                            argHasThreadBlockTileType(0, 2),
+                            argHasThreadBlockTileType(0, 1)),
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::device_ext,
+                    MEMBER_CALL_FACTORY_ENTRY("thread_rank", ARG(0), false,
+                                              "get_local_linear_id")),
                 UNSUPPORT_FACTORY_ENTRY("thread_rank",
-                                        Diagnostics::API_NOT_MIGRATED, ARG("thread_rank")))))
+                                        Diagnostics::API_NOT_MIGRATED,
+                                        ARG("thread_rank"))),
+            UNSUPPORT_FACTORY_ENTRY("thread_rank",
+                                    Diagnostics::API_NOT_MIGRATED,
+                                    ARG("thread_rank")))))
 
 CONDITIONAL_FACTORY_ENTRY(
     makeCheckAnd(CheckParamType(
@@ -201,8 +201,7 @@ CONDITIONAL_FACTORY_ENTRY(
             MapNames::getClNamespace() +
             "ext::oneapi::experimental::this_kernel::get_opportunistic_group")),
     UNSUPPORT_FACTORY_ENTRY(
-        "coalesced_threads",
-        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+        "coalesced_threads", Diagnostics::TRY_EXPERIMENTAL_FEATURE,
         ARG("coalesced_threads"),
         ARG("--use-experimental-features=non-uniform-groups")))
 #endif
@@ -226,37 +225,38 @@ CONDITIONAL_FACTORY_ENTRY(
 */
 WARNING_FACTORY_ENTRY(
     "cooperative_groups::__v1::thread_block.sync",
-    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.sync", NDITEM,
-                              false, "barrier"),
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.sync",
+                              NDITEM, false, "barrier"),
     Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item"))
 
 WARNING_FACTORY_ENTRY(
     "cooperative_groups::__v1::coalesced_group.sync",
-    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.sync", NDITEM,
-                              false, "barrier"),
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.sync",
+                              NDITEM, false, "barrier"),
     Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item"))
 // for cuda <= 10.2
 CONDITIONAL_FACTORY_ENTRY(
     baseHasThreadBlockTileType(32),
     WARNING_FACTORY_ENTRY(
         "cooperative_groups::__v1::__thread_block_tile_base.sync",
-        MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.sync",
-                                  SUBGROUP, false, "barrier"),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cooperative_groups::__v1::__thread_block_tile_base.sync", SUBGROUP,
+            false, "barrier"),
         Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
-    UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.sync",
-                            Diagnostics::API_NOT_MIGRATED,
-                            ARG("sync")))
+    UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.sync",
+        Diagnostics::API_NOT_MIGRATED, ARG("sync")))
 // for cuda >= 11.0
 CONDITIONAL_FACTORY_ENTRY(
     baseHasThreadBlockTileType(32),
     WARNING_FACTORY_ENTRY(
         "cooperative_groups::__v1::thread_block_tile.sync",
-        MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.sync",
-                                  SUBGROUP, false, "barrier"),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cooperative_groups::__v1::thread_block_tile.sync", SUBGROUP, false,
+            "barrier"),
         Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
     UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.sync",
-                            Diagnostics::API_NOT_MIGRATED,
-                            ARG("sync")))
+                            Diagnostics::API_NOT_MIGRATED, ARG("sync")))
 
 /*
   --- X.size() ---
@@ -278,39 +278,43 @@ MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block::size", GROUP,
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.size",
-                                   SUBGROUP, false, "get_local_linear_range")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                        baseHasThreadBlockTileType(16),
-                        baseHasThreadBlockTileType(8),
-                        baseHasThreadBlockTileType(4),
-                        baseHasThreadBlockTileType(2),
-                        baseHasThreadBlockTileType(1))),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::__thread_block_tile_base.size",
+             SUBGROUP, false, "get_local_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.size",
-                                       MemberExprBase(), false, "get_local_linear_range"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.size",
-                                Diagnostics::API_NOT_MIGRATED, ARG("size"))))
+             MEMBER_CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.size",
+                 MemberExprBase(), false, "get_local_linear_range"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.size",
+        Diagnostics::API_NOT_MIGRATED, ARG("size"))))
 // for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.size",
-                                   SUBGROUP, false, "get_local_linear_range")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                        baseHasThreadBlockTileType(16),
-                        baseHasThreadBlockTileType(8),
-                        baseHasThreadBlockTileType(4),
-                        baseHasThreadBlockTileType(2),
-                        baseHasThreadBlockTileType(1))),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::thread_block_tile.size", SUBGROUP,
+             false, "get_local_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.size",
-                                       MemberExprBase(), false, "get_local_linear_range"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.size",
-                                Diagnostics::API_NOT_MIGRATED, ARG("size"))))
+             MEMBER_CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::thread_block_tile.size",
+                 MemberExprBase(), false, "get_local_linear_range"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::thread_block_tile.size",
+        Diagnostics::API_NOT_MIGRATED, ARG("size"))))
 
 /*
   --- X.num_threads() ---
@@ -324,47 +328,52 @@ CASE_FACTORY_ENTRY(
   => if UseLogicalGroup then
      MemberBase().get_local_linear_id()
 */
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.num_threads", GROUP,
-                          false, "get_local_linear_range")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.num_threads",
+                          GROUP, false, "get_local_linear_range")
 
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block::num_threads",
-                   GROUP, false, "get_local_linear_range")
+                          GROUP, false, "get_local_linear_range")
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.num_threads",
-                                   SUBGROUP, false, "get_local_linear_range")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                        baseHasThreadBlockTileType(16),
-                        baseHasThreadBlockTileType(8),
-                        baseHasThreadBlockTileType(4),
-                        baseHasThreadBlockTileType(2),
-                        baseHasThreadBlockTileType(1))),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::__thread_block_tile_base.num_threads",
+             SUBGROUP, false, "get_local_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.num_threads",
-                                       MemberExprBase(), false, "get_local_linear_range"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.num_threads",
-                                Diagnostics::API_NOT_MIGRATED, ARG("num_threads"))))
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_"
+                                       "block_tile_base.num_threads",
+                                       MemberExprBase(), false,
+                                       "get_local_linear_range"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.num_threads",
+        Diagnostics::API_NOT_MIGRATED, ARG("num_threads"))))
 // for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.num_threads",
-                                   SUBGROUP, false, "get_local_linear_range")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                        baseHasThreadBlockTileType(16),
-                        baseHasThreadBlockTileType(8),
-                        baseHasThreadBlockTileType(4),
-                        baseHasThreadBlockTileType(2),
-                        baseHasThreadBlockTileType(1))),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::thread_block_tile.num_threads",
+             SUBGROUP, false, "get_local_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.num_threads",
-                                       MemberExprBase(), false, "get_local_linear_range"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.num_threads",
-                                Diagnostics::API_NOT_MIGRATED, ARG("num_threads"))))
+             MEMBER_CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::thread_block_tile.num_threads",
+                 MemberExprBase(), false, "get_local_linear_range"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::thread_block_tile.num_threads",
+        Diagnostics::API_NOT_MIGRATED, ARG("num_threads"))))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
@@ -430,14 +439,13 @@ CONDITIONAL_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
-    MEMBER_CALL_FACTORY_ENTRY(
-        "cooperative_groups::__v1::grid_group.size", MemberExprBase(),
-        false, "get_local_linear_range"),
-    UNSUPPORT_FACTORY_ENTRY(
-        "cooperative_groups::__v1::grid_group.size",
-        Diagnostics::TRY_EXPERIMENTAL_FEATURE,
-        ARG("cooperative_groups::__v1::grid_group.size"),
-        ARG("--use-experimental-features=root-group")))
+    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.size",
+                              MemberExprBase(), false,
+                              "get_local_linear_range"),
+    UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::grid_group.size",
+                            Diagnostics::TRY_EXPERIMENTAL_FEATURE,
+                            ARG("cooperative_groups::__v1::grid_group.size"),
+                            ARG("--use-experimental-features=root-group")))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseRootGroup,
@@ -468,40 +476,45 @@ MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_rank",
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
-                                   SUBGROUP, false, "get_local_linear_id")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                        baseHasThreadBlockTileType(16),
-                        baseHasThreadBlockTileType(8),
-                        baseHasThreadBlockTileType(4),
-                        baseHasThreadBlockTileType(2),
-                        baseHasThreadBlockTileType(1))),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
+             SUBGROUP, false, "get_local_linear_id")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
-                                       MemberExprBase(), false, "get_local_linear_id"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
-                                Diagnostics::API_NOT_MIGRATED, ARG("thread_rank"))))
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_"
+                                       "block_tile_base.thread_rank",
+                                       MemberExprBase(), false,
+                                       "get_local_linear_id"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
+        Diagnostics::API_NOT_MIGRATED, ARG("thread_rank"))))
 
 // for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
-                                   SUBGROUP, false, "get_local_linear_id")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                        baseHasThreadBlockTileType(16),
-                        baseHasThreadBlockTileType(8),
-                        baseHasThreadBlockTileType(4),
-                        baseHasThreadBlockTileType(2),
-                        baseHasThreadBlockTileType(1))),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::thread_block_tile.thread_rank",
+             SUBGROUP, false, "get_local_linear_id")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
-                                       MemberExprBase(), false, "get_local_linear_id"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
-                                Diagnostics::API_NOT_MIGRATED, ARG("thread_rank"))))
+             MEMBER_CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::thread_block_tile.thread_rank",
+                 MemberExprBase(), false, "get_local_linear_id"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::thread_block_tile.thread_rank",
+        Diagnostics::API_NOT_MIGRATED, ARG("thread_rank"))))
 
 /*
   --- X.meta_group_rank() ---
@@ -514,39 +527,96 @@ CASE_FACTORY_ENTRY(
 */
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
-                                   SUBGROUP, false, "get_group_linear_id")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                            baseHasThreadBlockTileType(16),
-                            baseHasThreadBlockTileType(8),
-                            baseHasThreadBlockTileType(4),
-                            baseHasThreadBlockTileType(2),
-                            baseHasThreadBlockTileType(1))),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::thread_block_tile.meta_group_rank",
+             SUBGROUP, false, "get_group_linear_id")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
-                                       MemberExprBase(), false, "get_group_linear_id"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
-                                Diagnostics::API_NOT_MIGRATED, ARG("meta_group_rank"))))
+             MEMBER_CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::thread_block_tile.meta_group_rank",
+                 MemberExprBase(), false, "get_group_linear_id"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::thread_block_tile.meta_group_rank",
+        Diagnostics::API_NOT_MIGRATED, ARG("meta_group_rank"))))
 
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
+         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_"
+                                   "thread_block_tile.meta_group_rank",
                                    SUBGROUP, false, "get_group_linear_id")),
-    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-                            baseHasThreadBlockTileType(16),
-                            baseHasThreadBlockTileType(8),
-                            baseHasThreadBlockTileType(4),
-                            baseHasThreadBlockTileType(2),
-                            baseHasThreadBlockTileType(1))),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::device_ext,
-             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
-                                       MemberExprBase(), false, "get_group_linear_id"))),
-    OTHERWISE(
-        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
-                                Diagnostics::API_NOT_MIGRATED, ARG("meta_group_rank"))))
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_"
+                                       "warp_thread_block_tile.meta_group_rank",
+                                       MemberExprBase(), false,
+                                       "get_group_linear_id"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_"
+                                      "thread_block_tile.meta_group_rank",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      ARG("meta_group_rank"))))
+
+/*
+  --- X.meta_group_size() ---
+  cg::thread_block_tile<32>::meta_group_size()
+  => item_ct1.get_sub_group().get_group_linear_range()
+
+  cg::thread_block_tile<N>::meta_group_size() if n in {1,2,4,8,16}
+  => if UseLogicalGroup then
+     MemberBase().get_group_linear_range()
+*/
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         MEMBER_CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::thread_block_tile.meta_group_size",
+             SUBGROUP, false, "get_group_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             MEMBER_CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::thread_block_tile.meta_group_size",
+                 MemberExprBase(), false, "get_group_linear_range"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::thread_block_tile.meta_group_size",
+        Diagnostics::API_NOT_MIGRATED, ARG("meta_group_size"))))
+
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_"
+                                   "thread_block_tile.meta_group_size",
+                                   SUBGROUP, false, "get_group_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup,
+                      makeCheckOr(baseHasThreadBlockTileType(16),
+                                  baseHasThreadBlockTileType(8),
+                                  baseHasThreadBlockTileType(4),
+                                  baseHasThreadBlockTileType(2),
+                                  baseHasThreadBlockTileType(1))),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::device_ext,
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_"
+                                       "warp_thread_block_tile.meta_group_size",
+                                       MemberExprBase(), false,
+                                       "get_group_linear_range"))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_"
+                                      "thread_block_tile.meta_group_size",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      ARG("meta_group_size"))))
 
 /*
   --- X.shfl_down() ---
@@ -1082,9 +1152,8 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     UseNonUniformGroups,
     CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.shfl",
-                              CALL(MapNames::getClNamespace() +
-                                       "select_from_group",
-                                   MemberExprBase(), ARG(0), ARG(1))),
+                       CALL(MapNames::getClNamespace() + "select_from_group",
+                            MemberExprBase(), ARG(0), ARG(1))),
     UNSUPPORT_FACTORY_ENTRY(
         "cooperative_groups::__v1::coalesced_group.shfl",
         Diagnostics::TRY_EXPERIMENTAL_FEATURE,

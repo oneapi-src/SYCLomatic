@@ -893,6 +893,36 @@ public:
   typename std::enable_if<Available, data_t>::type read(CoordT x) {
     return detail::fetch_data<T>()(_img_acc.read(x, _sampler));
   }
+
+  /// Read data from accessor.
+  template <class Coord0, class Coord1, class Coord2,
+            bool Available = dimensions == 3 &&
+                             std::is_integral<Coord0>::value
+                                 &&std::is_integral<Coord1>::value
+                                     &&std::is_integral<Coord2>::value>
+  typename std::enable_if<Available, data_t>::type read_byte(Coord0 x, Coord1 y,
+                                                             Coord2 z) {
+    return detail::fetch_data<T>()(
+        _img_acc.read(sycl::int4(x / sizeof(T), y, z, 0), _sampler));
+  }
+
+  /// Read data from accessor.
+  template <class Coord0, class Coord1,
+            bool Available = dimensions == 2 &&
+                             std::is_integral<Coord0>::value
+                                 &&std::is_integral<Coord1>::value>
+  typename std::enable_if<Available, data_t>::type read_byte(Coord0 x,
+                                                             Coord1 y) {
+    return detail::fetch_data<T>()(
+        _img_acc.read(sycl::int2(x / sizeof(T), y), _sampler));
+  }
+
+  /// Read data from accessor.
+  template <class CoordT,
+            bool Available = dimensions == 1 && std::is_integral<CoordT>::value>
+  typename std::enable_if<Available, data_t>::type read_byte(CoordT x) {
+    return detail::fetch_data<T>()(_img_acc.read(x / sizeof(T), _sampler));
+  }
 };
 
 template <class T, int dimensions> class image_accessor_ext<T, dimensions, true> {

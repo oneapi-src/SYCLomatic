@@ -16,212 +16,9 @@
 #include "dpct.hpp"
 #include "dpl_extras/functional.h"
 
+#include "detail/group_utils_detail.hpp"
 namespace dpct {
 namespace group {
-
-namespace detail {
-
-typedef uint16_t digit_counter_type;
-typedef uint32_t packed_counter_type;
-
-template <int N, int CURRENT_VAL = N, int COUNT = 0> struct log2 {
-  enum { VALUE = log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE };
-};
-
-template <int N, int COUNT> struct log2<N, 0, COUNT> {
-  enum { VALUE = (1 << (COUNT - 1) < N) ? COUNT : COUNT - 1 };
-};
-
-template <int RADIX_BITS, bool DESCENDING = false> class radix_rank {
-public:
-  static size_t get_local_memory_size(size_t group_threads) {
-    return group_threads * PADDED_COUNTER_LANES * sizeof(packed_counter_type);
-  }
-
-  radix_rank(uint8_t *local_memory) : _local_memory(local_memory) {}
-
-  template <typename Item, int VALUES_PER_THREAD>
-  __dpct_inline__ void
-  rank_keys(const Item &item, uint32_t (&keys)[VALUES_PER_THREAD],
-            int (&ranks)[VALUES_PER_THREAD], int current_bit, int num_bits) {
-
-    digit_counter_type thread_prefixes[VALUES_PER_THREAD];
-    digit_counter_type *digit_counters[VALUES_PER_THREAD];
-    digit_counter_type *buffer =
-        reinterpret_cast<digit_counter_type *>(_local_memory);
-
-    reset_local_memory(item);
-
-    item.barrier(sycl::access::fence_space::local_space);
-
-#pragma unroll
-    for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      uint32_t digit = ::dpct::bfe(keys[i], current_bit, num_bits);
-      uint32_t sub_counter = digit >> LOG_COUNTER_LANES;
-      uint32_t counter_lane = digit & (COUNTER_LANES - 1);
-
-      if (DESCENDING) {
-        sub_counter = PACKING_RATIO - 1 - sub_counter;
-        counter_lane = COUNTER_LANES - 1 - counter_lane;
-      }
-
-      digit_counters[i] =
-          &buffer[counter_lane * item.get_local_range().size() * PACKING_RATIO +
-                  item.get_local_linear_id() * PACKING_RATIO + sub_counter];
-      thread_prefixes[i] = *digit_counters[i];
-      *digit_counters[i] = thread_prefixes[i] + 1;
-    }
-
-    item.barrier(sycl::access::fence_space::local_space);
-
-    scan_counters(item);
-
-    item.barrier(sycl::access::fence_space::local_space);
-
-    for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      ranks[i] = thread_prefixes[i] + *digit_counters[i];
-    }
-  }
-
-private:
-  template <typename Item>
-  __dpct_inline__ void reset_local_memory(const Item &item) {
-    packed_counter_type *ptr =
-        reinterpret_cast<packed_counter_type *>(_local_memory);
-
-#pragma unroll
-    for (int i = 0; i < PADDED_COUNTER_LANES; ++i) {
-      ptr[i * item.get_local_range().size() + item.get_local_linear_id()] = 0;
-    }
-  }
-
-  template <typename Item>
-  __dpct_inline__ packed_counter_type upsweep(const Item &item) {
-    packed_counter_type sum = 0;
-    packed_counter_type *ptr =
-        reinterpret_cast<packed_counter_type *>(_local_memory);
-
-#pragma unroll
-    for (int i = 0; i < PADDED_COUNTER_LANES; i++) {
-      cached_segment[i] =
-          ptr[item.get_local_linear_id() * PADDED_COUNTER_LANES + i];
-    }
-
-#pragma unroll
-    for (int i = 0; i < PADDED_COUNTER_LANES; ++i) {
-      sum += cached_segment[i];
-    }
-
-    return sum;
-  }
-
-  template <typename Item>
-  __dpct_inline__ void exclusive_downsweep(const Item &item,
-                                           packed_counter_type raking_partial) {
-    packed_counter_type *ptr =
-        reinterpret_cast<packed_counter_type *>(_local_memory);
-    packed_counter_type sum = raking_partial;
-
-#pragma unroll
-    for (int i = 0; i < PADDED_COUNTER_LANES; ++i) {
-      packed_counter_type value = cached_segment[i];
-      cached_segment[i] = sum;
-      sum += value;
-    }
-
-#pragma unroll
-    for (int i = 0; i < PADDED_COUNTER_LANES; ++i) {
-      ptr[item.get_local_linear_id() * PADDED_COUNTER_LANES + i] =
-          cached_segment[i];
-    }
-  }
-
-  struct prefix_callback {
-    __dpct_inline__ packed_counter_type
-    operator()(packed_counter_type block_aggregate) {
-      packed_counter_type block_prefix = 0;
-
-#pragma unroll
-      for (int packed = 1; packed < PACKING_RATIO; packed++) {
-        block_prefix += block_aggregate
-                        << (sizeof(digit_counter_type) * 8 * packed);
-      }
-
-      return block_prefix;
-    }
-  };
-
-  template <typename Item>
-  __dpct_inline__ void scan_counters(const Item &item) {
-    packed_counter_type raking_partial = upsweep(item);
-
-    prefix_callback callback;
-    packed_counter_type exclusive_partial = exclusive_scan(
-        item, raking_partial, sycl::ext::oneapi::plus<packed_counter_type>(),
-        callback);
-
-    exclusive_downsweep(item, exclusive_partial);
-  }
-
-private:
-  static constexpr int PACKING_RATIO =
-      sizeof(packed_counter_type) / sizeof(digit_counter_type);
-  static constexpr int LOG_PACKING_RATIO = log2<PACKING_RATIO>::VALUE;
-  static constexpr int LOG_COUNTER_LANES = RADIX_BITS - LOG_PACKING_RATIO;
-  static constexpr int COUNTER_LANES = 1 << LOG_COUNTER_LANES;
-  static constexpr int PADDED_COUNTER_LANES = COUNTER_LANES + 1;
-
-  packed_counter_type cached_segment[PADDED_COUNTER_LANES];
-  uint8_t *_local_memory;
-};
-
-template <typename T, typename U> struct base_traits {
-
-  static __dpct_inline__ U twiddle_in(U key) {
-    throw std::runtime_error("Not implemented");
-  }
-  static __dpct_inline__ U twiddle_out(U key) {
-    throw std::runtime_error("Not implemented");
-  }
-};
-
-template <typename U> struct base_traits<uint32_t, U> {
-  static __dpct_inline__ U twiddle_in(U key) { return key; }
-  static __dpct_inline__ U twiddle_out(U key) { return key; }
-};
-
-template <typename U> struct base_traits<int, U> {
-  static constexpr U HIGH_BIT = U(1) << ((sizeof(U) * 8) - 1);
-  static __dpct_inline__ U twiddle_in(U key) { return key ^ HIGH_BIT; }
-  static __dpct_inline__ U twiddle_out(U key) { return key ^ HIGH_BIT; }
-};
-
-template <typename U> struct base_traits<float, U> {
-  static constexpr U HIGH_BIT = U(1) << ((sizeof(U) * 8) - 1);
-  static __dpct_inline__ U twiddle_in(U key) {
-    U mask = (key & HIGH_BIT) ? U(-1) : HIGH_BIT;
-    return key ^ mask;
-  }
-  static __dpct_inline__ U twiddle_out(U key) {
-    U mask = (key & HIGH_BIT) ? HIGH_BIT : U(-1);
-    return key ^ mask;
-  }
-};
-
-template <typename T> struct traits : base_traits<T, T> {};
-template <> struct traits<uint32_t> : base_traits<uint32_t, uint32_t> {};
-template <> struct traits<int> : base_traits<int, uint32_t> {};
-template <> struct traits<float> : base_traits<float, uint32_t> {};
-
-template <int N> struct power_of_two {
-  enum { VALUE = ((N & (N - 1)) == 0) };
-};
-
-__dpct_inline__ uint32_t shr_add(uint32_t x, uint32_t shift, uint32_t addend) {
-  return (x >> shift) + addend;
-}
-
-} // namespace detail
 
 /// Rearranging data partitioned across a work-group.
 ///
@@ -794,6 +591,55 @@ __dpct_inline__ void load_direct_striped(const ItemT &item,
     data[i] = input_iter[work_item_id + i * work_group_size];
 }
 
+/// Load a linear segment of elements into a blocked arrangement across the
+/// work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load
+template <typename T, size_t ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+load_direct_blocked(const ItemT &item, InputIteratorT input_iter,
+                    T (&data)[ElementsPerWorkItem], int valid_items) {
+  size_t work_item_id = item.get_local_linear_id();
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if ((work_item_id * ElementsPerWorkItem) + i < valid_items)
+      data[i] = input_iter[(work_item_id * ElementsPerWorkItem) + i];
+}
+
+/// Load a linear segment of elements into a striped arrangement across the
+/// work-group, guarded by range.
+///
+/// \tparam T The data type to load.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam InputIteratorT  The random-access iterator type for input \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param input_iter The work-group's base input iterator for loading from.
+/// \param data Data to load.
+/// \param valid_items Number of valid items to load
+template <typename T, int ElementsPerWorkItem, typename InputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+load_direct_striped(const ItemT &item, InputIteratorT input_iter,
+                    T (&data)[ElementsPerWorkItem], int valid_items) {
+  size_t work_group_size = item.get_group().get_local_linear_range();
+  size_t work_item_id = item.get_local_linear_id();
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if (work_item_id + (i * work_group_size) < valid_items)
+      data[i] = input_iter[work_item_id + i * work_group_size];
+}
+
 /// Store a blocked arrangement of items across a work-group into a linear
 /// segment of items.
 ///
@@ -842,6 +688,60 @@ __dpct_inline__ void store_direct_striped(const ItemT &item,
 #pragma unroll
   for (size_t i = 0; i < ElementsPerWorkItem; i++)
     work_item_iter[i * work_group_size] = data[i];
+}
+
+/// Store a blocked arrangement of items across a work-group into a linear
+/// segment of items, guarded by range.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param data Data to store.
+/// \param valid_items Number of valid items to load
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+store_direct_blocked(const ItemT &item, OutputIteratorT output_iter,
+                     T (&data)[ElementsPerWorkItem], size_t valid_items) {
+  size_t work_item_id = item.get_local_linear_id();
+  OutputIteratorT work_item_iter =
+      output_iter + (work_item_id * ElementsPerWorkItem);
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if (i + (work_item_id * ElementsPerWorkItem) < valid_items)
+      work_item_iter[i] = data[i];
+}
+
+/// Store a striped arrangement of items across a work-group into a linear
+/// segment of items, guarded by range.
+///
+/// \tparam T The data type to store.
+/// \tparam ElementsPerWorkItem The number of consecutive elements partitioned
+/// onto each work-item.
+/// \tparam OutputIteratorT  The random-access iterator type for output.
+/// \iterator.
+/// \tparam ItemT The sycl::nd_item index space class.
+/// \param item The calling work-item.
+/// \param output_iter The work-group's base output iterator for writing.
+/// \param items Data to store.
+/// \param valid_items Number of valid items to load
+template <typename T, size_t ElementsPerWorkItem, typename OutputIteratorT,
+          typename ItemT>
+__dpct_inline__ void
+store_direct_striped(const ItemT &item, OutputIteratorT output_iter,
+                     T (&data)[ElementsPerWorkItem], size_t valid_items) {
+  size_t work_group_size = item.get_group().get_local_linear_range();
+  size_t work_item_id = item.get_local_linear_id();
+  OutputIteratorT work_item_iter = output_iter + work_item_id;
+#pragma unroll
+  for (size_t i = 0; i < ElementsPerWorkItem; i++)
+    if ((i * work_group_size) + work_item_id < valid_items)
+      work_item_iter[i * work_group_size] = data[i];
 }
 
 // loads a linear segment of workgroup items into a subgroup striped
@@ -958,6 +858,41 @@ public:
           item, input_iter, data);
     }
   }
+
+  /// Load a linear segment of items from memory, guarded by range.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and
+  /// valid_items is 5, the \p input across the work-group is:
+  ///
+  ///   0, 1, 2, 3, 4, 5, 6, 7, ..., 508, 509, 510, 511.
+  ///
+  /// The blocked order \p data of each work-item will be:
+  ///
+  ///   {[0,1,2,3], [4,?,?,?], ..., [?,?,?,?]}.
+  ///
+  /// The striped order \p output of each work-item will be:
+  ///
+  ///   {[0,?,?,?], [1,?,?,?], [2,?,?,?], [3,?,?,?] ..., [?,?,?,?]}.
+  ///
+  /// \tparam ItemT The sycl::nd_item index space class.
+  /// \tparam InputIteratorT The random-access iterator type for input
+  /// \iterator.
+  /// \param item The work-item identifier.
+  /// \param input_iter The work-group's base input iterator for loading from.
+  /// \param data The data to load.
+  /// \param valid_items Number of valid items to load
+  template <typename ItemT, typename InputIteratorT>
+  __dpct_inline__ void load(const ItemT &item, InputIteratorT input_iter,
+                            T (&data)[ElementsPerWorkItem], int valid_items) {
+    if constexpr (LoadAlgorithm == group_load_algorithm::blocked) {
+      load_direct_blocked<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data, valid_items);
+    } else if constexpr (LoadAlgorithm == group_load_algorithm::striped) {
+      load_direct_striped<T, ElementsPerWorkItem, InputIteratorT, ItemT>(
+          item, input_iter, data, valid_items);
+    }
+  }
 };
 
 /// Enumerates alternative algorithms for dpct::group::group_load to write a
@@ -1018,6 +953,42 @@ public:
     } else if constexpr (StoreAlgorithm == group_store_algorithm::striped) {
       store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
           item, output_iter, data);
+    }
+  }
+
+  /// Store items into a linear segment of memory, guarded by range.
+  ///
+  /// Suppose 512 integer data elements partitioned across 128 work-items, where
+  /// each work-item owns 4 ( \p ElementsPerWorkItem ) data elements and
+  /// \p valid_items is 5, the \p output across the work-group is:
+  ///
+  ///   {[0,0,0,0], [0,0,0,0], ..., [0,0,0,0]}.
+  ///
+  /// The blocked order \p output will be:
+  ///
+  ///   0, 1, 2, 3, 4, 5, 0, 0, ..., 0, 0, 0, 0.
+  ///
+  /// The striped order \p output will be:
+  ///
+  ///   0, 4, 8, 12, 16, 0, 0, 0, ..., 0, 0, 0, 0.
+  ///
+  /// \tparam ItemT The sycl::nd_item index space class.
+  /// \tparam OutputIteratorT The random-access iterator type for \p output
+  /// iterator.
+  /// \param item The work-item identifier.
+  /// \param input The input data of each work-item.
+  /// \param data The data to store.
+  /// \param valid_items Number of valid items to load
+  template <typename ItemT, typename OutputIteratorT>
+  __dpct_inline__ void store(const ItemT &item, OutputIteratorT output_iter,
+                             T (&data)[ElementsPerWorkItem],
+                             size_t valid_items) {
+    if constexpr (StoreAlgorithm == group_store_algorithm::blocked) {
+      store_direct_blocked<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data, valid_items);
+    } else if constexpr (StoreAlgorithm == group_store_algorithm::striped) {
+      store_direct_striped<T, ElementsPerWorkItem, OutputIteratorT, ItemT>(
+          item, output_iter, data, valid_items);
     }
   }
 };

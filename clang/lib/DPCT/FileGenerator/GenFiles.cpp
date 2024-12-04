@@ -1,4 +1,4 @@
-//===--------------- GenFiles.cpp -------------------------------------===//
+//===--------------- GenFiles.cpp ----------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -44,13 +44,37 @@ using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
+extern DpctOption<clang::dpct::opt, bool> ProcessAll;
+extern DpctOption<dpct::opt, std::string> BuildScriptFile;
+extern DpctOption<dpct::opt, bool> GenBuildScript;
+extern std::map<std::string, uint64_t> ErrorCnt;
+
 namespace clang {
 namespace tooling {
 UnifiedPath getFormatSearchPath();
 } // namespace tooling
-} // namespace clang
 
-extern std::map<std::string, uint64_t> ErrorCnt;
+namespace dpct{
+
+/// Calculate the ranges of the input \p Ranges after \p Repls is applied to
+/// the files.
+/// \param Repls Replacements to apply.
+/// \param Ranges Ranges before applying the replacements.
+/// \return The result ranges.
+std::vector<clang::tooling::Range>
+calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
+                       const std::vector<clang::tooling::Range> &Ranges) {
+  std::vector<clang::tooling::Range> Result;
+  for (const auto &R : Ranges) {
+    unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
+    unsigned int EOffset =
+        Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
+    if (BOffset > EOffset)
+      continue;
+    Result.emplace_back(BOffset, EOffset - BOffset);
+  }
+  return Result;
+}
 
 static bool formatFile(const clang::tooling::UnifiedPath &FileName,
                        const std::vector<clang::tooling::Range> &Ranges,
@@ -122,7 +146,7 @@ std::map<clang::tooling::UnifiedPath, bool> IncludeFileMap;
 bool rewriteDir(std::string &FilePath,
                 const clang::tooling::UnifiedPath &InRoot,
                 const clang::tooling::UnifiedPath &OutRoot) {
-#if defined(_WIN64)
+#if defined(_WIN32)
   std::string Filename = sys::path::filename(FilePath).str();
 #endif
 
@@ -139,7 +163,7 @@ bool rewriteDir(std::string &FilePath,
                                 path::begin(InRoot.getCanonicalPath()));
   SmallString<512> NewFilePath = OutRoot.getCanonicalPath();
   path::append(NewFilePath, PathDiff.first, path::end(FilePath));
-#if defined(_WIN64)
+#if defined(_WIN32)
   sys::path::remove_filename(NewFilePath);
   sys::path::append(NewFilePath, Filename);
 #endif
@@ -273,7 +297,6 @@ void copyFileToOutRoot(clang::tooling::UnifiedPath &InRoot,
 void processallOptionAction(clang::tooling::UnifiedPath &InRoot,
                             clang::tooling::UnifiedPath &OutRoot,
                             bool IsForSYCL) {
-  extern DpctOption<clang::dpct::opt, bool> ProcessAll;
   if (ProcessAll) {
     std::error_code EC;
     for (fs::recursive_directory_iterator Iter(Twine(InRoot.getPath()), EC),
@@ -359,7 +382,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
                            " fail: " + EC.message() + "\n";
       PrintMsg(ErrMsg);
     }
-    auto FilePath = Iter->path();
+    auto &FilePath = Iter->path();
 
     // Skip output directory if it is in the in-root directory.
     if (isChildOrSamePath(OutRoot.str(), FilePath))
@@ -396,16 +419,16 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         }
         if (GetSourceFileType(FilePath) & SPT_CudaSource) {
           // Only migrates isolated CUDA source files.
-          FilesNotProcessed.push_back(FilePath);
+          FilesNotProcessed.push_back(std::move(FilePath));
         } else {
           // Collect the rest files which are not in the compilation database or
           // included by main source file in the compilation database.
-          FilesNotInCompilationDB.push_back(FilePath);
+          FilesNotInCompilationDB.push_back(std::move(FilePath));
         }
       }
 
     } else if (Iter->type() == fs::file_type::directory_file) {
-      const auto Path = Iter->path();
+      const auto &Path = Iter->path();
       clang::tooling::UnifiedPath OutDirectory = Path;
       if (!rewriteCanonicalDir(OutDirectory, InRoot, OutRoot)) {
         continue;
@@ -419,8 +442,6 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
   }
 }
 
-extern DpctOption<dpct::opt, std::string> BuildScriptFile;
-extern DpctOption<dpct::opt, bool> GenBuildScript;
 
 static void getMainSrcFilesRepls(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
@@ -508,10 +529,10 @@ int writeReplacementsToFiles(
     OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
         Rewrite.getSourceMgr().getFileManager(), Entry.first));
     bool HasRealReplacements = true;
-    auto Repls = Entry.second;
+    const auto &Repls = Entry.second;
 
     if (Repls.size() == 1) {
-      auto Repl = *Repls.begin();
+      const auto &Repl = *Repls.begin();
       if (Repl.getLength() == 0 && Repl.getReplacementText().empty())
         HasRealReplacements = false;
     }
@@ -917,7 +938,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool,
   SourceManager Sources(Diagnostics, Tool.getFiles());
   Rewriter Rewrite(Sources, DefaultLangOptions);
   Rewriter DebugCUDARewrite(Sources, DefaultLangOptions);
-  extern DpctOption<clang::dpct::opt, bool> ProcessAll;
 
   // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
@@ -1206,10 +1226,13 @@ void loadYAMLIntoFileInfo(clang::tooling::UnifiedPath Path) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
-            OriginPath, PreTU);
+            OriginPath, std::move(PreTU));
       } else {
         llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
       }
     }
   }
 }
+
+} // namespace dpct
+} // namespace clang

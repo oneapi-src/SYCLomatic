@@ -8,7 +8,6 @@
 
 #include "InclusionHeaders.h"
 #include "PreProcessor.h"
-#include "ASTTraversal.h"
 
 namespace clang {
 namespace dpct {

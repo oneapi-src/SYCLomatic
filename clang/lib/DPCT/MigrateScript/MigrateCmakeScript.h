@@ -11,6 +11,8 @@
 #include "MigrateBuildScript.h"
 #include "UserDefinedRules/UserDefinedRules.h"
 
+namespace clang {
+namespace dpct {
 void collectCmakeScripts(const clang::tooling::UnifiedPath &InRoot,
                          const clang::tooling::UnifiedPath &OutRoot);
 void collectCmakeScriptsSpecified(
@@ -23,4 +25,7 @@ void registerCmakeMigrationRule(MetaRuleObject &R);
 bool cmakeScriptNotFound();
 void addCmakeWarningMsg(const std::string &WarningMsg,
                         const std::string FileName);
-#endif
+
+} // namespace dpct
+} // namespace clang
+#endif //DPCT_MIGRATE_CMAKE_SCRIPT_H

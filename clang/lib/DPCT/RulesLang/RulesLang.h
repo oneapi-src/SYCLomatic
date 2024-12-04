@@ -25,6 +25,20 @@
 
 namespace clang {
 namespace dpct {
+// utils
+bool isAssignOperator(const Stmt *);
+
+const Expr *getRhs(const Stmt *);
+TextModification *ReplaceMemberAssignAsSetMethod(
+    SourceLocation EndLoc, const MemberExpr *ME, StringRef MethodName,
+    StringRef ReplacedArg, StringRef ExtraArg = "", StringRef ExtraFeild = "");
+
+TextModification *ReplaceMemberAssignAsSetMethod(const Expr *E,
+                                                 const MemberExpr *ME,
+                                                 StringRef MethodName,
+                                                 StringRef ReplacedArg = "",
+                                                 StringRef ExtraArg = "",
+                                                 StringRef ExtraFeild = "");
 
 /// Migration rule for iteration space built-in variables (threadIdx, etc).
 class IterationSpaceBuiltinRule
@@ -978,6 +992,13 @@ public:
 };
 
 class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class RulesLangAddrSpaceConvRule
+    : public NamedMigrationRule<RulesLangAddrSpaceConvRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

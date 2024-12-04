@@ -247,5 +247,28 @@ std::string getCheckVersionFailWarning() {
          "details.\n";
 }
 
+bool IsUsingDefaultOutRoot = false;
+
+void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot) {
+  if (isDirectory(DefaultOutRoot)) {
+    std::error_code EC;
+    llvm::sys::fs::directory_iterator Iter(DefaultOutRoot.getCanonicalPath(), EC);
+    if ((bool)EC)
+      return;
+    llvm::sys::fs::directory_iterator End;
+    if (Iter == End) {
+      // This folder is empty, then remove it.
+      llvm::sys::fs::remove_directories(DefaultOutRoot.getCanonicalPath(), false);
+    }
+  }
+}
+
+void dpctExit(int ExitCode, bool NeedCleanUp) {
+  if (IsUsingDefaultOutRoot && NeedCleanUp) {
+    removeDefaultOutRootFolder(dpct::DpctGlobalInfo::getOutRoot());
+  }
+  std::exit(ExitCode);
+}
+
 } // namespace dpct
 } // namespace clang

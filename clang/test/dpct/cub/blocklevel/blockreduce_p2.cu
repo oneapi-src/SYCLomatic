@@ -196,3 +196,11 @@ int main() {
     std::cout << "passed" << std::endl;
   return 0;
 }
+
+__global__ void foo() {
+  float v = 0.0f;
+  typedef cub::BlockReduce<float, 1024> BlockReduce;
+  __shared__ typename BlockReduce::TempStorage m;
+  // CHECK: v = sycl::reduce_over_group(item_ct1.get_group(), (item_ct1.get_group().get_local_linear_id() < item_ct1.get_local_range(2)) ? v : sycl::known_identity_v<sycl::plus<>, float>, sycl::plus<>());
+  v = BlockReduce(m).Reduce(v, cub::Sum{}, blockDim.x);
+}

@@ -223,7 +223,7 @@
 // CUMODULELOADDATA: CUDA API:
 // CUMODULELOADDATA-NEXT:   cuModuleLoadData(pm /*CUmodule **/, pData /*const void **/);
 // CUMODULELOADDATA-NEXT: Is migrated to:
-// CUMODULELOADDATA-NEXT:    *pm = dpct::load_kernel_library_mem(pData);
+// CUMODULELOADDATA-NEXT:    *pm = dpct::load_kernel_library_mem((const char *)pData);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuModuleLoadDataEx | FileCheck %s -check-prefix=CUMODULELOADDATAEX
 // CUMODULELOADDATAEX: CUDA API:
@@ -231,7 +231,7 @@
 // CUMODULELOADDATAEX-NEXT:                      u /*unsigned int*/, pOpt /*CUjit_option **/,
 // CUMODULELOADDATAEX-NEXT:                      pOptVal /*void ***/);
 // CUMODULELOADDATAEX-NEXT: Is migrated to:
-// CUMODULELOADDATAEX-NEXT:   *pm = dpct::load_kernel_library_mem(pData);
+// CUMODULELOADDATAEX-NEXT:   *pm = dpct::load_kernel_library_mem((const char *)pData);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuModuleUnload | FileCheck %s -check-prefix=CUMODULEUNLOAD
 // CUMODULEUNLOAD: CUDA API:

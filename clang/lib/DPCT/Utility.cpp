@@ -8,16 +8,18 @@
 
 #include "Utility.h"
 #include "ASTTraversal.h"
-#include "RuleInfra/MapNames.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
-#include "RulesDNN/DNNAPIMigration.h"
-#include "RuleInfra/ExprAnalysis.h"
-#include "RuleInfra/MapNames.h"
 #include "FileGenerator/GenFiles.h"
 #include "MigrationReport/Statics.h"
+#include "RuleInfra/ExprAnalysis.h"
+#include "RuleInfra/MapNames.h"
+#include "RulesDNN/DNNAPIMigration.h"
+#include "RulesDNN/MapNamesDNN.h"
+#include "RulesMathLib/MapNamesRandom.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTTypeTraits.h"
+#include "clang/AST/DeclBase.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/SourceLocation.h"
@@ -36,34 +38,16 @@
 
 using namespace llvm;
 using namespace clang;
+using namespace clang::dpct;
 using namespace std;
 
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
 extern clang::tooling::UnifiedPath DpctInstallPath; // Installation directory for this tool
-bool IsUsingDefaultOutRoot = false;
 
-void removeDefaultOutRootFolder(const clang::tooling::UnifiedPath &DefaultOutRoot) {
-  if (isDirectory(DefaultOutRoot)) {
-    std::error_code EC;
-    llvm::sys::fs::directory_iterator Iter(DefaultOutRoot.getCanonicalPath(), EC);
-    if ((bool)EC)
-      return;
-    llvm::sys::fs::directory_iterator End;
-    if (Iter == End) {
-      // This folder is empty, then remove it.
-      llvm::sys::fs::remove_directories(DefaultOutRoot.getCanonicalPath(), false);
-    }
-  }
-}
-
-void dpctExit(int ExitCode, bool NeedCleanUp) {
-  if (IsUsingDefaultOutRoot && NeedCleanUp) {
-    removeDefaultOutRootFolder(dpct::DpctGlobalInfo::getOutRoot());
-  }
-  std::exit(ExitCode);
-}
+namespace clang {
+  namespace dpct {
 
 bool makeCanonical(SmallVectorImpl<char> &Path) {
   if (fs::make_absolute(Path) != std::error_code()) {
@@ -95,7 +79,7 @@ const char *getNL(bool AddBackSlash) {
     return "\\\n";
   }
   return "\n";
-#elif defined(_WIN64)
+#elif defined(_WIN32)
   if (AddBackSlash) {
     return "\\\r\n";
   }
@@ -193,8 +177,8 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
       isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
                 SM.getExpansionRange(Range.getBegin()).getEnd(),
                 SM.getSpellingLoc(Range.getBegin())) &&
-      isInRange(SM.getExpansionRange(Range.getBegin()).getBegin(),
-                SM.getExpansionRange(Range.getBegin()).getEnd(),
+      isInRange(SM.getExpansionRange(Range.getEnd()).getBegin(),
+                SM.getExpansionRange(Range.getEnd()).getEnd(),
                 SM.getSpellingLoc(Range.getEnd()))) {
     // MACRO(callExpr())
     BeginLoc = SM.getSpellingLoc(Range.getBegin());
@@ -312,26 +296,6 @@ SourceProcessType GetSourceFileType(const clang::tooling::UnifiedPath &SourcePat
 
 const std::string SpacesForStatement = "        "; // Eight spaces
 const std::string SpacesForArg = "        ";       // Eight spaces
-
-const std::string &getFmtEndStatement(void) {
-  const static std::string EndStatement = ";\n";
-  return EndStatement;
-}
-
-const std::string &getFmtStatementIndent(std::string &BaseIndent) {
-  const static std::string FmtStatementIndent = BaseIndent + SpacesForStatement;
-  return FmtStatementIndent;
-}
-
-const std::string &getFmtEndArg(void) {
-  const static std::string EndArg = ",\n";
-  return EndArg;
-}
-
-const std::string &getFmtArgIndent(std::string &BaseIndent) {
-  const static std::string FmtArgIndent = BaseIndent + SpacesForArg;
-  return FmtArgIndent;
-}
 
 std::vector<std::string> split(const std::string &Str, char Delim) {
   std::vector<std::string> V;
@@ -452,11 +416,6 @@ const clang::CUDAKernelCallExpr *getParentKernelCall(const clang::Expr *E) {
   }
 
   return nullptr;
-}
-
-bool callingFuncHasDeviceAttr(const CallExpr *CE) {
-  auto FD = getImmediateOuterFuncDecl(CE);
-  return FD && FD->hasAttr<CUDADeviceAttr>();
 }
 
 // Determine if a Stmt and a ValueDecl are in the same scope
@@ -656,7 +615,7 @@ getNonImplicitCastParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
-  auto P = getParentNode(N);
+  auto P = getParentNode(std::move(N));
   while (P) {
     if (!P->get<ImplicitCastExpr>()) {
       return P;
@@ -1284,7 +1243,7 @@ std::string getBufferNameAndDeclStr(const Expr *Arg,
 
 // Recursively travers the subtree under \p S for all the reference of \p VD,
 // store and return matched nodes in \p Result
-void VarReferencedInFD(const Stmt *S, const ValueDecl *VD,
+void getVarReferencedInFD(const Stmt *S, const ValueDecl *VD,
                        std::vector<const clang::DeclRefExpr *> &Result) {
   if (!S)
     return;
@@ -1295,7 +1254,7 @@ void VarReferencedInFD(const Stmt *S, const ValueDecl *VD,
     }
   }
   for (auto It = S->child_begin(); It != S->child_end(); ++It) {
-    VarReferencedInFD(*It, VD, Result);
+    getVarReferencedInFD(*It, VD, Result);
   }
 }
 
@@ -1408,7 +1367,7 @@ calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
     else
       FormatFlags.push_back(true);
   }
-  return calculateRangesWithFlag(Repls, FormatFlags);
+  return calculateRangesWithFlag(Repls, std::move(FormatFlags));
 }
 
 /// Calculate the ranges of the input \p Repls which has set
@@ -1425,27 +1384,7 @@ std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
       BlockLevelFormatFlags.push_back(false);
   }
 
-  return calculateRangesWithFlag(Repls, BlockLevelFormatFlags);
-}
-
-/// Calculate the ranges of the input \p Ranges after \p Repls is applied to
-/// the files.
-/// \param Repls Replacements to apply.
-/// \param Ranges Ranges before applying the replacements.
-/// \return The result ranges.
-std::vector<clang::tooling::Range>
-calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
-                       const std::vector<clang::tooling::Range> &Ranges) {
-  std::vector<clang::tooling::Range> Result;
-  for (const auto &R : Ranges) {
-    unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
-    unsigned int EOffset =
-        Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
-    if (BOffset > EOffset)
-      continue;
-    Result.emplace_back(BOffset, EOffset - BOffset);
-  }
-  return Result;
+  return calculateRangesWithFlag(Repls, std::move(BlockLevelFormatFlags));
 }
 
 /// Determine if \param S is assigned or not
@@ -1556,7 +1495,8 @@ bool isOuterMostMacro(const Stmt *E) {
     StreamP.flush();
   } while (!ExpandedParent.compare(ExpandedExpr));
 
-  return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(), P);
+  return !isInsideFunctionLikeMacro(E->getBeginLoc(), E->getEndLoc(),
+                                    std::move(P));
 }
 
 bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
@@ -1847,69 +1787,6 @@ std::string deducePointerType(QualType QT, std::string TypeName,
   return "";
 }
 
-/// Deduce the type for a DeclaratorDecl
-/// \param DD The DeclaratorDecl of the type
-/// \param TypeName The name of the type
-/// \return The pointer type string
-std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
-  std::string Result;
-  auto DDT = DD->getType();
-  if (DDT->isPointerType()) {
-    auto PT = DDT->getPointeeType();
-    // cudaStream_t
-    Result = deducePointerType(PT, TypeName, DDT.getQualifiers().hasConst());
-    // cudaStream_t *
-    if (auto TDT = dyn_cast<TypedefType>(PT)) {
-      if (TDT->desugar()->isPointerType()) {
-        auto PT2 = TDT->desugar()->getPointeeType();
-        Result =
-            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
-      }
-    }
-  }
-  // cudaStream_t &
-  else if (auto LVRT = dyn_cast<LValueReferenceType>(DDT)) {
-    auto PT = LVRT->Type::getPointeeType();
-    if (auto TDT = dyn_cast<TypedefType>(PT)) {
-      if (TDT->desugar()->isPointerType()) {
-        auto PT2 = TDT->desugar()->getPointeeType();
-        Result =
-            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
-      }
-    }
-  }
-  // cudaStream_t &&
-  else if (auto RVRT = dyn_cast<RValueReferenceType>(DDT)) {
-    auto PT = RVRT->Type::getPointeeType();
-    if (auto TDT = dyn_cast<TypedefType>(PT)) {
-      if (TDT->desugar()->isPointerType()) {
-        auto PT2 = TDT->desugar()->getPointeeType();
-        Result =
-            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
-      }
-    }
-  }
-  // cudaStream_t [] and cudaStream_t *[]
-  else if (auto CAT = dyn_cast<clang::ArrayType>(DDT)) {
-    QualType FinalET = CAT->getElementType();
-    while(dyn_cast<clang::ArrayType>(FinalET)) {
-      FinalET = dyn_cast<clang::ArrayType>(FinalET)->getElementType();
-    }
-    auto PT = FinalET->getPointeeType();
-    // cudaStream_t []
-    Result = deducePointerType(PT, TypeName, DDT.getQualifiers().hasConst());
-    // cudaStream_t *[]
-    if (auto TDT = dyn_cast<TypedefType>(PT)) {
-      if (TDT->desugar()->isPointerType()) {
-        auto PT2 = TDT->desugar()->getPointeeType();
-        Result =
-            deducePointerType(PT2, TypeName, PT.getQualifiers().hasConst());
-      }
-    }
-  }
-  return Result;
-}
-
 /// Check whether the input expression \p E is a single token which is an
 /// identifier or literal.
 bool isAnIdentifierOrLiteral(const Expr *E) {
@@ -2176,7 +2053,7 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
 // Line 3: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
 // Line 4: void templatefoo2() { CALL_KERNEL(8, 9) }
 // There are 3 candidates of the kernel range,
-// 1. Line 4 "CALL_KERNEL2(8, AAA)"
+// 1. Line 4 "CALL_KERNEL(8, 9)"
 // 2. Line 3 "KERNEL(C, D)"
 // 3. Line 2 "templatefoo<A,B>CCC"
 // The 3rd candidate is the best choice.
@@ -2280,7 +2157,7 @@ void traversePossibleLocations(const SourceLocation &SL,
   if (!SL.isValid())
     return;
   if (Cache.find(SL.getHashValue()) != Cache.end())
-    return;
+    return; // If visited, return;
   Cache.insert(SL.getHashValue());
   if (!SL.isMacroID()) {
     if (isInRange(RangeBegin, RangeEnd, SL)) {
@@ -2504,7 +2381,7 @@ std::string getFinalCastTypeNameStr(std::string CastTypeName) {
            std::greater<size_t>>
       ReplaceLengthStringMap;
 
-  for (auto &Pair : MapNames::DeviceRandomGeneratorTypeMap) {
+  for (auto &Pair : MapNamesRandom::DeviceRandomGeneratorTypeMap) {
     std::string::size_type BeginLoc = CastTypeName.find(Pair.first);
     if (BeginLoc != std::string::npos) {
       ReplaceLengthStringMap.insert(std::make_pair(
@@ -2832,6 +2709,19 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   return LatestCS;
 }
 
+const FunctionDecl *findTheOuterMostFunctionDecl(const clang::Decl *D) {
+  if (!D)
+    return nullptr;
+  const FunctionDecl *FD = nullptr;
+  const DeclContext *Ctx = D->getDeclContext();
+  while (Ctx) {
+    if (Ctx->getDeclKind() == Decl::Function)
+      FD = dyn_cast<FunctionDecl>(Ctx);
+    Ctx = Ctx->getParent();
+  }
+  return FD;
+}
+
 bool isInMacroDefinition(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto Range = getDefinitionRange(BeginLoc, EndLoc);
   auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
@@ -2914,7 +2804,7 @@ void constructUnionFindSetRecursively(
     auto FuncInfoPtr = Item.second->getFuncInfo();
     if (!FuncInfoPtr)
       continue;
-    RelatedDFI.push_back(FuncInfoPtr);
+    RelatedDFI.push_back(std::move(FuncInfoPtr));
   }
   auto RelatedDFIFromSpellingLoc =
       dpct::DpctGlobalInfo::getDFIVecRelatedFromSpellingLoc(DFIPtr);
@@ -3017,14 +2907,14 @@ void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
       AssignedExpr = VD->getInit();
       if (FuncDecl = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext())) {
         std::vector<const DeclRefExpr *> Refs;
-        VarReferencedInFD(FuncDecl->getBody(), VD, Refs);
+        getVarReferencedInFD(FuncDecl->getBody(), VD, Refs);
         for (auto const &Ref : Refs) {
           if (Ref == DRE)
             break;
 
           if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
             if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
-                !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO))
+                !dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO))
               AssignedExpr = BO->getRHS();
           }
         }
@@ -3055,14 +2945,14 @@ findDREInScope(const clang::Stmt *Scope,
   if (IgnoreTypes.empty()) {
     auto VarReferenceMatcher = findAll(declRefExpr().bind("VarReference"));
     return match(VarReferenceMatcher, *Scope,
-                 clang::dpct::DpctGlobalInfo::getContext());
+                 dpct::DpctGlobalInfo::getContext());
   }
   auto VarReferenceWithIgnoreTypesMatcher =
       findAll(declRefExpr(unless(to(varDecl(internal::Matcher<NamedDecl>(
                               new internal::HasNameMatcher(IgnoreTypes))))))
                   .bind("VarReference"));
   return match(VarReferenceWithIgnoreTypesMatcher, *Scope,
-               clang::dpct::DpctGlobalInfo::getContext());
+               dpct::DpctGlobalInfo::getContext());
 }
 
 /// Find all the DRE sub-expression of \p E
@@ -3087,7 +2977,7 @@ void findDREs(const Expr *E, std::set<const clang::DeclRefExpr *> &DRESet,
   auto CallExprMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::callExpr().bind("CallExpr"));
   auto CEResults = clang::ast_matchers::match(
-      CallExprMatcher, *E, clang::dpct::DpctGlobalInfo::getContext());
+      CallExprMatcher, *E, dpct::DpctGlobalInfo::getContext());
   for (auto &Result : CEResults) {
     const CallExpr *MatchedCE = Result.getNodeAs<CallExpr>("CallExpr");
     if (MatchedCE) {
@@ -3168,7 +3058,7 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
 
     if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
       if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
-          !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
+          !dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
         if (isInCtrlFlowStmt(BO->getRHS(), FuncDecl,
                              dpct::DpctGlobalInfo::getContext())) {
           LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
@@ -3354,11 +3244,11 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
       }
 
       auto FunctionCall =
-          clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE);
+          dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE);
       if (!FunctionCall)
         continue;
       auto Expr =
-          clang::dpct::DpctGlobalInfo::getChildExprOfTargetAncestor<CallExpr>(
+          dpct::DpctGlobalInfo::getChildExprOfTargetAncestor<CallExpr>(
               DRE);
       if (!Expr)
         continue;
@@ -3536,7 +3426,7 @@ void findRelatedDREOffsets(std::set<const clang::DeclRefExpr *> &DRESet,
             declRefExpr(unless(to(varDecl(hasAnyName("cudaError_t")))))
                 .bind("VarReference")));
         Results = match(VarReferenceMatcher, *DeclScope,
-                        clang::dpct::DpctGlobalInfo::getContext());
+                        dpct::DpctGlobalInfo::getContext());
       }
       for (auto &Result : Results) {
         const DeclRefExpr *MatchedDRE =
@@ -3549,7 +3439,7 @@ void findRelatedDREOffsets(std::set<const clang::DeclRefExpr *> &DRESet,
           continue;
         }
         bool IsGlobalVar = !D->isLocalVarDecl();
-        if (auto ParentCE = clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(
+        if (auto ParentCE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(
                 MatchedDRE)) {
           if (auto Callee = ParentCE->getDirectCallee()) {
             if (!IsGlobalVar && !ExcludeVDSets.count(D) &&
@@ -3579,7 +3469,7 @@ void findRelatedDREOffsets(std::set<const clang::DeclRefExpr *> &DRESet,
               continue;
             }
           }
-        } else if (auto BO = clang::dpct::DpctGlobalInfo::findAncestor<
+        } else if (auto BO = dpct::DpctGlobalInfo::findAncestor<
                        BinaryOperator>(MatchedDRE)) {
           if ((BO->getOpcode() == BO_Assign) &&
               (MatchedDRE == dyn_cast_or_null<DeclRefExpr>(
@@ -3603,7 +3493,7 @@ void findRelatedDREOffsets(std::set<const clang::DeclRefExpr *> &DRESet,
       if (ExcludeDREs.count(NewDRE))
         continue;
       auto Offset =
-          clang::dpct::DpctGlobalInfo::getLocInfo(NewDRE->getBeginLoc()).second;
+          dpct::DpctGlobalInfo::getLocInfo(NewDRE->getBeginLoc()).second;
       DREOffsetVec.push_back(Offset);
     }
     NewDRESet.clear();
@@ -3630,7 +3520,7 @@ bool analyzeMemcpyOrder(
   //    The wait() must be added after the previous memcpy() call.
   auto CallExprMatcher = findAll(callExpr().bind("CallExpr"));
   auto MatchedResults =
-      match(CallExprMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+      match(CallExprMatcher, *CS, dpct::DpctGlobalInfo::getContext());
   for (auto &Result : MatchedResults) {
     const CallExpr *CE = Result.getNodeAs<CallExpr>("CallExpr");
     if (!CE)
@@ -3826,7 +3716,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   const clang::CompoundStmt *CS =
       dyn_cast_or_null<clang::CompoundStmt>(getBodyofAncestorFCStmt(CE));
   if (!CS) {
-    auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
+    auto FD = dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
     if (!FD)
       return false;
     CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
@@ -3886,7 +3776,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
           clang::ast_matchers::findAll(clang::ast_matchers::unaryOperator(
               clang::ast_matchers::hasOperatorName("&")));
       auto AddrOfMatchedResults = clang::ast_matchers::match(
-          AddrOfMatcher, *SrcExpr, clang::dpct::DpctGlobalInfo::getContext());
+          AddrOfMatcher, *SrcExpr, dpct::DpctGlobalInfo::getContext());
       if (AddrOfMatchedResults.size() == 0) {
         auto SyncPointMatcher = clang::ast_matchers::findAll(
             clang::ast_matchers::callExpr(
@@ -3902,7 +3792,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
         std::set<const clang::DeclRefExpr *> SrcDRESet;
         std::set<unsigned int> SyncPointOffset;
         auto SyncPointMatchedResults = clang::ast_matchers::match(
-            SyncPointMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+            SyncPointMatcher, *CS, dpct::DpctGlobalInfo::getContext());
         for (auto &SP : SyncPointMatchedResults) {
           if (const CallExpr *SPCE = SP.getNodeAs<CallExpr>("SyncPoint")) {
             if (auto Body = getBodyofAncestorFCStmt(SPCE)) {
@@ -3917,7 +3807,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
         auto checkIfSrcPointerFreedAfterCE = [&]() {
           for (auto &D : DREMatchResult) {
             if (auto ParentCE =
-                    clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(D)) {
+                    dpct::DpctGlobalInfo::findAncestor<CallExpr>(D)) {
               auto DC = ParentCE->getDirectCallee();
               if (!DC) {
                 continue;
@@ -3952,20 +3842,20 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
           DREMatchResult.clear();
         }
         if (!isSrcPointerFreedAfterCE) {
-          clang::dpct::DiagnosticsUtils::report(
+          dpct::DiagnosticsUtils::report(
               CEBegLocInfo.first, CEBegLocInfo.second,
-              clang::dpct::Diagnostics::WAIT_REMOVE, true, false);
+              dpct::Diagnostics::WAIT_REMOVE, true, false);
           return true;
         }
       }
     }
   }
 
-  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
-  auto CSLocInfo = clang::dpct::DpctGlobalInfo::getLocInfo(
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto CSLocInfo = dpct::DpctGlobalInfo::getLocInfo(
       SM.getExpansionLoc(CS->getBeginLoc()));
   auto FileInfo =
-      clang::dpct::DpctGlobalInfo::getInstance().insertFile(CSLocInfo.first);
+      dpct::DpctGlobalInfo::getInstance().insertFile(CSLocInfo.first);
   auto &Map = FileInfo->getMemcpyOrderAnalysisResultMap();
   auto Iter = Map.find(CS);
 
@@ -4002,9 +3892,9 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       }
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
         unsigned int CurrentCallExprEndOffset =
-            clang::dpct::DpctGlobalInfo::getLocInfo(CE->getEndLoc()).second;
+            dpct::DpctGlobalInfo::getLocInfo(CE->getEndLoc()).second;
         unsigned int NextCallExprEndOffset =
-            clang::dpct::DpctGlobalInfo::getLocInfo(S.first->getEndLoc())
+            dpct::DpctGlobalInfo::getLocInfo(S.first->getEndLoc())
                 .second;
         auto FirstDREAfterCurrentCallExprEndLoc = std::lower_bound(
             DREOffsetVec.begin(), DREOffsetVec.end(), CurrentCallExprEndOffset);
@@ -4029,7 +3919,7 @@ bool containSizeOfType(const Expr *E) {
           clang::ast_matchers::ofKind(UETT_SizeOf))
           .bind("sizeof"));
   auto MatchedResults = clang::ast_matchers::match(
-      SizeOfMatcher, *E, clang::dpct::DpctGlobalInfo::getContext());
+      SizeOfMatcher, *E, dpct::DpctGlobalInfo::getContext());
   for (const auto &Res : MatchedResults) {
     const UnaryExprOrTypeTraitExpr *UETTE =
         Res.getNodeAs<UnaryExprOrTypeTraitExpr>("sizeof");
@@ -4046,7 +3936,7 @@ void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
   auto VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   if (!VD)
     return;
-  auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(DRE);
+  auto FD = dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(DRE);
   if (!FD)
     return;
   auto CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
@@ -4056,7 +3946,7 @@ void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
   auto VarReferenceMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::declRefExpr().bind("VarReference"));
   auto MatchedResults = clang::ast_matchers::match(
-      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
+      VarReferenceMatcher, *CS, dpct::DpctGlobalInfo::getContext());
   std::vector<const DeclRefExpr *> Refs;
   for (auto &Result : MatchedResults) {
     const DeclRefExpr *MatchedDRE =
@@ -4075,9 +3965,9 @@ void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
     RHSSet.insert(VD->getInit());
   }
   for (auto const &Ref : Refs) {
-    if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
+    if (auto BO = dyn_cast_or_null<BinaryOperator>(dpct::getParentStmt(Ref))) {
       if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
-          !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
+          !dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
         RHSSet.insert(BO->getRHS());
       }
     }
@@ -4102,7 +3992,7 @@ bool checkIfContainSizeofTypeRecursively(
 
   bool HasCallExpr = false;
   std::set<const clang::DeclRefExpr *> DRESet;
-  findDREs(E, DRESet, HasCallExpr);
+  dpct::findDREs(E, DRESet, HasCallExpr);
   for (const auto &DRE : DRESet) {
     std::set<const clang::Expr *> RHSSet;
     findRelatedAssignmentRHS(DRE, RHSSet);
@@ -4226,7 +4116,7 @@ bool isCubVar(const VarDecl *VD) {
       return false;
     }
     auto DeviceFuncDecl =
-        clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(VD);
+        dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(VD);
     if (!DeviceFuncDecl)
       return false;
     std::string DeviceFuncName = DeviceFuncDecl->getNameAsString();
@@ -4274,7 +4164,7 @@ bool isCubVar(const VarDecl *VD) {
                                     ast_matchers::hasName(DeviceFuncName))))
                                 .bind("devcall");
       auto DevCallMatchResult = ast_matchers::match(
-          DevCallMatcher, clang::dpct::DpctGlobalInfo::getContext());
+          DevCallMatcher, dpct::DpctGlobalInfo::getContext());
       // if no MatchResult, then we return false.
       bool Result = DevCallMatchResult.size();
       for (auto &Element : DevCallMatchResult) {
@@ -4291,7 +4181,7 @@ bool isCubVar(const VarDecl *VD) {
                   ast_matchers::hasName(DeviceFuncName))))
               .bind("kernelcall");
       auto KernelMatchResult = ast_matchers::match(
-          KernelCallMatcher, clang::dpct::DpctGlobalInfo::getContext());
+          KernelCallMatcher, dpct::DpctGlobalInfo::getContext());
       bool Result = KernelMatchResult.size();
       for (auto &Element : KernelMatchResult) {
         if (auto CE = Element.getNodeAs<CUDAKernelCallExpr>("kernelcall")) {
@@ -4335,7 +4225,7 @@ bool isCubVar(const VarDecl *VD) {
   return false;
 }
 const std::string &getItemName() {
-  const static std::string ItemName = "item" + getCTFixedSuffix();
+  const static std::string ItemName = "item" + dpct::getCTFixedSuffix();
   return ItemName;
 }
 
@@ -4436,16 +4326,16 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
 }
 
 std::string getRemovedAPIWarningMessage(std::string FuncName) {
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    if (Msg != MapNames::RemovedAPIWarningMessage.end()) {
-      return Msg->second;
-    }
+  auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+  if (Msg != MapNames::RemovedAPIWarningMessage.end()) {
+    return Msg->second;
+  }
     return "";
 }
 
 bool isUserDefinedDecl(const clang::Decl *D) {
   clang::tooling::UnifiedPath InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
-  bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
+  bool InInstallPath = dpct::isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
@@ -4548,28 +4438,28 @@ getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl) {
 // Implementation copied from clang/lib/AST/Decl.cpp
 // Helper function: returns true if QT is or contains a type
 // having a postfix component.
-bool typeIsPostfix(clang::QualType QT) {
+bool isTypePostfix(clang::QualType QT) {
   using namespace clang;
   while (true) {
-    const auto *const T = QT.getTypePtr();
-    switch (T->getTypeClass()) {
+    const auto *const TP = QT.getTypePtr();
+    switch (TP->getTypeClass()) {
     default:
       return false;
     case clang::Type::Pointer:
-      QT = cast<clang::PointerType>(T)->getPointeeType();
+      QT = cast<clang::PointerType>(TP)->getPointeeType();
       break;
     case clang::Type::BlockPointer:
-      QT = cast<BlockPointerType>(T)->getPointeeType();
+      QT = cast<BlockPointerType>(TP)->getPointeeType();
       break;
     case clang::Type::MemberPointer:
-      QT = cast<MemberPointerType>(T)->getPointeeType();
+      QT = cast<MemberPointerType>(TP)->getPointeeType();
       break;
     case clang::Type::LValueReference:
     case clang::Type::RValueReference:
-      QT = cast<ReferenceType>(T)->getPointeeType();
+      QT = cast<ReferenceType>(TP)->getPointeeType();
       break;
     case clang::Type::PackExpansion:
-      QT = cast<PackExpansionType>(T)->getPattern();
+      QT = cast<PackExpansionType>(TP)->getPattern();
       break;
     case clang::Type::Paren:
     case clang::Type::ConstantArray:
@@ -4587,8 +4477,8 @@ bool typeIsPostfix(clang::QualType QT) {
 bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
   llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> MatchResult;
   using namespace clang::ast_matchers;
-  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
-  auto &CTX = clang::dpct::DpctGlobalInfo::getContext();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &CTX = dpct::DpctGlobalInfo::getContext();
   auto LocInfo =
       dpct::DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(VD->getBeginLoc()));
   auto &Map = dpct::DpctGlobalInfo::getMallocHostInfoMap();
@@ -4636,7 +4526,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
     const CallExpr *CE = nullptr;
     bool needFindParent = true;
     while(needFindParent) {
-      S = getParentStmt(S);
+      S = dpct::getParentStmt(S);
       switch(S->getStmtClass()) {
         // Condition 1
         case clang::Stmt::StmtClass::UnaryOperatorClass : {
@@ -4655,7 +4545,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
         // Condition 2
         case clang::Stmt::StmtClass::ArraySubscriptExprClass: {
           auto RValueExpr =
-              dyn_cast_or_null<ImplicitCastExpr>(getParentStmt(S));
+              dyn_cast_or_null<ImplicitCastExpr>(dpct::getParentStmt(S));
           if (RValueExpr &&
               (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue)) {
             HostAccess = true;
@@ -4698,10 +4588,10 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
             auto CpyKind = Enum->getDecl()->getName();
             if (CpyKind == "cudaMemcpyHostToHost" ||
                 (CpyKind == "cudaMemcpyHostToDevice" &&
-                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(1),
+                 dpct::DpctGlobalInfo::isAncestor(CE->getArg(1),
                                                          PtrDRE)) ||
                 (CpyKind == "cudaMemcpyDeviceToHost" &&
-                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(0),
+                 dpct::DpctGlobalInfo::isAncestor(CE->getArg(0),
                                                          PtrDRE))) {
               HostAccess = true;
             }
@@ -4715,7 +4605,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
         } else {
           int ArgIndex = -1, ArgNums = CE->getNumArgs();
           for (int index = 0; index < ArgNums; index++) {
-            if (clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(index),
+            if (dpct::DpctGlobalInfo::isAncestor(CE->getArg(index),
                                                         PtrDRE)) {
               ArgIndex = index;
               break;
@@ -4768,7 +4658,7 @@ bool containIterationSpaceBuiltinVar(const clang::Stmt *Node) {
                      hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
           .bind("memberExpr"));
   auto MatchedResults =
-      match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
+      match(BuiltinMatcher, *Node, dpct::DpctGlobalInfo::getContext());
   return MatchedResults.size();
 }
 
@@ -4779,12 +4669,12 @@ bool containBuiltinWarpSize(const clang::Stmt *Node) {
   auto BuiltinMatcher =
       findAll(declRefExpr(to(varDecl(hasName("warpSize")).bind("VD"))));
   auto MatchedResults =
-      match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
+      match(BuiltinMatcher, *Node, dpct::DpctGlobalInfo::getContext());
   for (const auto &Res : MatchedResults) {
     const clang::VarDecl *VD = Res.getNodeAs<clang::VarDecl>("VD");
     if (!VD)
       continue;
-    if (!clang::dpct::DpctGlobalInfo::isInAnalysisScope(VD->getLocation()))
+    if (!dpct::DpctGlobalInfo::isInAnalysisScope(VD->getLocation()))
       return true;
   }
   return false;
@@ -4848,8 +4738,8 @@ bool isFromCUDA(const Decl *D) {
     return false;
   }
 
-  return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
-          isChildPath(DpctInstallPath, DeclLocFilePath));
+  return (dpct::isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
+          dpct::isChildPath(DpctInstallPath, DeclLocFilePath));
 }
 
 
@@ -4912,8 +4802,6 @@ void PrintFullTemplateName(raw_ostream &OS, const PrintingPolicy &Policy, Templa
   }
 }
 
-namespace clang {
-namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
   if (Feature == HelperFeatureEnum::none) {
     return;
@@ -4937,9 +4825,9 @@ void requestHelperFeatureForEnumNames(const std::string Name) {
     return;
   }
   auto CuDNNHelperFeatureIter =
-      clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);
+      dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);
   if (CuDNNHelperFeatureIter !=
-      clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {
+      dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {
     requestFeature(CuDNNHelperFeatureIter->second);
   }
 }
@@ -4949,8 +4837,8 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
     requestFeature(HelperFeatureIter->second->RequestFeature);
     return;
   }
-  auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);
-  if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {
+  auto CuDNNHelperFeatureIter = MapNamesDNN::CuDNNTypeNamesMap.find(Name);
+  if (CuDNNHelperFeatureIter != MapNamesDNN::CuDNNTypeNamesMap.end()) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
 }
@@ -4978,7 +4866,7 @@ void createDirectories(const clang::tooling::UnifiedPath &FilePath,
       std::string ErrMsg =
           "[ERROR] Create Directory : " + FilePath.getPath().str() +
           " fail: " + EC.message() + "\n";
-      clang::dpct::PrintMsg(ErrMsg);
+      dpct::PrintMsg(ErrMsg);
       dpctExit(MigrationErrorCannotWrite); // Exit the execution directly.
     }
   }
@@ -5131,7 +5019,7 @@ const DeclRefExpr *getAddressedRef(const Expr *E) {
 // This function emits warning to tell user which part of that type violate the
 // trivally-copyable requirements.
 // TODO: Emit warning for non-instantiated template.
-void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
+void checkTrivallyCopyable(QualType QT, dpct::MigrationRule *Rule) {
   const auto &Ctx = DpctGlobalInfo::getContext();
   if (QT.isTriviallyCopyableType(Ctx))
     return;
@@ -5252,7 +5140,7 @@ void checkTrivallyCopyable(QualType QT, clang::dpct::MigrationRule *Rule) {
 // template <>
 // struct sycl::is_device_copyable<UserDefinedType> : std::true_type {};
 void insertIsDeviceCopyableSpecialization(QualType Type,
-                                          clang::dpct::MigrationRule *Rule,
+                                          dpct::MigrationRule *Rule,
                                           const Decl *D) {
   const auto &Ctx = DpctGlobalInfo::getContext();
   const auto &SM = DpctGlobalInfo::getSourceManager();
@@ -5352,7 +5240,7 @@ void insertIsDeviceCopyableSpecialization(QualType Type,
 // 1. Try to insert specialization sycl::is_device_copyable for it.
 // 2. Try to tell which part of that type violate the trivally-copyable
 // requirements.
-bool isDeviceCopyable(QualType Type, clang::dpct::MigrationRule *Rule) {
+bool isDeviceCopyable(QualType Type, dpct::MigrationRule *Rule) {
   if (Type->isPointerType())
     return true;
   const Decl *D = nullptr;

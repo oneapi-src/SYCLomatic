@@ -7,12 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "RulesLangLib/CUBAPIMigration.h"
-#include "ASTTraversal.h"
-#include "TextModification.h"
 #include "AnalysisInfo.h"
-#include "RuleInfra/CallExprRewriter.h"
-#include "RuleInfra/ExprAnalysis.h"
 #include "MigrationRuleManager.h"
+#include "RuleInfra/ASTmatcherCommon.h"
+#include "RuleInfra/ExprAnalysis.h"
 #include "TextModification.h"
 #include "Utility.h"
 #include "clang/AST/Attrs.inc"
@@ -29,35 +27,24 @@
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
-#include "clang/Basic/AttrKinds.h"
-#include "clang/Basic/CharInfo.h"
 #include "clang/Basic/LLVM.h"
-#include "clang/Tooling/Tooling.h"
-#include "llvm/ADT/None.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Casting.h"
-#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cstdlib>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <vector>
 
 using namespace clang;
 using namespace dpct;
+using namespace clang::dpct;
 using namespace tooling;
 using namespace ast_matchers;
 
 namespace {
-auto parentStmt = []() {
-  return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
-               hasParent(whileStmt()), hasParent(doStmt()),
-               hasParent(ifStmt()));
-};
+
 
 auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
@@ -766,7 +753,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          "ShuffleIndex", "ThreadLoad", "ThreadStore", "Sum",
                          "Reduce", "ExclusiveSum", "InclusiveSum",
                          "InclusiveScan", "ExclusiveScan"))),
-                     parentStmt()))
+                     parentStmtCub()))
           .bind("FuncCall"),
       this);
 
@@ -775,7 +762,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          "Sum", "Reduce", "ThreadLoad", "ShuffleIndex",
                          "ExclusiveSum", "InclusiveSum", "InclusiveScan",
                          "ExclusiveScan"))),
-                     unless(parentStmt())))
+                     unless(parentStmtCub())))
           .bind("FuncCallUsed"),
       this);
 }
@@ -786,22 +773,21 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
     return MapNames::getClNamespace() + "plus<>()";
   }
 
-  auto processCXXTemporaryObjectExpr =
-      [&](const CXXTemporaryObjectExpr *CXXTempObj) {
-        std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
-            CXXTempObj->getType().getCanonicalType());
-        if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
-          OpRepl = MapNames::getClNamespace() + "plus<>()";
-        } else if (OpType == "cub::Max") {
-          OpRepl = MapNames::getClNamespace() + "maximum<>()";
-        } else if (OpType == "cub::Min") {
-          OpRepl = MapNames::getClNamespace() + "minimum<>()";
-        }
-      };
+  auto processOperatorExpr = [&](const Expr *Obj) {
+    std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+        Obj->getType().getCanonicalType());
+    if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
+      OpRepl = MapNames::getClNamespace() + "plus<>()";
+    } else if (OpType == "cub::Max") {
+      OpRepl = MapNames::getClNamespace() + "maximum<>()";
+    } else if (OpType == "cub::Min") {
+      OpRepl = MapNames::getClNamespace() + "minimum<>()";
+    }
+  };
 
   if (auto Op = dyn_cast<CXXConstructExpr>(Operator)) {
     if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(Op)) {
-      processCXXTemporaryObjectExpr(CXXTempObj);
+      processOperatorExpr(CXXTempObj);
     } else {
       auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
       if (auto DRE = dyn_cast<DeclRefExpr>(CtorArg)) {
@@ -816,9 +802,16 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
           OpRepl = EA.getReplacedString();
         }
       } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
-        processCXXTemporaryObjectExpr(CXXTempObj);
+        processOperatorExpr(CXXTempObj);
+      } else if (const Expr *Inner = CtorArg->IgnoreCasts();
+                 isa<CXXFunctionalCastExpr>(CtorArg) &&
+                 isa<InitListExpr>(Inner)) {
+        processOperatorExpr(Inner);
       }
     }
+  } else if (const Expr *Inner = Operator->IgnoreCasts();
+             isa<CXXFunctionalCastExpr>(Operator) && isa<InitListExpr>(Inner)) {
+    processOperatorExpr(Inner);
   }
   return OpRepl;
 }

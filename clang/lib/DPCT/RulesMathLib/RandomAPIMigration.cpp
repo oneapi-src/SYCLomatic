@@ -7,8 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "RandomAPIMigration.h"
+#include "RuleInfra/ASTmatcherCommon.h"
 #include "RuleInfra/CallExprRewriter.h"
 #include "RuleInfra/CallExprRewriterCommon.h"
+#include "RulesMathLib/MapNamesRandom.h"
 
 namespace clang {
 namespace dpct {
@@ -40,8 +42,8 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "RANDOMOrderingConstants")) {
     std::string EnumStr = DE->getNameInfo().getName().getAsString();
-    auto Search = MapNames::RandomOrderingTypeMap.find(EnumStr);
-    if (Search == MapNames::RandomOrderingTypeMap.end()) {
+    auto Search = MapNamesRandom::RandomOrderingTypeMap.find(EnumStr);
+    if (Search == MapNamesRandom::RandomOrderingTypeMap.end()) {
       report(DE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumStr);
       return;
     }
@@ -50,8 +52,8 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "RandomTypeEnum")) {
     std::string EnumStr = DE->getNameInfo().getName().getAsString();
-    auto Search = MapNames::RandomEngineTypeMap.find(EnumStr);
-    if (Search == MapNames::RandomEngineTypeMap.end()) {
+    auto Search = MapNamesRandom::RandomEngineTypeMap.find(EnumStr);
+    if (Search == MapNamesRandom::RandomEngineTypeMap.end()) {
       report(DE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumStr);
       return;
     }
@@ -68,14 +70,6 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
 
 // Rule for Random function calls. Currently only support host APIs.
 void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
-    auto parentStmt = []() {
-    return anyOf(
-        hasParent(compoundStmt()), hasParent(forStmt()), hasParent(whileStmt()),
-        hasParent(doStmt()), hasParent(ifStmt()),
-        hasParent(exprWithCleanups(anyOf(
-            hasParent(compoundStmt()), hasParent(forStmt()),
-            hasParent(whileStmt()), hasParent(doStmt()), hasParent(ifStmt())))));
-    };
   auto functionName = [&]() {
     return hasAnyName(
         "curandCreateGenerator", "curandSetPseudoRandomGeneratorSeed",
@@ -189,8 +183,8 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_dimensions(",
                     ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
-  if (MapNames::RandomGenerateFuncMap.find(FuncName) !=
-      MapNames::RandomGenerateFuncMap.end()) {
+  if (MapNamesRandom::RandomGenerateFuncMap.find(FuncName) !=
+      MapNamesRandom::RandomGenerateFuncMap.end()) {
     auto ArgStr = ExprAnalysis::ref(CE->getArg(1));
     for (unsigned i = 2; i < CE->getNumArgs(); ++i) {
       ArgStr += buildString(", ", ExprAnalysis::ref(CE->getArg(i)));
@@ -199,7 +193,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE, false,
         buildString(
             ExprAnalysis::ref(CE->getArg(0)),
-            "->" + MapNames::RandomGenerateFuncMap.find(FuncName)->second + "(",
+            "->" +
+                MapNamesRandom::RandomGenerateFuncMap.find(FuncName)->second +
+                "(",
             ArgStr, ")")));
   }
   if (FuncName == "curandSetGeneratorOffset") {
@@ -281,8 +277,8 @@ void DeviceRandomFunctionCallRule::runRule(
         CE->getArg(3)->getType().getCanonicalType()->isPointerType()) {
       DRefArg3Type = DpctGlobalInfo::getTypeName(
           CE->getArg(3)->getType().getCanonicalType()->getPointeeType());
-      if (MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type) ==
-          MapNames::DeviceRandomGeneratorTypeMap.end()) {
+      if (MapNamesRandom::DeviceRandomGeneratorTypeMap.find(DRefArg3Type) ==
+          MapNamesRandom::DeviceRandomGeneratorTypeMap.end()) {
         report(FuncNameBegin, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
                FuncName,
                "parameter " + getStmtSpelling(CE->getArg(3)) +
@@ -304,7 +300,7 @@ void DeviceRandomFunctionCallRule::runRule(
     };
 
     std::string GeneratorType =
-        MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type)->second;
+        MapNamesRandom::DeviceRandomGeneratorTypeMap.find(DRefArg3Type)->second;
     std::string RNGSeed = ExprAnalysis::ref(CE->getArg(0));
     bool IsRNGSubseqLiteral = IsLiteral(CE->getArg(1));
     std::string RNGSubseq = ExprAnalysis::ref(CE->getArg(1));

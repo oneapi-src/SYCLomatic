@@ -7,6 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "BLASAPIMigration.h"
+#include "MapNamesBlas.h"
+#include "RuleInfra/ASTmatcherCommon.h"
 
 namespace clang {
 namespace dpct {
@@ -56,14 +58,7 @@ bool checkConstQualifierInDoublePointerType(
   return false;
 }
 
-auto parentStmt = []() {
-  return anyOf(
-      hasParent(compoundStmt()), hasParent(forStmt()), hasParent(whileStmt()),
-      hasParent(doStmt()), hasParent(ifStmt()),
-      hasParent(exprWithCleanups(anyOf(
-          hasParent(compoundStmt()), hasParent(forStmt()),
-          hasParent(whileStmt()), hasParent(doStmt()), hasParent(ifStmt())))));
-};
+
 
 // Rule for BLAS enums.
 // Migrate BLAS status values to corresponding int values
@@ -98,8 +93,8 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "BLASNamedValueConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     std::string Name = EC->getNameAsString();
-    auto Search = MapNames::BLASEnumsMap.find(Name);
-    if (Search == MapNames::BLASEnumsMap.end()) {
+    auto Search = MapNamesBlas::BLASEnumsMap.find(Name);
+    if (Search == MapNamesBlas::BLASEnumsMap.end()) {
       llvm::dbgs() << "[" << getName()
                    << "] Unexpected enum variable: " << Name;
       return;
@@ -469,6 +464,13 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     SuffixInsertLoc = FuncCallEnd;
   }
 
+  // In most cases, we do not need to insert blas_utils.hpp manually since the
+  // cublas_v2.h will be migrated. However, when the include directive of
+  // cublas_v2.h is not in the in-root, the migrated code cannot be built
+  // successfully.
+  DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(),
+                                             HeaderType::HT_DPCT_BLAS_Utils);
+
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
       (FuncName == "cublasHgemmBatched" || FuncName == "cublasSgemmBatched" ||
        FuncName == "cublasDgemmBatched" || FuncName == "cublasCgemmBatched" ||
@@ -489,8 +491,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
 
-  auto Item = MapNames::BLASAPIWithRewriter.find(FuncName);
-  if (Item != MapNames::BLASAPIWithRewriter.end()) {
+  auto Item = MapNamesBlas::BLASAPIWithRewriter.find(FuncName);
+  if (Item != MapNamesBlas::BLASAPIWithRewriter.end()) {
     std::string NewFunctionName = Item->second;
     if (HasDeviceAttr && !NewFunctionName.empty()) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
@@ -501,10 +503,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (MapNames::LegacyBLASFuncReplInfoMap.find(FuncName) !=
-             MapNames::LegacyBLASFuncReplInfoMap.end()) {
-    auto ReplInfoPair = MapNames::LegacyBLASFuncReplInfoMap.find(FuncName);
-    MapNames::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
+  } else if (MapNamesBlas::LegacyBLASFuncReplInfoMap.find(FuncName) !=
+             MapNamesBlas::LegacyBLASFuncReplInfoMap.end()) {
+    auto ReplInfoPair = MapNamesBlas::LegacyBLASFuncReplInfoMap.find(FuncName);
+    MapNamesBlas::BLASFuncComplexReplInfo ReplInfo = ReplInfoPair->second;
     requestFeature(HelperFeatureEnum::device_ext);
     CallExprReplStr = CallExprReplStr + ReplInfo.ReplName + "(" +
                       MapNames::getLibraryHelperNamespace() +

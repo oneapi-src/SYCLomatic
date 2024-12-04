@@ -28,6 +28,8 @@ using namespace llvm::cl;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
+namespace clang {
+namespace dpct {
 static std::vector<clang::tooling::UnifiedPath /*file path*/>
     PythonBuildScriptFilesSet;
 static std::map<clang::tooling::UnifiedPath /*file path*/,
@@ -125,3 +127,6 @@ void registerPythonMigrationRule(MetaRuleObject &R) {
     PythonBuildInRules[PR.BuildScriptSyntax] = PR;
   }
 }
+
+} // namespace dpct
+} // namespace clang

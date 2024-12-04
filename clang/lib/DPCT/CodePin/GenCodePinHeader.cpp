@@ -7,15 +7,9 @@
 //===-----------------------------------------------------------------===//
 
 #include "GenCodePinHeader.h"
-#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "Diagnostics/Diagnostics.h"
-#include "RuleInfra/MapNames.h"
-#include "MigrationReport/Statics.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
-#include "clang/Lex/Preprocessor.h"
-#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ConvertUTF.h"
 
@@ -181,20 +175,19 @@ void GenCodePinHeaderRule::processCodePinTypeMemberOrBase(
   }
 
   PrintPolicy.SuppressScope = true;
-  std::string MemberOrBaseTypeName = NextMT.getAsString(PrintPolicy);
   PrintPolicy.SuppressScope = false;
   MemberOrBaseInfo.UserDefinedTypeFlag =
       isTypeInAnalysisScope(NextMT.getTypePtrOrNull());
-  MemberOrBaseInfo.TypeNameInCuda = MemberOrBaseTypeName;
+  MemberOrBaseInfo.TypeNameInCuda = NextMT.getAsString(PrintPolicy);
   MemberOrBaseInfo.TypeNameInSycl = DpctGlobalInfo::getReplacedTypeName(
       NextMT, DpctGlobalInfo::getContext(), true);
   MemberOrBaseInfo.MemberName = Name;
   MemberOrBaseInfo.CodePinMemberName = Name + "_codepin";
   MemberOrBaseInfo.IsBaseMember = IsBaseMember;
   if (CodePinVarInfoType::Base == InfoType) {
-    VarInfo.Bases.push_back(MemberOrBaseInfo);
+    VarInfo.Bases.push_back(std::move(MemberOrBaseInfo));
   } else if (CodePinVarInfoType::Field == InfoType) {
-    VarInfo.Members.push_back(MemberOrBaseInfo);
+    VarInfo.Members.push_back(std::move(MemberOrBaseInfo));
   }
 }
 

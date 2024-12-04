@@ -35,6 +35,9 @@
 using namespace clang;
 using namespace clang::dpct;
 
+namespace clang {
+namespace dpct {
+
 unsigned MigrationRule::PairID = 0;
 
 void MigrationRule::print(llvm::raw_ostream &OS) {
@@ -152,6 +155,7 @@ REGISTER_RULE(CompatWithClangRule, PassKind::PK_Migration)
 REGISTER_RULE(AssertRule, PassKind::PK_Migration)
 REGISTER_RULE(GraphRule, PassKind::PK_Migration)
 REGISTER_RULE(GraphicsInteropRule, PassKind::PK_Migration)
+REGISTER_RULE(RulesLangAddrSpaceConvRule, PassKind::PK_Migration)
 
 REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_BLas)
 REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_BLas)
@@ -179,3 +183,6 @@ REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_FFT)
 
 REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
+
+} // namespace dpct
+} // namespace clang
