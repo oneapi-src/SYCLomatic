@@ -3086,9 +3086,9 @@ void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
           continue; // Saw this path before; no need to look at it again.
       if (CandidateVersion.isOlderThan(4, 1, 1))
         continue;
-      #ifdef SYCLomatic_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       this->CandidateVersion.push_back(CandidateVersion);
-      #endif // SYCLomatic_CUSTOMIZATION
+#endif // SYCLomatic_CUSTOMIZATION
       if (CandidateVersion <= Version)
         continue;
 
@@ -3103,6 +3103,10 @@ void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
       // Linux.
       GCCInstallPath = (LibDir + "/" + LibSuffix + "/" + VersionText).str();
       GCCParentLibPath = (GCCInstallPath + "/../" + Suffix.ReversePath).str();
+#ifdef SYCLomatic_CUSTOMIZATION
+      std::sort(this->CandidateVersion.begin(), this->CandidateVersion.end(),
+                std::greater<GCCVersion>());
+#endif // SYCLomatic_CUSTOMIZATION
       IsValid = true;
     }
   }
