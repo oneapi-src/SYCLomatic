@@ -13,9 +13,9 @@
 #ifndef __DPCT_BLAS_GEMM_UTILS_HPP__
 #define __DPCT_BLAS_GEMM_UTILS_HPP__
 
+#include "blas_utils.hpp"
 #include "compat_service.hpp"
 #include "dnnl_utils.hpp"
-#include "blas_utils.hpp"
 
 namespace dpct {
 namespace blas_gemm {
@@ -696,9 +696,9 @@ template <typename T> struct absmax_impl {
 } // namespace detail
 
 /// This function does the following operations:
-/// (1) D_temp = epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta * C)
-/// (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::absmax_d_pointer is specified
-/// (3) D = scale_d * D_temp
+/// (1) D_temp = epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta *
+/// C) (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::absmax_d_pointer
+/// is specified (3) D = scale_d * D_temp
 ///   "op_a" is specified by the matmul_desc_t::attribute::trans_a
 ///   (default is nontrans)
 ///   "op_b" is specified by the matmul_desc_t::attribute::trans_b
@@ -754,7 +754,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   const library_data_t c_type = c_desc->_type;
   const library_data_t d_type = d_desc->_type;
   const library_data_t scale_type = compute_desc->_scale_type;
-  
+
   if (!q_ptr)
     q_ptr = &::dpct::cs::get_default_queue();
   handle->init(q_ptr);
@@ -786,8 +786,9 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       compute_desc->_epilogue != epilogue_t::gelu &&
       compute_desc->_epilogue != epilogue_t::gelu_aux &&
       compute_desc->_epilogue != epilogue_t::gelu_aux_bias) {
-    throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-                             "supports relu, gelu, gelu_aux, gelu with bias epilogue currently.");
+    throw std::runtime_error(
+        "dpct::blas_gemm::experimental::matmul() only "
+        "supports relu, gelu, gelu_aux, gelu with bias epilogue currently.");
   }
 
   if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
@@ -1037,15 +1038,16 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   sycl::queue &queue = ::dpct::cs::get_default_queue();
   if (compute_desc->_epilogue != epilogue_t::nop) {
     ::dnnl::post_ops matmul_ops;
-     if (compute_desc->_epilogue == epilogue_t::relu) {
+    if (compute_desc->_epilogue == epilogue_t::relu) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
-    }  else if (compute_desc->_epilogue == epilogue_t::gelu) {
+    } else if (compute_desc->_epilogue == epilogue_t::gelu) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f, 0.f);
-    }  else if (compute_desc->_epilogue == epilogue_t::gelu_aux) {
+    } else if (compute_desc->_epilogue == epilogue_t::gelu_aux) {
       matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f, 0.f);
       dpct::blas::matrix_mem_copy(compute_desc->_epilogue_aux_pointer, new_c,
                                   compute_desc->_epilogue_aux_ld, new_ldc, m, n,
-                                  sizeof(size_t) , dpct::device_to_device, queue, false);
+                                  sizeof(size_t), dpct::device_to_device, queue,
+                                  false);
     } else if (compute_desc->_epilogue == epilogue_t::bias) {
       matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
     } else if (compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
@@ -1053,9 +1055,10 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
       dpct::blas::matrix_mem_copy(compute_desc->_epilogue_aux_pointer, new_c,
                                   compute_desc->_epilogue_aux_ld, new_ldc, m, n,
-                                  sizeof(size_t) , dpct::device_to_device, queue, false);
+                                  sizeof(size_t), dpct::device_to_device, queue,
+                                  false);
     }
-  matmul_attr.set_post_ops(matmul_ops);
+    matmul_attr.set_post_ops(matmul_ops);
   }
   auto matmul_pd = ::dnnl::matmul::primitive_desc(
       handle->get_engine(), src_md, weights_md, dst_md, matmul_attr);
