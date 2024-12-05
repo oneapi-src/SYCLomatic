@@ -1992,9 +1992,9 @@ ENTRY(cuTexObjectGetResourceViewDesc, cuTexObjectGetResourceViewDesc, false, NO_
 ENTRY(cuTexObjectGetTextureDesc, cuTexObjectGetTextureDesc, true, NO_FLAG, P4, "Successful")
 
 // Surface Object Management
-ENTRY(cuSurfObjectCreate, cuSurfObjectCreate, false, NO_FLAG, P4, "comment")
-ENTRY(cuSurfObjectDestroy, cuSurfObjectDestroy, false, NO_FLAG, P4, "comment")
-ENTRY(cuSurfObjectGetResourceDesc, cuSurfObjectGetResourceDesc, false, NO_FLAG, P4, "comment")
+ENTRY(cuSurfObjectCreate, cuSurfObjectCreate, true, NO_FLAG, P4, "Successful")
+ENTRY(cuSurfObjectDestroy, cuSurfObjectDestroy, true, NO_FLAG, P4, "Successful")
+ENTRY(cuSurfObjectGetResourceDesc, cuSurfObjectGetResourceDesc, true, NO_FLAG, P4, "Successfuls")
 
 // Tensor Map Object Managment
 ENTRY(cuTensorMapEncodeIm2col, cuTensorMapEncodeIm2col, false, NO_FLAG, P4, "comment")

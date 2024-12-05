@@ -508,6 +508,9 @@ void MapNames::setExplicitNamespaceMap(
       {"cudaResourceDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data",
                                       HelperFeatureEnum::device_ext)},
+      {"CUDA_RESOURCE_DESC",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data",
+                                      HelperFeatureEnum::device_ext)},
       {"cudaTextureObject_t",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
@@ -516,6 +519,13 @@ void MapNames::setExplicitNamespaceMap(
                : getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
       {"cudaSurfaceObject_t",
+       std::make_shared<TypeNameRule>(
+           DpctGlobalInfo::useExtBindlessImages()
+               ? getClNamespace() +
+                     "ext::oneapi::experimental::sampled_image_handle"
+               : getDpctNamespace() + "image_wrapper_base_p",
+           HelperFeatureEnum::device_ext)},
+      {"CUsurfObject",
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
                ? getClNamespace() +

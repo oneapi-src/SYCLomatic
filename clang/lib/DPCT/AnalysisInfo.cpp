@@ -5043,7 +5043,7 @@ void DeviceFunctionDecl::buildTextureObjectParamsInfo(
     std::string ParamName =
         DpctGlobalInfo::getUnqualifiedTypeName(Param->getType());
     if (ParamName == "cudaTextureObject_t" ||
-        ParamName == "cudaSurfaceObject_t") {
+        ParamName == "cudaSurfaceObject_t" || ParamName == "CUsurfObject") {
       TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
     }
   }
