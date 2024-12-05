@@ -78,7 +78,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                        CALL(MapNames::getDpctNamespace() +
                                 "experimental::destroy_bindless_image",
                             ARG(0), QUEUESTR)),
-    DELETER_FACTORY_ENTRY("cuSurfObjectDestroys", ARG(0))))
+    DELETER_FACTORY_ENTRY("cuSurfObjectDestroy", ARG(0))))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
