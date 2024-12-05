@@ -378,6 +378,10 @@ void foo() {
   // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(*D_ptr = (dpct::device_ptr)h_A));
   MY_SAFE_CALL(cuMemHostGetDevicePointer(D_ptr, h_A, 0));
 
+  unsigned long long addr;
+  // CHECK: *(dpct::device_ptr *)&addr = (dpct::device_ptr)h_A;
+  cuMemHostGetDevicePointer((CUdeviceptr *)&addr, h_A, 0);
+
   cudaHostRegister(h_A, size, 0);
   // CHECK: errorCode = 0;
   errorCode = cudaHostRegister(h_A, size, 0);
