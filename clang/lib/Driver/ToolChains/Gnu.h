@@ -212,6 +212,7 @@ public:
 
     GCCVersion Version;
 #ifdef SYCLomatic_CUSTOMIZATION
+    /// Collect all the potential versions of GCC libraries installed in the system.
     std::set<GCCVersion, std::greater<GCCVersion>> CandidateVersion;
 #endif // SYCLomatic_CUSTOMIZATION
     // We retain the list of install paths that were considered and rejected in
@@ -254,6 +255,7 @@ public:
     const GCCVersion &getVersion() const { return Version; }
 
 #ifdef SYCLomatic_CUSTOMIZATION
+    /// Get the potiential versions of GCC libraries installed in the system.
     const std::set<GCCVersion, std::greater<GCCVersion>> &
     GetCandidateVersion() const {
       return CandidateVersion;
