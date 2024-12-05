@@ -315,7 +315,22 @@ inline sycl::event scale_new_a(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
         device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
     break;
   }
+  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
+                                             library_data_t::real_int32): {
+    e = scale_new_a_impl<std::int8_t, int>(
+        q_ptr, rows, cols, (std::int8_t *)a, (const int *)alpha, vector_alpha,
+        device_alpha, (const int *)a_scale, (const int *)b_scale, deps);
+    break;
+  }
+  case dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                             library_data_t::real_float): {
+    e = scale_new_a_impl<float, float>(
+        q_ptr, rows, cols, (float *)a, (const float *)alpha, vector_alpha,
+        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
+    break;
+  }
   default:
+    printf("a_type:%d, scale_type:%d\n", (int)a_type, (int)scale_type);
     throw std::runtime_error("dpct::blas_gemm::experimental::detail::scale_new_"
                              "a_impl() does not support the data "
                              "type combination currently.");
@@ -786,7 +801,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   sycl::event e_scale_new_a = detail::scale_new_a(
       q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
       device_alpha, compute_desc->_a_scale_pointer,
-      compute_desc->_b_scale_pointer, {e});
+      compute_desc->_b_scale_pointer, {e_init});
   transform_events.push_back(e_scale_new_a);
 
   if (b_desc->_order != order_t::col) {
