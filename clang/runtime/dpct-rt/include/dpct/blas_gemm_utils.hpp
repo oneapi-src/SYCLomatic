@@ -222,13 +222,12 @@ private:
 
 namespace detail {
 /// Sacling each row of matrix D with the corresponding element of vector alpha.
-template <class T, class Tscale>
+template <class T, class Tscale, bool device_alpha>
 sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
                              T *a, const Tscale *alpha, bool vector_alpha,
-                             bool device_alpha, const Tscale *a_scale,
-                             const Tscale *b_scale,
+                             const Tscale *a_scale, const Tscale *b_scale,
                              std::vector<sycl::event> deps) {
-  if (device_alpha) {
+  if constexpr (device_alpha) {
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
@@ -292,45 +291,44 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
 }
 
 // a is col major without padding
-inline sycl::event scale_new_a(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
-                               void *a, library_data_t a_type,
-                               const void *alpha, library_data_t scale_type,
-                               bool vector_alpha, bool device_alpha,
-                               const void *a_scale, const void *b_scale,
-                               std::vector<sycl::event> deps) {
+template <bool device_alpha>
+inline sycl::event
+scale_new_a(::dpct::cs::queue_ptr q_ptr, int rows, int cols, void *a,
+            library_data_t a_type, const void *alpha, library_data_t scale_type,
+            bool vector_alpha, const void *a_scale, const void *b_scale,
+            std::vector<sycl::event> deps) {
   std::uint64_t key = dpct::detail::get_type_combination_id(a_type, scale_type);
   sycl::event e;
   switch (key) {
   case dpct::detail::get_type_combination_id(library_data_t::real_int8,
                                              library_data_t::real_float): {
-    e = scale_new_a_impl<std::int8_t, float>(
+    e = scale_new_a_impl<std::int8_t, float, device_alpha>(
         q_ptr, rows, cols, (std::int8_t *)a, (const float *)alpha, vector_alpha,
-        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
+        (const float *)a_scale, (const float *)b_scale, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_int32,
                                              library_data_t::real_float): {
-    e = scale_new_a_impl<int, float>(
+    e = scale_new_a_impl<int, float, device_alpha>(
         q_ptr, rows, cols, (int *)a, (const float *)alpha, vector_alpha,
-        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
+        (const float *)a_scale, (const float *)b_scale, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_int8,
                                              library_data_t::real_int32): {
-    e = scale_new_a_impl<std::int8_t, int>(
+    e = scale_new_a_impl<std::int8_t, int, device_alpha>(
         q_ptr, rows, cols, (std::int8_t *)a, (const int *)alpha, vector_alpha,
-        device_alpha, (const int *)a_scale, (const int *)b_scale, deps);
+        (const int *)a_scale, (const int *)b_scale, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_float,
                                              library_data_t::real_float): {
-    e = scale_new_a_impl<float, float>(
+    e = scale_new_a_impl<float, float, device_alpha>(
         q_ptr, rows, cols, (float *)a, (const float *)alpha, vector_alpha,
-        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
+        (const float *)a_scale, (const float *)b_scale, deps);
     break;
   }
   default:
-    printf("a_type:%d, scale_type:%d\n", (int)a_type, (int)scale_type);
     throw std::runtime_error("dpct::blas_gemm::experimental::detail::scale_new_"
                              "a_impl() does not support the data "
                              "type combination currently.");
@@ -798,10 +796,17 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                                 ::dpct::cs::memcpy_direction::device_to_device);
 
   // alpha = alpha * scale_a * scale_b
-  sycl::event e_scale_new_a = detail::scale_new_a(
-      q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
-      device_alpha, compute_desc->_a_scale_pointer,
-      compute_desc->_b_scale_pointer, {e_init});
+  sycl::event e_scale_new_a;
+  if (device_alpha)
+    e_scale_new_a = detail::scale_new_a<true>(
+        q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
+        compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
+        {e_init});
+  else
+    e_scale_new_a = detail::scale_new_a<false>(
+        q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
+        compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
+        {e_init});
   transform_events.push_back(e_scale_new_a);
 
   if (b_desc->_order != order_t::col) {
