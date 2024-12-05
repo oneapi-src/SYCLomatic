@@ -222,27 +222,44 @@ private:
 
 namespace detail {
 /// Sacling each row of matrix D with the corresponding element of vector alpha.
-template <class T, class Tscale, bool device_alpha>
+template <class T, class Tscale>
 sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
                              T *a, const Tscale *alpha, bool vector_alpha,
-                             const Tscale *a_scale, const Tscale *b_scale,
+                             bool device_alpha, const Tscale *a_scale,
+                             const Tscale *b_scale,
                              std::vector<sycl::event> deps) {
-  if constexpr (device_alpha) {
+  if (device_alpha) {
     return q_ptr->submit([&](sycl::handler &cgh) {
       cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
       access_wrapper<T *> a_acc(a, cgh);
-      access_wrapper<const Tscale *> alpha_acc(alpha, cgh);
+      const Tscale *alpha_ptr = nullptr;
+      if (device_alpha)
+        alpha_ptr = alpha;
+      access_wrapper<const Tscale *> alpha_acc(alpha_ptr, cgh);
+      auto a_scale_buf = a_scale ? dpct::get_buffer(a_scale) : dpct::buffer_t(sycl::range<1>(0));
+      auto b_scale_buf = b_scale ? dpct::get_buffer(b_scale) : dpct::buffer_t(sycl::range<1>(0));
+      auto a_scale_acc = a_scale_buf.template get_access<sycl::access_mode::read_write>(cgh);
+      auto b_scale_acc = b_scale_buf.template get_access<sycl::access_mode::read_write>(cgh);
+      size_t a_offset = 0, b_offset = 0;
+      if (a_scale)
+        a_offset = (dpct::byte_t *)a_scale - dpct::detail::mem_mgr::instance().translate_ptr(a_scale).alloc_ptr;
+      if (b_scale)
+        b_offset = (dpct::byte_t *)b_scale - dpct::detail::mem_mgr::instance().translate_ptr(b_scale).alloc_ptr;
 #endif
       cgh.parallel_for<
           ::dpct::cs::kernel_name<class scale_with_device_alpha, T, Tscale>>(
           sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
 #ifdef DPCT_USM_LEVEL_NONE
-            auto a_data = a_acc.get_raw_pointer();
-            auto alpha_data = alpha_acc.get_raw_pointer();
+            T *a_data = a_acc.get_raw_pointer();
+            const Tscale *alpha_data = alpha_acc.get_raw_pointer();
+            const Tscale *a_scale_data = a_scale ? (Tscale *)(&a_scale_acc[0] + a_offset) : nullptr;
+            const Tscale *b_scale_data = b_scale ? (Tscale *)(&b_scale_acc[0] + b_offset) : nullptr;
 #else
-            auto a_data = a;
-            auto alpha_data = alpha;
+          T *a_data = a;
+          const Tscale *alpha_data = alpha;
+          const Tscale *a_scale_data = a_scale;
+          const Tscale *b_scale_data = b_scale;
 #endif
             size_t row_idx = index.get(0);
             size_t col_idx = index.get(1);
@@ -250,9 +267,9 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
 
             Tscale ab_scale = 1.0;
             if (a_scale)
-              ab_scale = ab_scale * a_scale[0];
+              ab_scale = ab_scale * a_scale_data[0];
             if (b_scale)
-              ab_scale = ab_scale * b_scale[0];
+              ab_scale = ab_scale * b_scale_data[0];
 
             if (vector_alpha)
               a_data[idx] = a_data[idx] * alpha_data[row_idx] * ab_scale;
@@ -266,14 +283,27 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
     cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
     access_wrapper<T *> a_acc(a, cgh);
+    auto a_scale_buf = a_scale ? dpct::get_buffer(a_scale) : dpct::buffer_t(sycl::range<1>(0));
+    auto b_scale_buf = b_scale ? dpct::get_buffer(b_scale) : dpct::buffer_t(sycl::range<1>(0));
+    auto a_scale_acc = a_scale_buf.template get_access<sycl::access_mode::read_write>(cgh);
+    auto b_scale_acc = b_scale_buf.template get_access<sycl::access_mode::read_write>(cgh);
+    size_t a_offset = 0, b_offset = 0;
+    if (a_scale)
+      a_offset = (dpct::byte_t *)a_scale - dpct::detail::mem_mgr::instance().translate_ptr(a_scale).alloc_ptr;
+    if (b_scale)
+      b_offset = (dpct::byte_t *)b_scale - dpct::detail::mem_mgr::instance().translate_ptr(b_scale).alloc_ptr;
 #endif
     cgh.parallel_for<
         ::dpct::cs::kernel_name<class scale_with_host_alpha, T, Tscale>>(
         sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
 #ifdef DPCT_USM_LEVEL_NONE
-          auto a_data = a_acc.get_raw_pointer();
+          T *a_data = a_acc.get_raw_pointer();
+          const Tscale *a_scale_data = a_scale ? (Tscale *)(&a_scale_acc[0] + a_offset) : nullptr;
+          const Tscale *b_scale_data = b_scale ? (Tscale *)(&b_scale_acc[0] + b_offset) : nullptr;
 #else
-          auto a_data = a;
+          T *a_data = a;
+          const Tscale *a_scale_data = a_scale;
+          const Tscale *b_scale_data = b_scale;
 #endif
           size_t row_idx = index.get(0);
           size_t col_idx = index.get(1);
@@ -281,9 +311,9 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
 
           Tscale ab_scale = 1.0;
           if (a_scale)
-            ab_scale = ab_scale * a_scale[0];
+            ab_scale = ab_scale * a_scale_data[0];
           if (b_scale)
-            ab_scale = ab_scale * b_scale[0];
+            ab_scale = ab_scale * b_scale_data[0];
 
           a_data[idx] = a_data[idx] * alpha_value * ab_scale;
         });
@@ -291,41 +321,41 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
 }
 
 // a is col major without padding
-template <bool device_alpha>
-inline sycl::event
-scale_new_a(::dpct::cs::queue_ptr q_ptr, int rows, int cols, void *a,
-            library_data_t a_type, const void *alpha, library_data_t scale_type,
-            bool vector_alpha, const void *a_scale, const void *b_scale,
-            std::vector<sycl::event> deps) {
+inline sycl::event scale_new_a(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
+                               void *a, library_data_t a_type,
+                               const void *alpha, library_data_t scale_type,
+                               bool vector_alpha, bool device_alpha,
+                               const void *a_scale, const void *b_scale,
+                               std::vector<sycl::event> deps) {
   std::uint64_t key = dpct::detail::get_type_combination_id(a_type, scale_type);
   sycl::event e;
   switch (key) {
   case dpct::detail::get_type_combination_id(library_data_t::real_int8,
                                              library_data_t::real_float): {
-    e = scale_new_a_impl<std::int8_t, float, device_alpha>(
+    e = scale_new_a_impl<std::int8_t, float>(
         q_ptr, rows, cols, (std::int8_t *)a, (const float *)alpha, vector_alpha,
-        (const float *)a_scale, (const float *)b_scale, deps);
+        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_int32,
                                              library_data_t::real_float): {
-    e = scale_new_a_impl<int, float, device_alpha>(
+    e = scale_new_a_impl<int, float>(
         q_ptr, rows, cols, (int *)a, (const float *)alpha, vector_alpha,
-        (const float *)a_scale, (const float *)b_scale, deps);
+        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_int8,
                                              library_data_t::real_int32): {
-    e = scale_new_a_impl<std::int8_t, int, device_alpha>(
+    e = scale_new_a_impl<std::int8_t, int>(
         q_ptr, rows, cols, (std::int8_t *)a, (const int *)alpha, vector_alpha,
-        (const int *)a_scale, (const int *)b_scale, deps);
+        device_alpha, (const int *)a_scale, (const int *)b_scale, deps);
     break;
   }
   case dpct::detail::get_type_combination_id(library_data_t::real_float,
                                              library_data_t::real_float): {
-    e = scale_new_a_impl<float, float, device_alpha>(
+    e = scale_new_a_impl<float, float>(
         q_ptr, rows, cols, (float *)a, (const float *)alpha, vector_alpha,
-        (const float *)a_scale, (const float *)b_scale, deps);
+        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
     break;
   }
   default:
@@ -796,17 +826,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                                 ::dpct::cs::memcpy_direction::device_to_device);
 
   // alpha = alpha * scale_a * scale_b
-  sycl::event e_scale_new_a;
-  if (device_alpha)
-    e_scale_new_a = detail::scale_new_a<true>(
-        q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
-        compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
-        {e_init});
-  else
-    e_scale_new_a = detail::scale_new_a<false>(
-        q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
-        compute_desc->_a_scale_pointer, compute_desc->_b_scale_pointer,
-        {e_init});
+  sycl::event e_scale_new_a = detail::scale_new_a(
+      q_ptr, m, k, (void *)new_a, a_type, alpha, scale_type, vector_alpha,
+      device_alpha, compute_desc->_a_scale_pointer,
+      compute_desc->_b_scale_pointer, {e_init});
+
   transform_events.push_back(e_scale_new_a);
 
   if (b_desc->_order != order_t::col) {
