@@ -4,7 +4,6 @@
 // RUN: FileCheck --input-file %T/thrust-it-diff/thrust-it-diff.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-it-diff/thrust-it-diff.dp.cpp -o %T/thrust-it-diff/thrust-it-diff.dp.o %}
 
-#ifndef NO_BUILD_TEST
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <sycl/sycl.hpp>
@@ -24,6 +23,7 @@ public:
   typename thrust::iterator_difference<Iterator>::type IDTFieldDecl;
 };
 
-// TODO:
+// CHECK: typename std::iterator_traits<int *>::difference_type IDTVarDecl;
 typename thrust::iterator_difference<int *>::type IDTVarDecl;
-#endif
+
+

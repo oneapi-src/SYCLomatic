@@ -3244,10 +3244,14 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Diagnostics::SIZEOF_WARNING, false, false,
-                               "local memory");
+                               "local memory",
+                               "Check that the allocated memory size in the "
+                               "migrated code is correct");
       AccDecl.Warnings.push_back(
           DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-              Diagnostics::SIZEOF_WARNING, "local memory"));
+              Diagnostics::SIZEOF_WARNING, "local memory",
+              "Check that the allocated memory size in the migrated code is "
+              "correct"));
     }
     if (getType()->getDimension() > 3) {
       if (DiagnosticsUtils::report(getFilePath(), getOffset(),

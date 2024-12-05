@@ -17,6 +17,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/Basic/FileEntry.h"
 #include "llvm/Support/Path.h"
+#include <cctype>
 
 using namespace clang;
 using namespace clang::dpct;
@@ -642,9 +643,8 @@ InsertClassName::getReplacement(const ASTContext &Context) const {
   while ((Data != ':') && (Data != '{'))
     Data = DataBegin[++i];
 
-  Data = DataBegin[--i];
-  while ((Data == ' ') || (Data == '\t') || (Data == '\n') || (Data == '\r'))
-    Data = DataBegin[--i];
+  while (i && std::isspace(DataBegin[--i]))
+    ;
   auto Repl = std::make_shared<ExtReplacement>(
       SM, BeginLoc.getLocWithOffset(i + 1), 0,
       " dpct_type_" + getHashStrFromLoc(BeginLoc).substr(0, 6), this);

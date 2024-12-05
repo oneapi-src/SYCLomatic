@@ -3906,7 +3906,7 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) const {
 
 #ifdef SYCLomatic_CUSTOMIZATION
   if (formatRangeGetter() == FormatRange::migrated) {
-    if (Line.First && !Line.InPPDirective)
+    if (!Line.InPPDirective)
       Line.First->MustBreakBefore = true;
   }
 #endif // SYCLomatic_CUSTOMIZATION

@@ -770,11 +770,13 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       // avoid parsing error msgs like: "error: unknown argument: '-ptx'" or
       // "error: unknown argument: '-cubin'".
       bool IsModuleFile = false;
-      for (size_t Index = 0; Index < CommandLine.size(); Index++) {
-        if (CommandLine[Index] == "-ptx" || CommandLine[Index] == "--ptx" ||
-            CommandLine[Index] == "-cubin" || CommandLine[Index] == "--cubin") {
-          CommandLine.erase(CommandLine.begin() + Index--);
+      for (auto Iter = CommandLine.begin(); Iter != CommandLine.end();) {
+        if (*Iter == "-ptx" || *Iter == "--ptx" || *Iter == "-cubin" ||
+            *Iter == "--cubin") {
+          Iter = CommandLine.erase(Iter);
           IsModuleFile = true;
+        } else {
+          ++Iter;
         }
       }
       if(IsModuleFile)

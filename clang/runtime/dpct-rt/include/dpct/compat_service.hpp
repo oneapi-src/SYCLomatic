@@ -65,13 +65,18 @@ memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t size,
 inline std::vector<sycl::event>
 memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t to_pitch,
        size_t from_pitch, size_t x, size_t y,
-       memcpy_direction direction = memcpy_direction::automatic) {
+       memcpy_direction direction = memcpy_direction::automatic,
+       const std::vector<sycl::event> &dep_events = {}) {
 #if USE_DPCT_HELPER
-  return ::dpct::detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch,
-                                     x, y, direction);
+  return ::dpct::detail::dpct_memcpy(
+      q, to_ptr, from_ptr, sycl::range<3>(to_pitch, y, 1),
+      sycl::range<3>(from_pitch, y, 1), sycl::id<3>(0, 0, 0),
+      sycl::id<3>(0, 0, 0), sycl::range<3>(x, y, 1), direction, dep_events);
 #else
-  return ::syclcompat::detail::memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch,
-                                      x, y);
+  return ::syclcompat::detail::memcpy(
+      q, to_ptr, from_ptr, sycl::range<3>(to_pitch, y, 1),
+      sycl::range<3>(from_pitch, y, 1), sycl::id<3>(0, 0, 0),
+      sycl::id<3>(0, 0, 0), sycl::range<3>(x, y, 1), dep_events);
 #endif
 }
 

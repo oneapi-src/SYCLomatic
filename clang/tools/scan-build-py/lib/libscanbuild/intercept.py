@@ -195,6 +195,7 @@ def find_nvcc_and_set_env_variable():
 
     if nvcc_path:
         set_sys_env_var("INTERCEPT_COMPILE_PATH", nvcc_path)
+        set_sys_env_var("IS_INTERCEPT_COMPILE_PATH_FROM_ENV_PATH", "1")
         return
 
     # Search for nvcc in CUDA SDK default installation directories.
@@ -207,7 +208,8 @@ def find_nvcc_and_set_env_variable():
             break
 
     if nvcc_path:
-        set_system_environment_variable("INTERCEPT_COMPILE_PATH", nvcc_path)
+        set_sys_env_var("INTERCEPT_COMPILE_PATH", nvcc_path)
+        set_sys_env_var("IS_INTERCEPT_COMPILE_PATH_FROM_ENV_PATH", "0")
         return
 
 # SYCLomatic_CUSTOMIZATION end

@@ -1721,8 +1721,7 @@ int is_tool_available(char const *argv[], size_t const argc) {
   int is_nvcc = 0;
   int is_nvcc_available = 0;
 
-  const char *env_var = "INTERCEPT_COMPILE_PATH";
-  char *value = getenv(env_var);
+  char *value = getenv("INTERCEPT_COMPILE_PATH");
   if (value) {
     is_nvcc_available = 1;
   }
@@ -1731,6 +1730,10 @@ int is_tool_available(char const *argv[], size_t const argc) {
       pathname[1] == 'v' && pathname[0] == 'n') {
     // To handle case like "nvcc"
     is_nvcc = 1;
+    value = getenv("IS_INTERCEPT_COMPILE_PATH_FROM_ENV_PATH");
+    if (value && *value == '0') {
+      return 0;
+    }
   }
   if (len > 4 && pathname[len - 1] == 'c' && pathname[len - 2] == 'c' &&
       pathname[len - 3] == 'v' && pathname[len - 4] == 'n' &&

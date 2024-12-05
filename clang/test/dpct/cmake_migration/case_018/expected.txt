@@ -9,3 +9,7 @@ dpct_helper_sycl_compile(obj4 a.dp.cpp b.dp.cpp)
 dpct_helper_sycl_compile(obj5 a.dp.cpp b.dp.cpp)
 
 dpct_helper_sycl_compile(obj6 a.dp.cpp b.dp.cpp)
+
+dpct_helper_sycl_compile(obj7 a.dp.cpp b.dp.cpp OPTIONS -DNV_KERNEL)
+
+dpct_helper_sycl_compile(obj8 a.dp.cpp b.dp.cpp OPTIONS -DNV_KERNEL -DHELLO)

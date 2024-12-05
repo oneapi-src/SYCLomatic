@@ -638,7 +638,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_01
   In: cuda_compile(${libname} ${srcs} STATIC OPTIONS ${opts})
-  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs} OPTIONS ${opts})
 
 - Rule: rule_cuda_compile_with_opts
   Kind: CMakeRule
@@ -646,7 +646,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_02
   In: cuda_compile(${libname} ${srcs} SHARED OPTIONS ${opts})
-  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs} OPTIONS ${opts})
 
 - Rule: rule_cuda_compile_with_lib_type
   Kind: CMakeRule
@@ -670,7 +670,7 @@
   MatchMode: Partial
   CmakeSyntax: rule_cuda_compile_05
   In: cuda_compile(${libname} ${srcs} OPTIONS ${opts})
-  Out: dpct_helper_sycl_compile(${libname} ${srcs})
+  Out: dpct_helper_sycl_compile(${libname} ${srcs} OPTIONS ${opts})
 
 - Rule: rule_cuda_compile
   Kind: CMakeRule
@@ -1187,15 +1187,8 @@
 - Rule: rule_cuda_compile_fatbin
   Kind: CMakeRule
   Priority: Fallback
-  CmakeSyntax: cuda_compile_fatbin
+  CmakeSyntax: rule_cuda_compile_fatbin
   In: cuda_compile_fatbin(${value})
-  Out: dpct_helper_compile_sycl_code(${value})
-
-- Rule: rule_cuda_compile_fatbin_opts
-  Kind: CMakeRule
-  Priority: Fallback
-  CmakeSyntax: cuda_compile_fatbin_opts
-  In: dpct_helper_compile_sycl_code(${value} OPTIONS ${options})
   Out: dpct_helper_compile_sycl_code(${value})
 
 - Rule: rule_cuda_include_directories
