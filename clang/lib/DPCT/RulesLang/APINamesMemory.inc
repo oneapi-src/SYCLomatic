@@ -217,7 +217,8 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaHostGetDevicePointer",
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuMemHostGetDevicePointer_v2",
                                         DEREF(makeCallArgCreatorWithCall(0)),
-                                        CAST(getDerefedType(0), ARG(1))))
+                                        CAST(getReplacedTypeNameForDerefExpr(0),
+                                             ARG(1))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),

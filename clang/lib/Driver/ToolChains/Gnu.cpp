@@ -3086,6 +3086,10 @@ void Generic_GCC::GCCInstallationDetector::ScanLibDirForGCCTriple(
           continue; // Saw this path before; no need to look at it again.
       if (CandidateVersion.isOlderThan(4, 1, 1))
         continue;
+#ifdef SYCLomatic_CUSTOMIZATION
+      // Store all the potential GCC version candidates.
+      this->CandidateVersion.insert(CandidateVersion);
+#endif // SYCLomatic_CUSTOMIZATION
       if (CandidateVersion <= Version)
         continue;
 
@@ -3532,11 +3536,22 @@ bool Generic_GCC::addGCCLibStdCxxIncludePaths(
                                CC1Args))
     return true;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Detect Debian g++-multiarch-incdir.diff through the list of candidate, the
+  // potential GCC version sorts in descending orde.
+  for (auto Candidate : GCCInstallation.GetCandidateVersion()) {
+    if (addLibStdCXXIncludePaths(
+            LibDir.str() + "/../include/c++/" + Candidate.Text, DebianMultiarch,
+            Multilib.includeSuffix(), DriverArgs, CC1Args, /*Debian=*/true))
+      return true;
+  }
+#else
   // Detect Debian g++-multiarch-incdir.diff.
   if (addLibStdCXXIncludePaths(LibDir.str() + "/../include/c++/" + Version.Text,
                                DebianMultiarch, Multilib.includeSuffix(),
                                DriverArgs, CC1Args, /*Debian=*/true))
     return true;
+#endif // SYCLomatic_CUSTOMIZATION
 
   // Try /../include/c++/$version (gcc --print-multiarch is empty).
   if (addLibStdCXXIncludePaths(LibDir.str() + "/../include/c++/" + Version.Text,

@@ -3,7 +3,7 @@
 // RUN: dpct --format-range=none -out-root %T/thrust-algo %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/thrust-algo/thrust-algo.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-algo/thrust-algo.dp.cpp -o %T/thrust-algo/thrust-algo.dp.o %}
-#ifndef NO_BUILD_TEST
+
 #include <vector>
 
 #include <thrust/binary_search.h>
@@ -122,7 +122,6 @@ void k() {
   // CHECK: dpct::partition_point(oneapi::dpl::execution::seq, v.begin(), v.end(), up);
   thrust::partition_point(v.begin(), v.end(), up);
 
-
   // binary_search
 
   // CHECK: oneapi::dpl::binary_search(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin());
@@ -134,7 +133,7 @@ void k() {
   thrust::binary_search(thrust::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
   // CHECK: oneapi::dpl::binary_search(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
   thrust::binary_search(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
-
+#ifndef NO_BUILD_TEST
   // CHECK: oneapi::dpl::binary_search(oneapi::dpl::execution::seq, v.begin(), v.end(), 1);
   thrust::binary_search(thrust::seq, v.begin(), v.end(), 1);
 
@@ -146,7 +145,7 @@ void k() {
 
   // CHECK: oneapi::dpl::binary_search(oneapi::dpl::execution::seq, v.begin(), v.end(), 1, bp);
   thrust::binary_search(v.begin(), v.end(), 1, bp);
-
+#endif
 
   // lower_bound
 
@@ -410,7 +409,7 @@ void is_sorted_test() {
 struct is_even
 {
   __host__ __device__
-  bool operator()(const int &x)
+  bool operator()(const int &x) const
   {
     return (x % 2) == 0;
   }
@@ -767,10 +766,10 @@ void raw_reference_cast_test() {
   thrust::host_vector<int> h_vec(1);
   thrust::device_vector<int> d_vec = h_vec;
   const thrust::device_reference<int> ref_const = d_vec[0];
-// CHECK:  int &ref1 = dpct::get_raw_reference(d_vec[0]);
-// CHECK-NEXT:  int &ref2 = dpct::get_raw_reference(ref_const);
-  int &ref1 = thrust::raw_reference_cast(d_vec[0]);
-  int &ref2 = thrust::raw_reference_cast(ref_const);
+// CHECK:  int ref1 = dpct::get_raw_reference(d_vec[0]);
+// CHECK-NEXT:  int ref2 = dpct::get_raw_reference(ref_const);
+  int ref1 = thrust::raw_reference_cast(d_vec[0]);
+  int ref2 = thrust::raw_reference_cast(ref_const);
 }
 
 void partition_copy_test() {
@@ -1235,4 +1234,4 @@ void equal() {
   thrust::equal(d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
   thrust::equal(thrust::device, d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
 }
-#endif
+

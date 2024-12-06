@@ -211,7 +211,10 @@ public:
     std::optional<Multilib> BiarchSibling;
 
     GCCVersion Version;
-
+#ifdef SYCLomatic_CUSTOMIZATION
+    /// Collect all the potential versions of GCC libraries installed in the system.
+    std::set<GCCVersion, std::greater<GCCVersion>> CandidateVersion;
+#endif // SYCLomatic_CUSTOMIZATION
     // We retain the list of install paths that were considered and rejected in
     // order to print out detailed information in verbose mode.
     std::set<std::string> CandidateGCCInstallPaths;
@@ -250,6 +253,14 @@ public:
 
     /// Get the detected GCC version string.
     const GCCVersion &getVersion() const { return Version; }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+    /// Get the potiential versions of GCC libraries installed in the system.
+    const std::set<GCCVersion, std::greater<GCCVersion>> &
+    GetCandidateVersion() const {
+      return CandidateVersion;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
 
     /// Print information about the detected GCC installation.
     void print(raw_ostream &OS) const;
