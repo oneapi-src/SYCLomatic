@@ -695,9 +695,9 @@ template <typename T> struct absmax_impl {
 } // namespace detail
 
 /// This function does the following operations:
-/// (1) D_temp = epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta *
-/// C) (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::absmax_d_pointer
-/// is specified (3) D = scale_d * D_temp
+/// (1) D_temp = epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta * C)
+/// (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::absmax_d_pointer is specified
+/// (3) D = scale_d * D_temp
 ///   "op_a" is specified by the matmul_desc_t::attribute::trans_a
 ///   (default is nontrans)
 ///   "op_b" is specified by the matmul_desc_t::attribute::trans_b
@@ -1043,13 +1043,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     break;
   case epilogue_t::bias:
   case epilogue_t::gelu_bias: {
-    ::dnnl::memory::dims po_bias_dims = {M, 1};
-    const ::dnnl::memory::dims po_bias_strides = ::dnnl::memory::dims{1, M};
     auto po_bias_md =
-        ::dnnl::memory::desc(po_bias_dims,
+        ::dnnl::memory::desc(::dnnl::memory::dims{M, 1},
                              dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
                                  compute_desc->_bias_type),
-                             po_bias_strides);
+                             ::dnnl::memory::dims{1, M});
     po_bias_mem =
         new ::dnnl::memory(po_bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
 #ifdef DPCT_USM_LEVEL_NONE
