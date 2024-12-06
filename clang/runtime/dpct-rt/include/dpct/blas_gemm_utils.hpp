@@ -263,7 +263,7 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
           dpct::detail::mem_mgr::instance().translate_ptr(b_scale).alloc_ptr;
 #endif
     cgh.parallel_for<
-        ::dpct::cs::kernel_name<class scale_with_device_alpha, T, Tscale>>(
+        ::dpct::cs::kernel_name<class scale_with_alpha, T, Tscale>>(
         sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
 #ifdef DPCT_USM_LEVEL_NONE
           T *a_data = a_acc.get_raw_pointer();
