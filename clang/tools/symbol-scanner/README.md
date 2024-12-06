@@ -83,3 +83,21 @@ histogram will be saved to 'product-name.stats.csv'.
  | -d, --debug                                  | Enable debugging help.                                                                                                                                         |
  | -s, --statistics                             | Create function histograms.                                                                                                                                    |
  | -x, --extend-non-intel                       | Extend the scanning to non-Intel performance libraries.                                                                                                        |
+ | -m, --migration-status                       | Scans only for NVIDIA library APIs and emits the % of APIs which can be migrated to SYCL equiavlent
+             
+## Sample Output of Migration Status
+
+$ python3 BinarySymbolScanner.py -c "Company" -p "Appication_Name" -b /home/anoop/application_binary_dir/ -m
+
+.
+.
+
+Overwriting file:  Application_Name.funcs.csv
+
+List of Migratable APIs: ['cudaDeviceSynchronize', 'cudaEventSynchronize', 'cudaGetSymbolSize', 'cudaProfilerInitialize', 'cudaStreamSynchronize', 'cudaThreadSynchronize']
+ 
+List of Non-Migratable APIs: []
+
+**********************************************************************************************
+Percentage of CUDA Host/Library APIs Migratable by SYCLomatic: 100.00%
+**********************************************************************************************
