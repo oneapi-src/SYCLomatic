@@ -32,7 +32,7 @@ namespace detail {
 /// \param [in] expectednumberOfNodes The number of nodes
 /// to be added
 inline std::vector<sycl::ext::oneapi::experimental::node> get_nodes_impl(
-    std::function<std::vector<sycl::ext::oneapi::experimental::node>()> get_func,
+   const std::vector<sycl::ext::oneapi::experimental::node> &nodes,
     std::size_t expectedNumberOfNodes) {
 
     std::vector<sycl::ext::oneapi::experimental::node> nodeVec = get_func();
