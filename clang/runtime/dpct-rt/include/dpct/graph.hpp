@@ -160,8 +160,7 @@ inline std::vector<sycl::ext::oneapi::experimental::node> get_nodes(
     const dpct::experimental::command_graph_ptr graph,
     std::size_t numberOfNodes) {
 
-    return detail::get_nodes_impl(std::function<std::vector<sycl::ext::oneapi::experimental::node>()>(
-        [&]() { return graph->get_nodes(); }), numberOfNodes);
+    get_nodes_impl(graph->get_nodes(), numberOfNodes)
     ;
 }
 
