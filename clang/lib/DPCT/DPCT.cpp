@@ -78,6 +78,8 @@ using namespace clang::tooling;
 
 using namespace llvm::cl;
 
+extern bool isDPCT;
+
 namespace clang {
 namespace tooling {
 UnifiedPath getFormatSearchPath();
@@ -666,6 +668,7 @@ int showAPIMapping(std::string SrcAPI, std::string Option,
 }
 
 int runDPCT(int argc, const char **argv) {
+  isDPCT = true;
 
   if (argc < 2) {
     std::cout << CtHelpHint;

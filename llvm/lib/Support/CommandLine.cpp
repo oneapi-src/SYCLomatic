@@ -47,6 +47,10 @@
 using namespace llvm;
 using namespace cl;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+bool isDPCT = false;
+#endif // SYCLomatic_CUSTOMIZATION
+
 #define DEBUG_TYPE "commandline"
 
 //===----------------------------------------------------------------------===//
@@ -126,7 +130,6 @@ static inline bool isPrefixedOrGrouping(const Option *O) {
   return isGrouping(O) || O->getFormattingFlag() == cl::Prefix ||
          O->getFormattingFlag() == cl::AlwaysPrefix;
 }
-
 
 namespace {
 
@@ -1557,6 +1560,7 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
   };
 #ifndef _WIN32
   if ((argc >= FirstArg + 1) &&
+      (std::string(argv[FirstArg]).find("help") == std::string::npos) &&
       (std::string(argv[FirstArg]).find("intercept-build") !=
        std::string::npos)) {
     return HandleLongOptionCommand("intercept-build");
@@ -2368,7 +2372,6 @@ class HelpPrinter {
 protected:
   const bool ShowHidden;
 #ifdef SYCLomatic_CUSTOMIZATION
-  bool isDPCT = false;
   CtHelpCategory CtHelpCat = CtHelpCategory::HC_All;
 #endif // SYCLomatic_CUSTOMIZATION
   typedef SmallVector<std::pair<const char *, Option *>, 128>
@@ -2425,20 +2428,6 @@ protected:
       return cl::getCtExamplesCategory();
     }
   }
-
-  bool isPatReCat(OptionCategory *Category) {
-    if (Category->getName().starts_with("Pattern Rewriter"))
-      return true;
-
-    return false;
-  }
-
-  bool isDPCTCat(OptionCategory *Category) {
-    if (Category->getDescription().ends_with("DPCT options"))
-      return true;
-
-    return false;
-  }
 #endif // SYCLomatic_CUSTOMIZATION
 
 public:
@@ -2468,9 +2457,6 @@ public:
     sortSubCommands(GlobalParser->RegisteredSubCommands, Subs);
 
 #ifdef SYCLomatic_CUSTOMIZATION
-    isDPCT = !strcmp((GlobalParser->ProgramName).c_str(), "dpct") ||
-             !strcmp((GlobalParser->ProgramName).c_str(), "c2s");
-
     if (isDPCT) {
       if (CtHelpCat == CtHelpCategory::HC_Examples) {
         outs() << DPCTExamplesMsg;
@@ -2546,20 +2532,15 @@ public:
                                        "files. These paths are looked up in "
                                        "the compilation database.\n\n";
 
+    bool showCtDiagMsg = false;
+
     if (isDPCT) {
       outs() << CtHelpTrailMsg;
 
       if (CtHelpCat == CtHelpCategory::HC_All) {
         outs() << DPCTExamplesMsg;
       }
-    }
-#endif // SYCLomatic_CUSTOMIZATION
 
-    // Print any extra help the user has declared.
-#ifdef SYCLomatic_CUSTOMIZATION
-    bool showCtDiagMsg = false;
-
-    if (isDPCT) {
       switch (CtHelpCat) {
       case CtHelpCategory::HC_All:
       case CtHelpCategory::HC_Advanced:
@@ -2573,6 +2554,7 @@ public:
       }
     }
 
+    // Print any extra help the user has declared.
     if (!isDPCT || showCtDiagMsg) {
       for (const auto &I : GlobalParser->MoreHelp)
         outs() << I;
@@ -2600,15 +2582,13 @@ public:
 
   // Make sure we inherit our base class's operator=()
   using HelpPrinter::operator=;
+  using HelpPrinter::getReqCtHelpCategory;
   using HelpPrinter::setReqCtHelpCategory;
 
 protected:
   void printOptions(StrOptionPairVector &Opts, size_t MaxArgLen) override {
     std::vector<OptionCategory *> SortedCategories;
     DenseMap<OptionCategory *, std::vector<Option *>> CategorizedOptions;
-
-    bool isPatRe =
-        !strcmp((GlobalParser->ProgramName).c_str(), "pattern-rewriter");
 
     // Collect registered option categories into vector in preparation for
     // sorting.
@@ -2633,7 +2613,10 @@ protected:
     }
 
 #ifdef SYCLomatic_CUSTOMIZATION
-    OptionCategory &reqCtHelpCat(getReqCtHelpCategory(CtHelpCat));
+    if (CtHelpCat != CtHelpCategory::HC_All)
+      SortedCategories.erase(
+          std::find(SortedCategories.begin(), SortedCategories.end(),
+                    &getReqCtHelpCategory(CtHelpCategory::HC_All)));
 #endif // SYCLomatic_CUSTOMIZATION
 
     // Now do printing.
@@ -2642,17 +2625,6 @@ protected:
       const auto &CategoryOptions = CategorizedOptions[Category];
       if (CategoryOptions.empty())
         continue;
-
-#ifdef SYCLomatic_CUSTOMIZATION
-      if (isDPCT) {
-        if (!isDPCTCat(Category))
-          continue;
-        else if (&reqCtHelpCat != Category)
-          continue;
-      }
-      if (isPatRe && !isPatReCat(Category))
-        continue;
-#endif // SYCLomatic_CUSTOMIZATION
 
         // Print category information.
 #ifdef SYCLomatic_CUSTOMIZATION
@@ -2920,9 +2892,6 @@ OptionCategory &cl::getGeneralCategory() {
   return GeneralCategory;
 }
 #ifdef SYCLomatic_CUSTOMIZATION
-// Make sure to add descriptions for all DPCT Help cat options and
-// end them with str "DPCT options" suffix for printOptions() to detect
-// whether a category belongs to DPCT or not
 OptionCategory &cl::getCtHelpCat() {
   static OptionCategory CtHelpCatAll{"All", "All DPCT options"};
   return CtHelpCatAll;
@@ -3011,6 +2980,7 @@ void HelpPrinterWrapper::operator=(bool Value) {
 #ifdef SYCLomatic_CUSTOMIZATION
 void HelpPrinterWrapper::operator=(CtHelpCategory Value) {
   CategorizedPrinter.setReqCtHelpCategory(Value);
+  cl::HideUnrelatedOptions(CategorizedPrinter.getReqCtHelpCategory(Value));
 
   *this = true;
 }
