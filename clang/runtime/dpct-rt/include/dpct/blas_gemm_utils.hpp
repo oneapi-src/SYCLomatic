@@ -33,7 +33,7 @@ enum class pointer_mode_t {
   alpha_device_vector_beta_zero,
   alpha_device_vector_beta_host
 };
-enum class epilogue_t { nop = 1, relu };
+enum class epilogue_t { nop = 1, relu, bgradb };
 
 class descriptor;
 using descriptor_ptr = descriptor *;
