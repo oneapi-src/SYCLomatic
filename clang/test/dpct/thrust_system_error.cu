@@ -4,7 +4,6 @@
 // RUN: FileCheck --input-file %T/thrust_system_error/thrust_system_error.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust_system_error/thrust_system_error.dp.cpp -o %T/thrust_system_error/thrust_system_error.dp.o %}
 
-#ifndef NO_BUILD_TEST
 #include <cuda_runtime_api.h>
 #include <thrust/system/cuda/error.h>
 #include <thrust/system_error.h>
@@ -12,6 +11,7 @@
 
 void cuda_safe_call(cudaError_t error, const std::string &message = "") {
 
+  // CHECK: std::errc e;
   thrust::errc::errc_t e;
 
   // CHECK: std::system_error(error, std::generic_category(), message);
@@ -89,4 +89,3 @@ int main() {
   cuda_safe_call(e);
   return 0;
 }
-#endif

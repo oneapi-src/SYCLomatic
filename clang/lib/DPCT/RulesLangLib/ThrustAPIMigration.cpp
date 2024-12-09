@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "RulesLangLib/ThrustAPIMigration.h"
+#include "AnalysisInfo.h"
 #include "RuleInfra/ExprAnalysis.h"
 #include "RulesLangLib/MapNamesLangLib.h"
 #include "TextModification.h"
@@ -302,7 +303,8 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::system::system_error", "thrust::system::error_code",
         "enum thrust::system::errc::errc_t", "thrust::system::error_condition",
         "thrust::device_system_tag", "thrust::pointer",
-        "thrust::device_allocator", "thrust::reverse_iterator");
+        "thrust::device_allocator", "thrust::reverse_iterator",
+        "thrust::system::errc::errc_t");
   };
 
   MF.addMatcher(

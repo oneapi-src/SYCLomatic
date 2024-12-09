@@ -23,7 +23,7 @@ template <class... Args> using kernel_name = dpct_kernel_name<Args...>;
 using byte_t = ::dpct::byte_t;
 #else
 namespace ns = ::syclcompat;
-using memcpy_direction = ::syclcompat::experimental::memcpy_direction;
+using memcpy_direction = ::syclcompat::detail::memcpy_direction;
 template <class... Args> using kernel_name = syclcompat_kernel_name<Args...>;
 #ifndef __dpct_inline__
 #define __dpct_inline__ __syclcompat_inline__

@@ -234,9 +234,21 @@ void foo3() {
   // CHECK: dpct::blas_gemm::experimental::epilogue_t e;
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::nop;
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::relu;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::bias;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu_bias;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu_aux;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu_aux_bias;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::bgradb;
   cublasLtEpilogue_t e;
   e = CUBLASLT_EPILOGUE_DEFAULT;
   e = CUBLASLT_EPILOGUE_RELU;
+  e = CUBLASLT_EPILOGUE_BIAS;
+  e = CUBLASLT_EPILOGUE_GELU;
+  e = CUBLASLT_EPILOGUE_GELU_BIAS;
+  e = CUBLASLT_EPILOGUE_GELU_AUX;
+  e = CUBLASLT_EPILOGUE_GELU_AUX_BIAS;
+  e = CUBLASLT_EPILOGUE_BGRADB;
 }
 
 void foo4() {
