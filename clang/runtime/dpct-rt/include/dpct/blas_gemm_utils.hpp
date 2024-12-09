@@ -803,6 +803,9 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     e_init = ::dpct::cs::memcpy(*q_ptr, (void *)new_a, a,
                                 size_of_element * a_desc->_cols * new_lda,
                                 ::dpct::cs::memcpy_direction::device_to_device);
+  // FIXME: The following "wait" is not necessary in theory, but without it,
+  // there will be some runtime issues.
+  e_init.wait();
 
   // alpha = alpha * scale_a * scale_b
   sycl::event e_scale_new_a = detail::scale_new_a(
