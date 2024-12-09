@@ -239,6 +239,7 @@ void foo3() {
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu_bias;
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu_aux;
   // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::gelu_aux_bias;
+  // CHECK-NEXT: e = dpct::blas_gemm::experimental::epilogue_t::bgradb;
   cublasLtEpilogue_t e;
   e = CUBLASLT_EPILOGUE_DEFAULT;
   e = CUBLASLT_EPILOGUE_RELU;
@@ -247,6 +248,7 @@ void foo3() {
   e = CUBLASLT_EPILOGUE_GELU_BIAS;
   e = CUBLASLT_EPILOGUE_GELU_AUX;
   e = CUBLASLT_EPILOGUE_GELU_AUX_BIAS;
+  e = CUBLASLT_EPILOGUE_BGRADB;
 }
 
 void foo4() {

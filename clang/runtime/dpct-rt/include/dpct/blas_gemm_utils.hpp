@@ -41,7 +41,8 @@ enum class epilogue_t {
   gelu,
   gelu_bias,
   gelu_aux,
-  gelu_aux_bias
+  gelu_aux_bias,
+  bgradb
 };
 
 class descriptor;
