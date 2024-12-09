@@ -133,6 +133,19 @@
   In: BuildExtension
   Out: DpcppBuildExtension
 
+- Rule: rule_cpp_file
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cpp_file
+  In: ${func_name}(${value})
+  Out: ${func_name}(${value})
+  Subrules:
+    value:
+      MatchMode: Full
+      In: ${arg}.cpp
+      Out: ${arg}.${rewrite_extention_name}
+
 - Rule: rule_cu_file
   Kind: PythonRule
   Priority: Fallback
@@ -144,7 +157,7 @@
     value:
       MatchMode: Full
       In: ${arg}.cu
-      Out: ${arg}.cpp
+      Out: ${arg}.${rewrite_extention_name}
 
 - Rule: rule_cuda_device_count
   Kind: PythonRule

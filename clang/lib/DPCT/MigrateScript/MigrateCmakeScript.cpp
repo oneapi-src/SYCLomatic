@@ -8,9 +8,9 @@
 #include "MigrateCmakeScript.h"
 #include "Diagnostics/Diagnostics.h"
 #include "ErrorHandle/Error.h"
-#include "UserDefinedRules/PatternRewriter.h"
 #include "FileGenerator/GenFiles.h"
 #include "MigrationReport/Statics.h"
+#include "UserDefinedRules/PatternRewriter.h"
 #include "Utility.h"
 
 #include "llvm/Support/FileSystem.h"
@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
+#include <numeric>
 #include <string>
 
 using namespace clang::dpct;
@@ -319,6 +320,64 @@ void processExecuteProcess(std::string &Input, size_t &Size, size_t &Index) {
   Index = Begin + Value.size(); // Update index
 }
 
+void processCudaCompile(std::string &Input, size_t &Size, size_t &Index) {
+  size_t Begin, End;
+
+  // Get the beginning of the first argument
+  Index = skipWhiteSpaces(Input, Index);
+  Begin = Index;
+
+  // Get the end of the Cmake Stmt
+  Index = gotoEndOfCmakeCommandStmt(Input, Index);
+  End = Index;
+
+  // Extract the content of the command
+  std::string Content = Input.substr(Begin, End - Begin);
+
+  // Locate "OPTIONS" in the command
+  size_t OptionsPos = Content.find("OPTIONS");
+  if (OptionsPos != std::string::npos) {
+    // Locate Options Begin and End
+    size_t Pos = Content.find("OPTIONS", OptionsPos) + strlen("OPTIONS");
+    size_t OptionsBegin = skipWhiteSpaces(Content, Pos);
+    size_t OptionsEnd = gotoEndOfCmakeCommandStmt(Content, Pos);
+
+    // Split by Whitespaces and Filter
+    std::string Options =
+        Content.substr(OptionsBegin, OptionsEnd - OptionsBegin);
+    std::istringstream Stream(Options);
+    std::string Token;
+    std::vector<std::string> FilteredOptions;
+
+    // Find the Options starting with "-D"
+    while (Stream >> Token) {
+      if (Token.rfind("-D", 0) == 0) { // Keep only options that start with "-D"
+        FilteredOptions.push_back(Token);
+      }
+    }
+
+    // Create a new  replacement string with the filtered options
+    std::string FilteredOptionsString;
+    if (!FilteredOptions.empty()) {
+      FilteredOptionsString =
+          "OPTIONS " + std::accumulate(std::next(FilteredOptions.begin()),
+                                       FilteredOptions.end(),
+                                       FilteredOptions[0],
+                                       [](std::string a, std::string b) {
+                                         return a + " " + b;
+                                       });
+    } else {
+      // If there are no options, remove the OPTIONS keyword
+      OptionsPos--;
+    }
+
+    Content.replace(OptionsPos, OptionsEnd - OptionsPos, FilteredOptionsString);
+    Input.replace(Begin, End - Begin, Content);
+    Size = Input.size();            // Update the size of the input
+    Index = Begin + Content.size(); // Update the index
+  }
+}
+
 // Implicit migration rule is used when the migration logic is difficult to be
 // described with yaml based rule syntax. Currently only migration of
 // cmake_minimum_required() is implemented by implicit migration rule.
@@ -466,6 +525,8 @@ applyCmakeMigrationRules(const clang::tooling::UnifiedPath InRoot,
       DispatchTable = {
           {"cmake_minimum_required", processCmakeMinimumRequired},
           {"execute_process", processExecuteProcess},
+          {"cuda_compile", processCudaCompile},
+          {"cuda_compile_fatbin", processCudaCompile},
       };
 
   setFileTypeProcessed(SourceFileType::SFT_CMakeScript);
@@ -533,7 +594,8 @@ bool cmakeScriptNotFound() { return CmakeScriptFilesSet.empty(); }
 // cmake systaxes need to be processed by implicit migration rules, as they are
 // difficult to be described with yaml based rule syntax.
 static const std::vector<std::string> ImplicitMigrationRules = {
-    "cmake_minimum_required", "execute_process"};
+    "cmake_minimum_required", "execute_process", "cuda_compile",
+    "cuda_compile_fatbin"};
 
 static void reserveImplicitMigrationRules() {
   for (const auto &Rule : ImplicitMigrationRules) {

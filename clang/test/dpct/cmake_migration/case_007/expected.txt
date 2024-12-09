@@ -3,3 +3,7 @@ dpct_helper_compile_sycl_code(CUDA_FATBINS ${CUDA_FATBIN_SOURCE})
 dpct_helper_compile_sycl_code(FATBINS main.dp.cpp)
 
 dpct_helper_compile_sycl_code(${TARGET} ${CMAKE_SOURCE_DIR}/foo/bar/util.dp.cpp)
+
+dpct_helper_compile_sycl_code(FATBINS main.dp.cpp OPTIONS -DNV_KERNEL)
+
+dpct_helper_compile_sycl_code(${TARGET} main.dp.cpp OPTIONS -DCUDA -DNV_KERNEL)

@@ -3,7 +3,6 @@
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.cpp -o %T/tm-nonusm-no-submit-barrier-profiling/tm-nonusm-no-submit-barrier-profiling.dp.o %}
 // RUN: rm -rf %T/tm-nonusm-no-submit-barrier-profiling/
 
-#ifndef NO_BUILD_TEST
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT:#include <sycl/sycl.hpp>
@@ -153,7 +152,7 @@ void foo_test_2() {
     kernel<<<grid, block>>>(d_a, value);
     CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
 
-    // CHECK:    CHECK([](){dpct::get_current_device().queues_wait_and_throw();
+    // CHECK:    CHECK([&](){dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
     // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    return 0;}());
@@ -211,7 +210,7 @@ void foo_test_3() {
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
-// CHECK:  CHECK([](){dpct::get_current_device().queues_wait_and_throw();
+// CHECK:  CHECK([&](){dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:  *start = q_ct1.single_task([=](){});
 // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:  return 0;}());
@@ -232,7 +231,7 @@ void foo_test_3() {
                           cudaMemcpyDeviceToHost, stream[i]));
   }
 
-  // CHECK:  CHECK([](){dpct::get_current_device().queues_wait_and_throw();
+  // CHECK:  CHECK([&](){dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  *stop = q_ct1.single_task([=](){});
   // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  return 0;}());
@@ -253,7 +252,7 @@ void foo_usm() {
   int *gpu_t, *host_t, n = 10;
 
   // CHECK:  dpct::event_ptr start, stop;
-  // CHECK-NEXT:  SAFE_CALL([](){dpct::get_current_device().queues_wait_and_throw();
+  // CHECK-NEXT:  SAFE_CALL([&](){dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  *start = q_ct1.single_task([=](){});
   // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  return 0;}());
@@ -263,7 +262,7 @@ void foo_usm() {
   // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1)));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
-  // CHECK:  SAFE_CALL([](){dpct::get_current_device().queues_wait_and_throw();
+  // CHECK:  SAFE_CALL([&](){dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  *stop = q_ct1.single_task([=](){});
   // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  return 0;}());
@@ -315,16 +314,6 @@ void foo()
         float *h_out = new float[numFloat4];
         float *d_out;
         cudaMalloc((void**) &d_out, numFloat4 * sizeof(float));
-
-        // Allocate a cuda array
-        cudaArray* cuArray;
-        cudaMallocArray(&cuArray, &texA.channelDesc, width, height);
-
-        // Copy in source data
-        cudaMemcpyToArray(cuArray, 0, 0, h_in, size, cudaMemcpyHostToDevice);
-
-        // Bind texture to the array
-        cudaBindTextureToArray(texA, cuArray);
 
         for (int p = 0; p < passes; p++)
         {
@@ -395,8 +384,6 @@ void foo()
         delete[] h_in;
         delete[] h_out;
         cudaFree(d_out);
-        cudaFreeArray(cuArray);
-        cudaUnbindTexture(texA);
     }
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
@@ -436,7 +423,7 @@ int foo_test_4()
     kernelEvent = (cudaEvent_t *) malloc(n_streams * sizeof(cudaEvent_t));
 
     // record start event
-// CHECK:    CHECK([](){dpct::get_current_device().queues_wait_and_throw();
+// CHECK:    CHECK([&](){dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    *start = q_ct1.single_task([=](){});
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    return 0;}());
@@ -457,15 +444,15 @@ int foo_test_4()
         foo_kernel_3<<<grid, block, 0, streams[i]>>>();
         foo_kernel_4<<<grid, block, 0, streams[i]>>>();
 
-// CHECK:        CHECK([](){dpct::get_current_device().queues_wait_and_throw();
+// CHECK:        CHECK([&](){dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:        streams[i]->single_task([=](){});
-// CHECK-NEXT:        dpct::get_current_device().queues_wait_and_throw()}());
+// CHECK-NEXT:        dpct::get_current_device().queues_wait_and_throw(); return 0;}());
 // CHECK-NEXT:        kernelEvent[i]->wait();
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
-// CHECK:    CHECK([](){dpct::get_current_device().queues_wait_and_throw();
+// CHECK:    CHECK([&](){dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    return 0;}());
@@ -513,7 +500,7 @@ void RunTest()
     for (int k = 0; k < passes; k++)
     {
         float totalScanTime = 0.0f;
-// CHECK:         SAFE_CALL([](){dpct::get_current_device().queues_wait_and_throw();
+// CHECK:         SAFE_CALL([&](){dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:        *start = q_ct1.single_task([=](){});
 // CHECK-NEXT:        dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:        return 0;}());
@@ -549,6 +536,7 @@ void RunTest()
 
 int foo_test_5() {
    RunTest<float, float4>();
+   return 0;
 }
 
 __global__ void foo_kernel_1(unsigned short* blk_sad, unsigned short* frame,
@@ -685,4 +673,3 @@ void test_1999(void* ref_image, void* cur_image,
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
 }
-#endif

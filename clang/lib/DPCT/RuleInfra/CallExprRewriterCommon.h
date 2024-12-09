@@ -818,6 +818,35 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
   };
 }
 
+inline std::function<std::string(const CallExpr *C)>
+getReplacedTypeNameForDerefExpr(size_t Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    if (Idx >= C->getNumArgs())
+      return "";
+
+    const auto *ArgExpr = C->getArg(Idx);
+    QualType ArgExprType = ArgExpr->getType();
+
+    if (auto *CSCE =
+            dyn_cast<ExplicitCastExpr>(ArgExpr->IgnoreImplicitAsWritten()))
+      ArgExprType = CSCE->getTypeAsWritten();
+
+    while (const auto *ET = dyn_cast<ElaboratedType>(ArgExprType)) {
+      ArgExprType = ET->getNamedType();
+      if (const auto *TDT = dyn_cast<TypedefType>(ArgExprType)) {
+        if (isRedeclInCUDAHeader(TDT))
+          break;
+        ArgExprType = TDT->getDecl()->getUnderlyingType();
+      }
+    }
+
+    ArgExprType = DerefQualType(ArgExprType);
+    return ArgExprType.isNull()
+               ? ""
+               : DpctGlobalInfo::getReplacedTypeName(ArgExprType);
+  };
+}
+
 inline std::function<std::string(const CallExpr *)> getTemplateArg(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     std::string TemplateArgStr = "";

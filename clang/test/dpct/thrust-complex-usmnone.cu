@@ -3,7 +3,7 @@
 // RUN: dpct --format-range=none --optimize-migration -out-root %T/thrust-complex-usmnone %s --cuda-include-path="%cuda-path/include" -usm-level=none -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp --match-full-lines %s
 // RUN: %if build_lit %{icpx -c -fsycl -DNO_BUILD_TEST  %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp -o %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.o %}
-#ifndef NO_BUILD_TEST
+
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #define DPCT_USM_LEVEL_NONE
@@ -80,6 +80,7 @@ int main() {
 //  CC<thrust::complex, double> c4;
 
 // Check that no warnings are issued when using complex operators
+#ifndef NO_BUILD_TEST
 // CHECK:   cf = cf + 1.0;
   cf = cf + 1.0;
 // CHECK:   cf = cf - 1.0;
@@ -90,6 +91,7 @@ int main() {
   cf = cf / 1.0;
 // CHECK:   bool b1 = (cf == 1.0);
   bool b1 = (cf == 1.0);
+#endif
 // CHECK:  std::complex<float> cf2;
 // CHECK-NEXT:   bool b2 = (cf != cf2);
   thrust::complex<float> cf2;
@@ -156,4 +158,3 @@ int foo(){
   thrust::complex<float> c3 = c1 + c2;
   printf("c1 + c2 = (%f, %f)\n", c3.real(), c3.imag());
 }
-#endif

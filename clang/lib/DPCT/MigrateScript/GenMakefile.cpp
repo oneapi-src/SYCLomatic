@@ -162,6 +162,13 @@ static void getCompileInfo(
         continue;
       }
 
+      SmallString<512> TargetNameStr(TargetName);
+      if (path::is_absolute(TargetNameStr)) {
+        llvm::sys::path::replace_path_prefix(TargetNameStr,
+                                             InRoot.getCanonicalPath(), ".");
+      }
+      TargetName = TargetNameStr.c_str();
+
       clang::tooling::UnifiedPath OutDirectory =
           dpct::appendPath(Directory, TargetName);
       // Use relative path to out-root directory.

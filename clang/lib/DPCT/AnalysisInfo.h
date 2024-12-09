@@ -3118,20 +3118,15 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
   std::string KeyForDeclCounter = HFInfo.DeclLocFile.getCanonicalPath().str() +
                                   ":" + std::to_string(HFInfo.DeclLocOffset);
 
-  if (DpctGlobalInfo::getTempVariableDeclCounterMap().count(
-          KeyForDeclCounter) == 0) {
-    DpctGlobalInfo::getTempVariableDeclCounterMap().insert(
-        {KeyForDeclCounter, {}});
-  }
-  auto Iter =
-      DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
+  auto &Counter =
+      DpctGlobalInfo::getTempVariableDeclCounterMap()[KeyForDeclCounter];
   switch (HFT) {
   case HelperFuncType::HFT_DefaultQueue:
   case HelperFuncType::HFT_DefaultQueuePtr:
-    ++Iter->second.DefaultQueueCounter;
+    ++Counter.DefaultQueueCounter;
     break;
   case HelperFuncType::HFT_CurrentDevice:
-    ++Iter->second.CurrentDeviceCounter;
+    ++Counter.CurrentDeviceCounter;
     break;
   default:
     break;
