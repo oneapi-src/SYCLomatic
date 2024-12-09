@@ -1052,7 +1052,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       ::dnnl::memory::dims{M, 1},
       dpct::dnnl::memory_desc_ext::to_dnnl_data_type(compute_desc->_bias_type),
       ::dnnl::memory::dims{1, M});
-  if (compute_desc->_epilogue == epilogue_t::gelu_bias ||
+  if (compute_desc->_epilogue == epilogue_t::bias ||
+      compute_desc->_epilogue == epilogue_t::gelu_bias ||
       compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
     po_bias_mem =
         new ::dnnl::memory(po_bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
@@ -1095,15 +1096,22 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 
   // post-op implemented by separate primitives
   sycl::event post_op_prim_event;
-  switch (compute_desc->_epilogue) {
-  case epilogue_t::gelu_aux: {
-    auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
-        handle->get_engine(), ::dnnl::prop_kind::forward_training,
-        ::dnnl::algorithm::eltwise_gelu_tanh, dst_md, dst_md);
-    auto gelu_prim = ::dnnl::eltwise_forward(gelu_pd);
-    std::unordered_map<int, ::dnnl::memory> gelu_args;
-    gelu_args.insert({DNNL_ARG_SRC, *dst_mem});
-    gelu_args.insert({DNNL_ARG_DST, *dst_mem});
+  if (compute_desc->_epilogue == epilogue_t::gelu_aux ||
+      compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
+    sycl::event prev_event = matmul_prim_event;
+    if (compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
+      auto po_bias_pd = ::dnnl::binary::primitive_desc(
+          handle->get_engine(), ::dnnl::algorithm::binary_add, dst_md,
+          po_bias_md, dst_md);
+      auto po_bias_prim = ::dnnl::binary(po_bias_pd);
+      std::unordered_map<int, ::dnnl::memory> po_bias_args;
+      po_bias_args.insert({DNNL_ARG_SRC_0, *dst_mem});
+      po_bias_args.insert({DNNL_ARG_SRC_1, *po_bias_mem});
+      po_bias_args.insert({DNNL_ARG_DST, *dst_mem});
+      sycl::event prev_event = ::dnnl::sycl_interop::execute(
+          po_bias_prim, handle->get_engine_stream(), po_bias_args,
+          {matmul_prim_event});
+    }
     size_t size_of_element =
         dpct::detail::library_data_size[static_cast<unsigned int>(
             d_desc->_type)] /
@@ -1111,31 +1119,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     sycl::event copy_e = dpct::blas::matrix_mem_copy_async(
         compute_desc->_epilogue_aux_pointer, new_d,
         compute_desc->_epilogue_aux_ld, d_desc->_ld, m, n, size_of_element,
-        ::dpct::cs::memcpy_direction::automatic, *q_ptr, {matmul_prim_event});
-    post_op_prim_event = ::dnnl::sycl_interop::execute(
-        gelu_prim, handle->get_engine_stream(), gelu_args, {copy_e});
-    break;
-  }
-  case epilogue_t::gelu_aux_bias: {
-    auto po_bias_pd = ::dnnl::binary::primitive_desc(
-        handle->get_engine(), ::dnnl::algorithm::binary_add, dst_md, po_bias_md,
-        dst_md);
-    auto po_bias_prim = ::dnnl::binary(po_bias_pd);
-    std::unordered_map<int, ::dnnl::memory> po_bias_args;
-    po_bias_args.insert({DNNL_ARG_SRC_0, *dst_mem});
-    po_bias_args.insert({DNNL_ARG_SRC_1, *po_bias_mem});
-    po_bias_args.insert({DNNL_ARG_DST, *dst_mem});
-    sycl::event po_bias_e =
-        ::dnnl::sycl_interop::execute(po_bias_prim, handle->get_engine_stream(),
-                                      po_bias_args, {matmul_prim_event});
-    size_t size_of_element =
-        dpct::detail::library_data_size[static_cast<unsigned int>(
-            d_desc->_type)] /
-        8;
-    sycl::event copy_e = dpct::blas::matrix_mem_copy_async(
-        compute_desc->_epilogue_aux_pointer, new_d,
-        compute_desc->_epilogue_aux_ld, d_desc->_ld, m, n, size_of_element,
-        ::dpct::cs::memcpy_direction::automatic, *q_ptr, {po_bias_e});
+        ::dpct::cs::memcpy_direction::automatic, *q_ptr, {prev_event});
+
     auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
         handle->get_engine(), ::dnnl::prop_kind::forward_training,
         ::dnnl::algorithm::eltwise_gelu_tanh, dst_md, dst_md);
@@ -1145,9 +1130,6 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     gelu_args.insert({DNNL_ARG_DST, *dst_mem});
     post_op_prim_event = ::dnnl::sycl_interop::execute(
         gelu_prim, handle->get_engine_stream(), gelu_args, {copy_e});
-  }
-  default:
-    break;
   }
 
   // end of calling oneDNN
