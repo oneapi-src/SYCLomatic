@@ -1633,6 +1633,12 @@ void MapNamesBlas::setExplicitNamespaceMap(
       {"CUBLASLT_EPILOGUE_GELU_BIAS",
        MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::epilogue_t::gelu_bias"},
+      {"CUBLASLT_EPILOGUE_GELU_AUX",
+       MapNames::getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::gelu_aux"},
+      {"CUBLASLT_EPILOGUE_GELU_AUX_BIAS",
+       MapNames::getLibraryHelperNamespace() +
+           "blas_gemm::experimental::epilogue_t::gelu_aux_bias"},
       {"CUBLASLT_MATRIX_TRANSFORM_DESC_SCALE_TYPE",
        MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::transform_desc_t::attribute::scale_type"},
