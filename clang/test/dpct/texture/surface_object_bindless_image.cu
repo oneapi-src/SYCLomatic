@@ -8,11 +8,11 @@
 template<typename T> __global__ void kernel(cudaSurfaceObject_t surf, T data) {
   int i;
   float j, k, l, z, m;
-  // CHECK: dpct::experimental::write_image_by_byte(surf, int(i), data);
+  // CHECK: sycl::ext::oneapi::experimental::write_image(surf, int(i) / sizeof(data), data);
   surf1Dwrite(data, surf, i);
-  // CHECK: dpct::experimental::write_image_by_byte(surf, sycl::int2(i, j), data);
+  // CHECK: sycl::ext::oneapi::experimental::write_image(surf, sycl::int2(i / sizeof(data), j), data);
   surf2Dwrite(data, surf, i, j);
-  // CHECK: dpct::experimental::write_image_by_byte(surf, sycl::int3(i, j, z), data);
+  // CHECK:   sycl::ext::oneapi::experimental::write_image(surf, sycl::int3(i / sizeof(data), j, z), data);
   surf3Dwrite(data, surf, i, j, z);
 
 }
@@ -24,7 +24,7 @@ __global__ void kernelWriteToLayeredSurface(cudaSurfaceObject_t surface, int wid
 
     if (x < width && y < height && layer < layers) {
         uchar4 value = make_uchar4(255, 0, 0, 255);
-        // CHECK: dpct::experimental::write_image_array_by_byte(surface, sycl::int2(x * sizeof(sycl::uchar4), y), layer, value);
+        // CHECK: sycl::ext::oneapi::experimental::write_image(surface, sycl::int2(x * sizeof(sycl::uchar4) / sizeof(value), y), layer, value);
         surf2DLayeredwrite(value, surface, x * sizeof(uchar4), y, layer);
     }
 }

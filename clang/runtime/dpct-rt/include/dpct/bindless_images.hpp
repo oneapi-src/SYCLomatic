@@ -1424,36 +1424,6 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
   dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, s, q);
   sycl::free(temp, q);
 }
-
-// A wrapper for sycl write_image function for the byte addressing image.
-template <typename DataT, typename CoordT>
-void write_image_by_byte(
-    const sycl::ext::oneapi::experimental::unsampled_image_handle &imageHandle,
-    CoordT &&coords, const DataT &color) {
-  if constexpr (std::is_scalar_v<CoordT>) {
-    return sycl::ext::oneapi::experimental::write_image<DataT, CoordT>(
-        imageHandle, coords / sizeof(DataT), color);
-  } else {
-    coords[0] = coords[0] / sizeof(DataT);
-    return sycl::ext::oneapi::experimental::write_image<DataT, CoordT>(
-        imageHandle, coords, color);
-  }
-}
-
-// A wrapper for sycl write_image_array function for the byte addressing image.
-template <typename DataT, typename CoordT>
-void write_image_array_by_byte(
-    const sycl::ext::oneapi::experimental::unsampled_image_handle &imageHandle,
-    CoordT &&coords, unsigned int ArrayLayer, const DataT &color) {
-  if constexpr (std::is_scalar_v<CoordT>) {
-    return sycl::ext::oneapi::experimental::write_image_array<DataT, CoordT>(
-        imageHandle, coords / sizeof(DataT), ArrayLayer, color);
-  } else {
-    coords[0] = coords[0] / sizeof(DataT);
-    return sycl::ext::oneapi::experimental::write_image_array<DataT, CoordT>(
-        imageHandle, coords, ArrayLayer, color);
-  }
-}
 // A wrapper for sycl sample_image function for the byte addressing image.
 template <typename DataT, typename HintT = DataT, typename CoordT>
 DataT sample_image_by_byte(
