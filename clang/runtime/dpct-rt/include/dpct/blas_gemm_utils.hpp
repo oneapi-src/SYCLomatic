@@ -821,7 +821,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
                                 ::dpct::cs::memcpy_direction::device_to_device);
   // FIXME: The following "wait" is not necessary in theory, but without it,
   // there will be some runtime issues.
-  e_init.wait();
+  q_ptr->wait();
 
   // alpha = alpha * scale_a * scale_b
   sycl::event e_scale_new_a = detail::scale_new_a(
