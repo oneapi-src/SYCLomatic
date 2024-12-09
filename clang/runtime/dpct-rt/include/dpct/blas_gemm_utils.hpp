@@ -33,7 +33,7 @@ enum class pointer_mode_t {
   alpha_device_vector_beta_zero,
   alpha_device_vector_beta_host
 };
-enum class epilogue_t { nop = 1, relu };
+enum class epilogue_t { nop = 1, relu, bias, gelu, gelu_bias };
 
 class descriptor;
 using descriptor_ptr = descriptor *;
@@ -674,7 +674,8 @@ template <typename T> struct absmax_impl {
 ///   scale_type==float && a_type==int8 && b_type==int8 && c_type==int32;
 ///   scale_type==float && a_type==float && b_type==float && c_type==float.
 /// Currently, this function only supports beta==0 or beta==1.
-/// Currently, this function only supports the relu epilogue.
+/// Currently, this function only supports the relu, bias, gelu and gelu_bias
+/// epilogue.
 /// NOTE: Non-col-major matrix will be converted to col-major matrix before.
 /// TODO: Impl row-major matmul without layout conversion.
 /// multiplication and converted back after multiplication.
@@ -741,9 +742,13 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   }
 
   if (compute_desc->_epilogue != epilogue_t::nop &&
-      compute_desc->_epilogue != epilogue_t::relu) {
-    throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-                             "supports relu epilogue currently.");
+      compute_desc->_epilogue != epilogue_t::relu &&
+      compute_desc->_epilogue != epilogue_t::bias &&
+      compute_desc->_epilogue != epilogue_t::gelu &&
+      compute_desc->_epilogue != epilogue_t::gelu_bias) {
+    throw std::runtime_error(
+        "dpct::blas_gemm::experimental::matmul() only "
+        "supports relu, bias, gelu and gelu_bias epilogue currently.");
   }
 
   if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
@@ -928,11 +933,45 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   if (!beta_is_zero) {
     matmul_ops.append_binary(::dnnl::algorithm::binary_add, bias_md);
     matmul_args.insert(
-        {DNNL_ARG_ATTR_MULTIPLE_POST_OP(0) | DNNL_ARG_SRC_1, *bias_mem});
+        {DNNL_ARG_ATTR_MULTIPLE_POST_OP(matmul_ops.len() - 1) | DNNL_ARG_SRC_1,
+         *bias_mem});
   }
-  if (compute_desc->_epilogue != epilogue_t::nop) {
+
+  ::dnnl::memory *po_bias_mem = nullptr;
+  switch (compute_desc->_epilogue) {
+  case epilogue_t::relu:
     matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
+    break;
+  case epilogue_t::bias:
+  case epilogue_t::gelu_bias: {
+    auto po_bias_md =
+        ::dnnl::memory::desc(::dnnl::memory::dims{M, 1},
+                             dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
+                                 compute_desc->_bias_type),
+                             ::dnnl::memory::dims{1, M});
+    po_bias_mem =
+        new ::dnnl::memory(po_bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
+#ifdef DPCT_USM_LEVEL_NONE
+    detail::type_dispatch<detail::set_buffer_impl>(
+        compute_desc->_bias_type, po_bias_mem, compute_desc->_bias_pointer);
+#else
+    po_bias_mem->set_data_handle(compute_desc->_bias_pointer);
+#endif
+    matmul_ops.append_binary(::dnnl::algorithm::binary_add, po_bias_md);
+    matmul_args.insert(
+        {DNNL_ARG_ATTR_MULTIPLE_POST_OP(matmul_ops.len() - 1) | DNNL_ARG_SRC_1,
+         *po_bias_mem});
+    if (compute_desc->_epilogue == epilogue_t::gelu_bias)
+      matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f, 0.f);
+    break;
   }
+  case epilogue_t::gelu:
+    matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_gelu_tanh, 0.f, 0.f);
+    break;
+  default:
+    break;
+  }
+
   matmul_attr.set_post_ops(matmul_ops);
 
   auto matmul_pd = ::dnnl::matmul::primitive_desc(
@@ -973,6 +1012,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       delete weights_mem;
       delete bias_mem;
       delete dst_mem;
+      if (po_bias_mem)
+        delete po_bias_mem;
       if (new_a_allocated)
         ::dpct::cs::free((void *)new_a, *q_ptr);
       if (new_b_allocated)
