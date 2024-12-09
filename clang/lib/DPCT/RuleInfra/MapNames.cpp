@@ -529,7 +529,7 @@ void MapNames::setExplicitNamespaceMap(
        std::make_shared<TypeNameRule>(
            DpctGlobalInfo::useExtBindlessImages()
                ? getClNamespace() +
-                     "ext::oneapi::experimental::sampled_image_handle"
+                     "ext::oneapi::experimental::unsampled_image_handle"
                : getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
       {"textureReference",
