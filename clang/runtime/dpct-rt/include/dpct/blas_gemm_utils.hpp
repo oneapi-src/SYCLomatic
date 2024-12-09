@@ -704,9 +704,9 @@ template <typename T> struct absmax_impl {
 } // namespace detail
 
 /// This function does the following operations:
-/// (1) D_temp = epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta *
-/// C) (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::absmax_d_pointer
-/// is specified (3) D = scale_d * D_temp
+/// (1) D_temp = epilogue(alpha * scale_a * op_a(A) * scale_b * op_b(B) + beta * C)
+/// (2) Amax = absmax(D_temp) when matmul_desc_t::attribute::absmax_d_pointer is specified
+/// (3) D = scale_d * D_temp
 ///   "op_a" is specified by the matmul_desc_t::attribute::trans_a
 ///   (default is nontrans)
 ///   "op_b" is specified by the matmul_desc_t::attribute::trans_b
