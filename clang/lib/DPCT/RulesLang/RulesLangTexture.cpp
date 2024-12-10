@@ -520,9 +520,8 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
               "CUarray", "CUarray_format", "CUarray_format_enum",
               "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
               "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
-              "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC", "CUtexref",
-              "textureReference", "cudaMipmappedArray",
-              "cudaMipmappedArray_t"))))))
+              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference",
+              "cudaMipmappedArray", "cudaMipmappedArray_t"))))))
           .bind("texType"),
       this);
 
@@ -985,20 +984,16 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
     if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
-      if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
-        return;
-      }
-    } else if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-      if (!VD->hasGlobalStorage()) {
+      if ((FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) &&
+          !DpctGlobalInfo::useExtBindlessImages()) {
         return;
       }
     }
-    emplaceTransformation(new ReplaceToken(
-        TL->getBeginLoc(), TL->getEndLoc(),
-        DpctGlobalInfo::useExtBindlessImages()
-            ? MapNames::getClNamespace() +
-                  "ext::oneapi::experimental::sampled_image_handle"
-            : MapNames::getDpctNamespace() + "image_wrapper_base_p"));
+    llvm::outs() <<"eeee " << TL->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << "\n";
+    ExprAnalysis A;
+    A.analyze(*TL);
+    emplaceTransformation(A.getReplacement());
+    A.applyAllSubExprRepl();
     requestFeature(HelperFeatureEnum::device_ext);
   }
 }

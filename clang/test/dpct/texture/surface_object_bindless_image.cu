@@ -22,7 +22,7 @@ template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
   surf3Dread<T>(&i, surf, k, j, i);
 }
 void surface_driver_function() {
-  // CHECK: sycl::ext::oneapi::experimental::sampled_image_handle surf;
+  // CHECK: sycl::ext::oneapi::experimental::unsampled_image_handle surf;
   CUsurfObject surf;
   // CHECK: dpct::image_data pResDesc;
   CUDA_RESOURCE_DESC pResDesc;
