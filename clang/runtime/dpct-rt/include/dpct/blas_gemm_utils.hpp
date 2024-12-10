@@ -777,7 +777,6 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   const void *new_b = b;
   const void *new_c = c;
   void *new_d = d;
-  bool new_a_allocated = false;
   bool new_b_allocated = false;
   bool new_c_allocated = false;
   bool new_d_allocated = false;
@@ -792,7 +791,6 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
           a_desc->_type)] /
       8;
   new_a = ::dpct::cs::malloc(size_of_element * a_desc->_cols * new_lda, *q_ptr);
-  new_a_allocated = true;
   sycl::event e_init;
   if (a_desc->_order != order_t::col)
     e_init = detail::type_dispatch<detail::matrix_transform_impl>(
@@ -1051,8 +1049,7 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       delete dst_mem;
       if (po_bias_mem)
         delete po_bias_mem;
-      if (new_a_allocated)
-        ::dpct::cs::free((void *)new_a, *q_ptr);
+      ::dpct::cs::free((void *)new_a, *q_ptr);
       if (new_b_allocated)
         ::dpct::cs::free((void *)new_b, *q_ptr);
       if (new_c_allocated)
