@@ -234,55 +234,43 @@ namespace detail {
 /// Sacling each row of matrix D with the corresponding element of vector alpha.
 template <class T, class Tscale>
 sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
-                             T *a, const Tscale *alpha, bool vector_alpha,
-                             bool device_alpha, const Tscale *a_scale,
-                             const Tscale *b_scale,
-                             const std::vector<sycl::event> &deps) {
-  Tscale alpha_value = 1.0;
-  if (!device_alpha)
-    alpha_value = *alpha;
+                             void *a_ptr, const void *alpha_ptr,
+                             bool vector_alpha, bool device_alpha,
+                             const void *a_scale_ptr, const void *b_scale_ptr,
+                             const std::vector<sycl::event> &dependencies) {
+  std::vector<sycl::event> deps = dependencies;
+  T *a = (T *)a_ptr;
+  Tscale *alpha = (Tscale *)alpha_ptr;
+  Tscale *a_scale = (Tscale *)a_scale_ptr;
+  Tscale *b_scale = (Tscale *)b_scale_ptr;
 
-  return q_ptr->submit([&](sycl::handler &cgh) {
+  if (!device_alpha) {
+    Tscale *alpha_host = alpha;
+    alpha = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
+    deps.push_back(
+        ::dpct::cs::memcpy(*q_ptr, alpha, alpha_host, sizeof(Tscale)));
+  }
+  if (!a_scale_ptr)
+    a_scale = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
+  if (!b_scale_ptr)
+    b_scale = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
+
+  sycl::event e = q_ptr->submit([&](sycl::handler &cgh) {
     cgh.depends_on(deps);
 #ifdef DPCT_USM_LEVEL_NONE
     access_wrapper<T *> a_acc(a, cgh);
-    auto alpha_buf = device_alpha ? dpct::get_buffer(alpha)
-                                  : dpct::buffer_t(sycl::range<1>(0));
-    auto a_scale_buf =
-        a_scale ? dpct::get_buffer(a_scale) : dpct::buffer_t(sycl::range<1>(0));
-    auto b_scale_buf =
-        b_scale ? dpct::get_buffer(b_scale) : dpct::buffer_t(sycl::range<1>(0));
-    auto alpha_acc =
-        alpha_buf.template get_access<sycl::access_mode::read_write>(cgh);
-    auto a_scale_acc =
-        a_scale_buf.template get_access<sycl::access_mode::read_write>(cgh);
-    auto b_scale_acc =
-        b_scale_buf.template get_access<sycl::access_mode::read_write>(cgh);
-    size_t alpha_offset = 0, a_offset = 0, b_offset = 0;
-    if (device_alpha)
-      alpha_offset =
-          (dpct::byte_t *)alpha -
-          dpct::detail::mem_mgr::instance().translate_ptr(alpha).alloc_ptr;
-    if (a_scale)
-      a_offset =
-          (dpct::byte_t *)a_scale -
-          dpct::detail::mem_mgr::instance().translate_ptr(a_scale).alloc_ptr;
-    if (b_scale)
-      b_offset =
-          (dpct::byte_t *)b_scale -
-          dpct::detail::mem_mgr::instance().translate_ptr(b_scale).alloc_ptr;
+    access_wrapper<Tscale *> alpha_acc(alpha, cgh);
+    access_wrapper<Tscale *> a_scale_acc(a_scale, cgh);
+    access_wrapper<Tscale *> b_scale_acc(b_scale, cgh);
 #endif
     cgh.parallel_for<
         ::dpct::cs::kernel_name<class scale_with_alpha, T, Tscale>>(
         sycl::range<2>(rows, cols), [=](sycl::id<2> index) {
 #ifdef DPCT_USM_LEVEL_NONE
           T *a_data = a_acc.get_raw_pointer();
-          const Tscale *alpha_data =
-              device_alpha ? (Tscale *)(&alpha_acc[0] + alpha_offset) : nullptr;
-          const Tscale *a_scale_data =
-              a_scale ? (Tscale *)(&a_scale_acc[0] + a_offset) : nullptr;
-          const Tscale *b_scale_data =
-              b_scale ? (Tscale *)(&b_scale_acc[0] + b_offset) : nullptr;
+          Tscale *alpha_data = alpha_acc.get_raw_pointer();
+          Tscale *a_scale_data = a_scale_acc.get_raw_pointer();
+          Tscale *b_scale_data = b_scale_acc.get_raw_pointer();
 #else
           T *a_data = a;
           const Tscale *alpha_data = alpha;
@@ -294,18 +282,27 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
           size_t idx = rows * col_idx + row_idx;
 
           Tscale ab_scale = 1.0;
-          if (a_scale)
+          if (a_scale_ptr)
             ab_scale = ab_scale * a_scale_data[0];
-          if (b_scale)
+          if (b_scale_ptr)
             ab_scale = ab_scale * b_scale_data[0];
 
           if (vector_alpha)
             a_data[idx] = a_data[idx] * alpha_data[row_idx] * ab_scale;
-          else if (device_alpha)
-            a_data[idx] = a_data[idx] * alpha_data[0] * ab_scale;
           else
-            a_data[idx] = a_data[idx] * alpha_value * ab_scale;
+            a_data[idx] = a_data[idx] * alpha_data[0] * ab_scale;
         });
+  });
+  return q_ptr->submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      if (!device_alpha)
+        ::dpct::cs::free(alpha, *q_ptr);
+      if (!a_scale_ptr)
+        ::dpct::cs::free(a_scale, *q_ptr);
+      if (!b_scale_ptr)
+        ::dpct::cs::free(b_scale, *q_ptr);
+    });
   });
 }
 
@@ -319,34 +316,20 @@ inline sycl::event scale_new_a(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
   std::uint64_t key = dpct::detail::get_type_combination_id(a_type, scale_type);
   sycl::event e;
   switch (key) {
-  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
-                                             library_data_t::real_float): {
-    e = scale_new_a_impl<std::int8_t, float>(
-        q_ptr, rows, cols, (std::int8_t *)a, (const float *)alpha, vector_alpha,
-        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
-    break;
+#define __SCALE_NEW_A_IMPL_CASE(A_TYPE_ENUM, SCALE_TYPE_ENUM, A_TYPE,          \
+                                SCALE_TYPE)                                    \
+  case dpct::detail::get_type_combination_id(                                  \
+      library_data_t::A_TYPE_ENUM, library_data_t::SCALE_TYPE_ENUM): {         \
+    e = scale_new_a_impl<A_TYPE, SCALE_TYPE>(q_ptr, rows, cols, a, alpha,      \
+                                             vector_alpha, device_alpha,       \
+                                             a_scale, b_scale, deps);          \
+    break;                                                                     \
   }
-  case dpct::detail::get_type_combination_id(library_data_t::real_int32,
-                                             library_data_t::real_float): {
-    e = scale_new_a_impl<int, float>(
-        q_ptr, rows, cols, (int *)a, (const float *)alpha, vector_alpha,
-        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
-    break;
-  }
-  case dpct::detail::get_type_combination_id(library_data_t::real_int8,
-                                             library_data_t::real_int32): {
-    e = scale_new_a_impl<std::int8_t, int>(
-        q_ptr, rows, cols, (std::int8_t *)a, (const int *)alpha, vector_alpha,
-        device_alpha, (const int *)a_scale, (const int *)b_scale, deps);
-    break;
-  }
-  case dpct::detail::get_type_combination_id(library_data_t::real_float,
-                                             library_data_t::real_float): {
-    e = scale_new_a_impl<float, float>(
-        q_ptr, rows, cols, (float *)a, (const float *)alpha, vector_alpha,
-        device_alpha, (const float *)a_scale, (const float *)b_scale, deps);
-    break;
-  }
+    __SCALE_NEW_A_IMPL_CASE(real_int8, real_float, std::int8_t, float)
+    __SCALE_NEW_A_IMPL_CASE(real_int32, real_float, int, float)
+    __SCALE_NEW_A_IMPL_CASE(real_int8, real_int32, std::int8_t, int)
+    __SCALE_NEW_A_IMPL_CASE(real_float, real_float, float, float)
+#undef __SCALE_NEW_A_IMPL_CASE
   default:
     throw std::runtime_error("dpct::blas_gemm::experimental::detail::scale_new_"
                              "a_impl() does not support the data "
@@ -820,9 +803,6 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     e_init = ::dpct::cs::memcpy(*q_ptr, (void *)new_a, a,
                                 size_of_element * a_desc->_cols * new_lda,
                                 ::dpct::cs::memcpy_direction::device_to_device);
-  // FIXME: The following "wait" is not necessary in theory, but without it,
-  // there will be some runtime issues.
-  q_ptr->wait();
 
   // alpha = alpha * scale_a * scale_b
   sycl::event e_scale_new_a = detail::scale_new_a(
