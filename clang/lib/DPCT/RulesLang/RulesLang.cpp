@@ -345,7 +345,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasLtEpilogue_t", "cublasLtMatmulPreference_t",
               "cublasLtMatmulHeuristicResult_t", "CUjit_target",
               "cublasLtMatrixTransformDesc_t", "cudaGraphicsMapFlags",
-              "cudaGraphicsRegisterFlags"))))))
+              "cudaGraphicsRegisterFlags", "cudaExternalMemoryHandleType"))))))
           .bind("cudaTypeDef"),
       this);
 
@@ -355,7 +355,10 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::grid_group",
                   "cooperative_groups::__v1::thread_block_tile", "cudaGraph_t",
                   "cudaGraphExec_t", "cudaGraphNode_t", "cudaGraphicsResource",
-                  "cudaGraphicsResource_t"))))))
+                  "cudaGraphicsResource_t", "cudaExternalMemory_t",
+                  "cudaExternalMemoryHandleDesc",
+                  "cudaExternalMemoryMipmappedArrayDesc",
+                  "cudaExternalMemoryBufferDesc"))))))
           .bind("cudaTypeDefEA"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -1971,10 +1974,18 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
   if (!E)
     return;
   std::string EnumName = E->getNameInfo().getName().getAsString();
-  if (EnumName == "cudaComputeModeDefault" ||
-      EnumName == "cudaComputeModeExclusive" ||
-      EnumName == "cudaComputeModeProhibited" ||
-      EnumName == "cudaComputeModeExclusiveProcess") {
+  if (EnumName == "cudaStreamCaptureStatusInvalidated" ||
+      EnumName == "cudaExternalMemoryHandleTypeOpaqueWin32Kmt" ||
+      EnumName == "cudaExternalMemoryHandleTypeD3D12Heap" ||
+      EnumName == "cudaExternalMemoryHandleTypeD3D11Resource" ||
+      EnumName == "cudaExternalMemoryHandleTypeD3D11ResourceKmt" ||
+      EnumName == "cudaExternalMemoryHandleTypeNvSciBuf") {
+    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
+    return;
+  } else if (EnumName == "cudaComputeModeDefault" ||
+             EnumName == "cudaComputeModeExclusive" ||
+             EnumName == "cudaComputeModeProhibited" ||
+             EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
     return;
   } else if ((EnumName == "cudaStreamCaptureStatusActive" ||
@@ -1982,9 +1993,6 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
              !DpctGlobalInfo::useExtGraph()) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=graph");
-    return;
-  } else if (EnumName == "cudaStreamCaptureStatusInvalidated") {
-    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumName);
     return;
   } else if (!DpctGlobalInfo::useExtBindlessImages() &&
              (EnumName == "cudaGraphicsRegisterFlagsNone" ||
@@ -1994,7 +2002,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
               EnumName == "cudaGraphicsRegisterFlagsTextureGather" ||
               EnumName == "cudaGraphicsMapFlagsNone" ||
               EnumName == "cudaGraphicsMapFlagsReadOnly" ||
-              EnumName == "cudaGraphicsMapFlagsWriteDiscard")) {
+              EnumName == "cudaGraphicsMapFlagsWriteDiscard" ||
+              EnumName == "cudaExternalMemoryHandleTypeOpaqueFd" ||
+              EnumName == "cudaExternalMemoryHandleTypeOpaqueWin32" ||
+              EnumName == "cudaExternalMemoryHandleTypeD3D12Resource")) {
     report(E->getBeginLoc(), Diagnostics::TRY_EXPERIMENTAL_FEATURE, false,
            EnumName, "--use-experimental-features=bindless_images");
     return;

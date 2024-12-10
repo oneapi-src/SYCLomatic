@@ -496,3 +496,60 @@ TYPE_REWRITE_ENTRY(
             WARNING_FACTORY(
                 Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
                 STR("--use-experimental-features=bindless_images")))))
+
+// External Resource Handle Descs
+TYPE_REWRITE_ENTRY(
+    "cudaExternalMemory_t",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalMemory_t")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getClNamespace() +
+                             "ext::oneapi::experimental::external_mem")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalMemoryHandleDesc",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalMemoryHandleDesc")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_mem_handle_desc")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalMemoryMipmappedArrayDesc",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalMemoryMipmappedArrayDesc")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_mem_img_desc")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))
+
+TYPE_REWRITE_ENTRY(
+    "cudaExternalMemoryBufferDesc",
+    TYPE_CONDITIONAL_FACTORY(
+        [](const TypeLoc) { return DpctGlobalInfo::useSYCLCompat(); },
+        WARNING_FACTORY(Diagnostics::UNSUPPORT_SYCLCOMPAT,
+                        STR("cudaExternalMemoryBufferDesc")),
+        TYPE_CONDITIONAL_FACTORY(
+            checkEnableBindlessImagesForType(),
+            TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                             "experimental::external_mem_buf_desc")),
+            WARNING_FACTORY(
+                Diagnostics::TRY_EXPERIMENTAL_FEATURE, TYPESTR,
+                STR("--use-experimental-features=bindless_images")))))

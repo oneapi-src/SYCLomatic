@@ -126,11 +126,11 @@ ENTRY(cudaEventRecordWithFlags, cudaEventRecordWithFlags, false, NO_FLAG, P7, "c
 ENTRY(cudaEventSynchronize, cudaEventSynchronize, true, NO_FLAG, P0, "DPCT1012")
 
 // external resource interoperability functions of runtime API
-ENTRY(cudaDestroyExternalMemory, cudaDestroyExternalMemory, false, NO_FLAG, P4, "comment")
+ENTRY(cudaDestroyExternalMemory, cudaDestroyExternalMemory, true, NO_FLAG, P4, "Successful")
 ENTRY(cudaDestroyExternalSemaphore, cudaDestroyExternalSemaphore, false, NO_FLAG, P4, "comment")
-ENTRY(cudaExternalMemoryGetMappedBuffer, cudaExternalMemoryGetMappedBuffer, false, NO_FLAG, P4, "comment")
-ENTRY(cudaExternalMemoryGetMappedMipmappedArray, cudaExternalMemoryGetMappedMipmappedArray, false, NO_FLAG, P4, "comment")
-ENTRY(cudaImportExternalMemory, cudaImportExternalMemory, false, NO_FLAG, P4, "comment")
+ENTRY(cudaExternalMemoryGetMappedBuffer, cudaExternalMemoryGetMappedBuffer, true, NO_FLAG, P4, "Successful")
+ENTRY(cudaExternalMemoryGetMappedMipmappedArray, cudaExternalMemoryGetMappedMipmappedArray, true, NO_FLAG, P4, "Successful")
+ENTRY(cudaImportExternalMemory, cudaImportExternalMemory, true, NO_FLAG, P4, "Successful")
 ENTRY(cudaImportExternalSemaphore, cudaImportExternalSemaphore, false, NO_FLAG, P4, "comment")
 ENTRY(cudaSignalExternalSemaphoresAsync, cudaSignalExternalSemaphoresAsync, false, NO_FLAG, P4, "comment")
 ENTRY(cudaWaitExternalSemaphoresAsync, cudaWaitExternalSemaphoresAsync, false, NO_FLAG, P4, "comment")

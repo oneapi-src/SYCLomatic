@@ -992,9 +992,19 @@ public:
 };
 
 class GraphicsInteropRule : public NamedMigrationRule<GraphicsInteropRule> {
+  static MapNames::MapTy ExtMemHandleDescNames;
+
+  const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
+  const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context);
+  void replaceExtMemHandleDataExpr(const MemberExpr *ME, ASTContext &Context);
+  inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
+    return DpctGlobalInfo::findParent<MemberExpr>(S);
+  }
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  bool removeExtraMemberAccess(const MemberExpr *ME);
 };
 
 class RulesLangAddrSpaceConvRule
