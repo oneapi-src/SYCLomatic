@@ -375,7 +375,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UseExtBindlessImages,
     CALL_FACTORY_ENTRY("surf2DLayeredwrite",
                        CALL(MapNames::getClNamespace() +
-                                "ext::oneapi::experimental::write_image",
+                                "ext::oneapi::experimental::write_image_array",
                             ARG(1),
                             CALL(MapNames::getClNamespace() + "int2",
                                  BO(BinaryOperatorKind::BO_Div, ARG(2),
