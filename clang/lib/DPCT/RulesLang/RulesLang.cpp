@@ -3228,14 +3228,12 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
           Str += getIndent(IndentLoc, SM).str();
           Str += "return 0;";
 
-          Str = "[](){" + Str + "}()";
+          Str = "[&](){" + Str + "}()";
           emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
           return;
-
-        } else {
-          Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
-                "}}.single_task([=](){})";
         }
+        Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
+              "}}.single_task([=](){})";
 
       } else {
         if (DpctGlobalInfo::useSYCLCompat()) {
@@ -3268,14 +3266,13 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
           Str += MapNames::getDpctNamespace() +
-                 "get_current_device().queues_wait_and_throw()";
+                 "get_current_device().queues_wait_and_throw(); return 0;";
 
-          Str = "[](){" + Str + "}()";
+          Str = "[&](){" + Str + "}()";
           emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
           return;
-        } else {
-          Str = StreamName + "->" + "single_task([=](){})";
         }
+        Str = StreamName + "->" + "single_task([=](){})";
 
       } else {
         Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
