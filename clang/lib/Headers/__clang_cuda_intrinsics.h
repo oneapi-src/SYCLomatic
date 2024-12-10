@@ -443,84 +443,55 @@ inline __device__ double2 __ldg(const double2 *ptr) {
   return ret;
 }
 #if defined(SYCLomatic_CUSTOMIZATION)
-#define __LD_OVERLOADS(F)                                                      \
-  inline __device__ char F(const char *ptr);                                   \
-  inline __device__ signed char F(const signed char *ptr);                     \
-  inline __device__ short F(const short *ptr);                                 \
-  inline __device__ int F(const int *ptr);                                     \
-  inline __device__ long F(const long *ptr);                                   \
-  inline __device__ long long F(const long long *ptr);                         \
-  inline __device__ unsigned char F(const unsigned char *ptr);                 \
-  inline __device__ unsigned short F(const unsigned short *ptr);               \
-  inline __device__ unsigned int F(const unsigned int *ptr);                   \
-  inline __device__ unsigned long F(const unsigned long *ptr);                 \
-  inline __device__ unsigned long long F(const unsigned long long *ptr);       \
-  inline __device__ char2 F(const char2 *ptr);                                 \
-  inline __device__ char4 F(const char4 *ptr);                                 \
-  inline __device__ short2 F(const short2 *ptr);                               \
-  inline __device__ short4 F(const short4 *ptr);                               \
-  inline __device__ int2 F(const int2 *ptr);                                   \
-  inline __device__ int4 F(const int4 *ptr);                                   \
-  inline __device__ longlong2 F(const longlong2 *ptr);                         \
-  inline __device__ uchar2 F(const uchar2 *ptr);                               \
-  inline __device__ uchar4 F(const uchar4 *ptr);                               \
-  inline __device__ ushort2 F(const ushort2 *ptr);                             \
-  inline __device__ ushort4 F(const ushort4 *ptr);                             \
-  inline __device__ uint2 F(const uint2 *ptr);                                 \
-  inline __device__ uint4 F(const uint4 *ptr);                                 \
-  inline __device__ ulonglong2 F(const ulonglong2 *ptr);                       \
-  inline __device__ float F(const float *ptr);                                 \
-  inline __device__ float2 F(const float2 *ptr);                               \
-  inline __device__ float4 F(const float4 *ptr);                               \
-  inline __device__ double F(const double *ptr);                               \
-  inline __device__ double2 F(const double2 *ptr);
 
-#define __ST_OVERLOADS(F)                                                      \
-  inline __device__ void F(const char *ptr, char value);                       \
-  inline __device__ void F(const signed char *ptr, signed char value);         \
-  inline __device__ void F(const short *ptr, short value);                     \
-  inline __device__ void F(const int *ptr, int value);                         \
-  inline __device__ void F(const long *ptr, long value);                       \
-  inline __device__ void F(const long long *ptr, long long value);             \
-  inline __device__ void F(const unsigned char *ptr, unsigned char value);     \
-  inline __device__ void F(const unsigned short *ptr, unsigned short value);   \
-  inline __device__ void F(const unsigned int *ptr, unsigned int value);       \
-  inline __device__ void F(const unsigned long *ptr, unsigned long value);     \
-  inline __device__ void F(const unsigned long long *ptr,                      \
-                           unsigned long long value);                          \
-  inline __device__ void F(const char2 *ptr, char2 value);                     \
-  inline __device__ void F(const char4 *ptr, char4 value);                     \
-  inline __device__ void F(const short2 *ptr, short2 value);                   \
-  inline __device__ void F(const short4 *ptr, short4 value);                   \
-  inline __device__ void F(const int2 *ptr, int2 value);                       \
-  inline __device__ void F(const int4 *ptr, int4 value);                       \
-  inline __device__ void F(const longlong2 *ptr, longlong2 value);             \
-  inline __device__ void F(const uchar2 *ptr, uchar2 value);                   \
-  inline __device__ void F(const uchar4 *ptr, uchar4 value);                   \
-  inline __device__ void F(const ushort2 *ptr, ushort2 value);                 \
-  inline __device__ void F(const ushort4 *ptr, ushort4 value);                 \
-  inline __device__ void F(const uint2 *ptr, uint2 value);                     \
-  inline __device__ void F(const uint4 *ptr, uint4 value);                     \
-  inline __device__ void F(const ulonglong2 *ptr, ulonglong2 value);           \
-  inline __device__ void F(const float *ptr, float value);                     \
-  inline __device__ void F(const float2 *ptr, float2 value);                   \
-  inline __device__ void F(const float4 *ptr, float4 value);                   \
-  inline __device__ void F(const double *ptr, double value);                   \
-  inline __device__ void F(const double2 *ptr, double2 value);
+#define __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, T)                          \
+  inline __device__ T F(const T *ptr);                                         \
+  inline __device__ void F(const T *ptr, T value);
 
-__LD_OVERLOADS(__ldcg)
-__LD_OVERLOADS(__ldca)
-__LD_OVERLOADS(__ldcs)
-__LD_OVERLOADS(__ldlu)
-__LD_OVERLOADS(__ldcv)
+#define __DPCT_LD_ST_CACHE_HINTS_FUNC(F)                                       \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, char)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, signed char)                      \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, short)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, int)                              \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, long)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, long long)                        \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned char)                    \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned short)                   \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned int)                     \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned long)                    \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned long long)               \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, char2)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, char4)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, short2)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, short4)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, int2)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, int4)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, longlong2)                        \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uchar2)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uchar4)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, ushort2)                          \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, ushort4)                          \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uint2)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uint4)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, ulonglong2)                       \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, float)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, float2)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, float4)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, double)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, double2)
 
-__ST_OVERLOADS(__stwb)
-__ST_OVERLOADS(__stcg)
-__ST_OVERLOADS(__stcs)
-__ST_OVERLOADS(__stwt)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldcg)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldca)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldcs)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldlu)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldcv)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stwb)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stcg)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stcs)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stwt)
 
-#undef __LD_OVERLOADS
-#undef __ST_OVERLOADS
+#undef __DPCT_LD_ST_CACHE_HINTS_FUNC
+#undef __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS
 #endif // !SYCLomatic_CUSTOMIZATION
 
 // TODO: Implement these as intrinsics, so the backend can work its magic on
