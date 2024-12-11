@@ -42,6 +42,7 @@ enum class epilogue_t {
   gelu_bias,
   gelu_aux,
   gelu_aux_bias,
+  dgelu,
   bgradb
 };
 
@@ -668,7 +669,7 @@ template <typename T> struct absmax_impl {
 ///   scale_type==float && a_type==float && b_type==float && c_type==float.
 /// Currently, this function only supports beta==0 or beta==1.
 /// Currently, this function only supports the relu, bias, gelu, gelu_bias,
-/// gelu_aux and gelu_aux_bias epilogue.
+/// gelu_aux, gelu_aux_bias and dgelu epilogue.
 /// NOTE: Non-col-major matrix will be converted to col-major matrix before.
 /// TODO: Impl row-major matmul without layout conversion.
 /// multiplication and converted back after multiplication.
@@ -740,10 +741,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       compute_desc->_epilogue != epilogue_t::gelu &&
       compute_desc->_epilogue != epilogue_t::gelu_bias &&
       compute_desc->_epilogue != epilogue_t::gelu_aux &&
-      compute_desc->_epilogue != epilogue_t::gelu_aux_bias) {
+      compute_desc->_epilogue != epilogue_t::gelu_aux_bias &&
+      compute_desc->_epilogue != epilogue_t::dgelu) {
     throw std::runtime_error("dpct::blas_gemm::experimental::matmul() only "
-                             "supports relu, bias, gelu, gelu_bias, gelu_aux "
-                             "and gelu_aux_bias epilogue currently.");
+                             "supports relu, bias, gelu, gelu_bias, gelu_aux, "
+                             "gelu_aux_bias and dgelu epilogue currently.");
   }
 
   if (!(compute_desc->_scale_type == library_data_t::real_int32 &&
@@ -945,6 +947,25 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
 #endif
   }
 
+  ::dnnl::memory *po_aux_mem = nullptr;
+  auto po_aux_md = ::dnnl::memory::desc(
+      ::dnnl::memory::dims{M, N},
+      dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
+          compute_desc->_epilogue_aux_data_type),
+      ::dnnl::memory::dims{1,
+                           static_cast<long>(compute_desc->_epilogue_aux_ld)});
+  if (compute_desc->_epilogue == epilogue_t::dgelu) {
+    po_aux_mem =
+        new ::dnnl::memory(po_aux_md, handle->get_engine(), DNNL_MEMORY_NONE);
+#ifdef DPCT_USM_LEVEL_NONE
+    detail::type_dispatch<detail::set_buffer_impl>(
+        compute_desc->_epilogue_aux_data_type, po_aux_mem,
+        compute_desc->_epilogue_aux_pointer);
+#else
+    po_aux_mem->set_data_handle(compute_desc->_epilogue_aux_pointer);
+#endif
+  }
+
   switch (compute_desc->_epilogue) {
   case epilogue_t::relu:
     matmul_ops.append_eltwise(::dnnl::algorithm::eltwise_relu, 0.f, 0.f);
@@ -1010,6 +1031,21 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
     gelu_args.insert({DNNL_ARG_DST, *dst_mem});
     post_op_prim_event = ::dnnl::sycl_interop::execute(
         gelu_prim, handle->get_engine_stream(), gelu_args, {copy_e});
+  } else if (compute_desc->_epilogue == epilogue_t::dgelu) {
+    auto gelu_pd = ::dnnl::eltwise_forward::primitive_desc(
+        handle->get_engine(), ::dnnl::prop_kind::forward_training,
+        ::dnnl::algorithm::eltwise_gelu_tanh, po_aux_md, po_aux_md);
+    auto dgelu_pd = ::dnnl::eltwise_backward::primitive_desc(
+        handle->get_engine(), ::dnnl::algorithm::eltwise_gelu_tanh, dst_md,
+        dst_md, po_aux_md, gelu_pd);
+    auto dgelu_prim = ::dnnl::eltwise_backward(dgelu_pd);
+    std::unordered_map<int, ::dnnl::memory> dgelu_args;
+    dgelu_args.insert({DNNL_ARG_SRC, *po_aux_mem});
+    dgelu_args.insert({DNNL_ARG_DIFF_DST, *dst_mem});
+    dgelu_args.insert({DNNL_ARG_DIFF_SRC, *dst_mem});
+    post_op_prim_event =
+        ::dnnl::sycl_interop::execute(dgelu_prim, handle->get_engine_stream(),
+                                      dgelu_args, {matmul_prim_event});
   }
 
   // end of calling oneDNN
@@ -1049,6 +1085,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
       delete dst_mem;
       if (po_bias_mem)
         delete po_bias_mem;
+      if (po_aux_mem)
+        delete po_aux_mem;
       ::dpct::cs::free((void *)new_a, *q_ptr);
       if (new_b_allocated)
         ::dpct::cs::free((void *)new_b, *q_ptr);
