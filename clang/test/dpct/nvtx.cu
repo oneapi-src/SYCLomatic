@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --out-root %T/nvtx %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/nvtx/nvtx.dp.cpp
 // RUN: %if build_lit %{icpx -c -fsycl %T/nvtx/nvtx.dp.cpp -o %T/nvtx/nvtx.dp.o %}
