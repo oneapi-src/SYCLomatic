@@ -1126,6 +1126,7 @@ public:
   using arg_type = std::tuple_element_t<account_for_default_params<i>(),
 					  std::tuple<Ts...>>;
   static constexpr int params_num = sizeof...(Ts);
+
 private:
   template <int i>
   static constexpr int get_offset() {
@@ -1188,8 +1189,8 @@ public:
 
 template <typename Func, std::size_t N> struct nth_argument_type {
   template <typename R, typename... Args>
-  static auto helper(R(Args...))
-      -> std::tuple_element_t<N, std::tuple<Args...>>;
+  static auto
+      helper(R(Args...)) -> std::tuple_element_t<N, std::tuple<Args...>>;
   using type = decltype(helper(std::declval<Func>()));
 };
 
