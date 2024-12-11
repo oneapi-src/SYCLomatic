@@ -154,6 +154,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapCUDNN();
   initRewriterMapErrorHandling();
   initRewriterMapLIBCU();
+  initRewriterMapNvtx();
   initRewriterMapEvent();
   initRewriterMapMath();
   initRewriterMapCooperativeGroups();

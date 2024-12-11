@@ -18,6 +18,7 @@
 #include "CodePin/GenCodePinHeader.h"
 #include "RulesSecurity/Homoglyph.h"
 #include "RulesLangLib/LIBCUAPIMigration.h"
+#include "RulesLangLib/NvtxAPIMigration.h"
 #include "MigrationRuleManager.h"
 #include "RulesSecurity/MisleadingBidirectional.h"
 #include "RulesCCL/NCCLAPIMigration.h"
@@ -171,6 +172,7 @@ REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Solver)
 REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration,RuleGroupKind::RK_Solver)
 
 REGISTER_RULE(LIBCURule, PassKind::PK_Migration, RuleGroupKind::RK_Libcu)
+REGISTER_RULE(NvtxRule, PassKind::PK_Migration)
 
 REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)

@@ -75,6 +75,7 @@ private:
   static void initRewriterMapCUDNN();
   static void initRewriterMapErrorHandling();
   static void initRewriterMapLIBCU();
+  static void initRewriterMapNvtx();
   static void initRewriterMapEvent();
   static void initRewriterMapMath();
   static void initRewriterMapCooperativeGroups();
