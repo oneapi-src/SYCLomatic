@@ -250,10 +250,14 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
     deps.push_back(
         ::dpct::cs::memcpy(*q_ptr, alpha, alpha_host, sizeof(Tscale)));
   }
-  if (!a_scale_ptr)
+  if (!a_scale_ptr) {
     a_scale = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
-  if (!b_scale_ptr)
+    deps.push_back(::dpct::cs::fill<Tscale>(*q_ptr, a_scale, 1.0, 1));
+  }
+  if (!b_scale_ptr) {
     b_scale = (Tscale *)::dpct::cs::malloc(sizeof(Tscale), *q_ptr);
+    deps.push_back(::dpct::cs::fill<Tscale>(*q_ptr, b_scale, 1.0, 1));
+  }
 
   sycl::event e = q_ptr->submit([&](sycl::handler &cgh) {
     cgh.depends_on(deps);
@@ -281,11 +285,7 @@ sycl::event scale_new_a_impl(::dpct::cs::queue_ptr q_ptr, int rows, int cols,
           size_t col_idx = index.get(1);
           size_t idx = rows * col_idx + row_idx;
 
-          Tscale ab_scale = 1.0;
-          if (a_scale_ptr)
-            ab_scale = ab_scale * a_scale_data[0];
-          if (b_scale_ptr)
-            ab_scale = ab_scale * b_scale_data[0];
+          Tscale ab_scale = a_scale_data[0] * b_scale_data[0];
 
           if (vector_alpha)
             a_data[idx] = a_data[idx] * alpha_data[row_idx] * ab_scale;
