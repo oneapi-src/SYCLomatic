@@ -1206,16 +1206,26 @@ int runDPCT(int argc, const char **argv) {
 
   if (MigrateBuildScriptOnly ||
       DpctGlobalInfo::getBuildScript() == BuildScriptKind::BS_Python) {
-    SmallString<128> PythonRuleFilePath(DpctInstallPath.getCanonicalPath());
-    llvm::sys::path::append(
-        PythonRuleFilePath,
-        Twine("extensions/python_rules/"
-              "python_build_script_migration_rule_ipex.yaml"));
-    if (llvm::sys::fs::exists(PythonRuleFilePath)) {
-      std::vector<clang::tooling::UnifiedPath> PythonRuleFiles{
-          PythonRuleFilePath};
-      importRules(PythonRuleFiles);
-      // generage helper functions file in the outroot dir here
+    // check if RuleFilePaths contains any user specified python migration rule
+    // file
+    bool pythonRuleFilePresent = std::any_of(
+        RuleFilePath.begin(), RuleFilePath.end(),
+        [](const clang::tooling::UnifiedPath &path) {
+          return path.getPath().contains("python_build_script_migration_rule");
+        });
+
+    if (!pythonRuleFilePresent) {
+      SmallString<128> PythonRuleFilePath(DpctInstallPath.getCanonicalPath());
+      llvm::sys::path::append(
+          PythonRuleFilePath,
+          Twine("extensions/python_rules/"
+                "python_build_script_migration_rule_pytorch.yaml"));
+      if (llvm::sys::fs::exists(PythonRuleFilePath)) {
+        std::vector<clang::tooling::UnifiedPath> PythonRuleFiles{
+            PythonRuleFilePath};
+        importRules(PythonRuleFiles);
+        // generage helper functions file in the outroot dir here
+      }
     }
   }
 

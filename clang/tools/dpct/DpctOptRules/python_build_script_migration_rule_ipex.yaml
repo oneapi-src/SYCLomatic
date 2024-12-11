@@ -113,6 +113,22 @@
   In: DPCPPExtension(${args})
   Out: DPCPPExtension(${args}, include_dirs=cpp_extension.include_paths(),)
 
+- Rule: rule_cpp_extension_load_no_extra_cflags
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cpp_extension_load_no_extra_cflags
+  In: torch.utils.cpp_extension.load(${args})
+  Out: torch.utils.cpp_extension.load(${args}, extra_cflags=['-fsycl'])
+
+- Rule: rule_cpp_extension_load_no_extra_ldflags
+  Kind: PythonRule
+  Priority: Fallback
+  MatchMode: Partial
+  PythonSyntax: cpp_extension_load_no_extra_ldflags
+  In: torch.utils.cpp_extension.load(${args})
+  Out: torch.utils.cpp_extension.load(${args}, extra_ldflags=['-fsycl'])
+
 - Rule: rule_BuildExtension
   Kind: PythonRule
   Priority: Fallback
