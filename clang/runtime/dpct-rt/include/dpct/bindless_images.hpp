@@ -615,7 +615,7 @@ static inline std::vector<sycl::event> dpct_memcpy_to_host(
     w_offset_src = 0;
     ++h_offset_src;
   }
-  if (s - offset_src > 0) {
+  if (s - offset_dest > 0) {
     const auto src_offset =
         sycl::range<3>(w_offset_src / ele_size, h_offset_src, 0);
     const auto dest_offset = sycl::range<3>(offset_dest / ele_size, 0, 0);
