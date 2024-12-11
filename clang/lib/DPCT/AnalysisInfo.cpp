@@ -5323,32 +5323,37 @@ void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
     EA.analyze(TL);
     return EA.getReplacedString();
   };
-  if (auto FTD = dyn_cast_or_null<FunctionTemplateDecl>(getParentDecl(FD))) {
-    FD = FTD->getTemplatedDecl();
-    if (auto TemplateParmsList = FTD->getTemplateParameters()) {
-      for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
-        auto TemplateParm = TemplateParmsList->getParam(i);
-        if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
-          if (TTPD->hasDefaultArgument() &&
-              !TTPD->defaultArgumentWasInherited()) {
-            TemplateParameterDefaultValueMap[i] =
-                " = " + analyzeTypeLoc(TTPD->getDefaultArgument()
-                                           .getTypeSourceInfo()
-                                           ->getTypeLoc());
-          }
-        } else if (auto NTTPD =
-                       dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
-          if (NTTPD->hasDefaultArgument() &&
-              !NTTPD->defaultArgumentWasInherited()) {
-            TemplateParameterDefaultValueMap[i] =
-                " = " + ExprAnalysis::ref(
-                            NTTPD->getDefaultArgument().getSourceExpression());
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*FD);
+  if (Parents.size()) {
+    if (auto FTD = Parents[0].get<FunctionTemplateDecl>()) {
+      FD = FTD->getTemplatedDecl();
+      if (auto TemplateParmsList = FTD->getTemplateParameters()) {
+        for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
+          auto TemplateParm = TemplateParmsList->getParam(i);
+          if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
+            if (TTPD->hasDefaultArgument() &&
+                !TTPD->defaultArgumentWasInherited()) {
+              TemplateParameterDefaultValueMap[i] =
+                  " = " + analyzeTypeLoc(TTPD->getDefaultArgument()
+                                             .getTypeSourceInfo()
+                                             ->getTypeLoc());
+            }
+          } else if (auto NTTPD =
+                         dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
+            if (NTTPD->hasDefaultArgument() &&
+                !NTTPD->defaultArgumentWasInherited()) {
+              TemplateParameterDefaultValueMap[i] =
+                  " = " +
+                  ExprAnalysis::ref(
+                      NTTPD->getDefaultArgument().getSourceExpression());
+            }
           }
         }
       }
     }
   }
-
   for (size_t i = 0; i < FD->param_size(); i++) {
     auto PDecl = FD->getParamDecl(i);
     if (!PDecl->hasInheritedDefaultArg()) {
