@@ -5351,11 +5351,13 @@ void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
 
   for (size_t i = 0; i < FD->param_size(); i++) {
     auto PDecl = FD->getParamDecl(i);
-    if (PDecl->hasDefaultArg() && !PDecl->hasInheritedDefaultArg()) {
-      if (auto UDA = PDecl->getUninstantiatedDefaultArg()) {
-        ParameterDefaultValueMap[i] = " = " + ExprAnalysis::ref(UDA);
-      } else if (auto DA = PDecl->getDefaultArg()) {
-        ParameterDefaultValueMap[i] = " = " + ExprAnalysis::ref(DA);
+    if (!PDecl->hasInheritedDefaultArg()) {
+      if (PDecl->hasUninstantiatedDefaultArg()) {
+        ParameterDefaultValueMap[i] =
+            " = " + ExprAnalysis::ref(PDecl->getUninstantiatedDefaultArg());
+      } else if (PDecl->hasDefaultArg()) {
+        ParameterDefaultValueMap[i] =
+            " = " + ExprAnalysis::ref(PDecl->getDefaultArg());
       }
     }
   }
@@ -5402,23 +5404,27 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
       return EA.getReplacedString();
     };
 
-    if (auto FTD = dyn_cast_or_null<FunctionTemplateDecl>(getParentDecl(FD))) {
-      FD = FTD->getTemplatedDecl();
-      if (auto TemplateParmsList = FTD->getTemplateParameters()) {
-        for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
-          auto TemplateParm = TemplateParmsList->getParam(i);
-          if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
-            TemplateParametersInfo.push_back(
-                std::string(TTPD->wasDeclaredWithTypename() ? "typename"
-                                                            : "class") +
-                std::string(TTPD->isParameterPack() ? "... " : " ") +
-                TTPD->getNameAsString());
-          } else if (auto NTTPD =
-                         dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
-            std::string DefVal;
-            TemplateParametersInfo.push_back(
-                analyzeTypeLoc(NTTPD->getTypeSourceInfo()->getTypeLoc()) + " " +
-                NTTPD->getNameAsString());
+    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto Parents = Context.getParents(*FD);
+    if (Parents.size()) {
+      if (auto FTD = Parents[0].get<FunctionTemplateDecl>()) {
+        FD = FTD->getTemplatedDecl();
+        if (auto TemplateParmsList = FTD->getTemplateParameters()) {
+          for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
+            auto TemplateParm = TemplateParmsList->getParam(i);
+            if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
+              TemplateParametersInfo.push_back(
+                  std::string(TTPD->wasDeclaredWithTypename() ? "typename"
+                                                              : "class") +
+                  std::string(TTPD->isParameterPack() ? "... " : " ") +
+                  TTPD->getNameAsString());
+            } else if (auto NTTPD =
+                           dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
+              std::string DefVal;
+              TemplateParametersInfo.push_back(
+                  analyzeTypeLoc(NTTPD->getTypeSourceInfo()->getTypeLoc()) +
+                  " " + NTTPD->getNameAsString());
+            }
           }
         }
       }
