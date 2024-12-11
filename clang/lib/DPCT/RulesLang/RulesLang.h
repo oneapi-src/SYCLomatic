@@ -442,11 +442,17 @@ class KernelCallRule : public NamedMigrationRule<KernelCallRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-  SourceLocation
-  removeTrailingSemicolon(const CallExpr *KCall,
-                          const ast_matchers::MatchFinder::MatchResult &Result);
+  SourceLocation findAndRemoveTrailingSemicolon(
+      const CallExpr *KCall,
+      const ast_matchers::MatchFinder::MatchResult &Result, bool Remove = true);
   void instrumentKernelLogsForCodePin(const CUDAKernelCallExpr *KCall,
                                       SourceLocation &EpilogLocation);
+};
+
+class KernelCallRefRule : public NamedMigrationRule<KernelCallRefRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
 /// Migration rule for device function calls

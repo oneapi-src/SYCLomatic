@@ -88,7 +88,6 @@ class KernelCallExpr;
 class DeviceFunctionInfo;
 class CallFunctionExpr;
 class DeviceFunctionDecl;
-class DeviceFunctionDeclInModule;
 class MemVarInfo;
 class VarInfo;
 class ExplicitInstantiationDecl;
@@ -237,6 +236,12 @@ struct RnnBackwardFuncInfo {
   std::string CompoundLoc;
   std::vector<std::string> RnnInputDeclLoc;
   std::vector<std::string> FuncArgs;
+};
+
+struct DeviceFunctionInfoForWrapper {
+  std::vector<std::pair<std::string, std::string>> ParametersInfo;
+  std::vector<std::string> TemplateParametersInfo;
+  std::shared_ptr<KernelCallExpr> KernelForWrapper;
 };
 
 // <function name, Info>
@@ -1136,8 +1141,6 @@ public:
   std::shared_ptr<DeviceFunctionDecl> insertDeviceFunctionDecl(
       const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
       const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList);
-  std::shared_ptr<DeviceFunctionDecl>
-  insertDeviceFunctionDeclInModule(const FunctionDecl *FD);
 
   // Build kernel and device function declaration replacements and store
   // them.
@@ -1340,6 +1343,8 @@ public:
   static bool useNoQueueDevice() {
     return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
   }
+  static void setCVersionCUDALaunchUsed() { CVersionCUDALaunchUsedFlag = true; }
+  static bool isCVersionCUDALaunchUsed() { return CVersionCUDALaunchUsedFlag; }
   static void setUseSYCLCompat(bool Flag = true) { UseSYCLCompatFlag = Flag; }
   static bool useSYCLCompat() { return UseSYCLCompatFlag; }
   static bool useEnqueueBarrier() {
@@ -1461,6 +1466,7 @@ public:
     return ConstantReplProcessedFlagMap;
   }
   static IncludeMapSetTy &getIncludeMapSet() { return IncludeMapSet; }
+  static auto &getWrapperRegisterMap() { return WrapperRegisterMap; }
   static auto &getCodePinTypeInfoVec() { return CodePinTypeInfoMap; }
   static auto &getCodePinTemplateTypeInfoVec() {
     return CodePinTemplateTypeInfoMap;
@@ -1662,6 +1668,7 @@ private:
   static unsigned HelperFuncPreferenceFlag;
   static bool AnalysisModeFlag;
   static bool UseSYCLCompatFlag;
+  static bool CVersionCUDALaunchUsedFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
@@ -1684,6 +1691,10 @@ private:
   static std::map<std::shared_ptr<TextModification>, bool>
       ConstantReplProcessedFlagMap;
   static IncludeMapSetTy IncludeMapSet;
+  static std::unordered_map<std::string,
+                            std::pair<std::shared_ptr<ExtReplacement>,
+                                      std::shared_ptr<ExtReplacement>>>
+      WrapperRegisterMap;
   static std::vector<std::pair<std::string, VarInfoForCodePin>>
       CodePinTypeInfoMap;
   static std::vector<std::pair<std::string, VarInfoForCodePin>>
@@ -2565,7 +2576,8 @@ public:
       LinkDecl(D, List, Info);
   }
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info);
-
+  void insertWrapper();
+  void collectInfoForWrapper(const FunctionDecl *FD);
   virtual ~DeviceFunctionDecl() = default;
 
 protected:
@@ -2588,7 +2600,10 @@ protected:
   bool IsDefFilePathNeeded = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
-
+  bool HasBody = false;
+  size_t DeclEnd;
+  std::map<int, std::string> TemplateParameterDefaultValueMap;
+  std::map<int, std::string> ParameterDefaultValueMap;
   static std::shared_ptr<DeviceFunctionInfo> &getFuncInfo(const FunctionDecl *);
   static std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
       FuncInfoMap;
@@ -2617,32 +2632,6 @@ private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,
                                 const FunctionDecl *Specialization);
   std::string getExtraParameters(LocInfo LI) override;
-};
-
-class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
-  void insertWrapper();
-  bool HasBody = false;
-  size_t DeclEnd;
-  std::string FuncName;
-  std::vector<std::pair<std::string, std::string>> ParametersInfo;
-  std::shared_ptr<KernelCallExpr> Kernel;
-  void buildParameterInfo(const FunctionDecl *FD);
-  void buildWrapperInfo(const FunctionDecl *FD);
-  void buildCallInfo(const FunctionDecl *FD);
-  std::vector<std::pair<std::string, std::string>> &getParametersInfo() {
-    return ParametersInfo;
-  }
-
-public:
-  DeviceFunctionDeclInModule(unsigned Offset,
-                             const clang::tooling::UnifiedPath &FilePathIn,
-                             const FunctionTypeLoc &FTL,
-                             const ParsedAttributes &Attrs,
-                             const FunctionDecl *FD);
-  DeviceFunctionDeclInModule(unsigned Offset,
-                             const clang::tooling::UnifiedPath &FilePathIn,
-                             const FunctionDecl *FD);
-  void emplaceReplacement() override;
 };
 
 // device function info includes parameters num, memory variable and call
@@ -2744,6 +2733,13 @@ public:
   bool isParameterReferenced(unsigned int Index);
   void setParameterReferencedStatus(unsigned int Index, bool IsReferenced);
   std::string getFunctionName() { return FunctionName; }
+  void collectInfoForWrapper(const FunctionDecl *FD);
+  void setModuleUsed() { ModuleUsed = true; }
+  bool isModuleUsed() { return ModuleUsed; }
+  std::shared_ptr<DeviceFunctionInfoForWrapper>
+  getDeviceFunctionInfoForWrapper() {
+    return DFInfoForWrapper;
+  }
 
 private:
   void mergeCalledTexObj(
@@ -2776,6 +2772,9 @@ private:
   bool CallGroupFunctionInControlFlow = false;
   bool HasCheckedCallGroupFunctionInControlFlow = false;
   OverloadedOperatorKind OO_Kind = OverloadedOperatorKind::OO_None;
+  bool WrapperInfoCollected = false;
+  bool ModuleUsed = false;
+  std::shared_ptr<DeviceFunctionInfoForWrapper> DFInfoForWrapper;
 };
 
 class KernelCallExpr : public CallFunctionExpr {
@@ -2854,8 +2853,7 @@ public:
       const std::pair<clang::tooling::UnifiedPath, unsigned> &LocInfo,
       const CallExpr *, bool IsAssigned = false);
   static std::shared_ptr<KernelCallExpr>
-  buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *,
-                  std::shared_ptr<DeviceFunctionInfo>);
+  buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *);
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
   void setEmitSizeofWarningFlag(bool Flag) { EmitSizeofWarning = Flag; }

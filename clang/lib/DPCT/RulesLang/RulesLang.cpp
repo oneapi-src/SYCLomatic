@@ -4433,6 +4433,111 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
+void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto launchAPIName = [&]() {
+    return hasAnyName("cudaLaunchKernel", "cudaLaunchCooperativeKernel");
+  };
+  MF.addMatcher(declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
+                                  unless(hasAncestor(cudaKernelCallExpr())),
+                                  unless(hasAncestor(callExpr(
+                                      callee(functionDecl(launchAPIName())))))))
+                    .bind("kernelRef"),
+                this);
+  MF.addMatcher(unresolvedLookupExpr().bind("unresolvedRef"), this);
+}
+
+void KernelCallRefRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto DRE = getAssistNodeAsType<DeclRefExpr>(Result, "kernelRef")) {
+    if (auto ParentCE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE)) {
+      if (auto Callee = ParentCE->getDirectCallee()) {
+        if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
+          return;
+        }
+      }
+    }
+    if (auto FD = dyn_cast<FunctionDecl>(DRE->getDecl())) {
+      if (auto DFI = DeviceFunctionDecl::LinkRedecls(FD)) {
+        DFI->collectInfoForWrapper(FD);
+      }
+    }
+
+    auto NLoc = DpctGlobalInfo::getSourceManager().getSpellingLoc(
+        DRE->getNameInfo().getBeginLoc());
+    emplaceTransformation(new InsertText(
+        NLoc.getLocWithOffset(DRE->getNameInfo().getAsString().length()),
+        "_wrapper"));
+    if (DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto &Map = DpctGlobalInfo::getWrapperRegisterMap();
+      auto Key = getStrFromLoc(SM.getSpellingLoc(DRE->getBeginLoc()));
+      if (!Map.count(Key)) {
+        Map.insert({getStrFromLoc(SM.getSpellingLoc(DRE->getBeginLoc())),
+                    {InsertBeforeStmt(DRE, MapNames::getDpctNamespace() +
+                                               "wrapper_register(")
+                         .getReplacement(DpctGlobalInfo::getContext()),
+                     InsertAfterStmt(DRE, ").get()")
+                         .getReplacement(DpctGlobalInfo::getContext())}});
+      }
+    }
+  }
+  if (auto ULE =
+          getAssistNodeAsType<UnresolvedLookupExpr>(Result, "unresolvedRef")) {
+    if (!DpctGlobalInfo::isCVersionCUDALaunchUsed()) {
+      return;
+    }
+    bool KernelRefFound = false;
+    for (auto *D : ULE->decls()) {
+      const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
+      if (!FD) {
+        if (const FunctionTemplateDecl *FTD =
+                dyn_cast<FunctionTemplateDecl>(D)) {
+          FD = FTD->getTemplatedDecl();
+        }
+      }
+      if (FD && FD->hasAttr<CUDAGlobalAttr>()) {
+        KernelRefFound = true;
+        break;
+      }
+    }
+    if (!KernelRefFound) {
+      return;
+    }
+    std::string TypeRef;
+    if (auto BO = DpctGlobalInfo::findParent<BinaryOperator>(ULE)) {
+      TypeRef = "decltype(" + ExprAnalysis::ref(BO->getLHS()) + ")";
+    } else if (auto VD = DpctGlobalInfo::findParent<VarDecl>(ULE)) {
+      TypeRef = "decltype(" + VD->getNameAsString() + ")";
+    } else if (auto RS = DpctGlobalInfo::findParent<ReturnStmt>(ULE)) {
+      auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(RS);
+      TypeRef =
+          getStmtSpelling(FD->getReturnTypeSourceRange(), FD->getSourceRange());
+    } else if (auto CE = DpctGlobalInfo::findParent<CallExpr>(ULE)) {
+      size_t N = 0;
+      for (auto Arg : CE->arguments()) {
+        if (Arg == ULE) {
+          break;
+        }
+        N++;
+      }
+      TypeRef = "typename " + MapNames::getDpctNamespace() +
+                "nth_argument_type<decltype(" +
+                ExprAnalysis::ref(CE->getCallee()) + "), " + std::to_string(N) +
+                ">::type";
+    }
+    if (!TypeRef.empty()) {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto &Map = DpctGlobalInfo::getWrapperRegisterMap();
+      Map.insert(
+          {getStrFromLoc(SM.getSpellingLoc(ULE->getBeginLoc())),
+           {InsertBeforeStmt(ULE, MapNames::getDpctNamespace() +
+                                      "wrapper_register<" + TypeRef + ">(")
+                .getReplacement(DpctGlobalInfo::getContext()),
+            InsertAfterStmt(ULE, ").get()")
+                .getReplacement(DpctGlobalInfo::getContext())}});
+    }
+  }
+}
 
 // kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -4536,6 +4641,41 @@ void KernelCallRule::runRule(
              false);
       return;
     }
+    bool IsDirectCall = true;
+    if (!KCall->getDirectCallee() &&
+        !dyn_cast<UnresolvedLookupExpr>(KCall->getCallee())) {
+      IsDirectCall = false;
+      std::string ReplStr;
+      llvm::raw_string_ostream OS(ReplStr);
+      OS << MapNames::getDpctNamespace() + "kernel_launch::launch("
+         << ExprAnalysis::ref(KCall->getCallee());
+      if (const CallExpr *Configs = KCall->getConfig()) {
+        size_t ConfigArgsNum = Configs->getNumArgs();
+        for (size_t i = 0; i < ConfigArgsNum; i++) {
+          if (auto Config = Configs->getArg(i)) {
+            if (i == 0 || i == 1) {
+              OS << ", " << ExprAnalysis::ref(Config);
+            } else if (i == 2 || i == 3) {
+              if (Config->isDefaultArgument()) {
+                OS << ", 0";
+              } else {
+                OS << ", " << ExprAnalysis::ref(Config);
+              }
+            }
+          }
+        }
+        size_t ArgsNum = KCall->getNumArgs();
+        for (size_t i = 0; i < ArgsNum; i++) {
+          if (auto Arg = KCall->getArg(i)) {
+            if (!Arg->isDefaultArgument()) {
+              OS << ", " << ExprAnalysis::ref(Arg);
+            }
+          }
+        }
+        OS << ")";
+        emplaceTransformation(new ReplaceStmt(KCall, OS.str()));
+      }
+    }
 
     const auto &SM = (*Result.Context).getSourceManager();
 
@@ -4543,17 +4683,19 @@ void KernelCallRule::runRule(
       // Report warning message
       report(KCall->getBeginLoc(), Diagnostics::KERNEL_CALLEE_MACRO_ARG, false);
     }
-
-    // Remove KCall in the original location
-    auto KCallSpellingRange = getTheLastCompleteImmediateRange(
-        KCall->getBeginLoc(), KCall->getEndLoc());
-    auto KCallLen = SM.getCharacterData(KCallSpellingRange.second) -
-                    SM.getCharacterData(KCallSpellingRange.first) +
-                    Lexer::MeasureTokenLength(KCallSpellingRange.second, SM,
-                                              Result.Context->getLangOpts());
-    emplaceTransformation(
-        new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
-    auto EpilogLocation = removeTrailingSemicolon(KCall, Result);
+    if (IsDirectCall) {
+      // Remove KCall in the original location
+      auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+          KCall->getBeginLoc(), KCall->getEndLoc());
+      auto KCallLen = SM.getCharacterData(KCallSpellingRange.second) -
+                      SM.getCharacterData(KCallSpellingRange.first) +
+                      Lexer::MeasureTokenLength(KCallSpellingRange.second, SM,
+                                                Result.Context->getLangOpts());
+      emplaceTransformation(
+          new ReplaceText(KCallSpellingRange.first, KCallLen, ""));
+    }
+    auto EpilogLocation = findAndRemoveTrailingSemicolon(
+        KCall, Result, IsDirectCall ? true : false);
     if (DpctGlobalInfo::isCodePinEnabled()) {
       instrumentKernelLogsForCodePin(KCall, EpilogLocation);
     }
@@ -4573,11 +4715,11 @@ void KernelCallRule::runRule(
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
-    if (!FD->isTemplateInstantiation()){
+    if (IsDirectCall && !FD->isTemplateInstantiation()) {
       DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
     }
     const CallExpr *Config = KCall->getConfig();
-    if (Config) {
+    if (IsDirectCall && Config) {
       if (Config->getNumArgs() > 2) {
         const Expr *SharedMemSize = Config->getArg(2);
         if (containSizeOfType(SharedMemSize)) {
@@ -4620,8 +4762,42 @@ void KernelCallRule::runRule(
     }
     if (!LaunchKernelCall)
       return;
+    const Expr *CalleeDRE = LaunchKernelCall->getArg(0);
+    bool IsFuncTypeErased = true;
+    auto QT = CalleeDRE->getType();
+    if (QT->isFunctionType()) {
+      IsFuncTypeErased = false;
+    } else if (QT->isPointerType()) {
+      const Type *PointeeType = QT->getPointeeType().getTypePtr();
+      if (PointeeType->isFunctionType()) {
+        IsFuncTypeErased = false;
+      }
+    }
+    if (IsFuncTypeErased) {
+      DpctGlobalInfo::setCVersionCUDALaunchUsed();
+    }
+    if (auto CCast =
+            dyn_cast<CStyleCastExpr>(CalleeDRE->IgnoreImplicitAsWritten())) {
+      CalleeDRE = CCast->getSubExpr();
+    }
+    if (auto ICE = dyn_cast<ImplicitCastExpr>(CalleeDRE)) {
+      if (ICE->getCastKind() != clang::CK_FunctionToPointerDecay) {
+        std::string ReplStr;
+        llvm::raw_string_ostream OS(ReplStr);
+        OS << MapNames::getDpctNamespace() << "kernel_launch::launch(";
+        size_t ArgsNum = LaunchKernelCall->getNumArgs();
+        for (size_t i = 0; i < ArgsNum; i++) {
+          if (auto Arg = LaunchKernelCall->getArg(i)) {
+            OS << (i == 0 ? "" : ", ") << ExprAnalysis::ref(Arg);
+          }
+        }
+        OS << ")";
+        emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
+        return;
+      }
+    }
     if (!IsAssigned)
-      removeTrailingSemicolon(LaunchKernelCall, Result);
+      findAndRemoveTrailingSemicolon(LaunchKernelCall, Result);
     if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,
                                                             IsAssigned)) {
       emplaceTransformation(new ReplaceStmt(LaunchKernelCall, true, false, ""));
@@ -4630,24 +4806,24 @@ void KernelCallRule::runRule(
 }
 
 // Find and remove the semicolon after the kernel call
-SourceLocation KernelCallRule::removeTrailingSemicolon(
-    const CallExpr *KCall,
-    const ast_matchers::MatchFinder::MatchResult &Result) {
+SourceLocation KernelCallRule::findAndRemoveTrailingSemicolon(
+    const CallExpr *KCall, const ast_matchers::MatchFinder::MatchResult &Result,
+    bool Remove) {
   const auto &SM = (*Result.Context).getSourceManager();
   auto KELoc =
       getTheLastCompleteImmediateRange(KCall->getBeginLoc(), KCall->getEndLoc())
           .second;
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).value();
   if (Tok.is(tok::TokenKind::semi)) {
-    emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+    if (Remove) {
+      emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
+    }
     return Lexer::findNextToken(Tok.getLocation(), SM, LangOptions())
         .value()
         .getLocation();
   }
   return Tok.getLocation();
 }
-
-
 
 bool isRecursiveDeviceFuncDecl(const FunctionDecl* FD) {
   // Build call graph for FunctionDecl and look for cycles in call graph.
