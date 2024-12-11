@@ -1424,17 +1424,17 @@ static inline void dpct_memcpy(image_mem_wrapper *dest, size_t w_offset_dest,
   dpct_memcpy(dest, w_offset_dest, h_offset_dest, temp, s, q);
   sycl::free(temp, q);
 }
-// A wrapper for sycl sample_image function for the byte addressing image.
+// A wrapper for sycl fetch_image function for the byte addressing image.
 template <typename DataT, typename HintT = DataT, typename CoordT>
-DataT sample_image_by_byte(
-    const sycl::ext::oneapi::experimental::sampled_image_handle &imageHandle,
+DataT fetch_image_by_byte(
+    const sycl::ext::oneapi::experimental::unsampled_image_handle &imageHandle,
     CoordT &&coords) {
   if constexpr (std::is_scalar_v<CoordT>) {
-    return sycl::ext::oneapi::experimental::sample_image<DataT, HintT, CoordT>(
+    return sycl::ext::oneapi::experimental::fetch_image<DataT, HintT, CoordT>(
         imageHandle, coords / sizeof(DataT));
   } else {
     coords[0] = coords[0] / sizeof(DataT);
-    return sycl::ext::oneapi::experimental::sample_image<DataT, HintT, CoordT>(
+    return sycl::ext::oneapi::experimental::fetch_image<DataT, HintT, CoordT>(
         imageHandle, coords);
   }
 }

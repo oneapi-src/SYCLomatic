@@ -24,7 +24,7 @@ __global__ void kernelWriteToLayeredSurface(cudaSurfaceObject_t surface, int wid
 
     if (x < width && y < height && layer < layers) {
         uchar4 value = make_uchar4(255, 0, 0, 255);
-        // CHECK: sycl::ext::oneapi::experimental::write_image(surface, sycl::int2(x * sizeof(sycl::uchar4) / sizeof(value), y), layer, value);
+        // CHECK: sycl::ext::oneapi::experimental::write_image_array(surface, sycl::int2(x * sizeof(sycl::uchar4) / sizeof(value), y), layer, value);
         surf2DLayeredwrite(value, surface, x * sizeof(uchar4), y, layer);
     }
 }
@@ -33,17 +33,17 @@ __global__ void kernelWriteToLayeredSurface(cudaSurfaceObject_t surface, int wid
 template<typename T> __global__ void kernel2(cudaSurfaceObject_t surf) {
   int i;
   float j, k, l, m;
-  // CHECK: dpct::experimental::sample_image_by_byte<T>(surf, float(i));
+  // CHECK: dpct::experimental::fetch_image_by_byte<T>(surf, int(i));
   surf1Dread<T>(surf, i);
-  // CHECK: i = dpct::experimental::sample_image_by_byte<T>(surf, float(i));
+  // CHECK: i = dpct::experimental::fetch_image_by_byte<T>(surf, int(i));
   surf1Dread<T>(&i, surf, i);
-  // CHECK: dpct::experimental::sample_image_by_byte<T>(surf, sycl::float2(j, i));
+  // CHECK: dpct::experimental::fetch_image_by_byte<T>(surf, sycl::int2(j, i));
   surf2Dread<T>(surf, j, i);
-  // CHECK: i = dpct::experimental::sample_image_by_byte<T>(surf, sycl::float2(j, i));
+  // CHECK: i = dpct::experimental::fetch_image_by_byte<T>(surf, sycl::int2(j, i));
   surf2Dread<T>(&i, surf, j, i);
-  // CHECK: dpct::experimental::sample_image_by_byte<T>(surf, sycl::float3(k, j, i));
+  // CHECK: dpct::experimental::fetch_image_by_byte<T>(surf, sycl::int3(k, j, i));
   surf3Dread<T>(surf, k, j, i);
-  // CHECK: i = dpct::experimental::sample_image_by_byte<T>(surf, sycl::float3(k, j, i));
+  // CHECK: i = dpct::experimental::fetch_image_by_byte<T>(surf, sycl::int3(k, j, i));
   surf3Dread<T>(&i, surf, k, j, i);
 }
 int main() {

@@ -409,7 +409,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::device_ext,
         ENTRY_TEXTURE("surf1Dread", 0x01,
                       MapNames::getLibraryHelperNamespace() +
-                          "experimental::sample_image_by_byte",
+                          "experimental::fetch_image_by_byte",
                       1)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ENTRY_TEXTURE("surf1Dread", 0x01, "read_byte", 1)))
@@ -420,7 +420,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::device_ext,
         ENTRY_TEXTURE("surf2Dread", 0x02,
                       MapNames::getLibraryHelperNamespace() +
-                          "experimental::sample_image_by_byte",
+                          "experimental::fetch_image_by_byte",
                       1, 2)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ENTRY_TEXTURE("surf2Dread", 0x02, "read_byte", 1,
@@ -431,7 +431,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::device_ext,
         ENTRY_TEXTURE("surf3Dread", 0x03,
                       MapNames::getLibraryHelperNamespace() +
-                          "experimental::sample_image_by_byte",
+                          "experimental::fetch_image_by_byte",
                       1, 2, 3)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ENTRY_TEXTURE("surf3Dread", 0x03, "read_byte", 1, 2,
