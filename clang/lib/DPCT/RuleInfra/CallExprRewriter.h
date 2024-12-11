@@ -1678,7 +1678,6 @@ public:
       if (auto *MCE = llvm::dyn_cast<CXXMemberCallExpr>(Call)) {
         if (auto *Callee = llvm::dyn_cast<MemberExpr>(MCE->getCallee())) {
           const Expr *Base = Callee->getBase();
-          std::string BaseStr;
           if (!isa<CXXThisExpr>(Base)) {
             ExprAnalysis EA(Base);
             OS << EA.getReplacedString();
