@@ -6,7 +6,23 @@
 //
 //===----------------------------------------------------------------------===//
 
-REMOVE_API_FACTORY_ENTRY_WITH_MSG("nvtxNameCudaStreamA", "NVTX API is for debugging purposes only.")
-REMOVE_API_FACTORY_ENTRY_WITH_MSG("nvtxRangePushA", "NVTX API is for debugging purposes only.")
-REMOVE_API_FACTORY_ENTRY_WITH_MSG("nvtxRangePushW", "NVTX API is for debugging purposes only.")
-REMOVE_API_FACTORY_ENTRY_WITH_MSG("nvtxRangePop", "NVTX API is for debugging purposes only.")
+REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+    "nvtxNameCudaStreamA",
+    "it annotates source code to provide contextual information to the CUDA "
+    "analysis tool. Consider using Intel(R) Instrumentation and Tracing "
+    "Technology (ITT) API to implement a similar function.")
+REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+    "nvtxRangePushA",
+    "it annotates source code to provide contextual information to the CUDA "
+    "analysis tool. Consider using Intel(R) Instrumentation and Tracing "
+    "Technology (ITT) API to implement a similar function.")
+REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+    "nvtxRangePushW",
+    "it annotates source code to provide contextual information to the CUDA "
+    "analysis tool. Consider using Intel(R) Instrumentation and Tracing "
+    "Technology (ITT) API to implement a similar function.")
+REMOVE_API_FACTORY_ENTRY_WITH_MSG(
+    "nvtxRangePop",
+    "it annotates source code to provide contextual information to the CUDA "
+    "analysis tool. Consider using Intel(R) Instrumentation and Tracing "
+    "Technology (ITT) API to implement a similar function.")
