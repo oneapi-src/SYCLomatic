@@ -4434,16 +4434,13 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 void KernelCallRefRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  auto launchAPIName = [&]() {
-    return hasAnyName("cudaLaunchKernel", "cudaLaunchCooperativeKernel");
-  };
   MF.addMatcher(declRefExpr(allOf(to(functionDecl(hasAttr(attr::CUDAGlobal))),
-                                  unless(hasAncestor(cudaKernelCallExpr())),
-                                  unless(hasAncestor(callExpr(
-                                      callee(functionDecl(launchAPIName())))))))
+                                  unless(hasAncestor(cudaKernelCallExpr()))))
                     .bind("kernelRef"),
                 this);
-  MF.addMatcher(unresolvedLookupExpr().bind("unresolvedRef"), this);
+  MF.addMatcher(unresolvedLookupExpr(unless(hasAncestor(cudaKernelCallExpr())))
+                    .bind("unresolvedRef"),
+                this);
 }
 
 void KernelCallRefRule::runRule(
@@ -4502,6 +4499,13 @@ void KernelCallRefRule::runRule(
     }
     if (!KernelRefFound) {
       return;
+    }
+    if (auto ParentCE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(ULE)) {
+      if (auto Callee = ParentCE->getDirectCallee()) {
+        if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
+          return;
+        }
+      }
     }
     std::string TypeRef;
     if (auto BO = DpctGlobalInfo::findParent<BinaryOperator>(ULE)) {
