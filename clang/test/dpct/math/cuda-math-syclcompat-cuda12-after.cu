@@ -44,20 +44,19 @@ __global__ void kernelFuncSIMD() {
 #endif
   // CHECK: u_3 = sycl::min<unsigned>(u + u_1, u_2);
   u_3 = __viaddmin_u32(u, u_1, u_2);
-#ifndef NO_BUILD_TEST
-  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<short>(u, u_1, syclcompat::maximum(), &b_1, &b_2);
+  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<sycl::short2>(u, u_1, syclcompat::maximum(), &b_1, &b_2);
   u_2 = __vibmax_s16x2(u, u_1, &b_1, &b_2);
   // CHECK: i_2 = syclcompat::maximum()(i, i_1, &b_1);
   i_2 = __vibmax_s32(i, i_1, &b_1);
-  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<unsigned short>(u, u_1, syclcompat::maximum(), &b_1, &b_2);
+  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<sycl::ushort2>(u, u_1, syclcompat::maximum(), &b_1, &b_2);
   u_2 = __vibmax_u16x2(u, u_1, &b_1, &b_2);
   // CHECK: u_2 = syclcompat::maximum()(u, u_1, &b_1);
   u_2 = __vibmax_u32(u, u_1, &b_1);
-  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<short>(u, u_1, syclcompat::minimum(), &b_1, &b_2);
+  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<sycl::short2>(u, u_1, syclcompat::minimum(), &b_1, &b_2);
   u_2 = __vibmin_s16x2(u, u_1, &b_1, &b_2);
   // CHECK: i_2 = syclcompat::minimum()(i, i_1, &b_1);
   i_2 = __vibmin_s32(i, i_1, &b_1);
-  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<unsigned short>(u, u_1, syclcompat::minimum(), &b_1, &b_2);
+  // CHECK: u_2 = syclcompat::vectorized_binary_with_pred<sycl::ushort2>(u, u_1, syclcompat::minimum(), &b_1, &b_2);
   u_2 = __vibmin_u16x2(u, u_1, &b_1, &b_2);
   // CHECK: u_2 = syclcompat::minimum()(u, u_1, &b_1);
   u_2 = __vibmin_u32(u, u_1, &b_1);
@@ -65,7 +64,6 @@ __global__ void kernelFuncSIMD() {
   u_3 = __vimax3_s16x2(u, u_1, u_2);
   // CHECK: u_3 = syclcompat::vectorized_ternary<sycl::short2>(u, u_1, u_2, syclcompat::maximum(), syclcompat::maximum(), true);
   u_3 = __vimax3_s16x2_relu(u, u_1, u_2);
-#endif
   // CHECK: i_3 = sycl::max<int>(sycl::max<int>(i, i_1), i_2);
   i_3 = __vimax3_s32(i, i_1, i_2);
 #ifndef NO_BUILD_TEST
