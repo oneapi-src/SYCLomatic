@@ -1074,7 +1074,8 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
               CALL_FACTORY_ENTRY(
                   "__vibmax_s16x2",
                   CALL(MapNames::getDpctNamespace() +
-                           "vectorized_binary_with_pred<short>",
+                           "vectorized_binary_with_pred<" +
+                           MapNames::getClNamespace() + "short2>",
                        ARG(0), ARG(1),
                        LITERAL(MapNames::getDpctNamespace() + "maximum()"),
                        ARG(2), ARG(3)))))
@@ -1108,7 +1109,8 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
               CALL_FACTORY_ENTRY(
                   "__vibmax_u16x2",
                   CALL(MapNames::getDpctNamespace() +
-                           "vectorized_binary_with_pred<unsigned short>",
+                           "vectorized_binary_with_pred<" +
+                           MapNames::getClNamespace() + "ushort2>",
                        ARG(0), ARG(1),
                        LITERAL(MapNames::getDpctNamespace() + "maximum()"),
                        ARG(2), ARG(3)))))
@@ -1143,7 +1145,8 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
               CALL_FACTORY_ENTRY(
                   "__vibmin_s16x2",
                   CALL(MapNames::getDpctNamespace() +
-                           "vectorized_binary_with_pred<short>",
+                           "vectorized_binary_with_pred<" +
+                           MapNames::getClNamespace() + "short2>",
                        ARG(0), ARG(1),
                        LITERAL(MapNames::getDpctNamespace() + "minimum()"),
                        ARG(2), ARG(3)))))
@@ -1177,7 +1180,8 @@ RewriterMap dpct::createSIMDIntrinsicsRewriterMap() {
               CALL_FACTORY_ENTRY(
                   "__vibmin_u16x2",
                   CALL(MapNames::getDpctNamespace() +
-                           "vectorized_binary_with_pred<unsigned short>",
+                           "vectorized_binary_with_pred<" +
+                           MapNames::getClNamespace() + "ushort2>",
                        ARG(0), ARG(1),
                        LITERAL(MapNames::getDpctNamespace() + "minimum()"),
                        ARG(2), ARG(3)))))

@@ -555,6 +555,10 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "tex1Dfetch",
       "tex1DLayered",
       "tex2DLayered",
+      "surf1Dwrite",
+      "surf2Dwrite",
+      "surf3Dwrite",
+      "surf2DLayeredwrite",
       "surf1Dread",
       "surf2Dread",
       "surf3Dread",
@@ -989,7 +993,6 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
     }
-    llvm::outs() <<"eeee " << TL->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << "\n";
     ExprAnalysis A;
     A.analyze(*TL);
     emplaceTransformation(A.getReplacement());

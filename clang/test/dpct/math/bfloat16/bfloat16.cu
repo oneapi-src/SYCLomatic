@@ -585,6 +585,29 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   __stwt(deviceArrayBFloat16, bf16);
   __stwt(&bf16_2, bf16);
   __stwt(&bf162_2, bf162);
+
+  int4 value;
+  __nv_bfloat16* target;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '=' expression is used instead of the __stcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(reinterpret_cast<sycl::int4 *>(target)) = value;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '=' expression is used instead of the __stcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(reinterpret_cast<sycl::int4 *>(target)) = value;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '=' expression is used instead of the __stwb call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(reinterpret_cast<sycl::int4 *>(target)) = value;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '=' expression is used instead of the __stwt call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(reinterpret_cast<sycl::int4 *>(target)) = value;
+  __stcg(reinterpret_cast<int4 *>(target), value);
+  __stcs(reinterpret_cast<int4 *>(target), value);
+  __stwb(reinterpret_cast<int4 *>(target), value);
+  __stwt(reinterpret_cast<int4 *>(target), value);
 }
 
 // CHECK: void test_conversions() {

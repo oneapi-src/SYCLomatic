@@ -442,6 +442,57 @@ inline __device__ double2 __ldg(const double2 *ptr) {
   ret.y = rv[1];
   return ret;
 }
+#if defined(SYCLomatic_CUSTOMIZATION)
+
+#define __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, T)                          \
+  inline __device__ T F(const T *ptr);                                         \
+  inline __device__ void F(const T *ptr, T value);
+
+#define __DPCT_LD_ST_CACHE_HINTS_FUNC(F)                                       \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, char)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, signed char)                      \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, short)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, int)                              \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, long)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, long long)                        \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned char)                    \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned short)                   \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned int)                     \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned long)                    \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, unsigned long long)               \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, char2)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, char4)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, short2)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, short4)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, int2)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, int4)                             \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, longlong2)                        \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uchar2)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uchar4)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, ushort2)                          \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, ushort4)                          \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uint2)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, uint4)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, ulonglong2)                       \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, float)                            \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, float2)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, float4)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, double)                           \
+  __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS(F, double2)
+
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldcg)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldca)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldcs)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldlu)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__ldcv)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stwb)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stcg)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stcs)
+__DPCT_LD_ST_CACHE_HINTS_FUNC(__stwt)
+
+#undef __DPCT_LD_ST_CACHE_HINTS_FUNC
+#undef __DPCT_LD_ST_CACHE_HINTS_FUNC_OVERLOADS
+#endif // !SYCLomatic_CUSTOMIZATION
 
 // TODO: Implement these as intrinsics, so the backend can work its magic on
 // these.  Alternatively, we could implement these as plain C and try to get

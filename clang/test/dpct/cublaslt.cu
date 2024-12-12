@@ -187,7 +187,7 @@ void foo3() {
   // CHECK: dpct::blas_gemm::experimental::matmul_desc_t::attribute d;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::compute_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::scale_type;
-  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::bias_type;
+  // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::bias_data_type;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::bias_pointer;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::pointer_mode;
   // CHECK-NEXT: d = dpct::blas_gemm::experimental::matmul_desc_t::attribute::trans_a;
