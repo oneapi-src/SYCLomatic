@@ -39,7 +39,7 @@ __global__ void vectorTemplateAdd(T *A, T *B, T *C, int N) {
 // CHECK:      queue.parallel_for(
 // CHECK:        nr,
 // CHECK:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK:          vectorTemplateAdd(A, B, C, N, item_ct1);
+// CHECK:          vectorTemplateAdd<T>(A, B, C, N, item_ct1);
 // CHECK:        });
 // CHECK:  }
 

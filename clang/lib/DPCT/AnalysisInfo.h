@@ -240,7 +240,7 @@ struct RnnBackwardFuncInfo {
 
 struct DeviceFunctionInfoForWrapper {
   std::vector<std::pair<std::string, std::string>> ParametersInfo;
-  std::vector<std::string> TemplateParametersInfo;
+  std::vector<std::pair<std::string, std::string>> TemplateParametersInfo;
   std::shared_ptr<KernelCallExpr> KernelForWrapper;
 };
 
@@ -2781,6 +2781,7 @@ class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
   bool NeedLambda = false;
+  bool IsForWrapper = false;
   bool NeedDefaultRetValue = false;
 
 private:
@@ -2854,6 +2855,9 @@ public:
       const CallExpr *, bool IsAssigned = false);
   static std::shared_ptr<KernelCallExpr>
   buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *);
+  void setTemplateArgsStrForWrapper(std::string Str) {
+    TemplateArgsStrForWrapper = Str;
+  }
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;
   void setEmitSizeofWarningFlag(bool Flag) { EmitSizeofWarning = Flag; }
@@ -2957,6 +2961,7 @@ private:
   OuterStmtsList OuterStmts;
   StmtList KernelStmts;
   std::string KernelArgs;
+  std::string TemplateArgsStrForWrapper;
   int TotalArgsSize = 0;
   bool EmitSizeofWarning = false;
   unsigned int SizeOfHighestDimension = 0;

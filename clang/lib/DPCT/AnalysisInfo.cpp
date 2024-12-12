@@ -5233,8 +5233,9 @@ void DeviceFunctionDecl::insertWrapper() {
         bool IsFirst = true;
         Printer << "template<";
         for (size_t i = 0; i < TParamsInfo.size(); i++) {
-          Printer << (IsFirst ? "" : " ,")
-                  << TParamsInfo[i] + TemplateParameterDefaultValueMap[i];
+          Printer << (IsFirst ? "" : " ,") << TParamsInfo[i].first << " "
+                  << TParamsInfo[i].second
+                  << TemplateParameterDefaultValueMap[i];
           if (IsFirst) {
             IsFirst = false;
           }
@@ -5419,20 +5420,29 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
             auto TemplateParm = TemplateParmsList->getParam(i);
             if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
               TemplateParametersInfo.push_back(
-                  std::string(TTPD->wasDeclaredWithTypename() ? "typename"
-                                                              : "class") +
-                  std::string(TTPD->isParameterPack() ? "... " : " ") +
-                  TTPD->getNameAsString());
+                  {std::string(TTPD->wasDeclaredWithTypename() ? "typename"
+                                                               : "class") +
+                       std::string(TTPD->isParameterPack() ? "... " : ""),
+                   TTPD->getNameAsString()});
             } else if (auto NTTPD =
                            dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
               std::string DefVal;
               TemplateParametersInfo.push_back(
-                  analyzeTypeLoc(NTTPD->getTypeSourceInfo()->getTypeLoc()) +
-                  " " + NTTPD->getNameAsString());
+                  {analyzeTypeLoc(NTTPD->getTypeSourceInfo()->getTypeLoc()),
+                   NTTPD->getNameAsString()});
             }
           }
         }
       }
+    }
+    std::string TemplateArgsStr;
+    for (size_t i = 0; i < TemplateParametersInfo.size(); i++) {
+      TemplateArgsStr +=
+          (i == 0 ? "" : ", ") + TemplateParametersInfo[i].second;
+    }
+    if (!TemplateArgsStr.empty()) {
+      DFInfoForWrapper->KernelForWrapper->setTemplateArgsStrForWrapper(
+          TemplateArgsStr);
     }
     for (auto It = FD->param_begin(); It != FD->param_end(); It++) {
       ParametersInfo.push_back(
@@ -5882,11 +5892,15 @@ void KernelCallExpr::printSubmitLambda(KernelPrinter &Printer) {
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   std::string TemplateArgsStr;
   if (DpctGlobalInfo::isSyclNamedLambda() && hasTemplateArgs()) {
-    bool IsNeedWarning = false;
-    TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
-    if (!TemplateArgsStr.empty() && IsNeedWarning) {
-      printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
-                          "dpct_kernel_name");
+    if (IsForWrapper) {
+      TemplateArgsStr = TemplateArgsStrForWrapper;
+    } else {
+      bool IsNeedWarning = false;
+      TemplateArgsStr = getTemplateArguments(IsNeedWarning, false, true);
+      if (!TemplateArgsStr.empty() && IsNeedWarning) {
+        printWarningMessage(Printer, Diagnostics::UNDEDUCED_TYPE,
+                            "dpct_kernel_name");
+      }
     }
   }
   if (IsInSubmit) {
@@ -6000,7 +6014,11 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
     Printer.line(S.StmtStr);
   }
   std::string TemplateArgsStr;
-  if (hasWrittenTemplateArgs()) {
+  if (IsForWrapper) {
+    if (!TemplateArgsStrForWrapper.empty()) {
+      TemplateArgsStr = "<" + TemplateArgsStrForWrapper + ">";
+    }
+  } else if (hasWrittenTemplateArgs()) {
     bool IsNeedWarning = false;
     TemplateArgsStr =
         buildString("<", getTemplateArguments(IsNeedWarning), ">");
@@ -6203,6 +6221,7 @@ KernelCallExpr::buildForWrapper(clang::tooling::UnifiedPath FilePath,
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto Kernel =
       std::shared_ptr<KernelCallExpr>(new KernelCallExpr(0, FilePath));
+  Kernel->IsForWrapper = true;
   Kernel->Name = FD->getNameAsString();
   Kernel->setFuncInfo(DeviceFunctionDecl::LinkRedecls(FD));
   Kernel->ExecutionConfig.Config[0] = "";
