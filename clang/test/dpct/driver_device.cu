@@ -21,7 +21,7 @@ void test() {
 
   cuDeviceGet(&device, 0);
 
-  int result0, result1, result2, result3, result4, result5, result6;
+  int result0, result1, result2, result3, result4, result5, result6, result7;
   // CHECK: /*
   // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY. It was migrated to get_global_mem_size. You may need to adjust the value of get_global_mem_size for the specific device.
   // CHECK-NEXT: */
@@ -54,6 +54,10 @@ void test() {
   // CHECK: result6 = dpct::get_device(device).ext_oneapi_can_access_peer(dpct::get_device(peerDevice));
   cuDeviceCanAccessPeer(&result6, device, peerDevice);
   std::cout << " result6 " << result6 << std::endl;
+
+  // CHECK: result7 = dpct::get_device(device).get_max_pitch();
+  cuDeviceGetAttribute(&result7,CU_DEVICE_ATTRIBUTE_MAX_PITCH, device);
+  std::cout << " result7 " << result5 << std::endl;
 }
 
 int main(){

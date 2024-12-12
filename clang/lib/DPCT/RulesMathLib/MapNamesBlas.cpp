@@ -1553,7 +1553,7 @@ void MapNamesBlas::setExplicitNamespaceMap(
            "blas_gemm::experimental::matmul_desc_t::attribute::scale_type"},
       {"CUBLASLT_MATMUL_DESC_BIAS_DATA_TYPE",
        MapNames::getLibraryHelperNamespace() +
-           "blas_gemm::experimental::matmul_desc_t::attribute::bias_type"},
+           "blas_gemm::experimental::matmul_desc_t::attribute::bias_data_type"},
       {"CUBLASLT_MATMUL_DESC_BIAS_POINTER",
        MapNames::getLibraryHelperNamespace() +
            "blas_gemm::experimental::matmul_desc_t::attribute::bias_pointer"},

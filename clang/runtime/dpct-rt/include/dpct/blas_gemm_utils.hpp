@@ -143,7 +143,7 @@ public:
   enum class attribute {
     compute_type,
     scale_type,
-    bias_type,
+    bias_data_type,
     bias_pointer,
     pointer_mode,
     trans_a,
@@ -185,7 +185,7 @@ private:
     switch (attr) {
       CASE(compute_type)
       CASE(scale_type)
-      CASE(bias_type)
+      CASE(bias_data_type)
       CASE(bias_pointer)
       CASE(pointer_mode)
       CASE(trans_a)
@@ -207,7 +207,7 @@ private:
 
   compute_type _compute_type;
   library_data_t _scale_type;
-  library_data_t _bias_type = library_data_t::real_float;
+  library_data_t _bias_data_type = library_data_t::real_float;
   pointer_mode_t _pointer_mode = pointer_mode_t::host;
   oneapi::mkl::transpose _trans_a = oneapi::mkl::transpose::nontrans;
   oneapi::mkl::transpose _trans_b = oneapi::mkl::transpose::nontrans;
@@ -930,10 +930,11 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
   }
 
   ::dnnl::memory *po_bias_mem = nullptr;
-  auto po_bias_md = ::dnnl::memory::desc(
-      ::dnnl::memory::dims{M, 1},
-      dpct::dnnl::memory_desc_ext::to_dnnl_data_type(compute_desc->_bias_type),
-      ::dnnl::memory::dims{1, M});
+  auto po_bias_md =
+      ::dnnl::memory::desc(::dnnl::memory::dims{M, 1},
+                           dpct::dnnl::memory_desc_ext::to_dnnl_data_type(
+                               compute_desc->_bias_data_type),
+                           ::dnnl::memory::dims{1, M});
   if (compute_desc->_epilogue == epilogue_t::bias ||
       compute_desc->_epilogue == epilogue_t::gelu_bias ||
       compute_desc->_epilogue == epilogue_t::gelu_aux_bias) {
@@ -941,7 +942,8 @@ inline sycl::event matmul(descriptor_ptr handle, matmul_desc_ptr compute_desc,
         new ::dnnl::memory(po_bias_md, handle->get_engine(), DNNL_MEMORY_NONE);
 #ifdef DPCT_USM_LEVEL_NONE
     detail::type_dispatch<detail::set_buffer_impl>(
-        compute_desc->_bias_type, po_bias_mem, compute_desc->_bias_pointer);
+        compute_desc->_bias_data_type, po_bias_mem,
+        compute_desc->_bias_pointer);
 #else
     po_bias_mem->set_data_handle(compute_desc->_bias_pointer);
 #endif

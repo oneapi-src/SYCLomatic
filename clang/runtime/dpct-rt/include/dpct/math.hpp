@@ -627,7 +627,7 @@ inline unsigned vectorized_binary(unsigned a, unsigned b,
 /// Compute vectorized binary operation value with pred for two values, with
 /// each value treated as a 2 \p T type elements vector type.
 ///
-/// \tparam [in] T The type of elements type of the vector
+/// \tparam [in] VecT The type of the vector
 /// \tparam [in] BinaryOperation The binary operation class
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -635,13 +635,13 @@ inline unsigned vectorized_binary(unsigned a, unsigned b,
 /// \param [out] pred_hi The pred pointer that pass into high halfword operation
 /// \param [out] pred_lo The pred pointer that pass into low halfword operation
 /// \returns The vectorized binary operation value of the two values
-template <typename T, typename BinaryOperation>
+template <typename VecT, typename BinaryOperation>
 inline unsigned vectorized_binary_with_pred(unsigned a, unsigned b,
                                             const BinaryOperation binary_op,
                                             bool *pred_hi, bool *pred_lo) {
-  auto v1 = sycl::vec<unsigned, 1>(a).as<sycl::vec<T, 2>>();
-  auto v2 = sycl::vec<unsigned, 1>(b).as<sycl::vec<T, 2>>();
-  sycl::vec<T, 2> ret;
+  auto v1 = sycl::vec<unsigned, 1>(a).as<VecT>();
+  auto v2 = sycl::vec<unsigned, 1>(b).as<VecT>();
+  VecT ret;
   ret[0] = binary_op(v1[0], v2[0], pred_lo);
   ret[1] = binary_op(v1[1], v2[1], pred_hi);
   return ret.template as<sycl::vec<unsigned, 1>>();

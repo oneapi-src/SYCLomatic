@@ -1021,8 +1021,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               EMPTY_FACTORY_ENTRY("__stcg"),
               EMPTY_FACTORY_ENTRY("__stcg"),
               WARNING_FACTORY_ENTRY(
-                  "__stcg",
-                  ASSIGN_FACTORY_ENTRY("__stcg", DEREF(ARG_WC(0)), ARG(1)),
+                  "__stcg", ASSIGN_FACTORY_ENTRY("__stcg", DEREF(0), ARG(1)),
                   Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stcg"),
                   std::string("'='"))))
       // __stcs
@@ -1033,8 +1032,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               EMPTY_FACTORY_ENTRY("__stcs"),
               EMPTY_FACTORY_ENTRY("__stcs"),
               WARNING_FACTORY_ENTRY(
-                  "__stcs",
-                  ASSIGN_FACTORY_ENTRY("__stcs", DEREF(ARG_WC(0)), ARG(1)),
+                  "__stcs", ASSIGN_FACTORY_ENTRY("__stcs", DEREF(0), ARG(1)),
                   Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stcs"),
                   std::string("'='"))))
       // __stwb
@@ -1045,8 +1043,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               EMPTY_FACTORY_ENTRY("__stwb"),
               EMPTY_FACTORY_ENTRY("__stwb"),
               WARNING_FACTORY_ENTRY(
-                  "__stwb",
-                  ASSIGN_FACTORY_ENTRY("__stwb", DEREF(ARG_WC(0)), ARG(1)),
+                  "__stwb", ASSIGN_FACTORY_ENTRY("__stwb", DEREF(0), ARG(1)),
                   Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stwb"),
                   std::string("'='"))))
       // __stwt
@@ -1057,8 +1054,7 @@ RewriterMap dpct::createHalfPrecisionConversionAndDataMovementRewriterMap() {
               EMPTY_FACTORY_ENTRY("__stwt"),
               EMPTY_FACTORY_ENTRY("__stwt"),
               WARNING_FACTORY_ENTRY(
-                  "__stwt",
-                  ASSIGN_FACTORY_ENTRY("__stwt", DEREF(ARG_WC(0)), ARG(1)),
+                  "__stwt", ASSIGN_FACTORY_ENTRY("__stwt", DEREF(0), ARG(1)),
                   Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stwt"),
                   std::string("'='"))))
       // __uint2half_rd
