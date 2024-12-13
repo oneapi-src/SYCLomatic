@@ -4792,6 +4792,11 @@ void KernelCallRule::runRule(
       CalleeDRE = CCast->getSubExpr();
     }
     if (auto ICE = dyn_cast<ImplicitCastExpr>(CalleeDRE)) {
+      if (ICE->getCastKind() == clang::CK_BitCast) {
+        if (dyn_cast<ImplicitCastExpr>(ICE->getSubExpr())) {
+          ICE = dyn_cast<ImplicitCastExpr>(ICE->getSubExpr());
+        }
+      }
       if (ICE->getCastKind() != clang::CK_FunctionToPointerDecay) {
         std::string ReplStr;
         llvm::raw_string_ostream OS(ReplStr);
