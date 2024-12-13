@@ -5727,6 +5727,12 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   }
 
   printStreamBase(Printer);
+  if (isDefaultStream()) {
+    SubmitStmts.DefaultStreamFlag = true;
+  }
+  if (DpctGlobalInfo::useExpInOrderQueueEvent()) {
+    SubmitStmts.ImplicitSyncFlag = true;
+  }
   if (SubmitStmts.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -6525,10 +6531,17 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
   printList(Printer, NdRangeList,
             "ranges to define ND iteration space for the kernel");
   printList(Printer, CommandGroupList, "helper variables defined");
+  if (ImplicitSyncFlag) {
+    Printer.line(
+        std::string(
+            "cgh.depends_on(dpct::get_current_device().get_last_events()") +
+        std::string(DefaultStreamFlag ? "" : "[0]") + std::string(");"));
+    Printer.newLine();
+  }
   return Printer;
 }
 bool KernelCallExpr::SubmitStmtsList::empty() const noexcept {
-  return CommandGroupList.empty() && NdRangeList.empty() &&
+  return !ImplicitSyncFlag && CommandGroupList.empty() && NdRangeList.empty() &&
          AccessorList.empty() && PtrList.empty() && MemoryList.empty() &&
          RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
          StreamList.empty() && SyncList.empty();
