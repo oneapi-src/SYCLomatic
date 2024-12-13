@@ -5730,7 +5730,8 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (isDefaultStream()) {
     SubmitStmts.DefaultStreamFlag = true;
   }
-  if (DpctGlobalInfo::useExpInOrderQueueEvent()) {
+  if (DpctGlobalInfo::useExpInOrderQueueEvent() &&
+      (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)) {
     SubmitStmts.ImplicitSyncFlag = true;
   }
   if (SubmitStmts.empty()) {
