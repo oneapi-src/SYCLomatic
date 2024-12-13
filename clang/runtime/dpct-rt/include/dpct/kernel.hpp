@@ -496,7 +496,6 @@ public:
   static typename std::enable_if<std::is_function<FuncT>::value, void>::type
   launch(FuncT *func, dim3 group_range, dim3 local_range, void **args,
          unsigned int local_mem_size, queue_ptr que) {
-    // using func_type = typename std::remove_pointer<FuncT>::type;
     constexpr size_t p_num = args_selector<0, 0, FuncT>::params_num;
     set_execution_config(group_range, local_range, local_mem_size, que);
     args_selector<p_num, p_num, FuncT> selector(args, nullptr);
