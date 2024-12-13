@@ -5230,15 +5230,11 @@ void DeviceFunctionDecl::insertWrapper() {
                  "**kernelParams, void **extra)";
     } else {
       if (!TParamsInfo.empty()) {
-        bool IsFirst = true;
         Printer << "template<";
         for (size_t i = 0; i < TParamsInfo.size(); i++) {
-          Printer << (IsFirst ? "" : " ,") << TParamsInfo[i].first << " "
+          Printer << (i == 0 ? "" : " ,") << TParamsInfo[i].first << " "
                   << TParamsInfo[i].second
                   << TemplateParameterDefaultValueMap[i];
-          if (IsFirst) {
-            IsFirst = false;
-          }
         }
         Printer << ">";
         Printer.newLine();
@@ -5313,6 +5309,11 @@ void DeviceFunctionDecl::insertWrapper() {
   DpctGlobalInfo::getInstance().addReplacement(Repl);
 }
 void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
+  if ((FD->getTemplatedKind() != FunctionDecl::TemplatedKind::TK_NonTemplate) &&
+      (FD->getTemplatedKind() !=
+       FunctionDecl::TemplatedKind::TK_FunctionTemplate)) {
+    return;
+  }
   const FunctionDecl *Def;
   HasBody = FD->hasBody(Def);
   if (HasBody && FD != Def) {
@@ -5325,31 +5326,25 @@ void DeviceFunctionDecl::collectInfoForWrapper(const FunctionDecl *FD) {
     return EA.getReplacedString();
   };
 
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto Parents = Context.getParents(*FD);
-  if (Parents.size()) {
-    if (auto FTD = Parents[0].get<FunctionTemplateDecl>()) {
-      FD = FTD->getTemplatedDecl();
-      if (auto TemplateParmsList = FTD->getTemplateParameters()) {
-        for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
-          auto TemplateParm = TemplateParmsList->getParam(i);
-          if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
-            if (TTPD->hasDefaultArgument() &&
-                !TTPD->defaultArgumentWasInherited()) {
-              TemplateParameterDefaultValueMap[i] =
-                  " = " + analyzeTypeLoc(TTPD->getDefaultArgument()
-                                             .getTypeSourceInfo()
-                                             ->getTypeLoc());
-            }
-          } else if (auto NTTPD =
-                         dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
-            if (NTTPD->hasDefaultArgument() &&
-                !NTTPD->defaultArgumentWasInherited()) {
-              TemplateParameterDefaultValueMap[i] =
-                  " = " +
-                  ExprAnalysis::ref(
-                      NTTPD->getDefaultArgument().getSourceExpression());
-            }
+  if (auto FTD = FD->getDescribedFunctionTemplate()) {
+    if (auto TemplateParmsList = FTD->getTemplateParameters()) {
+      for (size_t i = 0; i < TemplateParmsList->size(); ++i) {
+        auto TemplateParm = TemplateParmsList->getParam(i);
+        if (auto TTPD = dyn_cast<TemplateTypeParmDecl>(TemplateParm)) {
+          if (TTPD->hasDefaultArgument() &&
+              !TTPD->defaultArgumentWasInherited()) {
+            TemplateParameterDefaultValueMap[i] =
+                " = " + analyzeTypeLoc(TTPD->getDefaultArgument()
+                                           .getTypeSourceInfo()
+                                           ->getTypeLoc());
+          }
+        } else if (auto NTTPD =
+                       dyn_cast<NonTypeTemplateParmDecl>(TemplateParm)) {
+          if (NTTPD->hasDefaultArgument() &&
+              !NTTPD->defaultArgumentWasInherited()) {
+            TemplateParameterDefaultValueMap[i] =
+                " = " + ExprAnalysis::ref(
+                            NTTPD->getDefaultArgument().getSourceExpression());
           }
         }
       }
@@ -5400,8 +5395,6 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
     WrapperInfoCollected = true;
     DFInfoForWrapper = std::make_shared<DeviceFunctionInfoForWrapper>();
     auto LocInfo = DpctGlobalInfo::getLocInfo(FD->getBeginLoc());
-    DFInfoForWrapper->KernelForWrapper =
-        KernelCallExpr::buildForWrapper(LocInfo.first, FD);
     auto &TemplateParametersInfo = DFInfoForWrapper->TemplateParametersInfo;
     auto &ParametersInfo = DFInfoForWrapper->ParametersInfo;
     auto analyzeTypeLoc = [](const TypeLoc &TL) {
@@ -5435,6 +5428,8 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
         }
       }
     }
+    DFInfoForWrapper->KernelForWrapper =
+        KernelCallExpr::buildForWrapper(LocInfo.first, FD);
     std::string TemplateArgsStr;
     for (size_t i = 0; i < TemplateParametersInfo.size(); i++) {
       TemplateArgsStr +=
@@ -5446,7 +5441,7 @@ void DeviceFunctionInfo::collectInfoForWrapper(const FunctionDecl *FD) {
     }
     for (auto It = FD->param_begin(); It != FD->param_end(); It++) {
       ParametersInfo.push_back(
-          {analyzeTypeLoc((*It)->getTypeSourceInfo()->getTypeLoc()),
+          {DpctGlobalInfo::getReplacedTypeName((*It)->getType()),
            (*It)->getNameAsString()});
     }
   }

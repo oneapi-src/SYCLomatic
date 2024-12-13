@@ -2856,7 +2856,7 @@ public:
   static std::shared_ptr<KernelCallExpr>
   buildForWrapper(clang::tooling::UnifiedPath, const FunctionDecl *);
   void setTemplateArgsStrForWrapper(std::string Str) {
-    TemplateArgsStrForWrapper = Str;
+    TemplateArgsStrForWrapper = std::move(Str);
   }
   unsigned int GridDim = 3;
   unsigned int BlockDim = 3;

@@ -4505,6 +4505,13 @@ void KernelCallRefRule::runRule(
         if (dpct::DpctGlobalInfo::isInCudaPath(Callee->getBeginLoc())) {
           return;
         }
+      } else if (auto PULE =
+                     dyn_cast<UnresolvedLookupExpr>(ParentCE->getCallee())) {
+        for (auto *D : PULE->decls()) {
+          if (dpct::DpctGlobalInfo::isInCudaPath(D->getBeginLoc())) {
+            return;
+          }
+        }
       }
     }
     std::string TypeRef;

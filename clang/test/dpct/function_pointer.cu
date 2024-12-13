@@ -5,14 +5,14 @@
 #include <cuda_runtime.h>
 #include <iostream>
 
-__global__ void vectorAdd(int *A, int *B, int *C, int N) {
+__global__ void vectorAdd(const int *A, int *B, int *C, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         C[i] = A[i] + B[i];
     }
 }
 
-// CHECK:  void vectorAdd_wrapper(int * A ,int * B ,int * C ,int N) {
+// CHECK:  void vectorAdd_wrapper(const int * A ,int * B ,int * C ,int N) {
 // CHECK:        sycl::queue queue = dpct::kernel_launch::_que;
 // CHECK:        unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
 // CHECK:        sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
@@ -24,7 +24,7 @@ __global__ void vectorAdd(int *A, int *B, int *C, int N) {
 // CHECK:  }
 
 template<typename T>
-__global__ void vectorTemplateAdd(T *A, T *B, T *C, int N) {
+__global__ void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) {
         C[i] = A[i] + B[i];
@@ -32,7 +32,7 @@ __global__ void vectorTemplateAdd(T *A, T *B, T *C, int N) {
 }
 
 // CHECK:  template<typename T>
-// CHECK:  void vectorTemplateAdd_wrapper(T * A ,T * B ,T * C ,int N) {
+// CHECK:  void vectorTemplateAdd_wrapper(const T * A ,T * B ,T * C ,int N) {
 // CHECK:      sycl::queue queue = dpct::kernel_launch::_que;
 // CHECK:      unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
 // CHECK:      sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
@@ -44,7 +44,7 @@ __global__ void vectorTemplateAdd(T *A, T *B, T *C, int N) {
 // CHECK:  }
 
 template <typename T>
-using fpt = void(*)(T *, T*, T*, int);
+using fpt = void(*)(const T *, T*, T*, int);
 
 void foo() {
     int N = 10;
@@ -103,7 +103,7 @@ void foo() {
     }
 
     // CHECK:  dpct::kernel_launch::launch(fp, 1, 10, args, 0, 0);
-    cudaLaunchKernel<void(int*, int*, int*, int)>(fp, 1, 10, args, 0, 0);
+    cudaLaunchKernel<void(const int*, int*, int*, int)>(fp, 1, 10, args, 0, 0);
 
     cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
 
