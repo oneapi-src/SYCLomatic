@@ -4787,31 +4787,30 @@ void KernelCallRule::runRule(
     if (IsFuncTypeErased) {
       DpctGlobalInfo::setCVersionCUDALaunchUsed();
     }
-    if (auto CCast =
-            dyn_cast<CStyleCastExpr>(CalleeDRE->IgnoreImplicitAsWritten())) {
-      CalleeDRE = CCast->getSubExpr();
-    }
-    if (auto ICE = dyn_cast<ImplicitCastExpr>(CalleeDRE)) {
-      if (ICE->getCastKind() == clang::CK_BitCast) {
-        if (dyn_cast<ImplicitCastExpr>(ICE->getSubExpr())) {
-          ICE = dyn_cast<ImplicitCastExpr>(ICE->getSubExpr());
-        }
-      }
-      if (ICE->getCastKind() != clang::CK_FunctionToPointerDecay) {
-        std::string ReplStr;
-        llvm::raw_string_ostream OS(ReplStr);
-        OS << MapNames::getDpctNamespace() << "kernel_launch::launch(";
-        size_t ArgsNum = LaunchKernelCall->getNumArgs();
-        for (size_t i = 0; i < ArgsNum; i++) {
-          if (auto Arg = LaunchKernelCall->getArg(i)) {
-            OS << (i == 0 ? "" : ", ") << ExprAnalysis::ref(Arg);
+
+    if (!getAddressedRef(CalleeDRE)) {
+      std::string ReplStr;
+      llvm::raw_string_ostream OS(ReplStr);
+      OS << MapNames::getDpctNamespace() << "kernel_launch::launch(";
+      size_t ArgsNum = LaunchKernelCall->getNumArgs();
+      for (size_t i = 0; i < ArgsNum; i++) {
+        if (auto Arg = LaunchKernelCall->getArg(i)) {
+          if (i == 0) {
+            if (auto E = getAddressedRef(CalleeDRE, false)) {
+              OS << ExprAnalysis::ref(E);
+            } else {
+              OS << ExprAnalysis::ref(Arg);
+            }
+          } else {
+            OS << ", " << ExprAnalysis::ref(Arg);
           }
         }
-        OS << ")";
-        emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
-        return;
       }
+      OS << ")";
+      emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
+      return;
     }
+
     if (!IsAssigned)
       findAndRemoveTrailingSemicolon(LaunchKernelCall, Result);
     if (DpctGlobalInfo::getInstance().buildLaunchKernelInfo(LaunchKernelCall,

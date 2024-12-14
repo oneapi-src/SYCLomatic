@@ -4998,10 +4998,14 @@ int isArgumentInitialized(
 
   return DeclsRequireInit.empty();
 }
-const DeclRefExpr *getAddressedRef(const Expr *E) {
+const DeclRefExpr *getAddressedRef(const Expr *E, bool IsCheckFunctionDecl) {
   E = E->IgnoreImplicitAsWritten();
   if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
-    if (DRE->getDecl()->getKind() == Decl::Function) {
+    if (IsCheckFunctionDecl) {
+      if (DRE->getDecl()->getKind() == Decl::Function) {
+        return DRE;
+      }
+    } else {
       return DRE;
     }
   } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
