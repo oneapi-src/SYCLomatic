@@ -13,7 +13,7 @@ __global__ void vectorAdd(const int *A, int *B, int *C, int N) {
 }
 
 // CHECK:  void vectorAdd_wrapper(const int * A ,int * B ,int * C ,int N) {
-// CHECK:        sycl::queue queue = dpct::kernel_launch::_que;
+// CHECK:        sycl::queue queue = *dpct::kernel_launch::_que;
 // CHECK:        unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
 // CHECK:        sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
 // CHECK:        queue.parallel_for(
@@ -33,7 +33,7 @@ __global__ void vectorTemplateAdd(const T *A, T *B, T *C, int N) {
 
 // CHECK:  template<typename T>
 // CHECK:  void vectorTemplateAdd_wrapper(const T * A ,T * B ,T * C ,int N) {
-// CHECK:      sycl::queue queue = dpct::kernel_launch::_que;
+// CHECK:      sycl::queue queue = *dpct::kernel_launch::_que;
 // CHECK:      unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
 // CHECK:      sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
 // CHECK:      queue.parallel_for(

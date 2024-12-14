@@ -25,7 +25,7 @@ __global__ void kernel(int *d, cudaTextureObject_t tex) {
 }
 
 // CHECK: void kernel_wrapper(int * d ,dpct::image_wrapper_base_p tex) {
-// CHECK:   sycl::queue queue = dpct::kernel_launch::_que;
+// CHECK:   sycl::queue queue = *dpct::kernel_launch::_que;
 // CHECK:   unsigned int localMemSize = dpct::kernel_launch::_local_mem_size;
 // CHECK:   sycl::nd_range<3> nr = dpct::kernel_launch::_nr;
 // CHECK:     static_cast<dpct::image_wrapper<int, 1> *>(tex)->create_image(queue);

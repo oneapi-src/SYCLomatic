@@ -5281,7 +5281,7 @@ void DeviceFunctionDecl::insertWrapper() {
         {
           auto BodyBlock = Printer.block();
           Printer.newLine();
-          Printer.line(MapNames::getClNamespace() + "queue queue = " +
+          Printer.line(MapNames::getClNamespace() + "queue queue = *" +
                        MapNames::getDpctNamespace() + "kernel_launch::_que;");
           Printer.line(
               "unsigned int localMemSize = " + MapNames::getDpctNamespace() +

@@ -453,9 +453,9 @@ class kernel_launch {
   static void set_execution_config(dim3 group_range, dim3 local_range,
                                    unsigned int local_mem_size, queue_ptr que) {
     if (que) {
-      _que = *que;
+      _que = que;
     } else {
-      _que = get_default_queue();
+      _que = &get_default_queue();
     }
     _nr = sycl::nd_range<3>(
         static_cast<sycl::range<3>>(group_range * local_range),
@@ -464,7 +464,7 @@ class kernel_launch {
   };
 
 public:
-  static inline thread_local sycl::queue _que = sycl::queue();
+  static inline thread_local sycl::queue *_que = nullptr;
   static inline thread_local sycl::nd_range<3> _nr = sycl::nd_range<3>();
   static inline thread_local unsigned int _local_mem_size = 0;
   static inline thread_local std::map<
