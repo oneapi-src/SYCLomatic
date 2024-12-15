@@ -88,7 +88,7 @@ void foo() {
     args[1] = &d_B;
     args[2] = &d_C;
     args[3] = &N;
-    // CHECK:  dpct::kernel_launch::launch((void *)fp, 1, 10, args, 0, 0);
+    // CHECK:  dpct::kernel_launch::launch(fp, 1, 10, args, 0, 0);
     cudaLaunchKernel((void *)fp, 1, 10, args, 0, 0);
 
     cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);

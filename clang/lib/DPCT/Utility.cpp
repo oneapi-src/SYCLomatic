@@ -4998,24 +4998,52 @@ int isArgumentInitialized(
 
   return DeclsRequireInit.empty();
 }
-const DeclRefExpr *getAddressedRef(const Expr *E, bool IsCheckFunctionDecl) {
+const Expr *getAddressedRef(const Expr *E, const FunctionDecl **FuncDecl,
+                            bool IsCheckFunctionDecl) {
   E = E->IgnoreImplicitAsWritten();
   if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
     if (IsCheckFunctionDecl) {
-      if (DRE->getDecl()->getKind() == Decl::Function) {
+      if (auto FD = dyn_cast<FunctionDecl>(DRE->getDecl())) {
+        if (FuncDecl) {
+          *FuncDecl = FD;
+        }
         return DRE;
       }
     } else {
       return DRE;
     }
+  } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(E)) {
+    if (IsCheckFunctionDecl) {
+      for (auto *D : ULE->decls()) {
+        const FunctionDecl *FD = dyn_cast<FunctionDecl>(D);
+        if (!FD) {
+          if (const FunctionTemplateDecl *FTD =
+                  dyn_cast<FunctionTemplateDecl>(D)) {
+            FD = FTD->getTemplatedDecl();
+          }
+        }
+        if (FD) {
+          if (FuncDecl) {
+            *FuncDecl = FD;
+          }
+          return ULE;
+        }
+      }
+    } else {
+      return ULE;
+    }
   } else if (auto Paren = dyn_cast<ParenExpr>(E)) {
-    return getAddressedRef(Paren->getSubExpr());
+    return getAddressedRef(Paren->getSubExpr(), FuncDecl, IsCheckFunctionDecl);
   } else if (auto Cast = dyn_cast<CastExpr>(E)) {
-    return getAddressedRef(Cast->getSubExprAsWritten());
+    return getAddressedRef(Cast->getSubExprAsWritten(), FuncDecl,
+                           IsCheckFunctionDecl);
   } else if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == UO_AddrOf) {
-      return getAddressedRef(UO->getSubExpr());
+      return getAddressedRef(UO->getSubExpr(), FuncDecl, IsCheckFunctionDecl);
     }
+  }
+  if (FuncDecl) {
+    *FuncDecl = nullptr;
   }
   return nullptr;
 }

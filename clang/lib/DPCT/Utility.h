@@ -375,8 +375,9 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(
 const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
 const clang::LambdaExpr *
 getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
-const DeclRefExpr *getAddressedRef(const Expr *E,
-                                   bool IsCheckFunctionDecl = true);
+const Expr *getAddressedRef(const Expr *E,
+                            const FunctionDecl **FuncDecl = nullptr,
+                            bool IsCheckFunctionDecl = true);
 const clang::FunctionDecl *findTheOuterMostFunctionDecl(const clang::Decl *D);
 
 // Source Range & location, offset.

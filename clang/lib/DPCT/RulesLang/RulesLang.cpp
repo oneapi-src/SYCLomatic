@@ -4787,16 +4787,18 @@ void KernelCallRule::runRule(
     if (IsFuncTypeErased) {
       DpctGlobalInfo::setCVersionCUDALaunchUsed();
     }
-
     if (!getAddressedRef(CalleeDRE)) {
       std::string ReplStr;
       llvm::raw_string_ostream OS(ReplStr);
+      if (IsAssigned) {
+        OS << MapNames::getCheckErrorMacroName() << "(";
+      }
       OS << MapNames::getDpctNamespace() << "kernel_launch::launch(";
       size_t ArgsNum = LaunchKernelCall->getNumArgs();
       for (size_t i = 0; i < ArgsNum; i++) {
         if (auto Arg = LaunchKernelCall->getArg(i)) {
           if (i == 0) {
-            if (auto E = getAddressedRef(CalleeDRE, false)) {
+            if (auto E = getAddressedRef(CalleeDRE, nullptr, false)) {
               OS << ExprAnalysis::ref(E);
             } else {
               OS << ExprAnalysis::ref(Arg);
@@ -4807,6 +4809,9 @@ void KernelCallRule::runRule(
         }
       }
       OS << ")";
+      if (IsAssigned) {
+        OS << ")";
+      }
       emplaceTransformation(new ReplaceStmt(LaunchKernelCall, OS.str()));
       return;
     }

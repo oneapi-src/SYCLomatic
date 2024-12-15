@@ -6181,10 +6181,9 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
                              CE->getArg(5)},
       CE);
   Kernel->buildNeedBracesInfo(CE);
-  if (auto Callee = getAddressedRef(CE->getArg(0))) {
+  const FunctionDecl *FD = nullptr;
+  if (auto Callee = getAddressedRef(CE->getArg(0), &FD)) {
     Kernel->buildCalleeInfo(Callee, std::nullopt);
-    auto FD =
-        dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
     auto FuncInfo = Kernel->getFuncInfo();
     if (FD && FuncInfo) {
       auto ArgsArray = ExprAnalysis::ref(CE->getArg(3));
