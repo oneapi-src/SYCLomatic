@@ -5041,6 +5041,10 @@ const Expr *getAddressedRef(const Expr *E, const FunctionDecl **FuncDecl,
     if (UO->getOpcode() == UO_AddrOf) {
       return getAddressedRef(UO->getSubExpr(), FuncDecl, IsCheckFunctionDecl);
     }
+  } else if (auto COC = dyn_cast<CXXOperatorCallExpr>(E)) {
+    if (COC->getOperator() == clang::OO_Amp) {
+      return getAddressedRef(COC->getArg(0), FuncDecl, IsCheckFunctionDecl);
+    }
   }
   if (FuncDecl) {
     *FuncDecl = nullptr;
