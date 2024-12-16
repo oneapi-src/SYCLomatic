@@ -40,7 +40,7 @@
   Priority: Takeover
   In: get_in_order_queue
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
-  Includes: ["<c10/xpu/XPUStream.h>"]
+  Includes: ["c10/xpu/XPUStream.h"]
 
 - Rule: rule_process_is_cuda
   Kind: PatternRewriter
@@ -53,7 +53,7 @@
   Priority: Takeover
   In: at::cuda::getCurrentCUDAStream
   Out: (&static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream($1)))
-  Includes: ["<c10/xpu/XPUStream.h>"]
+  Includes: ["c10/xpu/XPUStream.h"]
 
 - Rule: rule_remove_AT_CUDA_CHECK
   Kind: Macro
