@@ -28,7 +28,7 @@ public:
   } while (0)
 
 void foo(torch::Tensor x) {
-  // CHECK: MY_CHECK(x.is_xpu(), "x must reside on device");
+  // CHECK: MY_CHECK(x. is_xpu(), "x must reside on device");
   MY_CHECK(x.is_cuda(), "x must reside on device");
 
   return 0;

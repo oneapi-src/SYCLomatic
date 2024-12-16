@@ -34,7 +34,6 @@
 #include "clang/Lex/MacroArgs.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/SmallString.h"
-#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Path.h"
 
 #include <algorithm>
@@ -857,7 +856,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           return;
       }
     }
-
 
     // if TL is the T in
     // template<typename T> void foo(T a);

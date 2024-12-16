@@ -42,18 +42,30 @@
   Out: static_cast<sycl::queue&>(c10::xpu::getCurrentXPUStream())
   Includes: ["c10/xpu/XPUStream.h"]
 
-- Rule: rule_process_is_cuda
-  Kind: PatternRewriter
+- Rule: rule_torch_Tensor
+  Kind: Class
   Priority: Takeover
-  In: is_cuda
-  Out: is_xpu
+  In: torch::Tensor
+  Out: torch::Tensor
+  Methods:
+    - In: is_cuda
+      Out: $method_base is_xpu()
 
 - Rule: rule_getCurrentCUDAStream
   Kind: API
   Priority: Takeover
   In: at::cuda::getCurrentCUDAStream
-  Out: (&static_cast<sycl::queue &>(c10::xpu::getCurrentXPUStream($1)))
+  Out: c10::xpu::getCurrentXPUStream($1)
   Includes: ["c10/xpu/XPUStream.h"]
+
+- Rule: rule_CUDAStream
+  Kind: Class
+  Priority: Takeover
+  In: at::cuda::CUDAStream
+  Out: c10::xpu::XPUStream
+  Methods:
+    - In: stream
+      Out: \&static_cast<sycl::queue &>($method_base queue())
 
 - Rule: rule_remove_AT_CUDA_CHECK
   Kind: Macro
