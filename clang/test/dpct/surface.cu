@@ -19,6 +19,34 @@ template<typename T> __global__ void kernel(cudaSurfaceObject_t surf) {
   surf3Dread<T>(&i, surf, k, j, i);
 }
 
+template<typename T> __global__ void test_kernel_driver(CUsurfObject surf) {
+  int i;
+  float j, k, l, m;
+  // CHECK: surf.read_byte(i);
+  surf1Dread<T>(surf, i);
+  // CHECK: i = surf.read_byte(i);
+  surf1Dread<T>(&i, surf, i);
+  // CHECK: surf.read_byte(j, i);
+  surf2Dread<T>(surf, j, i);
+  // CHECK: i = surf.read_byte(j, i);
+  surf2Dread<T>(&i, surf, j, i);
+  // CHECK: surf.read_byte(k, j, i);
+  surf3Dread<T>(surf, k, j, i);
+  // CHECK: i = surf.read_byte(k, j, i);
+  surf3Dread<T>(&i, surf, k, j, i);
+}
+void test_driver() {
+  // CHECK: dpct::image_wrapper_base_p surf;
+  CUsurfObject surf;
+  // CHECK: dpct::image_data pResDesc;
+  CUDA_RESOURCE_DESC pResDesc;
+  // CHECK: surf = dpct::create_image_wrapper(pResDesc);
+  cuSurfObjectCreate(&surf, &pResDesc);
+  // CHECK: delete surf;
+  cuSurfObjectDestroy(surf);
+  // CHECK: pResDesc = surf->get_data();
+  cuSurfObjectGetResourceDesc(&pResDesc, surf);
+}
 static texture<uint2, 1> tex21;
 
 __device__ void device01() {
