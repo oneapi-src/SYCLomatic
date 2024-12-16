@@ -6,7 +6,7 @@
 
 #define AT_CUDA_CHECK(stmt)  (stmt)
 
-namespace at {
+namespace c10 {
 using DeviceIndex = int8_t;
 namespace cuda {
 class CUDAStream {
@@ -22,6 +22,10 @@ CUDAStream getCurrentCUDAStream(DeviceIndex device_index = -1) {
   return CUDAStream();
 }
 } // namespace cuda
+} // namespace c10
+
+namespace at {
+using namespace c10;
 } // namespace at
 
 __global__ void kernel() {}

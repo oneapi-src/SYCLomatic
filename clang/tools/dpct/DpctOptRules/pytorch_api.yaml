@@ -61,7 +61,7 @@
 - Rule: rule_CUDAStream
   Kind: Class
   Priority: Takeover
-  In: at::cuda::CUDAStream
+  In: c10::cuda::CUDAStream
   Out: c10::xpu::XPUStream
   Methods:
     - In: stream
