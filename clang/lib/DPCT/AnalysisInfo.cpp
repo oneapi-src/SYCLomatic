@@ -6533,10 +6533,8 @@ KernelPrinter &KernelCallExpr::SubmitStmtsList::print(KernelPrinter &Printer) {
             "ranges to define ND iteration space for the kernel");
   printList(Printer, CommandGroupList, "helper variables defined");
   if (ImplicitSyncFlag) {
-    Printer.line(
-        std::string(
-            "cgh.depends_on(dpct::get_current_device().get_last_events()") +
-        std::string(DefaultStreamFlag ? "" : "[0]") + std::string(");"));
+    Printer.line("cgh.depends_on(dpct::get_current_device().get_last_events()",
+                 (DefaultStreamFlag ? "" : "[0]"), ");");
     Printer.newLine();
   }
   return Printer;
